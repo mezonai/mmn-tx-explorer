@@ -5,8 +5,8 @@
   "printWidth": 80,
   "tabWidth": 2,
   "useTabs": false,
+  "endOfLine": "auto",
   "plugins": ["prettier-plugin-tailwindcss"],
   "tailwindCSS": "./app/globals.css",
-  "endOfLine": "auto",
   "tailwindFunctions": ["cn", "clsx", "tw"]
 }

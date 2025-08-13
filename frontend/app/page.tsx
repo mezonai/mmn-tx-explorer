@@ -1,4 +1,6 @@
-import { MainLayout } from '@/components/layout/main-layout';
+import { BarChart3, TrendingUp, Users, Wallet } from 'lucide-react';
+
+import { MainLayout } from '@/components/layout';
 import {
   Card,
   CardContent,
@@ -6,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { BarChart3, TrendingUp, Users, Wallet } from 'lucide-react';
 
 export default function Home() {
   return (
