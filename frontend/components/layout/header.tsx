@@ -1,18 +1,18 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { Menu } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { SidebarTrigger } from "@/components/ui/sidebar"
-import { Separator } from "@/components/ui/separator"
-import { MobileSidebar } from "./mobile-sidebar"
+import { useState } from 'react';
+import { Menu } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { SidebarTrigger } from '@/components/ui/sidebar';
+import { Separator } from '@/components/ui/separator';
+import { MobileSidebar } from './mobile-sidebar';
 
 export function Header() {
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   return (
     <>
-      <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 border-b bg-background px-4">
+      <header className="bg-background flex h-16 shrink-0 items-center gap-2 border-b px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
         <div className="flex items-center gap-2">
           {/* Mobile menu trigger - only visible on mobile */}
           <Button
@@ -26,7 +26,7 @@ export function Header() {
           </Button>
 
           {/* Desktop sidebar trigger - only visible on desktop */}
-          <SidebarTrigger className="hidden md:flex -ml-1" />
+          <SidebarTrigger className="-ml-1 hidden md:flex" />
 
           <Separator
             orientation="vertical"
@@ -34,10 +34,10 @@ export function Header() {
           />
 
           {/* Breadcrumb */}
-          <nav className="flex items-center space-x-1 text-sm text-muted-foreground">
+          <nav className="text-muted-foreground flex items-center space-x-1 text-sm">
             <a
               href="#"
-              className="hidden md:block transition-colors hover:text-foreground"
+              className="hover:text-foreground hidden transition-colors md:block"
             >
               MMN Explorer
             </a>
@@ -50,20 +50,20 @@ export function Header() {
         <div className="ml-auto flex items-center gap-2">
           <Button variant="ghost" size="icon">
             <span className="sr-only">Notifications</span>
-            <div className="h-4 w-4 rounded-full bg-muted" />
+            <div className="bg-muted h-4 w-4 rounded-full" />
           </Button>
           <Button variant="ghost" size="icon">
             <span className="sr-only">User menu</span>
-            <div className="h-6 w-6 rounded-full bg-muted" />
+            <div className="bg-muted h-6 w-6 rounded-full" />
           </Button>
         </div>
       </header>
 
       {/* Mobile Sidebar */}
-      <MobileSidebar 
-        open={mobileSidebarOpen} 
-        onOpenChange={setMobileSidebarOpen} 
+      <MobileSidebar
+        open={mobileSidebarOpen}
+        onOpenChange={setMobileSidebarOpen}
       />
     </>
-  )
+  );
 }

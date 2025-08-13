@@ -1,11 +1,11 @@
-"use client"
+'use client';
 
-import { Header } from "./header"
-import { AppSidebar } from "./sidebar"
-import { Footer } from "./footer"
+import { Footer } from './footer';
+import { Header } from './header';
+import { AppSidebar } from './sidebar';
 
 interface MainLayoutProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 export function MainLayout({ children }: MainLayoutProps) {
@@ -13,15 +13,13 @@ export function MainLayout({ children }: MainLayoutProps) {
     <AppSidebar>
       <div className="flex min-h-screen flex-col">
         <Header />
-        
+
         <main className="flex-1">
-          <div className="container mx-auto px-4 py-6">
-            {children}
-          </div>
+          <div className="container mx-auto px-4 py-6">{children}</div>
         </main>
-        
+
         <Footer />
       </div>
     </AppSidebar>
-  )
+  );
 }

@@ -1,8 +1,8 @@
-import { Separator } from "@/components/ui/separator"
+import { Separator } from '@/components/ui/separator';
 
 export function Footer() {
   return (
-    <footer className="border-t bg-background">
+    <footer className="bg-background border-t">
       <div className="container mx-auto px-4 py-6">
         <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
           <div className="flex flex-col items-center gap-4 md:flex-row md:gap-6">
@@ -13,27 +13,27 @@ export function Footer() {
               <span className="text-sm font-medium">MMN Explorer</span>
             </div>
             <Separator orientation="vertical" className="hidden h-4 md:block" />
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               © 2024 MMN Explorer. All rights reserved.
             </p>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <a
               href="#"
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground text-sm transition-colors"
             >
               Privacy Policy
             </a>
             <a
               href="#"
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground text-sm transition-colors"
             >
               Terms of Service
             </a>
             <a
               href="#"
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground text-sm transition-colors"
             >
               Contact
             </a>
@@ -41,5 +41,5 @@ export function Footer() {
         </div>
       </div>
     </footer>
-  )
+  );
 }

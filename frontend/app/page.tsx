@@ -1,6 +1,12 @@
-import { MainLayout } from "@/components/layout/main-layout"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { BarChart3, TrendingUp, Users, Wallet } from "lucide-react"
+import { MainLayout } from '@/components/layout/main-layout';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { BarChart3, TrendingUp, Users, Wallet } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -10,7 +16,8 @@ export default function Home() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">
-            Welcome to MMN Explorer. Monitor your network transactions and analytics.
+            Welcome to MMN Explorer. Monitor your network transactions and
+            analytics.
           </p>
         </div>
 
@@ -18,51 +25,57 @@ export default function Home() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
-              <Wallet className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">
+                Total Transactions
+              </CardTitle>
+              <Wallet className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">1,234</div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 +20.1% from last month
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">
+                Active Users
+              </CardTitle>
+              <Users className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">567</div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 +180.1% from last month
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Network Load</CardTitle>
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">
+                Network Load
+              </CardTitle>
+              <BarChart3 className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">89.2%</div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 +2.1% from last month
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <TrendingUp className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">$12,345</div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 +19% from last month
               </p>
             </CardContent>
@@ -82,12 +95,12 @@ export default function Home() {
               <div className="space-y-4">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <div key={i} className="flex items-center space-x-4">
-                    <div className="h-8 w-8 rounded-full bg-muted" />
+                    <div className="bg-muted h-8 w-8 rounded-full" />
                     <div className="flex-1 space-y-1">
-                      <p className="text-sm font-medium leading-none">
+                      <p className="text-sm leading-none font-medium">
                         Transaction #{1000 + i}
                       </p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         {new Date().toLocaleDateString()}
                       </p>
                     </div>
@@ -99,7 +112,7 @@ export default function Home() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card className="col-span-3">
             <CardHeader>
               <CardTitle>Network Status</CardTitle>
@@ -111,19 +124,21 @@ export default function Home() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Block Height</span>
-                  <span className="text-sm text-muted-foreground">1,234,567</span>
+                  <span className="text-muted-foreground text-sm">
+                    1,234,567
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Block Time</span>
-                  <span className="text-sm text-muted-foreground">~2.5s</span>
+                  <span className="text-muted-foreground text-sm">~2.5s</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">TPS</span>
-                  <span className="text-sm text-muted-foreground">1,234</span>
+                  <span className="text-muted-foreground text-sm">1,234</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Validators</span>
-                  <span className="text-sm text-muted-foreground">100</span>
+                  <span className="text-muted-foreground text-sm">100</span>
                 </div>
               </div>
             </CardContent>
@@ -131,5 +146,5 @@ export default function Home() {
         </div>
       </div>
     </MainLayout>
-  )
+  );
 }
