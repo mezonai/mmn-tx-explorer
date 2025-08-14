@@ -10,7 +10,7 @@ export function AppFooter() {
             <div className="flex items-center gap-2">
               <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center overflow-hidden rounded-md">
                 <Image
-                  src="/images/logo.png"
+                  src="/images/logo.webp"
                   alt="MMN Explorer"
                   width={24}
                   height={24}

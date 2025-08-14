@@ -1,47 +1,27 @@
-import {
-  BarChart3,
-  FileText,
-  Home,
-  Settings,
-  Users,
-  Wallet,
-} from 'lucide-react';
+import { ArrowLeftRight, Box, CircleGauge } from 'lucide-react';
+
+import { RoutePath, ROUTES } from '@/config/routes';
 
 export interface NavItem {
   title: string;
-  href: string;
+  href: RoutePath;
   icon: React.ComponentType<{ className?: string }>;
 }
 
 export const sidebarNavItems: NavItem[] = [
   {
     title: 'Dashboard',
-    href: '/',
-    icon: Home,
+    href: ROUTES.HOME,
+    icon: CircleGauge,
   },
   {
     title: 'Transactions',
-    href: '/transactions',
-    icon: Wallet,
+    href: ROUTES.TRANSACTIONS,
+    icon: ArrowLeftRight,
   },
   {
-    title: 'Analytics',
-    href: '/analytics',
-    icon: BarChart3,
-  },
-  {
-    title: 'Documents',
-    href: '/documents',
-    icon: FileText,
-  },
-  {
-    title: 'Users',
-    href: '/users',
-    icon: Users,
-  },
-  {
-    title: 'Settings',
-    href: '/settings',
-    icon: Settings,
+    title: 'Blocks',
+    href: ROUTES.BLOCKS,
+    icon: Box,
   },
 ];

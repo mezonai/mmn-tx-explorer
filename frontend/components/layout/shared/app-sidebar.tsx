@@ -18,6 +18,7 @@ import {
   SidebarProvider,
 } from '@/components/ui/sidebar';
 import { sidebarNavItems } from '../navigation/nav-items';
+import { ROUTES } from '@/config/routes';
 import { cn } from '@/lib/utils';
 
 interface SidebarProps {
@@ -34,18 +35,20 @@ export function AppSidebar({ children }: SidebarProps) {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton size="lg" asChild>
-                <Link href="/">
+                <Link href={ROUTES.HOME}>
                   <div className="flex items-center gap-2">
                     <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg">
                       <Image
-                        src="/images/logo.png"
+                        src="/images/logo.webp"
                         alt="MMN Explorer"
                         width={32}
                         height={32}
                       />
                     </div>
                     <div className="flex-1">
-                      <span className="truncate font-medium">MMN Explorer</span>
+                      <span className="truncate text-base font-bold">
+                        MMN Explorer
+                      </span>
                     </div>
                   </div>
                 </Link>
@@ -62,14 +65,14 @@ export function AppSidebar({ children }: SidebarProps) {
                   const isActive = pathname === item.href;
                   return (
                     <SidebarMenuItem key={item.href}>
-                      <SidebarMenuButton asChild>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive}
+                        tooltip={item.title}
+                      >
                         <Button
-                          variant={isActive ? 'default' : 'ghost'}
-                          className={cn(
-                            'justify-start',
-                            isActive &&
-                              'hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground'
-                          )}
+                          variant="ghost"
+                          className="justify-start"
                           asChild
                         >
                           <Link href={item.href}>

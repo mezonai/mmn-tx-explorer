@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'MMN Explorer',
-  description: 'Transaction Explorer for MMN Network',
+  description: 'Mezon Mainnet Transaction Explorer',
 };
 
 export default function RootLayout({
