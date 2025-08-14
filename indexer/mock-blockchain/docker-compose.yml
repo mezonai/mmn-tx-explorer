@@ -12,5 +12,3 @@ services:
     build: .
     depends_on:
       - ganache
-    environment:
-      GANACHE_URL: http://ganache:8545
