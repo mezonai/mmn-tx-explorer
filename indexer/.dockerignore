@@ -1,0 +1,4 @@
+.env
+.mockery.yaml
+
+configs/secrets*
