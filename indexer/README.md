@@ -32,8 +32,6 @@ go build -o main -tags=production
 # 6. Access the API
 # Default: http://localhost:3000
 
-#7. local blockchain
-docker run -it --rm -p 8545:8545 trufflesuite/ganache:v7.9.0 --miner.blockTime 5 --wallet.totalAccounts 10
 ```
 
 ### 🏃‍♂️ Quick Start with Hybrid Setup (PostgreSQL + ClickHouse)
