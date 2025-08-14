@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  ganache:
+    image: trufflesuite/ganache:v7.9.0
+    command: --miner.blockTime 5 --wallet.totalAccounts 10 --host 0.0.0.0
+    ports:
+      - "8545:8545"
+
+  spammer:
+    restart: always
+    build: .
+    depends_on:
+      - ganache
+    environment:
+      GANACHE_URL: http://ganache:8545
