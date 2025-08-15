@@ -21,15 +21,16 @@ docker-compose up -d clickhouse
 # 4. Apply ClickHouse migrations
 cat internal/tools/clickhouse/*.sql | docker exec -i <clickhouse-container> clickhouse-client --user admin --password password
 
-# 4b. Apply Postgres migrations (if using Postgres for orchestration and staging)
-psql -h localhost -U postgres -d postgres -f internal/tools/postgres/postgres_schema.sql
+# 5. Run a mock blockchain (Optional: if you have a real RPC, update it in config.yml).
+cd mock-blockchain
+docker compose up --build
 
-# 5. Build and run Insight
+# 6. Build and run Insight
 go build -o main -tags=production
 ./main orchestrator   # Starts the indexer
 ./main api           # Starts the API server
 
-# 6. Access the API
+# 7. Access the API
 # Default: http://localhost:3000
 
 ```
