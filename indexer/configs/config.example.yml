@@ -1,7 +1,8 @@
 # RPC Configuration - Settings for connecting to blockchain RPC endpoints
 rpc:
   # URL of the blockchain RPC endpoint to connect to
-  url: https://1.rpc.thirdweb.com
+  url: http://localhost:8545
+  chainId: 1337
   
   # Block fetching configuration
   blocks:
@@ -20,7 +21,7 @@ rpc:
   # Block receipts fetching configuration
   blockReceipts:
     # Whether to fetch block receipts (transaction receipts for all transactions in a block)
-    enabled: true
+    enabled: false
     # Number of blocks to fetch receipts for in a single request
     blocksPerRequest: 250
     # Delay in milliseconds between receipt batch requests
@@ -36,7 +37,7 @@ rpc:
     batchDelay: 100
   
   # Blockchain network identifier (1 = Ethereum mainnet). Optional. If RPC URL is omitted, will use thirdweb RPC with this chainId.
-  chainId: 1
+  # chainId: 1
 
 # Logging configuration
 log:
@@ -103,7 +104,7 @@ storage:
       # ClickHouse database host
       host: localhost
       # ClickHouse database port
-      port: 9000
+      port: 9440
       # Database username
       username: admin
       # Database password
@@ -111,7 +112,7 @@ storage:
       # Database name
       database: main
       # Whether to disable TLS encryption
-      disableTLS: false
+      disableTLS: true
       # Whether to use async inserts for better performance
       asyncInsert: true
       # Maximum number of rows to insert in a single query
@@ -123,15 +124,16 @@ storage:
       # Chain-specific configuration
       chainBasedConfig:
         "1": # Chain ID 1 (Ethereum mainnet)
-          # Table name for this chain's data
-          tableName: main
-          # Default fields to select when querying blocks
-          defaultSelectFields:
-            - block_number
-            - block_hash
-            - block_timestamp
-            - block_gas_limit
-            - block_gas_used
+          main: # Table type
+            # Table name for this chain's data
+            tableName: main
+            # Default fields to select when querying blocks
+            defaultSelectFields:
+              - block_number
+              - block_hash
+              - block_timestamp
+              - block_gas_limit
+              - block_gas_used
       # Whether to enable parallel processing of materialized views
       enableParallelViewProcessing: true
       # Maximum query execution time in seconds
@@ -141,22 +143,22 @@ storage:
   staging:
     clickhouse:
       host: localhost
-      port: 9000
+      port: 9440
       username: admin
       password: password
       database: main
-      disableTLS: false
+      disableTLS: true
       asyncInsert: true
   
   # Orchestrator storage configuration - Storage for orchestration metadata
   orchestrator:
     clickhouse:
       host: localhost
-      port: 9000
+      port: 9440
       username: admin
       password: password
       database: main
-      disableTLS: false
+      disableTLS: true
       asyncInsert: true
 
 # API configuration - Settings for the HTTP API server
