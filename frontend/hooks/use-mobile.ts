@@ -2,9 +2,7 @@ import { BREAKPOINTS } from '@/config/breakpoint';
 import * as React from 'react';
 
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(
-    undefined
-  );
+  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined);
 
   React.useEffect(() => {
     const mql = window.matchMedia(`(max-width: ${BREAKPOINTS.MOBILE - 1}px)`);

@@ -10,10 +10,7 @@ export function formatHash(hash: string, length: number = 8): string {
   return `${hash.slice(0, length)}...${hash.slice(-length)}`;
 }
 
-export function formatEth(
-  value: string | number,
-  decimals: number = 6
-): string {
+export function formatEth(value: string | number, decimals: number = 6): string {
   if (!value) return '0';
   const num = typeof value === 'string' ? parseFloat(value) : value;
   if (isNaN(num)) return '0';

@@ -30,13 +30,7 @@ export const Table = <T,>(props: TableProps<T>) => {
   return (
     <div className={cn('space-y-5', classNameLayout)}>
       <div className="w-full overflow-x-auto rounded-none border shadow md:rounded-lg">
-        <table
-          className={cn(
-            'text-foreground w-full text-left text-sm rtl:text-right',
-            className
-          )}
-          {...otherProps}
-        >
+        <table className={cn('text-foreground w-full text-left text-sm rtl:text-right', className)} {...otherProps}>
           {showHeader && (
             <thead className="bg-secondary text-foreground text-xs uppercase">
               <tr>
@@ -77,11 +71,7 @@ export const Table = <T,>(props: TableProps<T>) => {
                     const { field, valueGetter } = column;
                     return (
                       <td key={indexColumn} className="px-6 py-4">
-                        {valueGetter
-                          ? valueGetter(row)
-                          : field
-                            ? String(row[field] ?? '')
-                            : ''}
+                        {valueGetter ? valueGetter(row) : field ? String(row[field] ?? '') : ''}
                       </td>
                     );
                   })}
