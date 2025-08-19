@@ -10,25 +10,11 @@ export function formatHash(hash: string, length: number = 8): string {
   return `${hash.slice(0, length)}...${hash.slice(-length)}`;
 }
 
-export function formatEth(
-  value: string | number,
-  decimals: number = 6
-): string {
+export function formatEth(value: string | number, decimals: number = 6): string {
   if (!value) return '0';
   const num = typeof value === 'string' ? parseFloat(value) : value;
   if (isNaN(num)) return '0';
   return num.toFixed(decimals);
-}
-
-export function formatRelativeTime(timeString: string): string {
-  const now = new Date();
-  const time = new Date(timeString);
-  const diffInSeconds = Math.floor((now.getTime() - time.getTime()) / 1000);
-
-  if (diffInSeconds < 60) return `${diffInSeconds}s ago`;
-  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-  return `${Math.floor(diffInSeconds / 86400)}d ago`;
 }
 
 export function getStatusColor(status: string): string {
