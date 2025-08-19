@@ -121,7 +121,12 @@ type IMainStorage interface {
 	 * Gets full block data with transactions, logs and traces.
 	 */
 	GetFullBlockData(chainId *big.Int, blockNumbers []*big.Int) (blocks []common.BlockData, err error)
+	/**
+	 * Gets the count of items in a table.
+	 */
+	GetCount(table string, qf QueryFilter) (uint64, error)
 }
+
 
 func NewStorageConnector(cfg *config.StorageConfig) (IStorage, error) {
 	var storage IStorage

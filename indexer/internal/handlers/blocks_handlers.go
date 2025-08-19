@@ -69,6 +69,21 @@ func handleBlocksRequest(c *gin.Context) {
 		ForceConsistentData: queryParams.ForceConsistentData,
 	}
 
+	// Prepare the QueryFilter for count
+	countQf := storage.QueryFilter{
+		FilterParams:        queryParams.FilterParams,
+		ChainId:             chainId,
+		ForceConsistentData: queryParams.ForceConsistentData,
+	}
+
+	// Get the total number of items
+	totalItems, err := mainStorage.GetCount("blocks", countQf)
+	if err != nil {
+		log.Error().Err(err).Msg("Error getting count")
+		api.InternalErrorHandler(c)
+		return
+	}
+
 	// Initialize the QueryResult
 	queryResult := api.QueryResponse{
 		Meta: api.Meta{
@@ -108,7 +123,7 @@ func handleBlocksRequest(c *gin.Context) {
 
 		var data interface{} = serializeBlocks(blocksResult.Data)
 		queryResult.Data = &data
-		queryResult.Meta.TotalItems = len(blocksResult.Data)
+		queryResult.Meta.TotalItems = int(totalItems)
 	}
 
 	sendJSONResponse(c, queryResult)
