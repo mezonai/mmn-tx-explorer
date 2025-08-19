@@ -11,6 +11,7 @@ import (
 	config "github.com/thirdweb-dev/indexer/configs"
 	"github.com/thirdweb-dev/indexer/internal/common"
 	"github.com/thirdweb-dev/indexer/internal/storage"
+	"math"
 )
 
 // @Summary Get all transactions
@@ -228,6 +229,7 @@ func handleTransactionsRequest(c *gin.Context) {
 		}
 		queryResult.Data = &data
 		queryResult.Meta.TotalItems = int(totalItems)
+		queryResult.Meta.TotalPages = int(math.Ceil(float64(totalItems) / float64(queryParams.Limit)))
 	}
 
 	c.JSON(http.StatusOK, queryResult)

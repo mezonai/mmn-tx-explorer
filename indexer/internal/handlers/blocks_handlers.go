@@ -6,6 +6,7 @@ import (
 	"github.com/thirdweb-dev/indexer/api"
 	"github.com/thirdweb-dev/indexer/internal/common"
 	"github.com/thirdweb-dev/indexer/internal/storage"
+	"math"
 )
 
 // @Summary Get all blocks
@@ -124,6 +125,7 @@ func handleBlocksRequest(c *gin.Context) {
 		var data interface{} = serializeBlocks(blocksResult.Data)
 		queryResult.Data = &data
 		queryResult.Meta.TotalItems = int(totalItems)
+		queryResult.Meta.TotalPages = int(math.Ceil(float64(totalItems) / float64(queryParams.Limit)))
 	}
 
 	sendJSONResponse(c, queryResult)
