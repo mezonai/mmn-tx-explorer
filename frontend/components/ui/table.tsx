@@ -1,5 +1,6 @@
 import { ReactNode, TableHTMLAttributes } from 'react';
 
+import { DEFAULT_PAGINATION } from '@/constant';
 import { cn } from '@/lib/utils';
 import { TTableColumn } from '@/types';
 import { Skeleton } from './skeleton';
@@ -42,7 +43,7 @@ export const Table = <T,>({
         )}
         <tbody className="bg-card text-foreground">
           {!rows ? (
-            Array.from({ length: 10 }).map((_, index) => (
+            Array.from({ length: DEFAULT_PAGINATION.LIMIT }).map((_, index) => (
               <tr key={index} className="border-b">
                 {columns.map((_, columnIndex) => (
                   <td key={columnIndex} className="p-4">

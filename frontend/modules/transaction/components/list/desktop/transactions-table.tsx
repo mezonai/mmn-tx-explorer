@@ -3,8 +3,9 @@ import Link from 'next/link';
 import { Clock } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import { Table } from '@/components/ui/table';
-import { ITransaction, formatRelativeTime } from '@/modules/transaction';
+import { ITransaction } from '@/modules/transaction';
 import { TTableColumn } from '@/types';
+import { DateTimeUtil } from '@/utils';
 import { FromToAddresses, MethodBadge, MoreInfoButton, TxnHashLink, TypeBadges } from '../shared';
 
 interface TransactionsTableProps {
@@ -30,7 +31,7 @@ export const TransactionsTable = ({ transactions }: TransactionsTableProps) => {
           <div className="flex flex-col items-start">
             <TxnHashLink hash={row.hash} className="w-40" />
             <span className="text-muted-foreground text-sm">
-              {formatRelativeTime(new Date(row.block_timestamp * 1000).toISOString())}
+              {DateTimeUtil.formatRelativeTime(row.block_timestamp * 1000)}
             </span>
           </div>
         );

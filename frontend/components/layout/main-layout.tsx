@@ -1,6 +1,6 @@
 'use client';
 
-import { Sidebar, SidebarInset, SidebarProvider } from '../ui/sidebar';
+import { SidebarInset, SidebarProvider } from '../ui/sidebar';
 import { AppFooter, AppHeader, AppSidebar } from './shared';
 
 interface MainLayoutProps {

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
+import { DEFAULT_PAGINATION } from '@/constant';
 import { cn } from '@/lib/utils';
 import { GlobalSearch } from '@/modules/global-search';
 import { ITransaction, ITransactionListParams, TransactionService } from '@/modules/transaction';
@@ -13,8 +14,8 @@ import { TransactionCards, TransactionsTable } from './list';
 import { StatsGrid } from './stats';
 
 const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
-  page: 1,
-  limit: 20,
+  page: DEFAULT_PAGINATION.PAGE,
+  limit: DEFAULT_PAGINATION.LIMIT,
   sort_by: 'block_timestamp',
   sort_order: 'desc',
 } as const;

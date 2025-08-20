@@ -1,5 +1,6 @@
 import { Transaction } from '@/assets/icons';
-import { ITransaction, formatRelativeTime } from '@/modules/transaction';
+import { ITransaction } from '@/modules/transaction';
+import { DateTimeUtil } from '@/utils';
 import { FromToAddresses, MoreInfoButton, TxnHashLink, TypeBadges } from '../shared';
 
 interface TransactionCardProps {
@@ -24,7 +25,7 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
           <Transaction className="text-muted-foreground size-6" />
           <TxnHashLink hash={transaction.hash} />
           <p className="text-muted-foreground text-sm whitespace-nowrap">
-            {formatRelativeTime(new Date(transaction.block_timestamp * 1000).toISOString())}
+            {DateTimeUtil.formatRelativeTime(transaction.block_timestamp * 1000)}
           </p>
         </div>
       </div>

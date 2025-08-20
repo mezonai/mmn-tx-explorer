@@ -3,15 +3,16 @@ import { useState } from 'react';
 import { Copy01 } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ADDRESS_END_VISIBLE_CHARS } from '@/constant';
 import { cn } from '@/lib/utils';
 import { MiddleTruncate } from '@re-dev/react-truncate';
 
-interface ValidatorAddressProps {
+interface AddressDisplayProps {
   address: string;
   className?: string;
 }
 
-export const ValidatorAddress = ({ address, className }: ValidatorAddressProps) => {
+export const AddressDisplay = ({ address, className }: AddressDisplayProps) => {
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
   const handleCopy = async () => {
@@ -27,7 +28,7 @@ export const ValidatorAddress = ({ address, className }: ValidatorAddressProps) 
   return (
     <div className={cn('flex items-center gap-2', className)}>
       <span className="text-primary w-24 text-sm font-normal">
-        <MiddleTruncate end={4}>{address}</MiddleTruncate>
+        <MiddleTruncate end={ADDRESS_END_VISIBLE_CHARS}>{address}</MiddleTruncate>
       </span>
       <Tooltip open={isCopied}>
         <TooltipTrigger asChild>

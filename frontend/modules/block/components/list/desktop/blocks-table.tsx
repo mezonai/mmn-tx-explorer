@@ -3,13 +3,14 @@
 import Link from 'next/link';
 
 import { Clock } from '@/assets/icons';
+import { AddressDisplay } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Table } from '@/components/ui/table';
 import { ROUTES } from '@/config/routes';
 import { IBlock } from '@/modules/block/types';
-import { formatRelativeTime } from '@/modules/transaction';
 import { TTableColumn } from '@/types';
-import { GasUsage, TxnLink, ValidatorAddress } from '../shared';
+import { DateTimeUtil } from '@/utils';
+import { GasUsage, TxnLink } from '../shared';
 
 interface BlocksTableProps {
   blocks?: IBlock[];
@@ -33,7 +34,7 @@ export const BlocksTable = ({ blocks }: BlocksTableProps) => {
               <Link href={ROUTES.BLOCK.replace(':id', row.block_number.toString())}>{row.block_number}</Link>
             </Button>
             <span className="text-muted-foreground text-sm">
-              {formatRelativeTime(new Date(row.block_timestamp * 1000).toISOString())}
+              {DateTimeUtil.formatRelativeTime(row.block_timestamp * 1000)}
             </span>
           </div>
         );
@@ -45,7 +46,7 @@ export const BlocksTable = ({ blocks }: BlocksTableProps) => {
     },
     {
       header: 'Validator',
-      valueGetter: (row) => <ValidatorAddress address={row.miner} />,
+      valueGetter: (row) => <AddressDisplay address={row.miner} />,
     },
     {
       header: 'Txn',

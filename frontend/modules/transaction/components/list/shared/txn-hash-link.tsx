@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ADDRESS_END_VISIBLE_CHARS } from '@/constant';
 import { cn } from '@/lib/utils';
 
 interface TxnHashLinkProps {
@@ -16,7 +17,7 @@ export const TxnHashLink = ({ hash, className }: TxnHashLinkProps) => {
       <TooltipTrigger asChild>
         <Button variant="link" className={cn('flex-1 p-0', className)} asChild>
           <Link href={`/transactions/${hash}`}>
-            <MiddleTruncate end={4} className="font-semibold">
+            <MiddleTruncate end={ADDRESS_END_VISIBLE_CHARS} className="font-semibold">
               {hash}
             </MiddleTruncate>
           </Link>

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono, Manrope } from 'next/font/google';
+import { Suspense } from 'react';
 
 import './globals.css';
 
@@ -30,7 +31,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${manrope.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}>{children}</body>
+      <body className={`${manrope.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <Suspense fallback={null}>{children}</Suspense>
+      </body>
     </html>
   );
 }

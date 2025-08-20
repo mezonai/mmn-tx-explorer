@@ -10,7 +10,7 @@ interface GasUsageProps {
 }
 
 export const GasUsage = ({ gasUsed, gasLimit, className }: GasUsageProps) => {
-  const percent = (Number(gasUsed) / Number(gasLimit)) * 100;
+  const percent = Number(gasLimit) === 0 ? 0 : (Number(gasUsed) / Number(gasLimit)) * 100;
 
   return (
     <div className={cn('space-y-2', className)}>

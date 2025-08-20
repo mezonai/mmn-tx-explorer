@@ -1,10 +1,11 @@
 import Link from 'next/link';
 
+import { AddressDisplay } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/config/routes';
 import { IBlock } from '@/modules/block/types';
-import { formatRelativeTime } from '@/modules/transaction';
-import { GasUsage, TxnLink, ValidatorAddress } from '../shared';
+import { DateTimeUtil } from '@/utils';
+import { GasUsage, TxnLink } from '../shared';
 
 interface BlockCardProps {
   block: IBlock;
@@ -17,9 +18,7 @@ export const BlockCard = ({ block }: BlockCardProps) => {
         <Button variant="link" className="h-fit p-0 font-semibold" asChild>
           <Link href={ROUTES.BLOCK.replace(':id', block.block_number.toString())}>{block.block_number}</Link>
         </Button>
-        <span className="text-muted-foreground">
-          {formatRelativeTime(new Date(block.block_timestamp * 1000).toISOString())}
-        </span>
+        <span className="text-muted-foreground">{DateTimeUtil.formatRelativeTime(block.block_timestamp * 1000)}</span>
       </div>
       <div className="flex items-center justify-between">
         <span>Size</span>
@@ -27,7 +26,7 @@ export const BlockCard = ({ block }: BlockCardProps) => {
       </div>
       <div className="flex items-center justify-between">
         <span>Validator</span>
-        <ValidatorAddress address={block.miner} />
+        <AddressDisplay address={block.miner} />
       </div>
       <div className="flex items-center justify-between">
         <span>Txn</span>

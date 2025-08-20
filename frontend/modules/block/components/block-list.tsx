@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
+import { DEFAULT_PAGINATION } from '@/constant';
 import { cn } from '@/lib/utils';
 import { BlockService, IBlock, IBLockListParams } from '@/modules/block';
 import { GlobalSearch } from '@/modules/global-search';
@@ -12,8 +13,8 @@ import { IPaginationMeta } from '@/types';
 import { BlockCards, BlocksTable } from './list';
 
 const DEFAULT_VALUE_DATA_SEARCH: IBLockListParams = {
-  page: 1,
-  limit: 20,
+  page: DEFAULT_PAGINATION.PAGE,
+  limit: DEFAULT_PAGINATION.LIMIT,
   sort_by: 'block_number',
   sort_order: 'desc',
 } as const;

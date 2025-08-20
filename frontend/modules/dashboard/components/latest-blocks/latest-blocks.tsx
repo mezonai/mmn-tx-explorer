@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/config/routes';
-import { IBlock } from '@/modules/block';
+import { DASHBOARD_BLOCKS_LIMIT, IBlock } from '@/modules/block';
 import { BlockCard } from './block-card';
 import { BlockCardSkeleton } from './block-card-skeleton';
 
@@ -22,7 +22,7 @@ export const LatestBlocks = ({ blocks }: LatestBlocksProps) => {
       <div className="space-y-3">
         {blocks
           ? blocks.map((block) => <BlockCard key={block.block_number} block={block} />)
-          : Array.from({ length: 3 }).map((_, index) => <BlockCardSkeleton key={index} />)}
+          : Array.from({ length: DASHBOARD_BLOCKS_LIMIT }).map((_, index) => <BlockCardSkeleton key={index} />)}
       </div>
       <div className="flex w-full justify-center">
         <Button variant="link" className="font-medium" asChild>
