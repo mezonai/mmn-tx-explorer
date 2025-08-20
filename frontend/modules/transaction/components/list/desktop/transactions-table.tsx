@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Table } from '@/components/ui/table';
 import { ITransaction, formatRelativeTime } from '@/modules/transaction';
 import { TTableColumn } from '@/types';
-import { FromToAddresses, MethodBadge, ViewDetailsButton, TxnHashLink, TypeBadges } from '../shared';
+import { FromToAddresses, MethodBadge, MoreInfoButton, TxnHashLink, TypeBadges } from '../shared';
 
 interface TransactionsTableProps {
   transactions?: ITransaction[];
@@ -14,7 +14,7 @@ interface TransactionsTableProps {
 export const TransactionsTable = ({ transactions }: TransactionsTableProps) => {
   const columns: TTableColumn<ITransaction>[] = [
     {
-      valueGetter: () => <ViewDetailsButton />,
+      valueGetter: () => <MoreInfoButton />,
     },
     {
       header: (

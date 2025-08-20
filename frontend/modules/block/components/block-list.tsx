@@ -1,19 +1,19 @@
 'use client';
 
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { Table } from '@/components/ui/table';
+import { Pagination } from '@/components/ui/pagination';
+import { cn } from '@/lib/utils';
 import { BlockService, IBlock, IBLockListParams } from '@/modules/block';
 import { GlobalSearch } from '@/modules/global-search';
-import { IPaginationMeta, TTableColumn } from '@/types';
+import { IPaginationMeta } from '@/types';
+import { BlockCards, BlocksTable } from './list';
 
 const DEFAULT_VALUE_DATA_SEARCH: IBLockListParams = {
   page: 1,
-  limit: 10,
+  limit: 20,
   sort_by: 'block_number',
   sort_order: 'desc',
 } as const;
@@ -21,61 +21,15 @@ const DEFAULT_VALUE_DATA_SEARCH: IBLockListParams = {
 export const BlockList = () => {
   const urlSearchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'all' | 'forked' | 'uncles'>('all');
-  const [blocks, setBlocks] = useState<IBlock[]>([]);
+  const [blocks, setBlocks] = useState<IBlock[]>();
   const [pagination, setPagination] = useState<IPaginationMeta>();
-  const [isLoading, setIsLoading] = useState<boolean>();
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [localSearchParams, setLocalSearchParams] = useState<IBLockListParams>();
-
-  const columns: TTableColumn<IBlock>[] = [
-    {
-      headerName: 'Block',
-      valueGetter: (row) => {
-        return (
-          <Button variant="link" className="p-0" asChild>
-            <Link href={`/blocks/${row.block_number}`}>{row.block_number}</Link>
-          </Button>
-        );
-      },
-    },
-    {
-      headerName: 'Size, bytes',
-      field: 'size',
-    },
-    {
-      headerName: 'Validator',
-      field: 'miner',
-    },
-    {
-      headerName: 'Txn',
-      field: 'transaction_count',
-    },
-    {
-      headerName: 'Gas used',
-      field: 'gas_used',
-    },
-    {
-      headerName: 'Reward ETH',
-      valueGetter: () => {
-        return '0';
-      },
-    },
-    {
-      headerName: 'Burnt fees ETH',
-      valueGetter: () => {
-        return '0';
-      },
-    },
-    {
-      headerName: 'Base fee',
-      valueGetter: () => {
-        return '0';
-      },
-    },
-  ];
 
   const handleFetchBlocks = async (params: IBLockListParams) => {
     try {
       setIsLoading(true);
+      setBlocks(undefined);
       const { data, meta } = await BlockService.getBlocks(params);
       setBlocks(data);
       setPagination(meta);
@@ -87,13 +41,10 @@ export const BlockList = () => {
   };
 
   const handleChangePage = (page: number) => {
-    if (!pagination?.total_pages) return;
-    if (page >= 1 && page <= pagination.total_pages) {
-      const currentParams = new URLSearchParams(urlSearchParams.toString());
-      currentParams.set('page', page.toString());
-      const newUrl = `${window.location.pathname}?${currentParams.toString()}`;
-      window.history.pushState(null, '', newUrl);
-    }
+    const currentParams = new URLSearchParams(urlSearchParams.toString());
+    currentParams.set('page', page.toString());
+    const newUrl = `${window.location.pathname}?${currentParams.toString()}`;
+    window.history.pushState(null, '', newUrl);
   };
 
   useEffect(() => {
@@ -109,67 +60,63 @@ export const BlockList = () => {
   }, [localSearchParams]);
 
   return (
-    <div className="space-y-6">
-      <GlobalSearch />
-
-      <h1 className="text-3xl font-bold tracking-tight">Blocks</h1>
-
-      <div className="flex flex-col items-center justify-between gap-5 md:flex-row">
-        <div className="flex items-center gap-1 self-start">
-          <Button
-            variant={activeTab === 'all' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setActiveTab('all')}
-            disabled={isLoading}
-          >
-            All
-          </Button>
-          <Button
-            variant={activeTab === 'forked' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setActiveTab('forked')}
-            disabled={isLoading}
-          >
-            Forked
-          </Button>
-          <Button
-            variant={activeTab === 'uncles' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setActiveTab('uncles')}
-            disabled={isLoading}
-          >
-            Uncles
-          </Button>
-        </div>
-        {localSearchParams && (
-          <div className="flex items-center gap-2 self-end">
-            <Button variant="outline" size="sm" onClick={() => handleChangePage(1)} disabled={isLoading}>
-              First
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleChangePage(localSearchParams.page - 1)}
-              disabled={isLoading}
-            >
-              <ChevronLeft className="size-4" />
-            </Button>
-            <Button variant="default" size="sm">
-              {localSearchParams.page}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleChangePage(localSearchParams.page + 1)}
-              disabled={isLoading}
-            >
-              <ChevronRight className="size-4" />
-            </Button>
-          </div>
-        )}
+    <div className="space-y-8">
+      <div className="space-y-6">
+        <GlobalSearch />
+        <h1 className="text-2xl font-semibold">Blocks</h1>
       </div>
 
-      <Table columns={columns} rows={blocks} isLoading={isLoading} />
+      <div className="space-y-6">
+        <div className="flex flex-col items-center justify-between gap-5 md:flex-row">
+          <div className="bg-muted flex items-center gap-1 self-start rounded-md p-1">
+            <Button
+              variant={activeTab === 'all' ? 'outline' : 'ghost'}
+              size="sm"
+              onClick={() => setActiveTab('all')}
+              className={cn('border border-transparent px-3 py-2', activeTab === 'all' && 'hover:bg-background')}
+              disabled={isLoading}
+            >
+              All
+            </Button>
+            <Button
+              variant={activeTab === 'forked' ? 'outline' : 'ghost'}
+              size="sm"
+              onClick={() => setActiveTab('forked')}
+              className={cn('border border-transparent px-3 py-2', activeTab === 'forked' && 'hover:bg-background')}
+              disabled={isLoading}
+            >
+              Forked
+            </Button>
+            <Button
+              variant={activeTab === 'uncles' ? 'outline' : 'ghost'}
+              size="sm"
+              onClick={() => setActiveTab('uncles')}
+              className={cn('border border-transparent px-3 py-2', activeTab === 'uncles' && 'hover:bg-background')}
+              disabled={isLoading}
+            >
+              Uncles
+            </Button>
+          </div>
+
+          <Pagination
+            page={localSearchParams?.page ?? 1}
+            totalPages={pagination?.total_pages ?? 1}
+            isLoading={isLoading}
+            className="self-end"
+            onChangePage={handleChangePage}
+          />
+        </div>
+
+        <>
+          <div className="hidden lg:block">
+            <BlocksTable blocks={blocks} />
+          </div>
+
+          <div className="lg:hidden">
+            <BlockCards blocks={blocks} />
+          </div>
+        </>
+      </div>
     </div>
   );
 };

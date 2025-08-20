@@ -2,7 +2,7 @@ import { InfoSquare } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
-export const ViewDetailsButton = () => {
+export const MoreInfoButton = () => {
   return (
     <Tooltip>
       <TooltipTrigger asChild>

@@ -3,8 +3,9 @@
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import { ArrowLeft, ArrowRight } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
+import { Pagination } from '@/components/ui/pagination';
+import { cn } from '@/lib/utils';
 import { GlobalSearch } from '@/modules/global-search';
 import { ITransaction, ITransactionListParams, TransactionService } from '@/modules/transaction';
 import { IPaginationMeta } from '@/types';
@@ -78,7 +79,7 @@ export const TransactionsList = () => {
               variant={activeTab === 'validated' ? 'outline' : 'ghost'}
               size="sm"
               onClick={() => setActiveTab('validated')}
-              className="border border-transparent px-3 py-2"
+              className={cn('border border-transparent px-3 py-2', activeTab === 'validated' && 'hover:bg-background')}
               disabled={isLoading}
             >
               Validated
@@ -87,7 +88,7 @@ export const TransactionsList = () => {
               variant={activeTab === 'pending' ? 'outline' : 'ghost'}
               size="sm"
               onClick={() => setActiveTab('pending')}
-              className="border border-transparent px-3 py-2"
+              className={cn('border border-transparent px-3 py-2', activeTab === 'pending' && 'hover:bg-background')}
               disabled={isLoading}
             >
               Pending
@@ -96,43 +97,19 @@ export const TransactionsList = () => {
               variant={activeTab === 'blob' ? 'outline' : 'ghost'}
               size="sm"
               onClick={() => setActiveTab('blob')}
-              className="border border-transparent px-3 py-2"
+              className={cn('border border-transparent px-3 py-2', activeTab === 'blob' && 'hover:bg-background')}
               disabled={isLoading}
             >
               Blob txns
             </Button>
           </div>
-          <div className="flex items-center gap-2 self-end">
-            <Button
-              variant="outline"
-              className="px-3.5 py-2.5 text-sm font-semibold"
-              onClick={() => handleChangePage(1)}
-              disabled={isLoading}
-            >
-              First
-            </Button>
-            <div className="flex">
-              <Button
-                variant="outline"
-                className="rounded-tr-none rounded-br-none p-2.5"
-                onClick={() => localSearchParams && handleChangePage(localSearchParams.page - 1)}
-                disabled={isLoading}
-              >
-                <ArrowLeft className="text-muted-foreground size-5" />
-              </Button>
-              <div className="bg-primary/8 flex aspect-square h-[37px] items-center justify-center">
-                <p className="text-foreground text-sm font-semibold">{localSearchParams?.page ?? 1}</p>
-              </div>
-              <Button
-                variant="outline"
-                className="rounded-tl-none rounded-bl-none p-2.5"
-                onClick={() => localSearchParams && handleChangePage(localSearchParams.page + 1)}
-                disabled={isLoading}
-              >
-                <ArrowRight className="text-muted-foreground size-5" />
-              </Button>
-            </div>
-          </div>
+          <Pagination
+            page={localSearchParams?.page ?? 1}
+            totalPages={pagination?.total_pages ?? 1}
+            isLoading={isLoading}
+            className="self-end"
+            onChangePage={handleChangePage}
+          />
         </div>
 
         <>
@@ -140,7 +117,7 @@ export const TransactionsList = () => {
             <TransactionsTable transactions={transactions} />
           </div>
 
-          <div className="space-y-4 lg:hidden">
+          <div className="lg:hidden">
             <TransactionCards transactions={transactions} />
           </div>
         </>

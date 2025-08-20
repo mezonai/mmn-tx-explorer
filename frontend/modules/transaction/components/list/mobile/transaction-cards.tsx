@@ -7,9 +7,11 @@ interface TransactionCardsProps {
 }
 
 export const TransactionCards = ({ transactions }: TransactionCardsProps) => {
-  if (!transactions) {
-    return Array.from({ length: 10 }).map((_, index) => <TransactionCardSkeleton key={index} />);
-  }
-
-  return transactions.map((transaction) => <TransactionCard key={transaction.hash} transaction={transaction} />);
+  return (
+    <div className="space-y-4">
+      {transactions
+        ? transactions.map((transaction) => <TransactionCard key={transaction.hash} transaction={transaction} />)
+        : Array.from({ length: 20 }).map((_, index) => <TransactionCardSkeleton key={index} />)}
+    </div>
+  );
 };
