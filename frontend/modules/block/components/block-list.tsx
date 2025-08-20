@@ -1,14 +1,14 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Table } from '@/components/ui/table';
 import { BlockService, IBlock, IBLockListParams } from '@/modules/block';
+import { GlobalSearch } from '@/modules/global-search';
 import { IPaginationMeta, TTableColumn } from '@/types';
 
 const DEFAULT_VALUE_DATA_SEARCH: IBLockListParams = {
@@ -31,7 +31,7 @@ export const BlockList = () => {
       headerName: 'Block',
       valueGetter: (row) => {
         return (
-          <Button variant="link" asChild>
+          <Button variant="link" className="p-0" asChild>
             <Link href={`/blocks/${row.block_number}`}>{row.block_number}</Link>
           </Button>
         );
@@ -110,12 +110,7 @@ export const BlockList = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="relative flex-1">
-          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
-          <Input placeholder="Search by address / txn hash / block / token..." className="pl-10" />
-        </div>
-      </div>
+      <GlobalSearch />
 
       <h1 className="text-3xl font-bold tracking-tight">Blocks</h1>
 

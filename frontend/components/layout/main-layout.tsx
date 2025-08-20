@@ -10,9 +10,7 @@ interface MainLayoutProps {
 export function MainLayout({ children }: MainLayoutProps) {
   return (
     <SidebarProvider>
-      <Sidebar collapsible="icon">
-        <AppSidebar />
-      </Sidebar>
+      <AppSidebar />
 
       <SidebarInset>
         <div className="flex min-h-screen flex-col">

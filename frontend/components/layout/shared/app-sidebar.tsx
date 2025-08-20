@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { ChevronLeft } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import {
+  Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
@@ -25,7 +26,7 @@ export function AppSidebar() {
   const { toggleSidebar, state } = useSidebar();
 
   return (
-    <>
+    <Sidebar collapsible="icon">
       <SidebarHeader className="relative px-4">
         <SidebarMenu>
           <SidebarMenuItem>
@@ -44,7 +45,7 @@ export function AppSidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
 
-        <div className="absolute top-1/2 right-0 hidden translate-x-1/2 -translate-y-1/2 md:block">
+        <div className="pointer-events-none absolute top-1/2 right-0 hidden translate-x-1/2 -translate-y-1/2 md:block md:opacity-0 md:transition-opacity md:group-hover:pointer-events-auto md:group-hover:opacity-100">
           <Button variant="outline" size="icon" className="aspect-square size-fit p-1.5" onClick={toggleSidebar}>
             <ChevronLeft
               className={cn('text-muted-foreground size-4 transition-transform', state === 'collapsed' && 'rotate-180')}
@@ -88,6 +89,6 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-    </>
+    </Sidebar>
   );
 }

@@ -1,20 +1,19 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import { ArrowLeft, ArrowRight } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Table } from '@/components/ui/table';
+import { GlobalSearch } from '@/modules/global-search';
 import { ITransaction, ITransactionListParams, TransactionService } from '@/modules/transaction';
-import { IPaginationMeta, TTableColumn } from '@/types';
+import { IPaginationMeta } from '@/types';
+import { TransactionCards, TransactionsTable } from './list';
+import { StatsGrid } from './stats';
 
 const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
   page: 1,
-  limit: 10,
+  limit: 20,
   sort_by: 'block_timestamp',
   sort_order: 'desc',
 } as const;
@@ -22,52 +21,15 @@ const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
 export const TransactionsList = () => {
   const urlSearchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'validated' | 'pending' | 'blob'>('validated');
-  const [transactions, setTransactions] = useState<ITransaction[]>([]);
+  const [transactions, setTransactions] = useState<ITransaction[]>();
   const [pagination, setPagination] = useState<IPaginationMeta>();
-  const [isLoading, setIsLoading] = useState<boolean>();
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [localSearchParams, setLocalSearchParams] = useState<ITransactionListParams>();
-
-  const columns: TTableColumn<ITransaction>[] = [
-    {
-      headerName: 'Txn hash',
-      field: 'hash',
-      valueGetter: (row) => {
-        return (
-          <Button variant="link" asChild>
-            <Link href={`/transactions/${row.hash}`}>{row.hash}</Link>
-          </Button>
-        );
-      },
-    },
-    {
-      headerName: 'Type',
-      field: 'transaction_type',
-    },
-    {
-      headerName: 'Method',
-      field: 'function_selector',
-    },
-    {
-      headerName: 'Block',
-      field: 'block_number',
-    },
-    {
-      headerName: 'From/To',
-      field: 'from_address',
-    },
-    {
-      headerName: 'Value ETH',
-      field: 'value',
-    },
-    {
-      headerName: 'Fee ETH',
-      field: 'gas_price',
-    },
-  ];
 
   const handleFetchTransactions = async (params: ITransactionListParams) => {
     try {
       setIsLoading(true);
+      setTransactions(undefined);
       const { data, meta } = await TransactionService.getTransactions(params);
       setTransactions(data);
       setPagination(meta);
@@ -101,108 +63,88 @@ export const TransactionsList = () => {
   }, [localSearchParams]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="relative flex-1">
-          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
-          <Input placeholder="Search by address / txn hash / block / token..." className="pl-10" />
-        </div>
+    <div className="space-y-8">
+      <div className="space-y-6">
+        <GlobalSearch />
+        <h1 className="text-2xl font-semibold">Transactions</h1>
       </div>
 
-      <h1 className="text-3xl font-bold tracking-tight">Transactions</h1>
+      <StatsGrid />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardContent className="text-sm">
-            <p className="text-muted-foreground">Transactions</p>
-            <p>
-              <strong className="text-lg font-bold">1,804,233</strong> (24h)
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="text-sm">
-            <p className="text-muted-foreground">Pending transactions</p>
-            <p>
-              <strong className="text-lg font-bold">415</strong> (30min)
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="text-sm">
-            <p className="text-muted-foreground">Transactions fees</p>
-            <p>
-              <strong className="text-lg font-bold">556.28</strong> ETH (24h)
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="text-sm">
-            <p className="text-muted-foreground">Avg. transaction fee</p>
-            <p>
-              <strong className="text-lg font-bold">$1.47</strong> (24h)
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="flex flex-col items-center justify-between gap-5 md:flex-row">
-        <div className="flex items-center gap-1 self-start">
-          <Button
-            variant={activeTab === 'validated' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setActiveTab('validated')}
-            disabled={isLoading}
-          >
-            Validated
-          </Button>
-          <Button
-            variant={activeTab === 'pending' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setActiveTab('pending')}
-            disabled={isLoading}
-          >
-            Pending
-          </Button>
-          <Button
-            variant={activeTab === 'blob' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setActiveTab('blob')}
-            disabled={isLoading}
-          >
-            Blob txns
-          </Button>
-        </div>
-        {localSearchParams && (
-          <div className="flex items-center gap-2 self-end">
-            <Button variant="outline" size="sm" onClick={() => handleChangePage(1)} disabled={isLoading}>
-              First
-            </Button>
+      <div className="space-y-6">
+        <div className="flex flex-col items-center justify-between gap-5 md:flex-row">
+          <div className="bg-muted flex items-center gap-1 self-start rounded-md p-1">
             <Button
-              variant="outline"
+              variant={activeTab === 'validated' ? 'outline' : 'ghost'}
               size="sm"
-              onClick={() => handleChangePage(localSearchParams.page - 1)}
+              onClick={() => setActiveTab('validated')}
+              className="border border-transparent px-3 py-2"
               disabled={isLoading}
             >
-              <ChevronLeft className="size-4" />
-            </Button>
-            <Button variant="default" size="sm">
-              {localSearchParams.page}
+              Validated
             </Button>
             <Button
-              variant="outline"
+              variant={activeTab === 'pending' ? 'outline' : 'ghost'}
               size="sm"
-              onClick={() => handleChangePage(localSearchParams.page + 1)}
+              onClick={() => setActiveTab('pending')}
+              className="border border-transparent px-3 py-2"
               disabled={isLoading}
             >
-              <ChevronRight className="size-4" />
+              Pending
+            </Button>
+            <Button
+              variant={activeTab === 'blob' ? 'outline' : 'ghost'}
+              size="sm"
+              onClick={() => setActiveTab('blob')}
+              className="border border-transparent px-3 py-2"
+              disabled={isLoading}
+            >
+              Blob txns
             </Button>
           </div>
-        )}
-      </div>
+          <div className="flex items-center gap-2 self-end">
+            <Button
+              variant="outline"
+              className="px-3.5 py-2.5 text-sm font-semibold"
+              onClick={() => handleChangePage(1)}
+              disabled={isLoading}
+            >
+              First
+            </Button>
+            <div className="flex">
+              <Button
+                variant="outline"
+                className="rounded-tr-none rounded-br-none p-2.5"
+                onClick={() => localSearchParams && handleChangePage(localSearchParams.page - 1)}
+                disabled={isLoading}
+              >
+                <ArrowLeft className="text-muted-foreground size-5" />
+              </Button>
+              <div className="bg-primary/8 flex aspect-square h-[37px] items-center justify-center">
+                <p className="text-foreground text-sm font-semibold">{localSearchParams?.page ?? 1}</p>
+              </div>
+              <Button
+                variant="outline"
+                className="rounded-tl-none rounded-bl-none p-2.5"
+                onClick={() => localSearchParams && handleChangePage(localSearchParams.page + 1)}
+                disabled={isLoading}
+              >
+                <ArrowRight className="text-muted-foreground size-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
 
-      <Table columns={columns} rows={transactions} isLoading={isLoading} />
+        <>
+          <div className="hidden lg:block">
+            <TransactionsTable transactions={transactions} />
+          </div>
+
+          <div className="space-y-4 lg:hidden">
+            <TransactionCards transactions={transactions} />
+          </div>
+        </>
+      </div>
     </div>
   );
 };
