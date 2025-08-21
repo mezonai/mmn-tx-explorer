@@ -55,19 +55,6 @@ type Client struct {
 }
 
 func Initialize() (IRPCClient, error) {
-	// rpcUrl := config.Cfg.RPC.URL
-	// if rpcUrl == "" {
-	// 	return nil, fmt.Errorf("RPC_URL environment variable is not set")
-	// }
-	// log.Debug().Msg("Initializing RPC")
-	// rpcClient, dialErr := gethRpc.Dial(rpcUrl)
-	// if dialErr != nil {
-	// 	return nil, dialErr
-	// }
-
-	// ethClient := ethclient.NewClient(rpcClient)
-
-	// Initialize MMN BlockService for gRPC calls
 	blockService, err := NewBlockService("localhost:9001")
 	if err != nil {
 		log.Warn().Err(err).Msg("Failed to initialize MMN BlockService, continuing without it")
@@ -78,53 +65,36 @@ func Initialize() (IRPCClient, error) {
 		blocksPerRequest: GetBlockPerRequestConfig(),
 	}
 	
-	// Set default chain ID for MMN
-	rpc.chainID = big.NewInt(1337) // You can change this to the appropriate MMN chain ID
+	rpc.chainID = big.NewInt(1337)
 	return IRPCClient(rpc), nil
 }
 
 func InitializeSimpleRPCWithUrl(url string) (IRPCClient, error) {
-	// rpcClient, dialErr := gethRpc.Dial(url)
-	// if dialErr != nil {
-	// 	return nil, dialErr
-	// }
-	// ethClient := ethclient.NewClient(rpcClient)
-	
-	// Initialize MMN BlockService for gRPC calls
 	blockService, err := NewBlockService("localhost:9001")
 	if err != nil {
 		log.Warn().Err(err).Msg("Failed to initialize MMN BlockService, continuing without it")
 	}
 	
 	rpc := &Client{
-		// RPCClient:    rpcClient,
-		// EthClient:    ethClient,
 		blockService: blockService,
-		// url:          url,
 	}
 	
-	// Set default chain ID for MMN
-	rpc.chainID = big.NewInt(1337) // You can change this to the appropriate MMN chain ID
+	rpc.chainID = big.NewInt(1337)
 	return IRPCClient(rpc), nil
 }
 
-
-
 func (rpc *Client) GetFullBlocks(ctx context.Context, blockNumbers []*big.Int) []GetFullBlockResult {
-    // Check if BlockService is available
     if rpc.blockService == nil {
         return []GetFullBlockResult{{
             Error: fmt.Errorf("MMN BlockService not available"),
         }}
     }
 
-    // Convert block numbers to uint64 in one pass
     nums := make([]uint64, len(blockNumbers))
     for i, n := range blockNumbers {
         nums[i] = n.Uint64()
     }
 
-    // Get blocks using shared BlockService connection
     res, err := rpc.blockService.GetBlockByNumber(ctx, nums)
     if err != nil {
         return []GetFullBlockResult{{
@@ -132,7 +102,6 @@ func (rpc *Client) GetFullBlocks(ctx context.Context, blockNumbers []*big.Int) [
         }}
     }
 
-    // Process blocks directly without intermediate slices
     rawBlocks := make([]RPCFetchBatchResult[*big.Int, common.RawBlock], len(blockNumbers))
     
     for i, blk := range res.Blocks {
@@ -155,9 +124,6 @@ func (rpc *Client) GetFullBlocks(ctx context.Context, blockNumbers []*big.Int) [
     return SerializeFullBlocks(rpc.chainID, rawBlocks, nil, nil, nil)
 }
 
-
-
-
 func (rpc *Client) GetLatestBlockNumber(ctx context.Context) (*big.Int, error) {
 	if rpc.blockService == nil {
 		return nil, fmt.Errorf("MMN BlockService not available")
@@ -171,11 +137,6 @@ func (rpc *Client) GetLatestBlockNumber(ctx context.Context) (*big.Int, error) {
 	log.Debug().Uint64("blockNumber", res.BlockNumber).Msg("Got latest block number from MMN")
 	return new(big.Int).SetUint64(res.BlockNumber), nil
 }
-
-
-
-
-
 
 func (rpc *Client) GetChainID() *big.Int {
 	return rpc.chainID
@@ -202,33 +163,17 @@ func (rpc *Client) SupportsBlockReceipts() bool {
 }
 
 func (rpc *Client) Close() {
-	// Close BlockService if it exists
 	if rpc.blockService != nil {
 		rpc.blockService.Close()
 	}
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
 func (rpc *Client) HasCode(ctx context.Context, address string) (bool, error) {
-	// For MMN, we can't check contract code via gRPC, so return false
-	// This is used by the indexer to determine if an address is a contract
 	return false, nil
 }
 
 
 func (rpc *Client) GetBlocks(ctx context.Context, blockNumbers []*big.Int) []GetBlocksResult {
-	// For MMN, we need to get full blocks and then extract just the block data
 	fullBlocks := rpc.GetFullBlocks(ctx, blockNumbers)
 	
 	results := make([]GetBlocksResult, len(fullBlocks))
@@ -244,8 +189,6 @@ func (rpc *Client) GetBlocks(ctx context.Context, blockNumbers []*big.Int) []Get
 }
 
 func (rpc *Client) GetTransactions(ctx context.Context, txHashes []string) []GetTransactionsResult {
-	// For MMN, we can't get individual transactions by hash via gRPC
-	// Return empty results with errors
 	results := make([]GetTransactionsResult, len(txHashes))
 	for i, _ := range txHashes {
 		results[i] = GetTransactionsResult{
@@ -273,10 +216,7 @@ func convertPBBlockToRawBlock(pbBlock *pb.Block) common.RawBlock {
 	// Convert miner/author
 	rawBlock["miner"] = pbBlock.LeaderId
 	
-	
-	
 	// Convert transactions from TransactionData
-	
 	var transactions []interface{}
 	if pbBlock.TransactionData != nil {
 		for i, txData := range pbBlock.TransactionData {
@@ -290,8 +230,8 @@ func convertPBBlockToRawBlock(pbBlock *pb.Block) common.RawBlock {
 			transactions = append(transactions, rawTx)
 		}
 	}
-	
 	rawBlock["transactions"] = transactions
+	
 	// Set default values for Ethereum-compatible fields
 	rawBlock["nonce"] = "0x0"
 	rawBlock["sha3Uncles"] = "0x0000000000000000000000000000000000000000000000000000000000000000"
