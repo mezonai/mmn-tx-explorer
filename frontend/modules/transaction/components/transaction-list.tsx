@@ -3,12 +3,13 @@
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DEFAULT_PAGINATION } from '@/constant';
-import { cn } from '@/lib/utils';
-import { GlobalSearch } from '@/modules/global-search';
-import { ITransaction, ITransactionListParams, TransactionService } from '@/modules/transaction';
+import { EBreakpoint } from '@/enums';
+import { useBreakpoint } from '@/hooks';
+import { GlobalSearch } from '@/modules/global-search/components';
+import { ETransactionTab, ITransaction, ITransactionListParams, TransactionService } from '@/modules/transaction';
 import { IPaginationMeta } from '@/types';
 import { TransactionCards, TransactionsTable } from './list';
 import { StatsGrid } from './stats';
@@ -18,11 +19,12 @@ const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
   limit: DEFAULT_PAGINATION.LIMIT,
   sort_by: 'block_timestamp',
   sort_order: 'desc',
+  tab: ETransactionTab.Validated,
 } as const;
 
 export const TransactionsList = () => {
   const urlSearchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<'validated' | 'pending' | 'blob'>('validated');
+  const isDesktop = useBreakpoint(EBreakpoint.LG);
   const [transactions, setTransactions] = useState<ITransaction[]>();
   const [pagination, setPagination] = useState<IPaginationMeta>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -32,7 +34,12 @@ export const TransactionsList = () => {
     try {
       setIsLoading(true);
       setTransactions(undefined);
-      const { data, meta } = await TransactionService.getTransactions(params);
+
+      // TODO: update API to support tab, then remove this
+      const { tab: _omit, ...queryParams } = params;
+      void _omit;
+
+      const { data, meta } = await TransactionService.getTransactions(queryParams);
       setTransactions(data);
       setPagination(meta);
     } catch (error) {
@@ -42,20 +49,21 @@ export const TransactionsList = () => {
     }
   };
 
-  const handleChangePage = (page: number) => {
-    if (!pagination?.total_pages) return;
-    if (page >= 1 && page <= pagination.total_pages) {
-      const currentParams = new URLSearchParams(urlSearchParams.toString());
-      currentParams.set('page', page.toString());
-      const newUrl = `${window.location.pathname}?${currentParams.toString()}`;
-      window.history.pushState(null, '', newUrl);
-    }
+  const updateSearchParam = (key: 'page' | 'tab', value: string | number) => {
+    const currentParams = new URLSearchParams(urlSearchParams.toString());
+    currentParams.set(key, String(value));
+    const newUrl = `${window.location.pathname}?${currentParams.toString()}`;
+    window.history.pushState(null, '', newUrl);
   };
+
+  const handleChangePage = (page: number) => updateSearchParam('page', page);
+  const handleChangeTab = (tab: ETransactionTab) => updateSearchParam('tab', tab);
 
   useEffect(() => {
     setLocalSearchParams({
       ...DEFAULT_VALUE_DATA_SEARCH,
-      page: Number(urlSearchParams.get('page')) || 1,
+      page: Number(urlSearchParams.get('page')) || DEFAULT_PAGINATION.PAGE,
+      tab: (urlSearchParams.get('tab') as ETransactionTab | undefined) || ETransactionTab.Validated,
     });
   }, [urlSearchParams]);
 
@@ -75,38 +83,32 @@ export const TransactionsList = () => {
 
       <div className="space-y-6">
         <div className="flex flex-col items-center justify-between gap-5 md:flex-row">
-          <div className="bg-muted flex items-center gap-1 self-start rounded-md p-1">
-            <Button
-              variant={activeTab === 'validated' ? 'outline' : 'ghost'}
-              size="sm"
-              onClick={() => setActiveTab('validated')}
-              className={cn('border border-transparent px-3 py-2', activeTab === 'validated' && 'hover:bg-background')}
-              disabled={isLoading}
-            >
-              Validated
-            </Button>
-            <Button
-              variant={activeTab === 'pending' ? 'outline' : 'ghost'}
-              size="sm"
-              onClick={() => setActiveTab('pending')}
-              className={cn('border border-transparent px-3 py-2', activeTab === 'pending' && 'hover:bg-background')}
-              disabled={isLoading}
-            >
-              Pending
-            </Button>
-            <Button
-              variant={activeTab === 'blob' ? 'outline' : 'ghost'}
-              size="sm"
-              onClick={() => setActiveTab('blob')}
-              className={cn('border border-transparent px-3 py-2', activeTab === 'blob' && 'hover:bg-background')}
-              disabled={isLoading}
-            >
-              Blob txns
-            </Button>
-          </div>
+          <Tabs
+            value={localSearchParams?.tab ?? ETransactionTab.Validated}
+            onValueChange={(v) => handleChangeTab(v as ETransactionTab)}
+            className="w-full"
+          >
+            <TabsList className="w-full md:w-fit">
+              <TabsTrigger
+                value={ETransactionTab.Validated}
+                disabled={isLoading}
+                className="flex-1 px-3 py-2 md:flex-none"
+              >
+                Validated
+              </TabsTrigger>
+              <TabsTrigger
+                value={ETransactionTab.Pending}
+                disabled={isLoading}
+                className="flex-1 px-3 py-2 md:flex-none"
+              >
+                Pending
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
           <Pagination
-            page={localSearchParams?.page ?? 1}
-            totalPages={pagination?.total_pages ?? 1}
+            page={localSearchParams?.page ?? DEFAULT_PAGINATION.PAGE}
+            totalPages={pagination?.total_pages ?? DEFAULT_PAGINATION.PAGE}
             isLoading={isLoading}
             className="self-end"
             onChangePage={handleChangePage}
@@ -114,13 +116,20 @@ export const TransactionsList = () => {
         </div>
 
         <>
-          <div className="hidden lg:block">
+          {isDesktop === undefined ? (
+            <>
+              <div className="hidden lg:block">
+                <TransactionsTable transactions={transactions} />
+              </div>
+              <div className="block lg:hidden">
+                <TransactionCards transactions={transactions} />
+              </div>
+            </>
+          ) : isDesktop ? (
             <TransactionsTable transactions={transactions} />
-          </div>
-
-          <div className="lg:hidden">
+          ) : (
             <TransactionCards transactions={transactions} />
-          </div>
+          )}
         </>
       </div>
     </div>

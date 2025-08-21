@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
-import { ROUTES } from '@/config/routes';
+import { ROUTES } from '@/configs/routes.config';
 
 interface TxnLinkProps {
   count: number;

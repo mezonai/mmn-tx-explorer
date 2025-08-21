@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
-import { ROUTES } from '@/config/routes';
+import { ROUTES } from '@/configs/routes.config';
 import { DASHBOARD_BLOCKS_LIMIT, IBlock } from '@/modules/block';
 import { BlockCard } from './block-card';
 import { BlockCardSkeleton } from './block-card-skeleton';

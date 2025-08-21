@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { DEFAULT_PAGINATION } from '@/constant';
 import { BlockService, DASHBOARD_BLOCKS_LIMIT, IBlock, IBLockListParams } from '@/modules/block';
-import { GlobalSearch } from '@/modules/global-search';
+import { GlobalSearch } from '@/modules/global-search/components';
 import {
   DASHBOARD_TRANSACTIONS_LIMIT,
   ITransaction,

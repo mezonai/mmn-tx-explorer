@@ -5,7 +5,7 @@ import { MiddleTruncate } from '@re-dev/react-truncate';
 import { Cube01 } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ROUTES } from '@/config/routes';
+import { ROUTES } from '@/configs/routes.config';
 import { ADDRESS_END_VISIBLE_CHARS } from '@/constant';
 import { IBlock } from '@/modules/block';
 
@@ -56,9 +56,11 @@ export const BlockCard = ({ block }: BlockCardProps) => {
           </div>
           <div className="flex items-center justify-between gap-2">
             <span className="text-muted-foreground">Validator</span>
-            <span className="text-primary min-w-28 text-right font-normal">
-              <MiddleTruncate end={ADDRESS_END_VISIBLE_CHARS}>{block.miner}</MiddleTruncate>
-            </span>
+            <div className="w-24">
+              <MiddleTruncate end={ADDRESS_END_VISIBLE_CHARS} className="text-primary text-right font-normal">
+                {block.miner}
+              </MiddleTruncate>
+            </div>
           </div>
         </div>
       </CardContent>

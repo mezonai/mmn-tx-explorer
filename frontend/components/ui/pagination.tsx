@@ -1,5 +1,6 @@
 import { ArrowLeft, ArrowRight } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
+import { DEFAULT_PAGINATION } from '@/constant';
 import { cn } from '@/lib/utils';
 
 interface PaginationProps {
@@ -11,15 +12,15 @@ interface PaginationProps {
 }
 
 export const Pagination = ({ page, totalPages, isLoading = false, className, onChangePage }: PaginationProps) => {
-  if (page <= 1) {
-    page = 1;
+  if (page <= DEFAULT_PAGINATION.PAGE) {
+    page = DEFAULT_PAGINATION.PAGE;
   }
   if (page >= totalPages) {
     page = totalPages;
   }
 
   const handleChangePage = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
+    if (page >= DEFAULT_PAGINATION.PAGE && page <= totalPages) {
       onChangePage(page);
     }
   };
@@ -29,8 +30,8 @@ export const Pagination = ({ page, totalPages, isLoading = false, className, onC
       <Button
         variant="outline"
         className="px-3.5 py-2.5 text-sm font-semibold"
-        onClick={() => handleChangePage(1)}
-        disabled={isLoading || page <= 1}
+        onClick={() => handleChangePage(DEFAULT_PAGINATION.PAGE)}
+        disabled={isLoading || page <= DEFAULT_PAGINATION.PAGE}
       >
         First
       </Button>
@@ -39,7 +40,7 @@ export const Pagination = ({ page, totalPages, isLoading = false, className, onC
           variant="outline"
           className="rounded-tr-none rounded-br-none p-2.5"
           onClick={() => handleChangePage(page - 1)}
-          disabled={isLoading || page <= 1}
+          disabled={isLoading || page <= DEFAULT_PAGINATION.PAGE}
         >
           <ArrowLeft className="text-muted-foreground size-5" />
         </Button>

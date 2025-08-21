@@ -1,3 +1,4 @@
+import { MiddleTruncate } from '@re-dev/react-truncate';
 import { useState } from 'react';
 
 import { Copy01 } from '@/assets/icons';
@@ -5,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ADDRESS_END_VISIBLE_CHARS } from '@/constant';
 import { cn } from '@/lib/utils';
-import { MiddleTruncate } from '@re-dev/react-truncate';
 
 interface AddressDisplayProps {
   address: string;
@@ -27,9 +27,11 @@ export const AddressDisplay = ({ address, className }: AddressDisplayProps) => {
 
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      <span className="text-primary w-24 text-sm font-normal">
-        <MiddleTruncate end={ADDRESS_END_VISIBLE_CHARS}>{address}</MiddleTruncate>
-      </span>
+      <div className="w-24">
+        <MiddleTruncate end={ADDRESS_END_VISIBLE_CHARS} className="text-primary text-sm font-normal">
+          {address}
+        </MiddleTruncate>
+      </div>
       <Tooltip open={isCopied}>
         <TooltipTrigger asChild>
           <Button variant="ghost" size="icon" className="size-6 flex-shrink-0" onClick={handleCopy}>

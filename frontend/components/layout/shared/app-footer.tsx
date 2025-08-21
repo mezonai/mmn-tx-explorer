@@ -1,6 +1,8 @@
+import { format } from 'date-fns';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
+import { YEAR_FORMAT } from '@/constant';
 
 export function AppFooter() {
   return (
@@ -18,7 +20,9 @@ export function AppFooter() {
           </Button>
         </div>
 
-        <p className="text-muted-foreground text-base font-[400]">© 2025 MMN Explorer. All rights reserved.</p>
+        <p className="text-muted-foreground text-base font-[400]">
+          © {format(Date.now(), YEAR_FORMAT)} MMN Explorer. All rights reserved.
+        </p>
       </div>
     </footer>
   );

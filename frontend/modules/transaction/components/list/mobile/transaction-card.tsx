@@ -11,14 +11,14 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
   return (
     <div className="flex flex-col items-start gap-2 border-b pb-4 xl:flex-row xl:items-center xl:gap-4">
       <div className="hidden xl:block">
-        <MoreInfoButton />
+        <MoreInfoButton transaction={transaction} />
       </div>
 
       <div className="w-full flex-1 space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-medium">
           <TypeBadges />
           <div className="block xl:hidden">
-            <MoreInfoButton />
+            <MoreInfoButton transaction={transaction} />
           </div>
         </div>
         <div className="flex items-center gap-2">

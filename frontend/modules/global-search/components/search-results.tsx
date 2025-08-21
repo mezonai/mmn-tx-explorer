@@ -48,7 +48,7 @@ export const SearchResults = ({
                 key={block.block_number}
                 href={`/blocks/${block.block_number}`}
                 icon={Cube01}
-                title={block.block_number}
+                title={<span>{block.block_number}</span>}
                 timestamp={block.block_timestamp}
               />
             ))}

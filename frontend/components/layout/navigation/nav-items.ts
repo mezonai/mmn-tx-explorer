@@ -1,5 +1,5 @@
 import { BarChartSquare02, CreditCardRefresh, Cube01 } from '@/assets/icons';
-import { RoutePath, ROUTES } from '@/config/routes';
+import { RoutePath, ROUTES } from '@/configs/routes.config';
 
 export interface NavItem {
   title: string;

@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 import { AddressDisplay } from '@/components/shared';
 import { Button } from '@/components/ui/button';
-import { ROUTES } from '@/config/routes';
+import { ROUTES } from '@/configs/routes.config';
 import { IBlock } from '@/modules/block/types';
 import { DateTimeUtil } from '@/utils';
 import { GasUsage, TxnLink } from '../shared';

@@ -1,0 +1,16 @@
+import { formatDistanceToNowStrict } from 'date-fns';
+
+export class DateTimeUtil {
+  static formatRelativeTime(timeString: string | number): string {
+    const diff = formatDistanceToNowStrict(timeString, { addSuffix: false });
+
+    if (diff.includes('second')) return diff.replace(/\D/g, '') + 's ago';
+    if (diff.includes('minute')) return diff.replace(/\D/g, '') + 'm ago';
+    if (diff.includes('hour')) return diff.replace(/\D/g, '') + 'h ago';
+    if (diff.includes('day')) return diff.replace(/\D/g, '') + 'd ago';
+    if (diff.includes('month')) return diff.replace(/\D/g, '') + 'mo ago';
+    if (diff.includes('year')) return diff.replace(/\D/g, '') + 'y ago';
+
+    return diff + ' ago';
+  }
+}

@@ -1,2 +1,2 @@
-export * from './date-time';
-export * from './number';
+export * from './date-time.util';
+export * from './number.util';

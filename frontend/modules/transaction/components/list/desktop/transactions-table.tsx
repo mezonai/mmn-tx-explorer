@@ -1,8 +1,13 @@
+'use client';
+
+import { format } from 'date-fns';
 import Link from 'next/link';
+import { useState } from 'react';
 
 import { Clock } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import { Table } from '@/components/ui/table';
+import { DATE_TIME_FORMAT } from '@/constant';
 import { ITransaction } from '@/modules/transaction';
 import { TTableColumn } from '@/types';
 import { DateTimeUtil } from '@/utils';
@@ -13,15 +18,21 @@ interface TransactionsTableProps {
 }
 
 export const TransactionsTable = ({ transactions }: TransactionsTableProps) => {
+  const [showAbsoluteTime, setShowAbsoluteTime] = useState(false);
+
+  const toggleShowAbsoluteTime = () => {
+    setShowAbsoluteTime((prev) => !prev);
+  };
+
   const columns: TTableColumn<ITransaction>[] = [
     {
-      valueGetter: () => <MoreInfoButton />,
+      valueGetter: (row) => <MoreInfoButton transaction={row} />,
     },
     {
       header: (
         <div className="flex items-center gap-1">
           <span>TXN Hash</span>
-          <Button variant="ghost" size="icon" className="p-0">
+          <Button variant="ghost" size="icon" className="p-0" onClick={toggleShowAbsoluteTime}>
             <Clock className="text-muted-foreground size-4" />
           </Button>
         </div>
@@ -31,7 +42,9 @@ export const TransactionsTable = ({ transactions }: TransactionsTableProps) => {
           <div className="flex flex-col items-start">
             <TxnHashLink hash={row.hash} className="w-40" />
             <span className="text-muted-foreground text-sm">
-              {DateTimeUtil.formatRelativeTime(row.block_timestamp * 1000)}
+              {showAbsoluteTime
+                ? format(row.block_timestamp * 1000, DATE_TIME_FORMAT.HUMAN_READABLE_SHORT)
+                : DateTimeUtil.formatRelativeTime(row.block_timestamp * 1000)}
             </span>
           </div>
         );

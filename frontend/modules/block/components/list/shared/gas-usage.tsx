@@ -23,7 +23,7 @@ export const GasUsage = ({ gasUsed, gasLimit, className }: GasUsageProps) => {
           strokeColor="var(--muted-foreground)"
           className="w-20"
         />
-        <span>{NumberUtil.format(percent, 2)}%</span>
+        <span>{NumberUtil.roundUp(percent, 2)}%</span>
       </div>
     </div>
   );

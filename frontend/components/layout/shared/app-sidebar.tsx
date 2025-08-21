@@ -17,7 +17,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { ROUTES } from '@/config/routes';
+import { ROUTES } from '@/configs/routes.config';
 import { cn } from '@/lib/utils';
 import { sidebarNavItems } from '../navigation/nav-items';
 

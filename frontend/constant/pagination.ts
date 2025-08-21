@@ -1,4 +1,4 @@
 export const DEFAULT_PAGINATION = {
-  PAGE: 1,
+  PAGE: 0,
   LIMIT: 20,
 } as const;
