@@ -11,6 +11,7 @@ import (
 	config "github.com/thirdweb-dev/indexer/configs"
 	"github.com/thirdweb-dev/indexer/internal/common"
 	"github.com/thirdweb-dev/indexer/internal/storage"
+	"math"
 )
 
 // @Summary Get all transactions
@@ -166,6 +167,21 @@ func handleTransactionsRequest(c *gin.Context) {
 		ForceConsistentData: queryParams.ForceConsistentData,
 	}
 
+	// Prepare the QueryFilter for count
+	countQf := storage.QueryFilter{
+		FilterParams:        queryParams.FilterParams,
+		ChainId:             chainId,
+		ForceConsistentData: queryParams.ForceConsistentData,
+	}
+	
+	// Get the total number of items
+	totalItems, err := mainStorage.GetCount("transactions", countQf)
+	if err != nil {
+		log.Error().Err(err).Msg("Error getting count")
+		api.InternalErrorHandler(c)
+		return
+	}
+
 	// Initialize the QueryResult
 	queryResult := api.QueryResponse{
 		Meta: api.Meta{
@@ -212,7 +228,8 @@ func handleTransactionsRequest(c *gin.Context) {
 			data = serializeTransactions(transactionsResult.Data)
 		}
 		queryResult.Data = &data
-		queryResult.Meta.TotalItems = len(transactionsResult.Data)
+		queryResult.Meta.TotalItems = int(totalItems)
+		queryResult.Meta.TotalPages = int(math.Ceil(float64(totalItems) / float64(queryParams.Limit)))
 	}
 
 	c.JSON(http.StatusOK, queryResult)

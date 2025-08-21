@@ -522,6 +522,20 @@ func (c *ClickHouseConnector) GetAggregations(table string, qf QueryFilter) (Que
 	return QueryResult[interface{}]{Data: nil, Aggregates: aggregates}, nil
 }
 
+func (c *ClickHouseConnector) GetCount(table string, qf QueryFilter) (uint64, error) {
+	selectColumns := "COUNT(*)"
+
+	query := c.buildQuery(table, selectColumns, qf)
+
+	var count uint64
+	err := c.conn.QueryRow(context.Background(), query).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count %s: %w", table, err)
+	}
+
+	return count, nil
+}
+
 func executeQuery[T any](c *ClickHouseConnector, table, columns string, qf QueryFilter, scanFunc func(driver.Rows) (T, error)) (QueryResult[T], error) {
 	query := c.buildQuery(table, columns, qf)
 
