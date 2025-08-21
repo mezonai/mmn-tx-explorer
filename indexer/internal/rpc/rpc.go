@@ -4,15 +4,9 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"strings"
-	"sync"
-
-	gethCommon "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
-	gethRpc "github.com/ethereum/go-ethereum/rpc"
 	"github.com/rs/zerolog/log"
-	config "github.com/thirdweb-dev/indexer/configs"
 	"github.com/thirdweb-dev/indexer/internal/common"
+	pb "github.com/thirdweb-dev/indexer/proto"
 )
 
 type GetFullBlockResult struct {
@@ -55,73 +49,140 @@ type IRPCClient interface {
 }
 
 type Client struct {
-	RPCClient             *gethRpc.Client
-	EthClient             *ethclient.Client
-	supportsTraceBlock    bool
-	supportsBlockReceipts bool
-	isWebsocket           bool
-	url                   string
+	blockService          *BlockService
 	chainID               *big.Int
 	blocksPerRequest      BlocksPerRequestConfig
 }
 
 func Initialize() (IRPCClient, error) {
-	rpcUrl := config.Cfg.RPC.URL
-	if rpcUrl == "" {
-		return nil, fmt.Errorf("RPC_URL environment variable is not set")
-	}
-	log.Debug().Msg("Initializing RPC")
-	rpcClient, dialErr := gethRpc.Dial(rpcUrl)
-	if dialErr != nil {
-		return nil, dialErr
-	}
+	// rpcUrl := config.Cfg.RPC.URL
+	// if rpcUrl == "" {
+	// 	return nil, fmt.Errorf("RPC_URL environment variable is not set")
+	// }
+	// log.Debug().Msg("Initializing RPC")
+	// rpcClient, dialErr := gethRpc.Dial(rpcUrl)
+	// if dialErr != nil {
+	// 	return nil, dialErr
+	// }
 
-	ethClient := ethclient.NewClient(rpcClient)
+	// ethClient := ethclient.NewClient(rpcClient)
+
+	// Initialize MMN BlockService for gRPC calls
+	blockService, err := NewBlockService("localhost:9001")
+	if err != nil {
+		log.Warn().Err(err).Msg("Failed to initialize MMN BlockService, continuing without it")
+	}
 
 	rpc := &Client{
-		RPCClient:        rpcClient,
-		EthClient:        ethClient,
-		url:              rpcUrl,
-		isWebsocket:      strings.HasPrefix(rpcUrl, "ws://") || strings.HasPrefix(rpcUrl, "wss://"),
+		blockService:     blockService,
 		blocksPerRequest: GetBlockPerRequestConfig(),
 	}
-	checkErr := rpc.checkSupportedMethods()
-	if checkErr != nil {
-		return nil, checkErr
-	}
-
-	chainIdErr := rpc.setChainID(context.Background())
-	if chainIdErr != nil {
-		return nil, chainIdErr
-	}
+	
+	// Set default chain ID for MMN
+	rpc.chainID = big.NewInt(1337) // You can change this to the appropriate MMN chain ID
 	return IRPCClient(rpc), nil
 }
 
 func InitializeSimpleRPCWithUrl(url string) (IRPCClient, error) {
-	rpcClient, dialErr := gethRpc.Dial(url)
-	if dialErr != nil {
-		return nil, dialErr
+	// rpcClient, dialErr := gethRpc.Dial(url)
+	// if dialErr != nil {
+	// 	return nil, dialErr
+	// }
+	// ethClient := ethclient.NewClient(rpcClient)
+	
+	// Initialize MMN BlockService for gRPC calls
+	blockService, err := NewBlockService("localhost:9001")
+	if err != nil {
+		log.Warn().Err(err).Msg("Failed to initialize MMN BlockService, continuing without it")
 	}
-	ethClient := ethclient.NewClient(rpcClient)
+	
 	rpc := &Client{
-		RPCClient: rpcClient,
-		EthClient: ethClient,
-		url:       url,
+		// RPCClient:    rpcClient,
+		// EthClient:    ethClient,
+		blockService: blockService,
+		// url:          url,
 	}
-
-	chainIdErr := rpc.setChainID(context.Background())
-	if chainIdErr != nil {
-		return nil, chainIdErr
-	}
+	
+	// Set default chain ID for MMN
+	rpc.chainID = big.NewInt(1337) // You can change this to the appropriate MMN chain ID
 	return IRPCClient(rpc), nil
 }
+
+
+
+func (rpc *Client) GetFullBlocks(ctx context.Context, blockNumbers []*big.Int) []GetFullBlockResult {
+    // Check if BlockService is available
+    if rpc.blockService == nil {
+        return []GetFullBlockResult{{
+            Error: fmt.Errorf("MMN BlockService not available"),
+        }}
+    }
+
+    // Convert block numbers to uint64 in one pass
+    nums := make([]uint64, len(blockNumbers))
+    for i, n := range blockNumbers {
+        nums[i] = n.Uint64()
+    }
+
+    // Get blocks using shared BlockService connection
+    res, err := rpc.blockService.GetBlockByNumber(ctx, nums)
+    if err != nil {
+        return []GetFullBlockResult{{
+            Error: fmt.Errorf("failed to get full block: %v", err),
+        }}
+    }
+
+    // Process blocks directly without intermediate slices
+    rawBlocks := make([]RPCFetchBatchResult[*big.Int, common.RawBlock], len(blockNumbers))
+    
+    for i, blk := range res.Blocks {
+        if blk != nil {
+            rawBlock := convertPBBlockToRawBlock(blk)
+            rawBlocks[i] = RPCFetchBatchResult[*big.Int, common.RawBlock]{
+                Key:    blockNumbers[i],
+                Result: rawBlock,
+                Error:  nil,
+            }
+        } else {
+            rawBlocks[i] = RPCFetchBatchResult[*big.Int, common.RawBlock]{
+                Key:    blockNumbers[i],
+                Result: nil,
+                Error:  fmt.Errorf("block not found"),
+            }
+        }
+    }
+    
+    return SerializeFullBlocks(rpc.chainID, rawBlocks, nil, nil, nil)
+}
+
+
+
+
+func (rpc *Client) GetLatestBlockNumber(ctx context.Context) (*big.Int, error) {
+	if rpc.blockService == nil {
+		return nil, fmt.Errorf("MMN BlockService not available")
+	}
+	
+	res, err := rpc.blockService.GetBlockNumber(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get latest block number: %v", err)
+	}
+	
+	log.Debug().Uint64("blockNumber", res.BlockNumber).Msg("Got latest block number from MMN")
+	return new(big.Int).SetUint64(res.BlockNumber), nil
+}
+
+
+
+
+
 
 func (rpc *Client) GetChainID() *big.Int {
 	return rpc.chainID
 }
 
 func (rpc *Client) GetURL() string {
-	return rpc.url
+	return "mmn-grpc://localhost:9001"
 }
 
 func (rpc *Client) GetBlocksPerRequest() BlocksPerRequestConfig {
@@ -129,189 +190,179 @@ func (rpc *Client) GetBlocksPerRequest() BlocksPerRequestConfig {
 }
 
 func (rpc *Client) IsWebsocket() bool {
-	return rpc.isWebsocket
+	return false
 }
 
 func (rpc *Client) SupportsTraceBlock() bool {
-	return rpc.supportsTraceBlock
+	return false
 }
 
 func (rpc *Client) SupportsBlockReceipts() bool {
-	return rpc.supportsBlockReceipts
+	return false
 }
 
 func (rpc *Client) Close() {
-	rpc.RPCClient.Close()
-	rpc.EthClient.Close()
+	// Close BlockService if it exists
+	if rpc.blockService != nil {
+		rpc.blockService.Close()
+	}
 }
 
-func (rpc *Client) checkSupportedMethods() error {
-	if err := rpc.checkGetBlockByNumberSupport(); err != nil {
-		return err
-	}
-	if err := rpc.checkGetBlockReceiptsSupport(); err != nil {
-		return err
-	}
-	if err := rpc.checkGetLogsSupport(); err != nil {
-		return err
-	}
-	if err := rpc.checkTraceBlockSupport(); err != nil {
-		return err
-	}
-	return nil
+
+
+
+
+
+
+
+
+
+
+
+
+func (rpc *Client) HasCode(ctx context.Context, address string) (bool, error) {
+	// For MMN, we can't check contract code via gRPC, so return false
+	// This is used by the indexer to determine if an address is a contract
+	return false, nil
 }
 
-func (rpc *Client) checkGetBlockByNumberSupport() error {
-	var blockByNumberResult interface{}
-	err := rpc.RPCClient.Call(&blockByNumberResult, "eth_getBlockByNumber", "latest", true)
-	if err != nil {
-		return fmt.Errorf("eth_getBlockByNumber method not supported: %v", err)
-	}
-	log.Debug().Msg("eth_getBlockByNumber method supported")
-	return nil
-}
-
-func (rpc *Client) checkGetBlockReceiptsSupport() error {
-	if config.Cfg.RPC.BlockReceipts.Enabled {
-		var getBlockReceiptsResult interface{}
-		receiptsErr := rpc.RPCClient.Call(&getBlockReceiptsResult, "eth_getBlockReceipts", "latest")
-		if receiptsErr != nil {
-			log.Warn().Err(receiptsErr).Msg("eth_getBlockReceipts method not supported")
-			return fmt.Errorf("eth_getBlockReceipts method not supported: %v", receiptsErr)
-		} else {
-			rpc.supportsBlockReceipts = true
-			log.Debug().Msg("eth_getBlockReceipts method supported")
-		}
-	} else {
-		rpc.supportsBlockReceipts = false
-		log.Debug().Msg("eth_getBlockReceipts method disabled")
-	}
-	return nil
-}
-
-func (rpc *Client) checkGetLogsSupport() error {
-	if rpc.supportsBlockReceipts {
-		return nil
-	}
-	var getLogsResult interface{}
-	logsErr := rpc.RPCClient.Call(&getLogsResult, "eth_getLogs", map[string]string{"fromBlock": "0x0", "toBlock": "0x0"})
-	if logsErr != nil {
-		return fmt.Errorf("eth_getLogs method not supported: %v", logsErr)
-	}
-	log.Debug().Msg("eth_getLogs method supported")
-	return nil
-}
-
-func (rpc *Client) checkTraceBlockSupport() error {
-	if config.Cfg.RPC.Traces.Enabled {
-		var traceBlockResult interface{}
-		if traceBlockErr := rpc.RPCClient.Call(&traceBlockResult, "trace_block", "latest"); traceBlockErr != nil {
-			log.Warn().Err(traceBlockErr).Msg("Optional method trace_block not supported")
-		} else {
-			rpc.supportsTraceBlock = true
-			log.Debug().Msg("trace_block method supported")
-		}
-	} else {
-		rpc.supportsTraceBlock = false
-		log.Debug().Msg("trace_block method disabled")
-	}
-	return nil
-}
-
-func (rpc *Client) setChainID(ctx context.Context) error {
-	chainID, err := rpc.EthClient.ChainID(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get chain ID: %v", err)
-	}
-	rpc.chainID = chainID
-	config.Cfg.RPC.ChainID = chainID.String()
-	return nil
-}
-
-func (rpc *Client) GetFullBlocks(ctx context.Context, blockNumbers []*big.Int) []GetFullBlockResult {
-	var wg sync.WaitGroup
-	var blocks []RPCFetchBatchResult[*big.Int, common.RawBlock]
-	var logs []RPCFetchBatchResult[*big.Int, common.RawLogs]
-	var traces []RPCFetchBatchResult[*big.Int, common.RawTraces]
-	var receipts []RPCFetchBatchResult[*big.Int, common.RawReceipts]
-	wg.Add(2)
-
-	go func() {
-		defer wg.Done()
-		result := RPCFetchSingleBatch[*big.Int, common.RawBlock](rpc, ctx, blockNumbers, "eth_getBlockByNumber", GetBlockWithTransactionsParams)
-		blocks = result
-	}()
-
-	if rpc.supportsBlockReceipts {
-		go func() {
-			defer wg.Done()
-			result := RPCFetchInBatches[*big.Int, common.RawReceipts](rpc, ctx, blockNumbers, rpc.blocksPerRequest.Receipts, config.Cfg.RPC.BlockReceipts.BatchDelay, "eth_getBlockReceipts", GetBlockReceiptsParams)
-			receipts = result
-		}()
-	} else {
-		go func() {
-			defer wg.Done()
-			result := RPCFetchInBatches[*big.Int, common.RawLogs](rpc, ctx, blockNumbers, rpc.blocksPerRequest.Logs, config.Cfg.RPC.Logs.BatchDelay, "eth_getLogs", GetLogsParams)
-			logs = result
-		}()
-	}
-
-	if rpc.supportsTraceBlock {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			result := RPCFetchInBatches[*big.Int, common.RawTraces](rpc, ctx, blockNumbers, rpc.blocksPerRequest.Traces, config.Cfg.RPC.Traces.BatchDelay, "trace_block", TraceBlockParams)
-			traces = result
-		}()
-	}
-
-	wg.Wait()
-
-	return SerializeFullBlocks(rpc.chainID, blocks, logs, traces, receipts)
-}
 
 func (rpc *Client) GetBlocks(ctx context.Context, blockNumbers []*big.Int) []GetBlocksResult {
-	var wg sync.WaitGroup
-	var blocks []RPCFetchBatchResult[*big.Int, common.RawBlock]
-
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-		blocks = RPCFetchSingleBatch[*big.Int, common.RawBlock](rpc, ctx, blockNumbers, "eth_getBlockByNumber", GetBlockWithoutTransactionsParams)
-	}()
-	wg.Wait()
-
-	return SerializeBlocks(rpc.chainID, blocks)
+	// For MMN, we need to get full blocks and then extract just the block data
+	fullBlocks := rpc.GetFullBlocks(ctx, blockNumbers)
+	
+	results := make([]GetBlocksResult, len(fullBlocks))
+	for i, fullBlock := range fullBlocks {
+		results[i] = GetBlocksResult{
+			BlockNumber: fullBlock.BlockNumber,
+			Error:       fullBlock.Error,
+			Data:        fullBlock.Data.Block,
+		}
+	}
+	
+	return results
 }
 
 func (rpc *Client) GetTransactions(ctx context.Context, txHashes []string) []GetTransactionsResult {
-	var wg sync.WaitGroup
-	var transactions []RPCFetchBatchResult[string, common.RawTransaction]
-
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-		transactions = RPCFetchSingleBatch[string, common.RawTransaction](rpc, ctx, txHashes, "eth_getTransactionByHash", GetTransactionParams)
-	}()
-	wg.Wait()
-
-	return SerializeTransactions(rpc.chainID, transactions)
+	// For MMN, we can't get individual transactions by hash via gRPC
+	// Return empty results with errors
+	results := make([]GetTransactionsResult, len(txHashes))
+	for i, _ := range txHashes {
+		results[i] = GetTransactionsResult{
+			Error: fmt.Errorf("GetTransactions not supported for MMN gRPC"),
+			Data:  common.Transaction{},
+		}
+	}
+	return results
 }
 
-func (rpc *Client) GetLatestBlockNumber(ctx context.Context) (*big.Int, error) {
-	blockNumber, err := rpc.EthClient.BlockNumber(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get latest block number: %v", err)
+// convertPBBlockToRawBlock converts a protobuf Block to common.RawBlock format
+func convertPBBlockToRawBlock(pbBlock *pb.Block) common.RawBlock {
+	rawBlock := make(common.RawBlock)
+	
+	// Convert slot to block number
+	rawBlock["number"] = fmt.Sprintf("%x", pbBlock.Slot)
+	
+	// Convert hash
+	rawBlock["hash"] = fmt.Sprintf("%x", pbBlock.Hash)
+	rawBlock["parentHash"] = fmt.Sprintf("%x", pbBlock.PrevHash)
+
+	// Convert timestamp
+	rawBlock["timestamp"] = fmt.Sprintf("%x", pbBlock.Timestamp)
+	
+	// Convert miner/author
+	rawBlock["miner"] = pbBlock.LeaderId
+	
+	
+	
+	// Convert transactions from TransactionData
+	
+	var transactions []interface{}
+	if pbBlock.TransactionData != nil {
+		for i, txData := range pbBlock.TransactionData {
+			rawTx := convertPBTransactionDataToRawTransaction(
+				txData, 
+				fmt.Sprintf("%x", pbBlock.Hash), 
+				pbBlock.Slot, 
+				pbBlock.Timestamp, 
+				uint64(i),
+			)
+			transactions = append(transactions, rawTx)
+		}
 	}
-	return new(big.Int).SetUint64(blockNumber), nil
+	
+	rawBlock["transactions"] = transactions
+	// Set default values for Ethereum-compatible fields
+	rawBlock["nonce"] = "0x0"
+	rawBlock["sha3Uncles"] = "0x0000000000000000000000000000000000000000000000000000000000000000"
+	rawBlock["mixHash"] = "0x0000000000000000000000000000000000000000000000000000000000000000"
+	rawBlock["stateRoot"] = "0x0000000000000000000000000000000000000000000000000000000000000000"
+	rawBlock["transactionsRoot"] = "0x0000000000000000000000000000000000000000000000000000000000000000"
+	rawBlock["receiptsRoot"] = "0x0000000000000000000000000000000000000000000000000000000000000000"
+	rawBlock["logsBloom"] = "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+	rawBlock["difficulty"] = "0x0"
+	rawBlock["totalDifficulty"] = "0x0"
+	rawBlock["size"] = "0x0"
+	rawBlock["extraData"] = "0x"
+	rawBlock["gasLimit"] = "0x0"
+	rawBlock["gasUsed"] = "0x0"
+	rawBlock["baseFeePerGas"] = "0x0"
+	rawBlock["withdrawalsRoot"] = "0x0000000000000000000000000000000000000000000000000000000000000000"
+	
+	return rawBlock
 }
 
-func (rpc *Client) HasCode(ctx context.Context, address string) (bool, error) {
-	code, err := rpc.EthClient.CodeAt(ctx, gethCommon.HexToAddress(address), nil)
-	if err != nil {
-		return false, err
+// convertPBTransactionDataToRawTransaction converts a protobuf TransactionData to common.RawTransaction format
+func convertPBTransactionDataToRawTransaction(pbTransactionData *pb.TransactionData, blockHash string, blockNumber uint64, blockTimestamp uint64, txIndex uint64) map[string]interface{} {
+	rawTransaction := make(map[string]interface{})
+	// Convert transaction hash
+	rawTransaction["hash"] = pbTransactionData.TxHash
+	
+	// Convert addresses
+	rawTransaction["from"] = pbTransactionData.Sender
+	rawTransaction["to"] = pbTransactionData.Recipient
+	
+	// Convert amount to hex format
+	rawTransaction["value"] = fmt.Sprintf("%x", pbTransactionData.Amount)
+	
+	// Convert nonce to hex format
+	rawTransaction["nonce"] = fmt.Sprintf("%x", pbTransactionData.Nonce)
+	
+	// Block information
+	rawTransaction["blockHash"] = blockHash
+	fmt.Println("blockHashLen", len(blockHash))
+	rawTransaction["blockNumber"] = fmt.Sprintf("%x", blockNumber)
+	rawTransaction["transactionIndex"] = txIndex
+	status := getStatus(pbTransactionData.Status)
+	rawTransaction["status"] = &status
+	
+	// Set default values for Ethereum-compatible fields
+	rawTransaction["gas"] = "0x0"
+	rawTransaction["gasPrice"] = "0x0"
+	rawTransaction["input"] = "0x"
+	rawTransaction["type"] = "0x0"
+	rawTransaction["r"] = "0x0"
+	rawTransaction["s"] = "0x0"
+	rawTransaction["v"] = "0x0"
+	rawTransaction["maxFeePerGas"] = "0x0"
+	rawTransaction["maxPriorityFeePerGas"] = "0x0"
+	rawTransaction["maxFeePerBlobGas"] = "0x0"
+	rawTransaction["blobVersionedHashes"] = []string{}
+	rawTransaction["accessList"] = nil
+	rawTransaction["authorizationList"] = nil
+	
+	return rawTransaction
+}
+func getStatus(status pb.TransactionData_Status) uint64 {
+	switch status {
+	case pb.TransactionData_PENDING:
+		return 0
+	case pb.TransactionData_CONFIRMED:
+		return 1
+	case pb.TransactionData_FINALIZED:
+		return 2
+	case pb.TransactionData_FAILED:
+		return 3
 	}
-	return len(code) > 0, nil
+	return 4
 }

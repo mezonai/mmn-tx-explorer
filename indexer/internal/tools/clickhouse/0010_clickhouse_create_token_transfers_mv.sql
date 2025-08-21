@@ -2,9 +2,9 @@ CREATE TABLE IF NOT EXISTS token_transfers
 (
     `token_type` LowCardinality(String),
     `chain_id` UInt256,
-    `token_address` FixedString(42),
-    `from_address` FixedString(42),
-    `to_address` FixedString(42),
+    `token_address` FixedString(64),
+    `from_address` FixedString(64),
+    `to_address` FixedString(64),
     `block_number` UInt256,
     `block_timestamp` DateTime CODEC(Delta(4), ZSTD(1)),
     `transaction_hash` FixedString(66),
@@ -67,7 +67,7 @@ SETTINGS index_granularity = 8192, lightweight_mutation_projection_mode = 'rebui
 CREATE MATERIALIZED VIEW IF NOT EXISTS logs_to_token_transfers TO token_transfers
 (
     `chain_id` UInt256,
-    `token_address` FixedString(42),
+    `token_address` FixedString(64),
     `from_address` String,
     `to_address` String,
     `token_type` String,

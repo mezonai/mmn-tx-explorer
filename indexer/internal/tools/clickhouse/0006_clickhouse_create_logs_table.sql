@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS logs (
     `transaction_hash` FixedString(66),
     `transaction_index` UInt64,
     `log_index` UInt64,
-    `address` FixedString(42),
+    `address` FixedString(64),
     `data` String,
     `topic_0` String,
     `topic_1` String,

@@ -17,9 +17,9 @@ func SerializeFullBlocks(chainId *big.Int, blocks []RPCFetchBatchResult[*big.Int
 	}
 	results := make([]GetFullBlockResult, 0, len(blocks))
 
-	rawLogsMap := mapBatchResultsByBlockNumber[common.RawLogs](logs)
-	rawReceiptsMap := mapBatchResultsByBlockNumber[common.RawReceipts](receipts)
-	rawTracesMap := mapBatchResultsByBlockNumber[common.RawTraces](traces)
+	// rawLogsMap := mapBatchResultsByBlockNumber[common.RawLogs](logs)
+	// rawReceiptsMap := mapBatchResultsByBlockNumber[common.RawReceipts](receipts)
+	// rawTracesMap := mapBatchResultsByBlockNumber[common.RawTraces](traces)
 
 	for _, rawBlockData := range blocks {
 		result := GetFullBlockResult{
@@ -40,34 +40,35 @@ func SerializeFullBlocks(chainId *big.Int, blocks []RPCFetchBatchResult[*big.Int
 
 		result.Data.Block = serializeBlock(chainId, rawBlockData.Result)
 		blockTimestamp := result.Data.Block.Timestamp
+		result.Data.Transactions = serializeTransactions(chainId, rawBlockData.Result["transactions"].([]interface{}), blockTimestamp, nil)
 
-		if rawReceipts, exists := rawReceiptsMap[rawBlockData.Key.String()]; exists {
-			if rawReceipts.Error != nil {
-				result.Error = rawReceipts.Error
-			} else {
-				result.Data.Logs = serializeLogsFromReceipts(chainId, rawReceipts.Result, result.Data.Block)
-				result.Data.Transactions = serializeTransactions(chainId, rawBlockData.Result["transactions"].([]interface{}), blockTimestamp, &rawReceipts.Result)
-			}
-		} else {
-			if rawLogs, exists := rawLogsMap[rawBlockData.Key.String()]; exists {
-				if rawLogs.Error != nil {
-					result.Error = rawLogs.Error
-				} else {
-					result.Data.Logs = serializeLogs(chainId, rawLogs.Result, result.Data.Block)
-					result.Data.Transactions = serializeTransactions(chainId, rawBlockData.Result["transactions"].([]interface{}), blockTimestamp, nil)
-				}
-			}
-		}
+		// if rawReceipts, exists := rawReceiptsMap[rawBlockData.Key.String()]; exists {
+		// 	if rawReceipts.Error != nil {
+		// 		result.Error = rawReceipts.Error
+		// 	} else {
+		// 		result.Data.Logs = serializeLogsFromReceipts(chainId, rawReceipts.Result, result.Data.Block)
+		// 		result.Data.Transactions = serializeTransactions(chainId, rawBlockData.Result["transactions"].([]interface{}), blockTimestamp, &rawReceipts.Result)
+		// 	}
+		// } else {
+		// 	if rawLogs, exists := rawLogsMap[rawBlockData.Key.String()]; exists {
+		// 		if rawLogs.Error != nil {
+		// 			result.Error = rawLogs.Error
+		// 		} else {
+		// 			result.Data.Logs = serializeLogs(chainId, rawLogs.Result, result.Data.Block)
+		// 			result.Data.Transactions = serializeTransactions(chainId, rawBlockData.Result["transactions"].([]interface{}), blockTimestamp, nil)
+		// 		}
+		// 	}
+		// }
 
-		if result.Error == nil {
-			if rawTraces, exists := rawTracesMap[rawBlockData.Key.String()]; exists {
-				if rawTraces.Error != nil {
-					result.Error = rawTraces.Error
-				} else {
-					result.Data.Traces = serializeTraces(chainId, rawTraces.Result, result.Data.Block)
-				}
-			}
-		}
+		// if result.Error == nil {
+		// 	if rawTraces, exists := rawTracesMap[rawBlockData.Key.String()]; exists {
+		// 		if rawTraces.Error != nil {
+		// 			result.Error = rawTraces.Error
+		// 		} else {
+		// 			result.Data.Traces = serializeTraces(chainId, rawTraces.Result, result.Data.Block)
+		// 		}
+		// 	}
+		// }
 
 		results = append(results, result)
 	}
@@ -189,6 +190,7 @@ func serializeTransaction(chainId *big.Int, tx map[string]interface{}, blockTime
 		R:                    hexToBigInt(tx["r"]),
 		S:                    hexToBigInt(tx["s"]),
 		V:                    hexToBigInt(tx["v"]),
+		Status:               tx["status"].(*uint64),
 		AccessListJson: func() *string {
 			if tx["accessList"] != nil {
 				jsonString := interfaceToJsonString(tx["accessList"])
@@ -209,30 +211,9 @@ func serializeTransaction(chainId *big.Int, tx map[string]interface{}, blockTime
 			}
 			return nil
 		}(),
-		ContractAddress: func() *string {
-			if receipt != nil {
-				contractAddress := interfaceToString((*receipt)["contractAddress"])
-				if contractAddress == "" {
-					return nil
-				}
-				return &contractAddress
-			}
-			return nil
-		}(),
-		GasUsed: func() *uint64 {
-			if receipt != nil {
-				gasUsed := hexToUint64((*receipt)["gasUsed"])
-				return &gasUsed
-			}
-			return nil
-		}(),
-		CumulativeGasUsed: func() *uint64 {
-			if receipt != nil {
-				cumulativeGasUsed := hexToUint64((*receipt)["cumulativeGasUsed"])
-				return &cumulativeGasUsed
-			}
-			return nil
-		}(),
+		ContractAddress: nil,
+		GasUsed: nil,
+		CumulativeGasUsed: nil,
 		EffectiveGasPrice: func() *big.Int {
 			if receipt != nil {
 				effectiveGasPrice := hexToBigInt((*receipt)["effectiveGasPrice"])
@@ -240,37 +221,16 @@ func serializeTransaction(chainId *big.Int, tx map[string]interface{}, blockTime
 			}
 			return nil
 		}(),
-		BlobGasUsed: func() *uint64 {
-			if receipt != nil {
-				blobGasUsed := hexToUint64((*receipt)["blobGasUsed"])
-				return &blobGasUsed
-			}
-			return nil
-		}(),
-		BlobGasPrice: func() *big.Int {
-			if receipt != nil {
-				blobGasPrice := hexToBigInt((*receipt)["blobGasPrice"])
-				return blobGasPrice
-			}
-			return nil
-		}(),
-		LogsBloom: func() *string {
-			if receipt != nil {
-				logsBloom := interfaceToString((*receipt)["logsBloom"])
-				if logsBloom == "" {
-					return nil
-				}
-				return &logsBloom
-			}
-			return nil
-		}(),
-		Status: func() *uint64 {
-			if receipt != nil {
-				status := hexToUint64((*receipt)["status"])
-				return &status
-			}
-			return nil
-		}(),
+		BlobGasUsed: nil,
+		BlobGasPrice: nil,
+		LogsBloom: nil,
+		// Status: func() *uint64 {
+		// 	if receipt != nil {
+		// 		status := hexToUint64((*receipt)["status"])
+		// 		return &status
+		// 	}
+		// 	return nil
+		// }(),
 	}
 }
 
@@ -395,7 +355,7 @@ func hexToBigInt(hex interface{}) *big.Int {
 	if hexString == "" {
 		return new(big.Int)
 	}
-	v, _ := new(big.Int).SetString(hexString[2:], 16)
+	v, _ := new(big.Int).SetString(hexString, 16)
 	return v
 }
 
@@ -412,7 +372,9 @@ func serializeTraceAddress(traceAddress interface{}) []int64 {
 
 func hexToTime(hex interface{}) time.Time {
 	unixTime := hexToUint64(hex)
-	return time.Unix(int64(unixTime), 0)
+	seconds := unixTime / 1000000000
+		nanoRemainder := unixTime % 1000000000
+		return time.Unix(int64(seconds), int64(nanoRemainder))
 }
 
 func hexToUint64(hex interface{}) uint64 {
@@ -420,7 +382,7 @@ func hexToUint64(hex interface{}) uint64 {
 	if hexString == "" {
 		return 0
 	}
-	v, _ := strconv.ParseUint(hexString[2:], 16, 64)
+	v, _ := strconv.ParseUint(hexString, 16, 64)
 	return v
 }
 
