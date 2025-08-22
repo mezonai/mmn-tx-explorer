@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"github.com/rs/zerolog/log"
+	config "github.com/thirdweb-dev/indexer/configs"
 	"github.com/thirdweb-dev/indexer/internal/common"
 	pb "github.com/thirdweb-dev/indexer/proto"
 )
@@ -55,7 +56,7 @@ type Client struct {
 }
 
 func Initialize() (IRPCClient, error) {
-	blockService, err := NewBlockService("localhost:9001")
+	blockService, err := NewBlockService(config.Cfg.RPC.MMNGRPCURL)
 	if err != nil {
 		log.Warn().Err(err).Msg("Failed to initialize MMN BlockService, continuing without it")
 	}
@@ -70,7 +71,7 @@ func Initialize() (IRPCClient, error) {
 }
 
 func InitializeSimpleRPCWithUrl(url string) (IRPCClient, error) {
-	blockService, err := NewBlockService("localhost:9001")
+	blockService, err := NewBlockService(url)
 	if err != nil {
 		log.Warn().Err(err).Msg("Failed to initialize MMN BlockService, continuing without it")
 	}
@@ -143,7 +144,7 @@ func (rpc *Client) GetChainID() *big.Int {
 }
 
 func (rpc *Client) GetURL() string {
-	return "mmn-grpc://localhost:9001"
+	return ""
 }
 
 func (rpc *Client) GetBlocksPerRequest() BlocksPerRequestConfig {
@@ -270,7 +271,6 @@ func convertPBTransactionDataToRawTransaction(pbTransactionData *pb.TransactionD
 	
 	// Block information
 	rawTransaction["blockHash"] = blockHash
-	fmt.Println("blockHashLen", len(blockHash))
 	rawTransaction["blockNumber"] = fmt.Sprintf("%x", blockNumber)
 	rawTransaction["transactionIndex"] = txIndex
 	status := getStatus(pbTransactionData.Status)

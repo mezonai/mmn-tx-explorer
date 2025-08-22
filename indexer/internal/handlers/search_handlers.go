@@ -2,11 +2,9 @@ package handlers
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"math/big"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -106,7 +104,7 @@ func parseSearchInput(searchInput string) SearchInput {
 		return SearchInput{BlockNumber: blockNumber}
 	}
 
-	if isValidHashWithLength(searchInput, 66) {
+	if isValidHashWithLength(searchInput, 64) {
 		return SearchInput{Hash: searchInput}
 	} else if isValidHashWithLength(searchInput, 42) {
 		return SearchInput{Address: searchInput}
@@ -117,13 +115,7 @@ func parseSearchInput(searchInput string) SearchInput {
 }
 
 func isValidHashWithLength(input string, length int) bool {
-	if len(input) == length && strings.HasPrefix(input, "0x") {
-		_, err := hex.DecodeString(input[2:])
-		if err == nil {
-			return true
-		}
-	}
-	return false
+	return len(input) == length
 }
 
 func executeSearch(ctx context.Context, storage storage.IMainStorage, chainId *big.Int, input SearchInput) (SearchResultModel, error) {
