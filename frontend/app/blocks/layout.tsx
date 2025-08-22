@@ -1,5 +1,5 @@
-import { WithSearchLayout } from '@/components/layout/with-search-layout';
+import { MainLayout } from '@/components/layout';
 
 export default function BlocksLayout({ children }: { children: React.ReactNode }) {
-  return <WithSearchLayout>{children}</WithSearchLayout>;
+  return <MainLayout>{children}</MainLayout>;
 }

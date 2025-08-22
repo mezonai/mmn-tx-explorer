@@ -1,3 +1,3 @@
-export * from './pagination';
-export * from './table';
-export * from './breadcrumb';
+export * from './breadcrumb.type';
+export * from './pagination.type';
+export * from './table.type';
