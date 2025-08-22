@@ -3,9 +3,9 @@ Mezon Mainnet Transaction Explorer
 
 
 
-Quick start
+#Quick start
 
-
+# start & migrate database
 cd database
 
 docker compose up -d 
@@ -15,7 +15,9 @@ cat clickhouse/*.sql | docker exec -i <clickhouse-container> clickhouse-client -
 
 ===========REPLACE  <clickhouse-container> WITH YOUR CONTAINER ID========
 
+# start indexer, ui
 
-indexer, ui
 back to folder mmn-tx-explorer
+
 docker compose up -d
+
