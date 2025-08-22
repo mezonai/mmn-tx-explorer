@@ -1,16 +1,14 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import { TransactionsTable } from '@/components/shared/transactions-table';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Table } from '@/components/ui/table';
+import { TablePagination } from '@/components/ui/table-pagination';
 import { ITransaction, ITransactionListParams, TransactionService } from '@/modules/transaction';
-import { IPaginationMeta, TTableColumn } from '@/types';
+import { IPaginationMeta } from '@/types';
 
 const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
   page: 1,
@@ -26,44 +24,6 @@ export const TransactionsList = () => {
   const [pagination, setPagination] = useState<IPaginationMeta>();
   const [isLoading, setIsLoading] = useState<boolean>();
   const [localSearchParams, setLocalSearchParams] = useState<ITransactionListParams>();
-
-  const columns: TTableColumn<ITransaction>[] = [
-    {
-      headerName: 'Txn hash',
-      field: 'hash',
-      valueGetter: (row) => {
-        return (
-          <Button variant="link" asChild>
-            <Link href={`/transactions/${row.hash}`}>{row.hash}</Link>
-          </Button>
-        );
-      },
-    },
-    {
-      headerName: 'Type',
-      field: 'transaction_type',
-    },
-    {
-      headerName: 'Method',
-      field: 'function_selector',
-    },
-    {
-      headerName: 'Block',
-      field: 'block_number',
-    },
-    {
-      headerName: 'From/To',
-      field: 'from_address',
-    },
-    {
-      headerName: 'Value ETH',
-      field: 'value',
-    },
-    {
-      headerName: 'Fee ETH',
-      field: 'gas_price',
-    },
-  ];
 
   const handleFetchTransactions = async (params: ITransactionListParams) => {
     try {
@@ -102,13 +62,6 @@ export const TransactionsList = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="relative flex-1">
-          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
-          <Input placeholder="Search by address / txn hash / block / token..." className="pl-10" />
-        </div>
-      </div>
-
       <h1 className="text-3xl font-bold tracking-tight">Transactions</h1>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -175,34 +128,11 @@ export const TransactionsList = () => {
           </Button>
         </div>
         {localSearchParams && (
-          <div className="flex items-center gap-2 self-end">
-            <Button variant="outline" size="sm" onClick={() => handleChangePage(1)} disabled={isLoading}>
-              First
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleChangePage(localSearchParams.page - 1)}
-              disabled={isLoading}
-            >
-              <ChevronLeft className="size-4" />
-            </Button>
-            <Button variant="default" size="sm">
-              {localSearchParams.page}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleChangePage(localSearchParams.page + 1)}
-              disabled={isLoading}
-            >
-              <ChevronRight className="size-4" />
-            </Button>
-          </div>
+          <TablePagination page={localSearchParams.page} onPageChange={handleChangePage} disabled={isLoading} />
         )}
       </div>
 
-      <Table columns={columns} rows={transactions} isLoading={isLoading} />
+      <TransactionsTable transactions={transactions} isLoading={isLoading} />
     </div>
   );
 };

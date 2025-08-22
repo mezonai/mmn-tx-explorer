@@ -1,13 +1,12 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Table } from '@/components/ui/table';
+import { TablePagination } from '@/components/ui/table-pagination';
 import { BlockService, IBlock, IBLockListParams } from '@/modules/block';
 import { IPaginationMeta, TTableColumn } from '@/types';
 
@@ -110,13 +109,6 @@ export const BlockList = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="relative flex-1">
-          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
-          <Input placeholder="Search by address / txn hash / block / token..." className="pl-10" />
-        </div>
-      </div>
-
       <h1 className="text-3xl font-bold tracking-tight">Blocks</h1>
 
       <div className="flex flex-col items-center justify-between gap-5 md:flex-row">
@@ -147,30 +139,7 @@ export const BlockList = () => {
           </Button>
         </div>
         {localSearchParams && (
-          <div className="flex items-center gap-2 self-end">
-            <Button variant="outline" size="sm" onClick={() => handleChangePage(1)} disabled={isLoading}>
-              First
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleChangePage(localSearchParams.page - 1)}
-              disabled={isLoading}
-            >
-              <ChevronLeft className="size-4" />
-            </Button>
-            <Button variant="default" size="sm">
-              {localSearchParams.page}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleChangePage(localSearchParams.page + 1)}
-              disabled={isLoading}
-            >
-              <ChevronRight className="size-4" />
-            </Button>
-          </div>
+          <TablePagination page={localSearchParams.page} onPageChange={handleChangePage} disabled={isLoading} />
         )}
       </div>
 

@@ -9,7 +9,7 @@ interface ItemAttributeProps {
 
 export function ItemAttribute({ label, description, render }: ItemAttributeProps) {
   return (
-    <div className="min-h-7 items-center space-y-2 md:grid md:grid-cols-[250px_1fr] md:space-y-0">
+    <div className="min-h-7 items-center space-y-2 md:grid md:grid-cols-[200px_calc(100%-200px)] md:space-y-0">
       <div className="flex items-center gap-2">
         <Tooltip>
           <TooltipTrigger>

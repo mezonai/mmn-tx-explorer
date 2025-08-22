@@ -1,0 +1,105 @@
+import { ItemAttribute } from '@/components/shared/item-attribute';
+import { CopyButton } from '@/components/ui/copy-button';
+import { Separator } from '@/components/ui/separator';
+import { formatDate, formatRelativeTime } from '@/lib/utils';
+import { Clock4 } from 'lucide-react';
+import Link from 'next/link';
+import { ButtonNavigateBlock } from './button-navigate';
+import { ValidatorThumb } from '@/components/shared/validator-thumb';
+import { EllipsisText } from '@/components/ui/ellipsis-text';
+
+export const TabDetails = () => {
+  return (
+    <div className="space-y-5">
+      <ItemAttribute
+        label="Block height"
+        description="The height of the block"
+        render={
+          <div className="flex items-center">
+            <span>12132131</span>
+            <div className="ml-2 flex items-center gap-2">
+              <ButtonNavigateBlock
+                direction="previous"
+                blockHash="0xabc123def4567890ghijklmnopqrstu1234567890vwxyz1234567890abcdef"
+              />
+              <ButtonNavigateBlock
+                direction="next"
+                blockHash="0xabc123def4567890ghijklmnopqrstu1234567890vwxyz1234567890abcdef"
+              />
+            </div>
+          </div>
+        }
+      />
+      <ItemAttribute
+        label="Block size"
+        description="The size of the block"
+        render={
+          <div>
+            <span>1234567890</span>
+          </div>
+        }
+      />
+      <ItemAttribute
+        label="Transactions count"
+        description="The number of transactions in the block"
+        render={
+          <div>
+            <span>1234567890</span>
+          </div>
+        }
+      />
+      <ItemAttribute
+        label="Validated by"
+        description="The validator that validated the block"
+        render={
+          <div className="flex items-center">
+            <ValidatorThumb />
+            <EllipsisText className="text-brand-secondary-700 ml-2">
+              0xabc123def4567890ghijklmnopqrstu1234567890vwxyz1234567890abcdef
+            </EllipsisText>
+            <CopyButton textToCopy="0xabc123def4567890ghijklmnopqrstu1234567890vwxyz1234567890abcdef" />
+          </div>
+        }
+      />
+      <ItemAttribute
+        label="Block timestamp"
+        description="The timestamp of the block"
+        render={
+          <div className="flex items-center space-x-2">
+            <Clock4 className="text-foreground-quaternary-400 size-4" />
+            <span>{formatRelativeTime(new Date('2025-08-18T20:54:35.000Z'))}</span>
+            <span>|</span>
+            <span>{formatDate('2025-08-18T20:54:35.000Z')}</span>
+          </div>
+        }
+      />
+      <Separator />
+      <ItemAttribute
+        label="Block hash"
+        description="The hash of the block"
+        render={
+          <div className="flex items-center">
+            <EllipsisText className="text-brand-secondary-700">
+              0xabc123def4567890ghijklmnopqrstu1234567890vwxyz1234567890abcdefsssssssssssssssssssssssssssssssssssssssssssssssssssss
+            </EllipsisText>
+            <CopyButton textToCopy="0xabc123def4567890ghijklmnopqrstu1234567890vwxyz1234567890abcdef" />
+          </div>
+        }
+      />
+      <ItemAttribute
+        label="Block parent hash"
+        description="The hash of the parent block"
+        render={
+          <div className="flex items-center">
+            {/* <Link href="/blocks/1234567890" className="w-full flex-1"> */}
+            <EllipsisText className="text-brand-secondary-700">
+              0xabc123def4567890ghijklmnopqrstu1234567890vwxyz1234567890abcdef
+            </EllipsisText>
+            {/* </Link> */}
+            <CopyButton textToCopy="0x1234567890" />
+          </div>
+        }
+      />
+    </div>
+  );
+};

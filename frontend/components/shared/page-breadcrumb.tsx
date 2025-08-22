@@ -21,7 +21,7 @@ export function PageBreadcrumb({ breadcrumbs }: PageBreadcrumbProps) {
           {breadcrumbs.map((breadcrumb, index) => {
             const isLast = index === breadcrumbs.length - 1;
             return (
-              <Fragment key={breadcrumb.href}>
+              <Fragment key={breadcrumb.label}>
                 <BreadcrumbItem>
                   <BreadcrumbLink
                     className={cn(

@@ -29,7 +29,7 @@ export function formatDate(dateString: string): string {
   // Format the date in the user's local timezone
   const formattedDate = date.toLocaleDateString('en-US', {
     year: 'numeric',
-    month: 'long',
+    month: 'short',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
