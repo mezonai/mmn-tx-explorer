@@ -12,6 +12,7 @@ docker compose up -d
 
 
 ===========REPLACE  <clickhouse-container> WITH YOUR CONTAINER ID========
+
 cat clickhouse/*.sql | docker exec -i <clickhouse-container> clickhouse-client --user admin --password password
 
 
