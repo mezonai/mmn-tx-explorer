@@ -8,7 +8,6 @@ import { DEFAULT_PAGINATION } from '@/constant';
 import { EBreakpoint } from '@/enums';
 import { useBreakpoint } from '@/hooks';
 import { BlockService, IBlock, IBLockListParams } from '@/modules/block';
-import { GlobalSearch } from '@/modules/global-search/components';
 import { IPaginationMeta } from '@/types';
 import { BlockCards, BlocksTable } from './list';
 

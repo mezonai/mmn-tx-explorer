@@ -1,0 +1,17 @@
+services:
+  ganache:
+    image: trufflesuite/ganache:v7.9.0
+    command: --miner.blockTime 10 --wallet.totalAccounts 10 --wallet.defaultBalance 1000000000 --host 0.0.0.0 --database.dbPath /data
+    ports:
+      - "8545:8545"
+    volumes:
+      - ganache_data:/data
+
+  spammer:
+    restart: always
+    build: .
+    depends_on:
+      - ganache
+
+volumes:
+  ganache_data:
