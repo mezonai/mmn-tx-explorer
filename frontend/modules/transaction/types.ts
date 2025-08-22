@@ -1,3 +1,5 @@
+import { ETransactionTab } from './enums';
+
 export interface ITransaction {
   access_list_json: string;
   blob_gas_price: string;
@@ -35,4 +37,6 @@ export interface ITransactionListParams {
   limit: number;
   sort_by: keyof ITransaction;
   sort_order: 'asc' | 'desc';
+  // TODO: update API to support tab, then update this to required
+  tab?: ETransactionTab;
 }

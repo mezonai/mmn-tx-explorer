@@ -1,6 +1,13 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Geist, Geist_Mono, Manrope } from 'next/font/google';
+import { Suspense } from 'react';
+
 import './globals.css';
+
+const manrope = Manrope({
+  variable: '--font-manrope',
+  subsets: ['latin'],
+});
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -13,7 +20,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'MMN Explorer',
+  title: {
+    template: '%s | MMN Explorer',
+    default: 'MMN Explorer',
+  },
   description: 'Mezon Mainnet Transaction Explorer',
 };
 
@@ -24,10 +34,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+      <body className={`${manrope.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <Suspense fallback={null}>{children}</Suspense>
       </body>
     </html>
   );

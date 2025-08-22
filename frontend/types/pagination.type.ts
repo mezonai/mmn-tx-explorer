@@ -1,5 +1,5 @@
 export interface IPaginatedResponse<T> {
-  data: T[];
+  data: T;
   meta: IPaginationMeta;
 }
 

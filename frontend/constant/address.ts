@@ -1,0 +1,1 @@
+export const ADDRESS_END_VISIBLE_CHARS = 4;
