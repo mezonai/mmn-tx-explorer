@@ -15,6 +15,7 @@ cd insight
 cp configs/config.example.yml configs/config.yml
 cp configs/secrets.example.yml configs/secrets.yml
 
+change mmnGrpcUrl in config.yml with node url
 # 3. (Optional) Start dependencies with Docker Compose
 docker-compose up -d clickhouse
 

@@ -62,8 +62,8 @@ func TestMapClickHouseTypeToGoType(t *testing.T) {
 		// String types
 		{"String", ""},
 		{"Nullable(String)", (**string)(nil)},
-		{"FixedString(42)", ""},
-		{"Nullable(FixedString(42))", (**string)(nil)},
+		{"FixedString(64)", ""},
+		{"Nullable(FixedString(64))", (**string)(nil)},
 		{"UUID", ""},
 		{"Nullable(UUID)", (**string)(nil)},
 		{"IPv4", ""},

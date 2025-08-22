@@ -2,8 +2,8 @@ CREATE TABLE IF NOT EXISTS token_balances
 (
   `token_type` String,
   `chain_id` UInt256,
-  `owner` FixedString(42),
-  `address` FixedString(42),
+  `owner` FixedString(64),
+  `address` FixedString(64),
   `token_id` UInt256,
   `balance` Int256,
   PROJECTION address_projection

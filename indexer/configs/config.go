@@ -117,6 +117,7 @@ type RPCConfig struct {
 	BlockReceipts ToggleableRPCBatchRequestConfig `mapstructure:"blockReceipts"`
 	Traces        ToggleableRPCBatchRequestConfig `mapstructure:"traces"`
 	ChainID       string                          `mapstructure:"chainId"`
+	MMNGRPCURL    string                          `mapstructure:"mmnGrpcUrl"`
 }
 
 type BasicAuthConfig struct {
