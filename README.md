@@ -9,11 +9,11 @@ Mezon Mainnet Transaction Explorer
 cd database
 
 docker compose up -d 
-===========REPLACE  <clickhouse-container> WITH YOUR CONTAINER ID========
 
+
+===========REPLACE  <clickhouse-container> WITH YOUR CONTAINER ID========
 cat clickhouse/*.sql | docker exec -i <clickhouse-container> clickhouse-client --user admin --password password
 
-===========REPLACE  <clickhouse-container> WITH YOUR CONTAINER ID========
 
 # start indexer, ui
 
