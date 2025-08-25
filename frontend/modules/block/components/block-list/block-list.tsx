@@ -77,7 +77,6 @@ export const BlockList = () => {
           <Pagination
             page={localSearchParams?.page ?? DEFAULT_PAGINATION.PAGE}
             totalPages={pagination?.total_pages ?? DEFAULT_PAGINATION.PAGE}
-            isLoading={isLoading}
             className="ml-auto"
             onChangePage={handleChangePage}
           />

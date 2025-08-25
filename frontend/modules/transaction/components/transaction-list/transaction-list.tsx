@@ -12,7 +12,7 @@ import { GlobalSearch } from '@/modules/global-search/components';
 import { ETransactionTab, ITransaction, ITransactionListParams, TransactionService } from '@/modules/transaction';
 import { IPaginationMeta } from '@/types';
 import { TransactionCards, TransactionsTable } from './list';
-import { StatGrids } from './stats';
+import { Stats } from './stats';
 
 const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
   page: DEFAULT_PAGINATION.PAGE,
@@ -82,7 +82,7 @@ export const TransactionsList = () => {
         <h1 className="text-2xl font-semibold">Transactions</h1>
       </div>
 
-      <StatGrids />
+      <Stats />
 
       <div className="space-y-6">
         <div className="flex flex-col items-center justify-between gap-5 md:flex-row">
@@ -112,7 +112,6 @@ export const TransactionsList = () => {
           <Pagination
             page={localSearchParams?.page ?? DEFAULT_PAGINATION.PAGE}
             totalPages={pagination?.total_pages ?? DEFAULT_PAGINATION.PAGE}
-            isLoading={isLoading}
             className="self-end"
             onChangePage={handleChangePage}
           />

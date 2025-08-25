@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { InfoSquare } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ITransaction } from '@/modules/transaction';
+import { getTransactionTypeLabel, ITransaction } from '@/modules/transaction';
 
 interface MoreInfoButtonProps {
   transaction: ITransaction;
@@ -24,7 +24,7 @@ export const MoreInfoButton = ({ transaction }: MoreInfoButtonProps) => {
           <div className="space-y-1 text-xs">
             <div className="flex justify-between gap-2">
               <p className="text-muted-foreground font-semibold">Txn type</p>
-              <p className="text-end font-normal">{transaction.transaction_type}</p>
+              <p className="text-end font-normal">{getTransactionTypeLabel(transaction.transaction_type)}</p>
             </div>
             <div className="flex justify-between gap-2">
               <p className="text-muted-foreground font-semibold">Nonce</p>

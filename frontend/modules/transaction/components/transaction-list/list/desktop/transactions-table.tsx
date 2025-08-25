@@ -11,7 +11,7 @@ import { DATE_TIME_FORMAT } from '@/constant';
 import { ITransaction } from '@/modules/transaction';
 import { TTableColumn } from '@/types';
 import { DateTimeUtil, NumberUtil } from '@/utils';
-import { FromToAddresses, MethodBadge, MoreInfoButton, TxnHashLink, TypeBadges } from '../shared';
+import { FromToAddresses, MoreInfoButton, TxnHashLink, TypeBadges } from '../shared';
 
 interface TransactionsTableProps {
   transactions?: ITransaction[];
@@ -56,10 +56,6 @@ export const TransactionsTable = ({ transactions }: TransactionsTableProps) => {
       valueGetter: (row) => (
         <TypeBadges className="flex-col items-start" type={row.transaction_type} status={row.status} />
       ),
-    },
-    {
-      header: 'Method',
-      valueGetter: (row) => <MethodBadge method={row.function_selector} />,
     },
     {
       header: 'Block',

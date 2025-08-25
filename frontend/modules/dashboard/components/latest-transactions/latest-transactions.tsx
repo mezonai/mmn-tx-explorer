@@ -5,17 +5,16 @@ import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/configs/routes.config';
-import { DEFAULT_PAGINATION } from '@/constant';
 import {
   DASHBOARD_TRANSACTIONS_LIMIT,
   ITransaction,
   ITransactionListParams,
   TransactionService,
 } from '@/modules/transaction';
-import { TransactionCards } from '@/modules/transaction/components/list';
+import { TransactionCards } from '@/modules/transaction/components';
 
 const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
-  page: DEFAULT_PAGINATION.PAGE,
+  page: 0,
   limit: DASHBOARD_TRANSACTIONS_LIMIT,
   sort_by: 'block_timestamp',
   sort_order: 'desc',

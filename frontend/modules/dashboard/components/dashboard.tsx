@@ -1,7 +1,7 @@
 import { GlobalSearch } from '@/modules/global-search/components';
 import { LatestBlocks } from './latest-blocks';
 import { LatestTransactions } from './latest-transactions';
-import { StatsGrid } from './stats';
+import { Stats } from './stats';
 
 export const Dashboard = () => {
   return (
@@ -11,7 +11,7 @@ export const Dashboard = () => {
         <h1 className="text-2xl font-semibold">Dashboard</h1>
       </div>
 
-      <StatsGrid />
+      <Stats />
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-9">
         <LatestBlocks />

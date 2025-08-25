@@ -5,13 +5,12 @@ import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/configs/routes.config';
-import { DEFAULT_PAGINATION } from '@/constant';
 import { BlockService, DASHBOARD_BLOCKS_LIMIT, IBlock, IBLockListParams } from '@/modules/block';
 import { BlockCard } from './block-card';
 import { BlockCardSkeleton } from './block-card-skeleton';
 
 const DEFAULT_VALUE_DATA_SEARCH: IBLockListParams = {
-  page: DEFAULT_PAGINATION.PAGE,
+  page: 0,
   limit: DASHBOARD_BLOCKS_LIMIT,
   sort_by: 'block_number',
   sort_order: 'desc',

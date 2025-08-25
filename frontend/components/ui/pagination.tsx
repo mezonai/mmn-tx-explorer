@@ -1,61 +1,68 @@
-import { ArrowLeft, ArrowRight } from '@/assets/icons';
-import { Button } from '@/components/ui/button';
+'use client';
+
+import ReactPaginate from 'react-paginate';
+
+import { ChevronLeft, ChevronLeftDouble, ChevronRight, ChevronRightDouble } from '@/assets/icons';
 import { DEFAULT_PAGINATION } from '@/constant';
 import { cn } from '@/lib/utils';
+import { TOnChangePage } from '@/types';
 
-interface PaginationProps {
+type PaginationProps = {
   page: number;
   totalPages: number;
-  isLoading?: boolean;
+  onChangePage: TOnChangePage;
   className?: string;
-  onChangePage: (page: number) => void;
-}
+};
 
-export const Pagination = ({ page, totalPages, isLoading = false, className, onChangePage }: PaginationProps) => {
-  if (page <= DEFAULT_PAGINATION.PAGE) {
-    page = DEFAULT_PAGINATION.PAGE;
-  }
-  if (page >= totalPages) {
-    page = totalPages;
-  }
+export const Pagination = ({ page, totalPages, onChangePage, className }: PaginationProps) => {
+  const isFirstPage = page <= 1;
+  const isLastPage = totalPages <= 0 || page >= totalPages;
 
-  const handleChangePage = (page: number) => {
-    if (page >= DEFAULT_PAGINATION.PAGE && page <= totalPages) {
-      onChangePage(page);
-    }
-  };
+  const baseBtnClass =
+    'focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive bg-background hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 inline-flex size-10 shrink-0 cursor-pointer items-center justify-center border text-sm font-medium whitespace-nowrap shadow-xs transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50';
 
   return (
-    <div className={cn('flex items-center gap-2', className)}>
-      <Button
-        variant="outline"
-        className="px-3.5 py-2.5 text-sm font-semibold"
-        onClick={() => handleChangePage(DEFAULT_PAGINATION.PAGE)}
-        disabled={isLoading || page <= DEFAULT_PAGINATION.PAGE}
+    <div className={cn('flex items-center justify-center select-none', className)}>
+      <button
+        type="button"
+        className={cn(baseBtnClass, 'rounded-l-lg border', isFirstPage && 'pointer-events-none opacity-50')}
+        disabled={isFirstPage}
+        aria-label="Go to first page"
+        onClick={() => onChangePage(1)}
       >
-        First
-      </Button>
-      <div className="flex">
-        <Button
-          variant="outline"
-          className="rounded-tr-none rounded-br-none p-2.5"
-          onClick={() => handleChangePage(page - 1)}
-          disabled={isLoading || page <= DEFAULT_PAGINATION.PAGE}
-        >
-          <ArrowLeft className="text-muted-foreground size-5" />
-        </Button>
-        <div className="bg-primary/8 flex aspect-square h-[37px] items-center justify-center">
-          <p className="text-foreground text-sm font-semibold">{page}</p>
-        </div>
-        <Button
-          variant="outline"
-          className="rounded-tl-none rounded-bl-none p-2.5"
-          onClick={() => handleChangePage(page + 1)}
-          disabled={isLoading || page >= totalPages}
-        >
-          <ArrowRight className="text-muted-foreground size-5" />
-        </Button>
-      </div>
+        <ChevronLeftDouble className="text-muted-foreground size-4" />
+      </button>
+
+      <ReactPaginate
+        breakLabel="..."
+        previousLabel={<ChevronLeft className="text-muted-foreground size-4" />}
+        nextLabel={<ChevronRight className="text-muted-foreground size-4" />}
+        forcePage={Math.max(0, page - 1)}
+        marginPagesDisplayed={DEFAULT_PAGINATION.MARGIN_RANGE_DISPLAY}
+        pageCount={Math.max(0, totalPages)}
+        disableInitialCallback={true}
+        renderOnZeroPageCount={null}
+        className="flex items-center justify-center"
+        breakLinkClassName={cn(baseBtnClass, 'rounded-none')}
+        pageLinkClassName={cn(baseBtnClass, 'rounded-none')}
+        previousLinkClassName={cn(baseBtnClass)}
+        nextLinkClassName={cn(baseBtnClass)}
+        activeLinkClassName="!bg-primary/8 !text-foreground pointer-events-none"
+        disabledLinkClassName="opacity-50 pointer-events-none"
+        onPageChange={({ selected }) => {
+          onChangePage(selected + 1);
+        }}
+      />
+
+      <button
+        type="button"
+        className={cn(baseBtnClass, 'rounded-r-lg border', isLastPage && 'pointer-events-none opacity-50')}
+        disabled={isLastPage}
+        aria-label="Go to last page"
+        onClick={() => onChangePage(totalPages)}
+      >
+        <ChevronRightDouble className="text-muted-foreground size-4" />
+      </button>
     </div>
   );
 };
