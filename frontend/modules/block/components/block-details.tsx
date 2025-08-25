@@ -1,6 +1,6 @@
 'use client';
 
-import { PageBreadcrumb } from '@/components/shared/page-breadcrumb';
+import { BreadcrumbNavigation } from '@/components/shared/breadcrumb-navigation';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTabsQueryParams } from '@/hooks/use-tabs-query-params';
 import { TabsContent } from '@radix-ui/react-tabs';
@@ -14,9 +14,9 @@ export const BlockDetails = () => {
   const { tab, handleTabChange } = useTabsQueryParams({ defaultTab: 'details' });
 
   return (
-    <div>
-      <PageBreadcrumb breadcrumbs={breadcrumbs} />
-      <h1 className="text-primary-900 my-3 text-2xl font-semibold">Block Details</h1>
+          <div>
+        <BreadcrumbNavigation breadcrumbs={breadcrumbs} />
+        <h1 className="text-primary-900 my-3 text-2xl font-semibold">Block Details</h1>
       <Tabs value={tab} onValueChange={handleTabChange} className="mt-5 space-y-3">
         <div className="flex items-center justify-between">
           <TabsList className="w-full sm:w-fit">

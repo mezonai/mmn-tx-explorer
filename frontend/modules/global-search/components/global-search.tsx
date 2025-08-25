@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import { CircleX } from 'lucide-react';
-import { SearchService } from '../api';
+import { GlobalSearchService } from '../api';
 import { ISearchResult } from '../types';
 import { SearchResults } from './search-results';
 
@@ -45,7 +45,7 @@ export const GlobalSearch = ({ className }: GlobalSearchProps) => {
 
       setIsLoading(true);
       try {
-        const { data } = await SearchService.search(trimmed);
+        const { data } = await GlobalSearchService.search(trimmed);
         if (!isCancelled) {
           setSearchResults(data);
         }

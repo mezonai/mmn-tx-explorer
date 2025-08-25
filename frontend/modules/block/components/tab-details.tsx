@@ -1,12 +1,13 @@
 import { ItemAttribute } from '@/components/shared/item-attribute';
-import { CopyButton } from '@/components/ui/copy-button';
-import { Separator } from '@/components/ui/separator';
-import { formatDate, formatRelativeTime } from '@/lib/utils';
-import { Clock4 } from 'lucide-react';
-import Link from 'next/link';
-import { ButtonNavigateBlock } from './button-navigate';
 import { ValidatorThumb } from '@/components/shared/validator-thumb';
+import { CopyButton } from '@/components/ui/copy-button';
 import { EllipsisText } from '@/components/ui/ellipsis-text';
+import { Separator } from '@/components/ui/separator';
+import { DATE_TIME_FORMAT } from '@/constant';
+import { DateTimeUtil } from '@/utils';
+import { format } from 'date-fns';
+import { Clock4 } from 'lucide-react';
+import { ButtonNavigateBlock } from './button-navigate';
 
 export const TabDetails = () => {
   return (
@@ -67,9 +68,9 @@ export const TabDetails = () => {
         render={
           <div className="flex items-center space-x-2">
             <Clock4 className="text-foreground-quaternary-400 size-4" />
-            <span>{formatRelativeTime(new Date('2025-08-18T20:54:35.000Z'))}</span>
+            <span>{DateTimeUtil.formatRelativeTime(new Date('2025-08-18T20:54:35.000Z'))}</span>
             <span>|</span>
-            <span>{formatDate('2025-08-18T20:54:35.000Z')}</span>
+            <span>{format('2025-08-18T20:54:35.000Z', DATE_TIME_FORMAT.HUMAN_READABLE_WITH_OFFSET)}</span>
           </div>
         }
       />

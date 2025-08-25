@@ -2,15 +2,27 @@
 
 import { CheckCheck, Copy } from 'lucide-react';
 import { useEffect, useState } from 'react';
+
+import { cn } from '@/lib/utils';
 import { Button } from './button';
 import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
 
 interface CopyButtonProps {
   textToCopy: string;
+  className?: string;
 }
 
-function CopyButton({ textToCopy }: CopyButtonProps) {
+export const CopyButton = ({ textToCopy, className }: CopyButtonProps) => {
   const [isCopied, setIsCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      setIsCopied(true);
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+    }
+  };
 
   useEffect(() => {
     if (!isCopied) return;
@@ -22,19 +34,14 @@ function CopyButton({ textToCopy }: CopyButtonProps) {
     return () => clearTimeout(resetCopied);
   }, [isCopied]);
 
-  const doCopy = () => {
-    navigator.clipboard.writeText(textToCopy);
-    setIsCopied(true);
-  };
-
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
-          className="text-foreground-quaternary-400 hover:text-secondary-700 ml-2 size-7 flex-shrink-0 align-middle"
-          onClick={doCopy}
+          className={cn('hover:text-secondary-700 size-7 flex-shrink-0 align-middle', className)}
+          onClick={handleCopy}
         >
           {isCopied ? <CheckCheck className="size-4" /> : <Copy className="size-4" />}
         </Button>
@@ -42,6 +49,4 @@ function CopyButton({ textToCopy }: CopyButtonProps) {
       <TooltipContent>{isCopied ? 'Copied' : 'Copy to clipboard'}</TooltipContent>
     </Tooltip>
   );
-}
-
-export { CopyButton };
+};

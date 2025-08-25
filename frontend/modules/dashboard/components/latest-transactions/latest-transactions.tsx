@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/configs/routes.config';
 import { DASHBOARD_TRANSACTIONS_LIMIT, ITransaction } from '@/modules/transaction';
-import { TransactionCards } from '@/modules/transaction/components/list';
+import { TransactionCards } from '@/modules/transaction/components/transaction-list/list';
 
 interface LatestTransactionsProps {
   transactions?: ITransaction[];

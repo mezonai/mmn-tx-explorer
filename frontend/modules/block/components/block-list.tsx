@@ -1,12 +1,11 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { Pagination } from '@/components/ui/pagination';
 import { DEFAULT_PAGINATION } from '@/constant';
 import { EBreakpoint } from '@/enums';
-import { useBreakpoint } from '@/hooks';
+import { useBreakpoint, useQueryParam } from '@/hooks';
 import { BlockService, IBlock, IBLockListParams } from '@/modules/block';
 import { IPaginationMeta } from '@/types';
 import { BlockCards, BlocksTable } from './list';
@@ -19,12 +18,15 @@ const DEFAULT_VALUE_DATA_SEARCH: IBLockListParams = {
 } as const;
 
 export const BlockList = () => {
-  const urlSearchParams = useSearchParams();
   const isDesktop = useBreakpoint(EBreakpoint.LG);
   const [blocks, setBlocks] = useState<IBlock[]>();
   const [pagination, setPagination] = useState<IPaginationMeta>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [localSearchParams, setLocalSearchParams] = useState<IBLockListParams>();
+  const { value: currentPage, handleChangeValue: handleChangePage } = useQueryParam<number>({
+    queryParam: 'page',
+    defaultValue: DEFAULT_PAGINATION.PAGE,
+  });
 
   const handleFetchBlocks = async (params: IBLockListParams) => {
     try {
@@ -40,21 +42,12 @@ export const BlockList = () => {
     }
   };
 
-  const updateSearchParam = (key: 'page', value: string | number) => {
-    const currentParams = new URLSearchParams(urlSearchParams.toString());
-    currentParams.set(key, String(value));
-    const newUrl = `${window.location.pathname}?${currentParams.toString()}`;
-    window.history.pushState(null, '', newUrl);
-  };
-
-  const handleChangePage = (page: number) => updateSearchParam('page', page);
-
   useEffect(() => {
     setLocalSearchParams({
       ...DEFAULT_VALUE_DATA_SEARCH,
-      page: Number(urlSearchParams.get('page')) || DEFAULT_PAGINATION.PAGE,
+      page: currentPage,
     });
-  }, [urlSearchParams]);
+  }, [currentPage]);
 
   useEffect(() => {
     if (!localSearchParams) return;
@@ -68,7 +61,7 @@ export const BlockList = () => {
       <div className="space-y-6">
         <div className="flex justify-end">
           <Pagination
-            page={localSearchParams?.page ?? DEFAULT_PAGINATION.PAGE}
+            page={currentPage}
             totalPages={pagination?.total_pages ?? DEFAULT_PAGINATION.PAGE}
             isLoading={isLoading}
             className="ml-auto"

@@ -4,7 +4,7 @@ import { IPaginatedResponse } from '@/types';
 import { SEARCH_ENDPOINTS } from './constants';
 import { ISearchResult } from './types';
 
-export class SearchService {
+export class GlobalSearchService {
   static async search(input: string): Promise<IPaginatedResponse<ISearchResult>> {
     const { data } = await apiClient.get<IPaginatedResponse<ISearchResult>>(
       buildPathWithChainId(SEARCH_ENDPOINTS.LIST).replace(':input', input)

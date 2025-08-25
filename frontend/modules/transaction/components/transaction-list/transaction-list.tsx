@@ -1,13 +1,12 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { Pagination } from '@/components/ui/pagination';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DEFAULT_PAGINATION } from '@/constant';
 import { EBreakpoint } from '@/enums';
-import { useBreakpoint } from '@/hooks';
+import { useBreakpoint, useQueryParam } from '@/hooks';
 import { ETransactionTab, ITransaction, ITransactionListParams, TransactionService } from '@/modules/transaction';
 import { IPaginationMeta } from '@/types';
 import { TransactionCards, TransactionsTable } from './list';
@@ -22,12 +21,20 @@ const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
 } as const;
 
 export const TransactionsList = () => {
-  const urlSearchParams = useSearchParams();
   const isDesktop = useBreakpoint(EBreakpoint.LG);
   const [transactions, setTransactions] = useState<ITransaction[]>();
   const [pagination, setPagination] = useState<IPaginationMeta>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [localSearchParams, setLocalSearchParams] = useState<ITransactionListParams>();
+  const { value: currentTab, handleChangeValue: handleChangeTab } = useQueryParam<ETransactionTab>({
+    queryParam: 'tab',
+    defaultValue: ETransactionTab.Validated,
+    clearParams: ['page'],
+  });
+  const { value: currentPage, handleChangeValue: handleChangePage } = useQueryParam<number>({
+    queryParam: 'page',
+    defaultValue: DEFAULT_PAGINATION.PAGE,
+  });
 
   const handleFetchTransactions = async (params: ITransactionListParams) => {
     try {
@@ -48,23 +55,13 @@ export const TransactionsList = () => {
     }
   };
 
-  const updateSearchParam = (key: 'page' | 'tab', value: string | number) => {
-    const currentParams = new URLSearchParams(urlSearchParams.toString());
-    currentParams.set(key, String(value));
-    const newUrl = `${window.location.pathname}?${currentParams.toString()}`;
-    window.history.pushState(null, '', newUrl);
-  };
-
-  const handleChangePage = (page: number) => updateSearchParam('page', page);
-  const handleChangeTab = (tab: ETransactionTab) => updateSearchParam('tab', tab);
-
   useEffect(() => {
     setLocalSearchParams({
       ...DEFAULT_VALUE_DATA_SEARCH,
-      page: Number(urlSearchParams.get('page')) || DEFAULT_PAGINATION.PAGE,
-      tab: (urlSearchParams.get('tab') as ETransactionTab | undefined) || ETransactionTab.Validated,
+      page: currentPage,
+      tab: currentTab,
     });
-  }, [urlSearchParams]);
+  }, [currentPage, currentTab]);
 
   useEffect(() => {
     if (!localSearchParams) return;
@@ -79,31 +76,19 @@ export const TransactionsList = () => {
 
       <div className="space-y-6">
         <div className="flex flex-col items-center justify-between gap-5 md:flex-row">
-          <Tabs
-            value={localSearchParams?.tab ?? ETransactionTab.Validated}
-            onValueChange={(v) => handleChangeTab(v as ETransactionTab)}
-            className="w-full"
-          >
+          <Tabs value={currentTab} onValueChange={(v) => handleChangeTab(v as ETransactionTab)} className="w-full">
             <TabsList className="w-full md:w-fit">
-              <TabsTrigger
-                value={ETransactionTab.Validated}
-                disabled={isLoading}
-                className="flex-1 px-3 py-2 md:flex-none"
-              >
+              <TabsTrigger value={ETransactionTab.Validated} disabled={isLoading} className="px-3 py-2">
                 Validated
               </TabsTrigger>
-              <TabsTrigger
-                value={ETransactionTab.Pending}
-                disabled={isLoading}
-                className="flex-1 px-3 py-2 md:flex-none"
-              >
+              <TabsTrigger value={ETransactionTab.Pending} disabled={isLoading} className="px-3 py-2">
                 Pending
               </TabsTrigger>
             </TabsList>
           </Tabs>
 
           <Pagination
-            page={localSearchParams?.page ?? DEFAULT_PAGINATION.PAGE}
+            page={currentPage}
             totalPages={pagination?.total_pages ?? DEFAULT_PAGINATION.PAGE}
             isLoading={isLoading}
             className="self-end"
