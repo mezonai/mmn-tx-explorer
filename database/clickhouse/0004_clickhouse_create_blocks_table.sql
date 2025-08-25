@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS blocks (
     `sha3_uncles` FixedString(66),
     `nonce` FixedString(18),
     `mix_hash` FixedString(66),
-     miner FixedString(64),
+    `miner` FixedString(64),
     `state_root` FixedString(66),
     `transactions_root` FixedString(66),
     `receipts_root` FixedString(66),
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS blocks (
     `insert_timestamp` DateTime DEFAULT now(),
     `sign` Int8 DEFAULT 1,
     INDEX idx_block_timestamp block_timestamp TYPE minmax GRANULARITY 3,
-    INDEX idx_hash hash TYPE bloom_filter GRANULARITY 3,
+    INDEX idx_hash hash TYPE bloom_filter GRANULARITY 3
 ) ENGINE = VersionedCollapsingMergeTree(sign, insert_timestamp)
 ORDER BY (chain_id, block_number)
 PARTITION BY chain_id;

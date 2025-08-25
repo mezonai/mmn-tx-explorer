@@ -208,4 +208,4 @@ SELECT
 FROM batch_transfer_logs
 ARRAY JOIN
     ids_hex AS hex_id,
-    amounts_hex AS hex_amount
+    amounts_hex AS hex_amount;

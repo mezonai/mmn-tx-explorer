@@ -35,6 +35,9 @@ var EntityColumns = map[string][]string{
 	"balances": {
 		"token_type", "chain_id", "owner", "address", "token_id", "balance",
 	},
+	"wallet": {
+		"address", "balance", "created_at", "updated_at",
+	},
 	"traces": {
 		"chain_id", "block_number", "block_hash", "block_timestamp", "transaction_hash",
 		"transaction_index", "subtraces", "trace_address", "type", "call_type", "error",
