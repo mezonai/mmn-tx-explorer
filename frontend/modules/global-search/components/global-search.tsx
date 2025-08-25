@@ -1,15 +1,15 @@
 'use client';
 
+import { CircleX } from 'lucide-react';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 
 import { SearchMd } from '@/assets/icons';
 import { Input } from '@/components/ui/input';
 import { useDebounce } from '@/hooks/use-debounce';
-import { CircleX } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { SearchService } from '../api';
 import { ISearchResult } from '../types';
 import { SearchResults } from './search-results';
-import { cn } from '@/lib/utils';
 
 export const GlobalSearch = () => {
   const [query, setQuery] = useState<string>('');

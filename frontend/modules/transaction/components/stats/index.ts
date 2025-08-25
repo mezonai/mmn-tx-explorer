@@ -1,1 +1,1 @@
-export * from './stats-grid';
+export * from './stat-grids';

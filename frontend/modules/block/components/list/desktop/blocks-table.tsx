@@ -13,7 +13,7 @@ import { DATE_TIME_FORMAT } from '@/constant';
 import { IBlock } from '@/modules/block/types';
 import { TTableColumn } from '@/types';
 import { DateTimeUtil } from '@/utils';
-import { GasUsage, TxnLink } from '../shared';
+import { TxnLink } from '../shared';
 
 interface BlocksTableProps {
   blocks?: IBlock[];
@@ -52,30 +52,24 @@ export const BlocksTable = ({ blocks }: BlocksTableProps) => {
       },
     },
     {
-      header: 'Size, bytes',
-      field: 'size',
+      header: 'Hash',
+      valueGetter: (row) => (
+        <AddressDisplay address={row.block_hash} className="w-60" addressClassName="text-foreground" />
+      ),
+    },
+    {
+      header: 'Parent hash',
+      valueGetter: (row) => (
+        <AddressDisplay address={row.parent_hash} className="w-60" addressClassName="text-foreground" />
+      ),
     },
     {
       header: 'Validator',
-      valueGetter: (row) => <AddressDisplay address={row.miner} />,
+      valueGetter: (row) => <AddressDisplay address={row.miner} className="w-50" />,
     },
     {
       header: 'Txn',
       valueGetter: (row) => <TxnLink count={row.transaction_count} blockNumber={row.block_number} />,
-    },
-    {
-      header: 'Gas used',
-      valueGetter: (row) => <GasUsage gasUsed={row.gas_used} gasLimit={row.gas_limit} />,
-    },
-    {
-      header: 'Burnt fees',
-      valueGetter: () => {
-        return '0';
-      },
-    },
-    {
-      header: 'Base fee',
-      field: 'base_fee_per_gas',
     },
   ];
 

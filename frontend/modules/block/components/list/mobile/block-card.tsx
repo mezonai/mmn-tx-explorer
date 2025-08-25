@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/configs/routes.config';
 import { IBlock } from '@/modules/block/types';
 import { DateTimeUtil } from '@/utils';
-import { GasUsage, TxnLink } from '../shared';
+import { TxnLink } from '../shared';
 
 interface BlockCardProps {
   block: IBlock;
@@ -13,7 +13,7 @@ interface BlockCardProps {
 
 export const BlockCard = ({ block }: BlockCardProps) => {
   return (
-    <div className="space-y-2 border-b pb-4 text-sm [&>*]:w-full">
+    <div className="space-y-2 border-b pb-4 text-sm [&>*]:w-full [&>*]:gap-5">
       <div className="flex items-center justify-between">
         <Button variant="link" className="h-fit p-0 font-semibold" asChild>
           <Link href={ROUTES.BLOCK.replace(':id', block.block_number.toString())}>{block.block_number}</Link>
@@ -21,8 +21,12 @@ export const BlockCard = ({ block }: BlockCardProps) => {
         <span className="text-muted-foreground">{DateTimeUtil.formatRelativeTime(block.block_timestamp * 1000)}</span>
       </div>
       <div className="flex items-center justify-between">
-        <span>Size</span>
-        <span>{block.size} bytes</span>
+        <span>Hash</span>
+        <AddressDisplay address={block.block_hash} addressClassName="text-foreground" />
+      </div>
+      <div className="flex items-center justify-between">
+        <span>Parent hash</span>
+        <AddressDisplay address={block.parent_hash} addressClassName="text-foreground" />
       </div>
       <div className="flex items-center justify-between">
         <span>Validator</span>
@@ -31,18 +35,6 @@ export const BlockCard = ({ block }: BlockCardProps) => {
       <div className="flex items-center justify-between">
         <span>Txn</span>
         <TxnLink count={block.transaction_count} blockNumber={block.block_number} />
-      </div>
-      <div className="flex items-center justify-between">
-        <span>Gas used</span>
-        <GasUsage gasUsed={block.gas_used} gasLimit={block.gas_limit} className="flex items-center gap-2 space-y-0" />
-      </div>
-      <div className="flex items-center justify-between">
-        <span>Burnt fees</span>
-        <span>0</span>
-      </div>
-      <div className="flex items-center justify-between">
-        <span>Base fee</span>
-        <span>{block.base_fee_per_gas}</span>
       </div>
     </div>
   );

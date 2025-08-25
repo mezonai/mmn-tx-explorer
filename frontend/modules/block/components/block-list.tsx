@@ -31,7 +31,10 @@ export const BlockList = () => {
     try {
       setIsLoading(true);
       setBlocks(undefined);
-      const { data, meta } = await BlockService.getBlocks(params);
+      const { data, meta } = await BlockService.getBlocks({
+        ...params,
+        page: params.page - 1,
+      });
       setBlocks(data);
       setPagination(meta);
     } catch (error) {

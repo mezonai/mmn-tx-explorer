@@ -6,12 +6,9 @@ import { IBlock, IBLockListParams } from './types';
 
 export class BlockService {
   static async getBlocks(params: IBLockListParams): Promise<IPaginatedResponse<IBlock[]>> {
-    const { data } = await apiClient.get<IPaginatedResponse<IBlock[]>>(
-      buildPathWithChain(BLOCK_ENDPOINTS.LIST, '1337'),
-      {
-        params,
-      }
-    );
+    const { data } = await apiClient.get<IPaginatedResponse<IBlock[]>>(buildPathWithChain(BLOCK_ENDPOINTS.LIST), {
+      params,
+    });
     return data;
   }
 }

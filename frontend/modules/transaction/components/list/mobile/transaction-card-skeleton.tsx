@@ -11,8 +11,8 @@ export const TransactionCardSkeleton = () => {
       <div className="w-full flex-1 space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-medium">
           <div className="flex items-center gap-2">
-            <Skeleton className="h-[26px] w-28 rounded-lg" />
-            <Skeleton className="h-[26px] w-20 rounded-lg" />
+            <Skeleton className="h-[22px] w-28 rounded-lg" />
+            <Skeleton className="h-[22px] w-20 rounded-lg" />
           </div>
           <div className="block xl:hidden">
             <Skeleton className="size-9 rounded-md" />

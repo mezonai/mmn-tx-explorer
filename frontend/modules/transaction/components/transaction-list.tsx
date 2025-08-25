@@ -12,7 +12,7 @@ import { GlobalSearch } from '@/modules/global-search/components';
 import { ETransactionTab, ITransaction, ITransactionListParams, TransactionService } from '@/modules/transaction';
 import { IPaginationMeta } from '@/types';
 import { TransactionCards, TransactionsTable } from './list';
-import { StatsGrid } from './stats';
+import { StatGrids } from './stats';
 
 const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
   page: DEFAULT_PAGINATION.PAGE,
@@ -39,7 +39,10 @@ export const TransactionsList = () => {
       const { tab: _omit, ...queryParams } = params;
       void _omit;
 
-      const { data, meta } = await TransactionService.getTransactions(queryParams);
+      const { data, meta } = await TransactionService.getTransactions({
+        ...queryParams,
+        page: queryParams.page - 1,
+      });
       setTransactions(data);
       setPagination(meta);
     } catch (error) {
@@ -79,7 +82,7 @@ export const TransactionsList = () => {
         <h1 className="text-2xl font-semibold">Transactions</h1>
       </div>
 
-      <StatsGrid />
+      <StatGrids />
 
       <div className="space-y-6">
         <div className="flex flex-col items-center justify-between gap-5 md:flex-row">

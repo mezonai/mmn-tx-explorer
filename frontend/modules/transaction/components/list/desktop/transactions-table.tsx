@@ -10,7 +10,7 @@ import { Table } from '@/components/ui/table';
 import { DATE_TIME_FORMAT } from '@/constant';
 import { ITransaction } from '@/modules/transaction';
 import { TTableColumn } from '@/types';
-import { DateTimeUtil } from '@/utils';
+import { DateTimeUtil, NumberUtil } from '@/utils';
 import { FromToAddresses, MethodBadge, MoreInfoButton, TxnHashLink, TypeBadges } from '../shared';
 
 interface TransactionsTableProps {
@@ -53,7 +53,9 @@ export const TransactionsTable = ({ transactions }: TransactionsTableProps) => {
     {
       header: 'Type',
       field: 'transaction_type',
-      valueGetter: () => <TypeBadges className="flex-col items-start" />,
+      valueGetter: (row) => (
+        <TypeBadges className="flex-col items-start" type={row.transaction_type} status={row.status} />
+      ),
     },
     {
       header: 'Method',
@@ -74,8 +76,8 @@ export const TransactionsTable = ({ transactions }: TransactionsTableProps) => {
       valueGetter: (row) => <FromToAddresses fromAddress={row.from_address} toAddress={row.to_address} />,
     },
     {
-      header: 'Value ETH',
-      field: 'value',
+      header: 'Value Token',
+      valueGetter: (row) => NumberUtil.formatWithCommas(row.value),
     },
   ];
 

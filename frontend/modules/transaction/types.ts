@@ -1,4 +1,4 @@
-import { ETransactionTab } from './enums';
+import { ETransactionStatus, ETransactionTab, ETransactionType } from './enums';
 
 export interface ITransaction {
   access_list_json: string;
@@ -24,10 +24,10 @@ export interface ITransaction {
   nonce: number;
   r: string;
   s: string;
-  status: number;
+  status: ETransactionStatus;
   to_address: string;
   transaction_index: number;
-  transaction_type: number;
+  transaction_type: ETransactionType;
   v: string;
   value: string;
 }

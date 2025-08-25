@@ -1,6 +1,6 @@
 import { Transaction } from '@/assets/icons';
 import { ITransaction } from '@/modules/transaction';
-import { DateTimeUtil } from '@/utils';
+import { DateTimeUtil, NumberUtil } from '@/utils';
 import { FromToAddresses, MoreInfoButton, TxnHashLink, TypeBadges } from '../shared';
 
 interface TransactionCardProps {
@@ -16,7 +16,7 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
 
       <div className="w-full flex-1 space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-medium">
-          <TypeBadges />
+          <TypeBadges type={transaction.transaction_type} status={transaction.status} />
           <div className="block xl:hidden">
             <MoreInfoButton transaction={transaction} />
           </div>
@@ -35,7 +35,7 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
       <div className="flex w-full justify-between gap-2 text-sm font-medium xl:w-auto xl:justify-center">
         <div className="flex w-full justify-between gap-2">
           <span>Value</span>
-          <span className="font-medium">{transaction.value} ETH</span>
+          <span className="font-medium">{NumberUtil.formatWithCommas(transaction.value)} Token</span>
         </div>
       </div>
     </div>
