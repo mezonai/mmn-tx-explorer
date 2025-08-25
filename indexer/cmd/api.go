@@ -85,6 +85,10 @@ func RunApi(cmd *cobra.Command, args []string) {
 		// blocks table queries
 		root.GET("/blocks", handlers.GetBlocks)
 
+
+		// stats queries
+		root.GET("/stats", handlers.GetStats)
+
 		// token balance queries
 		root.GET("/balances/:owner/:type", handlers.GetTokenBalancesByType)
 
