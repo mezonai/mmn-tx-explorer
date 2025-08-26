@@ -7,9 +7,12 @@ import { DATE_TIME_FORMAT } from '@/constant';
 import { DateTimeUtil } from '@/utils';
 import { format } from 'date-fns';
 import { Clock4 } from 'lucide-react';
-import { ButtonNavigateBlock } from './button-navigate';
+import Link from 'next/link';
+import { ButtonNavigateBlock } from '.';
+import { IBlockDetails } from '../../../types';
 
-export const TabDetails = () => {
+export const TabDetails = ({ blockDetails }: { blockDetails: IBlockDetails }) => {
+  console.log('blockDetails', blockDetails);
   return (
     <div className="space-y-5">
       <ItemAttribute
@@ -17,16 +20,10 @@ export const TabDetails = () => {
         description="The height of the block"
         render={
           <div className="flex items-center">
-            <span>12132131</span>
+            <span>{blockDetails.block.block_number}</span>
             <div className="ml-2 flex items-center gap-2">
-              <ButtonNavigateBlock
-                direction="previous"
-                blockHash="0xabc123def4567890ghijklmnopqrstu1234567890vwxyz1234567890abcdef"
-              />
-              <ButtonNavigateBlock
-                direction="next"
-                blockHash="0xabc123def4567890ghijklmnopqrstu1234567890vwxyz1234567890abcdef"
-              />
+              <ButtonNavigateBlock direction="previous" blockNumber={blockDetails.block.block_number - 1} />
+              <ButtonNavigateBlock direction="next" blockNumber={blockDetails.block.block_number + 1} />
             </div>
           </div>
         }
@@ -36,7 +33,7 @@ export const TabDetails = () => {
         description="The size of the block"
         render={
           <div>
-            <span>1234567890</span>
+            <span>{blockDetails.block.size}</span>
           </div>
         }
       />
@@ -45,7 +42,7 @@ export const TabDetails = () => {
         description="The number of transactions in the block"
         render={
           <div>
-            <span>1234567890</span>
+            <span>{blockDetails.block.transaction_count}</span>
           </div>
         }
       />
@@ -55,10 +52,8 @@ export const TabDetails = () => {
         render={
           <div className="flex items-center">
             <ValidatorThumb />
-            <EllipsisText className="text-brand-secondary-700 ml-2">
-              0xabc123def4567890ghijklmnopqrstu1234567890vwxyz1234567890abcdef
-            </EllipsisText>
-            <CopyButton textToCopy="0xabc123def4567890ghijklmnopqrstu1234567890vwxyz1234567890abcdef" />
+            <EllipsisText className="text-brand-secondary-700 ml-2">{blockDetails.block.miner}</EllipsisText>
+            <CopyButton textToCopy={blockDetails.block.miner} />
           </div>
         }
       />
@@ -68,9 +63,11 @@ export const TabDetails = () => {
         render={
           <div className="flex items-center space-x-2">
             <Clock4 className="text-foreground-quaternary-400 size-4" />
-            <span>{DateTimeUtil.formatRelativeTime(new Date('2025-08-18T20:54:35.000Z'))}</span>
+            <span>{DateTimeUtil.formatRelativeTime(new Date(blockDetails.block.block_timestamp))}</span>
             <span>|</span>
-            <span>{format('2025-08-18T20:54:35.000Z', DATE_TIME_FORMAT.HUMAN_READABLE_WITH_OFFSET)}</span>
+            <span>
+              {format(new Date(blockDetails.block.block_timestamp), DATE_TIME_FORMAT.HUMAN_READABLE_WITH_OFFSET)}
+            </span>
           </div>
         }
       />
@@ -80,10 +77,8 @@ export const TabDetails = () => {
         description="The hash of the block"
         render={
           <div className="flex items-center">
-            <EllipsisText className="text-brand-secondary-700">
-              0xabc123def4567890ghijklmnopqrstu1234567890vwxyz1234567890abcdefsssssssssssssssssssssssssssssssssssssssssssssssssssss
-            </EllipsisText>
-            <CopyButton textToCopy="0xabc123def4567890ghijklmnopqrstu1234567890vwxyz1234567890abcdef" />
+            <EllipsisText className="text-brand-secondary-700">{blockDetails.block.block_hash}</EllipsisText>
+            <CopyButton textToCopy={blockDetails.block.block_hash} />
           </div>
         }
       />
@@ -92,12 +87,10 @@ export const TabDetails = () => {
         description="The hash of the parent block"
         render={
           <div className="flex items-center">
-            {/* <Link href="/blocks/1234567890" className="w-full flex-1"> */}
-            <EllipsisText className="text-brand-secondary-700">
-              0xabc123def4567890ghijklmnopqrstu1234567890vwxyz1234567890abcdef
-            </EllipsisText>
-            {/* </Link> */}
-            <CopyButton textToCopy="0x1234567890" />
+            <Link href="/blocks/1234567890" className="w-full flex-1">
+              <EllipsisText className="text-brand-secondary-700">{blockDetails.block.parent_hash}</EllipsisText>
+            </Link>
+            <CopyButton textToCopy={blockDetails.block.parent_hash} />
           </div>
         }
       />

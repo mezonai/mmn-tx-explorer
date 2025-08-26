@@ -1,3 +1,5 @@
+import { ITransaction } from '../transaction';
+
 export interface IBlock {
   base_fee_per_gas: number;
   block_hash: string;
@@ -28,4 +30,13 @@ export interface IBLockListParams {
   limit: number;
   sort_by: keyof IBlock;
   sort_order: 'asc' | 'desc';
+}
+
+export interface IBlockDetailsResponse {
+  data: IBlockDetails;
+}
+
+export interface IBlockDetails {
+  block: IBlock;
+  transactions: ITransaction[];
 }

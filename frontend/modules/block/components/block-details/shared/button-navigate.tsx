@@ -5,14 +5,14 @@ import { useRouter } from 'next/navigation';
 
 interface ButtonNavigateBlockProps {
   direction: 'previous' | 'next';
-  blockHash: string;
+  blockNumber: number;
 }
 
-export const ButtonNavigateBlock = ({ direction, blockHash }: ButtonNavigateBlockProps) => {
+export const ButtonNavigateBlock = ({ direction, blockNumber }: ButtonNavigateBlockProps) => {
   const router = useRouter();
 
   const handleNavigate = () => {
-    router.push(`/blocks/${blockHash}`);
+    router.push(`/blocks/${blockNumber}`);
   };
 
   return (
