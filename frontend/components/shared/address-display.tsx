@@ -16,12 +16,12 @@ export const AddressDisplay = ({ address, className, addressClassName }: Address
       <div className="w-full">
         <MiddleTruncate
           end={ADDRESS_END_VISIBLE_CHARS}
-          className={cn('text-primary text-sm font-normal', addressClassName)}
+          className={cn('text-primary flex h-6 items-center text-sm font-normal', addressClassName)}
         >
           {address}
         </MiddleTruncate>
       </div>
-      <CopyButton textToCopy={address} className="text-muted-foreground size-4" />
+      <CopyButton textToCopy={address} />
     </div>
   );
 };

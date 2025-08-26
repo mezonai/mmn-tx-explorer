@@ -6,13 +6,23 @@ import { useState } from 'react';
 
 import { Clock } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Table } from '@/components/ui/table';
 import { APP_CONFIG } from '@/configs/app.config';
 import { DATE_TIME_FORMAT } from '@/constant';
 import { ITransaction } from '@/modules/transaction';
 import { TTableColumn } from '@/types';
 import { DateTimeUtil, NumberUtil } from '@/utils';
-import { FromToAddresses, MoreInfoButton, TxnHashLink, TypeBadges } from '../shared';
+import {
+  FromToAddresses,
+  FromToAddressesSkeleton,
+  MoreInfoButton,
+  MoreInfoButtonSkeleton,
+  TxnHashLink,
+  TxnHashLinkSkeleton,
+  TypeBadges,
+  TypeBadgesSkeleton,
+} from '../shared';
 
 interface TransactionsTableProps {
   transactions?: ITransaction[];
@@ -28,10 +38,11 @@ export const TransactionsTable = ({ transactions, skeletonLength }: Transactions
 
   const columns: TTableColumn<ITransaction>[] = [
     {
-      valueGetter: (row) => <MoreInfoButton transaction={row} />,
+      renderCell: (row) => <MoreInfoButton transaction={row} />,
+      skeletonContent: <MoreInfoButtonSkeleton />,
     },
     {
-      header: (
+      headerContent: (
         <div className="flex items-center gap-1">
           <span>TXN Hash</span>
           <Button variant="ghost" size="icon" className="p-0" onClick={toggleShowAbsoluteTime}>
@@ -39,48 +50,55 @@ export const TransactionsTable = ({ transactions, skeletonLength }: Transactions
           </Button>
         </div>
       ),
-      valueGetter: (row) => {
-        return (
-          <div className="flex flex-col items-start">
-            <TxnHashLink hash={row.hash} className="w-40" />
-            <span className="text-muted-foreground text-sm">
-              {showAbsoluteTime
-                ? format(row.block_timestamp * 1000, DATE_TIME_FORMAT.HUMAN_READABLE_SHORT)
-                : DateTimeUtil.formatRelativeTime(row.block_timestamp * 1000)}
-            </span>
-          </div>
-        );
-      },
-    },
-    {
-      header: 'Type',
-      field: 'transaction_type',
-      valueGetter: (row) => (
-        <TypeBadges className="flex-col items-start" type={row.transaction_type} status={row.status} />
+      renderCell: (row) => (
+        <div className="flex flex-col items-start">
+          <TxnHashLink hash={row.hash} className="w-40" />
+          <span className="text-muted-foreground text-sm">
+            {showAbsoluteTime
+              ? format(DateTimeUtil.toMilliseconds(row.block_timestamp), DATE_TIME_FORMAT.HUMAN_READABLE_SHORT)
+              : DateTimeUtil.formatRelativeTimeSec(row.block_timestamp)}
+          </span>
+        </div>
+      ),
+      skeletonContent: (
+        <div className="flex flex-col items-start gap-1">
+          <TxnHashLinkSkeleton className="w-40" />
+          <Skeleton className="h-5 w-16" />
+        </div>
       ),
     },
     {
-      header: 'Block',
-      valueGetter: (row) => {
+      headerContent: 'Type',
+      dataKey: 'transaction_type',
+      renderCell: (row) => (
+        <TypeBadges className="flex-col items-start" type={row.transaction_type} status={row.status} />
+      ),
+      skeletonContent: <TypeBadgesSkeleton className="flex-col items-start" />,
+    },
+    {
+      headerContent: 'Block',
+      renderCell: (row) => {
         return (
-          <Button variant="link" className="p-0" asChild>
+          <Button variant="link" className="h-fit p-0" asChild>
             <Link href={`/blocks/${row.block_number}`}>{row.block_number}</Link>
           </Button>
         );
       },
     },
     {
-      header: 'From/To',
-      valueGetter: (row) => <FromToAddresses fromAddress={row.from_address} toAddress={row.to_address} />,
+      headerContent: 'From/To',
+      renderCell: (row) => <FromToAddresses fromAddress={row.from_address} toAddress={row.to_address} />,
+      skeletonContent: <FromToAddressesSkeleton />,
     },
     {
-      header: `Value ${APP_CONFIG.CHAIN_SYMBOL}`,
-      valueGetter: (row) => NumberUtil.formatWithCommas(row.value),
+      headerContent: `Value ${APP_CONFIG.CHAIN_SYMBOL}`,
+      renderCell: (row) => NumberUtil.formatWithCommas(row.value),
     },
   ];
 
   return (
     <Table
+      getRowKey={(row) => row.hash}
       columns={columns}
       rows={transactions}
       skeletonLength={skeletonLength}

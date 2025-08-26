@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ComponentType, ReactNode } from 'react';
 
 import { DATE_TIME_FORMAT } from '@/constant';
+import { DateTimeUtil } from '@/utils';
 
 interface SearchResultItemProps {
   href: string;
@@ -23,7 +24,7 @@ export const SearchResultItem = ({ href, icon: Icon, title, timestamp }: SearchR
       </div>
       <div className="flex flex-col items-start gap-1 lg:w-auto lg:flex-row lg:items-center lg:gap-2">
         <span className="line-clamp-1 text-sm font-medium">
-          {format(timestamp * 1000, DATE_TIME_FORMAT.HUMAN_READABLE_WITH_OFFSET)}
+          {format(DateTimeUtil.toMilliseconds(timestamp), DATE_TIME_FORMAT.HUMAN_READABLE_WITH_OFFSET)}
         </span>
       </div>
     </Link>

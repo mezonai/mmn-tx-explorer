@@ -1,3 +1,3 @@
-export * from './use-breakpoint';
-export * from './use-debounce';
-export * from './use-query-param';
+export * from './useBreakpoint';
+export * from './useDebounce';
+export * from './useQueryParam';

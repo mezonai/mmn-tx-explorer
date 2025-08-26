@@ -30,9 +30,7 @@ export const BlockCard = ({ block }: BlockCardProps) => {
               </Link>
             </Button>
           </div>
-          <p className="text-muted-foreground text-sm">
-            {DateTimeUtil.formatRelativeTime(block.block_timestamp * 1000)}
-          </p>
+          <p className="text-muted-foreground text-sm">{DateTimeUtil.formatRelativeTimeSec(block.block_timestamp)}</p>
         </div>
         <div className="space-y-2 text-sm font-medium">
           <div className="flex items-center justify-between gap-2">
@@ -42,7 +40,10 @@ export const BlockCard = ({ block }: BlockCardProps) => {
           <div className="flex items-center justify-between gap-2">
             <span className="text-muted-foreground">Validator</span>
             <div className="w-24">
-              <MiddleTruncate end={ADDRESS_END_VISIBLE_CHARS} className="text-primary text-right font-normal">
+              <MiddleTruncate
+                end={ADDRESS_END_VISIBLE_CHARS}
+                className="text-primary block w-full text-right font-normal"
+              >
                 {block.miner}
               </MiddleTruncate>
             </div>

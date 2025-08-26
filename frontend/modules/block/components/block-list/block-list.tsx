@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import { Pagination } from '@/components/ui/pagination';
-import { DEFAULT_PAGINATION } from '@/constant';
+import { PAGINATION } from '@/constant';
 import { EBreakpoint } from '@/enums';
 import { useBreakpoint, useQueryParam } from '@/hooks';
 import { BlockService, IBlock, IBLockListParams } from '@/modules/block';
@@ -12,8 +12,8 @@ import { IPaginationMeta } from '@/types';
 import { BlockCards, BlocksTable } from './list';
 
 const DEFAULT_VALUE_DATA_SEARCH: IBLockListParams = {
-  page: DEFAULT_PAGINATION.PAGE,
-  limit: DEFAULT_PAGINATION.LIMIT,
+  page: PAGINATION.DEFAULT_PAGE,
+  limit: PAGINATION.DEFAULT_LIMIT,
   sort_by: 'block_number',
   sort_order: 'desc',
 } as const;
@@ -26,11 +26,11 @@ export const BlockList = () => {
   const [localSearchParams, setLocalSearchParams] = useState<IBLockListParams>();
   const { value: page, handleChangeValue: handleChangePage } = useQueryParam<number>({
     queryParam: 'page',
-    defaultValue: DEFAULT_PAGINATION.PAGE,
+    defaultValue: PAGINATION.DEFAULT_PAGE,
   });
   const { value: limit, handleChangeValue: handleChangeLimit } = useQueryParam<number>({
     queryParam: 'limit',
-    defaultValue: DEFAULT_PAGINATION.LIMIT,
+    defaultValue: PAGINATION.DEFAULT_LIMIT,
     clearParams: ['page'],
   });
 
@@ -76,7 +76,7 @@ export const BlockList = () => {
           <Pagination
             page={page}
             limit={limit}
-            totalPages={pagination?.total_pages ?? DEFAULT_PAGINATION.PAGE}
+            totalPages={pagination?.total_pages ?? 0}
             totalItems={pagination?.total_items ?? 0}
             isLoading={isLoading}
             className="ml-auto"
@@ -87,14 +87,14 @@ export const BlockList = () => {
 
         <>
           {isDesktop === undefined ? (
-            <>
+            <div>
               <div className="hidden lg:block">
                 <BlocksTable blocks={blocks} skeletonLength={limit} />
               </div>
               <div className="lg:hidden">
                 <BlockCards blocks={blocks} skeletonLength={limit} />
               </div>
-            </>
+            </div>
           ) : isDesktop ? (
             <BlocksTable blocks={blocks} skeletonLength={limit} />
           ) : (

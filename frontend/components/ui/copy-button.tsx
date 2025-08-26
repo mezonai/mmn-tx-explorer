@@ -19,17 +19,20 @@ export const CopyButton = ({ textToCopy, className }: CopyButtonProps) => {
     const textarea = document.createElement('textarea');
     textarea.value = text;
     textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
     document.body.appendChild(textarea);
     textarea.focus();
     textarea.select();
+    textarea.setSelectionRange(0, text.length);
     try {
       document.execCommand('copy');
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     } catch (err) {
       console.error('Fallback: Oops, unable to copy', err);
+    } finally {
+      document.body.removeChild(textarea);
     }
-    document.body.removeChild(textarea);
   };
 
   const handleCopy = async () => {
@@ -61,7 +64,7 @@ export const CopyButton = ({ textToCopy, className }: CopyButtonProps) => {
         <Button
           variant="ghost"
           size="icon"
-          className={cn('size-4 flex-shrink-0 align-middle', className)}
+          className={cn('text-muted-foreground size-4 flex-shrink-0 align-middle', className)}
           onClick={handleCopy}
         >
           {isCopied ? <CheckCheck /> : <Copy />}

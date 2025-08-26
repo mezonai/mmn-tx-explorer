@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { DEFAULT_PAGINATION, LIMITS } from '@/constant';
+import { LIMITS, PAGINATION } from '@/constant';
 import { cn } from '@/lib/utils';
 import { NumberUtil } from '@/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';
@@ -29,14 +29,14 @@ interface PaginationState {
 
 // Helper function to normalize page number
 const normalizePage = (page: number, totalPages: number): number => {
-  if (page <= DEFAULT_PAGINATION.PAGE) return DEFAULT_PAGINATION.PAGE;
+  if (page <= PAGINATION.MIN_PAGE) return PAGINATION.MIN_PAGE;
   if (page >= totalPages) return totalPages;
   return page;
 };
 
 // Helper function to validate page change
 const isValidPageChange = (targetPage: number, totalPages: number): boolean => {
-  return targetPage >= DEFAULT_PAGINATION.PAGE && targetPage <= totalPages;
+  return targetPage >= PAGINATION.MIN_PAGE && targetPage <= totalPages;
 };
 
 // Helper function to calculate pagination state
@@ -45,11 +45,11 @@ const calculatePaginationState = (page: number, totalPages: number): PaginationS
 
   return {
     currentPage,
-    canGoPrevious: currentPage > DEFAULT_PAGINATION.PAGE,
+    canGoPrevious: currentPage > PAGINATION.MIN_PAGE,
     canGoNext: currentPage < totalPages,
-    showPreviousEllipsis: currentPage > 2,
+    showPreviousEllipsis: currentPage > PAGINATION.MIN_PAGE + 1,
     showNextEllipsis: currentPage < totalPages - 1,
-    showPreviousPage: currentPage > 1,
+    showPreviousPage: currentPage > PAGINATION.MIN_PAGE,
     showNextPage: currentPage < totalPages,
   };
 };
@@ -112,8 +112,6 @@ export const Pagination = ({
   onChangePage,
   onChangeLimit,
 }: PaginationProps) => {
-  const paginationState = calculatePaginationState(page, totalPages);
-
   const {
     currentPage,
     canGoPrevious,
@@ -122,10 +120,12 @@ export const Pagination = ({
     showNextEllipsis,
     showPreviousPage,
     showNextPage,
-  } = paginationState;
+  } = calculatePaginationState(page, totalPages);
 
   // Handle page change with validation
   const handleChangePage = (targetPage: number) => {
+    if (isLoading) return;
+
     if (isValidPageChange(targetPage, totalPages)) {
       onChangePage(targetPage);
     }
@@ -133,6 +133,8 @@ export const Pagination = ({
 
   // Handle limit change
   const handleChangeLimit = (limitString: string) => {
+    if (isLoading) return;
+
     const newLimit = Number(limitString);
     if (LIMITS.includes(newLimit as (typeof LIMITS)[number])) {
       onChangeLimit(newLimit);
@@ -143,9 +145,9 @@ export const Pagination = ({
     <div className={cn('flex flex-wrap items-center justify-end gap-x-4 gap-y-2 sm:flex-nowrap', className)}>
       {/* Limit selector and total items display */}
       <div className="flex items-center gap-2">
-        <Select value={limit.toString()} onValueChange={handleChangeLimit}>
+        <Select value={limit.toString()} disabled={isLoading} onValueChange={handleChangeLimit}>
           <SelectTrigger className="h-10">
-            <SelectValue placeholder={DEFAULT_PAGINATION.LIMIT.toString()} />
+            <SelectValue placeholder={PAGINATION.DEFAULT_LIMIT.toString()} />
           </SelectTrigger>
           <SelectContent>
             {LIMITS.map((limitOption) => (
@@ -165,7 +167,7 @@ export const Pagination = ({
         {/* First page button */}
         <NavigationButton
           icon={ChevronsLeft}
-          onClick={() => handleChangePage(DEFAULT_PAGINATION.PAGE)}
+          onClick={() => handleChangePage(PAGINATION.MIN_PAGE)}
           disabled={isLoading || !canGoPrevious}
           className="rounded-r-none"
           aria-label="Go to first page"
@@ -183,8 +185,8 @@ export const Pagination = ({
         {/* Previous ellipsis */}
         {showPreviousEllipsis && (
           <PageButton
-            pageNumber={currentPage - 2}
-            onClick={() => handleChangePage(currentPage - 2)}
+            pageNumber={currentPage - PAGINATION.ELLIPSIS_THRESHOLD}
+            onClick={() => handleChangePage(currentPage - PAGINATION.ELLIPSIS_THRESHOLD)}
             disabled={isLoading}
             isEllipsis
           />
@@ -221,8 +223,8 @@ export const Pagination = ({
         {/* Next ellipsis */}
         {showNextEllipsis && (
           <PageButton
-            pageNumber={currentPage + 2}
-            onClick={() => handleChangePage(currentPage + 2)}
+            pageNumber={currentPage + PAGINATION.ELLIPSIS_THRESHOLD}
+            onClick={() => handleChangePage(currentPage + PAGINATION.ELLIPSIS_THRESHOLD)}
             disabled={isLoading}
             isEllipsis
           />

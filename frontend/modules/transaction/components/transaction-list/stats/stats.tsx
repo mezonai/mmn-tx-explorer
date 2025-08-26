@@ -7,11 +7,11 @@ import { DashboardService, IDashboardStats } from '@/modules/dashboard';
 import { StatCard } from './stat-card';
 import { StatCardSkeleton } from './stat-card-skeleton';
 
-interface IStatsProps {
+interface StatsProps {
   className?: string;
 }
 
-export const Stats = ({ className }: IStatsProps) => {
+export const Stats = ({ className }: StatsProps) => {
   const [stats, setStats] = useState<IDashboardStats>();
 
   const statCards = [

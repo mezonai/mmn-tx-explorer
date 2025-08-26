@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { InfoSquare } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Skeleton } from '@/components/ui/skeleton';
 import { getTransactionTypeLabel, ITransaction } from '@/modules/transaction';
 
 interface MoreInfoButtonProps {
@@ -38,4 +39,8 @@ export const MoreInfoButton = ({ transaction }: MoreInfoButtonProps) => {
       </PopoverContent>
     </Popover>
   );
+};
+
+export const MoreInfoButtonSkeleton = () => {
+  return <Skeleton className="size-9" />;
 };

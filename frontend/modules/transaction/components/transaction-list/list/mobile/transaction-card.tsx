@@ -26,7 +26,7 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
           <Transaction className="text-muted-foreground size-6" />
           <TxnHashLink hash={transaction.hash} />
           <p className="text-muted-foreground text-sm whitespace-nowrap">
-            {DateTimeUtil.formatRelativeTime(transaction.block_timestamp * 1000)}
+            {DateTimeUtil.formatRelativeTimeSec(transaction.block_timestamp)}
           </p>
         </div>
       </div>

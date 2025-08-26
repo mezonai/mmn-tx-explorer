@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { Pagination } from '@/components/ui/pagination';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DEFAULT_PAGINATION } from '@/constant';
+import { PAGINATION } from '@/constant';
 import { EBreakpoint } from '@/enums';
 import { useBreakpoint, useQueryParam } from '@/hooks';
 import { GlobalSearch } from '@/modules/global-search/components';
@@ -14,8 +14,8 @@ import { TransactionCards, TransactionsTable } from './list';
 import { Stats } from './stats';
 
 const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
-  page: DEFAULT_PAGINATION.PAGE,
-  limit: DEFAULT_PAGINATION.LIMIT,
+  page: PAGINATION.DEFAULT_PAGE,
+  limit: PAGINATION.DEFAULT_LIMIT,
   sort_by: 'block_timestamp',
   sort_order: 'desc',
   tab: ETransactionTab.Validated,
@@ -29,11 +29,11 @@ export const TransactionsList = () => {
   const [localSearchParams, setLocalSearchParams] = useState<ITransactionListParams>();
   const { value: page, handleChangeValue: handleChangePage } = useQueryParam<number>({
     queryParam: 'page',
-    defaultValue: DEFAULT_PAGINATION.PAGE,
+    defaultValue: PAGINATION.DEFAULT_PAGE,
   });
   const { value: limit, handleChangeValue: handleChangeLimit } = useQueryParam<number>({
     queryParam: 'limit',
-    defaultValue: DEFAULT_PAGINATION.LIMIT,
+    defaultValue: PAGINATION.DEFAULT_LIMIT,
     clearParams: ['page'],
   });
   const { value: tab, handleChangeValue: handleChangeTab } = useQueryParam<ETransactionTab>({
@@ -111,7 +111,7 @@ export const TransactionsList = () => {
           <Pagination
             page={page}
             limit={limit}
-            totalPages={pagination?.total_pages ?? DEFAULT_PAGINATION.PAGE}
+            totalPages={pagination?.total_pages ?? 0}
             totalItems={pagination?.total_items ?? 0}
             isLoading={isLoading}
             className="self-end"
@@ -122,14 +122,14 @@ export const TransactionsList = () => {
 
         <>
           {isDesktop === undefined ? (
-            <>
+            <div>
               <div className="hidden lg:block">
                 <TransactionsTable transactions={transactions} skeletonLength={limit} />
               </div>
               <div className="block lg:hidden">
                 <TransactionCards transactions={transactions} skeletonLength={limit} />
               </div>
-            </>
+            </div>
           ) : isDesktop ? (
             <TransactionsTable transactions={transactions} skeletonLength={limit} />
           ) : (

@@ -1,7 +1,8 @@
 import { ReactNode } from 'react';
 
 export type TTableColumn<T> = {
-  header?: ReactNode;
-  field?: keyof T;
-  valueGetter?: (row: T) => ReactNode;
+  headerContent?: ReactNode;
+  dataKey?: keyof T;
+  renderCell?: (row: T) => ReactNode;
+  skeletonContent?: ReactNode;
 };

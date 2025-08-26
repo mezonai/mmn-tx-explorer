@@ -1,4 +1,4 @@
-import { DEFAULT_PAGINATION } from '@/constant';
+import { PAGINATION } from '@/constant';
 import { ITransaction } from '@/modules/transaction';
 import { TransactionCard } from './transaction-card';
 import { TransactionCardSkeleton } from './transaction-card-skeleton';
@@ -10,7 +10,7 @@ interface TransactionCardsProps {
 
 export const TransactionCards = ({
   transactions,
-  skeletonLength = DEFAULT_PAGINATION.LIMIT,
+  skeletonLength = PAGINATION.DEFAULT_LIMIT,
 }: TransactionCardsProps) => {
   return (
     <div className="space-y-4">

@@ -9,15 +9,15 @@ export const BlockCardSkeleton = () => {
       </div>
       <div className="flex items-center justify-between">
         <span>Hash</span>
-        <Skeleton className="h-5 w-32" />
+        <Skeleton className="h-6 w-32" />
       </div>
       <div className="flex items-center justify-between">
         <span>Parent hash</span>
-        <Skeleton className="h-5 w-32" />
+        <Skeleton className="h-6 w-32" />
       </div>
       <div className="flex items-center justify-between">
         <span>Validator</span>
-        <Skeleton className="h-5 w-32" />
+        <Skeleton className="h-6 w-32" />
       </div>
       <div className="flex items-center justify-between">
         <span>Txn</span>
