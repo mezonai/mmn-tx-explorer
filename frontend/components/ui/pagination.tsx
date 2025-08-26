@@ -1,68 +1,251 @@
-'use client';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
-import ReactPaginate from 'react-paginate';
-
-import { ChevronLeft, ChevronLeftDouble, ChevronRight, ChevronRightDouble } from '@/assets/icons';
-import { DEFAULT_PAGINATION } from '@/constant';
+import { Button } from '@/components/ui/button';
+import { DEFAULT_PAGINATION, LIMITS } from '@/constant';
 import { cn } from '@/lib/utils';
-import { TOnChangePage } from '@/types';
+import { NumberUtil } from '@/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';
 
-type PaginationProps = {
+interface PaginationProps {
   page: number;
+  limit: number;
   totalPages: number;
-  onChangePage: TOnChangePage;
+  totalItems: number;
+  isLoading?: boolean;
   className?: string;
+  onChangePage: (page: number) => void;
+  onChangeLimit: (limit: number) => void;
+}
+
+interface PaginationState {
+  currentPage: number;
+  canGoPrevious: boolean;
+  canGoNext: boolean;
+  showPreviousEllipsis: boolean;
+  showNextEllipsis: boolean;
+  showPreviousPage: boolean;
+  showNextPage: boolean;
+}
+
+// Helper function to normalize page number
+const normalizePage = (page: number, totalPages: number): number => {
+  if (page <= DEFAULT_PAGINATION.PAGE) return DEFAULT_PAGINATION.PAGE;
+  if (page >= totalPages) return totalPages;
+  return page;
 };
 
-export const Pagination = ({ page, totalPages, onChangePage, className }: PaginationProps) => {
-  const isFirstPage = page <= 1;
-  const isLastPage = totalPages <= 0 || page >= totalPages;
+// Helper function to validate page change
+const isValidPageChange = (targetPage: number, totalPages: number): boolean => {
+  return targetPage >= DEFAULT_PAGINATION.PAGE && targetPage <= totalPages;
+};
 
-  const baseBtnClass =
-    'focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive bg-background hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 inline-flex size-10 shrink-0 cursor-pointer items-center justify-center border text-sm font-medium whitespace-nowrap shadow-xs transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50';
+// Helper function to calculate pagination state
+const calculatePaginationState = (page: number, totalPages: number): PaginationState => {
+  const currentPage = normalizePage(page, totalPages);
+
+  return {
+    currentPage,
+    canGoPrevious: currentPage > DEFAULT_PAGINATION.PAGE,
+    canGoNext: currentPage < totalPages,
+    showPreviousEllipsis: currentPage > 2,
+    showNextEllipsis: currentPage < totalPages - 1,
+    showPreviousPage: currentPage > 1,
+    showNextPage: currentPage < totalPages,
+  };
+};
+
+// Component for navigation button with icon
+const NavigationButton = ({
+  icon: Icon,
+  onClick,
+  disabled,
+  className,
+  'aria-label': ariaLabel,
+}: {
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  onClick: () => void;
+  disabled: boolean;
+  className?: string;
+  'aria-label': string;
+}) => (
+  <Button
+    variant="outline"
+    className={cn('aspect-square size-10 p-2.5', className)}
+    onClick={onClick}
+    disabled={disabled}
+    aria-label={ariaLabel}
+  >
+    <Icon className="text-muted-foreground size-5" strokeWidth={1.3} />
+  </Button>
+);
+
+// Component for page number button
+const PageButton = ({
+  pageNumber,
+  onClick,
+  disabled,
+  isEllipsis = false,
+}: {
+  pageNumber: number;
+  onClick: () => void;
+  disabled: boolean;
+  isEllipsis?: boolean;
+}) => (
+  <Button
+    variant="outline"
+    className="hidden h-10 min-w-10 rounded-none p-2.5 md:block"
+    onClick={onClick}
+    disabled={disabled}
+    aria-label={isEllipsis ? 'More pages' : `Go to page ${pageNumber}`}
+  >
+    <span className="text-foreground text-sm font-semibold">{isEllipsis ? '...' : pageNumber}</span>
+  </Button>
+);
+
+export const Pagination = ({
+  page,
+  limit,
+  totalPages,
+  totalItems,
+  isLoading = false,
+  className,
+  onChangePage,
+  onChangeLimit,
+}: PaginationProps) => {
+  const paginationState = calculatePaginationState(page, totalPages);
+
+  const {
+    currentPage,
+    canGoPrevious,
+    canGoNext,
+    showPreviousEllipsis,
+    showNextEllipsis,
+    showPreviousPage,
+    showNextPage,
+  } = paginationState;
+
+  // Handle page change with validation
+  const handleChangePage = (targetPage: number) => {
+    if (isValidPageChange(targetPage, totalPages)) {
+      onChangePage(targetPage);
+    }
+  };
+
+  // Handle limit change
+  const handleChangeLimit = (limitString: string) => {
+    const newLimit = Number(limitString);
+    if (LIMITS.includes(newLimit as (typeof LIMITS)[number])) {
+      onChangeLimit(newLimit);
+    }
+  };
 
   return (
-    <div className={cn('flex items-center justify-center select-none', className)}>
-      <button
-        type="button"
-        className={cn(baseBtnClass, 'rounded-l-lg border', isFirstPage && 'pointer-events-none opacity-50')}
-        disabled={isFirstPage}
-        aria-label="Go to first page"
-        onClick={() => onChangePage(1)}
-      >
-        <ChevronLeftDouble className="text-muted-foreground size-4" />
-      </button>
+    <div className={cn('flex flex-wrap items-center justify-end gap-x-4 gap-y-2 sm:flex-nowrap', className)}>
+      {/* Limit selector and total items display */}
+      <div className="flex items-center gap-2">
+        <Select value={limit.toString()} onValueChange={handleChangeLimit}>
+          <SelectTrigger className="h-10">
+            <SelectValue placeholder={DEFAULT_PAGINATION.LIMIT.toString()} />
+          </SelectTrigger>
+          <SelectContent>
+            {LIMITS.map((limitOption) => (
+              <SelectItem key={limitOption} value={limitOption.toString()}>
+                {limitOption}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <span className="text-muted-foreground text-sm font-semibold whitespace-nowrap">
+          of {NumberUtil.formatWithCommas(totalItems)}
+        </span>
+      </div>
 
-      <ReactPaginate
-        breakLabel="..."
-        previousLabel={<ChevronLeft className="text-muted-foreground size-4" />}
-        nextLabel={<ChevronRight className="text-muted-foreground size-4" />}
-        forcePage={Math.max(0, page - 1)}
-        marginPagesDisplayed={DEFAULT_PAGINATION.MARGIN_RANGE_DISPLAY}
-        pageCount={Math.max(0, totalPages)}
-        disableInitialCallback={true}
-        renderOnZeroPageCount={null}
-        className="flex items-center justify-center"
-        breakLinkClassName={cn(baseBtnClass, 'rounded-none')}
-        pageLinkClassName={cn(baseBtnClass, 'rounded-none')}
-        previousLinkClassName={cn(baseBtnClass)}
-        nextLinkClassName={cn(baseBtnClass)}
-        activeLinkClassName="!bg-primary/8 !text-foreground pointer-events-none"
-        disabledLinkClassName="opacity-50 pointer-events-none"
-        onPageChange={({ selected }) => {
-          onChangePage(selected + 1);
-        }}
-      />
+      {/* Pagination controls */}
+      <div className="flex items-center">
+        {/* First page button */}
+        <NavigationButton
+          icon={ChevronsLeft}
+          onClick={() => handleChangePage(DEFAULT_PAGINATION.PAGE)}
+          disabled={isLoading || !canGoPrevious}
+          className="rounded-r-none"
+          aria-label="Go to first page"
+        />
 
-      <button
-        type="button"
-        className={cn(baseBtnClass, 'rounded-r-lg border', isLastPage && 'pointer-events-none opacity-50')}
-        disabled={isLastPage}
-        aria-label="Go to last page"
-        onClick={() => onChangePage(totalPages)}
-      >
-        <ChevronRightDouble className="text-muted-foreground size-4" />
-      </button>
+        {/* Previous page button */}
+        <NavigationButton
+          icon={ChevronLeft}
+          onClick={() => handleChangePage(currentPage - 1)}
+          disabled={isLoading || !canGoPrevious}
+          className="rounded-none"
+          aria-label="Go to previous page"
+        />
+
+        {/* Previous ellipsis */}
+        {showPreviousEllipsis && (
+          <PageButton
+            pageNumber={currentPage - 2}
+            onClick={() => handleChangePage(currentPage - 2)}
+            disabled={isLoading}
+            isEllipsis
+          />
+        )}
+
+        {/* Previous page number */}
+        {showPreviousPage && (
+          <PageButton
+            pageNumber={currentPage - 1}
+            onClick={() => handleChangePage(currentPage - 1)}
+            disabled={isLoading}
+          />
+        )}
+
+        {/* Current page indicator */}
+        <div
+          className="bg-primary/8 flex h-10 min-w-10 cursor-default items-center justify-center border p-2.5"
+          aria-current="page"
+          role="button"
+          tabIndex={-1}
+        >
+          <span className="text-foreground text-sm font-semibold">{currentPage}</span>
+        </div>
+
+        {/* Next page number */}
+        {showNextPage && (
+          <PageButton
+            pageNumber={currentPage + 1}
+            onClick={() => handleChangePage(currentPage + 1)}
+            disabled={isLoading}
+          />
+        )}
+
+        {/* Next ellipsis */}
+        {showNextEllipsis && (
+          <PageButton
+            pageNumber={currentPage + 2}
+            onClick={() => handleChangePage(currentPage + 2)}
+            disabled={isLoading}
+            isEllipsis
+          />
+        )}
+
+        {/* Next page button */}
+        <NavigationButton
+          icon={ChevronRight}
+          onClick={() => handleChangePage(currentPage + 1)}
+          disabled={isLoading || !canGoNext}
+          className="rounded-none"
+          aria-label="Go to next page"
+        />
+
+        {/* Last page button */}
+        <NavigationButton
+          icon={ChevronsRight}
+          onClick={() => handleChangePage(totalPages)}
+          disabled={isLoading || !canGoNext}
+          className="rounded-l-none"
+          aria-label="Go to last page"
+        />
+      </div>
     </div>
   );
 };

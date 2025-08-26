@@ -12,6 +12,7 @@ type TableProps<T> = {
   showHeader?: boolean;
   nullDataContext?: string | ReactNode;
   classNameLayout?: string;
+  skeletonLength?: number;
 } & TableHTMLAttributes<HTMLTableElement>;
 
 export const Table = <T,>({
@@ -22,6 +23,7 @@ export const Table = <T,>({
   className,
   showHeader = true,
   nullDataContext = 'No data',
+  skeletonLength = DEFAULT_PAGINATION.LIMIT,
   ...props
 }: TableProps<T>) => {
   return (
@@ -43,7 +45,7 @@ export const Table = <T,>({
         )}
         <tbody className="bg-card text-foreground">
           {!rows ? (
-            Array.from({ length: DEFAULT_PAGINATION.LIMIT }).map((_, index) => (
+            Array.from({ length: skeletonLength }).map((_, index) => (
               <tr key={index} className="border-b">
                 {columns.map((_, columnIndex) => (
                   <td key={columnIndex} className="p-4">

@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { Clock } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import { Table } from '@/components/ui/table';
+import { APP_CONFIG } from '@/configs/app.config';
 import { DATE_TIME_FORMAT } from '@/constant';
 import { ITransaction } from '@/modules/transaction';
 import { TTableColumn } from '@/types';
@@ -15,9 +16,10 @@ import { FromToAddresses, MoreInfoButton, TxnHashLink, TypeBadges } from '../sha
 
 interface TransactionsTableProps {
   transactions?: ITransaction[];
+  skeletonLength?: number;
 }
 
-export const TransactionsTable = ({ transactions }: TransactionsTableProps) => {
+export const TransactionsTable = ({ transactions, skeletonLength }: TransactionsTableProps) => {
   const [showAbsoluteTime, setShowAbsoluteTime] = useState(false);
 
   const toggleShowAbsoluteTime = () => {
@@ -72,10 +74,18 @@ export const TransactionsTable = ({ transactions }: TransactionsTableProps) => {
       valueGetter: (row) => <FromToAddresses fromAddress={row.from_address} toAddress={row.to_address} />,
     },
     {
-      header: 'Value Token',
+      header: `Value ${APP_CONFIG.CHAIN_SYMBOL}`,
       valueGetter: (row) => NumberUtil.formatWithCommas(row.value),
     },
   ];
 
-  return <Table columns={columns} rows={transactions} />;
+  return (
+    <Table
+      columns={columns}
+      rows={transactions}
+      skeletonLength={skeletonLength}
+      className="[&_thead]:sticky [&_thead]:top-[96px] [&_thead]:z-10"
+      classNameLayout="overflow-x-visible"
+    />
+  );
 };

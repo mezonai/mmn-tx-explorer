@@ -1,13 +1,12 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { Pagination } from '@/components/ui/pagination';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DEFAULT_PAGINATION } from '@/constant';
 import { EBreakpoint } from '@/enums';
-import { useBreakpoint } from '@/hooks';
+import { useBreakpoint, useQueryParam } from '@/hooks';
 import { GlobalSearch } from '@/modules/global-search/components';
 import { ETransactionTab, ITransaction, ITransactionListParams, TransactionService } from '@/modules/transaction';
 import { IPaginationMeta } from '@/types';
@@ -23,12 +22,25 @@ const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
 } as const;
 
 export const TransactionsList = () => {
-  const urlSearchParams = useSearchParams();
   const isDesktop = useBreakpoint(EBreakpoint.LG);
   const [transactions, setTransactions] = useState<ITransaction[]>();
   const [pagination, setPagination] = useState<IPaginationMeta>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [localSearchParams, setLocalSearchParams] = useState<ITransactionListParams>();
+  const { value: page, handleChangeValue: handleChangePage } = useQueryParam<number>({
+    queryParam: 'page',
+    defaultValue: DEFAULT_PAGINATION.PAGE,
+  });
+  const { value: limit, handleChangeValue: handleChangeLimit } = useQueryParam<number>({
+    queryParam: 'limit',
+    defaultValue: DEFAULT_PAGINATION.LIMIT,
+    clearParams: ['page'],
+  });
+  const { value: tab, handleChangeValue: handleChangeTab } = useQueryParam<ETransactionTab>({
+    queryParam: 'tab',
+    defaultValue: ETransactionTab.Validated,
+    clearParams: ['page'],
+  });
 
   const handleFetchTransactions = async (params: ITransactionListParams) => {
     try {
@@ -52,23 +64,14 @@ export const TransactionsList = () => {
     }
   };
 
-  const updateSearchParam = (key: 'page' | 'tab', value: string | number) => {
-    const currentParams = new URLSearchParams(urlSearchParams.toString());
-    currentParams.set(key, String(value));
-    const newUrl = `${window.location.pathname}?${currentParams.toString()}`;
-    window.history.pushState(null, '', newUrl);
-  };
-
-  const handleChangePage = (page: number) => updateSearchParam('page', page);
-  const handleChangeTab = (tab: ETransactionTab) => updateSearchParam('tab', tab);
-
   useEffect(() => {
     setLocalSearchParams({
       ...DEFAULT_VALUE_DATA_SEARCH,
-      page: Number(urlSearchParams.get('page')) || DEFAULT_PAGINATION.PAGE,
-      tab: (urlSearchParams.get('tab') as ETransactionTab | undefined) || ETransactionTab.Validated,
+      page,
+      limit,
+      tab,
     });
-  }, [urlSearchParams]);
+  }, [page, limit, tab]);
 
   useEffect(() => {
     if (!localSearchParams) return;
@@ -82,27 +85,23 @@ export const TransactionsList = () => {
         <h1 className="text-2xl font-semibold">Transactions</h1>
       </div>
 
-      <Stats />
+      <Stats className="mb-0" />
 
       <div className="space-y-6">
-        <div className="flex flex-col items-center justify-between gap-5 md:flex-row">
-          <Tabs
-            value={localSearchParams?.tab ?? ETransactionTab.Validated}
-            onValueChange={(v) => handleChangeTab(v as ETransactionTab)}
-            className="w-full"
-          >
-            <TabsList className="w-full md:w-fit">
+        <div className="bg-background sticky top-0 z-10 mb-0 flex flex-col items-center justify-between gap-5 pt-8 pb-6 lg:flex-row">
+          <Tabs value={tab} onValueChange={(v) => handleChangeTab(v as ETransactionTab)} className="w-full">
+            <TabsList className="w-full lg:w-fit">
               <TabsTrigger
                 value={ETransactionTab.Validated}
                 disabled={isLoading}
-                className="flex-1 px-3 py-2 md:flex-none"
+                className="flex-1 px-3 py-2 lg:flex-none"
               >
                 Validated
               </TabsTrigger>
               <TabsTrigger
                 value={ETransactionTab.Pending}
                 disabled={isLoading}
-                className="flex-1 px-3 py-2 md:flex-none"
+                className="flex-1 px-3 py-2 lg:flex-none"
               >
                 Pending
               </TabsTrigger>
@@ -110,10 +109,14 @@ export const TransactionsList = () => {
           </Tabs>
 
           <Pagination
-            page={localSearchParams?.page ?? DEFAULT_PAGINATION.PAGE}
+            page={page}
+            limit={limit}
             totalPages={pagination?.total_pages ?? DEFAULT_PAGINATION.PAGE}
+            totalItems={pagination?.total_items ?? 0}
+            isLoading={isLoading}
             className="self-end"
             onChangePage={handleChangePage}
+            onChangeLimit={handleChangeLimit}
           />
         </div>
 
@@ -121,16 +124,16 @@ export const TransactionsList = () => {
           {isDesktop === undefined ? (
             <>
               <div className="hidden lg:block">
-                <TransactionsTable transactions={transactions} />
+                <TransactionsTable transactions={transactions} skeletonLength={limit} />
               </div>
               <div className="block lg:hidden">
-                <TransactionCards transactions={transactions} />
+                <TransactionCards transactions={transactions} skeletonLength={limit} />
               </div>
             </>
           ) : isDesktop ? (
-            <TransactionsTable transactions={transactions} />
+            <TransactionsTable transactions={transactions} skeletonLength={limit} />
           ) : (
-            <TransactionCards transactions={transactions} />
+            <TransactionCards transactions={transactions} skeletonLength={limit} />
           )}
         </>
       </div>

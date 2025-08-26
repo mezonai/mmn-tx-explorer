@@ -15,22 +15,22 @@ export const Stats = () => {
     {
       icon: Cube01,
       title: 'Total Blocks',
-      value: stats?.total_blocks,
+      value: stats?.total_blocks ?? 0,
     },
     {
       icon: CreditCardRefresh,
       title: 'Total Transactions',
-      value: stats?.total_transactions,
+      value: stats?.total_transactions ?? 0,
     },
     {
       icon: Hourglass01,
       title: 'Average Block Time',
-      value: stats?.average_block_time,
+      value: stats ? stats.average_block_time / 1000 : 0,
     },
     {
       icon: Wallet02,
       title: 'Total Wallet',
-      value: stats?.total_wallets,
+      value: stats?.total_wallets ?? 0,
     },
   ];
 
@@ -50,9 +50,7 @@ export const Stats = () => {
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {stats
-        ? statCards.map((item) => (
-            <StatCard key={item.title} icon={item.icon} title={item.title} value={item.value ?? 0} />
-          ))
+        ? statCards.map((item) => <StatCard key={item.title} icon={item.icon} title={item.title} value={item.value} />)
         : statCards.map((item) => <StatCardSkeleton key={item.title} icon={item.icon} title={item.title} />)}
     </div>
   );

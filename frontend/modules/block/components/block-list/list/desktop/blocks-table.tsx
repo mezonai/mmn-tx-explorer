@@ -17,9 +17,10 @@ import { TxnLink } from '../shared';
 
 interface BlocksTableProps {
   blocks?: IBlock[];
+  skeletonLength?: number;
 }
 
-export const BlocksTable = ({ blocks }: BlocksTableProps) => {
+export const BlocksTable = ({ blocks, skeletonLength }: BlocksTableProps) => {
   const [showAbsoluteTime, setShowAbsoluteTime] = useState(false);
 
   const toggleShowAbsoluteTime = () => {
@@ -73,5 +74,13 @@ export const BlocksTable = ({ blocks }: BlocksTableProps) => {
     },
   ];
 
-  return <Table columns={columns} rows={blocks} />;
+  return (
+    <Table
+      columns={columns}
+      rows={blocks}
+      skeletonLength={skeletonLength}
+      className="[&_thead]:sticky [&_thead]:top-[96px] [&_thead]:z-10"
+      classNameLayout="overflow-x-visible"
+    />
+  );
 };

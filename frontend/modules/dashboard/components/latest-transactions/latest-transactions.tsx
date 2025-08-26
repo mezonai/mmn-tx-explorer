@@ -42,7 +42,7 @@ export const LatestTransactions = () => {
         <h2 className="text-xl font-semibold">Latest Transactions</h2>
       </div>
       <div className="space-y-4">
-        {<TransactionCards transactions={transactions} skeletonLimit={DASHBOARD_TRANSACTIONS_LIMIT} />}
+        {<TransactionCards transactions={transactions} skeletonLength={DASHBOARD_TRANSACTIONS_LIMIT} />}
       </div>
       <div className="flex w-full justify-center">
         <Button variant="link" className="font-medium" asChild>
