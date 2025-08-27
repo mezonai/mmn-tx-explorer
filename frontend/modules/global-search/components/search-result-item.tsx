@@ -10,15 +10,13 @@ interface SearchResultItemProps {
   icon: ComponentType<{ className?: string }>;
   title: ReactNode;
   timestamp: number;
-  onSelect: () => void;
 }
 
-export const SearchResultItem = ({ href, icon: Icon, title, timestamp, onSelect }: SearchResultItemProps) => {
+export const SearchResultItem = ({ href, icon: Icon, title, timestamp }: SearchResultItemProps) => {
   return (
     <Link
       href={href}
       className="focus:bg-primary/8 active:bg-primary/8 hover:bg-primary/8 flex flex-col items-start justify-between gap-1 rounded p-2 lg:flex-row lg:items-center lg:gap-2"
-      onClick={onSelect}
     >
       <div className="flex w-full flex-1 items-center justify-start gap-2 lg:w-auto">
         <Icon className="text-muted-foreground size-5" />

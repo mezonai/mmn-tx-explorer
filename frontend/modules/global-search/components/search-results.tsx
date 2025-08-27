@@ -8,10 +8,9 @@ import { SearchResultItem } from './search-result-item';
 interface SearchResultsProps {
   isLoading: boolean;
   searchResults: ISearchResult | null;
-  onSelect: () => void;
 }
 
-export const SearchResults = ({ isLoading, searchResults, onSelect }: SearchResultsProps) => {
+export const SearchResults = ({ isLoading, searchResults }: SearchResultsProps) => {
   if (isLoading) {
     return <p>We are searching, please wait...</p>;
   }
@@ -33,7 +32,6 @@ export const SearchResults = ({ isLoading, searchResults, onSelect }: SearchResu
                 icon={Transaction}
                 title={<MiddleTruncate end={ADDRESS_END_VISIBLE_CHARS}>{transaction.hash}</MiddleTruncate>}
                 timestamp={transaction.block_timestamp}
-                onSelect={onSelect}
               />
             ))}
           </div>
@@ -51,7 +49,6 @@ export const SearchResults = ({ isLoading, searchResults, onSelect }: SearchResu
                 icon={Cube01}
                 title={<span>{block.block_number}</span>}
                 timestamp={block.block_timestamp}
-                onSelect={onSelect}
               />
             ))}
           </div>
