@@ -12,7 +12,7 @@ export class BlockService {
     return data;
   }
 
-  static async getBlockDetails(blockNumber: string): Promise<IBlockDetails> {
+  static async getBlockDetails(blockNumber: number): Promise<IBlockDetails> {
     const { data } = await apiClient.get<IBlockDetailsResponse>(
       buildPathWithChain(BLOCK_ENDPOINTS.DETAILS(blockNumber))
     );

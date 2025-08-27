@@ -3,9 +3,8 @@ import { format } from 'date-fns';
 import { Clock4 } from 'lucide-react';
 import Link from 'next/link';
 
-import { CheckCircle } from '@/assets/icons';
 import { ItemAttribute } from '@/components/shared';
-import { Badge } from '@/components/ui/badge';
+import { TxStatusBadge } from '@/components/shared/tx-status-badge';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Separator } from '@/components/ui/separator';
@@ -23,38 +22,37 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
       <ItemAttribute
         label="Transaction Hash"
         description="The hash of the transaction"
-        render={
+        data={transaction}
+        render={(transaction) => (
           <div className="flex items-center gap-2">
             <div className="w-[500px]">
               <MiddleTruncate end={ADDRESS_END_VISIBLE_CHARS}>{transaction.hash}</MiddleTruncate>
             </div>
             <CopyButton textToCopy={transaction.hash} className="text-muted-foreground size-fit flex-shrink-0" />
           </div>
-        }
+        )}
       />
       <ItemAttribute
         label="Status"
         description="The status of the transaction"
-        render={
-          <Badge variant="outline" className="gap-1">
-            <CheckCircle className="size-4 text-green-600" strokeWidth={1.5} />
-            <span className="text-xs font-medium">Success</span>
-          </Badge>
-        }
+        data={transaction}
+        render={(transaction) => <TxStatusBadge status={transaction.status} />}
       />
       <ItemAttribute
         label="Block"
         description="The block of the transaction"
-        render={
+        data={transaction}
+        render={(transaction) => (
           <Button variant="link" className="size-fit p-0 text-sm font-semibold">
             <Link href={`/blocks/${transaction.block_number}`}>{transaction.block_number}</Link>
           </Button>
-        }
+        )}
       />
       <ItemAttribute
         label="Timestamp"
         description="The timestamp of the transaction"
-        render={
+        data={transaction}
+        render={(transaction) => (
           <div className="text-muted-foreground flex items-center space-x-2">
             <Clock4 className="size-4" />
             <div>
@@ -63,13 +61,14 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
               <span>{format(transaction.block_timestamp * 1000, DATE_TIME_FORMAT.HUMAN_READABLE_WITH_OFFSET)}</span>
             </div>
           </div>
-        }
+        )}
       />
       <Separator />
       <ItemAttribute
         label="From"
         description="The address of the sender"
-        render={
+        data={transaction}
+        render={(transaction) => (
           <div className="flex items-center gap-2">
             <span className="w-[335px]">
               <MiddleTruncate end={ADDRESS_END_VISIBLE_CHARS}>{transaction.from_address}</MiddleTruncate>
@@ -79,28 +78,30 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
               className="text-muted-foreground size-fit flex-shrink-0"
             />
           </div>
-        }
+        )}
       />
       <ItemAttribute
         label="To"
         description="The address of the recipient"
-        render={
+        data={transaction}
+        render={(transaction) => (
           <div className="flex items-center gap-2">
             <span className="w-[335px]">
               <MiddleTruncate end={ADDRESS_END_VISIBLE_CHARS}>{transaction.to_address}</MiddleTruncate>
             </span>
             <CopyButton textToCopy={transaction.to_address} className="text-muted-foreground size-fit flex-shrink-0" />
           </div>
-        }
+        )}
       />
       <ItemAttribute
         label="Value"
         description="The value of the transaction"
-        render={
+        data={transaction}
+        render={(transaction) => (
           <div className="flex items-center">
             <span>{transaction.value}</span>
           </div>
-        }
+        )}
       />
     </div>
   ) : null;

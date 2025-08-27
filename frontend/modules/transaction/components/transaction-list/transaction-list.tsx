@@ -6,7 +6,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PAGINATION } from '@/constant';
 import { EBreakpoint } from '@/enums';
-import { useBreakpoint, useQueryParam } from '@/hooks';
+import { useBreakpoint, usePaginationQueryParam, useQueryParam } from '@/hooks';
 import { ETransactionTab, ITransaction, ITransactionListParams, TransactionService } from '@/modules/transaction';
 import { IPaginationMeta } from '@/types';
 import { TransactionCards, TransactionsTable } from './list';
@@ -26,20 +26,12 @@ export const TransactionsList = () => {
   const [pagination, setPagination] = useState<IPaginationMeta>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [localSearchParams, setLocalSearchParams] = useState<ITransactionListParams>();
-  const { value: page, handleChangeValue: handleChangePage } = useQueryParam<number>({
-    queryParam: 'page',
-    defaultValue: PAGINATION.DEFAULT_PAGE,
-  });
-  const { value: limit, handleChangeValue: handleChangeLimit } = useQueryParam<number>({
-    queryParam: 'limit',
-    defaultValue: PAGINATION.DEFAULT_LIMIT,
-    clearParams: ['page'],
-  });
   const { value: tab, handleChangeValue: handleChangeTab } = useQueryParam<ETransactionTab>({
     queryParam: 'tab',
     defaultValue: ETransactionTab.Validated,
     clearParams: ['page'],
   });
+  const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
 
   const handleFetchTransactions = async (params: ITransactionListParams) => {
     try {
