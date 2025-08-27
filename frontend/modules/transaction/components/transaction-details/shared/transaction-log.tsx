@@ -37,12 +37,12 @@ export const TransactionLog = ({ log }: TransactionLogProps) => {
           render={
             <div className="space-y-2 md:space-y-4">
               <div className="grid grid-cols-[100px_1fr] items-center gap-2">
-                <span className="text-sm">Method ID</span>
-                <span className="text-sm">{log.decode_input_data.method_id}</span>
+                <span className="font-semibold">Method ID</span>
+                <span>{log.decode_input_data.method_id}</span>
               </div>
               <div className="grid grid-cols-[100px_1fr] items-center gap-2">
-                <span className="text-sm">Call</span>
-                <span className="text-sm">{log.decode_input_data.call}</span>
+                <span className="font-semibold">Call</span>
+                <span>{log.decode_input_data.call}</span>
               </div>
               <LogInputDataTable inputs={log.decode_input_data.inputs} />
             </div>
@@ -66,20 +66,20 @@ export const TransactionLog = ({ log }: TransactionLogProps) => {
 
 const logDataColumns: TTableColumn<ILogInputData>[] = [
   {
-    header: 'Name',
-    field: 'name',
+    headerContent: 'Name',
+    dataKey: 'name',
   },
   {
-    header: 'Type',
-    field: 'type',
+    headerContent: 'Type',
+    dataKey: 'type',
   },
   {
-    header: 'Indexed',
-    valueGetter: (row) => <span>{row.indexed ? 'true' : 'false'}</span>,
+    headerContent: 'Indexed',
+    renderCell: (row) => <span>{row.indexed ? 'true' : 'false'}</span>,
   },
   {
-    header: 'Data',
-    valueGetter: (row) => <LogTableDataColumn row={row} />,
+    headerContent: 'Data',
+    renderCell: (row) => <LogTableDataColumn row={row} />,
   },
 ];
 
@@ -108,14 +108,14 @@ const LogTableDataColumn = ({ row }: { row: ILogInputData }) => {
 
 const LogTopic = ({ index, value }: { index: number; value: string }) => {
   return (
-    <div className="flex items-center">
+    <div className="flex items-center space-x-3">
       <div className="flex size-5 items-center justify-center rounded-full border-1 border-blue-400 bg-blue-50 font-bold text-blue-400">
         {index}
       </div>
-      <div className="ml-2 flex-grow">
+      <div className="flex-grow">
         <Truncate>{value}</Truncate>
+        <CopyButton textToCopy={value} />
       </div>
-      <CopyButton textToCopy={value} />
     </div>
   );
 };

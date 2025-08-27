@@ -2,7 +2,7 @@ import apiClient from '@/service';
 import { buildPathWithChain } from '@/service/utils';
 import { IPaginatedResponse } from '@/types';
 import { TRANSACTION_ENDPOINTS } from './constants';
-import { ITransaction, ITransactionListParams } from './types';
+import { ITransaction, ITransactionDetailsResponse, ITransactionListParams } from './types';
 
 export class TransactionService {
   static async getTransactions(params: ITransactionListParams): Promise<IPaginatedResponse<ITransaction[]>> {
@@ -11,5 +11,12 @@ export class TransactionService {
       { params }
     );
     return data;
+  }
+
+  static async getTransactionDetails(transactionHash: string): Promise<ITransaction> {
+    const { data } = await apiClient.get<ITransactionDetailsResponse>(
+      buildPathWithChain(TRANSACTION_ENDPOINTS.DETAIL(transactionHash))
+    );
+    return data.data.transaction;
   }
 }

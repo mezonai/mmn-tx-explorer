@@ -5,8 +5,8 @@ import { useEffect, useState } from 'react';
 import { BreadcrumbNavigation } from '@/components/shared/breadcrumb-navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQueryParam } from '@/hooks';
-import { GlobalSearchService } from '@/modules/global-search';
 import { IBreadcrumb } from '@/types';
+import { TransactionService } from '../../api';
 import { ITransaction } from '../../types';
 import { TabDetails, TabLogs } from './shared';
 
@@ -30,12 +30,8 @@ export const TransactionDetails = ({ transactionHash }: TransactionDetailsProps)
   const handleFetchTransaction = async (transactionHash: string) => {
     try {
       setIsLoading(true);
-      const {
-        data: { transactions },
-      } = await GlobalSearchService.search(transactionHash);
-      if (transactions && transactions.length > 0) {
-        setTransaction(transactions[0]);
-      }
+      const transaction = await TransactionService.getTransactionDetails(transactionHash);
+      setTransaction(transaction);
     } catch (error) {
       console.error(error);
     } finally {

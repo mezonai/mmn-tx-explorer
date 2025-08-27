@@ -59,3 +59,9 @@ export interface ITransactionLog {
   topics: string[];
   data: string;
 }
+
+export interface ITransactionDetailsResponse {
+  data: {
+    transaction: ITransaction;
+  };
+}
