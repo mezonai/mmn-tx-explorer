@@ -1,9 +1,14 @@
-import { TransactionsTable } from '@/components/shared/transactions-table';
+import { ITransaction } from '@/modules/transaction';
+import { TransactionsTable } from '@/modules/transaction/components/transaction-list/list';
 
-export const TabTransactions = () => {
+interface TabTransactionsProps {
+  transactions?: ITransaction[];
+}
+
+export const TabTransactions = ({ transactions }: TabTransactionsProps) => {
   return (
     <div>
-      <TransactionsTable transactions={[]} />
+      <TransactionsTable transactions={transactions} />
     </div>
   );
 };

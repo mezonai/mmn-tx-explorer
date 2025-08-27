@@ -1,18 +1,23 @@
 import { ItemAttribute } from '@/components/shared/item-attribute';
 import { ValidatorThumb } from '@/components/shared/validator-thumb';
 import { CopyButton } from '@/components/ui/copy-button';
-import { EllipsisText } from '@/components/ui/ellipsis-text';
 import { Separator } from '@/components/ui/separator';
 import { DATE_TIME_FORMAT } from '@/constant';
 import { DateTimeUtil } from '@/utils';
+import { Truncate } from '@re-dev/react-truncate';
 import { format } from 'date-fns';
 import { Clock4 } from 'lucide-react';
 import Link from 'next/link';
 import { ButtonNavigateBlock } from '.';
-import { IBlockDetails } from '../../../types';
+import { IBlock } from '../../../types';
 
-export const TabDetails = ({ blockDetails }: { blockDetails: IBlockDetails }) => {
-  console.log('blockDetails', blockDetails);
+interface TabDetailsProps {
+  block?: IBlock;
+}
+
+export const TabDetails = ({ block }: TabDetailsProps) => {
+  if (!block) return <></>;
+
   return (
     <div className="space-y-5">
       <ItemAttribute
@@ -20,10 +25,10 @@ export const TabDetails = ({ blockDetails }: { blockDetails: IBlockDetails }) =>
         description="The height of the block"
         render={
           <div className="flex items-center">
-            <span>{blockDetails.block.block_number}</span>
+            <span>{block.block_number}</span>
             <div className="ml-2 flex items-center gap-2">
-              <ButtonNavigateBlock direction="previous" blockNumber={blockDetails.block.block_number - 1} />
-              <ButtonNavigateBlock direction="next" blockNumber={blockDetails.block.block_number + 1} />
+              <ButtonNavigateBlock direction="previous" blockNumber={block.block_number - 1} />
+              <ButtonNavigateBlock direction="next" blockNumber={block.block_number + 1} />
             </div>
           </div>
         }
@@ -33,7 +38,7 @@ export const TabDetails = ({ blockDetails }: { blockDetails: IBlockDetails }) =>
         description="The size of the block"
         render={
           <div>
-            <span>{blockDetails.block.size}</span>
+            <span>{block.size}</span>
           </div>
         }
       />
@@ -42,7 +47,7 @@ export const TabDetails = ({ blockDetails }: { blockDetails: IBlockDetails }) =>
         description="The number of transactions in the block"
         render={
           <div>
-            <span>{blockDetails.block.transaction_count}</span>
+            <span>{block.transaction_count}</span>
           </div>
         }
       />
@@ -52,8 +57,11 @@ export const TabDetails = ({ blockDetails }: { blockDetails: IBlockDetails }) =>
         render={
           <div className="flex items-center">
             <ValidatorThumb />
-            <EllipsisText className="text-brand-secondary-700 ml-2">{blockDetails.block.miner}</EllipsisText>
-            <CopyButton textToCopy={blockDetails.block.miner} />
+            <div className="text-primary flex-grow md:flex-grow-0">
+              <Truncate className="md:hidden">{block.miner}</Truncate>
+              <span className="hidden md:inline-block">{block.miner}</span>
+            </div>
+            <CopyButton textToCopy={block.miner} />
           </div>
         }
       />
@@ -63,11 +71,9 @@ export const TabDetails = ({ blockDetails }: { blockDetails: IBlockDetails }) =>
         render={
           <div className="flex items-center space-x-2">
             <Clock4 className="text-foreground-quaternary-400 size-4" />
-            <span>{DateTimeUtil.formatRelativeTime(new Date(blockDetails.block.block_timestamp))}</span>
+            <span>{DateTimeUtil.formatRelativeTime(new Date(block.block_timestamp * 1000))}</span>
             <span>|</span>
-            <span>
-              {format(new Date(blockDetails.block.block_timestamp), DATE_TIME_FORMAT.HUMAN_READABLE_WITH_OFFSET)}
-            </span>
+            <span>{format(new Date(block.block_timestamp * 1000), DATE_TIME_FORMAT.HUMAN_READABLE_WITH_OFFSET)}</span>
           </div>
         }
       />
@@ -77,8 +83,11 @@ export const TabDetails = ({ blockDetails }: { blockDetails: IBlockDetails }) =>
         description="The hash of the block"
         render={
           <div className="flex items-center">
-            <EllipsisText className="text-brand-secondary-700">{blockDetails.block.block_hash}</EllipsisText>
-            <CopyButton textToCopy={blockDetails.block.block_hash} />
+            <div className="flex-grow md:flex-grow-0">
+              <Truncate className="md:hidden">{block.block_hash}</Truncate>
+              <span className="hidden md:inline-block">{block.block_hash}</span>
+            </div>
+            <CopyButton textToCopy={block.block_hash} />
           </div>
         }
       />
@@ -87,10 +96,11 @@ export const TabDetails = ({ blockDetails }: { blockDetails: IBlockDetails }) =>
         description="The hash of the parent block"
         render={
           <div className="flex items-center">
-            <Link href="/blocks/1234567890" className="w-full flex-1">
-              <EllipsisText className="text-brand-secondary-700">{blockDetails.block.parent_hash}</EllipsisText>
+            <Link href={`/blocks/${block.block_number - 1}`} className="text-primary flex-grow md:flex-grow-0">
+              <Truncate className="md:hidden">{block.parent_hash}</Truncate>
+              <span className="hidden md:inline-block">{block.parent_hash}</span>
             </Link>
-            <CopyButton textToCopy={blockDetails.block.parent_hash} />
+            <CopyButton textToCopy={block.parent_hash} />
           </div>
         }
       />

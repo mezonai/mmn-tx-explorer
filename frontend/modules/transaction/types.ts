@@ -40,3 +40,22 @@ export interface ITransactionListParams {
   // TODO: update API to support tab, then update this to required
   tab?: ETransactionTab;
 }
+
+export interface ILogInputData {
+  name: string;
+  type: 'address' | 'uint256';
+  indexed: boolean;
+  data: string;
+}
+
+export interface ITransactionLog {
+  id: number;
+  address: string;
+  decode_input_data: {
+    method_id: string;
+    call: string;
+    inputs: ILogInputData[];
+  };
+  topics: string[];
+  data: string;
+}

@@ -4,11 +4,11 @@ import { BreadcrumbNavigation } from '@/components/shared/breadcrumb-navigation'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQueryParam } from '@/hooks';
 import { TabsContent } from '@radix-ui/react-tabs';
+import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { BlockService } from '../../api';
-import { TabDetails, TabTransactions } from './shared';
 import { IBlockDetails } from '../../types';
-import { useParams } from 'next/navigation';
+import { TabDetails, TabTransactions } from './shared';
 
 const breadcrumbs = [{ label: 'Blocks', href: '/blocks' }, { label: 'Block Details' }];
 
@@ -42,9 +42,11 @@ export const BlockDetails = () => {
             <TabsTrigger value="transactions">Transactions</TabsTrigger>
           </TabsList>
         </div>
-        <TabsContent value="details">{blockDetails && <TabDetails blockDetails={blockDetails} />}</TabsContent>
+        <TabsContent value="details">
+          <TabDetails block={blockDetails?.block} />
+        </TabsContent>
         <TabsContent value="transactions">
-          <TabTransactions />
+          <TabTransactions transactions={blockDetails?.transactions} />
         </TabsContent>
       </Tabs>
     </div>
