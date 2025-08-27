@@ -84,7 +84,9 @@ func RunApi(cmd *cobra.Command, args []string) {
 
 		// blocks table queries
 		root.GET("/blocks", handlers.GetBlocks)
+		root.GET("/blocks/:blockNumber/detail", handlers.GetBlockDetail)
 
+		root.GET("/tx/:txHash/detail", handlers.GetTransactionDetail)
 
 		// stats queries
 		root.GET("/stats", handlers.GetStats)

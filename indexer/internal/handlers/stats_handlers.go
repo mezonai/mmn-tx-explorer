@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
@@ -17,6 +19,9 @@ type StatsResponse struct {
 		TotalPendingTransactions uint64  `json:"total_pending_transactions"`
 		AverageBlockTime  uint64 `json:"average_block_time"`
 		TotalWallets     uint64  `json:"total_wallets"`
+		Transactions24h   uint64  `json:"transactions_24h"`
+		Transactions30m   uint64  `json:"transactions_30m"`
+		PendingTransactions24h uint64  `json:"pending_transactions_24h"`
 	} `json:"data"`
 }
 
@@ -74,9 +79,47 @@ func handleStatsRequest(c *gin.Context) {
 		return
 	}
 
+	// Calculate time ranges for recent transactions
+	now := time.Now()
+	time24hAgo := now.Add(-24 * time.Hour)
+	time30mAgo := now.Add(-30 * time.Minute)
+
+	// Prepare QueryFilter for time-based counts using FilterParams
+	timeBasedQf24h := storage.QueryFilter{
+		ForceConsistentData: true,
+		FilterParams: map[string]string{
+			"block_timestamp_gte": strconv.FormatInt(time24hAgo.Unix(), 10),
+		},
+	}
+
+	// Get transactions count in last 24 hours
+	transactions24h, err := mainStorage.GetCount("transactions", timeBasedQf24h)
+	if err != nil {
+		log.Error().Err(err).Msg("Error getting transactions count in last 24h")
+		api.InternalErrorHandler(c)
+		return
+	}
+
+	// Prepare QueryFilter for 30 minutes using FilterParams
+	timeBasedQf30m := storage.QueryFilter{
+		ForceConsistentData: true,
+		FilterParams: map[string]string{
+			"block_timestamp_gte": strconv.FormatInt(time30mAgo.Unix(), 10),
+		},
+	}
+
+	// Get transactions count in last 30 minutes
+	transactions30m, err := mainStorage.GetCount("transactions", timeBasedQf30m)
+	if err != nil {
+		log.Error().Err(err).Msg("Error getting transactions count in last 30m")
+		api.InternalErrorHandler(c)
+		return
+	}
+
 	// TODO: Get block time, pending transactions from the node
 	averageBlockTime := uint64(200)
 	totalPendingTransactions := uint64(0)
+	pendingTransactions24h := uint64(0)
 	// Initialize the StatsResponse
 	statsResponse := StatsResponse{
 		Data: struct {
@@ -85,12 +128,18 @@ func handleStatsRequest(c *gin.Context) {
 			TotalPendingTransactions uint64  `json:"total_pending_transactions"`
 			AverageBlockTime  uint64 `json:"average_block_time"`
 			TotalWallets     uint64  `json:"total_wallets"`
+			Transactions24h   uint64  `json:"transactions_24h"`
+			Transactions30m   uint64  `json:"transactions_30m"`
+			PendingTransactions24h uint64  `json:"pending_transactions_24h"`
 		}{
 			TotalBlocks:      totalBlocks,
 			TotalTransactions: totalTransactions,
 			TotalPendingTransactions: totalPendingTransactions,
 			AverageBlockTime:  averageBlockTime,
 			TotalWallets:     totalWallets,
+			Transactions24h:   transactions24h,
+			Transactions30m:   transactions30m,
+			PendingTransactions24h: pendingTransactions24h,
 		},
 	}
 

@@ -101,6 +101,9 @@ var (
 	UnauthorizedErrorHandler = func(c *gin.Context, err error) {
 		writeError(c.Writer, err.Error(), http.StatusUnauthorized)
 	}
+	NotFoundErrorHandler = func(c *gin.Context, err error) {
+		writeError(c.Writer, err.Error(), http.StatusNotFound)
+	}
 )
 
 func ParseQueryParams(r *http.Request) (QueryParams, error) {
