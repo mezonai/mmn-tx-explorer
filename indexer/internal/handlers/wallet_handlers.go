@@ -60,7 +60,7 @@ func GetWallets(c *gin.Context) {
         Page:                queryParams.Page,
         Limit:               queryParams.Limit,
         ForceConsistentData: queryParams.ForceConsistentData,
-        Aggregates:          []string{"address", "account_nonce", "balance", "tx_timestamp"},
+        Aggregates:          []string{"address", "account_nonce", "balance"},
     }
 
     // Prepare response
@@ -71,6 +71,8 @@ func GetWallets(c *gin.Context) {
             TotalItems: int(totalItems),
             TotalPages: int(math.Ceil(float64(totalItems) / float64(queryParams.Limit))),
         },
+        Data:         nil,
+        Aggregations: nil,
     }
 
     // Fetch data
@@ -80,7 +82,9 @@ func GetWallets(c *gin.Context) {
         api.InternalErrorHandler(c)
         return
     }
-    resp.Aggregations = &result.Aggregates
+    var data interface{} = result.Aggregates
+    resp.Data = &data
+    resp.Aggregations = nil
 
     sendJSONResponse(c, resp)
 }

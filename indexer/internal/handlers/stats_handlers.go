@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"math/big"
 	"net/http"
 	"strconv"
 	"time"
@@ -17,7 +18,7 @@ type StatsResponse struct {
 		TotalBlocks      uint64  `json:"total_blocks"`
 		TotalTransactions uint64  `json:"total_transactions"`
 		TotalPendingTransactions uint64  `json:"total_pending_transactions"`
-		AverageBlockTime  uint64 `json:"average_block_time"`
+		AverageBlockTime  float64 `json:"average_block_time"`
 		TotalWallets     uint64  `json:"total_wallets"`
 		Transactions24h   uint64  `json:"transactions_24h"`
 		Transactions30m   uint64  `json:"transactions_30m"`
@@ -116,8 +117,11 @@ func handleStatsRequest(c *gin.Context) {
 		return
 	}
 
-	// TODO: Get block time, pending transactions from the node
-	averageBlockTime := uint64(200)
+	// Compute average block time using last N blocks
+	const numberOfBlocks uint64 = 100
+	averageBlockTime := getAverageBlockTime(mainStorage, numberOfBlocks)
+
+	// TODO: Get block time, pending transactions from the node (pending txs not implemented yet)
 	totalPendingTransactions := uint64(0)
 	pendingTransactions24h := uint64(0)
 	// Initialize the StatsResponse
@@ -126,7 +130,7 @@ func handleStatsRequest(c *gin.Context) {
 			TotalBlocks      uint64  `json:"total_blocks"`
 			TotalTransactions uint64  `json:"total_transactions"`
 			TotalPendingTransactions uint64  `json:"total_pending_transactions"`
-			AverageBlockTime  uint64 `json:"average_block_time"`
+			AverageBlockTime  float64 `json:"average_block_time"`
 			TotalWallets     uint64  `json:"total_wallets"`
 			Transactions24h   uint64  `json:"transactions_24h"`
 			Transactions30m   uint64  `json:"transactions_30m"`
@@ -144,4 +148,42 @@ func handleStatsRequest(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, statsResponse)
+}
+
+
+func getAverageBlockTime(mainStorage storage.IMainStorage, numberOfBlocks uint64) float64 {
+	latestQf := storage.QueryFilter{
+		SortBy:              "block_number",
+		SortOrder:           "desc",
+		Limit:               1,
+		ForceConsistentData: true,
+	}
+	latestBlocks, err := mainStorage.GetBlocks(latestQf)
+	if err == nil && len(latestBlocks.Data) > 0 {
+		latest := latestBlocks.Data[0]
+		latestTimestamp := latest.Timestamp.Unix()
+		latestBlockNumber := latest.Number.Uint64()
+		k := numberOfBlocks
+		if latestBlockNumber == 0 {
+			k = 0
+		} else if latestBlockNumber < numberOfBlocks {
+			k = latestBlockNumber
+		}
+		if k > 0 {
+			targetNum := int64(latestBlockNumber) - int64(k)
+			targetQf := storage.QueryFilter{
+				BlockNumbers:        []*big.Int{big.NewInt(targetNum)},
+				ForceConsistentData: true,
+			}
+			targetBlocks, err2 := mainStorage.GetBlocks(targetQf)
+			if err2 == nil && len(targetBlocks.Data) > 0 {
+				timestampMinusK := targetBlocks.Data[0].Timestamp.Unix()
+				avg := float64(latestTimestamp-timestampMinusK) / float64(k)
+				if avg > 0 {
+					return float64(avg)
+				}
+			}
+		}
+	}
+	return 0
 }

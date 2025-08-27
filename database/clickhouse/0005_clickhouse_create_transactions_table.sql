@@ -6,8 +6,8 @@ CREATE TABLE IF NOT EXISTS transactions (
     `block_number` UInt256,
     `block_timestamp` DateTime CODEC(Delta, ZSTD),
     `transaction_index` UInt64,
-    `from_address` FixedString(64),
-    `to_address` FixedString(64),
+    `from_address` String,
+    `to_address` String,
     `value` UInt256,
     `gas` UInt64,
     `gas_price` UInt256,
@@ -34,12 +34,12 @@ CREATE TABLE IF NOT EXISTS transactions (
     `sign` Int8 DEFAULT 1,
     `insert_timestamp` DateTime DEFAULT now(),
     `sender_account` Tuple(
-        `address` FixedString(64),
+        `address` String,
         `balance` UInt256,
         `nonce` Nullable(UInt64)
     ),
     `receiver_account` Tuple(
-        `address` FixedString(64),
+        `address` String,
         `balance` UInt256,
         `nonce` Nullable(UInt64)
     ),
