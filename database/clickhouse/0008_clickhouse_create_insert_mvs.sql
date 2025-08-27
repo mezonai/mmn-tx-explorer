@@ -64,6 +64,9 @@ SELECT
     t.29 AS blob_gas_price,
     t.30 AS logs_bloom,
     t.31 AS status,
+    t.32 AS sender_account,
+    t.33 AS receiver_account,
+    t.34 AS transaction_timestamp,
     insert_timestamp,
     sign
 FROM inserts_null_table

@@ -54,7 +54,18 @@ CREATE TABLE IF NOT EXISTS inserts_null_table (
         blob_gas_used Nullable(UInt64),
         blob_gas_price Nullable(UInt256),
         logs_bloom Nullable(String),
-        status Nullable(UInt64)
+        status Nullable(UInt64),
+        senderAccount Tuple(
+            address FixedString(64),
+            balance UInt256,
+            nonce Nullable(UInt64)
+        ),
+        receiverAccount Tuple(
+            address FixedString(64),
+            balance UInt256,
+            nonce Nullable(UInt64)
+        ),
+        transaction_timestamp DateTime
     )),
     logs Array(Tuple(
         block_number UInt256,
