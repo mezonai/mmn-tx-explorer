@@ -7,7 +7,7 @@ import { ISearchResult } from './types';
 export class SearchService {
   static async search(input: string): Promise<IPaginatedResponse<ISearchResult>> {
     const { data } = await apiClient.get<IPaginatedResponse<ISearchResult>>(
-      buildPathWithChain(SEARCH_ENDPOINTS.LIST, '1337').replace(':input', input)
+      buildPathWithChain(SEARCH_ENDPOINTS.LIST).replace(':input', input)
     );
     return data;
   }

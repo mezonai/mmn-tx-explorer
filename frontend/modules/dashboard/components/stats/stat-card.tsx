@@ -1,6 +1,7 @@
 import { ComponentType } from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { NumberUtil } from '@/utils';
 
 interface StatCardProps {
   icon: ComponentType<{ className?: string }>;
@@ -17,7 +18,7 @@ export const StatCard = ({ icon: Icon, title, value }: StatCardProps) => {
         </div>
         <div className="space-y-2 font-semibold">
           <p className="text-sm">{title}</p>
-          <p className="text-3xl">{value}</p>
+          <p className="text-3xl">{NumberUtil.formatWithCommas(value)}</p>
         </div>
       </CardContent>
     </Card>
