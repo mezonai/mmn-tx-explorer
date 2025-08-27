@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS inserts_null_table (
         sha3_uncles FixedString(66),
         nonce FixedString(18),
         mix_hash FixedString(66),
-        miner FixedString(64),
+        miner String,
         state_root FixedString(66),
         transactions_root FixedString(66),
         receipts_root FixedString(66),
@@ -30,8 +30,8 @@ CREATE TABLE IF NOT EXISTS inserts_null_table (
         block_number UInt256,
         block_timestamp DateTime,
         transaction_index UInt64,
-        from_address FixedString(64),
-        to_address FixedString(64),
+        from_address String,
+        to_address String,
         value UInt256,
         gas UInt64,
         gas_price UInt256,
@@ -56,12 +56,12 @@ CREATE TABLE IF NOT EXISTS inserts_null_table (
         logs_bloom Nullable(String),
         status Nullable(UInt64),
         senderAccount Tuple(
-            address FixedString(64),
+            address String,
             balance UInt256,
             nonce Nullable(UInt64)
         ),
         receiverAccount Tuple(
-            address FixedString(64),
+            address String,
             balance UInt256,
             nonce Nullable(UInt64)
         ),

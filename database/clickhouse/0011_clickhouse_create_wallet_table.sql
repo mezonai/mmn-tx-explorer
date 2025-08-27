@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS wallet (
-    `address` FixedString(64),
+    `address` String,
     `account_nonce` Nullable(UInt64),
     `balance` UInt64 DEFAULT 0,
     `tx_timestamp` DateTime,

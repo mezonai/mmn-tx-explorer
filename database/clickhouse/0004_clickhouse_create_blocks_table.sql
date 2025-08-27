@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS blocks (
     `sha3_uncles` FixedString(66),
     `nonce` FixedString(18),
     `mix_hash` FixedString(66),
-    `miner` FixedString(64),
+    `miner` String,
     `state_root` FixedString(66),
     `transactions_root` FixedString(66),
     `receipts_root` FixedString(66),
