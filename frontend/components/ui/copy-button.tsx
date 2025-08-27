@@ -15,12 +15,36 @@ interface CopyButtonProps {
 export const CopyButton = ({ textToCopy, className }: CopyButtonProps) => {
   const [isCopied, setIsCopied] = useState(false);
 
-  const handleCopy = async () => {
+  const fallbackCopy = (text: string) => {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    textarea.setSelectionRange(0, text.length);
     try {
-      await navigator.clipboard.writeText(textToCopy);
+      document.execCommand('copy');
       setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy: ', err);
+      console.error('Fallback: Oops, unable to copy', err);
+    } finally {
+      document.body.removeChild(textarea);
+    }
+  };
+
+  const handleCopy = async () => {
+    if (navigator?.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(textToCopy);
+        setIsCopied(true);
+      } catch (err) {
+        console.error('Failed to copy: ', err);
+      }
+    } else {
+      fallbackCopy(textToCopy);
     }
   };
 
@@ -40,10 +64,10 @@ export const CopyButton = ({ textToCopy, className }: CopyButtonProps) => {
         <Button
           variant="ghost"
           size="icon"
-          className={cn('hover:text-secondary-700 size-7 flex-shrink-0 align-middle', className)}
+          className={cn('text-muted-foreground size-4 flex-shrink-0 align-middle', className)}
           onClick={handleCopy}
         >
-          {isCopied ? <CheckCheck className="size-4" /> : <Copy className="size-4" />}
+          {isCopied ? <CheckCheck /> : <Copy />}
         </Button>
       </TooltipTrigger>
       <TooltipContent>{isCopied ? 'Copied' : 'Copy to clipboard'}</TooltipContent>

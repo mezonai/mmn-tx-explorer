@@ -1,21 +1,17 @@
 'use client';
 
+import { CircleX } from 'lucide-react';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 
 import { SearchMd } from '@/assets/icons';
 import { Input } from '@/components/ui/input';
-import { useDebounce } from '@/hooks/use-debounce';
+import { useDebounce } from '@/hooks';
 import { cn } from '@/lib/utils';
-import { CircleX } from 'lucide-react';
-import { GlobalSearchService } from '../api';
+import { SearchService } from '../api';
 import { ISearchResult } from '../types';
 import { SearchResults } from './search-results';
 
-interface GlobalSearchProps {
-  className?: string;
-}
-
-export const GlobalSearch = ({ className }: GlobalSearchProps) => {
+export const GlobalSearch = () => {
   const [query, setQuery] = useState<string>('');
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -26,11 +22,6 @@ export const GlobalSearch = ({ className }: GlobalSearchProps) => {
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     setQuery(event.target.value);
-  };
-
-  const handleSelectResult = () => {
-    setIsFocused(false);
-    setQuery('');
   };
 
   useEffect(() => {
@@ -45,7 +36,7 @@ export const GlobalSearch = ({ className }: GlobalSearchProps) => {
 
       setIsLoading(true);
       try {
-        const { data } = await GlobalSearchService.search(trimmed);
+        const { data } = await SearchService.search(trimmed);
         if (!isCancelled) {
           setSearchResults(data);
         }
@@ -81,7 +72,7 @@ export const GlobalSearch = ({ className }: GlobalSearchProps) => {
   }, []);
 
   return (
-    <div className={cn('relative', className)} ref={containerRef} onFocus={() => setIsFocused(true)}>
+    <div className="relative flex-1" ref={containerRef} onFocus={() => setIsFocused(true)}>
       <SearchMd className="text-muted-foreground absolute top-1/2 left-3 size-5 -translate-y-1/2 transform" />
       <Input
         placeholder="Search by txn hash / block"
@@ -101,7 +92,7 @@ export const GlobalSearch = ({ className }: GlobalSearchProps) => {
       {isShowSearchResults && (
         <div className="bg-popover text-popover-foreground absolute top-full right-0 left-0 z-50 mt-2 max-h-[50dvh] overflow-y-auto rounded-md border shadow-md">
           <div className="text-muted-foreground px-3.5 py-4 text-sm">
-            <SearchResults isLoading={isLoading} searchResults={searchResults} onSelect={handleSelectResult} />
+            <SearchResults isLoading={isLoading} searchResults={searchResults} />
           </div>
         </div>
       )}

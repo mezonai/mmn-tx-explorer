@@ -4,17 +4,18 @@ import { useEffect, useState } from 'react';
 
 import { Pagination } from '@/components/ui/pagination';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DEFAULT_PAGINATION } from '@/constant';
+import { PAGINATION } from '@/constant';
 import { EBreakpoint } from '@/enums';
 import { useBreakpoint, useQueryParam } from '@/hooks';
+import { GlobalSearch } from '@/modules/global-search/components';
 import { ETransactionTab, ITransaction, ITransactionListParams, TransactionService } from '@/modules/transaction';
 import { IPaginationMeta } from '@/types';
 import { TransactionCards, TransactionsTable } from './list';
-import { StatsGrid } from './stats';
+import { Stats } from './stats';
 
 const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
-  page: DEFAULT_PAGINATION.PAGE,
-  limit: DEFAULT_PAGINATION.LIMIT,
+  page: PAGINATION.DEFAULT_PAGE,
+  limit: PAGINATION.DEFAULT_LIMIT,
   sort_by: 'block_timestamp',
   sort_order: 'desc',
   tab: ETransactionTab.Validated,
@@ -26,14 +27,19 @@ export const TransactionsList = () => {
   const [pagination, setPagination] = useState<IPaginationMeta>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [localSearchParams, setLocalSearchParams] = useState<ITransactionListParams>();
-  const { value: currentTab, handleChangeValue: handleChangeTab } = useQueryParam<ETransactionTab>({
+  const { value: page, handleChangeValue: handleChangePage } = useQueryParam<number>({
+    queryParam: 'page',
+    defaultValue: PAGINATION.DEFAULT_PAGE,
+  });
+  const { value: limit, handleChangeValue: handleChangeLimit } = useQueryParam<number>({
+    queryParam: 'limit',
+    defaultValue: PAGINATION.DEFAULT_LIMIT,
+    clearParams: ['page'],
+  });
+  const { value: tab, handleChangeValue: handleChangeTab } = useQueryParam<ETransactionTab>({
     queryParam: 'tab',
     defaultValue: ETransactionTab.Validated,
     clearParams: ['page'],
-  });
-  const { value: currentPage, handleChangeValue: handleChangePage } = useQueryParam<number>({
-    queryParam: 'page',
-    defaultValue: DEFAULT_PAGINATION.PAGE,
   });
 
   const handleFetchTransactions = async (params: ITransactionListParams) => {
@@ -45,7 +51,10 @@ export const TransactionsList = () => {
       const { tab: _omit, ...queryParams } = params;
       void _omit;
 
-      const { data, meta } = await TransactionService.getTransactions(queryParams);
+      const { data, meta } = await TransactionService.getTransactions({
+        ...queryParams,
+        page: queryParams.page - 1,
+      });
       setTransactions(data);
       setPagination(meta);
     } catch (error) {
@@ -58,10 +67,11 @@ export const TransactionsList = () => {
   useEffect(() => {
     setLocalSearchParams({
       ...DEFAULT_VALUE_DATA_SEARCH,
-      page: currentPage,
-      tab: currentTab,
+      page,
+      limit,
+      tab,
     });
-  }, [currentPage, currentTab]);
+  }, [page, limit, tab]);
 
   useEffect(() => {
     if (!localSearchParams) return;
@@ -70,46 +80,60 @@ export const TransactionsList = () => {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-semibold">Transactions</h1>
+      <div className="space-y-6">
+        <GlobalSearch />
+        <h1 className="text-2xl font-semibold">Transactions</h1>
+      </div>
 
-      <StatsGrid />
+      <Stats className="mb-0" />
 
       <div className="space-y-6">
-        <div className="flex flex-col items-center justify-between gap-5 md:flex-row">
-          <Tabs value={currentTab} onValueChange={(v) => handleChangeTab(v as ETransactionTab)} className="w-full">
-            <TabsList className="w-full md:w-fit">
-              <TabsTrigger value={ETransactionTab.Validated} disabled={isLoading} className="px-3 py-2">
+        <div className="bg-background sticky top-0 z-10 mb-0 flex flex-col items-center justify-between gap-5 pt-8 pb-6 lg:flex-row">
+          <Tabs value={tab} onValueChange={(v) => handleChangeTab(v as ETransactionTab)} className="w-full">
+            <TabsList className="w-full lg:w-fit">
+              <TabsTrigger
+                value={ETransactionTab.Validated}
+                disabled={isLoading}
+                className="flex-1 px-3 py-2 lg:flex-none"
+              >
                 Validated
               </TabsTrigger>
-              <TabsTrigger value={ETransactionTab.Pending} disabled={isLoading} className="px-3 py-2">
+              <TabsTrigger
+                value={ETransactionTab.Pending}
+                disabled={isLoading}
+                className="flex-1 px-3 py-2 lg:flex-none"
+              >
                 Pending
               </TabsTrigger>
             </TabsList>
           </Tabs>
 
           <Pagination
-            page={currentPage}
-            totalPages={pagination?.total_pages ?? DEFAULT_PAGINATION.PAGE}
+            page={page}
+            limit={limit}
+            totalPages={pagination?.total_pages ?? 0}
+            totalItems={pagination?.total_items ?? 0}
             isLoading={isLoading}
             className="self-end"
             onChangePage={handleChangePage}
+            onChangeLimit={handleChangeLimit}
           />
         </div>
 
         <>
           {isDesktop === undefined ? (
-            <>
+            <div>
               <div className="hidden lg:block">
-                <TransactionsTable transactions={transactions} />
+                <TransactionsTable transactions={transactions} skeletonLength={limit} />
               </div>
               <div className="block lg:hidden">
-                <TransactionCards transactions={transactions} />
+                <TransactionCards transactions={transactions} skeletonLength={limit} />
               </div>
-            </>
+            </div>
           ) : isDesktop ? (
-            <TransactionsTable transactions={transactions} />
+            <TransactionsTable transactions={transactions} skeletonLength={limit} />
           ) : (
-            <TransactionCards transactions={transactions} />
+            <TransactionCards transactions={transactions} skeletonLength={limit} />
           )}
         </>
       </div>

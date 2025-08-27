@@ -13,4 +13,20 @@ export class DateTimeUtil {
 
     return diff + ' ago';
   }
+
+  static formatRelativeTimeSec(timestampSec: number): string {
+    return this.formatRelativeTime(timestampSec * 1000);
+  }
+
+  static toMilliseconds(timestamp: string | number): number {
+    const numericTimestamp = typeof timestamp === 'string' ? Number(timestamp) : timestamp;
+
+    // If timestamp is already in milliseconds (13 digits), return as is
+    if (numericTimestamp.toString().length === 13) {
+      return numericTimestamp;
+    }
+
+    // If timestamp is in seconds (10 digits), multiply by 1000
+    return numericTimestamp * 1000;
+  }
 }

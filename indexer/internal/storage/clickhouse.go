@@ -21,6 +21,26 @@ import (
 	"github.com/thirdweb-dev/indexer/internal/metrics"
 )
 
+// parseAccountTuple parses a JSON string into a tuple compatible with ClickHouse Tuple(address, balance, nonce)
+// Returned slice order: address, balance, nonce
+func parseAccountTuple(jsonStr string) ([]interface{}, error) {
+    if jsonStr == "" {
+        return []interface{}{"", new(big.Int), (*uint64)(nil)}, nil
+    }
+    var v struct {
+        Address string   `json:"address"`
+        Balance *big.Int `json:"balance"`
+        Nonce   *uint64  `json:"nonce"`
+    }
+    if err := json.Unmarshal([]byte(jsonStr), &v); err != nil {
+        return nil, err
+    }
+    if v.Balance == nil {
+        v.Balance = new(big.Int)
+    }
+    return []interface{}{v.Address, v.Balance, v.Nonce}, nil
+}
+
 type ClickHouseConnector struct {
 	conn clickhouse.Conn
 	cfg  *config.ClickhouseConfig
@@ -1349,6 +1369,15 @@ func (c *ClickHouseConnector) InsertBlockData(data []common.BlockData) error {
 			transactions := make([][]interface{}, len(blockData.Transactions))
 			txsCount += len(blockData.Transactions)
 			for j, tx := range blockData.Transactions {
+				// Parse sender/receiver account JSON into tuples expected by ClickHouse schema
+				senderTuple, err := parseAccountTuple(tx.SenderAccount)
+				if err != nil {
+					return fmt.Errorf("invalid sender_account JSON for tx %s: %w", tx.Hash, err)
+				}
+				receiverTuple, err := parseAccountTuple(tx.ReceiverAccount)
+				if err != nil {
+					return fmt.Errorf("invalid receiver_account JSON for tx %s: %w", tx.Hash, err)
+				}
 				transactions[j] = []interface{}{
 					tx.Hash,
 					tx.Nonce,
@@ -1381,6 +1410,9 @@ func (c *ClickHouseConnector) InsertBlockData(data []common.BlockData) error {
 					tx.BlobGasPrice,
 					tx.LogsBloom,
 					tx.Status,
+					senderTuple,
+					receiverTuple,
+					tx.TransactionTimestamp,
 				}
 			}
 

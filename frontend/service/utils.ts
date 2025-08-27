@@ -1,7 +1,5 @@
-export const buildPathWithChainId = (path: string): string => {
-  const chainId = process.env.NEXT_PUBLIC_APP_CHAIN_ID;
-  if (!chainId) {
-    throw new Error(`Missing required env: NEXT_PUBLIC_APP_CHAIN_ID`);
-  }
-  return path.replace(':chainId', chainId);
+import { APP_CONFIG } from '@/configs/app.config';
+
+export const buildPathWithChain = (path: string) => {
+  return path.replace(':chainId', APP_CONFIG.CHAIN_ID);
 };

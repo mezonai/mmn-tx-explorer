@@ -177,6 +177,9 @@ func serializeTransaction(chainId *big.Int, tx map[string]interface{}, blockTime
 		TransactionIndex:     hexToUint64(tx["transactionIndex"]),
 		FromAddress:          interfaceToString(tx["from"]),
 		ToAddress:            interfaceToString(tx["to"]),
+		SenderAccount:        interfaceToJsonString(tx["senderAccount"]),
+		ReceiverAccount:      interfaceToJsonString(tx["receiverAccount"]),
+		TransactionTimestamp: hexToTime(tx["transactionTimestamp"]),
 		Value:                hexToBigInt(tx["value"]),
 		Gas:                  hexToUint64(tx["gas"]),
 		GasPrice:             hexToBigInt(tx["gasPrice"]),
@@ -372,9 +375,19 @@ func serializeTraceAddress(traceAddress interface{}) []int64 {
 
 func hexToTime(hex interface{}) time.Time {
 	unixTime := hexToUint64(hex)
-	seconds := unixTime / 1000000000
-		nanoRemainder := unixTime % 1000000000
+	// Detect units by magnitude: ns(~1e18), ms(~1e12), s(~1e9)
+	switch {
+	case unixTime >= 1_000_000_000_000_000: // nanoseconds
+		seconds := unixTime / 1_000_000_000
+		nanoRemainder := unixTime % 1_000_000_000
 		return time.Unix(int64(seconds), int64(nanoRemainder))
+	case unixTime >= 1_000_000_000_000: // milliseconds
+		seconds := unixTime / 1_000
+		milliRemainder := unixTime % 1_000
+		return time.Unix(int64(seconds), int64(milliRemainder)*int64(time.Millisecond))
+	default: // seconds
+		return time.Unix(int64(unixTime), 0)
+	}
 }
 
 func hexToUint64(hex interface{}) uint64 {

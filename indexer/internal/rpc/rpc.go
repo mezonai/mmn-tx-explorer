@@ -269,6 +269,19 @@ func convertPBTransactionDataToRawTransaction(pbTransactionData *pb.TransactionD
 	// Convert nonce to hex format
 	rawTransaction["nonce"] = fmt.Sprintf("%x", pbTransactionData.Nonce)
 	
+	rawTransaction["senderAccount"] = map[string]interface{}{
+		"address": pbTransactionData.SenderAccount.Address,
+		"balance": pbTransactionData.SenderAccount.Balance,
+		"nonce": pbTransactionData.SenderAccount.Nonce,
+	}
+	
+	rawTransaction["receiverAccount"] = map[string]interface{}{
+		"address": pbTransactionData.RecipientAccount.Address,
+		"balance": pbTransactionData.RecipientAccount.Balance,
+		"nonce": pbTransactionData.RecipientAccount.Nonce,
+	}
+
+	rawTransaction["transactionTimestamp"] = fmt.Sprintf("%x", pbTransactionData.Timestamp)
 	// Block information
 	rawTransaction["blockHash"] = blockHash
 	rawTransaction["blockNumber"] = fmt.Sprintf("%x", blockNumber)
@@ -293,15 +306,15 @@ func convertPBTransactionDataToRawTransaction(pbTransactionData *pb.TransactionD
 	
 	return rawTransaction
 }
-func getStatus(status pb.TransactionData_Status) uint64 {
+func getStatus(status pb.TransactionStatus) uint64 {
 	switch status {
-	case pb.TransactionData_PENDING:
+	case pb.TransactionStatus_PENDING:
 		return 0
-	case pb.TransactionData_CONFIRMED:
+	case pb.TransactionStatus_CONFIRMED:
 		return 1
-	case pb.TransactionData_FINALIZED:
+	case pb.TransactionStatus_FINALIZED:
 		return 2
-	case pb.TransactionData_FAILED:
+	case pb.TransactionStatus_FAILED:
 		return 3
 	}
 	return 4

@@ -7,19 +7,21 @@ import { useState } from 'react';
 import { Clock } from '@/assets/icons';
 import { AddressDisplay } from '@/components/shared';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Table } from '@/components/ui/table';
 import { ROUTES } from '@/configs/routes.config';
 import { DATE_TIME_FORMAT } from '@/constant';
 import { IBlock } from '@/modules/block/types';
 import { TTableColumn } from '@/types';
 import { DateTimeUtil } from '@/utils';
-import { GasUsage, TxnLink } from '../shared';
+import { TxnLink } from '../shared';
 
 interface BlocksTableProps {
   blocks?: IBlock[];
+  skeletonLength?: number;
 }
 
-export const BlocksTable = ({ blocks }: BlocksTableProps) => {
+export const BlocksTable = ({ blocks, skeletonLength }: BlocksTableProps) => {
   const [showAbsoluteTime, setShowAbsoluteTime] = useState(false);
 
   const toggleShowAbsoluteTime = () => {
@@ -28,7 +30,7 @@ export const BlocksTable = ({ blocks }: BlocksTableProps) => {
 
   const columns: TTableColumn<IBlock>[] = [
     {
-      header: (
+      headerContent: (
         <div className="flex items-center gap-1">
           <span>Block</span>
           <Button variant="ghost" size="icon" className="p-0" onClick={toggleShowAbsoluteTime}>
@@ -36,7 +38,7 @@ export const BlocksTable = ({ blocks }: BlocksTableProps) => {
           </Button>
         </div>
       ),
-      valueGetter: (row) => {
+      renderCell: (row) => {
         return (
           <div className="flex flex-col items-start">
             <Button variant="link" className="h-fit p-0" asChild>
@@ -44,40 +46,49 @@ export const BlocksTable = ({ blocks }: BlocksTableProps) => {
             </Button>
             <span className="text-muted-foreground text-sm">
               {showAbsoluteTime
-                ? format(row.block_timestamp * 1000, DATE_TIME_FORMAT.HUMAN_READABLE_SHORT)
-                : DateTimeUtil.formatRelativeTime(row.block_timestamp * 1000)}
+                ? format(DateTimeUtil.toMilliseconds(row.block_timestamp), DATE_TIME_FORMAT.HUMAN_READABLE_SHORT)
+                : DateTimeUtil.formatRelativeTimeSec(row.block_timestamp)}
             </span>
           </div>
         );
       },
+      skeletonContent: (
+        <div className="flex flex-col items-start gap-1">
+          <Skeleton className="h-4.5 w-20" />
+          <Skeleton className="h-4.5 w-16" />
+        </div>
+      ),
     },
     {
-      header: 'Size, bytes',
-      field: 'size',
+      headerContent: 'Hash',
+      renderCell: (row) => (
+        <AddressDisplay address={row.block_hash} className="w-60" addressClassName="text-foreground" />
+      ),
     },
     {
-      header: 'Validator',
-      valueGetter: (row) => <AddressDisplay address={row.miner} />,
+      headerContent: 'Parent hash',
+      renderCell: (row) => (
+        <AddressDisplay address={row.parent_hash} className="w-60" addressClassName="text-foreground" />
+      ),
     },
     {
-      header: 'Txn',
-      valueGetter: (row) => <TxnLink count={row.transaction_count} blockNumber={row.block_number} />,
+      headerContent: 'Validator',
+      renderCell: (row) => <AddressDisplay address={row.miner} className="w-50" />,
     },
     {
-      header: 'Gas used',
-      valueGetter: (row) => <GasUsage gasUsed={row.gas_used} gasLimit={row.gas_limit} />,
-    },
-    {
-      header: 'Burnt fees',
-      valueGetter: () => {
-        return '0';
-      },
-    },
-    {
-      header: 'Base fee',
-      field: 'base_fee_per_gas',
+      headerContent: 'Txn',
+      renderCell: (row) => <TxnLink count={row.transaction_count} blockNumber={row.block_number} />,
     },
   ];
 
-  return <Table columns={columns} rows={blocks} />;
+  return (
+    <Table
+      getRowKey={(row) => row.block_number}
+      columns={columns}
+      rows={blocks}
+      skeletonLength={skeletonLength}
+      className="[&_thead]:sticky [&_thead]:top-[96px] [&_thead]:z-10"
+      classNameLayout="overflow-x-visible"
+    />
+  );
 };
