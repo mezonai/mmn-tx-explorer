@@ -7,7 +7,6 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PAGINATION } from '@/constant';
 import { EBreakpoint } from '@/enums';
 import { useBreakpoint, useQueryParam } from '@/hooks';
-import { GlobalSearch } from '@/modules/global-search/components';
 import { ETransactionTab, ITransaction, ITransactionListParams, TransactionService } from '@/modules/transaction';
 import { IPaginationMeta } from '@/types';
 import { TransactionCards, TransactionsTable } from './list';
@@ -81,7 +80,6 @@ export const TransactionsList = () => {
   return (
     <div className="space-y-8">
       <div className="space-y-6">
-        <GlobalSearch />
         <h1 className="text-2xl font-semibold">Transactions</h1>
       </div>
 

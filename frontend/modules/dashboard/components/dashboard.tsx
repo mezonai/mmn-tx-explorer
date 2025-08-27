@@ -1,4 +1,3 @@
-import { GlobalSearch } from '@/modules/global-search/components';
 import { LatestBlocks } from './latest-blocks';
 import { LatestTransactions } from './latest-transactions';
 import { Stats } from './stats';
@@ -7,7 +6,6 @@ export const Dashboard = () => {
   return (
     <div className="space-y-8">
       <div className="space-y-5">
-        <GlobalSearch />
         <h1 className="text-2xl font-semibold">Dashboard</h1>
       </div>
 

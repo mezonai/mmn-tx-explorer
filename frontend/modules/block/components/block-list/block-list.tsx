@@ -7,7 +7,6 @@ import { PAGINATION } from '@/constant';
 import { EBreakpoint } from '@/enums';
 import { useBreakpoint, useQueryParam } from '@/hooks';
 import { BlockService, IBlock, IBLockListParams } from '@/modules/block';
-import { GlobalSearch } from '@/modules/global-search/components';
 import { IPaginationMeta } from '@/types';
 import { BlockCards, BlocksTable } from './list';
 
@@ -67,7 +66,6 @@ export const BlockList = () => {
   return (
     <div className="space-y-8">
       <div className="mb-0 space-y-6">
-        <GlobalSearch />
         <h1 className="text-2xl font-semibold">Blocks</h1>
       </div>
 
