@@ -82,6 +82,9 @@ func RunApi(cmd *cobra.Command, args []string) {
 		root.GET("/transactions/:to/:signature", handlers.GetTransactionsByContractAndSignature)
 		root.GET("/events/:contract/:signature", handlers.GetLogsByContractAndSignature)
 
+		// wallet queries
+		root.GET("/wallets", handlers.GetWallets)
+
 		// blocks table queries
 		root.GET("/blocks", handlers.GetBlocks)
 		root.GET("/blocks/:blockNumber/detail", handlers.GetBlockDetail)

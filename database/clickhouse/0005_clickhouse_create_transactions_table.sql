@@ -33,6 +33,17 @@ CREATE TABLE IF NOT EXISTS transactions (
     `status` Nullable(UInt64),
     `sign` Int8 DEFAULT 1,
     `insert_timestamp` DateTime DEFAULT now(),
+    `sender_account` Tuple(
+        `address` FixedString(64),
+        `balance` UInt256,
+        `nonce` Nullable(UInt64)
+    ),
+    `receiver_account` Tuple(
+        `address` FixedString(64),
+        `balance` UInt256,
+        `nonce` Nullable(UInt64)
+    ),
+    `transaction_timestamp` DateTime CODEC(Delta, ZSTD),
     INDEX idx_block_timestamp block_timestamp TYPE minmax GRANULARITY 3,
     INDEX idx_block_hash block_hash TYPE bloom_filter GRANULARITY 3,
     INDEX idx_hash hash TYPE bloom_filter GRANULARITY 3,
