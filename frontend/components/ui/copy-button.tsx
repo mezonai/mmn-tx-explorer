@@ -71,7 +71,7 @@ export const CopyButton = ({ textToCopy, className }: CopyButtonProps) => {
           )}
           onClick={handleCopy}
         >
-          {isCopied ? <CheckCheck strokeWidth={1.5} /> : <Copy01 />}
+          {isCopied ? <CheckCheck strokeWidth={1.5} /> : <Copy01 strokeWidth={1.5} />}
         </Button>
       </TooltipTrigger>
       <TooltipContent>{isCopied ? 'Copied' : 'Copy to clipboard'}</TooltipContent>

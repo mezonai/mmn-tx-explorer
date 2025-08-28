@@ -3,7 +3,6 @@ import { PAGINATION } from '@/constant';
 import { cn } from '@/lib/utils';
 import { ITransaction } from '@/modules/transaction';
 import { TransactionCard } from './transaction-card';
-import { TransactionCardSkeleton } from './transaction-card-skeleton';
 
 interface TransactionCardsDesktopProps {
   transactions?: ITransaction[];
@@ -36,7 +35,7 @@ export const TransactionCardsDesktop = ({
 
       {transactions
         ? transactions.map((transaction) => <TransactionCard key={transaction.hash} transaction={transaction} />)
-        : Array.from({ length: skeletonLength }).map((_, index) => <TransactionCardSkeleton key={index} />)}
+        : Array.from({ length: skeletonLength }).map((_, index) => <TransactionCard key={index} />)}
     </div>
   );
 };

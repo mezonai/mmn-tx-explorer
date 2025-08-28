@@ -4,6 +4,7 @@ import { ArrowDown, ArrowNarrowRight } from '@/assets/icons';
 import { AddressDisplay } from '@/components/shared';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ROUTES } from '@/configs/routes.config';
+import { cn } from '@/lib/utils';
 
 interface FromToAddressesProps {
   fromAddress: string;
@@ -20,12 +21,12 @@ export const FromToAddresses = ({ fromAddress, toAddress, orientation = 'horizon
 
   return (
     <div className="flex w-full items-center gap-2">
-      <div className={isVertical ? 'block' : 'hidden'}>
+      <div className={cn(isVertical ? 'block' : 'hidden')}>
         <ArrowDown className="text-foreground-quaternary-400 size-4" />
       </div>
-      <div className={`flex flex-1 gap-3 ${isVertical ? 'flex-col' : 'flex-row justify-between'}`}>
+      <div className={cn('flex flex-1 gap-3', isVertical ? 'flex-col' : 'flex-row justify-between')}>
         <AddressDisplay address={fromAddress} href={ROUTES.WALLET(fromAddress)} />
-        <div className={`flex items-center justify-center ${isVertical ? 'hidden' : 'block'}`}>
+        <div className={cn('flex items-center justify-center', isVertical ? 'hidden' : 'block')}>
           <ArrowNarrowRight className="text-foreground-quaternary-400 size-4" />
         </div>
         <AddressDisplay address={toAddress} href={ROUTES.WALLET(toAddress)} />
@@ -39,15 +40,15 @@ export const FromToAddressesSkeleton = ({ orientation = 'horizontal' }: FromToAd
 
   return (
     <div className="flex w-full items-center gap-2">
-      <div className={isVertical ? 'block' : 'hidden'}>
+      <div className={cn(isVertical ? 'block' : 'hidden')}>
         <Skeleton className="size-5" />
       </div>
-      <div className={`flex flex-1 gap-3 ${isVertical ? 'flex-col' : 'flex-row justify-between'}`}>
+      <div className={cn('flex flex-1 gap-3', isVertical ? 'flex-col' : 'flex-row justify-between')}>
         <div className="flex w-30 items-center gap-2">
           <Skeleton className="h-6 flex-1" />
           <Skeleton className="size-5" />
         </div>
-        <div className={`flex items-center justify-center ${isVertical ? 'hidden' : 'block'}`}>
+        <div className={cn('flex items-center justify-center', isVertical ? 'hidden' : 'block')}>
           <Skeleton className="size-5" />
         </div>
         <div className="flex w-30 items-center gap-2">

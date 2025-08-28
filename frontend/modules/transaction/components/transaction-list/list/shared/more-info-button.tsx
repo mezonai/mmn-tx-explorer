@@ -4,6 +4,7 @@ import { InfoSquare } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ROUTES } from '@/configs/routes.config';
 import { getTransactionTypeLabel, ITransaction } from '@/modules/transaction';
 
 interface MoreInfoButtonProps {
@@ -36,7 +37,7 @@ export const MoreInfoButton = ({ transaction }: MoreInfoButtonProps) => {
           </div>
         </div>
         <Button variant="link" className="text-brand-secondary-700 size-fit p-0 text-sm font-semibold">
-          <Link href={`/transaction/${transaction.hash}`}>More details</Link>
+          <Link href={ROUTES.TRANSACTION(transaction.hash)}>More details</Link>
         </Button>
       </PopoverContent>
     </Popover>

@@ -1,10 +1,10 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { ChevronLeft } from '@/assets/icons';
+import { AppLogo } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import {
   Sidebar,
@@ -32,14 +32,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href={ROUTES.HOME}>
-                <div className="flex items-center gap-3">
-                  <div className="flex aspect-square size-9 items-center justify-center overflow-hidden rounded-lg">
-                    <Image src="/images/logo.webp" alt="MMN Explorer Logo" width={36} height={36} />
-                  </div>
-                  <div className="flex-1">
-                    <span className="text-brand-primary-900 truncate text-xl font-bold">MMN Explorer</span>
-                  </div>
-                </div>
+                <AppLogo />
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -62,15 +55,15 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {sidebarNavItems.map(({ href, icon: Icon, title }) => {
-                const isActive = pathname === href;
+                const isActive = href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
                 return (
                   <SidebarMenuItem key={href}>
                     <SidebarMenuButton
                       asChild
                       tooltip={title}
                       className={cn(
-                        'w-full justify-start gap-3 rounded-[6px] px-3 py-2 transition-all duration-200',
-                        isActive ? 'bg-active' : 'hover:bg-active'
+                        'hover:bg-active w-full justify-start gap-3 rounded-[6px] px-3 py-2 transition-all duration-200',
+                        isActive && 'bg-active'
                       )}
                     >
                       <Button variant="ghost" className="h-auto w-full justify-start" asChild>

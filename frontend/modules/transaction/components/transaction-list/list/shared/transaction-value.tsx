@@ -1,5 +1,5 @@
-import { APP_CONFIG } from '@/configs/app.config';
 import { Skeleton } from '@/components/ui/skeleton';
+import { APP_CONFIG } from '@/configs/app.config';
 import { cn } from '@/lib/utils';
 import { NumberUtil } from '@/utils';
 
@@ -7,6 +7,7 @@ interface TransactionValueProps {
   value: string;
   className?: string;
   showLabel?: boolean;
+  showSymbol?: boolean;
 }
 
 interface TransactionValueSkeletonProps {
@@ -14,8 +15,13 @@ interface TransactionValueSkeletonProps {
   showLabel?: boolean;
 }
 
-export const TransactionValue = ({ value, className, showLabel = false }: TransactionValueProps) => {
-  const formattedValue = `${NumberUtil.formatWithCommas(value)} ${APP_CONFIG.CHAIN_SYMBOL}`;
+export const TransactionValue = ({
+  value,
+  className,
+  showLabel = false,
+  showSymbol = false,
+}: TransactionValueProps) => {
+  const formattedValue = `${NumberUtil.formatWithCommas(value)} ${showSymbol ? APP_CONFIG.CHAIN_SYMBOL : ''}`;
 
   if (showLabel) {
     return (

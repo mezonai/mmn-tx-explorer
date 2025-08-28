@@ -5,36 +5,27 @@ import { useEffect, useState } from 'react';
 import { Pagination } from '@/components/ui/pagination';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PAGINATION } from '@/constant';
-import { EBreakpoint, ESortOrder } from '@/enums';
-import { useBreakpoint, useQueryParam } from '@/hooks';
+import { ESortOrder } from '@/enums';
+import { usePaginationQueryParam, useQueryParam } from '@/hooks';
 import { ETransactionTab, ITransaction, ITransactionListParams, TransactionService } from '@/modules/transaction';
 import { IPaginationMeta } from '@/types';
-import { TransactionCardsMobile, TransactionsTable } from './list';
+import { TransactionCollection } from './list';
 import { Stats } from './stats';
 
 const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
   page: PAGINATION.DEFAULT_PAGE,
   limit: PAGINATION.DEFAULT_LIMIT,
-  sort_by: 'block_timestamp',
+  sort_by: 'transaction_timestamp',
   sort_order: ESortOrder.DESC,
   tab: ETransactionTab.Validated,
 } as const;
 
 export const TransactionsList = () => {
-  const isDesktop = useBreakpoint(EBreakpoint.LG);
   const [transactions, setTransactions] = useState<ITransaction[]>();
   const [pagination, setPagination] = useState<IPaginationMeta>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [localSearchParams, setLocalSearchParams] = useState<ITransactionListParams>();
-  const { value: page, handleChangeValue: handleChangePage } = useQueryParam<number>({
-    queryParam: 'page',
-    defaultValue: PAGINATION.DEFAULT_PAGE,
-  });
-  const { value: limit, handleChangeValue: handleChangeLimit } = useQueryParam<number>({
-    queryParam: 'limit',
-    defaultValue: PAGINATION.DEFAULT_LIMIT,
-    clearParams: ['page'],
-  });
+  const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
   const { value: tab, handleChangeValue: handleChangeTab } = useQueryParam<ETransactionTab>({
     queryParam: 'tab',
     defaultValue: ETransactionTab.Validated,
@@ -116,22 +107,7 @@ export const TransactionsList = () => {
           />
         </div>
 
-        <>
-          {isDesktop === undefined ? (
-            <div>
-              <div className="hidden lg:block">
-                <TransactionsTable transactions={transactions} skeletonLength={limit} />
-              </div>
-              <div className="block lg:hidden">
-                <TransactionCardsMobile transactions={transactions} skeletonLength={limit} />
-              </div>
-            </div>
-          ) : isDesktop ? (
-            <TransactionsTable transactions={transactions} skeletonLength={limit} />
-          ) : (
-            <TransactionCardsMobile transactions={transactions} skeletonLength={limit} />
-          )}
-        </>
+        <TransactionCollection transactions={transactions} skeletonLength={limit} />
       </div>
     </div>
   );

@@ -52,7 +52,7 @@ export const BlockCard = ({ block }: BlockCardProps) => {
             {block ? (
               <Button
                 variant="link"
-                className="text-brand-secondary-700 size-fit w-24 p-0 text-right font-normal"
+                className="text-brand-secondary-700 size-fit w-30 truncate p-0 text-right font-normal"
                 asChild
               >
                 <Link href={ROUTES.WALLET(block.miner)}>
@@ -60,7 +60,7 @@ export const BlockCard = ({ block }: BlockCardProps) => {
                 </Link>
               </Button>
             ) : (
-              <Skeleton className="h-5 w-24" />
+              <Skeleton className="h-5 w-30" />
             )}
           </div>
         </div>

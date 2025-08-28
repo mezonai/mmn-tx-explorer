@@ -16,12 +16,12 @@ export const Stats = ({ className }: StatsProps) => {
   const statCards = [
     {
       title: 'Transactions',
-      value: stats?.transactions_24h ?? 0,
+      value: stats?.transactions_24h,
       subValue: '(24h)',
     },
     {
       title: 'Pending transactions',
-      value: stats?.pending_transactions_30m ?? 0,
+      value: stats?.pending_transactions_30m,
       subValue: '(30m)',
     },
   ];

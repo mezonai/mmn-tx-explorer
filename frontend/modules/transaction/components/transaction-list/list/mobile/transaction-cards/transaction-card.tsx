@@ -48,7 +48,11 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
         <FromToAddressesSkeleton />
       )}
 
-      {transaction ? <TransactionValue value={transaction.value} showLabel /> : <TransactionValueSkeleton showLabel />}
+      {transaction ? (
+        <TransactionValue value={transaction.value} showLabel showSymbol />
+      ) : (
+        <TransactionValueSkeleton showLabel />
+      )}
     </div>
   );
 };
