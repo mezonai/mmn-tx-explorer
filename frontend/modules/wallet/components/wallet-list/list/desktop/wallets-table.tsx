@@ -7,8 +7,8 @@ import {
   BalanceAmountSkeleton,
   RankBadge,
   RankBadgeSkeleton,
-  TxnCountLink,
-  TxnCountLinkSkeleton,
+  TxnLink,
+  TxnLinkSkeleton,
   WalletAddressDisplay,
   WalletAddressDisplaySkeleton,
 } from '../shared';
@@ -37,8 +37,8 @@ export const WalletsTable = ({ wallets, skeletonLength }: WalletsTableProps) => 
     },
     {
       headerContent: 'Txn',
-      renderCell: (row) => <TxnCountLink address={row.address} accountNonce={row.account_nonce} />,
-      skeletonContent: <TxnCountLinkSkeleton />,
+      renderCell: (row) => <TxnLink address={row.address} accountNonce={row.account_nonce} />,
+      skeletonContent: <TxnLinkSkeleton />,
     },
   ];
 

@@ -4,17 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ROUTES } from '@/configs/routes.config';
 
-interface TxnCountLinkProps {
+interface TxnLinkProps {
   address: string;
   accountNonce: number;
   className?: string;
 }
 
-interface TxnCountLinkSkeletonProps {
+interface TxnLinkSkeletonProps {
   className?: string;
 }
 
-export const TxnCountLink = ({ address, accountNonce, className }: TxnCountLinkProps) => {
+export const TxnLink = ({ address, accountNonce, className }: TxnLinkProps) => {
   return (
     <Button variant="link" className={`text-brand-secondary-700 size-fit p-0 font-normal ${className}`} asChild>
       <Link href={ROUTES.WALLET(address, 'tab=transactions')}>{accountNonce}</Link>
@@ -22,6 +22,6 @@ export const TxnCountLink = ({ address, accountNonce, className }: TxnCountLinkP
   );
 };
 
-export const TxnCountLinkSkeleton = ({ className }: TxnCountLinkSkeletonProps) => {
+export const TxnLinkSkeleton = ({ className }: TxnLinkSkeletonProps) => {
   return <Skeleton className={`h-5 w-12 ${className}`} />;
 };

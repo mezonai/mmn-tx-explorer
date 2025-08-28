@@ -4,8 +4,8 @@ import {
   BalanceAmountSkeleton,
   RankBadge,
   RankBadgeSkeleton,
-  TxnCountLink,
-  TxnCountLinkSkeleton,
+  TxnLink,
+  TxnLinkSkeleton,
   WalletAddressDisplay,
   WalletAddressDisplaySkeleton,
 } from '../shared';
@@ -39,11 +39,7 @@ export const WalletCard = ({ wallet }: WalletCardProps) => {
       </div>
       <div className="flex items-center justify-between">
         <span>Txn</span>
-        {wallet ? (
-          <TxnCountLink address={wallet.address} accountNonce={wallet.account_nonce} />
-        ) : (
-          <TxnCountLinkSkeleton />
-        )}
+        {wallet ? <TxnLink address={wallet.address} accountNonce={wallet.account_nonce} /> : <TxnLinkSkeleton />}
       </div>
     </div>
   );
