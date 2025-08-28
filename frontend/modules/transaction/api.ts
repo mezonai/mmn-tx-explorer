@@ -19,12 +19,4 @@ export class TransactionService {
     );
     return data.data.transaction;
   }
-
-  static async getTxsByBlockNumber(blockNumber: number): Promise<IPaginatedResponse<ITransaction[]>> {
-    const { data } = await apiClient.get<IPaginatedResponse<ITransaction[]>>(
-      buildPathWithChain(TRANSACTION_ENDPOINTS.LIST),
-      { params: { filter_block_number: blockNumber } }
-    );
-    return data;
-  }
 }

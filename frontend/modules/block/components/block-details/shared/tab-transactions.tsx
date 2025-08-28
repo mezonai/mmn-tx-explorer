@@ -1,6 +1,7 @@
 import { Pagination } from '@/components/ui/pagination';
+import { PAGINATION } from '@/constant';
 import { usePaginationQueryParam } from '@/hooks';
-import { ITransaction, TransactionService } from '@/modules/transaction';
+import { ITransaction, ITransactionListParams, TransactionService } from '@/modules/transaction';
 import { TransactionCollection } from '@/modules/transaction/components/transaction-list/list/transaction-collection';
 import { IPaginationMeta } from '@/types';
 import { useEffect, useState } from 'react';
@@ -9,28 +10,39 @@ interface TabTransactionsProps {
   blockNumber: number;
 }
 
+const DEFAULT_TRANSACTION_SEARCH_PARAMS: ITransactionListParams = {
+  page: PAGINATION.DEFAULT_PAGE,
+  limit: PAGINATION.DEFAULT_LIMIT,
+  sort_by: 'transaction_timestamp',
+  sort_order: 'desc',
+};
+
 export const TabTransactions = ({ blockNumber }: TabTransactionsProps) => {
   const [pagination, setPagination] = useState<IPaginationMeta>();
   const [transactions, setTransactions] = useState<ITransaction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
 
+  const fetchTransactions = async (params: ITransactionListParams) => {
+    try {
+      setIsLoading(true);
+      const txsPage = await TransactionService.getTransactions(params);
+      setTransactions(txsPage.data);
+      setPagination(txsPage.meta);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!blockNumber) return;
-
-    const fetchTransactions = async () => {
-      try {
-        setIsLoading(true);
-        const txsPage = await TransactionService.getTxsByBlockNumber(blockNumber);
-        setTransactions(txsPage.data);
-        setPagination(txsPage.meta);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchTransactions();
-  }, [blockNumber]);
+    fetchTransactions({
+      ...DEFAULT_TRANSACTION_SEARCH_PARAMS,
+      filter_block_number: blockNumber,
+      page: page,
+      limit: limit,
+    });
+  }, [blockNumber, page, limit]);
 
   return (
     <div>
