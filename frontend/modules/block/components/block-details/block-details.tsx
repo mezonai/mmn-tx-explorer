@@ -21,7 +21,7 @@ export const BlockDetails = () => {
       <BreadcrumbNavigation breadcrumbs={breadcrumbs} />
       <h1 className="text-primary-900 my-3 text-2xl font-semibold">Block Details</h1>
       <Tabs value={currentTab} onValueChange={handleChangeTab} className="mt-5 space-y-3">
-        <TabsList className="z-10 w-full sm:w-fit">
+        <TabsList className="z-10 w-full lg:w-fit">
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="transactions">Transactions</TabsTrigger>
         </TabsList>

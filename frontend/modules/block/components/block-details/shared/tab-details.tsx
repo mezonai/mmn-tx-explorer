@@ -1,11 +1,11 @@
 import { ItemAttribute } from '@/components/shared/item-attribute';
-import { ValidatorThumb } from '@/components/shared/validator-thumb';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DATE_TIME_FORMAT } from '@/constant';
 import { BlockService } from '@/modules/block/api';
 import { DashboardService } from '@/modules/dashboard';
+import { WalletThumb } from '@/modules/wallet/components/shared/wallet-thumb';
 import { DateTimeUtil } from '@/utils';
 import { Truncate } from '@re-dev/react-truncate';
 import { format } from 'date-fns';
@@ -84,7 +84,7 @@ export const TabDetails = ({ blockNumber }: TabDetailsProps) => {
         data={block}
         render={(block) => (
           <div className="flex items-center">
-            <ValidatorThumb />
+            <WalletThumb />
             <div className="mr-2 flex-grow md:flex-grow-0">
               <Truncate className="md:hidden">{block.miner}</Truncate>
               <span className="hidden md:block">{block.miner}</span>

@@ -39,14 +39,14 @@ export const TabTransactions = ({ blockNumber }: TabTransactionsProps) => {
     fetchTransactions({
       ...DEFAULT_TRANSACTION_SEARCH_PARAMS,
       filter_block_number: blockNumber,
-      page: page,
+      page: page - 1,
       limit: limit,
     });
   }, [blockNumber, page, limit]);
 
   return (
     <div>
-      <div className="relative mb-5 md:-top-15 md:-mb-10">
+      <div className="relative mb-5 lg:-top-15 lg:-mb-10">
         <Pagination
           page={page}
           limit={limit}

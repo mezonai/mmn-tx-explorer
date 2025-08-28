@@ -1,4 +1,3 @@
-import { ValidatorThumb } from '@/components/shared/validator-thumb';
 import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Table } from '@/components/ui/table';
@@ -92,7 +91,6 @@ const LogTableDataColumn = ({ row }: { row: ILogInputData }) => {
     case 'address':
       return (
         <div className="flex items-center">
-          <ValidatorThumb />
           <Link href={`/address/${row.data}`} className="text-primary">
             {row.data}
           </Link>

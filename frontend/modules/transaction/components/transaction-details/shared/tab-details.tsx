@@ -4,7 +4,7 @@ import { Clock4 } from 'lucide-react';
 import Link from 'next/link';
 
 import { ItemAttribute } from '@/components/shared';
-import { TxStatusBadge } from '@/components/shared/tx-status-badge';
+import { TxStatusBadge } from '@/modules/transaction/components/shared/tx-status-badge';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Separator } from '@/components/ui/separator';
