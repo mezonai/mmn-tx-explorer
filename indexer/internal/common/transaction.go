@@ -98,6 +98,7 @@ type TransactionModel struct {
 	BlobGasPrice          *string  `json:"blob_gas_price"`
 	LogsBloom             *string  `json:"logs_bloom"`
 	Status                *uint64  `json:"status"`
+	TransactionTimestamp  uint64   `json:"transaction_timestamp"`
 }
 
 type DecodedTransactionDataModel struct {
@@ -230,8 +231,9 @@ func (t *Transaction) Serialize() TransactionModel {
 			v := t.BlobGasPrice.String()
 			return &v
 		}(),
-		LogsBloom: t.LogsBloom,
-		Status:    t.Status,
+		LogsBloom:            t.LogsBloom,
+		Status:               t.Status,
+		TransactionTimestamp: uint64(t.TransactionTimestamp.Unix()),
 	}
 }
 

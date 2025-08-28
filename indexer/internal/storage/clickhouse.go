@@ -68,7 +68,7 @@ var defaultTransactionFields = []string{
 	"data", "function_selector", "max_fee_per_gas", "max_priority_fee_per_gas",
 	"max_fee_per_blob_gas", "blob_versioned_hashes", "transaction_type", "r", "s", "v",
 	"access_list", "authorization_list", "contract_address", "gas_used", "cumulative_gas_used",
-	"effective_gas_price", "blob_gas_used", "blob_gas_price", "logs_bloom", "status",
+	"effective_gas_price", "blob_gas_used", "blob_gas_price", "logs_bloom", "status", "transaction_timestamp",
 }
 
 var defaultLogFields = []string{

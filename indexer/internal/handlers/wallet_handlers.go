@@ -60,7 +60,7 @@ func GetWallets(c *gin.Context) {
         Page:                queryParams.Page,
         Limit:               queryParams.Limit,
         ForceConsistentData: queryParams.ForceConsistentData,
-        Aggregates:          []string{"address", "account_nonce", "balance"},
+        Aggregates:          []string{"address", "account_nonce", "balance", "tx_timestamp", "rank() OVER (ORDER BY balance DESC) AS rank"},
     }
 
     // Prepare response
