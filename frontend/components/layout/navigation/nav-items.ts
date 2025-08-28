@@ -1,6 +1,6 @@
 import { ComponentType, SVGProps } from 'react';
 
-import { BarChartSquare02, CreditCardRefresh, Cube01 } from '@/assets/icons';
+import { Award04, BarChartSquare02, CreditCardRefresh, Cube01 } from '@/assets/icons';
 import { ROUTES } from '@/configs/routes.config';
 
 export interface NavItem {
@@ -24,5 +24,10 @@ export const sidebarNavItems: NavItem[] = [
     title: 'Blocks',
     href: ROUTES.BLOCKS,
     icon: Cube01,
+  },
+  {
+    title: 'Top accounts',
+    href: ROUTES.WALLETS,
+    icon: Award04,
   },
 ];

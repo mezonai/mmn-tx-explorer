@@ -94,7 +94,7 @@ const PageButton = ({
 }) => (
   <Button
     variant="outline"
-    className="-ml-px hidden h-10 min-w-10 rounded-none p-2.5 md:block"
+    className="-ml-px hidden h-10 min-w-10 rounded-none p-2.5 md:flex"
     onClick={onClick}
     disabled={disabled}
     aria-label={isEllipsis ? 'More pages' : `Go to page ${pageNumber}`}
