@@ -5,6 +5,7 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DATE_TIME_FORMAT } from '@/constant';
 import { BlockService } from '@/modules/block/api';
+import { DashboardService } from '@/modules/dashboard';
 import { DateTimeUtil } from '@/utils';
 import { Truncate } from '@re-dev/react-truncate';
 import { format } from 'date-fns';
@@ -20,14 +21,19 @@ interface TabDetailsProps {
 
 export const TabDetails = ({ blockNumber }: TabDetailsProps) => {
   const [blockDetails, setBlockDetails] = useState<IBlockDetails | null>(null);
+  const [hasNextBlock, setHasNextBlock] = useState(true);
   const block = blockDetails?.block;
 
   useEffect(() => {
     if (!blockNumber) return;
 
     const fetchBlockDetails = async () => {
-      const blockDetails = await BlockService.getBlockDetails(blockNumber);
+      const [blockDetails, stats] = await Promise.all([
+        BlockService.getBlockDetails(blockNumber),
+        DashboardService.getStats(),
+      ]);
       setBlockDetails(blockDetails);
+      setHasNextBlock(blockNumber < stats.data.total_blocks - 1);
     };
 
     fetchBlockDetails();
@@ -43,8 +49,8 @@ export const TabDetails = ({ blockNumber }: TabDetailsProps) => {
           <div className="flex items-center">
             <span>{block.block_number}</span>
             <div className="ml-2 flex items-center gap-2">
-              <ButtonNavigateBlock direction="previous" blockNumber={block.block_number - 1} />
-              <ButtonNavigateBlock direction="next" blockNumber={block.block_number + 1} />
+              {block.parent_hash && <ButtonNavigateBlock direction="previous" blockNumber={block.block_number - 1} />}
+              {hasNextBlock && <ButtonNavigateBlock direction="next" blockNumber={block.block_number + 1} />}
             </div>
           </div>
         )}
