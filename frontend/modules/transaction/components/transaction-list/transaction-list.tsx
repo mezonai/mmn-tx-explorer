@@ -5,19 +5,18 @@ import { useEffect, useState } from 'react';
 import { Pagination } from '@/components/ui/pagination';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PAGINATION } from '@/constant';
-import { EBreakpoint } from '@/enums';
+import { EBreakpoint, ESortOrder } from '@/enums';
 import { useBreakpoint, useQueryParam } from '@/hooks';
-import { GlobalSearch } from '@/modules/global-search/components';
 import { ETransactionTab, ITransaction, ITransactionListParams, TransactionService } from '@/modules/transaction';
 import { IPaginationMeta } from '@/types';
-import { TransactionCards, TransactionsTable } from './list';
+import { TransactionCardsMobile, TransactionsTable } from './list';
 import { Stats } from './stats';
 
 const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
   page: PAGINATION.DEFAULT_PAGE,
   limit: PAGINATION.DEFAULT_LIMIT,
   sort_by: 'block_timestamp',
-  sort_order: 'desc',
+  sort_order: ESortOrder.DESC,
   tab: ETransactionTab.Validated,
 } as const;
 
@@ -80,12 +79,9 @@ export const TransactionsList = () => {
 
   return (
     <div className="space-y-8">
-      <div className="space-y-6">
-        <GlobalSearch />
-        <h1 className="text-2xl font-semibold">Transactions</h1>
-      </div>
+      <h1 className="text-2xl font-semibold">Transactions</h1>
 
-      <Stats className="mb-0" />
+      <Stats className="mb-1" />
 
       <div className="space-y-6">
         <div className="bg-background sticky top-0 z-10 mb-0 flex flex-col items-center justify-between gap-5 pt-8 pb-6 lg:flex-row">
@@ -114,7 +110,7 @@ export const TransactionsList = () => {
             totalPages={pagination?.total_pages ?? 0}
             totalItems={pagination?.total_items ?? 0}
             isLoading={isLoading}
-            className="self-end"
+            className="w-full lg:w-auto"
             onChangePage={handleChangePage}
             onChangeLimit={handleChangeLimit}
           />
@@ -127,13 +123,13 @@ export const TransactionsList = () => {
                 <TransactionsTable transactions={transactions} skeletonLength={limit} />
               </div>
               <div className="block lg:hidden">
-                <TransactionCards transactions={transactions} skeletonLength={limit} />
+                <TransactionCardsMobile transactions={transactions} skeletonLength={limit} />
               </div>
             </div>
           ) : isDesktop ? (
             <TransactionsTable transactions={transactions} skeletonLength={limit} />
           ) : (
-            <TransactionCards transactions={transactions} skeletonLength={limit} />
+            <TransactionCardsMobile transactions={transactions} skeletonLength={limit} />
           )}
         </>
       </div>

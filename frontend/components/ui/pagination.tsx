@@ -1,5 +1,6 @@
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { ComponentType, SVGProps } from 'react';
 
+import { ChevronLeft, ChevronLeftDouble, ChevronRight, ChevronRightDouble } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import { LIMITS, PAGINATION } from '@/constant';
 import { cn } from '@/lib/utils';
@@ -62,7 +63,7 @@ const NavigationButton = ({
   className,
   'aria-label': ariaLabel,
 }: {
-  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
   onClick: () => void;
   disabled: boolean;
   className?: string;
@@ -75,7 +76,7 @@ const NavigationButton = ({
     disabled={disabled}
     aria-label={ariaLabel}
   >
-    <Icon className="text-muted-foreground size-5" strokeWidth={1.3} />
+    <Icon className="text-foreground-quaternary-400 size-5" strokeWidth={1.67} />
   </Button>
 );
 
@@ -93,12 +94,12 @@ const PageButton = ({
 }) => (
   <Button
     variant="outline"
-    className="hidden h-10 min-w-10 rounded-none p-2.5 md:block"
+    className="-ml-px hidden h-10 min-w-10 rounded-none p-2.5 md:block"
     onClick={onClick}
     disabled={disabled}
     aria-label={isEllipsis ? 'More pages' : `Go to page ${pageNumber}`}
   >
-    <span className="text-foreground text-sm font-semibold">{isEllipsis ? '...' : pageNumber}</span>
+    <span className="text-quaternary-500 text-sm font-semibold">{isEllipsis ? '...' : pageNumber}</span>
   </Button>
 );
 
@@ -157,7 +158,7 @@ export const Pagination = ({
             ))}
           </SelectContent>
         </Select>
-        <span className="text-muted-foreground text-sm font-semibold whitespace-nowrap">
+        <span className="text-quaternary-500 text-sm font-semibold whitespace-nowrap">
           of {NumberUtil.formatWithCommas(totalItems)}
         </span>
       </div>
@@ -166,7 +167,7 @@ export const Pagination = ({
       <div className="flex items-center">
         {/* First page button */}
         <NavigationButton
-          icon={ChevronsLeft}
+          icon={ChevronLeftDouble}
           onClick={() => handleChangePage(PAGINATION.MIN_PAGE)}
           disabled={isLoading || !canGoPrevious}
           className="rounded-r-none"
@@ -178,7 +179,7 @@ export const Pagination = ({
           icon={ChevronLeft}
           onClick={() => handleChangePage(currentPage - 1)}
           disabled={isLoading || !canGoPrevious}
-          className="rounded-none"
+          className="-ml-px rounded-none"
           aria-label="Go to previous page"
         />
 
@@ -203,12 +204,12 @@ export const Pagination = ({
 
         {/* Current page indicator */}
         <div
-          className="bg-primary/8 flex h-10 min-w-10 cursor-default items-center justify-center border p-2.5"
+          className="bg-brand-primary -ml-px flex h-10 min-w-10 cursor-default items-center justify-center border p-2.5"
           aria-current="page"
           role="button"
           tabIndex={-1}
         >
-          <span className="text-foreground text-sm font-semibold">{currentPage}</span>
+          <span className="text-secondary-hover text-sm font-semibold">{currentPage}</span>
         </div>
 
         {/* Next page number */}
@@ -235,16 +236,16 @@ export const Pagination = ({
           icon={ChevronRight}
           onClick={() => handleChangePage(currentPage + 1)}
           disabled={isLoading || !canGoNext}
-          className="rounded-none"
+          className="-ml-px rounded-none"
           aria-label="Go to next page"
         />
 
         {/* Last page button */}
         <NavigationButton
-          icon={ChevronsRight}
+          icon={ChevronRightDouble}
           onClick={() => handleChangePage(totalPages)}
           disabled={isLoading || !canGoNext}
-          className="rounded-l-none"
+          className="-ml-px rounded-l-none"
           aria-label="Go to last page"
         />
       </div>

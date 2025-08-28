@@ -14,7 +14,7 @@ export function AppHeader() {
               <Image src="/images/logo.webp" alt="MMN Explorer Logo" width={36} height={36} />
             </div>
             <div className="flex-1">
-              <span className="text-primary truncate text-xl font-bold">MMN Explorer</span>
+              <span className="text-brand-primary-900 truncate text-xl font-bold">MMN Explorer</span>
             </div>
           </div>
         </Link>

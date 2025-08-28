@@ -1,8 +1,9 @@
 'use client';
 
-import { CheckCheck, Copy } from 'lucide-react';
+import { CheckCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+import { Copy01 } from '@/assets/icons';
 import { cn } from '@/lib/utils';
 import { Button } from './button';
 import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
@@ -64,10 +65,13 @@ export const CopyButton = ({ textToCopy, className }: CopyButtonProps) => {
         <Button
           variant="ghost"
           size="icon"
-          className={cn('text-muted-foreground size-4 flex-shrink-0 align-middle', className)}
+          className={cn(
+            'text-foreground-quaternary-400 hover:text-muted-foreground size-4 flex-shrink-0 align-middle hover:bg-transparent',
+            className
+          )}
           onClick={handleCopy}
         >
-          {isCopied ? <CheckCheck /> : <Copy />}
+          {isCopied ? <CheckCheck strokeWidth={1.5} /> : <Copy01 />}
         </Button>
       </TooltipTrigger>
       <TooltipContent>{isCopied ? 'Copied' : 'Copy to clipboard'}</TooltipContent>

@@ -1,23 +1,24 @@
 'use client';
 
-import { format } from 'date-fns';
-import Link from 'next/link';
 import { useState } from 'react';
 
 import { Clock } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Table } from '@/components/ui/table';
 import { APP_CONFIG } from '@/configs/app.config';
-import { DATE_TIME_FORMAT } from '@/constant';
 import { ITransaction } from '@/modules/transaction';
 import { TTableColumn } from '@/types';
-import { DateTimeUtil, NumberUtil } from '@/utils';
 import {
+  BlockNumber,
+  BlockNumberSkeleton,
   FromToAddresses,
   FromToAddressesSkeleton,
   MoreInfoButton,
   MoreInfoButtonSkeleton,
+  TransactionTime,
+  TransactionTimeSkeleton,
+  TransactionValue,
+  TransactionValueSkeleton,
   TxnHashLink,
   TxnHashLinkSkeleton,
   TypeBadges,
@@ -45,25 +46,26 @@ export const TransactionsTable = ({ transactions, skeletonLength }: Transactions
       headerContent: (
         <div className="flex items-center gap-1">
           <span>TXN Hash</span>
-          <Button variant="ghost" size="icon" className="p-0" onClick={toggleShowAbsoluteTime}>
-            <Clock className="text-muted-foreground size-4" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-fit p-0 hover:bg-transparent"
+            onClick={toggleShowAbsoluteTime}
+          >
+            <Clock className="text-foreground-quaternary-400 size-4 font-normal" />
           </Button>
         </div>
       ),
       renderCell: (row) => (
         <div className="flex flex-col items-start">
           <TxnHashLink hash={row.hash} className="w-40" />
-          <span className="text-muted-foreground text-sm">
-            {showAbsoluteTime
-              ? format(DateTimeUtil.toMilliseconds(row.block_timestamp), DATE_TIME_FORMAT.HUMAN_READABLE_SHORT)
-              : DateTimeUtil.formatRelativeTimeSec(row.block_timestamp)}
-          </span>
+          <TransactionTime blockTimestamp={row.block_timestamp} showAbsolute={showAbsoluteTime} />
         </div>
       ),
       skeletonContent: (
         <div className="flex flex-col items-start gap-1">
           <TxnHashLinkSkeleton className="w-40" />
-          <Skeleton className="h-5 w-16" />
+          <TransactionTimeSkeleton />
         </div>
       ),
     },
@@ -77,22 +79,20 @@ export const TransactionsTable = ({ transactions, skeletonLength }: Transactions
     },
     {
       headerContent: 'Block',
-      renderCell: (row) => {
-        return (
-          <Button variant="link" className="h-fit p-0" asChild>
-            <Link href={`/blocks/${row.block_number}`}>{row.block_number}</Link>
-          </Button>
-        );
-      },
+      renderCell: (row) => <BlockNumber blockNumber={row.block_number} />,
+      skeletonContent: <BlockNumberSkeleton />,
     },
     {
       headerContent: 'From/To',
-      renderCell: (row) => <FromToAddresses fromAddress={row.from_address} toAddress={row.to_address} />,
-      skeletonContent: <FromToAddressesSkeleton />,
+      renderCell: (row) => (
+        <FromToAddresses fromAddress={row.from_address} toAddress={row.to_address} orientation="vertical" />
+      ),
+      skeletonContent: <FromToAddressesSkeleton orientation="vertical" />,
     },
     {
       headerContent: `Value ${APP_CONFIG.CHAIN_SYMBOL}`,
-      renderCell: (row) => NumberUtil.formatWithCommas(row.value),
+      renderCell: (row) => <TransactionValue value={row.value} />,
+      skeletonContent: <TransactionValueSkeleton />,
     },
   ];
 

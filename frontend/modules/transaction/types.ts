@@ -1,3 +1,4 @@
+import { ESortOrder } from '@/enums';
 import { ETransactionStatus, ETransactionTab, ETransactionType } from './enums';
 
 export interface ITransaction {
@@ -36,7 +37,7 @@ export interface ITransactionListParams {
   page: number;
   limit: number;
   sort_by: keyof ITransaction;
-  sort_order: 'asc' | 'desc';
+  sort_order: ESortOrder;
   // TODO: update API to support tab, then update this to required
   tab?: ETransactionTab;
 }

@@ -4,10 +4,9 @@ import { useEffect, useState } from 'react';
 
 import { Pagination } from '@/components/ui/pagination';
 import { PAGINATION } from '@/constant';
-import { EBreakpoint } from '@/enums';
+import { EBreakpoint, ESortOrder } from '@/enums';
 import { useBreakpoint, useQueryParam } from '@/hooks';
 import { BlockService, IBlock, IBLockListParams } from '@/modules/block';
-import { GlobalSearch } from '@/modules/global-search/components';
 import { IPaginationMeta } from '@/types';
 import { BlockCards, BlocksTable } from './list';
 
@@ -15,7 +14,7 @@ const DEFAULT_VALUE_DATA_SEARCH: IBLockListParams = {
   page: PAGINATION.DEFAULT_PAGE,
   limit: PAGINATION.DEFAULT_LIMIT,
   sort_by: 'block_number',
-  sort_order: 'desc',
+  sort_order: ESortOrder.DESC,
 } as const;
 
 export const BlockList = () => {
@@ -66,20 +65,17 @@ export const BlockList = () => {
 
   return (
     <div className="space-y-8">
-      <div className="mb-0 space-y-6">
-        <GlobalSearch />
-        <h1 className="text-2xl font-semibold">Blocks</h1>
-      </div>
+      <h1 className="mb-0 text-2xl font-semibold">Blocks</h1>
 
       <div className="space-y-6">
-        <div className="bg-background sticky top-0 z-10 mb-0 flex flex-col items-center justify-end gap-5 pt-8 pb-6 md:flex-row">
+        <div className="bg-background sticky top-0 z-10 mb-0 flex justify-end gap-5 pt-8 pb-6">
           <Pagination
             page={page}
             limit={limit}
             totalPages={pagination?.total_pages ?? 0}
             totalItems={pagination?.total_items ?? 0}
             isLoading={isLoading}
-            className="ml-auto"
+            className="w-full lg:w-auto"
             onChangePage={handleChangePage}
             onChangeLimit={handleChangeLimit}
           />

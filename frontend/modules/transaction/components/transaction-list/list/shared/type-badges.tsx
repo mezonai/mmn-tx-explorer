@@ -1,4 +1,4 @@
-import { CheckCircle, Clock, InfoSquare } from '@/assets/icons';
+import { AlertCircle, CheckCircle, XCircle } from '@/assets/icons';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -22,7 +22,7 @@ interface TypeBadgesSkeletonProps {
 const getTransactionTypeInfo = (type: ETransactionType) => {
   switch (type) {
     case ETransactionType.TokenTransfer:
-      return { color: 'bg-orange-50 border-orange-200 text-orange-700' };
+      return { color: 'bg-utility-warning-50 border-utility-warning-200 text-utility-warning-700' };
   }
 };
 
@@ -30,23 +30,23 @@ const getTransactionStatusInfo = (status: ETransactionStatus) => {
   switch (status) {
     case ETransactionStatus.Pending:
       return {
-        icon: Clock,
-        iconColor: 'text-yellow-600',
+        icon: AlertCircle,
+        iconColor: 'text-utility-warning-600',
       };
     case ETransactionStatus.Confirmed:
       return {
         icon: CheckCircle,
-        iconColor: 'text-green-600',
+        iconColor: 'text-utility-success-600',
       };
-    case ETransactionStatus.Finalized:
+    case ETransactionStatus.Passed:
       return {
-        icon: InfoSquare,
-        iconColor: 'text-red-600',
+        icon: CheckCircle,
+        iconColor: 'text-utility-success-600',
       };
     case ETransactionStatus.Failed:
       return {
-        icon: InfoSquare,
-        iconColor: 'text-red-600',
+        icon: XCircle,
+        iconColor: 'text-utility-error-600',
       };
   }
 };
@@ -64,7 +64,9 @@ export const TypeBadges = ({ className, type, status }: TypeBadgesProps) => {
 
       <Badge variant="outline">
         <StatusIcon className={cn('size-3', statusInfo.iconColor)} strokeWidth={1.5} />
-        <span className="text-xs font-medium whitespace-nowrap">{getTransactionStatusLabel(status)}</span>
+        <span className="text-secondary-700 text-xs font-medium whitespace-nowrap">
+          {getTransactionStatusLabel(status)}
+        </span>
       </Badge>
     </div>
   );

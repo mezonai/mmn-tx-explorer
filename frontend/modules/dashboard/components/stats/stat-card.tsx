@@ -1,24 +1,34 @@
-import { ComponentType } from 'react';
+import { ComponentType, SVGProps } from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { NumberUtil } from '@/utils';
 
 interface StatCardProps {
-  icon: ComponentType<{ className?: string }>;
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
   title: string;
-  value: string | number;
+  value?: string | number;
+  subValue?: string;
 }
 
-export const StatCard = ({ icon: Icon, title, value }: StatCardProps) => {
+export const StatCard = ({ icon: Icon, title, value, subValue }: StatCardProps) => {
   return (
-    <Card className="bg-primary/8 p-0">
+    <Card className={value ? 'bg-brand-primary p-0' : 'bg-background p-0'}>
       <CardContent className="space-y-5 p-5">
         <div className="bg-background w-fit rounded-lg border p-3">
-          <Icon className="size-6" />
+          <Icon className="text-foreground-secondary-700 size-6" strokeWidth={2} />
         </div>
         <div className="space-y-2 font-semibold">
-          <p className="text-sm">{title}</p>
-          <p className="text-3xl">{NumberUtil.formatWithCommas(value)}</p>
+          <p className="text-tertiary-600 text-sm font-medium">{title}</p>
+          {value ? (
+            <div>
+              <span className="text-3xl font-semibold">{NumberUtil.formatWithCommas(value)}</span>
+              <span>&nbsp;</span>
+              <span className="text-base font-medium">{subValue}</span>
+            </div>
+          ) : (
+            <Skeleton className="h-9 w-28" />
+          )}
         </div>
       </CardContent>
     </Card>

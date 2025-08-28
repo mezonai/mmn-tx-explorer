@@ -37,7 +37,7 @@ export function AppSidebar() {
                     <Image src="/images/logo.webp" alt="MMN Explorer Logo" width={36} height={36} />
                   </div>
                   <div className="flex-1">
-                    <span className="text-primary truncate text-xl font-bold">MMN Explorer</span>
+                    <span className="text-brand-primary-900 truncate text-xl font-bold">MMN Explorer</span>
                   </div>
                 </div>
               </Link>
@@ -48,7 +48,10 @@ export function AppSidebar() {
         <div className="pointer-events-none absolute top-1/2 right-0 hidden translate-x-1/2 -translate-y-1/2 md:block md:opacity-0 md:transition-opacity md:group-hover:pointer-events-auto md:group-hover:opacity-100">
           <Button variant="outline" size="icon" className="aspect-square size-fit p-1.5" onClick={toggleSidebar}>
             <ChevronLeft
-              className={cn('text-muted-foreground size-4 transition-transform', state === 'collapsed' && 'rotate-180')}
+              className={cn(
+                'text-foreground-quaternary-400 size-4 transition-transform',
+                state === 'collapsed' && 'rotate-180'
+              )}
             />
           </Button>
         </div>
@@ -58,27 +61,34 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {sidebarNavItems.map((item) => {
-                const isActive = pathname === item.href;
+              {sidebarNavItems.map(({ href, icon: Icon, title }) => {
+                const isActive = pathname === href;
                 return (
-                  <SidebarMenuItem key={item.href}>
+                  <SidebarMenuItem key={href}>
                     <SidebarMenuButton
                       asChild
-                      isActive={isActive}
-                      tooltip={item.title}
+                      tooltip={title}
                       className={cn(
                         'w-full justify-start gap-3 rounded-[6px] px-3 py-2 transition-all duration-200',
-                        isActive ? 'bg-primary text-primary-foreground' : 'hover:bg-muted/50'
+                        isActive ? 'bg-active' : 'hover:bg-active'
                       )}
                     >
                       <Button variant="ghost" className="h-auto w-full justify-start" asChild>
-                        <Link href={item.href}>
+                        <Link href={href}>
                           <div className="flex aspect-square size-5 items-center justify-center">
-                            <item.icon
-                              className={cn('!size-full', isActive ? 'text-primary' : 'text-muted-foreground')}
+                            <Icon
+                              className={cn(
+                                'text-foreground-quaternary-400 !size-full',
+                                isActive && 'text-foreground-brand-secondary_hover'
+                              )}
+                              strokeWidth={2}
                             />
                           </div>
-                          <span className={cn('font-semibold', isActive && 'text-primary')}>{item.title}</span>
+                          <span
+                            className={cn('text-secondary-700 font-semibold', isActive && 'text-brand-secondary_hover')}
+                          >
+                            {title}
+                          </span>
                         </Link>
                       </Button>
                     </SidebarMenuButton>

@@ -1,7 +1,9 @@
+export * from './alert-circle';
 export * from './arrow-down';
 export * from './arrow-left';
 export * from './arrow-narrow-right';
 export * from './arrow-right';
+export * from './award-04';
 export * from './bar-chart-square-02';
 export * from './check-circle';
 export * from './chevron-left';
@@ -18,3 +20,4 @@ export * from './menu-02';
 export * from './search-md';
 export * from './transaction';
 export * from './wallet-02';
+export * from './x-circle';
