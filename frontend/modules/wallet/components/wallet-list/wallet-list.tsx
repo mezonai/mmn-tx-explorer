@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Pagination } from '@/components/ui/pagination';
 import { PAGINATION } from '@/constant';
 import { ESortOrder } from '@/enums';
-import { useQueryParam } from '@/hooks';
+import { usePaginationQueryParam } from '@/hooks';
 import { IPaginationMeta } from '@/types';
 import { WalletService } from '../../api';
 import { IWallet, IWalletListParams } from '../../type';
@@ -24,15 +24,7 @@ export const WalletList = () => {
   const [pagination, setPagination] = useState<IPaginationMeta>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [localSearchParams, setLocalSearchParams] = useState<IWalletListParams>();
-  const { value: page, handleChangeValue: handleChangePage } = useQueryParam<number>({
-    queryParam: 'page',
-    defaultValue: PAGINATION.DEFAULT_PAGE,
-  });
-  const { value: limit, handleChangeValue: handleChangeLimit } = useQueryParam<number>({
-    queryParam: 'limit',
-    defaultValue: PAGINATION.DEFAULT_LIMIT,
-    clearParams: ['page'],
-  });
+  const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
 
   const handleFetchWallets = async (params: IWalletListParams) => {
     try {
