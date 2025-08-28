@@ -26,7 +26,7 @@ export function AppSidebar() {
   const { toggleSidebar, state } = useSidebar();
 
   return (
-    <Sidebar collapsible="icon" className="z-999">
+    <Sidebar collapsible="icon">
       <SidebarHeader className="relative px-4">
         <SidebarMenu>
           <SidebarMenuItem>
