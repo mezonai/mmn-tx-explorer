@@ -28,6 +28,7 @@ docker compose up --build
 
 # 6. Build and run Insight
 go build -o main -tags=production
+./main migrate
 ./main orchestrator   # Starts the indexer
 ./main api           # Starts the API server
 

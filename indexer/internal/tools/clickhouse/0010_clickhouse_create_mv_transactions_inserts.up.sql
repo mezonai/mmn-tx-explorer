@@ -1,0 +1,43 @@
+CREATE MATERIALIZED VIEW IF NOT EXISTS mv_transactions_inserts
+TO transactions
+AS
+SELECT
+    chain_id,
+    t.1 AS hash,
+    t.2 AS nonce,
+    t.3 AS block_hash,
+    t.4 AS block_number,
+    t.5 AS block_timestamp,
+    t.6 AS transaction_index,
+    t.7 AS from_address,
+    t.8 AS to_address,
+    t.9 AS value,
+    t.10 AS gas,
+    t.11 AS gas_price,
+    t.12 AS data,
+    t.13 AS function_selector,
+    t.14 AS max_fee_per_gas,
+    t.15 AS max_priority_fee_per_gas,
+    t.16 AS max_fee_per_blob_gas,
+    t.17 AS blob_versioned_hashes,
+    t.18 AS transaction_type,
+    t.19 AS r,
+    t.20 AS s,
+    t.21 AS v,
+    t.22 AS access_list,
+    t.23 AS authorization_list,
+    t.24 AS contract_address,
+    t.25 AS gas_used,
+    t.26 AS cumulative_gas_used,
+    t.27 AS effective_gas_price,
+    t.28 AS blob_gas_used,
+    t.29 AS blob_gas_price,
+    t.30 AS logs_bloom,
+    t.31 AS status,
+    t.32 AS sender_account,
+    t.33 AS receiver_account,
+    t.34 AS transaction_timestamp,
+    insert_timestamp,
+    sign
+FROM inserts_null_table
+ARRAY JOIN transactions AS t;
