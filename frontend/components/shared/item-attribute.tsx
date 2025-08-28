@@ -34,7 +34,7 @@ export function ItemAttribute<D>({
           <span className="text-sm font-semibold">{label}</span>
         </div>
       ) : (
-        <Skeleton className="h-4 w-[85%]" />
+        <Skeleton className="h-5 w-40 md:w-[85%]" />
       )}
       <div className="text-sm font-normal">{data ? render(data) : skeleton}</div>
     </div>

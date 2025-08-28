@@ -5,11 +5,10 @@ import { useEffect, useState } from 'react';
 import { Pagination } from '@/components/ui/pagination';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PAGINATION } from '@/constant';
-import { EBreakpoint } from '@/enums';
-import { useBreakpoint, usePaginationQueryParam, useQueryParam } from '@/hooks';
+import { usePaginationQueryParam, useQueryParam } from '@/hooks';
 import { ETransactionTab, ITransaction, ITransactionListParams, TransactionService } from '@/modules/transaction';
 import { IPaginationMeta } from '@/types';
-import { TransactionCards, TransactionsTable } from './list';
+import { TransactionCollection } from './list/transaction-collection';
 import { Stats } from './stats';
 
 const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
@@ -21,7 +20,6 @@ const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
 } as const;
 
 export const TransactionsList = () => {
-  const isDesktop = useBreakpoint(EBreakpoint.LG);
   const [transactions, setTransactions] = useState<ITransaction[]>();
   const [pagination, setPagination] = useState<IPaginationMeta>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -110,22 +108,7 @@ export const TransactionsList = () => {
           />
         </div>
 
-        <>
-          {isDesktop === undefined ? (
-            <div>
-              <div className="hidden lg:block">
-                <TransactionsTable transactions={transactions} skeletonLength={limit} />
-              </div>
-              <div className="block lg:hidden">
-                <TransactionCards transactions={transactions} skeletonLength={limit} />
-              </div>
-            </div>
-          ) : isDesktop ? (
-            <TransactionsTable transactions={transactions} skeletonLength={limit} />
-          ) : (
-            <TransactionCards transactions={transactions} skeletonLength={limit} />
-          )}
-        </>
+        <TransactionCollection transactions={transactions} skeletonLimit={limit} />
       </div>
     </div>
   );

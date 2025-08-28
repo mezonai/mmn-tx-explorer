@@ -1,7 +1,7 @@
 import { Pagination } from '@/components/ui/pagination';
 import { usePaginationQueryParam } from '@/hooks';
 import { ITransaction, TransactionService } from '@/modules/transaction';
-import { TransactionsTable } from '@/modules/transaction/components/transaction-list/list';
+import { TransactionCollection } from '@/modules/transaction/components/transaction-list/list/transaction-collection';
 import { IPaginationMeta } from '@/types';
 import { useEffect, useState } from 'react';
 
@@ -34,7 +34,7 @@ export const TabTransactions = ({ blockNumber }: TabTransactionsProps) => {
 
   return (
     <div>
-      <div className="relative -top-15 -mb-10">
+      <div className="relative mb-5 md:-top-15 md:-mb-10">
         <Pagination
           page={page}
           limit={limit}
@@ -46,7 +46,7 @@ export const TabTransactions = ({ blockNumber }: TabTransactionsProps) => {
           onChangeLimit={handleChangeLimit}
         />
       </div>
-      <TransactionsTable transactions={transactions} skeletonLength={5} />
+      <TransactionCollection transactions={transactions} skeletonLimit={5} />
       <div className="h-1000" />
     </div>
   );

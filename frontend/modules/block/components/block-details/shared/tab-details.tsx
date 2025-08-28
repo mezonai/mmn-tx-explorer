@@ -48,7 +48,7 @@ export const TabDetails = ({ blockNumber }: TabDetailsProps) => {
             </div>
           </div>
         )}
-        skeleton={<Skeleton className="h-4 w-20" />}
+        skeleton={<Skeleton className="h-5 w-30" />}
       />
       <ItemAttribute
         label="Block size"
@@ -59,7 +59,7 @@ export const TabDetails = ({ blockNumber }: TabDetailsProps) => {
             <span>{block.size}</span>
           </div>
         )}
-        skeleton={<Skeleton className="h-4 w-15" />}
+        skeleton={<Skeleton className="h-5 w-15" />}
       />
       <ItemAttribute
         label="Transactions count"
@@ -70,7 +70,7 @@ export const TabDetails = ({ blockNumber }: TabDetailsProps) => {
             <span>{block.transaction_count}</span>
           </div>
         )}
-        skeleton={<Skeleton className="h-4 w-15" />}
+        skeleton={<Skeleton className="h-5 w-15" />}
       />
       <ItemAttribute
         label="Validated by"
@@ -79,13 +79,14 @@ export const TabDetails = ({ blockNumber }: TabDetailsProps) => {
         render={(block) => (
           <div className="flex items-center">
             <ValidatorThumb />
-            <div className="text-primary flex-grow md:flex-grow-0">
+            <div className="mr-2 flex-grow md:flex-grow-0">
               <Truncate className="md:hidden">{block.miner}</Truncate>
-              <span className="hidden md:inline-block">{block.miner}</span>
+              <span className="hidden md:block">{block.miner}</span>
             </div>
             <CopyButton textToCopy={block.miner} />
           </div>
         )}
+        skeleton={<Skeleton className="h-5 w-full md:w-150" />}
       />
       <ItemAttribute
         label="Block timestamp"
@@ -99,7 +100,7 @@ export const TabDetails = ({ blockNumber }: TabDetailsProps) => {
             <span>{format(new Date(block.block_timestamp * 1000), DATE_TIME_FORMAT.HUMAN_READABLE_WITH_OFFSET)}</span>
           </div>
         )}
-        skeleton={<Skeleton className="h-4 w-[50%]" />}
+        skeleton={<Skeleton className="h-5 w-[50%]" />}
       />
       <Separator />
       <ItemAttribute
@@ -107,28 +108,30 @@ export const TabDetails = ({ blockNumber }: TabDetailsProps) => {
         description="The hash of the block"
         data={block}
         render={(block) => (
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
             <div className="flex-grow md:flex-grow-0">
               <Truncate className="md:hidden">{block.block_hash}</Truncate>
-              <span className="hidden md:inline-block">{block.block_hash}</span>
+              <span className="hidden md:block">{block.block_hash}</span>
             </div>
             <CopyButton textToCopy={block.block_hash} />
           </div>
         )}
+        skeleton={<Skeleton className="h-5 w-full md:w-150" />}
       />
       <ItemAttribute
         label="Block parent hash"
         description="The hash of the parent block"
         data={block}
         render={(block) => (
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
             <Link href={`/blocks/${block.block_number - 1}`} className="text-primary flex-grow md:flex-grow-0">
               <Truncate className="md:hidden">{block.parent_hash}</Truncate>
-              <span className="hidden md:inline-block">{block.parent_hash}</span>
+              <span className="hidden md:block">{block.parent_hash}</span>
             </Link>
             <CopyButton textToCopy={block.parent_hash} />
           </div>
         )}
+        skeleton={<Skeleton className="h-5 w-full md:w-150" />}
       />
     </div>
   );

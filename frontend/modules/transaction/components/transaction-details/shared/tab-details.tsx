@@ -1,4 +1,4 @@
-import { MiddleTruncate } from '@re-dev/react-truncate';
+import { Truncate } from '@re-dev/react-truncate';
 import { format } from 'date-fns';
 import { Clock4 } from 'lucide-react';
 import Link from 'next/link';
@@ -8,16 +8,17 @@ import { TxStatusBadge } from '@/components/shared/tx-status-badge';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Separator } from '@/components/ui/separator';
-import { ADDRESS_END_VISIBLE_CHARS, DATE_TIME_FORMAT } from '@/constant';
+import { Skeleton } from '@/components/ui/skeleton';
+import { DATE_TIME_FORMAT } from '@/constant';
 import { ITransaction } from '@/modules/transaction/types';
-import { DateTimeUtil } from '@/utils';
+import { DateTimeUtil, NumberUtil } from '@/utils';
 
 interface TabDetailsProps {
   transaction?: ITransaction;
 }
 
 export const TabDetails = ({ transaction }: TabDetailsProps) => {
-  return transaction ? (
+  return (
     <div className="space-y-4">
       <ItemAttribute
         label="Transaction Hash"
@@ -25,18 +26,21 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
         data={transaction}
         render={(transaction) => (
           <div className="flex items-center gap-2">
-            <div className="w-[500px]">
-              <MiddleTruncate end={ADDRESS_END_VISIBLE_CHARS}>{transaction.hash}</MiddleTruncate>
+            <div className="flex-grow md:flex-grow-0">
+              <Truncate className="md:hidden">{transaction.hash}</Truncate>
+              <span className="hidden md:block">{transaction.hash}</span>
             </div>
             <CopyButton textToCopy={transaction.hash} className="text-muted-foreground size-fit flex-shrink-0" />
           </div>
         )}
+        skeleton={<Skeleton className="h-5 w-full md:w-150" />}
       />
       <ItemAttribute
         label="Status"
         description="The status of the transaction"
         data={transaction}
         render={(transaction) => <TxStatusBadge status={transaction.status} />}
+        skeleton={<Skeleton className="h-5 w-20" />}
       />
       <ItemAttribute
         label="Block"
@@ -47,6 +51,7 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
             <Link href={`/blocks/${transaction.block_number}`}>{transaction.block_number}</Link>
           </Button>
         )}
+        skeleton={<Skeleton className="h-5 w-15" />}
       />
       <ItemAttribute
         label="Timestamp"
@@ -62,6 +67,7 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
             </div>
           </div>
         )}
+        skeleton={<Skeleton className="h-5 w-1/2" />}
       />
       <Separator />
       <ItemAttribute
@@ -70,15 +76,17 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
         data={transaction}
         render={(transaction) => (
           <div className="flex items-center gap-2">
-            <span className="w-[335px]">
-              <MiddleTruncate end={ADDRESS_END_VISIBLE_CHARS}>{transaction.from_address}</MiddleTruncate>
-            </span>
+            <div className="flex-grow md:flex-grow-0">
+              <Truncate className="md:hidden">{transaction.from_address}</Truncate>
+              <span className="hidden md:block">{transaction.from_address}</span>
+            </div>
             <CopyButton
               textToCopy={transaction.from_address}
               className="text-muted-foreground size-fit flex-shrink-0"
             />
           </div>
         )}
+        skeleton={<Skeleton className="h-5 w-full md:w-150" />}
       />
       <ItemAttribute
         label="To"
@@ -86,12 +94,14 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
         data={transaction}
         render={(transaction) => (
           <div className="flex items-center gap-2">
-            <span className="w-[335px]">
-              <MiddleTruncate end={ADDRESS_END_VISIBLE_CHARS}>{transaction.to_address}</MiddleTruncate>
-            </span>
+            <div className="flex-grow md:flex-grow-0">
+              <Truncate className="md:hidden">{transaction.to_address}</Truncate>
+              <span className="hidden md:block">{transaction.to_address}</span>
+            </div>
             <CopyButton textToCopy={transaction.to_address} className="text-muted-foreground size-fit flex-shrink-0" />
           </div>
         )}
+        skeleton={<Skeleton className="h-5 w-full md:w-150" />}
       />
       <ItemAttribute
         label="Value"
@@ -99,10 +109,11 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
         data={transaction}
         render={(transaction) => (
           <div className="flex items-center">
-            <span>{transaction.value}</span>
+            <span>{NumberUtil.formatWithCommas(transaction.value)}</span>
           </div>
         )}
+        skeleton={<Skeleton className="h-5 w-20" />}
       />
     </div>
-  ) : null;
+  );
 };
