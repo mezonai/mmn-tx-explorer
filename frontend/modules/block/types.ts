@@ -1,3 +1,5 @@
+import { ESortOrder } from '@/enums';
+
 export interface IBlock {
   base_fee_per_gas: number;
   block_hash: string;
@@ -27,5 +29,5 @@ export interface IBLockListParams {
   page: number;
   limit: number;
   sort_by: keyof IBlock;
-  sort_order: 'asc' | 'desc';
+  sort_order: ESortOrder;
 }

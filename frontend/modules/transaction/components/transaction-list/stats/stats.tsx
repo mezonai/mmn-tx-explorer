@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { DashboardService, IDashboardStats } from '@/modules/dashboard';
 import { StatCard } from './stat-card';
-import { StatCardSkeleton } from './stat-card-skeleton';
 
 interface StatsProps {
   className?: string;
@@ -17,11 +16,13 @@ export const Stats = ({ className }: StatsProps) => {
   const statCards = [
     {
       title: 'Transactions',
-      value: stats?.total_transactions,
+      value: stats?.transactions_24h,
+      subValue: '(24h)',
     },
     {
       title: 'Pending transactions',
-      value: stats?.total_pending_transactions,
+      value: stats?.pending_transactions_30m,
+      subValue: '(30m)',
     },
   ];
 
@@ -41,8 +42,10 @@ export const Stats = ({ className }: StatsProps) => {
   return (
     <div className={cn('grid grid-cols-1 gap-4 sm:grid-cols-2', className)}>
       {stats
-        ? statCards.map((item) => <StatCard key={item.title} title={item.title} value={item.value ?? 0} />)
-        : statCards.map((item) => <StatCardSkeleton key={item.title} />)}
+        ? statCards.map((item) => (
+            <StatCard key={item.title} title={item.title} value={item.value} subValue={item.subValue} />
+          ))
+        : statCards.map((item) => <StatCard key={item.title} title={item.title} subValue={item.subValue} />)}
     </div>
   );
 };

@@ -1,10 +1,9 @@
 export const ROUTES = {
   HOME: '/',
   TRANSACTIONS: '/transactions',
-  TRANSACTION: '/transactions/:id',
+  TRANSACTION: (hash: string, queryParams?: string) => `/transactions/${hash}${queryParams ? `?${queryParams}` : ''}`,
   BLOCKS: '/blocks',
-  BLOCK: '/blocks/:id',
+  BLOCK: (number: number, queryParams?: string) => `/blocks/${number}${queryParams ? `?${queryParams}` : ''}`,
+  WALLETS: '/wallets',
+  WALLET: (address: string, queryParams?: string) => `/wallets/${address}${queryParams ? `?${queryParams}` : ''}`,
 } as const;
-
-export type RouteKey = keyof typeof ROUTES;
-export type RoutePath = (typeof ROUTES)[RouteKey];

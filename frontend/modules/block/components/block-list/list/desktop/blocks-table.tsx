@@ -1,20 +1,22 @@
 'use client';
 
-import { format } from 'date-fns';
-import Link from 'next/link';
 import { useState } from 'react';
 
 import { Clock } from '@/assets/icons';
-import { AddressDisplay } from '@/components/shared';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Table } from '@/components/ui/table';
-import { ROUTES } from '@/configs/routes.config';
-import { DATE_TIME_FORMAT } from '@/constant';
 import { IBlock } from '@/modules/block/types';
 import { TTableColumn } from '@/types';
-import { DateTimeUtil } from '@/utils';
-import { TxnLink } from '../shared';
+import {
+  BlockNumberField,
+  BlockNumberFieldSkeleton,
+  HashField,
+  HashFieldSkeleton,
+  TxnLink,
+  TxnLinkSkeleton,
+  ValidatorField,
+  ValidatorFieldSkeleton,
+} from '../shared';
 
 interface BlocksTableProps {
   blocks?: IBlock[];
@@ -33,51 +35,48 @@ export const BlocksTable = ({ blocks, skeletonLength }: BlocksTableProps) => {
       headerContent: (
         <div className="flex items-center gap-1">
           <span>Block</span>
-          <Button variant="ghost" size="icon" className="p-0" onClick={toggleShowAbsoluteTime}>
-            <Clock className="text-muted-foreground size-4" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-fit p-0 hover:bg-transparent"
+            onClick={toggleShowAbsoluteTime}
+          >
+            <Clock className="text-foreground-quaternary-400 size-4" />
           </Button>
         </div>
       ),
-      renderCell: (row) => {
-        return (
-          <div className="flex flex-col items-start">
-            <Button variant="link" className="h-fit p-0" asChild>
-              <Link href={ROUTES.BLOCK.replace(':id', row.block_number.toString())}>{row.block_number}</Link>
-            </Button>
-            <span className="text-muted-foreground text-sm">
-              {showAbsoluteTime
-                ? format(DateTimeUtil.toMilliseconds(row.block_timestamp), DATE_TIME_FORMAT.HUMAN_READABLE_SHORT)
-                : DateTimeUtil.formatRelativeTimeSec(row.block_timestamp)}
-            </span>
-          </div>
-        );
-      },
-      skeletonContent: (
-        <div className="flex flex-col items-start gap-1">
-          <Skeleton className="h-4.5 w-20" />
-          <Skeleton className="h-4.5 w-16" />
-        </div>
+      renderCell: (row) => (
+        <BlockNumberField
+          blockNumber={row.block_number}
+          blockTimestamp={row.block_timestamp}
+          showAbsoluteTime={showAbsoluteTime}
+        />
       ),
+      skeletonContent: <BlockNumberFieldSkeleton />,
     },
     {
       headerContent: 'Hash',
       renderCell: (row) => (
-        <AddressDisplay address={row.block_hash} className="w-60" addressClassName="text-foreground" />
+        <HashField hash={row.block_hash} className="w-60 lg:w-40 xl:w-60" addressClassName="text-foreground" />
       ),
+      skeletonContent: <HashFieldSkeleton />,
     },
     {
       headerContent: 'Parent hash',
       renderCell: (row) => (
-        <AddressDisplay address={row.parent_hash} className="w-60" addressClassName="text-foreground" />
+        <HashField hash={row.parent_hash} className="w-60 lg:w-40 xl:w-60" addressClassName="text-foreground" />
       ),
+      skeletonContent: <HashFieldSkeleton />,
     },
     {
       headerContent: 'Validator',
-      renderCell: (row) => <AddressDisplay address={row.miner} className="w-50" />,
+      renderCell: (row) => <ValidatorField miner={row.miner} className="w-50 lg:w-30 xl:w-50" />,
+      skeletonContent: <ValidatorFieldSkeleton />,
     },
     {
-      headerContent: 'Txn',
+      headerContent: 'TXN',
       renderCell: (row) => <TxnLink count={row.transaction_count} blockNumber={row.block_number} />,
+      skeletonContent: <TxnLinkSkeleton />,
     },
   ];
 

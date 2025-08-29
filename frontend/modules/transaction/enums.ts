@@ -10,6 +10,6 @@ export enum ETransactionType {
 export enum ETransactionStatus {
   Pending = 0,
   Confirmed = 1,
-  Finalized = 2,
+  Passed = 2,
   Failed = 3,
 }

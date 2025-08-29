@@ -5,37 +5,27 @@ import { useEffect, useState } from 'react';
 import { Pagination } from '@/components/ui/pagination';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PAGINATION } from '@/constant';
-import { EBreakpoint } from '@/enums';
-import { useBreakpoint, useQueryParam } from '@/hooks';
-import { GlobalSearch } from '@/modules/global-search/components';
+import { ESortOrder } from '@/enums';
+import { usePaginationQueryParam, useQueryParam } from '@/hooks';
 import { ETransactionTab, ITransaction, ITransactionListParams, TransactionService } from '@/modules/transaction';
 import { IPaginationMeta } from '@/types';
-import { TransactionCards, TransactionsTable } from './list';
+import { TransactionCollection } from './list';
 import { Stats } from './stats';
 
 const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
   page: PAGINATION.DEFAULT_PAGE,
   limit: PAGINATION.DEFAULT_LIMIT,
-  sort_by: 'block_timestamp',
-  sort_order: 'desc',
+  sort_by: 'transaction_timestamp',
+  sort_order: ESortOrder.DESC,
   tab: ETransactionTab.Validated,
 } as const;
 
 export const TransactionsList = () => {
-  const isDesktop = useBreakpoint(EBreakpoint.LG);
   const [transactions, setTransactions] = useState<ITransaction[]>();
   const [pagination, setPagination] = useState<IPaginationMeta>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [localSearchParams, setLocalSearchParams] = useState<ITransactionListParams>();
-  const { value: page, handleChangeValue: handleChangePage } = useQueryParam<number>({
-    queryParam: 'page',
-    defaultValue: PAGINATION.DEFAULT_PAGE,
-  });
-  const { value: limit, handleChangeValue: handleChangeLimit } = useQueryParam<number>({
-    queryParam: 'limit',
-    defaultValue: PAGINATION.DEFAULT_LIMIT,
-    clearParams: ['page'],
-  });
+  const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
   const { value: tab, handleChangeValue: handleChangeTab } = useQueryParam<ETransactionTab>({
     queryParam: 'tab',
     defaultValue: ETransactionTab.Validated,
@@ -80,12 +70,9 @@ export const TransactionsList = () => {
 
   return (
     <div className="space-y-8">
-      <div className="space-y-6">
-        <GlobalSearch />
-        <h1 className="text-2xl font-semibold">Transactions</h1>
-      </div>
+      <h1 className="text-2xl font-semibold">Transactions</h1>
 
-      <Stats className="mb-0" />
+      <Stats className="mb-1" />
 
       <div className="space-y-6">
         <div className="bg-background sticky top-0 z-10 mb-0 flex flex-col items-center justify-between gap-5 pt-8 pb-6 lg:flex-row">
@@ -114,28 +101,13 @@ export const TransactionsList = () => {
             totalPages={pagination?.total_pages ?? 0}
             totalItems={pagination?.total_items ?? 0}
             isLoading={isLoading}
-            className="self-end"
+            className="w-full lg:w-auto"
             onChangePage={handleChangePage}
             onChangeLimit={handleChangeLimit}
           />
         </div>
 
-        <>
-          {isDesktop === undefined ? (
-            <div>
-              <div className="hidden lg:block">
-                <TransactionsTable transactions={transactions} skeletonLength={limit} />
-              </div>
-              <div className="block lg:hidden">
-                <TransactionCards transactions={transactions} skeletonLength={limit} />
-              </div>
-            </div>
-          ) : isDesktop ? (
-            <TransactionsTable transactions={transactions} skeletonLength={limit} />
-          ) : (
-            <TransactionCards transactions={transactions} skeletonLength={limit} />
-          )}
-        </>
+        <TransactionCollection transactions={transactions} skeletonLength={limit} />
       </div>
     </div>
   );
