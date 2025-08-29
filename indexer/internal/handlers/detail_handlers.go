@@ -17,7 +17,6 @@ import (
 type BlockDetailResponse struct {
 	Data struct {
 		Block        common.BlockModel        `json:"block"`
-		Transactions []common.TransactionModel `json:"transactions"`
 	} `json:"data"`
 }
 
@@ -109,32 +108,13 @@ func handleBlockDetailRequest(c *gin.Context) {
 
 	block := blockResult.Data[0].Serialize()
 
-	// Get all transactions in this block
-	transactionsResult, err := mainStorage.GetTransactions(storage.QueryFilter{
-		ChainId:      chainId,
-		BlockNumbers: []*big.Int{blockNumber},
-		SortBy:       "nonce",
-		SortOrder:    "asc",
-	})
-	if err != nil {
-		log.Error().Err(err).Msg("Error getting block transactions")
-		api.InternalErrorHandler(c)
-		return
-	}
-
-	transactions := make([]common.TransactionModel, len(transactionsResult.Data))
-	for i, tx := range transactionsResult.Data {
-		transactions[i] = tx.Serialize()
-	}
 
 	// Initialize the BlockDetailResponse
 	blockDetailResponse := BlockDetailResponse{
 		Data: struct {
 			Block        common.BlockModel        `json:"block"`
-			Transactions []common.TransactionModel `json:"transactions"`
 		}{
 			Block:        block,
-			Transactions: transactions,
 		},
 	}
 

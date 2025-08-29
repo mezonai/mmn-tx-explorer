@@ -42,7 +42,7 @@ func CalculateTransactionsRoot(transactions []common.Transaction) (string, error
 			if isContractCreation {
 				ethTx = types.NewContractCreation(
 					tx.Nonce,
-					tx.Value,
+					safeBigInt(tx.Value),
 					tx.Gas,
 					tx.GasPrice,
 					data,
@@ -51,7 +51,7 @@ func CalculateTransactionsRoot(transactions []common.Transaction) (string, error
 				ethTx = types.NewTransaction(
 					tx.Nonce,
 					to,
-					tx.Value,
+					safeBigInt(tx.Value),
 					tx.Gas,
 					tx.GasPrice,
 					data,
@@ -110,7 +110,7 @@ func CalculateTransactionsRoot(transactions []common.Transaction) (string, error
 				GasPrice:   tx.GasPrice,
 				Gas:        tx.Gas,
 				To:         toAddr,
-				Value:      tx.Value,
+				Value:      safeBigInt(tx.Value),
 				Data:       data,
 				AccessList: accessList,
 				V:          tx.V,
@@ -139,7 +139,7 @@ func CalculateTransactionsRoot(transactions []common.Transaction) (string, error
 				GasFeeCap:  tx.MaxFeePerGas,
 				Gas:        tx.Gas,
 				To:         toAddr,
-				Value:      tx.Value,
+				Value:      safeBigInt(tx.Value),
 				Data:       data,
 				AccessList: accessList,
 				V:          tx.V,
@@ -151,7 +151,7 @@ func CalculateTransactionsRoot(transactions []common.Transaction) (string, error
 			chainID := safeUint256(tx.ChainId)
 			gasTipCap := safeUint256(tx.MaxPriorityFeePerGas)
 			gasFeeCap := safeUint256(tx.MaxFeePerGas)
-			value := safeUint256(tx.Value)
+			value := safeUint256(safeBigInt(tx.Value))
 			blobFeeCap := safeUint256(tx.MaxFeePerBlobGas)
 			v := safeUint256(tx.V)
 			r := safeUint256(tx.R)
@@ -197,7 +197,7 @@ func CalculateTransactionsRoot(transactions []common.Transaction) (string, error
 			chainID := safeUint256(tx.ChainId)
 			gasTipCap := safeUint256(tx.MaxPriorityFeePerGas)
 			gasFeeCap := safeUint256(tx.MaxFeePerGas)
-			value := safeUint256(tx.Value)
+			value := safeUint256(safeBigInt(tx.Value))
 			v := safeUint256(tx.V)
 			r := safeUint256(tx.R)
 			s := safeUint256(tx.S)
@@ -310,4 +310,12 @@ func safeUint256(b *big.Int) *uint256.Int {
 	}
 	out, _ := uint256.FromBig(b)
 	return out
+}
+
+func safeBigInt(s string) *big.Int {
+	b, ok := new(big.Int).SetString(s, 10)
+	if !ok {
+		return nil
+	}
+	return b
 }
