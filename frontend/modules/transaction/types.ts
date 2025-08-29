@@ -30,6 +30,7 @@ export interface ITransaction {
   transaction_type: ETransactionType;
   v: string;
   value: string;
+  transaction_timestamp: number;
 }
 
 export interface ITransactionListParams {
@@ -39,4 +40,30 @@ export interface ITransactionListParams {
   sort_order: 'asc' | 'desc';
   // TODO: update API to support tab, then update this to required
   tab?: ETransactionTab;
+  filter_block_number?: number;
+}
+
+export interface ILogInputData {
+  name: string;
+  type: 'address' | 'uint256';
+  indexed: boolean;
+  data: string;
+}
+
+export interface ITransactionLog {
+  id: number;
+  address: string;
+  decode_input_data: {
+    method_id: string;
+    call: string;
+    inputs: ILogInputData[];
+  };
+  topics: string[];
+  data: string;
+}
+
+export interface ITransactionDetailsResponse {
+  data: {
+    transaction: ITransaction;
+  };
 }

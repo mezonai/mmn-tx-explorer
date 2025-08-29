@@ -11,7 +11,11 @@ import { SearchService } from '../api';
 import { ISearchResult } from '../types';
 import { SearchResults } from './search-results';
 
-export const GlobalSearch = () => {
+interface GlobalSearchProps {
+  className?: string;
+}
+
+export const GlobalSearch = ({ className }: GlobalSearchProps) => {
   const [query, setQuery] = useState<string>('');
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -72,7 +76,7 @@ export const GlobalSearch = () => {
   }, []);
 
   return (
-    <div className="relative flex-1" ref={containerRef} onFocus={() => setIsFocused(true)}>
+    <div className={cn('relative flex-1', className)} ref={containerRef} onFocus={() => setIsFocused(true)}>
       <SearchMd className="text-muted-foreground absolute top-1/2 left-3 size-5 -translate-y-1/2 transform" />
       <Input
         placeholder="Search by txn hash / block"
