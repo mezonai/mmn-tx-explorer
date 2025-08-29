@@ -131,6 +131,10 @@ func handleTransactionsRequest(c *gin.Context) {
 		return
 	}
 
+	if walletAddress == "" && queryParams.WalletAddress != "" {
+		walletAddress = queryParams.WalletAddress
+	}
+
 	// Validate GroupBy and SortBy fields
 	if err := api.ValidateGroupByAndSortBy("transactions", queryParams.GroupBy, queryParams.SortBy, queryParams.Aggregates); err != nil {
 		api.BadRequestErrorHandler(c, err)

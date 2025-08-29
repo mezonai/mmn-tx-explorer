@@ -1,6 +1,7 @@
 package handlers
 
 import (
+    "fmt"
     "math"
     "strings"
 
@@ -86,5 +87,84 @@ func GetWallets(c *gin.Context) {
     resp.Data = &data
     resp.Aggregations = nil
 
+    sendJSONResponse(c, resp)
+}
+
+// WalletDetailResponse represents the response structure for wallet detail
+type WalletDetailResponse struct {
+    Data map[string]interface{} `json:"data"`
+}
+
+// @Summary Get wallet detail
+// @Description Retrieve detailed information about a specific wallet
+// @Tags wallet
+// @Accept json
+// @Produce json
+// @Security BasicAuth
+// @Param chainId path string true "Chain ID"
+// @Param address path string true "Wallet address"
+// @Success 200 {object} WalletDetailResponse
+// @Failure 400 {object} api.Error
+// @Failure 401 {object} api.Error
+// @Failure 404 {object} api.Error
+// @Failure 500 {object} api.Error
+// @Router /{chainId}/wallets/{address}/detail [get]
+func GetWalletDetail(c *gin.Context) {
+    // Parse common query params (force_consistent_data, etc.)
+    queryParams, err := api.ParseQueryParams(c.Request)
+    if err != nil {
+        api.BadRequestErrorHandler(c, err)
+        return
+    }
+
+    address := c.Param("address")
+    if strings.TrimSpace(address) == "" {
+        api.BadRequestErrorHandler(c, fmt.Errorf("address cannot be empty"))
+        return
+    }
+
+    mainStorage, err := getMainStorage()
+    if err != nil {
+        log.Error().Err(err).Msg("Error getting main storage")
+        api.InternalErrorHandler(c)
+        return
+    }
+
+    // Build query filter to fetch a single wallet row
+    qf := storage.QueryFilter{
+        FilterParams:        map[string]string{"address": address},
+        Limit:               1,
+        ForceConsistentData: queryParams.ForceConsistentData,
+        Aggregates:          []string{"address", "account_nonce", "balance"},
+    }
+
+    result, err := mainStorage.GetAggregations("wallet", qf)
+    if err != nil {
+        log.Error().Err(err).Msg("Error querying wallet detail")
+        api.InternalErrorHandler(c)
+        return
+    }
+    if len(result.Aggregates) == 0 {
+        api.NotFoundErrorHandler(c, fmt.Errorf("wallet not found"))
+        return
+    }
+
+    // Prepare base response data from wallet table
+    resp := WalletDetailResponse{ Data: result.Aggregates[0] }
+
+    // Fetch latest transaction timestamp for this wallet (from OR to)
+    txQf := storage.QueryFilter{
+        WalletAddress:       address,
+        ForceConsistentData: queryParams.ForceConsistentData,
+        SortBy:              "transaction_timestamp",
+        SortOrder:           "desc",
+        Limit:               1,
+        Aggregates:         nil,
+    }
+   
+    transactionsResult, err := mainStorage.GetTransactions(txQf)
+    if err == nil && len(transactionsResult.Data) > 0 {
+        resp.Data["last_balance_update"] = transactionsResult.Data[0].TransactionTimestamp
+    }
     sendJSONResponse(c, resp)
 }

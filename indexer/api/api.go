@@ -46,6 +46,9 @@ type QueryParams struct {
 	Decode bool `schema:"decode"`
 	// @Description Flag to force consistent data at the expense of query speed
 	ForceConsistentData bool `schema:"force_consistent_data"`
+
+	// @Description Wallet address to fetch transactions for (matches from OR to)
+	WalletAddress string `schema:"wallet_address"`
 }
 
 // Meta represents metadata for a query response

@@ -551,7 +551,6 @@ func (c *ClickHouseConnector) GetCount(table string, qf QueryFilter) (uint64, er
 
 func executeQuery[T any](c *ClickHouseConnector, table, columns string, qf QueryFilter, scanFunc func(driver.Rows) (T, error)) (QueryResult[T], error) {
 	query := c.buildQuery(table, columns, qf)
-
 	rows, err := c.conn.Query(context.Background(), query)
 	if err != nil {
 		return QueryResult[T]{}, err
@@ -626,11 +625,11 @@ func (c *ClickHouseConnector) buildUnionQuery(table, columns string, qf QueryFil
 	// Add base where clauses to both queries
 	if len(baseWhereClauses) > 0 {
 		baseWhereClause := strings.Join(baseWhereClauses, " AND ")
-		fromQuery += " WHERE " + baseWhereClause + " AND from_address = '" + strings.ToLower(qf.WalletAddress) + "'"
-		toQuery += " WHERE " + baseWhereClause + " AND to_address = '" + strings.ToLower(qf.WalletAddress) + "'"
+		fromQuery += " WHERE " + baseWhereClause + " AND from_address = '" + qf.WalletAddress + "'"
+		toQuery += " WHERE " + baseWhereClause + " AND to_address = '" + qf.WalletAddress + "'"
 	} else {
-		fromQuery += " WHERE from_address = '" + strings.ToLower(qf.WalletAddress) + "'"
-		toQuery += " WHERE to_address = '" + strings.ToLower(qf.WalletAddress) + "'"
+		fromQuery += " WHERE from_address = '" + qf.WalletAddress + "'"
+		toQuery += " WHERE to_address = '" + qf.WalletAddress + "'"
 	}
 
 	// Apply ORDER BY to both queries for consistent results
@@ -741,7 +740,7 @@ func (c *ClickHouseConnector) buildWhereClauses(table string, qf QueryFilter) []
 
 	// Add filter params
 	for key, value := range qf.FilterParams {
-		whereClauses = append(whereClauses, createFilterClause(key, strings.ToLower(value)))
+		whereClauses = append(whereClauses, createFilterClause(key, value))
 	}
 
 	return whereClauses
@@ -773,7 +772,7 @@ func createFilterClause(key, value string) string {
 }
 
 func createContractAddressClause(table, contractAddress string) string {
-	contractAddress = strings.ToLower(contractAddress)
+	contractAddress = contractAddress
 	// This needs to move to a query param that accept multiple addresses
 	if table == "logs" {
 		if contractAddress != "" {
@@ -788,7 +787,7 @@ func createContractAddressClause(table, contractAddress string) string {
 }
 
 func createWalletAddressClause(table, walletAddress string) string {
-	walletAddress = strings.ToLower(walletAddress)
+	walletAddress = walletAddress
 	if table != "transactions" || walletAddress == "" {
 		return ""
 	}
@@ -799,7 +798,7 @@ func createFromAddressClause(table, fromAddress string) string {
 	if fromAddress == "" {
 		return ""
 	}
-	fromAddress = strings.ToLower(fromAddress)
+	fromAddress = fromAddress
 	if table == "transactions" {
 		return fmt.Sprintf("from_address = '%s'", fromAddress)
 	}

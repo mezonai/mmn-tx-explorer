@@ -10,6 +10,8 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/thirdweb-dev/indexer/api"
 	"github.com/thirdweb-dev/indexer/internal/storage"
+	pb "github.com/thirdweb-dev/indexer/proto"
+	"context"
 )
 
 // StatsResponse represents the response structure for blockchain statistics
@@ -22,7 +24,6 @@ type StatsResponse struct {
 		TotalWallets     uint64  `json:"total_wallets"`
 		Transactions24h   uint64  `json:"transactions_24h"`
 		PendingTransactions30m   uint64  `json:"pending_transactions_30m"`
-		PendingTransactions24h uint64  `json:"pending_transactions_24h"`
 	} `json:"data"`
 }
 
@@ -64,6 +65,17 @@ func handleStatsRequest(c *gin.Context) {
 		return
 	}
 
+	// Get pending transactions count
+	pendingTxsData, err := mainStorage.GetPendingTransactions(context.Background())
+	if err != nil {
+		log.Error().Err(err).Msg("Error getting pending transactions")
+		api.InternalErrorHandler(c)
+		return
+	}
+
+	totalPendingTransactions := pendingTxsData.TotalCount
+	pendingTransactions30m := CountPendingTxLast30m(pendingTxsData.PendingTxs)
+
 	// Get total transactions count
 	totalTransactions, err := mainStorage.GetCount("transactions", countQf)
 	if err != nil {
@@ -71,7 +83,8 @@ func handleStatsRequest(c *gin.Context) {
 		api.InternalErrorHandler(c)
 		return
 	}
-
+	totalTransactions+=totalPendingTransactions
+	
 	// Get total wallets count from wallet table
 	totalWallets, err := mainStorage.GetCount("wallet", countQf)
 	if err != nil {
@@ -100,17 +113,13 @@ func handleStatsRequest(c *gin.Context) {
 		return
 	}
 
-
+	transactions24h+=totalPendingTransactions
 
 
 	// Compute average block time using last N blocks
 	const numberOfBlocks uint64 = 100
 	averageBlockTime := getAverageBlockTime(mainStorage, numberOfBlocks)
 
-	// TODO: Get block time, pending transactions from the node (pending txs not implemented yet)
-	totalPendingTransactions := uint64(0)
-	pendingTransactions24h := uint64(0)
-	pendingTransactions30m := uint64(0)
 	// Initialize the StatsResponse
 	statsResponse := StatsResponse{
 		Data: struct {
@@ -121,7 +130,6 @@ func handleStatsRequest(c *gin.Context) {
 			TotalWallets     uint64  `json:"total_wallets"`
 			Transactions24h   uint64  `json:"transactions_24h"`
 			PendingTransactions30m   uint64  `json:"pending_transactions_30m"`
-			PendingTransactions24h uint64  `json:"pending_transactions_24h"`
 		}{
 			TotalBlocks:      totalBlocks,
 			TotalTransactions: totalTransactions,
@@ -130,14 +138,24 @@ func handleStatsRequest(c *gin.Context) {
 			TotalWallets:     totalWallets,
 			Transactions24h:   transactions24h,
 			PendingTransactions30m:   pendingTransactions30m,
-			PendingTransactions24h: pendingTransactions24h,
 		},
 	}
 
 	c.JSON(http.StatusOK, statsResponse)
 }
 
+func CountPendingTxLast30m(pendingTxs []*pb.TransactionData) uint64 {
+    now := uint64(time.Now().Unix())
+    thirtyMinutesAgo := now - 1800
 
+    count := 0
+    for _, tx := range pendingTxs {
+        if tx != nil && tx.Timestamp >= thirtyMinutesAgo {
+            count++
+        }
+    }
+    return uint64(count)
+}
 func getAverageBlockTime(mainStorage storage.IMainStorage, numberOfBlocks uint64) float64 {
 	latestQf := storage.QueryFilter{
 		SortBy:              "block_number",
