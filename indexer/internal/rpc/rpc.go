@@ -50,19 +50,19 @@ type IRPCClient interface {
 }
 
 type Client struct {
-	blockService          *BlockService
+	mmnService          *MMNGrpcService
 	chainID               *big.Int
 	blocksPerRequest      BlocksPerRequestConfig
 }
 
 func Initialize() (IRPCClient, error) {
-	blockService, err := NewBlockService(config.Cfg.RPC.MMNGRPCURL)
+	mmnService, err := NewMMNGrpcService(config.Cfg.RPC.MMNGRPCURL)
 	if err != nil {
-		log.Warn().Err(err).Msg("Failed to initialize MMN BlockService, continuing without it")
+		log.Warn().Err(err).Msg("Failed to initialize MMNGrpcService, continuing without it")
 	}
 
 	rpc := &Client{
-		blockService:     blockService,
+		mmnService:     mmnService,
 		blocksPerRequest: GetBlockPerRequestConfig(),
 	}
 	
@@ -71,13 +71,13 @@ func Initialize() (IRPCClient, error) {
 }
 
 func InitializeSimpleRPCWithUrl(url string) (IRPCClient, error) {
-	blockService, err := NewBlockService(url)
+	mmnService, err := NewMMNGrpcService(url)
 	if err != nil {
-		log.Warn().Err(err).Msg("Failed to initialize MMN BlockService, continuing without it")
+		log.Warn().Err(err).Msg("Failed to initialize MMNGrpcService, continuing without it")
 	}
 	
 	rpc := &Client{
-		blockService: blockService,
+		mmnService: mmnService,
 	}
 	
 	rpc.chainID = big.NewInt(1337)
@@ -85,9 +85,9 @@ func InitializeSimpleRPCWithUrl(url string) (IRPCClient, error) {
 }
 
 func (rpc *Client) GetFullBlocks(ctx context.Context, blockNumbers []*big.Int) []GetFullBlockResult {
-    if rpc.blockService == nil {
+    if rpc.mmnService == nil {
         return []GetFullBlockResult{{
-            Error: fmt.Errorf("MMN BlockService not available"),
+            Error: fmt.Errorf(" MMNGrpcService not available"),
         }}
     }
 
@@ -96,7 +96,7 @@ func (rpc *Client) GetFullBlocks(ctx context.Context, blockNumbers []*big.Int) [
         nums[i] = n.Uint64()
     }
 
-    res, err := rpc.blockService.GetBlockByNumber(ctx, nums)
+    res, err := rpc.mmnService.GetBlockByNumber(ctx, nums)
     if err != nil {
         return []GetFullBlockResult{{
             Error: fmt.Errorf("failed to get full block: %v", err),
@@ -126,11 +126,11 @@ func (rpc *Client) GetFullBlocks(ctx context.Context, blockNumbers []*big.Int) [
 }
 
 func (rpc *Client) GetLatestBlockNumber(ctx context.Context) (*big.Int, error) {
-	if rpc.blockService == nil {
-		return nil, fmt.Errorf("MMN BlockService not available")
+	if rpc.mmnService == nil {
+		return nil, fmt.Errorf("MMNGrpcService not available")
 	}
 	
-	res, err := rpc.blockService.GetBlockNumber(ctx)
+	res, err := rpc.mmnService.GetBlockNumber(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest block number: %v", err)
 	}
@@ -164,8 +164,8 @@ func (rpc *Client) SupportsBlockReceipts() bool {
 }
 
 func (rpc *Client) Close() {
-	if rpc.blockService != nil {
-		rpc.blockService.Close()
+	if rpc.mmnService != nil {
+		rpc.mmnService.Close()
 	}
 }
 
@@ -264,22 +264,11 @@ func convertPBTransactionDataToRawTransaction(pbTransactionData *pb.TransactionD
 	rawTransaction["to"] = pbTransactionData.Recipient
 	
 	// Convert amount to hex format
-	rawTransaction["value"] = fmt.Sprintf("%x", pbTransactionData.Amount)
+	rawTransaction["value"] = pbTransactionData.Amount
 	
 	// Convert nonce to hex format
 	rawTransaction["nonce"] = fmt.Sprintf("%x", pbTransactionData.Nonce)
 	
-	rawTransaction["senderAccount"] = map[string]interface{}{
-		"address": pbTransactionData.SenderAccount.Address,
-		"balance": pbTransactionData.SenderAccount.Balance,
-		"nonce": pbTransactionData.SenderAccount.Nonce,
-	}
-	
-	rawTransaction["receiverAccount"] = map[string]interface{}{
-		"address": pbTransactionData.RecipientAccount.Address,
-		"balance": pbTransactionData.RecipientAccount.Balance,
-		"nonce": pbTransactionData.RecipientAccount.Nonce,
-	}
 
 	rawTransaction["transactionTimestamp"] = fmt.Sprintf("%x", pbTransactionData.Timestamp)
 	// Block information

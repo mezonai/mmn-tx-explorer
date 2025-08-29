@@ -23,10 +23,8 @@ type Transaction struct {
 	TransactionIndex      uint64    `json:"transaction_index" ch:"transaction_index"`
 	FromAddress           string    `json:"from_address" ch:"from_address"`
 	ToAddress             string    `json:"to_address" ch:"to_address"`
-	SenderAccount         string    `json:"sender_account" ch:"sender_account"`
-	ReceiverAccount       string    `json:"receiver_account" ch:"receiver_account"`
 	TransactionTimestamp  time.Time `json:"transaction_timestamp" ch:"transaction_timestamp"`
-	Value                 *big.Int  `json:"value" ch:"value" swaggertype:"string"`
+	Value                 string  `json:"value" ch:"value" swaggertype:"string"`
 	Gas                   uint64    `json:"gas" ch:"gas"`
 	GasPrice              *big.Int  `json:"gas_price" ch:"gas_price" swaggertype:"string"`
 	Data                  string    `json:"data" ch:"data"`
@@ -192,7 +190,7 @@ func (t *Transaction) Serialize() TransactionModel {
 		TransactionIndex:     t.TransactionIndex,
 		FromAddress:          t.FromAddress,
 		ToAddress:            t.ToAddress,
-		Value:                t.Value.String(),
+		Value:                t.Value,
 		Gas:                  t.Gas,
 		GasPrice:             t.GasPrice.String(),
 		Data:                 t.Data,
