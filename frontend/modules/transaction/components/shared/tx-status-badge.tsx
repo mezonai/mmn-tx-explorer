@@ -18,7 +18,7 @@ const getTransactionStatusInfo = (status: ETransactionStatus) => {
     case ETransactionStatus.Finalized:
       return {
         icon: InfoSquare,
-        iconColor: 'text-red-600',
+        iconColor: 'text-blue-600',
       };
     case ETransactionStatus.Failed:
       return {

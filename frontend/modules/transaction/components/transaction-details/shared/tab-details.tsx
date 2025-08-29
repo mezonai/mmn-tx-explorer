@@ -61,9 +61,14 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
           <div className="text-muted-foreground flex items-center space-x-2">
             <Clock4 className="size-4" />
             <div>
-              <span>{DateTimeUtil.formatRelativeTime(transaction.block_timestamp * 1000)}</span>
+              <span>{DateTimeUtil.formatRelativeTimeSec(transaction.block_timestamp)}</span>
               <span> | </span>
-              <span>{format(transaction.block_timestamp * 1000, DATE_TIME_FORMAT.HUMAN_READABLE_WITH_OFFSET)}</span>
+              <span>
+                {format(
+                  DateTimeUtil.toMilliseconds(transaction.block_timestamp),
+                  DATE_TIME_FORMAT.HUMAN_READABLE_WITH_OFFSET
+                )}
+              </span>
             </div>
           </div>
         )}

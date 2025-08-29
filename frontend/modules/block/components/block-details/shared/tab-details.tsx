@@ -101,9 +101,11 @@ export const TabDetails = ({ blockNumber }: TabDetailsProps) => {
         render={(block) => (
           <div className="flex items-center space-x-2">
             <Clock4 className="text-foreground-quaternary-400 size-4" />
-            <span>{DateTimeUtil.formatRelativeTime(new Date(block.block_timestamp * 1000))}</span>
+            <span>{DateTimeUtil.formatRelativeTimeSec(block.block_timestamp)}</span>
             <span>|</span>
-            <span>{format(new Date(block.block_timestamp * 1000), DATE_TIME_FORMAT.HUMAN_READABLE_WITH_OFFSET)}</span>
+            <span>
+              {format(DateTimeUtil.toMilliseconds(block.block_timestamp), DATE_TIME_FORMAT.HUMAN_READABLE_WITH_OFFSET)}
+            </span>
           </div>
         )}
         skeleton={<Skeleton className="h-5 w-[50%]" />}
