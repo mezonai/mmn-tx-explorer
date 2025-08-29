@@ -177,6 +177,7 @@ func handleTransactionsRequest(c *gin.Context) {
 		FilterParams:        queryParams.FilterParams,
 		ChainId:             chainId,
 		ForceConsistentData: queryParams.ForceConsistentData,
+		WalletAddress:       walletAddress,
 	}
 	
 	// Get the total number of items
