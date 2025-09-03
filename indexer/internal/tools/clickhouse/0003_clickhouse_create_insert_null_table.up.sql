@@ -55,7 +55,8 @@ CREATE TABLE IF NOT EXISTS inserts_null_table (
         blob_gas_price Nullable(UInt256),
         logs_bloom Nullable(String),
         status Nullable(UInt64),
-        transaction_timestamp DateTime
+        transaction_timestamp DateTime,
+        text_data String
     )),
     logs Array(Tuple(
         block_number UInt256,

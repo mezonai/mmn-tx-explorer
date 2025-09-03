@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     `sign` Int8 DEFAULT 1,
     `insert_timestamp` DateTime DEFAULT now(),
     `transaction_timestamp` DateTime CODEC(Delta, ZSTD),
+    `text_data` String,
     INDEX idx_block_timestamp block_timestamp TYPE minmax GRANULARITY 3,
     INDEX idx_block_hash block_hash TYPE bloom_filter GRANULARITY 3,
     INDEX idx_hash hash TYPE bloom_filter GRANULARITY 3,

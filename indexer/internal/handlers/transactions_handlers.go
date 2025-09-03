@@ -175,9 +175,11 @@ func handleTransactionsRequest(c *gin.Context) {
 	// Prepare the QueryFilter for count
 	countQf := storage.QueryFilter{
 		FilterParams:        queryParams.FilterParams,
+		ContractAddress:     contractAddress,
+		WalletAddress:       walletAddress,
+		Signature:           signatureHash,
 		ChainId:             chainId,
 		ForceConsistentData: queryParams.ForceConsistentData,
-		WalletAddress:       walletAddress,
 	}
 	
 	// Get the total number of items

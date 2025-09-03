@@ -52,7 +52,7 @@ var defaultTransactionFields = []string{
 	"data", "function_selector", "max_fee_per_gas", "max_priority_fee_per_gas",
 	"max_fee_per_blob_gas", "blob_versioned_hashes", "transaction_type", "r", "s", "v",
 	"access_list", "authorization_list", "contract_address", "gas_used", "cumulative_gas_used",
-	"effective_gas_price", "blob_gas_used", "blob_gas_price", "logs_bloom", "status", "transaction_timestamp",
+	"effective_gas_price", "blob_gas_used", "blob_gas_price", "logs_bloom", "status", "transaction_timestamp", "text_data",
 }
 
 var defaultLogFields = []string{
@@ -536,9 +536,34 @@ func (c *ClickHouseConnector) GetAggregations(table string, qf QueryFilter) (Que
 }
 
 func (c *ClickHouseConnector) GetCount(table string, qf QueryFilter) (uint64, error) {
-	selectColumns := "COUNT(*)"
-
-	query := c.buildQuery(table, selectColumns, qf)
+	var query string
+	
+	// Special handling for transactions with wallet address to avoid double counting
+	if table == "transactions" && qf.WalletAddress != "" {
+		tableName := c.getTableName(qf.ChainId, table)
+		baseWhereClauses := c.buildWhereClauses(table, qf)
+		
+		// Build a query that counts unique transactions involving the wallet
+		query = fmt.Sprintf("SELECT COUNT(DISTINCT hash) FROM %s.%s", c.cfg.Database, tableName)
+		if qf.ForceConsistentData {
+			query += " FINAL"
+		}
+		
+		// Add all base conditions plus wallet address condition
+		allWhereClauses := append(baseWhereClauses, fmt.Sprintf("(from_address = '%s' OR to_address = '%s')", qf.WalletAddress, qf.WalletAddress))
+		if len(allWhereClauses) > 0 {
+			query += " WHERE " + strings.Join(allWhereClauses, " AND ")
+		}
+		
+		// Add settings if configured
+		if c.cfg.MaxQueryTime > 0 {
+			query += fmt.Sprintf(" SETTINGS max_execution_time = %d", c.cfg.MaxQueryTime)
+		}
+	} else {
+		// Use standard query building for all other cases
+		selectColumns := "COUNT(*)"
+		query = c.buildQuery(table, selectColumns, qf)
+	}
 
 	var count uint64
 	err := c.conn.QueryRow(context.Background(), query).Scan(&count)
@@ -1394,6 +1419,7 @@ func (c *ClickHouseConnector) InsertBlockData(data []common.BlockData) error {
 					tx.LogsBloom,
 					tx.Status,
 					tx.TransactionTimestamp,
+					tx.TextData,
 				}
 				_ = c.refreshWalletFromService(context.Background(), tx.FromAddress)
 				_ = c.refreshWalletFromService(context.Background(),  tx.ToAddress)
