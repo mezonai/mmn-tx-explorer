@@ -3,6 +3,7 @@ import { ComponentType, SVGProps } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NumberUtil } from '@/utils';
+import { cn } from '@/lib/utils';
 
 interface StatCardProps {
   icon: ComponentType<SVGProps<SVGSVGElement>>;
@@ -13,9 +14,9 @@ interface StatCardProps {
 
 export const StatCard = ({ icon: Icon, title, value, subValue }: StatCardProps) => {
   const isLoading = value === undefined;
-
+  const cardClassName = cn('p-0', isLoading ? 'bg-background' : 'bg-brand-primary');
   return (
-    <Card className={isLoading ? 'bg-background p-0' : 'bg-brand-primary p-0'}>
+    <Card className={cardClassName}>
       <CardContent className="space-y-5 p-5">
         <div className="bg-background w-fit rounded-lg border p-3">
           <Icon className="text-foreground-secondary-700 size-6" strokeWidth={2} />

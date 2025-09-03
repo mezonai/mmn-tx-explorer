@@ -5,19 +5,24 @@ import { AddressDisplay } from '@/components/shared';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ROUTES } from '@/configs/routes.config';
 import { cn } from '@/lib/utils';
+import { ETransactionOrientation } from '@/modules/transaction/enums';
 
 interface FromToAddressesProps {
   fromAddress: string;
   toAddress: string;
-  orientation?: 'horizontal' | 'vertical';
+  orientation?: ETransactionOrientation;
 }
 
 interface FromToAddressesSkeletonProps {
-  orientation?: 'horizontal' | 'vertical';
+  orientation?: ETransactionOrientation;
 }
 
-export const FromToAddresses = ({ fromAddress, toAddress, orientation = 'horizontal' }: FromToAddressesProps) => {
-  const isVertical = orientation === 'vertical';
+export const FromToAddresses = ({
+  fromAddress,
+  toAddress,
+  orientation = ETransactionOrientation.Horizontal,
+}: FromToAddressesProps) => {
+  const isVertical = orientation === ETransactionOrientation.Vertical;
 
   return (
     <div className="flex w-full items-center gap-2">
@@ -35,8 +40,10 @@ export const FromToAddresses = ({ fromAddress, toAddress, orientation = 'horizon
   );
 };
 
-export const FromToAddressesSkeleton = ({ orientation = 'horizontal' }: FromToAddressesSkeletonProps) => {
-  const isVertical = orientation === 'vertical';
+export const FromToAddressesSkeleton = ({
+  orientation = ETransactionOrientation.Horizontal,
+}: FromToAddressesSkeletonProps) => {
+  const isVertical = orientation === ETransactionOrientation.Vertical;
 
   return (
     <div className="flex w-full items-center gap-2">

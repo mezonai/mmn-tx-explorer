@@ -13,3 +13,8 @@ export enum ETransactionStatus {
   Passed = 2,
   Failed = 3,
 }
+
+export enum ETransactionOrientation {
+  Horizontal = 'horizontal',
+  Vertical = 'vertical',
+}
