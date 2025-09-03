@@ -1,7 +1,7 @@
 import { formatDistanceToNowStrict } from 'date-fns';
 
 export class DateTimeUtil {
-  static formatRelativeTime(timeString: string | number): string {
+  static formatRelativeTime(timeString: Date | string | number): string {
     const diff = formatDistanceToNowStrict(timeString, { addSuffix: false });
 
     if (diff.includes('second')) return diff.replace(/\D/g, '') + 's ago';

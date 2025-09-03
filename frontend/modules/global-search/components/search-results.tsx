@@ -5,13 +5,12 @@ import { ADDRESS_END_VISIBLE_CHARS } from '@/constant';
 import { ISearchResult } from '../types';
 import { SearchResultItem } from './search-result-item';
 
-export const SearchResults = ({
-  isLoading,
-  searchResults,
-}: {
+interface SearchResultsProps {
   isLoading: boolean;
   searchResults: ISearchResult | null;
-}) => {
+}
+
+export const SearchResults = ({ isLoading, searchResults }: SearchResultsProps) => {
   if (isLoading) {
     return <p>We are searching, please wait...</p>;
   }

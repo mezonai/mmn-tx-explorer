@@ -5,12 +5,10 @@ import { useEffect, useState } from 'react';
 import { Pagination } from '@/components/ui/pagination';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PAGINATION } from '@/constant';
-import { EBreakpoint } from '@/enums';
-import { useBreakpoint, useQueryParam } from '@/hooks';
-import { GlobalSearch } from '@/modules/global-search/components';
+import { usePaginationQueryParam, useQueryParam } from '@/hooks';
 import { ETransactionTab, ITransaction, ITransactionListParams, TransactionService } from '@/modules/transaction';
 import { IPaginationMeta } from '@/types';
-import { TransactionCards, TransactionsTable } from './list';
+import { TransactionCollection } from './list/transaction-collection';
 import { Stats } from './stats';
 
 const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
@@ -22,25 +20,16 @@ const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
 } as const;
 
 export const TransactionsList = () => {
-  const isDesktop = useBreakpoint(EBreakpoint.LG);
   const [transactions, setTransactions] = useState<ITransaction[]>();
   const [pagination, setPagination] = useState<IPaginationMeta>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [localSearchParams, setLocalSearchParams] = useState<ITransactionListParams>();
-  const { value: page, handleChangeValue: handleChangePage } = useQueryParam<number>({
-    queryParam: 'page',
-    defaultValue: PAGINATION.DEFAULT_PAGE,
-  });
-  const { value: limit, handleChangeValue: handleChangeLimit } = useQueryParam<number>({
-    queryParam: 'limit',
-    defaultValue: PAGINATION.DEFAULT_LIMIT,
-    clearParams: ['page'],
-  });
   const { value: tab, handleChangeValue: handleChangeTab } = useQueryParam<ETransactionTab>({
     queryParam: 'tab',
     defaultValue: ETransactionTab.Validated,
     clearParams: ['page'],
   });
+  const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
 
   const handleFetchTransactions = async (params: ITransactionListParams) => {
     try {
@@ -81,7 +70,6 @@ export const TransactionsList = () => {
   return (
     <div className="space-y-8">
       <div className="space-y-6">
-        <GlobalSearch />
         <h1 className="text-2xl font-semibold">Transactions</h1>
       </div>
 
@@ -120,22 +108,7 @@ export const TransactionsList = () => {
           />
         </div>
 
-        <>
-          {isDesktop === undefined ? (
-            <div>
-              <div className="hidden lg:block">
-                <TransactionsTable transactions={transactions} skeletonLength={limit} />
-              </div>
-              <div className="block lg:hidden">
-                <TransactionCards transactions={transactions} skeletonLength={limit} />
-              </div>
-            </div>
-          ) : isDesktop ? (
-            <TransactionsTable transactions={transactions} skeletonLength={limit} />
-          ) : (
-            <TransactionCards transactions={transactions} skeletonLength={limit} />
-          )}
-        </>
+        <TransactionCollection transactions={transactions} skeletonLimit={limit} />
       </div>
     </div>
   );
