@@ -40,4 +40,6 @@ export interface ITransactionListParams {
   sort_by: keyof ITransaction;
   sort_order: ESortOrder;
   wallet_address?: string;
+  filter_to_address?: string;
+  filter_from_address?: string;
 }

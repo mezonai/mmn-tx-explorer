@@ -38,7 +38,7 @@ export const WalletCard = ({ wallet }: WalletCardProps) => {
         )}
       </div>
       <div className="flex items-center justify-between">
-        <span>Txn</span>
+        <span>Txn Count</span>
         {wallet ? <TxnLink address={wallet.address} accountNonce={wallet.account_nonce} /> : <TxnLinkSkeleton />}
       </div>
     </div>

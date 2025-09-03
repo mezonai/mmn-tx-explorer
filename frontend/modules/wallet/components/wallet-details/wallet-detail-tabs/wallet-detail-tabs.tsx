@@ -53,10 +53,10 @@ export const WalletDetailTabs = ({ currentTab, isLoading, address, handleChangeT
         <AllTransactionsTab walletAddress={address} />
       </TabsContent>
       <TabsContent value="sent-transactions">
-        <SentTransactionsTab />
+        <SentTransactionsTab walletAddress={address} />
       </TabsContent>
       <TabsContent value="received-transactions">
-        <ReceivedTransactionsTab />
+        <ReceivedTransactionsTab walletAddress={address} />
       </TabsContent>
     </Tabs>
   );

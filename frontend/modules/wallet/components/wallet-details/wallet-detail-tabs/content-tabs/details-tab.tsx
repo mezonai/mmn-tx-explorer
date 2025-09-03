@@ -60,7 +60,7 @@ export const DetailsTab = ({ address }: TabDetailsProps) => {
             <Cube01 className="text-foreground-quaternary-400 size-4" />
             <Button variant="link" className="text-brand-secondary-700 size-fit p-0 text-sm font-normal" asChild>
               <Link href={ROUTES.BLOCK(Number(walletDetails?.last_balance_update ?? 0))}>
-                {walletDetails?.last_balance_update ?? 'N/A'}
+                {walletDetails?.last_balance_update ?? 0}
               </Link>
             </Button>
           </div>

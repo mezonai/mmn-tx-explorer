@@ -36,7 +36,7 @@ export const WalletsTable = ({ wallets, skeletonLength }: WalletsTableProps) => 
       skeletonContent: <BalanceAmountSkeleton />,
     },
     {
-      headerContent: 'Txn',
+      headerContent: 'Txn Count',
       renderCell: (row) => <TxnLink address={row.address} accountNonce={row.account_nonce} />,
       skeletonContent: <TxnLinkSkeleton />,
     },
