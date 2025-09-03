@@ -16,7 +16,11 @@ interface BlockNumberSkeletonProps {
 
 export const BlockNumber = ({ blockNumber, className }: BlockNumberProps) => {
   return (
-    <Button variant="link" className={cn('size-fit p-0', className)} asChild>
+    <Button
+      variant="link"
+      className={cn('text-brand-secondary-700 size-fit p-0 text-sm font-semibold', className)}
+      asChild
+    >
       <Link href={ROUTES.BLOCK(blockNumber)}>{blockNumber}</Link>
     </Button>
   );

@@ -146,8 +146,8 @@ export const Pagination = ({
     <div className={cn('flex flex-wrap items-center justify-end gap-x-4 gap-y-2 sm:flex-nowrap', className)}>
       {/* Limit selector and total items display */}
       <div className="flex items-center gap-2">
-        <Select value={limit.toString()} disabled={isLoading} onValueChange={handleChangeLimit}>
-          <SelectTrigger className="h-10">
+        <Select size="sm" value={limit.toString()} disabled={isLoading} onValueChange={handleChangeLimit}>
+          <SelectTrigger>
             <SelectValue placeholder={PAGINATION.DEFAULT_LIMIT.toString()} />
           </SelectTrigger>
           <SelectContent>

@@ -47,7 +47,6 @@
   --color-brand-secondary_hover: #53389e;
   --color-secondary-700: #414651;
   --color-active: #fafafa;
-  --color-foreground-quaternary-400: #a4a7ae;
   --color-foreground-secondary-700: #414651;
   --color-brand-primary: #f9f5ff;
   --color-border-secondary: #e9eaeb;
@@ -64,6 +63,9 @@
   --color-utility-warning-200: #fedf89;
   --color-utility-warning-50: #fffaeb;
   --color-utility-warning-700: #b54708;
+  --color-tertiary_hover: #414651;
+  --color-foreground-brand-primary-600: #7f56d9;
+  --color-error-primary-600: #d92d20;
 }
 
 :root {

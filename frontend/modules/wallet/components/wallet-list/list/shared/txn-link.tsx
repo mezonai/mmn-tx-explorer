@@ -17,7 +17,7 @@ interface TxnLinkSkeletonProps {
 export const TxnLink = ({ address, accountNonce, className }: TxnLinkProps) => {
   return (
     <Button variant="link" className={`text-brand-secondary-700 size-fit p-0 font-normal ${className}`} asChild>
-      <Link href={ROUTES.WALLET(address, 'tab=transactions')}>{accountNonce}</Link>
+      <Link href={ROUTES.WALLET(address, 'tab=all-transactions')}>{accountNonce}</Link>
     </Button>
   );
 };

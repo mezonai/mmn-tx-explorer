@@ -23,7 +23,7 @@ import {
   TxnHashLinkSkeleton,
   TypeBadges,
   TypeBadgesSkeleton,
-} from '../shared';
+} from '../../shared';
 
 interface TransactionsTableProps {
   transactions?: ITransaction[];
