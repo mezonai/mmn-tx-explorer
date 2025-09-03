@@ -164,7 +164,7 @@ func GetWalletDetail(c *gin.Context) {
    
     transactionsResult, err := mainStorage.GetTransactions(txQf)
     if err == nil && len(transactionsResult.Data) > 0 {
-        resp.Data["last_balance_update"] = transactionsResult.Data[0].TransactionTimestamp
+        resp.Data["last_balance_update"] = transactionsResult.Data[0].BlockNumber
     }
     sendJSONResponse(c, resp)
 }
