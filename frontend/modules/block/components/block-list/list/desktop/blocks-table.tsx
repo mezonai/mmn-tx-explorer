@@ -74,7 +74,7 @@ export const BlocksTable = ({ blocks, skeletonLength }: BlocksTableProps) => {
       skeletonContent: <ValidatorFieldSkeleton />,
     },
     {
-      headerContent: 'TXN',
+      headerContent: 'Txn',
       renderCell: (row) => <TxnLink count={row.transaction_count} blockNumber={row.block_number} />,
       skeletonContent: <TxnLinkSkeleton />,
     },
