@@ -32,7 +32,7 @@ export const WalletTransactionsTable = ({
       skeletonContent: <TxnHashLinkSkeleton className="w-40" />,
     },
     {
-      headerContent: 'Created Date',
+      headerContent: 'Created At',
       renderCell: (row) => format(DateTimeUtil.toMilliseconds(row.transaction_timestamp), DATE_TIME_FORMAT.DATE_TIME),
     },
     {
