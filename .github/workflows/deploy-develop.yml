@@ -1,0 +1,80 @@
+name: Deploy to Server (develop)
+
+on:
+  push:
+    branches: [ "develop" ]
+  pull_request:
+    branches: [ "develop" ]
+    types: [ closed ]
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+    
+    steps:
+      - name: Ensure repository context (optional)
+        uses: actions/checkout@v4
+
+      - name: SSH into server and deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            set -e
+            
+            # Set project directory
+            if [ -z "${PROJECT_DIR:-}" ]; then
+              PROJECT_DIR="${{ secrets.PROJECT_DIR }}"
+            fi
+            echo "Using project directory: $PROJECT_DIR"
+            cd "$PROJECT_DIR"
+
+            # Fetch latest code safely
+            echo "Fetching latest code..."
+            git fetch --all --prune
+            git checkout develop
+            
+            # Check if pull will cause conflicts
+            if ! git pull --ff-only origin develop; then
+              echo "Error: Cannot fast-forward. Manual intervention required."
+              exit 1
+            fi
+            
+            echo "Code updated successfully"
+
+            # Docker operations with proper cleanup
+            echo "Starting Docker deployment..."
+            docker compose pull || echo "Warning: Could not pull some images"
+            docker compose down --remove-orphans || echo "Warning: Issues during container shutdown"
+            docker compose up -d --build
+            
+            # Verify deployment
+            sleep 10
+            if ! docker compose ps | grep -q "Up"; then
+              echo "Error: Some containers failed to start"
+              docker compose logs --tail=20
+              exit 1
+            fi
+            
+            echo "Docker containers started successfully"
+            
+            # Cleanup old images
+            docker image prune -f || echo "Warning: Could not prune images"
+            
+            echo "Deployment completed successfully"
+
+      - name: Notify on success
+        if: success()
+        run: echo "✅ Deployment to server completed successfully."
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed. Check the workflow logs."
+          echo "::error::Deployment to develop server failed"
+          exit 1
