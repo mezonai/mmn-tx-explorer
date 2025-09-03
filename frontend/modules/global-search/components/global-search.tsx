@@ -1,9 +1,8 @@
 'use client';
 
-import { CircleX } from 'lucide-react';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 
-import { SearchMd } from '@/assets/icons';
+import { SearchMd, XCircle } from '@/assets/icons';
 import { Input } from '@/components/ui/input';
 import { useDebounce } from '@/hooks';
 import { cn } from '@/lib/utils';
@@ -77,7 +76,10 @@ export const GlobalSearch = ({ className }: GlobalSearchProps) => {
 
   return (
     <div className={cn('relative flex-1', className)} ref={containerRef} onFocus={() => setIsFocused(true)}>
-      <SearchMd className="text-muted-foreground absolute top-1/2 left-3 size-5 -translate-y-1/2 transform" />
+      <SearchMd
+        className="text-foreground-quaternary-400 absolute top-1/2 left-3 size-5 -translate-y-1/2 transform"
+        strokeWidth={1.5}
+      />
       <Input
         placeholder="Search by txn hash / block"
         className={cn('pl-10', query && 'pr-9')}
@@ -89,7 +91,7 @@ export const GlobalSearch = ({ className }: GlobalSearchProps) => {
           className="text-muted-foreground absolute top-1/2 right-0 size-fit -translate-y-1/2 transform cursor-pointer p-2"
           onClick={() => setQuery('')}
         >
-          <CircleX className="text-muted-foreground size-5" />
+          <XCircle className="text-foreground-quaternary-400 size-5" strokeWidth={1} />
         </button>
       )}
 

@@ -1,5 +1,6 @@
 import { Pagination } from '@/components/ui/pagination';
 import { PAGINATION } from '@/constant';
+import { ESortOrder } from '@/enums';
 import { usePaginationQueryParam } from '@/hooks';
 import { ITransaction, ITransactionListParams, TransactionService } from '@/modules/transaction';
 import { TransactionCollection } from '@/modules/transaction/components/transaction-list/list/transaction-collection';
@@ -14,7 +15,7 @@ const DEFAULT_TRANSACTION_SEARCH_PARAMS: ITransactionListParams = {
   page: PAGINATION.DEFAULT_PAGE,
   limit: PAGINATION.DEFAULT_LIMIT,
   sort_by: 'transaction_timestamp',
-  sort_order: 'desc',
+  sort_order: ESortOrder.DESC,
 };
 
 export const TabTransactions = ({ blockNumber }: TabTransactionsProps) => {
@@ -58,8 +59,7 @@ export const TabTransactions = ({ blockNumber }: TabTransactionsProps) => {
           onChangeLimit={handleChangeLimit}
         />
       </div>
-      <TransactionCollection transactions={transactions} skeletonLimit={5} />
-      <div className="h-1000" />
+      <TransactionCollection transactions={transactions} skeletonLength={5} />
     </div>
   );
 };

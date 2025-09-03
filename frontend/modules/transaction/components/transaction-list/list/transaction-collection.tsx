@@ -1,14 +1,17 @@
+'use client';
+
 import { EBreakpoint } from '@/enums';
 import { useBreakpoint } from '@/hooks';
 import { ITransaction } from '@/modules/transaction/types';
-import { TransactionCards, TransactionsTable } from '.';
+import { TransactionsTable } from './desktop';
+import { TransactionCardsMobile } from './mobile';
 
 interface TransactionCollectionProps {
   transactions?: ITransaction[];
-  skeletonLimit?: number;
+  skeletonLength: number;
 }
 
-export const TransactionCollection = ({ transactions, skeletonLimit = 5 }: TransactionCollectionProps) => {
+export const TransactionCollection = ({ transactions, skeletonLength }: TransactionCollectionProps) => {
   const isDesktop = useBreakpoint(EBreakpoint.LG);
 
   return (
@@ -16,16 +19,16 @@ export const TransactionCollection = ({ transactions, skeletonLimit = 5 }: Trans
       {isDesktop === undefined ? (
         <div>
           <div className="hidden lg:block">
-            <TransactionsTable transactions={transactions} skeletonLength={skeletonLimit} />
+            <TransactionsTable transactions={transactions} skeletonLength={skeletonLength} />
           </div>
           <div className="block lg:hidden">
-            <TransactionCards transactions={transactions} skeletonLength={skeletonLimit} />
+            <TransactionCardsMobile transactions={transactions} skeletonLength={skeletonLength} />
           </div>
         </div>
       ) : isDesktop ? (
-        <TransactionsTable transactions={transactions} skeletonLength={skeletonLimit} />
+        <TransactionsTable transactions={transactions} skeletonLength={skeletonLength} />
       ) : (
-        <TransactionCards transactions={transactions} skeletonLength={skeletonLimit} />
+        <TransactionCardsMobile transactions={transactions} skeletonLength={skeletonLength} />
       )}
     </>
   );

@@ -1,10 +1,12 @@
-import { BarChartSquare02, CreditCardRefresh, Cube01 } from '@/assets/icons';
-import { RoutePath, ROUTES } from '@/configs/routes.config';
+import { ComponentType, SVGProps } from 'react';
+
+import { Award04, BarChartSquare02, CreditCardRefresh, Cube01 } from '@/assets/icons';
+import { ROUTES } from '@/configs/routes.config';
 
 export interface NavItem {
   title: string;
-  href: RoutePath;
-  icon: React.ComponentType<{ className?: string; color?: string }>;
+  href: string;
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
 }
 
 export const sidebarNavItems: NavItem[] = [
@@ -22,5 +24,10 @@ export const sidebarNavItems: NavItem[] = [
     title: 'Blocks',
     href: ROUTES.BLOCKS,
     icon: Cube01,
+  },
+  {
+    title: 'Top accounts',
+    href: ROUTES.WALLETS,
+    icon: Award04,
   },
 ];

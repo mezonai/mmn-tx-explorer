@@ -89,7 +89,7 @@ export const Table = <T,>({
         >
           {validColumns.map(({ dataKey, renderCell }, columnIndex) => (
             <td key={columnIndex} className="p-4">
-              {renderCell ? renderCell(row) : dataKey ? String(row[dataKey] ?? '') : ''}
+              {renderCell ? renderCell(row, index) : dataKey ? String(row[dataKey] ?? '') : ''}
             </td>
           ))}
         </tr>
@@ -112,9 +112,13 @@ export const Table = <T,>({
 
   return (
     <div className={cn('w-full overflow-x-auto', classNameLayout)}>
-      <table className={cn('text-foreground w-full text-left text-sm', className)} role="table" {...props}>
+      <table
+        className={cn('text-tertiary-600 w-full text-left text-sm font-normal', className)}
+        role="table"
+        {...props}
+      >
         {showHeader && (
-          <thead className="bg-secondary text-muted-foreground text-sm font-normal">
+          <thead className="bg-active text-quaternary-500 text-xs font-normal">
             <tr role="row">
               {validColumns.map(({ headerContent }, index) => (
                 <th
@@ -128,7 +132,7 @@ export const Table = <T,>({
             </tr>
           </thead>
         )}
-        <tbody className="bg-card text-foreground" role="rowgroup">
+        <tbody className="bg-card" role="rowgroup">
           {renderSkeletonRows() || renderDataRows() || renderEmptyRow()}
         </tbody>
       </table>

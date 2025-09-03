@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ROUTES } from '@/configs/routes.config';
 import { ADDRESS_END_VISIBLE_CHARS } from '@/constant';
 import { cn } from '@/lib/utils';
 
@@ -23,7 +24,7 @@ export const TxnHashLink = ({ hash, className }: TxnHashLinkProps) => {
       <Tooltip>
         <TooltipTrigger asChild>
           <Button variant="link" className="size-fit flex-1 p-0" asChild>
-            <Link href={`/transactions/${hash}`}>
+            <Link href={ROUTES.TRANSACTION(hash)}>
               <MiddleTruncate end={ADDRESS_END_VISIBLE_CHARS} className="font-semibold">
                 {hash}
               </MiddleTruncate>
@@ -41,7 +42,7 @@ export const TxnHashLinkSkeleton = ({ className }: TxnHashLinkSkeletonProps) => 
   return (
     <div className={cn('flex flex-1 items-center gap-1', className)}>
       <Skeleton className="h-5 flex-1" />
-      <Skeleton className="size-4" />
+      <Skeleton className="size-5" />
     </div>
   );
 };

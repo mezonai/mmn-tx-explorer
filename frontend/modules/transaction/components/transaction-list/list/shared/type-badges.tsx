@@ -1,8 +1,8 @@
-import { TxStatusBadge } from '@/modules/transaction/components/shared/tx-status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { ETransactionStatus, ETransactionType, getTransactionTypeLabel } from '@/modules/transaction';
+import { TxStatusBadge } from '@/modules/transaction/components/shared';
 
 interface TypeBadgesProps {
   type: ETransactionType;
@@ -17,7 +17,7 @@ interface TypeBadgesSkeletonProps {
 const getTransactionTypeInfo = (type: ETransactionType) => {
   switch (type) {
     case ETransactionType.TokenTransfer:
-      return { color: 'bg-orange-50 border-orange-200 text-orange-700' };
+      return { color: 'bg-utility-warning-50 border-utility-warning-200 text-utility-warning-700' };
   }
 };
 

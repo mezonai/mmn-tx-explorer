@@ -12,9 +12,9 @@ export const getTransactionStatusLabel = (status: ETransactionStatus): string =>
     case ETransactionStatus.Pending:
       return 'Pending';
     case ETransactionStatus.Confirmed:
-      return 'Confirmed';
-    case ETransactionStatus.Finalized:
-      return 'Finalized';
+      return 'Passed';
+    case ETransactionStatus.Passed:
+      return 'Passed';
     case ETransactionStatus.Failed:
       return 'Failed';
   }

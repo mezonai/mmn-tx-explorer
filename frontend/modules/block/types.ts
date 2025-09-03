@@ -1,3 +1,4 @@
+import { ESortOrder } from '@/enums';
 import { ITransaction } from '../transaction';
 
 export interface IBlock {
@@ -29,7 +30,7 @@ export interface IBLockListParams {
   page: number;
   limit: number;
   sort_by: keyof IBlock;
-  sort_order: 'asc' | 'desc';
+  sort_order: ESortOrder;
 }
 
 export interface IBlockDetailsResponse {

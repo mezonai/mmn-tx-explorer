@@ -4,4 +4,6 @@ export interface IDashboardStats {
   total_pending_transactions: number;
   average_block_time: number;
   total_wallets: number;
+  transactions_24h: number;
+  pending_transactions_30m: number;
 }
