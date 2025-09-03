@@ -1,5 +1,5 @@
 import { ESortOrder } from '@/enums';
-import { ETransactionStatus, ETransactionTab, ETransactionType } from './enums';
+import { ETransactionStatus, ETransactionType } from './enums';
 
 export interface ITransaction {
   access_list_json: string;
@@ -39,6 +39,5 @@ export interface ITransactionListParams {
   limit: number;
   sort_by: keyof ITransaction;
   sort_order: ESortOrder;
-  // TODO: update API to support tab, then update this to required
-  tab?: ETransactionTab;
+  wallet_address?: string;
 }
