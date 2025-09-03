@@ -1,5 +1,5 @@
 import { Skeleton } from '@/components/ui/skeleton';
-import { ITransaction } from '@/modules/transaction';
+import { ETransactionOrientation, ITransaction } from '@/modules/transaction';
 import { DateTimeUtil, NumberUtil } from '@/utils';
 import {
   FromToAddresses,
@@ -46,10 +46,10 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
           <FromToAddresses
             fromAddress={transaction.from_address}
             toAddress={transaction.to_address}
-            orientation="vertical"
+            orientation={ETransactionOrientation.Vertical}
           />
         ) : (
-          <FromToAddressesSkeleton orientation="vertical" />
+          <FromToAddressesSkeleton orientation={ETransactionOrientation.Vertical} />
         )}
       </div>
 

@@ -10,6 +10,8 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/thirdweb-dev/indexer/api"
 	"github.com/thirdweb-dev/indexer/internal/storage"
+	pb "github.com/thirdweb-dev/indexer/proto"
+	"context"
 )
 
 // StatsResponse represents the response structure for blockchain statistics
@@ -21,8 +23,7 @@ type StatsResponse struct {
 		AverageBlockTime  float64 `json:"average_block_time"`
 		TotalWallets     uint64  `json:"total_wallets"`
 		Transactions24h   uint64  `json:"transactions_24h"`
-		Transactions30m   uint64  `json:"transactions_30m"`
-		PendingTransactions24h uint64  `json:"pending_transactions_24h"`
+		PendingTransactions30m   uint64  `json:"pending_transactions_30m"`
 	} `json:"data"`
 }
 
@@ -64,6 +65,17 @@ func handleStatsRequest(c *gin.Context) {
 		return
 	}
 
+	// Get pending transactions count
+	pendingTxsData, err := mainStorage.GetPendingTransactions(context.Background())
+	if err != nil {
+		log.Error().Err(err).Msg("Error getting pending transactions")
+		api.InternalErrorHandler(c)
+		return
+	}
+
+	totalPendingTransactions := pendingTxsData.TotalCount
+	pendingTransactions30m := CountPendingTxLast30m(pendingTxsData.PendingTxs)
+
 	// Get total transactions count
 	totalTransactions, err := mainStorage.GetCount("transactions", countQf)
 	if err != nil {
@@ -71,7 +83,8 @@ func handleStatsRequest(c *gin.Context) {
 		api.InternalErrorHandler(c)
 		return
 	}
-
+	totalTransactions+=totalPendingTransactions
+	
 	// Get total wallets count from wallet table
 	totalWallets, err := mainStorage.GetCount("wallet", countQf)
 	if err != nil {
@@ -83,7 +96,6 @@ func handleStatsRequest(c *gin.Context) {
 	// Calculate time ranges for recent transactions
 	now := time.Now()
 	time24hAgo := now.Add(-24 * time.Hour)
-	time30mAgo := now.Add(-30 * time.Minute)
 
 	// Prepare QueryFilter for time-based counts using FilterParams
 	timeBasedQf24h := storage.QueryFilter{
@@ -101,29 +113,13 @@ func handleStatsRequest(c *gin.Context) {
 		return
 	}
 
-	// Prepare QueryFilter for 30 minutes using FilterParams
-	timeBasedQf30m := storage.QueryFilter{
-		ForceConsistentData: true,
-		FilterParams: map[string]string{
-			"block_timestamp_gte": strconv.FormatInt(time30mAgo.Unix(), 10),
-		},
-	}
+	transactions24h+=totalPendingTransactions
 
-	// Get transactions count in last 30 minutes
-	transactions30m, err := mainStorage.GetCount("transactions", timeBasedQf30m)
-	if err != nil {
-		log.Error().Err(err).Msg("Error getting transactions count in last 30m")
-		api.InternalErrorHandler(c)
-		return
-	}
 
 	// Compute average block time using last N blocks
 	const numberOfBlocks uint64 = 100
 	averageBlockTime := getAverageBlockTime(mainStorage, numberOfBlocks)
 
-	// TODO: Get block time, pending transactions from the node (pending txs not implemented yet)
-	totalPendingTransactions := uint64(0)
-	pendingTransactions24h := uint64(0)
 	// Initialize the StatsResponse
 	statsResponse := StatsResponse{
 		Data: struct {
@@ -133,8 +129,7 @@ func handleStatsRequest(c *gin.Context) {
 			AverageBlockTime  float64 `json:"average_block_time"`
 			TotalWallets     uint64  `json:"total_wallets"`
 			Transactions24h   uint64  `json:"transactions_24h"`
-			Transactions30m   uint64  `json:"transactions_30m"`
-			PendingTransactions24h uint64  `json:"pending_transactions_24h"`
+			PendingTransactions30m   uint64  `json:"pending_transactions_30m"`
 		}{
 			TotalBlocks:      totalBlocks,
 			TotalTransactions: totalTransactions,
@@ -142,15 +137,25 @@ func handleStatsRequest(c *gin.Context) {
 			AverageBlockTime:  averageBlockTime,
 			TotalWallets:     totalWallets,
 			Transactions24h:   transactions24h,
-			Transactions30m:   transactions30m,
-			PendingTransactions24h: pendingTransactions24h,
+			PendingTransactions30m:   pendingTransactions30m,
 		},
 	}
 
 	c.JSON(http.StatusOK, statsResponse)
 }
 
+func CountPendingTxLast30m(pendingTxs []*pb.TransactionData) uint64 {
+    now := uint64(time.Now().Unix())
+    thirtyMinutesAgo := now - 1800
 
+    count := 0
+    for _, tx := range pendingTxs {
+        if tx != nil && tx.Timestamp >= thirtyMinutesAgo {
+            count++
+        }
+    }
+    return uint64(count)
+}
 func getAverageBlockTime(mainStorage storage.IMainStorage, numberOfBlocks uint64) float64 {
 	latestQf := storage.QueryFilter{
 		SortBy:              "block_number",

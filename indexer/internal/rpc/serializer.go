@@ -177,10 +177,8 @@ func serializeTransaction(chainId *big.Int, tx map[string]interface{}, blockTime
 		TransactionIndex:     hexToUint64(tx["transactionIndex"]),
 		FromAddress:          interfaceToString(tx["from"]),
 		ToAddress:            interfaceToString(tx["to"]),
-		SenderAccount:        interfaceToJsonString(tx["senderAccount"]),
-		ReceiverAccount:      interfaceToJsonString(tx["receiverAccount"]),
 		TransactionTimestamp: hexToTime(tx["transactionTimestamp"]),
-		Value:                hexToBigInt(tx["value"]),
+		Value:                interfaceToString(tx["value"]),
 		Gas:                  hexToUint64(tx["gas"]),
 		GasPrice:             hexToBigInt(tx["gasPrice"]),
 		Data:                 interfaceToString(tx["input"]),
@@ -194,6 +192,7 @@ func serializeTransaction(chainId *big.Int, tx map[string]interface{}, blockTime
 		S:                    hexToBigInt(tx["s"]),
 		V:                    hexToBigInt(tx["v"]),
 		Status:               tx["status"].(*uint64),
+		TextData:             interfaceToString(tx["textData"]),
 		AccessListJson: func() *string {
 			if tx["accessList"] != nil {
 				jsonString := interfaceToJsonString(tx["accessList"])

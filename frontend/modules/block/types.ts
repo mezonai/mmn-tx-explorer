@@ -1,4 +1,5 @@
 import { ESortOrder } from '@/enums';
+import { ITransaction } from '../transaction';
 
 export interface IBlock {
   base_fee_per_gas: number;
@@ -30,4 +31,13 @@ export interface IBLockListParams {
   limit: number;
   sort_by: keyof IBlock;
   sort_order: ESortOrder;
+}
+
+export interface IBlockDetailsResponse {
+  data: IBlockDetails;
+}
+
+export interface IBlockDetails {
+  block: IBlock;
+  transactions: ITransaction[];
 }

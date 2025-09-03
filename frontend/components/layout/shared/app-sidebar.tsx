@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 
 import { ChevronLeft } from '@/assets/icons';
 import { AppLogo } from '@/components/shared';
@@ -20,9 +19,9 @@ import {
 import { ROUTES } from '@/configs/routes.config';
 import { cn } from '@/lib/utils';
 import { sidebarNavItems } from '../navigation/nav-items';
+import { AppSidebarItem } from './app-sidebar-item';
 
 export function AppSidebar() {
-  const pathname = usePathname();
   const { toggleSidebar, state } = useSidebar();
 
   return (
@@ -54,40 +53,9 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {sidebarNavItems.map(({ href, icon: Icon, title }) => {
-                const isActive = href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
-                return (
-                  <SidebarMenuItem key={href}>
-                    <SidebarMenuButton
-                      asChild
-                      tooltip={title}
-                      className={cn(
-                        'hover:bg-active w-full justify-start gap-3 rounded-[6px] px-3 py-2 transition-all duration-200',
-                        isActive && 'bg-active'
-                      )}
-                    >
-                      <Button variant="ghost" className="h-auto w-full justify-start" asChild>
-                        <Link href={href}>
-                          <div className="flex aspect-square size-5 items-center justify-center">
-                            <Icon
-                              className={cn(
-                                'text-foreground-quaternary-400 !size-full',
-                                isActive && 'text-foreground-brand-secondary_hover'
-                              )}
-                              strokeWidth={2}
-                            />
-                          </div>
-                          <span
-                            className={cn('text-secondary-700 font-semibold', isActive && 'text-brand-secondary_hover')}
-                          >
-                            {title}
-                          </span>
-                        </Link>
-                      </Button>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
+              {sidebarNavItems.map((item) => (
+                <AppSidebarItem key={item.href} item={item} />
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

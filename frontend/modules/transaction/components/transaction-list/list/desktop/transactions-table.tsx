@@ -6,7 +6,7 @@ import { Clock } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import { Table } from '@/components/ui/table';
 import { APP_CONFIG } from '@/configs/app.config';
-import { ITransaction } from '@/modules/transaction';
+import { ETransactionOrientation, ITransaction } from '@/modules/transaction';
 import { TTableColumn } from '@/types';
 import {
   BlockNumber,
@@ -85,9 +85,13 @@ export const TransactionsTable = ({ transactions, skeletonLength }: Transactions
     {
       headerContent: 'From/To',
       renderCell: (row) => (
-        <FromToAddresses fromAddress={row.from_address} toAddress={row.to_address} orientation="vertical" />
+        <FromToAddresses
+          fromAddress={row.from_address}
+          toAddress={row.to_address}
+          orientation={ETransactionOrientation.Vertical}
+        />
       ),
-      skeletonContent: <FromToAddressesSkeleton orientation="vertical" />,
+      skeletonContent: <FromToAddressesSkeleton orientation={ETransactionOrientation.Vertical} />,
     },
     {
       headerContent: `Value ${APP_CONFIG.CHAIN_SYMBOL}`,

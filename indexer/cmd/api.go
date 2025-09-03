@@ -71,6 +71,7 @@ func RunApi(cmd *cobra.Command, args []string) {
 		root.Use(middleware.Cors)
 		// wildcard queries
 		root.GET("/transactions", handlers.GetTransactions)
+		root.GET("/pending-transactions", handlers.GetPendingTransactions)
 		root.GET("/events", handlers.GetLogs)
 		root.GET("/wallet-transactions/:wallet_address", handlers.GetWalletTransactions)
 
@@ -84,6 +85,7 @@ func RunApi(cmd *cobra.Command, args []string) {
 
 		// wallet queries
 		root.GET("/wallets", handlers.GetWallets)
+		root.GET("/wallets/:address/detail", handlers.GetWalletDetail)
 
 		// blocks table queries
 		root.GET("/blocks", handlers.GetBlocks)
