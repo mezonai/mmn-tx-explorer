@@ -271,6 +271,8 @@ func convertPBTransactionDataToRawTransaction(pbTransactionData *pb.TransactionD
 	
 
 	rawTransaction["transactionTimestamp"] = fmt.Sprintf("%x", pbTransactionData.Timestamp)
+
+	rawTransaction["textData"] = pbTransactionData.TextData
 	// Block information
 	rawTransaction["blockHash"] = blockHash
 	rawTransaction["blockNumber"] = fmt.Sprintf("%x", blockNumber)

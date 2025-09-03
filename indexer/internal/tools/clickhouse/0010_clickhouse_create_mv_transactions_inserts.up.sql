@@ -35,6 +35,7 @@ SELECT
     t.30 AS logs_bloom,
     t.31 AS status,
     t.32 AS transaction_timestamp,
+    t.33 AS text_data,
     insert_timestamp,
     sign
 FROM inserts_null_table
