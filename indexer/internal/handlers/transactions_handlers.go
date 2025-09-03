@@ -12,6 +12,7 @@ import (
 	"github.com/thirdweb-dev/indexer/internal/common"
 	"github.com/thirdweb-dev/indexer/internal/storage"
 	"math"
+	pb "github.com/thirdweb-dev/indexer/proto"
 )
 
 // @Summary Get all transactions
@@ -272,3 +273,91 @@ func serializeTransactions(transactions []common.Transaction) []common.Transacti
 	}
 	return transactionModels
 }
+
+// PendingTransactionModel return type for Swagger documentation
+type PendingTransactionModel struct {
+	TxHash    string `json:"tx_hash"`
+	Sender    string `json:"sender"`
+	Recipient string `json:"recipient"`
+	Amount    string `json:"amount"`
+	Nonce     uint64 `json:"nonce"`
+	Timestamp uint64 `json:"timestamp"`
+	Status    uint64 `json:"status"`
+}
+
+// @Summary Get pending transactions
+// @Description Retrieve all pending transactions from mempool
+// @Tags transactions
+// @Accept json
+// @Produce json
+// @Security BasicAuth
+// @Param chainId path string true "Chain ID"
+// @Success 200 {object} api.QueryResponse{data=[]PendingTransactionModel}
+// @Failure 400 {object} api.Error
+// @Failure 401 {object} api.Error
+// @Failure 500 {object} api.Error
+// @Router /{chainId}/pending-transactions [get]
+func GetPendingTransactions(c *gin.Context) {
+	chainId, err := api.GetChainId(c)
+	if err != nil {
+		api.BadRequestErrorHandler(c, err)
+		return
+	}
+
+	mainStorage, err := getMainStorage()
+	if err != nil {
+		log.Error().Err(err).Msg("Error getting main storage")
+		api.InternalErrorHandler(c)
+		return
+	}
+
+	// Get pending transactions from MMN service
+	ctx := c.Request.Context()
+	pendingResp, err := mainStorage.GetPendingTransactions(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("Error getting pending transactions from MMN service")
+		api.InternalErrorHandler(c)
+		return
+	}
+
+	if pendingResp == nil || pendingResp.Error != "" {
+		log.Error().Msgf("MMN service error: %s", pendingResp.Error)
+		api.InternalErrorHandler(c)
+		return
+	}
+
+	// Prepare response
+	queryResult := api.QueryResponse{
+		Meta: api.Meta{
+			ChainId:    chainId.Uint64(),
+			TotalItems: int(pendingResp.TotalCount),
+		},
+	}
+
+	// Serialize pending transactions
+	var data interface{} = serializePendingTransactions(pendingResp.PendingTxs)
+	queryResult.Data = &data
+
+	c.JSON(http.StatusOK, queryResult)
+}
+
+func serializePendingTransactions(pendingTxs []*pb.TransactionData) []PendingTransactionModel {
+	if pendingTxs == nil {
+		return []PendingTransactionModel{}
+	}
+
+	models := make([]PendingTransactionModel, len(pendingTxs))
+	for i, tx := range pendingTxs {
+		models[i] = PendingTransactionModel{
+			TxHash:    tx.TxHash,
+			Sender:    tx.Sender,
+			Recipient: tx.Recipient,
+			Amount:    tx.Amount,
+			Nonce:     tx.Nonce,
+			Timestamp: tx.Timestamp,
+			Status:    0,
+		}
+	}
+	return models
+}
+

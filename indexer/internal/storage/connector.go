@@ -6,6 +6,8 @@ import (
 
 	config "github.com/thirdweb-dev/indexer/configs"
 	"github.com/thirdweb-dev/indexer/internal/common"
+	pb "github.com/thirdweb-dev/indexer/proto"
+	"context"
 )
 
 type QueryFilter struct {
@@ -125,6 +127,11 @@ type IMainStorage interface {
 	 * Gets the count of items in a table.
 	 */
 	GetCount(table string, qf QueryFilter) (uint64, error)
+
+	/**
+	 * Gets pending transactions from MMN service.
+	 */
+	GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error)
 }
 
 

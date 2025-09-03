@@ -11,7 +11,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -19,31 +18,16 @@ import (
 	config "github.com/thirdweb-dev/indexer/configs"
 	"github.com/thirdweb-dev/indexer/internal/common"
 	"github.com/thirdweb-dev/indexer/internal/metrics"
+	"github.com/thirdweb-dev/indexer/internal/rpc"
+	pb "github.com/thirdweb-dev/indexer/proto"
+	"github.com/thirdweb-dev/indexer/internal/utils"
 )
 
-// parseAccountTuple parses a JSON string into a tuple compatible with ClickHouse Tuple(address, balance, nonce)
-// Returned slice order: address, balance, nonce
-func parseAccountTuple(jsonStr string) ([]interface{}, error) {
-    if jsonStr == "" {
-        return []interface{}{"", new(big.Int), (*uint64)(nil)}, nil
-    }
-    var v struct {
-        Address string   `json:"address"`
-        Balance *big.Int `json:"balance"`
-        Nonce   *uint64  `json:"nonce"`
-    }
-    if err := json.Unmarshal([]byte(jsonStr), &v); err != nil {
-        return nil, err
-    }
-    if v.Balance == nil {
-        v.Balance = new(big.Int)
-    }
-    return []interface{}{v.Address, v.Balance, v.Nonce}, nil
-}
 
 type ClickHouseConnector struct {
 	conn clickhouse.Conn
 	cfg  *config.ClickhouseConfig
+	mmnGrpcService *rpc.MMNGrpcService
 }
 
 type InsertOptions struct {
@@ -64,11 +48,11 @@ var defaultBlockFields = []string{
 
 var defaultTransactionFields = []string{
 	"chain_id", "hash", "nonce", "block_hash", "block_number", "block_timestamp",
-	"transaction_index", "from_address", "to_address", "value", "gas", "gas_price",
+	"transaction_index", "from_address", "to_address", "toString(value) AS value", "gas", "gas_price",
 	"data", "function_selector", "max_fee_per_gas", "max_priority_fee_per_gas",
 	"max_fee_per_blob_gas", "blob_versioned_hashes", "transaction_type", "r", "s", "v",
 	"access_list", "authorization_list", "contract_address", "gas_used", "cumulative_gas_used",
-	"effective_gas_price", "blob_gas_used", "blob_gas_price", "logs_bloom", "status",
+	"effective_gas_price", "blob_gas_used", "blob_gas_price", "logs_bloom", "status", "transaction_timestamp",
 }
 
 var defaultLogFields = []string{
@@ -92,10 +76,19 @@ func NewClickHouseConnector(cfg *config.ClickhouseConfig) (*ClickHouseConnector,
 	if cfg.MaxRowsPerInsert == 0 {
 		cfg.MaxRowsPerInsert = DEFAULT_MAX_ROWS_PER_INSERT
 	}
-	return &ClickHouseConnector{
+	connector := &ClickHouseConnector{
 		conn: conn,
 		cfg:  cfg,
-	}, nil
+	}
+	if config.Cfg.RPC.MMNGRPCURL != "" {
+		mmn, err := rpc.NewMMNGrpcService(config.Cfg.RPC.MMNGRPCURL)
+		if err != nil {
+			zLog.Warn().Err(err).Msg("Failed to init MMNGrpcService; wallet sync disabled")
+		} else {
+			connector.mmnGrpcService = mmn
+		}
+	}
+	return connector, nil
 }
 
 func connectDB(cfg *config.ClickhouseConfig) (clickhouse.Conn, error) {
@@ -1369,15 +1362,6 @@ func (c *ClickHouseConnector) InsertBlockData(data []common.BlockData) error {
 			transactions := make([][]interface{}, len(blockData.Transactions))
 			txsCount += len(blockData.Transactions)
 			for j, tx := range blockData.Transactions {
-				// Parse sender/receiver account JSON into tuples expected by ClickHouse schema
-				senderTuple, err := parseAccountTuple(tx.SenderAccount)
-				if err != nil {
-					return fmt.Errorf("invalid sender_account JSON for tx %s: %w", tx.Hash, err)
-				}
-				receiverTuple, err := parseAccountTuple(tx.ReceiverAccount)
-				if err != nil {
-					return fmt.Errorf("invalid receiver_account JSON for tx %s: %w", tx.Hash, err)
-				}
 				transactions[j] = []interface{}{
 					tx.Hash,
 					tx.Nonce,
@@ -1387,7 +1371,7 @@ func (c *ClickHouseConnector) InsertBlockData(data []common.BlockData) error {
 					tx.TransactionIndex,
 					tx.FromAddress,
 					tx.ToAddress,
-					tx.Value,
+					utils.StringToBigInt(tx.Value),
 					tx.Gas,
 					tx.GasPrice,
 					tx.Data,
@@ -1410,10 +1394,10 @@ func (c *ClickHouseConnector) InsertBlockData(data []common.BlockData) error {
 					tx.BlobGasPrice,
 					tx.LogsBloom,
 					tx.Status,
-					senderTuple,
-					receiverTuple,
 					tx.TransactionTimestamp,
 				}
+				_ = c.refreshWalletFromService(context.Background(), tx.FromAddress)
+				_ = c.refreshWalletFromService(context.Background(),  tx.ToAddress)
 			}
 
 			// Prepare logs array
@@ -2209,3 +2193,37 @@ func (c *ClickHouseConnector) DeleteOlderThan(chainId *big.Int, blockNumber *big
 func (c *ClickHouseConnector) TestQueryGeneration(table, columns string, qf QueryFilter) string {
 	return c.buildQuery(table, columns, qf)
 }
+
+func (c *ClickHouseConnector) insertWallet(ctx context.Context, address string, nonce uint64, balance string) error {
+	if address == "" {
+		return nil
+	}
+	query := fmt.Sprintf("INSERT INTO %s.%s (address, account_nonce, balance, updated_at) VALUES (?, ?, ?, now())", c.cfg.Database, "wallet")
+	return c.conn.Exec(ctx, query, address, nonce, balance)
+}
+
+// refreshWalletFromService fetches from MMN and writes to DB
+func (c *ClickHouseConnector) refreshWalletFromService(ctx context.Context, address string) error {
+	if c.mmnGrpcService == nil || address == "" {
+		return nil
+	}
+	resp, err := c.mmnGrpcService.GetAccountByAddress(ctx, address)
+	if err != nil {
+		return err
+	}
+	if resp == nil || resp.Account == nil {
+		return nil
+	}
+	return c.insertWallet(ctx, address, resp.Account.Nonce, resp.Account.Balance)
+}
+
+// GetPendingTransactions retrieves pending transactions from MMN service
+//TODO: index pending transactions to db
+func (c *ClickHouseConnector) GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error) {
+	if c.mmnGrpcService == nil {
+		return nil, fmt.Errorf("MMN MMNGrpcService not initialized")
+	}
+	return c.mmnGrpcService.GetPendingTransactions(ctx)
+}
+
+
