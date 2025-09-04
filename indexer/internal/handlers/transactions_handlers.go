@@ -283,13 +283,14 @@ func serializeTransactions(transactions []common.Transaction) []common.Transacti
 
 // PendingTransactionModel return type for Swagger documentation
 type PendingTransactionModel struct {
-	TxHash    string `json:"tx_hash"`
-	Sender    string `json:"sender"`
-	Recipient string `json:"recipient"`
-	Amount    string `json:"amount"`
+	TxHash    string `json:"hash"`
+	Sender    string `json:"from_address"`
+	Recipient string `json:"to_address"`
+	Amount    string `json:"value"`
 	Nonce     uint64 `json:"nonce"`
-	Timestamp uint64 `json:"timestamp"`
+	Timestamp uint64 `json:"transaction_timestamp"`
 	Status    uint64 `json:"status"`
+	TransactionType uint64 `json:"transaction_type"`
 }
 
 // @Summary Get pending transactions
@@ -306,6 +307,13 @@ type PendingTransactionModel struct {
 // @Router /{chainId}/pending-transactions [get]
 func GetPendingTransactions(c *gin.Context) {
 	chainId, err := api.GetChainId(c)
+	if err != nil {
+		api.BadRequestErrorHandler(c, err)
+		return
+	}
+
+	// Parse pagination params
+	queryParams, err := api.ParseQueryParams(c.Request)
 	if err != nil {
 		api.BadRequestErrorHandler(c, err)
 		return
@@ -333,16 +341,46 @@ func GetPendingTransactions(c *gin.Context) {
 		return
 	}
 
-	// Prepare response
+	// Compute pagination over full pending set received from node
+	totalItems := int(pendingResp.TotalCount)
+	limit := queryParams.Limit
+	page := queryParams.Page
+	if limit <= 0 {
+		limit = 5
+	}
+	if page < 0 {
+		page = 0
+	}
+
+	start := page * limit
+	if start > totalItems {
+		start = totalItems
+	}
+	end := start + limit
+	if end > totalItems {
+		end = totalItems
+	}
+
+	var sliced []*pb.TransactionData
+	if pendingResp.PendingTxs != nil && start < end {
+		sliced = pendingResp.PendingTxs[start:end]
+	} else {
+		sliced = []*pb.TransactionData{}
+	}
+
+	// Prepare response with pagination meta
 	queryResult := api.QueryResponse{
 		Meta: api.Meta{
 			ChainId:    chainId.Uint64(),
-			TotalItems: int(pendingResp.TotalCount),
+			Page:       page,
+			Limit:      limit,
+			TotalItems: totalItems,
+			TotalPages: int(math.Ceil(float64(totalItems) / float64(limit))),
 		},
 	}
 
-	// Serialize pending transactions
-	var data interface{} = serializePendingTransactions(pendingResp.PendingTxs)
+	// Serialize pending transactions page
+	var data interface{} = serializePendingTransactions(sliced)
 	queryResult.Data = &data
 
 	c.JSON(http.StatusOK, queryResult)
@@ -361,8 +399,9 @@ func serializePendingTransactions(pendingTxs []*pb.TransactionData) []PendingTra
 			Recipient: tx.Recipient,
 			Amount:    tx.Amount,
 			Nonce:     tx.Nonce,
-			Timestamp: tx.Timestamp,
+			Timestamp: tx.Timestamp / 1000,
 			Status:    0,
+			TransactionType: 0,
 		}
 	}
 	return models

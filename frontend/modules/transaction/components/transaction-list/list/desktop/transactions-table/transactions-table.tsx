@@ -39,7 +39,7 @@ export const TransactionsTable = ({ transactions, skeletonLength }: Transactions
 
   const columns: TTableColumn<ITransaction>[] = [
     {
-      renderCell: (row) => <MoreInfoButton transaction={row} />,
+      renderCell: (row) => <MoreInfoButton transaction={row as ITransaction} />,
       skeletonContent: <MoreInfoButtonSkeleton />,
     },
     {
@@ -59,7 +59,7 @@ export const TransactionsTable = ({ transactions, skeletonLength }: Transactions
       renderCell: (row) => (
         <div className="flex flex-col items-start">
           <TxnHashLink hash={row.hash} className="w-40" />
-          <TransactionTime blockTimestamp={row.block_timestamp} showAbsolute={showAbsoluteTime} />
+          <TransactionTime transactionTimestamp={row.transaction_timestamp} showAbsolute={showAbsoluteTime} />
         </div>
       ),
       skeletonContent: (
@@ -79,7 +79,7 @@ export const TransactionsTable = ({ transactions, skeletonLength }: Transactions
     },
     {
       headerContent: 'Block',
-      renderCell: (row) => <BlockNumber blockNumber={row.block_number} />,
+      renderCell: (row) => <BlockNumber blockNumber={row.block_number || 'N/A'} />,
       skeletonContent: <BlockNumberSkeleton />,
     },
     {

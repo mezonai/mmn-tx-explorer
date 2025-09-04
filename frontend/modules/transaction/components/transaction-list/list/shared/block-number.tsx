@@ -6,7 +6,7 @@ import { ROUTES } from '@/configs/routes.config';
 import { cn } from '@/lib/utils';
 
 interface BlockNumberProps {
-  blockNumber: number;
+  blockNumber: number | string;
   className?: string;
 }
 
@@ -15,13 +15,15 @@ interface BlockNumberSkeletonProps {
 }
 
 export const BlockNumber = ({ blockNumber, className }: BlockNumberProps) => {
+  const isPending = blockNumber === 'N/A';
+  const buttonVariant = isPending ? 'disabled' : 'link';
   return (
     <Button
-      variant="link"
+      variant={buttonVariant}
       className={cn('text-brand-secondary-700 size-fit p-0 text-sm font-semibold', className)}
       asChild
     >
-      <Link href={ROUTES.BLOCK(blockNumber)}>{blockNumber}</Link>
+      {isPending ? <span>{blockNumber}</span> : <Link href={ROUTES.BLOCK(blockNumber as number)}>{blockNumber}</Link>}
     </Button>
   );
 };

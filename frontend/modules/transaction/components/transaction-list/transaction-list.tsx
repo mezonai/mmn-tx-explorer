@@ -49,6 +49,23 @@ export const TransactionsList = () => {
     }
   };
 
+  const handleFetchPendingTransactions = async (localSearchParams: ITransactionListParams) => {
+    try {
+      setIsLoading(true);
+      setTransactions(undefined);
+      const { data, meta } = await TransactionService.getPendingTransactions({
+        page: localSearchParams.page - 1,
+        limit: localSearchParams.limit,
+      });
+      setTransactions(data);
+      setPagination(meta);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     setLocalSearchParams({
       ...DEFAULT_VALUE_DATA_SEARCH,
@@ -59,8 +76,12 @@ export const TransactionsList = () => {
 
   useEffect(() => {
     if (!localSearchParams) return;
-    handleFetchTransactions(localSearchParams);
-  }, [localSearchParams]);
+    if (tab === ETransactionTab.Pending) {
+      handleFetchPendingTransactions(localSearchParams);
+    } else {
+      handleFetchTransactions(localSearchParams);
+    }
+  }, [localSearchParams, tab]);
 
   return (
     <div className="space-y-6 md:space-y-8">
