@@ -5,6 +5,7 @@ import { ROUTES } from '@/configs/routes.config';
 import { ADDRESS_END_VISIBLE_CHARS } from '@/constant';
 import { ISearchResult } from '../types';
 import { SearchResultItem } from './search-result-item';
+import { Wallet } from 'lucide-react';
 
 interface SearchResultsProps {
   isLoading: boolean;
@@ -16,7 +17,7 @@ export const SearchResults = ({ isLoading, searchResults }: SearchResultsProps) 
     return <p>We are searching, please wait...</p>;
   }
 
-  if (!searchResults?.blocks?.length && !searchResults?.transactions?.length) {
+  if (!searchResults?.blocks?.length && !searchResults?.transactions?.length && !searchResults?.wallets?.length) {
     return <p>No results found.</p>;
   }
 
@@ -32,7 +33,7 @@ export const SearchResults = ({ isLoading, searchResults }: SearchResultsProps) 
                 href={ROUTES.TRANSACTION(transaction.hash)}
                 icon={Transaction}
                 title={<MiddleTruncate end={ADDRESS_END_VISIBLE_CHARS}>{transaction.hash}</MiddleTruncate>}
-                timestamp={transaction.block_timestamp}
+                timestamp={transaction.transaction_timestamp}
               />
             ))}
           </div>
@@ -50,6 +51,22 @@ export const SearchResults = ({ isLoading, searchResults }: SearchResultsProps) 
                 icon={Cube01}
                 title={<span>{block.block_number}</span>}
                 timestamp={block.block_timestamp}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {searchResults.wallets?.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-tertiary-600 text-sm font-semibold">Wallets</p>
+          <div className="space-y-2">
+            {searchResults.wallets.map((wallet) => (
+              <SearchResultItem
+                key={wallet.address}
+                href={ROUTES.WALLET(wallet.address)}
+                icon={Wallet}
+                title={<span>{wallet.address}</span>}
               />
             ))}
           </div>

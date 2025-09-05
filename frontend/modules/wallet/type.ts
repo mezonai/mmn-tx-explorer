@@ -5,7 +5,6 @@ export interface IWallet {
   address: string;
   balance: number;
   rank: number;
-  tx_timestamp: string;
 }
 
 export interface IWalletListParams {

@@ -39,7 +39,7 @@ export const TransactionsTable = ({ transactions, skeletonLength }: Transactions
 
   const columns: TTableColumn<ITransaction>[] = [
     {
-      renderCell: (row) => <MoreInfoButton transaction={row as ITransaction} />,
+      renderCell: (row) => <MoreInfoButton transaction={row} />,
       skeletonContent: <MoreInfoButtonSkeleton />,
     },
     {
