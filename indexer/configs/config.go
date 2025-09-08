@@ -217,6 +217,7 @@ func LoadConfig(cfgFile string) error {
 	} else {
 		viper.SetConfigName("config")
 		viper.AddConfigPath("./configs")
+		viper.AddConfigPath("/app/configs")
 
 		if err := viper.ReadInConfig(); err != nil {
 			log.Warn().Msgf("error reading config file, %s", err)
@@ -245,7 +246,6 @@ func LoadConfig(cfgFile string) error {
 		return fmt.Errorf("error setting custom JSON configs: %v", err)
 	}
 
-	// Add debug logging
 	if clickhouse := Cfg.Storage.Main.Clickhouse; clickhouse != nil {
 		log.Debug().
 			Interface("chainConfig", clickhouse.ChainBasedConfig).

@@ -11,11 +11,11 @@ services:
 
   # PostgreSQL database
   postgres:
-    image: postgres:15
+    image: postgres:16
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: insight
+      POSTGRES_DB: indexer
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
     volumes:
