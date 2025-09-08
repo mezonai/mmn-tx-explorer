@@ -1,3 +1,4 @@
+'use client';
 import { Pagination } from '@/components/ui/pagination';
 import { PAGINATION } from '@/constant';
 import { ESortOrder } from '@/enums';

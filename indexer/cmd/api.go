@@ -72,6 +72,7 @@ func RunApi(cmd *cobra.Command, args []string) {
 		// wildcard queries
 		root.GET("/transactions", handlers.GetTransactions)
 		root.GET("/pending-transactions", handlers.GetPendingTransactions)
+		root.GET("/pending-tx/:transaction_hash/detail", handlers.GetPendingTransactionDetail)
 		root.GET("/events", handlers.GetLogs)
 		root.GET("/wallet-transactions/:wallet_address", handlers.GetWalletTransactions)
 

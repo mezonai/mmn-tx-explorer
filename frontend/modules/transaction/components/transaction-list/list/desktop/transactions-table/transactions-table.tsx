@@ -6,7 +6,7 @@ import { Clock } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import { Table } from '@/components/ui/table';
 import { APP_CONFIG } from '@/configs/app.config';
-import { ETransactionOrientation, ITransaction } from '@/modules/transaction';
+import { ETransactionOrientation, ETransactionStatus, ITransaction } from '@/modules/transaction';
 import { TTableColumn } from '@/types';
 import {
   BlockNumber,
@@ -58,7 +58,7 @@ export const TransactionsTable = ({ transactions, skeletonLength }: Transactions
       ),
       renderCell: (row) => (
         <div className="flex flex-col items-start">
-          <TxnHashLink hash={row.hash} className="w-40" />
+          <TxnHashLink hash={row.hash} isPending={row.status === ETransactionStatus.Pending} className="w-40" />
           <TransactionTime transactionTimestamp={row.transaction_timestamp} showAbsolute={showAbsoluteTime} />
         </div>
       ),

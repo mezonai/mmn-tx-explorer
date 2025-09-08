@@ -15,6 +15,7 @@ export async function generateMetadata({ params }: TransactionDetailPageProps): 
   };
 }
 
-export default function BlockDetailsPage() {
-  return <BlockDetails />;
+export default async function BlockDetailsPage({ params }: TransactionDetailPageProps) {
+  const { blockNumber } = await params;
+  return <BlockDetails blockNumber={blockNumber} />;
 }

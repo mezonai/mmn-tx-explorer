@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Manrope } from 'next/font/google';
 import { Suspense } from 'react';
 
 import './globals.css';
+import Providers from '@/providers/QueryClientProvider';
 
 const manrope = Manrope({
   variable: '--font-manrope',
@@ -35,7 +36,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${manrope.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Suspense fallback={null}>{children}</Suspense>
+        <Suspense fallback={null}>
+          <Providers>{children}</Providers>
+        </Suspense>
       </body>
     </html>
   );

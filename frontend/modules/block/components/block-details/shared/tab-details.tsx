@@ -1,44 +1,27 @@
+'use client';
 import { ItemAttribute } from '@/components/shared/item-attribute';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DATE_TIME_FORMAT } from '@/constant';
-import { BlockService } from '@/modules/block/api';
-import { DashboardService } from '@/modules/dashboard';
 import { WalletThumb } from '@/modules/wallet/components/shared/wallet-thumb';
 import { DateTimeUtil } from '@/utils';
 import { Truncate } from '@re-dev/react-truncate';
 import { format } from 'date-fns';
 import { Clock4 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
 import { ButtonNavigateBlock } from '.';
 import { IBlockDetails } from '../../../types';
+import { useStats } from '@/modules/dashboard/hooks/useStas';
 
 interface TabDetailsProps {
-  blockNumber: number;
+  blockDetails: IBlockDetails;
 }
 
-export const TabDetails = ({ blockNumber }: TabDetailsProps) => {
-  const [blockDetails, setBlockDetails] = useState<IBlockDetails | null>(null);
-  const [hasNextBlock, setHasNextBlock] = useState(true);
-  const block = blockDetails?.block;
-
-  useEffect(() => {
-    if (!blockNumber) return;
-
-    const fetchBlockDetails = async () => {
-      const [blockDetails, stats] = await Promise.all([
-        BlockService.getBlockDetails(blockNumber),
-        DashboardService.getStats(),
-      ]);
-      setBlockDetails(blockDetails);
-      setHasNextBlock(blockNumber < stats.data.total_blocks - 1);
-    };
-
-    fetchBlockDetails();
-  }, [blockNumber]);
-
+export const TabDetails = ({ blockDetails }: TabDetailsProps) => {
+  const block = blockDetails.block;
+  const stats = useStats();
+  const hasNextBlock = stats && block.block_number < stats.total_blocks - 1;
   return (
     <div className="space-y-5">
       <ItemAttribute

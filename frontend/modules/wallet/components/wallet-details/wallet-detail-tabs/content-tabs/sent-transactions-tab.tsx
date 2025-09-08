@@ -4,10 +4,9 @@ import { Pagination } from '@/components/ui/pagination';
 import { PAGINATION } from '@/constant';
 import { EBreakpoint, ESortOrder } from '@/enums';
 import { useBreakpoint, usePaginationQueryParam } from '@/hooks';
-import { ITransaction, ITransactionListParams, TransactionService } from '@/modules/transaction';
+import { ITransactionListParams } from '@/modules/transaction';
 import { MobileWalletTransactionsTable, WalletTransactionsTable } from '@/modules/transaction/components';
-import { IPaginationMeta } from '@/types';
-import { PageLoading } from '@/components/shared/page-loading';
+import { useTransactions } from '@/modules/transaction/hooks/useTransactions';
 
 interface SentTransactionsTabProps {
   walletAddress: string;
@@ -21,31 +20,17 @@ const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
 } as const;
 
 export const SentTransactionsTab = ({ walletAddress }: SentTransactionsTabProps) => {
-  const [transactions, setTransactions] = useState<ITransaction[]>();
-  const [pagination, setPagination] = useState<IPaginationMeta>();
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [localSearchParams, setLocalSearchParams] = useState<ITransactionListParams>();
+  const { data: transactionsResponse, isLoading: isLoadingTransactions } = useTransactions({
+    ...(localSearchParams ?? DEFAULT_VALUE_DATA_SEARCH),
+    filter_from_address: walletAddress,
+  });
+  const transactions = transactionsResponse?.data;
+  const pagination = transactionsResponse?.meta;
+
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
   const isDesktop = useBreakpoint(EBreakpoint.LG);
   const isEmptyTransactions = transactions && transactions.length === 0;
-  const handleFetchTransactions = async (params: ITransactionListParams, walletAddress: string) => {
-    try {
-      setIsLoading(true);
-      setTransactions(undefined);
-
-      const { meta, data } = await TransactionService.getTransactions({
-        ...params,
-        page: params.page - 1,
-        filter_from_address: walletAddress,
-      });
-      setTransactions(data);
-      setPagination(meta);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   useEffect(() => {
     setLocalSearchParams({
@@ -55,13 +40,6 @@ export const SentTransactionsTab = ({ walletAddress }: SentTransactionsTabProps)
     });
   }, [page, limit]);
 
-  useEffect(() => {
-    if (!localSearchParams) return;
-    handleFetchTransactions(localSearchParams, walletAddress);
-  }, [localSearchParams, walletAddress]);
-  if (isDesktop === undefined) {
-    return <PageLoading />;
-  }
   return (
     <div>
       {!isEmptyTransactions && (
@@ -70,7 +48,7 @@ export const SentTransactionsTab = ({ walletAddress }: SentTransactionsTabProps)
           limit={limit}
           totalPages={pagination?.total_pages ?? 0}
           totalItems={pagination?.total_items ?? 0}
-          isLoading={isLoading}
+          isLoading={isLoadingTransactions}
           className="w-full pb-6 lg:w-auto"
           onChangePage={handleChangePage}
           onChangeLimit={handleChangeLimit}
@@ -81,7 +59,7 @@ export const SentTransactionsTab = ({ walletAddress }: SentTransactionsTabProps)
         <WalletTransactionsTable walletAddress={walletAddress} transactions={transactions} skeletonLength={limit} />
       ) : (
         <MobileWalletTransactionsTable
-          isLoading={isLoading}
+          isLoading={isLoadingTransactions}
           walletAddress={walletAddress}
           transactions={transactions ?? []}
           skeletonLength={limit}

@@ -1,5 +1,5 @@
 import { Skeleton } from '@/components/ui/skeleton';
-import { ETransactionOrientation, ITransaction } from '@/modules/transaction';
+import { ETransactionOrientation, ETransactionStatus, ITransaction } from '@/modules/transaction';
 import { DateTimeUtil, NumberUtil } from '@/utils';
 import {
   FromToAddresses,
@@ -30,7 +30,11 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
           <TypeBadgesSkeleton />
         )}
         <div className="flex items-center gap-2">
-          {transaction ? <TxnHashLink hash={transaction.hash} /> : <TxnHashLinkSkeleton />}
+          {transaction ? (
+            <TxnHashLink hash={transaction.hash} isPending={transaction.status === ETransactionStatus.Pending} />
+          ) : (
+            <TxnHashLinkSkeleton />
+          )}
           {transaction ? (
             <span className="text-quaternary-500 text-sm font-normal whitespace-nowrap">
               {DateTimeUtil.formatRelativeTimeSec(transaction.block_timestamp)}

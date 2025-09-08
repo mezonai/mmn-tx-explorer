@@ -1,5 +1,5 @@
 import { Transaction } from '@/assets/icons';
-import { ITransaction } from '@/modules/transaction';
+import { ETransactionStatus, ITransaction } from '@/modules/transaction';
 import {
   FromToAddresses,
   FromToAddressesSkeleton,
@@ -33,7 +33,11 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
         </div>
         <div className="flex items-center gap-2">
           <Transaction className="text-foreground-quaternary-400 size-6" />
-          {transaction ? <TxnHashLink hash={transaction.hash} /> : <TxnHashLinkSkeleton />}
+          {transaction ? (
+            <TxnHashLink hash={transaction.hash} isPending={transaction.status === ETransactionStatus.Pending} />
+          ) : (
+            <TxnHashLinkSkeleton />
+          )}
           {transaction ? (
             <TransactionTime
               transactionTimestamp={transaction.transaction_timestamp}

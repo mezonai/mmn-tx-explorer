@@ -1,6 +1,7 @@
 package handlers
 
 import (
+    "fmt"
 	"net/http"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -384,6 +385,91 @@ func GetPendingTransactions(c *gin.Context) {
 	queryResult.Data = &data
 
 	c.JSON(http.StatusOK, queryResult)
+}
+
+// @Summary Get pending transaction detail
+// @Description Retrieve a single pending transaction by transaction hash
+// @Tags transactions
+// @Accept json
+// @Produce json
+// @Security BasicAuth
+// @Param chainId path string true "Chain ID"
+// @Param transactionHash path string true "Transaction hash"
+// @Success 200 {object} api.QueryResponse{data=PendingTransactionModel}
+// @Failure 400 {object} api.Error
+// @Failure 401 {object} api.Error
+// @Failure 404 {object} api.Error
+// @Failure 500 {object} api.Error
+// @Router /{chainId}/pending-transactions/{transactionHash} [get]
+
+type PendingTransactionDetailResponse struct {
+	Data struct {
+		Transaction PendingTransactionModel `json:"transaction"`
+	} `json:"data"`
+}
+
+func GetPendingTransactionDetail(c *gin.Context) {
+    hash := c.Param("transaction_hash")
+    if hash == "" {
+        api.BadRequestErrorHandler(c, fmt.Errorf("missing transaction hash"))
+        return
+    }
+
+    mainStorage, err := getMainStorage()
+    if err != nil {
+        log.Error().Err(err).Msg("Error getting main storage")
+        api.InternalErrorHandler(c)
+        return
+    }
+
+    ctx := c.Request.Context()
+    pendingResp, err := mainStorage.GetPendingTransactions(ctx)
+    if err != nil {
+        log.Error().Err(err).Msg("Error getting pending transactions from MMN service")
+        api.InternalErrorHandler(c)
+        return
+    }
+
+    if pendingResp == nil || pendingResp.Error != "" {
+        log.Error().Msgf("MMN service error: %s", pendingResp.Error)
+        api.InternalErrorHandler(c)
+        return
+    }
+
+    var found *pb.TransactionData
+    if pendingResp.PendingTxs != nil {
+        for _, tx := range pendingResp.PendingTxs {
+            if tx != nil && tx.TxHash == hash {
+                found = tx
+                break
+            }
+        }
+    }
+
+    if found == nil {
+        c.JSON(http.StatusNotFound, api.Error{Message: "Pending transaction not found"})
+        return
+    }
+
+    model := PendingTransactionModel{
+        TxHash:    found.TxHash,
+        Sender:    found.Sender,
+        Recipient: found.Recipient,
+        Amount:    found.Amount,
+        Nonce:     found.Nonce,
+        Timestamp: found.Timestamp / 1000,
+        Status:    0,
+        TransactionType: 0,
+    }
+
+	transactionDetailResponse := PendingTransactionDetailResponse{
+		Data: struct {
+			Transaction PendingTransactionModel `json:"transaction"`
+		}{
+			Transaction: model,
+		},
+	}
+    c.JSON(http.StatusOK, transactionDetailResponse)
 }
 
 func serializePendingTransactions(pendingTxs []*pb.TransactionData) []PendingTransactionModel {
