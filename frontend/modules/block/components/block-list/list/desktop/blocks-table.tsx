@@ -14,8 +14,6 @@ import {
   HashFieldSkeleton,
   TxnLink,
   TxnLinkSkeleton,
-  ValidatorField,
-  ValidatorFieldSkeleton,
 } from '../shared';
 
 interface BlocksTableProps {

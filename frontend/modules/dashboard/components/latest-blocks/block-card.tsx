@@ -10,6 +10,7 @@ import { ROUTES } from '@/configs/routes.config';
 import { ADDRESS_END_VISIBLE_CHARS } from '@/constant';
 import { IBlock } from '@/modules/block';
 import { DateTimeUtil } from '@/utils';
+import { HashField, TxnLink } from '@/modules/block/components/block-list/list/shared';
 
 interface BlockCardProps {
   block?: IBlock;
@@ -42,7 +43,7 @@ export const BlockCard = ({ block }: BlockCardProps) => {
           <div className="flex items-center justify-between gap-2">
             <span className="text-secondary-700 font-medium">Txn</span>
             {block ? (
-              <span className="text-tertiary-600 text-right font-normal">{block.transaction_count}</span>
+              <TxnLink count={block.transaction_count} blockNumber={block.block_number} />
             ) : (
               <Skeleton className="h-5 w-8" />
             )}
@@ -50,15 +51,7 @@ export const BlockCard = ({ block }: BlockCardProps) => {
           <div className="flex items-center justify-between gap-2">
             <span className="text-secondary-700 font-medium">Validator</span>
             {block ? (
-              <Button
-                variant="link"
-                className="text-brand-secondary-700 size-fit w-30 truncate p-0 text-right font-normal"
-                asChild
-              >
-                <Link href={ROUTES.WALLET(block.miner)}>
-                  <MiddleTruncate end={ADDRESS_END_VISIBLE_CHARS}>{block.miner}</MiddleTruncate>
-                </Link>
-              </Button>
+              <HashField hash={block.miner} className="w-30" addressClassName="text-foreground" />
             ) : (
               <Skeleton className="h-5 w-30" />
             )}

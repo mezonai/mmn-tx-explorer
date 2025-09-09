@@ -6,6 +6,7 @@ import { LIMITS, PAGINATION } from '@/constant';
 import { cn } from '@/lib/utils';
 import { NumberUtil } from '@/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';
+import { Skeleton } from './skeleton';
 
 interface PaginationProps {
   page: number;
@@ -16,6 +17,7 @@ interface PaginationProps {
   className?: string;
   onChangePage: (page: number) => void;
   onChangeLimit: (limit: number) => void;
+  skeletonClassName?: string;
 }
 
 interface PaginationState {
@@ -112,6 +114,7 @@ export const Pagination = ({
   className,
   onChangePage,
   onChangeLimit,
+  skeletonClassName = '',
 }: PaginationProps) => {
   const {
     currentPage,
@@ -141,7 +144,12 @@ export const Pagination = ({
       onChangeLimit(newLimit);
     }
   };
-
+  if (isLoading)
+    return (
+      <div className={cn('flex w-full items-center justify-end gap-2', skeletonClassName)}>
+        <Skeleton className="h-10 w-1/3" />
+      </div>
+    );
   return (
     <div className={cn('flex flex-wrap items-center justify-end gap-x-4 gap-y-2 sm:flex-nowrap', className)}>
       {/* Limit selector and total items display */}

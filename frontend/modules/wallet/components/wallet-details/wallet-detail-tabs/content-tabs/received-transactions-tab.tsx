@@ -42,20 +42,35 @@ export const ReceivedTransactionsTab = ({ walletAddress }: ReceivedTransactionsT
 
   return (
     <div>
-      {!isEmptyTransactions && (
+      <div className="bg-background sticky top-0 z-10 mb-0 flex justify-end gap-5 py-6 md:pt-8">
         <Pagination
           page={page}
           limit={limit}
           totalPages={pagination?.total_pages ?? 0}
           totalItems={pagination?.total_items ?? 0}
           isLoading={isLoadingTransactions}
-          className="w-full pb-6 lg:w-auto"
+          className="w-full lg:w-auto"
           onChangePage={handleChangePage}
           onChangeLimit={handleChangeLimit}
         />
-      )}
+      </div>
 
-      {isDesktop ? (
+      {isDesktop === undefined ? (
+        <div>
+          <div className="hidden lg:block">
+            <WalletTransactionsTable walletAddress={walletAddress} transactions={transactions} skeletonLength={limit} />
+          </div>
+          <div className="block lg:hidden">
+            <MobileWalletTransactionsTable
+              isLoading={isLoadingTransactions}
+              walletAddress={walletAddress}
+              transactions={transactions ?? []}
+              skeletonLength={limit}
+              isEmptyTransactions={isEmptyTransactions}
+            />
+          </div>
+        </div>
+      ) : isDesktop ? (
         <WalletTransactionsTable walletAddress={walletAddress} transactions={transactions} skeletonLength={limit} />
       ) : (
         <MobileWalletTransactionsTable

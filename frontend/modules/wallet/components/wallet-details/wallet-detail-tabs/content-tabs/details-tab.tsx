@@ -18,7 +18,7 @@ interface TabDetailsProps {
 
 export const DetailsTab = ({ walletDetails }: TabDetailsProps) => {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 md:min-h-[600px]">
       <ItemAttribute
         label="Address"
         description="The address of the account"

@@ -59,7 +59,7 @@ export const WalletTransactionsTable = ({
       columns={columns}
       rows={transactions}
       skeletonLength={skeletonLength}
-      className="[&_thead]:sticky [&_thead]:top-[96px] [&_thead]:z-10"
+      className="min-h-[500px] [&_thead]:sticky [&_thead]:top-[96px] [&_thead]:z-10"
       classNameLayout="overflow-x-visible"
     />
   );
