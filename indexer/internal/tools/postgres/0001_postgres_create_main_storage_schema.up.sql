@@ -1,6 +1,5 @@
--- PostgreSQL schema for main storage tables
--- This schema is designed to be compatible with the ClickHouse schema
--- while leveraging PostgreSQL-specific features
+-- PostgreSQL migration: Create main storage schema
+-- This migration creates all main storage tables and indexes
 
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

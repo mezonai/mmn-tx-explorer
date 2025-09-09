@@ -5,7 +5,7 @@ rpc:
   chainId: 1337
 
   # MMN gRPC endpoint for block service
-  mmnGrpcUrl: host.docker.internal:9001
+  mmnGrpcUrl: localhost:9001
   
   # Block fetching configuration
   blocks:
