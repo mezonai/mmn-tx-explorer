@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Manrope } from 'next/font/google';
 import { Suspense } from 'react';
 
 import './globals.css';
+import { ErrorBoundary } from '@/components/shared';
 import Providers from '@/providers/QueryClientProvider';
 
 const manrope = Manrope({
@@ -36,9 +37,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${manrope.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Suspense fallback={null}>
-          <Providers>{children}</Providers>
-        </Suspense>
+        <ErrorBoundary>
+          <Suspense fallback={null}>
+            <Providers>{children}</Providers>
+          </Suspense>
+        </ErrorBoundary>
       </body>
     </html>
   );
