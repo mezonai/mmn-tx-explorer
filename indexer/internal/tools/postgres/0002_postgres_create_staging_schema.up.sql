@@ -1,10 +1,5 @@
--- PostgreSQL schema for staging storage
--- This database is used for temporary storage during data processing
-
--- Create staging database (run this separately)
--- CREATE DATABASE indexer_staging;
-
--- Connect to staging database and run the following:
+-- PostgreSQL migration: Create staging schema
+-- This migration creates staging tables for temporary data processing
 
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

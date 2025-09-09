@@ -1,10 +1,5 @@
--- PostgreSQL schema for orchestrator storage
--- This database is used for orchestration metadata and cursors
-
--- Create orchestrator database (run this separately)
--- CREATE DATABASE indexer_orchestrator;
-
--- Connect to orchestrator database and run the following:
+-- PostgreSQL migration: Create orchestrator schema
+-- This migration creates orchestrator tables for metadata and cursors
 
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

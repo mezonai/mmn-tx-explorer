@@ -1,5 +1,4 @@
 services:
-
   postgres:
     image: postgres:16
     ports:
@@ -23,15 +22,10 @@ services:
       dockerfile: Dockerfile
     command: ["orchestrator"]
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
+      - indexer-migrate-postgres
     volumes:
       - ./indexer/configs:/app/configs:ro
-      - ./indexer/internal/tools/postgres:/app/internal/tools/postgres:ro
-    environment:
-      # Migrations path for Docker
-      MIGRATIONS_PATH: app/internal/tools/postgres
-
     restart: unless-stopped
 
   indexer-api:
@@ -40,19 +34,40 @@ services:
       dockerfile: Dockerfile
     command: ["api"]
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
+      - indexer-migrate-postgres
+      - indexer-orchestrator
     ports:
       - "${INDEXER_API_PORT:-8080}:3000"
     volumes:
       - ./indexer/configs:/app/configs:ro
     restart: unless-stopped
 
+  indexer-migrate-postgres:
+    build:
+      context: ./indexer
+      dockerfile: Dockerfile
+    command: ["migrate-postgres"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./indexer/configs:/app/configs:ro
+      - ./indexer/internal/tools/postgres:/app/internal/tools/postgres:ro
+    environment:
+      - MIGRATIONS_PATH=file://app/internal/tools/postgres
+      - STORAGE_MAIN_POSTGRES_HOST=postgres
+      - STORAGE_MAIN_POSTGRES_PORT=5432
+      - STORAGE_MAIN_POSTGRES_USERNAME=${POSTGRES_USER}
+      - STORAGE_MAIN_POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - STORAGE_MAIN_POSTGRES_DATABASE=${POSTGRES_DB}
+      - STORAGE_MAIN_POSTGRES_SSLMODE=disable
+    restart: "no"
+
   frontend:
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     environment:
-      # Example: connect frontend to indexer-api
       NEXT_PUBLIC_APP_API_URL: ${NEXT_PUBLIC_APP_API_URL:-http://localhost:8080}
     build:
       context: ./frontend
@@ -65,5 +80,3 @@ services:
 
 volumes:
   postgres_data:
-
-
