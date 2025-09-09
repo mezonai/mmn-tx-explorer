@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 
 import { DATE_TIME_FORMAT } from '@/constant';
 import { cn } from '@/lib/utils';
-import { ITransaction } from '@/modules/transaction';
+import { ETransactionStatus, ITransaction } from '@/modules/transaction';
 import { DateTimeUtil, NumberUtil } from '@/utils';
 import {
   MoreInfoButton,
@@ -51,7 +51,7 @@ export const MobileWalletTransactionsTable = ({
     return (
       <div key={transaction.hash} className="border-secondary space-y-2 border-b pb-4">
         <div className="flex items-center justify-between">
-          <TxnHashLink hash={transaction.hash} />
+          <TxnHashLink hash={transaction.hash} isPending={transaction.status === ETransactionStatus.Pending} />
           <MoreInfoButton transaction={transaction} />
         </div>
         <div className="flex items-center justify-between gap-2">

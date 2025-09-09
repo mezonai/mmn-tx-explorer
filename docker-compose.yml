@@ -5,13 +5,13 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: indexer
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d indexer"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-indexer}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -54,6 +54,7 @@ services:
     environment:
       # Example: connect frontend to indexer-api
       NEXT_PUBLIC_APP_API_URL: ${NEXT_PUBLIC_APP_API_URL:-http://localhost:8080}
+      APP_API_URL_INTERNAL: ${APP_API_URL_INTERNAL:-http://indexer-api:3000}
     build:
       context: ./frontend
       dockerfile: Dockerfile

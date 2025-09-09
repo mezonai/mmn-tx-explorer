@@ -35,20 +35,20 @@ export const BlockCard = ({ block }: BlockCardProps) => {
           <HashFieldSkeleton className="w-40" />
         )}
       </div>
-      <div className="flex items-center justify-between">
+      {/* <div className="flex items-center justify-between">
         <span>Parent hash</span>
         {block ? (
           <HashField hash={block.parent_hash} className="w-40" addressClassName="text-foreground" />
         ) : (
           <HashFieldSkeleton className="w-40" />
         )}
-      </div>
+      </div> */}
       <div className="flex items-center justify-between">
         <span>Validator</span>
         {block ? (
-          <ValidatorField miner={block.miner} className="w-40" addressClassName="font-normal" />
+          <HashField hash={block.miner} className="w-40" addressClassName="text-foreground" />
         ) : (
-          <ValidatorFieldSkeleton className="w-40" />
+          <HashFieldSkeleton className="w-40" />
         )}
       </div>
       <div className="flex items-center justify-between">

@@ -61,17 +61,19 @@ export const BlocksTable = ({ blocks, skeletonLength }: BlocksTableProps) => {
       ),
       skeletonContent: <HashFieldSkeleton />,
     },
-    {
-      headerContent: 'Parent hash',
-      renderCell: (row) => (
-        <HashField hash={row.parent_hash} className="w-60 lg:w-40 xl:w-60" addressClassName="text-foreground" />
-      ),
-      skeletonContent: <HashFieldSkeleton />,
-    },
+    // {
+    //   headerContent: 'Parent hash',
+    //   renderCell: (row) => (
+    //     <HashField hash={row.parent_hash} className="w-60 lg:w-40 xl:w-60" addressClassName="text-foreground" />
+    //   ),
+    //   skeletonContent: <HashFieldSkeleton />,
+    // },
     {
       headerContent: 'Validator',
-      renderCell: (row) => <ValidatorField miner={row.miner} className="w-50 lg:w-30 xl:w-50" />,
-      skeletonContent: <ValidatorFieldSkeleton />,
+      renderCell: (row) => (
+        <HashField hash={row.miner} className="w-60 lg:w-40 xl:w-60" addressClassName="text-foreground" />
+      ),
+      skeletonContent: <HashFieldSkeleton />,
     },
     {
       headerContent: 'Txn',

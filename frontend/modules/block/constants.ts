@@ -4,3 +4,4 @@ export const BLOCK_ENDPOINTS = {
 } as const;
 
 export const DASHBOARD_BLOCKS_LIMIT = 5;
+export const BLOCKS_QUERY_KEY = 'blocks';

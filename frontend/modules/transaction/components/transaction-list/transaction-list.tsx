@@ -11,6 +11,8 @@ import { ETransactionTab, ITransaction, ITransactionListParams, TransactionServi
 import { IPaginationMeta } from '@/types';
 import { TransactionCollection } from './list';
 import { Stats } from './stats';
+import { useTransactions } from '../../hooks/useTransactions';
+import { usePendingTransactions } from '../../hooks/usePendingTransactions';
 
 const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
   page: PAGINATION.DEFAULT_PAGE,
@@ -20,51 +22,22 @@ const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
 } as const;
 
 export const TransactionsList = () => {
+  const [localSearchParams, setLocalSearchParams] = useState<ITransactionListParams>();
+  const { data: transactionsResponse, isLoading: isLoadingTransactions } = useTransactions(
+    localSearchParams ?? DEFAULT_VALUE_DATA_SEARCH
+  );
+  const { data: pendingTransactionsResponse, isLoading: isLoadingPendingTransactions } = usePendingTransactions(
+    localSearchParams ?? DEFAULT_VALUE_DATA_SEARCH
+  );
   const [transactions, setTransactions] = useState<ITransaction[]>();
   const [pagination, setPagination] = useState<IPaginationMeta>();
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [localSearchParams, setLocalSearchParams] = useState<ITransactionListParams>();
+
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
   const { value: tab, handleChangeValue: handleChangeTab } = useQueryParam<ETransactionTab>({
     queryParam: 'tab',
     defaultValue: ETransactionTab.Validated,
     clearParams: ['page'],
   });
-
-  const handleFetchTransactions = async (params: ITransactionListParams) => {
-    try {
-      setIsLoading(true);
-      setTransactions(undefined);
-
-      const { data, meta } = await TransactionService.getTransactions({
-        ...params,
-        page: params.page - 1,
-      });
-      setTransactions(data);
-      setPagination(meta);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleFetchPendingTransactions = async (localSearchParams: ITransactionListParams) => {
-    try {
-      setIsLoading(true);
-      setTransactions(undefined);
-      const { data, meta } = await TransactionService.getPendingTransactions({
-        page: localSearchParams.page - 1,
-        limit: localSearchParams.limit,
-      });
-      setTransactions(data);
-      setPagination(meta);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   useEffect(() => {
     setLocalSearchParams({
@@ -77,11 +50,13 @@ export const TransactionsList = () => {
   useEffect(() => {
     if (!localSearchParams) return;
     if (tab === ETransactionTab.Pending) {
-      handleFetchPendingTransactions(localSearchParams);
+      setTransactions(pendingTransactionsResponse?.data);
+      setPagination(pendingTransactionsResponse?.meta);
     } else {
-      handleFetchTransactions(localSearchParams);
+      setTransactions(transactionsResponse?.data);
+      setPagination(transactionsResponse?.meta);
     }
-  }, [localSearchParams, tab]);
+  }, [localSearchParams, tab, transactionsResponse, pendingTransactionsResponse]);
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -93,10 +68,10 @@ export const TransactionsList = () => {
         <div className="bg-background sticky top-0 z-10 mb-0 flex flex-col items-center justify-between gap-4 py-6 md:pt-8 lg:flex-row">
           <Tabs value={tab} onValueChange={(v) => handleChangeTab(v as ETransactionTab)} className="w-full">
             <TabsList className="w-full lg:w-fit">
-              <TabsTrigger value={ETransactionTab.Validated} disabled={isLoading}>
+              <TabsTrigger value={ETransactionTab.Validated} disabled={isLoadingTransactions}>
                 Validated
               </TabsTrigger>
-              <TabsTrigger value={ETransactionTab.Pending} disabled={isLoading}>
+              <TabsTrigger value={ETransactionTab.Pending} disabled={isLoadingPendingTransactions}>
                 Pending
               </TabsTrigger>
             </TabsList>
@@ -107,7 +82,7 @@ export const TransactionsList = () => {
             limit={limit}
             totalPages={pagination?.total_pages ?? 0}
             totalItems={pagination?.total_items ?? 0}
-            isLoading={isLoading}
+            isLoading={isLoadingTransactions || isLoadingPendingTransactions}
             className="w-full lg:w-auto"
             onChangePage={handleChangePage}
             onChangeLimit={handleChangeLimit}

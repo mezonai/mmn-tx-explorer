@@ -1,3 +1,4 @@
+'use client';
 import { Pagination } from '@/components/ui/pagination';
 import { PAGINATION } from '@/constant';
 import { ESortOrder } from '@/enums';
@@ -47,14 +48,14 @@ export const TabTransactions = ({ blockNumber }: TabTransactionsProps) => {
 
   return (
     <div>
-      <div className="relative mb-5 lg:-top-15 lg:-mb-10">
+      <div>
         <Pagination
           page={page}
           limit={limit}
           totalPages={pagination?.total_pages ?? 0}
           totalItems={pagination?.total_items ?? 0}
           isLoading={isLoading}
-          className="self-end"
+          className="mb-4 self-end"
           onChangePage={handleChangePage}
           onChangeLimit={handleChangeLimit}
         />

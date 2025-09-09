@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { Table } from '@/components/ui/table';
 import { DATE_TIME_FORMAT } from '@/constant';
 import { cn } from '@/lib/utils';
-import { ITransaction } from '@/modules/transaction';
+import { ETransactionStatus, ITransaction } from '@/modules/transaction';
 import { TTableColumn } from '@/types';
 import { DateTimeUtil, NumberUtil } from '@/utils';
 import { MoreInfoButton, MoreInfoButtonSkeleton, TxnHashLink, TxnHashLinkSkeleton } from '../../shared';
@@ -28,7 +28,9 @@ export const WalletTransactionsTable = ({
     },
     {
       headerContent: 'Txn Hash',
-      renderCell: (row) => <TxnHashLink hash={row.hash} className="w-40" />,
+      renderCell: (row) => (
+        <TxnHashLink hash={row.hash} isPending={row.status === ETransactionStatus.Pending} className="w-40" />
+      ),
       skeletonContent: <TxnHashLinkSkeleton className="w-40" />,
     },
     {
