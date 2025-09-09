@@ -44,7 +44,7 @@ export const DetailsTab = ({ walletDetails }: TabDetailsProps) => {
         description="Number of transactions related to this address"
         data={walletDetails}
         render={(walletDetails) => (
-          <TxnLink address={walletDetails.address} accountNonce={walletDetails?.account_nonce ?? 0} />
+          <TxnLink address={walletDetails.address} accountNonce={walletDetails?.transaction_count ?? 0} />
         )}
         skeleton={<Skeleton className="h-5 w-50" />}
       />

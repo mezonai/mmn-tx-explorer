@@ -37,7 +37,7 @@ export const WalletsTable = ({ wallets, skeletonLength }: WalletsTableProps) => 
     },
     {
       headerContent: 'Txn Count',
-      renderCell: (row) => <TxnLink address={row.address} accountNonce={row.account_nonce} />,
+      renderCell: (row) => <TxnLink address={row.address} accountNonce={row.transaction_count} />,
       skeletonContent: <TxnLinkSkeleton />,
     },
   ];

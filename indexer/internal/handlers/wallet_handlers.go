@@ -83,6 +83,23 @@ func GetWallets(c *gin.Context) {
         api.InternalErrorHandler(c)
         return
     }
+    // Enrich each wallet with transaction_count using transactions table count
+    for i := range result.Aggregates {
+        addr, _ := result.Aggregates[i]["address"].(string)
+        if strings.TrimSpace(addr) == "" {
+            continue
+        }
+        txCountQf := storage.QueryFilter{
+            WalletAddress:       addr,
+            ForceConsistentData: queryParams.ForceConsistentData,
+        }
+        txCount, err := mainStorage.GetCount("transactions", txCountQf)
+        if err != nil {
+            log.Error().Err(err).Str("address", addr).Msg("Error counting wallet transactions")
+        } else {
+            result.Aggregates[i]["transaction_count"] = int(txCount)
+        }
+    }
     var data interface{} = result.Aggregates
     resp.Data = &data
     resp.Aggregations = nil
@@ -151,6 +168,17 @@ func GetWalletDetail(c *gin.Context) {
 
     // Prepare base response data from wallet table
     resp := WalletDetailResponse{ Data: result.Aggregates[0] }
+
+    // Count all transactions involving this wallet
+    txCountQf := storage.QueryFilter{
+        WalletAddress:       address,
+        ForceConsistentData: queryParams.ForceConsistentData,
+    }
+    if txCount, err := mainStorage.GetCount("transactions", txCountQf); err == nil {
+        resp.Data["transaction_count"] = int(txCount)
+    } else {
+        log.Error().Err(err).Str("address", address).Msg("Error counting wallet transactions")
+    }
 
     // Fetch latest transaction timestamp for this wallet (from OR to)
     txQf := storage.QueryFilter{

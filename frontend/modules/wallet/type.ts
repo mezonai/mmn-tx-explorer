@@ -5,6 +5,7 @@ export interface IWallet {
   address: string;
   balance: number;
   rank: number;
+  transaction_count: number;
 }
 
 export interface IWalletListParams {
@@ -20,4 +21,5 @@ export interface IWalletDetails {
   address: string;
   balance: string;
   last_balance_update: string;
+  transaction_count: number;
 }
