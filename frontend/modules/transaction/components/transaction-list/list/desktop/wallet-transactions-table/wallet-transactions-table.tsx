@@ -54,13 +54,15 @@ export const WalletTransactionsTable = ({
   ];
 
   return (
-    <Table
-      getRowKey={(row) => row.hash}
-      columns={columns}
-      rows={transactions}
-      skeletonLength={skeletonLength}
-      className="min-h-[500px] [&_thead]:sticky [&_thead]:top-[96px] [&_thead]:z-10"
-      classNameLayout="overflow-x-visible"
-    />
+    <div className="min-h-[500px]">
+      <Table
+        getRowKey={(row) => row.hash}
+        columns={columns}
+        rows={transactions}
+        skeletonLength={skeletonLength}
+        className="[&_thead]:sticky [&_thead]:top-[96px] [&_thead]:z-10"
+        classNameLayout="overflow-x-visible"
+      />
+    </div>
   );
 };
