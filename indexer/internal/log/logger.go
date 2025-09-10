@@ -13,7 +13,7 @@ import (
 
 func InitLogger() {
 	// overrides zerolog global logger
-	log.Logger = NewLogger("default")
+	log.Logger = NewLogger("indexer")
 }
 
 func NewLogger(name string) zerolog.Logger {
