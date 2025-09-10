@@ -135,15 +135,42 @@ func (w *Worker) Run(ctx context.Context, blockNumbers []*big.Int) []rpc.GetFull
 		results = append(results, batchResults...)
 	}
 
-	// Sort results by block number
-	sort.Slice(results, func(i, j int) bool {
-		return results[i].BlockNumber.Cmp(results[j].BlockNumber) < 0
+	// Diagnostics: log entries missing block number or with error
+	for i, r := range results {
+		if r.BlockNumber == nil {
+			log.Error().Int("idx", i).Msg("Worker.Run: nil BlockNumber in results before sort")
+		}
+		if r.Error != nil {
+			log.Error().Int("idx", i).Err(r.Error).Msg("Worker.Run: result has error before sort")
+		}
+	}
+
+	// Filter out entries that have nil BlockNumber to avoid nil dereference in sort comparator
+	filtered := make([]rpc.GetFullBlockResult, 0, len(results))
+	for _, r := range results {
+		if r.BlockNumber != nil {
+			filtered = append(filtered, r)
+		}
+	}
+	if len(filtered) != len(results) {
+		log.Warn().Int("dropped", len(results)-len(filtered)).Int("total", len(results)).Msg("Worker.Run: dropped results with nil BlockNumber before sort")
+	}
+
+	// Sort results by block number with extra guard
+	sort.Slice(filtered, func(i, j int) bool {
+		if filtered[i].BlockNumber == nil {
+			return false
+		}
+		if filtered[j].BlockNumber == nil {
+			return true
+		}
+		return filtered[i].BlockNumber.Cmp(filtered[j].BlockNumber) < 0
 	})
 
 	// track the last fetched block number
-	if len(results) > 0 {
-		lastBlockNumberFloat, _ := results[len(results)-1].BlockNumber.Float64()
+	if len(filtered) > 0 {
+		lastBlockNumberFloat, _ := filtered[len(filtered)-1].BlockNumber.Float64()
 		metrics.LastFetchedBlock.Set(lastBlockNumberFloat)
 	}
-	return results
+	return filtered
 }

@@ -48,6 +48,13 @@ log:
   level: debug
   # Whether to format logs in a human-readable way (vs JSON)
   prettify: true
+  # File logging configuration
+  fileEnabled: true
+  filePath: /app/logs/indexer.log
+  maxSize: 100      # Maximum size in MB before rotation
+  maxBackups: 5     # Maximum number of old log files to retain
+  maxAge: 30        # Maximum number of days to retain old log files
+  compress: true    # Whether to compress rotated log files
 
 # Poller configuration - Controls how blocks are fetched from the blockchain
 poller:
