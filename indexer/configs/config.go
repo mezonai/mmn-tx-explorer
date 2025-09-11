@@ -13,6 +13,13 @@ import (
 type LogConfig struct {
 	Level    string `mapstructure:"level"`
 	Prettify bool   `mapstructure:"prettify"`
+	// File logging configuration
+	FileEnabled bool   `mapstructure:"fileEnabled"`
+	FilePath    string `mapstructure:"filePath"`
+	MaxSize     int    `mapstructure:"maxSize"`     // Maximum size in MB before rotation
+	MaxBackups  int    `mapstructure:"maxBackups"`  // Maximum number of old log files to retain
+	MaxAge      int    `mapstructure:"maxAge"`      // Maximum number of days to retain old log files
+	Compress    bool   `mapstructure:"compress"`    // Whether to compress rotated log files
 }
 
 type PollerConfig struct {
