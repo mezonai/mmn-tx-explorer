@@ -3,7 +3,7 @@
 import { format } from 'date-fns';
 
 import { Table } from '@/components/ui/table';
-import { DATE_TIME_FORMAT } from '@/constant';
+import { DATE_TIME_FORMAT, PAGINATION } from '@/constant';
 import { cn } from '@/lib/utils';
 import { ETransactionStatus, ITransaction } from '@/modules/transaction';
 import { TTableColumn } from '@/types';
@@ -14,12 +14,14 @@ interface WalletTransactionsTableProps {
   walletAddress: string;
   transactions?: ITransaction[];
   skeletonLength?: number;
+  isLoading: boolean;
 }
 
 export const WalletTransactionsTable = ({
   walletAddress,
   transactions,
-  skeletonLength,
+  skeletonLength = PAGINATION.DEFAULT_LIMIT,
+  isLoading,
 }: WalletTransactionsTableProps) => {
   const columns: TTableColumn<ITransaction>[] = [
     {
@@ -44,7 +46,7 @@ export const WalletTransactionsTable = ({
         return (
           <div className="flex flex-col justify-end gap-1 text-end text-sm">
             <p className={cn('font-bold', isSent ? 'text-error-primary-600' : 'text-utility-success-600')}>
-              {isSent ? '-' : '+'} {NumberUtil.formatWithCommas(row.value)}
+              {isSent ? '-' : '+'} {NumberUtil.formatWithCommasAndScale(row.value)}
             </p>
             <p className={cn('text-quaternary-500 font-normal')}>{isSent ? 'Sent' : 'Received'}</p>
           </div>
@@ -60,8 +62,9 @@ export const WalletTransactionsTable = ({
         columns={columns}
         rows={transactions}
         skeletonLength={skeletonLength}
-        className="[&_thead]:sticky [&_thead]:top-[96px] [&_thead]:z-10"
+        className="[&_thead]:sticky [&_thead]:z-10"
         classNameLayout="overflow-x-visible"
+        isLoading={isLoading}
       />
     </div>
   );

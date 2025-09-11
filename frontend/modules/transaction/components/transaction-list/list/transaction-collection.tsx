@@ -8,10 +8,10 @@ import { TransactionCardsMobile } from './mobile';
 
 interface TransactionCollectionProps {
   transactions?: ITransaction[];
-  skeletonLength: number;
+  isLoading: boolean;
 }
 
-export const TransactionCollection = ({ transactions, skeletonLength }: TransactionCollectionProps) => {
+export const TransactionCollection = ({ transactions, isLoading }: TransactionCollectionProps) => {
   const isDesktop = useBreakpoint(EBreakpoint.LG);
 
   return (
@@ -19,16 +19,16 @@ export const TransactionCollection = ({ transactions, skeletonLength }: Transact
       {isDesktop === undefined ? (
         <div>
           <div className="hidden lg:block">
-            <TransactionsTable transactions={transactions} skeletonLength={skeletonLength} />
+            <TransactionsTable transactions={transactions} isLoading={isLoading} />
           </div>
           <div className="block lg:hidden">
-            <TransactionCardsMobile transactions={transactions} skeletonLength={skeletonLength} />
+            <TransactionCardsMobile transactions={transactions} isLoading={isLoading} />
           </div>
         </div>
       ) : isDesktop ? (
-        <TransactionsTable transactions={transactions} skeletonLength={skeletonLength} />
+        <TransactionsTable transactions={transactions} isLoading={isLoading} />
       ) : (
-        <TransactionCardsMobile transactions={transactions} skeletonLength={skeletonLength} />
+        <TransactionCardsMobile transactions={transactions} isLoading={isLoading} />
       )}
     </>
   );

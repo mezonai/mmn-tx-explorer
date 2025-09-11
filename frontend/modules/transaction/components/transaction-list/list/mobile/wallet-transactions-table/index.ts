@@ -1,1 +1,1 @@
-export * from './wallet-transactions-table';
+export * from './wallet-transactions-cards';

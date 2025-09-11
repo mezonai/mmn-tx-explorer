@@ -1,11 +1,9 @@
-import { useEffect, useState } from 'react';
-
 import { Pagination } from '@/components/ui/pagination';
 import { PAGINATION } from '@/constant';
 import { EBreakpoint, ESortOrder } from '@/enums';
 import { useBreakpoint, usePaginationQueryParam } from '@/hooks';
 import { ITransactionListParams } from '@/modules/transaction';
-import { MobileWalletTransactionsTable, WalletTransactionsTable } from '@/modules/transaction/components';
+import { WalletTransactionsCards, WalletTransactionsTable } from '@/modules/transaction/components';
 import { useTransactions } from '@/modules/transaction/hooks/useTransactions';
 
 interface ReceivedTransactionsTabProps {
@@ -20,26 +18,21 @@ const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
 } as const;
 
 export const ReceivedTransactionsTab = ({ walletAddress }: ReceivedTransactionsTabProps) => {
-  const [localSearchParams, setLocalSearchParams] = useState<ITransactionListParams>();
-  const { data: transactionsResponse, isLoading: isLoadingTransactions } = useTransactions({
-    ...(localSearchParams ?? DEFAULT_VALUE_DATA_SEARCH),
-    filter_to_address: walletAddress,
-  });
-  const transactions = transactionsResponse?.data;
-  const pagination = transactionsResponse?.meta;
-
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
   const isDesktop = useBreakpoint(EBreakpoint.LG);
+
+  // Create search params directly from URL params to avoid double useEffect
+  const searchParams: ITransactionListParams = {
+    ...DEFAULT_VALUE_DATA_SEARCH,
+    page,
+    limit,
+    filter_to_address: walletAddress,
+  };
+
+  const { data: transactionsResponse, isLoading: isLoadingTransactions } = useTransactions(searchParams);
+  const transactions = transactionsResponse?.data;
+  const pagination = transactionsResponse?.meta;
   const isEmptyTransactions = transactions && transactions.length === 0;
-
-  useEffect(() => {
-    setLocalSearchParams({
-      ...DEFAULT_VALUE_DATA_SEARCH,
-      page,
-      limit,
-    });
-  }, [page, limit]);
-
   return (
     <div>
       <div className="bg-background sticky top-0 z-10 mb-0 flex justify-end gap-5 py-6 md:pt-8">
@@ -58,10 +51,15 @@ export const ReceivedTransactionsTab = ({ walletAddress }: ReceivedTransactionsT
       {isDesktop === undefined ? (
         <div>
           <div className="hidden lg:block">
-            <WalletTransactionsTable walletAddress={walletAddress} transactions={transactions} skeletonLength={limit} />
+            <WalletTransactionsTable
+              walletAddress={walletAddress}
+              transactions={transactions}
+              skeletonLength={limit}
+              isLoading={isLoadingTransactions}
+            />
           </div>
           <div className="block lg:hidden">
-            <MobileWalletTransactionsTable
+            <WalletTransactionsCards
               isLoading={isLoadingTransactions}
               walletAddress={walletAddress}
               transactions={transactions ?? []}
@@ -71,9 +69,14 @@ export const ReceivedTransactionsTab = ({ walletAddress }: ReceivedTransactionsT
           </div>
         </div>
       ) : isDesktop ? (
-        <WalletTransactionsTable walletAddress={walletAddress} transactions={transactions} skeletonLength={limit} />
+        <WalletTransactionsTable
+          walletAddress={walletAddress}
+          transactions={transactions}
+          skeletonLength={limit}
+          isLoading={isLoadingTransactions}
+        />
       ) : (
-        <MobileWalletTransactionsTable
+        <WalletTransactionsCards
           isLoading={isLoadingTransactions}
           walletAddress={walletAddress}
           transactions={transactions ?? []}

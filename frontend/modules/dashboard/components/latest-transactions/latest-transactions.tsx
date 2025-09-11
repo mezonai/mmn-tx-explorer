@@ -14,8 +14,8 @@ interface LatestTransactionsProps {
 }
 
 export const LatestTransactions = ({ className }: LatestTransactionsProps) => {
-  const transactions = useLatestTransactions();
-
+  const { data: transactionsResponse, isLoading } = useLatestTransactions();
+  const transactions = transactionsResponse?.data;
   return (
     <div className={cn('space-y-4', className)}>
       <div>
@@ -23,10 +23,18 @@ export const LatestTransactions = ({ className }: LatestTransactionsProps) => {
       </div>
       <div>
         <div className="hidden lg:block">
-          <TransactionCardsDesktop transactions={transactions} skeletonLength={DASHBOARD_TRANSACTIONS_LIMIT} />
+          <TransactionCardsDesktop
+            transactions={transactions}
+            skeletonLength={DASHBOARD_TRANSACTIONS_LIMIT}
+            isLoading={isLoading}
+          />
         </div>
         <div className="block lg:hidden">
-          <TransactionCardsMobile transactions={transactions} skeletonLength={DASHBOARD_TRANSACTIONS_LIMIT} />
+          <TransactionCardsMobile
+            transactions={transactions}
+            skeletonLength={DASHBOARD_TRANSACTIONS_LIMIT}
+            isLoading={isLoading}
+          />
         </div>
       </div>
       <div className="flex w-full justify-center">

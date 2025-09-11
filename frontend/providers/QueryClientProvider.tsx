@@ -1,6 +1,7 @@
 // In Next.js, this file would be called: app/providers.tsx
 'use client';
 
+import { DEFAULT_STALE_TIME } from '@/constant';
 // Since QueryClientProvider relies on useContext under the hood, we have to put 'use client' on top
 import { isServer, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -9,7 +10,7 @@ function makeQueryClient() {
     defaultOptions: {
       queries: {
         // above 0 to avoid refetching immediately on the client
-        staleTime: 30 * 1000,
+        staleTime: DEFAULT_STALE_TIME,
       },
     },
   });

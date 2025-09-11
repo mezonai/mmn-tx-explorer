@@ -1,14 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
 import { Pagination } from '@/components/ui/pagination';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PAGINATION } from '@/constant';
 import { ESortOrder } from '@/enums';
 import { usePaginationQueryParam, useQueryParam } from '@/hooks';
-import { ETransactionTab, ITransaction, ITransactionListParams, TransactionService } from '@/modules/transaction';
-import { IPaginationMeta } from '@/types';
+import { ETransactionTab, ITransactionListParams } from '@/modules/transaction';
 import { TransactionCollection } from './list';
 import { Stats } from './stats';
 import { useTransactions } from '../../hooks/useTransactions';
@@ -22,16 +19,6 @@ const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
 } as const;
 
 export const TransactionsList = () => {
-  const [localSearchParams, setLocalSearchParams] = useState<ITransactionListParams>();
-  const { data: transactionsResponse, isLoading: isLoadingTransactions } = useTransactions(
-    localSearchParams ?? DEFAULT_VALUE_DATA_SEARCH
-  );
-  const { data: pendingTransactionsResponse, isLoading: isLoadingPendingTransactions } = usePendingTransactions(
-    localSearchParams ?? DEFAULT_VALUE_DATA_SEARCH
-  );
-  const [transactions, setTransactions] = useState<ITransaction[]>();
-  const [pagination, setPagination] = useState<IPaginationMeta>();
-
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
   const { value: tab, handleChangeValue: handleChangeTab } = useQueryParam<ETransactionTab>({
     queryParam: 'tab',
@@ -39,25 +26,22 @@ export const TransactionsList = () => {
     clearParams: ['page'],
   });
 
-  useEffect(() => {
-    setLocalSearchParams({
-      ...DEFAULT_VALUE_DATA_SEARCH,
-      page,
-      limit,
-    });
-  }, [page, limit]);
+  // Create search params directly from URL params to avoid double useEffect
+  const searchParams: ITransactionListParams = {
+    ...DEFAULT_VALUE_DATA_SEARCH,
+    page,
+    limit,
+  };
 
-  useEffect(() => {
-    if (!localSearchParams) return;
-    if (tab === ETransactionTab.Pending) {
-      setTransactions(pendingTransactionsResponse?.data);
-      setPagination(pendingTransactionsResponse?.meta);
-    } else {
-      setTransactions(transactionsResponse?.data);
-      setPagination(transactionsResponse?.meta);
-    }
-  }, [localSearchParams, tab, transactionsResponse, pendingTransactionsResponse]);
-
+  const { data: transactionsResponse, isLoading: isLoadingTransactions } = useTransactions(searchParams, tab);
+  const { data: pendingTransactionsResponse, isLoading: isLoadingPendingTransactions } = usePendingTransactions(
+    searchParams,
+    tab
+  );
+  const isLoading = tab === ETransactionTab.Pending ? isLoadingPendingTransactions : isLoadingTransactions;
+  // Determine which data to show based on tab
+  const transactions = tab === ETransactionTab.Pending ? pendingTransactionsResponse?.data : transactionsResponse?.data;
+  const pagination = tab === ETransactionTab.Pending ? pendingTransactionsResponse?.meta : transactionsResponse?.meta;
   return (
     <div className="space-y-6 md:space-y-8">
       <h1 className="text-2xl font-semibold">Transactions</h1>
@@ -68,10 +52,10 @@ export const TransactionsList = () => {
         <div className="bg-background sticky top-0 z-10 mb-0 flex flex-col items-center justify-between gap-4 py-6 md:pt-8 lg:flex-row">
           <Tabs value={tab} onValueChange={(v) => handleChangeTab(v as ETransactionTab)} className="w-full">
             <TabsList className="w-full lg:w-fit">
-              <TabsTrigger value={ETransactionTab.Validated} disabled={isLoadingTransactions}>
+              <TabsTrigger value={ETransactionTab.Validated} disabled={isLoading}>
                 Validated
               </TabsTrigger>
-              <TabsTrigger value={ETransactionTab.Pending} disabled={isLoadingPendingTransactions}>
+              <TabsTrigger value={ETransactionTab.Pending} disabled={isLoading}>
                 Pending
               </TabsTrigger>
             </TabsList>
@@ -82,14 +66,14 @@ export const TransactionsList = () => {
             limit={limit}
             totalPages={pagination?.total_pages ?? 0}
             totalItems={pagination?.total_items ?? 0}
-            isLoading={isLoadingTransactions || isLoadingPendingTransactions}
+            isLoading={isLoading}
             className="w-full lg:w-auto"
             onChangePage={handleChangePage}
             onChangeLimit={handleChangeLimit}
           />
         </div>
 
-        <TransactionCollection transactions={transactions} skeletonLength={limit} />
+        <TransactionCollection transactions={transactions} isLoading={isLoading} />
       </div>
     </div>
   );

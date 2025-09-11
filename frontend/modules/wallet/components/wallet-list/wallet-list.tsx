@@ -34,7 +34,6 @@ export const WalletList = () => {
       limit,
     });
   }, [page, limit]);
-
   return (
     <div className="space-y-6 md:space-y-8">
       <h1 className="mb-0 text-2xl font-semibold">Top accounts</h1>
@@ -53,7 +52,7 @@ export const WalletList = () => {
           />
         </div>
 
-        <WalletCollection wallets={wallets} skeletonLength={limit} />
+        <WalletCollection wallets={wallets} isLoading={isLoadingWallets} />
       </div>
     </div>
   );

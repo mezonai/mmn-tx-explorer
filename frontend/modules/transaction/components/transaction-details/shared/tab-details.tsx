@@ -121,7 +121,7 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
         data={transaction}
         render={(transaction) => (
           <div className="flex items-center">
-            <span>{NumberUtil.formatWithCommas(transaction.value)}</span>
+            <span>{NumberUtil.formatWithCommasAndScale(transaction.value)}</span>
           </div>
         )}
         skeleton={<Skeleton className="h-5 w-20" />}

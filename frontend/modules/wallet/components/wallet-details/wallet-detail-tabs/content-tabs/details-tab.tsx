@@ -1,7 +1,5 @@
 import Link from 'next/link';
 
-import { useEffect, useState } from 'react';
-
 import { Cube01 } from '@/assets/icons';
 import { AddressDisplay, ItemAttribute } from '@/components/shared';
 import { Button } from '@/components/ui/button';
@@ -33,7 +31,7 @@ export const DetailsTab = ({ walletDetails }: TabDetailsProps) => {
         data={walletDetails}
         render={(walletDetails) => (
           <span>
-            {NumberUtil.formatWithCommas(walletDetails?.balance ?? 0)} {APP_CONFIG.CHAIN_SYMBOL}
+            {NumberUtil.formatWithCommasAndScale(walletDetails?.balance ?? 0)} {APP_CONFIG.CHAIN_SYMBOL}
           </span>
         )}
         skeleton={<Skeleton className="h-5 w-20" />}

@@ -12,13 +12,17 @@ import {
   WalletAddressDisplay,
   WalletAddressDisplaySkeleton,
 } from '../shared';
+import { PAGINATION } from '@/constant';
+import { usePaginationQueryParam } from '@/hooks';
 
 interface WalletsTableProps {
   wallets?: IWallet[];
   skeletonLength?: number;
+  isLoading: boolean;
 }
 
-export const WalletsTable = ({ wallets, skeletonLength }: WalletsTableProps) => {
+export const WalletsTable = ({ wallets, skeletonLength = PAGINATION.DEFAULT_LIMIT, isLoading }: WalletsTableProps) => {
+  const { page, limit } = usePaginationQueryParam();
   const columns: TTableColumn<IWallet>[] = [
     {
       headerContent: 'Rank',
@@ -44,12 +48,14 @@ export const WalletsTable = ({ wallets, skeletonLength }: WalletsTableProps) => 
 
   return (
     <Table
+      key={`${page}-${limit}`}
       getRowKey={(row) => row.address}
       columns={columns}
       rows={wallets}
       skeletonLength={skeletonLength}
       className="[&_thead]:sticky [&_thead]:top-[96px] [&_thead]:z-10"
       classNameLayout="overflow-x-visible"
+      isLoading={isLoading}
     />
   );
 };

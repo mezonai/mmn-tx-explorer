@@ -15,15 +15,18 @@ import {
   TxnLink,
   TxnLinkSkeleton,
 } from '../shared';
+import { PAGINATION } from '@/constant';
+import { usePaginationQueryParam } from '@/hooks';
 
 interface BlocksTableProps {
   blocks?: IBlock[];
   skeletonLength?: number;
+  isLoading: boolean;
 }
 
-export const BlocksTable = ({ blocks, skeletonLength }: BlocksTableProps) => {
+export const BlocksTable = ({ blocks, skeletonLength = PAGINATION.DEFAULT_LIMIT, isLoading }: BlocksTableProps) => {
   const [showAbsoluteTime, setShowAbsoluteTime] = useState(false);
-
+  const { page, limit } = usePaginationQueryParam();
   const toggleShowAbsoluteTime = () => {
     setShowAbsoluteTime((prev) => !prev);
   };
@@ -82,12 +85,14 @@ export const BlocksTable = ({ blocks, skeletonLength }: BlocksTableProps) => {
 
   return (
     <Table
+      key={`${page}-${limit}`}
       getRowKey={(row) => row.block_number}
       columns={columns}
       rows={blocks}
       skeletonLength={skeletonLength}
       className="[&_thead]:sticky [&_thead]:top-[96px] [&_thead]:z-10"
       classNameLayout="overflow-x-visible"
+      isLoading={isLoading}
     />
   );
 };

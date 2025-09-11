@@ -60,7 +60,7 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
       <div className="flex items-center px-4 py-3">
         {transaction ? (
           <span className="text-tertiary-600 text-sm font-normal whitespace-nowrap">
-            {NumberUtil.formatWithCommas(transaction.value)}
+            {NumberUtil.formatWithCommasAndScale(transaction.value)}
           </span>
         ) : (
           <Skeleton className="h-5 w-14" />

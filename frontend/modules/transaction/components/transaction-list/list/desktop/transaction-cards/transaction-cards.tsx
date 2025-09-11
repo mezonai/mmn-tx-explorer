@@ -7,6 +7,7 @@ import { TransactionCard } from './transaction-card';
 interface TransactionCardsDesktopProps {
   transactions?: ITransaction[];
   skeletonLength?: number;
+  isLoading: boolean;
 }
 
 export const TransactionCardsDesktop = ({

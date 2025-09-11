@@ -6,8 +6,6 @@ import {
   HashFieldSkeleton,
   TxnLink,
   TxnLinkSkeleton,
-  ValidatorField,
-  ValidatorFieldSkeleton,
 } from '../shared';
 
 interface BlockCardProps {
@@ -16,7 +14,7 @@ interface BlockCardProps {
 
 export const BlockCard = ({ block }: BlockCardProps) => {
   return (
-    <div className="text-secondary-700 space-y-2 border-b pb-4 text-sm font-medium [&>*]:w-full [&>*]:gap-5">
+    <div className="text-secondary-700 space-y-2 border-b py-2 text-sm font-medium [&>*]:w-full [&>*]:gap-5">
       {block ? (
         <BlockNumberField
           blockNumber={block.block_number}

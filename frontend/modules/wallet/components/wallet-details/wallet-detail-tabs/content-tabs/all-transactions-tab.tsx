@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react';
 import { Pagination } from '@/components/ui/pagination';
 import { PAGINATION } from '@/constant';
 import { EBreakpoint, ESortOrder } from '@/enums';
 import { useBreakpoint, usePaginationQueryParam } from '@/hooks';
-import { ITransactionListParams } from '@/modules/transaction';
-import { MobileWalletTransactionsTable, WalletTransactionsTable } from '@/modules/transaction/components';
+import { ETransactionTab, ITransactionListParams } from '@/modules/transaction';
+import { WalletTransactionsCards, WalletTransactionsTable } from '@/modules/transaction/components';
 import { useTransactions } from '@/modules/transaction/hooks/useTransactions';
 
 interface AllTransactionsTabProps {
@@ -19,25 +18,21 @@ const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
 } as const;
 
 export const AllTransactionsTab = ({ walletAddress }: AllTransactionsTabProps) => {
-  const [localSearchParams, setLocalSearchParams] = useState<ITransactionListParams>();
-  const { data: transactionsResponse, isLoading: isLoadingTransactions } = useTransactions({
-    ...(localSearchParams ?? DEFAULT_VALUE_DATA_SEARCH),
-    wallet_address: walletAddress,
-  });
-  const transactions = transactionsResponse?.data;
-  const pagination = transactionsResponse?.meta;
-
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
   const isDesktop = useBreakpoint(EBreakpoint.LG);
-  const isEmptyTransactions = transactions && transactions.length === 0;
 
-  useEffect(() => {
-    setLocalSearchParams({
-      ...DEFAULT_VALUE_DATA_SEARCH,
-      page,
-      limit,
-    });
-  }, [page, limit]);
+  // Create search params directly from URL params to avoid double useEffect
+  const searchParams: ITransactionListParams = {
+    ...DEFAULT_VALUE_DATA_SEARCH,
+    page,
+    limit,
+    wallet_address: walletAddress,
+  };
+
+  const { data: transactionsResponse, isLoading: isLoadingTransactions } = useTransactions(searchParams);
+  const transactions = transactionsResponse?.data;
+  const pagination = transactionsResponse?.meta;
+  const isEmptyTransactions = transactions && transactions.length === 0;
   return (
     <div>
       <div className="bg-background sticky top-0 z-10 mb-0 flex justify-end gap-5 py-6 md:pt-8">
@@ -56,26 +51,32 @@ export const AllTransactionsTab = ({ walletAddress }: AllTransactionsTabProps) =
       {isDesktop === undefined ? (
         <div>
           <div className="hidden lg:block">
-            <WalletTransactionsTable walletAddress={walletAddress} transactions={transactions} skeletonLength={limit} />
+            <WalletTransactionsTable
+              walletAddress={walletAddress}
+              transactions={transactions}
+              isLoading={isLoadingTransactions}
+            />
           </div>
           <div className="block lg:hidden">
-            <MobileWalletTransactionsTable
+            <WalletTransactionsCards
               isLoading={isLoadingTransactions}
               walletAddress={walletAddress}
               transactions={transactions ?? []}
-              skeletonLength={limit}
               isEmptyTransactions={isEmptyTransactions}
             />
           </div>
         </div>
       ) : isDesktop ? (
-        <WalletTransactionsTable walletAddress={walletAddress} transactions={transactions} skeletonLength={limit} />
+        <WalletTransactionsTable
+          walletAddress={walletAddress}
+          transactions={transactions}
+          isLoading={isLoadingTransactions}
+        />
       ) : (
-        <MobileWalletTransactionsTable
+        <WalletTransactionsCards
           isLoading={isLoadingTransactions}
           walletAddress={walletAddress}
           transactions={transactions ?? []}
-          skeletonLength={limit}
           isEmptyTransactions={isEmptyTransactions}
         />
       )}

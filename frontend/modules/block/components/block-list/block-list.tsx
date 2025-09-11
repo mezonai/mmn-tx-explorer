@@ -1,7 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
 import { Pagination } from '@/components/ui/pagination';
 import { PAGINATION } from '@/constant';
 import { ESortOrder } from '@/enums';
@@ -18,23 +16,19 @@ const DEFAULT_VALUE_DATA_SEARCH: IBLockListParams = {
 } as const;
 
 export const BlockList = () => {
-  const [localSearchParams, setLocalSearchParams] = useState<IBLockListParams>();
-  const { data: blocksResponse, isLoading: isLoadingBlocks } = useBlocks(
-    localSearchParams ?? DEFAULT_VALUE_DATA_SEARCH
-  );
+  const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
+
+  // Create search params directly from URL params to avoid double useEffect
+  const searchParams: IBLockListParams = {
+    ...DEFAULT_VALUE_DATA_SEARCH,
+    page,
+    limit,
+  };
+
+  const { data: blocksResponse, isLoading: isLoadingBlocks } = useBlocks(searchParams);
 
   const blocks = blocksResponse?.data;
   const pagination = blocksResponse?.meta;
-  const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
-
-  useEffect(() => {
-    setLocalSearchParams({
-      ...DEFAULT_VALUE_DATA_SEARCH,
-      page,
-      limit,
-    });
-  }, [page, limit]);
-
   return (
     <div className="space-y-6 md:space-y-8">
       <h1 className="mb-0 text-2xl font-semibold">Blocks</h1>
@@ -53,7 +47,7 @@ export const BlockList = () => {
           />
         </div>
 
-        <BlockCollection blocks={blocks} skeletonLength={limit} />
+        <BlockCollection blocks={blocks} isLoading={isLoadingBlocks} />
       </div>
     </div>
   );

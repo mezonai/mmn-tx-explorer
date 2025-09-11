@@ -1,17 +1,32 @@
 import { IWallet } from '@/modules/wallet/type';
 import { WalletCard } from './wallet-card';
+import { PAGINATION } from '@/constant';
+import { VirtualizedList } from '@/components/ui/virtualized-list';
+import { usePaginationQueryParam } from '@/hooks';
 
 interface WalletCardsProps {
   wallets?: IWallet[];
-  skeletonLength: number;
+  skeletonLength?: number;
+  isLoading: boolean;
 }
 
-export const WalletCards = ({ wallets, skeletonLength }: WalletCardsProps) => {
+export const WalletCards = ({ wallets, skeletonLength = PAGINATION.DEFAULT_LIMIT, isLoading }: WalletCardsProps) => {
+  const { page, limit } = usePaginationQueryParam();
   return (
-    <div className="space-y-4">
-      {wallets
-        ? wallets.map((wallet) => <WalletCard key={wallet.address} wallet={wallet} />)
-        : Array.from({ length: skeletonLength }).map((_, index) => <WalletCard key={index} />)}
-    </div>
+    <VirtualizedList<IWallet>
+      key={`${page}-${limit}`}
+      items={wallets}
+      isLoading={isLoading}
+      isEmpty={!isLoading && (!wallets || wallets.length === 0)}
+      skeletonCount={skeletonLength}
+      estimateSize={140}
+      overscan={8}
+      maxHeight={600}
+      minItemsForVirtualization={30}
+      getItemKey={(item) => item.address}
+      renderItem={(item) => <WalletCard wallet={item} />}
+      renderSkeletonItem={() => <WalletCard />}
+      className="space-y-4"
+    />
   );
 };

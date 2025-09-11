@@ -3,11 +3,9 @@ import { Pagination } from '@/components/ui/pagination';
 import { PAGINATION } from '@/constant';
 import { ESortOrder } from '@/enums';
 import { usePaginationQueryParam } from '@/hooks';
-import { ITransaction, ITransactionListParams, TransactionService } from '@/modules/transaction';
+import { ETransactionTab, ITransactionListParams } from '@/modules/transaction';
 import { TransactionCollection } from '@/modules/transaction/components/transaction-list/list/transaction-collection';
 import { useTransactions } from '@/modules/transaction/hooks/useTransactions';
-import { IPaginationMeta } from '@/types';
-import { useEffect, useState } from 'react';
 
 interface TabTransactionsProps {
   blockNumber: number;
@@ -46,7 +44,7 @@ export const TabTransactions = ({ blockNumber }: TabTransactionsProps) => {
           skeletonClassName="mb-4"
         />
       </div>
-      <TransactionCollection transactions={transactions} skeletonLength={5} />
+      <TransactionCollection transactions={transactions} isLoading={isLoadingTransactions} />
     </div>
   );
 };

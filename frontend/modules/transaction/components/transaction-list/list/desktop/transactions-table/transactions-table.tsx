@@ -24,19 +24,25 @@ import {
   TypeBadges,
   TypeBadgesSkeleton,
 } from '../../shared';
+import { PAGINATION } from '@/constant';
+import { usePaginationQueryParam } from '@/hooks';
 
 interface TransactionsTableProps {
   transactions?: ITransaction[];
   skeletonLength?: number;
+  isLoading: boolean;
 }
 
-export const TransactionsTable = ({ transactions, skeletonLength }: TransactionsTableProps) => {
+export const TransactionsTable = ({
+  transactions,
+  skeletonLength = PAGINATION.DEFAULT_LIMIT,
+  isLoading,
+}: TransactionsTableProps) => {
   const [showAbsoluteTime, setShowAbsoluteTime] = useState(false);
-
   const toggleShowAbsoluteTime = () => {
     setShowAbsoluteTime((prev) => !prev);
   };
-
+  const { page, limit } = usePaginationQueryParam();
   const columns: TTableColumn<ITransaction>[] = [
     {
       renderCell: (row) => <MoreInfoButton transaction={row} />,
@@ -102,12 +108,14 @@ export const TransactionsTable = ({ transactions, skeletonLength }: Transactions
 
   return (
     <Table
+      key={`${page}-${limit}`}
       getRowKey={(row) => row.hash}
       columns={columns}
       rows={transactions}
       skeletonLength={skeletonLength}
       className="[&_thead]:sticky [&_thead]:top-[96px] [&_thead]:z-10"
       classNameLayout="overflow-x-visible"
+      isLoading={isLoading}
     />
   );
 };
