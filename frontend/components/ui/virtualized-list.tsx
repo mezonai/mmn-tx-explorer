@@ -1,8 +1,7 @@
 'use client';
 
-import { ReactNode, useEffect, useRef } from 'react';
+import { ReactNode, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { useResetTable } from '@/hooks/useResetTable';
 
 type VirtualizedListProps<T> = {
   items?: T[];
@@ -42,34 +41,17 @@ export function VirtualizedList<T>({
   const isVirtualized = !shouldShowSkeleton && !isEmpty && itemCount >= minItemsForVirtualization;
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const seenIndexesRef = useRef<Set<number>>(new Set());
-  const lastCountRef = useRef<number>(itemCount);
-
-  // Reset seen indexes when list shrinks
-  useEffect(() => {
-    if (itemCount < lastCountRef.current) {
-      seenIndexesRef.current.clear();
-    }
-    lastCountRef.current = itemCount;
-  }, [itemCount]);
 
   const virtualizer = useVirtualizer({
     count: itemCount,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => estimateSize,
     overscan,
-    // Keep already-seen items mounted; reduces scrollbar flicker
-    rangeExtractor: (range) => {
-      const seen = seenIndexesRef.current;
-      for (let i = range.startIndex; i <= range.endIndex; i++) seen.add(i);
-      return Array.from(seen).sort((a, b) => a - b);
-    },
     getItemKey: (index) => {
       if (items && getItemKey) return getItemKey(items[index] as T, index);
       return index;
     },
   });
-  useResetTable(virtualizer, isVirtualized, seenIndexesRef);
   if (shouldShowSkeleton) {
     return (
       <div className={className}>

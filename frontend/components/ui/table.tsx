@@ -1,13 +1,12 @@
 'use client';
 
-import { ReactNode, TableHTMLAttributes, useEffect, useMemo, useRef } from 'react';
+import { ReactNode, TableHTMLAttributes, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
 import { PAGINATION } from '@/constant';
 import { cn } from '@/lib/utils';
 import { TTableColumn } from '@/types';
 import { Skeleton } from './skeleton';
-import { useResetTable } from '@/hooks/useResetTable';
 
 type TableProps<T> = {
   columns: TTableColumn<T>[];
@@ -53,32 +52,12 @@ export const Table = <T,>({
   // Scroll container ref for virtualization
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // Track which indexes have been rendered so far to keep them mounted
-  const seenIndexesRef = useRef<Set<number>>(new Set());
-  const lastCountRef = useRef<number>(rows?.length ?? 0);
-  // Function to reset rangeExtractor and scroll to top
-
-  // Reset seen indexes when data length shrinks or resets
-  useEffect(() => {
-    const currentCount = rows?.length ?? 0;
-    if (currentCount < lastCountRef.current) {
-      seenIndexesRef.current.clear();
-    }
-    lastCountRef.current = currentCount;
-  }, [rows?.length]);
-
   // Configure virtualizer (always initialize; use only when virtualized)
   const rowVirtualizer = useVirtualizer({
     count: rows?.length ?? 0,
     getScrollElement: () => scrollContainerRef.current,
     estimateSize: () => estimateRowHeight, // approximate row height in px
     overscan: overscan,
-    // Keep already-seen indexes mounted to avoid re-renders on scroll up
-    rangeExtractor: (range) => {
-      const seen = seenIndexesRef.current;
-      for (let i = range.startIndex; i <= range.endIndex; i++) seen.add(i);
-      return Array.from(seen).sort((a, b) => a - b);
-    },
     // Stable keys for measurement cache
     getItemKey: (index) => {
       if (rows && getRowKey) {
@@ -91,8 +70,6 @@ export const Table = <T,>({
       return index;
     },
   });
-
-  useResetTable(rowVirtualizer, isVirtualized, seenIndexesRef);
 
   // Validate that we have columns
   if (!validColumns.length) {
