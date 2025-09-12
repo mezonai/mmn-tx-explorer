@@ -93,6 +93,7 @@ export const BlocksTable = ({ blocks, skeletonLength = PAGINATION.DEFAULT_LIMIT,
       className="[&_thead]:sticky [&_thead]:top-[96px] [&_thead]:z-10"
       classNameLayout="overflow-x-visible"
       isLoading={isLoading}
+      estimateRowHeight={72.5}
     />
   );
 };
