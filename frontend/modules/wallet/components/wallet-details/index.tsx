@@ -1,0 +1,1 @@
+export * from './wallet-details';

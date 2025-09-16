@@ -81,7 +81,7 @@ export const GlobalSearch = ({ className }: GlobalSearchProps) => {
         strokeWidth={1.5}
       />
       <Input
-        placeholder="Search by txn hash / block"
+        placeholder="Search by txn hash / block number / wallet address"
         className={cn('pl-10', query && 'pr-9')}
         value={query}
         onChange={handleChange}

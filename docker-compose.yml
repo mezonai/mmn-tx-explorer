@@ -1,21 +1,16 @@
 services:
-  clickhouse:
-    image: clickhouse/clickhouse-server:latest
+  postgres:
+    image: postgres:16
     ports:
-      - "8123:8123"
-      - "9440:9000"
-    volumes:
-      - clickhouse_data:/var/lib/clickhouse
+      - "5432:5432"
     environment:
-      CLICKHOUSE_DB:  ${STORAGE_MAIN_CLICKHOUSE_DATABASE:-default}
-      CLICKHOUSE_USER: ${STORAGE_MAIN_CLICKHOUSE_USER:-admin}
-      CLICKHOUSE_PASSWORD: ${STORAGE_MAIN_CLICKHOUSE_PASSWORD:-password}
-    ulimits:
-      nofile:
-        soft: 262144
-        hard: 262144
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8123/ping"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-indexer}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -27,35 +22,13 @@ services:
       dockerfile: Dockerfile
     command: ["orchestrator"]
     depends_on:
-      clickhouse:
+      postgres:
         condition: service_healthy
+      indexer-migrate-postgres:
+        condition: service_completed_successfully
     volumes:
       - ./indexer/configs:/app/configs:ro
-      - ./indexer/internal/tools/clickhouse:/app/internal/tools/clickhouse:ro
-    environment:
-      # Override via env if needed
-      RPC_MMNGRPCURL: ${RPC_MMNGRPCURL:-host.docker.internal:9001}
-      # Migrations path for Docker
-      MIGRATIONS_PATH: file:///app/internal/tools/clickhouse
-      # ClickHouse inside Docker network - use service name
-      STORAGE_MAIN_CLICKHOUSE_DATABASE: ${STORAGE_MAIN_CLICKHOUSE_DATABASE:-default}
-      STORAGE_MAIN_CLICKHOUSE_USERNAME: ${STORAGE_MAIN_CLICKHOUSE_USERNAME:-admin}
-      STORAGE_MAIN_CLICKHOUSE_PASSWORD: ${STORAGE_MAIN_CLICKHOUSE_PASSWORD:-password}
-      STORAGE_MAIN_CLICKHOUSE_HOST: ${STORAGE_MAIN_CLICKHOUSE_HOST:-clickhouse}
-      STORAGE_MAIN_CLICKHOUSE_PORT: ${STORAGE_MAIN_CLICKHOUSE_PORT:-9000}
-      STORAGE_MAIN_CLICKHOUSE_DISABLETLS: ${STORAGE_MAIN_CLICKHOUSE_DISABLETLS:-true}
-      STORAGE_STAGING_CLICKHOUSE_HOST: ${STORAGE_STAGING_CLICKHOUSE_HOST:-clickhouse}
-      STORAGE_STAGING_CLICKHOUSE_PORT: ${STORAGE_STAGING_CLICKHOUSE_PORT:-9000}
-      STORAGE_STAGING_CLICKHOUSE_DATABASE: ${STORAGE_STAGING_CLICKHOUSE_DATABASE:-default}
-      STORAGE_STAGING_CLICKHOUSE_USERNAME: ${STORAGE_STAGING_CLICKHOUSE_USERNAME:-admin}
-      STORAGE_STAGING_CLICKHOUSE_PASSWORD: ${STORAGE_STAGING_CLICKHOUSE_PASSWORD:-password}
-      STORAGE_STAGING_CLICKHOUSE_DISABLETLS: ${STORAGE_STAGING_CLICKHOUSE_DISABLETLS:-true}
-      STORAGE_ORCHESTRATOR_CLICKHOUSE_HOST: ${STORAGE_ORCHESTRATOR_CLICKHOUSE_HOST:-clickhouse}
-      STORAGE_ORCHESTRATOR_CLICKHOUSE_PORT: ${STORAGE_ORCHESTRATOR_CLICKHOUSE_PORT:-9000}
-      STORAGE_ORCHESTRATOR_CLICKHOUSE_DATABASE: ${STORAGE_ORCHESTRATOR_CLICKHOUSE_DATABASE:-default}
-      STORAGE_ORCHESTRATOR_CLICKHOUSE_USERNAME: ${STORAGE_ORCHESTRATOR_CLICKHOUSE_USERNAME:-admin}
-      STORAGE_ORCHESTRATOR_CLICKHOUSE_PASSWORD: ${STORAGE_ORCHESTRATOR_CLICKHOUSE_PASSWORD:-password}
-      STORAGE_ORCHESTRATOR_CLICKHOUSE_DISABLETLS: ${STORAGE_ORCHESTRATOR_CLICKHOUSE_DISABLETLS:-true}
+      - ./logs:/app/logs
     restart: unless-stopped
 
   indexer-api:
@@ -64,41 +37,47 @@ services:
       dockerfile: Dockerfile
     command: ["api"]
     depends_on:
-      clickhouse:
+      postgres:
         condition: service_healthy
+      indexer-migrate-postgres:
+        condition: service_completed_successfully
+      indexer-orchestrator:
+        condition: service_started
     ports:
       - "${INDEXER_API_PORT:-8080}:3000"
     volumes:
       - ./indexer/configs:/app/configs:ro
-    environment:
-      RPC_MMNGRPCURL: ${RPC_MMNGRPCURL:-host.docker.internal:9001}
-      # ClickHouse inside Docker network - use service name
-      STORAGE_MAIN_CLICKHOUSE_HOST: ${STORAGE_MAIN_CLICKHOUSE_HOST:-clickhouse}
-      STORAGE_MAIN_CLICKHOUSE_PORT: ${STORAGE_MAIN_CLICKHOUSE_PORT:-9000}
-      STORAGE_MAIN_CLICKHOUSE_DATABASE: ${STORAGE_MAIN_CLICKHOUSE_DATABASE:-default}
-      STORAGE_MAIN_CLICKHOUSE_USERNAME: ${STORAGE_MAIN_CLICKHOUSE_USERNAME:-admin}
-      STORAGE_MAIN_CLICKHOUSE_PASSWORD: ${STORAGE_MAIN_CLICKHOUSE_PASSWORD:-password}
-      STORAGE_MAIN_CLICKHOUSE_DISABLETLS: ${STORAGE_MAIN_CLICKHOUSE_DISABLETLS:-true}
-      STORAGE_STAGING_CLICKHOUSE_HOST: ${STORAGE_STAGING_CLICKHOUSE_HOST:-clickhouse}
-      STORAGE_STAGING_CLICKHOUSE_PORT: ${STORAGE_STAGING_CLICKHOUSE_PORT:-9000}
-      STORAGE_STAGING_CLICKHOUSE_DATABASE: ${STORAGE_STAGING_CLICKHOUSE_DATABASE:-default}
-      STORAGE_STAGING_CLICKHOUSE_USERNAME: ${STORAGE_STAGING_CLICKHOUSE_USERNAME:-admin}
-      STORAGE_STAGING_CLICKHOUSE_PASSWORD: ${STORAGE_STAGING_CLICKHOUSE_PASSWORD:-password}
-      STORAGE_STAGING_CLICKHOUSE_DISABLETLS: ${STORAGE_STAGING_CLICKHOUSE_DISABLETLS:-true}
-      STORAGE_ORCHESTRATOR_CLICKHOUSE_HOST: ${STORAGE_ORCHESTRATOR_CLICKHOUSE_HOST:-clickhouse}
-      STORAGE_ORCHESTRATOR_CLICKHOUSE_PORT: ${STORAGE_ORCHESTRATOR_CLICKHOUSE_PORT:-9000}
-      STORAGE_ORCHESTRATOR_CLICKHOUSE_DATABASE: ${STORAGE_ORCHESTRATOR_CLICKHOUSE_DATABASE:-default}
-      STORAGE_ORCHESTRATOR_CLICKHOUSE_USERNAME: ${STORAGE_ORCHESTRATOR_CLICKHOUSE_USERNAME:-admin}
-      STORAGE_ORCHESTRATOR_CLICKHOUSE_PASSWORD: ${STORAGE_ORCHESTRATOR_CLICKHOUSE_PASSWORD:-password}
-      STORAGE_ORCHESTRATOR_CLICKHOUSE_DISABLETLS: ${STORAGE_ORCHESTRATOR_CLICKHOUSE_DISABLETLS:-true}
+      - ./logs:/app/logs
     restart: unless-stopped
+
+  indexer-migrate-postgres:
+    build:
+      context: ./indexer
+      dockerfile: Dockerfile
+    command: ["migrate-postgres"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./indexer/configs:/app/configs:ro
+      - ./indexer/internal/tools/postgres:/app/internal/tools/postgres:ro
+      - ./logs:/app/logs
+    environment:
+      - MIGRATIONS_PATH=file://app/internal/tools/postgres
+      - STORAGE_MAIN_POSTGRES_HOST=postgres
+      - STORAGE_MAIN_POSTGRES_PORT=5432
+      - STORAGE_MAIN_POSTGRES_USERNAME=${POSTGRES_USER}
+      - STORAGE_MAIN_POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - STORAGE_MAIN_POSTGRES_DATABASE=${POSTGRES_DB}
+      - STORAGE_MAIN_POSTGRES_SSLMODE=disable
+    restart: "no"
 
   frontend:
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     environment:
-      # Example: connect frontend to indexer-api
       NEXT_PUBLIC_APP_API_URL: ${NEXT_PUBLIC_APP_API_URL:-http://localhost:8080}
+      APP_API_URL_INTERNAL: ${APP_API_URL_INTERNAL:-http://indexer-api:3000}
     build:
       context: ./frontend
       dockerfile: Dockerfile
@@ -108,7 +87,13 @@ services:
       - indexer-api
     restart: unless-stopped
 
+  promtail:
+    image: grafana/promtail:2.9.0
+    volumes:
+      - ./indexer/configs/promtail-config.yml:/etc/promtail/config.yml:ro
+      - ./logs:/app/logs:ro
+    command: -config.file=/etc/promtail/config.yml
+    restart: unless-stopped
+
 volumes:
-  clickhouse_data:
-
-
+  postgres_data:

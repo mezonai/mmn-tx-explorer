@@ -55,11 +55,11 @@ export const BlockList = () => {
   }, [localSearchParams]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       <h1 className="mb-0 text-2xl font-semibold">Blocks</h1>
 
       <div className="space-y-6">
-        <div className="bg-background sticky top-0 z-10 mb-0 flex justify-end gap-5 pt-8 pb-6">
+        <div className="bg-background sticky top-0 z-10 mb-0 flex justify-end gap-5 py-6 md:pt-8">
           <Pagination
             page={page}
             limit={limit}

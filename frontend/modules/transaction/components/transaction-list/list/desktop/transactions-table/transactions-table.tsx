@@ -23,7 +23,8 @@ import {
   TxnHashLinkSkeleton,
   TypeBadges,
   TypeBadgesSkeleton,
-} from '../shared';
+} from '../../shared';
+import { TEXT_CONSTANT } from '@/constant';
 
 interface TransactionsTableProps {
   transactions?: ITransaction[];
@@ -59,7 +60,7 @@ export const TransactionsTable = ({ transactions, skeletonLength }: Transactions
       renderCell: (row) => (
         <div className="flex flex-col items-start">
           <TxnHashLink hash={row.hash} className="w-40" />
-          <TransactionTime blockTimestamp={row.block_timestamp} showAbsolute={showAbsoluteTime} />
+          <TransactionTime transactionTimestamp={row.transaction_timestamp} showAbsolute={showAbsoluteTime} />
         </div>
       ),
       skeletonContent: (
@@ -79,7 +80,7 @@ export const TransactionsTable = ({ transactions, skeletonLength }: Transactions
     },
     {
       headerContent: 'Block',
-      renderCell: (row) => <BlockNumber blockNumber={row.block_number} />,
+      renderCell: (row) => <BlockNumber blockNumber={row.block_number || TEXT_CONSTANT.NA} />,
       skeletonContent: <BlockNumberSkeleton />,
     },
     {

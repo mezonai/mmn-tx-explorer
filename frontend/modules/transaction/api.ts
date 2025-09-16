@@ -13,6 +13,16 @@ export class TransactionService {
     return data;
   }
 
+  static async getPendingTransactions(
+    params: Pick<ITransactionListParams, 'page' | 'limit'>
+  ): Promise<IPaginatedResponse<ITransaction[]>> {
+    const { data } = await apiClient.get<IPaginatedResponse<ITransaction[]>>(
+      buildPathWithChain(TRANSACTION_ENDPOINTS.PENDING),
+      { params }
+    );
+    return data;
+  }
+
   static async getTransactionDetails(transactionHash: string): Promise<ITransaction> {
     const { data } = await apiClient.get<ITransactionDetailsResponse>(
       buildPathWithChain(TRANSACTION_ENDPOINTS.DETAIL(transactionHash))

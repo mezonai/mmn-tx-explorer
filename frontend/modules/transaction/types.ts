@@ -42,6 +42,9 @@ export interface ITransactionListParams {
   // TODO: update API to support tab, then update this to required
   tab?: ETransactionTab;
   filter_block_number?: number;
+  wallet_address?: string;
+  filter_to_address?: string;
+  filter_from_address?: string;
 }
 
 export interface ILogInputData {

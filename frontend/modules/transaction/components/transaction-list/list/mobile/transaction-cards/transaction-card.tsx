@@ -35,7 +35,10 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
           <Transaction className="text-foreground-quaternary-400 size-6" />
           {transaction ? <TxnHashLink hash={transaction.hash} /> : <TxnHashLinkSkeleton />}
           {transaction ? (
-            <TransactionTime blockTimestamp={transaction.block_timestamp} className="font-normal whitespace-nowrap" />
+            <TransactionTime
+              transactionTimestamp={transaction.transaction_timestamp}
+              className="font-normal whitespace-nowrap"
+            />
           ) : (
             <TransactionTimeSkeleton className="font-normal whitespace-nowrap" />
           )}

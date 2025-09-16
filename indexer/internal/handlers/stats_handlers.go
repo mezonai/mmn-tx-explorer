@@ -150,7 +150,7 @@ func CountPendingTxLast30m(pendingTxs []*pb.TransactionData) uint64 {
 
     count := 0
     for _, tx := range pendingTxs {
-        if tx != nil && tx.Timestamp >= thirtyMinutesAgo {
+        if tx != nil && tx.Timestamp / 1000 >= thirtyMinutesAgo {
             count++
         }
     }

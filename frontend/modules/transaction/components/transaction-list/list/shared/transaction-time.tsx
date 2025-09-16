@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { DateTimeUtil } from '@/utils';
 
 interface TransactionTimeProps {
-  blockTimestamp: number;
+  transactionTimestamp: number;
   showAbsolute?: boolean;
   className?: string;
 }
@@ -15,10 +15,10 @@ interface TransactionTimeSkeletonProps {
   className?: string;
 }
 
-export const TransactionTime = ({ blockTimestamp, showAbsolute = false, className }: TransactionTimeProps) => {
+export const TransactionTime = ({ transactionTimestamp, showAbsolute = false, className }: TransactionTimeProps) => {
   const timeDisplay = showAbsolute
-    ? format(DateTimeUtil.toMilliseconds(blockTimestamp), DATE_TIME_FORMAT.HUMAN_READABLE_SHORT)
-    : DateTimeUtil.formatRelativeTimeSec(blockTimestamp);
+    ? format(DateTimeUtil.toMilliseconds(transactionTimestamp), DATE_TIME_FORMAT.HUMAN_READABLE_SHORT)
+    : DateTimeUtil.formatRelativeTimeSec(transactionTimestamp);
 
   return <span className={cn('text-quaternary-500 text-sm', className)}>{timeDisplay}</span>;
 };

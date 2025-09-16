@@ -48,6 +48,13 @@ log:
   level: debug
   # Whether to format logs in a human-readable way (vs JSON)
   prettify: true
+  # File logging configuration
+  fileEnabled: true
+  filePath: /app/logs/indexer.log
+  maxSize: 100      # Maximum size in MB before rotation
+  maxBackups: 5     # Maximum number of old log files to retain
+  maxAge: 30        # Maximum number of days to retain old log files
+  compress: true    # Whether to compress rotated log files
 
 # Poller configuration - Controls how blocks are fetched from the blockchain
 poller:
@@ -103,66 +110,45 @@ reorgHandler:
 storage:
   # Main storage configuration - Primary data storage
   main:
-    clickhouse:
-      # ClickHouse database host
-      host: localhost
-      # ClickHouse database port
-      port: 9440
-      # Database username
+    postgres:
+      host: postgres
+      port: 5432
       username: admin
-      # Database password
       password: password
-      # Database name
-      database: main
-      # Whether to disable TLS encryption
-      disableTLS: true
-      # Whether to use async inserts for better performance
-      asyncInsert: true
-      # Maximum number of rows to insert in a single query
-      maxRowsPerInsert: 1000
-      # Maximum number of open database connections
+      database: indexer
+      sslMode: disable
       maxOpenConns: 100
-      # Maximum number of idle database connections
-      maxIdleConns: 100
-      # Chain-specific configuration
-      chainBasedConfig:
-        "1": # Chain ID 1 (Ethereum mainnet)
-          main: # Table type
-            # Table name for this chain's data
-            tableName: main
-            # Default fields to select when querying blocks
-            defaultSelectFields:
-              - block_number
-              - block_hash
-              - block_timestamp
-              - block_gas_limit
-              - block_gas_used
-      # Whether to enable parallel processing of materialized views
-      enableParallelViewProcessing: true
-      # Maximum query execution time in seconds
-      maxQueryTime: 60
+      maxIdleConns: 50
+      maxConnLifetime: 3600
+      connectTimeout: 30
   
   # Staging storage configuration - Temporary storage for data processing
   staging:
-    clickhouse:
-      host: localhost
-      port: 9440
+    postgres:
+      host: postgres
+      port: 5432
       username: admin
       password: password
-      database: main
-      disableTLS: true
-      asyncInsert: true
+      database: indexer
+      sslMode: disable
+      maxOpenConns: 20
+      maxIdleConns: 10
+      maxConnLifetime: 3600
+      connectTimeout: 30
   
   # Orchestrator storage configuration - Storage for orchestration metadata
   orchestrator:
-    clickhouse:
-      host: localhost
-      port: 9440
+    postgres:
+      host: postgres
+      port: 5432
       username: admin
       password: password
-      database: main
-      disableTLS: true
-      asyncInsert: true
+      database: indexer
+      sslMode: disable
+      maxOpenConns: 20
+      maxIdleConns: 10
+      maxConnLifetime: 3600
+      connectTimeout: 30
 
 # API configuration - Settings for the HTTP API server
 api:
