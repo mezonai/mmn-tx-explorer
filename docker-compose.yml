@@ -22,10 +22,13 @@ services:
       dockerfile: Dockerfile
     command: ["orchestrator"]
     depends_on:
-      - postgres
-      - indexer-migrate-postgres
+      postgres:
+        condition: service_healthy
+      indexer-migrate-postgres:
+        condition: service_completed_successfully
     volumes:
       - ./indexer/configs:/app/configs:ro
+      - ./logs:/app/logs
     restart: unless-stopped
 
   indexer-api:
@@ -34,13 +37,17 @@ services:
       dockerfile: Dockerfile
     command: ["api"]
     depends_on:
-      - postgres
-      - indexer-migrate-postgres
-      - indexer-orchestrator
+      postgres:
+        condition: service_healthy
+      indexer-migrate-postgres:
+        condition: service_completed_successfully
+      indexer-orchestrator:
+        condition: service_started
     ports:
       - "${INDEXER_API_PORT:-8080}:3000"
     volumes:
       - ./indexer/configs:/app/configs:ro
+      - ./logs:/app/logs
     restart: unless-stopped
 
   indexer-migrate-postgres:
@@ -54,6 +61,7 @@ services:
     volumes:
       - ./indexer/configs:/app/configs:ro
       - ./indexer/internal/tools/postgres:/app/internal/tools/postgres:ro
+      - ./logs:/app/logs
     environment:
       - MIGRATIONS_PATH=file://app/internal/tools/postgres
       - STORAGE_MAIN_POSTGRES_HOST=postgres
@@ -77,6 +85,14 @@ services:
         NEXT_PUBLIC_APP_API_URL: ${NEXT_PUBLIC_APP_API_URL:-http://localhost:8080}
     depends_on:
       - indexer-api
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:2.9.0
+    volumes:
+      - ./indexer/configs/promtail-config.yml:/etc/promtail/config.yml:ro
+      - ./logs:/app/logs:ro
+    command: -config.file=/etc/promtail/config.yml
     restart: unless-stopped
 
 volumes:
