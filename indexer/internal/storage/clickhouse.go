@@ -39,33 +39,6 @@ var ZERO_BYTES_66 = strings.Repeat("\x00", 66)
 var ZERO_BYTES_10 = strings.Repeat("\x00", 10)
 var ZERO_BYTES_42 = strings.Repeat("\x00", 42)
 
-var defaultBlockFields = []string{
-	"chain_id", "block_number", "hash", "parent_hash", "block_timestamp", "nonce",
-	"sha3_uncles", "mix_hash", "miner", "state_root", "transactions_root", "logs_bloom",
-	"receipts_root", "difficulty", "total_difficulty", "size", "extra_data", "gas_limit",
-	"gas_used", "transaction_count", "base_fee_per_gas", "withdrawals_root",
-}
-
-var defaultTransactionFields = []string{
-	"chain_id", "hash", "nonce", "block_hash", "block_number", "block_timestamp",
-	"transaction_index", "from_address", "to_address", "toString(value) AS value", "gas", "gas_price",
-	"data", "function_selector", "max_fee_per_gas", "max_priority_fee_per_gas",
-	"max_fee_per_blob_gas", "blob_versioned_hashes", "transaction_type", "r", "s", "v",
-	"access_list", "authorization_list", "contract_address", "gas_used", "cumulative_gas_used",
-	"effective_gas_price", "blob_gas_used", "blob_gas_price", "logs_bloom", "status", "transaction_timestamp", "text_data",
-}
-
-var defaultLogFields = []string{
-	"chain_id", "block_number", "block_hash", "block_timestamp", "transaction_hash",
-	"transaction_index", "log_index", "address", "data", "topic_0", "topic_1", "topic_2", "topic_3",
-}
-
-var defaultTraceFields = []string{
-	"chain_id", "block_number", "block_hash", "block_timestamp", "transaction_hash",
-	"transaction_index", "subtraces", "trace_address", "type", "call_type", "error",
-	"from_address", "to_address", "gas", "gas_used", "input", "output", "value", "author",
-	"reward_type", "refund_address",
-}
 
 func NewClickHouseConnector(cfg *config.ClickhouseConfig) (*ClickHouseConnector, error) {
 	conn, err := connectDB(cfg)

@@ -160,7 +160,8 @@ func NewStorageConnector(cfg *config.StorageConfig) (IStorage, error) {
 func NewConnector[T any](cfg *config.StorageConnectionConfig) (T, error) {
 	var conn interface{}
 	var err error
-	if cfg.Postgres != nil && cfg.Postgres.Host != "" {
+
+	if cfg.Postgres != nil {
 		conn, err = NewPostgresConnector(cfg.Postgres)
 	} else if cfg.Clickhouse != nil {
 		conn, err = NewClickHouseConnector(cfg.Clickhouse)
