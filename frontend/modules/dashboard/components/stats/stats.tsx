@@ -1,14 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
 import { CreditCardRefresh, Cube01, Hourglass01, Wallet02 } from '@/assets/icons';
-import { DashboardService } from '../../api';
-import { IDashboardStats } from '../../type';
 import { StatCard } from './stat-card';
+import { useStats } from '../../hooks/useStas';
 
 export const Stats = () => {
-  const [stats, setStats] = useState<IDashboardStats>();
+  const stats = useStats();
 
   const statCards = [
     {
@@ -33,19 +30,6 @@ export const Stats = () => {
       value: stats?.total_wallets,
     },
   ];
-
-  const handleFetchStats = async () => {
-    try {
-      const { data } = await DashboardService.getStats();
-      setStats(data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  useEffect(() => {
-    handleFetchStats();
-  }, []);
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

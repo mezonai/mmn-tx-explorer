@@ -1,47 +1,21 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/configs/routes.config';
-import { ESortOrder } from '@/enums';
 import { cn } from '@/lib/utils';
-import {
-  DASHBOARD_TRANSACTIONS_LIMIT,
-  ITransaction,
-  ITransactionListParams,
-  TransactionService,
-} from '@/modules/transaction';
+import { DASHBOARD_TRANSACTIONS_LIMIT } from '@/modules/transaction';
 import { TransactionCardsMobile, TransactionCardsDesktop } from '@/modules/transaction/components';
+import { useLatestTransactions } from '../../hooks/useLatestTransactions';
 
 interface LatestTransactionsProps {
   className?: string;
 }
 
-const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
-  page: 0,
-  limit: DASHBOARD_TRANSACTIONS_LIMIT,
-  sort_by: 'block_timestamp',
-  sort_order: ESortOrder.DESC,
-} as const;
-
 export const LatestTransactions = ({ className }: LatestTransactionsProps) => {
-  const [transactions, setTransactions] = useState<ITransaction[]>();
-
-  const handleFetchTransactions = async () => {
-    try {
-      const { data } = await TransactionService.getTransactions(DEFAULT_VALUE_DATA_SEARCH);
-      setTransactions(data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  useEffect(() => {
-    handleFetchTransactions();
-  }, []);
-
+  const { data: transactionsResponse, isLoading } = useLatestTransactions();
+  const transactions = transactionsResponse?.data;
   return (
     <div className={cn('space-y-4', className)}>
       <div>
@@ -49,10 +23,18 @@ export const LatestTransactions = ({ className }: LatestTransactionsProps) => {
       </div>
       <div>
         <div className="hidden lg:block">
-          <TransactionCardsDesktop transactions={transactions} skeletonLength={DASHBOARD_TRANSACTIONS_LIMIT} />
+          <TransactionCardsDesktop
+            transactions={transactions}
+            skeletonLength={DASHBOARD_TRANSACTIONS_LIMIT}
+            isLoading={isLoading}
+          />
         </div>
         <div className="block lg:hidden">
-          <TransactionCardsMobile transactions={transactions} skeletonLength={DASHBOARD_TRANSACTIONS_LIMIT} />
+          <TransactionCardsMobile
+            transactions={transactions}
+            skeletonLength={DASHBOARD_TRANSACTIONS_LIMIT}
+            isLoading={isLoading}
+          />
         </div>
       </div>
       <div className="flex w-full justify-center">

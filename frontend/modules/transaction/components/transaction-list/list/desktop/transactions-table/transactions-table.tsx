@@ -6,7 +6,7 @@ import { Clock } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import { Table } from '@/components/ui/table';
 import { APP_CONFIG } from '@/configs/app.config';
-import { ETransactionOrientation, ITransaction } from '@/modules/transaction';
+import { ETransactionOrientation, ETransactionStatus, ITransaction } from '@/modules/transaction';
 import { TTableColumn } from '@/types';
 import {
   BlockNumber,
@@ -24,20 +24,26 @@ import {
   TypeBadges,
   TypeBadgesSkeleton,
 } from '../../shared';
+import { PAGINATION } from '@/constant';
+import { usePaginationQueryParam } from '@/hooks';
 import { TEXT_CONSTANT } from '@/constant';
 
 interface TransactionsTableProps {
   transactions?: ITransaction[];
   skeletonLength?: number;
+  isLoading: boolean;
 }
 
-export const TransactionsTable = ({ transactions, skeletonLength }: TransactionsTableProps) => {
+export const TransactionsTable = ({
+  transactions,
+  skeletonLength = PAGINATION.DEFAULT_LIMIT,
+  isLoading,
+}: TransactionsTableProps) => {
   const [showAbsoluteTime, setShowAbsoluteTime] = useState(false);
-
   const toggleShowAbsoluteTime = () => {
     setShowAbsoluteTime((prev) => !prev);
   };
-
+  const { page, limit } = usePaginationQueryParam();
   const columns: TTableColumn<ITransaction>[] = [
     {
       renderCell: (row) => <MoreInfoButton transaction={row} />,
@@ -59,7 +65,7 @@ export const TransactionsTable = ({ transactions, skeletonLength }: Transactions
       ),
       renderCell: (row) => (
         <div className="flex flex-col items-start">
-          <TxnHashLink hash={row.hash} className="w-40" />
+          <TxnHashLink hash={row.hash} isPending={row.status === ETransactionStatus.Pending} className="w-40" />
           <TransactionTime transactionTimestamp={row.transaction_timestamp} showAbsolute={showAbsoluteTime} />
         </div>
       ),
@@ -103,12 +109,14 @@ export const TransactionsTable = ({ transactions, skeletonLength }: Transactions
 
   return (
     <Table
+      key={`${page}-${limit}`}
       getRowKey={(row) => row.hash}
       columns={columns}
       rows={transactions}
       skeletonLength={skeletonLength}
       className="[&_thead]:sticky [&_thead]:top-[96px] [&_thead]:z-10"
       classNameLayout="overflow-x-visible"
+      isLoading={isLoading}
     />
   );
 };

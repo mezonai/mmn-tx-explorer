@@ -1,13 +1,10 @@
-import { useEffect, useState } from 'react';
-
 import { Pagination } from '@/components/ui/pagination';
 import { PAGINATION } from '@/constant';
 import { EBreakpoint, ESortOrder } from '@/enums';
 import { useBreakpoint, usePaginationQueryParam } from '@/hooks';
-import { ITransaction, ITransactionListParams, TransactionService } from '@/modules/transaction';
-import { MobileWalletTransactionsTable, WalletTransactionsTable } from '@/modules/transaction/components';
-import { IPaginationMeta } from '@/types';
-import { PageLoading } from '@/components/shared/page-loading';
+import { ITransactionListParams } from '@/modules/transaction';
+import { WalletTransactionsCards, WalletTransactionsTable } from '@/modules/transaction/components';
+import { useTransactions } from '@/modules/transaction/hooks/useTransactions';
 
 interface ReceivedTransactionsTabProps {
   walletAddress: string;
@@ -21,67 +18,66 @@ const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
 } as const;
 
 export const ReceivedTransactionsTab = ({ walletAddress }: ReceivedTransactionsTabProps) => {
-  const [transactions, setTransactions] = useState<ITransaction[]>();
-  const [pagination, setPagination] = useState<IPaginationMeta>();
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [localSearchParams, setLocalSearchParams] = useState<ITransactionListParams>();
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
   const isDesktop = useBreakpoint(EBreakpoint.LG);
-  const isEmptyTransactions = transactions && transactions.length === 0;
-  const handleFetchTransactions = async (params: ITransactionListParams, walletAddress: string) => {
-    try {
-      setIsLoading(true);
-      setTransactions(undefined);
 
-      const { meta, data } = await TransactionService.getTransactions({
-        ...params,
-        page: params.page - 1,
-        filter_to_address: walletAddress,
-      });
-      setTransactions(data);
-      setPagination(meta);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
+  // Create search params directly from URL params to avoid double useEffect
+  const searchParams: ITransactionListParams = {
+    ...DEFAULT_VALUE_DATA_SEARCH,
+    page,
+    limit,
+    filter_to_address: walletAddress,
   };
 
-  useEffect(() => {
-    setLocalSearchParams({
-      ...DEFAULT_VALUE_DATA_SEARCH,
-      page,
-      limit,
-    });
-  }, [page, limit]);
-
-  useEffect(() => {
-    if (!localSearchParams) return;
-    handleFetchTransactions(localSearchParams, walletAddress);
-  }, [localSearchParams, walletAddress]);
-  if (isDesktop === undefined) {
-    return <PageLoading />;
-  }
+  const { data: transactionsResponse, isLoading: isLoadingTransactions } = useTransactions(searchParams);
+  const transactions = transactionsResponse?.data;
+  const pagination = transactionsResponse?.meta;
+  const isEmptyTransactions = transactions && transactions.length === 0;
   return (
     <div>
-      {!isEmptyTransactions && (
+      <div className="bg-background sticky top-0 z-10 mb-0 flex justify-end gap-5 py-6 md:pt-8">
         <Pagination
           page={page}
           limit={limit}
           totalPages={pagination?.total_pages ?? 0}
           totalItems={pagination?.total_items ?? 0}
-          isLoading={isLoading}
-          className="w-full pb-6 lg:w-auto"
+          isLoading={isLoadingTransactions}
+          className="w-full lg:w-auto"
           onChangePage={handleChangePage}
           onChangeLimit={handleChangeLimit}
         />
-      )}
+      </div>
 
-      {isDesktop ? (
-        <WalletTransactionsTable walletAddress={walletAddress} transactions={transactions} skeletonLength={limit} />
+      {isDesktop === undefined ? (
+        <div>
+          <div className="hidden lg:block">
+            <WalletTransactionsTable
+              walletAddress={walletAddress}
+              transactions={transactions}
+              skeletonLength={limit}
+              isLoading={isLoadingTransactions}
+            />
+          </div>
+          <div className="block lg:hidden">
+            <WalletTransactionsCards
+              isLoading={isLoadingTransactions}
+              walletAddress={walletAddress}
+              transactions={transactions ?? []}
+              skeletonLength={limit}
+              isEmptyTransactions={isEmptyTransactions}
+            />
+          </div>
+        </div>
+      ) : isDesktop ? (
+        <WalletTransactionsTable
+          walletAddress={walletAddress}
+          transactions={transactions}
+          skeletonLength={limit}
+          isLoading={isLoadingTransactions}
+        />
       ) : (
-        <MobileWalletTransactionsTable
-          isLoading={isLoading}
+        <WalletTransactionsCards
+          isLoading={isLoadingTransactions}
           walletAddress={walletAddress}
           transactions={transactions ?? []}
           skeletonLength={limit}

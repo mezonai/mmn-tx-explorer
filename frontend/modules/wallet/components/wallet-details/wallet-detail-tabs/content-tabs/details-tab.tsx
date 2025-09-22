@@ -1,44 +1,26 @@
 import Link from 'next/link';
 
-import { useEffect, useState } from 'react';
-
 import { Cube01 } from '@/assets/icons';
 import { AddressDisplay, ItemAttribute } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { APP_CONFIG } from '@/configs/app.config';
 import { ROUTES } from '@/configs/routes.config';
-import { WalletService } from '@/modules/wallet/api';
 import { IWalletDetails } from '@/modules/wallet/type';
 import { NumberUtil } from '@/utils';
 import { TxnLink } from '../../../wallet-list/list/shared';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface TabDetailsProps {
-  address: string;
+  walletDetails: IWalletDetails;
 }
 
-export const DetailsTab = ({ address }: TabDetailsProps) => {
-  const [walletDetails, setWalletDetails] = useState<IWalletDetails>();
-
-  const fetchWalletDetails = async (address: string) => {
-    try {
-      const { data } = await WalletService.getWalletDetails(address);
-      setWalletDetails(data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  useEffect(() => {
-    fetchWalletDetails(address);
-  }, [address]);
-
+export const DetailsTab = ({ walletDetails }: TabDetailsProps) => {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 md:min-h-[600px]">
       <ItemAttribute
         label="Address"
         description="The address of the account"
-        data={address}
+        data={walletDetails.address}
         render={(address) => <AddressDisplay address={address} className="w-[300px]" />}
         skeleton={<Skeleton className="h-5 w-30" />}
       />
@@ -49,7 +31,7 @@ export const DetailsTab = ({ address }: TabDetailsProps) => {
         data={walletDetails}
         render={(walletDetails) => (
           <span>
-            {NumberUtil.formatWithCommas(walletDetails?.balance ?? 0)} {APP_CONFIG.CHAIN_SYMBOL}
+            {NumberUtil.formatWithCommasAndScale(walletDetails?.balance ?? 0)} {APP_CONFIG.CHAIN_SYMBOL}
           </span>
         )}
         skeleton={<Skeleton className="h-5 w-20" />}
@@ -59,7 +41,9 @@ export const DetailsTab = ({ address }: TabDetailsProps) => {
         label="Transactions"
         description="Number of transactions related to this address"
         data={walletDetails}
-        render={(walletDetails) => <TxnLink address={address} accountNonce={walletDetails?.account_nonce ?? 0} />}
+        render={(walletDetails) => (
+          <TxnLink address={walletDetails.address} accountNonce={walletDetails?.transaction_count ?? 0} />
+        )}
         skeleton={<Skeleton className="h-5 w-50" />}
       />
 

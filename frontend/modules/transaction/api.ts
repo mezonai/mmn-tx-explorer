@@ -29,4 +29,11 @@ export class TransactionService {
     );
     return data.data.transaction;
   }
+
+  static async getPendingTransactionDetails(transactionHash: string): Promise<ITransaction> {
+    const { data } = await apiClient.get<ITransactionDetailsResponse>(
+      buildPathWithChain(TRANSACTION_ENDPOINTS.PENDING_DETAIL(transactionHash))
+    );
+    return data.data.transaction;
+  }
 }

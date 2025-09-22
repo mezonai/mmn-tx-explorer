@@ -18,3 +18,15 @@ for indexer:
 
 docker compose up --build
 
+
+
+
+run indexer with go for development
+```bash
+    cd indexer
+    docker-compose up -d postgres
+    go build -o main -tags=production
+    ./main migrate-postgres
+    ./main orchestrator   # Starts the indexer
+    ./main api           # Starts the API server
+```

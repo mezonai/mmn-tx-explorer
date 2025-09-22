@@ -6,10 +6,9 @@ import { Pagination } from '@/components/ui/pagination';
 import { PAGINATION } from '@/constant';
 import { ESortOrder } from '@/enums';
 import { usePaginationQueryParam } from '@/hooks';
-import { IPaginationMeta } from '@/types';
-import { WalletService } from '../../api';
-import { IWallet, IWalletListParams } from '../../type';
+import { IWalletListParams } from '../../type';
 import { WalletCollection } from './list';
+import { useWallets } from '../../hooks/useWallets';
 
 const DEFAULT_VALUE_DATA_SEARCH: IWalletListParams = {
   page: PAGINATION.DEFAULT_PAGE,
@@ -20,28 +19,13 @@ const DEFAULT_VALUE_DATA_SEARCH: IWalletListParams = {
 } as const;
 
 export const WalletList = () => {
-  const [wallets, setWallets] = useState<IWallet[]>();
-  const [pagination, setPagination] = useState<IPaginationMeta>();
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [localSearchParams, setLocalSearchParams] = useState<IWalletListParams>();
+  const { data: walletsResponse, isLoading: isLoadingWallets } = useWallets(
+    localSearchParams ?? DEFAULT_VALUE_DATA_SEARCH
+  );
+  const wallets = walletsResponse?.data;
+  const pagination = walletsResponse?.meta;
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
-
-  const handleFetchWallets = async (params: IWalletListParams) => {
-    try {
-      setIsLoading(true);
-      setWallets(undefined);
-      const { data, meta } = await WalletService.getWallets({
-        ...params,
-        page: params.page - 1,
-      });
-      setWallets(data);
-      setPagination(meta);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   useEffect(() => {
     setLocalSearchParams({
@@ -50,12 +34,6 @@ export const WalletList = () => {
       limit,
     });
   }, [page, limit]);
-
-  useEffect(() => {
-    if (!localSearchParams) return;
-    handleFetchWallets(localSearchParams);
-  }, [localSearchParams]);
-
   return (
     <div className="space-y-6 md:space-y-8">
       <h1 className="mb-0 text-2xl font-semibold">Top accounts</h1>
@@ -67,14 +45,14 @@ export const WalletList = () => {
             limit={limit}
             totalPages={pagination?.total_pages ?? 0}
             totalItems={pagination?.total_items ?? 0}
-            isLoading={isLoading}
+            isLoading={isLoadingWallets}
             className="w-full lg:w-auto"
             onChangePage={handleChangePage}
             onChangeLimit={handleChangeLimit}
           />
         </div>
 
-        <WalletCollection wallets={wallets} skeletonLength={limit} />
+        <WalletCollection wallets={wallets} isLoading={isLoadingWallets} />
       </div>
     </div>
   );

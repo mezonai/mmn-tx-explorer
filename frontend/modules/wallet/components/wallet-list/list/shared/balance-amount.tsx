@@ -15,7 +15,7 @@ interface BalanceAmountSkeletonProps {
 export const BalanceAmount = ({ balance, className, showSymbol = true }: BalanceAmountProps) => {
   return (
     <span className={className}>
-      {NumberUtil.formatWithCommas(balance)} {showSymbol && APP_CONFIG.CHAIN_SYMBOL}
+      {NumberUtil.formatWithCommasAndScale(balance)} {showSymbol && APP_CONFIG.CHAIN_SYMBOL}
     </span>
   );
 };

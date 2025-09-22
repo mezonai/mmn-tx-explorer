@@ -1,41 +1,19 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/configs/routes.config';
-import { ESortOrder } from '@/enums';
 import { cn } from '@/lib/utils';
-import { BlockService, DASHBOARD_BLOCKS_LIMIT, IBlock, IBLockListParams } from '@/modules/block';
 import { BlockCard } from './block-card';
+import { useLatestBlocks } from '../../hooks/useLatestBlocks';
+import { DASHBOARD_BLOCKS_LIMIT } from '@/modules/block';
 
 interface LatestBlocksProps {
   className?: string;
 }
 
-const DEFAULT_VALUE_DATA_SEARCH: IBLockListParams = {
-  page: 0,
-  limit: DASHBOARD_BLOCKS_LIMIT,
-  sort_by: 'block_number',
-  sort_order: ESortOrder.DESC,
-} as const;
-
 export const LatestBlocks = ({ className }: LatestBlocksProps) => {
-  const [blocks, setBlocks] = useState<IBlock[]>();
-
-  const handleFetchBlocks = async () => {
-    try {
-      const { data } = await BlockService.getBlocks(DEFAULT_VALUE_DATA_SEARCH);
-      setBlocks(data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  useEffect(() => {
-    handleFetchBlocks();
-  }, []);
+  const blocks = useLatestBlocks();
 
   return (
     <div className={cn('space-y-4', className)}>

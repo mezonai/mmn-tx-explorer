@@ -21,7 +21,7 @@ export const TransactionValue = ({
   showLabel = false,
   showSymbol = false,
 }: TransactionValueProps) => {
-  const formattedValue = `${NumberUtil.formatWithCommas(value)} ${showSymbol ? APP_CONFIG.CHAIN_SYMBOL : ''}`;
+  const formattedValue = `${NumberUtil.formatWithCommasAndScale(value)} ${showSymbol ? APP_CONFIG.CHAIN_SYMBOL : ''}`;
 
   if (showLabel) {
     return (

@@ -39,23 +39,9 @@ type BlockModel struct {
 	BlockHash        string `json:"block_hash"`
 	ParentHash       string `json:"parent_hash"`
 	BlockTimestamp   uint64 `json:"block_timestamp"`
-	Nonce            string `json:"nonce"`
-	Sha3Uncles       string `json:"sha3_uncles"`
-	MixHash          string `json:"mix_hash"`
 	Miner            string `json:"miner"`
-	StateRoot        string `json:"state_root"`
-	TransactionsRoot string `json:"transactions_root"`
-	ReceiptsRoot     string `json:"receipts_root"`
-	LogsBloom        string `json:"logs_bloom"`
 	Size             uint64 `json:"size"`
-	ExtraData        string `json:"extra_data"`
-	Difficulty       string `json:"difficulty"`
-	TotalDifficulty  string `json:"total_difficulty"`
 	TransactionCount uint64 `json:"transaction_count"`
-	GasLimit         string `json:"gas_limit"`
-	GasUsed          string `json:"gas_used"`
-	WithdrawalsRoot  string `json:"withdrawals_root"`
-	BaseFeePerGas    uint64 `json:"base_fee_per_gas"`
 }
 
 type BlockData struct {
@@ -80,22 +66,8 @@ func (b *Block) Serialize() BlockModel {
 		BlockHash:        b.Hash,
 		ParentHash:       b.ParentHash,
 		BlockTimestamp:   uint64(b.Timestamp.Unix()),
-		Nonce:            b.Nonce,
-		Sha3Uncles:       b.Sha3Uncles,
-		MixHash:          b.MixHash,
 		Miner:            b.Miner,
-		StateRoot:        b.StateRoot,
-		TransactionsRoot: b.TransactionsRoot,
-		ReceiptsRoot:     b.ReceiptsRoot,
-		LogsBloom:        b.LogsBloom,
 		Size:             b.Size,
-		ExtraData:        b.ExtraData,
-		Difficulty:       b.Difficulty.String(),
-		TotalDifficulty:  b.TotalDifficulty.String(),
 		TransactionCount: b.TransactionCount,
-		GasLimit:         b.GasLimit.String(),
-		GasUsed:          b.GasUsed.String(),
-		WithdrawalsRoot:  b.WithdrawalsRoot,
-		BaseFeePerGas:    b.BaseFeePerGas,
 	}
 }

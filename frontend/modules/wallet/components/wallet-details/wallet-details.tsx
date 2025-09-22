@@ -1,12 +1,8 @@
-'use client';
-
-import { useState } from 'react';
-
 import { BackButton, BreadcrumbTrail } from '@/components/shared';
 import { ROUTES } from '@/configs/routes.config';
-import { useQueryParam } from '@/hooks';
 import { IBreadcrumb } from '@/types';
 import { WalletDetailTabs } from './wallet-detail-tabs';
+import { WalletService } from '../../api';
 
 interface WalletDetailsProps {
   address: string;
@@ -17,14 +13,8 @@ const breadcrumbs: IBreadcrumb[] = [
   { label: 'Wallet Details', href: '#' },
 ] as const;
 
-export const WalletDetails = ({ address }: WalletDetailsProps) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const { value: currentTab, handleChangeValue: handleChangeTab } = useQueryParam<string>({
-    queryParam: 'tab',
-    defaultValue: 'details',
-    clearParams: ['page', 'limit'],
-  });
-
+export const WalletDetails = async ({ address }: WalletDetailsProps) => {
+  const { data: walletDetails } = await WalletService.getWalletDetails(address);
   return (
     <div className="space-y-8">
       <div className="mb-0 space-y-4">
@@ -35,12 +25,7 @@ export const WalletDetails = ({ address }: WalletDetailsProps) => {
         <h1 className="text-2xl font-semibold">Account Details</h1>
       </div>
 
-      <WalletDetailTabs
-        currentTab={currentTab}
-        isLoading={isLoading}
-        address={address}
-        handleChangeTab={handleChangeTab}
-      />
+      <WalletDetailTabs walletDetails={walletDetails} />
     </div>
   );
 };

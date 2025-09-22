@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 
 interface TxnHashLinkProps {
   hash: string;
+  isPending: boolean;
   className?: string;
 }
 
@@ -18,13 +19,13 @@ interface TxnHashLinkSkeletonProps {
   className?: string;
 }
 
-export const TxnHashLink = ({ hash, className }: TxnHashLinkProps) => {
+export const TxnHashLink = ({ hash, isPending, className }: TxnHashLinkProps) => {
   return (
     <div className={cn('flex flex-1 items-center gap-1', className)}>
       <Tooltip>
         <TooltipTrigger asChild>
           <Button variant="link" className="size-fit flex-1 p-0" asChild>
-            <Link href={ROUTES.TRANSACTION(hash)}>
+            <Link href={isPending ? ROUTES.PENDING_TRANSACTION(hash) : ROUTES.TRANSACTION(hash)}>
               <MiddleTruncate end={ADDRESS_END_VISIBLE_CHARS} className="font-semibold">
                 {hash}
               </MiddleTruncate>

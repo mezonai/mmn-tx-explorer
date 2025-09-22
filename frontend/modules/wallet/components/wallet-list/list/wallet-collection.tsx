@@ -8,10 +8,10 @@ import { WalletCards } from './mobile';
 
 interface WalletCollectionProps {
   wallets?: IWallet[];
-  skeletonLength: number;
+  isLoading: boolean;
 }
 
-export const WalletCollection = ({ wallets, skeletonLength }: WalletCollectionProps) => {
+export const WalletCollection = ({ wallets, isLoading }: WalletCollectionProps) => {
   const isDesktop = useBreakpoint(EBreakpoint.LG);
 
   return (
@@ -19,16 +19,16 @@ export const WalletCollection = ({ wallets, skeletonLength }: WalletCollectionPr
       {isDesktop === undefined ? (
         <div>
           <div className="hidden lg:block">
-            <WalletsTable wallets={wallets} skeletonLength={skeletonLength} />
+            <WalletsTable wallets={wallets} isLoading={isLoading} />
           </div>
           <div className="block lg:hidden">
-            <WalletCards wallets={wallets} skeletonLength={skeletonLength} />
+            <WalletCards wallets={wallets} isLoading={isLoading} />
           </div>
         </div>
       ) : isDesktop ? (
-        <WalletsTable wallets={wallets} skeletonLength={skeletonLength} />
+        <WalletsTable wallets={wallets} isLoading={isLoading} />
       ) : (
-        <WalletCards wallets={wallets} skeletonLength={skeletonLength} />
+        <WalletCards wallets={wallets} isLoading={isLoading} />
       )}
     </>
   );

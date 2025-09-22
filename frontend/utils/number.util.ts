@@ -26,4 +26,13 @@ export class NumberUtil {
 
     return num.toLocaleString('en-US');
   }
+
+  static formatWithCommasAndScale(value: number | string, scale: number = 1_000_000): string {
+    if (!value) return '0';
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    if (isNaN(num)) return '0';
+
+    const scaled = num / scale;
+    return scaled.toLocaleString('en-US');
+  }
 }

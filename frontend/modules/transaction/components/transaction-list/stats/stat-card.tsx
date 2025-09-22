@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 
 interface StatCardProps {
   title: string;
-  value?: number;
+  value?: number | string;
   subValue: string;
 }
 

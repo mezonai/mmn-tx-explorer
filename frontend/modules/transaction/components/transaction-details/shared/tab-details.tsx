@@ -47,8 +47,15 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
         description="The block of the transaction"
         data={transaction}
         render={(transaction) => (
-          <Button variant="link" className="size-fit p-0 text-sm font-semibold">
-            <Link href={`/blocks/${transaction.block_number}`}>{transaction.block_number}</Link>
+          <Button
+            variant={transaction.block_number ? 'link' : 'disabled'}
+            className="size-fit p-0 text-sm font-semibold"
+          >
+            {transaction.block_number ? (
+              <Link href={`/blocks/${transaction.block_number}`}>{transaction.block_number}</Link>
+            ) : (
+              'N/A'
+            )}
           </Button>
         )}
         skeleton={<Skeleton className="h-5 w-15" />}
@@ -61,11 +68,11 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
           <div className="text-muted-foreground flex items-center space-x-2">
             <Clock4 className="size-4" />
             <div>
-              <span>{DateTimeUtil.formatRelativeTimeSec(transaction.block_timestamp)}</span>
+              <span>{DateTimeUtil.formatRelativeTimeSec(transaction.transaction_timestamp)}</span>
               <span> | </span>
               <span>
                 {format(
-                  DateTimeUtil.toMilliseconds(transaction.block_timestamp),
+                  DateTimeUtil.toMilliseconds(transaction.transaction_timestamp),
                   DATE_TIME_FORMAT.HUMAN_READABLE_WITH_OFFSET
                 )}
               </span>
@@ -114,7 +121,7 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
         data={transaction}
         render={(transaction) => (
           <div className="flex items-center">
-            <span>{NumberUtil.formatWithCommas(transaction.value)}</span>
+            <span>{NumberUtil.formatWithCommasAndScale(transaction.value)}</span>
           </div>
         )}
         skeleton={<Skeleton className="h-5 w-20" />}
