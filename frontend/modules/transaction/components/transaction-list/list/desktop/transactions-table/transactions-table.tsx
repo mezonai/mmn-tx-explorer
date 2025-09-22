@@ -26,6 +26,7 @@ import {
 } from '../../shared';
 import { PAGINATION } from '@/constant';
 import { usePaginationQueryParam } from '@/hooks';
+import { TEXT_CONSTANT } from '@/constant';
 
 interface TransactionsTableProps {
   transactions?: ITransaction[];
@@ -85,7 +86,7 @@ export const TransactionsTable = ({
     },
     {
       headerContent: 'Block',
-      renderCell: (row) => <BlockNumber blockNumber={row.block_number || 'N/A'} />,
+      renderCell: (row) => <BlockNumber blockNumber={row.block_number || TEXT_CONSTANT.NA} />,
       skeletonContent: <BlockNumberSkeleton />,
     },
     {
