@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -19,14 +20,13 @@ import (
 	"github.com/thirdweb-dev/indexer/internal/common"
 	"github.com/thirdweb-dev/indexer/internal/metrics"
 	"github.com/thirdweb-dev/indexer/internal/rpc"
-	pb "github.com/thirdweb-dev/indexer/proto"
 	"github.com/thirdweb-dev/indexer/internal/utils"
+	pb "github.com/thirdweb-dev/indexer/proto"
 )
 
-
 type ClickHouseConnector struct {
-	conn clickhouse.Conn
-	cfg  *config.ClickhouseConfig
+	conn           clickhouse.Conn
+	cfg            *config.ClickhouseConfig
 	mmnGrpcService *rpc.MMNGrpcService
 }
 
@@ -38,7 +38,6 @@ var DEFAULT_MAX_ROWS_PER_INSERT = 100000
 var ZERO_BYTES_66 = strings.Repeat("\x00", 66)
 var ZERO_BYTES_10 = strings.Repeat("\x00", 10)
 var ZERO_BYTES_42 = strings.Repeat("\x00", 42)
-
 
 func NewClickHouseConnector(cfg *config.ClickhouseConfig) (*ClickHouseConnector, error) {
 	conn, err := connectDB(cfg)
@@ -510,24 +509,24 @@ func (c *ClickHouseConnector) GetAggregations(table string, qf QueryFilter) (Que
 
 func (c *ClickHouseConnector) GetCount(table string, qf QueryFilter) (uint64, error) {
 	var query string
-	
+
 	// Special handling for transactions with wallet address to avoid double counting
 	if table == "transactions" && qf.WalletAddress != "" {
 		tableName := c.getTableName(qf.ChainId, table)
 		baseWhereClauses := c.buildWhereClauses(table, qf)
-		
+
 		// Build a query that counts unique transactions involving the wallet
 		query = fmt.Sprintf("SELECT COUNT(DISTINCT hash) FROM %s.%s", c.cfg.Database, tableName)
 		if qf.ForceConsistentData {
 			query += " FINAL"
 		}
-		
+
 		// Add all base conditions plus wallet address condition
 		allWhereClauses := append(baseWhereClauses, fmt.Sprintf("(from_address = '%s' OR to_address = '%s')", qf.WalletAddress, qf.WalletAddress))
 		if len(allWhereClauses) > 0 {
 			query += " WHERE " + strings.Join(allWhereClauses, " AND ")
 		}
-		
+
 		// Add settings if configured
 		if c.cfg.MaxQueryTime > 0 {
 			query += fmt.Sprintf(" SETTINGS max_execution_time = %d", c.cfg.MaxQueryTime)
@@ -1347,7 +1346,7 @@ func (c *ClickHouseConnector) InsertBlockData(data []common.BlockData) error {
 					tx.TextData,
 				}
 				_ = c.refreshWalletFromService(context.Background(), tx.FromAddress)
-				_ = c.refreshWalletFromService(context.Background(),  tx.ToAddress)
+				_ = c.refreshWalletFromService(context.Background(), tx.ToAddress)
 			}
 
 			// Prepare logs array
@@ -2168,12 +2167,10 @@ func (c *ClickHouseConnector) refreshWalletFromService(ctx context.Context, addr
 }
 
 // GetPendingTransactions retrieves pending transactions from MMN service
-//TODO: index pending transactions to db
+// TODO: index pending transactions to db
 func (c *ClickHouseConnector) GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error) {
 	if c.mmnGrpcService == nil {
 		return nil, fmt.Errorf("MMN MMNGrpcService not initialized")
 	}
 	return c.mmnGrpcService.GetPendingTransactions(ctx)
 }
-
-
