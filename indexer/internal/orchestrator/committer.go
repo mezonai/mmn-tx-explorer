@@ -370,6 +370,62 @@ func (c *Committer) getSequentialBlockData(ctx context.Context, blockNumbers []*
 	})
 
 	if blocksData[0].Block.Number.Cmp(blockNumbers[0]) != 0 {
+		if c.workMode == WorkModeLive {
+			missingCount := new(big.Int).Sub(blocksData[0].Block.Number, blockNumbers[0]).Int64()
+			if missingCount > 0 {
+				var sequentialBlockData []common.BlockData
+				chainID := c.rpc.GetChainID()
+				for i := int64(0); i < missingCount; i++ {
+					bn := new(big.Int).Add(blockNumbers[0], big.NewInt(i))
+					placeholder := common.Block{
+						ChainId:          chainID,
+						Number:           bn,
+						Hash:             "",
+						ParentHash:       "",
+						Timestamp:        time.Now(),
+						Nonce:            "",
+						Sha3Uncles:       "",
+						MixHash:          "",
+						Miner:            "",
+						StateRoot:        "",
+						TransactionsRoot: "",
+						ReceiptsRoot:     "",
+						LogsBloom:        "",
+						Size:             0,
+						ExtraData:        "",
+						Difficulty:       big.NewInt(0),
+						TotalDifficulty:  big.NewInt(0),
+						TransactionCount: 0,
+						GasLimit:         big.NewInt(0),
+						GasUsed:          big.NewInt(0),
+						WithdrawalsRoot:  "",
+						BaseFeePerGas:    0,
+						Sign:             0,
+						InsertTimestamp:  time.Now(),
+						IsMissing:        true,
+					}
+					sequentialBlockData = append(sequentialBlockData, common.BlockData{Block: placeholder, Transactions: []common.Transaction{}, Logs: []common.Log{}, Traces: []common.Trace{}})
+				}
+
+				expected := new(big.Int).Set(blocksData[0].Block.Number)
+				sequentialBlockData = append(sequentialBlockData, blocksData[0])
+				expected.Add(expected, big.NewInt(1))
+				for i := 1; i < len(blocksData); i++ {
+					if blocksData[i].Block.Number.Cmp(blocksData[i-1].Block.Number) == 0 {
+						continue
+					}
+					if blocksData[i].Block.Number.Cmp(expected) != 0 {
+						log.Warn().Msgf("Gap detected at block %s, committing until %s", expected.String(), blocksData[i-1].Block.Number.String())
+						metrics.GapCounter.Inc()
+						metrics.MissedBlockNumbers.Set(float64(blocksData[0].Block.Number.Int64()))
+						break
+					}
+					sequentialBlockData = append(sequentialBlockData, blocksData[i])
+					expected.Add(expected, big.NewInt(1))
+				}
+				return sequentialBlockData, nil
+			}
+		}
 		return nil, c.handleGap(ctx, blockNumbers[0], blocksData[0].Block)
 	}
 
