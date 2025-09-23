@@ -1826,12 +1826,13 @@ func (p *PostgresConnector) insertWallet(ctx context.Context, address string, no
 		balanceBig = big.NewInt(0)
 	}
 	
-	query := `INSERT INTO wallet (address, account_nonce, balance, updated_at, created_at) 
-	          VALUES ($1, $2, $3, NOW(), NOW())
+	query := `INSERT INTO wallet (address, account_nonce, balance, transaction_count, updated_at, created_at) 
+	          VALUES ($1, $2, $3, 1, NOW(), NOW())
 	          ON CONFLICT (address) 
 	          DO UPDATE SET 
 	              account_nonce = EXCLUDED.account_nonce,
 	              balance = EXCLUDED.balance,
+				  transaction_count = wallet.transaction_count + 1,
 	              updated_at = NOW()`
 	
 	_, err := p.db.ExecContext(ctx, query, address, nonce, bigIntToString(balanceBig))

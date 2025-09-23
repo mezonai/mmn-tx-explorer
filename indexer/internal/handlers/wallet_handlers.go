@@ -1,14 +1,14 @@
 package handlers
 
 import (
-    "fmt"
-    "math"
-    "strings"
+	"fmt"
+	"math"
+	"strings"
 
-    "github.com/gin-gonic/gin"
-    "github.com/rs/zerolog/log"
-    "github.com/thirdweb-dev/indexer/api"
-    "github.com/thirdweb-dev/indexer/internal/storage"
+	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
+	"github.com/thirdweb-dev/indexer/api"
+	"github.com/thirdweb-dev/indexer/internal/storage"
 )
 
 // GetWallets returns wallet list with sorting and pagination (default sort by balance desc)
@@ -61,7 +61,7 @@ func GetWallets(c *gin.Context) {
         Page:                queryParams.Page,
         Limit:               queryParams.Limit,
         ForceConsistentData: queryParams.ForceConsistentData,
-        Aggregates:          []string{"address", "account_nonce", "balance", "rank() OVER (ORDER BY balance DESC) AS rank"},
+        Aggregates:          []string{"address", "account_nonce", "balance", "transaction_count", "rank() OVER (ORDER BY balance DESC) AS rank"},
     }
 
     // Prepare response
@@ -83,23 +83,7 @@ func GetWallets(c *gin.Context) {
         api.InternalErrorHandler(c)
         return
     }
-    // Enrich each wallet with transaction_count using transactions table count
-    for i := range result.Aggregates {
-        addr, _ := result.Aggregates[i]["address"].(string)
-        if strings.TrimSpace(addr) == "" {
-            continue
-        }
-        txCountQf := storage.QueryFilter{
-            WalletAddress:       addr,
-            ForceConsistentData: queryParams.ForceConsistentData,
-        }
-        txCount, err := mainStorage.GetCount("transactions", txCountQf)
-        if err != nil {
-            log.Error().Err(err).Str("address", addr).Msg("Error counting wallet transactions")
-        } else {
-            result.Aggregates[i]["transaction_count"] = int(txCount)
-        }
-    }
+	
     var data interface{} = result.Aggregates
     resp.Data = &data
     resp.Aggregations = nil
