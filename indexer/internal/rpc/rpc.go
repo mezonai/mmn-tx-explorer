@@ -65,7 +65,7 @@ func Initialize() (IRPCClient, error) {
 		mmnService:     mmnService,
 		blocksPerRequest: GetBlockPerRequestConfig(),
 	}
-
+	
 	rpc.chainID = big.NewInt(1337)
 	return IRPCClient(rpc), nil
 }
@@ -75,77 +75,77 @@ func InitializeSimpleRPCWithUrl(url string) (IRPCClient, error) {
 	if err != nil {
 		log.Warn().Err(err).Msg("Failed to initialize MMNGrpcService, continuing without it")
 	}
-
+	
 	rpc := &Client{
 		mmnService: mmnService,
 	}
-
+	
 	rpc.chainID = big.NewInt(1337)
 	return IRPCClient(rpc), nil
 }
 
 func (rpc *Client) GetFullBlocks(ctx context.Context, blockNumbers []*big.Int) []GetFullBlockResult {
-	if rpc.mmnService == nil {
-		return []GetFullBlockResult{{
-			Error: fmt.Errorf(" MMNGrpcService not available"),
-		}}
-	}
+    if rpc.mmnService == nil {
+        return []GetFullBlockResult{{
+            Error: fmt.Errorf(" MMNGrpcService not available"),
+        }}
+    }
 
-	nums := make([]uint64, len(blockNumbers))
-	for i, n := range blockNumbers {
-		nums[i] = n.Uint64()
-	}
+    nums := make([]uint64, len(blockNumbers))
+    for i, n := range blockNumbers {
+        nums[i] = n.Uint64()
+    }
 
-	res, err := rpc.mmnService.GetBlockByNumber(ctx, nums)
-	if err != nil {
-		return []GetFullBlockResult{{
-			Error: fmt.Errorf("failed to get full block: %v", err),
-		}}
-	}
+    res, err := rpc.mmnService.GetBlockByNumber(ctx, nums)
+    if err != nil {
+        return []GetFullBlockResult{{
+            Error: fmt.Errorf("failed to get full block: %v", err),
+        }}
+    }
 
-	rawBlocks := make([]RPCFetchBatchResult[*big.Int, common.RawBlock], len(blockNumbers))
+    rawBlocks := make([]RPCFetchBatchResult[*big.Int, common.RawBlock], len(blockNumbers))
+    
+    for i, blk := range res.Blocks {
+        if blk != nil {
+            rawBlock := convertPBBlockToRawBlock(blk)
+            rawBlocks[i] = RPCFetchBatchResult[*big.Int, common.RawBlock]{
+                Key:    blockNumbers[i],
+                Result: rawBlock,
+                Error:  nil,
+            }
+        } else {
+            log.Warn().
+                Int("index", i).
+                Str("requestedBlock", blockNumbers[i].String()).
+                Msg("GetFullBlocks: received nil block from MMN service")
+            rawBlocks[i] = RPCFetchBatchResult[*big.Int, common.RawBlock]{
+                Key:    blockNumbers[i],
+                Result: nil,
+                Error:  fmt.Errorf("block not found"),
+            }
+        }
+    }
+    
+    results := SerializeFullBlocks(rpc.chainID, rawBlocks, nil, nil, nil)
 
-	for i, blk := range res.Blocks {
-		if blk != nil {
-			rawBlock := convertPBBlockToRawBlock(blk)
-			rawBlocks[i] = RPCFetchBatchResult[*big.Int, common.RawBlock]{
-				Key:    blockNumbers[i],
-				Result: rawBlock,
-				Error:  nil,
-			}
-		} else {
-			log.Warn().
-				Int("index", i).
-				Str("requestedBlock", blockNumbers[i].String()).
-				Msg("GetFullBlocks: received nil block from MMN service")
-			rawBlocks[i] = RPCFetchBatchResult[*big.Int, common.RawBlock]{
-				Key:    blockNumbers[i],
-				Result: nil,
-				Error:  fmt.Errorf("block not found"),
-			}
-		}
-	}
+    // Diagnostics: log entries that are missing BlockNumber or have errors
+    for idx, r := range results {
+        if r.Error != nil {
+            log.Warn().
+                Int("idx", idx).
+                Str("requestedBlock", rawBlocks[idx].Key.String()).
+                Err(r.Error).
+                Msg("GetFullBlocks: result has error")
+        }
+        if r.BlockNumber == nil {
+            log.Warn().
+                Int("idx", idx).
+                Str("requestedBlock", rawBlocks[idx].Key.String()).
+                Msg("GetFullBlocks: result has nil BlockNumber")
+        }
+    }
 
-	results := SerializeFullBlocks(rpc.chainID, rawBlocks, nil, nil, nil)
-
-	// Diagnostics: log entries that are missing BlockNumber or have errors
-	for idx, r := range results {
-		if r.Error != nil {
-			log.Warn().
-				Int("idx", idx).
-				Str("requestedBlock", rawBlocks[idx].Key.String()).
-				Err(r.Error).
-				Msg("GetFullBlocks: result has error")
-		}
-		if r.BlockNumber == nil {
-			log.Warn().
-				Int("idx", idx).
-				Str("requestedBlock", rawBlocks[idx].Key.String()).
-				Msg("GetFullBlocks: result has nil BlockNumber")
-		}
-	}
-
-	return results
+    return results
 }
 
 func (rpc *Client) GetLatestBlockNumber(ctx context.Context) (*big.Int, error) {
