@@ -275,6 +275,7 @@ func convertPBBlockToRawBlock(pbBlock *pb.Block) common.RawBlock {
 	
 	return rawBlock
 }
+
 // convertPBTransactionDataToRawTransaction converts a protobuf TransactionData to common.RawTransaction format
 func convertPBTransactionDataToRawTransaction(pbTransactionData *pb.TransactionData, blockHash string, blockNumber uint64, blockTimestamp uint64, txIndex uint64) map[string]interface{} {
 	rawTransaction := make(map[string]interface{})
@@ -290,7 +291,7 @@ func convertPBTransactionDataToRawTransaction(pbTransactionData *pb.TransactionD
 	
 	// Convert nonce to hex format
 	rawTransaction["nonce"] = fmt.Sprintf("%x", pbTransactionData.Nonce)
-
+	
 
 	rawTransaction["transactionTimestamp"] = fmt.Sprintf("%x", pbTransactionData.Timestamp)
 
