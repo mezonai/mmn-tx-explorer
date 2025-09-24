@@ -152,12 +152,12 @@ func (rpc *Client) GetLatestBlockNumber(ctx context.Context) (*big.Int, error) {
 	if rpc.mmnService == nil {
 		return nil, fmt.Errorf("MMNGrpcService not available")
 	}
-
+	
 	res, err := rpc.mmnService.GetBlockNumber(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest block number: %v", err)
 	}
-
+	
 	log.Debug().Uint64("blockNumber", res.BlockNumber).Msg("Got latest block number from MMN")
 	return new(big.Int).SetUint64(res.BlockNumber), nil
 }
@@ -199,7 +199,7 @@ func (rpc *Client) HasCode(ctx context.Context, address string) (bool, error) {
 
 func (rpc *Client) GetBlocks(ctx context.Context, blockNumbers []*big.Int) []GetBlocksResult {
 	fullBlocks := rpc.GetFullBlocks(ctx, blockNumbers)
-
+	
 	results := make([]GetBlocksResult, len(fullBlocks))
 	for i, fullBlock := range fullBlocks {
 		results[i] = GetBlocksResult{
@@ -208,7 +208,7 @@ func (rpc *Client) GetBlocks(ctx context.Context, blockNumbers []*big.Int) []Get
 			Data:        fullBlock.Data.Block,
 		}
 	}
-
+	
 	return results
 }
 
@@ -226,36 +226,36 @@ func (rpc *Client) GetTransactions(ctx context.Context, txHashes []string) []Get
 // convertPBBlockToRawBlock converts a protobuf Block to common.RawBlock format
 func convertPBBlockToRawBlock(pbBlock *pb.Block) common.RawBlock {
 	rawBlock := make(common.RawBlock)
-
+	
 	// Convert slot to block number
 	rawBlock["number"] = fmt.Sprintf("%x", pbBlock.Slot)
-
+	
 	// Convert hash
 	rawBlock["hash"] = fmt.Sprintf("%x", pbBlock.Hash)
 	rawBlock["parentHash"] = fmt.Sprintf("%x", pbBlock.PrevHash)
 
 	// Convert timestamp
 	rawBlock["timestamp"] = fmt.Sprintf("%x", pbBlock.Timestamp)
-
+	
 	// Convert miner/author
 	rawBlock["miner"] = pbBlock.LeaderId
-
+	
 	// Convert transactions from TransactionData
 	var transactions []interface{}
 	if pbBlock.TransactionData != nil {
 		for i, txData := range pbBlock.TransactionData {
 			rawTx := convertPBTransactionDataToRawTransaction(
-				txData,
-				fmt.Sprintf("%x", pbBlock.Hash),
-				pbBlock.Slot,
-				pbBlock.Timestamp,
+				txData, 
+				fmt.Sprintf("%x", pbBlock.Hash), 
+				pbBlock.Slot, 
+				pbBlock.Timestamp, 
 				uint64(i),
 			)
 			transactions = append(transactions, rawTx)
 		}
 	}
 	rawBlock["transactions"] = transactions
-
+	
 	// Set default values for Ethereum-compatible fields
 	rawBlock["nonce"] = "0x0"
 	rawBlock["sha3Uncles"] = "0x0000000000000000000000000000000000000000000000000000000000000000"
@@ -272,25 +272,25 @@ func convertPBBlockToRawBlock(pbBlock *pb.Block) common.RawBlock {
 	rawBlock["gasUsed"] = "0x0"
 	rawBlock["baseFeePerGas"] = "0x0"
 	rawBlock["withdrawalsRoot"] = "0x0000000000000000000000000000000000000000000000000000000000000000"
-
+	
 	return rawBlock
 }
-
 // convertPBTransactionDataToRawTransaction converts a protobuf TransactionData to common.RawTransaction format
 func convertPBTransactionDataToRawTransaction(pbTransactionData *pb.TransactionData, blockHash string, blockNumber uint64, blockTimestamp uint64, txIndex uint64) map[string]interface{} {
 	rawTransaction := make(map[string]interface{})
 	// Convert transaction hash
 	rawTransaction["hash"] = pbTransactionData.TxHash
-
+	
 	// Convert addresses
 	rawTransaction["from"] = pbTransactionData.Sender
 	rawTransaction["to"] = pbTransactionData.Recipient
-
+	
 	// Convert amount to hex format
 	rawTransaction["value"] = pbTransactionData.Amount
-
+	
 	// Convert nonce to hex format
 	rawTransaction["nonce"] = fmt.Sprintf("%x", pbTransactionData.Nonce)
+
 
 	rawTransaction["transactionTimestamp"] = fmt.Sprintf("%x", pbTransactionData.Timestamp)
 
@@ -303,7 +303,7 @@ func convertPBTransactionDataToRawTransaction(pbTransactionData *pb.TransactionD
 	rawTransaction["transactionIndex"] = txIndex
 	status := getStatus(pbTransactionData.Status)
 	rawTransaction["status"] = &status
-
+	
 	// Set default values for Ethereum-compatible fields
 	rawTransaction["gas"] = "0x0"
 	rawTransaction["gasPrice"] = "0x0"
@@ -318,7 +318,7 @@ func convertPBTransactionDataToRawTransaction(pbTransactionData *pb.TransactionD
 	rawTransaction["blobVersionedHashes"] = []string{}
 	rawTransaction["accessList"] = nil
 	rawTransaction["authorizationList"] = nil
-
+	
 	return rawTransaction
 }
 func getStatus(status pb.TransactionStatus) uint64 {
