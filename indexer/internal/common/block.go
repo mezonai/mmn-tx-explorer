@@ -30,7 +30,6 @@ type Block struct {
 	BaseFeePerGas    uint64    `json:"base_fee_per_gas" ch:"base_fee_per_gas"`
 	Sign             int8      `json:"sign" ch:"sign"`
 	InsertTimestamp  time.Time `json:"insert_timestamp" ch:"insert_timestamp"`
-	IsMissing        bool      `json:"is_missing" ch:"is_missing"`
 }
 
 // BlockModel represents a simplified Block structure for Swagger documentation

@@ -1374,13 +1374,12 @@ func (p *PostgresConnector) insertBlocks(blocks []common.Block) error {
 	}
 
 	valueStrings := make([]string, 0, len(blocks))
-	valueArgs := make([]interface{}, 0, len(blocks)*23)
+	valueArgs := make([]interface{}, 0, len(blocks)*22)
 
 	for i, block := range blocks {
-		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
-			i*23+1, i*23+2, i*23+3, i*23+4, i*23+5, i*23+6, i*23+7, i*23+8, i*23+9, i*23+10,
-			i*23+11, i*23+12, i*23+13, i*23+14, i*23+15, i*23+16, i*23+17, i*23+18, i*23+19, i*23+20,
-			i*23+21, i*23+22, i*23+23))
+		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
+			i*22+1, i*22+2, i*22+3, i*22+4, i*22+5, i*22+6, i*22+7, i*22+8, i*22+9, i*22+10,
+			i*22+11, i*22+12, i*22+13, i*22+14, i*22+15, i*22+16, i*22+17, i*22+18, i*22+19, i*22+20, i*22+21, i*22+22))
 		valueArgs = append(valueArgs,
 			bigIntToString(block.ChainId),
 			bigIntToString(block.Number),
@@ -1404,11 +1403,10 @@ func (p *PostgresConnector) insertBlocks(blocks []common.Block) error {
 			bigIntToString(block.GasUsed),
 			block.WithdrawalsRoot,
 			block.BaseFeePerGas,
-			block.IsMissing,
 		)
 	}
 
-	query := fmt.Sprintf(`INSERT INTO blocks (chain_id, block_number, block_timestamp, hash, parent_hash, sha3_uncles, nonce, mix_hash, miner, state_root, transactions_root, receipts_root, logs_bloom, size, extra_data, difficulty, total_difficulty, transaction_count, gas_limit, gas_used, withdrawals_root, base_fee_per_gas, is_missing)
+	query := fmt.Sprintf(`INSERT INTO blocks (chain_id, block_number, block_timestamp, hash, parent_hash, sha3_uncles, nonce, mix_hash, miner, state_root, transactions_root, receipts_root, logs_bloom, size, extra_data, difficulty, total_difficulty, transaction_count, gas_limit, gas_used, withdrawals_root, base_fee_per_gas)
 	          VALUES %s
 	          ON CONFLICT (chain_id, block_number) 
 	          DO UPDATE SET 
@@ -1432,7 +1430,6 @@ func (p *PostgresConnector) insertBlocks(blocks []common.Block) error {
 	              gas_used = EXCLUDED.gas_used,
 	              withdrawals_root = EXCLUDED.withdrawals_root,
 	              base_fee_per_gas = EXCLUDED.base_fee_per_gas,
-	              is_missing = EXCLUDED.is_missing,
 	              updated_at = NOW()`, strings.Join(valueStrings, ","))
 
 	_, err := p.db.Exec(query, valueArgs...)

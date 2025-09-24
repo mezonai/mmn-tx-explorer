@@ -8,6 +8,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"strings"
 
 	"github.com/rs/zerolog/log"
 	config "github.com/thirdweb-dev/indexer/configs"
@@ -373,40 +374,69 @@ func (c *Committer) getSequentialBlockData(ctx context.Context, blockNumbers []*
 		if c.workMode == WorkModeLive {
 			missingCount := new(big.Int).Sub(blocksData[0].Block.Number, blockNumbers[0]).Int64()
 			if missingCount > 0 {
-				var sequentialBlockData []common.BlockData
-				chainID := c.rpc.GetChainID()
+				// Verify the suspected missing range with a lightweight RPC call that returns block headers.
+				// Only create placeholders for blocks explicitly returned as "not found"; for transient errors, skip committing this batch.
+				verifyNumbers := make([]*big.Int, 0, missingCount)
+				startBn := new(big.Int).Set(blockNumbers[0])
 				for i := int64(0); i < missingCount; i++ {
-					bn := new(big.Int).Add(blockNumbers[0], big.NewInt(i))
-					placeholder := common.Block{
-						ChainId:          chainID,
-						Number:           bn,
-						Hash:             "",
-						ParentHash:       "",
-						Timestamp:        time.Now(),
-						Nonce:            "",
-						Sha3Uncles:       "",
-						MixHash:          "",
-						Miner:            "",
-						StateRoot:        "",
-						TransactionsRoot: "",
-						ReceiptsRoot:     "",
-						LogsBloom:        "",
-						Size:             0,
-						ExtraData:        "",
-						Difficulty:       big.NewInt(0),
-						TotalDifficulty:  big.NewInt(0),
-						TransactionCount: 0,
-						GasLimit:         big.NewInt(0),
-						GasUsed:          big.NewInt(0),
-						WithdrawalsRoot:  "",
-						BaseFeePerGas:    0,
-						Sign:             0,
-						InsertTimestamp:  time.Now(),
-						IsMissing:        true,
-					}
-					sequentialBlockData = append(sequentialBlockData, common.BlockData{Block: placeholder, Transactions: []common.Transaction{}, Logs: []common.Log{}, Traces: []common.Trace{}})
+					verifyNumbers = append(verifyNumbers, new(big.Int).Add(startBn, big.NewInt(i)))
 				}
 
+				verifyResults := c.rpc.GetBlocks(ctx, verifyNumbers)
+				if len(verifyResults) != len(verifyNumbers) {
+					// Unexpected RPC response shape; don't risk mass placeholders
+					log.Warn().Msgf("Verification result size mismatch (%d vs %d), deferring commit to avoid false missing blocks", len(verifyResults), len(verifyNumbers))
+					return nil, nil
+				}
+
+				var sequentialBlockData []common.BlockData
+				chainID := c.rpc.GetChainID()
+
+				for i := 0; i < len(verifyNumbers); i++ {
+					bn := verifyNumbers[i]
+					res := verifyResults[i]
+					if res.Error == nil && res.Data.Number != nil && res.Data.Number.Cmp(bn) == 0 {
+						// We have the block; include it as part of the sequential data
+						sequentialBlockData = append(sequentialBlockData, common.BlockData{Block: res.Data, Transactions: []common.Transaction{}, Logs: []common.Log{}, Traces: []common.Trace{}})
+						continue
+					}
+					if res.Error != nil && strings.Contains(strings.ToLower(res.Error.Error()), "not found") {
+						// Confirmed missing
+						placeholder := common.Block{
+							ChainId:          chainID,
+							Number:           bn,
+							Hash:             "",
+							ParentHash:       "",
+							Timestamp:        time.Now(),
+							Nonce:            "",
+							Sha3Uncles:       "",
+							MixHash:          "",
+							Miner:            "",
+							StateRoot:        "",
+							TransactionsRoot: "",
+							ReceiptsRoot:     "",
+							LogsBloom:        "",
+							Size:             0,
+							ExtraData:        "",
+							Difficulty:       big.NewInt(0),
+							TotalDifficulty:  big.NewInt(0),
+							TransactionCount: 0,
+							GasLimit:         big.NewInt(0),
+							GasUsed:          big.NewInt(0),
+							WithdrawalsRoot:  "",
+							BaseFeePerGas:    0,
+							Sign:             0,
+							InsertTimestamp:  time.Now(),
+						}
+						sequentialBlockData = append(sequentialBlockData, common.BlockData{Block: placeholder, Transactions: []common.Transaction{}, Logs: []common.Log{}, Traces: []common.Trace{}})
+						continue
+					}
+					// Any other error might be transient; avoid generating placeholders for safety
+					log.Warn().Err(res.Error).Msgf("Transient error verifying block %s; deferring commit to avoid false missing sequence", bn.String())
+					return nil, nil
+				}
+
+				// Now append the fetched blocks, ensuring continuity
 				expected := new(big.Int).Set(blocksData[0].Block.Number)
 				sequentialBlockData = append(sequentialBlockData, blocksData[0])
 				expected.Add(expected, big.NewInt(1))
