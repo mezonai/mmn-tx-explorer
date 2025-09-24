@@ -187,7 +187,7 @@ func (c *ClickHouseConnector) insertTransactions(txs []common.Transaction, opt I
 	columns := []string{
 		"chain_id", "hash", "nonce", "block_hash", "block_number", "block_timestamp", "transaction_index", "from_address", "to_address", "value", "gas",
 		"gas_price", "data", "function_selector", "max_fee_per_gas", "max_priority_fee_per_gas", "max_fee_per_blob_gas", "blob_versioned_hashes", "transaction_type", "r", "s", "v", "access_list",
-		"authorization_list", "contract_address", "gas_used", "cumulative_gas_used", "effective_gas_price", "blob_gas_used", "blob_gas_price", "logs_bloom", "status", "sign",
+		"authorization_list", "contract_address", "gas_used", "cumulative_gas_used", "effective_gas_price", "blob_gas_used", "blob_gas_price", "logs_bloom", "status", "extra_info", "sign",
 	}
 	if opt.AsDeleted {
 		columns = append(columns, "insert_timestamp")
@@ -239,6 +239,7 @@ func (c *ClickHouseConnector) insertTransactions(txs []common.Transaction, opt I
 				tx.BlobGasPrice,
 				tx.LogsBloom,
 				tx.Status,
+				tx.ExtraInfo,
 				func() int8 {
 					if tx.Sign == -1 || opt.AsDeleted {
 						return -1

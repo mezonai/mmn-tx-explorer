@@ -65,7 +65,7 @@ func Initialize() (IRPCClient, error) {
 		mmnService:     mmnService,
 		blocksPerRequest: GetBlockPerRequestConfig(),
 	}
-	
+
 	rpc.chainID = big.NewInt(1337)
 	return IRPCClient(rpc), nil
 }
@@ -75,89 +75,89 @@ func InitializeSimpleRPCWithUrl(url string) (IRPCClient, error) {
 	if err != nil {
 		log.Warn().Err(err).Msg("Failed to initialize MMNGrpcService, continuing without it")
 	}
-	
+
 	rpc := &Client{
 		mmnService: mmnService,
 	}
-	
+
 	rpc.chainID = big.NewInt(1337)
 	return IRPCClient(rpc), nil
 }
 
 func (rpc *Client) GetFullBlocks(ctx context.Context, blockNumbers []*big.Int) []GetFullBlockResult {
-    if rpc.mmnService == nil {
-        return []GetFullBlockResult{{
-            Error: fmt.Errorf(" MMNGrpcService not available"),
-        }}
-    }
+	if rpc.mmnService == nil {
+		return []GetFullBlockResult{{
+			Error: fmt.Errorf(" MMNGrpcService not available"),
+		}}
+	}
 
-    nums := make([]uint64, len(blockNumbers))
-    for i, n := range blockNumbers {
-        nums[i] = n.Uint64()
-    }
+	nums := make([]uint64, len(blockNumbers))
+	for i, n := range blockNumbers {
+		nums[i] = n.Uint64()
+	}
 
-    res, err := rpc.mmnService.GetBlockByNumber(ctx, nums)
-    if err != nil {
-        return []GetFullBlockResult{{
-            Error: fmt.Errorf("failed to get full block: %v", err),
-        }}
-    }
+	res, err := rpc.mmnService.GetBlockByNumber(ctx, nums)
+	if err != nil {
+		return []GetFullBlockResult{{
+			Error: fmt.Errorf("failed to get full block: %v", err),
+		}}
+	}
 
-    rawBlocks := make([]RPCFetchBatchResult[*big.Int, common.RawBlock], len(blockNumbers))
-    
-    for i, blk := range res.Blocks {
-        if blk != nil {
-            rawBlock := convertPBBlockToRawBlock(blk)
-            rawBlocks[i] = RPCFetchBatchResult[*big.Int, common.RawBlock]{
-                Key:    blockNumbers[i],
-                Result: rawBlock,
-                Error:  nil,
-            }
-        } else {
-            log.Warn().
-                Int("index", i).
-                Str("requestedBlock", blockNumbers[i].String()).
-                Msg("GetFullBlocks: received nil block from MMN service")
-            rawBlocks[i] = RPCFetchBatchResult[*big.Int, common.RawBlock]{
-                Key:    blockNumbers[i],
-                Result: nil,
-                Error:  fmt.Errorf("block not found"),
-            }
-        }
-    }
-    
-    results := SerializeFullBlocks(rpc.chainID, rawBlocks, nil, nil, nil)
+	rawBlocks := make([]RPCFetchBatchResult[*big.Int, common.RawBlock], len(blockNumbers))
 
-    // Diagnostics: log entries that are missing BlockNumber or have errors
-    for idx, r := range results {
-        if r.Error != nil {
-            log.Warn().
-                Int("idx", idx).
-                Str("requestedBlock", rawBlocks[idx].Key.String()).
-                Err(r.Error).
-                Msg("GetFullBlocks: result has error")
-        }
-        if r.BlockNumber == nil {
-            log.Warn().
-                Int("idx", idx).
-                Str("requestedBlock", rawBlocks[idx].Key.String()).
-                Msg("GetFullBlocks: result has nil BlockNumber")
-        }
-    }
+	for i, blk := range res.Blocks {
+		if blk != nil {
+			rawBlock := convertPBBlockToRawBlock(blk)
+			rawBlocks[i] = RPCFetchBatchResult[*big.Int, common.RawBlock]{
+				Key:    blockNumbers[i],
+				Result: rawBlock,
+				Error:  nil,
+			}
+		} else {
+			log.Warn().
+				Int("index", i).
+				Str("requestedBlock", blockNumbers[i].String()).
+				Msg("GetFullBlocks: received nil block from MMN service")
+			rawBlocks[i] = RPCFetchBatchResult[*big.Int, common.RawBlock]{
+				Key:    blockNumbers[i],
+				Result: nil,
+				Error:  fmt.Errorf("block not found"),
+			}
+		}
+	}
 
-    return results
+	results := SerializeFullBlocks(rpc.chainID, rawBlocks, nil, nil, nil)
+
+	// Diagnostics: log entries that are missing BlockNumber or have errors
+	for idx, r := range results {
+		if r.Error != nil {
+			log.Warn().
+				Int("idx", idx).
+				Str("requestedBlock", rawBlocks[idx].Key.String()).
+				Err(r.Error).
+				Msg("GetFullBlocks: result has error")
+		}
+		if r.BlockNumber == nil {
+			log.Warn().
+				Int("idx", idx).
+				Str("requestedBlock", rawBlocks[idx].Key.String()).
+				Msg("GetFullBlocks: result has nil BlockNumber")
+		}
+	}
+
+	return results
 }
 
 func (rpc *Client) GetLatestBlockNumber(ctx context.Context) (*big.Int, error) {
 	if rpc.mmnService == nil {
 		return nil, fmt.Errorf("MMNGrpcService not available")
 	}
-	
+
 	res, err := rpc.mmnService.GetBlockNumber(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest block number: %v", err)
 	}
-	
+
 	log.Debug().Uint64("blockNumber", res.BlockNumber).Msg("Got latest block number from MMN")
 	return new(big.Int).SetUint64(res.BlockNumber), nil
 }
@@ -199,7 +199,7 @@ func (rpc *Client) HasCode(ctx context.Context, address string) (bool, error) {
 
 func (rpc *Client) GetBlocks(ctx context.Context, blockNumbers []*big.Int) []GetBlocksResult {
 	fullBlocks := rpc.GetFullBlocks(ctx, blockNumbers)
-	
+
 	results := make([]GetBlocksResult, len(fullBlocks))
 	for i, fullBlock := range fullBlocks {
 		results[i] = GetBlocksResult{
@@ -208,7 +208,7 @@ func (rpc *Client) GetBlocks(ctx context.Context, blockNumbers []*big.Int) []Get
 			Data:        fullBlock.Data.Block,
 		}
 	}
-	
+
 	return results
 }
 
@@ -226,36 +226,36 @@ func (rpc *Client) GetTransactions(ctx context.Context, txHashes []string) []Get
 // convertPBBlockToRawBlock converts a protobuf Block to common.RawBlock format
 func convertPBBlockToRawBlock(pbBlock *pb.Block) common.RawBlock {
 	rawBlock := make(common.RawBlock)
-	
+
 	// Convert slot to block number
 	rawBlock["number"] = fmt.Sprintf("%x", pbBlock.Slot)
-	
+
 	// Convert hash
 	rawBlock["hash"] = fmt.Sprintf("%x", pbBlock.Hash)
 	rawBlock["parentHash"] = fmt.Sprintf("%x", pbBlock.PrevHash)
 
 	// Convert timestamp
 	rawBlock["timestamp"] = fmt.Sprintf("%x", pbBlock.Timestamp)
-	
+
 	// Convert miner/author
 	rawBlock["miner"] = pbBlock.LeaderId
-	
+
 	// Convert transactions from TransactionData
 	var transactions []interface{}
 	if pbBlock.TransactionData != nil {
 		for i, txData := range pbBlock.TransactionData {
 			rawTx := convertPBTransactionDataToRawTransaction(
-				txData, 
-				fmt.Sprintf("%x", pbBlock.Hash), 
-				pbBlock.Slot, 
-				pbBlock.Timestamp, 
+				txData,
+				fmt.Sprintf("%x", pbBlock.Hash),
+				pbBlock.Slot,
+				pbBlock.Timestamp,
 				uint64(i),
 			)
 			transactions = append(transactions, rawTx)
 		}
 	}
 	rawBlock["transactions"] = transactions
-	
+
 	// Set default values for Ethereum-compatible fields
 	rawBlock["nonce"] = "0x0"
 	rawBlock["sha3Uncles"] = "0x0000000000000000000000000000000000000000000000000000000000000000"
@@ -272,7 +272,7 @@ func convertPBBlockToRawBlock(pbBlock *pb.Block) common.RawBlock {
 	rawBlock["gasUsed"] = "0x0"
 	rawBlock["baseFeePerGas"] = "0x0"
 	rawBlock["withdrawalsRoot"] = "0x0000000000000000000000000000000000000000000000000000000000000000"
-	
+
 	return rawBlock
 }
 
@@ -281,28 +281,29 @@ func convertPBTransactionDataToRawTransaction(pbTransactionData *pb.TransactionD
 	rawTransaction := make(map[string]interface{})
 	// Convert transaction hash
 	rawTransaction["hash"] = pbTransactionData.TxHash
-	
+
 	// Convert addresses
 	rawTransaction["from"] = pbTransactionData.Sender
 	rawTransaction["to"] = pbTransactionData.Recipient
-	
+
 	// Convert amount to hex format
 	rawTransaction["value"] = pbTransactionData.Amount
-	
+
 	// Convert nonce to hex format
 	rawTransaction["nonce"] = fmt.Sprintf("%x", pbTransactionData.Nonce)
-	
 
 	rawTransaction["transactionTimestamp"] = fmt.Sprintf("%x", pbTransactionData.Timestamp)
 
 	rawTransaction["textData"] = pbTransactionData.TextData
+
+	rawTransaction["extra_info"] = pbTransactionData.ExtraInfo
 	// Block information
 	rawTransaction["blockHash"] = blockHash
 	rawTransaction["blockNumber"] = fmt.Sprintf("%x", blockNumber)
 	rawTransaction["transactionIndex"] = txIndex
 	status := getStatus(pbTransactionData.Status)
 	rawTransaction["status"] = &status
-	
+
 	// Set default values for Ethereum-compatible fields
 	rawTransaction["gas"] = "0x0"
 	rawTransaction["gasPrice"] = "0x0"
@@ -317,7 +318,7 @@ func convertPBTransactionDataToRawTransaction(pbTransactionData *pb.TransactionD
 	rawTransaction["blobVersionedHashes"] = []string{}
 	rawTransaction["accessList"] = nil
 	rawTransaction["authorizationList"] = nil
-	
+
 	return rawTransaction
 }
 func getStatus(status pb.TransactionStatus) uint64 {
