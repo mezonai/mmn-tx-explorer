@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+
 	"github.com/rs/zerolog/log"
 	config "github.com/thirdweb-dev/indexer/configs"
 	"github.com/thirdweb-dev/indexer/internal/common"
@@ -302,7 +303,7 @@ func convertPBTransactionDataToRawTransaction(pbTransactionData *pb.TransactionD
 	rawTransaction["blockHash"] = blockHash
 	rawTransaction["blockNumber"] = fmt.Sprintf("%x", blockNumber)
 	rawTransaction["transactionIndex"] = txIndex
-	status := getStatus(pbTransactionData.Status)
+	status := uint64(pbTransactionData.Status)
 	rawTransaction["status"] = &status
 	
 	// Set default values for Ethereum-compatible fields
@@ -322,16 +323,4 @@ func convertPBTransactionDataToRawTransaction(pbTransactionData *pb.TransactionD
 	
 	return rawTransaction
 }
-func getStatus(status pb.TransactionStatus) uint64 {
-	switch status {
-	case pb.TransactionStatus_PENDING:
-		return 0
-	case pb.TransactionStatus_CONFIRMED:
-		return 1
-	case pb.TransactionStatus_FINALIZED:
-		return 2
-	case pb.TransactionStatus_FAILED:
-		return 3
-	}
-	return 4
-}
+
