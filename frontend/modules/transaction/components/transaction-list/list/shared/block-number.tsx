@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ROUTES } from '@/configs/routes.config';
 import { cn } from '@/lib/utils';
+import { TEXT_CONSTANT } from '@/constant';
 
 interface BlockNumberProps {
   blockNumber: number | string;
@@ -15,7 +16,7 @@ interface BlockNumberSkeletonProps {
 }
 
 export const BlockNumber = ({ blockNumber, className }: BlockNumberProps) => {
-  const isPending = blockNumber === 'N/A';
+  const isPending = blockNumber === TEXT_CONSTANT.NA;
   const buttonVariant = isPending ? 'disabled' : 'link';
   return (
     <Button
@@ -23,7 +24,7 @@ export const BlockNumber = ({ blockNumber, className }: BlockNumberProps) => {
       className={cn('text-brand-secondary-700 size-fit p-0 text-sm font-semibold', className)}
       asChild
     >
-      {isPending ? <span>{blockNumber}</span> : <Link href={ROUTES.BLOCK(blockNumber as number)}>{blockNumber}</Link>}
+      {isPending ? <span>{blockNumber}</span> : <Link href={ROUTES.BLOCK(Number(blockNumber))}>{blockNumber}</Link>}
     </Button>
   );
 };

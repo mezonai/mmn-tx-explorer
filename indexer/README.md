@@ -17,7 +17,7 @@ cp configs/secrets.example.yml configs/secrets.yml
 
 change mmnGrpcUrl in config.yml with node url
 # 3. (Optional) Start dependencies with Docker Compose
-docker-compose up -d clickhouse
+docker-compose up -d postgres
 
 # 4. Apply ClickHouse migrations
 cat internal/tools/clickhouse/*.sql | docker exec -i <clickhouse-container> clickhouse-client --user admin --password password

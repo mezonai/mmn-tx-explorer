@@ -40,7 +40,7 @@ var defaultTransactionFields = []string{
 	"data", "function_selector", "max_fee_per_gas", "max_priority_fee_per_gas",
 	"max_fee_per_blob_gas", "blob_versioned_hashes", "transaction_type", "r", "s", "v",
 	"access_list", "authorization_list", "contract_address", "gas_used", "cumulative_gas_used",
-	"effective_gas_price", "blob_gas_used", "blob_gas_price", "logs_bloom", "status", "transaction_timestamp", "text_data",
+	"effective_gas_price", "blob_gas_used", "blob_gas_price", "logs_bloom", "status", "transaction_timestamp", "text_data", "extra_info",
 }
 
 var defaultLogFields = []string{
@@ -1135,7 +1135,7 @@ func (p *PostgresConnector) GetFullBlockData(chainId *big.Int, blockNumbers []*b
 		max_fee_per_gas, max_priority_fee_per_gas, max_fee_per_blob_gas, blob_versioned_hashes,
 		transaction_type, r, s, v, access_list, authorization_list, contract_address, gas_used,
 		cumulative_gas_used, effective_gas_price, blob_gas_used, blob_gas_price, logs_bloom, status,
-		transaction_timestamp, text_data
+		transaction_timestamp, text_data, extra_info
 		FROM transactions 
 		WHERE chain_id = $1 AND block_number IN (%s)
 		ORDER BY block_number ASC, transaction_index ASC`, strings.Join(blockNumberStrs, ","))
@@ -1155,6 +1155,7 @@ func (p *PostgresConnector) GetFullBlockData(chainId *big.Int, blockNumbers []*b
 		var blobVersionedHashesStr string
 		var gasUsed, cumulativeGasUsed, blobGasUsed *uint64
 		var status *uint64
+		var extraInfo sql.NullString
 
 		err := txRows.Scan(&chainIdStr, &tx.Hash, &tx.Nonce, &tx.BlockHash, &blockNumberStr, &timestamp,
 			&tx.TransactionIndex, &tx.FromAddress, &tx.ToAddress, &valueStr, &tx.Gas, &gasPriceStr,
@@ -1162,7 +1163,7 @@ func (p *PostgresConnector) GetFullBlockData(chainId *big.Int, blockNumbers []*b
 			&maxFeePerBlobGasStr, &blobVersionedHashesStr, &tx.TransactionType, &rStr, &sStr, &vStr,
 			&tx.AccessListJson, &tx.AuthorizationListJson, &tx.ContractAddress, &gasUsed, &cumulativeGasUsed,
 			&effectiveGasPriceStr, &blobGasUsed, &blobGasPriceStr, &tx.LogsBloom, &status,
-			&transactionTimestamp, &tx.TextData)
+			&transactionTimestamp, &tx.TextData, &extraInfo)
 		if err != nil {
 			return nil, err
 		}
@@ -1187,6 +1188,12 @@ func (p *PostgresConnector) GetFullBlockData(chainId *big.Int, blockNumbers []*b
 		tx.CumulativeGasUsed = cumulativeGasUsed
 		tx.BlobGasUsed = blobGasUsed
 		tx.Status = status
+
+		if extraInfo.Valid {
+			tx.ExtraInfo = extraInfo.String
+		} else {
+			tx.ExtraInfo = ""
+		}
 
 		if blockData, exists := blockDataMap[blockNumberStr]; exists {
 			blockData.Transactions = append(blockData.Transactions, tx)
@@ -1442,14 +1449,14 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 	}
 
 	valueStrings := make([]string, 0, len(transactions))
-	valueArgs := make([]interface{}, 0, len(transactions)*34)
+	valueArgs := make([]interface{}, 0, len(transactions)*35)
 
 	for i, tx := range transactions {
-		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
-			i*34+1, i*34+2, i*34+3, i*34+4, i*34+5, i*34+6, i*34+7, i*34+8, i*34+9, i*34+10,
-			i*34+11, i*34+12, i*34+13, i*34+14, i*34+15, i*34+16, i*34+17, i*34+18, i*34+19, i*34+20,
-			i*34+21, i*34+22, i*34+23, i*34+24, i*34+25, i*34+26, i*34+27, i*34+28, i*34+29, i*34+30,
-			i*34+31, i*34+32, i*34+33, i*34+34))
+		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
+			i*35+1, i*35+2, i*35+3, i*35+4, i*35+5, i*35+6, i*35+7, i*35+8, i*35+9, i*35+10,
+			i*35+11, i*35+12, i*35+13, i*35+14, i*35+15, i*35+16, i*35+17, i*35+18, i*35+19, i*35+20,
+			i*35+21, i*35+22, i*35+23, i*35+24, i*35+25, i*35+26, i*35+27, i*35+28, i*35+29, i*35+30,
+			i*35+31, i*35+32, i*35+33, i*35+34, i*35+35))
 		
 		// Convert arrays to PostgreSQL format
 		blobHashes := make([]string, len(tx.BlobVersionedHashes))
@@ -1492,6 +1499,7 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 			tx.Status,
 			tx.TransactionTimestamp,
 			tx.TextData,
+			tx.ExtraInfo,
 		)
 		
 		// Refresh wallet data from MMN service (non-blocking)
@@ -1502,7 +1510,7 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 		}()
 	}
 
-	query := fmt.Sprintf(`INSERT INTO transactions (chain_id, hash, nonce, block_hash, block_number, block_timestamp, transaction_index, from_address, to_address, value, gas, gas_price, data, function_selector, max_fee_per_gas, max_priority_fee_per_gas, max_fee_per_blob_gas, blob_versioned_hashes, transaction_type, r, s, v, access_list, authorization_list, contract_address, gas_used, cumulative_gas_used, effective_gas_price, blob_gas_used, blob_gas_price, logs_bloom, status, transaction_timestamp, text_data)
+	query := fmt.Sprintf(`INSERT INTO transactions (chain_id, hash, nonce, block_hash, block_number, block_timestamp, transaction_index, from_address, to_address, value, gas, gas_price, data, function_selector, max_fee_per_gas, max_priority_fee_per_gas, max_fee_per_blob_gas, blob_versioned_hashes, transaction_type, r, s, v, access_list, authorization_list, contract_address, gas_used, cumulative_gas_used, effective_gas_price, blob_gas_used, blob_gas_price, logs_bloom, status, transaction_timestamp, text_data, extra_info)
 	          VALUES %s
 	          ON CONFLICT (chain_id, block_number, hash) 
 	          DO UPDATE SET 
@@ -1537,6 +1545,7 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 	              status = EXCLUDED.status,
 	              transaction_timestamp = EXCLUDED.transaction_timestamp,
 	              text_data = EXCLUDED.text_data,
+	              extra_info = EXCLUDED.extra_info,
 	              updated_at = NOW()`, strings.Join(valueStrings, ","))
 
 	_, err := p.db.Exec(query, valueArgs...)
@@ -1609,6 +1618,7 @@ func (p *PostgresConnector) scanTransaction(rows *sql.Rows, tx *common.Transacti
 	var blobVersionedHashesStr string
 	var gasUsed, cumulativeGasUsed, blobGasUsed *uint64
 	var status *uint64
+	var extraInfo sql.NullString
 
 	err := rows.Scan(
 		&chainIdStr, &tx.Hash, &tx.Nonce, &tx.BlockHash, &blockNumberStr, &timestamp,
@@ -1617,7 +1627,7 @@ func (p *PostgresConnector) scanTransaction(rows *sql.Rows, tx *common.Transacti
 		&maxFeePerBlobGasStr, &blobVersionedHashesStr, &tx.TransactionType, &rStr, &sStr, &vStr,
 		&tx.AccessListJson, &tx.AuthorizationListJson, &tx.ContractAddress, &gasUsed, &cumulativeGasUsed,
 		&effectiveGasPriceStr, &blobGasUsed, &blobGasPriceStr, &tx.LogsBloom, &status,
-		&transactionTimestamp, &tx.TextData,
+		&transactionTimestamp, &tx.TextData, &extraInfo,
 	)
 	if err != nil {
 		return err
@@ -1699,6 +1709,12 @@ func (p *PostgresConnector) scanTransaction(rows *sql.Rows, tx *common.Transacti
 	tx.CumulativeGasUsed = cumulativeGasUsed
 	tx.BlobGasUsed = blobGasUsed
 	tx.Status = status
+
+	if extraInfo.Valid {
+		tx.ExtraInfo = extraInfo.String
+	} else {
+		tx.ExtraInfo = ""
+	}
 
 	return nil
 }
@@ -1826,12 +1842,13 @@ func (p *PostgresConnector) insertWallet(ctx context.Context, address string, no
 		balanceBig = big.NewInt(0)
 	}
 	
-	query := `INSERT INTO wallet (address, account_nonce, balance, updated_at, created_at) 
-	          VALUES ($1, $2, $3, NOW(), NOW())
+	query := `INSERT INTO wallet (address, account_nonce, balance, transaction_count, updated_at, created_at) 
+	          VALUES ($1, $2, $3, 1, NOW(), NOW())
 	          ON CONFLICT (address) 
 	          DO UPDATE SET 
 	              account_nonce = EXCLUDED.account_nonce,
 	              balance = EXCLUDED.balance,
+				  transaction_count = wallet.transaction_count + 1,
 	              updated_at = NOW()`
 	
 	_, err := p.db.ExecContext(ctx, query, address, nonce, bigIntToString(balanceBig))

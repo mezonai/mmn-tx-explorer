@@ -22,8 +22,10 @@ services:
       dockerfile: Dockerfile
     command: ["orchestrator"]
     depends_on:
-      - postgres
-      - indexer-migrate-postgres
+      postgres:
+        condition: service_healthy
+      indexer-migrate-postgres:
+        condition: service_completed_successfully
     volumes:
       - ./indexer/configs:/app/configs:ro
       - ./logs:/app/logs
@@ -35,9 +37,12 @@ services:
       dockerfile: Dockerfile
     command: ["api"]
     depends_on:
-      - postgres
-      - indexer-migrate-postgres
-      - indexer-orchestrator
+      postgres:
+        condition: service_healthy
+      indexer-migrate-postgres:
+        condition: service_completed_successfully
+      indexer-orchestrator:
+        condition: service_started
     ports:
       - "${INDEXER_API_PORT:-8080}:3000"
     volumes:
