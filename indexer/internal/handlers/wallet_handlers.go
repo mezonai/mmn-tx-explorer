@@ -1,14 +1,14 @@
 package handlers
 
 import (
-	"fmt"
-	"math"
-	"strings"
+    "fmt"
+    "math"
+    "strings"
 
-	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
-	"github.com/thirdweb-dev/indexer/api"
-	"github.com/thirdweb-dev/indexer/internal/storage"
+    "github.com/gin-gonic/gin"
+    "github.com/rs/zerolog/log"
+    "github.com/thirdweb-dev/indexer/api"
+    "github.com/thirdweb-dev/indexer/internal/storage"
 )
 
 // GetWallets returns wallet list with sorting and pagination (default sort by balance desc)
