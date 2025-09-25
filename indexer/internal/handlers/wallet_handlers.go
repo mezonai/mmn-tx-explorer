@@ -130,13 +130,12 @@ func GetWalletDetail(c *gin.Context) {
         api.InternalErrorHandler(c)
         return
     }
-
     // Build query filter to fetch a single wallet row
     qf := storage.QueryFilter{
         FilterParams:        map[string]string{"address": address},
         Limit:               1,
         ForceConsistentData: queryParams.ForceConsistentData,
-        Aggregates:          []string{"address", "account_nonce", "balance"},
+        Aggregates:          []string{"address", "account_nonce", "balance", "transaction_count"},
     }
 
     result, err := mainStorage.GetAggregations("wallet", qf)
@@ -152,17 +151,6 @@ func GetWalletDetail(c *gin.Context) {
 
     // Prepare base response data from wallet table
     resp := WalletDetailResponse{ Data: result.Aggregates[0] }
-
-    // Count all transactions involving this wallet
-    txCountQf := storage.QueryFilter{
-        WalletAddress:       address,
-        ForceConsistentData: queryParams.ForceConsistentData,
-    }
-    if txCount, err := mainStorage.GetCount("transactions", txCountQf); err == nil {
-        resp.Data["transaction_count"] = int(txCount)
-    } else {
-        log.Error().Err(err).Str("address", address).Msg("Error counting wallet transactions")
-    }
 
     // Fetch latest transaction timestamp for this wallet (from OR to)
     txQf := storage.QueryFilter{
