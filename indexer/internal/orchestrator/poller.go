@@ -85,7 +85,7 @@ func NewPoller(rpc rpc.IRPCClient, storage storage.IStorage, opts ...PollerOptio
 		if err != nil || highestBlockFromStaging == nil || highestBlockFromStaging.Sign() <= 0 {
 			log.Warn().Err(err).Msgf("No last polled block found, setting to %s", lastPolledBlock.String())
 		} else {
-			log.Debug().Msgf("Last polled block found in staging: %s", lastPolledBlock.String())
+			log.Debug().Msgf("Last polled block found in staging: %s", highestBlockFromStaging.String())
 			if highestBlockFromStaging.Cmp(pollFromBlock) > 0 {
 				log.Debug().Msgf("Staging block %s is higher than configured start block %s", highestBlockFromStaging.String(), pollFromBlock.String())
 				lastPolledBlock = highestBlockFromStaging
@@ -229,7 +229,9 @@ func (p *Poller) PollWithoutSaving(ctx context.Context, blockNumbers []*big.Int)
 	}
 	endBlock := blockNumbers[len(blockNumbers)-1]
 	if endBlock != nil {
+		p.lastPolledBlockMutex.Lock()
 		p.lastPolledBlock = endBlock
+		p.lastPolledBlockMutex.Unlock()
 	}
 	log.Debug().Msgf("Polling %d blocks starting from %s to %s", len(blockNumbers), blockNumbers[0], endBlock)
 
@@ -295,7 +297,13 @@ func (p *Poller) StageResults(blockData []common.BlockData, failedResults []rpc.
 }
 
 func (p *Poller) reachedPollLimit(blockNumber *big.Int) bool {
-	return blockNumber == nil || (p.pollUntilBlock.Sign() > 0 && blockNumber.Cmp(p.pollUntilBlock) >= 0)
+	if blockNumber == nil {
+		return true
+	}
+	if p.pollUntilBlock == nil || p.pollUntilBlock.Sign() <= 0 {
+		return false
+	}
+	return blockNumber.Cmp(p.pollUntilBlock) >= 0
 }
 
 func (p *Poller) getNextBlockRange(ctx context.Context) ([]*big.Int, error) {
@@ -303,9 +311,12 @@ func (p *Poller) getNextBlockRange(ctx context.Context) ([]*big.Int, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Debug().Msgf("Last polled block: %s", p.lastPolledBlock.String())
+	p.lastPolledBlockMutex.RLock()
+	lastPolled := new(big.Int).Set(p.lastPolledBlock)
+	p.lastPolledBlockMutex.RUnlock()
+	log.Debug().Msgf("Last polled block: %s", lastPolled.String())
 
-	startBlock := new(big.Int).Add(p.lastPolledBlock, big.NewInt(1))
+	startBlock := new(big.Int).Add(lastPolled, big.NewInt(1))
 	if startBlock.Cmp(latestBlock) > 0 {
 		log.Debug().Msgf("Start block %s is greater than latest block %s, skipping", startBlock, latestBlock)
 		return nil, ErrNoNewBlocks

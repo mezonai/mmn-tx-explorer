@@ -96,13 +96,14 @@ func (w *Worker) processChunkWithRetry(ctx context.Context, chunk []*big.Int, re
 
 func (w *Worker) Run(ctx context.Context, blockNumbers []*big.Int) []rpc.GetFullBlockResult {
 	blockCount := len(blockNumbers)
-	chunks := common.SliceToChunks(blockNumbers, w.rpc.GetBlocksPerRequest().Blocks)
+	blockPerRequestConfig := w.rpc.GetBlocksPerRequest()
+	chunks := common.SliceToChunks(blockNumbers, blockPerRequestConfig.Blocks)
 
 	var wg sync.WaitGroup
 	resultsCh := make(chan []rpc.GetFullBlockResult, blockCount)
 
 	// Create a semaphore channel to limit concurrent goroutines
-	sem := make(chan struct{}, 20)
+	sem := make(chan struct{}, blockPerRequestConfig.ConcurrentRequests)
 
 	log.Debug().Msgf("Worker Processing %d blocks in %d chunks of max %d blocks", blockCount, len(chunks), w.rpc.GetBlocksPerRequest().Blocks)
 

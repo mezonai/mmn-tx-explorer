@@ -58,21 +58,21 @@ func GetMigrationsPath(defaultPath string) string {
 		// Default path for local development
 		cwd, _ := os.Getwd()
 		log.Debug().Str("cwd", cwd).Msg("Current working directory")
-		
+
 		joinedPath := filepath.Join(cwd, "internal", "tools", defaultPath)
 		log.Debug().Str("joined_path", joinedPath).Msg("Joined path")
-		
+
 		// Convert to forward slashes and use file:// URL with two slashes
 		absPath, _ := filepath.Abs(joinedPath)
 		slashPath := filepath.ToSlash(absPath)
 		log.Debug().Str("slash_path", slashPath).Msg("Absolute path with forward slashes")
-		
+
 		migrationsPath = "file://" + slashPath
 	} else {
 		// Use the path from environment variable (for Docker)
 		log.Debug().Str("migrations_path", migrationsPath).Msg("Using migrations path from environment")
 	}
-	
+
 	log.Debug().Str("migrations_path", migrationsPath).Msg("Final migrations path")
 	return migrationsPath
 }
@@ -89,16 +89,6 @@ func getEnvOrDefault(key, defaultValue string) string {
 func getEnvOrDefaultInt(key string, defaultValue int) int {
 	if value := os.Getenv(key); value != "" {
 		if intValue, err := fmt.Sscanf(value, "%d", &defaultValue); err == nil && intValue == 1 {
-			return defaultValue
-		}
-	}
-	return defaultValue
-}
-
-// getEnvOrDefaultBool returns the value of an environment variable as bool or a default value if not set
-func getEnvOrDefaultBool(key string, defaultValue bool) bool {
-	if value := os.Getenv(key); value != "" {
-		if boolValue, err := fmt.Sscanf(value, "%t", &defaultValue); err == nil && boolValue == 1 {
 			return defaultValue
 		}
 	}

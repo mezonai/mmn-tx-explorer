@@ -1,12 +1,10 @@
 package cmd
 
 import (
-	"crypto/tls"
 	"fmt"
 	"math/big"
 	"strconv"
 
-	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	config "github.com/thirdweb-dev/indexer/configs"
@@ -67,32 +65,6 @@ func RunValidateAndFix(cmd *cobra.Command, args []string) {
 	}
 	log.Debug().Msgf("Cursor initialized for chain %d, starting from block %d", rpcClient.GetChainID(), cursor.LastScannedBlockNumber)
 
-	conn, err := clickhouse.Open(&clickhouse.Options{
-		Addr:     []string{fmt.Sprintf("%s:%d", config.Cfg.Storage.Main.Clickhouse.Host, config.Cfg.Storage.Main.Clickhouse.Port)},
-		Protocol: clickhouse.Native,
-		TLS: &tls.Config{
-			MinVersion: tls.VersionTLS12,
-		},
-		Auth: clickhouse.Auth{
-			Username: config.Cfg.Storage.Main.Clickhouse.Username,
-			Password: config.Cfg.Storage.Main.Clickhouse.Password,
-		},
-		Settings: func() clickhouse.Settings {
-			settings := clickhouse.Settings{
-				"do_not_merge_across_partitions_select_final": "1",
-				"use_skip_indexes_if_final":                   "1",
-				"optimize_move_to_prewhere_if_final":          "1",
-				"async_insert":                                "1",
-				"wait_for_async_insert":                       "1",
-			}
-			return settings
-		}(),
-	})
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to connect to ClickHouse")
-	}
-	defer conn.Close()
-
 	startBlock := new(big.Int).Add(cursor.LastScannedBlockNumber, big.NewInt(1))
 
 	for startBlock.Cmp(cursor.MaxBlockNumber) <= 0 {
@@ -102,7 +74,7 @@ func RunValidateAndFix(cmd *cobra.Command, args []string) {
 		}
 
 		log.Info().Msgf("Validating batch of blocks from %s to %s", startBlock.String(), batchEndBlock.String())
-		err := validateAndFixRange(rpcClient, s, conn, startBlock, batchEndBlock, fixBatchSize)
+		err := validateAndFixRange(rpcClient, s, startBlock, batchEndBlock, fixBatchSize)
 		if err != nil {
 			log.Fatal().Err(err).Msgf("failed to validate and fix range %v-%v", startBlock, batchEndBlock)
 		}
@@ -115,23 +87,17 @@ func RunValidateAndFix(cmd *cobra.Command, args []string) {
 /**
  * Validates a range of blocks (end and start are inclusive) for a given chain and fixes any problems it finds
  */
-func validateAndFixRange(rpcClient rpc.IRPCClient, s storage.IStorage, conn clickhouse.Conn, startBlock *big.Int, endBlock *big.Int, fixBatchSize int) error {
+func validateAndFixRange(rpcClient rpc.IRPCClient, s storage.IStorage, startBlock *big.Int, endBlock *big.Int, fixBatchSize int) error {
 	validator := orchestrator.NewValidator(rpcClient, s)
 
-	chainId := rpcClient.GetChainID()
-	err := validation.FindAndRemoveDuplicates(conn, chainId, startBlock, endBlock)
+	err := validator.FindAndFixGaps(startBlock, endBlock)
 	if err != nil {
-		return fmt.Errorf("failed to find and fix duplicates: %w", err)
-	}
-
-	err = validator.FindAndFixGaps(startBlock, endBlock)
-	if err != nil {
-		return fmt.Errorf("failed to find and fix gaps: %w", err)
+		return err
 	}
 
 	_, invalidBlocks, err := validator.ValidateBlockRange(startBlock, endBlock)
 	if err != nil {
-		return fmt.Errorf("failed to validate and fix blocks: %w", err)
+		return err
 	}
 
 	invalidBlockNumbers := make([]*big.Int, 0)

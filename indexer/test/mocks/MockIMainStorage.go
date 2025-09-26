@@ -5,10 +5,12 @@
 package mocks
 
 import (
+	"context"
 	big "math/big"
 
 	mock "github.com/stretchr/testify/mock"
 	common "github.com/thirdweb-dev/indexer/internal/common"
+	pb "github.com/thirdweb-dev/indexer/proto"
 
 	storage "github.com/thirdweb-dev/indexer/internal/storage"
 )
@@ -966,6 +968,123 @@ func (_c *MockIMainStorage_ReplaceBlockData_Call) Return(_a0 []common.BlockData,
 }
 
 func (_c *MockIMainStorage_ReplaceBlockData_Call) RunAndReturn(run func([]common.BlockData) ([]common.BlockData, error)) *MockIMainStorage_ReplaceBlockData_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetCount provides a mock function with given fields: table, qf
+func (_m *MockIMainStorage) GetCount(table string, qf storage.QueryFilter) (uint64, error) {
+	ret := _m.Called(table, qf)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetCount")
+	}
+
+	var r0 uint64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, storage.QueryFilter) (uint64, error)); ok {
+		return rf(table, qf)
+	}
+	if rf, ok := ret.Get(0).(func(string, storage.QueryFilter) uint64); ok {
+		r0 = rf(table, qf)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(uint64)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string, storage.QueryFilter) error); ok {
+		r1 = rf(table, qf)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockIMainStorage_GetCount_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCount'
+type MockIMainStorage_GetCount_Call struct {
+	*mock.Call
+}
+
+// GetCount is a helper method to define mock.On call
+//   - table string
+//   - qf storage.QueryFilter
+func (_e *MockIMainStorage_Expecter) GetCount(table interface{}, qf interface{}) *MockIMainStorage_GetCount_Call {
+	return &MockIMainStorage_GetCount_Call{Call: _e.mock.On("GetCount", table, qf)}
+}
+
+func (_c *MockIMainStorage_GetCount_Call) Run(run func(table string, qf storage.QueryFilter)) *MockIMainStorage_GetCount_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(storage.QueryFilter))
+	})
+	return _c
+}
+
+func (_c *MockIMainStorage_GetCount_Call) Return(_a0 uint64, _a1 error) *MockIMainStorage_GetCount_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockIMainStorage_GetCount_Call) RunAndReturn(run func(string, storage.QueryFilter) (uint64, error)) *MockIMainStorage_GetCount_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetPendingTransactions provides a mock function with given fields: ctx
+func (_m *MockIMainStorage) GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetPendingTransactions")
+	}
+
+	var r0 *pb.GetPendingTransactionsResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (*pb.GetPendingTransactionsResponse, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) *pb.GetPendingTransactionsResponse); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*pb.GetPendingTransactionsResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockIMainStorage_GetPendingTransactions_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetPendingTransactions'
+type MockIMainStorage_GetPendingTransactions_Call struct {
+	*mock.Call
+}
+
+// GetPendingTransactions is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *MockIMainStorage_Expecter) GetPendingTransactions(ctx interface{}) *MockIMainStorage_GetPendingTransactions_Call {
+	return &MockIMainStorage_GetPendingTransactions_Call{Call: _e.mock.On("GetPendingTransactions", ctx)}
+}
+
+func (_c *MockIMainStorage_GetPendingTransactions_Call) Run(run func(ctx context.Context)) *MockIMainStorage_GetPendingTransactions_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *MockIMainStorage_GetPendingTransactions_Call) Return(_a0 *pb.GetPendingTransactionsResponse, _a1 error) *MockIMainStorage_GetPendingTransactions_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockIMainStorage_GetPendingTransactions_Call) RunAndReturn(run func(context.Context) (*pb.GetPendingTransactionsResponse, error)) *MockIMainStorage_GetPendingTransactions_Call {
 	_c.Call.Return(run)
 	return _c
 }

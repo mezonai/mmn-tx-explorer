@@ -1,68 +1,41 @@
 # Insight
 
-**Insight** is a high-performance, modular blockchain indexer and data API for EVM chains. It fetches, processes, and stores on-chain data—making it easy to query blocks, transactions, logs, token balances, and more via a robust HTTP API.
+Insight is a high-performance, modular blockchain indexer and data API for EVM chains. It fetches, processes, and stores on-chain data—making it easy to query blocks, transactions, logs, token balances, and more via an HTTP API.
 
 ## 🚀 Getting Started
 
-**Quickstart (Local Development):**
+Quickstart (Local Development):
 
 ```bash
-# 1. Clone the repo
-git clone https://github.com/thirdweb-dev/insight.git
-cd insight
-
-# 2. Copy example configs and secrets
+# 1. Copy example configs and secrets
 cp configs/config.example.yml configs/config.yml
 cp configs/secrets.example.yml configs/secrets.yml
 
-change mmnGrpcUrl in config.yml with node url
-# 3. (Optional) Start dependencies with Docker Compose
-docker-compose up -d postgres
+# 2. Start dependencies (optional)
+docker compose up -d postgres
 
-# 4. Apply ClickHouse migrations
-cat internal/tools/clickhouse/*.sql | docker exec -i <clickhouse-container> clickhouse-client --user admin --password password
-
-# 5. Run a mock blockchain (Optional: if you have a real RPC, update it in config.yml).
-cd mock-blockchain
-docker compose up --build
-
-# 6. Build and run Insight
-go build -o main -tags=production
+# 3. Run PostgreSQL migrations for orchestrator/staging/main
+go build -o main .
 ./main migrate-postgres
-./main orchestrator   # Starts the indexer
-./main api           # Starts the API server
 
-# 7. Access the API
-# Default: http://localhost:3000
+# 4. Start the indexer (orchestrator) and API
+./main orchestrator
+./main api
 
+# API default: http://localhost:3000
 ```
 
-### 🏃‍♂️ Quick Start with Hybrid Setup (PostgreSQL + ClickHouse)
-
-For testing the staging flow with PostgreSQL for orchestration/staging and ClickHouse for main storage:
+### Quick Start with Example Config
 
 ```bash
-# 1. Build the application
-go build -o insight .
-
-# 2. Start databases (PostgreSQL + ClickHouse)
-docker compose up -d
-
-# 3. Run the orchestrator with test configuration
-./insight orchestrator --config configs/test_config.yml
-
-# 4. (Optional) Start the API server
-./insight api --config configs/test_config.yml
-
-# 5. Monitor the databases
-# PostgreSQL (staging): docker exec insight-postgres-1 psql -U admin -d insight
-# ClickHouse (main): clickhouse-client --host localhost --port 9440 --user admin --password password
+# Use provided test configuration
+./main orchestrator --config configs/test_config.yml
+./main api --config configs/test_config.yml
 ```
 
-**Database Connections:**
-- **PostgreSQL**: `localhost:5432` (staging & orchestrator storage)
-- **ClickHouse**: `localhost:9440` (main storage)
-- **Credentials**: `admin` / `password`
+Database Connections:
+- PostgreSQL: localhost:5432 (orchestrator, staging, main)
+- Credentials: admin / password
 
 ---
 
@@ -94,7 +67,7 @@ The Orchestrator coordinates and manages the poller, failure recoverer, and comm
 6. **API**: The HTTP API serves queries from the main storage
 
 ### Work Modes
-Insight operates in two distinct work modes that automatically adapt based on how far behind the chain head the indexer is:
+Insight operates in two distinct work modes that adapt based on distance from chain head:
 
 **Backfill Mode** (Catching Up):
 - Used when the indexer is significantly behind the latest block
@@ -108,7 +81,7 @@ Insight operates in two distinct work modes that automatically adapt based on ho
 - Optimized for real-time data availability
 - Switches back to backfill mode if falling behind
 
-The work mode threshold and check interval are configurable via `workMode.liveModeThreshold` and `workMode.checkIntervalMinutes` settings.
+The work mode threshold and check interval are configurable via `workMode.liveModeThreshold` and `workMode.checkIntervalMinutes`.
 
 This modular architecture allows for adaptation to various EVM chains and use cases, with configurable batch sizes, delays, and processing strategies.
 
@@ -118,78 +91,102 @@ This modular architecture allows for adaptation to various EVM chains and use ca
 
 ### Prerequisites
 
-- **Go** 1.23+
-- **ClickHouse** database (Docker Compose included)
-- (Optional) **Redis**, **Kafka**, **Prometheus**, **Grafana** for advanced features
+- Go 1.23+
+- PostgreSQL (Docker Compose included)
+- Optional: Redis, Kafka, Prometheus, Grafana
 
 ### Environment Variables & Secrets
 
-Insight supports configuration via environment variables, which is especially useful for containerized deployments and CI/CD pipelines.
+Insight supports configuration via environment variables in addition to YAML config and CLI flags.
 
 **Environment Variable Naming Convention:**
 - Use uppercase letters and underscores
 - Nested YAML paths become underscore-separated variables
 - Example: `rpc.url` becomes `RPC_URL`
-- Example: `storage.main.clickhouse.host` becomes `STORAGE_MAIN_CLICKHOUSE_HOST`
+- Example: `storage.main.postgres.host` becomes `STORAGE_MAIN_POSTGRES_HOST`
 
-**Common Environment Variables:**
+Common Environment Variables:
 
-**RPC Configuration:**
+RPC Configuration:
 ```bash
-RPC_URL=https://1.rpc.thirdweb.com/your-client-id
+RPC_URL=https://1.rpc.thirdweb.com
 RPC_CHAIN_ID=1
 RPC_BLOCKS_BLOCKS_PER_REQUEST=500
 RPC_BLOCKS_BATCH_DELAY=100
 RPC_LOGS_BLOCKS_PER_REQUEST=250
 RPC_LOGS_BATCH_DELAY=100
+RPC_BLOCKRECEIPTS_ENABLED=false
+RPC_BLOCKRECEIPTS_BLOCKS_PER_REQUEST=250
+RPC_BLOCKRECEIPTS_BATCH_DELAY=100
 RPC_TRACES_ENABLED=false
+RPC_TRACES_BLOCKS_PER_REQUEST=500
+RPC_TRACES_BATCH_DELAY=100
+RPC_MMNGRPCURL=localhost:9001
 ```
 
-**Storage Configuration:**
+Storage Configuration (PostgreSQL):
 ```bash
-STORAGE_MAIN_CLICKHOUSE_HOST=localhost
-STORAGE_MAIN_CLICKHOUSE_PORT=9000
-STORAGE_MAIN_CLICKHOUSE_USERNAME=admin
-STORAGE_MAIN_CLICKHOUSE_PASSWORD=your-password
-STORAGE_MAIN_CLICKHOUSE_DATABASE=main
-STORAGE_MAIN_CLICKHOUSE_DISABLE_TLS=false
+STORAGE_MAIN_POSTGRES_HOST=postgres
+STORAGE_MAIN_POSTGRES_PORT=5432
+STORAGE_MAIN_POSTGRES_USERNAME=admin
+STORAGE_MAIN_POSTGRES_PASSWORD=password
+STORAGE_MAIN_POSTGRES_DATABASE=indexer
+STORAGE_MAIN_POSTGRES_SSLMODE=disable
+
+STORAGE_STAGING_POSTGRES_HOST=postgres
+STORAGE_STAGING_POSTGRES_PORT=5432
+STORAGE_STAGING_POSTGRES_USERNAME=admin
+STORAGE_STAGING_POSTGRES_PASSWORD=password
+STORAGE_STAGING_POSTGRES_DATABASE=indexer
+STORAGE_STAGING_POSTGRES_SSLMODE=disable
+
+STORAGE_ORCHESTRATOR_POSTGRES_HOST=postgres
+STORAGE_ORCHESTRATOR_POSTGRES_PORT=5432
+STORAGE_ORCHESTRATOR_POSTGRES_USERNAME=admin
+STORAGE_ORCHESTRATOR_POSTGRES_PASSWORD=password
+STORAGE_ORCHESTRATOR_POSTGRES_DATABASE=indexer
+STORAGE_ORCHESTRATOR_POSTGRES_SSLMODE=disable
 ```
 
-**API Configuration:**
+API Configuration:
 ```bash
-API_HOST=0.0.0.0
-API_PORT=3000
-API_THIRDWEB_CLIENT_ID=your-client-id
+API_HOST=localhost:3000
 API_BASIC_AUTH_USERNAME=admin
-API_BASIC_AUTH_PASSWORD=your-api-password
+API_BASIC_AUTH_PASSWORD=admin
+API_THIRDWEB_CLIENT_ID=your-client-id
 ```
 
-**Logging Configuration:**
+Logging Configuration:
 ```bash
 LOG_LEVEL=info
-LOG_PRETTIFY=false
+LOG_PRETTIFY=true
+LOG_FILEENABLED=true
+LOG_FILEPATH=/app/logs/indexer.log
 ```
 
-**Poller Configuration:**
+Poller Configuration:
 ```bash
 POLLER_ENABLED=true
 POLLER_INTERVAL=1000
 POLLER_BLOCKS_PER_POLL=500
 POLLER_FROM_BLOCK=0
+POLLER_FORCE_FROM_BLOCK=false
+POLLER_UNTIL_BLOCK=0
+POLLER_PARALLEL_POLLERS=1
 ```
 
-**Complete Example:**
+Complete Example:
 ```bash
 # Set all configuration via environment variables
-export RPC_URL="https://1.rpc.thirdweb.com/your-client-id"
+export RPC_URL="https://1.rpc.thirdweb.com"
 export RPC_CHAIN_ID=1
-export STORAGE_MAIN_CLICKHOUSE_HOST="your-clickhouse-host"
-export STORAGE_MAIN_CLICKHOUSE_PASSWORD="your-password"
+export STORAGE_MAIN_POSTGRES_HOST="localhost"
+export STORAGE_MAIN_POSTGRES_PASSWORD="password"
 export API_BASIC_AUTH_USERNAME="admin"
-export API_BASIC_AUTH_PASSWORD="your-api-password"
+export API_BASIC_AUTH_PASSWORD="admin"
 export LOG_LEVEL="info"
 
-# Run without config files
+# Run with env only
 ./main orchestrator
 ./main api
 ```
@@ -201,17 +198,16 @@ export LOG_LEVEL="info"
 
 ### Docker
 
-- `docker-compose.yml` provides ClickHouse, Redis, Prometheus, and Grafana for local development.
+- `docker-compose.yml` provides PostgreSQL, Redis (optional), Prometheus, and Grafana for local development.
 - Exposes:
-  - ClickHouse: `localhost:8123` (web UI), `localhost:9440` (native)
+  - PostgreSQL: `localhost:5432`
   - Prometheus: `localhost:9090`
   - Grafana: `localhost:4000`
   - Redis: `localhost:6379`
 
 ### Database Migrations
 
-- SQL migration scripts are in `internal/tools/`.
-- Apply them to your ClickHouse instance before running the indexer.
+- Run `./main migrate-postgres` to create required PostgreSQL tables/schemas.
 
 ---
 
@@ -219,56 +215,60 @@ export LOG_LEVEL="info"
 
 ### CLI Commands
 
-- **Indexer (Orchestrator):**  
-  `./main orchestrator`  
-  Starts the block poller, committer, and failure recovery.
-
-- **API Server:**  
-  `./main api`  
-  Serves the HTTP API at `http://localhost:3000`.
-
-- **Validation & Utilities:**  
-  Additional commands: `validate`, `validate-and-fix`, `migrate-valid` (see `cmd/`).
+- Indexer (orchestrator): `./main orchestrator`
+- API server: `./main api`
+- Run PostgreSQL migrations: `./main migrate-postgres`
+- Validate range: `./main validate <startBlock> [endBlock]`
+- Validate and fix in batches: `./main validateAndFix [batchSize] [fixBatchSize]`
+- Validation migration to temp DB: `./main validationMigration`
 
 ### API Endpoints
 
-All endpoints require HTTP Basic Auth (see `configs/secrets.yml`).
+All endpoints are under `/{chainId}` and require HTTP Basic Auth.
 
-- **Blocks:**  
-  `GET /{chainId}/blocks`  
-  Query blocks with filters, sorting, pagination, and aggregation.
+- Blocks:
+  - `GET /{chainId}/blocks`
+  - `GET /{chainId}/blocks/{blockNumber}/detail`
 
-- **Transactions:**  
-  `GET /{chainId}/transactions`  
-  `GET /{chainId}/transactions/{to}`  
-  `GET /{chainId}/transactions/{to}/{signature}`  
-  `GET /{chainId}/wallet-transactions/{wallet_address}`
+- Transactions:
+  - `GET /{chainId}/transactions`
+  - `GET /{chainId}/transactions/{to}`
+  - `GET /{chainId}/transactions/{to}/{signature}`
+  - `GET /{chainId}/tx/{txHash}/detail`
+  - `GET /{chainId}/pending-transactions`
+  - `GET /{chainId}/pending-tx/{transaction_hash}/detail`
+  - `GET /{chainId}/wallet-transactions/{wallet_address}`
 
-- **Logs/Events:**  
-  `GET /{chainId}/events`  
-  `GET /{chainId}/events/{contract}`  
-  `GET /{chainId}/events/{contract}/{signature}`
+- Events:
+  - `GET /{chainId}/events`
+  - `GET /{chainId}/events/{contract}`
+  - `GET /{chainId}/events/{contract}/{signature}`
 
-- **Token Balances & Holders:**  
-  `GET /{chainId}/balances/{owner}/{type}`  
-  `GET /{chainId}/holders/{address}`  
-  `GET /{chainId}/tokens/{address}`
+- Wallets:
+  - `GET /{chainId}/wallets`
+  - `GET /{chainId}/wallets/{address}/detail`
 
-- **Token Transfers:**  
-  `GET /{chainId}/transfers`
+- Tokens:
+  - `GET /{chainId}/balances/{owner}/{type}`
+  - `GET /{chainId}/balances/{owner}`
+  - `GET /{chainId}/holders/{address}`
+  - `GET /{chainId}/transfers`
+  - `GET /{chainId}/tokens/{address}`
 
-- **Search:**  
-  `GET /{chainId}/search/{input}`  
-  Search by block number, hash, address, or function signature.
+- Stats:
+  - `GET /{chainId}/stats`
 
-- **Health:**  
-  `GET /health`
+- Search:
+  - `GET /{chainId}/search/{input}`
 
-- **Swagger/OpenAPI:**  
-  `GET /swagger/index.html`  
-  `GET /openapi.json`
+- Health:
+  - `GET /health`
 
-See the [OpenAPI spec](docs/swagger.yaml) for full details.
+- Swagger/OpenAPI:
+  - `GET /swagger/index.html`
+  - `GET /openapi.json`
+
+See the OpenAPI spec at `docs/swagger.yaml` for full details.
 
 ---
 
@@ -276,17 +276,17 @@ See the [OpenAPI spec](docs/swagger.yaml) for full details.
 
 Insight supports configuration via multiple methods with the following priority order:
 
-1. **Command-line flags** (highest priority)
-2. **Environment variables** 
-3. **YAML config files** (`configs/config.yml`)
+1. Command-line flags (highest priority)
+2. Environment variables
+3. YAML config files (`configs/config.yml`)
 
 ### Configuration Methods
 
-**1. YAML Config Files (Recommended for Development):**
+1) YAML Config Files (Recommended for Development):
 ```yaml
 # configs/config.yml
 rpc:
-  url: https://1.rpc.thirdweb.com/your-thirdweb-client-id
+  url: https://1.rpc.thirdweb.com
   blocks:
     blocksPerRequest: 1000
     batchDelay: 0
@@ -294,7 +294,7 @@ rpc:
     blocksPerRequest: 400
     batchDelay: 100
   traces:
-    enabled: true
+    enabled: false
     blocksPerRequest: 200
     batchDelay: 100
 
@@ -304,37 +304,37 @@ log:
 
 storage:
   main:
-    clickhouse:
-      host: localhost
-      port: 9440
-      database: "default"
+    postgres:
+      host: postgres
+      port: 5432
+      database: indexer
       username: admin
       password: password
-      disableTLS: true
+      sslMode: disable
 ```
 
-**2. Environment Variables (Recommended for Production):**
+2) Environment Variables (Recommended for Production):
 ```bash
 # Set configuration via environment variables
-export RPC_URL="https://1.rpc.thirdweb.com/your-client-id"
+export RPC_URL="https://1.rpc.thirdweb.com"
 export RPC_BLOCKS_BLOCKS_PER_REQUEST=1000
 export RPC_BLOCKS_BATCH_DELAY=0
 export LOG_LEVEL="debug"
 export LOG_PRETTIFY=true
-export STORAGE_MAIN_CLICKHOUSE_HOST="localhost"
-export STORAGE_MAIN_CLICKHOUSE_PASSWORD="your-password"
+export STORAGE_MAIN_POSTGRES_HOST="localhost"
+export STORAGE_MAIN_POSTGRES_PASSWORD="password"
 ```
 
-**3. Command-line Flags:**
+3) Command-line Flags:
 ```bash
-# Override specific settings via CLI flags
-./main orchestrator --rpc-url="https://1.rpc.thirdweb.com/your-client-id" --log-level=info
-./main api --api-host=0.0.0.0 --api-port=8080
+# Override specific settings via CLI flags (examples)
+./main orchestrator --rpc-url="https://1.rpc.thirdweb.com" --log-level=info
+./main api --api-host=localhost:3000
 ```
 
 ### Environment Variable Reference
 
-**RPC Configuration:**
+RPC Configuration:
 | YAML Path | Environment Variable | Description | Default |
 |-----------|---------------------|-------------|---------|
 | `rpc.url` | `RPC_URL` | RPC endpoint URL | - |
@@ -345,39 +345,48 @@ export STORAGE_MAIN_CLICKHOUSE_PASSWORD="your-password"
 | `rpc.logs.batchDelay` | `RPC_LOGS_BATCH_DELAY` | Log batch delay (ms) | 100 |
 | `rpc.traces.enabled` | `RPC_TRACES_ENABLED` | Enable trace fetching | false |
 | `rpc.traces.blocksPerRequest` | `RPC_TRACES_BLOCKS_PER_REQUEST` | Traces per RPC request | 500 |
+| `rpc.blockReceipts.enabled` | `RPC_BLOCKRECEIPTS_ENABLED` | Enable block receipts | false |
+| `rpc.blockReceipts.blocksPerRequest` | `RPC_BLOCKRECEIPTS_BLOCKS_PER_REQUEST` | Receipts per request | 250 |
+| `rpc.blockReceipts.batchDelay` | `RPC_BLOCKRECEIPTS_BATCH_DELAY` | Receipts batch delay (ms) | 100 |
+| `rpc.mmnGrpcUrl` | `RPC_MMNGRPCURL` | MMN gRPC URL | - |
 
-**Storage Configuration:**
+Storage Configuration (PostgreSQL):
 | YAML Path | Environment Variable | Description | Default |
 |-----------|---------------------|-------------|---------|
-| `storage.main.clickhouse.host` | `STORAGE_MAIN_CLICKHOUSE_HOST` | ClickHouse host | localhost |
-| `storage.main.clickhouse.port` | `STORAGE_MAIN_CLICKHOUSE_PORT` | ClickHouse port | 9000 |
-| `storage.main.clickhouse.username` | `STORAGE_MAIN_CLICKHOUSE_USERNAME` | Database username | admin |
-| `storage.main.clickhouse.password` | `STORAGE_MAIN_CLICKHOUSE_PASSWORD` | Database password | password |
-| `storage.main.clickhouse.database` | `STORAGE_MAIN_CLICKHOUSE_DATABASE` | Database name | main |
-| `storage.main.clickhouse.disableTLS` | `STORAGE_MAIN_CLICKHOUSE_DISABLE_TLS` | Disable TLS | false |
+| `storage.main.postgres.host` | `STORAGE_MAIN_POSTGRES_HOST` | Host | postgres |
+| `storage.main.postgres.port` | `STORAGE_MAIN_POSTGRES_PORT` | Port | 5432 |
+| `storage.main.postgres.username` | `STORAGE_MAIN_POSTGRES_USERNAME` | Username | admin |
+| `storage.main.postgres.password` | `STORAGE_MAIN_POSTGRES_PASSWORD` | Password | password |
+| `storage.main.postgres.database` | `STORAGE_MAIN_POSTGRES_DATABASE` | Database | indexer |
+| `storage.main.postgres.sslMode` | `STORAGE_MAIN_POSTGRES_SSLMODE` | SSL mode | disable |
 
-**API Configuration:**
+API Configuration:
 | YAML Path | Environment Variable | Description | Default |
 |-----------|---------------------|-------------|---------|
 | `api.host` | `API_HOST` | API server host | localhost |
-| `api.port` | `API_PORT` | API server port | 3000 |
+| `api.port` | - | API server port (combined in host) | - |
 | `api.thirdweb.clientId` | `API_THIRDWEB_CLIENT_ID` | ThirdWeb client ID | - |
 | `api.basicAuth.username` | `API_BASIC_AUTH_USERNAME` | API username | admin |
 | `api.basicAuth.password` | `API_BASIC_AUTH_PASSWORD` | API password | admin |
 
-**Logging Configuration:**
+Logging Configuration:
 | YAML Path | Environment Variable | Description | Default |
 |-----------|---------------------|-------------|---------|
 | `log.level` | `LOG_LEVEL` | Log level (debug, info, warn, error) | debug |
 | `log.prettify` | `LOG_PRETTIFY` | Pretty print logs | true |
+| `log.fileEnabled` | `LOG_FILEENABLED` | Enable file logging | false |
+| `log.filePath` | `LOG_FILEPATH` | Log file path | /app/logs/indexer.log |
 
-**Poller Configuration:**
+Poller Configuration:
 | YAML Path | Environment Variable | Description | Default |
 |-----------|---------------------|-------------|---------|
 | `poller.enabled` | `POLLER_ENABLED` | Enable block polling | true |
 | `poller.interval` | `POLLER_INTERVAL` | Polling interval (ms) | 1000 |
 | `poller.blocksPerPoll` | `POLLER_BLOCKS_PER_POLL` | Blocks per poll | 500 |
 | `poller.fromBlock` | `POLLER_FROM_BLOCK` | Starting block number | 0 |
+| `poller.forceFromBlock` | `POLLER_FORCE_FROM_BLOCK` | Force fromBlock | false |
+| `poller.untilBlock` | `POLLER_UNTIL_BLOCK` | Until block | 0 |
+| `poller.parallelPollers` | `POLLER_PARALLEL_POLLERS` | Parallel pollers | 1 |
 
 ### Configuration Best Practices
 
@@ -390,13 +399,13 @@ export STORAGE_MAIN_CLICKHOUSE_PASSWORD="your-password"
 - Set sensitive credentials via environment variables
 - Use container orchestration secrets management
 
-**Docker/Kubernetes:**
+Docker/Kubernetes:
 ```yaml
 # docker-compose.yml example
 environment:
   - RPC_URL=https://1.rpc.thirdweb.com/your-client-id
-  - STORAGE_MAIN_CLICKHOUSE_HOST=clickhouse
-  - STORAGE_MAIN_CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
+  - STORAGE_MAIN_POSTGRES_HOST=postgres
+  - STORAGE_MAIN_POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
   - API_BASIC_AUTH_PASSWORD=${API_PASSWORD}
 ```
 
@@ -408,7 +417,7 @@ environment:
 ## 📁 Project Structure
 
 ```
-insight/
+indexer/
   api/           # API layer
   cmd/           # CLI commands (orchestrator, api, validation, etc.)
   configs/       # Config and secrets templates
@@ -422,7 +431,7 @@ insight/
     orchestrator/# Indexer orchestration logic
     publisher/   # Kafka publisher (optional)
     rpc/         # RPC client logic
-    storage/     # ClickHouse connectors
+    storage/     # Storage connectors
     tools/       # SQL migration scripts
     validation/  # Data validation logic
     worker/      # Block processing workers
@@ -439,8 +448,8 @@ insight/
 1. **Fork & clone** the repo.
 2. **Install dependencies:**  
    `go mod download`
-3. **Set up local ClickHouse:**  
-   `docker-compose up -d clickhouse`
+3. **Start PostgreSQL:**  
+   `docker compose up -d postgres`
 4. **Apply migrations** (see above).
 5. **Run tests:**  
    `go test ./...`
