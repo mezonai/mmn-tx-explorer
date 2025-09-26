@@ -77,7 +77,7 @@ func Search(c *gin.Context) {
 		return
 	}
 
-	result, err := executeSearch(c.Request.Context(), mainStorage, chainId, searchInput)
+	result, err := executeSearch(mainStorage, chainId, searchInput)
 	if err != nil {
 		log.Error().Err(err).Msg("Error executing search")
 		api.InternalErrorHandler(c)
@@ -124,7 +124,7 @@ func isValidAddressWithLength(input string, minLength int, maxLength int) bool {
 	return len(input) >= minLength && len(input) <= maxLength
 }
 
-func executeSearch(ctx context.Context, storage storage.IMainStorage, chainId *big.Int, input SearchInput) (SearchResultModel, error) {
+func executeSearch(storage storage.IMainStorage, chainId *big.Int, input SearchInput) (SearchResultModel, error) {
 	switch {
 	case input.BlockNumber != nil:
 		block, err := searchByBlockNumber(storage, chainId, input.BlockNumber)
@@ -134,7 +134,7 @@ func executeSearch(ctx context.Context, storage storage.IMainStorage, chainId *b
 		return searchByHash(storage, chainId, input.Hash)
 
 	case input.Address != "":
-		return searchByAddress(ctx, storage, chainId, input.Address)
+		return searchByAddress(storage, input.Address)
 
 	case input.FunctionSignature != "":
 		transactions, err := searchByFunctionSelectorOptimistically(storage, chainId, input.FunctionSignature)
@@ -329,9 +329,9 @@ func searchByHash(mainStorage storage.IMainStorage, chainId *big.Int, hash strin
 	}
 }
 
-func searchByAddress(ctx context.Context, mainStorage storage.IMainStorage, chainId *big.Int, address string) (SearchResultModel, error) {
+func searchByAddress(mainStorage storage.IMainStorage, address string) (SearchResultModel, error) {
 	searchResult := SearchResultModel{Type: SearchResultTypeWallet}
-	
+
 	// Search for wallet in the wallet table
 	qf := storage.QueryFilter{
 		FilterParams:        map[string]string{"address": address},
@@ -339,12 +339,12 @@ func searchByAddress(ctx context.Context, mainStorage storage.IMainStorage, chai
 		ForceConsistentData: false,
 		Aggregates:          []string{"address", "account_nonce", "balance"},
 	}
-	
+
 	result, err := mainStorage.GetAggregations("wallet", qf)
 	if err != nil {
 		return searchResult, err
 	}
-	
+
 	if len(result.Aggregates) > 0 {
 		// Wallet found
 		searchResult.Wallets = result.Aggregates
@@ -353,63 +353,6 @@ func searchByAddress(ctx context.Context, mainStorage storage.IMainStorage, chai
 	}
 
 	return searchResult, nil
-}
-
-func findLatestTransactionsToAddress(mainStorage storage.IMainStorage, chainId *big.Int, address string) ([]common.TransactionModel, error) {
-	result, err := mainStorage.GetTransactions(storage.QueryFilter{
-		ChainId:         chainId,
-		ContractAddress: address,
-		Limit:           20,
-		SortBy:          "block_number",
-		SortOrder:       "desc",
-	})
-	if err != nil {
-		return nil, err
-	}
-	transactions := make([]common.TransactionModel, len(result.Data))
-	for i, transaction := range result.Data {
-		transactions[i] = transaction.Serialize()
-	}
-	return transactions, nil
-}
-
-func findLatestTransactionsFromAddressOptimistically(mainStorage storage.IMainStorage, chainId *big.Int, address string) ([]common.TransactionModel, error) {
-	now := time.Now()
-	thirtyDaysAgo := now.AddDate(0, 0, -30)
-
-	result, err := mainStorage.GetTransactions(storage.QueryFilter{
-		ChainId:     chainId,
-		FromAddress: address,
-		FilterParams: map[string]string{
-			"block_timestamp_gte": strconv.FormatInt(thirtyDaysAgo.Unix(), 10),
-		},
-		Limit:     20,
-		SortBy:    "block_number",
-		SortOrder: "desc",
-	})
-	if err != nil {
-		return nil, err
-	}
-	if len(result.Data) == 0 {
-		result, err = mainStorage.GetTransactions(storage.QueryFilter{
-			ChainId:     chainId,
-			FromAddress: address,
-			FilterParams: map[string]string{
-				"block_timestamp_lte": strconv.FormatInt(thirtyDaysAgo.Unix(), 10),
-			},
-			Limit:     20,
-			SortBy:    "block_number",
-			SortOrder: "desc",
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-	transactions := make([]common.TransactionModel, len(result.Data))
-	for i, transaction := range result.Data {
-		transactions[i] = transaction.Serialize()
-	}
-	return transactions, nil
 }
 
 type ContractCodeState int

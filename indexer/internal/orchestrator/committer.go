@@ -33,6 +33,9 @@ type Committer struct {
 	workMode           WorkMode
 	workModeChan       chan WorkMode
 	validator          *Validator
+	// guards to prevent goroutine piling for cleanup/publish
+	cleanupRunning atomic.Bool
+	publishRunning atomic.Bool
 }
 
 type CommitterOption func(*Committer)
@@ -162,7 +165,7 @@ func (c *Committer) runCommitLoop(ctx context.Context, interval time.Duration) {
 				log.Debug().Msg("No block data to commit")
 				continue
 			}
-			if err := c.commit(ctx, blockDataToCommit); err != nil {
+			if err := c.commit(blockDataToCommit); err != nil {
 				log.Error().Err(err).Msg("Error committing blocks")
 			}
 		}
@@ -211,6 +214,33 @@ func (c *Committer) cleanupProcessedStagingBlocks() {
 	metrics.StagingDeleteDuration.Observe(time.Since(stagingDeleteStart).Seconds())
 }
 
+// triggerCleanup ensures only one cleanup runs at a time to avoid goroutine piling
+func (c *Committer) triggerCleanup() {
+	if c.cleanupRunning.CompareAndSwap(false, true) {
+		go func() {
+			defer c.cleanupRunning.Store(false)
+			c.cleanupProcessedStagingBlocks()
+		}()
+	}
+}
+
+// asyncPublishDefault guards the fire-and-forget publish in default mode to prevent piling
+func (c *Committer) asyncPublishDefault(blockData []common.BlockData, highest uint64) {
+	if c.publishRunning.CompareAndSwap(false, true) {
+		go func() {
+			defer c.publishRunning.Store(false)
+			if err := c.publisher.PublishBlockData(blockData); err != nil {
+				log.Error().Err(err).Msg("Failed to publish block data to kafka")
+				return
+			}
+			c.lastPublishedBlock.Store(highest)
+			c.triggerCleanup()
+		}()
+	} else {
+		log.Debug().Msg("Publish already running, skipping new publish trigger")
+	}
+}
+
 func (c *Committer) getBlockNumbersToCommit(ctx context.Context) ([]*big.Int, error) {
 	startTime := time.Now()
 	defer func() {
@@ -257,25 +287,25 @@ func (c *Committer) getBlockNumbersToCommit(ctx context.Context) ([]*big.Int, er
 }
 
 func (c *Committer) getBlockNumbersToPublish(ctx context.Context) ([]*big.Int, error) {
-	lastestPublishedBlockNumber, err := c.storage.StagingStorage.GetLastPublishedBlockNumber(c.rpc.GetChainID())
-	log.Debug().Msgf("Committer found this last published block number in staging storage: %s", lastestPublishedBlockNumber.String())
+	latestPublishedBlockNumber, err := c.storage.StagingStorage.GetLastPublishedBlockNumber(c.rpc.GetChainID())
+	log.Debug().Msgf("Committer found this last published block number in staging storage: %s", latestPublishedBlockNumber.String())
 	if err != nil {
 		return nil, err
 	}
 
-	if lastestPublishedBlockNumber.Sign() == 0 {
+	if latestPublishedBlockNumber.Sign() == 0 {
 		// If no blocks have been committed yet, start from the fromBlock specified in the config
-		lastestPublishedBlockNumber = new(big.Int).Sub(c.commitFromBlock, big.NewInt(1))
+		latestPublishedBlockNumber = new(big.Int).Sub(c.commitFromBlock, big.NewInt(1))
 	} else {
 		lastPublished := new(big.Int).SetUint64(c.lastPublishedBlock.Load())
-		if lastestPublishedBlockNumber.Cmp(lastPublished) < 0 {
-			log.Warn().Msgf("Max block in storage (%s) is less than last published block in memory (%s).", lastestPublishedBlockNumber.String(), lastPublished.String())
+		if latestPublishedBlockNumber.Cmp(lastPublished) < 0 {
+			log.Warn().Msgf("Max block in storage (%s) is less than last published block in memory (%s).", latestPublishedBlockNumber.String(), lastPublished.String())
 			return []*big.Int{}, nil
 		}
 	}
 
-	startBlock := new(big.Int).Add(lastestPublishedBlockNumber, big.NewInt(1))
-	endBlock, err := c.getBlockToCommitUntil(ctx, lastestPublishedBlockNumber)
+	startBlock := new(big.Int).Add(latestPublishedBlockNumber, big.NewInt(1))
+	endBlock, err := c.getBlockToCommitUntil(ctx, latestPublishedBlockNumber)
 	if err != nil {
 		return nil, fmt.Errorf("error getting block to commit until: %v", err)
 	}
@@ -439,11 +469,11 @@ func (c *Committer) publish(ctx context.Context) error {
 		return err
 	}
 	c.lastPublishedBlock.Store(highest.Uint64())
-	go c.cleanupProcessedStagingBlocks()
+	c.triggerCleanup()
 	return nil
 }
 
-func (c *Committer) commit(ctx context.Context, blockData []common.BlockData) error {
+func (c *Committer) commit(blockData []common.BlockData) error {
 	blockNumbers := make([]*big.Int, len(blockData))
 	highestBlock := blockData[0].Block
 	for i, block := range blockData {
@@ -463,18 +493,11 @@ func (c *Committer) commit(ctx context.Context, blockData []common.BlockData) er
 
 	if config.Cfg.Publisher.Mode == "default" {
 		highest := highestBlock.Number.Uint64()
-		go func() {
-			if err := c.publisher.PublishBlockData(blockData); err != nil {
-				log.Error().Err(err).Msg("Failed to publish block data to kafka")
-				return
-			}
-			c.lastPublishedBlock.Store(highest)
-			c.cleanupProcessedStagingBlocks()
-		}()
+		c.asyncPublishDefault(blockData, highest)
 	}
 
 	c.lastCommittedBlock.Store(highestBlock.Number.Uint64())
-	go c.cleanupProcessedStagingBlocks()
+	c.triggerCleanup()
 
 	// Update metrics for successful commits
 	metrics.SuccessfulCommits.Add(float64(len(blockData)))
