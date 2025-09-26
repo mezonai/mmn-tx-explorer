@@ -6,6 +6,8 @@ import (
 
 	config "github.com/thirdweb-dev/indexer/configs"
 	"github.com/thirdweb-dev/indexer/internal/common"
+	pb "github.com/thirdweb-dev/indexer/proto"
+	"context"
 )
 
 type QueryFilter struct {
@@ -121,7 +123,17 @@ type IMainStorage interface {
 	 * Gets full block data with transactions, logs and traces.
 	 */
 	GetFullBlockData(chainId *big.Int, blockNumbers []*big.Int) (blocks []common.BlockData, err error)
+	/**
+	 * Gets the count of items in a table.
+	 */
+	GetCount(table string, qf QueryFilter) (uint64, error)
+
+	/**
+	 * Gets pending transactions from MMN service.
+	 */
+	GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error)
 }
+
 
 func NewStorageConnector(cfg *config.StorageConfig) (IStorage, error) {
 	var storage IStorage
@@ -148,7 +160,8 @@ func NewStorageConnector(cfg *config.StorageConfig) (IStorage, error) {
 func NewConnector[T any](cfg *config.StorageConnectionConfig) (T, error) {
 	var conn interface{}
 	var err error
-	if cfg.Postgres != nil && cfg.Postgres.Host != "" {
+
+	if cfg.Postgres != nil {
 		conn, err = NewPostgresConnector(cfg.Postgres)
 	} else if cfg.Clickhouse != nil {
 		conn, err = NewClickHouseConnector(cfg.Clickhouse)

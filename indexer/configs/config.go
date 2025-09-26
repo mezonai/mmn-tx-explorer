@@ -13,6 +13,13 @@ import (
 type LogConfig struct {
 	Level    string `mapstructure:"level"`
 	Prettify bool   `mapstructure:"prettify"`
+	// File logging configuration
+	FileEnabled bool   `mapstructure:"fileEnabled"`
+	FilePath    string `mapstructure:"filePath"`
+	MaxSize     int    `mapstructure:"maxSize"`     // Maximum size in MB before rotation
+	MaxBackups  int    `mapstructure:"maxBackups"`  // Maximum number of old log files to retain
+	MaxAge      int    `mapstructure:"maxAge"`      // Maximum number of days to retain old log files
+	Compress    bool   `mapstructure:"compress"`    // Whether to compress rotated log files
 }
 
 type PollerConfig struct {
@@ -117,6 +124,7 @@ type RPCConfig struct {
 	BlockReceipts ToggleableRPCBatchRequestConfig `mapstructure:"blockReceipts"`
 	Traces        ToggleableRPCBatchRequestConfig `mapstructure:"traces"`
 	ChainID       string                          `mapstructure:"chainId"`
+	MMNGRPCURL    string                          `mapstructure:"mmnGrpcUrl"`
 }
 
 type BasicAuthConfig struct {
@@ -216,6 +224,7 @@ func LoadConfig(cfgFile string) error {
 	} else {
 		viper.SetConfigName("config")
 		viper.AddConfigPath("./configs")
+		viper.AddConfigPath("/app/configs")
 
 		if err := viper.ReadInConfig(); err != nil {
 			log.Warn().Msgf("error reading config file, %s", err)
@@ -244,7 +253,6 @@ func LoadConfig(cfgFile string) error {
 		return fmt.Errorf("error setting custom JSON configs: %v", err)
 	}
 
-	// Add debug logging
 	if clickhouse := Cfg.Storage.Main.Clickhouse; clickhouse != nil {
 		log.Debug().
 			Interface("chainConfig", clickhouse.ChainBasedConfig).

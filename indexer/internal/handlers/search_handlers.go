@@ -2,11 +2,9 @@ package handlers
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"math/big"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -28,12 +26,14 @@ const (
 	SearchResultTypeFunctionSignature SearchResultType = "function_signature"
 	SearchResultTypeAddress           SearchResultType = "address"
 	SearchResultTypeContract          SearchResultType = "contract"
+	SearchResultTypeWallet            SearchResultType = "wallet"
 )
 
 type SearchResultModel struct {
 	Blocks       []common.BlockModel       `json:"blocks,omitempty"`
 	Transactions []common.TransactionModel `json:"transactions,omitempty"`
 	Events       []common.LogModel         `json:"events,omitempty"`
+	Wallets      []map[string]interface{}  `json:"wallets,omitempty"`
 	Type         SearchResultType          `json:"type,omitempty"`
 }
 
@@ -106,9 +106,9 @@ func parseSearchInput(searchInput string) SearchInput {
 		return SearchInput{BlockNumber: blockNumber}
 	}
 
-	if isValidHashWithLength(searchInput, 66) {
+	if isValidHashWithLength(searchInput, 64) {
 		return SearchInput{Hash: searchInput}
-	} else if isValidHashWithLength(searchInput, 42) {
+	} else if isValidAddressWithLength(searchInput, 42, 44) {
 		return SearchInput{Address: searchInput}
 	} else if isValidHashWithLength(searchInput, 10) {
 		return SearchInput{FunctionSignature: searchInput}
@@ -117,13 +117,11 @@ func parseSearchInput(searchInput string) SearchInput {
 }
 
 func isValidHashWithLength(input string, length int) bool {
-	if len(input) == length && strings.HasPrefix(input, "0x") {
-		_, err := hex.DecodeString(input[2:])
-		if err == nil {
-			return true
-		}
-	}
-	return false
+	return len(input) == length
+}
+
+func isValidAddressWithLength(input string, minLength int, maxLength int) bool {
+	return len(input) >= minLength && len(input) <= maxLength
 }
 
 func executeSearch(ctx context.Context, storage storage.IMainStorage, chainId *big.Int, input SearchInput) (SearchResultModel, error) {
@@ -332,46 +330,29 @@ func searchByHash(mainStorage storage.IMainStorage, chainId *big.Int, hash strin
 }
 
 func searchByAddress(ctx context.Context, mainStorage storage.IMainStorage, chainId *big.Int, address string) (SearchResultModel, error) {
-	searchResult := SearchResultModel{Type: SearchResultTypeAddress}
-	contractCode, err := checkIfContractHasCode(ctx, chainId, address)
+	searchResult := SearchResultModel{Type: SearchResultTypeWallet}
+	
+	// Search for wallet in the wallet table
+	qf := storage.QueryFilter{
+		FilterParams:        map[string]string{"address": address},
+		Limit:               1,
+		ForceConsistentData: false,
+		Aggregates:          []string{"address", "account_nonce", "balance"},
+	}
+	
+	result, err := mainStorage.GetAggregations("wallet", qf)
 	if err != nil {
 		return searchResult, err
 	}
-	if contractCode == ContractCodeExists {
-		searchResult.Type = SearchResultTypeContract
-		txs, err := findLatestTransactionsToAddress(mainStorage, chainId, address)
-		if err == nil {
-			searchResult.Transactions = txs
-			return searchResult, nil
-		}
-		return searchResult, err
-	} else if contractCode == ContractCodeDoesNotExist {
-		txs, err := findLatestTransactionsFromAddressOptimistically(mainStorage, chainId, address)
-		if err == nil {
-			searchResult.Transactions = txs
-			return searchResult, nil
-		}
-		return searchResult, err
-	} else {
-		transactionsTo, err := findLatestTransactionsToAddress(mainStorage, chainId, address)
-		if err != nil {
-			return searchResult, err
-		}
-		for _, tx := range transactionsTo {
-			if len(tx.Data) > 0 && tx.Data != "0x" {
-				// if any received transactions is a function call, likely a contract
-				searchResult.Type = SearchResultTypeContract
-				searchResult.Transactions = transactionsTo
-				return searchResult, nil
-			}
-		}
-		transactionsFrom, err := findLatestTransactionsFromAddressOptimistically(mainStorage, chainId, address)
-		if err != nil {
-			return searchResult, err
-		}
-		searchResult.Transactions = transactionsFrom
+	
+	if len(result.Aggregates) > 0 {
+		// Wallet found
+		searchResult.Wallets = result.Aggregates
+		searchResult.Type = SearchResultTypeWallet
 		return searchResult, nil
 	}
+
+	return searchResult, nil
 }
 
 func findLatestTransactionsToAddress(mainStorage storage.IMainStorage, chainId *big.Int, address string) ([]common.TransactionModel, error) {

@@ -1,0 +1,99 @@
+services:
+  postgres:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-indexer}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  indexer-orchestrator:
+    build:
+      context: ./indexer
+      dockerfile: Dockerfile
+    command: ["orchestrator"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      indexer-migrate-postgres:
+        condition: service_completed_successfully
+    volumes:
+      - ./indexer/configs:/app/configs:ro
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+  indexer-api:
+    build:
+      context: ./indexer
+      dockerfile: Dockerfile
+    command: ["api"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      indexer-migrate-postgres:
+        condition: service_completed_successfully
+      indexer-orchestrator:
+        condition: service_started
+    ports:
+      - "${INDEXER_API_PORT:-8080}:3000"
+    volumes:
+      - ./indexer/configs:/app/configs:ro
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+  indexer-migrate-postgres:
+    build:
+      context: ./indexer
+      dockerfile: Dockerfile
+    command: ["migrate-postgres"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./indexer/configs:/app/configs:ro
+      - ./indexer/internal/tools/postgres:/app/internal/tools/postgres:ro
+      - ./logs:/app/logs
+    environment:
+      - MIGRATIONS_PATH=file://app/internal/tools/postgres
+      - STORAGE_MAIN_POSTGRES_HOST=postgres
+      - STORAGE_MAIN_POSTGRES_PORT=5432
+      - STORAGE_MAIN_POSTGRES_USERNAME=${POSTGRES_USER}
+      - STORAGE_MAIN_POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - STORAGE_MAIN_POSTGRES_DATABASE=${POSTGRES_DB}
+      - STORAGE_MAIN_POSTGRES_SSLMODE=disable
+    restart: "no"
+
+  frontend:
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    environment:
+      NEXT_PUBLIC_APP_API_URL: ${NEXT_PUBLIC_APP_API_URL:-http://localhost:8080}
+      APP_API_URL_INTERNAL: ${APP_API_URL_INTERNAL:-http://indexer-api:3000}
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_APP_API_URL: ${NEXT_PUBLIC_APP_API_URL:-http://localhost:8080}
+    depends_on:
+      - indexer-api
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:2.9.0
+    volumes:
+      - ./indexer/configs/promtail-config.yml:/etc/promtail/config.yml:ro
+      - ./logs:/app/logs:ro
+    command: -config.file=/etc/promtail/config.yml
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

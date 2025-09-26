@@ -1,0 +1,11 @@
+export const TRANSACTION_ENDPOINTS = {
+  LIST: '/:chainId/transactions',
+  PENDING: '/:chainId/pending-transactions',
+  DETAIL: (transactionHash: string) => `/:chainId/tx/${transactionHash}/detail`,
+  PENDING_DETAIL: (transactionHash: string) => `/:chainId/pending-tx/${transactionHash}/detail`,
+} as const;
+
+export const DASHBOARD_TRANSACTIONS_LIMIT = 7;
+
+export const TRANSACTIONS_QUERY_KEY = 'transactions';
+export const PENDING_TRANSACTIONS_QUERY_KEY = 'pending-transactions';

@@ -15,8 +15,9 @@ cd insight
 cp configs/config.example.yml configs/config.yml
 cp configs/secrets.example.yml configs/secrets.yml
 
+change mmnGrpcUrl in config.yml with node url
 # 3. (Optional) Start dependencies with Docker Compose
-docker-compose up -d clickhouse
+docker-compose up -d postgres
 
 # 4. Apply ClickHouse migrations
 cat internal/tools/clickhouse/*.sql | docker exec -i <clickhouse-container> clickhouse-client --user admin --password password
@@ -27,6 +28,7 @@ docker compose up --build
 
 # 6. Build and run Insight
 go build -o main -tags=production
+./main migrate-postgres
 ./main orchestrator   # Starts the indexer
 ./main api           # Starts the API server
 

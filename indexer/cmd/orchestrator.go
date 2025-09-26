@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"net/http"
-
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -23,6 +22,7 @@ var (
 
 func RunOrchestrator(cmd *cobra.Command, args []string) {
 	log.Info().Msg("Starting indexer")
+
 	rpc, err := rpc.Initialize()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to initialize RPC")

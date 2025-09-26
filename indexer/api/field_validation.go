@@ -21,7 +21,7 @@ var EntityColumns = map[string][]string{
 		"max_fee_per_blob_gas", "blob_versioned_hashes", "transaction_type", "r", "s", "v",
 		"access_list", "authorization_list", "contract_address", "gas_used", "cumulative_gas_used",
 		"effective_gas_price", "blob_gas_used", "blob_gas_price", "logs_bloom", "status",
-		"insert_timestamp", "sign",
+		"insert_timestamp", "sign", "transaction_timestamp",
 	},
 	"logs": {
 		"chain_id", "block_number", "block_hash", "block_timestamp", "transaction_hash",
@@ -34,6 +34,9 @@ var EntityColumns = map[string][]string{
 	},
 	"balances": {
 		"token_type", "chain_id", "owner", "address", "token_id", "balance",
+	},
+	"wallet": {
+		"address", "balance", "created_at", "updated_at",
 	},
 	"traces": {
 		"chain_id", "block_number", "block_hash", "block_timestamp", "transaction_hash",

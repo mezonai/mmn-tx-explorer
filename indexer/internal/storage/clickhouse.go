@@ -11,7 +11,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -19,11 +18,16 @@ import (
 	config "github.com/thirdweb-dev/indexer/configs"
 	"github.com/thirdweb-dev/indexer/internal/common"
 	"github.com/thirdweb-dev/indexer/internal/metrics"
+	"github.com/thirdweb-dev/indexer/internal/rpc"
+	pb "github.com/thirdweb-dev/indexer/proto"
+	"github.com/thirdweb-dev/indexer/internal/utils"
 )
+
 
 type ClickHouseConnector struct {
 	conn clickhouse.Conn
 	cfg  *config.ClickhouseConfig
+	mmnGrpcService *rpc.MMNGrpcService
 }
 
 type InsertOptions struct {
@@ -35,33 +39,6 @@ var ZERO_BYTES_66 = strings.Repeat("\x00", 66)
 var ZERO_BYTES_10 = strings.Repeat("\x00", 10)
 var ZERO_BYTES_42 = strings.Repeat("\x00", 42)
 
-var defaultBlockFields = []string{
-	"chain_id", "block_number", "hash", "parent_hash", "block_timestamp", "nonce",
-	"sha3_uncles", "mix_hash", "miner", "state_root", "transactions_root", "logs_bloom",
-	"receipts_root", "difficulty", "total_difficulty", "size", "extra_data", "gas_limit",
-	"gas_used", "transaction_count", "base_fee_per_gas", "withdrawals_root",
-}
-
-var defaultTransactionFields = []string{
-	"chain_id", "hash", "nonce", "block_hash", "block_number", "block_timestamp",
-	"transaction_index", "from_address", "to_address", "value", "gas", "gas_price",
-	"data", "function_selector", "max_fee_per_gas", "max_priority_fee_per_gas",
-	"max_fee_per_blob_gas", "blob_versioned_hashes", "transaction_type", "r", "s", "v",
-	"access_list", "authorization_list", "contract_address", "gas_used", "cumulative_gas_used",
-	"effective_gas_price", "blob_gas_used", "blob_gas_price", "logs_bloom", "status",
-}
-
-var defaultLogFields = []string{
-	"chain_id", "block_number", "block_hash", "block_timestamp", "transaction_hash",
-	"transaction_index", "log_index", "address", "data", "topic_0", "topic_1", "topic_2", "topic_3",
-}
-
-var defaultTraceFields = []string{
-	"chain_id", "block_number", "block_hash", "block_timestamp", "transaction_hash",
-	"transaction_index", "subtraces", "trace_address", "type", "call_type", "error",
-	"from_address", "to_address", "gas", "gas_used", "input", "output", "value", "author",
-	"reward_type", "refund_address",
-}
 
 func NewClickHouseConnector(cfg *config.ClickhouseConfig) (*ClickHouseConnector, error) {
 	conn, err := connectDB(cfg)
@@ -72,10 +49,19 @@ func NewClickHouseConnector(cfg *config.ClickhouseConfig) (*ClickHouseConnector,
 	if cfg.MaxRowsPerInsert == 0 {
 		cfg.MaxRowsPerInsert = DEFAULT_MAX_ROWS_PER_INSERT
 	}
-	return &ClickHouseConnector{
+	connector := &ClickHouseConnector{
 		conn: conn,
 		cfg:  cfg,
-	}, nil
+	}
+	if config.Cfg.RPC.MMNGRPCURL != "" {
+		mmn, err := rpc.NewMMNGrpcService(config.Cfg.RPC.MMNGRPCURL)
+		if err != nil {
+			zLog.Warn().Err(err).Msg("Failed to init MMNGrpcService; wallet sync disabled")
+		} else {
+			connector.mmnGrpcService = mmn
+		}
+	}
+	return connector, nil
 }
 
 func connectDB(cfg *config.ClickhouseConfig) (clickhouse.Conn, error) {
@@ -201,7 +187,7 @@ func (c *ClickHouseConnector) insertTransactions(txs []common.Transaction, opt I
 	columns := []string{
 		"chain_id", "hash", "nonce", "block_hash", "block_number", "block_timestamp", "transaction_index", "from_address", "to_address", "value", "gas",
 		"gas_price", "data", "function_selector", "max_fee_per_gas", "max_priority_fee_per_gas", "max_fee_per_blob_gas", "blob_versioned_hashes", "transaction_type", "r", "s", "v", "access_list",
-		"authorization_list", "contract_address", "gas_used", "cumulative_gas_used", "effective_gas_price", "blob_gas_used", "blob_gas_price", "logs_bloom", "status", "sign",
+		"authorization_list", "contract_address", "gas_used", "cumulative_gas_used", "effective_gas_price", "blob_gas_used", "blob_gas_price", "logs_bloom", "status", "extra_info", "sign",
 	}
 	if opt.AsDeleted {
 		columns = append(columns, "insert_timestamp")
@@ -253,6 +239,7 @@ func (c *ClickHouseConnector) insertTransactions(txs []common.Transaction, opt I
 				tx.BlobGasPrice,
 				tx.LogsBloom,
 				tx.Status,
+				tx.ExtraInfo,
 				func() int8 {
 					if tx.Sign == -1 || opt.AsDeleted {
 						return -1
@@ -522,9 +509,47 @@ func (c *ClickHouseConnector) GetAggregations(table string, qf QueryFilter) (Que
 	return QueryResult[interface{}]{Data: nil, Aggregates: aggregates}, nil
 }
 
+func (c *ClickHouseConnector) GetCount(table string, qf QueryFilter) (uint64, error) {
+	var query string
+	
+	// Special handling for transactions with wallet address to avoid double counting
+	if table == "transactions" && qf.WalletAddress != "" {
+		tableName := c.getTableName(qf.ChainId, table)
+		baseWhereClauses := c.buildWhereClauses(table, qf)
+		
+		// Build a query that counts unique transactions involving the wallet
+		query = fmt.Sprintf("SELECT COUNT(DISTINCT hash) FROM %s.%s", c.cfg.Database, tableName)
+		if qf.ForceConsistentData {
+			query += " FINAL"
+		}
+		
+		// Add all base conditions plus wallet address condition
+		allWhereClauses := append(baseWhereClauses, fmt.Sprintf("(from_address = '%s' OR to_address = '%s')", qf.WalletAddress, qf.WalletAddress))
+		if len(allWhereClauses) > 0 {
+			query += " WHERE " + strings.Join(allWhereClauses, " AND ")
+		}
+		
+		// Add settings if configured
+		if c.cfg.MaxQueryTime > 0 {
+			query += fmt.Sprintf(" SETTINGS max_execution_time = %d", c.cfg.MaxQueryTime)
+		}
+	} else {
+		// Use standard query building for all other cases
+		selectColumns := "COUNT(*)"
+		query = c.buildQuery(table, selectColumns, qf)
+	}
+
+	var count uint64
+	err := c.conn.QueryRow(context.Background(), query).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count %s: %w", table, err)
+	}
+
+	return count, nil
+}
+
 func executeQuery[T any](c *ClickHouseConnector, table, columns string, qf QueryFilter, scanFunc func(driver.Rows) (T, error)) (QueryResult[T], error) {
 	query := c.buildQuery(table, columns, qf)
-
 	rows, err := c.conn.Query(context.Background(), query)
 	if err != nil {
 		return QueryResult[T]{}, err
@@ -585,88 +610,40 @@ func (c *ClickHouseConnector) buildUnionQuery(table, columns string, qf QueryFil
 	// Build base where clauses (excluding wallet address)
 	baseWhereClauses := c.buildWhereClauses(table, qf)
 
-	// Create two separate queries for from_address and to_address
-	fromQuery := fmt.Sprintf("SELECT %s FROM %s.%s", columns, c.cfg.Database, tableName)
+	// Create a single query that uses OR condition for wallet address
+	// This is much simpler and more efficient than UNION for this use case
+	query := fmt.Sprintf("SELECT %s FROM %s.%s", columns, c.cfg.Database, tableName)
 	if qf.ForceConsistentData {
-		fromQuery += " FINAL"
+		query += " FINAL"
 	}
 
-	toQuery := fmt.Sprintf("SELECT %s FROM %s.%s", columns, c.cfg.Database, tableName)
-	if qf.ForceConsistentData {
-		toQuery += " FINAL"
+	// Add all base conditions plus wallet address condition
+	allWhereClauses := append(baseWhereClauses, fmt.Sprintf("(from_address = '%s' OR to_address = '%s')", qf.WalletAddress, qf.WalletAddress))
+	if len(allWhereClauses) > 0 {
+		query += " WHERE " + strings.Join(allWhereClauses, " AND ")
 	}
 
-	// Add base where clauses to both queries
-	if len(baseWhereClauses) > 0 {
-		baseWhereClause := strings.Join(baseWhereClauses, " AND ")
-		fromQuery += " WHERE " + baseWhereClause + " AND from_address = '" + strings.ToLower(qf.WalletAddress) + "'"
-		toQuery += " WHERE " + baseWhereClause + " AND to_address = '" + strings.ToLower(qf.WalletAddress) + "'"
-	} else {
-		fromQuery += " WHERE from_address = '" + strings.ToLower(qf.WalletAddress) + "'"
-		toQuery += " WHERE to_address = '" + strings.ToLower(qf.WalletAddress) + "'"
-	}
-
-	// Apply ORDER BY to both queries for consistent results
-	if qf.SortBy != "" {
-		fromQuery += fmt.Sprintf(" ORDER BY %s %s", qf.SortBy, qf.SortOrder)
-		toQuery += fmt.Sprintf(" ORDER BY %s %s", qf.SortBy, qf.SortOrder)
-	}
-
-	// Apply LIMIT to each individual query to avoid loading too much data
-	// We use a higher limit to ensure we get enough results after UNION
-	individualLimit := qf.Limit * 2 // Double the limit to account for potential duplicates
-	if qf.Page >= 0 && qf.Limit > 0 {
-		offset := qf.Page * qf.Limit
-		fromQuery += fmt.Sprintf(" LIMIT %d OFFSET %d", individualLimit, offset)
-		toQuery += fmt.Sprintf(" LIMIT %d OFFSET %d", individualLimit, offset)
-	} else if qf.Limit > 0 {
-		fromQuery += fmt.Sprintf(" LIMIT %d", individualLimit)
-		toQuery += fmt.Sprintf(" LIMIT %d", individualLimit)
-	}
-
-	// Combine with UNION
-	unionQuery := fmt.Sprintf("(%s) UNION ALL (%s)", fromQuery, toQuery)
-
-	return unionQuery
+	return query
 }
 
 func (c *ClickHouseConnector) addPostQueryClauses(query string, qf QueryFilter) string {
 	// Add GROUP BY clause if needed (for aggregations)
 	if len(qf.GroupBy) > 0 {
 		groupByClause := fmt.Sprintf(" GROUP BY %s", strings.Join(qf.GroupBy, ", "))
-		// For UNION queries, we need to wrap the entire query in a subquery to apply GROUP BY
-		if strings.Contains(query, "UNION ALL") {
-			query = fmt.Sprintf("SELECT * FROM (%s) %s", query, groupByClause)
-		} else {
-			// For standard queries, just append GROUP BY
-			query += groupByClause
-		}
+		query += groupByClause
 	}
 
-	// For UNION queries, ORDER BY and LIMIT are already applied to individual queries
-	// For standard queries, apply ORDER BY and LIMIT
-	if !strings.Contains(query, "UNION ALL") {
-		// Add ORDER BY clause
-		if qf.SortBy != "" {
-			query += fmt.Sprintf(" ORDER BY %s %s", qf.SortBy, qf.SortOrder)
-		}
+	// Add ORDER BY clause
+	if qf.SortBy != "" {
+		query += fmt.Sprintf(" ORDER BY %s %s", qf.SortBy, qf.SortOrder)
+	}
 
-		// Add limit clause
-		if qf.Page >= 0 && qf.Limit > 0 {
-			offset := qf.Page * qf.Limit
-			query += fmt.Sprintf(" LIMIT %d OFFSET %d", qf.Limit, offset)
-		} else if qf.Limit > 0 {
-			query += fmt.Sprintf(" LIMIT %d", qf.Limit)
-		}
-	} else {
-		// For UNION queries, we need to apply final LIMIT after the UNION
-		// This ensures we get exactly the requested number of results
-		if qf.Page >= 0 && qf.Limit > 0 {
-			offset := qf.Page * qf.Limit
-			query = fmt.Sprintf("SELECT * FROM (%s) LIMIT %d OFFSET %d", query, qf.Limit, offset)
-		} else if qf.Limit > 0 {
-			query = fmt.Sprintf("SELECT * FROM (%s) LIMIT %d", query, qf.Limit)
-		}
+	// Add limit clause
+	if qf.Page >= 0 && qf.Limit > 0 {
+		offset := qf.Page * qf.Limit
+		query += fmt.Sprintf(" LIMIT %d OFFSET %d", qf.Limit, offset)
+	} else if qf.Limit > 0 {
+		query += fmt.Sprintf(" LIMIT %d", qf.Limit)
 	}
 
 	// Add settings at the very end
@@ -714,7 +691,7 @@ func (c *ClickHouseConnector) buildWhereClauses(table string, qf QueryFilter) []
 
 	// Add filter params
 	for key, value := range qf.FilterParams {
-		whereClauses = append(whereClauses, createFilterClause(key, strings.ToLower(value)))
+		whereClauses = append(whereClauses, createFilterClause(key, value))
 	}
 
 	return whereClauses
@@ -746,7 +723,7 @@ func createFilterClause(key, value string) string {
 }
 
 func createContractAddressClause(table, contractAddress string) string {
-	contractAddress = strings.ToLower(contractAddress)
+	contractAddress = contractAddress
 	// This needs to move to a query param that accept multiple addresses
 	if table == "logs" {
 		if contractAddress != "" {
@@ -761,7 +738,7 @@ func createContractAddressClause(table, contractAddress string) string {
 }
 
 func createWalletAddressClause(table, walletAddress string) string {
-	walletAddress = strings.ToLower(walletAddress)
+	walletAddress = walletAddress
 	if table != "transactions" || walletAddress == "" {
 		return ""
 	}
@@ -772,7 +749,7 @@ func createFromAddressClause(table, fromAddress string) string {
 	if fromAddress == "" {
 		return ""
 	}
-	fromAddress = strings.ToLower(fromAddress)
+	fromAddress = fromAddress
 	if table == "transactions" {
 		return fmt.Sprintf("from_address = '%s'", fromAddress)
 	}
@@ -1344,7 +1321,7 @@ func (c *ClickHouseConnector) InsertBlockData(data []common.BlockData) error {
 					tx.TransactionIndex,
 					tx.FromAddress,
 					tx.ToAddress,
-					tx.Value,
+					utils.StringToBigInt(tx.Value),
 					tx.Gas,
 					tx.GasPrice,
 					tx.Data,
@@ -1367,7 +1344,11 @@ func (c *ClickHouseConnector) InsertBlockData(data []common.BlockData) error {
 					tx.BlobGasPrice,
 					tx.LogsBloom,
 					tx.Status,
+					tx.TransactionTimestamp,
+					tx.TextData,
 				}
+				_ = c.refreshWalletFromService(context.Background(), tx.FromAddress)
+				_ = c.refreshWalletFromService(context.Background(),  tx.ToAddress)
 			}
 
 			// Prepare logs array
@@ -2163,3 +2144,37 @@ func (c *ClickHouseConnector) DeleteOlderThan(chainId *big.Int, blockNumber *big
 func (c *ClickHouseConnector) TestQueryGeneration(table, columns string, qf QueryFilter) string {
 	return c.buildQuery(table, columns, qf)
 }
+
+func (c *ClickHouseConnector) insertWallet(ctx context.Context, address string, nonce uint64, balance string) error {
+	if address == "" {
+		return nil
+	}
+	query := fmt.Sprintf("INSERT INTO %s.%s (address, account_nonce, balance, updated_at) VALUES (?, ?, ?, now())", c.cfg.Database, "wallet")
+	return c.conn.Exec(ctx, query, address, nonce, balance)
+}
+
+// refreshWalletFromService fetches from MMN and writes to DB
+func (c *ClickHouseConnector) refreshWalletFromService(ctx context.Context, address string) error {
+	if c.mmnGrpcService == nil || address == "" {
+		return nil
+	}
+	resp, err := c.mmnGrpcService.GetAccountByAddress(ctx, address)
+	if err != nil {
+		return err
+	}
+	if resp == nil || resp.Account == nil {
+		return nil
+	}
+	return c.insertWallet(ctx, address, resp.Account.Nonce, resp.Account.Balance)
+}
+
+// GetPendingTransactions retrieves pending transactions from MMN service
+//TODO: index pending transactions to db
+func (c *ClickHouseConnector) GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error) {
+	if c.mmnGrpcService == nil {
+		return nil, fmt.Errorf("MMN MMNGrpcService not initialized")
+	}
+	return c.mmnGrpcService.GetPendingTransactions(ctx)
+}
+
+

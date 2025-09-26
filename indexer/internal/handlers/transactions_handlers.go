@@ -1,6 +1,7 @@
 package handlers
 
 import (
+    "fmt"
 	"net/http"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -11,6 +12,8 @@ import (
 	config "github.com/thirdweb-dev/indexer/configs"
 	"github.com/thirdweb-dev/indexer/internal/common"
 	"github.com/thirdweb-dev/indexer/internal/storage"
+	"math"
+	pb "github.com/thirdweb-dev/indexer/proto"
 )
 
 // @Summary Get all transactions
@@ -129,6 +132,10 @@ func handleTransactionsRequest(c *gin.Context) {
 		return
 	}
 
+	if walletAddress == "" && queryParams.WalletAddress != "" {
+		walletAddress = queryParams.WalletAddress
+	}
+
 	// Validate GroupBy and SortBy fields
 	if err := api.ValidateGroupByAndSortBy("transactions", queryParams.GroupBy, queryParams.SortBy, queryParams.Aggregates); err != nil {
 		api.BadRequestErrorHandler(c, err)
@@ -164,6 +171,24 @@ func handleTransactionsRequest(c *gin.Context) {
 		Page:                queryParams.Page,
 		Limit:               queryParams.Limit,
 		ForceConsistentData: queryParams.ForceConsistentData,
+	}
+
+	// Prepare the QueryFilter for count
+	countQf := storage.QueryFilter{
+		FilterParams:        queryParams.FilterParams,
+		ContractAddress:     contractAddress,
+		WalletAddress:       walletAddress,
+		Signature:           signatureHash,
+		ChainId:             chainId,
+		ForceConsistentData: queryParams.ForceConsistentData,
+	}
+	
+	// Get the total number of items
+	totalItems, err := mainStorage.GetCount("transactions", countQf)
+	if err != nil {
+		log.Error().Err(err).Msg("Error getting count")
+		api.InternalErrorHandler(c)
+		return
 	}
 
 	// Initialize the QueryResult
@@ -212,7 +237,8 @@ func handleTransactionsRequest(c *gin.Context) {
 			data = serializeTransactions(transactionsResult.Data)
 		}
 		queryResult.Data = &data
-		queryResult.Meta.TotalItems = len(transactionsResult.Data)
+		queryResult.Meta.TotalItems = int(totalItems)
+		queryResult.Meta.TotalPages = int(math.Ceil(float64(totalItems) / float64(queryParams.Limit)))
 	}
 
 	c.JSON(http.StatusOK, queryResult)
@@ -255,3 +281,215 @@ func serializeTransactions(transactions []common.Transaction) []common.Transacti
 	}
 	return transactionModels
 }
+
+// PendingTransactionModel return type for Swagger documentation
+type PendingTransactionModel struct {
+	TxHash    string `json:"hash"`
+	Sender    string `json:"from_address"`
+	Recipient string `json:"to_address"`
+	Amount    string `json:"value"`
+	Nonce     uint64 `json:"nonce"`
+	Timestamp uint64 `json:"transaction_timestamp"`
+	Status    uint64 `json:"status"`
+	TransactionType uint64 `json:"transaction_type"`
+}
+
+// @Summary Get pending transactions
+// @Description Retrieve all pending transactions from mempool
+// @Tags transactions
+// @Accept json
+// @Produce json
+// @Security BasicAuth
+// @Param chainId path string true "Chain ID"
+// @Success 200 {object} api.QueryResponse{data=[]PendingTransactionModel}
+// @Failure 400 {object} api.Error
+// @Failure 401 {object} api.Error
+// @Failure 500 {object} api.Error
+// @Router /{chainId}/pending-transactions [get]
+func GetPendingTransactions(c *gin.Context) {
+	chainId, err := api.GetChainId(c)
+	if err != nil {
+		api.BadRequestErrorHandler(c, err)
+		return
+	}
+
+	// Parse pagination params
+	queryParams, err := api.ParseQueryParams(c.Request)
+	if err != nil {
+		api.BadRequestErrorHandler(c, err)
+		return
+	}
+
+	mainStorage, err := getMainStorage()
+	if err != nil {
+		log.Error().Err(err).Msg("Error getting main storage")
+		api.InternalErrorHandler(c)
+		return
+	}
+
+	// Get pending transactions from MMN service
+	ctx := c.Request.Context()
+	pendingResp, err := mainStorage.GetPendingTransactions(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("Error getting pending transactions from MMN service")
+		api.InternalErrorHandler(c)
+		return
+	}
+
+	if pendingResp == nil || pendingResp.Error != "" {
+		log.Error().Msgf("MMN service error: %s", pendingResp.Error)
+		api.InternalErrorHandler(c)
+		return
+	}
+
+	// Compute pagination over full pending set received from node
+	totalItems := int(pendingResp.TotalCount)
+	limit := queryParams.Limit
+	page := queryParams.Page
+	if limit <= 0 {
+		limit = 5
+	}
+	if page < 0 {
+		page = 0
+	}
+
+	start := page * limit
+	if start > totalItems {
+		start = totalItems
+	}
+	end := start + limit
+	if end > totalItems {
+		end = totalItems
+	}
+
+	var sliced []*pb.TransactionData
+	if pendingResp.PendingTxs != nil && start < end {
+		sliced = pendingResp.PendingTxs[start:end]
+	} else {
+		sliced = []*pb.TransactionData{}
+	}
+
+	// Prepare response with pagination meta
+	queryResult := api.QueryResponse{
+		Meta: api.Meta{
+			ChainId:    chainId.Uint64(),
+			Page:       page,
+			Limit:      limit,
+			TotalItems: totalItems,
+			TotalPages: int(math.Ceil(float64(totalItems) / float64(limit))),
+		},
+	}
+
+	// Serialize pending transactions page
+	var data interface{} = serializePendingTransactions(sliced)
+	queryResult.Data = &data
+
+	c.JSON(http.StatusOK, queryResult)
+}
+
+// @Summary Get pending transaction detail
+// @Description Retrieve a single pending transaction by transaction hash
+// @Tags transactions
+// @Accept json
+// @Produce json
+// @Security BasicAuth
+// @Param chainId path string true "Chain ID"
+// @Param transactionHash path string true "Transaction hash"
+// @Success 200 {object} api.QueryResponse{data=PendingTransactionModel}
+// @Failure 400 {object} api.Error
+// @Failure 401 {object} api.Error
+// @Failure 404 {object} api.Error
+// @Failure 500 {object} api.Error
+// @Router /{chainId}/pending-transactions/{transactionHash} [get]
+
+type PendingTransactionDetailResponse struct {
+	Data struct {
+		Transaction PendingTransactionModel `json:"transaction"`
+	} `json:"data"`
+}
+
+func GetPendingTransactionDetail(c *gin.Context) {
+    hash := c.Param("transaction_hash")
+    if hash == "" {
+        api.BadRequestErrorHandler(c, fmt.Errorf("missing transaction hash"))
+        return
+    }
+
+    mainStorage, err := getMainStorage()
+    if err != nil {
+        log.Error().Err(err).Msg("Error getting main storage")
+        api.InternalErrorHandler(c)
+        return
+    }
+
+    ctx := c.Request.Context()
+    pendingResp, err := mainStorage.GetPendingTransactions(ctx)
+    if err != nil {
+        log.Error().Err(err).Msg("Error getting pending transactions from MMN service")
+        api.InternalErrorHandler(c)
+        return
+    }
+
+    if pendingResp == nil || pendingResp.Error != "" {
+        log.Error().Msgf("MMN service error: %s", pendingResp.Error)
+        api.InternalErrorHandler(c)
+        return
+    }
+
+    var found *pb.TransactionData
+    if pendingResp.PendingTxs != nil {
+        for _, tx := range pendingResp.PendingTxs {
+            if tx != nil && tx.TxHash == hash {
+                found = tx
+                break
+            }
+        }
+    }
+
+    if found == nil {
+        c.JSON(http.StatusNotFound, api.Error{Message: "Pending transaction not found"})
+        return
+    }
+
+    model := PendingTransactionModel{
+        TxHash:    found.TxHash,
+        Sender:    found.Sender,
+        Recipient: found.Recipient,
+        Amount:    found.Amount,
+        Nonce:     found.Nonce,
+        Timestamp: found.Timestamp / 1000,
+        Status:    0,
+        TransactionType: 0,
+    }
+
+	transactionDetailResponse := PendingTransactionDetailResponse{
+		Data: struct {
+			Transaction PendingTransactionModel `json:"transaction"`
+		}{
+			Transaction: model,
+		},
+	}
+    c.JSON(http.StatusOK, transactionDetailResponse)
+}
+
+func serializePendingTransactions(pendingTxs []*pb.TransactionData) []PendingTransactionModel {
+	if pendingTxs == nil {
+		return []PendingTransactionModel{}
+	}
+
+	models := make([]PendingTransactionModel, len(pendingTxs))
+	for i, tx := range pendingTxs {
+		models[i] = PendingTransactionModel{
+			TxHash:    tx.TxHash,
+			Sender:    tx.Sender,
+			Recipient: tx.Recipient,
+			Amount:    tx.Amount,
+			Nonce:     tx.Nonce,
+			Timestamp: tx.Timestamp / 1000,
+			Status:    0,
+			TransactionType: 0,
+		}
+	}
+	return models
+}
+
