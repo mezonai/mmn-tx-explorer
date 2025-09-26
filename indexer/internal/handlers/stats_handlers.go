@@ -1,18 +1,17 @@
 package handlers
 
 import (
-	"math/big"
-    "net/http"
-    "strconv"
-    "sync"
-    "time"
+	"net/http"
+	"strconv"
+	"sync"
+	"time"
 
-    "github.com/gin-gonic/gin"
-    "github.com/rs/zerolog/log"
-    "github.com/thirdweb-dev/indexer/api"
-    "github.com/thirdweb-dev/indexer/internal/storage"
-    pb "github.com/thirdweb-dev/indexer/proto"
-	 "context"
+	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
+	"github.com/thirdweb-dev/indexer/api"
+	"github.com/thirdweb-dev/indexer/internal/storage"
+	pb "github.com/thirdweb-dev/indexer/proto"
+	"context"
 )
 
 var (
@@ -48,7 +47,7 @@ type StatsResponse struct {
 // @Failure 500 {object} api.Error
 // @Router /{chainId}/stats [get]
 func GetStats(c *gin.Context) {
-    handleStatsRequest(c)
+	handleStatsRequest(c)
 }
 
 func handleStatsRequest(c *gin.Context) {
@@ -148,25 +147,25 @@ func handleStatsRequest(c *gin.Context) {
         transactions24h += totalPendingTransactions
     }
 
-    statsResponse := StatsResponse{
-        Data: struct {
+	statsResponse := StatsResponse{
+		Data: struct {
 			TotalBlocks      uint64  `json:"total_blocks"`
 			TotalTransactions uint64  `json:"total_transactions"`
-            TotalPendingTransactions uint64  `json:"total_pending_transactions"`
+			TotalPendingTransactions uint64  `json:"total_pending_transactions"`
 			AverageBlockTime  float64 `json:"average_block_time"`
 			TotalWallets     uint64  `json:"total_wallets"`
 			Transactions24h   uint64  `json:"transactions_24h"`
 			PendingTransactions30m   uint64  `json:"pending_transactions_30m"`
-        }{
+		}{
 			TotalBlocks:      totalBlocks,
 			TotalTransactions: totalTransactions,
-            TotalPendingTransactions: totalPendingTransactions,
+			TotalPendingTransactions: totalPendingTransactions,
 			AverageBlockTime:  averageBlockTime,
 			TotalWallets:     totalWallets,
 			Transactions24h:   transactions24h,
 			PendingTransactions30m:   pendingTransactions30m,
-        },
-    }
+		},
+	}
 
     statsMutex.Lock()
     statsCache = &statsResponse
