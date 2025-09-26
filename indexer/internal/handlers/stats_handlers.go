@@ -23,15 +23,15 @@ var (
 
 // StatsResponse represents the response structure for blockchain statistics
 type StatsResponse struct {
-    Data struct {
+	Data struct {
 		TotalBlocks      uint64  `json:"total_blocks"`
 		TotalTransactions uint64  `json:"total_transactions"`
-        TotalPendingTransactions uint64  `json:"total_pending_transactions"`
+		TotalPendingTransactions uint64  `json:"total_pending_transactions"`
 		AverageBlockTime  float64 `json:"average_block_time"`
 		TotalWallets     uint64  `json:"total_wallets"`
 		Transactions24h   uint64  `json:"transactions_24h"`
 		PendingTransactions30m   uint64  `json:"pending_transactions_30m"`
-    } `json:"data"`
+	} `json:"data"`
 }
 
 // @Summary Get blockchain statistics
