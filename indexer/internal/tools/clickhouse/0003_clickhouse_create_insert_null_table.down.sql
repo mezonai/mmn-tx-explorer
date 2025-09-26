@@ -1,1 +1,0 @@
-DROP TABLE IF EXISTS inserts_null_table;
