@@ -158,22 +158,23 @@ func NewStorageConnector(cfg *config.StorageConfig) (IStorage, error) {
 }
 
 func NewConnector[T any](cfg *config.StorageConnectionConfig) (T, error) {
-    var conn interface{}
-    var err error
+	var conn interface{}
+	var err error
 
-    if cfg.Postgres != nil {
-        conn, err = NewPostgresConnector(cfg.Postgres)
-    } else {
-        return *new(T), fmt.Errorf("no storage driver configured (Postgres required)")
-    }
-    if err != nil {
-        return *new(T), err
-    }
+	if cfg.Postgres != nil {
+		conn, err = NewPostgresConnector(cfg.Postgres)
+	} else {
+		return *new(T), fmt.Errorf("no storage driver configured")
+	}
 
-    typedConn, ok := conn.(T)
-    if !ok {
-        return *new(T), fmt.Errorf("connector does not implement the required interface")
-    }
+	if err != nil {
+		return *new(T), err
+	}
 
-    return typedConn, nil
+	typedConn, ok := conn.(T)
+	if !ok {
+		return *new(T), fmt.Errorf("connector does not implement the required interface")
+	}
+
+	return typedConn, nil
 }
