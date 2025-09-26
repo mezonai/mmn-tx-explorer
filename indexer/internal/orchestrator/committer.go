@@ -141,6 +141,8 @@ func (c *Committer) Start(ctx context.Context) {
 }
 
 func (c *Committer) runCommitLoop(ctx context.Context, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
@@ -150,8 +152,7 @@ func (c *Committer) runCommitLoop(ctx context.Context, interval time.Duration) {
 				log.Info().Msgf("Committer work mode changing from %s to %s", c.workMode, workMode)
 				c.workMode = workMode
 			}
-		default:
-			time.Sleep(interval)
+		case <-ticker.C:
 			if c.workMode == "" {
 				log.Debug().Msg("Committer work mode not set, skipping commit")
 				continue
@@ -173,12 +174,13 @@ func (c *Committer) runCommitLoop(ctx context.Context, interval time.Duration) {
 }
 
 func (c *Committer) runPublishLoop(ctx context.Context, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		default:
-			time.Sleep(interval)
+		case <-ticker.C:
 			if c.workMode == "" {
 				log.Debug().Msg("Committer work mode not set, skipping publish")
 				continue

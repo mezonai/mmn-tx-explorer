@@ -13,13 +13,13 @@ import (
 
 // MMNGrpcService manages a shared gRPC connection for block operations
 type MMNGrpcService struct {
-	conn        *grpc.ClientConn
-	blockClient      pb.BlockServiceClient
-	txClient    pb.TxServiceClient
+	conn          *grpc.ClientConn
+	blockClient   pb.BlockServiceClient
+	txClient      pb.TxServiceClient
 	accountClient pb.AccountServiceClient
-	mu          sync.RWMutex
-	url         string
-	isConnected bool
+	mu            sync.RWMutex
+	url           string
+	isConnected   bool
 }
 
 // NewMMNGrpcService creates a new MMNGrpcService with connection to MMN gRPC
@@ -27,11 +27,11 @@ func NewMMNGrpcService(url string) (*MMNGrpcService, error) {
 	service := &MMNGrpcService{
 		url: url,
 	}
-	
+
 	if err := service.connect(); err != nil {
 		return nil, fmt.Errorf("failed to create block service: %w", err)
 	}
-	
+
 	return service, nil
 }
 
@@ -39,22 +39,22 @@ func NewMMNGrpcService(url string) (*MMNGrpcService, error) {
 func (mmn *MMNGrpcService) connect() error {
 	mmn.mu.Lock()
 	defer mmn.mu.Unlock()
-	
+
 	if mmn.isConnected {
 		return nil
 	}
-	
-	conn, err := grpc.Dial(mmn.url, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	conn, err := grpc.NewClient(mmn.url, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return fmt.Errorf("failed to connect to %s: %w", mmn.url, err)
 	}
-	
+
 	mmn.conn = conn
 	mmn.blockClient = pb.NewBlockServiceClient(conn)
 	mmn.txClient = pb.NewTxServiceClient(conn)
 	mmn.accountClient = pb.NewAccountServiceClient(conn)
 	mmn.isConnected = true
-	
+
 	return nil
 }
 
@@ -66,7 +66,7 @@ func (mmn *MMNGrpcService) ensureConnection() error {
 		return nil
 	}
 	mmn.mu.RUnlock()
-	
+
 	return mmn.connect()
 }
 
@@ -75,16 +75,16 @@ func (mmn *MMNGrpcService) GetBlockByNumber(ctx context.Context, blockNumbers []
 	if err := mmn.ensureConnection(); err != nil {
 		return nil, fmt.Errorf("connection error: %w", err)
 	}
-	
+
 	mmn.mu.RLock()
 	defer mmn.mu.RUnlock()
-	
+
 	if !mmn.isConnected {
 		return nil, fmt.Errorf("service not connected")
 	}
-	
+
 	return mmn.blockClient.GetBlockByNumber(ctx, &pb.GetBlockByNumberRequest{
-		BlockNumbers:        blockNumbers,
+		BlockNumbers: blockNumbers,
 	})
 }
 
@@ -93,14 +93,14 @@ func (mmn *MMNGrpcService) GetBlockNumber(ctx context.Context) (*pb.GetBlockNumb
 	if err := mmn.ensureConnection(); err != nil {
 		return nil, fmt.Errorf("connection error: %w", err)
 	}
-	
+
 	mmn.mu.RLock()
 	defer mmn.mu.RUnlock()
-	
+
 	if !mmn.isConnected {
 		return nil, fmt.Errorf("service not connected")
 	}
-	
+
 	return mmn.blockClient.GetBlockNumber(ctx, &pb.EmptyParams{})
 }
 
@@ -140,12 +140,12 @@ func (mmn *MMNGrpcService) GetPendingTransactions(ctx context.Context) (*pb.GetP
 func (mmn *MMNGrpcService) Close() error {
 	mmn.mu.Lock()
 	defer mmn.mu.Unlock()
-	
+
 	if mmn.conn != nil {
 		mmn.isConnected = false
 		return mmn.conn.Close()
 	}
-	
+
 	return nil
 }
 
@@ -153,7 +153,7 @@ func (mmn *MMNGrpcService) Close() error {
 func (mmn *MMNGrpcService) IsConnected() bool {
 	mmn.mu.RLock()
 	defer mmn.mu.RUnlock()
-	
+
 	return mmn.isConnected
 }
 
