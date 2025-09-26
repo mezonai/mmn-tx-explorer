@@ -91,7 +91,7 @@ type Migrator struct {
 	rpcClient          rpc.IRPCClient
 	storage            storage.IStorage
 	validator          *orchestrator.Validator
-	targetConn         *storage.ClickHouseConnector
+	targetConn         storage.IMainStorage
 	migrationBatchSize int
 	rpcBatchSize       int
 }
@@ -131,9 +131,9 @@ func NewMigrator() *Migrator {
 
 	validator := orchestrator.NewValidator(rpcClient, s)
 
-	targetStorageConfig := *config.Cfg.Storage.Main.Clickhouse
+	targetStorageConfig := *config.Cfg.Storage.Main.Postgres
 	targetStorageConfig.Database = targetDBName
-	targetConn, err := storage.NewClickHouseConnector(&targetStorageConfig)
+	pgConn, err := storage.NewPostgresConnector(&targetStorageConfig)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to initialize target storage")
 	}
@@ -144,7 +144,7 @@ func NewMigrator() *Migrator {
 		rpcClient:          rpcClient,
 		storage:            s,
 		validator:          validator,
-		targetConn:         targetConn,
+		targetConn:         pgConn,
 	}
 }
 

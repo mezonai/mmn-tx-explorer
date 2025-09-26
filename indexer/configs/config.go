@@ -1,9 +1,7 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/rs/zerolog/log"
@@ -16,10 +14,10 @@ type LogConfig struct {
 	// File logging configuration
 	FileEnabled bool   `mapstructure:"fileEnabled"`
 	FilePath    string `mapstructure:"filePath"`
-	MaxSize     int    `mapstructure:"maxSize"`     // Maximum size in MB before rotation
-	MaxBackups  int    `mapstructure:"maxBackups"`  // Maximum number of old log files to retain
-	MaxAge      int    `mapstructure:"maxAge"`      // Maximum number of days to retain old log files
-	Compress    bool   `mapstructure:"compress"`    // Whether to compress rotated log files
+	MaxSize     int    `mapstructure:"maxSize"`    // Maximum size in MB before rotation
+	MaxBackups  int    `mapstructure:"maxBackups"` // Maximum number of old log files to retain
+	MaxAge      int    `mapstructure:"maxAge"`     // Maximum number of days to retain old log files
+	Compress    bool   `mapstructure:"compress"`   // Whether to compress rotated log files
 }
 
 type PollerConfig struct {
@@ -67,31 +65,7 @@ const (
 )
 
 type StorageConnectionConfig struct {
-	Clickhouse *ClickhouseConfig `mapstructure:"clickhouse"`
-	Postgres   *PostgresConfig   `mapstructure:"postgres"`
-}
-
-type TableConfig struct {
-	DefaultSelectFields []string `mapstructure:"defaultSelectFields"`
-	TableName           string   `mapstructure:"tableName"`
-}
-
-type TableOverrideConfig map[string]TableConfig
-
-type ClickhouseConfig struct {
-	Host                         string                         `mapstructure:"host"`
-	Port                         int                            `mapstructure:"port"`
-	Username                     string                         `mapstructure:"username"`
-	Password                     string                         `mapstructure:"password"`
-	Database                     string                         `mapstructure:"database"`
-	DisableTLS                   bool                           `mapstructure:"disableTLS"`
-	AsyncInsert                  bool                           `mapstructure:"asyncInsert"`
-	MaxRowsPerInsert             int                            `mapstructure:"maxRowsPerInsert"`
-	MaxOpenConns                 int                            `mapstructure:"maxOpenConns"`
-	MaxIdleConns                 int                            `mapstructure:"maxIdleConns"`
-	ChainBasedConfig             map[string]TableOverrideConfig `mapstructure:"chainBasedConfig"`
-	EnableParallelViewProcessing bool                           `mapstructure:"enableParallelViewProcessing"`
-	MaxQueryTime                 int                            `mapstructure:"maxQueryTime"`
+	Postgres *PostgresConfig `mapstructure:"postgres"`
 }
 
 type PostgresConfig struct {
@@ -108,8 +82,9 @@ type PostgresConfig struct {
 }
 
 type RPCBatchRequestConfig struct {
-	BlocksPerRequest int `mapstructure:"blocksPerRequest"`
-	BatchDelay       int `mapstructure:"batchDelay"`
+	BlocksPerRequest   int `mapstructure:"blocksPerRequest"`
+	BatchDelay         int `mapstructure:"batchDelay"`
+	ConcurrentRequests int `mapstructure:"concurrentRequests"`
 }
 
 type ToggleableRPCBatchRequestConfig struct {
@@ -245,50 +220,8 @@ func LoadConfig(cfgFile string) error {
 
 	err := viper.Unmarshal(&Cfg)
 	if err != nil {
-		return fmt.Errorf("error unmarshalling config: %v", err)
+		return fmt.Errorf("error unmarshal config: %v", err)
 	}
 
-	err = setCustomJSONConfigs()
-	if err != nil {
-		return fmt.Errorf("error setting custom JSON configs: %v", err)
-	}
-
-	if clickhouse := Cfg.Storage.Main.Clickhouse; clickhouse != nil {
-		log.Debug().
-			Interface("chainConfig", clickhouse.ChainBasedConfig).
-			Msgf("Loaded chain config %v", clickhouse.ChainBasedConfig)
-	}
-
-	return nil
-}
-
-func setCustomJSONConfigs() error {
-	if chainConfigJSON := os.Getenv("STORAGE_MAIN_CLICKHOUSE_CHAINBASEDCONFIG"); chainConfigJSON != "" {
-		var mainChainConfig map[string]TableOverrideConfig
-		if err := json.Unmarshal([]byte(chainConfigJSON), &mainChainConfig); err != nil {
-			return fmt.Errorf("error parsing main chainBasedConfig JSON: %v", err)
-		}
-		if Cfg.Storage.Main.Clickhouse != nil {
-			Cfg.Storage.Main.Clickhouse.ChainBasedConfig = mainChainConfig
-		}
-	}
-	if chainConfigJSON := os.Getenv("STORAGE_STAGING_CLICKHOUSE_CHAINBASEDCONFIG"); chainConfigJSON != "" {
-		var stagingChainConfig map[string]TableOverrideConfig
-		if err := json.Unmarshal([]byte(chainConfigJSON), &stagingChainConfig); err != nil {
-			return fmt.Errorf("error parsing staging chainBasedConfig JSON: %v", err)
-		}
-		if Cfg.Storage.Staging.Clickhouse != nil {
-			Cfg.Storage.Staging.Clickhouse.ChainBasedConfig = stagingChainConfig
-		}
-	}
-	if chainConfigJSON := os.Getenv("STORAGE_ORCHESTRATOR_CLICKHOUSE_CHAINBASEDCONFIG"); chainConfigJSON != "" {
-		var orchestratorChainConfig map[string]TableOverrideConfig
-		if err := json.Unmarshal([]byte(chainConfigJSON), &orchestratorChainConfig); err != nil {
-			return fmt.Errorf("error parsing orchestrator chainBasedConfig JSON: %v", err)
-		}
-		if Cfg.Storage.Main.Clickhouse != nil {
-			Cfg.Storage.Main.Clickhouse.ChainBasedConfig = orchestratorChainConfig
-		}
-	}
 	return nil
 }

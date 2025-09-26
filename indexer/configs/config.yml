@@ -13,6 +13,8 @@ rpc:
     blocksPerRequest: 500
     # Delay in milliseconds between batch requests to avoid rate limiting
     batchDelay: 100
+    # Number of concurrent requests to make to the RPC
+    concurrentRequests: 20
   
   # Log fetching configuration
   logs:

@@ -125,8 +125,8 @@ func (m *WorkModeMonitor) Start(ctx context.Context) {
 }
 
 func (m *WorkModeMonitor) broadcastWorkMode(mode WorkMode) {
-	m.channelsMutex.RLock()
-	defer m.channelsMutex.RUnlock()
+	m.channelsMutex.Lock()
+	defer m.channelsMutex.Unlock()
 
 	for ch := range m.workModeChannels {
 		select {
