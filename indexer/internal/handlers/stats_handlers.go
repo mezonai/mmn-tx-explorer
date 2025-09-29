@@ -72,8 +72,6 @@ func handleTransactionStats(c *gin.Context) {
 	resp.Data.Transactions24h = transactions24h
 	resp.Data.PendingTransactions30m = pendingTransactions30m
 
-	// Không sử dụng cache
-
 	c.JSON(http.StatusOK, resp)
 }
 
