@@ -221,13 +221,13 @@ func (p *PostgresConnector) StoreBlockFailures(failures []common.BlockFailure) e
 	}
 
 	query := fmt.Sprintf(`INSERT INTO block_failures (chain_id, block_number, last_error_timestamp, failure_count, reason)
-	          VALUES %s
-	          ON CONFLICT (chain_id, block_number) 
-	          DO UPDATE SET 
-	              last_error_timestamp = EXCLUDED.last_error_timestamp,
+              VALUES %s
+              ON CONFLICT (chain_id, block_number)
+              DO UPDATE SET 
+                  last_error_timestamp = EXCLUDED.last_error_timestamp,
 	              failure_count = EXCLUDED.failure_count,
-	              reason = EXCLUDED.reason,
-	              updated_at = NOW()`, strings.Join(valueStrings, ","))
+                  reason = EXCLUDED.reason,
+                  updated_at = NOW()`, strings.Join(valueStrings, ","))
 
 	_, err := p.db.Exec(query, valueArgs...)
 	return err
@@ -319,7 +319,25 @@ func (p *PostgresConnector) InsertStagingData(data []common.BlockData) error {
 	          DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`, strings.Join(valueStrings, ","))
 
 	_, err := p.db.Exec(query, valueArgs...)
-	return err
+	if err != nil {
+		return err
+	}
+	txCount := 0
+    for _, blockData := range data {
+        txCount += len(blockData.Transactions)
+    }
+    
+    if txCount > 0 {
+        _, err2 := p.db.Exec(
+            "INSERT INTO stats(key, value) VALUES ('total_transactions', 0) ON CONFLICT (key) DO UPDATE SET value = stats.value + $1",
+            txCount,
+        )
+        if err2 != nil {
+            log.Warn().Err(err2).Msg("Failed to update stats.total_transactions")
+        }
+    }
+    
+    return nil
 }
 
 func (p *PostgresConnector) GetStagingData(qf QueryFilter) ([]common.BlockData, error) {
@@ -1221,6 +1239,21 @@ func (p *PostgresConnector) GetCount(table string, qf QueryFilter) (uint64, erro
 	var count uint64
 	err := p.db.QueryRow(query).Scan(&count)
 	return count, err
+}
+
+func (p *PostgresConnector) GetStatByKey(key string) (uint64, error) {
+    query := "SELECT value FROM stats WHERE key = $1"
+    
+    var value uint64
+    err := p.db.QueryRow(query, key).Scan(&value)
+    if err != nil {
+        if err == sql.ErrNoRows {
+            return 0, nil 
+        }
+        return 0, err
+    }
+    
+    return value, nil
 }
 
 func (p *PostgresConnector) GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error) {

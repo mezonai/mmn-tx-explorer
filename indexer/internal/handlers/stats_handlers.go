@@ -16,164 +16,180 @@ import (
 )
 
 var (
-    statsCache     *StatsResponse
-    statsCacheTime time.Time
-    statsMutex    sync.RWMutex
-    cacheTTL      = 3 * time.Second
+	dashboardStatsCache *DashboardStatsResponse
+	dashboardCacheTime  time.Time
+	txStatsCache        *TransactionStatsResponse
+	txStatsCacheTime    time.Time
+	statsMutex          sync.RWMutex
+	cacheTTL            = 3 * time.Second
 )
 
-// StatsResponse represents the response structure for blockchain statistics
-type StatsResponse struct {
-	Data struct {
-		TotalBlocks      uint64  `json:"total_blocks"`
-		TotalTransactions uint64  `json:"total_transactions"`
-		TotalPendingTransactions uint64  `json:"total_pending_transactions"`
-		AverageBlockTime  float64 `json:"average_block_time"`
-		TotalWallets     uint64  `json:"total_wallets"`
-		Transactions24h   uint64  `json:"transactions_24h"`
-		PendingTransactions30m   uint64  `json:"pending_transactions_30m"`
-	} `json:"data"`
-}
 
-// @Summary Get blockchain statistics
-// @Description Retrieve comprehensive blockchain statistics including total blocks, transactions, average block time, and wallets
-// @Tags stats
-// @Accept json
-// @Produce json
-// @Security BasicAuth
-// @Param chainId path string true "Chain ID"
-// @Success 200 {object} StatsResponse
-// @Failure 400 {object} api.Error
-// @Failure 401 {object} api.Error
-// @Failure 500 {object} api.Error
-// @Router /{chainId}/stats [get]
-func GetStats(c *gin.Context) {
-	handleStatsRequest(c)
-}
+// handleTransactionStats builds and returns only transactions page stats fields
+func handleTransactionStats(c *gin.Context) {
+	statsMutex.RLock()
+	if time.Since(txStatsCacheTime) < cacheTTL && txStatsCache != nil {
+		defer statsMutex.RUnlock()
+		c.JSON(http.StatusOK, txStatsCache)
+		return
+	}
+	statsMutex.RUnlock()
 
-func handleStatsRequest(c *gin.Context) {
-    statsMutex.RLock()
-    if time.Since(statsCacheTime) < cacheTTL && statsCache != nil {
-        defer statsMutex.RUnlock()
-        c.JSON(http.StatusOK, statsCache)
-        return
-    }
-    statsMutex.RUnlock()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 
-    ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-    defer cancel()
+	mainStorage, err := getMainStorage()
+	if err != nil {
+		log.Error().Err(err).Msg("Error getting main storage")
+		api.InternalErrorHandler(c)
+		return
+	}
 
-    mainStorage, err := getMainStorage()
-    if err != nil {
-        log.Error().Err(err).Msg("Error getting main storage")
-        api.InternalErrorHandler(c)
-        return
-    }
-
-    countQf := storage.QueryFilter{
-        ForceConsistentData: true,
-    }
-
-    time24hAgo := time.Now().Add(-24 * time.Hour)
-    timeBasedQf24h := storage.QueryFilter{
-        ForceConsistentData: true,
-        FilterParams: map[string]string{
-            "block_timestamp_gte": strconv.FormatInt(time24hAgo.Unix(), 10),
-        },
-    }
-
-    var (
-        totalBlocks, totalTransactions, totalWallets, transactions24h uint64
-        pendingTxsData *pb.GetPendingTransactionsResponse
-        averageBlockTime float64
-        wg sync.WaitGroup
-        errs = make([]error, 5)
-    )
-
-    wg.Add(5)
-
-    go func() {
-        defer wg.Done()
-        totalBlocks, errs[0] = mainStorage.GetCount("blocks", countQf)
-    }()
-
-    go func() {
-        defer wg.Done()
-        totalTransactions, errs[1] = mainStorage.GetCount("transactions", countQf)
-    }()
-
-    go func() {
-        defer wg.Done()
-        totalWallets, errs[2] = mainStorage.GetCount("wallet", countQf)
-    }()
-
-    go func() {
-        defer wg.Done()
-        transactions24h, errs[3] = mainStorage.GetCount("transactions", timeBasedQf24h)
-    }()
-
-    go func() {
-        defer wg.Done()
-        pendingTxsData, errs[4] = mainStorage.GetPendingTransactions(ctx)
-    }()
-
-    var avgErr error
-    wg.Add(1)
-	go func() {
-		defer wg.Done()
-		averageBlockTime = getAverageBlockTime(mainStorage, 100)
-	}()
-
-    wg.Wait()
-
-    for _, err := range errs {
-        if err != nil {
-            log.Error().Err(err).Msg("Error querying stats")
-            api.InternalErrorHandler(c)
-            return
-        }
-    }
-    if avgErr != nil {
-        log.Error().Err(avgErr).Msg("Error calculating average block time")
-        api.InternalErrorHandler(c)
-        return
-    }
-
-    totalPendingTransactions := uint64(0)
-    pendingTransactions30m := uint64(0)
-    if pendingTxsData != nil {
-        totalPendingTransactions = pendingTxsData.TotalCount
-        pendingTransactions30m = CountPendingTxLast30m(pendingTxsData.PendingTxs)
-        totalTransactions += totalPendingTransactions
-        transactions24h += totalPendingTransactions
-    }
-
-	statsResponse := StatsResponse{
-		Data: struct {
-			TotalBlocks      uint64  `json:"total_blocks"`
-			TotalTransactions uint64  `json:"total_transactions"`
-			TotalPendingTransactions uint64  `json:"total_pending_transactions"`
-			AverageBlockTime  float64 `json:"average_block_time"`
-			TotalWallets     uint64  `json:"total_wallets"`
-			Transactions24h   uint64  `json:"transactions_24h"`
-			PendingTransactions30m   uint64  `json:"pending_transactions_30m"`
-		}{
-			TotalBlocks:      totalBlocks,
-			TotalTransactions: totalTransactions,
-			TotalPendingTransactions: totalPendingTransactions,
-			AverageBlockTime:  averageBlockTime,
-			TotalWallets:     totalWallets,
-			Transactions24h:   transactions24h,
-			PendingTransactions30m:   pendingTransactions30m,
+	time24hAgo := time.Now().Add(-24 * time.Hour)
+	timeBasedQf24h := storage.QueryFilter{
+		ForceConsistentData: true,
+		FilterParams: map[string]string{
+			"block_timestamp_gte": strconv.FormatInt(time24hAgo.Unix(), 10),
 		},
 	}
 
-    statsMutex.Lock()
-    statsCache = &statsResponse
-    statsCacheTime = time.Now()
-    statsMutex.Unlock()
+	var (
+		transactions24h uint64
+		pendingTxsData *pb.GetPendingTransactionsResponse
+		wg              sync.WaitGroup
+		errs            = make([]error, 2)
+	)
 
-    c.JSON(http.StatusOK, statsResponse)
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		transactions24h, errs[0] = mainStorage.GetCount("transactions", timeBasedQf24h)
+	}()
+	go func() {
+		defer wg.Done()
+		pendingTxsData, errs[1] = mainStorage.GetPendingTransactions(ctx)
+	}()
+
+	wg.Wait()
+
+	for _, err := range errs {
+		if err != nil {
+			log.Error().Err(err).Msg("Error querying transaction stats")
+			api.InternalErrorHandler(c)
+			return
+		}
+	}
+
+	pendingTransactions30m := uint64(0)
+	if pendingTxsData != nil {
+		pendingTransactions30m = CountPendingTxLast30m(pendingTxsData.PendingTxs)
+	}
+
+	resp := &TransactionStatsResponse{}
+	resp.Data.Transactions24h = transactions24h
+	resp.Data.PendingTransactions30m = pendingTransactions30m
+
+	statsMutex.Lock()
+	txStatsCache = resp
+	txStatsCacheTime = time.Now()
+	statsMutex.Unlock()
+
+	c.JSON(http.StatusOK, resp)
+}
+
+// DashboardStatsResponse represents the dashboard-only stats payload
+type DashboardStatsResponse struct {
+	Data struct {
+		TotalBlocks       uint64  `json:"total_blocks"`
+		TotalTransactions uint64  `json:"total_transactions"`
+		AverageBlockTime  float64 `json:"average_block_time"`
+		TotalWallets      uint64  `json:"total_wallets"`
+	} `json:"data"`
+}
+
+// TransactionStatsResponse represents the transactions page-only stats payload
+type TransactionStatsResponse struct {
+	Data struct {
+		Transactions24h        uint64 `json:"transactions_24h"`
+		PendingTransactions30m uint64 `json:"pending_transactions_30m"`
+	} `json:"data"`
+}
+
+
+// GetDashboardStats returns only the dashboard stats payload
+func GetDashboardStats(c *gin.Context) {
+	handleDashboardStats(c)
+}
+
+// GetTransactionStats returns only the transactions page stats payload
+func GetTransactionStats(c *gin.Context) {
+	handleTransactionStats(c)
+}
+
+
+// handleDashboardStats builds and returns only dashboard stats fields
+func handleDashboardStats(c *gin.Context) {
+	statsMutex.RLock()
+	if time.Since(dashboardCacheTime) < cacheTTL && dashboardStatsCache != nil {
+		defer statsMutex.RUnlock()
+		c.JSON(http.StatusOK, dashboardStatsCache)
+		return
+	}
+	statsMutex.RUnlock()
+
+	mainStorage, err := getMainStorage()
+	if err != nil {
+		log.Error().Err(err).Msg("Error getting main storage")
+		api.InternalErrorHandler(c)
+		return
+	}
+
+	// Build only the fields needed for dashboard
+	countQf := storage.QueryFilter{ForceConsistentData: true}
+	var (
+		totalBlocks, totalTransactions, totalWallets uint64
+		averageBlockTime                             float64
+		wg                                           sync.WaitGroup
+		errs                                         = make([]error, 3)
+	)
+
+	wg.Add(3)
+	go func() {
+		defer wg.Done()
+		totalBlocks, errs[0] = mainStorage.GetCount("blocks", countQf)
+	}()
+	go func() {
+		defer wg.Done()
+		totalTransactions, errs[1] = mainStorage.GetStatByKey("total_transactions")
+	}()
+	go func() {
+		defer wg.Done()
+		totalWallets, errs[2] = mainStorage.GetCount("wallet", countQf)
+	}()
+
+	averageBlockTime = getAverageBlockTime(mainStorage, 100)
+	wg.Wait()
+
+	for _, err := range errs {
+		if err != nil {
+			log.Error().Err(err).Msg("Error querying dashboard stats")
+			api.InternalErrorHandler(c)
+			return
+		}
+	}
+
+	resp := &DashboardStatsResponse{}
+	resp.Data.TotalBlocks = totalBlocks
+	resp.Data.TotalTransactions = totalTransactions
+	resp.Data.AverageBlockTime = averageBlockTime
+	resp.Data.TotalWallets = totalWallets
+
+	statsMutex.Lock()
+	dashboardStatsCache = resp
+	dashboardCacheTime = time.Now()
+	statsMutex.Unlock()
+
+	c.JSON(http.StatusOK, resp)
 }
 
 func getAverageBlockTime(mainStorage storage.IMainStorage, numberOfBlocks uint64) float64 {
@@ -214,20 +230,20 @@ func getAverageBlockTime(mainStorage storage.IMainStorage, numberOfBlocks uint64
 }
 
 func CountPendingTxLast30m(pendingTxs []*pb.TransactionData) uint64 {
-    now := uint64(time.Now().Unix())
-    thirtyMinutesAgo := now - 1800
-    count := 0
-    
-    for _, tx := range pendingTxs {
-        if tx == nil {
-            continue
-        }
-        txTime := tx.Timestamp / 1000
-        if txTime >= thirtyMinutesAgo {
-            count++
-        } else {
-            break
-        }
-    }
-    return uint64(count)
+	now := uint64(time.Now().Unix())
+	thirtyMinutesAgo := now - 1800
+	count := 0
+
+	for _, tx := range pendingTxs {
+		if tx == nil {
+			continue
+		}
+		txTime := tx.Timestamp / 1000
+		if txTime >= thirtyMinutesAgo {
+			count++
+		} else {
+			break
+		}
+	}
+	return uint64(count)
 }
