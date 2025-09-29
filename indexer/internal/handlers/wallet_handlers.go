@@ -46,7 +46,8 @@ func GetWallets(c *gin.Context) {
         FilterParams:        queryParams.FilterParams,
         ForceConsistentData: queryParams.ForceConsistentData,
     }
-    totalItems, err := mainStorage.GetCount("wallet", countQf)
+    ctx := c.Request.Context()
+    totalItems, err := mainStorage.GetCount(ctx, "wallet", countQf)
     if err != nil {
         log.Error().Err(err).Msg("Error getting wallets count")
         api.InternalErrorHandler(c)

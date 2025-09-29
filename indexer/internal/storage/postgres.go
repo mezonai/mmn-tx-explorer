@@ -319,25 +319,7 @@ func (p *PostgresConnector) InsertStagingData(data []common.BlockData) error {
 	          DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`, strings.Join(valueStrings, ","))
 
 	_, err := p.db.Exec(query, valueArgs...)
-	if err != nil {
-		return err
-	}
-	txCount := 0
-    for _, blockData := range data {
-        txCount += len(blockData.Transactions)
-    }
-    
-    if txCount > 0 {
-        _, err2 := p.db.Exec(
-            "INSERT INTO stats(key, value) VALUES ('total_transactions', 0) ON CONFLICT (key) DO UPDATE SET value = stats.value + $1",
-            txCount,
-        )
-        if err2 != nil {
-            log.Warn().Err(err2).Msg("Failed to update stats.total_transactions")
-        }
-    }
-    
-    return nil
+    return err
 }
 
 func (p *PostgresConnector) GetStagingData(qf QueryFilter) ([]common.BlockData, error) {
@@ -1229,7 +1211,7 @@ func (p *PostgresConnector) GetFullBlockData(chainId *big.Int, blockNumbers []*b
 	return result, nil
 }
 
-func (p *PostgresConnector) GetCount(table string, qf QueryFilter) (uint64, error) {
+func (p *PostgresConnector) GetCount(ctx context.Context, table string, qf QueryFilter) (uint64, error) {
 	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", table)
 	whereClause := p.buildWhereClause(qf)
 	if whereClause != "" {
@@ -1241,7 +1223,7 @@ func (p *PostgresConnector) GetCount(table string, qf QueryFilter) (uint64, erro
 	return count, err
 }
 
-func (p *PostgresConnector) GetStatByKey(key string) (uint64, error) {
+func (p *PostgresConnector) GetStatByKey(ctx context.Context, key string) (uint64, error) {
     query := "SELECT value FROM stats WHERE key = $1"
     
     var value uint64
@@ -1580,9 +1562,21 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 	              text_data = EXCLUDED.text_data,
 	              extra_info = EXCLUDED.extra_info,
 	              updated_at = NOW()`, strings.Join(valueStrings, ","))
-
 	_, err := p.db.Exec(query, valueArgs...)
-	return err
+	if err != nil {
+		return err
+	}
+
+	txCount := len(transactions)
+	if txCount > 0 {
+		query2 := "INSERT INTO stats(key, value) VALUES ('total_transactions', 0) ON CONFLICT (key) DO UPDATE SET value = stats.value + $1"
+		_, err = p.db.Exec(query2, txCount)
+		if err != nil {
+			log.Warn().Err(err).Msg("Failed to update stats.total_transactions")
+		}
+	}
+
+	return nil
 }
 
 func (p *PostgresConnector) scanBlock(rows *sql.Rows, block *common.Block) error {

@@ -126,12 +126,12 @@ type IMainStorage interface {
 	/**
 	 * Gets the count of items in a table.
 	 */
-	GetCount(table string, qf QueryFilter) (uint64, error)
+	GetCount(ctx context.Context, table string, qf QueryFilter) (uint64, error)
 
 	/**
     * Gets a precomputed stat value from the stats table by key.
     */
-    GetStatByKey(key string) (uint64, error)
+    GetStatByKey(ctx context.Context, key string) (uint64, error)
 
 	/**
 	 * Gets pending transactions from MMN service.
