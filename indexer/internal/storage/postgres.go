@@ -221,13 +221,13 @@ func (p *PostgresConnector) StoreBlockFailures(failures []common.BlockFailure) e
 	}
 
 	query := fmt.Sprintf(`INSERT INTO block_failures (chain_id, block_number, last_error_timestamp, failure_count, reason)
-              VALUES %s
-              ON CONFLICT (chain_id, block_number)
-              DO UPDATE SET 
-                  last_error_timestamp = EXCLUDED.last_error_timestamp,
+	          VALUES %s
+	          ON CONFLICT (chain_id, block_number) 
+	          DO UPDATE SET 
+	              last_error_timestamp = EXCLUDED.last_error_timestamp,
 	              failure_count = EXCLUDED.failure_count,
-                  reason = EXCLUDED.reason,
-                  updated_at = NOW()`, strings.Join(valueStrings, ","))
+	              reason = EXCLUDED.reason,
+	              updated_at = NOW()`, strings.Join(valueStrings, ","))
 
 	_, err := p.db.Exec(query, valueArgs...)
 	return err
