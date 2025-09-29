@@ -1,6 +1,11 @@
 import { ESortOrder } from '@/enums';
 import { ETransactionStatus, ETransactionTab, ETransactionType } from './enums';
 
+export interface ITransactionStats {
+  transactions_24h: number;
+  pending_transactions_30m: number;
+}
+
 export interface ITransaction {
   access_list_json: string;
   blob_gas_price: string;
