@@ -15,25 +15,8 @@ import (
 	"context"
 )
 
-var (
-	dashboardStatsCache *DashboardStatsResponse
-	dashboardCacheTime  time.Time
-	txStatsCache        *TransactionStatsResponse
-	txStatsCacheTime    time.Time
-	statsMutex          sync.RWMutex
-	cacheTTL            = 3 * time.Second
-)
-
-
 // handleTransactionStats builds and returns only transactions page stats fields
 func handleTransactionStats(c *gin.Context) {
-	statsMutex.RLock()
-	if time.Since(txStatsCacheTime) < cacheTTL && txStatsCache != nil {
-		defer statsMutex.RUnlock()
-		c.JSON(http.StatusOK, txStatsCache)
-		return
-	}
-	statsMutex.RUnlock()
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
@@ -89,10 +72,7 @@ func handleTransactionStats(c *gin.Context) {
 	resp.Data.Transactions24h = transactions24h
 	resp.Data.PendingTransactions30m = pendingTransactions30m
 
-	statsMutex.Lock()
-	txStatsCache = resp
-	txStatsCacheTime = time.Now()
-	statsMutex.Unlock()
+	// Không sử dụng cache
 
 	c.JSON(http.StatusOK, resp)
 }
@@ -129,13 +109,6 @@ func GetTransactionStats(c *gin.Context) {
 
 // handleDashboardStats builds and returns only dashboard stats fields
 func handleDashboardStats(c *gin.Context) {
-	statsMutex.RLock()
-	if time.Since(dashboardCacheTime) < cacheTTL && dashboardStatsCache != nil {
-		defer statsMutex.RUnlock()
-		c.JSON(http.StatusOK, dashboardStatsCache)
-		return
-	}
-	statsMutex.RUnlock()
 
 	mainStorage, err := getMainStorage()
 	if err != nil {
@@ -183,11 +156,6 @@ func handleDashboardStats(c *gin.Context) {
 	resp.Data.TotalTransactions = totalTransactions
 	resp.Data.AverageBlockTime = averageBlockTime
 	resp.Data.TotalWallets = totalWallets
-
-	statsMutex.Lock()
-	dashboardStatsCache = resp
-	dashboardCacheTime = time.Now()
-	statsMutex.Unlock()
 
 	c.JSON(http.StatusOK, resp)
 }
