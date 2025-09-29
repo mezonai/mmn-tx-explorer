@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 
 import { cn } from '@/lib/utils';
-import { DashboardService, ITransactionStats } from '@/modules/dashboard';
+import { TransactionService } from '@/modules/transaction/api';
+import { ITransactionStats } from '@/modules/transaction/types';
 import { StatCard } from './stat-card';
 import { NumberUtil } from '@/utils';
 
@@ -29,7 +30,7 @@ export const Stats = ({ className }: StatsProps) => {
 
   const handleFetchStats = async () => {
     try {
-      const { data } = await DashboardService.getTxStats();
+      const { data } = await TransactionService.getStats();
       setStats(data);
     } catch (error) {
       console.error(error);
