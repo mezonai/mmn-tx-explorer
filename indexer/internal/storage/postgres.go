@@ -1805,7 +1805,7 @@ func (p *PostgresConnector) scanLog(rows *sql.Rows, log *common.Log) error {
 		return fmt.Errorf("failed to parse block_number: %s", blockNumberStr)
 	}
 
-	log.BlockTimestamp = timestamp
+			log.BlockTimestamp = timestamp
 
 	return nil
 }
@@ -1838,7 +1838,7 @@ func (p *PostgresConnector) scanTrace(rows *sql.Rows, trace *common.Trace) error
 		return fmt.Errorf("failed to parse block_number: %s", blockNumberStr)
 	}
 
-	trace.BlockTimestamp = timestamp
+			trace.BlockTimestamp = timestamp
 
 	trace.Value, ok = new(big.Int).SetString(valueStr, 10)
 	if !ok {
@@ -1903,8 +1903,8 @@ func (p *PostgresConnector) insertWallet(ctx context.Context, address string, no
 	if !ok {
 		balanceBig = big.NewInt(0)
 	}
-	
-	query := `INSERT INTO wallet (address, account_nonce, balance, transaction_count, updated_at, created_at)
+
+	query := `INSERT INTO wallet (address, account_nonce, balance, transaction_count, updated_at, created_at) 
 	          VALUES ($1, $2, $3, 1, NOW(), NOW())
 	          ON CONFLICT (address) 
 	          DO UPDATE SET 
