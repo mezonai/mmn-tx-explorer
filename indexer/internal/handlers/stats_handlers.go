@@ -6,23 +6,17 @@ import (
 	"strconv"
 	"sync"
 	"time"
-	"context"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	"github.com/thirdweb-dev/indexer/api"
-	config "github.com/thirdweb-dev/indexer/configs"
 	"github.com/thirdweb-dev/indexer/internal/storage"
 	pb "github.com/thirdweb-dev/indexer/proto"
 )
 
 // handleTransactionStats builds and returns only transactions page stats fields
 func handleTransactionStats(c *gin.Context) {
-
-	timeoutSeconds := config.Cfg.API.ContractApiRequest.Timeout
-	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(timeoutSeconds)*time.Second)
-	defer cancel()
-
+	ctx := c.Request.Context()
 	mainStorage, err := getMainStorage()
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting main storage")
@@ -109,11 +103,7 @@ func GetTransactionStats(c *gin.Context) {
 
 // handleDashboardStats builds and returns only dashboard stats fields
 func handleDashboardStats(c *gin.Context) {
-
-	timeoutSeconds := config.Cfg.API.ContractApiRequest.Timeout
-	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(timeoutSeconds)*time.Second)
-	defer cancel()
-
+	ctx := c.Request.Context()
 	mainStorage, err := getMainStorage()
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting main storage")
