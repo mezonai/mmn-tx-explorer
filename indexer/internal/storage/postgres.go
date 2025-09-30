@@ -92,7 +92,7 @@ func NewPostgresConnector(cfg *config.PostgresConfig) (*PostgresConnector, error
 		db:  db,
 		cfg: cfg,
 	}
-
+	
 	// Initialize MMN gRPC service if URL is provided
 	if config.Cfg.RPC.MMNGRPCURL != "" {
 		mmn, err := rpc.NewMMNGrpcService(config.Cfg.RPC.MMNGRPCURL)
@@ -102,7 +102,7 @@ func NewPostgresConnector(cfg *config.PostgresConfig) (*PostgresConnector, error
 			connector.mmnGrpcService = mmn
 		}
 	}
-
+	
 	return connector, nil
 }
 
@@ -536,7 +536,7 @@ func (p *PostgresConnector) ReplaceBlockData(data []common.BlockData) ([]common.
 func (p *PostgresConnector) GetBlocks(qf QueryFilter, fields ...string) (QueryResult[common.Block], error) {
 	columns := p.buildSelectFields(fields, defaultBlockFields)
 	query := p.buildQuery("blocks", columns, qf)
-
+	
 	rows, err := p.db.Query(query)
 	if err != nil {
 		return QueryResult[common.Block]{}, err
@@ -559,7 +559,7 @@ func (p *PostgresConnector) GetBlocks(qf QueryFilter, fields ...string) (QueryRe
 func (p *PostgresConnector) GetTransactions(qf QueryFilter, fields ...string) (QueryResult[common.Transaction], error) {
 	columns := p.buildSelectFields(fields, defaultTransactionFields)
 	query := p.buildQuery("transactions", columns, qf)
-
+	
 	rows, err := p.db.Query(query)
 	if err != nil {
 		return QueryResult[common.Transaction]{}, err
@@ -582,7 +582,7 @@ func (p *PostgresConnector) GetTransactions(qf QueryFilter, fields ...string) (Q
 func (p *PostgresConnector) GetLogs(qf QueryFilter, fields ...string) (QueryResult[common.Log], error) {
 	columns := p.buildSelectFields(fields, defaultLogFields)
 	query := p.buildQuery("logs", columns, qf)
-
+	
 	rows, err := p.db.Query(query)
 	if err != nil {
 		return QueryResult[common.Log]{}, err
@@ -605,7 +605,7 @@ func (p *PostgresConnector) GetLogs(qf QueryFilter, fields ...string) (QueryResu
 func (p *PostgresConnector) GetTraces(qf QueryFilter, fields ...string) (QueryResult[common.Trace], error) {
 	columns := p.buildSelectFields(fields, defaultTraceFields)
 	query := p.buildQuery("traces", columns, qf)
-
+	
 	rows, err := p.db.Query(query)
 	if err != nil {
 		return QueryResult[common.Trace]{}, err
@@ -703,7 +703,7 @@ func (p *PostgresConnector) GetAggregations(table string, qf QueryFilter) (Query
 
 func (p *PostgresConnector) GetMaxBlockNumber(chainId *big.Int) (*big.Int, error) {
 	query := `SELECT MAX(block_number) FROM blocks WHERE chain_id = $1`
-
+	
 	var blockNumberStr sql.NullString
 	err := p.db.QueryRow(query, bigIntToString(chainId)).Scan(&blockNumberStr)
 	if err != nil {
@@ -724,7 +724,7 @@ func (p *PostgresConnector) GetMaxBlockNumber(chainId *big.Int) (*big.Int, error
 
 func (p *PostgresConnector) GetMaxBlockNumberInRange(chainId *big.Int, startBlock *big.Int, endBlock *big.Int) (*big.Int, error) {
 	query := `SELECT MAX(block_number) FROM blocks WHERE chain_id = $1 AND block_number BETWEEN $2 AND $3`
-
+	
 	var blockNumberStr sql.NullString
 	err := p.db.QueryRow(query, bigIntToString(chainId), bigIntToString(startBlock), bigIntToString(endBlock)).Scan(&blockNumberStr)
 	if err != nil {
@@ -748,7 +748,7 @@ func (p *PostgresConnector) GetBlockHeadersDescending(chainId *big.Int, from *bi
 	          FROM blocks 
 	          WHERE chain_id = $1 AND block_number BETWEEN $2 AND $3 
 	          ORDER BY block_number DESC`
-
+	
 	rows, err := p.db.Query(query, bigIntToString(chainId), bigIntToString(from), bigIntToString(to))
 	if err != nil {
 		return nil, err
@@ -777,7 +777,7 @@ func (p *PostgresConnector) GetTokenBalances(qf BalancesQueryFilter, fields ...s
 	columns := p.buildSelectFields(fields, []string{
 		"token_type", "chain_id", "owner", "address", "token_id", "balance",
 	})
-
+	
 	query := fmt.Sprintf("SELECT %s FROM token_balances WHERE 1=1", columns)
 	args := []interface{}{}
 	argCount := 0
@@ -874,7 +874,7 @@ func (p *PostgresConnector) GetTokenTransfers(qf TransfersQueryFilter, fields ..
 		"token_type", "chain_id", "token_address", "from_address", "to_address", "block_number",
 		"block_timestamp", "transaction_hash", "token_id", "amount", "log_index",
 	})
-
+	
 	query := fmt.Sprintf("SELECT %s FROM token_transfers WHERE 1=1", columns)
 	args := []interface{}{}
 	argCount := 0
@@ -963,8 +963,8 @@ func (p *PostgresConnector) GetTokenTransfers(qf TransfersQueryFilter, fields ..
 		var chainIdStr, blockNumberStr, tokenIdStr, amountStr string
 		var timestamp time.Time
 
-		err := rows.Scan(&transfer.TokenType, &chainIdStr, &transfer.TokenAddress, &transfer.FromAddress,
-			&transfer.ToAddress, &blockNumberStr, &timestamp, &transfer.TransactionHash,
+		err := rows.Scan(&transfer.TokenType, &chainIdStr, &transfer.TokenAddress, &transfer.FromAddress, 
+			&transfer.ToAddress, &blockNumberStr, &timestamp, &transfer.TransactionHash, 
 			&tokenIdStr, &amountStr, &transfer.LogIndex)
 		if err != nil {
 			return QueryResult[common.TokenTransfer]{}, err
@@ -988,7 +988,7 @@ func (p *PostgresConnector) GetValidationBlockData(chainId *big.Int, startBlock 
 	          FROM blocks 
 	          WHERE chain_id = $1 AND block_number BETWEEN $2 AND $3 
 	          ORDER BY block_number ASC`
-
+	
 	rows, err := p.db.Query(query, bigIntToString(chainId), bigIntToString(startBlock), bigIntToString(endBlock))
 	if err != nil {
 		return nil, err
@@ -1041,7 +1041,7 @@ func (p *PostgresConnector) FindMissingBlockNumbers(chainId *big.Int, startBlock
 	LEFT JOIN existing_blocks eb ON bs.block_num = eb.block_number
 	WHERE eb.block_number IS NULL
 	ORDER BY bs.block_num`
-
+	
 	rows, err := p.db.Query(query, bigIntToString(chainId), bigIntToString(startBlock), bigIntToString(endBlock))
 	if err != nil {
 		return nil, err
@@ -1259,14 +1259,14 @@ func (p *PostgresConnector) buildQuery(table, columns string, qf QueryFilter) st
 	if whereClause != "" {
 		query += " WHERE " + whereClause
 	}
-
+	
 	if qf.SortBy != "" {
 		query += fmt.Sprintf(" ORDER BY %s", qf.SortBy)
 		if qf.SortOrder != "" {
 			query += " " + qf.SortOrder
 		}
 	}
-
+	
 	// Prefer page/limit pagination; fallback to raw offset if provided
 	if qf.Page >= 0 && qf.Limit > 0 {
 		offset := qf.Page * qf.Limit
@@ -1277,17 +1277,17 @@ func (p *PostgresConnector) buildQuery(table, columns string, qf QueryFilter) st
 			query += fmt.Sprintf(" OFFSET %d", qf.Offset)
 		}
 	}
-
+	
 	return query
 }
 
 func (p *PostgresConnector) buildWhereClause(qf QueryFilter) string {
 	var conditions []string
-
+	
 	if qf.ChainId != nil && qf.ChainId.Sign() > 0 {
 		conditions = append(conditions, fmt.Sprintf("chain_id = %s", bigIntToString(qf.ChainId)))
 	}
-
+	
 	if len(qf.BlockNumbers) > 0 {
 		blockNumbers := make([]string, len(qf.BlockNumbers))
 		for i, bn := range qf.BlockNumbers {
@@ -1295,19 +1295,19 @@ func (p *PostgresConnector) buildWhereClause(qf QueryFilter) string {
 		}
 		conditions = append(conditions, fmt.Sprintf("block_number IN (%s)", strings.Join(blockNumbers, ",")))
 	}
-
+	
 	if qf.StartBlock != nil && qf.EndBlock != nil {
 		conditions = append(conditions, fmt.Sprintf("block_number BETWEEN %s AND %s", bigIntToString(qf.StartBlock), bigIntToString(qf.EndBlock)))
 	}
-
+	
 	if qf.FromAddress != "" {
 		conditions = append(conditions, fmt.Sprintf("from_address = '%s'", qf.FromAddress))
 	}
-
+	
 	if qf.ContractAddress != "" {
 		conditions = append(conditions, fmt.Sprintf("to_address = '%s'", qf.ContractAddress))
 	}
-
+	
 	if qf.WalletAddress != "" {
 		conditions = append(conditions, fmt.Sprintf("(from_address = '%s' OR to_address = '%s')", qf.WalletAddress, qf.WalletAddress))
 	}
@@ -1319,75 +1319,75 @@ func (p *PostgresConnector) buildWhereClause(qf QueryFilter) string {
 		}
 		conditions = append(conditions, createPgFilterClause(key, value))
 	}
-
+	
 	return strings.Join(conditions, " AND ")
 }
 
 // createPgFilterClause builds a SQL clause from a key that may include operator suffixes
 // Supported suffixes: _gte, _lte, _lt, _gt, _ne, _in
 func createPgFilterClause(key, value string) string {
-	// Determine operator and base column name
-	op := "="
-	baseKey := key
-	if len(key) >= 3 {
-		suffix := key[len(key)-3:]
-		switch suffix {
-		case "gte":
-			if len(key) >= 4 {
-				baseKey = key[:len(key)-4]
-				op = ">="
-			}
-		case "lte":
-			if len(key) >= 4 {
-				baseKey = key[:len(key)-4]
-				op = "<="
-			}
-		case "_lt":
-			baseKey = key[:len(key)-3]
-			op = "<"
-		case "_gt":
-			baseKey = key[:len(key)-3]
-			op = ">"
-		case "_ne":
-			baseKey = key[:len(key)-3]
-			op = "!="
-		case "_in":
-			baseKey = key[:len(key)-3]
-			// Expect value to be a comma-separated list without surrounding parentheses
-			return fmt.Sprintf("%s IN (%s)", baseKey, value)
-		default:
-			// keep defaults
-		}
-	}
+    // Determine operator and base column name
+    op := "="
+    baseKey := key
+    if len(key) >= 3 {
+        suffix := key[len(key)-3:]
+        switch suffix {
+        case "gte":
+            if len(key) >= 4 {
+                baseKey = key[:len(key)-4]
+                op = ">="
+            }
+        case "lte":
+            if len(key) >= 4 {
+                baseKey = key[:len(key)-4]
+                op = "<="
+            }
+        case "_lt":
+            baseKey = key[:len(key)-3]
+            op = "<"
+        case "_gt":
+            baseKey = key[:len(key)-3]
+            op = ">"
+        case "_ne":
+            baseKey = key[:len(key)-3]
+            op = "!="
+        case "_in":
+            baseKey = key[:len(key)-3]
+            // Expect value to be a comma-separated list without surrounding parentheses
+            return fmt.Sprintf("%s IN (%s)", baseKey, value)
+        default:
+            // keep defaults
+        }
+    }
 
-	// If the column looks like a timestamp and the value is numeric unix seconds/millis, use to_timestamp()
-	if looksLikeTimestampColumn(baseKey) && isAllDigits(value) {
-		// 13+ digits likely milliseconds
-		if len(value) >= 13 {
-			return fmt.Sprintf("%s %s to_timestamp((%s)::bigint/1000.0)", baseKey, op, value)
-		}
-		return fmt.Sprintf("%s %s to_timestamp(%s)", baseKey, op, value)
-	}
+    // If the column looks like a timestamp and the value is numeric unix seconds/millis, use to_timestamp()
+    if looksLikeTimestampColumn(baseKey) && isAllDigits(value) {
+        // 13+ digits likely milliseconds
+        if len(value) >= 13 {
+            return fmt.Sprintf("%s %s to_timestamp((%s)::bigint/1000.0)", baseKey, op, value)
+        }
+        return fmt.Sprintf("%s %s to_timestamp(%s)", baseKey, op, value)
+    }
 
-	return fmt.Sprintf("%s %s '%s'", baseKey, op, value)
+    return fmt.Sprintf("%s %s '%s'", baseKey, op, value)
 }
 
 func isAllDigits(s string) bool {
-	if s == "" {
-		return false
-	}
-	for i := 0; i < len(s); i++ {
-		c := s[i]
-		if c < '0' || c > '9' {
-			return false
-		}
-	}
-	return true
+    if s == "" {
+        return false
+    }
+    for i := 0; i < len(s); i++ {
+        c := s[i]
+        if c < '0' || c > '9' {
+            return false
+        }
+    }
+    return true
 }
 
 func looksLikeTimestampColumn(col string) bool {
-	colLower := strings.ToLower(col)
-	return strings.Contains(colLower, "timestamp") || strings.HasSuffix(colLower, "_time") || strings.HasSuffix(colLower, "time")
+    colLower := strings.ToLower(col)
+    return strings.Contains(colLower, "timestamp") || strings.HasSuffix(colLower, "_time") || strings.HasSuffix(colLower, "time")
 }
 
 func (p *PostgresConnector) insertBlocks(blocks []common.Block) error {
@@ -1472,7 +1472,7 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 			i*35+11, i*35+12, i*35+13, i*35+14, i*35+15, i*35+16, i*35+17, i*35+18, i*35+19, i*35+20,
 			i*35+21, i*35+22, i*35+23, i*35+24, i*35+25, i*35+26, i*35+27, i*35+28, i*35+29, i*35+30,
 			i*35+31, i*35+32, i*35+33, i*35+34, i*35+35))
-
+		
 		// Convert arrays to PostgreSQL format
 		blobHashes := make([]string, len(tx.BlobVersionedHashes))
 		for j, hash := range tx.BlobVersionedHashes {
@@ -1516,7 +1516,7 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 			tx.TextData,
 			tx.ExtraInfo,
 		)
-
+		
 		// Refresh wallet data from MMN service (non-blocking)
 		go func() {
 			ctx := context.Background()
@@ -1897,21 +1897,21 @@ func (p *PostgresConnector) insertWallet(ctx context.Context, address string, no
 	if address == "" {
 		return nil
 	}
-
+	
 	// Convert balance string to big.Int for safe handling
 	balanceBig, ok := new(big.Int).SetString(balance, 10)
 	if !ok {
 		balanceBig = big.NewInt(0)
 	}
-
-	query := `INSERT INTO wallet (address, account_nonce, balance, transaction_count, updated_at, created_at) 
+	
+	query := `INSERT INTO wallet (address, account_nonce, balance, transaction_count, updated_at, created_at)
 	          VALUES ($1, $2, $3, 1, NOW(), NOW())
 	          ON CONFLICT (address) 
 	          DO UPDATE SET 
 	              account_nonce = EXCLUDED.account_nonce,
 	              balance = EXCLUDED.balance,
 	              updated_at = NOW()`
-
+	
 	_, err := p.db.ExecContext(ctx, query, address, nonce, bigIntToString(balanceBig))
 	return err
 }
@@ -1921,16 +1921,16 @@ func (p *PostgresConnector) refreshWalletFromService(ctx context.Context, addres
 	if p.mmnGrpcService == nil || address == "" {
 		return nil
 	}
-
+	
 	resp, err := p.mmnGrpcService.GetAccountByAddress(ctx, address)
 	if err != nil {
 		return err
 	}
-
+	
 	if resp == nil || resp.Account == nil {
 		return nil
 	}
-
+	
 	return p.insertWallet(ctx, address, resp.Account.Nonce, resp.Account.Balance)
 }
 
@@ -1938,11 +1938,11 @@ func (p *PostgresConnector) refreshWalletFromService(ctx context.Context, addres
 func (p *PostgresConnector) GetWallet(address string) (*common.Wallet, error) {
 	query := `SELECT address, account_nonce, balance, updated_at, created_at 
 	          FROM wallet WHERE address = $1`
-
+	
 	var wallet common.Wallet
 	var balanceStr string
 	var nonce *uint64
-
+	
 	err := p.db.QueryRow(query, address).Scan(
 		&wallet.Address,
 		&nonce,
@@ -1956,16 +1956,16 @@ func (p *PostgresConnector) GetWallet(address string) (*common.Wallet, error) {
 		}
 		return nil, err
 	}
-
+	
 	wallet.AccountNonce = nonce
-
+	
 	// Convert balance string to big.Int
 	balance, ok := new(big.Int).SetString(balanceStr, 10)
 	if !ok {
 		balance = big.NewInt(0)
 	}
 	wallet.Balance = balance
-
+	
 	return &wallet, nil
 }
 
@@ -1973,7 +1973,7 @@ func (p *PostgresConnector) GetWallet(address string) (*common.Wallet, error) {
 func (p *PostgresConnector) GetWallets(limit, offset int, sortBy, sortOrder string) ([]common.Wallet, error) {
 	query := `SELECT address, account_nonce, balance, updated_at, created_at 
 	          FROM wallet`
-
+	
 	if sortBy != "" {
 		query += fmt.Sprintf(" ORDER BY %s", sortBy)
 		if sortOrder != "" {
@@ -1982,27 +1982,27 @@ func (p *PostgresConnector) GetWallets(limit, offset int, sortBy, sortOrder stri
 	} else {
 		query += " ORDER BY balance DESC"
 	}
-
+	
 	if limit > 0 {
 		query += fmt.Sprintf(" LIMIT %d", limit)
 	}
-
+	
 	if offset > 0 {
 		query += fmt.Sprintf(" OFFSET %d", offset)
 	}
-
+	
 	rows, err := p.db.Query(query)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-
+	
 	var wallets []common.Wallet
 	for rows.Next() {
 		var wallet common.Wallet
 		var balanceStr string
 		var nonce *uint64
-
+		
 		err := rows.Scan(
 			&wallet.Address,
 			&nonce,
@@ -2013,19 +2013,19 @@ func (p *PostgresConnector) GetWallets(limit, offset int, sortBy, sortOrder stri
 		if err != nil {
 			return nil, err
 		}
-
+		
 		wallet.AccountNonce = nonce
-
+		
 		// Convert balance string to big.Int
 		balance, ok := new(big.Int).SetString(balanceStr, 10)
 		if !ok {
 			balance = big.NewInt(0)
 		}
 		wallet.Balance = balance
-
+		
 		wallets = append(wallets, wallet)
 	}
-
+	
 	return wallets, rows.Err()
 }
 
