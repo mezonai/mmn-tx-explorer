@@ -59,6 +59,10 @@ func handleTransactionStats(c *gin.Context) {
 		}
 	}
 
+	if pendingTxsData != nil {
+		transactions24h += pendingTxsData.TotalCount
+	}
+
 	pendingTransactions30m := uint64(0)
 	if pendingTxsData != nil {
 		pendingTransactions30m = CountPendingTxLast30m(pendingTxsData.PendingTxs)
