@@ -145,7 +145,7 @@ func handleDashboardStats(c *gin.Context) {
 	}()
 	go func() {
 		defer wg.Done()
-		averageBlockTime, errs[3] = getAverageBlockTime(ctx, mainStorage, 100)
+		averageBlockTime, errs[3] = getAverageBlockTime(mainStorage, 100)
 	}()
 	wg.Wait()
 
@@ -166,25 +166,17 @@ func handleDashboardStats(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func getAverageBlockTime(ctx context.Context, mainStorage storage.IMainStorage, numberOfBlocks uint64) (float64, error) {
+func getAverageBlockTime(mainStorage storage.IMainStorage, numberOfBlocks uint64) (float64, error) {
 	latestQf := storage.QueryFilter{
 		SortBy:              "block_number",
 		SortOrder:           "desc",
 		Limit:               1,
 		ForceConsistentData: true,
 	}
-
-	select {
-	case <-ctx.Done():
-		return 0, ctx.Err()
-	default:
-	}
-	
 	latestBlocks, err := mainStorage.GetBlocks(latestQf)
 	if err != nil {
 		return 0, err
 	}
-	
 	if len(latestBlocks.Data) == 0 {
 		return 0, nil
 	}
@@ -198,17 +190,9 @@ func getAverageBlockTime(ctx context.Context, mainStorage storage.IMainStorage, 
 	} else if latestBlockNumber < numberOfBlocks {
 		k = latestBlockNumber
 	}
-	
 	if k <= 0 {
 		return 0, nil
 	}
-	
-	select {
-	case <-ctx.Done():
-		return 0, ctx.Err()
-	default:
-	}
-	
 	targetNum := int64(latestBlockNumber) - int64(k)
 	targetQf := storage.QueryFilter{
 		BlockNumbers:        []*big.Int{big.NewInt(targetNum)},
@@ -219,11 +203,9 @@ func getAverageBlockTime(ctx context.Context, mainStorage storage.IMainStorage, 
 	if err != nil {
 		return 0, err
 	}
-	
 	if len(targetBlocks.Data) == 0 {
 		return 0, nil
 	}
-	
 	timestampMinusK := targetBlocks.Data[0].Timestamp.Unix()
 	avg := float64(latestTimestamp-timestampMinusK) / float64(k)
 	
