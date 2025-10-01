@@ -1223,19 +1223,55 @@ func (p *PostgresConnector) GetCount(ctx context.Context, table string, qf Query
 	return count, err
 }
 
-func (p *PostgresConnector) GetStatByKey(ctx context.Context, key string) (uint64, error) {
-	query := "SELECT value FROM stats WHERE key = $1"
-
-	var value uint64
-	err := p.db.QueryRowContext(ctx, query, key).Scan(&value)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return 0, nil
-		}
-		return 0, err
+func (p *PostgresConnector) GetDashboardStats(ctx context.Context, qf QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, err error) {
+	blockWhereClause := "transaction_count > 0"
+	if qf.ChainId != nil && qf.ChainId.Sign() > 0 {
+		blockWhereClause += fmt.Sprintf(" AND chain_id = %s", bigIntToString(qf.ChainId))
 	}
 
-	return value, nil
+	walletWhereClause := ""
+	if qf.ChainId != nil && qf.ChainId.Sign() > 0 {
+		walletWhereClause = fmt.Sprintf("WHERE chain_id = %s", bigIntToString(qf.ChainId))
+	}
+
+	query := fmt.Sprintf(`
+		SELECT 'blocks' as stat_type, COUNT(*) as count FROM blocks WHERE %s
+		UNION ALL
+		SELECT 'transactions' as stat_type, value as count FROM stats WHERE key = 'total_transactions'
+		UNION ALL
+		SELECT 'wallets' as stat_type, COUNT(*) as count FROM wallet %s
+	`, blockWhereClause, walletWhereClause)
+
+	rows, err := p.db.QueryContext(ctx, query)
+	if err != nil {
+		return 0, 0, 0, fmt.Errorf("failed to execute dashboard stats query: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var statType string
+		var count uint64
+		
+		err := rows.Scan(&statType, &count)
+		if err != nil {
+			return 0, 0, 0, fmt.Errorf("failed to scan dashboard stats row: %w", err)
+		}
+		
+		switch statType {
+		case "blocks":
+			totalBlocks = count
+		case "transactions":
+			totalTransactions = count
+		case "wallets":
+			totalWallets = count
+		}
+	}
+	
+	if err = rows.Err(); err != nil {
+		return 0, 0, 0, fmt.Errorf("error iterating dashboard stats rows: %w", err)
+	}
+	
+	return totalBlocks, totalTransactions, totalWallets, nil
 }
 
 func (p *PostgresConnector) GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error) {
