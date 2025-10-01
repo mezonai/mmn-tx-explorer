@@ -1587,21 +1587,23 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 		}
 	}
 
-	addresses := make(map[string]bool)
+	addresses := make(map[string]int64)
 	for _, tx := range transactions {
 		if tx.FromAddress != "" {
-			addresses[tx.FromAddress] = true
+			addresses[tx.FromAddress] = addresses[tx.FromAddress] + 1
 		}
 		if tx.ToAddress != "" {
-			addresses[tx.ToAddress] = true
+			addresses[tx.ToAddress] = addresses[tx.ToAddress] + 1
 		}
 	}
 
 	for address := range addresses {
-		incrementWalletTxCountQuery := `UPDATE wallet
-			SET transaction_count = COALESCE(transaction_count, 0) + 1
-			WHERE address = $1`
-		_, err = tx.Exec(incrementWalletTxCountQuery, address)
+		
+		incrementWalletTxCountQuery := `INSERT INTO wallet(address, transaction_count) VALUES ($1, $2)
+		ON CONFLICT (address) 
+		DO UPDATE 
+			SET transaction_count = COALESCE(wallet.transaction_count, 0) + $2`
+		_, err = tx.Exec(incrementWalletTxCountQuery, address, addresses[address])
 		if err != nil {
 			return fmt.Errorf("failed to update transaction_count for wallet %s: %w", address, err)
 		}
@@ -1905,7 +1907,7 @@ func (p *PostgresConnector) insertWallet(ctx context.Context, address string, no
 	}
 
 	query := `INSERT INTO wallet (address, account_nonce, balance, transaction_count, updated_at, created_at) 
-	          VALUES ($1, $2, $3, 1, NOW(), NOW())
+	          VALUES ($1, $2, $3, 0, NOW(), NOW())
 	          ON CONFLICT (address) 
 	          DO UPDATE SET 
 	              account_nonce = EXCLUDED.account_nonce,
