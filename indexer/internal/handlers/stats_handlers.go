@@ -120,35 +120,22 @@ func handleDashboardStats(c *gin.Context) {
 	var (
 		totalBlocks, totalTransactions, totalWallets uint64
 		averageBlockTime                             float64
-		wg                                           sync.WaitGroup
-		errs                                         = make([]error, 4)
+		err1                                         error
 	)
 
-	wg.Add(4)
-	go func() {
-		defer wg.Done()
-		totalBlocks, errs[0] = mainStorage.GetCount(ctx, "blocks", countQf)
-	}()
-	go func() {
-		defer wg.Done()
-		totalTransactions, errs[1] = mainStorage.GetStatByKey(ctx, "total_transactions")
-	}()
-	go func() {
-		defer wg.Done()
-		totalWallets, errs[2] = mainStorage.GetCount(ctx, "wallet", countQf)
-	}()
-	go func() {
-		defer wg.Done()
-		averageBlockTime, errs[3] = getAverageBlockTime(mainStorage, 100)
-	}()
-	wg.Wait()
+	totalBlocks, totalTransactions, totalWallets, err1 = mainStorage.GetDashboardStats(ctx, countQf)
+	if err1 != nil {
+		log.Error().Err(err1).Msg("Error getting dashboard stats")
+		api.InternalErrorHandler(c)
+		return
+	}
 
-	for _, err := range errs {
-		if err != nil {
-			log.Error().Err(err).Msg("Error querying dashboard stats")
-			api.InternalErrorHandler(c)
-			return
-		}
+	var err2 error
+	averageBlockTime, err2 = getAverageBlockTime(mainStorage, 100)
+	if err2 != nil {
+		log.Error().Err(err2).Msg("Error calculating average block time")
+		api.InternalErrorHandler(c)
+		return
 	}
 
 	resp := &DashboardStatsResponse{}

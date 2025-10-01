@@ -129,9 +129,9 @@ type IMainStorage interface {
 	GetCount(ctx context.Context, table string, qf QueryFilter) (uint64, error)
 
 	/**
-    * Gets a precomputed stat value from the stats table by key.
-    */
-    GetStatByKey(ctx context.Context, key string) (uint64, error)
+	 * Gets dashboard stats (totalBlocks, totalTransactions, totalWallets) in a single call.
+	 */
+	GetDashboardStats(ctx context.Context, qf QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, err error)
 
 	/**
 	 * Gets pending transactions from MMN service.
