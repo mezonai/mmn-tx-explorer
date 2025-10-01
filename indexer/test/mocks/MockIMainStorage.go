@@ -1091,6 +1091,83 @@ func (_c *MockIMainStorage_GetStatByKey_Call) RunAndReturn(run func(context.Cont
 	return _c
 }
 
+// GetDashboardStats provides a mock function with given fields: ctx, qf
+func (_m *MockIMainStorage) GetDashboardStats(ctx context.Context, qf storage.QueryFilter) (uint64, uint64, uint64, error) {
+	ret := _m.Called(ctx, qf)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetDashboardStats")
+	}
+
+	var r0 uint64
+	var r1 uint64
+	var r2 uint64
+	var r3 error
+	if rf, ok := ret.Get(0).(func(context.Context, storage.QueryFilter) (uint64, uint64, uint64, error)); ok {
+		return rf(ctx, qf)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, storage.QueryFilter) uint64); ok {
+		r0 = rf(ctx, qf)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(uint64)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, storage.QueryFilter) uint64); ok {
+		r1 = rf(ctx, qf)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(uint64)
+		}
+	}
+
+	if rf, ok := ret.Get(2).(func(context.Context, storage.QueryFilter) uint64); ok {
+		r2 = rf(ctx, qf)
+	} else {
+		if ret.Get(2) != nil {
+			r2 = ret.Get(2).(uint64)
+		}
+	}
+
+	if rf, ok := ret.Get(3).(func(context.Context, storage.QueryFilter) error); ok {
+		r3 = rf(ctx, qf)
+	} else {
+		r3 = ret.Error(3)
+	}
+
+	return r0, r1, r2, r3
+}
+
+// MockIMainStorage_GetDashboardStats_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetDashboardStats'
+type MockIMainStorage_GetDashboardStats_Call struct {
+	*mock.Call
+}
+
+// GetDashboardStats is a helper method to define mock.On call
+//   - ctx context.Context
+//   - qf storage.QueryFilter
+func (_e *MockIMainStorage_Expecter) GetDashboardStats(ctx interface{}, qf interface{}) *MockIMainStorage_GetDashboardStats_Call {
+	return &MockIMainStorage_GetDashboardStats_Call{Call: _e.mock.On("GetDashboardStats", ctx, qf)}
+}
+
+func (_c *MockIMainStorage_GetDashboardStats_Call) Run(run func(ctx context.Context, qf storage.QueryFilter)) *MockIMainStorage_GetDashboardStats_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(storage.QueryFilter))
+	})
+	return _c
+}
+
+func (_c *MockIMainStorage_GetDashboardStats_Call) Return(totalBlocks uint64, totalTransactions uint64, totalWallets uint64, err error) *MockIMainStorage_GetDashboardStats_Call {
+	_c.Call.Return(totalBlocks, totalTransactions, totalWallets, err)
+	return _c
+}
+
+func (_c *MockIMainStorage_GetDashboardStats_Call) RunAndReturn(run func(context.Context, storage.QueryFilter) (uint64, uint64, uint64, error)) *MockIMainStorage_GetDashboardStats_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetPendingTransactions provides a mock function with given fields: ctx
 func (_m *MockIMainStorage) GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error) {
 	ret := _m.Called(ctx)
