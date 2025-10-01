@@ -972,9 +972,9 @@ func (_c *MockIMainStorage_ReplaceBlockData_Call) RunAndReturn(run func([]common
 	return _c
 }
 
-// GetCount provides a mock function with given fields: table, qf
-func (_m *MockIMainStorage) GetCount(table string, qf storage.QueryFilter) (uint64, error) {
-	ret := _m.Called(table, qf)
+// GetCount provides a mock function with given fields: ctx, table, qf
+func (_m *MockIMainStorage) GetCount(ctx context.Context, table string, qf storage.QueryFilter) (uint64, error) {
+	ret := _m.Called(ctx, table, qf)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetCount")
@@ -982,19 +982,19 @@ func (_m *MockIMainStorage) GetCount(table string, qf storage.QueryFilter) (uint
 
 	var r0 uint64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, storage.QueryFilter) (uint64, error)); ok {
-		return rf(table, qf)
+	if rf, ok := ret.Get(0).(func(context.Context, string, storage.QueryFilter) (uint64, error)); ok {
+		return rf(ctx, table, qf)
 	}
-	if rf, ok := ret.Get(0).(func(string, storage.QueryFilter) uint64); ok {
-		r0 = rf(table, qf)
+	if rf, ok := ret.Get(0).(func(context.Context, string, storage.QueryFilter) uint64); ok {
+		r0 = rf(ctx, table, qf)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(uint64)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string, storage.QueryFilter) error); ok {
-		r1 = rf(table, qf)
+	if rf, ok := ret.Get(1).(func(context.Context, string, storage.QueryFilter) error); ok {
+		r1 = rf(ctx, table, qf)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1008,15 +1008,16 @@ type MockIMainStorage_GetCount_Call struct {
 }
 
 // GetCount is a helper method to define mock.On call
+//   - ctx context.Context
 //   - table string
 //   - qf storage.QueryFilter
-func (_e *MockIMainStorage_Expecter) GetCount(table interface{}, qf interface{}) *MockIMainStorage_GetCount_Call {
-	return &MockIMainStorage_GetCount_Call{Call: _e.mock.On("GetCount", table, qf)}
+func (_e *MockIMainStorage_Expecter) GetCount(ctx interface{}, table interface{}, qf interface{}) *MockIMainStorage_GetCount_Call {
+	return &MockIMainStorage_GetCount_Call{Call: _e.mock.On("GetCount", ctx, table, qf)}
 }
 
-func (_c *MockIMainStorage_GetCount_Call) Run(run func(table string, qf storage.QueryFilter)) *MockIMainStorage_GetCount_Call {
+func (_c *MockIMainStorage_GetCount_Call) Run(run func(ctx context.Context, table string, qf storage.QueryFilter)) *MockIMainStorage_GetCount_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(storage.QueryFilter))
+		run(args[0].(context.Context), args[1].(string), args[2].(storage.QueryFilter))
 	})
 	return _c
 }
@@ -1026,7 +1027,66 @@ func (_c *MockIMainStorage_GetCount_Call) Return(_a0 uint64, _a1 error) *MockIMa
 	return _c
 }
 
-func (_c *MockIMainStorage_GetCount_Call) RunAndReturn(run func(string, storage.QueryFilter) (uint64, error)) *MockIMainStorage_GetCount_Call {
+func (_c *MockIMainStorage_GetCount_Call) RunAndReturn(run func(context.Context, string, storage.QueryFilter) (uint64, error)) *MockIMainStorage_GetCount_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetStatByKey provides a mock function with given fields: ctx, key
+func (_m *MockIMainStorage) GetStatByKey(ctx context.Context, key string) (uint64, error) {
+	ret := _m.Called(ctx, key)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetStatByKey")
+	}
+
+	var r0 uint64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (uint64, error)); ok {
+		return rf(ctx, key)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) uint64); ok {
+		r0 = rf(ctx, key)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(uint64)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, key)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockIMainStorage_GetStatByKey_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetStatByKey'
+type MockIMainStorage_GetStatByKey_Call struct {
+	*mock.Call
+}
+
+// GetStatByKey is a helper method to define mock.On call
+//   - ctx context.Context
+//   - key string
+func (_e *MockIMainStorage_Expecter) GetStatByKey(ctx interface{}, key interface{}) *MockIMainStorage_GetStatByKey_Call {
+	return &MockIMainStorage_GetStatByKey_Call{Call: _e.mock.On("GetStatByKey", ctx, key)}
+}
+
+func (_c *MockIMainStorage_GetStatByKey_Call) Run(run func(ctx context.Context, key string)) *MockIMainStorage_GetStatByKey_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *MockIMainStorage_GetStatByKey_Call) Return(_a0 uint64, _a1 error) *MockIMainStorage_GetStatByKey_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockIMainStorage_GetStatByKey_Call) RunAndReturn(run func(context.Context, string) (uint64, error)) *MockIMainStorage_GetStatByKey_Call {
 	_c.Call.Return(run)
 	return _c
 }
