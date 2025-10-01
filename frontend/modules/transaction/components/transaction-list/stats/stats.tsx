@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 
 import { cn } from '@/lib/utils';
-import { DashboardService, IDashboardStats } from '@/modules/dashboard';
+import { TransactionService } from '@/modules/transaction/api';
+import { ITransactionStats } from '@/modules/transaction/types';
 import { StatCard } from './stat-card';
 import { NumberUtil } from '@/utils';
 
@@ -12,7 +13,7 @@ interface StatsProps {
 }
 
 export const Stats = ({ className }: StatsProps) => {
-  const [stats, setStats] = useState<IDashboardStats>();
+  const [stats, setStats] = useState<ITransactionStats>();
 
   const statCards = [
     {
@@ -29,7 +30,7 @@ export const Stats = ({ className }: StatsProps) => {
 
   const handleFetchStats = async () => {
     try {
-      const { data } = await DashboardService.getStats();
+      const { data } = await TransactionService.getStats();
       setStats(data);
     } catch (error) {
       console.error(error);

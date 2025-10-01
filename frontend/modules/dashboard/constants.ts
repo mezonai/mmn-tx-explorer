@@ -3,7 +3,7 @@ import { DASHBOARD_BLOCKS_LIMIT, IBLockListParams } from '../block';
 import { DASHBOARD_TRANSACTIONS_LIMIT, ITransactionListParams } from '../transaction';
 
 export const DASHBOARD_ENDPOINTS = {
-  STATS: '/:chainId/stats',
+  STATS: '/:chainId/stats/dashboard',
 } as const;
 
 export const DASHBOARD_STATS_QUERY_KEY = 'stats';

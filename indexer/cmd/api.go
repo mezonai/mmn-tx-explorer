@@ -95,7 +95,8 @@ func RunApi(cmd *cobra.Command, args []string) {
 		root.GET("/tx/:txHash/detail", handlers.GetTransactionDetail)
 
 		// stats queries
-		root.GET("/stats", handlers.GetStats)
+		root.GET("/stats/dashboard", handlers.GetDashboardStats)
+		root.GET("/stats/transactions", handlers.GetTransactionStats)
 
 		// token balance queries
 		root.GET("/balances/:owner/:type", handlers.GetTokenBalancesByType)

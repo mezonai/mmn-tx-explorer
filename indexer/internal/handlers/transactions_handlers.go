@@ -184,7 +184,8 @@ func handleTransactionsRequest(c *gin.Context) {
 	}
 	
 	// Get the total number of items
-	totalItems, err := mainStorage.GetCount("transactions", countQf)
+	ctx := c.Request.Context()
+totalItems, err := mainStorage.GetCount(ctx, "transactions", countQf)
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting count")
 		api.InternalErrorHandler(c)

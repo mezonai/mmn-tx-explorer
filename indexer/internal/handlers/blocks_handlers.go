@@ -59,6 +59,13 @@ func handleBlocksRequest(c *gin.Context) {
 		return
 	}
 
+	if queryParams.FilterParams == nil {
+	   queryParams.FilterParams = make(map[string]string)
+	}
+		
+	// Add filter for transaction_count > 0
+	queryParams.FilterParams["transaction_count_gt"] = "0"
+
 	// Prepare the QueryFilter
 	qf := storage.QueryFilter{
 		FilterParams:        queryParams.FilterParams,
@@ -78,7 +85,8 @@ func handleBlocksRequest(c *gin.Context) {
 	}
 
 	// Get the total number of items
-	totalItems, err := mainStorage.GetCount("blocks", countQf)
+	ctx := c.Request.Context()
+	totalItems, err := mainStorage.GetCount(ctx, "blocks", countQf)
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting count")
 		api.InternalErrorHandler(c)
