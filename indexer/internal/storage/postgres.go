@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 	"github.com/rs/zerolog/log"
 	config "github.com/thirdweb-dev/indexer/configs"
@@ -1874,6 +1875,31 @@ func (p *PostgresConnector) batchUpdateWalletTransactionCounts(tx *sql.Tx, addre
 	if err != nil {
 		return fmt.Errorf("failed to batch update wallet transaction counts: %w", err)
 	}
+
+    updateBlockQuery := `
+        WITH max_blocks AS (
+            SELECT 
+                address, 
+                MAX(block_number) AS max_block
+            FROM (
+                SELECT from_address AS address, block_number FROM transactions WHERE from_address = ANY($1)
+                UNION ALL
+                SELECT to_address AS address, block_number FROM transactions WHERE to_address = ANY($2)
+            ) addr_blocks
+            WHERE address IS NOT NULL
+            GROUP BY address
+        )
+        UPDATE wallet 
+        SET last_block = COALESCE(
+            (SELECT max_block FROM max_blocks WHERE max_blocks.address = wallet.address), 
+            wallet.last_block
+        )
+        WHERE address = ANY($3)`
+
+	_, err = tx.Exec(updateBlockQuery, pq.Array(addressList), pq.Array(addressList), pq.Array(addressList)) 
+    if err != nil {
+        return fmt.Errorf("failed to update last_block for wallets: %w", err)
+    }
 
 	log.Debug().Int("count", len(addressList)).Msg("Batch updated wallet transaction counts")
 	return nil

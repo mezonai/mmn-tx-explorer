@@ -136,10 +136,9 @@ func GetWalletDetail(c *gin.Context) {
 		FilterParams:        map[string]string{"address": address},
 		Limit:               1,
 		ForceConsistentData: queryParams.ForceConsistentData,
-		Aggregates:          []string{"address", "account_nonce", "balance", "transaction_count"},
+		Aggregates:          []string{"address", "account_nonce", "balance", "transaction_count", "last_block"},
 	}
 
-	ctx := c.Request.Context()
 	result, err := mainStorage.GetAggregations("wallet", qf)
 	if err != nil {
 		log.Error().Err(err).Msg("Error querying wallet detail")
@@ -154,19 +153,6 @@ func GetWalletDetail(c *gin.Context) {
 	// Prepare base response data from wallet table
 	resp := WalletDetailResponse{Data: result.Aggregates[0]}
 
-	// Fetch latest transaction timestamp for this wallet (from OR to)
-	txQf := storage.QueryFilter{
-		WalletAddress:       address,
-		ForceConsistentData: queryParams.ForceConsistentData,
-		SortBy:              "transaction_timestamp",
-		SortOrder:           "desc",
-		Limit:               1,
-		Aggregates:          nil,
-	}
-
-	transactionsResult, err := mainStorage.GetTransactions(ctx, txQf)
-	if err == nil && len(transactionsResult.Data) > 0 {
-		resp.Data["last_balance_update"] = transactionsResult.Data[0].BlockNumber
-	}
+	resp.Data["last_balance_update"] = resp.Data["last_block"]
 	sendJSONResponse(c, resp)
 }
