@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"math/big"
 
+	"context"
+
 	config "github.com/thirdweb-dev/indexer/configs"
 	"github.com/thirdweb-dev/indexer/internal/common"
 	pb "github.com/thirdweb-dev/indexer/proto"
-	"context"
 )
 
 type QueryFilter struct {
@@ -97,7 +98,7 @@ type IMainStorage interface {
 	ReplaceBlockData(data []common.BlockData) ([]common.BlockData, error)
 
 	GetBlocks(qf QueryFilter, fields ...string) (blocks QueryResult[common.Block], err error)
-	GetTransactions(qf QueryFilter, fields ...string) (transactions QueryResult[common.Transaction], err error)
+	GetTransactions(ctx context.Context, qf QueryFilter, fields ...string) (transactions QueryResult[common.Transaction], err error)
 	GetLogs(qf QueryFilter, fields ...string) (logs QueryResult[common.Log], err error)
 	GetTraces(qf QueryFilter, fields ...string) (traces QueryResult[common.Trace], err error)
 	GetAggregations(table string, qf QueryFilter) (QueryResult[interface{}], error)
@@ -137,8 +138,13 @@ type IMainStorage interface {
 	 * Gets pending transactions from MMN service.
 	 */
 	GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error)
-}
 
+	/**
+	 * Gets the count of transactions in a table.
+	 */
+	GetTransactionCount(ctx context.Context, qf QueryFilter) (uint64, error)
+	GetTransactionsByWallet(ctx context.Context, qf QueryFilter) (QueryResult[interface{}], error)
+}
 
 func NewStorageConnector(cfg *config.StorageConfig) (IStorage, error) {
 	var storage IStorage
