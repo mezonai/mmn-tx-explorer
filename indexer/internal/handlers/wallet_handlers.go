@@ -139,7 +139,7 @@ func GetWalletDetail(c *gin.Context) {
 		Aggregates:          []string{"address", "account_nonce", "balance", "transaction_count", "last_block"},
 	}
 
-	result, err := mainStorage.GetAggregations("wallet", qf)
+	result, err := mainStorage.GetAggregations(c.Request.Context(), "wallet", qf)
 	if err != nil {
 		log.Error().Err(err).Msg("Error querying wallet detail")
 		api.InternalErrorHandler(c)
