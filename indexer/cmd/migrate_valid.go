@@ -261,7 +261,8 @@ func validateRPC(rpcClient rpc.IRPCClient, s storage.IStorage) (bool, error) {
 	}
 
 	// If rpc does not support block receipts, we need to check if the transactions are indexed with block receipts
-	transactionsQueryResult, err := s.MainStorage.GetTransactions(storage.QueryFilter{
+	ctx := context.Background()
+	transactionsQueryResult, err := s.MainStorage.GetTransactions(ctx, storage.QueryFilter{
 		ChainId: rpcClient.GetChainID(),
 		Limit:   1,
 	})

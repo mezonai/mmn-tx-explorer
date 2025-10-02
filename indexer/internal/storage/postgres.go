@@ -751,11 +751,11 @@ func (p *PostgresConnector) GetBlocks(qf QueryFilter, fields ...string) (QueryRe
 	return QueryResult[common.Block]{Data: blocks}, rows.Err()
 }
 
-func (p *PostgresConnector) GetTransactions(qf QueryFilter, fields ...string) (QueryResult[common.Transaction], error) {
+func (p *PostgresConnector) GetTransactions(ctx context.Context, qf QueryFilter, fields ...string) (QueryResult[common.Transaction], error) {
 	columns := p.buildSelectFields(fields, defaultTransactionFields)
 	query := p.buildQuery("transactions", columns, qf)
 
-	rows, err := p.db.Query(query)
+	rows, err := p.db.QueryContext(ctx, query)
 	if err != nil {
 		return QueryResult[common.Transaction]{}, err
 	}
@@ -1445,12 +1445,12 @@ func (p *PostgresConnector) GetDashboardStats(ctx context.Context, qf QueryFilte
 	for rows.Next() {
 		var statType string
 		var count uint64
-		
+
 		err := rows.Scan(&statType, &count)
 		if err != nil {
 			return 0, 0, 0, fmt.Errorf("failed to scan dashboard stats row: %w", err)
 		}
-		
+
 		switch statType {
 		case "blocks":
 			totalBlocks = count
@@ -1460,11 +1460,11 @@ func (p *PostgresConnector) GetDashboardStats(ctx context.Context, qf QueryFilte
 			totalWallets = count
 		}
 	}
-	
+
 	if err = rows.Err(); err != nil {
 		return 0, 0, 0, fmt.Errorf("error iterating dashboard stats rows: %w", err)
 	}
-	
+
 	return totalBlocks, totalTransactions, totalWallets, nil
 }
 
@@ -2273,6 +2273,106 @@ func (p *PostgresConnector) GetWallets(limit, offset int, sortBy, sortOrder stri
 	}
 
 	return wallets, rows.Err()
+}
+
+func (p *PostgresConnector) GetTransactionCount(ctx context.Context, qf QueryFilter) (uint64, error) {
+	query := "SELECT COUNT(*) FROM transactions"
+	args := []any{}
+	if qf.WalletAddress != "" {
+		query = `SELECT COUNT(*) FROM (
+			SELECT 1 FROM transactions WHERE from_address = $1
+			UNION ALL
+			SELECT 1 FROM transactions WHERE to_address = $1
+		) t`
+		args = append(args, qf.WalletAddress)
+	}
+
+	var count uint64
+	err := p.db.QueryRowContext(ctx, query, args...).Scan(&count)
+	return count, err
+}
+
+func (p *PostgresConnector) GetTransactionsByWallet(ctx context.Context, qf QueryFilter) (QueryResult[interface{}], error) {
+	if qf.WalletAddress == "" {
+		return QueryResult[interface{}]{}, fmt.Errorf("no aggregates specified")
+	}
+	queryByFrom := "SELECT * FROM transactions WHERE from_address = $1"
+	queryByTo := "SELECT * FROM transactions WHERE to_address = $1"
+	query := fmt.Sprintf("(%s) UNION (%s)", queryByFrom, queryByTo)
+	args := []any{qf.WalletAddress}
+	if qf.SortBy != "" {
+		query += fmt.Sprintf(" ORDER BY %s", qf.SortBy)
+		if qf.SortOrder != "" {
+			query += " " + qf.SortOrder
+		}
+	}
+
+	if qf.Page >= 0 && qf.Limit > 0 {
+		query += fmt.Sprintf(" LIMIT %d OFFSET %d", qf.Limit, qf.Page*qf.Limit)
+	} else if qf.Limit > 0 {
+		query += fmt.Sprintf(" LIMIT %d", qf.Limit)
+		if qf.Offset > 0 {
+			query += fmt.Sprintf(" OFFSET %d", qf.Offset)
+		}
+	}
+	// Execute optimized query
+	rows, err := p.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return QueryResult[interface{}]{}, err
+	}
+	defer rows.Close()
+
+	// Initialize as empty slice to avoid null in JSON when no rows
+	aggregates, err := p.scanRowsToMaps(rows, qf.Limit)
+	if err != nil {
+		return QueryResult[interface{}]{}, err
+	}
+
+	return QueryResult[interface{}]{Data: nil, Aggregates: aggregates}, rows.Err()
+}
+
+// scanRowsToMapsOptimized - version tối ưu với pre-allocation và caching
+func (p *PostgresConnector) scanRowsToMaps(rows *sql.Rows, estimatedRows int) ([]map[string]interface{}, error) {
+	aggregates := make([]map[string]interface{}, 0, estimatedRows)
+
+	var columns []string
+	var columnsInitialized bool
+
+	for rows.Next() {
+		if !columnsInitialized {
+			var err error
+			columns, err = rows.Columns()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get columns: %w", err)
+			}
+			columnsInitialized = true
+		}
+
+		values := make([]interface{}, len(columns))
+		valuePtrs := make([]interface{}, len(columns))
+		for i := range values {
+			valuePtrs[i] = &values[i]
+		}
+
+		if err := rows.Scan(valuePtrs...); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+
+		row := make(map[string]interface{}, len(columns))
+		for i, col := range columns {
+			val := values[i]
+			// Convert PostgreSQL []byte to string
+			if b, ok := val.([]byte); ok {
+				row[col] = string(b)
+			} else {
+				row[col] = val
+			}
+		}
+
+		aggregates = append(aggregates, row)
+	}
+
+	return aggregates, nil
 }
 
 // Close closes the database connection

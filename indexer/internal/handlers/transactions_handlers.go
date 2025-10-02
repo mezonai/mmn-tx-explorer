@@ -1,18 +1,16 @@
 package handlers
 
 import (
-    "fmt"
+	"fmt"
 	"net/http"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	gethCommon "github.com/ethereum/go-ethereum/common"
+	"math"
+
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	"github.com/thirdweb-dev/indexer/api"
-	config "github.com/thirdweb-dev/indexer/configs"
 	"github.com/thirdweb-dev/indexer/internal/common"
 	"github.com/thirdweb-dev/indexer/internal/storage"
-	"math"
 	pb "github.com/thirdweb-dev/indexer/proto"
 )
 
@@ -117,14 +115,6 @@ func GetTransactionsByContractAndSignature(c *gin.Context) {
 }
 
 func handleTransactionsRequest(c *gin.Context) {
-	chainId, err := api.GetChainId(c)
-	if err != nil {
-		api.BadRequestErrorHandler(c, err)
-		return
-	}
-
-	contractAddress := c.Param("to")
-	signature := c.Param("signature")
 	walletAddress := c.Param("wallet_address")
 	queryParams, err := api.ParseQueryParams(c.Request)
 	if err != nil {
@@ -142,16 +132,6 @@ func handleTransactionsRequest(c *gin.Context) {
 		return
 	}
 
-	var functionABI *abi.Method
-	signatureHash := ""
-	if signature != "" {
-		functionABI, err = common.ConstructFunctionABI(signature)
-		if err != nil {
-			log.Debug().Err(err).Msgf("Unable to construct function ABI for %s", signature)
-		}
-		signatureHash = "0x" + gethCommon.Bytes2Hex(functionABI.ID)
-	}
-
 	mainStorage, err := getMainStorage()
 	if err != nil {
 		log.Error().Err(err).Msg("Error creating storage connector")
@@ -161,11 +141,8 @@ func handleTransactionsRequest(c *gin.Context) {
 
 	// Prepare the QueryFilter
 	qf := storage.QueryFilter{
-		FilterParams:        queryParams.FilterParams,
-		ContractAddress:     contractAddress,
+		// FilterParams:        queryParams.FilterParams,
 		WalletAddress:       walletAddress,
-		Signature:           signatureHash,
-		ChainId:             chainId,
 		SortBy:              queryParams.SortBy,
 		SortOrder:           queryParams.SortOrder,
 		Page:                queryParams.Page,
@@ -175,17 +152,14 @@ func handleTransactionsRequest(c *gin.Context) {
 
 	// Prepare the QueryFilter for count
 	countQf := storage.QueryFilter{
-		FilterParams:        queryParams.FilterParams,
-		ContractAddress:     contractAddress,
+		// FilterParams:        queryParams.FilterParams,
 		WalletAddress:       walletAddress,
-		Signature:           signatureHash,
-		ChainId:             chainId,
 		ForceConsistentData: queryParams.ForceConsistentData,
 	}
-	
+
 	// Get the total number of items
 	ctx := c.Request.Context()
-totalItems, err := mainStorage.GetCount(ctx, "transactions", countQf)
+	totalItems, err := mainStorage.GetTransactionCount(ctx, countQf)
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting count")
 		api.InternalErrorHandler(c)
@@ -195,13 +169,11 @@ totalItems, err := mainStorage.GetCount(ctx, "transactions", countQf)
 	// Initialize the QueryResult
 	queryResult := api.QueryResponse{
 		Meta: api.Meta{
-			ChainId:         chainId.Uint64(),
-			ContractAddress: contractAddress,
-			Signature:       signatureHash,
-			Page:            queryParams.Page,
-			Limit:           queryParams.Limit,
-			TotalItems:      0,
-			TotalPages:      0, // TODO: Implement total pages count
+			ChainId:    1337,
+			Page:       queryParams.Page,
+			Limit:      queryParams.Limit,
+			TotalItems: 0,
+			TotalPages: 0, // TODO: Implement total pages count
 		},
 		Data:         nil,
 		Aggregations: nil,
@@ -223,7 +195,7 @@ totalItems, err := mainStorage.GetCount(ctx, "transactions", countQf)
 		queryResult.Meta.TotalItems = len(aggregatesResult.Aggregates)
 	} else {
 		// Retrieve logs data
-		transactionsResult, err := mainStorage.GetTransactions(qf)
+		transactionsResult, err := mainStorage.GetTransactions(ctx, qf)
 		if err != nil {
 			log.Error().Err(err).Msg("Error querying transactions")
 			// TODO: might want to choose BadRequestError if it's due to not-allowed functions
@@ -232,11 +204,7 @@ totalItems, err := mainStorage.GetCount(ctx, "transactions", countQf)
 		}
 
 		var data interface{}
-		if decodedTxs := decodeTransactionsIfNeeded(chainId.String(), transactionsResult.Data, functionABI, config.Cfg.API.AbiDecodingEnabled && queryParams.Decode); decodedTxs != nil {
-			data = serializeDecodedTransactions(decodedTxs)
-		} else {
-			data = serializeTransactions(transactionsResult.Data)
-		}
+		data = serializeTransactions(transactionsResult.Data)
 		queryResult.Data = &data
 		queryResult.Meta.TotalItems = int(totalItems)
 		queryResult.Meta.TotalPages = int(math.Ceil(float64(totalItems) / float64(queryParams.Limit)))
@@ -245,53 +213,26 @@ totalItems, err := mainStorage.GetCount(ctx, "transactions", countQf)
 	c.JSON(http.StatusOK, queryResult)
 }
 
-func decodeTransactionsIfNeeded(chainId string, transactions []common.Transaction, functionABI *abi.Method, useContractService bool) []*common.DecodedTransaction {
-	if functionABI != nil {
-		decodingCompletelySuccessful := true
-		decodedTransactions := []*common.DecodedTransaction{}
-		for _, transaction := range transactions {
-			decodedTransaction := transaction.Decode(functionABI)
-			if decodedTransaction.Decoded.Name == "" || decodedTransaction.Decoded.Signature == "" {
-				decodingCompletelySuccessful = false
-			}
-			decodedTransactions = append(decodedTransactions, decodedTransaction)
-		}
-		if !useContractService || decodingCompletelySuccessful {
-			// decoding was successful or contract service decoding is disabled
-			return decodedTransactions
-		}
-	}
-	if useContractService {
-		return common.DecodeTransactions(chainId, transactions)
-	}
-	return nil
-}
-
-func serializeDecodedTransactions(transactions []*common.DecodedTransaction) []common.DecodedTransactionModel {
-	decodedTransactionModels := make([]common.DecodedTransactionModel, len(transactions))
-	for i, transaction := range transactions {
-		decodedTransactionModels[i] = transaction.Serialize()
-	}
-	return decodedTransactionModels
-}
-
 func serializeTransactions(transactions []common.Transaction) []common.TransactionModel {
-	transactionModels := make([]common.TransactionModel, len(transactions))
-	for i, transaction := range transactions {
-		transactionModels[i] = transaction.Serialize()
+	if len(transactions) == 0 {
+		return []common.TransactionModel{}
+	}
+	transactionModels := make([]common.TransactionModel, 0, len(transactions))
+	for _, transaction := range transactions {
+		transactionModels = append(transactionModels, transaction.Serialize())
 	}
 	return transactionModels
 }
 
 // PendingTransactionModel return type for Swagger documentation
 type PendingTransactionModel struct {
-	TxHash    string `json:"hash"`
-	Sender    string `json:"from_address"`
-	Recipient string `json:"to_address"`
-	Amount    string `json:"value"`
-	Nonce     uint64 `json:"nonce"`
-	Timestamp uint64 `json:"transaction_timestamp"`
-	Status    uint64 `json:"status"`
+	TxHash          string `json:"hash"`
+	Sender          string `json:"from_address"`
+	Recipient       string `json:"to_address"`
+	Amount          string `json:"value"`
+	Nonce           uint64 `json:"nonce"`
+	Timestamp       uint64 `json:"transaction_timestamp"`
+	Status          uint64 `json:"status"`
 	TransactionType uint64 `json:"transaction_type"`
 }
 
@@ -410,58 +351,58 @@ type PendingTransactionDetailResponse struct {
 }
 
 func GetPendingTransactionDetail(c *gin.Context) {
-    hash := c.Param("transaction_hash")
-    if hash == "" {
-        api.BadRequestErrorHandler(c, fmt.Errorf("missing transaction hash"))
-        return
-    }
+	hash := c.Param("transaction_hash")
+	if hash == "" {
+		api.BadRequestErrorHandler(c, fmt.Errorf("missing transaction hash"))
+		return
+	}
 
-    mainStorage, err := getMainStorage()
-    if err != nil {
-        log.Error().Err(err).Msg("Error getting main storage")
-        api.InternalErrorHandler(c)
-        return
-    }
+	mainStorage, err := getMainStorage()
+	if err != nil {
+		log.Error().Err(err).Msg("Error getting main storage")
+		api.InternalErrorHandler(c)
+		return
+	}
 
-    ctx := c.Request.Context()
-    pendingResp, err := mainStorage.GetPendingTransactions(ctx)
-    if err != nil {
-        log.Error().Err(err).Msg("Error getting pending transactions from MMN service")
-        api.InternalErrorHandler(c)
-        return
-    }
+	ctx := c.Request.Context()
+	pendingResp, err := mainStorage.GetPendingTransactions(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("Error getting pending transactions from MMN service")
+		api.InternalErrorHandler(c)
+		return
+	}
 
-    if pendingResp == nil || pendingResp.Error != "" {
-        log.Error().Msgf("MMN service error: %s", pendingResp.Error)
-        api.InternalErrorHandler(c)
-        return
-    }
+	if pendingResp == nil || pendingResp.Error != "" {
+		log.Error().Msgf("MMN service error: %s", pendingResp.Error)
+		api.InternalErrorHandler(c)
+		return
+	}
 
-    var found *pb.TransactionData
-    if pendingResp.PendingTxs != nil {
-        for _, tx := range pendingResp.PendingTxs {
-            if tx != nil && tx.TxHash == hash {
-                found = tx
-                break
-            }
-        }
-    }
+	var found *pb.TransactionData
+	if pendingResp.PendingTxs != nil {
+		for _, tx := range pendingResp.PendingTxs {
+			if tx != nil && tx.TxHash == hash {
+				found = tx
+				break
+			}
+		}
+	}
 
-    if found == nil {
-        c.JSON(http.StatusNotFound, api.Error{Message: "Pending transaction not found"})
-        return
-    }
+	if found == nil {
+		c.JSON(http.StatusNotFound, api.Error{Message: "Pending transaction not found"})
+		return
+	}
 
-    model := PendingTransactionModel{
-        TxHash:    found.TxHash,
-        Sender:    found.Sender,
-        Recipient: found.Recipient,
-        Amount:    found.Amount,
-        Nonce:     found.Nonce,
-        Timestamp: found.Timestamp / 1000,
-        Status:    0,
-        TransactionType: 0,
-    }
+	model := PendingTransactionModel{
+		TxHash:          found.TxHash,
+		Sender:          found.Sender,
+		Recipient:       found.Recipient,
+		Amount:          found.Amount,
+		Nonce:           found.Nonce,
+		Timestamp:       found.Timestamp / 1000,
+		Status:          0,
+		TransactionType: 0,
+	}
 
 	transactionDetailResponse := PendingTransactionDetailResponse{
 		Data: struct {
@@ -470,7 +411,7 @@ func GetPendingTransactionDetail(c *gin.Context) {
 			Transaction: model,
 		},
 	}
-    c.JSON(http.StatusOK, transactionDetailResponse)
+	c.JSON(http.StatusOK, transactionDetailResponse)
 }
 
 func serializePendingTransactions(pendingTxs []*pb.TransactionData) []PendingTransactionModel {
@@ -481,16 +422,15 @@ func serializePendingTransactions(pendingTxs []*pb.TransactionData) []PendingTra
 	models := make([]PendingTransactionModel, len(pendingTxs))
 	for i, tx := range pendingTxs {
 		models[i] = PendingTransactionModel{
-			TxHash:    tx.TxHash,
-			Sender:    tx.Sender,
-			Recipient: tx.Recipient,
-			Amount:    tx.Amount,
-			Nonce:     tx.Nonce,
-			Timestamp: tx.Timestamp / 1000,
-			Status:    0,
+			TxHash:          tx.TxHash,
+			Sender:          tx.Sender,
+			Recipient:       tx.Recipient,
+			Amount:          tx.Amount,
+			Nonce:           tx.Nonce,
+			Timestamp:       tx.Timestamp / 1000,
+			Status:          0,
 			TransactionType: 0,
 		}
 	}
 	return models
 }
-
