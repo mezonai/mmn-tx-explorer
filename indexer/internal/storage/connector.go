@@ -101,7 +101,7 @@ type IMainStorage interface {
 	GetTransactions(ctx context.Context, qf QueryFilter, fields ...string) (transactions QueryResult[common.Transaction], err error)
 	GetLogs(qf QueryFilter, fields ...string) (logs QueryResult[common.Log], err error)
 	GetTraces(qf QueryFilter, fields ...string) (traces QueryResult[common.Trace], err error)
-	GetAggregations(table string, qf QueryFilter) (QueryResult[interface{}], error)
+	GetAggregations(ctx context.Context, table string, qf QueryFilter) (QueryResult[interface{}], error)
 	GetMaxBlockNumber(chainId *big.Int) (maxBlockNumber *big.Int, err error)
 	GetMaxBlockNumberInRange(chainId *big.Int, startBlock *big.Int, endBlock *big.Int) (maxBlockNumber *big.Int, err error)
 	/**

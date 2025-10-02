@@ -40,7 +40,7 @@ type WalletUpdateBatcher struct {
 }
 
 type WalletStats struct {
-	Count    int64
+	TransactionCount    int64
 	MaxBlock *big.Int
 }
 
@@ -826,7 +826,7 @@ func (p *PostgresConnector) GetTraces(qf QueryFilter, fields ...string) (QueryRe
 	return QueryResult[common.Trace]{Data: traces}, rows.Err()
 }
 
-func (p *PostgresConnector) GetAggregations(table string, qf QueryFilter) (QueryResult[interface{}], error) {
+func (p *PostgresConnector) GetAggregations(ctx context.Context, table string, qf QueryFilter) (QueryResult[interface{}], error) {
 	if len(qf.Aggregates) == 0 {
 		return QueryResult[interface{}]{}, fmt.Errorf("no aggregates specified")
 	}
@@ -858,7 +858,7 @@ func (p *PostgresConnector) GetAggregations(table string, qf QueryFilter) (Query
 		}
 	}
 
-	rows, err := p.db.Query(query)
+	rows, err := p.db.QueryContext(ctx, query)
 	if err != nil {
 		return QueryResult[interface{}]{}, err
 	}
@@ -1822,7 +1822,7 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 	for _, tx := range transactions {
 		if tx.FromAddress != "" {
 			stat := addressStats[tx.FromAddress]
-			stat.Count++
+			stat.TransactionCount++
 			if stat.MaxBlock == nil || tx.BlockNumber.Cmp(stat.MaxBlock) > 0 {
 				stat.MaxBlock = new(big.Int).Set(tx.BlockNumber)
 			}
@@ -1831,7 +1831,7 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 
 		if tx.ToAddress != "" {
 			stat := addressStats[tx.ToAddress]
-			stat.Count++
+			stat.TransactionCount++
 			if stat.MaxBlock == nil || tx.BlockNumber.Cmp(stat.MaxBlock) > 0 {
 				stat.MaxBlock = new(big.Int).Set(tx.BlockNumber)
 			}
@@ -1865,7 +1865,7 @@ func (p *PostgresConnector) batchUpdateWalletTransactionCounts(
 
 	for addr, stat := range addressStats {
 		addressList = append(addressList, addr)
-		counts = append(counts, stat.Count)
+		counts = append(counts, stat.TransactionCount)
 		maxBlocks = append(maxBlocks, stat.MaxBlock.String())
 	}
 

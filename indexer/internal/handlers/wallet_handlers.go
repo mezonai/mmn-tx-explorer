@@ -78,7 +78,7 @@ func GetWallets(c *gin.Context) {
 	}
 
 	// Fetch data
-	result, err := mainStorage.GetAggregations("wallet", qf)
+	result, err := mainStorage.GetAggregations(c.Request.Context(), "wallet", qf)
 	if err != nil {
 		log.Error().Err(err).Msg("Error querying wallets")
 		api.InternalErrorHandler(c)
