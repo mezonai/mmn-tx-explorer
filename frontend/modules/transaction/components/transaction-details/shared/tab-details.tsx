@@ -1,5 +1,4 @@
 import { Truncate } from '@re-dev/react-truncate';
-import { format } from 'date-fns';
 import { Clock4 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -9,9 +8,9 @@ import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DATE_TIME_FORMAT } from '@/constant';
 import { ITransaction } from '@/modules/transaction/types';
 import { DateTimeUtil, NumberUtil } from '@/utils';
+import { ClientTimeDisplay } from './client-time-display';
 
 interface TabDetailsProps {
   transaction?: ITransaction;
@@ -71,10 +70,7 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
               <span>{DateTimeUtil.formatRelativeTimeSec(transaction.transaction_timestamp)}</span>
               <span> | </span>
               <span>
-                {format(
-                  DateTimeUtil.toMilliseconds(transaction.transaction_timestamp),
-                  DATE_TIME_FORMAT.HUMAN_READABLE_WITH_OFFSET
-                )}
+                <ClientTimeDisplay timestamp={transaction.block_timestamp} />
               </span>
             </div>
           </div>
