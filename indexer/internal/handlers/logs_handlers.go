@@ -167,7 +167,7 @@ func handleLogsRequest(c *gin.Context) {
 		qf.Aggregates = queryParams.Aggregates
 		qf.GroupBy = queryParams.GroupBy
 
-		aggregatesResult, err := mainStorage.GetAggregations("logs", qf)
+		aggregatesResult, err := mainStorage.GetAggregations(c.Request.Context(), "logs", qf)
 		if err != nil {
 			log.Error().Err(err).Msg("Error querying aggregates")
 			// TODO: might want to choose BadRequestError if it's due to not-allowed functions

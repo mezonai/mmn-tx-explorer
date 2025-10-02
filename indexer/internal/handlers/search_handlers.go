@@ -135,7 +135,7 @@ func executeSearch(ctx context.Context, storage storage.IMainStorage, chainId *b
 		return searchByHash(ctx, storage, chainId, input.Hash)
 
 	case input.Address != "":
-		return searchByAddress(storage, input.Address)
+		return searchByAddress(ctx, storage, input.Address)
 
 	case input.FunctionSignature != "":
 		transactions, err := searchByFunctionSelectorOptimistically(ctx, storage, chainId, input.FunctionSignature)
@@ -330,7 +330,7 @@ func searchByHash(ctx context.Context, mainStorage storage.IMainStorage, chainId
 	}
 }
 
-func searchByAddress(mainStorage storage.IMainStorage, address string) (SearchResultModel, error) {
+func searchByAddress(ctx context.Context, mainStorage storage.IMainStorage, address string) (SearchResultModel, error) {
 	searchResult := SearchResultModel{Type: SearchResultTypeWallet}
 
 	// Search for wallet in the wallet table
@@ -341,7 +341,7 @@ func searchByAddress(mainStorage storage.IMainStorage, address string) (SearchRe
 		Aggregates:          []string{"address", "account_nonce", "balance"},
 	}
 
-	result, err := mainStorage.GetAggregations("wallet", qf)
+	result, err := mainStorage.GetAggregations(ctx, "wallet", qf)
 	if err != nil {
 		return searchResult, err
 	}
