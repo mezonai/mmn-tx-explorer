@@ -39,6 +39,11 @@ type WalletUpdateBatcher struct {
 	stopChan         chan struct{}
 }
 
+type WalletStats struct {
+	Count    int64
+	MaxBlock *big.Int
+}
+
 // NewWalletUpdateBatcher creates a new wallet update batcher
 func NewWalletUpdateBatcher(connector *PostgresConnector) *WalletUpdateBatcher {
 	batcher := &WalletUpdateBatcher{
@@ -1812,20 +1817,30 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 		}
 	}
 
-	// Collect addresses for batch wallet update
-	addresses := make(map[string]int64)
+	addressStats := make(map[string]WalletStats)
+
 	for _, tx := range transactions {
 		if tx.FromAddress != "" {
-			addresses[tx.FromAddress] = addresses[tx.FromAddress] + 1
+			stat := addressStats[tx.FromAddress]
+			stat.Count++
+			if stat.MaxBlock == nil || tx.BlockNumber.Cmp(stat.MaxBlock) > 0 {
+				stat.MaxBlock = new(big.Int).Set(tx.BlockNumber)
+			}
+			addressStats[tx.FromAddress] = stat
 		}
+
 		if tx.ToAddress != "" {
-			addresses[tx.ToAddress] = addresses[tx.ToAddress] + 1
+			stat := addressStats[tx.ToAddress]
+			stat.Count++
+			if stat.MaxBlock == nil || tx.BlockNumber.Cmp(stat.MaxBlock) > 0 {
+				stat.MaxBlock = new(big.Int).Set(tx.BlockNumber)
+			}
+			addressStats[tx.ToAddress] = stat
 		}
 	}
 
-	// Perform batched wallet transaction count update
-	if len(addresses) > 0 {
-		if err := p.batchUpdateWalletTransactionCounts(tx, addresses); err != nil {
+	if len(addressStats) > 0 {
+		if err := p.batchUpdateWalletTransactionCounts(tx, addressStats); err != nil {
 			return fmt.Errorf("failed to batch update wallet transaction counts: %w", err)
 		}
 	}
@@ -1837,69 +1852,47 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 	return nil
 }
 
-// batchUpdateWalletTransactionCounts performs batched wallet transaction count updates
-func (p *PostgresConnector) batchUpdateWalletTransactionCounts(tx *sql.Tx, addresses map[string]int64) error {
-	if len(addresses) == 0 {
+func (p *PostgresConnector) batchUpdateWalletTransactionCounts(
+	tx *sql.Tx,
+	addressStats map[string]WalletStats,) error {
+	if len(addressStats) == 0 {
 		return nil
 	}
 
-	// Convert map to slices for batch processing
-	addressList := make([]string, 0, len(addresses))
-	countList := make([]int64, 0, len(addresses))
+	addressList := make([]string, 0, len(addressStats))
+	counts := make([]int64, 0, len(addressStats))
+	maxBlocks := make([]string, 0, len(addressStats))
 
-	for address, count := range addresses {
-		addressList = append(addressList, address)
-		countList = append(countList, count)
+	for addr, stat := range addressStats {
+		addressList = append(addressList, addr)
+		counts = append(counts, stat.Count)
+		maxBlocks = append(maxBlocks, stat.MaxBlock.String())
 	}
 
-	// Create batch update query using VALUES clause
-	valueStrings := make([]string, len(addressList))
-	valueArgs := make([]interface{}, len(addressList)*2)
+	query := `
+        INSERT INTO wallet (address, transaction_count, last_block)
+        SELECT 
+            unnest($1::text[]) as address,
+            unnest($2::bigint[]) as transaction_count,
+            unnest($3::numeric[]) as last_block
+        ON CONFLICT (address) 
+        DO UPDATE SET 
+            transaction_count = wallet.transaction_count + EXCLUDED.transaction_count,
+            last_block = GREATEST(COALESCE(wallet.last_block, 0)::numeric, EXCLUDED.last_block)::bigint`
 
-	for i, address := range addressList {
-		valueStrings[i] = fmt.Sprintf("($%d, $%d)", i*2+1, i*2+2)
-		valueArgs[i*2] = address
-		valueArgs[i*2+1] = countList[i]
+	maxBlocksInterface := make([]interface{}, len(maxBlocks))
+	for i, v := range maxBlocks {
+		maxBlocksInterface[i] = v
 	}
 
-	query := fmt.Sprintf(`
-		INSERT INTO wallet(address, transaction_count) 
-		VALUES %s
-		ON CONFLICT (address) 
-		DO UPDATE SET 
-			transaction_count = COALESCE(wallet.transaction_count, 0) + EXCLUDED.transaction_count,
-			updated_at = NOW()`,
-		strings.Join(valueStrings, ","))
-
-	_, err := tx.Exec(query, valueArgs...)
+	_, err := tx.Exec(query,
+		pq.Array(addressList),
+		pq.Array(counts),
+		pq.Array(maxBlocksInterface),
+	)
 	if err != nil {
 		return fmt.Errorf("failed to batch update wallet transaction counts: %w", err)
 	}
-
-    updateBlockQuery := `
-        WITH max_blocks AS (
-            SELECT 
-                address, 
-                MAX(block_number) AS max_block
-            FROM (
-                SELECT from_address AS address, block_number FROM transactions WHERE from_address = ANY($1)
-                UNION ALL
-                SELECT to_address AS address, block_number FROM transactions WHERE to_address = ANY($2)
-            ) addr_blocks
-            WHERE address IS NOT NULL
-            GROUP BY address
-        )
-        UPDATE wallet 
-        SET last_block = COALESCE(
-            (SELECT max_block FROM max_blocks WHERE max_blocks.address = wallet.address), 
-            wallet.last_block
-        )
-        WHERE address = ANY($3)`
-
-	_, err = tx.Exec(updateBlockQuery, pq.Array(addressList), pq.Array(addressList), pq.Array(addressList)) 
-    if err != nil {
-        return fmt.Errorf("failed to update last_block for wallets: %w", err)
-    }
 
 	log.Debug().Int("count", len(addressList)).Msg("Batch updated wallet transaction counts")
 	return nil
