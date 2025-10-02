@@ -8,3 +8,6 @@ ON transactions (to_address);
 
 CREATE INDEX IF NOT EXISTS idx_transactions_only_block_timestamp
 ON transactions (block_timestamp);
+
+CREATE INDEX IF NOT EXISTS idx_transactions_only_transaction_timestamp
+ON transactions (transaction_timestamp);
