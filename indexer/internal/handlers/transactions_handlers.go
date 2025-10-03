@@ -153,7 +153,6 @@ func handleTransactionsRequest(c *gin.Context) {
 		Aggregations: nil,
 	}
 	if walletAddress != "" {
-		// Get total count for pagination metadata
 		totalItems, err := mainStorage.GetTransactionsByWalletCount(ctx, walletAddress)
 		if err != nil {
 			log.Error().Err(err).Msg("Error getting transactions count")
@@ -161,7 +160,6 @@ func handleTransactionsRequest(c *gin.Context) {
 			return
 		}
 
-		// Get paginated transactions with database-level sorting
 		offset := queryParams.Page * queryParams.Limit
 		transactions, err := mainStorage.GetTransactionsByWalletPaginated(
 			ctx,
@@ -177,7 +175,6 @@ func handleTransactionsRequest(c *gin.Context) {
 			return
 		}
 
-		// No need for manual sorting and pagination - handled by database
 		var data interface{} = serializeTransactions(transactions)
 		queryResult.Data = &data
 		queryResult.Meta.TotalItems = int(totalItems)

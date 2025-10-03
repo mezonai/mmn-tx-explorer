@@ -2305,7 +2305,6 @@ func (p *PostgresConnector) GetTransactionsByWalletPaginated(ctx context.Context
 		sortOrder = "DESC"
 	}
 
-	// Optimized query with pagination and sorting at database level
 	query := fmt.Sprintf(`
 		(
 			SELECT %s FROM transactions
