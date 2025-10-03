@@ -139,11 +139,7 @@ type IMainStorage interface {
 	 */
 	GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error)
 
-	/**
-	 * Gets the count of transactions in a table.
-	 */
-	GetTransactionCount(ctx context.Context, qf QueryFilter) (uint64, error)
-	GetTransactionsByWallet(ctx context.Context, qf QueryFilter) (QueryResult[interface{}], error)
+	GetTransactionsByWallet(ctx context.Context, walletAddress string) ([]common.Transaction, error)
 }
 
 func NewStorageConnector(cfg *config.StorageConfig) (IStorage, error) {
