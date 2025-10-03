@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"sort"
 
 	"math"
 
@@ -139,33 +140,7 @@ func handleTransactionsRequest(c *gin.Context) {
 		return
 	}
 
-	// Prepare the QueryFilter
-	qf := storage.QueryFilter{
-		// FilterParams:        queryParams.FilterParams,
-		WalletAddress:       walletAddress,
-		SortBy:              queryParams.SortBy,
-		SortOrder:           queryParams.SortOrder,
-		Page:                queryParams.Page,
-		Limit:               queryParams.Limit,
-		ForceConsistentData: queryParams.ForceConsistentData,
-	}
-
-	// Prepare the QueryFilter for count
-	countQf := storage.QueryFilter{
-		// FilterParams:        queryParams.FilterParams,
-		WalletAddress:       walletAddress,
-		ForceConsistentData: queryParams.ForceConsistentData,
-	}
-
-	// Get the total number of items
 	ctx := c.Request.Context()
-	totalItems, err := mainStorage.GetTransactionCount(ctx, countQf)
-	if err != nil {
-		log.Error().Err(err).Msg("Error getting count")
-		api.InternalErrorHandler(c)
-		return
-	}
-
 	// Initialize the QueryResult
 	queryResult := api.QueryResponse{
 		Meta: api.Meta{
@@ -177,6 +152,70 @@ func handleTransactionsRequest(c *gin.Context) {
 		},
 		Data:         nil,
 		Aggregations: nil,
+	}
+	if walletAddress != "" {
+		transactions, err := mainStorage.GetTransactionsByWallet(ctx, walletAddress)
+		if err != nil {
+			log.Error().Err(err).Msg("Error querying transactions")
+			api.InternalErrorHandler(c)
+			return
+		}
+
+		// Sort transactions by transaction_timestamp desc
+		sort.Slice(transactions, func(i, j int) bool {
+			return transactions[i].TransactionTimestamp.After(transactions[j].TransactionTimestamp)
+		})
+
+		totalItems := len(transactions)
+
+		// Apply pagination to the sorted array
+		start := queryParams.Page * queryParams.Limit
+		end := start + queryParams.Limit
+
+		if start > totalItems {
+			start = totalItems
+		}
+		if end > totalItems {
+			end = totalItems
+		}
+
+		var paginatedTransactions []common.Transaction
+		if start < end {
+			paginatedTransactions = transactions[start:end]
+		} else {
+			paginatedTransactions = []common.Transaction{}
+		}
+
+		var data interface{} = serializeTransactions(paginatedTransactions)
+		queryResult.Data = &data
+		queryResult.Meta.TotalItems = int(totalItems)
+		queryResult.Meta.TotalPages = int(math.Ceil(float64(totalItems) / float64(queryParams.Limit)))
+		c.JSON(http.StatusOK, queryResult)
+		return
+	}
+
+	// Prepare the QueryFilter
+	qf := storage.QueryFilter{
+		FilterParams:        queryParams.FilterParams,
+		SortBy:              queryParams.SortBy,
+		SortOrder:           queryParams.SortOrder,
+		Page:                queryParams.Page,
+		Limit:               queryParams.Limit,
+		ForceConsistentData: queryParams.ForceConsistentData,
+	}
+
+	// Prepare the QueryFilter for count
+	countQf := storage.QueryFilter{
+		FilterParams:        queryParams.FilterParams,
+		ForceConsistentData: queryParams.ForceConsistentData,
+	}
+
+	// Get the total number of items
+	totalItems, err := mainStorage.GetCount(ctx, "transactions", countQf)
+	if err != nil {
+		log.Error().Err(err).Msg("Error getting count")
+		api.InternalErrorHandler(c)
+		return
 	}
 
 	// If aggregates or groupings are specified, retrieve them
@@ -203,8 +242,7 @@ func handleTransactionsRequest(c *gin.Context) {
 			return
 		}
 
-		var data interface{}
-		data = serializeTransactions(transactionsResult.Data)
+		var data interface{} = serializeTransactions(transactionsResult.Data)
 		queryResult.Data = &data
 		queryResult.Meta.TotalItems = int(totalItems)
 		queryResult.Meta.TotalPages = int(math.Ceil(float64(totalItems) / float64(queryParams.Limit)))
