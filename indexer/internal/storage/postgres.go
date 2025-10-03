@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/lib/pq"
-	_ "github.com/lib/pq"
 	"github.com/rs/zerolog/log"
 	config "github.com/thirdweb-dev/indexer/configs"
 	"github.com/thirdweb-dev/indexer/internal/common"
@@ -2294,12 +2293,37 @@ func (p *PostgresConnector) GetWallets(limit, offset int, sortBy, sortOrder stri
 	return wallets, rows.Err()
 }
 
-func (p *PostgresConnector) GetTransactionsByWallet(ctx context.Context, walletAddress string) ([]common.Transaction, error) {
+// GetTransactionsByWalletPaginated retrieves paginated transactions for a wallet with sorting
+func (p *PostgresConnector) GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit, offset int, sortBy, sortOrder string) ([]common.Transaction, error) {
 	columns := p.buildSelectFields([]string{}, defaultTransactionFields)
-	queryByFrom := fmt.Sprintf("SELECT %s FROM transactions WHERE from_address = $1", columns)
-	queryByTo := fmt.Sprintf("SELECT %s FROM transactions WHERE to_address = $1", columns)
-	query := fmt.Sprintf("(%s) UNION ALL (%s)", queryByFrom, queryByTo)
-	args := []any{walletAddress}
+
+	// Validate sort parameters
+	if sortBy == "" {
+		sortBy = "transaction_timestamp"
+	}
+	if sortOrder == "" {
+		sortOrder = "DESC"
+	}
+
+	query := fmt.Sprintf(`
+		(
+			SELECT %s FROM transactions
+			WHERE from_address = $1
+			ORDER BY %s %s
+			LIMIT $2
+		)
+		UNION ALL
+		(
+			SELECT %s FROM transactions
+			WHERE to_address = $1
+			ORDER BY %s %s
+			LIMIT $2
+		)
+		ORDER BY %s %s
+		LIMIT $3 OFFSET $4;
+	`, columns, sortBy, sortOrder, columns, sortBy, sortOrder, sortBy, sortOrder)
+
+	args := []any{walletAddress, limit + offset, limit, offset}
 
 	// Execute optimized query
 	rows, err := p.db.QueryContext(ctx, query, args...)
@@ -2315,6 +2339,25 @@ func (p *PostgresConnector) GetTransactionsByWallet(ctx context.Context, walletA
 	}
 
 	return transactions, rows.Err()
+}
+
+// GetTransactionsByWalletCount gets the total count of transactions for a wallet
+func (p *PostgresConnector) GetTransactionsByWalletCount(ctx context.Context, walletAddress string) (uint64, error) {
+	query := `
+		SELECT COUNT(*) FROM (
+			SELECT 1 FROM transactions WHERE from_address = $1
+			UNION ALL
+			SELECT 1 FROM transactions WHERE to_address = $1
+		) AS wallet_txs
+	`
+
+	var count uint64
+	err := p.db.QueryRowContext(ctx, query, walletAddress).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }
 
 func (p *PostgresConnector) scanRowsToTransactions(rows *sql.Rows) ([]common.Transaction, error) {

@@ -927,63 +927,6 @@ func (_c *MockIMainStorage_GetTraces_Call) RunAndReturn(run func(storage.QueryFi
 	return _c
 }
 
-// GetTransactionCount provides a mock function with given fields: ctx, qf
-func (_m *MockIMainStorage) GetTransactionCount(ctx context.Context, qf storage.QueryFilter) (uint64, error) {
-	ret := _m.Called(ctx, qf)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetTransactionCount")
-	}
-
-	var r0 uint64
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, storage.QueryFilter) (uint64, error)); ok {
-		return rf(ctx, qf)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, storage.QueryFilter) uint64); ok {
-		r0 = rf(ctx, qf)
-	} else {
-		r0 = ret.Get(0).(uint64)
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, storage.QueryFilter) error); ok {
-		r1 = rf(ctx, qf)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// MockIMainStorage_GetTransactionCount_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTransactionCount'
-type MockIMainStorage_GetTransactionCount_Call struct {
-	*mock.Call
-}
-
-// GetTransactionCount is a helper method to define mock.On call
-//   - ctx context.Context
-//   - qf storage.QueryFilter
-func (_e *MockIMainStorage_Expecter) GetTransactionCount(ctx interface{}, qf interface{}) *MockIMainStorage_GetTransactionCount_Call {
-	return &MockIMainStorage_GetTransactionCount_Call{Call: _e.mock.On("GetTransactionCount", ctx, qf)}
-}
-
-func (_c *MockIMainStorage_GetTransactionCount_Call) Run(run func(ctx context.Context, qf storage.QueryFilter)) *MockIMainStorage_GetTransactionCount_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(storage.QueryFilter))
-	})
-	return _c
-}
-
-func (_c *MockIMainStorage_GetTransactionCount_Call) Return(_a0 uint64, _a1 error) *MockIMainStorage_GetTransactionCount_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *MockIMainStorage_GetTransactionCount_Call) RunAndReturn(run func(context.Context, storage.QueryFilter) (uint64, error)) *MockIMainStorage_GetTransactionCount_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // GetTransactions provides a mock function with given fields: ctx, qf, fields
 func (_m *MockIMainStorage) GetTransactions(ctx context.Context, qf storage.QueryFilter, fields ...string) (storage.QueryResult[common.Transaction], error) {
 	_va := make([]interface{}, len(fields))
@@ -1056,27 +999,27 @@ func (_c *MockIMainStorage_GetTransactions_Call) RunAndReturn(run func(context.C
 	return _c
 }
 
-// GetTransactionsByWallet provides a mock function with given fields: ctx, qf
-func (_m *MockIMainStorage) GetTransactionsByWallet(ctx context.Context, qf storage.QueryFilter) (storage.QueryResult[interface{}], error) {
-	ret := _m.Called(ctx, qf)
+// GetTransactionsByWalletCount provides a mock function with given fields: ctx, walletAddress
+func (_m *MockIMainStorage) GetTransactionsByWalletCount(ctx context.Context, walletAddress string) (uint64, error) {
+	ret := _m.Called(ctx, walletAddress)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetTransactionsByWallet")
+		panic("no return value specified for GetTransactionsByWalletCount")
 	}
 
-	var r0 storage.QueryResult[interface{}]
+	var r0 uint64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, storage.QueryFilter) (storage.QueryResult[interface{}], error)); ok {
-		return rf(ctx, qf)
+	if rf, ok := ret.Get(0).(func(context.Context, string) (uint64, error)); ok {
+		return rf(ctx, walletAddress)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, storage.QueryFilter) storage.QueryResult[interface{}]); ok {
-		r0 = rf(ctx, qf)
+	if rf, ok := ret.Get(0).(func(context.Context, string) uint64); ok {
+		r0 = rf(ctx, walletAddress)
 	} else {
-		r0 = ret.Get(0).(storage.QueryResult[interface{}])
+		r0 = ret.Get(0).(uint64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, storage.QueryFilter) error); ok {
-		r1 = rf(ctx, qf)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, walletAddress)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1084,31 +1027,94 @@ func (_m *MockIMainStorage) GetTransactionsByWallet(ctx context.Context, qf stor
 	return r0, r1
 }
 
-// MockIMainStorage_GetTransactionsByWallet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTransactionsByWallet'
-type MockIMainStorage_GetTransactionsByWallet_Call struct {
+// MockIMainStorage_GetTransactionsByWalletCount_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTransactionsByWalletCount'
+type MockIMainStorage_GetTransactionsByWalletCount_Call struct {
 	*mock.Call
 }
 
-// GetTransactionsByWallet is a helper method to define mock.On call
+// GetTransactionsByWalletCount is a helper method to define mock.On call
 //   - ctx context.Context
-//   - qf storage.QueryFilter
-func (_e *MockIMainStorage_Expecter) GetTransactionsByWallet(ctx interface{}, qf interface{}) *MockIMainStorage_GetTransactionsByWallet_Call {
-	return &MockIMainStorage_GetTransactionsByWallet_Call{Call: _e.mock.On("GetTransactionsByWallet", ctx, qf)}
+//   - walletAddress string
+func (_e *MockIMainStorage_Expecter) GetTransactionsByWalletCount(ctx interface{}, walletAddress interface{}) *MockIMainStorage_GetTransactionsByWalletCount_Call {
+	return &MockIMainStorage_GetTransactionsByWalletCount_Call{Call: _e.mock.On("GetTransactionsByWalletCount", ctx, walletAddress)}
 }
 
-func (_c *MockIMainStorage_GetTransactionsByWallet_Call) Run(run func(ctx context.Context, qf storage.QueryFilter)) *MockIMainStorage_GetTransactionsByWallet_Call {
+func (_c *MockIMainStorage_GetTransactionsByWalletCount_Call) Run(run func(ctx context.Context, walletAddress string)) *MockIMainStorage_GetTransactionsByWalletCount_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(storage.QueryFilter))
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
 
-func (_c *MockIMainStorage_GetTransactionsByWallet_Call) Return(_a0 storage.QueryResult[interface{}], _a1 error) *MockIMainStorage_GetTransactionsByWallet_Call {
+func (_c *MockIMainStorage_GetTransactionsByWalletCount_Call) Return(_a0 uint64, _a1 error) *MockIMainStorage_GetTransactionsByWalletCount_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockIMainStorage_GetTransactionsByWallet_Call) RunAndReturn(run func(context.Context, storage.QueryFilter) (storage.QueryResult[interface{}], error)) *MockIMainStorage_GetTransactionsByWallet_Call {
+func (_c *MockIMainStorage_GetTransactionsByWalletCount_Call) RunAndReturn(run func(context.Context, string) (uint64, error)) *MockIMainStorage_GetTransactionsByWalletCount_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetTransactionsByWalletPaginated provides a mock function with given fields: ctx, walletAddress, limit, offset, sortBy, sortOrder
+func (_m *MockIMainStorage) GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit int, offset int, sortBy string, sortOrder string) ([]common.Transaction, error) {
+	ret := _m.Called(ctx, walletAddress, limit, offset, sortBy, sortOrder)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTransactionsByWalletPaginated")
+	}
+
+	var r0 []common.Transaction
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, int, string, string) ([]common.Transaction, error)); ok {
+		return rf(ctx, walletAddress, limit, offset, sortBy, sortOrder)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, int, string, string) []common.Transaction); ok {
+		r0 = rf(ctx, walletAddress, limit, offset, sortBy, sortOrder)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]common.Transaction)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, int, int, string, string) error); ok {
+		r1 = rf(ctx, walletAddress, limit, offset, sortBy, sortOrder)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockIMainStorage_GetTransactionsByWalletPaginated_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTransactionsByWalletPaginated'
+type MockIMainStorage_GetTransactionsByWalletPaginated_Call struct {
+	*mock.Call
+}
+
+// GetTransactionsByWalletPaginated is a helper method to define mock.On call
+//   - ctx context.Context
+//   - walletAddress string
+//   - limit int
+//   - offset int
+//   - sortBy string
+//   - sortOrder string
+func (_e *MockIMainStorage_Expecter) GetTransactionsByWalletPaginated(ctx interface{}, walletAddress interface{}, limit interface{}, offset interface{}, sortBy interface{}, sortOrder interface{}) *MockIMainStorage_GetTransactionsByWalletPaginated_Call {
+	return &MockIMainStorage_GetTransactionsByWalletPaginated_Call{Call: _e.mock.On("GetTransactionsByWalletPaginated", ctx, walletAddress, limit, offset, sortBy, sortOrder)}
+}
+
+func (_c *MockIMainStorage_GetTransactionsByWalletPaginated_Call) Run(run func(ctx context.Context, walletAddress string, limit int, offset int, sortBy string, sortOrder string)) *MockIMainStorage_GetTransactionsByWalletPaginated_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(int), args[3].(int), args[4].(string), args[5].(string))
+	})
+	return _c
+}
+
+func (_c *MockIMainStorage_GetTransactionsByWalletPaginated_Call) Return(_a0 []common.Transaction, _a1 error) *MockIMainStorage_GetTransactionsByWalletPaginated_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockIMainStorage_GetTransactionsByWalletPaginated_Call) RunAndReturn(run func(context.Context, string, int, int, string, string) ([]common.Transaction, error)) *MockIMainStorage_GetTransactionsByWalletPaginated_Call {
 	_c.Call.Return(run)
 	return _c
 }
