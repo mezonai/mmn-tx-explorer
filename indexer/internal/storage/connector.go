@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"math/big"
 
+	"context"
+
 	config "github.com/thirdweb-dev/indexer/configs"
 	"github.com/thirdweb-dev/indexer/internal/common"
 	pb "github.com/thirdweb-dev/indexer/proto"
-	"context"
 )
 
 type QueryFilter struct {
@@ -97,10 +98,10 @@ type IMainStorage interface {
 	ReplaceBlockData(data []common.BlockData) ([]common.BlockData, error)
 
 	GetBlocks(qf QueryFilter, fields ...string) (blocks QueryResult[common.Block], err error)
-	GetTransactions(qf QueryFilter, fields ...string) (transactions QueryResult[common.Transaction], err error)
+	GetTransactions(ctx context.Context, qf QueryFilter, fields ...string) (transactions QueryResult[common.Transaction], err error)
 	GetLogs(qf QueryFilter, fields ...string) (logs QueryResult[common.Log], err error)
 	GetTraces(qf QueryFilter, fields ...string) (traces QueryResult[common.Trace], err error)
-	GetAggregations(table string, qf QueryFilter) (QueryResult[interface{}], error)
+	GetAggregations(ctx context.Context, table string, qf QueryFilter) (QueryResult[interface{}], error)
 	GetMaxBlockNumber(chainId *big.Int) (maxBlockNumber *big.Int, err error)
 	GetMaxBlockNumberInRange(chainId *big.Int, startBlock *big.Int, endBlock *big.Int) (maxBlockNumber *big.Int, err error)
 	/**
@@ -126,14 +127,24 @@ type IMainStorage interface {
 	/**
 	 * Gets the count of items in a table.
 	 */
-	GetCount(table string, qf QueryFilter) (uint64, error)
+	GetCount(ctx context.Context, table string, qf QueryFilter) (uint64, error)
+
+	/**
+	 * Gets dashboard stats (totalBlocks, totalTransactions, totalWallets) in a single call.
+	 */
+	GetDashboardStats(ctx context.Context, qf QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, err error)
 
 	/**
 	 * Gets pending transactions from MMN service.
 	 */
 	GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error)
-}
 
+	/**
+	 * Gets the count of transactions in a table.
+	 */
+	GetTransactionCount(ctx context.Context, qf QueryFilter) (uint64, error)
+	GetTransactionsByWallet(ctx context.Context, qf QueryFilter) (QueryResult[interface{}], error)
+}
 
 func NewStorageConnector(cfg *config.StorageConfig) (IStorage, error) {
 	var storage IStorage
@@ -163,8 +174,6 @@ func NewConnector[T any](cfg *config.StorageConnectionConfig) (T, error) {
 
 	if cfg.Postgres != nil {
 		conn, err = NewPostgresConnector(cfg.Postgres)
-	} else if cfg.Clickhouse != nil {
-		conn, err = NewClickHouseConnector(cfg.Clickhouse)
 	} else {
 		return *new(T), fmt.Errorf("no storage driver configured")
 	}

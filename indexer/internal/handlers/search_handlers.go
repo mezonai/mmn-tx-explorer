@@ -77,7 +77,8 @@ func Search(c *gin.Context) {
 		return
 	}
 
-	result, err := executeSearch(c.Request.Context(), mainStorage, chainId, searchInput)
+	ctx := c.Request.Context()
+	result, err := executeSearch(ctx, mainStorage, chainId, searchInput)
 	if err != nil {
 		log.Error().Err(err).Msg("Error executing search")
 		api.InternalErrorHandler(c)
@@ -131,13 +132,13 @@ func executeSearch(ctx context.Context, storage storage.IMainStorage, chainId *b
 		return SearchResultModel{Blocks: []common.BlockModel{*block}, Type: SearchResultTypeBlock}, err
 
 	case input.Hash != "":
-		return searchByHash(storage, chainId, input.Hash)
+		return searchByHash(ctx, storage, chainId, input.Hash)
 
 	case input.Address != "":
-		return searchByAddress(ctx, storage, chainId, input.Address)
+		return searchByAddress(ctx, storage, input.Address)
 
 	case input.FunctionSignature != "":
-		transactions, err := searchByFunctionSelectorOptimistically(storage, chainId, input.FunctionSignature)
+		transactions, err := searchByFunctionSelectorOptimistically(ctx, storage, chainId, input.FunctionSignature)
 		return SearchResultModel{Transactions: transactions, Type: SearchResultTypeFunctionSignature}, err
 
 	default:
@@ -162,11 +163,11 @@ func searchByBlockNumber(mainStorage storage.IMainStorage, chainId *big.Int, blo
 	return &block, nil
 }
 
-func searchByFunctionSelectorOptimistically(mainStorage storage.IMainStorage, chainId *big.Int, functionSelector string) ([]common.TransactionModel, error) {
+func searchByFunctionSelectorOptimistically(ctx context.Context, mainStorage storage.IMainStorage, chainId *big.Int, functionSelector string) ([]common.TransactionModel, error) {
 	now := time.Now()
 	thirtyDaysAgo := now.AddDate(0, 0, -30)
 
-	result, err := mainStorage.GetTransactions(storage.QueryFilter{
+	result, err := mainStorage.GetTransactions(ctx, storage.QueryFilter{
 		ChainId:   chainId,
 		Signature: functionSelector,
 		FilterParams: map[string]string{
@@ -180,7 +181,7 @@ func searchByFunctionSelectorOptimistically(mainStorage storage.IMainStorage, ch
 		return nil, err
 	}
 	if len(result.Data) == 0 {
-		result, err = mainStorage.GetTransactions(storage.QueryFilter{
+		result, err = mainStorage.GetTransactions(ctx, storage.QueryFilter{
 			ChainId:   chainId,
 			Signature: functionSelector,
 			FilterParams: map[string]string{
@@ -202,7 +203,7 @@ func searchByFunctionSelectorOptimistically(mainStorage storage.IMainStorage, ch
 	return transactions, nil
 }
 
-func searchByHash(mainStorage storage.IMainStorage, chainId *big.Int, hash string) (SearchResultModel, error) {
+func searchByHash(ctx context.Context, mainStorage storage.IMainStorage, chainId *big.Int, hash string) (SearchResultModel, error) {
 	var result SearchResultModel
 	var wg sync.WaitGroup
 	resultChan := make(chan SearchResultModel)
@@ -213,7 +214,7 @@ func searchByHash(mainStorage storage.IMainStorage, chainId *big.Int, hash strin
 	// Try as transaction hash past 5 days
 	go func() {
 		defer wg.Done()
-		txs, err := searchTransactionsByTimeRange(mainStorage, chainId, hash, 5, 0)
+		txs, err := searchTransactionsByTimeRange(ctx, mainStorage, chainId, hash, 5, 0)
 		if err != nil {
 			errChan <- err
 			return
@@ -229,7 +230,7 @@ func searchByHash(mainStorage storage.IMainStorage, chainId *big.Int, hash strin
 	// Try as transaction hash past 5-30 days
 	go func() {
 		defer wg.Done()
-		txs, err := searchTransactionsByTimeRange(mainStorage, chainId, hash, 30, 5)
+		txs, err := searchTransactionsByTimeRange(ctx, mainStorage, chainId, hash, 30, 5)
 		if err != nil {
 			errChan <- err
 			return
@@ -245,7 +246,7 @@ func searchByHash(mainStorage storage.IMainStorage, chainId *big.Int, hash strin
 	// Try as transaction hash more than 30 days ago
 	go func() {
 		defer wg.Done()
-		txs, err := searchTransactionsByTimeRange(mainStorage, chainId, hash, 0, 30)
+		txs, err := searchTransactionsByTimeRange(ctx, mainStorage, chainId, hash, 0, 30)
 		if err != nil {
 			errChan <- err
 			return
@@ -329,9 +330,9 @@ func searchByHash(mainStorage storage.IMainStorage, chainId *big.Int, hash strin
 	}
 }
 
-func searchByAddress(ctx context.Context, mainStorage storage.IMainStorage, chainId *big.Int, address string) (SearchResultModel, error) {
+func searchByAddress(ctx context.Context, mainStorage storage.IMainStorage, address string) (SearchResultModel, error) {
 	searchResult := SearchResultModel{Type: SearchResultTypeWallet}
-	
+
 	// Search for wallet in the wallet table
 	qf := storage.QueryFilter{
 		FilterParams:        map[string]string{"address": address},
@@ -339,12 +340,12 @@ func searchByAddress(ctx context.Context, mainStorage storage.IMainStorage, chai
 		ForceConsistentData: false,
 		Aggregates:          []string{"address", "account_nonce", "balance"},
 	}
-	
-	result, err := mainStorage.GetAggregations("wallet", qf)
+
+	result, err := mainStorage.GetAggregations(ctx, "wallet", qf)
 	if err != nil {
 		return searchResult, err
 	}
-	
+
 	if len(result.Aggregates) > 0 {
 		// Wallet found
 		searchResult.Wallets = result.Aggregates
@@ -353,63 +354,6 @@ func searchByAddress(ctx context.Context, mainStorage storage.IMainStorage, chai
 	}
 
 	return searchResult, nil
-}
-
-func findLatestTransactionsToAddress(mainStorage storage.IMainStorage, chainId *big.Int, address string) ([]common.TransactionModel, error) {
-	result, err := mainStorage.GetTransactions(storage.QueryFilter{
-		ChainId:         chainId,
-		ContractAddress: address,
-		Limit:           20,
-		SortBy:          "block_number",
-		SortOrder:       "desc",
-	})
-	if err != nil {
-		return nil, err
-	}
-	transactions := make([]common.TransactionModel, len(result.Data))
-	for i, transaction := range result.Data {
-		transactions[i] = transaction.Serialize()
-	}
-	return transactions, nil
-}
-
-func findLatestTransactionsFromAddressOptimistically(mainStorage storage.IMainStorage, chainId *big.Int, address string) ([]common.TransactionModel, error) {
-	now := time.Now()
-	thirtyDaysAgo := now.AddDate(0, 0, -30)
-
-	result, err := mainStorage.GetTransactions(storage.QueryFilter{
-		ChainId:     chainId,
-		FromAddress: address,
-		FilterParams: map[string]string{
-			"block_timestamp_gte": strconv.FormatInt(thirtyDaysAgo.Unix(), 10),
-		},
-		Limit:     20,
-		SortBy:    "block_number",
-		SortOrder: "desc",
-	})
-	if err != nil {
-		return nil, err
-	}
-	if len(result.Data) == 0 {
-		result, err = mainStorage.GetTransactions(storage.QueryFilter{
-			ChainId:     chainId,
-			FromAddress: address,
-			FilterParams: map[string]string{
-				"block_timestamp_lte": strconv.FormatInt(thirtyDaysAgo.Unix(), 10),
-			},
-			Limit:     20,
-			SortBy:    "block_number",
-			SortOrder: "desc",
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-	transactions := make([]common.TransactionModel, len(result.Data))
-	for i, transaction := range result.Data {
-		transactions[i] = transaction.Serialize()
-	}
-	return transactions, nil
 }
 
 type ContractCodeState int
@@ -439,7 +383,7 @@ func checkIfContractHasCode(ctx context.Context, chainId *big.Int, address strin
 	return ContractCodeUnknown, nil
 }
 
-func searchTransactionsByTimeRange(mainStorage storage.IMainStorage, chainId *big.Int, hash string, startOffsetDays, endOffsetDays int) ([]common.TransactionModel, error) {
+func searchTransactionsByTimeRange(ctx context.Context, mainStorage storage.IMainStorage, chainId *big.Int, hash string, startOffsetDays, endOffsetDays int) ([]common.TransactionModel, error) {
 	now := time.Now()
 	filters := map[string]string{
 		"hash": hash,
@@ -453,7 +397,7 @@ func searchTransactionsByTimeRange(mainStorage storage.IMainStorage, chainId *bi
 		filters["block_timestamp_lte"] = strconv.FormatInt(endTime.Unix(), 10)
 	}
 
-	txResult, err := mainStorage.GetTransactions(storage.QueryFilter{
+	txResult, err := mainStorage.GetTransactions(ctx, storage.QueryFilter{
 		ChainId:      chainId,
 		FilterParams: filters,
 		Limit:        1,

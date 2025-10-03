@@ -91,7 +91,7 @@ type Migrator struct {
 	rpcClient          rpc.IRPCClient
 	storage            storage.IStorage
 	validator          *orchestrator.Validator
-	targetConn         *storage.ClickHouseConnector
+	targetConn         storage.IMainStorage
 	migrationBatchSize int
 	rpcBatchSize       int
 }
@@ -131,9 +131,9 @@ func NewMigrator() *Migrator {
 
 	validator := orchestrator.NewValidator(rpcClient, s)
 
-	targetStorageConfig := *config.Cfg.Storage.Main.Clickhouse
+	targetStorageConfig := *config.Cfg.Storage.Main.Postgres
 	targetStorageConfig.Database = targetDBName
-	targetConn, err := storage.NewClickHouseConnector(&targetStorageConfig)
+	pgConn, err := storage.NewPostgresConnector(&targetStorageConfig)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to initialize target storage")
 	}
@@ -144,7 +144,7 @@ func NewMigrator() *Migrator {
 		rpcClient:          rpcClient,
 		storage:            s,
 		validator:          validator,
-		targetConn:         targetConn,
+		targetConn:         pgConn,
 	}
 }
 
@@ -261,7 +261,8 @@ func validateRPC(rpcClient rpc.IRPCClient, s storage.IStorage) (bool, error) {
 	}
 
 	// If rpc does not support block receipts, we need to check if the transactions are indexed with block receipts
-	transactionsQueryResult, err := s.MainStorage.GetTransactions(storage.QueryFilter{
+	ctx := context.Background()
+	transactionsQueryResult, err := s.MainStorage.GetTransactions(ctx, storage.QueryFilter{
 		ChainId: rpcClient.GetChainID(),
 		Limit:   1,
 	})

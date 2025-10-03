@@ -13,6 +13,8 @@ rpc:
     blocksPerRequest: 500
     # Delay in milliseconds between batch requests to avoid rate limiting
     batchDelay: 100
+    # Number of concurrent requests to make to the RPC
+    concurrentRequests: 20
   
   # Log fetching configuration
   logs:
@@ -63,7 +65,7 @@ poller:
   # Interval in milliseconds between polling cycles
   interval: 1000
   # Number of blocks to fetch in each polling cycle
-  blocksPerPoll: 500
+  blocksPerPoll: 50
   # Starting block number to begin polling from (0 = start from latest)
   fromBlock: 0
   # Whether to force starting from fromBlock even if a cursor exists
@@ -80,7 +82,7 @@ committer:
   # Interval in milliseconds between commit cycles
   interval: 1000
   # Number of blocks to commit in each cycle
-  blocksPerCommit: 1000
+  blocksPerCommit: 100
   # Starting block number for commits (0 = start from latest)
   fromBlock: 0
 

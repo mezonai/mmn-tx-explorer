@@ -7,3 +7,4 @@ export interface IDashboardStats {
   transactions_24h: number;
   pending_transactions_30m: number;
 }
+

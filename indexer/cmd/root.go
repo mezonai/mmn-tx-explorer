@@ -274,7 +274,6 @@ func init() {
 	rootCmd.AddCommand(validateCmd)
 	rootCmd.AddCommand(migrateValidationCmd)
 	rootCmd.AddCommand(migratePostgresCmd)
-	rootCmd.AddCommand(migrateClickhouseCmd)
 }
 
 func initConfig() {

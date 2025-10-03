@@ -10,6 +10,7 @@ const (
 	DEFAULT_LOGS_PER_REQUEST     = 100
 	DEFAULT_TRACES_PER_REQUEST   = 100
 	DEFAULT_RECEIPTS_PER_REQUEST = 250
+	DEFAULT_CONCURRENT_REQUESTS  = 20
 )
 
 func GetBlockPerRequestConfig() BlocksPerRequestConfig {
@@ -29,10 +30,15 @@ func GetBlockPerRequestConfig() BlocksPerRequestConfig {
 	if blockReceiptsBlocksPerRequest == 0 {
 		blockReceiptsBlocksPerRequest = DEFAULT_RECEIPTS_PER_REQUEST
 	}
+	concurrentRequests := config.Cfg.RPC.Blocks.ConcurrentRequests
+	if concurrentRequests == 0 {
+		concurrentRequests = DEFAULT_CONCURRENT_REQUESTS
+	}
 	return BlocksPerRequestConfig{
-		Blocks:   blocksPerRequest,
-		Logs:     logsBlocksPerRequest,
-		Traces:   tracesBlocksPerRequest,
-		Receipts: blockReceiptsBlocksPerRequest,
+		Blocks:             blocksPerRequest,
+		Logs:               logsBlocksPerRequest,
+		Traces:             tracesBlocksPerRequest,
+		Receipts:           blockReceiptsBlocksPerRequest,
+		ConcurrentRequests: concurrentRequests,
 	}
 }

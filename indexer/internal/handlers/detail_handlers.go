@@ -12,11 +12,10 @@ import (
 	"github.com/thirdweb-dev/indexer/internal/storage"
 )
 
-
 // BlockDetailResponse represents the response structure for block detail
 type BlockDetailResponse struct {
 	Data struct {
-		Block        common.BlockModel        `json:"block"`
+		Block common.BlockModel `json:"block"`
 	} `json:"data"`
 }
 
@@ -108,13 +107,12 @@ func handleBlockDetailRequest(c *gin.Context) {
 
 	block := blockResult.Data[0].Serialize()
 
-
 	// Initialize the BlockDetailResponse
 	blockDetailResponse := BlockDetailResponse{
 		Data: struct {
-			Block        common.BlockModel        `json:"block"`
+			Block common.BlockModel `json:"block"`
 		}{
-			Block:        block,
+			Block: block,
 		},
 	}
 
@@ -141,8 +139,9 @@ func handleTransactionDetailRequest(c *gin.Context) {
 		return
 	}
 
+	ctx := c.Request.Context()
 	// Get transaction details
-	transactionResult, err := mainStorage.GetTransactions(storage.QueryFilter{
+	transactionResult, err := mainStorage.GetTransactions(ctx, storage.QueryFilter{
 		ChainId: chainId,
 		FilterParams: map[string]string{
 			"hash": txHash,
@@ -162,8 +161,6 @@ func handleTransactionDetailRequest(c *gin.Context) {
 
 	transaction := transactionResult.Data[0].Serialize()
 
-
-
 	// Initialize the TransactionDetailResponse
 	transactionDetailResponse := TransactionDetailResponse{
 		Data: struct {
@@ -175,4 +172,3 @@ func handleTransactionDetailRequest(c *gin.Context) {
 
 	c.JSON(http.StatusOK, transactionDetailResponse)
 }
-

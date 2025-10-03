@@ -76,17 +76,6 @@ func SerializeFullBlocks(chainId *big.Int, blocks []RPCFetchBatchResult[*big.Int
 	return results
 }
 
-func mapBatchResultsByBlockNumber[T any](results []RPCFetchBatchResult[*big.Int, T]) map[string]*RPCFetchBatchResult[*big.Int, T] {
-	if results == nil {
-		return make(map[string]*RPCFetchBatchResult[*big.Int, T], 0)
-	}
-	resultsMap := make(map[string]*RPCFetchBatchResult[*big.Int, T], len(results))
-	for _, result := range results {
-		resultsMap[result.Key.String()] = &result
-	}
-	return resultsMap
-}
-
 func SerializeBlocks(chainId *big.Int, blocks []RPCFetchBatchResult[*big.Int, common.RawBlock]) []GetBlocksResult {
 	results := make([]GetBlocksResult, 0, len(blocks))
 
@@ -214,8 +203,8 @@ func serializeTransaction(chainId *big.Int, tx map[string]interface{}, blockTime
 			}
 			return nil
 		}(),
-		ContractAddress: nil,
-		GasUsed: nil,
+		ContractAddress:   nil,
+		GasUsed:           nil,
 		CumulativeGasUsed: nil,
 		EffectiveGasPrice: func() *big.Int {
 			if receipt != nil {
@@ -224,9 +213,9 @@ func serializeTransaction(chainId *big.Int, tx map[string]interface{}, blockTime
 			}
 			return nil
 		}(),
-		BlobGasUsed: nil,
+		BlobGasUsed:  nil,
 		BlobGasPrice: nil,
-		LogsBloom: nil,
+		LogsBloom:    nil,
 		// Status: func() *uint64 {
 		// 	if receipt != nil {
 		// 		status := hexToUint64((*receipt)["status"])
@@ -247,112 +236,6 @@ func ExtractFunctionSelector(s string) string {
 	return s[0:10]
 }
 
-func serializeLogsFromReceipts(chainId *big.Int, rawReceipts []map[string]interface{}, block common.Block) []common.Log {
-	logs := make([]common.Log, 0)
-	if rawReceipts == nil {
-		return logs
-	}
-
-	for _, receipt := range rawReceipts {
-		rawLogs, ok := receipt["logs"].([]interface{})
-		if !ok {
-			log.Debug().Msgf("Failed to serialize logs: %v", receipt["logs"])
-			continue
-		}
-		for _, rawLog := range rawLogs {
-			logMap, ok := rawLog.(map[string]interface{})
-			if !ok {
-				log.Debug().Msgf("Invalid log format: %v", rawLog)
-				continue
-			}
-			logs = append(logs, serializeLog(chainId, logMap, block))
-		}
-	}
-	return logs
-}
-
-func serializeLogs(chainId *big.Int, rawLogs []map[string]interface{}, block common.Block) []common.Log {
-	serializedLogs := make([]common.Log, len(rawLogs))
-	for i, rawLog := range rawLogs {
-		serializedLogs[i] = serializeLog(chainId, rawLog, block)
-	}
-	return serializedLogs
-}
-
-func serializeLog(chainId *big.Int, rawLog map[string]interface{}, block common.Block) common.Log {
-	log := common.Log{
-		ChainId:          chainId,
-		BlockNumber:      block.Number,
-		BlockHash:        block.Hash,
-		BlockTimestamp:   block.Timestamp,
-		TransactionHash:  interfaceToString(rawLog["transactionHash"]),
-		TransactionIndex: hexToUint64(rawLog["transactionIndex"]),
-		LogIndex:         hexToUint64(rawLog["logIndex"]),
-		Address:          interfaceToString(rawLog["address"]),
-		Data:             interfaceToString(rawLog["data"]),
-	}
-	for i, topic := range rawLog["topics"].([]interface{}) {
-		if i == 0 {
-			log.Topic0 = topic.(string)
-		} else if i == 1 {
-			log.Topic1 = topic.(string)
-		} else if i == 2 {
-			log.Topic2 = topic.(string)
-		} else if i == 3 {
-			log.Topic3 = topic.(string)
-		}
-	}
-	return log
-}
-
-func serializeTraces(chainId *big.Int, traces []map[string]interface{}, block common.Block) []common.Trace {
-	serializedTraces := make([]common.Trace, 0, len(traces))
-	for _, trace := range traces {
-		serializedTraces = append(serializedTraces, serializeTrace(chainId, trace, block))
-	}
-	return serializedTraces
-}
-
-func serializeTrace(chainId *big.Int, trace map[string]interface{}, block common.Block) common.Trace {
-	action := trace["action"].(map[string]interface{})
-	result := make(map[string]interface{})
-	if resultVal, ok := trace["result"]; ok {
-		if resultMap, ok := resultVal.(map[string]interface{}); ok {
-			result = resultMap
-		}
-	}
-	return common.Trace{
-		ChainID:         chainId,
-		BlockNumber:     block.Number,
-		BlockHash:       block.Hash,
-		BlockTimestamp:  block.Timestamp,
-		TransactionHash: interfaceToString(trace["transactionHash"]),
-		TransactionIndex: func() uint64 {
-			if v, ok := trace["transactionPosition"]; ok && v != nil {
-				if f, ok := v.(uint64); ok {
-					return f
-				}
-			}
-			return 0
-		}(),
-		Subtraces:     int64(trace["subtraces"].(float64)),
-		TraceAddress:  serializeTraceAddress(trace["traceAddress"]),
-		TraceType:     interfaceToString(trace["type"]),
-		CallType:      interfaceToString(action["callType"]),
-		Error:         interfaceToString(trace["error"]),
-		FromAddress:   interfaceToString(action["from"]),
-		ToAddress:     interfaceToString(action["to"]),
-		Gas:           hexToUint64(action["gas"]),
-		GasUsed:       hexToUint64(result["gasUsed"]),
-		Input:         interfaceToString(action["input"]),
-		Output:        interfaceToString(result["output"]),
-		Value:         hexToBigInt(action["value"]),
-		Author:        interfaceToString(action["author"]),
-		RewardType:    interfaceToString(action["rewardType"]),
-		RefundAddress: interfaceToString(action["refundAddress"]),
-	}
-}
-
 func hexToBigInt(hex interface{}) *big.Int {
 	hexString := interfaceToString(hex)
 	if hexString == "" {
@@ -360,17 +243,6 @@ func hexToBigInt(hex interface{}) *big.Int {
 	}
 	v, _ := new(big.Int).SetString(hexString, 16)
 	return v
-}
-
-func serializeTraceAddress(traceAddress interface{}) []int64 {
-	if traceAddressSlice, ok := traceAddress.([]interface{}); ok {
-		var addresses []int64
-		for _, addr := range traceAddressSlice {
-			addresses = append(addresses, int64(addr.(float64)))
-		}
-		return addresses
-	}
-	return []int64{}
 }
 
 func hexToTime(hex interface{}) time.Time {
