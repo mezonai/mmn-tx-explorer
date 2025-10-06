@@ -19,6 +19,12 @@ import (
 	pb "github.com/thirdweb-dev/indexer/proto"
 )
 
+// Transaction type constants
+const (
+    TransactionTypeSender   = 0
+    TransactionTypeReceiver = 1
+)
+
 type PostgresConnector struct {
 	db             *sql.DB
 	cfg            *config.PostgresConfig
@@ -1807,6 +1813,11 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 		return fmt.Errorf("failed to execute insert transactions query: %w", err)
 	}
 
+    if err := p.batchInsertUserTransactions(tx, transactions); err != nil {
+        log.Error().Err(err).Msg("Failed to insert user transactions")
+        return err  
+    }
+
 	txCount := len(transactions)
 	if txCount > 0 {
 		updateStatsQuery := "INSERT INTO stats(key, value) VALUES ('total_transactions', 0) ON CONFLICT (key) DO UPDATE SET value = stats.value + $1"
@@ -1849,6 +1860,62 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 	}
 
 	return nil
+}
+
+// batchInsertUserTransactions saves transaction information to the user_transaction table
+func (p *PostgresConnector) batchInsertUserTransactions(tx *sql.Tx, transactions []common.Transaction) error {
+    if len(transactions) == 0 {
+        return nil
+    }
+
+    query := `
+        INSERT INTO user_transaction (
+            address, transaction_hash, transaction_type, "timestamp"
+        ) VALUES %s
+        ON CONFLICT (address, transaction_hash, transaction_type) 
+        DO UPDATE SET updated_at = NOW()`
+
+    var valueStrings []string
+    var valueArgs []interface{}
+    var idx int
+
+    for _, tx := range transactions {
+        if tx.FromAddress == "" {
+            continue
+        }
+
+        valueStrings = append(valueStrings, 
+            fmt.Sprintf("($%d, $%d, $%d, $%d)", 
+                idx+1, idx+2, idx+3, idx+4))
+        valueArgs = append(valueArgs, 
+            strings.ToLower(tx.FromAddress),
+            tx.Hash,
+            TransactionTypeSender,
+            tx.TransactionTimestamp,
+        )
+        idx += 4
+
+        if tx.ToAddress != "" {
+            valueStrings = append(valueStrings, 
+                fmt.Sprintf("($%d, $%d, $%d, $%d)", 
+                    idx+1, idx+2, idx+3, idx+4))
+            valueArgs = append(valueArgs, 
+                strings.ToLower(tx.ToAddress),
+                tx.Hash,
+                TransactionTypeReceiver,
+                tx.TransactionTimestamp,  
+            )
+            idx += 4
+        }
+    }
+
+    if len(valueStrings) == 0 {
+        return nil
+    }
+
+    query = fmt.Sprintf(query, strings.Join(valueStrings, ","))
+    _, err := tx.Exec(query, valueArgs...)
+    return err
 }
 
 func (p *PostgresConnector) batchUpdateWalletTransactionCounts(
