@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS user_transaction (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     PRIMARY KEY (address, transaction_hash, transaction_type)
-) WITH (fillfactor = 80, autovacuum_vacuum_scale_factor = 0.1, autovacuum_analyze_scale_factor = 0.05);
+);
 
 -- Add composite index for queries filtering by address and sorting by timestamp
 CREATE INDEX IF NOT EXISTS idx_user_transaction_address_timestamp ON user_transaction(address, "timestamp" DESC);
