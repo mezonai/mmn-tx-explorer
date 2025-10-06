@@ -10,11 +10,7 @@ CREATE TABLE IF NOT EXISTS user_transaction (
     PRIMARY KEY (address, transaction_hash, transaction_type)
 ) WITH (fillfactor = 80, autovacuum_vacuum_scale_factor = 0.1, autovacuum_analyze_scale_factor = 0.05);
 
--- Create indexes for better query performance
-CREATE INDEX IF NOT EXISTS idx_user_transaction_address ON user_transaction(address);
-CREATE INDEX IF NOT EXISTS idx_user_transaction_hash ON user_transaction(transaction_hash);
-CREATE INDEX IF NOT EXISTS idx_user_transaction_timestamp ON user_transaction("timestamp" DESC);
-CREATE INDEX IF NOT EXISTS idx_user_transaction_address_type ON user_transaction(address, transaction_type);
-
--- Add comment for transaction_type
-COMMENT ON COLUMN user_transaction.transaction_type IS '0: sender, 1: receiver';
+-- Add composite index for queries filtering by address and sorting by timestamp
+CREATE INDEX IF NOT EXISTS idx_user_transaction_address_timestamp ON user_transaction(address, "timestamp" DESC);
+-- Add composite index for queries filtering by address and transaction_type, sorting by timestamp
+CREATE INDEX IF NOT EXISTS idx_user_transaction_addr_type_time ON user_transaction(address, transaction_type, "timestamp" DESC);
