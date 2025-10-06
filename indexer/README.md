@@ -7,9 +7,8 @@ Insight is a high-performance, modular blockchain indexer and data API for EVM c
 Quickstart (Local Development):
 
 ```bash
-# 1. Copy example configs and secrets
+# 1. Copy example configs
 cp configs/config.example.yml configs/config.yml
-cp configs/secrets.example.yml configs/secrets.yml
 
 # 2. Start dependencies (optional)
 docker compose up -d postgres
@@ -190,11 +189,6 @@ export LOG_LEVEL="info"
 ./main orchestrator
 ./main api
 ```
-
-**Secrets Management:**
-- For sensitive credentials, you can use environment variables instead of `configs/secrets.yml`
-- Environment variables take precedence over config files
-- See `configs/secrets.example.yml` for the complete structure
 
 ### Docker
 
@@ -392,7 +386,6 @@ Poller Configuration:
 
 **Development:**
 - Use YAML config files for easy configuration management
-- Keep sensitive data in `configs/secrets.yml` (gitignored)
 
 **Production:**
 - Use environment variables for security and flexibility
@@ -409,7 +402,6 @@ environment:
   - API_BASIC_AUTH_PASSWORD=${API_PASSWORD}
 ```
 
-- See `configs/config.example.yml` and `configs/secrets.example.yml` for complete configuration options.
 - All config options can be overridden by environment variables or CLI flags.
 
 ---

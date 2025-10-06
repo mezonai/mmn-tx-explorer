@@ -5,7 +5,7 @@ rpc:
   chainId: 1337
 
   # MMN gRPC endpoint for block service
-  mmnGrpcUrl: localhost:9001
+  mmnGrpcUrl: {{MMN_GRPC_URL}}
   
   # Block fetching configuration
   blocks:
@@ -113,7 +113,7 @@ storage:
   # Main storage configuration - Primary data storage
   main:
     postgres:
-      host: postgres
+      host: {{MAIN_POSTGRES_HOST}}
       port: 5432
       username: admin
       password: password
@@ -127,7 +127,7 @@ storage:
   # Staging storage configuration - Temporary storage for data processing
   staging:
     postgres:
-      host: postgres
+      host: {{STAGING_POSTGRES_HOST}}
       port: 5432
       username: admin
       password: password
@@ -141,7 +141,7 @@ storage:
   # Orchestrator storage configuration - Storage for orchestration metadata
   orchestrator:
     postgres:
-      host: postgres
+      host: {{ORCHESTRATOR_POSTGRES_HOST}}
       port: 5432
       username: admin
       password: password

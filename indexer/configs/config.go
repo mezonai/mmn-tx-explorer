@@ -204,12 +204,6 @@ func LoadConfig(cfgFile string) error {
 		if err := viper.ReadInConfig(); err != nil {
 			log.Warn().Msgf("error reading config file, %s", err)
 		}
-
-		viper.SetConfigName("secrets")
-		err := viper.MergeInConfig()
-		if err != nil {
-			log.Warn().Msgf("error loading secrets file: %v", err)
-		}
 	}
 
 	// sets e.g. RPC_URL to rpc.url

@@ -5,7 +5,7 @@ rpc:
   chainId: 1337
 
   # MMN gRPC endpoint for block service
-  mmnGrpcUrl: localhost:9001
+  mmnGrpcUrl: 172.16.100.180:9001
   
   # Block fetching configuration
   blocks:
