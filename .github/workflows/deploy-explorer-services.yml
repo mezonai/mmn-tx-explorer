@@ -52,8 +52,7 @@ jobs:
           cd frontend
           npm install
           npm run build
-          sudo ls -la .
-          sudo ls -la .next
+          sudo tar -czf /tmp/frontend_build.tar.gz -C frontend .next package.json package-lock.json public || sudo tar -czf /tmp/frontend_build.tar.gz .next package.json package-lock.json public
 
       - name: Upload Indexer Artifacts
         uses: actions/upload-artifact@v4
@@ -65,11 +64,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
-          path: |
-            frontend/.next
-            frontend/public
-            frontend/package.json
-            frontend/next.config.js
+          path: /tmp/frontend_build.tar.gz
+      
+      - name: check gzip fe
+        run: |
+          tar -tzf /tmp/frontend_build.tar.gz | sed -n '1,200p'
 
       - name: Upload Migration Artifacts
         uses: actions/upload-artifact@v4
@@ -239,7 +238,6 @@ jobs:
           sudo tar -tzf /tmp/frontend_build.tar.gz | sed -n '1,200p'
           sudo tar -xzvf /tmp/frontend_build.tar.gz -C /var/www/frontend
           sudo rm -f /tmp/frontend_build.tar.gz
-          sudo ls -la /var/www/frontend
           sudo ls -la /var/www/frontend/.next
 
           sudo chown -R mmn:mmn /var/www/frontend
