@@ -237,7 +237,9 @@ jobs:
           sudo ln -sfn indexer-${GIT_SHA} /opt/indexer/bin/indexer
 
           echo "==> Deploying new frontend build..."
+          sudo rm -rf /var/www/frontend/*
           sudo rm -rf /var/www/frontend/.next
+          
           sudo tar -xzvf /tmp/frontend_build.tar.gz -C /var/www/frontend
           sudo rm -f /tmp/frontend_build.tar.gz
           
