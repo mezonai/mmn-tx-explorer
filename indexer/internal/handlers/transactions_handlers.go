@@ -139,33 +139,7 @@ func handleTransactionsRequest(c *gin.Context) {
 		return
 	}
 
-	// Prepare the QueryFilter
-	qf := storage.QueryFilter{
-		// FilterParams:        queryParams.FilterParams,
-		WalletAddress:       walletAddress,
-		SortBy:              queryParams.SortBy,
-		SortOrder:           queryParams.SortOrder,
-		Page:                queryParams.Page,
-		Limit:               queryParams.Limit,
-		ForceConsistentData: queryParams.ForceConsistentData,
-	}
-
-	// Prepare the QueryFilter for count
-	countQf := storage.QueryFilter{
-		// FilterParams:        queryParams.FilterParams,
-		WalletAddress:       walletAddress,
-		ForceConsistentData: queryParams.ForceConsistentData,
-	}
-
-	// Get the total number of items
 	ctx := c.Request.Context()
-	totalItems, err := mainStorage.GetTransactionCount(ctx, countQf)
-	if err != nil {
-		log.Error().Err(err).Msg("Error getting count")
-		api.InternalErrorHandler(c)
-		return
-	}
-
 	// Initialize the QueryResult
 	queryResult := api.QueryResponse{
 		Meta: api.Meta{
@@ -177,6 +151,60 @@ func handleTransactionsRequest(c *gin.Context) {
 		},
 		Data:         nil,
 		Aggregations: nil,
+	}
+	if walletAddress != "" {
+		totalItems, err := mainStorage.GetTransactionsByWalletCount(ctx, walletAddress)
+		if err != nil {
+			log.Error().Err(err).Msg("Error getting transactions count")
+			api.InternalErrorHandler(c)
+			return
+		}
+
+		offset := queryParams.Page * queryParams.Limit
+		transactions, err := mainStorage.GetTransactionsByWalletPaginated(
+			ctx,
+			walletAddress,
+			queryParams.Limit,
+			offset,
+			queryParams.SortBy,
+			queryParams.SortOrder,
+		)
+		if err != nil {
+			log.Error().Err(err).Msg("Error querying transactions")
+			api.InternalErrorHandler(c)
+			return
+		}
+
+		var data interface{} = serializeTransactions(transactions)
+		queryResult.Data = &data
+		queryResult.Meta.TotalItems = int(totalItems)
+		queryResult.Meta.TotalPages = int(math.Ceil(float64(totalItems) / float64(queryParams.Limit)))
+		c.JSON(http.StatusOK, queryResult)
+		return
+	}
+
+	// Prepare the QueryFilter
+	qf := storage.QueryFilter{
+		FilterParams:        queryParams.FilterParams,
+		SortBy:              queryParams.SortBy,
+		SortOrder:           queryParams.SortOrder,
+		Page:                queryParams.Page,
+		Limit:               queryParams.Limit,
+		ForceConsistentData: queryParams.ForceConsistentData,
+	}
+
+	// Prepare the QueryFilter for count
+	countQf := storage.QueryFilter{
+		FilterParams:        queryParams.FilterParams,
+		ForceConsistentData: queryParams.ForceConsistentData,
+	}
+
+	// Get the total number of items
+	totalItems, err := mainStorage.GetCount(ctx, "transactions", countQf)
+	if err != nil {
+		log.Error().Err(err).Msg("Error getting count")
+		api.InternalErrorHandler(c)
+		return
 	}
 
 	// If aggregates or groupings are specified, retrieve them
@@ -203,8 +231,7 @@ func handleTransactionsRequest(c *gin.Context) {
 			return
 		}
 
-		var data interface{}
-		data = serializeTransactions(transactionsResult.Data)
+		var data interface{} = serializeTransactions(transactionsResult.Data)
 		queryResult.Data = &data
 		queryResult.Meta.TotalItems = int(totalItems)
 		queryResult.Meta.TotalPages = int(math.Ceil(float64(totalItems) / float64(queryParams.Limit)))

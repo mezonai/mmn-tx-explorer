@@ -3,7 +3,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { PAGINATION } from '@/constant';
 import { ESortOrder } from '@/enums';
 import { usePaginationQueryParam } from '@/hooks';
-import { ETransactionTab, ITransactionListParams } from '@/modules/transaction';
+import { ITransactionListParams } from '@/modules/transaction';
 import { TransactionCollection } from '@/modules/transaction/components/transaction-list/list/transaction-collection';
 import { useTransactions } from '@/modules/transaction/hooks/useTransactions';
 

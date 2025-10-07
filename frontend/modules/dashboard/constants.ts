@@ -19,6 +19,6 @@ export const DASHBOARD_BLOCK_FILTER: IBLockListParams = {
 export const DASHBOARD_TRANSACTION_FILTER: ITransactionListParams = {
   page: 0,
   limit: DASHBOARD_TRANSACTIONS_LIMIT,
-  sort_by: 'block_timestamp',
+  sort_by: 'transaction_timestamp',
   sort_order: ESortOrder.DESC,
 } as const;

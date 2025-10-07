@@ -1,3 +1,4 @@
+'use client';
 import { Truncate } from '@re-dev/react-truncate';
 import { Clock4 } from 'lucide-react';
 import Link from 'next/link';
@@ -70,7 +71,7 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
               <span>{DateTimeUtil.formatRelativeTimeSec(transaction.transaction_timestamp)}</span>
               <span> | </span>
               <span>
-                <ClientTimeDisplay timestamp={transaction.block_timestamp} />
+                <ClientTimeDisplay timestamp={transaction.transaction_timestamp} />
               </span>
             </div>
           </div>

@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/lib/pq"
-	_ "github.com/lib/pq"
 	"github.com/rs/zerolog/log"
 	config "github.com/thirdweb-dev/indexer/configs"
 	"github.com/thirdweb-dev/indexer/internal/common"
@@ -40,8 +39,8 @@ type WalletUpdateBatcher struct {
 }
 
 type WalletStats struct {
-	TransactionCount    int64
-	MaxBlock *big.Int
+	TransactionCount int64
+	MaxBlock         *big.Int
 }
 
 // NewWalletUpdateBatcher creates a new wallet update batcher
@@ -1854,7 +1853,7 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 
 func (p *PostgresConnector) batchUpdateWalletTransactionCounts(
 	tx *sql.Tx,
-	addressStats map[string]WalletStats,) error {
+	addressStats map[string]WalletStats) error {
 	if len(addressStats) == 0 {
 		return nil
 	}
@@ -2294,104 +2293,87 @@ func (p *PostgresConnector) GetWallets(limit, offset int, sortBy, sortOrder stri
 	return wallets, rows.Err()
 }
 
-func (p *PostgresConnector) GetTransactionCount(ctx context.Context, qf QueryFilter) (uint64, error) {
-	query := "SELECT COUNT(*) FROM transactions"
-	args := []any{}
-	if qf.WalletAddress != "" {
-		query = `SELECT COUNT(*) FROM (
-			SELECT 1 FROM transactions WHERE from_address = $1
-			UNION ALL
-			SELECT 1 FROM transactions WHERE to_address = $1
-		) t`
-		args = append(args, qf.WalletAddress)
+// GetTransactionsByWalletPaginated retrieves paginated transactions for a wallet with sorting
+func (p *PostgresConnector) GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit, offset int, sortBy, sortOrder string) ([]common.Transaction, error) {
+	columns := p.buildSelectFields([]string{}, defaultTransactionFields)
+
+	// Validate sort parameters
+	if sortBy == "" {
+		sortBy = "transaction_timestamp"
+	}
+	if sortOrder == "" {
+		sortOrder = "DESC"
 	}
 
-	var count uint64
-	err := p.db.QueryRowContext(ctx, query, args...).Scan(&count)
-	return count, err
-}
+	query := fmt.Sprintf(`
+		(
+			SELECT %s FROM transactions
+			WHERE from_address = $1
+			ORDER BY %s %s
+			LIMIT $2
+		)
+		UNION ALL
+		(
+			SELECT %s FROM transactions
+			WHERE to_address = $1
+			ORDER BY %s %s
+			LIMIT $2
+		)
+		ORDER BY %s %s
+		LIMIT $3 OFFSET $4;
+	`, columns, sortBy, sortOrder, columns, sortBy, sortOrder, sortBy, sortOrder)
 
-func (p *PostgresConnector) GetTransactionsByWallet(ctx context.Context, qf QueryFilter) (QueryResult[interface{}], error) {
-	if qf.WalletAddress == "" {
-		return QueryResult[interface{}]{}, fmt.Errorf("no aggregates specified")
-	}
-	queryByFrom := "SELECT * FROM transactions WHERE from_address = $1"
-	queryByTo := "SELECT * FROM transactions WHERE to_address = $1"
-	query := fmt.Sprintf("(%s) UNION (%s)", queryByFrom, queryByTo)
-	args := []any{qf.WalletAddress}
-	if qf.SortBy != "" {
-		query += fmt.Sprintf(" ORDER BY %s", qf.SortBy)
-		if qf.SortOrder != "" {
-			query += " " + qf.SortOrder
-		}
-	}
+	args := []any{walletAddress, limit + offset, limit, offset}
 
-	if qf.Page >= 0 && qf.Limit > 0 {
-		query += fmt.Sprintf(" LIMIT %d OFFSET %d", qf.Limit, qf.Page*qf.Limit)
-	} else if qf.Limit > 0 {
-		query += fmt.Sprintf(" LIMIT %d", qf.Limit)
-		if qf.Offset > 0 {
-			query += fmt.Sprintf(" OFFSET %d", qf.Offset)
-		}
-	}
 	// Execute optimized query
 	rows, err := p.db.QueryContext(ctx, query, args...)
 	if err != nil {
-		return QueryResult[interface{}]{}, err
+		return nil, err
 	}
 	defer rows.Close()
 
 	// Initialize as empty slice to avoid null in JSON when no rows
-	aggregates, err := p.scanRowsToMaps(rows, qf.Limit)
+	transactions, err := p.scanRowsToTransactions(rows)
 	if err != nil {
-		return QueryResult[interface{}]{}, err
+		return nil, err
 	}
 
-	return QueryResult[interface{}]{Data: nil, Aggregates: aggregates}, rows.Err()
+	return transactions, rows.Err()
 }
 
-// scanRowsToMapsOptimized - version tối ưu với pre-allocation và caching
-func (p *PostgresConnector) scanRowsToMaps(rows *sql.Rows, estimatedRows int) ([]map[string]interface{}, error) {
-	aggregates := make([]map[string]interface{}, 0, estimatedRows)
+// GetTransactionsByWalletCount gets the total count of transactions for a wallet
+func (p *PostgresConnector) GetTransactionsByWalletCount(ctx context.Context, walletAddress string) (uint64, error) {
+	query := `
+		SELECT COUNT(*) FROM (
+			SELECT 1 FROM transactions WHERE from_address = $1
+			UNION ALL
+			SELECT 1 FROM transactions WHERE to_address = $1
+		) AS wallet_txs
+	`
 
-	var columns []string
-	var columnsInitialized bool
-
-	for rows.Next() {
-		if !columnsInitialized {
-			var err error
-			columns, err = rows.Columns()
-			if err != nil {
-				return nil, fmt.Errorf("failed to get columns: %w", err)
-			}
-			columnsInitialized = true
-		}
-
-		values := make([]interface{}, len(columns))
-		valuePtrs := make([]interface{}, len(columns))
-		for i := range values {
-			valuePtrs[i] = &values[i]
-		}
-
-		if err := rows.Scan(valuePtrs...); err != nil {
-			return nil, fmt.Errorf("failed to scan row: %w", err)
-		}
-
-		row := make(map[string]interface{}, len(columns))
-		for i, col := range columns {
-			val := values[i]
-			// Convert PostgreSQL []byte to string
-			if b, ok := val.([]byte); ok {
-				row[col] = string(b)
-			} else {
-				row[col] = val
-			}
-		}
-
-		aggregates = append(aggregates, row)
+	var count uint64
+	err := p.db.QueryRowContext(ctx, query, walletAddress).Scan(&count)
+	if err != nil {
+		return 0, err
 	}
 
-	return aggregates, nil
+	return count, nil
+}
+
+func (p *PostgresConnector) scanRowsToTransactions(rows *sql.Rows) ([]common.Transaction, error) {
+	transactions := make([]common.Transaction, 0)
+
+	for rows.Next() {
+		var tx common.Transaction
+		err := p.scanTransaction(rows, &tx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan transaction: %w", err)
+		}
+
+		transactions = append(transactions, tx)
+	}
+
+	return transactions, nil
 }
 
 // Close closes the database connection
