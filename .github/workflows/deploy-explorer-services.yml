@@ -65,7 +65,7 @@ jobs:
         with:
           name: frontend-build
           path: |
-            frontend/.next
+            frontend/.next/**
             frontend/public
             frontend/package.json
             frontend/next.config.ts
@@ -234,7 +234,6 @@ jobs:
 
           echo "==> Deploying new frontend build..."
           sudo ls -la /var/www/frontend
-          sudo rm -rf /var/www/frontend/.next
           sudo tar -tzf /tmp/frontend_build.tar.gz | sed -n '1,200p'
           sudo tar -xzvf /tmp/frontend_build.tar.gz -C /var/www/frontend
           sudo rm -f /tmp/frontend_build.tar.gz
