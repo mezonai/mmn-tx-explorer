@@ -91,6 +91,14 @@ jobs:
           path: build/frontend
 
       - name: Generate remote setup script
+        env:
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+          POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
+          NEXT_PUBLIC_APP_API_URL: ${{ secrets.NEXT_PUBLIC_APP_API_URL }}
+          APP_API_URL_INTERNAL: ${{ secrets.APP_API_URL_INTERNAL }}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
@@ -101,7 +109,7 @@ jobs:
           sudo mkdir -p /opt/indexer/bin /opt/indexer/config /var/www/frontend
           
           echo "==> Writing environment configs..."
-          sudo tee /opt/indexer/config/indexer.env > /dev/null <<'EON'
+          sudo tee /opt/indexer/config/indexer.env > /dev/null <<EON
           STORAGE_MAIN_POSTGRES_HOST=${POSTGRES_HOST}
           STORAGE_MAIN_POSTGRES_PORT=${POSTGRES_PORT}
           STORAGE_MAIN_POSTGRES_USERNAME=${POSTGRES_USER}
@@ -111,15 +119,15 @@ jobs:
           MIGRATIONS_PATH=file://app/internal/tools/postgres
           EON
 
-          sudo tee /var/www/frontend/.env.local > /dev/null <<'EON'
-          NEXT_PUBLIC_INDEXER_API_URL=${NEXT_PUBLIC_INDEXER_API_URL}
+          sudo tee /var/www/frontend/frontend.env > /dev/null <<EON
+          NEXT_PUBLIC_APP_API_URL=${NEXT_PUBLIC_APP_API_URL}
           APP_API_URL_INTERNAL=${APP_API_URL_INTERNAL}
           EON
 
           sudo chown -R mmn:mmn /opt/indexer
           sudo chown -R mmn:mmn /var/www/frontend
           sudo chmod 600 /opt/indexer/config/indexer.env
-          sudo chmod 644 /var/www/frontend/.env.local
+          sudo chmod 644 /var/www/frontend/frontend.env
 
           echo "==> Deploying new indexer binary to staging path..."
           sudo install -m 0755 /tmp/indexer /opt/indexer/bin/indexer-${SHA}
@@ -128,35 +136,30 @@ jobs:
           EOF
           chmod +x remote_setup.sh
 
+          echo "# Explorer env generated at $(date)" > explorer_env.sh
+          printf "export POSTGRES_DB=%q\n" "$POSTGRES_DB" >> explorer_env.sh
+          printf "export POSTGRES_USER=%q\n" "$POSTGRES_USER" >> explorer_env.sh
+          printf "export POSTGRES_PASSWORD=%q\n" "$POSTGRES_PASSWORD" >> explorer_env.sh
+          printf "export POSTGRES_HOST=%q\n" "$POSTGRES_HOST" >> explorer_env.sh
+          printf "export POSTGRES_PORT=%q\n" "$POSTGRES_PORT" >> explorer_env.sh
+          printf "export NEXT_PUBLIC_APP_API_URL=%q\n" "$NEXT_PUBLIC_APP_API_URL" >> explorer_env.sh
+          printf "export APP_API_URL_INTERNAL=%q\n" "$APP_API_URL_INTERNAL" >> explorer_env.sh
+          echo "==> Generated explorer_env.sh"
+
       - name: Prepare and deploy to target server
-        env:
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
-          POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
-          NEXT_PUBLIC_INDEXER_API_URL: ${{ secrets.NEXT_PUBLIC_INDEXER_API_URL }}
-          APP_API_URL_INTERNAL: ${{ secrets.APP_API_URL_INTERNAL }}
         run: |
           set -e
           echo "==> Compressing frontend build..."
           tar -czvf /tmp/frontend_build.tar.gz -C build/frontend .
 
           echo "==> Copying files to target server..."
-          scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} build/indexer remote_setup.sh /tmp/frontend_build.tar.gz ${{ secrets.HOST_ALIAS }}:/tmp/
+          scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} build/indexer remote_setup.sh explorer_env.sh /tmp/frontend_build.tar.gz ${{ secrets.HOST_ALIAS }}:/tmp/
 
           echo "==> Running remote setup script..."
           ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "
-            export POSTGRES_DB='${POSTGRES_DB}'
-            export POSTGRES_USER='${POSTGRES_USER}'
-            export POSTGRES_PASSWORD='${POSTGRES_PASSWORD}'
-            export POSTGRES_HOST='${POSTGRES_HOST}'
-            export POSTGRES_PORT='${POSTGRES_PORT}'
-            export NEXT_PUBLIC_INDEXER_API_URL='${NEXT_PUBLIC_INDEXER_API_URL}'
-            export APP_API_URL_INTERNAL='${APP_API_URL_INTERNAL}'
-
-            sudo bash /tmp/remote_setup.sh $GIT_SHA
-            rm -f /tmp/indexer /tmp/remote_setup.sh
+            set -e
+            bash -c 'source /tmp/explorer_env.sh; bash /tmp/remote_setup.sh \"$GIT_SHA\"'
+            rm -f /tmp/indexer /tmp/remote_setup.sh /tmp/explorer_env.sh
           "
 
       - name: Atomic swap + restart services
