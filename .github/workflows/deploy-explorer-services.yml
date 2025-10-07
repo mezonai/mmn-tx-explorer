@@ -69,6 +69,12 @@ jobs:
             frontend/package.json
             frontend/next.config.js
 
+      - name: Upload Migration Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: migrations-postgres
+          path: indexer/internal/tools/postgres
+
   deploy:
     needs: build
     runs-on: [self-hosted, Linux, mezon-runner]
@@ -95,6 +101,12 @@ jobs:
           name: frontend-build
           path: build/frontend
 
+      - name: Download postgres migrations
+        uses: actions/download-artifact@v4
+        with:
+          name: migrations-postgres
+          path: build/migrations/postgres
+
       - name: Generate remote setup script
         env:
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
@@ -111,7 +123,7 @@ jobs:
 
           SHA="$1"
           echo "==> Preparing deployment directories and configs..."
-          sudo mkdir -p /opt/indexer/bin /opt/indexer/config /var/www/frontend
+          sudo mkdir -p /opt/indexer/bin /opt/indexer/config /opt/indexer/migrations /var/www/frontend
           
           echo "==> Writing environment configs..."
           sudo tee /opt/indexer/config/indexer.env > /dev/null <<EON
@@ -121,7 +133,7 @@ jobs:
           STORAGE_MAIN_POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
           STORAGE_MAIN_POSTGRES_DATABASE=${POSTGRES_DB}
           STORAGE_MAIN_POSTGRES_SSLMODE=disable
-          MIGRATIONS_PATH=file://app/internal/tools/postgres
+          MIGRATIONS_PATH=/opt/indexer/migrations/postgres
           EON
 
           sudo tee /var/www/frontend/frontend.env > /dev/null <<EON
@@ -137,6 +149,10 @@ jobs:
           echo "==> Deploying new indexer binary to staging path..."
           sudo install -m 0755 /tmp/indexer /opt/indexer/bin/indexer-${SHA}
 
+          echo "==> Deploying migrations..."
+          sudo rm -rf /opt/indexer/migrations/postgres
+          sudo mv /tmp/postgres /opt/indexer/migrations/
+
           echo "==> Preparation complete!"
           EOF
           chmod +x remote_setup.sh
@@ -151,35 +167,6 @@ jobs:
           printf "export APP_API_URL_INTERNAL=%q\n" "$APP_API_URL_INTERNAL" >> explorer_env.sh
           echo "==> Generated explorer_env.sh"
 
-      - name: Generate configs and secrets yml file
-        env: 
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
-          POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
-          MMN_GRPC_URL: ${{ secrets.MMN_GRPC_URL }}
-        run: |
-          echo "==> Generating config/config.yml from template..."
-          sed \
-            -e "s|__POSTGRES_DB__|$POSTGRES_DB|g" \
-            -e "s|__POSTGRES_USER__|$POSTGRES_USER|g" \
-            -e "s|__POSTGRES_PASSWORD__|$POSTGRES_PASSWORD|g" \
-            -e "s|__POSTGRES_HOST__|$POSTGRES_HOST|g" \
-            -e "s|__POSTGRES_PORT__|$POSTGRES_PORT|g" \
-            -e "s|__MMN_GRPC_URL__|$MMN_GRPC_URL|g" \
-            /opt/mezon/explorer/config/config.example.yml \
-            | sudo tee /etc/mezon/config.yml >/dev/null
-          sed \
-            -e "s|__POSTGRES_DB__|$POSTGRES_DB|g" \
-            -e "s|__POSTGRES_USER__|$POSTGRES_USER|g" \
-            -e "s|__POSTGRES_PASSWORD__|$POSTGRES_PASSWORD|g" \
-            -e "s|__POSTGRES_HOST__|$POSTGRES_HOST|g" \
-            -e "s|__POSTGRES_PORT__|$POSTGRES_PORT|g" \
-            -e "s|__MMN_GRPC_URL__|$MMN_GRPC_URL|g" \
-            /opt/mezon/explorer/config/secrets.example.yml \
-            | sudo tee /etc/mezon/secrets.yml >/dev/null
-
       - name: Prepare and deploy to target server
         run: |
           set -e
@@ -187,6 +174,7 @@ jobs:
           tar -czvf /tmp/frontend_build.tar.gz -C build/frontend .
 
           echo "==> Copying files to target server..."
+          scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} -r build/migrations/postgres ${{ secrets.HOST_ALIAS }}:/tmp/
           scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} build/indexer remote_setup.sh explorer_env.sh /tmp/frontend_build.tar.gz ${{ secrets.HOST_ALIAS }}:/tmp/
 
           echo "==> Running remote setup script..."
@@ -201,6 +189,28 @@ jobs:
           ssh -i ${{secrets.SSH_PRIVATE_KEY_PATH}} ${{secrets.HOST_ALIAS}} <<EOF
           #!/usr/bin/env bash
           set -euo pipefail
+
+          echo "==> Generating final config files on target server..."
+          sudo mkdir -p /etc/mezon
+          sed \
+            -e "s|__POSTGRES_DB__|$POSTGRES_DB|g" \
+            -e "s|__POSTGRES_USER__|$POSTGRES_USER|g" \
+            -e "s|__POSTGRES_PASSWORD__|$POSTGRES_PASSWORD|g" \
+            -e "s|__POSTGRES_HOST__|$POSTGRES_HOST|g" \
+            -e "s|__POSTGRES_PORT__|$POSTGRES_PORT|g" \
+            -e "s|__MMN_GRPC_URL__|$MMN_GRPC_URL|g" \
+            /opt/mezon/explorer/config/config.example.yml \
+            | sudo tee /etc/mezon/config.yml >/dev/null
+
+          sed \
+            -e "s|__POSTGRES_DB__|$POSTGRES_DB|g" \
+            -e "s|__POSTGRES_USER__|$POSTGRES_USER|g" \
+            -e "s|__POSTGRES_PASSWORD__|$POSTGRES_PASSWORD|g" \
+            -e "s|__POSTGRES_HOST__|$POSTGRES_HOST|g" \
+            -e "s|__POSTGRES_PORT__|$POSTGRES_PORT|g" \
+            -e "s|__MMN_GRPC_URL__|$MMN_GRPC_URL|g" \
+            /opt/mezon/explorer/config/secrets.example.yml \
+            | sudo tee /etc/mezon/secrets.yml >/dev/null
 
           echo "==> Stopping services..."
           sudo systemctl stop indexer-api || true
