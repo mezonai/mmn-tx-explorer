@@ -241,6 +241,9 @@ jobs:
           sudo tar -xzvf /tmp/frontend_build.tar.gz -C /var/www/frontend
           sudo rm -f /tmp/frontend_build.tar.gz
           
+          echo "==> Installing frontend dependencies on target..."
+          sudo -u mmn -H bash -c 'cd /var/www/frontend && npm install --production'
+
           echo "==> Running database migrations..."
           set -a
           source /opt/indexer/config/indexer.env
