@@ -68,6 +68,9 @@ jobs:
             frontend/public
             frontend/package.json
             frontend/next.config.js
+          run: |
+            ls -la frontend
+            ls -la frontend/.next
 
       - name: Upload Migration Artifacts
         uses: actions/upload-artifact@v4
@@ -235,7 +238,9 @@ jobs:
 
           sudo tar -xzvf /tmp/frontend_build.tar.gz -C /var/www/frontend
           sudo rm -f /tmp/frontend_build.tar.gz
-          
+          sudo ls -la /var/www/frontend
+          sudo ls -la /var/www/frontend/.next
+
           sudo chown -R mmn:mmn /var/www/frontend
           echo "==> Installing frontend dependencies on target..."
           sudo -u mmn -H bash -c 'cd /var/www/frontend && npm install --production'
