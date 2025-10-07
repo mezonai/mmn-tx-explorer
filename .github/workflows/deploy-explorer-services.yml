@@ -146,7 +146,7 @@ jobs:
           printf "export APP_API_URL_INTERNAL=%q\n" "$APP_API_URL_INTERNAL" >> explorer_env.sh
           echo "==> Generated explorer_env.sh"
 
-      - name: Generate configs yml file
+      - name: Generate configs and secrets yml file
         env: 
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
@@ -155,9 +155,10 @@ jobs:
           POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
           MMN_GRPC_URL: ${{ secrets.MMN_GRPC_URL }}
         run: |
-          mkdir -p config
+          mkdir -p /app/configs
           echo "==> Generating config/config.yml from template..."
-          cp indexer/configs/config.example.yml config/config.yml
+          cp indexer/configs/config.example.yml /app/configs/config.yml
+          cp indexer/configs/secrets.example.yml /app/configs/secrets.yml
           sed -i \
             -e "s|__POSTGRES_DB__|$POSTGRES_DB|g" \
             -e "s|__POSTGRES_USER__|$POSTGRES_USER|g" \
@@ -165,12 +166,20 @@ jobs:
             -e "s|__POSTGRES_HOST__|$POSTGRES_HOST|g" \
             -e "s|__POSTGRES_PORT__|$POSTGRES_PORT|g" \
             -e "s|__MMN_GRPC_URL__|$MMN_GRPC_URL|g" \
-            config/config.yml >/dev/null
-          echo "==> config/config.yml generated (values not shown for security)"
-          
-      - name: Copy config files to target server
+            /app/configs/config.yml >/dev/null
+          sed -i \
+            -e "s|__POSTGRES_DB__|$POSTGRES_DB|g" \
+            -e "s|__POSTGRES_USER__|$POSTGRES_USER|g" \
+            -e "s|__POSTGRES_PASSWORD__|$POSTGRES_PASSWORD|g" \
+            -e "s|__POSTGRES_HOST__|$POSTGRES_HOST|g" \
+            -e "s|__POSTGRES_PORT__|$POSTGRES_PORT|g" \
+            -e "s|__MMN_GRPC_URL__|$MMN_GRPC_URL|g" \
+            /app/configs/secrets.yml >/dev/null
+
+      - name: Copy config and secrets files to target server
         run: |
-          scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} config/config.yml ${{ secrets.HOST_ALIAS }}:/opt/indexer/config/config.yml
+          scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} /app/configs/config.yml ${{ secrets.HOST_ALIAS }}:/opt/indexer/config/config.yml
+          scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} /app/configs/secrets.yml ${{ secrets.HOST_ALIAS }}:/opt/indexer/config/secrets.yml
 
       - name: Prepare and deploy to target server
         run: |
