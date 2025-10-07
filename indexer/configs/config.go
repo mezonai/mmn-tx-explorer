@@ -198,6 +198,7 @@ func LoadConfig(cfgFile string) error {
 		}
 	} else {
 		viper.SetConfigName("config")
+		viper.AddConfigPath("/etc/mezon") // path for deploy
 		viper.AddConfigPath("./configs")
 		viper.AddConfigPath("/app/configs")
 
