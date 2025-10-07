@@ -7,4 +7,7 @@ export const ROUTES = {
   BLOCK: (number: number, queryParams?: string) => `/blocks/${number}${queryParams ? `?${queryParams}` : ''}`,
   WALLETS: '/wallets',
   WALLET: (address: string, queryParams?: string) => `/wallets/${address}${queryParams ? `?${queryParams}` : ''}`,
+  TRANSFER: '/transfer',
+  SWAP: '/swap',
+  STAKE: '/stake',
 } as const;
