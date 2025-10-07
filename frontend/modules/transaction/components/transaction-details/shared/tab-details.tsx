@@ -1,3 +1,4 @@
+'use client';
 import { Truncate } from '@re-dev/react-truncate';
 import { Clock4 } from 'lucide-react';
 import Link from 'next/link';
