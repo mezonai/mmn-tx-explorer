@@ -171,6 +171,13 @@ jobs:
       - name: Prepare and deploy to target server
         run: |
           set -e
+
+          echo "==> Setting up Node.js symlinks..."
+          ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "
+            sudo ln -sf /home/nccsoft/.nvm/versions/node/v22.18.0/bin/npm /usr/local/bin/npm
+            sudo ln -sf /home/nccsoft/.nvm/versions/node/v22.18.0/bin/node /usr/local/bin/node
+          "
+
           echo "==> Compressing frontend build..."
           tar -czvf /tmp/frontend_build.tar.gz -C build/frontend .
 
