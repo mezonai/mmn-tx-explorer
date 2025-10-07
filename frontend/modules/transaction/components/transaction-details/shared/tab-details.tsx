@@ -70,7 +70,7 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
               <span>{DateTimeUtil.formatRelativeTimeSec(transaction.transaction_timestamp)}</span>
               <span> | </span>
               <span>
-                <ClientTimeDisplay timestamp={transaction.block_timestamp} />
+                <ClientTimeDisplay timestamp={transaction.transaction_timestamp} />
               </span>
             </div>
           </div>
