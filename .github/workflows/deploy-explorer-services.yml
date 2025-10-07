@@ -123,7 +123,7 @@ jobs:
 
           SHA="$1"
           echo "==> Preparing deployment directories and configs..."
-          sudo mkdir -p /opt/indexer/bin /opt/indexer/config /opt/indexer/migrations /var/www/frontend
+          sudo mkdir -p /opt/indexer/bin /opt/indexer/config /opt/indexer/migrations /opt/indexer/logs /var/www/frontend
           
           echo "==> Writing environment configs..."
           sudo tee /opt/indexer/config/indexer.env > /dev/null <<EON
@@ -141,6 +141,7 @@ jobs:
           APP_API_URL_INTERNAL=${APP_API_URL_INTERNAL}
           EON
 
+          sudo chown -R mmn:mmn /opt/indexer
           sudo chown -R mmn:mmn /opt/indexer
           sudo chown -R mmn:mmn /var/www/frontend
           sudo chmod 600 /opt/indexer/config/indexer.env
