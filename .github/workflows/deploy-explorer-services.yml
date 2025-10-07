@@ -186,6 +186,14 @@ jobs:
           "
 
       - name: Atomic swap + restart services
+        env:
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+          POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
+          MMN_GRPC_URL: ${{ secrets.MMN_GRPC_URL }}
+          GIT_SHA: ${{ needs.build.outputs.git_sha }}
         run: |
           ssh -i ${{secrets.SSH_PRIVATE_KEY_PATH}} ${{secrets.HOST_ALIAS}} <<EOF
           #!/usr/bin/env bash
