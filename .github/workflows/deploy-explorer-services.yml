@@ -52,8 +52,6 @@ jobs:
           cd frontend
           npm install
           npm run build
-          sudo ls -la .
-          sudo ls -la .next
           cd ..
 
       - name: Stage Frontend Artifacts
@@ -180,7 +178,6 @@ jobs:
           set -e
 
           echo "==> Compressing frontend build..."
-          sudo ls -la build/frontend
           tar -czvf /tmp/frontend_build.tar.gz -C build/frontend .
 
           echo "==> Copying files to target server..."
@@ -239,8 +236,6 @@ jobs:
           sudo ln -sfn indexer-${GIT_SHA} /opt/indexer/bin/indexer
 
           echo "==> Deploying new frontend build..."
-          sudo ls -la /var/www/frontend
-          sudo tar -tzf /tmp/frontend_build.tar.gz | sed -n '1,200p'
           sudo tar -xzvf /tmp/frontend_build.tar.gz -C /var/www/frontend
           sudo rm -f /tmp/frontend_build.tar.gz
 
