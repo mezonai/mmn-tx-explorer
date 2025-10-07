@@ -123,12 +123,6 @@ jobs:
 
           echo "==> Deploying new indexer binary to staging path..."
           sudo install -m 0755 /tmp/indexer /opt/indexer/bin/indexer-${SHA}
-          
-          echo "==> Running database migrations..."
-          set -a
-          source /opt/indexer/config/indexer.env
-          set +a
-          /opt/indexer/bin/indexer-${SHA} migrate-postgres
 
           echo "==> Preparation complete!"
           EOF
@@ -183,6 +177,13 @@ jobs:
           sudo rm -rf /var/www/frontend/.next
           sudo tar -xzvf /tmp/frontend_build.tar.gz -C /var/www/frontend
           sudo rm -f /tmp/frontend_build.tar.gz
+          
+          echo "==> Running database migrations..."
+          set -a
+          source /opt/indexer/config/indexer.env
+          set +a
+          /opt/indexer/bin/indexer migrate-postgres
+
 
           echo "==> Reloading and starting services..."
           sudo systemctl daemon-reload
