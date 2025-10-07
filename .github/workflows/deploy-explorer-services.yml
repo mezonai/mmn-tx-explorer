@@ -57,7 +57,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: indexer-binary
-          path: build/indexer
+          path: indexer/build/indexer
 
       - name: Upload Frontend Artifacts
         uses: actions/upload-artifact@v4
