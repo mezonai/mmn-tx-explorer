@@ -52,8 +52,8 @@ jobs:
           cd frontend
           npm install
           npm run build
-          sudo ls -la frontend
-          sudo ls -la frontend/.next
+          sudo ls -la .
+          sudo ls -la .next
 
       - name: Upload Indexer Artifacts
         uses: actions/upload-artifact@v4
