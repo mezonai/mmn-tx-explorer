@@ -267,7 +267,7 @@ jobs:
           SSH_PRIVATE_KEY_PATH: ${{ secrets.SSH_PRIVATE_KEY_PATH }}
         run: |
           echo "==> Checking API status..."
-          ssh -i $SSH_PRIVATE_KEY_PATH $HOST_ALIAS "curl -sSf http://127.0.0.1:3000/health"
+          ssh -i $SSH_PRIVATE_KEY_PATH $HOST_ALIAS "curl -sSf http://127.0.0.1:8080/health"
 
           echo "==> Checking Orchestrator status..."
           ssh -i $SSH_PRIVATE_KEY_PATH $HOST_ALIAS "systemctl is-active indexer-orchestrator"
