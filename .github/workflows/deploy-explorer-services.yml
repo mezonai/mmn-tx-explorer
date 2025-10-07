@@ -230,16 +230,11 @@ jobs:
           echo "==> Atomically swapping to new indexer binary..."
           sudo ln -sfn indexer-${GIT_SHA} /opt/indexer/bin/indexer
 
-          sudo mv /var/www/frontend/frontend.env /tmp/frontend.env.bak
-
           echo "==> Deploying new frontend build..."
-          sudo rm -rf /var/www/frontend/*
           sudo rm -rf /var/www/frontend/.next
 
           sudo tar -xzvf /tmp/frontend_build.tar.gz -C /var/www/frontend
           sudo rm -f /tmp/frontend_build.tar.gz
-
-          sudo mv /tmp/frontend.env.bak /var/www/frontend/frontend.env
           
           sudo chown -R mmn:mmn /var/www/frontend
           echo "==> Installing frontend dependencies on target..."
