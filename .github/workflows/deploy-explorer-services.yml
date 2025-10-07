@@ -155,6 +155,7 @@ jobs:
           POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
           MMN_GRPC_URL: ${{ secrets.MMN_GRPC_URL }}
         run: |
+          mkdir -p config
           echo "==> Generating config/config.yml from template..."
           cp indexer/configs/config.example.yml config/config.yml
           sed -i \
