@@ -181,9 +181,9 @@ jobs:
           echo "==> Copying Next.js standalone build to target..."
           ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "sudo mkdir -p /opt/frontend"
 
-          rsync -avz --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/frontend/.next/standalone/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/
-          rsync -avz --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/frontend/.next/static/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/.next/static/
-          rsync -avz --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/frontend/public/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/public/
+          rsync -avz --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/standalone/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/
+          rsync -avz --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/static/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/.next/static/
+          rsync -avz --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/public/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/public/
           
           ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "sudo chmod +x /opt/frontend/server.js"
 
