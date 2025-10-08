@@ -179,7 +179,10 @@ jobs:
           scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} build/indexer remote_setup.sh explorer_env.sh ${{ secrets.HOST_ALIAS }}:/tmp/
 
           echo "==> Copying Next.js standalone build to target..."
-          ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "sudo mkdir -p /opt/frontend"
+          ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "
+            sudo mkdir -p /opt/frontend
+            sudo chown -R mmn:mmn /opt/frontend
+          "
 
           rsync -avz --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/standalone/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/
           rsync -avz --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/static/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/.next/static/
