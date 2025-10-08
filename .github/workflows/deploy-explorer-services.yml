@@ -172,12 +172,6 @@ jobs:
         run: |
           set -e
           sudo ls -la build/frontend/
-          echo "==> frontend/standalone..."
-          sudo ls -la build/frontend/standalone
-          echo "==> frontend/static..."
-          sudo ls -la build/frontend/static
-          echo "==> frontend/public..."
-          sudo ls -la build/frontend/public
           echo "==> Copying files to target server..."
           scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} -r build/migrations/postgres ${{ secrets.HOST_ALIAS }}:/tmp/
           scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} build/indexer remote_setup.sh explorer_env.sh ${{ secrets.HOST_ALIAS }}:/tmp/
