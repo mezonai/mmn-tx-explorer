@@ -52,15 +52,14 @@ jobs:
           cd frontend
           npm install
           npm run build
+          next export
+          sudo ls -la .
           cd ..
 
       - name: Stage Frontend Artifacts
         run: |
           mkdir -p build/frontend-stage
-          cp -r frontend/.next build/frontend-stage/
-          cp -r frontend/public build/frontend-stage/
-          cp frontend/package.json build/frontend-stage/
-          cp frontend/next.config.ts build/frontend-stage/
+          cp -r frontend/build/. build/frontend-stage/ 
 
       - name: Upload Indexer Artifacts
         uses: actions/upload-artifact@v4
@@ -119,8 +118,6 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
           POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
-          NEXT_PUBLIC_APP_API_URL: ${{ secrets.NEXT_PUBLIC_APP_API_URL }}
-          APP_API_URL_INTERNAL: ${{ secrets.APP_API_URL_INTERNAL }}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
@@ -128,7 +125,7 @@ jobs:
 
           SHA="$1"
           echo "==> Preparing deployment directories and configs..."
-          sudo mkdir -p /opt/indexer/bin /opt/indexer/config /opt/indexer/migrations /opt/indexer/logs /var/www/frontend
+          sudo mkdir -p /opt/indexer/bin /opt/indexer/config /opt/indexer/migrations /opt/indexer/logs
           
           echo "==> Writing environment configs..."
           sudo tee /opt/indexer/config/indexer.env > /dev/null <<EON
@@ -141,16 +138,9 @@ jobs:
           MIGRATIONS_PATH=/opt/indexer/migrations/postgres
           EON
 
-          sudo tee /var/www/frontend/frontend.env > /dev/null <<EON
-          NEXT_PUBLIC_APP_API_URL=${NEXT_PUBLIC_APP_API_URL}
-          APP_API_URL_INTERNAL=${APP_API_URL_INTERNAL}
-          EON
-
           sudo chown -R mmn:mmn /opt/indexer
           sudo chown -R mmn:mmn /opt/indexer
-          sudo chown -R mmn:mmn /var/www/frontend
           sudo chmod 600 /opt/indexer/config/indexer.env
-          sudo chmod 644 /var/www/frontend/frontend.env
 
           echo "==> Deploying new indexer binary to staging path..."
           sudo install -m 0755 /tmp/indexer /opt/indexer/bin/indexer-${SHA}
@@ -177,12 +167,12 @@ jobs:
         run: |
           set -e
 
-          echo "==> Compressing frontend build..."
-          tar -czvf /tmp/frontend_build.tar.gz -C build/frontend .
-
           echo "==> Copying files to target server..."
           scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} -r build/migrations/postgres ${{ secrets.HOST_ALIAS }}:/tmp/
-          scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} build/indexer remote_setup.sh explorer_env.sh /tmp/frontend_build.tar.gz ${{ secrets.HOST_ALIAS }}:/tmp/
+          scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} build/indexer remote_setup.sh explorer_env.sh ${{ secrets.HOST_ALIAS }}:/tmp/
+
+          echo "==> Copying frontend build to Nginx root..."
+          rsync -avz --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/ ${{ secrets.HOST_ALIAS }}:/var/www/frontend/
 
           echo "==> Running remote setup script..."
           ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "
@@ -230,19 +220,9 @@ jobs:
           echo "==> Stopping services..."
           sudo systemctl stop indexer-api || true
           sudo systemctl stop indexer-orchestrator || true
-          sudo systemctl stop frontend || true
 
           echo "==> Atomically swapping to new indexer binary..."
           sudo ln -sfn indexer-${GIT_SHA} /opt/indexer/bin/indexer
-
-          echo "==> Deploying new frontend build..."
-          sudo rm -rf /var/www/frontend/.next
-          sudo tar -xzvf /tmp/frontend_build.tar.gz -C /var/www/frontend
-          sudo rm -f /tmp/frontend_build.tar.gz
-
-          sudo chown -R mmn:mmn /var/www/frontend
-          echo "==> Installing frontend dependencies on target..."
-          sudo -u mmn -H bash -c 'cd /var/www/frontend && npm install --production'
 
           echo "==> Running database migrations..."
           set -a
@@ -250,12 +230,13 @@ jobs:
           set +a
           /opt/indexer/bin/indexer migrate-postgres
 
-
           echo "==> Reloading and starting services..."
           sudo systemctl daemon-reload
           sudo systemctl start indexer-orchestrator
           sudo systemctl start indexer-api
-          sudo systemctl start frontend
+
+          echo "==> Reloading Nginx..."
+          sudo nginx -t && sudo systemctl reload nginx
 
           echo "==> Activation complete!"
           EOF
@@ -270,6 +251,3 @@ jobs:
 
           echo "==> Checking Orchestrator status..."
           ssh -i $SSH_PRIVATE_KEY_PATH $HOST_ALIAS "systemctl is-active indexer-orchestrator"
-
-          echo "==> Checking Frontend status..."
-          ssh -i $SSH_PRIVATE_KEY_PATH $HOST_ALIAS "sudo systemctl is-active frontend"
