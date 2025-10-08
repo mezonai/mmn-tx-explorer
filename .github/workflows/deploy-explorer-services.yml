@@ -57,6 +57,12 @@ jobs:
           rm -rf .next
           echo "NEXT_PUBLIC_APP_API_URL=${NEXT_PUBLIC_APP_API_URL}" > .env.local
           echo "APP_API_URL_INTERNAL=${APP_API_URL_INTERNAL}" >> .env.local
+          if [ -z "${{ secrets.NEXT_PUBLIC_APP_API_URL }}" ]; then
+            echo "LỖI: Secret NEXT_PUBLIC_APP_API_URL không được set!"
+            exit 1
+          else
+            echo "Secret NEXT_PUBLIC_APP_API_URL đã được set."
+          fi
           npm run build
           cd ..
 
