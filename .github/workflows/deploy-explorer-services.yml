@@ -49,16 +49,16 @@ jobs:
 
       - name: Build Frontend
         env:
-          NEXT_PUBLIC_APP_API_URL: ${{ secrets.NEXT_PUBLIC_APP_API_URL }}
-          APP_API_URL_INTERNAL: ${{ secrets.APP_API_URL_INTERNAL }}
+          NEXT_PUBLIC_APP_API_URL: https://dev-mmn.nccsoft.vn/indexer-api
+          APP_API_URL_INTERNAL: https://dev-mmn.nccsoft.vn/indexer-api
         run: |
           cd frontend
           npm install
           rm -rf .next
           echo "NEXT_PUBLIC_APP_API_URL=$NEXT_PUBLIC_APP_API_URL"
           echo "APP_API_URL_INTERNAL=$APP_API_URL_INTERNAL"
-          echo "NEXT_PUBLIC_APP_API_URL=${{ secrets.NEXT_PUBLIC_APP_API_URL }}" > .env.local
-          echo "APP_API_URL_INTERNAL=${{ secrets.APP_API_URL_INTERNAL }}" >> .env.local
+          echo "NEXT_PUBLIC_APP_API_URL=${NEXT_PUBLIC_APP_API_URL}" > .env.local
+          echo "APP_API_URL_INTERNAL=${APP_API_URL_INTERNAL}" >> .env.local
           npm run build
           cd ..
 
@@ -83,8 +83,8 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
           POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
-          NEXT_PUBLIC_APP_API_URL: ${{ secrets.NEXT_PUBLIC_APP_API_URL }}
-          APP_API_URL_INTERNAL: ${{ secrets.APP_API_URL_INTERNAL }}
+          NEXT_PUBLIC_APP_API_URL: https://dev-mmn.nccsoft.vn/indexer-api
+          APP_API_URL_INTERNAL: https://dev-mmn.nccsoft.vn/indexer-api
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
@@ -145,7 +145,7 @@ jobs:
           scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} remote_setup.sh explorer_env.sh ${{ secrets.HOST_ALIAS }}:/tmp/
 
           echo "==> Syncing Frontend build to target..."
-          scp -r -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} frontend/* ${{ secrets.HOST_ALIAS }}:/opt/frontend/
+          rsync -avz --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" frontend/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/
 
           echo "==> Running remote setup script..."
           ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "
@@ -226,5 +226,4 @@ jobs:
           ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "systemctl is-active indexer-orchestrator"
 
           echo "==> Checking Frontend status..."
-          ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "systemctl is-active frontend"
-          ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "curl -sSf --resolve dev-mmn.nccsoft.vn:443:127.0.0.1 https://dev-mmn.nccsoft.vn/ > /dev/null"
+          ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "systemctl is-active frontend-explorer"
