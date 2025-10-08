@@ -58,7 +58,7 @@ jobs:
 
       - name: Stage Frontend Artifacts
         run: |
-          mkdir -p build/deploy/frontend
+          mkdir -p build/deploy/frontend/.next
 
           cp -r frontend/.next/standalone/. build/deploy/frontend/
           cp -r frontend/.next/static build/deploy/frontend/.next/static
@@ -189,7 +189,7 @@ jobs:
             sudo chown -R mmn:mmn /opt/frontend
           "
 
-          rsync -avz --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/
+          rsync -avz --delete -q -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/
           ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "sudo chmod +x /opt/frontend/server.js"
 
           echo "==> Running remote setup script..."
