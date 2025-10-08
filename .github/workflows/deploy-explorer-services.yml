@@ -54,6 +54,8 @@ jobs:
         run: |
           cd frontend
           npm install
+          echo "NEXT_PUBLIC_APP_API_URL=$NEXT_PUBLIC_APP_API_URL"
+          echo "APP_API_URL_INTERNAL=$APP_API_URL_INTERNAL"
           npm run build
           cd ..
 
