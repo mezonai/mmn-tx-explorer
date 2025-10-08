@@ -58,8 +58,13 @@ jobs:
 
       - name: Stage Frontend Artifacts
         run: |
-          mkdir -p build/frontend-stage
-          cp -r frontend/build/. build/frontend-stage/ 
+          mkdir -p build/frontend-stage/static
+          mkdir -p build/frontend-stage/public
+          mkdir -p build/frontend-stage/standalone
+
+          cp -r frontend/.next/static/. build/frontend-stage/static/
+          cp -r frontend/public/. build/frontend-stage/public/
+          cp -r frontend/.next/standalone/. build/frontend-stage/standalone/ 
 
       - name: Upload Indexer Artifacts
         uses: actions/upload-artifact@v4
@@ -71,10 +76,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
-          path: |
-            frontend/.next/standalone
-            frontend/.next/static
-            frontend/public
+          path: build/frontend-stage/
 
       - name: Upload Migration Artifacts
         uses: actions/upload-artifact@v4
