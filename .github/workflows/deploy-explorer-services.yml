@@ -58,13 +58,11 @@ jobs:
 
       - name: Stage Frontend Artifacts
         run: |
-          mkdir -p build/frontend-stage/static
-          mkdir -p build/frontend-stage/public
-          mkdir -p build/frontend-stage/standalone
+          mkdir -p build/deploy/frontend
 
-          cp -r frontend/.next/static/. build/frontend-stage/static/
-          cp -r frontend/public/. build/frontend-stage/public/
-          cp -r frontend/.next/standalone/. build/frontend-stage/standalone/ 
+          cp -r frontend/.next/standalone/. build/deploy/frontend/
+          cp -r frontend/.next/static build/deploy/frontend/.next/
+          cp -r frontend/public build/deploy/frontend/
 
       - name: Upload Indexer Artifacts
         uses: actions/upload-artifact@v4
@@ -76,7 +74,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
-          path: build/frontend-stage/
+          path: build/deploy/frontend/
 
       - name: Upload Migration Artifacts
         uses: actions/upload-artifact@v4
@@ -173,21 +171,24 @@ jobs:
       - name: Prepare and deploy to target server
         run: |
           set -e
-          sudo ls -la build/frontend
+          sudo ls -la build/frontend/
+          echo "==> frontend/standalone..."
+          sudo ls -la build/frontend/standalone
+          echo "==> frontend/static..."
+          sudo ls -la build/frontend/static
+          echo "==> frontend/public..."
+          sudo ls -la build/frontend/public
           echo "==> Copying files to target server..."
           scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} -r build/migrations/postgres ${{ secrets.HOST_ALIAS }}:/tmp/
           scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} build/indexer remote_setup.sh explorer_env.sh ${{ secrets.HOST_ALIAS }}:/tmp/
 
           echo "==> Copying Next.js standalone build to target..."
           ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "
-            sudo mkdir -p /opt/frontend /opt/frontend/.next /opt/frontend/public; 
+            sudo mkdir -p /opt/frontend  
             sudo chown -R mmn:mmn /opt/frontend
           "
 
-          rsync -avz --delete -q -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/standalone/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/
-          rsync -avz --delete -q -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/static/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/.next/static/
-          rsync -avz --delete -q -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/public/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/public/
-          
+          rsync -avz --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/
           ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "sudo chmod +x /opt/frontend/server.js"
 
           echo "==> Running remote setup script..."
