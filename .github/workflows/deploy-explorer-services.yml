@@ -145,7 +145,8 @@ jobs:
           scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} remote_setup.sh explorer_env.sh ${{ secrets.HOST_ALIAS }}:/tmp/
 
           echo "==> Syncing Frontend build to target..."
-          rsync -avz --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" frontend/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/
+          scp -r -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} frontend/* ${{ secrets.HOST_ALIAS }}:/opt/frontend/
+
 
           echo "==> Running remote setup script..."
           ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "
