@@ -124,7 +124,7 @@ func init() {
 	rootCmd.PersistentFlags().Int("storage-staging-postgres-maxIdleConns", 25, "PostgreSQL max idle connections for staging storage")
 	rootCmd.PersistentFlags().Int("storage-staging-postgres-maxConnLifetime", 300, "PostgreSQL max connection lifetime in seconds for staging storage")
 	rootCmd.PersistentFlags().Int("storage-staging-postgres-connectTimeout", 10, "PostgreSQL connection timeout in seconds for staging storage")
-	rootCmd.PersistentFlags().String("api-host", "localhost:3000", "API host")
+	rootCmd.PersistentFlags().String("api-host", "localhost:8080", "API host")
 	rootCmd.PersistentFlags().String("api-basicAuth-username", "", "API basic auth username")
 	rootCmd.PersistentFlags().String("api-basicAuth-password", "", "API basic auth password")
 	rootCmd.PersistentFlags().String("api-thirdweb-clientId", "", "Thirdweb client id")

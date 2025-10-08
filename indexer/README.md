@@ -22,7 +22,7 @@ go build -o main .
 ./main orchestrator
 ./main api
 
-# API default: http://localhost:3000
+# API default: http://localhost:8080
 ```
 
 ### Quick Start with Example Config
@@ -150,7 +150,7 @@ STORAGE_ORCHESTRATOR_POSTGRES_SSLMODE=disable
 
 API Configuration:
 ```bash
-API_HOST=localhost:3000
+API_HOST=localhost:8080
 API_BASIC_AUTH_USERNAME=admin
 API_BASIC_AUTH_PASSWORD=admin
 API_THIRDWEB_CLIENT_ID=your-client-id
@@ -329,7 +329,7 @@ export STORAGE_MAIN_POSTGRES_PASSWORD="password"
 ```bash
 # Override specific settings via CLI flags (examples)
 ./main orchestrator --rpc-url="https://1.rpc.thirdweb.com" --log-level=info
-./main api --api-host=localhost:3000
+./main api --api-host=localhost:8080
 ```
 
 ### Environment Variable Reference
@@ -470,7 +470,7 @@ indexer/
 ## 📚 Documentation
 
 - **API Reference:**  
-  - [Swagger UI](http://localhost:3000/swagger/index.html) (when running)
+  - [Swagger UI](http://localhost:8080/swagger/index.html) (when running)
   - [OpenAPI Spec](docs/swagger.yaml)
 - **Metrics:**  
   - Prometheus metrics at [http://localhost:2112/metrics](http://localhost:2112/metrics)
