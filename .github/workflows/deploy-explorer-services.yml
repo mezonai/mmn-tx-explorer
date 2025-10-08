@@ -15,6 +15,7 @@ on:
 jobs:
   build:
     runs-on: [self-hosted, Linux, mezon-runner]
+    environment: ${{ inputs.env }}
     outputs:
       git_sha: ${{ steps.get_sha.outputs.git_sha }}
     steps:
