@@ -6,7 +6,7 @@ const baseURL = isServer
   : process.env.NEXT_PUBLIC_APP_API_URL;
 
 const apiClient = axios.create({
-  baseURL,
+  baseURL: "https://dev-mmn.nccsoft.vn/indexer-api",
   headers: {
     'Content-Type': 'application/json',
   },
