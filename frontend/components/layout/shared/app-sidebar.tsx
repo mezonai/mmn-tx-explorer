@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
@@ -20,10 +21,15 @@ import { ROUTES } from '@/configs/routes.config';
 import { cn } from '@/lib/utils';
 import { sidebarNavItems } from '../navigation/nav-items';
 import { AppSidebarItem } from './app-sidebar-item';
+import { Circle } from 'lucide-react';
+import apiClient from '@/service';
 
 export function AppSidebar() {
   const { toggleSidebar, state } = useSidebar();
-
+  const mezonLogin = async () => {
+    const response = await apiClient.get('api/oauth2/login');
+    console.log(response);
+  };
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="relative px-4">
@@ -48,7 +54,6 @@ export function AppSidebar() {
           </Button>
         </div>
       </SidebarHeader>
-
       <SidebarContent className="px-2 py-4">
         <SidebarGroup>
           <SidebarGroupContent>
@@ -60,6 +65,18 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <Button onClick={mezonLogin}>
+          {state === 'collapsed' ? (
+            <Circle className="h-10 w-10" />
+          ) : (
+            <>
+              <Circle />
+              Login with Mezon
+            </>
+          )}
+        </Button>
+      </SidebarFooter>
     </Sidebar>
   );
 }
