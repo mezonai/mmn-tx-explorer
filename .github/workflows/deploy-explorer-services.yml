@@ -173,7 +173,7 @@ jobs:
       - name: Prepare and deploy to target server
         run: |
           set -e
-
+          sudo ls -la build/frontend
           echo "==> Copying files to target server..."
           scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} -r build/migrations/postgres ${{ secrets.HOST_ALIAS }}:/tmp/
           scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} build/indexer remote_setup.sh explorer_env.sh ${{ secrets.HOST_ALIAS }}:/tmp/
