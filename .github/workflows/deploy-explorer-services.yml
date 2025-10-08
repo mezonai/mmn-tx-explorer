@@ -30,16 +30,16 @@ jobs:
           cache: true
           check-latest: false
 
-      - name: Build Index binary
+      - name: Build Indexer binary
         run: |
           mkdir -p build
           cd indexer
-          GOOS=linux GOARCH=amd64 go build -o build/indexer .
-      
+          GOOS=linux GOARCH=amd64 go build -o ../build/indexer .
+
       - name: Get short SHA
         id: get_sha
         run: echo "git_sha=$(git rev-parse --short=8 HEAD)" >> $GITHUB_OUTPUT
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -52,40 +52,7 @@ jobs:
           cd frontend
           npm install
           npm run build
-          sudo ls -la .
-          sudo ls -la .next
           cd ..
-
-      - name: Stage Frontend Artifacts
-        run: |
-          mkdir -p build/deploy/frontend
-
-          cp -r frontend/.next/standalone/. build/deploy/frontend/
-
-          cp -r frontend/.next/static build/deploy/frontend/.next/
-          cp -r frontend/.next/server build/deploy/frontend/.next/
-
-          cp -r frontend/public build/deploy/frontend/
-          
-          ls -laR build/deploy/frontend
-
-      - name: Upload Indexer Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: indexer-binary
-          path: indexer/build/indexer
-
-      - name: Upload Frontend Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-build
-          path: build/deploy/frontend/
-
-      - name: Upload Migration Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: migrations-postgres
-          path: indexer/internal/tools/postgres
 
   deploy:
     needs: build
@@ -100,24 +67,6 @@ jobs:
         run: |
           scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} indexer/configs/config.example.yml ${{ secrets.HOST_ALIAS }}:/opt/mezon/explorer/config/
           scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} indexer/configs/secrets.example.yml ${{ secrets.HOST_ALIAS }}:/opt/mezon/explorer/config/
-
-      - name: Download indexer binary
-        uses: actions/download-artifact@v4
-        with:
-          name: indexer-binary
-          path: build
-
-      - name: Download frontend build
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-build
-          path: build/frontend
-
-      - name: Download postgres migrations
-        uses: actions/download-artifact@v4
-        with:
-          name: migrations-postgres
-          path: build/migrations/postgres
 
       - name: Generate remote setup script
         env:
@@ -154,7 +103,7 @@ jobs:
           EON
 
           sudo chown -R mmn:mmn /opt/indexer
-          sudo chown -R mmn:mmn /opt/indexer
+          sudo chown -R mmn:mmn /opt/frontend
           sudo chmod 600 /opt/indexer/config/indexer.env
           sudo chmod 644 /opt/frontend/frontend.env
 
@@ -169,38 +118,26 @@ jobs:
           EOF
           chmod +x remote_setup.sh
 
-          echo "# Explorer env generated at $(date)" > explorer_env.sh
-          printf "export POSTGRES_DB=%q\n" "$POSTGRES_DB" >> explorer_env.sh
-          printf "export POSTGRES_USER=%q\n" "$POSTGRES_USER" >> explorer_env.sh
-          printf "export POSTGRES_PASSWORD=%q\n" "$POSTGRES_PASSWORD" >> explorer_env.sh
-          printf "export POSTGRES_HOST=%q\n" "$POSTGRES_HOST" >> explorer_env.sh
-          printf "export POSTGRES_PORT=%q\n" "$POSTGRES_PORT" >> explorer_env.sh
-          printf "export NEXT_PUBLIC_APP_API_URL=%q\n" "$NEXT_PUBLIC_APP_API_URL" >> explorer_env.sh
-          printf "export APP_API_URL_INTERNAL=%q\n" "$APP_API_URL_INTERNAL" >> explorer_env.sh
-          echo "==> Generated explorer_env.sh"
-
       - name: Prepare and deploy to target server
         run: |
           set -e
-          sudo ls -la build/frontend/
-          echo "==> Copying files to target server..."
-          scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} -r build/migrations/postgres ${{ secrets.HOST_ALIAS }}:/tmp/
-          scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} build/indexer remote_setup.sh explorer_env.sh ${{ secrets.HOST_ALIAS }}:/tmp/
+          echo "==> Copying build artifacts and scripts to target server..."
+          # Copy indexer binary
+          scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} build/indexer ${{ secrets.HOST_ALIAS }}:/tmp/
+          # Copy migrations folder
+          scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} -r indexer/internal/tools/postgres ${{ secrets.HOST_ALIAS }}:/tmp/
+          # Copy setup script
+          scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} remote_setup.sh ${{ secrets.HOST_ALIAS }}:/tmp/
 
-          echo "==> Copying Next.js standalone build to target..."
-          ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "
-            sudo mkdir -p /opt/frontend  
-            sudo chown -R mmn:mmn /opt/frontend
-          "
-
-          rsync -avz --delete -q -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/
-          ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "sudo chmod +x /opt/frontend/server.js"
+          echo "==> Syncing Frontend build to target..."
+          rsync -avz --delete --exclude 'node_modules' -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" frontend/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/
 
           echo "==> Running remote setup script..."
           ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "
             set -e
-            bash -c 'source /tmp/explorer_env.sh; bash /tmp/remote_setup.sh \"$GIT_SHA\"'
-            rm -f /tmp/indexer /tmp/remote_setup.sh /tmp/explorer_env.sh
+            bash /tmp/remote_setup.sh \"$GIT_SHA\"
+            rm -f /tmp/indexer /tmp/remote_setup.sh
+            rm -rf /tmp/postgres
           "
 
       - name: Atomic swap + restart services
@@ -211,7 +148,6 @@ jobs:
           POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
           POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
           MMN_GRPC_URL: ${{ secrets.MMN_GRPC_URL }}
-          GIT_SHA: ${{ needs.build.outputs.git_sha }}
         run: |
           ssh -i ${{secrets.SSH_PRIVATE_KEY_PATH}} ${{secrets.HOST_ALIAS}} <<EOF
           #!/usr/bin/env bash
@@ -240,6 +176,7 @@ jobs:
             | sudo tee /etc/mezon/secrets.yml >/dev/null
 
           echo "==> Stopping services..."
+          sudo systemctl stop frontend-explorer || true
           sudo systemctl stop indexer-api || true
           sudo systemctl stop indexer-orchestrator || true
 
@@ -256,6 +193,7 @@ jobs:
           sudo systemctl daemon-reload
           sudo systemctl start indexer-orchestrator
           sudo systemctl start indexer-api
+          sudo systemctl start frontend-explorer
 
           echo "==> Reloading Nginx..."
           sudo nginx -t && sudo systemctl reload nginx
@@ -264,15 +202,13 @@ jobs:
           EOF
 
       - name: Health check after deployment
-        env:
-          HOST_ALIAS: ${{ secrets.HOST_ALIAS }}
-          SSH_PRIVATE_KEY_PATH: ${{ secrets.SSH_PRIVATE_KEY_PATH }}
         run: |
           echo "==> Checking API status..."
-          ssh -i $SSH_PRIVATE_KEY_PATH $HOST_ALIAS "curl -sSf http://127.0.0.1:8080/health"
+          ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "curl -sSf http://127.0.0.1:8080/health"
 
           echo "==> Checking Orchestrator status..."
-          ssh -i $SSH_PRIVATE_KEY_PATH $HOST_ALIAS "systemctl is-active indexer-orchestrator"
-          
+          ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "systemctl is-active indexer-orchestrator"
+
           echo "==> Checking Frontend status..."
-          ssh -i $SSH_PRIVATE_KEY_PATH $HOST_ALIAS "curl -sSf https://dev-mmn.nccsoft.vn/ > /dev/null"
+          ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "systemctl is-active frontend"
+          ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "curl -sSf --resolve dev-mmn.nccsoft.vn:443:127.0.0.1 https://dev-mmn.nccsoft.vn/ > /dev/null"
