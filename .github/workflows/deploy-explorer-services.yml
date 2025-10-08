@@ -53,7 +53,7 @@ jobs:
           npm install
           npm run build
           sudo ls -la .
-          sudo ls -la build
+          sudo ls -la .next
           cd ..
 
       - name: Stage Frontend Artifacts
@@ -71,7 +71,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
-          path: build/frontend-stage
+          path: |
+            frontend/.next/standalone
+            frontend/.next/static
+            frontend/public
 
       - name: Upload Migration Artifacts
         uses: actions/upload-artifact@v4
@@ -118,6 +121,8 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
           POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
+          NEXT_PUBLIC_APP_API_URL: ${{ secrets.NEXT_PUBLIC_APP_API_URL }}
+          APP_API_URL_INTERNAL: ${{ secrets.APP_API_URL_INTERNAL }}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
@@ -171,8 +176,14 @@ jobs:
           scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} -r build/migrations/postgres ${{ secrets.HOST_ALIAS }}:/tmp/
           scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} build/indexer remote_setup.sh explorer_env.sh ${{ secrets.HOST_ALIAS }}:/tmp/
 
-          echo "==> Copying frontend build to Nginx root..."
-          rsync -avz --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/ ${{ secrets.HOST_ALIAS }}:/var/www/frontend/
+          echo "==> Copying Next.js standalone build to target..."
+          ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "sudo mkdir -p /opt/frontend"
+
+          rsync -avz --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/frontend/.next/standalone/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/
+          rsync -avz --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/frontend/.next/static/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/.next/static/
+          rsync -avz --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/frontend/public/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/public/
+          
+          ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "sudo chmod +x /opt/frontend/server.js"
 
           echo "==> Running remote setup script..."
           ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "
