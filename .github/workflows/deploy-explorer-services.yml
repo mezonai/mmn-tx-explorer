@@ -52,8 +52,8 @@ jobs:
           cd frontend
           npm install
           npm run build
-          npm run export
           sudo ls -la .
+          sudo ls -la build
           cd ..
 
       - name: Stage Frontend Artifacts

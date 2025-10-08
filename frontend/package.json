@@ -7,7 +7,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "export": "next export",
     "lint:fix": "next lint --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
