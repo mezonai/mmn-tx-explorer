@@ -52,7 +52,7 @@ jobs:
           cd frontend
           npm install
           npm run build
-          next export
+          npm run export
           sudo ls -la .
           cd ..
 
@@ -251,3 +251,6 @@ jobs:
 
           echo "==> Checking Orchestrator status..."
           ssh -i $SSH_PRIVATE_KEY_PATH $HOST_ALIAS "systemctl is-active indexer-orchestrator"
+          
+          echo "==> Checking Frontend status..."
+          ssh -i $SSH_PRIVATE_KEY_PATH $HOST_ALIAS "curl -sSf https://dev-mmn.nccsoft.vn/ > /dev/null"
