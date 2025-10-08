@@ -180,7 +180,7 @@ jobs:
 
           echo "==> Copying Next.js standalone build to target..."
           ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "
-            sudo mkdir -p /opt/frontend
+            sudo mkdir -p /opt/frontend /opt/frontend/.next /opt/frontend/public; 
             sudo chown -R mmn:mmn /opt/frontend
           "
 
