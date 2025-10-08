@@ -143,8 +143,9 @@ jobs:
           scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} remote_setup.sh explorer_env.sh ${{ secrets.HOST_ALIAS }}:/tmp/
 
           echo "==> Syncing Frontend build to target..."
-          rsync -az --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" frontend/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/
-
+          rsync -az --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" frontend/.next/standalone/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/.next/standalone/
+          rsync -az --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" frontend/.next/static/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/.next/static/
+          rsync -az --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" frontend/public/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/public/
 
           echo "==> Running remote setup script..."
           ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "
