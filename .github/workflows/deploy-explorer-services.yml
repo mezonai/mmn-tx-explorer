@@ -118,16 +118,23 @@ jobs:
           EOF
           chmod +x remote_setup.sh
 
+          echo "# Explorer env generated at $(date)" > explorer_env.sh
+          printf "export POSTGRES_DB=%q\n" "$POSTGRES_DB" >> explorer_env.sh
+          printf "export POSTGRES_USER=%q\n" "$POSTGRES_USER" >> explorer_env.sh
+          printf "export POSTGRES_PASSWORD=%q\n" "$POSTGRES_PASSWORD" >> explorer_env.sh
+          printf "export POSTGRES_HOST=%q\n" "$POSTGRES_HOST" >> explorer_env.sh
+          printf "export POSTGRES_PORT=%q\n" "$POSTGRES_PORT" >> explorer_env.sh
+          printf "export NEXT_PUBLIC_APP_API_URL=%q\n" "$NEXT_PUBLIC_APP_API_URL" >> explorer_env.sh
+          printf "export APP_API_URL_INTERNAL=%q\n" "$APP_API_URL_INTERNAL" >> explorer_env.sh
+          echo "==> Generated explorer_env.sh"
+
       - name: Prepare and deploy to target server
         run: |
           set -e
-          echo "==> Copying build artifacts and scripts to target server..."
-          # Copy indexer binary
+          echo "==> Copying build to target server..."
           scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} build/indexer ${{ secrets.HOST_ALIAS }}:/tmp/
-          # Copy migrations folder
           scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} -r indexer/internal/tools/postgres ${{ secrets.HOST_ALIAS }}:/tmp/
-          # Copy setup script
-          scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} remote_setup.sh ${{ secrets.HOST_ALIAS }}:/tmp/
+          scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} remote_setup.sh explorer_env.sh ${{ secrets.HOST_ALIAS }}:/tmp/
 
           echo "==> Syncing Frontend build to target..."
           rsync -avz --delete --exclude 'node_modules' -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" frontend/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/
@@ -135,8 +142,9 @@ jobs:
           echo "==> Running remote setup script..."
           ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "
             set -e
+            source /tmp/explorer_env.sh
             bash /tmp/remote_setup.sh \"$GIT_SHA\"
-            rm -f /tmp/indexer /tmp/remote_setup.sh
+            rm -f /tmp/indexer /tmp/remote_setup.sh /tmp/explorer_env.sh
             rm -rf /tmp/postgres
           "
 
