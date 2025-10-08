@@ -184,9 +184,9 @@ jobs:
             sudo chown -R mmn:mmn /opt/frontend
           "
 
-          rsync -avz --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/standalone/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/
-          rsync -avz --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/static/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/.next/static/
-          rsync -avz --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/public/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/public/
+          rsync -avz --delete -q -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/standalone/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/
+          rsync -avz --delete -q -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/static/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/.next/static/
+          rsync -avz --delete -q -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" build/frontend/public/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/public/
           
           ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "sudo chmod +x /opt/frontend/server.js"
 
