@@ -143,9 +143,15 @@ jobs:
           MIGRATIONS_PATH=/opt/indexer/migrations/postgres
           EON
 
+          sudo tee /opt/frontend/frontend.env > /dev/null <<EON
+          NEXT_PUBLIC_APP_API_URL=${NEXT_PUBLIC_APP_API_URL}
+          APP_API_URL_INTERNAL=${APP_API_URL_INTERNAL}
+          EON
+
           sudo chown -R mmn:mmn /opt/indexer
           sudo chown -R mmn:mmn /opt/indexer
           sudo chmod 600 /opt/indexer/config/indexer.env
+          sudo chmod 644 /opt/frontend/frontend.env
 
           echo "==> Deploying new indexer binary to staging path..."
           sudo install -m 0755 /tmp/indexer /opt/indexer/bin/indexer-${SHA}
