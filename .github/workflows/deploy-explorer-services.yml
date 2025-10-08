@@ -49,8 +49,8 @@ jobs:
 
       - name: Build Frontend
         env:
-          NEXT_PUBLIC_APP_API_URL: ${{ secrets.NEXT_PUBLIC_APP_API_URL }}
-          APP_API_URL_INTERNAL: ${{ secrets.APP_API_URL_INTERNAL }}
+          NEXT_PUBLIC_APP_API_URL: https://dev-mmn.nccsoft.vn/indexer-api
+          APP_API_URL_INTERNAL: https://dev-mmn.nccsoft.vn/indexer-api
         run: |
           cd frontend
           npm install
