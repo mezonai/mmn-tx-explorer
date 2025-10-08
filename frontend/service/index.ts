@@ -12,4 +12,14 @@ const apiClient = axios.create({
   },
 });
 
+apiClient.interceptors.request.use((config) => {
+  const isAbsolute = /^https?:\/\//i.test(config.url || "");
+  if (isAbsolute) {
+    console.warn("[apiClient] ABSOLUTE URL BYPASSES baseURL:", config.url);
+  } else {
+    console.info("[apiClient] baseURL:", config.baseURL, "url:", config.url);
+  }
+  return config;
+});
+
 export default apiClient;
