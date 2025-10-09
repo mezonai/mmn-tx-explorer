@@ -15,6 +15,7 @@ on:
 jobs:
   build:
     runs-on: [self-hosted, Linux, mezon-runner]
+    environment: ${{ inputs.env }}
     outputs:
       git_sha: ${{ steps.get_sha.outputs.git_sha }}
     steps:
@@ -30,44 +31,33 @@ jobs:
           cache: true
           check-latest: false
 
-      - name: Build Index binary
+      - name: Build Indexer binary
         run: |
           mkdir -p build
           cd indexer
-          GOOS=linux GOARCH=amd64 go build -o build/indexer .
-      
+          GOOS=linux GOARCH=amd64 go build -o ../build/indexer .
+
       - name: Get short SHA
         id: get_sha
         run: echo "git_sha=$(git rev-parse --short=8 HEAD)" >> $GITHUB_OUTPUT
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: "20"
-          cache: "npm"
-          cache-dependency-path: "frontend/package-lock.json"
+          cache: ""
+
 
       - name: Build Frontend
+        env:
+          NEXT_PUBLIC_APP_API_URL: ${{ secrets.NEXT_PUBLIC_APP_API_URL }}
+          APP_API_URL_INTERNAL: ${{ secrets.APP_API_URL_INTERNAL }}
         run: |
           cd frontend
           npm install
+          rm -rf .next
           npm run build
-
-      - name: Upload Indexer Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: indexer-binary
-          path: build/indexer
-
-      - name: Upload Frontend Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-build
-          path: |
-            frontend/.next
-            frontend/public
-            frontend/package.json
-            frontend/next.config.js
+          cd ..
 
   deploy:
     needs: build
@@ -78,17 +68,10 @@ jobs:
       GIT_SHA: ${{ needs.build.outputs.git_sha }}
 
     steps:
-      - name: Download indexer binary
-        uses: actions/download-artifact@v4
-        with:
-          name: indexer-binary
-          path: build
-
-      - name: Download frontend build
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-build
-          path: build/frontend
+      - name: Copy config and secrets to target
+        run: |
+          scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} indexer/configs/config.example.yml ${{ secrets.HOST_ALIAS }}:/opt/mezon/explorer/config/
+          scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} indexer/configs/secrets.example.yml ${{ secrets.HOST_ALIAS }}:/opt/mezon/explorer/config/
 
       - name: Generate remote setup script
         env:
@@ -106,7 +89,7 @@ jobs:
 
           SHA="$1"
           echo "==> Preparing deployment directories and configs..."
-          sudo mkdir -p /opt/indexer/bin /opt/indexer/config /var/www/frontend
+          sudo mkdir -p /opt/indexer/bin /opt/indexer/config /opt/indexer/migrations /opt/indexer/logs
           
           echo "==> Writing environment configs..."
           sudo tee /opt/indexer/config/indexer.env > /dev/null <<EON
@@ -116,21 +99,25 @@ jobs:
           STORAGE_MAIN_POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
           STORAGE_MAIN_POSTGRES_DATABASE=${POSTGRES_DB}
           STORAGE_MAIN_POSTGRES_SSLMODE=disable
-          MIGRATIONS_PATH=file://app/internal/tools/postgres
+          MIGRATIONS_PATH=/opt/indexer/migrations/postgres
           EON
 
-          sudo tee /var/www/frontend/frontend.env > /dev/null <<EON
+          sudo tee /opt/frontend/frontend.env > /dev/null <<EON
           NEXT_PUBLIC_APP_API_URL=${NEXT_PUBLIC_APP_API_URL}
           APP_API_URL_INTERNAL=${APP_API_URL_INTERNAL}
           EON
 
           sudo chown -R mmn:mmn /opt/indexer
-          sudo chown -R mmn:mmn /var/www/frontend
+          sudo chown -R mmn:mmn /opt/frontend
           sudo chmod 600 /opt/indexer/config/indexer.env
-          sudo chmod 644 /var/www/frontend/frontend.env
+          sudo chmod 644 /opt/frontend/frontend.env
 
           echo "==> Deploying new indexer binary to staging path..."
           sudo install -m 0755 /tmp/indexer /opt/indexer/bin/indexer-${SHA}
+
+          echo "==> Deploying migrations..."
+          sudo rm -rf /opt/indexer/migrations/postgres
+          sudo mv /tmp/postgres /opt/indexer/migrations/
 
           echo "==> Preparation complete!"
           EOF
@@ -149,64 +136,107 @@ jobs:
       - name: Prepare and deploy to target server
         run: |
           set -e
-          echo "==> Compressing frontend build..."
-          tar -czvf /tmp/frontend_build.tar.gz -C build/frontend .
+          echo "==> Copying build to target server..."
+          scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} build/indexer ${{ secrets.HOST_ALIAS }}:/tmp/
+          scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} -r indexer/internal/tools/postgres ${{ secrets.HOST_ALIAS }}:/tmp/
+          scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} remote_setup.sh explorer_env.sh ${{ secrets.HOST_ALIAS }}:/tmp/
 
-          echo "==> Copying files to target server..."
-          scp -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} build/indexer remote_setup.sh explorer_env.sh /tmp/frontend_build.tar.gz ${{ secrets.HOST_ALIAS }}:/tmp/
+          echo "==> Syncing Frontend build to target..."
+          rsync -az --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" frontend/.next/standalone/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/.next/standalone/
+          rsync -az --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" frontend/public/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/.next/standalone/public/
+          rsync -az --delete -e "ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }}" frontend/.next/static/ ${{ secrets.HOST_ALIAS }}:/opt/frontend/.next/standalone/.next/static/
 
           echo "==> Running remote setup script..."
           ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "
             set -e
-            bash -c 'source /tmp/explorer_env.sh; bash /tmp/remote_setup.sh \"$GIT_SHA\"'
+            source /tmp/explorer_env.sh
+            bash /tmp/remote_setup.sh \"$GIT_SHA\"
             rm -f /tmp/indexer /tmp/remote_setup.sh /tmp/explorer_env.sh
+            rm -rf /tmp/postgres
           "
 
       - name: Atomic swap + restart services
+        env:
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+          POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
+          MMN_GRPC_URL: ${{ secrets.MMN_GRPC_URL }}
         run: |
           ssh -i ${{secrets.SSH_PRIVATE_KEY_PATH}} ${{secrets.HOST_ALIAS}} <<EOF
           #!/usr/bin/env bash
           set -euo pipefail
 
+          echo "==> Generating final config files on target server..."
+          sudo mkdir -p /etc/mezon
+          echo "--> Generating config for indexer-api"
+          sed \
+            -e "s|__POSTGRES_DB__|$POSTGRES_DB|g" \
+            -e "s|__POSTGRES_USER__|$POSTGRES_USER|g" \
+            -e "s|__POSTGRES_PASSWORD__|$POSTGRES_PASSWORD|g" \
+            -e "s|__POSTGRES_HOST__|$POSTGRES_HOST|g" \
+            -e "s|__POSTGRES_PORT__|$POSTGRES_PORT|g" \
+            -e "s|__MMN_GRPC_URL__|$MMN_GRPC_URL|g" \
+            -e "s|filePath: /opt/indexer/logs/indexer.log|filePath: /opt/indexer/logs/indexer-api.log|g" \
+            /opt/mezon/explorer/config/config.example.yml \
+            | sudo tee /etc/mezon/config-api.yml >/dev/null
+
+          echo "--> Generating config for indexer-orchestrator"
+          sed \
+            -e "s|__POSTGRES_DB__|$POSTGRES_DB|g" \
+            -e "s|__POSTGRES_USER__|$POSTGRES_USER|g" \
+            -e "s|__POSTGRES_PASSWORD__|$POSTGRES_PASSWORD|g" \
+            -e "s|__POSTGRES_HOST__|$POSTGRES_HOST|g" \
+            -e "s|__POSTGRES_PORT__|$POSTGRES_PORT|g" \
+            -e "s|__MMN_GRPC_URL__|$MMN_GRPC_URL|g" \
+            -e "s|filePath: /opt/indexer/logs/indexer.log|filePath: /opt/indexer/logs/indexer-orchestrator.log|g" \
+            /opt/mezon/explorer/config/config.example.yml \
+            | sudo tee /etc/mezon/config-orchestrator.yml >/dev/null
+
+          sed \
+            -e "s|__POSTGRES_DB__|$POSTGRES_DB|g" \
+            -e "s|__POSTGRES_USER__|$POSTGRES_USER|g" \
+            -e "s|__POSTGRES_PASSWORD__|$POSTGRES_PASSWORD|g" \
+            -e "s|__POSTGRES_HOST__|$POSTGRES_HOST|g" \
+            -e "s|__POSTGRES_PORT__|$POSTGRES_PORT|g" \
+            -e "s|__MMN_GRPC_URL__|$MMN_GRPC_URL|g" \
+            /opt/mezon/explorer/config/secrets.example.yml \
+            | sudo tee /etc/mezon/secrets.yml >/dev/null
+
           echo "==> Stopping services..."
+          sudo systemctl stop frontend-explorer || true
           sudo systemctl stop indexer-api || true
           sudo systemctl stop indexer-orchestrator || true
-          sudo systemctl stop frontend || true
 
           echo "==> Atomically swapping to new indexer binary..."
           sudo ln -sfn indexer-${GIT_SHA} /opt/indexer/bin/indexer
 
-          echo "==> Deploying new frontend build..."
-          sudo rm -rf /var/www/frontend/.next
-          sudo tar -xzvf /tmp/frontend_build.tar.gz -C /var/www/frontend
-          sudo rm -f /tmp/frontend_build.tar.gz
-          
           echo "==> Running database migrations..."
           set -a
           source /opt/indexer/config/indexer.env
           set +a
           /opt/indexer/bin/indexer migrate-postgres
 
-
           echo "==> Reloading and starting services..."
           sudo systemctl daemon-reload
           sudo systemctl start indexer-orchestrator
           sudo systemctl start indexer-api
-          sudo systemctl start frontend
+          sudo systemctl start frontend-explorer
+
+          echo "==> Reloading Nginx..."
+          sudo nginx -t && sudo systemctl reload nginx
 
           echo "==> Activation complete!"
           EOF
 
       - name: Health check after deployment
-        env:
-          HOST_ALIAS: ${{ secrets.HOST_ALIAS }}
-          SSH_PRIVATE_KEY_PATH: ${{ secrets.SSH_PRIVATE_KEY_PATH }}
         run: |
           echo "==> Checking API status..."
-          ssh -i $SSH_PRIVATE_KEY_PATH $HOST_ALIAS "curl -sSf http://127.0.0.1:3000/health"
+          ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "curl -sSf http://127.0.0.1:8080/health"
 
           echo "==> Checking Orchestrator status..."
-          ssh -i $SSH_PRIVATE_KEY_PATH $HOST_ALIAS "systemctl is-active indexer-orchestrator"
+          ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "systemctl is-active indexer-orchestrator"
 
           echo "==> Checking Frontend status..."
-          ssh -i $SSH_PRIVATE_KEY_PATH $HOST_ALIAS "sudo systemctl is-active frontend"
+          ssh -i ${{ secrets.SSH_PRIVATE_KEY_PATH }} ${{ secrets.HOST_ALIAS }} "systemctl is-active frontend-explorer"

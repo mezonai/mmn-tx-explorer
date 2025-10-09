@@ -1,56 +1,26 @@
 package common
 
 import (
-	"encoding/hex"
 	"math/big"
-	"strings"
-	"sync"
 	"time"
-
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/rs/zerolog/log"
 )
 
 type RawTransaction = map[string]interface{}
 
 type Transaction struct {
-	ChainId               *big.Int  `json:"chain_id" ch:"chain_id" swaggertype:"string"`
-	Hash                  string    `json:"hash" ch:"hash"`
-	Nonce                 uint64    `json:"nonce" ch:"nonce"`
-	BlockHash             string    `json:"block_hash" ch:"block_hash"`
-	BlockNumber           *big.Int  `json:"block_number" ch:"block_number" swaggertype:"string"`
-	BlockTimestamp        time.Time `json:"block_timestamp" ch:"block_timestamp"`
-	TransactionIndex      uint64    `json:"transaction_index" ch:"transaction_index"`
-	FromAddress           string    `json:"from_address" ch:"from_address"`
-	ToAddress             string    `json:"to_address" ch:"to_address"`
-	TransactionTimestamp  time.Time `json:"transaction_timestamp" ch:"transaction_timestamp"`
-	Value                 string  `json:"value" ch:"value" swaggertype:"string"`
-	Gas                   uint64    `json:"gas" ch:"gas"`
-	GasPrice              *big.Int  `json:"gas_price" ch:"gas_price" swaggertype:"string"`
-	Data                  string    `json:"data" ch:"data"`
-	FunctionSelector      string    `json:"function_selector" ch:"function_selector"`
-	MaxFeePerGas          *big.Int  `json:"max_fee_per_gas" ch:"max_fee_per_gas" swaggertype:"string"`
-	MaxPriorityFeePerGas  *big.Int  `json:"max_priority_fee_per_gas" ch:"max_priority_fee_per_gas" swaggertype:"string"`
-	MaxFeePerBlobGas      *big.Int  `json:"max_fee_per_blob_gas" ch:"max_fee_per_blob_gas" swaggertype:"string"`
-	BlobVersionedHashes   []string  `json:"blob_versioned_hashes" ch:"blob_versioned_hashes"`
-	TransactionType       uint8     `json:"transaction_type" ch:"transaction_type"`
-	R                     *big.Int  `json:"r" ch:"r" swaggertype:"string"`
-	S                     *big.Int  `json:"s" ch:"s" swaggertype:"string"`
-	V                     *big.Int  `json:"v" ch:"v" swaggertype:"string"`
-	AccessListJson        *string   `json:"access_list_json" ch:"access_list"`
-	AuthorizationListJson *string   `json:"authorization_list_json" ch:"authorization_list"`
-	ContractAddress       *string   `json:"contract_address" ch:"contract_address"`
-	GasUsed               *uint64   `json:"gas_used" ch:"gas_used"`
-	CumulativeGasUsed     *uint64   `json:"cumulative_gas_used" ch:"cumulative_gas_used"`
-	EffectiveGasPrice     *big.Int  `json:"effective_gas_price" ch:"effective_gas_price" swaggertype:"string"`
-	BlobGasUsed           *uint64   `json:"blob_gas_used" ch:"blob_gas_used"`
-	BlobGasPrice          *big.Int  `json:"blob_gas_price" ch:"blob_gas_price" swaggertype:"string"`
-	LogsBloom             *string   `json:"logs_bloom" ch:"logs_bloom"`
-	Status                *uint64   `json:"status" ch:"status"`
-	Sign                  int8      `json:"sign" ch:"sign"`
-	InsertTimestamp       time.Time `json:"insert_timestamp" ch:"insert_timestamp"`
-	TextData              string    `json:"text_data" ch:"text_data"`
-	ExtraInfo             string    `json:"extra_info" ch:"extra_info"`
+	ChainId              *big.Int  `json:"chain_id" ch:"chain_id" swaggertype:"string"`
+	Hash                 string    `json:"hash" ch:"hash"`
+	Nonce                uint64    `json:"nonce" ch:"nonce"`
+	BlockHash            string    `json:"block_hash" ch:"block_hash"`
+	BlockNumber          *big.Int  `json:"block_number" ch:"block_number" swaggertype:"string"`
+	FromAddress          string    `json:"from_address" ch:"from_address"`
+	ToAddress            string    `json:"to_address" ch:"to_address"`
+	TransactionTimestamp time.Time `json:"transaction_timestamp" ch:"transaction_timestamp"`
+	Value                string    `json:"value" ch:"value" swaggertype:"string"`
+	TransactionType      uint8     `json:"transaction_type" ch:"transaction_type"`
+	Status               *uint64   `json:"status" ch:"status"`
+	TextData             string    `json:"text_data" ch:"text_data"`
+	ExtraInfo            string    `json:"extra_info" ch:"extra_info"`
 }
 
 type DecodedTransactionData struct {
@@ -66,20 +36,19 @@ type DecodedTransaction struct {
 
 // TransactionModel represents a simplified Transaction structure for Swagger documentation
 type TransactionModel struct {
-	ChainId               string   `json:"chain_id"`
-	Hash                  string   `json:"hash"`
-	Nonce                 uint64   `json:"nonce"`
-	BlockHash             string   `json:"block_hash"`
-	BlockNumber           uint64   `json:"block_number"`
-	BlockTimestamp        uint64   `json:"block_timestamp"`
-	FromAddress           string   `json:"from_address"`
-	ToAddress             string   `json:"to_address"`
-	Value                 string   `json:"value"`
-	TransactionType       uint8    `json:"transaction_type"`
-	Status                *uint64  `json:"status"`
-	TransactionTimestamp  uint64   `json:"transaction_timestamp"`
-	TextData              string   `json:"text_data"`
-	ExtraInfo             string   `json:"extra_info"`
+	ChainId              string  `json:"chain_id"`
+	Hash                 string  `json:"hash"`
+	Nonce                uint64  `json:"nonce"`
+	BlockHash            string  `json:"block_hash"`
+	BlockNumber          uint64  `json:"block_number"`
+	FromAddress          string  `json:"from_address"`
+	ToAddress            string  `json:"to_address"`
+	Value                string  `json:"value"`
+	TransactionType      uint8   `json:"transaction_type"`
+	Status               *uint64 `json:"status"`
+	TransactionTimestamp uint64  `json:"transaction_timestamp"`
+	TextData             string  `json:"text_data"`
+	ExtraInfo            string  `json:"extra_info"`
 }
 
 type DecodedTransactionDataModel struct {
@@ -93,91 +62,21 @@ type DecodedTransactionModel struct {
 	Decoded DecodedTransactionDataModel `json:"decoded"`
 }
 
-func DecodeTransactions(chainId string, txs []Transaction) []*DecodedTransaction {
-	decodedTxs := make([]*DecodedTransaction, len(txs))
-	abiCache := &sync.Map{}
-	decodeTxFunc := func(transaction *Transaction) *DecodedTransaction {
-		decodedTransaction := DecodedTransaction{Transaction: *transaction}
-		abi := GetABIForContractWithCache(chainId, transaction.ToAddress, abiCache)
-		if abi == nil {
-			return &decodedTransaction
-		}
-
-		decodedData, err := hex.DecodeString(strings.TrimPrefix(transaction.Data, "0x"))
-		if err != nil {
-			return &decodedTransaction
-		}
-
-		if len(decodedData) < 4 {
-			return &decodedTransaction
-		}
-		methodID := decodedData[:4]
-		method, err := abi.MethodById(methodID)
-		if err != nil {
-			log.Debug().Msgf("failed to get method by id: %v", err)
-			return &decodedTransaction
-		}
-		if method == nil {
-			return &decodedTransaction
-		}
-		return transaction.Decode(method)
-	}
-
-	var wg sync.WaitGroup
-	for idx, transaction := range txs {
-		wg.Add(1)
-		go func(idx int, transaction Transaction) {
-			defer wg.Done()
-			decodedTx := decodeTxFunc(&transaction)
-			decodedTxs[idx] = decodedTx
-		}(idx, transaction)
-	}
-	wg.Wait()
-	return decodedTxs
-}
-
-func (t *Transaction) Decode(functionABI *abi.Method) *DecodedTransaction {
-	decodedData, err := hex.DecodeString(strings.TrimPrefix(t.Data, "0x"))
-	if err != nil {
-		log.Debug().Msgf("failed to decode transaction data: %v", err)
-		return &DecodedTransaction{Transaction: *t}
-	}
-
-	if len(decodedData) < 4 {
-		log.Debug().Msg("Data too short to contain function selector")
-		return &DecodedTransaction{Transaction: *t}
-	}
-	inputData := decodedData[4:]
-	decodedInputs := make(map[string]interface{})
-	err = functionABI.Inputs.UnpackIntoMap(decodedInputs, inputData)
-	if err != nil {
-		log.Warn().Msgf("failed to decode function parameters: %v, signature: %s", err, functionABI.Sig)
-	}
-	return &DecodedTransaction{
-		Transaction: *t,
-		Decoded: DecodedTransactionData{
-			Name:      functionABI.RawName,
-			Signature: functionABI.Sig,
-			Inputs:    decodedInputs,
-		}}
-}
-
 func (t *Transaction) Serialize() TransactionModel {
 	return TransactionModel{
-		ChainId:             t.ChainId.String(),
-		Hash:                t.Hash,
-		Nonce:               t.Nonce,
-		BlockHash:           t.BlockHash,
-		BlockNumber:         t.BlockNumber.Uint64(),
-		BlockTimestamp:      uint64(t.BlockTimestamp.Unix()),
-		FromAddress:         t.FromAddress,
-		ToAddress:           t.ToAddress,
-		Value:               t.Value,
-		TransactionType:     t.TransactionType,
-		Status:              t.Status,
+		ChainId:              t.ChainId.String(),
+		Hash:                 t.Hash,
+		Nonce:                t.Nonce,
+		BlockHash:            t.BlockHash,
+		BlockNumber:          t.BlockNumber.Uint64(),
+		FromAddress:          t.FromAddress,
+		ToAddress:            t.ToAddress,
+		Value:                t.Value,
+		TransactionType:      t.TransactionType,
+		Status:               t.Status,
 		TransactionTimestamp: uint64(t.TransactionTimestamp.Unix()),
-		TextData:            t.TextData,
-		ExtraInfo:           t.ExtraInfo,
+		TextData:             t.TextData,
+		ExtraInfo:            t.ExtraInfo,
 	}
 }
 

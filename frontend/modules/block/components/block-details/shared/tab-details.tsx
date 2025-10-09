@@ -39,7 +39,7 @@ export const TabDetails = ({ blockDetails }: TabDetailsProps) => {
         )}
         skeleton={<Skeleton className="h-5 w-30" />}
       />
-      <ItemAttribute
+      {/* <ItemAttribute
         label="Block size"
         description="The size of the block"
         data={block}
@@ -49,7 +49,7 @@ export const TabDetails = ({ blockDetails }: TabDetailsProps) => {
           </div>
         )}
         skeleton={<Skeleton className="h-5 w-15" />}
-      />
+      /> */}
       <ItemAttribute
         label="Transactions count"
         description="The number of transactions in the block"
@@ -61,7 +61,7 @@ export const TabDetails = ({ blockDetails }: TabDetailsProps) => {
         )}
         skeleton={<Skeleton className="h-5 w-15" />}
       />
-      <ItemAttribute
+      {/* <ItemAttribute
         label="Validated by"
         description="The validator that validated the block"
         data={block}
@@ -76,7 +76,7 @@ export const TabDetails = ({ blockDetails }: TabDetailsProps) => {
           </div>
         )}
         skeleton={<Skeleton className="h-5 w-full md:w-150" />}
-      />
+      /> */}
       <ItemAttribute
         label="Block timestamp"
         description="The timestamp of the block"
