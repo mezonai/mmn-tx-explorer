@@ -10,7 +10,6 @@ import (
 	"github.com/thirdweb-dev/indexer/internal/common"
 	"github.com/thirdweb-dev/indexer/internal/rpc"
 	"github.com/thirdweb-dev/indexer/internal/storage"
-	"github.com/thirdweb-dev/indexer/internal/validation"
 )
 
 type Validator struct {
@@ -74,14 +73,6 @@ func (v *Validator) ValidateBlock(blockData common.BlockData) (valid bool, err e
 		return false, nil
 	}
 
-	// check that logs exist if logsBloom is not empty
-	logsBloomAsNumber := new(big.Int)
-	logsBloomAsNumber.SetString(blockData.Block.LogsBloom[2:], 16)
-	if logsBloomAsNumber.Sign() != 0 && len(blockData.Logs) == 0 {
-		log.Error().Msgf("Block verification failed for block %s: logsBloom is not empty but no logs exist", blockData.Block.Number)
-		return false, nil
-	}
-
 	// strict mode also validates logsBloom and transactionsRoot
 	if config.Cfg.Validation.Mode == "strict" {
 		// Calculate logsBloom from logs
@@ -92,31 +83,6 @@ func (v *Validator) ValidateBlock(blockData common.BlockData) (valid bool, err e
 		// 	return false, nil
 		// }
 
-		// Check transactionsRoot
-		if blockData.Block.TransactionsRoot == "0x0000000000000000000000000000000000000000000000000000000000000000" {
-			// likely a zk chain and does not support tx root
-			return true, nil
-		}
-
-		// TODO: remove this once we know how to validate all tx types
-		for _, tx := range blockData.Transactions {
-			if tx.TransactionType > 4 { // Currently supported types are 0-4
-				log.Warn().Msgf("Skipping transaction root validation for block %s due to unsupported transaction type %d", blockData.Block.Number, tx.TransactionType)
-				return true, nil
-			}
-		}
-
-		// Calculate transactionsRoot from transactions
-		calculatedTransactionsRoot, err := validation.CalculateTransactionsRoot(blockData.Transactions)
-		if err != nil {
-			return false, fmt.Errorf("failed to calculate transactionsRoot: %v", err)
-		}
-
-		// Compare calculated transactionsRoot with block's transactionsRoot
-		if calculatedTransactionsRoot != blockData.Block.TransactionsRoot {
-			log.Error().Msgf("Block verification failed for block %s: transactionsRoot mismatch: calculated=%s, block=%s", blockData.Block.Number, calculatedTransactionsRoot, blockData.Block.TransactionsRoot)
-			return false, nil
-		}
 	}
 
 	return true, nil
