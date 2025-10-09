@@ -11,25 +11,7 @@ type Block struct {
 	Hash             string    `json:"hash" ch:"hash"`
 	ParentHash       string    `json:"parent_hash" ch:"parent_hash"`
 	Timestamp        time.Time `json:"block_timestamp" ch:"block_timestamp"`
-	Nonce            string    `json:"nonce" ch:"nonce"`
-	Sha3Uncles       string    `json:"sha3_uncles" ch:"sha3_uncles"`
-	MixHash          string    `json:"mix_hash" ch:"mix_hash"`
-	Miner            string    `json:"miner" ch:"miner"`
-	StateRoot        string    `json:"state_root" ch:"state_root"`
-	TransactionsRoot string    `json:"transactions_root" ch:"transactions_root"`
-	ReceiptsRoot     string    `json:"receipts_root" ch:"receipts_root"`
-	LogsBloom        string    `json:"logs_bloom" ch:"logs_bloom"`
-	Size             uint64    `json:"size" ch:"size"`
-	ExtraData        string    `json:"extra_data" ch:"extra_data"`
-	Difficulty       *big.Int  `json:"difficulty" ch:"difficulty"`
-	TotalDifficulty  *big.Int  `json:"total_difficulty" ch:"total_difficulty"`
 	TransactionCount uint64    `json:"transaction_count" ch:"transaction_count"`
-	GasLimit         *big.Int  `json:"gas_limit" ch:"gas_limit"`
-	GasUsed          *big.Int  `json:"gas_used" ch:"gas_used"`
-	WithdrawalsRoot  string    `json:"withdrawals_root" ch:"withdrawals_root"`
-	BaseFeePerGas    uint64    `json:"base_fee_per_gas" ch:"base_fee_per_gas"`
-	Sign             int8      `json:"sign" ch:"sign"`
-	InsertTimestamp  time.Time `json:"insert_timestamp" ch:"insert_timestamp"`
 }
 
 // BlockModel represents a simplified Block structure for Swagger documentation
@@ -39,8 +21,6 @@ type BlockModel struct {
 	BlockHash        string `json:"block_hash"`
 	ParentHash       string `json:"parent_hash"`
 	BlockTimestamp   uint64 `json:"block_timestamp"`
-	Miner            string `json:"miner"`
-	Size             uint64 `json:"size"`
 	TransactionCount uint64 `json:"transaction_count"`
 }
 
@@ -66,8 +46,6 @@ func (b *Block) Serialize() BlockModel {
 		BlockHash:        b.Hash,
 		ParentHash:       b.ParentHash,
 		BlockTimestamp:   uint64(b.Timestamp.Unix()),
-		Miner:            b.Miner,
-		Size:             b.Size,
 		TransactionCount: b.TransactionCount,
 	}
 }

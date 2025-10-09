@@ -1,7 +1,6 @@
 package rpc
 
 import (
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"strconv"
@@ -39,8 +38,7 @@ func SerializeFullBlocks(chainId *big.Int, blocks []RPCFetchBatchResult[*big.Int
 		}
 
 		result.Data.Block = serializeBlock(chainId, rawBlockData.Result)
-		blockTimestamp := result.Data.Block.Timestamp
-		result.Data.Transactions = serializeTransactions(chainId, rawBlockData.Result["transactions"].([]interface{}), blockTimestamp, nil)
+		result.Data.Transactions = serializeTransactions(chainId, rawBlockData.Result["transactions"].([]interface{}), nil)
 
 		// if rawReceipts, exists := rawReceiptsMap[rawBlockData.Key.String()]; exists {
 		// 	if rawReceipts.Error != nil {
@@ -110,27 +108,11 @@ func serializeBlock(chainId *big.Int, block common.RawBlock) common.Block {
 		Hash:             interfaceToString(block["hash"]),
 		ParentHash:       interfaceToString(block["parentHash"]),
 		Timestamp:        hexToTime(block["timestamp"]),
-		Nonce:            interfaceToString(block["nonce"]),
-		Sha3Uncles:       interfaceToString(block["sha3Uncles"]),
-		MixHash:          interfaceToString(block["mixHash"]),
-		Miner:            interfaceToString(block["miner"]),
-		StateRoot:        interfaceToString(block["stateRoot"]),
-		TransactionsRoot: interfaceToString(block["transactionsRoot"]),
-		ReceiptsRoot:     interfaceToString(block["receiptsRoot"]),
-		LogsBloom:        interfaceToString(block["logsBloom"]),
-		Size:             hexToUint64(block["size"]),
-		ExtraData:        interfaceToString(block["extraData"]),
-		Difficulty:       hexToBigInt(block["difficulty"]),
-		TotalDifficulty:  hexToBigInt(block["totalDifficulty"]),
-		GasLimit:         hexToBigInt(block["gasLimit"]),
-		GasUsed:          hexToBigInt(block["gasUsed"]),
 		TransactionCount: uint64(len(block["transactions"].([]interface{}))),
-		BaseFeePerGas:    hexToUint64(block["baseFeePerGas"]),
-		WithdrawalsRoot:  interfaceToString(block["withdrawalsRoot"]),
 	}
 }
 
-func serializeTransactions(chainId *big.Int, transactions []interface{}, blockTimestamp time.Time, receipts *common.RawReceipts) []common.Transaction {
+func serializeTransactions(chainId *big.Int, transactions []interface{}, receipts *common.RawReceipts) []common.Transaction {
 	if len(transactions) == 0 {
 		return []common.Transaction{}
 	}
@@ -150,79 +132,26 @@ func serializeTransactions(chainId *big.Int, transactions []interface{}, blockTi
 			log.Debug().Msgf("Failed to serialize transaction: %v", rawTx)
 			continue
 		}
-		serializedTransactions = append(serializedTransactions, serializeTransaction(chainId, tx, blockTimestamp, receiptMap[interfaceToString(tx["hash"])]))
+		serializedTransactions = append(serializedTransactions, serializeTransaction(chainId, tx))
 	}
 	return serializedTransactions
 }
 
-func serializeTransaction(chainId *big.Int, tx map[string]interface{}, blockTimestamp time.Time, receipt *common.RawReceipt) common.Transaction {
+func serializeTransaction(chainId *big.Int, tx map[string]interface{}) common.Transaction {
 	return common.Transaction{
 		ChainId:              chainId,
 		Hash:                 interfaceToString(tx["hash"]),
 		Nonce:                hexToUint64(tx["nonce"]),
 		BlockHash:            interfaceToString(tx["blockHash"]),
 		BlockNumber:          hexToBigInt(tx["blockNumber"]),
-		BlockTimestamp:       blockTimestamp,
-		TransactionIndex:     hexToUint64(tx["transactionIndex"]),
 		FromAddress:          interfaceToString(tx["from"]),
 		ToAddress:            interfaceToString(tx["to"]),
 		TransactionTimestamp: hexToTime(tx["transactionTimestamp"]),
 		Value:                interfaceToString(tx["value"]),
-		Gas:                  hexToUint64(tx["gas"]),
-		GasPrice:             hexToBigInt(tx["gasPrice"]),
-		Data:                 interfaceToString(tx["input"]),
-		FunctionSelector:     ExtractFunctionSelector(interfaceToString(tx["input"])),
-		MaxFeePerGas:         hexToBigInt(tx["maxFeePerGas"]),
-		MaxPriorityFeePerGas: hexToBigInt(tx["maxPriorityFeePerGas"]),
-		MaxFeePerBlobGas:     hexToBigInt(tx["maxFeePerBlobGas"]),
-		BlobVersionedHashes:  interfaceToStringSlice(tx["blobVersionedHashes"]),
 		TransactionType:      uint8(hexToUint64(tx["type"])),
-		R:                    hexToBigInt(tx["r"]),
-		S:                    hexToBigInt(tx["s"]),
-		V:                    hexToBigInt(tx["v"]),
 		Status:               tx["status"].(*uint64),
 		TextData:             interfaceToString(tx["textData"]),
 		ExtraInfo:            interfaceToString(tx["extra_info"]),
-		AccessListJson: func() *string {
-			if tx["accessList"] != nil {
-				jsonString := interfaceToJsonString(tx["accessList"])
-				if jsonString == "" {
-					return nil
-				}
-				return &jsonString
-			}
-			return nil
-		}(),
-		AuthorizationListJson: func() *string {
-			if tx["authorizationList"] != nil {
-				jsonString := interfaceToJsonString(tx["authorizationList"])
-				if jsonString == "" {
-					return nil
-				}
-				return &jsonString
-			}
-			return nil
-		}(),
-		ContractAddress:   nil,
-		GasUsed:           nil,
-		CumulativeGasUsed: nil,
-		EffectiveGasPrice: func() *big.Int {
-			if receipt != nil {
-				effectiveGasPrice := hexToBigInt((*receipt)["effectiveGasPrice"])
-				return effectiveGasPrice
-			}
-			return nil
-		}(),
-		BlobGasUsed:  nil,
-		BlobGasPrice: nil,
-		LogsBloom:    nil,
-		// Status: func() *uint64 {
-		// 	if receipt != nil {
-		// 		status := hexToUint64((*receipt)["status"])
-		// 		return &status
-		// 	}
-		// 	return nil
-		// }(),
 	}
 }
 
@@ -282,45 +211,12 @@ func interfaceToString(value interface{}) string {
 	return res
 }
 
-func interfaceToStringSlice(value interface{}) []string {
-	if value == nil {
-		return []string{}
-	}
-
-	// Handle []string case
-	if res, ok := value.([]string); ok {
-		return res
-	}
-
-	// Handle []interface{} case
-	if res, ok := value.([]interface{}); ok {
-		strings := make([]string, len(res))
-		for i, v := range res {
-			strings[i] = interfaceToString(v)
-		}
-		return strings
-	}
-
-	return []string{}
-}
-
-func interfaceToJsonString(value interface{}) string {
-	if value == nil {
-		return ""
-	}
-	jsonString, err := json.Marshal(value)
-	if err != nil {
-		return ""
-	}
-	return string(jsonString)
-}
-
 func SerializeTransactions(chainId *big.Int, transactions []RPCFetchBatchResult[string, common.RawTransaction]) []GetTransactionsResult {
 	results := make([]GetTransactionsResult, 0, len(transactions))
 	for _, transaction := range transactions {
 		result := GetTransactionsResult{
 			Error: transaction.Error,
-			Data:  serializeTransaction(chainId, transaction.Result, time.Time{}, nil),
+			Data:  serializeTransaction(chainId, transaction.Result),
 		}
 		results = append(results, result)
 	}

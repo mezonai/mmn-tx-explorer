@@ -197,8 +197,6 @@ func TestBlockSerialize(t *testing.T) {
 		Number:           big.NewInt(12345),
 		Hash:             "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
 		ParentHash:       "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-		Miner:            "0x1234567890123456789012345678901234567890",
-		Size:             1234,
 		TransactionCount: 5,
 	}
 
@@ -208,8 +206,6 @@ func TestBlockSerialize(t *testing.T) {
 	assert.Equal(t, uint64(12345), model.BlockNumber)
 	assert.Equal(t, block.Hash, model.BlockHash)
 	assert.Equal(t, block.ParentHash, model.ParentHash)
-	assert.Equal(t, block.Miner, model.Miner)
-	assert.Equal(t, block.Size, model.Size)
 	assert.Equal(t, block.TransactionCount, model.TransactionCount)
 }
 

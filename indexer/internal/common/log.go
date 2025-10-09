@@ -31,16 +31,18 @@ type Log struct {
 }
 
 func (l *Log) GetTopic(index int) (string, error) {
-	if index == 0 {
+	switch index {
+	case 0:
 		return l.Topic0, nil
-	} else if index == 1 {
+	case 1:
 		return l.Topic1, nil
-	} else if index == 2 {
+	case 2:
 		return l.Topic2, nil
-	} else if index == 3 {
+	case 3:
 		return l.Topic3, nil
+	default:
+		return "", fmt.Errorf("invalid topic index: %d", index)
 	}
-	return "", fmt.Errorf("invalid topic index: %d", index)
 }
 
 // LogModel represents a simplified Log structure for Swagger documentation
