@@ -170,6 +170,7 @@ jobs:
 
           echo "==> Generating final config files on target server..."
           sudo mkdir -p /etc/mezon
+          echo "--> Generating config for indexer-api"
           sed \
             -e "s|__POSTGRES_DB__|$POSTGRES_DB|g" \
             -e "s|__POSTGRES_USER__|$POSTGRES_USER|g" \
@@ -177,8 +178,21 @@ jobs:
             -e "s|__POSTGRES_HOST__|$POSTGRES_HOST|g" \
             -e "s|__POSTGRES_PORT__|$POSTGRES_PORT|g" \
             -e "s|__MMN_GRPC_URL__|$MMN_GRPC_URL|g" \
+            -e "s|filePath: /opt/indexer/logs/indexer.log|filePath: /opt/indexer/logs/indexer-api.log|g" \
             /opt/mezon/explorer/config/config.example.yml \
-            | sudo tee /etc/mezon/config.yml >/dev/null
+            | sudo tee /etc/mezon/config-api.yml >/dev/null
+
+          echo "--> Generating config for indexer-orchestrator"
+          sed \
+            -e "s|__POSTGRES_DB__|$POSTGRES_DB|g" \
+            -e "s|__POSTGRES_USER__|$POSTGRES_USER|g" \
+            -e "s|__POSTGRES_PASSWORD__|$POSTGRES_PASSWORD|g" \
+            -e "s|__POSTGRES_HOST__|$POSTGRES_HOST|g" \
+            -e "s|__POSTGRES_PORT__|$POSTGRES_PORT|g" \
+            -e "s|__MMN_GRPC_URL__|$MMN_GRPC_URL|g" \
+            -e "s|filePath: /opt/indexer/logs/indexer.log|filePath: /opt/indexer/logs/indexer-orchestrator.log|g" \
+            /opt/mezon/explorer/config/config.example.yml \
+            | sudo tee /etc/mezon/config-orchestrator.yml >/dev/null
 
           sed \
             -e "s|__POSTGRES_DB__|$POSTGRES_DB|g" \
