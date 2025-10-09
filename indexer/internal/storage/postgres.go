@@ -21,8 +21,8 @@ import (
 
 // Transaction type constants
 const (
-    TransactionTypeSender   = 0
-    TransactionTypeReceiver = 1
+	TransactionTypeSender   = 0
+	TransactionTypeReceiver = 1
 )
 
 type PostgresConnector struct {
@@ -1813,10 +1813,10 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 		return fmt.Errorf("failed to execute insert transactions query: %w", err)
 	}
 
-    if err := p.batchInsertUserTransactions(tx, transactions); err != nil {
-        log.Error().Err(err).Msg("Failed to insert user transactions")
-        return err  
-    }
+	if err := p.batchInsertUserTransactions(tx, transactions); err != nil {
+		log.Error().Err(err).Msg("Failed to insert user transactions")
+		return err
+	}
 
 	txCount := len(transactions)
 	if txCount > 0 {
@@ -1864,58 +1864,58 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 
 // batchInsertUserTransactions saves transaction information to the user_transaction table
 func (p *PostgresConnector) batchInsertUserTransactions(tx *sql.Tx, transactions []common.Transaction) error {
-    if len(transactions) == 0 {
-        return nil
-    }
+	if len(transactions) == 0 {
+		return nil
+	}
 
-    query := `
+	query := `
         INSERT INTO user_transaction (
             address, transaction_hash, transaction_type, "timestamp"
         ) VALUES %s
         ON CONFLICT (address, transaction_hash, transaction_type) 
         DO UPDATE SET updated_at = NOW()`
 
-    var valueStrings []string
-    var valueArgs []interface{}
-    var idx int
+	var valueStrings []string
+	var valueArgs []interface{}
+	var idx int
 
-    for _, tx := range transactions {
-        if tx.FromAddress == "" {
-            continue
-        }
+	for _, tx := range transactions {
+		if tx.FromAddress == "" {
+			continue
+		}
 
-        valueStrings = append(valueStrings, 
-            fmt.Sprintf("($%d, $%d, $%d, $%d)", 
-                idx+1, idx+2, idx+3, idx+4))
-        valueArgs = append(valueArgs, 
-            strings.ToLower(tx.FromAddress),
-            tx.Hash,
-            TransactionTypeSender,
-            tx.TransactionTimestamp,
-        )
-        idx += 4
+		valueStrings = append(valueStrings,
+			fmt.Sprintf("($%d, $%d, $%d, $%d)",
+				idx+1, idx+2, idx+3, idx+4))
+		valueArgs = append(valueArgs,
+			strings.ToLower(tx.FromAddress),
+			tx.Hash,
+			TransactionTypeSender,
+			tx.TransactionTimestamp,
+		)
+		idx += 4
 
-        if tx.ToAddress != "" {
-            valueStrings = append(valueStrings, 
-                fmt.Sprintf("($%d, $%d, $%d, $%d)", 
-                    idx+1, idx+2, idx+3, idx+4))
-            valueArgs = append(valueArgs, 
-                strings.ToLower(tx.ToAddress),
-                tx.Hash,
-                TransactionTypeReceiver,
-                tx.TransactionTimestamp,  
-            )
-            idx += 4
-        }
-    }
+		if tx.ToAddress != "" {
+			valueStrings = append(valueStrings,
+				fmt.Sprintf("($%d, $%d, $%d, $%d)",
+					idx+1, idx+2, idx+3, idx+4))
+			valueArgs = append(valueArgs,
+				strings.ToLower(tx.ToAddress),
+				tx.Hash,
+				TransactionTypeReceiver,
+				tx.TransactionTimestamp,
+			)
+			idx += 4
+		}
+	}
 
-    if len(valueStrings) == 0 {
-        return nil
-    }
+	if len(valueStrings) == 0 {
+		return nil
+	}
 
-    query = fmt.Sprintf(query, strings.Join(valueStrings, ","))
-    _, err := tx.Exec(query, valueArgs...)
-    return err
+	query = fmt.Sprintf(query, strings.Join(valueStrings, ","))
+	_, err := tx.Exec(query, valueArgs...)
+	return err
 }
 
 func (p *PostgresConnector) batchUpdateWalletTransactionCounts(
@@ -2438,6 +2438,102 @@ func (p *PostgresConnector) scanRowsToTransactions(rows *sql.Rows) ([]common.Tra
 		}
 
 		transactions = append(transactions, tx)
+	}
+
+	return transactions, nil
+}
+
+// GetUserTransactionHashes retrieves transaction hashes for a specific wallet with pagination and sorting
+func (p *PostgresConnector) GetUserTransactionHashes(ctx context.Context, walletAddress string, page, limit int, sortBy, sortOrder string) ([]string, error) {
+	offset := page * limit
+
+	sortColumn := `"timestamp"`
+	switch sortBy {
+	case "", "ut.timestamp", "timestamp" :
+		sortColumn = `"timestamp"`
+	default:
+		sortColumn = `"timestamp"`
+	}
+
+	if sortOrder != "ASC" && sortOrder != "DESC" {
+		sortOrder = "DESC"
+	}
+
+	query := fmt.Sprintf(`
+		SELECT transaction_hash
+		FROM user_transaction
+		WHERE address = $1
+		ORDER BY %s %s
+		LIMIT $2 OFFSET $3`, sortColumn, sortOrder)
+
+	rows, err := p.db.QueryContext(ctx, query, strings.ToLower(walletAddress), limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user transaction hashes: %w", err)
+	}
+	defer rows.Close()
+
+	var hashes []string
+	for rows.Next() {
+		var hash string
+		if err := rows.Scan(&hash); err != nil {
+			return nil, fmt.Errorf("failed to scan transaction hash: %w", err)
+		}
+		hashes = append(hashes, hash)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating transaction hashes: %w", err)
+	}
+
+	return hashes, nil
+}
+
+func (p *PostgresConnector) GetUserTransactionCount(ctx context.Context, walletAddress string) (uint64, error) {
+	query := `
+		SELECT COUNT(DISTINCT transaction_hash) 
+		FROM user_transaction 
+		WHERE address = $1`
+
+	var count uint64
+	err := p.db.QueryRowContext(ctx, query, strings.ToLower(walletAddress)).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get user transaction count: %w", err)
+	}
+
+	return count, nil
+}
+
+func (p *PostgresConnector) GetTransactionsByWalletAndHashes(ctx context.Context, hashes []string) ([]common.Transaction, error) {
+	if len(hashes) == 0 {
+		return []common.Transaction{}, nil
+	}
+
+	query := fmt.Sprintf(`
+		SELECT %s
+		FROM transactions t
+		WHERE t.hash = ANY($1)
+		ORDER BY array_position($1, t.hash)
+	`,
+		"t."+strings.Join(defaultTransactionFields, ", t."),
+	)
+
+	rows, err := p.db.QueryContext(ctx, query, pq.Array(hashes))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transactions by hashes for wallet: %w", err)
+	}
+	defer rows.Close()
+
+	var transactions []common.Transaction
+	for rows.Next() {
+		var tx common.Transaction
+		if err := p.scanTransaction(rows, &tx); err != nil {
+			return nil, fmt.Errorf("failed to scan transaction: %w", err)
+		}
+		transactions = append(transactions, tx)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating transactions: %w", err)
 	}
 
 	return transactions, nil

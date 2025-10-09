@@ -14,6 +14,28 @@ import (
 	pb "github.com/thirdweb-dev/indexer/proto"
 )
 
+// GetWalletTransactionsV2 handles the request to get wallet transactions using the new user_transaction table
+// @Summary Get wallet transactions (V2)
+// @Description Get paginated transactions for a specific wallet address using the new user_transaction table
+// @Tags wallet
+// @Accept json
+// @Produce json
+// @Security BasicAuth
+// @Param chainId path string true "Chain ID"
+// @Param wallet_address query string true "Wallet address to filter by"
+// @Param page query int false "Page number" default(1)
+// @Param limit query int false "Items per page" default(10)
+// @Param sort_by query string false "Field to sort by" default(transaction_timestamp)
+// @Param sort_order query string false "Sort order (asc/desc)" default(desc)
+// @Success 200 {object} api.QueryResponse{data=[]common.Transaction}
+// @Failure 400 {object} api.Error
+// @Failure 401 {object} api.Error
+// @Failure 500 {object} api.Error
+// @Router /{chainId}/v2/wallet-transactions [get]
+func GetWalletTransactionsV2(c *gin.Context) {
+    handleWalletTransactions(c)
+}
+
 // @Summary Get all transactions
 // @Description Retrieve all transactions across all contracts
 // @Tags transactions
@@ -112,6 +134,119 @@ func GetTransactionsByContract(c *gin.Context) {
 // @Router /{chainId}/transactions/{to}/{signature} [get]
 func GetTransactionsByContractAndSignature(c *gin.Context) {
 	handleTransactionsRequest(c)
+}
+
+func handleWalletTransactions(c *gin.Context) {
+	// Parse query parameters
+	queryParams, err := api.ParseQueryParams(c.Request)
+	if err != nil {
+		api.BadRequestErrorHandler(c, err)
+		return
+	}
+
+	walletAddress := c.Query("wallet_address")
+	if walletAddress == "" {
+		api.BadRequestErrorHandler(c, fmt.Errorf("wallet_address is required"))
+		return
+	}
+
+	mainStorage, err := getMainStorage()
+	if err != nil {
+		log.Error().Err(err).Msg("Error creating storage connector")
+		api.InternalErrorHandler(c)
+		return
+	}
+
+	ctx := c.Request.Context()
+
+	txHashes, err := mainStorage.GetUserTransactionHashes(ctx, walletAddress, queryParams.Page, queryParams.Limit, queryParams.SortBy, queryParams.SortOrder)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get user transaction hashes")
+		api.InternalErrorHandler(c)
+		return
+	}
+
+	if len(txHashes) == 0 {
+		emptySlice := []interface{}{}
+		var data interface{} = emptySlice
+		
+		c.JSON(http.StatusOK, api.QueryResponse{
+			Meta: api.Meta{
+				ChainId:    1337,
+				Page:       queryParams.Page,
+				Limit:      queryParams.Limit,
+				TotalItems: 0,
+				TotalPages: 0,
+			},
+			Data:         &data,
+			Aggregations: nil,
+		})
+		return
+	}
+
+	totalItems, err := mainStorage.GetUserTransactionCount(ctx, walletAddress)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get user transactions count")
+		api.InternalErrorHandler(c)
+		return
+	}
+
+	transactions, err := mainStorage.GetTransactionsByWalletAndHashes(ctx, txHashes)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get transactions by hashes")
+		api.InternalErrorHandler(c)
+		return
+	}
+
+	transactionModels := make([]common.TransactionModel, len(transactions))
+	for i, tx := range transactions {
+		var blockNumber uint64
+		if tx.BlockNumber != nil {
+			blockNumber = tx.BlockNumber.Uint64()
+		}
+
+		var blockTimestamp, txTimestamp uint64
+		if !tx.BlockTimestamp.IsZero() {
+			blockTimestamp = uint64(tx.BlockTimestamp.Unix())
+		}
+		if !tx.TransactionTimestamp.IsZero() {
+			txTimestamp = uint64(tx.TransactionTimestamp.Unix())
+		}
+
+		transactionModels[i] = common.TransactionModel{
+			ChainId:              fmt.Sprint(tx.ChainId),
+			Hash:                 tx.Hash,
+			Nonce:                tx.Nonce,
+			BlockHash:            tx.BlockHash,
+			BlockNumber:          blockNumber,
+			BlockTimestamp:       blockTimestamp,
+			FromAddress:          tx.FromAddress,
+			ToAddress:            tx.ToAddress,
+			Value:                tx.Value,
+			TransactionType:      tx.TransactionType,
+			Status:               tx.Status,
+			TransactionTimestamp: txTimestamp,
+			TextData:             tx.TextData,
+			ExtraInfo:            tx.ExtraInfo,
+		}
+	}
+
+	var dataPtr *interface{} = new(interface{})
+	*dataPtr = transactionModels
+
+	response := api.QueryResponse{
+		Meta: api.Meta{
+			ChainId:    1337,
+			Page:       queryParams.Page,
+			Limit:      queryParams.Limit,
+			TotalItems: int(totalItems),
+			TotalPages: (int(totalItems) + queryParams.Limit - 1) / queryParams.Limit,
+		},
+		Data:         dataPtr,
+		Aggregations: nil,
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 func handleTransactionsRequest(c *gin.Context) {

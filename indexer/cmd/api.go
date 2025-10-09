@@ -75,6 +75,7 @@ func RunApi(cmd *cobra.Command, args []string) {
 		root.GET("/pending-tx/:transaction_hash/detail", handlers.GetPendingTransactionDetail)
 		root.GET("/events", handlers.GetLogs)
 		root.GET("/wallet-transactions/:wallet_address", handlers.GetWalletTransactions)
+		root.GET("/v2/wallet-transactions", handlers.GetWalletTransactionsV2)
 
 		// contract scoped queries
 		root.GET("/transactions/:to", handlers.GetTransactionsByContract)
