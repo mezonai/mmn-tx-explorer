@@ -1423,54 +1423,21 @@ func (p *PostgresConnector) GetCount(ctx context.Context, table string, qf Query
 }
 
 func (p *PostgresConnector) GetDashboardStats(ctx context.Context, qf QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, err error) {
-	blockWhereClause := "transaction_count > 0"
-	if qf.ChainId != nil && qf.ChainId.Sign() > 0 {
-		blockWhereClause += fmt.Sprintf(" AND chain_id = %s", bigIntToString(qf.ChainId))
-	}
+    query := `
+        SELECT 
+            COALESCE(MAX(CASE WHEN key = 'total_blocks' THEN value::bigint END), 0) as blocks,
+            COALESCE(MAX(CASE WHEN key = 'total_transactions' THEN value::bigint END), 0) as transactions,
+            COALESCE(MAX(CASE WHEN key = 'total_wallets' THEN value::bigint END), 0) as wallets
+        FROM stats
+        WHERE key IN ('total_blocks', 'total_transactions', 'total_wallets')
+    `
 
-	walletWhereClause := ""
-	if qf.ChainId != nil && qf.ChainId.Sign() > 0 {
-		walletWhereClause = fmt.Sprintf("WHERE chain_id = %s", bigIntToString(qf.ChainId))
-	}
+    err = p.db.QueryRowContext(ctx, query).Scan(&totalBlocks, &totalTransactions, &totalWallets)
+    if err != nil {
+        return 0, 0, 0, fmt.Errorf("failed to get dashboard stats: %w", err)
+    }
 
-	query := fmt.Sprintf(`
-		SELECT 'blocks' as stat_type, COUNT(*) as count FROM blocks WHERE %s
-		UNION ALL
-		SELECT 'transactions' as stat_type, value as count FROM stats WHERE key = 'total_transactions'
-		UNION ALL
-		SELECT 'wallets' as stat_type, COUNT(*) as count FROM wallet %s
-	`, blockWhereClause, walletWhereClause)
-
-	rows, err := p.db.QueryContext(ctx, query)
-	if err != nil {
-		return 0, 0, 0, fmt.Errorf("failed to execute dashboard stats query: %w", err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var statType string
-		var count uint64
-
-		err := rows.Scan(&statType, &count)
-		if err != nil {
-			return 0, 0, 0, fmt.Errorf("failed to scan dashboard stats row: %w", err)
-		}
-
-		switch statType {
-		case "blocks":
-			totalBlocks = count
-		case "transactions":
-			totalTransactions = count
-		case "wallets":
-			totalWallets = count
-		}
-	}
-
-	if err = rows.Err(); err != nil {
-		return 0, 0, 0, fmt.Errorf("error iterating dashboard stats rows: %w", err)
-	}
-
-	return totalBlocks, totalTransactions, totalWallets, nil
+    return totalBlocks, totalTransactions, totalWallets, nil
 }
 
 func (p *PostgresConnector) GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error) {
@@ -1687,9 +1654,20 @@ func (p *PostgresConnector) insertBlocks(blocks []common.Block) error {
 	              withdrawals_root = EXCLUDED.withdrawals_root,
 	              base_fee_per_gas = EXCLUDED.base_fee_per_gas,
 	              updated_at = NOW()`, strings.Join(valueStrings, ","))
+   if _, err := p.db.Exec(query, valueArgs...); err != nil {
+        return fmt.Errorf("failed to insert blocks: %w", err)
+    }
 
-	_, err := p.db.Exec(query, valueArgs...)
-	return err
+    // Update total_blocks count
+    if _, err := p.db.Exec(`
+        INSERT INTO stats(key, value) VALUES ('total_blocks', 0)
+        ON CONFLICT (key) 
+        DO UPDATE SET value = (SELECT COUNT(*) FROM blocks)
+    `); err != nil {
+        return fmt.Errorf("failed to update total_blocks stat: %w", err)
+    }
+
+    return nil
 }
 
 func (p *PostgresConnector) insertTransactions(transactions []common.Transaction) error {
@@ -1893,8 +1871,19 @@ func (p *PostgresConnector) batchUpdateWalletTransactionCounts(
 		return fmt.Errorf("failed to batch update wallet transaction counts: %w", err)
 	}
 
-	log.Debug().Int("count", len(addressList)).Msg("Batch updated wallet transaction counts")
-	return nil
+    // Update total_wallets count
+    if _, err := tx.Exec(`
+        INSERT INTO stats(key, value) VALUES ('total_wallets', 0)
+        ON CONFLICT (key) 
+        DO UPDATE SET value = (SELECT COUNT(*) FROM wallet)
+    `); err != nil {
+        return fmt.Errorf("failed to update total_wallets stat: %w", err)
+    }
+
+    log.Debug().
+        Int("count", len(addressList)).
+        Msg("Batch updated wallet transaction counts and stats")
+    return nil
 }
 
 func (p *PostgresConnector) scanBlock(rows *sql.Rows, block *common.Block) error {
