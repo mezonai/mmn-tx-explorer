@@ -28,13 +28,13 @@ func handleTransactionStats(c *gin.Context) {
 	timeBasedQf24h := storage.QueryFilter{
 		ForceConsistentData: true,
 		FilterParams: map[string]string{
-			"block_timestamp_gte": strconv.FormatInt(time24hAgo.Unix(), 10),
+			"transaction_timestamp_gte": strconv.FormatInt(time24hAgo.Unix(), 10),
 		},
 	}
 
 	var (
 		transactions24h uint64
-		pendingTxsData *pb.GetPendingTransactionsResponse
+		pendingTxsData  *pb.GetPendingTransactionsResponse
 		wg              sync.WaitGroup
 		errs            = make([]error, 2)
 	)
@@ -43,7 +43,7 @@ func handleTransactionStats(c *gin.Context) {
 	go func() {
 		defer wg.Done()
 		transactions24h, errs[0] = mainStorage.GetCount(ctx, "transactions", timeBasedQf24h)
-		}()
+	}()
 	go func() {
 		defer wg.Done()
 		pendingTxsData, errs[1] = mainStorage.GetPendingTransactions(ctx)
@@ -93,7 +93,6 @@ type TransactionStatsResponse struct {
 	} `json:"data"`
 }
 
-
 // GetDashboardStats returns only the dashboard stats payload
 func GetDashboardStats(c *gin.Context) {
 	handleDashboardStats(c)
@@ -103,7 +102,6 @@ func GetDashboardStats(c *gin.Context) {
 func GetTransactionStats(c *gin.Context) {
 	handleTransactionStats(c)
 }
-
 
 // handleDashboardStats builds and returns only dashboard stats fields
 func handleDashboardStats(c *gin.Context) {
@@ -161,7 +159,7 @@ func getAverageBlockTime(mainStorage storage.IMainStorage, numberOfBlocks uint64
 	if len(latestBlocks.Data) == 0 {
 		return 0, nil
 	}
-	
+
 	latest := latestBlocks.Data[0]
 	latestTimestamp := latest.Timestamp.Unix()
 	latestBlockNumber := latest.Number.Uint64()
@@ -179,7 +177,7 @@ func getAverageBlockTime(mainStorage storage.IMainStorage, numberOfBlocks uint64
 		BlockNumbers:        []*big.Int{big.NewInt(targetNum)},
 		ForceConsistentData: true,
 	}
-	
+
 	targetBlocks, err := mainStorage.GetBlocks(targetQf)
 	if err != nil {
 		return 0, err
@@ -189,11 +187,11 @@ func getAverageBlockTime(mainStorage storage.IMainStorage, numberOfBlocks uint64
 	}
 	timestampMinusK := targetBlocks.Data[0].Timestamp.Unix()
 	avg := float64(latestTimestamp-timestampMinusK) / float64(k)
-	
+
 	if avg <= 0 {
 		return 0, nil
 	}
-	
+
 	return avg, nil
 }
 
