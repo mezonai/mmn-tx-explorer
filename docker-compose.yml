@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16
+    image: postgres:16.10-alpine3.22
     ports:
       - "5432:5432"
     environment:
@@ -44,7 +44,7 @@ services:
       indexer-orchestrator:
         condition: service_started
     ports:
-      - "${INDEXER_API_PORT:-8080}:3000"
+      - "${INDEXER_API_PORT:-8080}:8080"
     volumes:
       - ./indexer/configs:/app/configs:ro
       - ./logs:/app/logs
