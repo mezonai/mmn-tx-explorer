@@ -274,7 +274,7 @@ func validateRPC(rpcClient rpc.IRPCClient, s storage.IStorage) (bool, error) {
 		return true, nil
 	}
 	tx := transactionsQueryResult.Data[0]
-	if tx.GasUsed == nil {
+	if tx.Status == nil {
 		// was indexed with logs not receipts and current rpc does not support block receipts
 		return true, nil
 	}

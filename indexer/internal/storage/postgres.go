@@ -227,19 +227,12 @@ func (wub *WalletUpdateBatcher) Stop() {
 }
 
 var defaultBlockFields = []string{
-	"chain_id", "block_number", "block_timestamp", "hash", "parent_hash", "sha3_uncles",
-	"nonce", "mix_hash", "miner", "state_root", "transactions_root", "receipts_root",
-	"logs_bloom", "size", "extra_data", "difficulty", "total_difficulty", "transaction_count",
-	"gas_limit", "gas_used", "withdrawals_root", "base_fee_per_gas",
+	"chain_id", "block_number", "block_timestamp", "hash", "parent_hash", "transaction_count",
 }
 
 var defaultTransactionFields = []string{
-	"chain_id", "hash", "nonce", "block_hash", "block_number", "block_timestamp",
-	"transaction_index", "from_address", "to_address", "value", "gas", "gas_price",
-	"data", "function_selector", "max_fee_per_gas", "max_priority_fee_per_gas",
-	"max_fee_per_blob_gas", "blob_versioned_hashes", "transaction_type", "r", "s", "v",
-	"access_list", "authorization_list", "contract_address", "gas_used", "cumulative_gas_used",
-	"effective_gas_price", "blob_gas_used", "blob_gas_price", "logs_bloom", "status", "transaction_timestamp", "text_data", "extra_info",
+	"chain_id", "hash", "nonce", "block_hash", "block_number", "from_address", "to_address",
+	"transaction_timestamp", "value", "transaction_type", "status", "text_data", "extra_info",
 }
 
 var defaultLogFields = []string{
@@ -315,8 +308,7 @@ func (p *PostgresConnector) DB() *sql.DB {
 // Orchestrator Storage Implementation
 
 func (p *PostgresConnector) GetBlockFailures(qf QueryFilter) ([]common.BlockFailure, error) {
-	query := `SELECT chain_id, block_number, last_error_timestamp, failure_count, reason 
-	          FROM block_failures`
+	query := `SELECT chain_id, block_number, last_error_timestamp, failure_count, reason FROM block_failures`
 
 	args := []interface{}{}
 	argCount := 0
@@ -422,13 +414,13 @@ func (p *PostgresConnector) StoreBlockFailures(failures []common.BlockFailure) e
 	}
 
 	query := fmt.Sprintf(`INSERT INTO block_failures (chain_id, block_number, last_error_timestamp, failure_count, reason)
-	          VALUES %s
-	          ON CONFLICT (chain_id, block_number) 
-	          DO UPDATE SET 
-	              last_error_timestamp = EXCLUDED.last_error_timestamp,
-	              failure_count = EXCLUDED.failure_count,
-	              reason = EXCLUDED.reason,
-	              updated_at = NOW()`, strings.Join(valueStrings, ","))
+			VALUES %s
+			ON CONFLICT (chain_id, block_number) 
+			DO UPDATE SET 
+				last_error_timestamp = EXCLUDED.last_error_timestamp,
+				failure_count = EXCLUDED.failure_count,
+				reason = EXCLUDED.reason,
+				updated_at = NOW()`, strings.Join(valueStrings, ","))
 
 	_, err := p.db.Exec(query, valueArgs...)
 	return err
@@ -461,8 +453,7 @@ func (p *PostgresConnector) DeleteBlockFailures(failures []common.BlockFailure) 
 }
 
 func (p *PostgresConnector) GetLastReorgCheckedBlockNumber(chainId *big.Int) (*big.Int, error) {
-	query := `SELECT cursor_value FROM cursors 
-	          WHERE cursor_type = 'reorg' AND chain_id = $1`
+	query := `SELECT cursor_value FROM cursors WHERE cursor_type = 'reorg' AND chain_id = $1`
 
 	var blockNumberString string
 	err := p.db.QueryRow(query, bigIntToString(chainId)).Scan(&blockNumberString)
@@ -480,9 +471,9 @@ func (p *PostgresConnector) GetLastReorgCheckedBlockNumber(chainId *big.Int) (*b
 
 func (p *PostgresConnector) SetLastReorgCheckedBlockNumber(chainId *big.Int, blockNumber *big.Int) error {
 	query := `INSERT INTO cursors (chain_id, cursor_type, cursor_value)
-	          VALUES ($1, 'reorg', $2)
-	          ON CONFLICT (chain_id, cursor_type) 
-	          DO UPDATE SET cursor_value = EXCLUDED.cursor_value, updated_at = NOW()`
+			VALUES ($1, 'reorg', $2)
+			ON CONFLICT (chain_id, cursor_type) 
+			DO UPDATE SET cursor_value = EXCLUDED.cursor_value, updated_at = NOW()`
 
 	_, err := p.db.Exec(query, bigIntToString(chainId), bigIntToString(blockNumber))
 	return err
@@ -515,9 +506,9 @@ func (p *PostgresConnector) InsertStagingData(data []common.BlockData) error {
 	}
 
 	query := fmt.Sprintf(`INSERT INTO block_data (chain_id, block_number, data)
-	          VALUES %s
-	          ON CONFLICT (chain_id, block_number) 
-	          DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`, strings.Join(valueStrings, ","))
+			VALUES %s
+			ON CONFLICT (chain_id, block_number) 
+			DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`, strings.Join(valueStrings, ","))
 
 	_, err := p.db.Exec(query, valueArgs...)
 	return err
@@ -635,9 +626,9 @@ func (p *PostgresConnector) GetLastPublishedBlockNumber(chainId *big.Int) (*big.
 
 func (p *PostgresConnector) SetLastPublishedBlockNumber(chainId *big.Int, blockNumber *big.Int) error {
 	query := `INSERT INTO cursors (chain_id, cursor_type, cursor_value)
-                 VALUES ($1, 'publish', $2)
-                 ON CONFLICT (chain_id, cursor_type)
-                 DO UPDATE SET cursor_value = EXCLUDED.cursor_value, updated_at = NOW()`
+				VALUES ($1, 'publish', $2)
+				ON CONFLICT (chain_id, cursor_type)
+				DO UPDATE SET cursor_value = EXCLUDED.cursor_value, updated_at = NOW()`
 
 	_, err := p.db.Exec(query, bigIntToString(chainId), bigIntToString(blockNumber))
 	return err
@@ -1278,10 +1269,7 @@ func (p *PostgresConnector) GetFullBlockData(chainId *big.Int, blockNumbers []*b
 	}
 
 	// Get blocks
-	blocksQuery := fmt.Sprintf(`SELECT chain_id, block_number, hash, parent_hash, block_timestamp, nonce,
-		sha3_uncles, mix_hash, miner, state_root, transactions_root, receipts_root, logs_bloom,
-		size, extra_data, difficulty, total_difficulty, transaction_count, gas_limit, gas_used,
-		withdrawals_root, base_fee_per_gas
+	blocksQuery := fmt.Sprintf(`SELECT chain_id, block_number, hash, parent_hash, block_timestamp, transaction_count
 		FROM blocks 
 		WHERE chain_id = $1 AND block_number IN (%s)
 		ORDER BY block_number ASC`, strings.Join(blockNumberStrs, ","))
@@ -1297,14 +1285,8 @@ func (p *PostgresConnector) GetFullBlockData(chainId *big.Int, blockNumbers []*b
 		var block common.Block
 		var chainIdStr, blockNumberStr string
 		var timestamp time.Time
-		var difficultyStr, totalDifficultyStr, gasLimitStr, gasUsedStr string
-		var baseFeePerGas *int64
 
-		err := rows.Scan(&chainIdStr, &blockNumberStr, &block.Hash, &block.ParentHash, &timestamp, &block.Nonce,
-			&block.Sha3Uncles, &block.MixHash, &block.Miner, &block.StateRoot, &block.TransactionsRoot,
-			&block.ReceiptsRoot, &block.LogsBloom, &block.Size, &block.ExtraData, &difficultyStr,
-			&totalDifficultyStr, &block.TransactionCount, &gasLimitStr, &gasUsedStr, &block.WithdrawalsRoot,
-			&baseFeePerGas)
+		err := rows.Scan(&chainIdStr, &blockNumberStr, &block.Hash, &block.ParentHash, &timestamp, &block.TransactionCount)
 		if err != nil {
 			return nil, err
 		}
@@ -1312,13 +1294,6 @@ func (p *PostgresConnector) GetFullBlockData(chainId *big.Int, blockNumbers []*b
 		block.ChainId, _ = new(big.Int).SetString(chainIdStr, 10)
 		block.Number, _ = new(big.Int).SetString(blockNumberStr, 10)
 		block.Timestamp = timestamp
-		block.Difficulty, _ = new(big.Int).SetString(difficultyStr, 10)
-		block.TotalDifficulty, _ = new(big.Int).SetString(totalDifficultyStr, 10)
-		block.GasLimit, _ = new(big.Int).SetString(gasLimitStr, 10)
-		block.GasUsed, _ = new(big.Int).SetString(gasUsedStr, 10)
-		if baseFeePerGas != nil {
-			block.BaseFeePerGas = uint64(*baseFeePerGas)
-		}
 
 		blockDataMap[blockNumberStr] = &common.BlockData{
 			Block:        block,
@@ -1329,15 +1304,11 @@ func (p *PostgresConnector) GetFullBlockData(chainId *big.Int, blockNumbers []*b
 	}
 
 	// Get transactions for these blocks
-	txsQuery := fmt.Sprintf(`SELECT chain_id, hash, nonce, block_hash, block_number, block_timestamp,
-		transaction_index, from_address, to_address, value, gas, gas_price, data, function_selector,
-		max_fee_per_gas, max_priority_fee_per_gas, max_fee_per_blob_gas, blob_versioned_hashes,
-		transaction_type, r, s, v, access_list, authorization_list, contract_address, gas_used,
-		cumulative_gas_used, effective_gas_price, blob_gas_used, blob_gas_price, logs_bloom, status,
-		transaction_timestamp, text_data, extra_info
+	txsQuery := fmt.Sprintf(`SELECT chain_id, hash, nonce, block_hash, block_number, from_address, to_address, 
+		transaction_timestamp, value, transaction_type, status, text_data, extra_info
 		FROM transactions 
 		WHERE chain_id = $1 AND block_number IN (%s)
-		ORDER BY block_number ASC, transaction_index ASC`, strings.Join(blockNumberStrs, ","))
+		ORDER BY block_number ASC`, strings.Join(blockNumberStrs, ","))
 
 	txRows, err := p.db.Query(txsQuery, bigIntToString(chainId))
 	if err != nil {
@@ -1348,44 +1319,22 @@ func (p *PostgresConnector) GetFullBlockData(chainId *big.Int, blockNumbers []*b
 	for txRows.Next() {
 		var tx common.Transaction
 		var chainIdStr, blockNumberStr string
-		var timestamp, transactionTimestamp time.Time
-		var valueStr, gasPriceStr, maxFeePerGasStr, maxPriorityFeePerGasStr, maxFeePerBlobGasStr string
-		var rStr, sStr, vStr, effectiveGasPriceStr, blobGasPriceStr string
-		var blobVersionedHashesStr string
-		var gasUsed, cumulativeGasUsed, blobGasUsed *uint64
+		var transactionTimestamp time.Time
+		var valueStr string
 		var status *uint64
 		var extraInfo sql.NullString
 
-		err := txRows.Scan(&chainIdStr, &tx.Hash, &tx.Nonce, &tx.BlockHash, &blockNumberStr, &timestamp,
-			&tx.TransactionIndex, &tx.FromAddress, &tx.ToAddress, &valueStr, &tx.Gas, &gasPriceStr,
-			&tx.Data, &tx.FunctionSelector, &maxFeePerGasStr, &maxPriorityFeePerGasStr,
-			&maxFeePerBlobGasStr, &blobVersionedHashesStr, &tx.TransactionType, &rStr, &sStr, &vStr,
-			&tx.AccessListJson, &tx.AuthorizationListJson, &tx.ContractAddress, &gasUsed, &cumulativeGasUsed,
-			&effectiveGasPriceStr, &blobGasUsed, &blobGasPriceStr, &tx.LogsBloom, &status,
-			&transactionTimestamp, &tx.TextData, &extraInfo)
+		err := txRows.Scan(&chainIdStr, &tx.Hash, &tx.Nonce, &tx.BlockHash, &blockNumberStr, &tx.FromAddress, &tx.ToAddress,
+			&transactionTimestamp, &valueStr, &tx.TransactionType, &status, &tx.TextData, &extraInfo)
 		if err != nil {
 			return nil, err
 		}
 
-		// Convert values (simplified - in real implementation, handle all conversions)
+		// Convert values
 		tx.ChainId, _ = new(big.Int).SetString(chainIdStr, 10)
 		tx.BlockNumber, _ = new(big.Int).SetString(blockNumberStr, 10)
-		tx.BlockTimestamp = timestamp
 		tx.TransactionTimestamp = transactionTimestamp
 		tx.Value = valueStr
-		tx.GasPrice, _ = new(big.Int).SetString(gasPriceStr, 10)
-		tx.MaxFeePerGas, _ = new(big.Int).SetString(maxFeePerGasStr, 10)
-		tx.MaxPriorityFeePerGas, _ = new(big.Int).SetString(maxPriorityFeePerGasStr, 10)
-		tx.MaxFeePerBlobGas, _ = new(big.Int).SetString(maxFeePerBlobGasStr, 10)
-		tx.R, _ = new(big.Int).SetString(rStr, 10)
-		tx.S, _ = new(big.Int).SetString(sStr, 10)
-		tx.V, _ = new(big.Int).SetString(vStr, 10)
-		tx.EffectiveGasPrice, _ = new(big.Int).SetString(effectiveGasPriceStr, 10)
-		tx.BlobGasPrice, _ = new(big.Int).SetString(blobGasPriceStr, 10)
-
-		tx.GasUsed = gasUsed
-		tx.CumulativeGasUsed = cumulativeGasUsed
-		tx.BlobGasUsed = blobGasUsed
 		tx.Status = status
 
 		if extraInfo.Valid {
@@ -1630,63 +1579,30 @@ func (p *PostgresConnector) insertBlocks(blocks []common.Block) error {
 	}
 
 	valueStrings := make([]string, 0, len(blocks))
-	valueArgs := make([]interface{}, 0, len(blocks)*22)
+	valueArgs := make([]interface{}, 0, len(blocks)*6)
 
 	for i, block := range blocks {
-		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
-			i*22+1, i*22+2, i*22+3, i*22+4, i*22+5, i*22+6, i*22+7, i*22+8, i*22+9, i*22+10,
-			i*22+11, i*22+12, i*22+13, i*22+14, i*22+15, i*22+16, i*22+17, i*22+18, i*22+19, i*22+20, i*22+21, i*22+22))
+		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)",
+			i*6+1, i*6+2, i*6+3, i*6+4, i*6+5, i*6+6))
 		valueArgs = append(valueArgs,
 			bigIntToString(block.ChainId),
 			bigIntToString(block.Number),
 			block.Timestamp,
 			block.Hash,
 			block.ParentHash,
-			block.Sha3Uncles,
-			block.Nonce,
-			block.MixHash,
-			block.Miner,
-			block.StateRoot,
-			block.TransactionsRoot,
-			block.ReceiptsRoot,
-			block.LogsBloom,
-			block.Size,
-			block.ExtraData,
-			bigIntToString(block.Difficulty),
-			bigIntToString(block.TotalDifficulty),
 			block.TransactionCount,
-			bigIntToString(block.GasLimit),
-			bigIntToString(block.GasUsed),
-			block.WithdrawalsRoot,
-			block.BaseFeePerGas,
 		)
 	}
 
-	query := fmt.Sprintf(`INSERT INTO blocks (chain_id, block_number, block_timestamp, hash, parent_hash, sha3_uncles, nonce, mix_hash, miner, state_root, transactions_root, receipts_root, logs_bloom, size, extra_data, difficulty, total_difficulty, transaction_count, gas_limit, gas_used, withdrawals_root, base_fee_per_gas)
-	          VALUES %s
-	          ON CONFLICT (chain_id, block_number) 
-	          DO UPDATE SET 
-	              block_timestamp = EXCLUDED.block_timestamp,
-	              hash = EXCLUDED.hash,
-	              parent_hash = EXCLUDED.parent_hash,
-	              sha3_uncles = EXCLUDED.sha3_uncles,
-	              nonce = EXCLUDED.nonce,
-	              mix_hash = EXCLUDED.mix_hash,
-	              miner = EXCLUDED.miner,
-	              state_root = EXCLUDED.state_root,
-	              transactions_root = EXCLUDED.transactions_root,
-	              receipts_root = EXCLUDED.receipts_root,
-	              logs_bloom = EXCLUDED.logs_bloom,
-	              size = EXCLUDED.size,
-	              extra_data = EXCLUDED.extra_data,
-	              difficulty = EXCLUDED.difficulty,
-	              total_difficulty = EXCLUDED.total_difficulty,
-	              transaction_count = EXCLUDED.transaction_count,
-	              gas_limit = EXCLUDED.gas_limit,
-	              gas_used = EXCLUDED.gas_used,
-	              withdrawals_root = EXCLUDED.withdrawals_root,
-	              base_fee_per_gas = EXCLUDED.base_fee_per_gas,
-	              updated_at = NOW()`, strings.Join(valueStrings, ","))
+	query := fmt.Sprintf(`INSERT INTO blocks (chain_id, block_number, block_timestamp, hash, parent_hash, transaction_count)
+			VALUES %s
+			ON CONFLICT (chain_id, block_number) 
+			DO UPDATE SET 
+				block_timestamp = EXCLUDED.block_timestamp,
+				hash = EXCLUDED.hash,
+				parent_hash = EXCLUDED.parent_hash,
+				transaction_count = EXCLUDED.transaction_count,
+				updated_at = NOW()`, strings.Join(valueStrings, ","))
 
 	_, err := p.db.Exec(query, valueArgs...)
 	return err
@@ -1698,18 +1614,11 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 	}
 
 	valueStrings := make([]string, 0, len(transactions))
-	valueArgs := make([]interface{}, 0, len(transactions)*35)
+	valueArgs := make([]interface{}, 0, len(transactions)*13)
 
 	for i, tx := range transactions {
-		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
-			i*35+1, i*35+2, i*35+3, i*35+4, i*35+5, i*35+6, i*35+7, i*35+8, i*35+9, i*35+10,
-			i*35+11, i*35+12, i*35+13, i*35+14, i*35+15, i*35+16, i*35+17, i*35+18, i*35+19, i*35+20,
-			i*35+21, i*35+22, i*35+23, i*35+24, i*35+25, i*35+26, i*35+27, i*35+28, i*35+29, i*35+30,
-			i*35+31, i*35+32, i*35+33, i*35+34, i*35+35))
-
-		// Convert arrays to PostgreSQL format
-		blobHashes := make([]string, len(tx.BlobVersionedHashes))
-		copy(blobHashes, tx.BlobVersionedHashes)
+		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
+			i*13+1, i*13+2, i*13+3, i*13+4, i*13+5, i*13+6, i*13+7, i*13+8, i*13+9, i*13+10, i*13+11, i*13+12, i*13+13))
 
 		valueArgs = append(valueArgs,
 			bigIntToString(tx.ChainId),
@@ -1717,34 +1626,12 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 			tx.Nonce,
 			tx.BlockHash,
 			bigIntToString(tx.BlockNumber),
-			tx.BlockTimestamp,
-			tx.TransactionIndex,
 			tx.FromAddress,
 			tx.ToAddress,
-			tx.Value,
-			tx.Gas,
-			bigIntToString(tx.GasPrice),
-			tx.Data,
-			tx.FunctionSelector,
-			bigIntToString(tx.MaxFeePerGas),
-			bigIntToString(tx.MaxPriorityFeePerGas),
-			bigIntToString(tx.MaxFeePerBlobGas),
-			fmt.Sprintf("{%s}", strings.Join(blobHashes, ",")), // PostgreSQL array format
-			tx.TransactionType,
-			bigIntToString(tx.R),
-			bigIntToString(tx.S),
-			bigIntToString(tx.V),
-			tx.AccessListJson,
-			tx.AuthorizationListJson,
-			tx.ContractAddress,
-			tx.GasUsed,
-			tx.CumulativeGasUsed,
-			bigIntToString(tx.EffectiveGasPrice),
-			tx.BlobGasUsed,
-			bigIntToString(tx.BlobGasPrice),
-			tx.LogsBloom,
-			tx.Status,
 			tx.TransactionTimestamp,
+			tx.Value,
+			tx.TransactionType,
+			tx.Status,
 			tx.TextData,
 			tx.ExtraInfo,
 		)
@@ -1765,43 +1652,21 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 		}
 	}()
 
-	insertTransactionsQuery := fmt.Sprintf(`INSERT INTO transactions (chain_id, hash, nonce, block_hash, block_number, block_timestamp, transaction_index, from_address, to_address, value, gas, gas_price, data, function_selector, max_fee_per_gas, max_priority_fee_per_gas, max_fee_per_blob_gas, blob_versioned_hashes, transaction_type, r, s, v, access_list, authorization_list, contract_address, gas_used, cumulative_gas_used, effective_gas_price, blob_gas_used, blob_gas_price, logs_bloom, status, transaction_timestamp, text_data, extra_info)
-	          VALUES %s
-	          ON CONFLICT (chain_id, block_number, hash) 
-	          DO UPDATE SET 
-	              nonce = EXCLUDED.nonce,
-	              block_hash = EXCLUDED.block_hash,
-	              block_timestamp = EXCLUDED.block_timestamp,
-	              transaction_index = EXCLUDED.transaction_index,
-	              from_address = EXCLUDED.from_address,
-	              to_address = EXCLUDED.to_address,
-	              value = EXCLUDED.value,
-	              gas = EXCLUDED.gas,
-	              gas_price = EXCLUDED.gas_price,
-	              data = EXCLUDED.data,
-	              function_selector = EXCLUDED.function_selector,
-	              max_fee_per_gas = EXCLUDED.max_fee_per_gas,
-	              max_priority_fee_per_gas = EXCLUDED.max_priority_fee_per_gas,
-	              max_fee_per_blob_gas = EXCLUDED.max_fee_per_blob_gas,
-	              blob_versioned_hashes = EXCLUDED.blob_versioned_hashes,
-	              transaction_type = EXCLUDED.transaction_type,
-	              r = EXCLUDED.r,
-	              s = EXCLUDED.s,
-	              v = EXCLUDED.v,
-	              access_list = EXCLUDED.access_list,
-	              authorization_list = EXCLUDED.authorization_list,
-	              contract_address = EXCLUDED.contract_address,
-	              gas_used = EXCLUDED.gas_used,
-	              cumulative_gas_used = EXCLUDED.cumulative_gas_used,
-	              effective_gas_price = EXCLUDED.effective_gas_price,
-	              blob_gas_used = EXCLUDED.blob_gas_used,
-	              blob_gas_price = EXCLUDED.blob_gas_price,
-	              logs_bloom = EXCLUDED.logs_bloom,
-	              status = EXCLUDED.status,
-	              transaction_timestamp = EXCLUDED.transaction_timestamp,
-	              text_data = EXCLUDED.text_data,
-	              extra_info = EXCLUDED.extra_info,
-	              updated_at = NOW()`, strings.Join(valueStrings, ","))
+	insertTransactionsQuery := fmt.Sprintf(`INSERT INTO transactions (chain_id, hash, nonce, block_hash, block_number, from_address, to_address, transaction_timestamp, value, transaction_type, status, text_data, extra_info)
+			VALUES %s
+			ON CONFLICT (chain_id, block_number, hash) 
+			DO UPDATE SET 
+				nonce = EXCLUDED.nonce,
+				block_hash = EXCLUDED.block_hash,
+				from_address = EXCLUDED.from_address,
+				to_address = EXCLUDED.to_address,
+				transaction_timestamp = EXCLUDED.transaction_timestamp,
+				value = EXCLUDED.value,
+				transaction_type = EXCLUDED.transaction_type,
+				status = EXCLUDED.status,
+				text_data = EXCLUDED.text_data,
+				extra_info = EXCLUDED.extra_info,
+				updated_at = NOW()`, strings.Join(valueStrings, ","))
 	_, err = tx.Exec(insertTransactionsQuery, valueArgs...)
 	if err != nil {
 		return fmt.Errorf("failed to execute insert transactions query: %w", err)
@@ -1900,15 +1765,9 @@ func (p *PostgresConnector) batchUpdateWalletTransactionCounts(
 func (p *PostgresConnector) scanBlock(rows *sql.Rows, block *common.Block) error {
 	var chainIdStr, blockNumberStr string
 	var timestamp time.Time
-	var difficultyStr, totalDifficultyStr, gasLimitStr, gasUsedStr string
-	var baseFeePerGas *int64
 
 	err := rows.Scan(
-		&chainIdStr, &blockNumberStr, &timestamp, &block.Hash, &block.ParentHash, &block.Sha3Uncles,
-		&block.Nonce, &block.MixHash, &block.Miner, &block.StateRoot, &block.TransactionsRoot,
-		&block.ReceiptsRoot, &block.LogsBloom, &block.Size, &block.ExtraData, &difficultyStr,
-		&totalDifficultyStr, &block.TransactionCount, &gasLimitStr, &gasUsedStr, &block.WithdrawalsRoot,
-		&baseFeePerGas,
+		&chainIdStr, &blockNumberStr, &timestamp, &block.Hash, &block.ParentHash, &block.TransactionCount,
 	)
 	if err != nil {
 		return err
@@ -1928,51 +1787,19 @@ func (p *PostgresConnector) scanBlock(rows *sql.Rows, block *common.Block) error
 
 	block.Timestamp = timestamp
 
-	block.Difficulty, ok = new(big.Int).SetString(difficultyStr, 10)
-	if !ok {
-		return fmt.Errorf("failed to parse difficulty: %s", difficultyStr)
-	}
-
-	block.TotalDifficulty, ok = new(big.Int).SetString(totalDifficultyStr, 10)
-	if !ok {
-		return fmt.Errorf("failed to parse total_difficulty: %s", totalDifficultyStr)
-	}
-
-	block.GasLimit, ok = new(big.Int).SetString(gasLimitStr, 10)
-	if !ok {
-		return fmt.Errorf("failed to parse gas_limit: %s", gasLimitStr)
-	}
-
-	block.GasUsed, ok = new(big.Int).SetString(gasUsedStr, 10)
-	if !ok {
-		return fmt.Errorf("failed to parse gas_used: %s", gasUsedStr)
-	}
-
-	if baseFeePerGas != nil {
-		block.BaseFeePerGas = uint64(*baseFeePerGas)
-	}
-
 	return nil
 }
 
 func (p *PostgresConnector) scanTransaction(rows *sql.Rows, tx *common.Transaction) error {
 	var chainIdStr, blockNumberStr string
-	var timestamp, transactionTimestamp time.Time
-	var valueStr, gasPriceStr, maxFeePerGasStr, maxPriorityFeePerGasStr, maxFeePerBlobGasStr string
-	var rStr, sStr, vStr, effectiveGasPriceStr, blobGasPriceStr string
-	var blobVersionedHashesStr string
-	var gasUsed, cumulativeGasUsed, blobGasUsed *uint64
+	var transactionTimestamp time.Time
+	var valueStr string
 	var status *uint64
 	var extraInfo sql.NullString
 
 	err := rows.Scan(
-		&chainIdStr, &tx.Hash, &tx.Nonce, &tx.BlockHash, &blockNumberStr, &timestamp,
-		&tx.TransactionIndex, &tx.FromAddress, &tx.ToAddress, &valueStr, &tx.Gas, &gasPriceStr,
-		&tx.Data, &tx.FunctionSelector, &maxFeePerGasStr, &maxPriorityFeePerGasStr,
-		&maxFeePerBlobGasStr, &blobVersionedHashesStr, &tx.TransactionType, &rStr, &sStr, &vStr,
-		&tx.AccessListJson, &tx.AuthorizationListJson, &tx.ContractAddress, &gasUsed, &cumulativeGasUsed,
-		&effectiveGasPriceStr, &blobGasUsed, &blobGasPriceStr, &tx.LogsBloom, &status,
-		&transactionTimestamp, &tx.TextData, &extraInfo,
+		&chainIdStr, &tx.Hash, &tx.Nonce, &tx.BlockHash, &blockNumberStr, &tx.FromAddress, &tx.ToAddress,
+		&transactionTimestamp, &valueStr, &tx.TransactionType, &status, &tx.TextData, &extraInfo,
 	)
 	if err != nil {
 		return err
@@ -1990,69 +1817,8 @@ func (p *PostgresConnector) scanTransaction(rows *sql.Rows, tx *common.Transacti
 		return fmt.Errorf("failed to parse block_number: %s", blockNumberStr)
 	}
 
-	tx.BlockTimestamp = timestamp
 	tx.TransactionTimestamp = transactionTimestamp
-
 	tx.Value = valueStr
-
-	tx.GasPrice, ok = new(big.Int).SetString(gasPriceStr, 10)
-	if !ok {
-		return fmt.Errorf("failed to parse gas_price: %s", gasPriceStr)
-	}
-
-	tx.MaxFeePerGas, ok = new(big.Int).SetString(maxFeePerGasStr, 10)
-	if !ok {
-		return fmt.Errorf("failed to parse max_fee_per_gas: %s", maxFeePerGasStr)
-	}
-
-	tx.MaxPriorityFeePerGas, ok = new(big.Int).SetString(maxPriorityFeePerGasStr, 10)
-	if !ok {
-		return fmt.Errorf("failed to parse max_priority_fee_per_gas: %s", maxPriorityFeePerGasStr)
-	}
-
-	tx.MaxFeePerBlobGas, ok = new(big.Int).SetString(maxFeePerBlobGasStr, 10)
-	if !ok {
-		return fmt.Errorf("failed to parse max_fee_per_blob_gas: %s", maxFeePerBlobGasStr)
-	}
-
-	tx.R, ok = new(big.Int).SetString(rStr, 10)
-	if !ok {
-		return fmt.Errorf("failed to parse r: %s", rStr)
-	}
-
-	tx.S, ok = new(big.Int).SetString(sStr, 10)
-	if !ok {
-		return fmt.Errorf("failed to parse s: %s", sStr)
-	}
-
-	tx.V, ok = new(big.Int).SetString(vStr, 10)
-	if !ok {
-		return fmt.Errorf("failed to parse v: %s", vStr)
-	}
-
-	tx.EffectiveGasPrice, ok = new(big.Int).SetString(effectiveGasPriceStr, 10)
-	if !ok {
-		return fmt.Errorf("failed to parse effective_gas_price: %s", effectiveGasPriceStr)
-	}
-
-	tx.BlobGasPrice, ok = new(big.Int).SetString(blobGasPriceStr, 10)
-	if !ok {
-		return fmt.Errorf("failed to parse blob_gas_price: %s", blobGasPriceStr)
-	}
-
-	// Parse blob versioned hashes array
-	if blobVersionedHashesStr != "" {
-		// Remove curly braces and split by comma
-		hashStr := strings.Trim(blobVersionedHashesStr, "{}")
-		if hashStr != "" {
-			tx.BlobVersionedHashes = strings.Split(hashStr, ",")
-		}
-	}
-
-	// Set optional fields
-	tx.GasUsed = gasUsed
-	tx.CumulativeGasUsed = cumulativeGasUsed
-	tx.BlobGasUsed = blobGasUsed
 	tx.Status = status
 
 	if extraInfo.Valid {

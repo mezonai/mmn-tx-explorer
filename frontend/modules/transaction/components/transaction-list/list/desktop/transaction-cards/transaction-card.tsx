@@ -37,7 +37,7 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
           )}
           {transaction ? (
             <span className="text-quaternary-500 text-sm font-normal whitespace-nowrap">
-              {DateTimeUtil.formatRelativeTimeSec(transaction.block_timestamp)}
+              {DateTimeUtil.formatRelativeTimeSec(transaction.transaction_timestamp)}
             </span>
           ) : (
             <Skeleton className="h-5 w-14" />
