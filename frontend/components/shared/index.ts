@@ -4,6 +4,7 @@ export * from './api-error';
 export * from './back-button';
 export * from './breadcrumb-navigation';
 export * from './breadcrumb-trail';
+export * from './coming-soon';
 export * from './error-boundary';
 export * from './error-screen';
 export * from './item-attribute';

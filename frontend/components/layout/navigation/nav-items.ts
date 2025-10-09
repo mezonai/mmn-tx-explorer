@@ -2,6 +2,7 @@ import { ComponentType, SVGProps } from 'react';
 
 import { Award04, BarChartSquare02, CreditCardRefresh, Cube01 } from '@/assets/icons';
 import { ROUTES } from '@/configs/routes.config';
+import { CircleDollarSign, RefreshCcw, Sprout } from 'lucide-react';
 
 export interface NavItem {
   title: string;
@@ -29,5 +30,20 @@ export const sidebarNavItems: NavItem[] = [
     title: 'Top accounts',
     href: ROUTES.WALLETS,
     icon: Award04,
+  },
+  {
+    title: 'Give coffee',
+    href: ROUTES.TRANSFER,
+    icon: CircleDollarSign,
+  },
+  {
+    title: 'Swap',
+    href: ROUTES.SWAP,
+    icon: RefreshCcw,
+  },
+  {
+    title: 'Stake',
+    href: ROUTES.STAKE,
+    icon: Sprout,
   },
 ];
