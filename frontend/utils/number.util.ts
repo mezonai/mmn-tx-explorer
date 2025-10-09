@@ -35,4 +35,9 @@ export class NumberUtil {
     const scaled = num / scale;
     return scaled.toLocaleString('en-US');
   }
+
+  static formatNumber(amount: number): string {
+	const formattedAmount = new Intl.NumberFormat().format(amount);
+	return formattedAmount;
+  }
 }
