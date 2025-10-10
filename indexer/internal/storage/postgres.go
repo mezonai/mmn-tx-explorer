@@ -1576,12 +1576,15 @@ func (p *PostgresConnector) insertBlocks(blocks []common.Block) error {
 	}
 
     // Update total_blocks count
-    if _, err := p.db.Exec(`
-        INSERT INTO stats(key, value) VALUES ('total_blocks', 0)
-        ON CONFLICT (key) 
-        DO UPDATE SET value = (SELECT COUNT(*) FROM blocks)
-    `); err != nil {
-        return fmt.Errorf("failed to update total_blocks stat: %w", err)
+    blockCount := len(blocks)
+    if blockCount > 0 {
+        if _, err := p.db.Exec(`
+            INSERT INTO stats(key, value) VALUES ('total_blocks', $1)
+            ON CONFLICT (key) 
+            DO UPDATE SET value = stats.value + $1
+        `, blockCount); err != nil {
+            return fmt.Errorf("failed to update total_blocks stat: %w", err)
+        }
     }
 
     return nil
@@ -1738,12 +1741,12 @@ func (p *PostgresConnector) batchUpdateWalletTransactionCounts(
 	}
 
     // Update total_wallets count
-    if _, err := tx.Exec(`
+        if _, err := tx.Exec(`
         INSERT INTO stats(key, value) VALUES ('total_wallets', 0)
-        ON CONFLICT (key) 
+            ON CONFLICT (key) 
         DO UPDATE SET value = (SELECT COUNT(*) FROM wallet)
     `); err != nil {
-        return fmt.Errorf("failed to update total_wallets stat: %w", err)
+            return fmt.Errorf("failed to update total_wallets stat: %w", err)
     }
 
     log.Debug().
