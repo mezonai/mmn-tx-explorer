@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import { useEffect, useState } from 'react';
 
 function MezonLoginButton() {
@@ -55,7 +55,7 @@ function MezonLogoutButton({ onLogout }: { onLogout: () => void }) {
 }
 
 export default function UserPage() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
