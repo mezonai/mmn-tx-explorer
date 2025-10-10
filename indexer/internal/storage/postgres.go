@@ -1576,7 +1576,12 @@ func (p *PostgresConnector) insertBlocks(blocks []common.Block) error {
 	}
 
     // Update total_blocks count
-    blockCount := len(blocks)
+    blockCount := 0
+	for _, block := range blocks {
+		if block.TransactionCount > 0 {
+			blockCount++
+		}
+	}
     if blockCount > 0 {
         if _, err := p.db.Exec(`
             INSERT INTO stats(key, value) VALUES ('total_blocks', $1)
