@@ -60,9 +60,9 @@ func handleBlocksRequest(c *gin.Context) {
 	}
 
 	if queryParams.FilterParams == nil {
-		queryParams.FilterParams = make(map[string]string)
+	   queryParams.FilterParams = make(map[string]string)
 	}
-
+		
 	// Add filter for transaction_count > 0
 	queryParams.FilterParams["transaction_count_gt"] = "0"
 
