@@ -1407,7 +1407,7 @@ func (p *PostgresConnector) GetCount(ctx context.Context, table string, qf Query
 }
 
 func (p *PostgresConnector) GetDashboardStats(ctx context.Context, qf QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, err error) {
-    query := `
+	query := `
         SELECT 
             COALESCE(MAX(CASE WHEN key = 'total_blocks' THEN value::bigint END), 0) as blocks,
             COALESCE(MAX(CASE WHEN key = 'total_transactions' THEN value::bigint END), 0) as transactions,
@@ -1416,12 +1416,12 @@ func (p *PostgresConnector) GetDashboardStats(ctx context.Context, qf QueryFilte
         WHERE key IN ('total_blocks', 'total_transactions', 'total_wallets')
     `
 
-    err = p.db.QueryRowContext(ctx, query).Scan(&totalBlocks, &totalTransactions, &totalWallets)
-    if err != nil {
-        return 0, 0, 0, fmt.Errorf("failed to get dashboard stats: %w", err)
-    }
+	err = p.db.QueryRowContext(ctx, query).Scan(&totalBlocks, &totalTransactions, &totalWallets)
+	if err != nil {
+		return 0, 0, 0, fmt.Errorf("failed to get dashboard stats: %w", err)
+	}
 
-    return totalBlocks, totalTransactions, totalWallets, nil
+	return totalBlocks, totalTransactions, totalWallets, nil
 }
 
 func (p *PostgresConnector) GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error) {
@@ -1614,29 +1614,29 @@ func (p *PostgresConnector) insertBlocks(blocks []common.Block) error {
 				parent_hash = EXCLUDED.parent_hash,
 				transaction_count = EXCLUDED.transaction_count,
 				updated_at = NOW()`, strings.Join(valueStrings, ","))
-				
+
 	if _, err := p.db.Exec(query, valueArgs...); err != nil {
-	return fmt.Errorf("failed to insert blocks: %w", err)
+		return fmt.Errorf("failed to insert blocks: %w", err)
 	}
 
-    // Update total_blocks count
-    blockCount := 0
+	// Update total_blocks count
+	blockCount := 0
 	for _, block := range blocks {
 		if block.TransactionCount > 0 {
 			blockCount++
 		}
 	}
-    if blockCount > 0 {
-        if _, err := p.db.Exec(`
+	if blockCount > 0 {
+		if _, err := p.db.Exec(`
             INSERT INTO stats(key, value) VALUES ('total_blocks', $1)
             ON CONFLICT (key) 
             DO UPDATE SET value = stats.value + $1
         `, blockCount); err != nil {
-            return fmt.Errorf("failed to update total_blocks stat: %w", err)
-        }
-    }
+			return fmt.Errorf("failed to update total_blocks stat: %w", err)
+		}
+	}
 
-    return nil
+	return nil
 }
 
 func (p *PostgresConnector) insertTransactions(transactions []common.Transaction) error {
@@ -1791,7 +1791,7 @@ func (p *PostgresConnector) batchUpdateWalletTransactionCounts(
 		pq.Array(counts),
 		pq.Array(maxBlocksInterface),
 	).Scan(&newWalletCount)
-	
+
 	if err != nil {
 		return fmt.Errorf("failed to batch update wallet transaction counts: %w", err)
 	}
@@ -1804,7 +1804,7 @@ func (p *PostgresConnector) batchUpdateWalletTransactionCounts(
 		`, newWalletCount); err != nil {
 			return fmt.Errorf("failed to update total_wallets stat: %w", err)
 		}
-		
+
 		log.Debug().
 			Int64("new_wallets", newWalletCount).
 			Msg("Added new wallets to stats")
