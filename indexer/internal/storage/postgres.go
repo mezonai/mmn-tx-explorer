@@ -759,7 +759,13 @@ func (p *PostgresConnector) GetBlocks(qf QueryFilter, fields ...string) (QueryRe
 
 func (p *PostgresConnector) GetTransactions(ctx context.Context, qf QueryFilter, fields ...string) (QueryResult[common.Transaction], error) {
 	columns := p.buildSelectFields(fields, defaultTransactionFields)
-	query := p.buildQuery("transactions", columns, qf)
+
+	var query string
+	if qf.Page > 0 && qf.Limit > 0 {
+		query = p.buildSubQuery("transactions", columns, qf)
+	} else {
+		query = p.buildQuery("transactions", columns, qf)
+	}
 
 	rows, err := p.db.QueryContext(ctx, query)
 	if err != nil {
@@ -778,6 +784,54 @@ func (p *PostgresConnector) GetTransactions(ctx context.Context, qf QueryFilter,
 	}
 
 	return QueryResult[common.Transaction]{Data: transactions}, rows.Err()
+}
+
+
+func (p *PostgresConnector) buildSubQuery(table string, columns string, qf QueryFilter) string {
+
+	subquery := "SELECT s.chain_id as sub_chain_id, s.block_number as sub_block_number, s.hash as sub_hash FROM " + table + " s"
+
+
+	if whereClause := p.buildWhereClause(qf); whereClause != "" {
+
+		prefixedWhere := whereClause
+		prefixedWhere = strings.ReplaceAll(prefixedWhere, "chain_id", "s.chain_id")
+		prefixedWhere = strings.ReplaceAll(prefixedWhere, "block_number", "s.block_number")
+		prefixedWhere = strings.ReplaceAll(prefixedWhere, "from_address", "s.from_address")
+		prefixedWhere = strings.ReplaceAll(prefixedWhere, "to_address", "s.to_address")
+		prefixedWhere = strings.ReplaceAll(prefixedWhere, "transaction_timestamp", "s.transaction_timestamp")
+
+		subquery += " WHERE " + prefixedWhere
+	}
+
+	if qf.SortBy != "" {
+		subquery += fmt.Sprintf(" ORDER BY s.%s", qf.SortBy)
+		if qf.SortOrder != "" {
+			subquery += " " + qf.SortOrder
+		}
+	} else {
+		subquery += " ORDER BY s.transaction_timestamp DESC"
+	}
+
+	offset := qf.Page * qf.Limit
+	subquery += fmt.Sprintf(" LIMIT %d OFFSET %d", qf.Limit, offset)
+
+	var mainOrderBy string
+	if qf.SortBy != "" {
+		mainOrderBy = fmt.Sprintf(" ORDER BY t.%s", qf.SortBy)
+		if qf.SortOrder != "" {
+			mainOrderBy += " " + qf.SortOrder
+		}
+	} else {
+		mainOrderBy = " ORDER BY t.transaction_timestamp DESC"
+	}
+
+	return fmt.Sprintf(`
+		SELECT %s FROM %s t
+		INNER JOIN (%s) sub 
+		ON t.chain_id = sub.sub_chain_id 
+		   AND t.block_number = sub.sub_block_number 
+		   AND t.hash = sub.sub_hash%s`, columns, table, subquery, mainOrderBy)
 }
 
 func (p *PostgresConnector) GetLogs(qf QueryFilter, fields ...string) (QueryResult[common.Log], error) {
