@@ -1716,43 +1716,55 @@ func (p *PostgresConnector) batchUpdateWalletTransactionCounts(
 	}
 
 	query := `
-        INSERT INTO wallet (address, transaction_count, last_block)
-        SELECT 
-            unnest($1::text[]) as address,
-            unnest($2::bigint[]) as transaction_count,
-            unnest($3::numeric[]) as last_block
-        ON CONFLICT (address) 
-        DO UPDATE SET 
-            transaction_count = wallet.transaction_count + EXCLUDED.transaction_count,
-            last_block = GREATEST(COALESCE(wallet.last_block, 0)::numeric, EXCLUDED.last_block)::bigint`
+        WITH inserted AS (
+            INSERT INTO wallet (address, transaction_count, last_block)
+            SELECT 
+                unnest($1::text[]) as address,
+                unnest($2::bigint[]) as transaction_count,
+                unnest($3::numeric[]) as last_block
+            ON CONFLICT (address) 
+            DO UPDATE SET 
+                transaction_count = wallet.transaction_count + EXCLUDED.transaction_count,
+                last_block = GREATEST(COALESCE(wallet.last_block, 0)::numeric, EXCLUDED.last_block)::bigint
+            RETURNING (xmax = 0) as is_new
+        )
+        SELECT COUNT(*) FROM inserted WHERE is_new = true
+    `
 
 	maxBlocksInterface := make([]interface{}, len(maxBlocks))
 	for i, v := range maxBlocks {
 		maxBlocksInterface[i] = v
 	}
 
-	_, err := tx.Exec(query,
+	var newWalletCount int64
+	err := tx.QueryRow(query,
 		pq.Array(addressList),
 		pq.Array(counts),
 		pq.Array(maxBlocksInterface),
-	)
+	).Scan(&newWalletCount)
+	
 	if err != nil {
 		return fmt.Errorf("failed to batch update wallet transaction counts: %w", err)
 	}
 
-    // Update total_wallets count
-        if _, err := tx.Exec(`
-        INSERT INTO stats(key, value) VALUES ('total_wallets', 0)
-            ON CONFLICT (key) 
-        DO UPDATE SET value = (SELECT COUNT(*) FROM wallet)
-    `); err != nil {
-            return fmt.Errorf("failed to update total_wallets stat: %w", err)
-    }
+	if newWalletCount > 0 {
+		if _, err := tx.Exec(`
+			INSERT INTO stats(key, value) VALUES ('total_wallets', $1)
+			ON CONFLICT (key) 
+			DO UPDATE SET value = stats.value + $1
+		`, newWalletCount); err != nil {
+			return fmt.Errorf("failed to update total_wallets stat: %w", err)
+		}
+		
+		log.Debug().
+			Int64("new_wallets", newWalletCount).
+			Msg("Added new wallets to stats")
+	}
 
-    log.Debug().
-        Int("count", len(addressList)).
-        Msg("Batch updated wallet transaction counts and stats")
-    return nil
+	log.Debug().
+		Int("count", len(addressList)).
+		Msg("Batch updated wallet transaction counts and stats")
+	return nil
 }
 
 func (p *PostgresConnector) scanBlock(rows *sql.Rows, block *common.Block) error {
