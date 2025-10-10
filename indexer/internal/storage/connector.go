@@ -142,6 +142,7 @@ type IMainStorage interface {
 	// Optimized methods for pagination
 	GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit, offset int, sortBy, sortOrder string) ([]common.Transaction, error)
 	GetTransactionsByWalletCount(ctx context.Context, walletAddress string) (uint64, error)
+	GetTotalTransactions(ctx context.Context) (uint64, error)
 }
 
 func NewStorageConnector(cfg *config.StorageConfig) (IStorage, error) {
