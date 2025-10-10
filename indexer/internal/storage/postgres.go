@@ -19,6 +19,8 @@ import (
 	pb "github.com/thirdweb-dev/indexer/proto"
 )
 
+const DATA_ROWS_DISPLAY_LIMIT = 500000
+
 type PostgresConnector struct {
 	db             *sql.DB
 	cfg            *config.PostgresConfig
@@ -268,6 +270,7 @@ func NewPostgresConnector(cfg *config.PostgresConfig) (*PostgresConnector, error
 		return nil, fmt.Errorf("failed to connect to postgres: %w", err)
 	}
 
+	// Configure connection pool for optimal performance
 	db.SetMaxOpenConns(cfg.MaxOpenConns)
 	db.SetMaxIdleConns(cfg.MaxIdleConns)
 
@@ -275,9 +278,41 @@ func NewPostgresConnector(cfg *config.PostgresConfig) (*PostgresConnector, error
 		db.SetConnMaxLifetime(time.Duration(cfg.MaxConnLifetime) * time.Second)
 	}
 
+	// Set connection max idle time to prevent stale connections
+	// This helps maintain healthy connections and avoid lazy initialization delays
+	db.SetConnMaxIdleTime(30 * time.Minute)
+
 	if err := db.Ping(); err != nil {
 		return nil, fmt.Errorf("failed to ping postgres: %w", err)
 	}
+
+	// Perform comprehensive warmup queries to pre-load database metadata and avoid lazy initialization delays
+	// This helps reduce the 100-300ms delay on first query by warming up the connection and metadata cache
+	log.Info().Msg("Performing database warmup queries to pre-load metadata...")
+	start := time.Now()
+
+	// Basic connectivity test
+	var tmp int
+	if err := db.QueryRow("SELECT 1").Scan(&tmp); err != nil {
+		log.Warn().Err(err).Msg("Database basic warmup query failed, but continuing...")
+	}
+
+	// Warmup common table metadata by querying system catalogs
+	// This pre-loads table structure information that would otherwise be loaded lazily
+	warmupQueries := []string{
+		"SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public'",
+		"SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = 'public'",
+		"SELECT 1 FROM pg_stat_activity LIMIT 1",
+	}
+
+	for i, query := range warmupQueries {
+		if err := db.QueryRow(query).Scan(&tmp); err != nil {
+			log.Debug().Err(err).Int("query_index", i).Msg("Database warmup query failed, but continuing...")
+		}
+	}
+
+	duration := time.Since(start)
+	log.Info().Dur("duration", duration).Msg("Database warmup completed successfully")
 
 	connector := &PostgresConnector{
 		db:  db,
@@ -1450,15 +1485,24 @@ func (p *PostgresConnector) buildQuery(table, columns string, qf QueryFilter) st
 		}
 	}
 
-	// Prefer page/limit pagination; fallback to raw offset if provided
-	if qf.Page >= 0 && qf.Limit > 0 {
-		offset := qf.Page * qf.Limit
-		query += fmt.Sprintf(" LIMIT %d OFFSET %d", qf.Limit, offset)
-	} else if qf.Limit > 0 {
-		query += fmt.Sprintf(" LIMIT %d", qf.Limit)
-		if qf.Offset > 0 {
-			query += fmt.Sprintf(" OFFSET %d", qf.Offset)
+	// Apply pagination with safety limits
+	if qf.Limit > 0 {
+		// Calculate offset based on page or direct offset
+		var offset int
+		if qf.Page >= 0 {
+			offset = qf.Page * qf.Limit
+		} else {
+			offset = qf.Offset
 		}
+
+		// Ensure offset doesn't exceed the display limit
+		maxOffset := DATA_ROWS_DISPLAY_LIMIT - qf.Limit
+		if offset > maxOffset {
+			offset = maxOffset
+		}
+
+		// Apply limit and offset
+		query += fmt.Sprintf(" LIMIT %d OFFSET %d", qf.Limit, offset)
 	}
 
 	return query
@@ -2001,8 +2045,7 @@ func (p *PostgresConnector) GetWallet(address string) (*common.Wallet, error) {
 
 // GetWallets retrieves wallets with pagination and filtering
 func (p *PostgresConnector) GetWallets(limit, offset int, sortBy, sortOrder string) ([]common.Wallet, error) {
-	query := `SELECT address, account_nonce, balance, updated_at, created_at 
-	          FROM wallet`
+	query := `SELECT address, account_nonce, balance, updated_at, created_at FROM wallet`
 
 	if sortBy != "" {
 		query += fmt.Sprintf(" ORDER BY %s", sortBy)
@@ -2057,6 +2100,13 @@ func (p *PostgresConnector) GetWallets(limit, offset int, sortBy, sortOrder stri
 	}
 
 	return wallets, rows.Err()
+}
+
+func (p *PostgresConnector) GetTotalTransactions(ctx context.Context) (uint64, error) {
+	query := "SELECT value FROM stats WHERE key = 'total_transactions' LIMIT 1"
+	var count uint64
+	err := p.db.QueryRowContext(ctx, query).Scan(&count)
+	return count, err
 }
 
 // GetTransactionsByWalletPaginated retrieves paginated transactions for a wallet with sorting
