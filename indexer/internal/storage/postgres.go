@@ -1570,6 +1570,10 @@ func (p *PostgresConnector) insertBlocks(blocks []common.Block) error {
 				parent_hash = EXCLUDED.parent_hash,
 				transaction_count = EXCLUDED.transaction_count,
 				updated_at = NOW()`, strings.Join(valueStrings, ","))
+				
+	if _, err := p.db.Exec(query, valueArgs...); err != nil {
+	return fmt.Errorf("failed to insert blocks: %w", err)
+	}
 
     // Update total_blocks count
     if _, err := p.db.Exec(`
