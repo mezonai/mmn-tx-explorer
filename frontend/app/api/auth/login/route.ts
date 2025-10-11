@@ -7,7 +7,7 @@ export async function GET() {
     `client_id=${process.env.NEXT_PUBLIC_OAUTH2_CLIENT_ID}&` +
     `redirect_uri=${encodeURIComponent(process.env.NEXT_PUBLIC_OAUTH2_REDIRECT_URI!)}&` +
     'response_type=code&' +
-    'scope=openid&' +
+    'scope=scope=openid+offline&' +
     `state=${state}`;
 
   const response = NextResponse.redirect(authUrl);
