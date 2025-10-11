@@ -44,8 +44,8 @@ export const UserDetailPopover: React.FC<UserDetailPopoverProps> = ({
         <Image
           src={user.avatar || '/default-avatar.png'}
           alt="avatar"
-          width={72}
-          height={72}
+          width={100}
+          height={100}
           className="absolute -bottom-9 left-1/2 -translate-x-1/2 rounded-full border-4 border-white shadow"
         />
       </div>
