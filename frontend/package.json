@@ -27,7 +27,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
-    "frontend": "file:",
     "lucide-react": "^0.539.0",
     "next": "15.4.6",
     "rc-progress": "^4.0.0",
