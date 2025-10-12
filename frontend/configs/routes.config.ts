@@ -10,4 +10,5 @@ export const ROUTES = {
   TRANSFER: '/transfer',
   SWAP: '/swap',
   STAKE: '/stake',
+  LOGOUT: '/oauth2/logout',
 } as const;

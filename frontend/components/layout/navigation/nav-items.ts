@@ -2,7 +2,7 @@ import { ComponentType, SVGProps } from 'react';
 
 import { Award04, BarChartSquare02, CreditCardRefresh, Cube01 } from '@/assets/icons';
 import { ROUTES } from '@/configs/routes.config';
-import { CircleDollarSign, RefreshCcw, Sprout } from 'lucide-react';
+import { CircleDollarSign, RefreshCcw, Sprout, LogOut } from 'lucide-react';
 
 export interface NavItem {
   title: string;
@@ -46,4 +46,5 @@ export const sidebarNavItems: NavItem[] = [
     href: ROUTES.STAKE,
     icon: Sprout,
   },
+  { title: 'Log Out', href: ROUTES.LOGOUT, icon: LogOut },
 ];
