@@ -9,6 +9,8 @@ import * as React from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { UserDetailPopover } from './user-detail-popover';
+import { AUTHENCATION_ENDPOINT } from '@/modules/auth';
+import { useUserInfo } from '@/modules/auth/hooks/useUserInfo';
 
 export function SidebarUserInfo() {
   const [copiedKey, setCopiedKey] = React.useState<string | null>(null);
@@ -18,26 +20,26 @@ export function SidebarUserInfo() {
   const [showModal, setShowModal] = React.useState<boolean>(false);
   const [popoverPos, setPopoverPos] = React.useState<{ top: number; left: number } | null>(null);
   const [mounted, setMounted] = React.useState<boolean>(false);
-
+  const test = useUserInfo();
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
   React.useEffect(() => {
     if (!mounted) return;
-    fetch('/api/me/user')
+    fetch(AUTHENCATION_ENDPOINT.USER_INFO)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         setUser(data && !data.error ? data : null);
         setLoading(false);
       });
-  }, [mounted]);
+  }, [mounted, test]);
 
   const handleLogin = () => {
-    window.location.href = '/api/auth/login';
+    window.location.href = AUTHENCATION_ENDPOINT.LOGIN;
   };
   const handleLogout = async () => {
-    await fetch('/api/auth/logout');
+    await fetch(AUTHENCATION_ENDPOINT.LOGOUT);
     setUser(null);
     window.location.href = '/';
   };
@@ -61,7 +63,7 @@ export function SidebarUserInfo() {
     return <div className="p-4 text-sm text-gray-400">Loading...</div>;
   }
   return (
-    <div className="relative flex flex-col items-center gap-2 border-t border-gray-200 p-4">
+    <div className="flex flex-col items-center gap-2 border-t border-gray-200 p-4">
       {user ? (
         <>
           <button

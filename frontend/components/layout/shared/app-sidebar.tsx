@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
@@ -61,8 +62,10 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        <SidebarUserInfo />
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarUserInfo />
+      </SidebarFooter>
     </Sidebar>
   );
 }
