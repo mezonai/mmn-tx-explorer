@@ -49,6 +49,9 @@ type QueryParams struct {
 
 	// @Description Wallet address to fetch transactions for (matches from OR to)
 	WalletAddress string `schema:"wallet_address"`
+
+	// @Description Timestamp less than (for infinite scroll)
+    TimestampLt int64 `schema:"timestamp_lt"`
 }
 
 // Meta represents metadata for a query response
@@ -68,6 +71,10 @@ type Meta struct {
 	TotalItems int `json:"total_items,omitempty"`
 	// @Description Total number of pages
 	TotalPages int `json:"total_pages,omitempty"`
+    // @Description Flag indicating if there are more items to load
+    HasMore bool `json:"has_more,omitempty"`
+    // @Description Timestamp to use for the next request
+    NextTimestamp int64 `json:"next_timestamp,omitempty"`
 }
 
 // QueryResponse represents the response structure for a query

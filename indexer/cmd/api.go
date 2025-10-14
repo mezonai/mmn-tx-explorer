@@ -71,6 +71,7 @@ func RunApi(cmd *cobra.Command, args []string) {
 		root.Use(middleware.Cors)
 		// wildcard queries
 		root.GET("/transactions", handlers.GetTransactions)
+        root.GET("/transactions/infinite", handlers.GetTransactionsInfinite)
 		root.GET("/pending-transactions", handlers.GetPendingTransactions)
 		root.GET("/pending-tx/:transaction_hash/detail", handlers.GetPendingTransactionDetail)
 		root.GET("/events", handlers.GetLogs)
@@ -121,7 +122,7 @@ func RunApi(cmd *cobra.Command, args []string) {
 	})
 
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":3000",
 		Handler: r,
 	}
 

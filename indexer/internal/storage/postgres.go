@@ -1988,16 +1988,47 @@ func (p *PostgresConnector) insertWallet(ctx context.Context, address string, no
 		balanceBig = big.NewInt(0)
 	}
 
-	query := `INSERT INTO wallet (address, account_nonce, balance, transaction_count, updated_at, created_at) 
+	tx, err := p.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback() 
+
+	query := `
+		WITH inserted AS (
+			INSERT INTO wallet (address, account_nonce, balance, transaction_count, updated_at, created_at) 
 			VALUES ($1, $2, $3, 0, NOW(), NOW())
 			ON CONFLICT (address) 
 			DO UPDATE SET 
 				account_nonce = EXCLUDED.account_nonce,
 				balance = EXCLUDED.balance,
-				updated_at = NOW()`
+				updated_at = NOW()
+			RETURNING (xmax = 0) as is_new
+		)
+		SELECT COUNT(*) FROM inserted WHERE is_new = true
+	`
 
-	_, err := p.db.ExecContext(ctx, query, address, nonce, bigIntToString(balanceBig))
-	return err
+	var newWalletCount int64
+	err = tx.QueryRowContext(ctx, query, address, nonce, bigIntToString(balanceBig)).Scan(&newWalletCount)
+	if err != nil {
+		return fmt.Errorf("failed to insert wallet: %w", err)
+	}
+
+	if newWalletCount > 0 {
+		if _, err := tx.ExecContext(ctx, `
+			INSERT INTO stats(key, value) VALUES ('total_wallets', $1)
+			ON CONFLICT (key) 
+			DO UPDATE SET value = stats.value + $1
+		`, newWalletCount); err != nil {
+			return fmt.Errorf("failed to update total_wallets stat: %w", err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
 }
 
 // refreshWalletFromService fetches wallet data from MMN gRPC service and writes to DB
@@ -2184,6 +2215,54 @@ func (p *PostgresConnector) GetTransactionsByWalletCount(ctx context.Context, wa
 	}
 
 	return count, nil
+}
+
+// GetTransactionsByWalletWithTimestamp retrieves transactions for a wallet with timestamp-based cursor pagination
+func (p *PostgresConnector) GetTransactionsByWalletWithTimestamp(ctx context.Context, walletAddress string, limit int, timestampLt int64) ([]common.Transaction, error) {
+	columns := p.buildSelectFields([]string{}, defaultTransactionFields)
+
+	fromQuery := fmt.Sprintf(
+		"SELECT %s FROM transactions WHERE from_address = $1", 
+		columns,
+	)
+	toQuery := fmt.Sprintf(
+		"SELECT %s FROM transactions WHERE to_address = $1", 
+		columns,
+	)
+
+    args := []interface{}{walletAddress}
+    argIndex := 2
+    if timestampLt > 0 {
+        fromQuery += " AND transaction_timestamp < to_timestamp($2)"
+        toQuery += " AND transaction_timestamp < to_timestamp($2)"
+        args = append(args, timestampLt)
+        argIndex++
+    }
+
+	fromQuery += " ORDER BY transaction_timestamp DESC LIMIT $" + strconv.Itoa(argIndex)
+	toQuery += " ORDER BY transaction_timestamp DESC LIMIT $" + strconv.Itoa(argIndex)
+	args = append(args, limit)
+
+	query := fmt.Sprintf(
+		"(%s) UNION ALL (%s) ORDER BY transaction_timestamp DESC LIMIT $%d",
+		fromQuery,
+		toQuery,
+		argIndex+1,
+	)
+	args = append(args, limit)
+
+	rows, err := p.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	transactions, err := p.scanRowsToTransactions(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return transactions, rows.Err()
 }
 
 func (p *PostgresConnector) scanRowsToTransactions(rows *sql.Rows) ([]common.Transaction, error) {

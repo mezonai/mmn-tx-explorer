@@ -3,7 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-
+    "strconv"
 	"math"
 
 	"github.com/gin-gonic/gin"
@@ -36,6 +36,28 @@ import (
 // @Router /{chainId}/transactions [get]
 func GetTransactions(c *gin.Context) {
 	handleTransactionsRequest(c)
+}
+
+// @Summary Get transactions for infinite scroll
+// @Description Retrieve transactions with cursor-based pagination for infinite scroll
+// @Tags transactions
+// @Accept json
+// @Produce json
+// @Security BasicAuth
+// @Param chainId path string true "Chain ID"
+// @Param timestamp_lt query int false "Timestamp less than (from last page)"
+// @Param limit query int false "Number of items per page" default(20)
+// @Param wallet_address query string false "Wallet address to filter transactions"
+// @Param from_address query string false "From address to filter transactions"
+// @Param to_address query string false "To address to filter transactions"
+// @Param force_consistent_data query bool false "Force consistent data at the expense of query speed"
+// @Success 200 {object} api.QueryResponse{data=[]common.TransactionModel}
+// @Failure 400 {object} api.Error
+// @Failure 401 {object} api.Error
+// @Failure 500 {object} api.Error
+// @Router /{chainId}/transactions/infinite [get]
+func GetTransactionsInfinite(c *gin.Context) {
+    handleTransactionsInfiniteRequest(c)
 }
 
 // @Summary Get wallet transactions
@@ -225,6 +247,86 @@ func handleTransactionsRequest(c *gin.Context) {
 	queryResult.Meta.TotalItems = int(totalItems)
 	maxItemsDisplayed := min(totalItems, storage.DATA_ROWS_DISPLAY_LIMIT)
 	queryResult.Meta.TotalPages = int(math.Ceil(float64(maxItemsDisplayed) / float64(queryParams.Limit)))
+
+	c.JSON(http.StatusOK, queryResult)
+}
+
+func handleTransactionsInfiniteRequest(c *gin.Context) {
+	queryParams, err := api.ParseQueryParams(c.Request)
+	if err != nil {
+		api.BadRequestErrorHandler(c, err)
+		return
+	}
+
+	walletAddress := queryParams.WalletAddress
+
+	if walletAddress == "" {
+		api.BadRequestErrorHandler(c, fmt.Errorf("wallet_address is required"))
+		return
+	}
+
+	timestampLtStr := c.Query("timestamp_lt")
+	var timestampLt int64
+	if timestampLtStr != "" {
+		timestampLt, err = strconv.ParseInt(timestampLtStr, 10, 64)
+		if err != nil {
+			api.BadRequestErrorHandler(c, fmt.Errorf("invalid timestamp_lt parameter: %w", err))
+			return
+		}
+	}
+
+	chainId, err := api.GetChainId(c)
+	if err != nil {
+		api.BadRequestErrorHandler(c, err)
+		return
+	}
+
+	mainStorage, err := getMainStorage()
+	if err != nil {
+		log.Error().Err(err).Msg("Error creating storage connector")
+		api.InternalErrorHandler(c)
+		return
+	}
+
+	ctx := c.Request.Context()
+
+	queryResult := api.QueryResponse{
+		Meta: api.Meta{
+			ChainId: chainId.Uint64(),
+			Page:    0,
+			Limit:   queryParams.Limit,
+		},
+		Data: nil,
+	}
+
+	transactions, err := mainStorage.GetTransactionsByWalletWithTimestamp(
+		ctx,
+		walletAddress,
+		queryParams.Limit+1, 
+		timestampLt,
+	)
+	if err != nil {
+		log.Error().Err(err).Msg("Error querying transactions")
+		api.InternalErrorHandler(c)
+		return
+	}
+
+	hasMore := len(transactions) > queryParams.Limit
+	if hasMore {
+		transactions = transactions[:queryParams.Limit]
+	}
+
+	var nextTimestamp int64
+	if len(transactions) > 0 {
+		lastTx := transactions[len(transactions)-1]
+		nextTimestamp = lastTx.TransactionTimestamp.Unix()
+	}
+
+	var data interface{} = serializeTransactions(transactions)
+	queryResult.Data = &data
+	
+    queryResult.Meta.HasMore = hasMore  
+    queryResult.Meta.NextTimestamp = nextTimestamp  
 
 	c.JSON(http.StatusOK, queryResult)
 }
