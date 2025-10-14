@@ -11,6 +11,7 @@ import {
   TypeBadges,
   TypeBadgesSkeleton,
 } from '../../shared';
+import { APP_CONFIG } from '@/configs/app.config';
 
 interface TransactionCardProps {
   transaction?: ITransaction;
@@ -22,7 +23,6 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
       <div className="flex items-center justify-center">
         {transaction ? <MoreInfoButton transaction={transaction} /> : <MoreInfoButtonSkeleton />}
       </div>
-
       <div className="space-y-2 px-4 py-3">
         {transaction ? (
           <TypeBadges type={transaction.transaction_type} status={transaction.status} />
@@ -44,7 +44,6 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
           )}
         </div>
       </div>
-
       <div className="flex items-center px-4 py-3">
         {transaction ? (
           <FromToAddresses
@@ -56,11 +55,10 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
           <FromToAddressesSkeleton orientation={ETransactionOrientation.Vertical} />
         )}
       </div>
-
       <div className="flex items-center px-4 py-3">
         {transaction ? (
           <span className="text-tertiary-600 text-sm font-normal whitespace-nowrap">
-            {NumberUtil.formatWithCommasAndScale(transaction.value)}
+            {NumberUtil.formatWithCommasAndScale(transaction.value)} {APP_CONFIG.CHAIN_SYMBOL}
           </span>
         ) : (
           <Skeleton className="h-5 w-14" />
