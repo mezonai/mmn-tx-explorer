@@ -3,7 +3,6 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-    "strconv"
 	"math"
 
 	"github.com/gin-gonic/gin"
@@ -265,15 +264,7 @@ func handleTransactionsInfiniteRequest(c *gin.Context) {
 		return
 	}
 
-	timestampLtStr := c.Query("timestamp_lt")
-	var timestampLt int64
-	if timestampLtStr != "" {
-		timestampLt, err = strconv.ParseInt(timestampLtStr, 10, 64)
-		if err != nil {
-			api.BadRequestErrorHandler(c, fmt.Errorf("invalid timestamp_lt parameter: %w", err))
-			return
-		}
-	}
+    timestampLt := queryParams.TimestampLt
 
 	chainId, err := api.GetChainId(c)
 	if err != nil {
@@ -319,7 +310,7 @@ func handleTransactionsInfiniteRequest(c *gin.Context) {
 	var nextTimestamp int64
 	if len(transactions) > 0 {
 		lastTx := transactions[len(transactions)-1]
-		nextTimestamp = lastTx.TransactionTimestamp.Unix()
+		nextTimestamp = lastTx.TransactionTimestamp.UnixMilli()
 	}
 
 	var data interface{} = serializeTransactions(transactions)

@@ -1992,7 +1992,7 @@ func (p *PostgresConnector) insertWallet(ctx context.Context, address string, no
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback() 
+	defer tx.Rollback()
 
 	query := `
 		WITH inserted AS (
@@ -2222,22 +2222,22 @@ func (p *PostgresConnector) GetTransactionsByWalletWithTimestamp(ctx context.Con
 	columns := p.buildSelectFields([]string{}, defaultTransactionFields)
 
 	fromQuery := fmt.Sprintf(
-		"SELECT %s FROM transactions WHERE from_address = $1", 
+		"SELECT %s FROM transactions WHERE from_address = $1",
 		columns,
 	)
 	toQuery := fmt.Sprintf(
-		"SELECT %s FROM transactions WHERE to_address = $1", 
+		"SELECT %s FROM transactions WHERE to_address = $1",
 		columns,
 	)
 
-    args := []interface{}{walletAddress}
-    argIndex := 2
-    if timestampLt > 0 {
-        fromQuery += " AND transaction_timestamp < to_timestamp($2)"
-        toQuery += " AND transaction_timestamp < to_timestamp($2)"
-        args = append(args, timestampLt)
-        argIndex++
-    }
+	args := []interface{}{walletAddress}
+	argIndex := 2
+	if timestampLt > 0 {
+		fromQuery += " AND transaction_timestamp < to_timestamp($2/1000.0)"
+		toQuery += " AND transaction_timestamp < to_timestamp($2/1000.0)"
+		args = append(args, timestampLt)
+		argIndex++
+	}
 
 	fromQuery += " ORDER BY transaction_timestamp DESC LIMIT $" + strconv.Itoa(argIndex)
 	toQuery += " ORDER BY transaction_timestamp DESC LIMIT $" + strconv.Itoa(argIndex)
