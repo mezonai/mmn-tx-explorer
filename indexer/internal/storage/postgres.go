@@ -2218,7 +2218,7 @@ func (p *PostgresConnector) GetTransactionsByWalletCount(ctx context.Context, wa
 }
 
 // GetTransactionsByWalletWithTimestamp retrieves transactions for a wallet with timestamp-based cursor pagination
-func (p *PostgresConnector) GetTransactionsByWalletWithTimestamp(ctx context.Context, walletAddress string, limit int, timestampLt int64) ([]common.Transaction, error) {
+func (p *PostgresConnector) GetTransactionsByWalletWithTimestamp(ctx context.Context, walletAddress string, limit int, timestampLt int64, lastHash string) ([]common.Transaction, error) {
 	columns := p.buildSelectFields([]string{}, defaultTransactionFields)
 
 	fromQuery := fmt.Sprintf(
@@ -2233,18 +2233,25 @@ func (p *PostgresConnector) GetTransactionsByWalletWithTimestamp(ctx context.Con
 	args := []interface{}{walletAddress}
 	argIndex := 2
 	if timestampLt > 0 {
-		fromQuery += " AND transaction_timestamp < to_timestamp($2/1000.0)"
-		toQuery += " AND transaction_timestamp < to_timestamp($2/1000.0)"
-		args = append(args, timestampLt)
-		argIndex++
+		if lastHash != "" {
+			fromQuery += " AND (transaction_timestamp < to_timestamp($2/1000.0) OR (transaction_timestamp = to_timestamp($2/1000.0) AND hash < $3))"
+			toQuery += " AND (transaction_timestamp < to_timestamp($2/1000.0) OR (transaction_timestamp = to_timestamp($2/1000.0) AND hash < $3))"
+			args = append(args, timestampLt, lastHash)
+			argIndex += 2
+		} else {
+			fromQuery += " AND transaction_timestamp < to_timestamp($2/1000.0)"
+			toQuery += " AND transaction_timestamp < to_timestamp($2/1000.0)"
+			args = append(args, timestampLt)
+			argIndex++
+		}
 	}
 
-	fromQuery += " ORDER BY transaction_timestamp DESC LIMIT $" + strconv.Itoa(argIndex)
-	toQuery += " ORDER BY transaction_timestamp DESC LIMIT $" + strconv.Itoa(argIndex)
+	fromQuery += " ORDER BY transaction_timestamp DESC, hash DESC LIMIT $" + strconv.Itoa(argIndex)
+	toQuery += " ORDER BY transaction_timestamp DESC, hash DESC LIMIT $" + strconv.Itoa(argIndex)
 	args = append(args, limit)
 
 	query := fmt.Sprintf(
-		"(%s) UNION ALL (%s) ORDER BY transaction_timestamp DESC LIMIT $%d",
+		"(%s) UNION ALL (%s) ORDER BY transaction_timestamp DESC, hash DESC LIMIT $%d",
 		fromQuery,
 		toQuery,
 		argIndex+1,

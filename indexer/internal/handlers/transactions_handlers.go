@@ -265,6 +265,7 @@ func handleTransactionsInfiniteRequest(c *gin.Context) {
 	}
 
     timestampLt := queryParams.TimestampLt
+    lastHash := queryParams.LastHash
 
 	chainId, err := api.GetChainId(c)
 	if err != nil {
@@ -295,6 +296,7 @@ func handleTransactionsInfiniteRequest(c *gin.Context) {
 		walletAddress,
 		queryParams.Limit+1, 
 		timestampLt,
+		lastHash,
 	)
 	if err != nil {
 		log.Error().Err(err).Msg("Error querying transactions")
@@ -308,16 +310,19 @@ func handleTransactionsInfiniteRequest(c *gin.Context) {
 	}
 
 	var nextTimestamp int64
+	var nextHash string
 	if len(transactions) > 0 {
 		lastTx := transactions[len(transactions)-1]
 		nextTimestamp = lastTx.TransactionTimestamp.UnixMilli()
+		nextHash = lastTx.Hash
 	}
 
 	var data interface{} = serializeTransactions(transactions)
 	queryResult.Data = &data
 	
     queryResult.Meta.HasMore = hasMore  
-    queryResult.Meta.NextTimestamp = nextTimestamp  
+    queryResult.Meta.NextTimestamp = nextTimestamp
+    queryResult.Meta.NextHash = nextHash
 
 	c.JSON(http.StatusOK, queryResult)
 }

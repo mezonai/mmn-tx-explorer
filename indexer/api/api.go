@@ -52,6 +52,9 @@ type QueryParams struct {
 
 	// @Description Timestamp less than (for infinite scroll)
     TimestampLt int64 `schema:"timestamp_lt"`
+
+	// @Description Transaction hash for pagination when timestamps are identical
+    LastHash string `schema:"last_hash"`
 }
 
 // Meta represents metadata for a query response
@@ -75,6 +78,8 @@ type Meta struct {
     HasMore bool `json:"has_more,omitempty"`
     // @Description Timestamp to use for the next request
     NextTimestamp int64 `json:"next_timestamp,omitempty"`
+    // @Description Hash to use for the next request when timestamps are identical
+    NextHash string `json:"next_hash,omitempty"`
 }
 
 // QueryResponse represents the response structure for a query
