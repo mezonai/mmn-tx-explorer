@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mezon Explorer · Swap Assets</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#6941c6",
+            "primary-light": "#8b5cf6",
+            "primary-dark": "#553c9a",
+            dark: "#0B1533",
+            "dark-light": "#1e293b",
+            neon: "#00f5ff"
+          },
+          fontFamily: {
+            inter: ["Inter", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-dark text-white font-inter">
+  <div class="min-h-screen flex flex-col">
+    <header class="bg-dark/80 border-b border-gray-800 backdrop-blur">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex h-16 items-center justify-between">
+          <a href="index.html" class="flex items-center space-x-2">
+            <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/30 text-primary">
+              MEZ
+            </span>
+            <span class="text-lg font-semibold tracking-wide">Mezon Explorer</span>
+          </a>
+          <nav class="hidden md:flex items-center space-x-6 text-sm">
+            <a href="index.html" class="text-gray-400 hover:text-white transition">Public Dashboard</a>
+            <a href="login.html" class="text-gray-400 hover:text-white transition">Login</a>
+            <a href="dashboard.html" class="text-gray-400 hover:text-white transition">My Dashboard</a>
+            <a href="account-detail.html" class="text-gray-400 hover:text-white transition">Account Detail</a>
+            <a href="give-coffee.html" class="text-gray-400 hover:text-white transition">Give Coffee</a>
+            <a href="stake.html" class="text-gray-400 hover:text-white transition">Stake</a>
+            <a href="swap.html" class="text-white font-semibold border-b-2 border-primary pb-1">Swap</a>
+            <a href="donate.html" class="text-gray-400 hover:text-white transition">Donate</a>
+            <a href="red-envelope.html" class="text-gray-400 hover:text-white transition">Lì Xì</a>
+            <a href="search.html" class="text-gray-400 hover:text-white transition">Search</a>
+            <a href="settings.html" class="text-gray-400 hover:text-white transition">Settings</a>
+          </nav>
+          <div class="flex items-center space-x-3 text-xs text-gray-300">
+            <span class="rounded-xl border border-white/10 bg-black/40 px-3 py-1">Liquidity · $2.4M TVL</span>
+            <button class="rounded-xl border border-primary/40 px-3 py-1 font-semibold text-primary hover:bg-primary/10 transition">Bridge</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1">
+      <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
+        <header class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p class="text-xs uppercase tracking-[0.3em] text-primary-light">Instant Swap</p>
+            <h1 class="mt-3 text-4xl font-bold">Swap tokens with MEZ liquidity insurance.</h1>
+            <p class="mt-4 max-w-3xl text-sm text-gray-300">
+              Execute atomic swaps between MEZ, stablecoins, and supported ecosystem tokens. Protection is enabled through smart routing, MEZ insurance pools, and on-chain compliance checks.
+            </p>
+          </div>
+          <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-gray-300">
+            Quotes refresh every 5 seconds · Slippage auto-lock 0.5%
+          </div>
+        </header>
+
+        <div class="grid gap-10 lg:grid-cols-3">
+          <form class="lg:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-8">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <h2 class="text-lg font-semibold">Swap details</h2>
+              <div class="flex items-center gap-2 text-xs text-gray-300">
+                <span class="rounded-lg border border-white/10 px-3 py-1">Routing: Mezon DEX</span>
+                <span class="rounded-lg border border-primary/40 px-3 py-1 text-primary">Smart route</span>
+              </div>
+            </div>
+
+            <div class="mt-6 grid gap-6 text-sm text-gray-300 sm:grid-cols-2">
+              <label class="block rounded-2xl border border-white/10 bg-black/30 p-6">
+                <span class="text-xs uppercase tracking-[0.2em] text-gray-400">You pay</span>
+                <div class="mt-4 flex items-center justify-between">
+                  <input type="number" placeholder="1000" class="bg-transparent text-3xl font-semibold text-white focus:outline-none" />
+                  <select class="rounded-xl border border-white/10 bg-black/40 px-3 py-1 text-xs uppercase tracking-[0.2em] text-gray-300 focus:border-primary/40 focus:outline-none">
+                    <option value="MEZ">MEZ</option>
+                    <option value="USDT">USDT</option>
+                    <option value="USDC">USDC</option>
+                  </select>
+                </div>
+                <p class="mt-3 text-xs text-gray-500">Balance · 482,940 MEZ</p>
+              </label>
+
+              <label class="block rounded-2xl border border-white/10 bg-black/30 p-6">
+                <span class="text-xs uppercase tracking-[0.2em] text-gray-400">You receive</span>
+                <div class="mt-4 flex items-center justify-between">
+                  <input type="number" placeholder="4250" class="bg-transparent text-3xl font-semibold text-white focus:outline-none" />
+                  <select class="rounded-xl border border-white/10 bg-black/40 px-3 py-1 text-xs uppercase tracking-[0.2em] text-gray-300 focus:border-primary/40 focus:outline-none">
+                    <option value="USDT">USDT</option>
+                    <option value="MEZ">MEZ</option>
+                    <option value="USDC">USDC</option>
+                  </select>
+                </div>
+                <p class="mt-3 text-xs text-gray-500">Best execution from Vault B</p>
+              </label>
+            </div>
+
+            <div class="mt-6 grid gap-4 sm:grid-cols-2 text-xs text-gray-300">
+              <div class="rounded-2xl border border-white/10 bg-black/30 px-5 py-4">
+                <p class="uppercase tracking-[0.2em] text-gray-400">Price</p>
+                <p class="mt-2 text-white text-sm font-semibold">1 MEZ ≈ 4.25 USDT</p>
+              </div>
+              <div class="rounded-2xl border border-white/10 bg-black/30 px-5 py-4">
+                <p class="uppercase tracking-[0.2em] text-gray-400">Fees</p>
+                <p class="mt-2 text-white text-sm font-semibold">Swap 0.35% · Insurance 0.1%</p>
+              </div>
+            </div>
+
+            <div class="mt-8 space-y-4 text-xs text-gray-400">
+              <div class="flex items-center justify-between">
+                <span>Minimum received</span>
+                <span class="font-semibold text-white">4,200 USDT</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span>Route</span>
+                <span class="font-semibold text-white">MEZ → USDX → USDT</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span>Insurance coverage</span>
+                <span class="font-semibold text-white">$10,000 fail-safe</span>
+              </div>
+            </div>
+
+            <button type="submit" class="mt-8 w-full rounded-2xl bg-primary py-4 text-sm font-semibold shadow-lg shadow-primary/30 hover:bg-primary-light transition">
+              Confirm swap
+            </button>
+
+            <p class="mt-6 text-xs text-gray-400">
+              By confirming, you agree to the Mezon swap policy and authorize price locks for up to 30 seconds. All swaps are non-custodial and executed via audited smart contracts.
+            </p>
+          </form>
+
+          <aside class="space-y-8">
+            <section class="rounded-3xl border border-neon/40 bg-neon/10 p-6 text-sm text-neon/90">
+              <h2 class="text-lg font-semibold text-neon">Risk engine</h2>
+              <ul class="mt-4 space-y-3">
+                <li class="flex items-start space-x-3">
+                  <span class="mt-2 h-2 w-2 rounded-full bg-neon"></span>
+                  <p>Automatic front-running protection with transaction bundling.</p>
+                </li>
+                <li class="flex items-start space-x-3">
+                  <span class="mt-2 h-2 w-2 rounded-full bg-neon"></span>
+                  <p>MEV shield monitors mempool and delays if slippage exceeds threshold.</p>
+                </li>
+                <li class="flex items-start space-x-3">
+                  <span class="mt-2 h-2 w-2 rounded-full bg-neon"></span>
+                  <p>Compliance checks ensure swaps only touch approved pools.</p>
+                </li>
+              </ul>
+            </section>
+
+            <section class="rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-gray-300">
+              <h2 class="text-lg font-semibold">Recent swaps</h2>
+              <div class="mt-4 space-y-3">
+                <div class="flex items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
+                  <div>
+                    <p class="font-semibold text-white">MEZ → USDT</p>
+                    <p class="text-xs text-gray-400">0x45df...ab21 · Finalized</p>
+                  </div>
+                  <span class="text-xs text-emerald-300">+4,250 USDT</span>
+                </div>
+                <div class="flex items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
+                  <div>
+                    <p class="font-semibold text-white">USDT → MEZ</p>
+                    <p class="text-xs text-gray-400">0x62fa...2c54 · Finalized</p>
+                  </div>
+                  <span class="text-xs text-emerald-300">+950 MEZ</span>
+                </div>
+                <div class="flex items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
+                  <div>
+                    <p class="font-semibold text-white">MEZ → USDX</p>
+                    <p class="text-xs text-gray-400">0x19ff...8b11 · Pending</p>
+                  </div>
+                  <span class="text-xs text-amber-300">Processing</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="rounded-3xl border border-white/10 bg-white/5 p-6 text-xs text-gray-400">
+              <h2 class="text-lg font-semibold text-white">Supported assets</h2>
+              <ul class="mt-4 grid gap-3">
+                <li class="flex items-center justify-between">
+                  <span>MEZ</span>
+                  <span class="rounded-full bg-emerald-400/10 px-3 py-1 text-emerald-300">Native</span>
+                </li>
+                <li class="flex items-center justify-between">
+                  <span>USDT</span>
+                  <span class="rounded-full bg-white/10 px-3 py-1 text-gray-300">Stable</span>
+                </li>
+                <li class="flex items-center justify-between">
+                  <span>USDC</span>
+                  <span class="rounded-full bg-white/10 px-3 py-1 text-gray-300">Stable</span>
+                </li>
+                <li class="flex items-center justify-between">
+                  <span>MEZ-LP</span>
+                  <span class="rounded-full bg-primary/20 px-3 py-1 text-primary-light">LP token</span>
+                </li>
+              </ul>
+            </section>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <footer class="bg-dark-light/70 border-t border-gray-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-sm text-gray-400 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <span>Audit status: CertiGuard 2024 · Insurance pool active</span>
+        <a href="#" class="hover:text-white transition">Swap policy</a>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

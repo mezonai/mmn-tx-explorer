@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mezon Explorer · Account Detail</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#6941c6",
+            "primary-light": "#8b5cf6",
+            "primary-dark": "#553c9a",
+            dark: "#0B1533",
+            "dark-light": "#1e293b",
+            neon: "#00f5ff"
+          },
+          fontFamily: {
+            inter: ["Inter", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-dark text-white font-inter">
+  <div class="min-h-screen flex flex-col">
+    <header class="bg-dark/80 border-b border-gray-800 backdrop-blur">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex h-16 items-center justify-between">
+          <a href="index.html" class="flex items-center space-x-2">
+            <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/30 text-primary">
+              MEZ
+            </span>
+            <span class="text-lg font-semibold tracking-wide">Mezon Explorer</span>
+          </a>
+          <nav class="hidden md:flex items-center space-x-6 text-sm">
+            <a href="index.html" class="text-gray-400 hover:text-white transition">Public Dashboard</a>
+            <a href="login.html" class="text-gray-400 hover:text-white transition">Login</a>
+            <a href="dashboard.html" class="text-gray-400 hover:text-white transition">My Dashboard</a>
+            <a href="account-detail.html" class="text-white font-semibold border-b-2 border-primary pb-1">Account Detail</a>
+            <a href="give-coffee.html" class="text-gray-400 hover:text-white transition">Give Coffee</a>
+            <a href="stake.html" class="text-gray-400 hover:text-white transition">Stake</a>
+            <a href="swap.html" class="text-gray-400 hover:text-white transition">Swap</a>
+            <a href="donate.html" class="text-gray-400 hover:text-white transition">Donate</a>
+            <a href="red-envelope.html" class="text-gray-400 hover:text-white transition">Lì Xì</a>
+            <a href="search.html" class="text-gray-400 hover:text-white transition">Search</a>
+            <a href="settings.html" class="text-gray-400 hover:text-white transition">Settings</a>
+          </nav>
+          <div class="flex items-center space-x-3 text-xs text-gray-300">
+            <span class="rounded-lg border border-white/10 bg-black/40 px-3 py-1 font-semibold">Wallet: aurora.mez</span>
+            <a href="settings.html" class="rounded-lg border border-primary/40 px-3 py-1 font-semibold text-primary hover:bg-primary/10 transition">Manage</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1">
+      <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
+        <div class="grid gap-8 lg:grid-cols-3">
+          <div class="lg:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-8">
+            <header class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p class="text-xs uppercase tracking-[0.3em] text-primary-light">Account Summary</p>
+                <h1 class="mt-2 text-3xl font-bold">aurora.mez</h1>
+                <p class="mt-2 text-sm text-gray-300">Encrypted account details. Only visible to you.</p>
+              </div>
+              <div class="rounded-xl border border-white/10 bg-black/40 px-4 py-2 text-xs text-gray-300">
+                Last updated block · 1,245,902
+              </div>
+            </header>
+
+            <dl class="mt-10 grid gap-6 text-sm sm:grid-cols-2">
+              <div class="rounded-2xl border border-white/10 bg-black/20 px-4 py-5">
+                <dt class="uppercase tracking-[0.2em] text-xs text-gray-400">Address</dt>
+                <dd class="mt-3 font-mono text-sm text-white">0x934a...cd21</dd>
+              </div>
+              <div class="rounded-2xl border border-white/10 bg-black/20 px-4 py-5">
+                <dt class="uppercase tracking-[0.2em] text-xs text-gray-400">Balance</dt>
+                <dd class="mt-3 text-xl font-semibold text-white">482,940 MEZ</dd>
+              </div>
+              <div class="rounded-2xl border border-white/10 bg-black/20 px-4 py-5">
+                <dt class="uppercase tracking-[0.2em] text-xs text-gray-400">Transaction Count</dt>
+                <dd class="mt-3 text-xl font-semibold text-white">2,483</dd>
+              </div>
+              <div class="rounded-2xl border border-white/10 bg-black/20 px-4 py-5">
+                <dt class="uppercase tracking-[0.2em] text-xs text-gray-400">Stake Delegated</dt>
+                <dd class="mt-3 text-xl font-semibold text-white">120,000 MEZ</dd>
+              </div>
+            </dl>
+          </div>
+
+          <aside class="rounded-3xl border border-primary/30 bg-primary/10 p-8">
+            <h2 class="text-lg font-semibold">Access controls</h2>
+            <p class="mt-2 text-sm text-gray-200/80">
+              Account data is protected by session-bound policies. Use the filters to limit queries and export results for compliance.
+            </p>
+            <ul class="mt-6 space-y-4 text-sm text-gray-200/80">
+              <li class="flex space-x-3">
+                <span class="h-2 w-2 rounded-full bg-emerald-400 mt-2"></span>
+                <p>Only you can view this data. Session wallet must equal address.</p>
+              </li>
+              <li class="flex space-x-3">
+                <span class="h-2 w-2 rounded-full bg-amber-300 mt-2"></span>
+                <p>Time range limited to 12 months. Default selection: 3 months.</p>
+              </li>
+              <li class="flex space-x-3">
+                <span class="h-2 w-2 rounded-full bg-neon mt-2"></span>
+                <p>Rate limited to 20 private requests per minute.</p>
+              </li>
+            </ul>
+            <a href="settings.html" class="mt-8 inline-flex items-center justify-center rounded-xl border border-white/10 bg-black/30 px-4 py-2 text-sm font-medium text-white hover:border-primary/40 hover:text-primary-light transition">Open privacy settings</a>
+          </aside>
+        </div>
+
+        <section class="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <header class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h2 class="text-lg font-semibold">Transaction history</h2>
+              <p class="text-sm text-gray-400">Filter your on-chain activity by period, type, and state.</p>
+            </div>
+            <form class="flex flex-wrap gap-4 text-xs text-gray-300">
+              <label class="flex flex-col gap-2">
+                <span>Time Range</span>
+                <select class="rounded-xl border border-white/10 bg-black/40 px-4 py-2 focus:border-primary/40 focus:outline-none">
+                  <option value="3m">Last 3 months (default)</option>
+                  <option value="6m">Last 6 months</option>
+                  <option value="12m">Last 12 months</option>
+                </select>
+              </label>
+              <label class="flex flex-col gap-2">
+                <span>Type</span>
+                <select class="rounded-xl border border-white/10 bg-black/40 px-4 py-2 focus:border-primary/40 focus:outline-none">
+                  <option value="all">All</option>
+                  <option value="sent">Sent</option>
+                  <option value="received">Received</option>
+                  <option value="stake">Stake</option>
+                  <option value="coffee">Give Coffee</option>
+                  <option value="swap">Swap</option>
+                </select>
+              </label>
+              <label class="flex flex-col gap-2">
+                <span>Status</span>
+                <select class="rounded-xl border border-white/10 bg-black/40 px-4 py-2 focus:border-primary/40 focus:outline-none">
+                  <option>Any</option>
+                  <option>Pending</option>
+                  <option>Finalized</option>
+                  <option>Failed</option>
+                </select>
+              </label>
+              <label class="flex flex-col gap-2">
+                <span>Results per page</span>
+                <select class="rounded-xl border border-white/10 bg-black/40 px-4 py-2 focus:border-primary/40 focus:outline-none">
+                  <option>20</option>
+                  <option>40</option>
+                  <option>100</option>
+                </select>
+              </label>
+              <button type="submit" class="self-end rounded-xl bg-primary px-5 py-2 text-sm font-semibold shadow-lg shadow-primary/30 hover:bg-primary-light transition">Apply</button>
+            </form>
+          </header>
+
+          <div class="mt-8 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+            <table class="min-w-full divide-y divide-white/5 text-sm">
+              <thead class="bg-black/40 text-xs uppercase tracking-[0.2em] text-gray-400">
+                <tr>
+                  <th class="px-6 py-3 text-left">Hash</th>
+                  <th class="px-6 py-3 text-left">Type</th>
+                  <th class="px-6 py-3 text-left">Amount</th>
+                  <th class="px-6 py-3 text-left">Status</th>
+                  <th class="px-6 py-3 text-left">Time</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-white/5 text-gray-300">
+                <tr class="hover:bg-white/5 transition">
+                  <td class="px-6 py-4 font-mono text-xs">0x45df...ab21</td>
+                  <td class="px-6 py-4">Swap</td>
+                  <td class="px-6 py-4 text-emerald-300">+4,250 USDT</td>
+                  <td class="px-6 py-4">
+                    <span class="rounded-full bg-emerald-400/10 px-3 py-1 text-xs text-emerald-300">Finalized</span>
+                  </td>
+                  <td class="px-6 py-4">12:40 UTC</td>
+                </tr>
+                <tr class="hover:bg-white/5 transition">
+                  <td class="px-6 py-4 font-mono text-xs">0x72aa...be81</td>
+                  <td class="px-6 py-4">Give Coffee</td>
+                  <td class="px-6 py-4 text-emerald-300">Completed</td>
+                  <td class="px-6 py-4">
+                    <span class="rounded-full bg-emerald-400/10 px-3 py-1 text-xs text-emerald-300">TokenIssued</span>
+                  </td>
+                  <td class="px-6 py-4">11:58 UTC</td>
+                </tr>
+                <tr class="hover:bg-white/5 transition">
+                  <td class="px-6 py-4 font-mono text-xs">0x19fa...1d20</td>
+                  <td class="px-6 py-4">Stake</td>
+                  <td class="px-6 py-4 text-amber-300">15,000 MEZ</td>
+                  <td class="px-6 py-4">
+                    <span class="rounded-full bg-amber-400/10 px-3 py-1 text-xs text-amber-300">Pending</span>
+                  </td>
+                  <td class="px-6 py-4">11:23 UTC</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="mt-6 flex flex-col gap-4 text-xs text-gray-400 sm:flex-row sm:items-center sm:justify-between">
+            <p>Showing 1–20 of 2483 records</p>
+            <div class="flex items-center space-x-2">
+              <button class="rounded-lg border border-white/10 px-3 py-2 hover:border-primary/40 hover:text-white transition">&larr; Prev</button>
+              <button class="rounded-lg border border-primary/40 bg-primary/20 px-3 py-2 text-primary-light">1</button>
+              <button class="rounded-lg border border-white/10 px-3 py-2 hover:border-primary/40 hover:text-white transition">2</button>
+              <button class="rounded-lg border border-white/10 px-3 py-2 hover:border-primary/40 hover:text-white transition">3</button>
+              <button class="rounded-lg border border-white/10 px-3 py-2 hover:border-primary/40 hover:text-white transition">Next &rarr;</button>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <footer class="bg-dark-light/70 border-t border-gray-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-sm text-gray-400 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <span>Encrypted export available · CSV / JSON</span>
+        <div class="flex items-center space-x-5">
+          <a href="#" class="hover:text-white transition">Export</a>
+          <a href="support.html" class="hover:text-white transition">Support</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mezon Explorer · Public Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#6941c6",
+            "primary-light": "#8b5cf6",
+            "primary-dark": "#553c9a",
+            dark: "#0B1533",
+            "dark-light": "#1e293b",
+            neon: "#00f5ff"
+          },
+          fontFamily: {
+            inter: ["Inter", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-dark text-white font-inter">
+  <div class="min-h-screen flex flex-col">
+    <header class="bg-dark/80 border-b border-gray-800 backdrop-blur">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex h-16 items-center justify-between">
+          <a href="index.html" class="flex items-center space-x-2">
+            <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/30 text-primary">
+              MEZ
+            </span>
+            <span class="text-lg font-semibold tracking-wide">Mezon Explorer</span>
+          </a>
+          <nav class="hidden md:flex items-center space-x-6 text-sm">
+            <a href="index.html" class="text-white font-semibold border-b-2 border-primary pb-1">Public Dashboard</a>
+            <a href="login.html" class="text-gray-400 hover:text-white transition">Login</a>
+            <a href="dashboard.html" class="text-gray-400 hover:text-white transition">My Dashboard</a>
+            <a href="account-detail.html" class="text-gray-400 hover:text-white transition">Account Detail</a>
+            <a href="give-coffee.html" class="text-gray-400 hover:text-white transition">Give Coffee</a>
+            <a href="stake.html" class="text-gray-400 hover:text-white transition">Stake</a>
+            <a href="swap.html" class="text-gray-400 hover:text-white transition">Swap</a>
+            <a href="donate.html" class="text-gray-400 hover:text-white transition">Donate</a>
+            <a href="red-envelope.html" class="text-gray-400 hover:text-white transition">Lì Xì</a>
+            <a href="search.html" class="text-gray-400 hover:text-white transition">Search</a>
+            <a href="settings.html" class="text-gray-400 hover:text-white transition">Settings</a>
+          </nav>
+          <div class="flex items-center space-x-3">
+            <a href="login.html" class="rounded-lg border border-primary/40 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/20 transition">Login</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1">
+      <section class="relative overflow-hidden">
+        <div class="absolute inset-0 opacity-60">
+          <div class="pointer-events-none absolute -left-32 top-10 h-64 w-64 rounded-full bg-primary/30 blur-3xl"></div>
+          <div class="pointer-events-none absolute right-0 top-20 h-72 w-72 rounded-full bg-neon/20 blur-3xl"></div>
+        </div>
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div class="max-w-3xl">
+            <div class="inline-flex items-center space-x-2 rounded-full bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-primary-light">
+              <span class="h-2 w-2 rounded-full bg-neon animate-pulse"></span>
+              <span>Network Status · Private Mainnet</span>
+            </div>
+            <h1 class="mt-6 text-4xl sm:text-5xl font-bold tracking-tight leading-tight">
+              Transparently monitor Mezon's private mainnet performance.
+            </h1>
+            <p class="mt-6 text-base text-gray-300 sm:text-lg">
+              The public dashboard surfaces key chain metrics so the community can verify liveness and throughput without exposing sensitive wallet histories.
+            </p>
+            <div class="mt-8 flex flex-wrap items-center gap-4">
+              <a href="dashboard.html" class="inline-flex items-center space-x-2 rounded-lg bg-primary px-5 py-3 text-sm font-semibold shadow-lg shadow-primary/30 transition hover:bg-primary-light">
+                <span>View Personal Dashboard</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                </svg>
+              </a>
+              <a href="login.html" class="text-sm font-medium text-gray-300 hover:text-white transition">Sign in for full access →</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+        <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-5">
+          <div class="rounded-2xl border border-white/5 bg-white/5 p-6 backdrop-blur">
+            <p class="text-sm text-gray-400">Total Blocks</p>
+            <p class="mt-3 text-3xl font-semibold">1,245,908</p>
+            <span class="mt-4 inline-flex items-center space-x-1 text-xs text-emerald-400">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5 10a.75.75 0 01.75-.75h5.69l-1.72-1.72a.75.75 0 111.06-1.06l3.25 3.25a.75.75 0 010 1.06l-3.25 3.25a.75.75 0 11-1.06-1.06l1.72-1.72H5.75A.75.75 0 015 10z" clip-rule="evenodd"/>
+              </svg>
+              <span>+0.8% 24h</span>
+            </span>
+          </div>
+          <div class="rounded-2xl border border-white/5 bg-white/5 p-6 backdrop-blur">
+            <p class="text-sm text-gray-400">Total Transactions</p>
+            <p class="mt-3 text-3xl font-semibold">82,430,554</p>
+            <p class="mt-4 text-xs text-gray-400">Last 24h · 1,245,980</p>
+          </div>
+          <div class="rounded-2xl border border-white/5 bg-white/5 p-6 backdrop-blur">
+            <p class="text-sm text-gray-400">Average Block Time</p>
+            <p class="mt-3 text-3xl font-semibold">2.8s</p>
+            <p class="mt-4 text-xs text-gray-400">SLA target 3s</p>
+          </div>
+          <div class="rounded-2xl border border-white/5 bg-white/5 p-6 backdrop-blur">
+            <p class="text-sm text-gray-400">Total Wallets</p>
+            <p class="mt-3 text-3xl font-semibold">418,902</p>
+            <p class="mt-4 text-xs text-gray-400">+3,418 new wallets this week</p>
+          </div>
+          <div class="rounded-2xl border border-white/5 bg-white/5 p-6 backdrop-blur">
+            <p class="text-sm text-gray-400">Coffee Gifts Issued</p>
+            <p class="mt-3 text-3xl font-semibold">12,448</p>
+            <p class="mt-4 text-xs text-gray-400">On-chain token &amp; Stripe gifts combined</p>
+          </div>
+        </div>
+
+        <div class="mt-12 grid gap-8 lg:grid-cols-3">
+          <div class="lg:col-span-2 rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-dark-light/40 to-dark-light/80 p-8 relative overflow-hidden">
+            <div class="absolute right-10 top-10 h-32 w-32 rounded-full bg-primary/30 blur-3xl"></div>
+            <div class="absolute -bottom-10 -left-10 h-56 w-56 rounded-full bg-neon/10 blur-3xl"></div>
+            <div class="relative">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h2 class="text-lg font-semibold">Throughput Trend</h2>
+                  <p class="mt-2 text-sm text-gray-300">Transactions per second across the last 24 hours.</p>
+                </div>
+                <span class="rounded-full border border-white/10 bg-black/40 px-3 py-1 text-xs text-gray-300">Auto-refresh · 30s</span>
+              </div>
+              <div class="mt-8 h-60 rounded-2xl bg-black/30 p-6">
+                <div class="h-full w-full rounded-xl bg-gradient-to-t from-primary/10 via-primary/40 to-neon/30 opacity-80"></div>
+              </div>
+              <dl class="mt-6 grid gap-4 sm:grid-cols-3 text-sm text-gray-300">
+                <div>
+                  <dt>Peak TPS</dt>
+                  <dd class="text-white font-semibold">312</dd>
+                </div>
+                <div>
+                  <dt>Average TPS</dt>
+                  <dd class="text-white font-semibold">218</dd>
+                </div>
+                <div>
+                  <dt>Finalised Blocks</dt>
+                  <dd class="text-white font-semibold">27,540</dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+
+          <div class="space-y-6">
+            <div class="rounded-3xl border border-white/10 bg-white/5 p-6">
+              <h3 class="text-lg font-semibold">Latest Validators</h3>
+              <ul class="mt-4 space-y-4 text-sm">
+                <li class="flex items-center justify-between border-b border-white/5 pb-3">
+                  <span class="text-gray-200">mezon-core-01</span>
+                  <span class="rounded-full border border-emerald-400/40 bg-emerald-400/10 px-3 py-1 text-emerald-400">Healthy</span>
+                </li>
+                <li class="flex items-center justify-between border-b border-white/5 pb-3">
+                  <span class="text-gray-200">mezon-core-02</span>
+                  <span class="rounded-full border border-emerald-400/40 bg-emerald-400/10 px-3 py-1 text-emerald-400">Healthy</span>
+                </li>
+                <li class="flex items-center justify-between">
+                  <span class="text-gray-200">mezon-archive-01</span>
+                  <span class="rounded-full border border-amber-400/40 bg-amber-400/10 px-3 py-1 text-amber-300">Syncing</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="rounded-3xl border border-white/10 bg-white/5 p-6">
+              <h3 class="text-lg font-semibold">Ecosystem Activity</h3>
+              <ul class="mt-4 space-y-4 text-sm">
+                <li class="flex items-start justify-between gap-4">
+                  <div>
+                    <p class="font-medium">Give Coffee</p>
+                    <p class="text-gray-400">1,204 gifts sent · last 24h</p>
+                  </div>
+                  <span class="text-emerald-400">+18%</span>
+                </li>
+                <li class="flex items-start justify-between gap-4">
+                  <div>
+                    <p class="font-medium">Stake</p>
+                    <p class="text-gray-400">54 new delegations</p>
+                  </div>
+                  <span class="text-emerald-400">+6%</span>
+                </li>
+                <li class="flex items-start justify-between gap-4">
+                  <div>
+                    <p class="font-medium">Swaps</p>
+                    <p class="text-gray-400">$2.4M TVL</p>
+                  </div>
+                  <span class="text-amber-300">Stable</span>
+                </li>
+                <li class="flex items-start justify-between gap-4">
+                  <div>
+                    <p class="font-medium">Donate</p>
+                    <p class="text-gray-400">342 live streams integrated</p>
+                  </div>
+                  <span class="text-emerald-400">+9%</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-16 rounded-3xl border border-primary/30 bg-primary/10 p-10">
+          <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h2 class="text-2xl font-semibold">Privacy-first by design</h2>
+              <p class="mt-2 max-w-xl text-sm text-gray-300">
+                Sign in to access personal dashboards, wallet history, staking controls, and QR-based lì xì gifting while keeping sensitive data protected behind zero-knowledge login.
+              </p>
+            </div>
+            <div class="flex gap-3">
+              <a href="login.html" class="inline-flex items-center justify-center rounded-xl bg-white text-dark px-5 py-3 text-sm font-semibold shadow-lg shadow-white/40 transition hover:bg-gray-100">Secure Login</a>
+              <a href="features.html" class="inline-flex items-center justify-center rounded-xl border border-white/20 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10 transition">Read Feature Specification</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="bg-dark-light/70 border-t border-gray-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between text-sm text-gray-400">
+          <div class="flex items-center space-x-2">
+            <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/40 text-primary">MEZ</span>
+            <span>Mezon Explorer · Public Overview</span>
+          </div>
+          <div class="flex items-center space-x-6">
+            <a class="hover:text-white transition" href="privacy.html">Privacy Policy</a>
+            <a class="hover:text-white transition" href="terms.html">Terms</a>
+            <a class="hover:text-white transition" href="support.html">Support</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

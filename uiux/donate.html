@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mezon Explorer · Donate to Streamer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#6941c6",
+            "primary-light": "#8b5cf6",
+            "primary-dark": "#553c9a",
+            dark: "#0B1533",
+            "dark-light": "#1e293b",
+            neon: "#00f5ff"
+          },
+          fontFamily: {
+            inter: ["Inter", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-dark text-white font-inter">
+  <div class="min-h-screen flex flex-col">
+    <header class="bg-dark/80 border-b border-gray-800 backdrop-blur">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex h-16 items-center justify-between">
+          <a href="index.html" class="flex items-center space-x-2">
+            <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/30 text-primary">
+              MEZ
+            </span>
+            <span class="text-lg font-semibold tracking-wide">Mezon Explorer</span>
+          </a>
+          <nav class="hidden md:flex items-center space-x-6 text-sm">
+            <a href="index.html" class="text-gray-400 hover:text-white transition">Public Dashboard</a>
+            <a href="login.html" class="text-gray-400 hover:text-white transition">Login</a>
+            <a href="dashboard.html" class="text-gray-400 hover:text-white transition">My Dashboard</a>
+            <a href="account-detail.html" class="text-gray-400 hover:text-white transition">Account Detail</a>
+            <a href="give-coffee.html" class="text-gray-400 hover:text-white transition">Give Coffee</a>
+            <a href="stake.html" class="text-gray-400 hover:text-white transition">Stake</a>
+            <a href="swap.html" class="text-gray-400 hover:text-white transition">Swap</a>
+            <a href="donate.html" class="text-white font-semibold border-b-2 border-primary pb-1">Donate</a>
+            <a href="red-envelope.html" class="text-gray-400 hover:text-white transition">Lì Xì</a>
+            <a href="search.html" class="text-gray-400 hover:text-white transition">Search</a>
+            <a href="settings.html" class="text-gray-400 hover:text-white transition">Settings</a>
+          </nav>
+          <div class="flex items-center space-x-3 text-xs text-gray-300">
+            <span class="rounded-xl border border-white/10 bg-black/40 px-3 py-1">Live streams · 342</span>
+            <a href="#" class="rounded-xl border border-primary/40 px-3 py-1 font-semibold text-primary hover:bg-primary/10 transition">Integrate</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1">
+      <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
+        <header class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p class="text-xs uppercase tracking-[0.3em] text-primary-light">Donate</p>
+            <h1 class="mt-3 text-4xl font-bold">Support creators with transparent MEZ donations.</h1>
+            <p class="mt-4 max-w-3xl text-sm text-gray-300">
+              Connect to live streams, send MEZ or fiat-backed gifts, and let donors see their impact in real time. Streamers receive funds instantly while preserving audience privacy.
+            </p>
+          </div>
+          <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-gray-300">
+            Average confirmation · 8 seconds · Fees under 0.2%
+          </div>
+        </header>
+
+        <section class="grid gap-8 lg:grid-cols-3">
+          <form class="lg:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-8">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <h2 class="text-lg font-semibold">Donation flow</h2>
+              <div class="flex items-center gap-3 text-xs text-gray-300">
+                <span class="rounded-lg border border-white/10 px-3 py-1">Embed ready</span>
+                <span class="rounded-lg border border-primary/40 px-3 py-1 text-primary">Mezon Pay</span>
+              </div>
+            </div>
+
+            <div class="mt-6 grid gap-6 text-sm text-gray-300 md:grid-cols-2">
+              <label class="block">
+                <span class="text-xs uppercase tracking-[0.2em] text-gray-400">Select streamer</span>
+                <div class="mt-2 rounded-2xl border border-white/10 bg-black/30 p-4">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="font-semibold text-white">Luna Stream</p>
+                      <p class="text-xs text-gray-400">Streaming · Validators &amp; dev tips</p>
+                    </div>
+                    <button type="button" class="rounded-lg border border-primary/40 px-3 py-1 text-xs text-primary hover:bg-primary/15 transition">Change</button>
+                  </div>
+                  <div class="mt-3 flex items-center gap-2 text-xs text-gray-400">
+                    <span class="rounded-full bg-emerald-400/10 px-3 py-1 text-emerald-300">Verified</span>
+                    <span class="rounded-full bg-white/10 px-3 py-1">Mixer Off</span>
+                  </div>
+                </div>
+              </label>
+
+              <label class="block">
+                <span class="text-xs uppercase tracking-[0.2em] text-gray-400">Donation amount</span>
+                <div class="mt-2 flex rounded-2xl border border-white/10 bg-black/30">
+                  <input type="number" placeholder="100" class="h-14 flex-1 rounded-2xl rounded-r-none border-none bg-transparent px-4 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-0">
+                  <select class="rounded-2xl rounded-l-none border-none bg-white/10 px-4 text-xs uppercase tracking-[0.2em] text-gray-300 focus:border-primary/40 focus:outline-none">
+                    <option value="MEZ">MEZ</option>
+                    <option value="USDT">USDT</option>
+                  </select>
+                </div>
+              </label>
+
+              <label class="block md:col-span-2">
+                <span class="text-xs uppercase tracking-[0.2em] text-gray-400">Message</span>
+                <textarea rows="3" placeholder="Thanks for showcasing advanced staking strategies!" class="mt-2 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-4 text-sm text-white placeholder:text-gray-500 focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/40"></textarea>
+              </label>
+
+              <div class="md:col-span-2 rounded-2xl border border-white/10 bg-black/30 px-5 py-4 text-xs text-gray-400">
+                <div class="flex items-center justify-between text-sm text-white">
+                  <span>Estimated impact</span>
+                  <span>+2,340 viewers will see your name on stream</span>
+                </div>
+                <div class="mt-3 flex flex-wrap gap-3">
+                  <span class="rounded-lg border border-white/10 px-3 py-1">Leaderboard points · +120</span>
+                  <span class="rounded-lg border border-white/10 px-3 py-1">Badge: Top Supporter (24h)</span>
+                  <span class="rounded-lg border border-white/10 px-3 py-1">Stream overlay trigger</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-8 grid gap-6 lg:grid-cols-2">
+              <div class="rounded-2xl border border-white/10 bg-black/30 px-6 py-5 text-xs text-gray-400">
+                <p class="text-sm font-semibold text-white">Payment method</p>
+                <div class="mt-4 space-y-3">
+                  <label class="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-4 py-3">
+                    <span class="flex items-center gap-3 text-white">
+                      <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+                      Wallet balance
+                    </span>
+                    <input type="radio" name="payment" checked class="text-primary focus:ring-primary/40">
+                  </label>
+                  <label class="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-4 py-3">
+                    <span class="flex items-center gap-3">
+                      <span class="h-2 w-2 rounded-full bg-primary-light"></span>
+                      Stripe (USD)
+                    </span>
+                    <input type="radio" name="payment" class="text-primary focus:ring-primary/40">
+                  </label>
+                </div>
+              </div>
+
+              <div class="rounded-2xl border border-white/10 bg-black/30 px-6 py-5 text-xs text-gray-400">
+                <p class="text-sm font-semibold text-white">Privacy options</p>
+                <div class="mt-4 space-y-3">
+                  <label class="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-4 py-3">
+                    <span class="text-white">Hide wallet address</span>
+                    <input type="checkbox" class="text-primary focus:ring-primary/40">
+                  </label>
+                  <label class="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-4 py-3">
+                    <span class="text-white">Anonymous leaderboard</span>
+                    <input type="checkbox" class="text-primary focus:ring-primary/40">
+                  </label>
+                  <label class="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-4 py-3">
+                    <span class="text-white">Send thank-you DM</span>
+                    <input type="checkbox" class="text-primary focus:ring-primary/40">
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="mt-8 w-full rounded-2xl bg-primary py-4 text-sm font-semibold shadow-lg shadow-primary/30 hover:bg-primary-light transition">
+              Send donation
+            </button>
+          </form>
+
+          <aside class="space-y-8">
+            <section class="rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-gray-300">
+              <h2 class="text-lg font-semibold">Stream preview</h2>
+              <div class="mt-4 aspect-video w-full overflow-hidden rounded-2xl border border-white/10 bg-black/40">
+                <div class="flex h-full items-center justify-center text-xs text-gray-500">Stream embed placeholder</div>
+              </div>
+              <p class="mt-3 text-xs text-gray-400">
+                Embeds can be copied in one click for Twitch, YouTube, or custom sites. Privacy settings ensure wallet addresses never appear on stream.
+              </p>
+              <button class="mt-4 w-full rounded-xl border border-primary/40 px-4 py-2 text-xs font-semibold text-primary hover:bg-primary/10 transition">Copy embed code</button>
+            </section>
+
+            <section class="rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-gray-300">
+              <h2 class="text-lg font-semibold">Leaderboard</h2>
+              <ul class="mt-4 space-y-3 text-xs">
+                <li class="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-4 py-3">
+                  <span class="text-white font-semibold">aurora.mez</span>
+                  <span class="rounded-full bg-primary/20 px-3 py-1 text-primary-light">1.2K MEZ</span>
+                </li>
+                <li class="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-4 py-3">
+                  <span>builder.eth</span>
+                  <span class="rounded-full bg-white/10 px-3 py-1 text-gray-300">980 MEZ</span>
+                </li>
+                <li class="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-4 py-3">
+                  <span>anon supporter</span>
+                  <span class="rounded-full bg-white/10 px-3 py-1 text-gray-300">$500 Stripe</span>
+                </li>
+              </ul>
+            </section>
+
+            <section class="rounded-3xl border border-neon/40 bg-neon/10 p-6 text-sm text-neon/90">
+              <h2 class="text-lg font-semibold text-neon">Security</h2>
+              <ul class="mt-4 space-y-3">
+                <li class="flex items-start space-x-3">
+                  <span class="mt-2 h-2 w-2 rounded-full bg-neon"></span>
+                  <p>Donation links are tokenized. No raw wallet addresses are exposed.</p>
+                </li>
+                <li class="flex items-start space-x-3">
+                  <span class="mt-2 h-2 w-2 rounded-full bg-neon"></span>
+                  <p>Every donation is logged for admins with IP-less audit trails.</p>
+                </li>
+                <li class="flex items-start space-x-3">
+                  <span class="mt-2 h-2 w-2 rounded-full bg-neon"></span>
+                  <p>Stream overlays fetch data via signed websocket sessions.</p>
+                </li>
+              </ul>
+            </section>
+          </aside>
+        </section>
+      </section>
+    </main>
+
+    <footer class="bg-dark-light/70 border-t border-gray-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-sm text-gray-400 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <span>Creators can manage payouts from Admin Portal</span>
+        <a href="#" class="hover:text-white transition">Creator docs</a>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

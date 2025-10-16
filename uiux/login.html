@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mezon Explorer · Secure Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#6941c6",
+            "primary-light": "#8b5cf6",
+            "primary-dark": "#553c9a",
+            dark: "#0B1533",
+            "dark-light": "#1e293b",
+            neon: "#00f5ff"
+          },
+          fontFamily: {
+            inter: ["Inter", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-dark text-white font-inter">
+  <div class="min-h-screen flex flex-col">
+    <header class="bg-dark/80 border-b border-gray-800 backdrop-blur">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex h-16 items-center justify-between">
+          <a href="index.html" class="flex items-center space-x-2">
+            <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/30 text-primary">
+              MEZ
+            </span>
+            <span class="text-lg font-semibold tracking-wide">Mezon Explorer</span>
+          </a>
+          <nav class="hidden md:flex items-center space-x-6 text-sm">
+            <a href="index.html" class="text-gray-400 hover:text-white transition">Public Dashboard</a>
+            <a href="login.html" class="text-white font-semibold border-b-2 border-primary pb-1">Login</a>
+            <a href="dashboard.html" class="text-gray-400 hover:text-white transition">My Dashboard</a>
+            <a href="account-detail.html" class="text-gray-400 hover:text-white transition">Account Detail</a>
+            <a href="give-coffee.html" class="text-gray-400 hover:text-white transition">Give Coffee</a>
+            <a href="stake.html" class="text-gray-400 hover:text-white transition">Stake</a>
+            <a href="swap.html" class="text-gray-400 hover:text-white transition">Swap</a>
+            <a href="donate.html" class="text-gray-400 hover:text-white transition">Donate</a>
+            <a href="red-envelope.html" class="text-gray-400 hover:text-white transition">Lì Xì</a>
+            <a href="search.html" class="text-gray-400 hover:text-white transition">Search</a>
+            <a href="settings.html" class="text-gray-400 hover:text-white transition">Settings</a>
+          </nav>
+          <div class="flex items-center space-x-3">
+            <span class="rounded-lg border border-emerald-400/40 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-300">Status: Online</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1">
+      <section class="relative flex flex-1 items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+        <div class="absolute inset-0 overflow-hidden">
+          <div class="pointer-events-none absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-primary/20 blur-3xl"></div>
+          <div class="pointer-events-none absolute bottom-0 right-0 h-96 w-96 rounded-full bg-neon/10 blur-3xl"></div>
+        </div>
+        <div class="relative grid max-w-5xl w-full gap-12 lg:grid-cols-5">
+          <div class="lg:col-span-3 space-y-6">
+            <div class="inline-flex items-center space-x-2 rounded-full bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-primary-light">
+              <span>Zero Knowledge Login</span>
+            </div>
+            <h1 class="text-4xl font-bold leading-tight">Authenticate privately to unlock personal analytics.</h1>
+            <p class="text-base text-gray-300">
+              Mezon Explorer keeps your wallet data encrypted at rest and requires secure JWT-based sessions before revealing personal balances, transaction timelines, or gifting controls.
+            </p>
+            <ul class="grid gap-4 text-sm text-gray-300 sm:grid-cols-2">
+              <li class="flex items-start space-x-3 rounded-2xl border border-white/5 bg-white/5 p-4">
+                <span class="mt-1 h-2 w-2 rounded-full bg-emerald-400"></span>
+                <div>
+                  <p class="font-semibold text-white">Mezon Account SSO</p>
+                  <p class="text-gray-400">FIDO-compliant authentication with hardware key support.</p>
+                </div>
+              </li>
+              <li class="flex items-start space-x-3 rounded-2xl border border-white/5 bg-white/5 p-4">
+                <span class="mt-1 h-2 w-2 rounded-full bg-neon"></span>
+                <div>
+                  <p class="font-semibold text-white">ZK Login</p>
+                  <p class="text-gray-400">Sign in with zero-knowledge proofs, revealing no wallet keys.</p>
+                </div>
+              </li>
+              <li class="flex items-start space-x-3 rounded-2xl border border-white/5 bg-white/5 p-4">
+                <span class="mt-1 h-2 w-2 rounded-full bg-primary-light"></span>
+                <div>
+                  <p class="font-semibold text-white">Session Intelligence</p>
+                  <p class="text-gray-400">Auto-logout on inactivity, session expiry alerts, device pinning.</p>
+                </div>
+              </li>
+              <li class="flex items-start space-x-3 rounded-2xl border border-white/5 bg-white/5 p-4">
+                <span class="mt-1 h-2 w-2 rounded-full bg-amber-300"></span>
+                <div>
+                  <p class="font-semibold text-white">Privacy Controls</p>
+                  <p class="text-gray-400">Restrict time ranges, export audits, revoke devices instantly.</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="lg:col-span-2">
+            <div class="rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur">
+              <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold">Login</h2>
+                <span class="text-xs text-gray-400">Session expires in 24h</span>
+              </div>
+              <form class="mt-6 space-y-5">
+                <div class="space-y-2">
+                  <label class="text-sm text-gray-300" for="email">Email or Wallet Alias</label>
+                  <div class="relative">
+                    <input id="email" type="text" placeholder="you@mezon.id" class="h-12 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-sm text-white placeholder:text-gray-500 focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/50"/>
+                    <span class="absolute inset-y-0 right-3 flex items-center text-gray-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                      </svg>
+                    </span>
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <label class="text-sm text-gray-300" for="password">Password</label>
+                  <div class="relative">
+                    <input id="password" type="password" placeholder="••••••••" class="h-12 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-sm text-white placeholder:text-gray-500 focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/50"/>
+                    <button type="button" class="absolute inset-y-0 right-3 flex items-center text-xs text-gray-400 hover:text-white">Show</button>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between text-xs text-gray-400">
+                  <label class="inline-flex items-center space-x-2">
+                    <input type="checkbox" class="h-4 w-4 rounded border-white/10 bg-black/40 text-primary focus:ring-primary/50">
+                    <span>Remember device</span>
+                  </label>
+                  <a href="#" class="text-primary-light hover:text-white">Forgot password?</a>
+                </div>
+                <button type="submit" class="w-full rounded-xl bg-primary py-3 text-sm font-semibold transition hover:bg-primary-light shadow-lg shadow-primary/25">Sign in</button>
+              </form>
+
+              <div class="mt-8 space-y-4 text-sm">
+                <div class="flex items-center space-x-3">
+                  <span class="h-px flex-1 bg-white/10"></span>
+                  <span class="text-xs text-gray-400 uppercase tracking-[0.3em]">Or</span>
+                  <span class="h-px flex-1 bg-white/10"></span>
+                </div>
+                <button class="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm font-medium text-white transition hover:border-primary/40 hover:bg-primary/10">
+                  Continue with ZK-Proof
+                </button>
+                <button class="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm font-medium text-white transition hover:border-primary/40 hover:bg-primary/10">
+                  Sign in with Hardware Key
+                </button>
+                <p class="text-xs text-gray-400 text-center">
+                  New here? <a href="#" class="text-primary-light hover:text-white">Create a Mezon Account</a>
+                </p>
+              </div>
+            </div>
+
+            <div class="mt-6 rounded-3xl border border-emerald-400/20 bg-emerald-400/10 p-6 text-sm text-emerald-200">
+              <p class="font-semibold">Security tip</p>
+              <p class="mt-2 text-emerald-100/90">
+                Mezon never stores raw keys. All transactions are signed client-side and transmitted using ephemeral session IDs. Enable two-factor authentication in Settings to harden your account.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="bg-dark-light/70 border-t border-gray-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-sm text-gray-400 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <span>© 2024 Mezon · Private Explorer</span>
+        <div class="flex items-center space-x-5">
+          <a href="privacy.html" class="hover:text-white transition">Privacy</a>
+          <a href="terms.html" class="hover:text-white transition">Terms</a>
+          <a href="support.html" class="hover:text-white transition">Need help?</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

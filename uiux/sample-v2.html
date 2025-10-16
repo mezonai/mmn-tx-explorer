@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mezon Explorer – Private (HTML Wireframes)</title>
+  <style>
+    :root{
+      --primary:#6941c6; /* Mezon Purple */
+      --bg:#0b1533;
+      --card:#0f1b42;
+      --muted:#8b95b7;
+      --ok:#20c997;
+      --warn:#f59f00;
+      --err:#ef4444;
+      --white:#ffffff;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,'Noto Sans',sans-serif;background:linear-gradient(180deg,#0b1533 0%,#0a1030 100%);color:#e6e9f5}
+    a{color:var(--primary);text-decoration:none}
+    header{position:sticky;top:0;z-index:10;background:rgba(11,21,51,.7);backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.06)}
+    .container{max-width:1200px;margin:0 auto;padding:16px}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:28px;height:28px;border-radius:8px;background:conic-gradient(from 180deg,var(--primary),#7c5dea,#8f84ff,#a58cff,var(--primary));box-shadow:0 0 0 2px rgba(105,65,198,.2)}
+    nav{display:flex;gap:10px;flex-wrap:wrap}
+    .navlink{padding:8px 12px;border-radius:10px;color:#d9ddf0;border:1px solid transparent}
+    .navlink.active,.navlink:hover{background:rgba(105,65,198,.18);border-color:rgba(105,65,198,.32)}
+    .main{display:grid;grid-template-columns:260px 1fr;gap:16px}
+    @media (max-width:960px){.main{grid-template-columns:1fr}}
+    .sidebar{position:sticky;top:64px;align-self:start;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:12px}
+    .group{margin:10px 0}
+    .group h4{margin:8px 8px;color:#aab3d6;font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+    .pill{display:block;margin:6px;padding:10px 12px;border-radius:12px;color:#e6e9f5;border:1px solid transparent}
+    .pill:hover,.pill.active{background:rgba(105,65,198,.18);border-color:rgba(105,65,198,.32)}
+
+    .content{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:18px;padding:16px}
+    .title{display:flex;align-items:center;gap:10px;margin:0 0 12px 0}
+    .title .tag{font-size:12px;color:#c5cae8;background:rgba(105,65,198,.18);border:1px solid rgba(105,65,198,.32);padding:2px 8px;border-radius:999px}
+
+    .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    @media (max-width:1200px){.cards{grid-template-columns:repeat(2,1fr)}}
+    @media (max-width:640px){.cards{grid-template-columns:1fr}}
+    .card{background:var(--card);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:14px}
+    .card h3{margin:0 0 6px 0;font-size:14px;color:#aab3d6;font-weight:600}
+    .metric{font-size:28px;font-weight:700;letter-spacing:.3px}
+    .muted{color:var(--muted);font-size:13px}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .input,.select{background:#0c1636;border:1px solid rgba(255,255,255,.08);color:#e6e9f5;padding:10px 12px;border-radius:12px;min-width:180px}
+    .btn{background:var(--primary);color:var(--white);border:1px solid rgba(255,255,255,.06);padding:10px 14px;border-radius:12px;font-weight:600;cursor:pointer;box-shadow:0 6px 18px rgba(105,65,198,.35)}
+    .btn.ghost{background:transparent;color:#d9ddf0;border-color:rgba(255,255,255,.12)}
+    .btn.warn{background:var(--warn)}
+    .btn.ok{background:var(--ok)}
+    .btn.err{background:var(--err)}
+
+    table{width:100%;border-collapse:collapse;border-spacing:0}
+    th,td{padding:10px;border-bottom:1px dashed rgba(255,255,255,.08);text-align:left}
+    th{color:#b8c1e6;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+    tr:hover td{background:rgba(255,255,255,.02)}
+
+    .label{font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.12)}
+    .label.ok{background:rgba(32,201,151,.12);border-color:rgba(32,201,151,.35)}
+    .label.warn{background:rgba(245,159,0,.12);border-color:rgba(245,159,0,.35)}
+    .label.err{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.35)}
+
+    .private{display:inline-flex;align-items:center;gap:6px;color:#cdd3ee;background:rgba(105,65,198,.12);border:1px dashed rgba(105,65,198,.4);padding:6px 10px;border-radius:999px;font-size:12px}
+
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:960px){.grid2{grid-template-columns:1fr}}
+
+    .hidden{display:none !important}
+    .notice{background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.12);border-radius:12px;padding:12px;color:#cbd2ef}
+
+    /* Modal */
+    .modal{position:fixed;inset:0;background:rgba(2,4,12,.6);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:16px}
+    .modal .panel{max-width:520px;width:100%;background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px}
+
+    .qr{width:180px;height:180px;background:repeating-linear-gradient(45deg,#0b1533 0 6px,#121b3f 6px 12px);display:grid;place-items:center;border-radius:12px;border:1px dashed rgba(255,255,255,.15)}
+    .qr small{color:#9aa5cc}
+
+    .footer{opacity:.6;font-size:12px;text-align:center;padding:18px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <strong>Mezon Explorer – Private</strong>
+        <span class="private" title="Dữ liệu cá nhân chỉ hiển thị cho chính bạn">🔒 Privacy-first</span>
+      </div>
+      <nav id="topnav"></nav>
+    </div>
+  </header>
+
+  <div class="container main">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="group">
+        <h4>Public</h4>
+        <a class="pill" href="#/public">Dashboard (Public)</a>
+        <a class="pill" href="#/login">Login</a>
+      </div>
+      <div class="group">
+        <h4>Private</h4>
+        <a class="pill" href="#/dashboard">My Dashboard</a>
+        <a class="pill" href="#/account">Account Detail</a>
+        <a class="pill" href="#/give-coffee">Give Coffee</a>
+        <a class="pill" href="#/stake">Stake</a>
+        <a class="pill" href="#/swap">Swap</a>
+        <a class="pill" href="#/donate">Donate (Streamer)</a>
+        <a class="pill" href="#/lixi">Lì Xì</a>
+        <a class="pill" href="#/search">Search (Mine)</a>
+        <a class="pill" href="#/settings">Settings</a>
+      </div>
+    </aside>
+
+    <main class="content">
+      <!-- PUBLIC DASHBOARD -->
+      <section id="page-public" class="page">
+        <h2 class="title">Public Overview <span class="tag">Aggregate</span></h2>
+        <div class="cards">
+          <div class="card"><h3>Total Blocks</h3><div class="metric" id="p_totalBlocks">1,234,567</div><div class="muted">Avg growth +0.4s per block</div></div>
+          <div class="card"><h3>Total Transactions</h3><div class="metric" id="p_totalTx">98,765,432</div><div class="muted">Last 24h: 120,044</div></div>
+          <div class="card"><h3>Average Block Time</h3><div class="metric">0.4s</div><div class="muted">Proof-of-History cadence</div></div>
+          <div class="card"><h3>Total Wallets</h3><div class="metric">45,320</div><div class="muted">Active 24h: 3,102</div></div>
+          <div class="card"><h3>Total Coffee Gifts</h3><div class="metric">12,403</div><div class="muted">+231 today</div></div>
+        </div>
+        <div class="notice" style="margin-top:14px">
+          <strong>💡 Lưu ý:</strong> Đây là số liệu tổng hợp, không hiển thị dữ liệu ví hay giao dịch của người dùng. 
+          <a href="#/login">Đăng nhập</a> để xem dữ liệu cá nhân của bạn.
+        </div>
+      </section>
+
+      <!-- LOGIN -->
+      <section id="page-login" class="page hidden">
+        <h2 class="title">Login <span class="tag">Mezon Account / ZK-Login</span></h2>
+        <div class="grid2">
+          <div class="card">
+            <h3>Sign in</h3>
+            <div class="row">
+              <input id="login-email" class="input" placeholder="Email" />
+              <input id="login-pass" class="input" placeholder="Password" type="password" />
+            </div>
+            <div class="row" style="margin-top:10px">
+              <button class="btn" onclick="mockLogin()">Login</button>
+              <button class="btn ghost" onclick="location.hash='#/public'">Back</button>
+            </div>
+            <p class="muted" style="margin-top:8px">* Prototype minh hoạ — không gửi dữ liệu ra ngoài.</p>
+          </div>
+          <div class="card">
+            <h3>Why login?</h3>
+            <ul class="muted">
+              <li>🔒 Chỉ bạn mới xem được balance & lịch sử giao dịch của mình.</li>
+              <li>☕ Gửi/nhận Give Coffee, Donate cho streamer.</li>
+              <li>💎 Stake, 🔄 Swap, 🎁 Lì Xì.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- MY DASHBOARD -->
+      <section id="page-dashboard" class="page hidden">
+        <h2 class="title">My Dashboard <span class="tag">Private</span></h2>
+        <div class="cards">
+          <div class="card"><h3>My Balance</h3><div class="metric" id="m_balance">—</div><div class="muted">🔒 Only visible to you</div></div>
+          <div class="card"><h3>My Transactions</h3><div class="metric" id="m_tx">—</div><div class="muted">24h / Pending / Total</div></div>
+          <div class="card"><h3>My Staking</h3><div class="metric" id="m_stake">—</div><div class="muted">Active stakes & rewards</div></div>
+          <div class="card"><h3>My Coffee</h3><div class="metric" id="m_coffee">—</div><div class="muted">Sent / Received</div></div>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn" onclick="go('#/give-coffee')">Give Coffee</button>
+          <button class="btn" onclick="go('#/stake')">Stake</button>
+          <button class="btn" onclick="go('#/swap')">Swap</button>
+          <button class="btn" onclick="go('#/donate')">Donate</button>
+          <button class="btn" onclick="go('#/lixi')">Send Lì Xì</button>
+        </div>
+      </section>
+
+      <!-- ACCOUNT DETAIL -->
+      <section id="page-account" class="page hidden">
+        <h2 class="title">Account Detail <span class="tag">Private</span></h2>
+        <div class="grid2">
+          <div class="card">
+            <h3>Wallet</h3>
+            <div class="muted">Address</div>
+            <div id="acc_addr" style="font-family:JetBrains Mono,monospace;margin:6px 0">—</div>
+            <div class="row">
+              <div>
+                <div class="muted">Balance</div>
+                <div id="acc_bal" class="metric">—</div>
+              </div>
+              <div>
+                <div class="muted">Tx Count</div>
+                <div id="acc_tx" class="metric">—</div>
+              </div>
+              <div>
+                <div class="muted">Last Update (Block)</div>
+                <div id="acc_blk" class="metric">—</div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Transactions (by Range)</h3>
+            <div class="row">
+              <input id="rangeStart" class="input" type="date" />
+              <input id="rangeEnd" class="input" type="date" />
+              <select id="txFilter" class="select">
+                <option value="all">All</option>
+                <option value="sent">Sent</option>
+                <option value="received">Received</option>
+              </select>
+              <button class="btn" onclick="loadMyTx()">Load</button>
+            </div>
+            <p class="muted" style="margin:8px 0">Yêu cầu khoảng thời gian (tối đa 12 tháng) để bảo vệ hiệu năng.</p>
+            <div class="card" style="margin-top:10px">
+              <table id="tblTx"><thead><tr><th>Hash</th><th>Type</th><th>Value</th><th>Status</th><th>Time</th></tr></thead><tbody></tbody></table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- GIVE COFFEE -->
+      <section id="page-give" class="page hidden">
+        <h2 class="title">Give Coffee <span class="tag">Social</span></h2>
+        <div class="grid2">
+          <div class="card">
+            <h3>Send Mezon Token</h3>
+            <div class="row">
+              <input id="gift_to" class="input" placeholder="Receiver address or user id" />
+              <input id="gift_amt" class="input" placeholder="Amount (MEZ)" type="number" min="0" />
+            </div>
+            <div class="row" style="margin-top:10px">
+              <button class="btn" onclick="confirmGift()">Send</button>
+              <span class="muted">On-chain transfer • tx hash will be shown</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Buy Gift via Stripe</h3>
+            <div class="row">
+              <select id="stripe_pack" class="select">
+                <option value="50">$50</option>
+                <option value="100">$100</option>
+                <option value="200">$200</option>
+              </select>
+              <input id="stripe_to" class="input" placeholder="Receiver user id" />
+            </div>
+            <div class="row" style="margin-top:10px">
+              <button class="btn" onclick="mockStripe()">Pay & Issue Token</button>
+              <span class="muted">Tỷ giá do hệ thống quy đổi</span>
+            </div>
+          </div>
+        </div>
+        <div id="gift_log" class="notice" style="margin-top:12px">Lịch sử gần đây sẽ hiển thị ở đây…</div>
+      </section>
+
+      <!-- STAKE -->
+      <section id="page-stake" class="page hidden">
+        <h2 class="title">Stake <span class="tag">Earn</span></h2>
+        <div class="grid2">
+          <div class="card">
+            <h3>Stake Now</h3>
+            <div class="row">
+              <input id="stake_amt" class="input" placeholder="Amount (MEZ)" type="number" min="0" />
+              <select id="stake_term" class="select">
+                <option value="30">30 ngày – 6% APY</option>
+                <option value="90">90 ngày – 8% APY</option>
+                <option value="180">180 ngày – 10% APY</option>
+              </select>
+            </div>
+            <div class="row" style="margin-top:10px">
+              <button class="btn" onclick="mockStake()">Confirm Stake</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>My Stakes</h3>
+            <table id="tblStake"><thead><tr><th>Amount</th><th>Term</th><th>Status</th><th>Reward</th><th>Action</th></tr></thead><tbody></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <!-- SWAP -->
+      <section id="page-swap" class="page hidden">
+        <h2 class="title">Swap <span class="tag">Convert</span></h2>
+        <div class="grid2">
+          <div class="card">
+            <h3>Swap Tokens</h3>
+            <div class="row">
+              <select id="swap_from" class="select"><option>MEZ</option><option>Coffee</option></select>
+              <span style="align-self:center">→</span>
+              <select id="swap_to" class="select"><option>USD (internal)</option><option>MEZ</option><option>Coffee</option></select>
+            </div>
+            <div class="row" style="margin-top:10px">
+              <input id="swap_amt" class="input" placeholder="Amount" type="number" min="0" />
+              <button class="btn" onclick="mockSwap()">Swap</button>
+            </div>
+            <div class="muted" id="swap_note" style="margin-top:6px">Rate: dynamic (demo).</div>
+          </div>
+          <div class="card">
+            <h3>History</h3>
+            <table id="tblSwap"><thead><tr><th>Pair</th><th>Amount</th><th>Result</th><th>Time</th></tr></thead><tbody></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <!-- DONATE (STREAMER) -->
+      <section id="page-donate" class="page hidden">
+        <h2 class="title">Donate cho Streamer <span class="tag">Social</span></h2>
+        <div class="grid2">
+          <div class="card">
+            <h3>Create Donate Link (for Streamers)</h3>
+            <div class="row">
+              <input id="creator_name" class="input" placeholder="Channel name" />
+              <button class="btn" onclick="genDonateLink()">Generate Link</button>
+            </div>
+            <div id="donate_link" class="notice" style="margin-top:10px">Link donate sẽ hiển thị ở đây…</div>
+          </div>
+          <div class="card">
+            <h3>Donate Widget (Preview)</h3>
+            <div class="row">
+              <input id="donate_to" class="input" placeholder="Streamer ID" />
+              <input id="donate_amt" class="input" placeholder="Amount (MEZ)" type="number" min="0" />
+              <button class="btn" onclick="mockDonate()">Donate</button>
+            </div>
+            <div id="donate_log" class="notice" style="margin-top:8px">Recent donations…</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- LÌ XÌ -->
+      <section id="page-lixi" class="page hidden">
+        <h2 class="title">Lì Xì (Red Envelope) <span class="tag">Festival</span></h2>
+        <div class="grid2">
+          <div class="card">
+            <h3>Tạo Lì Xì mới</h3>
+            <div class="row">
+              <input id="lx_total" class="input" placeholder="Tổng tiền (MEZ)" type="number" min="0" />
+              <input id="lx_count" class="input" placeholder="Số người" type="number" min="1" />
+            </div>
+            <div class="row" style="margin-top:8px">
+              <input id="lx_min" class="input" placeholder="Min mỗi người (optional)" type="number" min="0" />
+              <input id="lx_max" class="input" placeholder="Max mỗi người (optional)" type="number" min="0" />
+              <label style="display:flex;align-items:center;gap:6px"><input id="lx_rand" type="checkbox" /> Random mode</label>
+            </div>
+            <textarea id="lx_msg" class="input" style="width:100%;margin-top:8px;height:70px" placeholder="Lời chúc…"></textarea>
+            <div class="row" style="margin-top:10px">
+              <button class="btn" onclick="genLixi()">Generate QR</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>QR Code / Link</h3>
+            <div style="display:flex;gap:16px;align-items:center">
+              <div id="qr" class="qr"><small>QR</small></div>
+              <div>
+                <div class="muted">Share this link</div>
+                <div id="lx_link" style="font-family:JetBrains Mono,monospace;margin-top:6px">—</div>
+                <div class="row" style="margin-top:8px">
+                  <button class="btn ghost" onclick="claimDemo()">Simulate Claim</button>
+                </div>
+              </div>
+            </div>
+            <div id="lx_log" class="notice" style="margin-top:10px">Claim log sẽ hiển thị ở đây…</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SEARCH (MINE) -->
+      <section id="page-search" class="page hidden">
+        <h2 class="title">Search (Mine Only) <span class="tag">Private</span></h2>
+        <div class="row">
+          <input id="s_hash" class="input" placeholder="Transaction hash" />
+          <button class="btn" onclick="searchMine()">Search</button>
+        </div>
+        <div class="card" style="margin-top:10px">
+          <table id="tblSearch"><thead><tr><th>Hash</th><th>Type</th><th>Value</th><th>Status</th><th>Time</th></tr></thead><tbody></tbody></table>
+        </div>
+        <p class="muted">Chỉ trả về kết quả nếu thuộc về ví của bạn.</p>
+      </section>
+
+      <!-- SETTINGS -->
+      <section id="page-settings" class="page hidden">
+        <h2 class="title">Settings <span class="tag">Security & Privacy</span></h2>
+        <div class="grid2">
+          <div class="card">
+            <h3>Account Security</h3>
+            <div class="row"><button class="btn ghost">Enable 2FA</button><button class="btn ghost">Change Password</button></div>
+          </div>
+          <div class="card">
+            <h3>Privacy Notice</h3>
+            <p class="muted">Your wallet balance and transactions are visible only to you. Mezon does not store your private key.</p>
+            <div class="row"><button class="btn warn" onclick="mockLogout()">Logout</button></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="footer">
+    Built as HTML wireframes to illustrate product flows. Primary color <strong style="color:#cdbaff">#6941c6</strong>.
+  </div>
+
+  <!-- MODALS -->
+  <div id="modal" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <strong id="modal_title">Confirm</strong>
+        <button class="btn ghost" onclick="hideModal()">Close</button>
+      </div>
+      <div id="modal_body" style="margin-top:10px" class="muted">—</div>
+      <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">
+        <button class="btn ghost" onclick="hideModal()">Cancel</button>
+        <button id="modal_ok" class="btn">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Minimal SPA Router ---
+    const routes = {
+      '#/public':'page-public',
+      '#/login':'page-login',
+      '#/dashboard':'page-dashboard',
+      '#/account':'page-account',
+      '#/give-coffee':'page-give',
+      '#/stake':'page-stake',
+      '#/swap':'page-swap',
+      '#/donate':'page-donate',
+      '#/lixi':'page-lixi',
+      '#/search':'page-search',
+      '#/settings':'page-settings'
+    };
+
+    const topnav = [
+      ['#/public','Public'],
+      ['#/dashboard','My Dashboard'],
+      ['#/give-coffee','Give Coffee'],
+      ['#/stake','Stake'],
+      ['#/swap','Swap'],
+      ['#/donate','Donate'],
+      ['#/lixi','Lì Xì'],
+      ['#/search','Search'],
+      ['#/settings','Settings']
+    ];
+
+    function mountTopnav(){
+      const el = document.getElementById('topnav');
+      el.innerHTML = topnav.map(([href,label])=>`<a class="navlink" href="${href}">${label}</a>`).join('');
+    }
+
+    function go(hash){ location.hash = hash; }
+
+    function render(){
+      const hash = location.hash || '#/public';
+      document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
+      const target = document.getElementById(routes[hash]);
+      if(target){ target.classList.remove('hidden'); }
+      document.querySelectorAll('.navlink').forEach(a=>{
+        if(a.getAttribute('href')===hash) a.classList.add('active'); else a.classList.remove('active');
+      });
+      document.querySelectorAll('.pill').forEach(a=>{
+        if(a.getAttribute('href')===hash) a.classList.add('active'); else a.classList.remove('active');
+      });
+      guardPrivate(hash);
+    }
+
+    // --- Mock Auth & Data ---
+    let session = { logged:false, wallet:null, name:null };
+    const myData = {
+      wallet:'MEZ1x9GJ...a4Q', balance: 12890.42,
+      tx:{ total: 342, pending: 2, last24h: 18 },
+      stake:{ active: 2, reward: 48.2 },
+      coffee:{ sent: 12, received: 7 },
+      txHistory: [
+        {hash:'0xAAA', type:'sent', value:120, status:'success', time:'2025-10-14 10:12'},
+        {hash:'0xBBB', type:'received', value:45, status:'success', time:'2025-10-14 09:00'},
+        {hash:'0xCCC', type:'sent', value:5, status:'pending', time:'2025-10-14 08:55'}
+      ]
+    };
+
+    function mockLogin(){
+      const email = document.getElementById('login-email').value || 'user@mezon.io';
+      session = { logged:true, wallet: myData.wallet, name: email.split('@')[0] };
+      updatePersonal();
+      go('#/dashboard');
+    }
+    function mockLogout(){ session = {logged:false,wallet:null,name:null}; go('#/public'); }
+
+    function updatePersonal(){
+      // dashboard cards
+      document.getElementById('m_balance').textContent = myData.balance.toLocaleString(undefined,{maximumFractionDigits:2}) + ' MEZ';
+      document.getElementById('m_tx').textContent = `${myData.tx.last24h} / ${myData.tx.pending} / ${myData.tx.total}`;
+      document.getElementById('m_stake').textContent = `${myData.stake.active} active · ${myData.stake.reward} MEZ`;
+      document.getElementById('m_coffee').textContent = `${myData.coffee.sent} sent · ${myData.coffee.received} received`;
+
+      // account
+      document.getElementById('acc_addr').textContent = session.wallet;
+      document.getElementById('acc_bal').textContent = myData.balance + ' MEZ';
+      document.getElementById('acc_tx').textContent = myData.tx.total;
+      document.getElementById('acc_blk').textContent = '1,233,900';
+    }
+
+    function guardPrivate(hash){
+      const priv = ['#/dashboard','#/account','#/give-coffee','#/stake','#/swap','#/donate','#/lixi','#/search','#/settings'];
+      if(priv.includes(hash) && !session.logged){
+        go('#/login');
+      }
+    }
+
+    // --- Account Tx table (range-limited demo) ---
+    function loadMyTx(){
+      const tbody = document.querySelector('#tblTx tbody');
+      const filter = document.getElementById('txFilter').value;
+      const rows = myData.txHistory
+        .filter(it=>filter==='all' || it.type===filter)
+        .map(it=>`<tr><td>${it.hash}</td><td>${it.type}</td><td>${it.value} MEZ</td><td><span class="label ${it.status==='success'?'ok':(it.status==='pending'?'warn':'err')}">${it.status}</span></td><td>${it.time}</td></tr>`)
+        .join('');
+      tbody.innerHTML = rows || `<tr><td colspan="5" class="muted">No data in selected range.</td></tr>`;
+    }
+
+    // --- Give Coffee ---
+    function confirmGift(){
+      const to = document.getElementById('gift_to').value;
+      const amt = Number(document.getElementById('gift_amt').value||0);
+      if(!to || amt<=0) return alert('Nhập người nhận và số lượng > 0');
+      showModal('Confirm Gift', `Gửi <b>${amt} MEZ</b> tới <code>${to}</code>?`, ()=>{
+        document.getElementById('gift_log').innerHTML = `✅ Đã gửi ${amt} MEZ đến ${to}. tx: 0x${Math.random().toString(16).slice(2,8).toUpperCase()}`;
+      });
+    }
+    function mockStripe(){
+      const pack = document.getElementById('stripe_pack').value;
+      const to = document.getElementById('stripe_to').value||'user_123';
+      showModal('Stripe Payment', `Thanh toán <b>$${pack}</b> cho <code>${to}</code> → hệ thống sẽ phát hành MEZ tương ứng.`, ()=>{
+        document.getElementById('gift_log').innerHTML = `💳 Paid $${pack}. Issued  ${pack*2} MEZ  → receiver ${to}.`;
+      });
+    }
+
+    // --- Stake ---
+    const stakeRows = [];
+    function mockStake(){
+      const amt = Number(document.getElementById('stake_amt').value||0);
+      const term = Number(document.getElementById('stake_term').value);
+      if(amt<=0) return alert('Nhập số lượng stake > 0');
+      const reward = (amt * (term>=180?0.10:(term>=90?0.08:0.06)) * term/365).toFixed(2);
+      stakeRows.push({amt,term,status:'Active',reward});
+      renderStake();
+    }
+    function renderStake(){
+      const tbody = document.querySelector('#tblStake tbody');
+      if(!stakeRows.length){ tbody.innerHTML = `<tr><td colspan="5" class="muted">No stakes yet.</td></tr>`; return; }
+      tbody.innerHTML = stakeRows.map((r,i)=>`<tr><td>${r.amt} MEZ</td><td>${r.term}d</td><td><span class="label ok">${r.status}</span></td><td>${r.reward} MEZ</td><td><button class="btn ghost" onclick="claim(${i})">Claim</button></td></tr>`).join('');
+    }
+    function claim(i){ stakeRows[i].status='Completed'; renderStake(); }
+
+    // --- Swap ---
+    function mockSwap(){
+      const from = document.getElementById('swap_from').value;
+      const to = document.getElementById('swap_to').value;
+      const amt = Number(document.getElementById('swap_amt').value||0);
+      if(amt<=0) return alert('Nhập số lượng > 0');
+      const result = (from==='MEZ'&&to.includes('USD'))? (amt*0.25).toFixed(2)+' USD' : `${(amt*1.02).toFixed(2)} ${to}`;
+      const tbody = document.querySelector('#tblSwap tbody');
+      const row = `<tr><td>${from} → ${to}</td><td>${amt}</td><td>${result}</td><td>${new Date().toLocaleTimeString()}</td></tr>`;
+      tbody.innerHTML = row + tbody.innerHTML;
+    }
+
+    // --- Donate ---
+    function genDonateLink(){
+      const name = (document.getElementById('creator_name').value||'mystream').trim().replace(/\s+/g,'-');
+      const id = 'strm_' + Math.random().toString(36).slice(2,8);
+      const link = `https://explorer.mezon.io/donate/${id}`;
+      document.getElementById('donate_link').innerHTML = `Kênh <b>${name}</b> • ID <code>${id}</code><br/>Link: <a href="${link}" target="_blank">${link}</a>`;
+      document.getElementById('donate_to').value = id;
+    }
+    function mockDonate(){
+      const id = document.getElementById('donate_to').value||'strm_demo';
+      const amt = Number(document.getElementById('donate_amt').value||0);
+      if(amt<=0) return alert('Nhập số lượng > 0');
+      const log = document.getElementById('donate_log');
+      log.innerHTML = `🎉 Donated ${amt} MEZ to ${id}. tx: 0x${Math.random().toString(16).slice(2,8)}`;
+    }
+
+    // --- Lì Xì ---
+    function genLixi(){
+      const total = Number(document.getElementById('lx_total').value||0);
+      const count = Number(document.getElementById('lx_count').value||0);
+      const min = Number(document.getElementById('lx_min').value||0);
+      const max = Number(document.getElementById('lx_max').value||0);
+      const isRand = document.getElementById('lx_rand').checked;
+      const msg = encodeURIComponent(document.getElementById('lx_msg').value||'Chúc bạn may mắn!');
+      if(total<=0||count<=0) return alert('Nhập tổng tiền và số người > 0');
+      const id = 'lixi_' + Math.random().toString(36).slice(2,8);
+      const link = `https://explorer.mezon.io/lixi/${id}?rand=${isRand?1:0}&min=${min}&max=${max}&msg=${msg}`;
+      document.getElementById('lx_link').textContent = link;
+      drawQR(id);
+      document.getElementById('lx_log').textContent = 'QR sẵn sàng. Chia sẻ link cho mọi người để nhận lì xì.';
+    }
+    function drawQR(seed){
+      // Simple placeholder QR pattern (for wireframe only)
+      const el = document.getElementById('qr');
+      const size = 9; // 9x9
+      const rng = mulberry32(seed.split('').reduce((a,c)=>a+c.charCodeAt(0),0));
+      const cell = 16;
+      const svg = ["<svg width='180' height='180' viewBox='0 0 "+(size*cell)+" "+(size*cell)+"' xmlns='http://www.w3.org/2000/svg'>","<rect width='100%' height='100%' fill='white'/>" ];
+      for(let y=0;y<size;y++){
+        for(let x=0;x<size;x++){
+          if((x<3&&y<3)||(x>size-4&&y<3)||(x<3&&y>size-4)) { svg.push(rect(x,y,'#000')); continue; }
+          if(rng()>0.55) svg.push(rect(x,y,'#000'));
+        }
+      }
+      svg.push('</svg>');
+      el.innerHTML = svg.join('');
+      function rect(x,y,fill){return `<rect x='${x*cell}' y='${y*cell}' width='${cell}' height='${cell}' fill='${fill}'/>`;}
+      function mulberry32(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return ((t^t>>>14)>>>0)/4294967296}}
+    }
+    function claimDemo(){
+      const log = document.getElementById('lx_log');
+      log.innerHTML = `✅ user_${Math.random().toString(36).slice(2,6)} đã nhận 12 MEZ · "${decodeURIComponent((new URL('http://x?'+(document.getElementById('lx_link').textContent.split('?')[1]||''))).searchParams.get('msg')||'Chúc mừng!')}"`;
+    }
+
+    // --- Search (mine) ---
+    function searchMine(){
+      const q = (document.getElementById('s_hash').value||'').trim();
+      const tbody = document.querySelector('#tblSearch tbody');
+      const hit = myData.txHistory.find(x=>x.hash.toLowerCase()===q.toLowerCase());
+      tbody.innerHTML = hit ? `<tr><td>${hit.hash}</td><td>${hit.type}</td><td>${hit.value} MEZ</td><td><span class='label ok'>${hit.status}</span></td><td>${hit.time}</td></tr>` : `<tr><td colspan='5' class='muted'>No transaction found under your account.</td></tr>`;
+    }
+
+    // --- Modal helpers ---
+    function showModal(title, html, onok){
+      const m = document.getElementById('modal');
+      document.getElementById('modal_title').textContent = title;
+      document.getElementById('modal_body').innerHTML = html;
+      const ok = document.getElementById('modal_ok');
+      ok.onclick = ()=>{ onok&&onok(); hideModal(); };
+      m.style.display = 'flex';
+      m.setAttribute('aria-hidden','false');
+    }
+    function hideModal(){
+      const m = document.getElementById('modal');
+      m.style.display='none';
+      m.setAttribute('aria-hidden','true');
+    }
+
+    // --- init ---
+    window.addEventListener('hashchange', render);
+    mountTopnav();
+    render();
+  </script>
+</body>
+</html>

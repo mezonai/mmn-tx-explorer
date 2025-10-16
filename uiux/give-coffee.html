@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mezon Explorer · Give Coffee</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#6941c6",
+            "primary-light": "#8b5cf6",
+            "primary-dark": "#553c9a",
+            dark: "#0B1533",
+            "dark-light": "#1e293b",
+            neon: "#00f5ff"
+          },
+          fontFamily: {
+            inter: ["Inter", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-dark text-white font-inter">
+  <div class="min-h-screen flex flex-col">
+    <header class="bg-dark/80 border-b border-gray-800 backdrop-blur">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex h-16 items-center justify-between">
+          <a href="index.html" class="flex items-center space-x-2">
+            <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/30 text-primary">
+              MEZ
+            </span>
+            <span class="text-lg font-semibold tracking-wide">Mezon Explorer</span>
+          </a>
+          <nav class="hidden md:flex items-center space-x-6 text-sm">
+            <a href="index.html" class="text-gray-400 hover:text-white transition">Public Dashboard</a>
+            <a href="login.html" class="text-gray-400 hover:text-white transition">Login</a>
+            <a href="dashboard.html" class="text-gray-400 hover:text-white transition">My Dashboard</a>
+            <a href="account-detail.html" class="text-gray-400 hover:text-white transition">Account Detail</a>
+            <a href="give-coffee.html" class="text-white font-semibold border-b-2 border-primary pb-1">Give Coffee</a>
+            <a href="stake.html" class="text-gray-400 hover:text-white transition">Stake</a>
+            <a href="swap.html" class="text-gray-400 hover:text-white transition">Swap</a>
+            <a href="donate.html" class="text-gray-400 hover:text-white transition">Donate</a>
+            <a href="red-envelope.html" class="text-gray-400 hover:text-white transition">Lì Xì</a>
+            <a href="search.html" class="text-gray-400 hover:text-white transition">Search</a>
+            <a href="settings.html" class="text-gray-400 hover:text-white transition">Settings</a>
+          </nav>
+          <div class="flex items-center space-x-3 text-xs text-gray-300">
+            <span class="rounded-xl border border-white/10 bg-black/40 px-3 py-1">Balance · 482,940 MEZ</span>
+            <a href="dashboard.html" class="rounded-xl border border-primary/40 px-3 py-1 font-semibold text-primary hover:bg-primary/10 transition">Back to Dashboard</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1">
+      <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-14">
+        <header class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p class="text-xs uppercase tracking-[0.3em] text-primary-light">Give Coffee</p>
+            <h1 class="mt-3 text-4xl font-bold">Send warmth, on-chain or through Stripe.</h1>
+            <p class="mt-4 max-w-2xl text-sm text-gray-300">
+              Two gifting flows let you transfer MEZ tokens directly or buy curated packs through Stripe that are settled on-chain by Mezon. Choose the option that matches your recipient’s preference.
+            </p>
+          </div>
+          <div class="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs text-gray-300">
+            Last gift sent · 2 hours ago
+          </div>
+        </header>
+
+        <div class="rounded-3xl border border-white/10 bg-white/5 p-6">
+          <nav class="grid gap-3 text-sm sm:grid-cols-2">
+            <button class="rounded-2xl bg-primary/20 px-4 py-4 text-left font-semibold text-primary-light shadow-lg shadow-primary/20">
+              Send Mezon Token
+              <p class="mt-1 text-xs text-primary/80">Transfer tokens wallet-to-wallet</p>
+            </button>
+            <button class="rounded-2xl border border-white/10 bg-black/30 px-4 py-4 text-left font-semibold text-gray-300 hover:border-primary/40 hover:text-white transition">
+              Buy Gift via Stripe
+              <p class="mt-1 text-xs text-gray-400">Purchase curated packs in USD</p>
+            </button>
+          </nav>
+
+          <div class="mt-8 grid gap-8 lg:grid-cols-2">
+            <form class="rounded-3xl border border-primary/40 bg-primary/10 p-8 shadow-lg shadow-primary/20">
+              <h2 class="text-lg font-semibold text-primary-light">Type A · Send Mezon Token</h2>
+              <p class="mt-2 text-sm text-primary-light/80">
+                Tokens are transferred instantly once the transaction is confirmed on-chain.
+              </p>
+
+              <div class="mt-6 space-y-5 text-sm text-gray-200">
+                <label class="block">
+                  <span class="text-xs uppercase tracking-[0.2em] text-gray-300">Recipient</span>
+                  <input type="text" placeholder="alice.mez" class="mt-2 h-12 w-full rounded-xl border border-white/10 bg-black/30 px-4 text-sm text-white placeholder:text-gray-500 focus:border-neon/40 focus:outline-none focus:ring-2 focus:ring-neon/40">
+                </label>
+                <label class="block">
+                  <span class="text-xs uppercase tracking-[0.2em] text-gray-300">Amount</span>
+                  <div class="mt-2 flex rounded-xl border border-white/10 bg-black/30">
+                    <input type="number" placeholder="50" class="h-12 flex-1 rounded-xl rounded-r-none border-none bg-transparent px-4 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-0">
+                    <span class="flex items-center rounded-r-xl bg-white/10 px-4 text-xs uppercase tracking-[0.2em] text-gray-300">MEZ</span>
+                  </div>
+                </label>
+                <label class="block">
+                  <span class="text-xs uppercase tracking-[0.2em] text-gray-300">Message (optional)</span>
+                  <textarea rows="3" placeholder="Grind on! Thanks for keeping the validator healthy." class="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white placeholder:text-gray-500 focus:border-neon/40 focus:outline-none focus:ring-2 focus:ring-neon/40"></textarea>
+                </label>
+                <div class="flex items-center justify-between text-xs text-gray-300">
+                  <span>Network fee approx. 0.0004 MEZ</span>
+                  <button type="button" class="text-primary-light hover:text-white transition">View gas details</button>
+                </div>
+                <button type="submit" class="w-full rounded-xl bg-primary py-3 text-sm font-semibold shadow-lg shadow-primary/30 hover:bg-primary-light transition">
+                  Confirm &amp; broadcast transaction
+                </button>
+              </div>
+            </form>
+
+            <form class="rounded-3xl border border-white/10 bg-white/5 p-8">
+              <h2 class="text-lg font-semibold">Type B · Buy Gift via Stripe</h2>
+              <p class="mt-2 text-sm text-gray-300">Pick a pack, pay in USD, and we deliver MEZ on your behalf.</p>
+
+              <div class="mt-6 space-y-5 text-sm text-gray-200">
+                <label class="block">
+                  <span class="text-xs uppercase tracking-[0.2em] text-gray-300">Select pack</span>
+                  <div class="mt-3 grid gap-3 text-sm font-medium sm:grid-cols-3">
+                    <button type="button" class="rounded-2xl border border-primary/40 bg-primary/20 px-4 py-4 text-left text-primary-light shadow-md shadow-primary/20">
+                      $50 Pack
+                      <p class="mt-1 text-xs text-primary/70">2 × Nitro Latte</p>
+                    </button>
+                    <button type="button" class="rounded-2xl border border-white/10 bg-black/30 px-4 py-4 text-left text-gray-300 hover:border-primary/40 hover:text-white transition">
+                      $100 Pack
+                      <p class="mt-1 text-xs text-gray-400">5 × Cappuccino Rewards</p>
+                    </button>
+                    <button type="button" class="rounded-2xl border border-white/10 bg-black/30 px-4 py-4 text-left text-gray-300 hover:border-primary/40 hover:text-white transition">
+                      $200 Pack
+                      <p class="mt-1 text-xs text-gray-400">VIP Pour-over Experience</p>
+                    </button>
+                  </div>
+                </label>
+                <label class="block">
+                  <span class="text-xs uppercase tracking-[0.2em] text-gray-300">Receiver wallet / email</span>
+                  <input type="text" placeholder="bob.mez or bob@email.com" class="mt-2 h-12 w-full rounded-xl border border-white/10 bg-black/30 px-4 text-sm text-white placeholder:text-gray-500 focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/40">
+                </label>
+                <label class="block">
+                  <span class="text-xs uppercase tracking-[0.2em] text-gray-300">Payment method</span>
+                  <select class="mt-2 h-12 w-full rounded-xl border border-white/10 bg-black/30 px-4 text-sm text-white focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/40">
+                    <option>Card ending ••42</option>
+                    <option>New card</option>
+                    <option>Apple Pay</option>
+                  </select>
+                </label>
+                <div class="rounded-2xl border border-white/10 bg-black/30 px-4 py-4 text-xs text-gray-300">
+                  <p class="font-semibold text-white">Order summary</p>
+                  <div class="mt-3 space-y-2">
+                    <div class="flex items-center justify-between">
+                      <span>Gift value</span>
+                      <span>$50.00</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span>Expected MEZ</span>
+                      <span>100 MEZ</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span>Mezon fee</span>
+                      <span>$0.75</span>
+                    </div>
+                  </div>
+                  <div class="mt-3 border-t border-white/10 pt-3 flex items-center justify-between text-sm text-white">
+                    <span>Total charged</span>
+                    <span>$50.75</span>
+                  </div>
+                </div>
+                <button type="submit" class="w-full rounded-xl border border-primary/30 bg-primary/20 py-3 text-sm font-semibold text-primary-light shadow-lg shadow-primary/20 hover:border-primary/50 hover:bg-primary/30 transition">
+                  Pay with Stripe
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <section class="grid gap-8 lg:grid-cols-3">
+          <div class="lg:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-8">
+            <header class="flex items-center justify-between">
+              <div>
+                <h2 class="text-lg font-semibold">Recent gifts</h2>
+                <p class="text-sm text-gray-400">Track pending, success, or failed deliveries.</p>
+              </div>
+              <a href="#" class="text-xs text-primary-light hover:text-white transition">View full history</a>
+            </header>
+            <div class="mt-6 space-y-4 text-sm text-gray-300">
+              <div class="flex items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
+                <div>
+                  <p class="font-semibold text-white">alice.mez</p>
+                  <p class="text-xs text-gray-400">Send Token · Tx 0x45df...ab21</p>
+                </div>
+                <span class="rounded-full bg-emerald-400/10 px-3 py-1 text-xs text-emerald-300">Success</span>
+              </div>
+              <div class="flex items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
+                <div>
+                  <p class="font-semibold text-white">luna.stream</p>
+                  <p class="text-xs text-gray-400">Stripe $100 · TokenIssued</p>
+                </div>
+                <span class="rounded-full bg-emerald-400/10 px-3 py-1 text-xs text-emerald-300">Completed</span>
+              </div>
+              <div class="flex items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
+                <div>
+                  <p class="font-semibold text-white">devrel.tuan</p>
+                  <p class="text-xs text-gray-400">Send Token · Pending confirmation</p>
+                </div>
+                <span class="rounded-full bg-amber-400/10 px-3 py-1 text-xs text-amber-300">Pending</span>
+              </div>
+            </div>
+          </div>
+
+          <aside class="rounded-3xl border border-neon/40 bg-neon/10 p-8 text-sm text-neon/90">
+            <h2 class="text-lg font-semibold text-neon">Notifications</h2>
+            <p class="mt-2">
+              Recipients receive a push notification in the Mezon app and an email summarizing the gift, including your message.
+            </p>
+            <div class="mt-6 space-y-4">
+              <div class="rounded-2xl border border-neon/40 bg-black/50 px-4 py-4 text-xs text-gray-200">
+                “You’ve received a coffee from Aurora! Enjoy 50 MEZ to fuel your validator ☕️”
+              </div>
+              <div class="rounded-2xl border border-neon/40 bg-black/50 px-4 py-4 text-xs text-gray-200">
+                Real-time status updates mirror on the dashboard: Created → Paid → TokenIssued → Completed.
+              </div>
+              <div class="rounded-2xl border border-neon/40 bg-black/50 px-4 py-4 text-xs text-gray-200">
+                Failed and refunded events trigger alerts and suggested follow-up actions.
+              </div>
+            </div>
+          </aside>
+        </section>
+      </section>
+    </main>
+
+    <footer class="bg-dark-light/70 border-t border-gray-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-sm text-gray-400 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <span>Coffee ledger retained for 24 months · Export in CSV / JSON</span>
+        <a href="support.html" class="hover:text-white transition">Need assistance?</a>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
