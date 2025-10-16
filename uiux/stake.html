@@ -31,32 +31,162 @@
     <header class="bg-dark/80 border-b border-gray-800 backdrop-blur">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex h-16 items-center justify-between">
-          <a href="index.html" class="flex items-center space-x-2">
+          <a href="index.html" class="flex items-center gap-2">
             <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/30 text-primary">
               MEZ
             </span>
             <span class="text-lg font-semibold tracking-wide">Mezon Explorer</span>
           </a>
-          <nav class="hidden md:flex items-center space-x-6 text-sm">
-            <a href="index.html" class="text-gray-400 hover:text-white transition">Public Dashboard</a>
-            <a href="login.html" class="text-gray-400 hover:text-white transition">Login</a>
-            <a href="dashboard.html" class="text-gray-400 hover:text-white transition">My Dashboard</a>
-            <a href="account-detail.html" class="text-gray-400 hover:text-white transition">Account Detail</a>
-            <a href="give-coffee.html" class="text-gray-400 hover:text-white transition">Give Coffee</a>
-            <a href="stake.html" class="text-white font-semibold border-b-2 border-primary pb-1">Stake</a>
-            <a href="swap.html" class="text-gray-400 hover:text-white transition">Swap</a>
-            <a href="donate.html" class="text-gray-400 hover:text-white transition">Donate</a>
-            <a href="red-envelope.html" class="text-gray-400 hover:text-white transition">Lì Xì</a>
-            <a href="search.html" class="text-gray-400 hover:text-white transition">Search</a>
-            <a href="settings.html" class="text-gray-400 hover:text-white transition">Settings</a>
+          <nav class="hidden md:flex items-center gap-6 text-sm">
+            <div class="relative group">
+              <button class="inline-flex items-center gap-2 font-medium text-gray-300 transition hover:text-white">
+                <span>Explorer</span>
+                <svg class="h-3.5 w-3.5 text-primary transition group-hover:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" clip-rule="evenodd" />
+                </svg>
+              </button>
+              <div class="absolute left-0 top-full z-30 mt-0 w-56 rounded-2xl border border-white/10 bg-dark-light/95 p-3 text-sm shadow-2xl shadow-primary/10 ring-1 ring-black/30 opacity-0 translate-y-1 invisible pointer-events-none transition-all duration-150 ease-out group-hover:visible group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                <a href="index.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Public Dashboard</a>
+                <a href="dashboard.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Personal Dashboard</a>
+                <a href="account-detail.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Account Detail</a>
+                <a href="search.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Universal Search</a>
+              </div>
+            </div>
+            <div class="relative group">
+              <button class="inline-flex items-center gap-2 font-medium text-gray-300 transition hover:text-white">
+                <span>Finance</span>
+                <svg class="h-3.5 w-3.5 text-primary transition group-hover:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" clip-rule="evenodd" />
+                </svg>
+              </button>
+              <div class="absolute left-0 top-full z-30 mt-0 w-52 rounded-2xl border border-white/10 bg-dark-light/95 p-3 text-sm shadow-2xl shadow-primary/10 ring-1 ring-black/30 opacity-0 translate-y-1 invisible pointer-events-none transition-all duration-150 ease-out group-hover:visible group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                <a href="stake.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Stake</a>
+                <a href="swap.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Swap</a>
+                <a href="give-coffee.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Give Coffee</a>
+                <a href="donate.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Donate</a>
+                <a href="red-envelope.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Li Xi</a>
+              </div>
+            </div>
+            <div class="relative group">
+              <button class="inline-flex items-center gap-2 font-medium text-gray-300 transition hover:text-white">
+                <span>Community</span>
+                <svg class="h-3.5 w-3.5 text-primary transition group-hover:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" clip-rule="evenodd" />
+                </svg>
+              </button>
+              <div class="absolute left-0 top-full z-30 mt-0 w-56 rounded-2xl border border-white/10 bg-dark-light/95 p-3 text-sm shadow-2xl shadow-primary/10 ring-1 ring-black/30 opacity-0 translate-y-1 invisible pointer-events-none transition-all duration-150 ease-out group-hover:visible group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                <a href="donate.html#feed" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Donation Feed</a>
+                <a href="donate.html#top-supporters" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Top Supporters</a>
+                <a href="dashboard.html#activity" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">My Activity</a>
+                <a href="dashboard.html#notifications" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Notifications</a>
+              </div>
+            </div>
+            <div class="relative group">
+              <button class="inline-flex items-center gap-2 font-medium text-gray-300 transition hover:text-white">
+                <span>Ecosystem</span>
+                <svg class="h-3.5 w-3.5 text-primary transition group-hover:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" clip-rule="evenodd" />
+                </svg>
+              </button>
+              <div class="absolute left-0 top-full z-30 mt-0 w-56 rounded-2xl border border-white/10 bg-dark-light/95 p-3 text-sm shadow-2xl shadow-primary/10 ring-1 ring-black/30 opacity-0 translate-y-1 invisible pointer-events-none transition-all duration-150 ease-out group-hover:visible group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                <a href="https://cobar.vn" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white" target="_blank" rel="noopener">Cobar.vn</a>
+                <a href="https://explorer.mezon.io/game" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white" target="_blank" rel="noopener">Mezon Game</a>
+                <a href="https://docs.mezon.io" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white" target="_blank" rel="noopener">Developers</a>
+              </div>
+            </div>
+            <div class="relative group">
+              <button class="inline-flex items-center gap-2 font-medium text-gray-300 transition hover:text-white">
+                <span>Settings</span>
+                <svg class="h-3.5 w-3.5 text-primary transition group-hover:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" clip-rule="evenodd" />
+                </svg>
+              </button>
+              <div class="absolute left-0 top-full z-30 mt-0 w-56 rounded-2xl border border-white/10 bg-dark-light/95 p-3 text-sm shadow-2xl shadow-primary/10 ring-1 ring-black/30 opacity-0 translate-y-1 invisible pointer-events-none transition-all duration-150 ease-out group-hover:visible group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                <a href="settings.html#profile" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Profile</a>
+                <a href="settings.html#security" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">2FA Security</a>
+                <a href="settings.html#privacy" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Privacy Notice</a>
+                <a href="settings.html#logout" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Logout</a>
+              </div>
+            </div>
           </nav>
-          <div class="flex items-center space-x-3 text-xs text-gray-300">
-            <span class="rounded-xl border border-white/10 bg-black/40 px-3 py-1">Staking power · 120,000 MEZ</span>
-            <button class="rounded-xl border border-primary/40 px-3 py-1 font-semibold text-primary hover:bg-primary/10 transition">Rewards</button>
+          <div class="flex items-center gap-3">
+            <a href="https://auth.mezon.io/login" class="hidden sm:inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition hover:bg-primary-light">
+              <span>Login with Mezon</span>
+              <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path d="M3 10a.75.75 0 0 1 .75-.75h8.69L9.22 6.03a.75.75 0 1 1 1.06-1.06l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06l3.22-3.22H3.75A.75.75 0 0 1 3 10z" />
+                <path d="M17 4.5a.75.75 0 0 1 .75.75v9.5a.75.75 0 0 1-1.5 0v-9.5A.75.75 0 0 1 17 4.5z" />
+              </svg>
+            </a>
+            <details class="relative md:hidden">
+              <summary class="list-none inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-gray-300">
+                <span>Menu</span>
+                <svg class="h-4 w-4 text-primary" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" clip-rule="evenodd" />
+                </svg>
+              </summary>
+              <div class="absolute right-0 mt-3 w-72 rounded-2xl border border-white/10 bg-dark-light/95 p-4 text-sm shadow-2xl shadow-black/40">
+                <div class="space-y-4">
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Explorer</p>
+                    <div class="mt-2 grid gap-2 text-gray-300">
+                      <a href="index.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Public Dashboard</a>
+                      <a href="dashboard.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Personal Dashboard</a>
+                      <a href="account-detail.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Account Detail</a>
+                      <a href="search.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Universal Search</a>
+                    </div>
+                  </div>
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Finance</p>
+                    <div class="mt-2 grid gap-2 text-gray-300">
+                      <a href="stake.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Stake</a>
+                      <a href="swap.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Swap</a>
+                      <a href="give-coffee.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Give Coffee</a>
+                      <a href="donate.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Donate</a>
+                      <a href="red-envelope.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Li Xi</a>
+                    </div>
+                  </div>
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Community</p>
+                    <div class="mt-2 grid gap-2 text-gray-300">
+                      <a href="donate.html#feed" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Donation Feed</a>
+                      <a href="donate.html#top-supporters" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Top Supporters</a>
+                      <a href="dashboard.html#activity" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">My Activity</a>
+                      <a href="dashboard.html#notifications" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Notifications</a>
+                    </div>
+                  </div>
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Ecosystem</p>
+                    <div class="mt-2 grid gap-2 text-gray-300">
+                      <a href="https://cobar.vn" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition" target="_blank" rel="noopener">Cobar.vn</a>
+                      <a href="https://explorer.mezon.io/game" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition" target="_blank" rel="noopener">Mezon Game</a>
+                      <a href="https://docs.mezon.io" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition" target="_blank" rel="noopener">Developers</a>
+                    </div>
+                  </div>
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Settings</p>
+                    <div class="mt-2 grid gap-2 text-gray-300">
+                      <a href="settings.html#profile" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Profile</a>
+                      <a href="settings.html#security" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">2FA Security</a>
+                      <a href="settings.html#privacy" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Privacy Notice</a>
+                      <a href="settings.html#logout" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Logout</a>
+                    </div>
+                  </div>
+                  <a href="https://auth.mezon.io/login" class="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition hover:bg-primary-light">
+                    <span>Login with Mezon</span>
+                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path d="M3 10a.75.75 0 0 1 .75-.75h8.69L9.22 6.03a.75.75 0 1 1 1.06-1.06l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06l3.22-3.22H3.75A.75.75 0 0 1 3 10z" />
+                      <path d="M17 4.5a.75.75 0 0 1 .75.75v9.5a.75.75 0 0 1-1.5 0v-9.5A.75.75 0 0 1 17 4.5z" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </details>
           </div>
         </div>
       </div>
     </header>
+
+
 
     <main class="flex-1">
       <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
@@ -65,7 +195,7 @@
             <p class="text-xs uppercase tracking-[0.3em] text-primary-light">Delegated Staking</p>
             <h1 class="mt-3 text-4xl font-bold">Grow your stake, protect the network.</h1>
             <p class="mt-4 max-w-3xl text-sm text-gray-300">
-              Stake MEZ to validators that align with your preferences. Monitor performance, adjust allocations, and withdraw when necessary. Rewards compound automatically to maximize yield while keeping everything private.
+              Delegate MEZ to trusted validators, watch rewards climb, and rebalance in seconds.
             </p>
           </div>
           <div class="grid gap-3 text-sm text-gray-300 sm:grid-cols-2">

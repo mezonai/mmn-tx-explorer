@@ -31,181 +31,434 @@
     <header class="bg-dark/80 border-b border-gray-800 backdrop-blur">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex h-16 items-center justify-between">
-          <a href="index.html" class="flex items-center space-x-2">
+          <a href="index.html" class="flex items-center gap-2">
             <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/30 text-primary">
               MEZ
             </span>
             <span class="text-lg font-semibold tracking-wide">Mezon Explorer</span>
           </a>
-          <nav class="hidden md:flex items-center space-x-6 text-sm">
-            <a href="index.html" class="text-gray-400 hover:text-white transition">Public Dashboard</a>
-            <a href="login.html" class="text-gray-400 hover:text-white transition">Login</a>
-            <a href="dashboard.html" class="text-white font-semibold border-b-2 border-primary pb-1">My Dashboard</a>
-            <a href="account-detail.html" class="text-gray-400 hover:text-white transition">Account Detail</a>
-            <a href="give-coffee.html" class="text-gray-400 hover:text-white transition">Give Coffee</a>
-            <a href="stake.html" class="text-gray-400 hover:text-white transition">Stake</a>
-            <a href="swap.html" class="text-gray-400 hover:text-white transition">Swap</a>
-            <a href="donate.html" class="text-gray-400 hover:text-white transition">Donate</a>
-            <a href="red-envelope.html" class="text-gray-400 hover:text-white transition">Lì Xì</a>
-            <a href="search.html" class="text-gray-400 hover:text-white transition">Search</a>
-            <a href="settings.html" class="text-gray-400 hover:text-white transition">Settings</a>
+          <nav class="hidden md:flex items-center gap-6 text-sm">
+            <div class="relative group">
+              <button class="inline-flex items-center gap-2 font-medium text-white transition">
+                <span>Explorer</span>
+                <svg class="h-3.5 w-3.5 text-primary transition group-hover:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" clip-rule="evenodd" />
+                </svg>
+              </button>
+              <div class="absolute left-0 top-full z-30 mt-0 w-56 rounded-2xl border border-white/10 bg-dark-light/95 p-3 text-sm shadow-2xl shadow-primary/10 ring-1 ring-black/30 opacity-0 translate-y-1 invisible pointer-events-none transition-all duration-150 ease-out group-hover:visible group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                <a href="index.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Public Dashboard</a>
+                <a href="dashboard.html" class="block rounded-lg px-3 py-2 text-white bg-white/5 transition hover:bg-white/10">Personal Dashboard</a>
+                <a href="account-detail.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Account Detail</a>
+                <a href="search.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Universal Search</a>
+              </div>
+            </div>
+            <div class="relative group">
+              <button class="inline-flex items-center gap-2 font-medium text-gray-300 transition hover:text-white">
+                <span>Finance</span>
+                <svg class="h-3.5 w-3.5 text-primary transition group-hover:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" clip-rule="evenodd" />
+                </svg>
+              </button>
+              <div class="absolute left-0 top-full z-30 mt-0 w-52 rounded-2xl border border-white/10 bg-dark-light/95 p-3 text-sm shadow-2xl shadow-primary/10 ring-1 ring-black/30 opacity-0 translate-y-1 invisible pointer-events-none transition-all duration-150 ease-out group-hover:visible group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                <a href="stake.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Stake</a>
+                <a href="swap.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Swap</a>
+                <a href="give-coffee.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Give Coffee</a>
+                <a href="donate.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Donate</a>
+                <a href="red-envelope.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Li Xi</a>
+              </div>
+            </div>
+            <div class="relative group">
+              <button class="inline-flex items-center gap-2 font-medium text-gray-300 transition hover:text-white">
+                <span>Community</span>
+                <svg class="h-3.5 w-3.5 text-primary transition group-hover:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" clip-rule="evenodd" />
+                </svg>
+              </button>
+              <div class="absolute left-0 top-full z-30 mt-0 w-56 rounded-2xl border border-white/10 bg-dark-light/95 p-3 text-sm shadow-2xl shadow-primary/10 ring-1 ring-black/30 opacity-0 translate-y-1 invisible pointer-events-none transition-all duration-150 ease-out group-hover:visible group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                <a href="donate.html#feed" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Donation Feed</a>
+                <a href="donate.html#top-supporters" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Top Supporters</a>
+                <a href="dashboard.html#activity" class="block rounded-lg px-3 py-2 text-white bg-white/5 transition hover:bg-white/10">My Activity</a>
+                <a href="dashboard.html#notifications" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Notifications</a>
+              </div>
+            </div>
+            <div class="relative group">
+              <button class="inline-flex items-center gap-2 font-medium text-gray-300 transition hover:text-white">
+                <span>Ecosystem</span>
+                <svg class="h-3.5 w-3.5 text-primary transition group-hover:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" clip-rule="evenodd" />
+                </svg>
+              </button>
+              <div class="absolute left-0 top-full z-30 mt-0 w-56 rounded-2xl border border-white/10 bg-dark-light/95 p-3 text-sm shadow-2xl shadow-primary/10 ring-1 ring-black/30 opacity-0 translate-y-1 invisible pointer-events-none transition-all duration-150 ease-out group-hover:visible group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                <a href="https://cobar.vn" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white" target="_blank" rel="noopener">Cobar.vn</a>
+                <a href="https://explorer.mezon.io/game" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white" target="_blank" rel="noopener">Mezon Game</a>
+                <a href="https://docs.mezon.io" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white" target="_blank" rel="noopener">Developers</a>
+              </div>
+            </div>
+            <div class="relative group">
+              <button class="inline-flex items-center gap-2 font-medium text-gray-300 transition hover:text-white">
+                <span>Settings</span>
+                <svg class="h-3.5 w-3.5 text-primary transition group-hover:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" clip-rule="evenodd" />
+                </svg>
+              </button>
+              <div class="absolute left-0 top-full z-30 mt-0 w-56 rounded-2xl border border-white/10 bg-dark-light/95 p-3 text-sm shadow-2xl shadow-primary/10 ring-1 ring-black/30 opacity-0 translate-y-1 invisible pointer-events-none transition-all duration-150 ease-out group-hover:visible group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                <a href="settings.html#profile" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Profile</a>
+                <a href="settings.html#security" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">2FA Security</a>
+                <a href="settings.html#privacy" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Privacy Notice</a>
+                <a href="settings.html#logout" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Logout</a>
+              </div>
+            </div>
           </nav>
-          <div class="flex items-center space-x-3">
-            <button class="rounded-full border border-white/10 bg-black/40 px-4 py-2 text-xs font-semibold text-gray-300 hover:border-primary/40 hover:text-white transition">Session 23m</button>
-            <a href="settings.html" class="hidden sm:inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold shadow-lg shadow-primary/30 hover:bg-primary-light transition">Settings</a>
+          <div class="flex items-center gap-3">
+            <span class="hidden sm:inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-200">Synced 12s ago</span>
+            <details class="relative md:hidden">
+              <summary class="list-none inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-gray-300">
+                <span>Menu</span>
+                <svg class="h-4 w-4 text-primary" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" clip-rule="evenodd" />
+                </svg>
+              </summary>
+              <div class="absolute right-0 mt-3 w-72 rounded-2xl border border-white/10 bg-dark-light/95 p-4 text-sm shadow-2xl shadow-black/40">
+                <div class="space-y-4">
+                  <div class="flex items-center gap-3 rounded-xl border border-white/10 bg-black/30 px-3 py-2">
+                    <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary/40 text-sm font-semibold text-white">A</span>
+                    <div>
+                      <p class="text-sm font-semibold text-white">Aurora</p>
+                      <p class="text-xs text-gray-400">Wallet 0x2f3...9c21</p>
+                    </div>
+                  </div>
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Explore</p>
+                    <div class="mt-2 grid gap-2 text-gray-300">
+                      <a href="index.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Public Dashboard</a>
+                      <a href="dashboard.html" class="rounded-lg px-3 py-2 bg-white/5 text-white hover:bg-white/10 transition">Personal Dashboard</a>
+                      <a href="account-detail.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Account Detail</a>
+                      <a href="search.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Universal Search</a>
+                    </div>
+                  </div>
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Finance</p>
+                    <div class="mt-2 grid gap-2 text-gray-300">
+                      <a href="stake.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Stake</a>
+                      <a href="swap.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Swap</a>
+                      <a href="give-coffee.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Give Coffee</a>
+                      <a href="donate.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Donate</a>
+                      <a href="red-envelope.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Li Xi</a>
+                    </div>
+                  </div>
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Community</p>
+                    <div class="mt-2 grid gap-2 text-gray-300">
+                      <a href="donate.html#feed" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Donation Feed</a>
+                      <a href="donate.html#top-supporters" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Top Supporters</a>
+                      <a href="dashboard.html#activity" class="rounded-lg px-3 py-2 bg-white/5 text-white hover:bg-white/10 transition">My Activity</a>
+                      <a href="dashboard.html#notifications" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Notifications</a>
+                    </div>
+                  </div>
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Ecosystem</p>
+                    <div class="mt-2 grid gap-2 text-gray-300">
+                      <a href="https://cobar.vn" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition" target="_blank" rel="noopener">Cobar.vn</a>
+                      <a href="https://explorer.mezon.io/game" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition" target="_blank" rel="noopener">Mezon Game</a>
+                      <a href="https://docs.mezon.io" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition" target="_blank" rel="noopener">Developers</a>
+                    </div>
+                  </div>
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Settings</p>
+                    <div class="mt-2 grid gap-2 text-gray-300">
+                      <a href="settings.html#profile" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Profile</a>
+                      <a href="settings.html#security" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">2FA Security</a>
+                      <a href="settings.html#privacy" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Privacy Notice</a>
+                      <a href="settings.html#logout" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Logout</a>
+                    </div>
+                  </div>
+                  <button class="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 px-4 py-2 text-sm font-semibold text-gray-300 transition hover:border-primary/40 hover:text-white">
+                    <span>Switch account</span>
+                    <svg class="h-4 w-4 text-primary" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path d="M3 4.5A1.5 1.5 0 0 1 4.5 3h6a1.5 1.5 0 0 1 1.5 1.5v2a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5V5H5v10h4.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-6A1.5 1.5 0 0 1 2 15.5v-11z" />
+                      <path d="M12.72 7.22a.75.75 0 0 1 1.06 0l3 3a.75.75 0 0 1 0 1.06l-3 3a.75.75 0 0 1-1.06-1.06l1.72-1.72H9a.75.75 0 0 1 0-1.5h5.44L12.72 8.28a.75.75 0 0 1 0-1.06z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </details>
+            <button class="hidden md:inline-flex items-center gap-3 rounded-full border border-white/10 bg-black/30 px-3 py-1.5 text-sm text-white transition hover:border-primary/40">
+              <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary/40 text-sm font-semibold">A</span>
+              <div class="text-left">
+                <p class="text-sm font-semibold leading-tight">Aurora</p>
+                <p class="text-xs text-gray-400">Wallet 0x2f3...9c21</p>
+              </div>
+            </button>
           </div>
         </div>
       </div>
     </header>
 
+
     <main class="flex-1">
-      <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
+      <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
         <header class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p class="text-xs uppercase tracking-[0.3em] text-primary-light">Personal Overview</p>
-            <h1 class="mt-3 text-4xl font-bold">Welcome back, Aurora.</h1>
-            <p class="mt-3 max-w-2xl text-sm text-gray-300">
-              This dashboard combines your balance, staking positions, gifting history, and recent interactions into a private, encrypted view. Data is refreshed every 20 seconds while you are active.
-            </p>
+            <p class="text-xs uppercase tracking-[0.3em] text-primary-light">Personal overview</p>
+            <h1 class="mt-3 text-3xl sm:text-4xl font-bold">Good morning, Aurora.</h1>
+            <p class="mt-2 max-w-xl text-sm text-gray-300">Keep tabs on balances, rewards, and gifting in one private console. Everything updates in real time.</p>
           </div>
           <div class="flex flex-wrap items-center gap-3 text-sm">
-            <span class="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-emerald-200">All systems healthy</span>
-            <span class="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-gray-300">Last synced · 12 seconds ago</span>
+            <span class="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-emerald-200">
+              <span class="h-2 w-2 rounded-full bg-emerald-300 animate-pulse"></span>
+              All systems healthy
+            </span>
+            <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-300">
+              <span class="h-2 w-2 rounded-full bg-primary/50 animate-ping"></span>
+              Synced 12s ago
+            </span>
           </div>
         </header>
 
-        <section class="grid gap-6 lg:grid-cols-4">
-          <article class="rounded-3xl border border-white/10 bg-gradient-to-br from-primary/15 via-dark-light/60 to-dark-light/80 p-6">
-            <header class="flex items-center justify-between text-sm text-gray-300">
-              <span>Main Balance</span>
-              <span class="rounded-full bg-black/40 px-2 py-0.5">Wallet</span>
-            </header>
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <article class="rounded-3xl border border-white/10 bg-gradient-to-br from-primary/20 via-dark-light/70 to-dark-light/80 p-6 shadow-lg shadow-primary/20">
+            <span class="text-xs uppercase tracking-[0.2em] text-primary-light">Main balance</span>
             <p class="mt-4 text-3xl font-semibold">482,940 MEZ</p>
-            <p class="mt-3 text-xs text-gray-400">Fiat · $126,224.33</p>
+            <p class="mt-2 text-xs text-gray-300">≈ $126,224</p>
           </article>
           <article class="rounded-3xl border border-white/10 bg-white/5 p-6">
-            <header class="flex items-center justify-between text-sm text-gray-300">
-              <span>Total Transactions</span>
-              <span class="rounded-full bg-black/40 px-2 py-0.5">24h</span>
-            </header>
-            <p class="mt-4 text-3xl font-semibold">128</p>
-            <p class="mt-3 text-xs text-gray-400">6 pending · 14 awaiting confirmation</p>
+            <span class="text-xs uppercase tracking-[0.2em] text-gray-400">Rewards ready</span>
+            <p class="mt-4 text-3xl font-semibold text-emerald-300">4,680 MEZ</p>
+            <p class="mt-2 text-xs text-gray-300">Claimable now</p>
           </article>
           <article class="rounded-3xl border border-white/10 bg-white/5 p-6">
-            <header class="flex items-center justify-between text-sm text-gray-300">
-              <span>Staking Overview</span>
-              <span class="rounded-full bg-black/40 px-2 py-0.5">v1</span>
-            </header>
-            <p class="mt-4 text-3xl font-semibold">120,000 MEZ</p>
-            <p class="mt-3 text-xs text-gray-400">APY ~ 18.4% · Next reward 4h 12m</p>
+            <span class="text-xs uppercase tracking-[0.2em] text-gray-400">Staked</span>
+            <p class="mt-4 text-3xl font-semibold">128,000 MEZ</p>
+            <p class="mt-2 text-xs text-gray-300">Across 3 validators</p>
           </article>
           <article class="rounded-3xl border border-white/10 bg-white/5 p-6">
-            <header class="flex items-center justify-between text-sm text-gray-300">
-              <span>Coffee &amp; Support</span>
-              <span class="rounded-full bg-black/40 px-2 py-0.5">Last 30d</span>
-            </header>
-            <div class="mt-4 space-y-2 text-sm text-gray-300">
-              <p><span class="font-semibold text-white">Sent:</span> 18 gifts · 420 MEZ</p>
-              <p><span class="font-semibold text-white">Received:</span> 24 gifts · 600 MEZ</p>
-              <p><span class="font-semibold text-white">Donations:</span> 12 streamers supported</p>
-            </div>
+            <span class="text-xs uppercase tracking-[0.2em] text-gray-400">Pending</span>
+            <p class="mt-4 text-3xl font-semibold text-amber-300">6 actions</p>
+            <p class="mt-2 text-xs text-gray-300">Confirm before 18:00 UTC</p>
           </article>
-        </section>
+        </div>
 
-        <section class="grid gap-10 lg:grid-cols-3">
-          <article class="lg:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-8">
-            <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 class="text-lg font-semibold">Transaction timeline</h2>
-                <p class="text-sm text-gray-400">Chronological record of the latest on-chain interactions.</p>
+        <div class="grid gap-6 lg:grid-cols-3">
+          <div class="lg:col-span-2 space-y-6">
+            <section class="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg shadow-primary/10">
+              <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold">Action center</h2>
+                <span class="text-xs uppercase tracking-[0.2em] text-gray-400">Most used</span>
               </div>
-              <div class="flex flex-wrap gap-3 text-xs text-gray-300">
-                <button class="rounded-full border border-primary/40 bg-primary/20 px-4 py-2 font-medium text-primary-light">All</button>
-                <button class="rounded-full border border-white/10 px-4 py-2 hover:border-primary/40 hover:text-white transition">Sent</button>
-                <button class="rounded-full border border-white/10 px-4 py-2 hover:border-primary/40 hover:text-white transition">Received</button>
-                <button class="rounded-full border border-white/10 px-4 py-2 hover:border-primary/40 hover:text-white transition">Pending</button>
+              <div class="mt-6 grid gap-4 md:grid-cols-2">
+                <a href="give-coffee.html" class="flex items-center gap-4 rounded-2xl bg-primary px-4 py-4 text-white shadow-lg shadow-primary/30 transition hover:bg-primary-dark">
+                  <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 text-white">
+                    <svg class="h-6 w-6" viewBox="0 0 640 512" fill="currentColor" aria-hidden="true">
+                      <path d="M96 64c0-17.7 14.3-32 32-32H448h64c70.7 0 128 57.3 128 128s-57.3 128-128 128H480c0 53-43 96-96 96H192c-53 0-96-43-96-96V64zM480 224h32c35.3 0 64-28.7 64-64s-28.7-64-64-64H480V224zM32 416H544c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32z" />
+                    </svg>
+                  </span>
+                  <div class="text-left">
+                    <p class="text-base font-semibold">Give Coffee</p>
+                    <p class="text-sm text-purple-100/80">Send instant gifts</p>
+                  </div>
+                </a>
+                <a href="stake.html" class="flex items-center gap-4 rounded-2xl bg-emerald-600 px-4 py-4 text-white shadow-lg shadow-emerald-600/30 transition hover:bg-emerald-700">
+                  <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 text-white">
+                    <svg class="h-6 w-6" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true">
+                      <path d="M512 32c0 113.6-84.6 207.5-194.2 222c-7.1-53.4-30.6-101.6-65.3-139.3C290.8 46.3 364 0 448 0h32c17.7 0 32 14.3 32 32zM0 96C0 78.3 14.3 64 32 64H64c123.7 0 224 100.3 224 224v32V480c0 17.7-14.3 32-32 32s-32-14.3-32-32V320C100.3 320 0 219.7 0 96z" />
+                    </svg>
+                  </span>
+                  <div class="text-left">
+                    <p class="text-base font-semibold">Stake tokens</p>
+                    <p class="text-sm text-emerald-100/90">Earn 12.5% APY</p>
+                  </div>
+                </a>
+                <a href="swap.html" class="flex items-center gap-4 rounded-2xl bg-sky-600 px-4 py-4 text-white shadow-lg shadow-sky-600/30 transition hover:bg-sky-700">
+                  <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 text-white">
+                    <svg class="h-6 w-6" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true">
+                      <path d="M32 96l320 0V32c0-12.9 7.8-24.6 19.8-29.6s25.7-2.2 34.9 6.9l96 96c6 6 9.4 14.1 9.4 22.6s-3.4 16.6-9.4 22.6l-96 96c-9.2 9.2-22.9 11.9-34.9 6.9s-19.8-16.6-19.8-29.6V160L32 160c-17.7 0-32-14.3-32-32s14.3-32 32-32zM480 352c17.7 0 32 14.3 32 32s-14.3 32-32 32H160v64c0 12.9-7.8 24.6-19.8 29.6s-25.7 2.2-34.9-6.9l-96-96c-6-6-9.4-14.1-9.4-22.6s3.4-16.6 9.4-22.6l96-96c9.2-9.2 22.9-11.9 34.9-6.9s19.8 16.6 19.8 29.6l0 64H480z" />
+                    </svg>
+                  </span>
+                  <div class="text-left">
+                    <p class="text-base font-semibold">Token swap</p>
+                    <p class="text-sm text-sky-100/90">Convert in seconds</p>
+                  </div>
+                </a>
+                <a href="red-envelope.html" class="flex items-center gap-4 rounded-2xl bg-pink-600 px-4 py-4 text-white shadow-lg shadow-pink-600/30 transition hover:bg-pink-700">
+                  <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 text-white">
+                    <svg class="h-6 w-6" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true">
+                      <path d="M64 32C28.7 32 0 60.7 0 96l0 320c0 35.3 28.7 64 64 64l320 0c35.3 0 64-28.7 64-64l0-320c0-35.3-28.7-64-64-64L64 32zM335.7 96l-223.4 0L112 112l112 96 112-96-0.3-16zM64 416l0-255.3 0.3-.3L208 272l143.7-111.3 .3 .3 0 255.3L64 416z" />
+                    </svg>
+                  </span>
+                  <div class="text-left">
+                    <p class="text-base font-semibold">Create Li Xi</p>
+                    <p class="text-sm text-pink-100/90">Launch red packets</p>
+                  </div>
+                </a>
               </div>
-            </header>
-            <div class="mt-8 space-y-4">
-              <div class="flex items-start justify-between rounded-2xl border border-white/10 bg-black/20 px-6 py-5">
-                <div>
-                  <p class="text-sm font-semibold text-white">Swap · MEZ → USDT</p>
-                  <p class="mt-1 text-xs text-gray-400">Tx: 0x45df...ab21 · Finalized · 12:40 UTC</p>
+            </section>
+
+            <section id="activity" class="rounded-3xl border border-white/10 bg-black/30 p-6">
+              <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold">Recent activity</h2>
+                <button class="inline-flex items-center gap-2 text-xs font-semibold text-primary hover:text-primary-light transition">
+                  View timeline
+                  <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path d="M3 10a.75.75 0 0 1 .75-.75h8.44l-2.97-2.97a.75.75 0 1 1 1.06-1.06l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06l2.97-2.97H3.75A.75.75 0 0 1 3 10z" />
+                  </svg>
+                </button>
+              </div>
+              <div class="mt-5 space-y-4">
+                <div class="flex items-center justify-between rounded-2xl border border-white/10 bg-dark-light/60 px-4 py-4">
+                  <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/25 text-primary">
+                      <svg class="h-5 w-5" viewBox="0 0 640 512" fill="currentColor" aria-hidden="true">
+                        <path d="M96 64c0-17.7 14.3-32 32-32H448h64c70.7 0 128 57.3 128 128s-57.3 128-128 128H480c0 53-43 96-96 96H192c-53 0-96-43-96-96V64zM480 224h32c35.3 0 64-28.7 64-64s-28.7-64-64-64H480V224zM32 416H544c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32z" />
+                      </svg>
+                    </span>
+                    <div>
+                      <p class="text-sm font-semibold">Sent 80 MEZ to luna.stream</p>
+                      <p class="text-xs text-gray-400">Give Coffee · 5 minutes ago</p>
+                    </div>
+                  </div>
+                  <span class="text-xs text-emerald-300">Completed</span>
                 </div>
-                <p class="text-sm text-emerald-300">+4,250 USDT</p>
-              </div>
-              <div class="flex items-start justify-between rounded-2xl border border-white/10 bg-black/20 px-6 py-5">
-                <div>
-                  <p class="text-sm font-semibold text-white">Give Coffee · to luna.stream</p>
-                  <p class="mt-1 text-xs text-gray-400">Stripe · TokenIssued · 11:58 UTC</p>
+                <div class="flex items-center justify-between rounded-2xl border border-white/10 bg-dark-light/60 px-4 py-4">
+                  <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-400/15 text-emerald-300">
+                      <svg class="h-5 w-5" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true">
+                        <path d="M192 32c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32V416h32c17.7 0 32 14.3 32 32s-14.3 32-32 32H352c-53 0-96-43-96-96V96H224c-17.7 0-32-14.3-32-32zM64 96H96c17.7 0 32 14.3 32 32V480c0 17.7-14.3 32-32 32H64c-35.3 0-64-28.7-64-64V160C0 124.7 28.7 96 64 96z" />
+                      </svg>
+                    </span>
+                    <div>
+                      <p class="text-sm font-semibold">Delegated 15,000 MEZ</p>
+                      <p class="text-xs text-gray-400">Stake · 32 minutes ago</p>
+                    </div>
+                  </div>
+                  <span class="text-xs text-gray-300">Pending</span>
                 </div>
-                <p class="text-sm text-emerald-300">Completed</p>
-              </div>
-              <div class="flex items-start justify-between rounded-2xl border border-white/10 bg-black/20 px-6 py-5">
-                <div>
-                  <p class="text-sm font-semibold text-white">Stake · Delegated to mezon-core-02</p>
-                  <p class="mt-1 text-xs text-gray-400">Pending confirmation · 11:23 UTC</p>
+                <div class="flex items-center justify-between rounded-2xl border border-white/10 bg-dark-light/60 px-4 py-4">
+                  <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 items-center justify-center rounded-full bg-sky-400/15 text-sky-300">
+                      <svg class="h-5 w-5" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true">
+                        <path d="M32 96l320 0V32c0-12.9 7.8-24.6 19.8-29.6s25.7-2.2 34.9 6.9l96 96c6 6 9.4 14.1 9.4 22.6s-3.4 16.6-9.4 22.6l-96 96c-9.2 9.2-22.9 11.9-34.9 6.9s-19.8-16.6-19.8-29.6V160L32 160c-17.7 0-32-14.3-32-32s14.3-32 32-32zM480 352c17.7 0 32 14.3 32 32s-14.3 32-32 32H160v64c0 12.9-7.8 24.6-19.8 29.6s-25.7 2.2-34.9-6.9l-96-96c-6-6-9.4-14.1-9.4-22.6s3.4-16.6 9.4-22.6l96-96c9.2-9.2 22.9-11.9 34.9-6.9s19.8 16.6 19.8 29.6l0 64H480z" />
+                      </svg>
+                    </span>
+                    <div>
+                      <p class="text-sm font-semibold">Swapped 1,200 MEZ → Coffee</p>
+                      <p class="text-xs text-gray-400">Swap · 1 hour ago</p>
+                    </div>
+                  </div>
+                  <span class="text-xs text-emerald-300">Settled</span>
                 </div>
-                <p class="text-sm text-amber-300">+15,000 MEZ</p>
-              </div>
-              <div class="flex items-start justify-between rounded-2xl border border-white/10 bg-black/20 px-6 py-5">
-                <div>
-                  <p class="text-sm font-semibold text-white">Lì Xì · Lunar New Year Pack</p>
-                  <p class="mt-1 text-xs text-gray-400">Session #7845 · 10 claims remaining</p>
+                <div class="flex items-center justify-between rounded-2xl border border-white/10 bg-dark-light/60 px-4 py-4">
+                  <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 items-center justify-center rounded-full bg-pink-400/15 text-pink-300">
+                      <svg class="h-5 w-5" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true">
+                        <path d="M64 32C28.7 32 0 60.7 0 96l0 320c0 35.3 28.7 64 64 64l320 0c35.3 0 64-28.7 64-64l0-320c0-35.3-28.7-64-64-64L64 32zM335.7 96l-223.4 0L112 112l112 96 112-96-0.3-16zM64 416l0-255.3 0.3-.3L208 272l143.7-111.3 .3 .3 0 255.3L64 416z" />
+                      </svg>
+                    </span>
+                    <div>
+                      <p class="text-sm font-semibold">Li Xi Lunar pack live</p>
+                      <p class="text-xs text-gray-400">Red envelope · 2 hours ago</p>
+                    </div>
+                  </div>
+                  <span class="text-xs text-emerald-300">10 claims left</span>
                 </div>
-                <p class="text-sm text-emerald-300">Live</p>
               </div>
-            </div>
-          </article>
+            </section>
+
+            <section id="notifications" class="rounded-3xl border border-white/10 bg-white/5 p-6">
+              <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold">Notifications</h2>
+                <span class="rounded-full bg-primary/20 px-3 py-1 text-xs text-primary-light">3 new</span>
+              </div>
+              <div class="mt-5 space-y-4">
+                <div class="flex items-start gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-4">
+                  <span class="mt-1 h-2 w-2 rounded-full bg-primary"></span>
+                  <div>
+                    <p class="text-sm font-semibold">Validator mezon-core-02 sent a reward</p>
+                    <p class="text-xs text-gray-400">Reward 1,120 MEZ credited to main wallet.</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-4">
+                  <span class="mt-1 h-2 w-2 rounded-full bg-emerald-400"></span>
+                  <div>
+                    <p class="text-sm font-semibold">Stripe bridge settled</p>
+                    <p class="text-xs text-gray-400">$240 Stripe top-up converted to MEZ.</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-4">
+                  <span class="mt-1 h-2 w-2 rounded-full bg-pink-400"></span>
+                  <div>
+                    <p class="text-sm font-semibold">Li Xi campaign hits goal</p>
+                    <p class="text-xs text-gray-400">20 red packets opened in the past hour.</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
 
           <aside class="space-y-6">
-            <div class="rounded-3xl border border-white/10 bg-gradient-to-br from-primary/20 via-dark-light/70 to-dark-light/90 p-6 shadow-lg shadow-primary/20">
-              <h3 class="text-lg font-semibold">Quick actions</h3>
-              <p class="mt-1 text-sm text-gray-300">Trigger commonly used flows from any page.</p>
-              <div class="mt-6 grid gap-4">
-                <a href="give-coffee.html" class="flex items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-medium hover:border-primary/40 hover:text-white transition">
-                  Give Coffee
-                  <span class="text-xs text-gray-400">Send gift</span>
-                </a>
-                <a href="stake.html" class="flex items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-medium hover:border-primary/40 hover:text-white transition">
-                  Stake Tokens
-                  <span class="text-xs text-gray-400">Earn yields</span>
-                </a>
-                <a href="swap.html" class="flex items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-medium hover:border-primary/40 hover:text-white transition">
-                  Swap Assets
-                  <span class="text-xs text-gray-400">Instant bridges</span>
-                </a>
-                <a href="red-envelope.html" class="flex items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-medium hover:border-primary/40 hover:text-white transition">
-                  Create Lì Xì
-                  <span class="text-xs text-gray-400">QR gifting</span>
-                </a>
-              </div>
-            </div>
-
-            <div class="rounded-3xl border border-white/10 bg-white/5 p-6">
-              <div class="flex items-center justify-between">
-                <h3 class="text-lg font-semibold">Coffee summary</h3>
-                <span class="rounded-md bg-black/40 px-2 py-1 text-xs text-gray-300">30 days</span>
-              </div>
+            <div class="rounded-3xl border border-white/10 bg-gradient-to-br from-primary/15 via-dark-light/60 to-dark-light/80 p-6">
+              <h3 class="text-lg font-semibold">Portfolio split</h3>
               <dl class="mt-6 space-y-4 text-sm">
-                <div class="flex items-center justify-between">
-                  <dt>Sent</dt>
-                  <dd class="font-semibold text-white">18 gifts · 420 MEZ</dd>
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between text-gray-300">
+                    <dt>Liquid MEZ</dt>
+                    <dd>58%</dd>
+                  </div>
+                  <div class="h-2 rounded-full bg-white/10">
+                    <div class="h-full w-[58%] rounded-full bg-primary"></div>
+                  </div>
                 </div>
-                <div class="flex items-center justify-between">
-                  <dt>Received</dt>
-                  <dd class="font-semibold text-white">24 gifts · 600 MEZ</dd>
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between text-gray-300">
+                    <dt>Staked</dt>
+                    <dd>32%</dd>
+                  </div>
+                  <div class="h-2 rounded-full bg-white/10">
+                    <div class="h-full w-[32%] rounded-full bg-emerald-400"></div>
+                  </div>
                 </div>
-                <div class="flex items-center justify-between">
-                  <dt>Stripe Issued</dt>
-                  <dd class="font-semibold text-white">$1,850</dd>
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between text-gray-300">
+                    <dt>Li Xi Pools</dt>
+                    <dd>10%</dd>
+                  </div>
+                  <div class="h-2 rounded-full bg-white/10">
+                    <div class="h-full w-[10%] rounded-full bg-pink-400"></div>
+                  </div>
                 </div>
               </dl>
             </div>
+
+            <div class="rounded-3xl border border-white/10 bg-white/5 p-6">
+              <h3 class="text-lg font-semibold">Validator health</h3>
+              <ul class="mt-4 space-y-3 text-sm">
+                <li class="flex items-center justify-between">
+                  <span class="text-gray-300">mezon-core-01</span>
+                  <span class="rounded-full border border-emerald-400/40 bg-emerald-400/10 px-3 py-1 text-xs text-emerald-300">Healthy</span>
+                </li>
+                <li class="flex items-center justify-between">
+                  <span class="text-gray-300">mezon-core-02</span>
+                  <span class="rounded-full border border-emerald-400/40 bg-emerald-400/10 px-3 py-1 text-xs text-emerald-300">Healthy</span>
+                </li>
+                <li class="flex items-center justify-between">
+                  <span class="text-gray-300">mezon-archive-01</span>
+                  <span class="rounded-full border border-amber-400/40 bg-amber-400/10 px-3 py-1 text-xs text-amber-300">Syncing</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="rounded-3xl border border-primary/30 bg-primary/10 p-6">
+              <h3 class="text-lg font-semibold">Need help?</h3>
+              <p class="mt-2 text-sm text-primary-light/90">Our concierge team can assist with swaps, staking, or Li Xi campaigns.</p>
+              <div class="mt-4 flex gap-3">
+                <a href="https://support.mezon.io" class="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-semibold text-dark transition hover:bg-gray-100" target="_blank" rel="noopener">Open ticket</a>
+                <a href="https://docs.mezon.io" class="inline-flex items-center justify-center rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10" target="_blank" rel="noopener">Docs</a>
+              </div>
+            </div>
           </aside>
-        </section>
+        </div>
       </section>
     </main>
+
 
     <footer class="bg-dark-light/70 border-t border-gray-800">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-sm text-gray-400 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

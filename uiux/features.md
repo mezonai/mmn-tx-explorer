@@ -1,362 +1,260 @@
-## 1. Overview
+# 🧭 MEZON MAINNET EXPLORER – UPDATED FUNCTIONAL SPEC (v2.0)
 
-### Mục tiêu
-Mezon Mainnet Explorer (Private Version) hướng đến:
-- Duy trì tính minh bạch tổng thể (thống kê hệ thống).  
-- Bảo vệ quyền riêng tư người dùng (ẩn dữ liệu ví & lịch sử giao dịch).  
-- Tích hợp thêm các tính năng tài chính – cộng đồng mới:
-  - Give Coffee
-  - Stake
-  - Swap
-  - Donate cho Streamer
-  - Lì xì (Red Envelope)
+**Prepared by:** Business Analysis Team  
+**Audience:** UI/UX Design, Backend, Product Owner, QA  
 
 ---
 
-## 2. User Roles
+## 🎯 Mục tiêu dự án
 
-| Role | Quyền | Mô tả |
-|------|--------|--------|
-| **Guest** | Public access | Chỉ xem thống kê tổng quan hệ thống |
-| **Authenticated User** | Private access | Xem dữ liệu cá nhân, thực hiện các giao dịch |
-| **Admin** | Internal access | Quản lý, giám sát log, staking pool (v2) |
+Mezon Mainnet Explorer (Public & Private Mode) là hệ thống **theo dõi – tra cứu – giao dịch token Mezon (MEZ)**, hướng đến hai mục tiêu song song:
 
----
-
-## 3. Core Modules
-
-### 3.1. Authentication
-
-**Mục đích:** Xác thực người dùng để truy cập dữ liệu cá nhân.  
-
-**Flow:**
-1. User mở trang Explorer.  
-2. Nếu chưa đăng nhập → redirect đến trang **Login**.  
-3. User đăng nhập qua Mezon Account hoặc ZK-Login.  
-4. Nhận JWT token → truy cập My Dashboard.  
-
-**UI/UX:**  
-- Trang `/login` hoặc modal.  
-- Success → redirect `/dashboard`.  
-- States: Logged out / Logging in / Invalid credentials / Session expired.
+1. **Giữ tính minh bạch cao của hệ thống blockchain** (người dùng có thể tra cứu balance, transaction, donation, hoạt động công khai).  
+2. **Cung cấp các tính năng mở rộng hệ sinh thái Mezon**, bao gồm:
+   - Giao dịch & donation minh bạch.
+   - Tích hợp mua sắm (Cobar.vn).
+   - Tích hợp game (Mezon Game).
+   - Các dịch vụ cộng đồng: Give Coffee, Lì Xì, Stake, Swap.
 
 ---
 
-### 3.2. Public Dashboard
+## 👥 1. Phân loại người dùng
 
-**Mục đích:** Hiển thị thống kê tổng quan toàn mạng (public).  
-
-**Data hiển thị:**
-- Total blocks  
-- Total transactions  
-- Average block time  
-- Total wallets  
-- Total “Give Coffee” gifts  
-
-**UI/UX:**  
-- 5 card thống kê.  
-- CTA: “Login to view your personal dashboard”.
+| Role | Quyền truy cập | Mô tả |
+|------|----------------|-------|
+| **Guest (Public User)** | Toàn quyền xem dữ liệu công khai (balance, transaction, block, donation list, v.v.) | Xem minh bạch toàn mạng |
+| **Authenticated User** | Có thêm quyền tương tác (transfer, stake, swap, gửi lì xì, donate, mua hàng, ... ) | Cần đăng nhập qua OAuth Mezon |
+| **Admin (Internal)** | Theo dõi, audit hệ thống, dashboard tổng | Quản trị nội bộ NCC / Mezon |
 
 ---
 
-### 3.3. My Dashboard
+## 🔐 2. Login & Access
 
-**Mục đích:** Trang tổng hợp dữ liệu cá nhân.  
+- Hệ thống **tích hợp OAuth Login với Mezon** → chỉ cần **1 nút “Login with Mezon”**.  
+- Không có trang login riêng.  
+- Sau khi login → hiển thị avatar + tên user trên thanh menu.
 
-**Data hiển thị:**
-- My balance  
-- My total transactions (24h / pending / total)  
-- My staking overview  
-- My coffee summary (sent / received)  
-- My donate & red-envelope history  
-
-**UI Layout:**
-- **Top section:** statistic cards (balance, tx, stake, coffee).  
-- **Bottom section:** line chart / transaction timeline.  
-
-**Actions:**  
-- Quick buttons: `Give Coffee`, `Stake`, `Swap`, `Donate`, `Send Lì xì`.
+**Button:**  
+> “🔐 Login with Mezon” → redirect OAuth → trả JWT session token.
 
 ---
 
-### 3.4. Account Detail
+## 🧭 3. Cấu trúc Menu Mới
 
-**Mục đích:** Xem thông tin ví cá nhân.  
-
-**Data hiển thị:**
-- Address  
-- Balance  
-- Tx count  
-- Last update block  
-- Transaction history (with filters)  
-
-**Filter & Limitations:**
-- Require time range input (default 3 months, max 12 months).  
-- Filter type: All / Sent / Received.  
-- Pagination: 20 records/page.  
-
-**Security:**  
-- Chỉ xem được ví của chính mình (`session.wallet == address`).
+Cấu trúc menu được **gom nhóm hợp lý** để tránh rối, hiển thị dạng **menu cha – con** (dropdown hoặc sidebar tree).  
+Gợi ý hiển thị theo kiểu **3 nhóm chính: “Explorer”, “Finance”, “Community”**, cộng thêm “Ecosystem” (Cobar & Games).
 
 ---
 
-### 3.5. Give Coffee
+### 🌐 Explorer
+> **Chức năng minh bạch, tra cứu dữ liệu on-chain**
 
-**Type A – Send Mezon Token:**
-- User login → chọn người nhận → nhập số lượng → confirm transaction → broadcast on-chain.  
-- Record fields: sender, receiver, amount, tx_hash, timestamp.  
-- States: `Pending → Success → Failed`.
-
-**Type B – Buy Gift via Stripe:**
-- User login → chọn gói (50$, 100$, 200$) → thanh toán qua Stripe → backend chuyển token cho người nhận.  
-- Record fields: payer_id, receiver, usd_value, token_amount, stripe_id, status.  
-- States: `Created → Paid → TokenIssued → Completed`.
-
-**UI:**  
-- Page `/give-coffee` với 2 tab: [Send Token] / [Buy Gift].  
-- Popup confirmation + success message.  
-
-**Notification:**  
-> “☕ You’ve received a coffee from Alice!”
+| Menu | Mô tả | Visibility |
+|------|--------|-------------|
+| **Dashboard** | Thống kê toàn mạng: total block, tx, wallet, avg block time, donation volume | Public |
+| **Blocks** | Danh sách block, block detail (height, timestamp, tx count, miner, hash) | Public |
+| **Transactions** | Danh sách giao dịch (paging), filter theo status, date | Public |
+| **Accounts** | Top account theo balance, transaction count | Public |
+| **Account Detail** | Xem chi tiết ví (balance, tx count, tx history, donation history, stake info) | Public + Private |
+| **Search** | Tìm theo transaction hash, block number, wallet address | Public |
 
 ---
 
-### 3.6. Stake
+### 💰 Finance
+> **Các tính năng tài chính sử dụng Mezon token**
 
-**Mục đích:** Cho phép user gửi token để nhận lãi.  
-
-**Data model:**
-| Field | Description |
-|--------|-------------|
-| stake_amount | Số lượng token stake |
-| start_date / end_date | Thời gian stake |
-| interest_rate | % reward |
-| reward_claimable | Có thể claim chưa |
-| status | Active / Completed / Claimed |
-
-**Actions:**
-- `Stake Now`
-- `View My Stakes`
-- `Claim Reward`
-
-**Flow:**
-1. User chọn “Stake Now”.  
-2. Nhập số lượng token → xác nhận → broadcast transaction.  
-3. Khi đủ kỳ hạn → hệ thống thông báo “Reward available”.  
-4. User “Claim Reward”.
-
-**UI/UX:**  
-- Tab layout: [My Stakes] [Stake Now] [Claim Reward].
+| Menu | Mô tả | Access |
+|------|--------|---------|
+| **Stake** | Gửi token để nhận lãi | Login |
+| **Swap** | Hoán đổi token (MEZ ↔ CoffeeToken / USD value) | Login |
+| **Give Coffee** | Gửi token như quà tặng hoặc thanh toán Stripe | Login |
+| **Donate** | Gửi tiền cho streamer hoặc tổ chức từ thiện | Public (minh bạch) + Login (thực hiện giao dịch) |
+| **Lì Xì** | Tạo gói lì xì, generate QR, chia sẻ cho nhiều người nhận | Login |
 
 ---
 
-### 3.7. Swap
+### 🫶 Community
+> **Tính năng gắn kết, truyền cảm hứng và chia sẻ**
 
-**Mục đích:** Hoán đổi token nội bộ trong hệ sinh thái Mezon.  
-
-**Token pair:**
-- MEZ ↔ CoffeeToken  
-- MEZ ↔ USD (internal value)
-
-**Flow:**
-1. Login → chọn token pair.  
-2. Nhập số lượng.  
-3. Confirm → backend xử lý swap.  
-4. Show result (new balances).  
-
-**Validation:**
-- Kiểm tra balance đủ.  
-- Lấy tỷ giá từ config.  
-
-**UI/UX:**  
-- Giao diện kiểu DEX nhỏ gọn.  
-- Input + output token card.  
+| Menu | Mô tả | Access |
+|------|--------|---------|
+| **Donation Feed** | Danh sách công khai các chiến dịch hoặc streamer nhận donate, thống kê tổng donation | Public |
+| **Top Supporters** | Bảng xếp hạng người donate hoặc give coffee nhiều nhất | Public |
+| **My Activity** | User xem toàn bộ lịch sử tặng / nhận / stake / swap / lì xì | Login |
+| **Notifications** | Hiển thị các event: nhận quà, donate mới, reward stake, ... | Login |
 
 ---
 
-### 3.8. Search (Limited Scope)
+### 🧩 Ecosystem
+> **Kết nối với các sản phẩm khác trong hệ sinh thái Mezon**
 
-**Mục đích:** Tìm kiếm transaction của chính mình.  
-
-**Input:** Transaction hash.  
-**Validation:** Server chỉ trả về nếu `sender` hoặc `receiver` == `session.wallet`.  
-**UI:** Search bar → result card.  
-**Empty state:** “No transaction found under your account.”
-
----
-
-### 3.9. Settings
-
-**Mục đích:** Quản lý bảo mật tài khoản & privacy.  
-
-**Functions:**
-- Change password  
-- Enable 2FA  
-- Logout all sessions  
-- Privacy Notice  
-
-**Privacy text:**  
-> “Your wallet balance and transactions are visible only to you. Mezon does not store your private key.”
-
-**UI:**  
-- Page `/settings`  
-- Section: `Account Security`, `Privacy Policy`
+| Menu | Mô tả | Visibility |
+|------|--------|-------------|
+| **Cobar.vn** | Tích hợp sàn thương mại điện tử chấp nhận Mezon token, link trực tiếp `https://cobar.vn` | Public |
+| **Mezon Game** | Danh sách các game trên hệ sinh thái Mezon tích hợp MEZ token | Public |
+| **Developers (optional)** | API docs, token integration guides | Public |
 
 ---
 
-## 4. New Features (Community Layer)
+### ⚙️ Settings
+> **Quản lý tài khoản & bảo mật**
 
----
-
-### 4.1. Donate cho Streamer
-
-**Mục đích:** Cho phép người dùng **donate token trực tiếp cho streamer**, tương tự “Super Chat” của YouTube.  
-
-**Flow tổng quan:**
-1. Streamer đăng ký tài khoản Mezon để tạo **Donate Link**:  
-   `https://explorer.mezon.io/donate/<streamer_id>`
-2. Người xem click link → mở trang donate hiển thị thông tin streamer.  
-3. Nhập số lượng token → confirm donate → broadcast transaction.  
-4. Streamer nhận thông báo: “🎉 New donation from [user]!”.
-
-**Integration concept:**
-- Streamer có thể nhúng link trong YouTube, Twitch hoặc overlay livestream.  
-- Có thể embed widget hiển thị **Donate Mezon** trực tiếp trên video.
-
-**Data model:**
-| Field | Description |
-|--------|-------------|
-| donor_id | ID người tặng |
-| streamer_id | ID người nhận |
-| amount | Số token |
-| message | Optional lời nhắn |
-| tx_hash | Transaction hash |
-| timestamp | Thời gian |
-
-**UI/UX:**
-- Popup nhỏ: `Streamer Info | Amount | Confirm`.  
-- Hiển thị recent donations (optional).  
-
-**Optional v2:**
-- Leaderboard top donor.  
-- Badge “Top Supporter” trong Mezon chat.
-
----
-
-### 4.2. Lì Xì (Red Envelope Feature)
-
-**Mục đích:** Cho phép user phát lì xì token qua QR code kèm lời chúc.  
-
-**Flow chi tiết:**
-1. User login → chọn “Tạo lì xì mới”.  
-2. Nhập:  
-   - Tổng số tiền (token)  
-   - Số người nhận  
-   - Số tiền min/max (optional)  
-   - Lời chúc (“Chúc bạn may mắn 🎉”)  
-3. Xác nhận → hệ thống tạo **Lì xì session**.  
-4. Hệ thống sinh **QR code** → user copy/share link.  
-5. Người khác scan QR → nếu còn phần thưởng → nhận token + lời chúc.  
-
-**Validation Rules:**
-- QR code hết hạn sau X ngày.  
-- Khi hết lượt nhận → hiển thị “🎁 Đã hết lì xì”.  
-- Có thể bật Random mode để chia ngẫu nhiên.  
-
-**Data model:**
-| Field | Description |
-|--------|-------------|
-| red_packet_id | ID gói lì xì |
-| creator_id | Người tạo |
-| total_amount | Tổng tiền |
-| participant_count | Số người dự kiến |
-| amount_min / max | Giới hạn |
-| is_random | Boolean |
-| message | Lời chúc |
-| remaining_amount | Số tiền còn lại |
-| qr_code | Link QR |
-| created_at / expired_at | Thời gian |
-
-**UI/UX:**
-- Page `/red-envelope` với 2 tab: [Tạo Lì Xì] / [Danh sách của tôi].  
-- Khi người nhận scan → show:  
-  - Lời chúc  
-  - Số tiền nhận được  
-  - Animation mở phong bao lì xì 🎊  
-
-**Optional v2:**
-- Event lì xì dịp Tết, sinh nhật, lễ hội.  
-- “Top người lì xì nhiều nhất 🎊”.
-
----
-
-## 5. Security & Privacy Rules
-
-| Rule | Mô tả |
+| Menu | Mô tả |
 |------|--------|
-| R1 | Chỉ user login mới xem được dữ liệu cá nhân. |
-| R2 | Mọi request private API đều cần JWT token. |
-| R3 | Transaction query chỉ trả về data của chính user. |
-| R4 | Limit query time range ≤ 12 tháng. |
-| R5 | Rate limit API 20 req/min/user. |
-| R6 | QR Code lì xì chỉ chứa tokenized session id, không chứa wallet trực tiếp. |
-| R7 | Donate link mã hoá, không hiển thị ví streamer công khai. |
+| **Profile** | Thông tin user (tên, email, ví) |
+| **2FA Security** | Kích hoạt / tắt bảo mật 2 lớp |
+| **Privacy Notice** | Chính sách dữ liệu và minh bạch |
+| **Logout** | Đăng xuất khỏi OAuth session |
 
 ---
 
-## 6. UI/UX Guidelines  
+## 💎 4. Chức năng chi tiết
 
-> **Note cho UI/UX:**  
-> Màu chủ đạo của hệ thống: **#6941c6** (Mezon Purple).  
-> Tone hiện đại, trẻ trung, công nghệ cao, thể hiện cảm giác tin cậy & riêng tư.  
+### 4.1. Account & Transparency
 
-| Thành phần | Mô tả |
-|-------------|--------|
-| **Style** | Mezon Blue/Purple theme (#6941c6, #0B1533), accent neon. |
-| **Font** | Inter / JetBrains Mono. |
-| **Layout** | Card-based, responsive 1366px+. |
-| **Icons** | Lucide hoặc Phosphor icons. |
-| **Tone UX** | Privacy-first, Friendly, Tech-trust. |
-| **Feedbacks** | Toast + animation (coffee pour, envelope open, etc). |
-| **Empty states** | Dễ hiểu, có minh hoạ nhỏ. |
-| **CTA buttons** | Màu tím chính (#6941c6) – gradient nhẹ. |
-| **Hover/Focus** | Nhấn mạnh bằng bóng mờ tím và hiệu ứng blur. |
+- **Tra cứu ví của người khác:**  
+  - Cho phép xem balance, tx count, tx list, donation list, staking status.  
+  - Dữ liệu hiển thị công khai (như blockchain explorer truyền thống).  
+- **Minh bạch donation:**  
+  - Các giao dịch donation có tag `donate=TRUE` và hiển thị riêng trong giao diện.  
+  - Người xem có thể click xem chi tiết donation → “từ ai” (nếu public name), “cho ai”, “số tiền”, “thời gian”.
 
 ---
 
-## 7. Navigation Structure
+### 4.2. Donation Module (Mở rộng)
 
+- Cho phép:
+  - **Streamer / tổ chức** đăng ký “Donation link”.  
+  - **Người xem** donate bằng token Mezon hoặc Stripe → hiển thị công khai trên Explorer.  
+- Explorer có thể hiển thị:
+  - Tổng số donation (tổng token / USD).  
+  - Top campaign, top donor.  
+  - Donation history (minh bạch, giống Etherscan hoặc blockchain charity explorer).  
+
+**Ví dụ URL:**
 ```
-Public Area
- ├── Dashboard (public overview)
- ├── Login
-Private Area
- ├── My Dashboard
- ├── Account Detail
- ├── Give Coffee
- ├── Stake
- ├── Swap
- ├── Donate
- ├── Lì Xì
- ├── Search (mine only)
- ├── Settings
- └── Logout
-
+https://explorer.mezon.io/donate/<campaign_id>
+https://explorer.mezon.io/address/<wallet>?tab=donations
 ```
 
+---
+
+### 4.3. Cobar.vn Integration
+
+- **Mục đích:** kết nối sàn thương mại điện tử **Cobar.vn** đã chấp nhận thanh toán bằng MEZ token.  
+- **Giao diện:**  
+  - Menu “🛍️ Cobar.vn” → hiển thị banner, danh mục sản phẩm nổi bật, link tới `https://cobar.vn`.  
+  - Có thể show real-time statistic: “Số đơn hàng thanh toán bằng MEZ hôm nay”.  
+- **Tích hợp:**  
+  - Sử dụng API `cobar.vn/api/mezon/payments` để hiển thị thống kê.  
+  - Dùng cùng token address với hệ thống mainnet (MEZ).
 
 ---
 
-## 8. Summary Table
+### 4.4. Mezon Game Integration
 
-| Module | Visibility | Purpose | Status |
-|---------|-------------|----------|---------|
-| Dashboard | Public + Private | Statistic tổng + cá nhân | ✅ |
-| Account Detail | Private | Xem ví của mình | ✅ |
-| Give Coffee | Private | Gift token / Stripe payment | ✅ |
-| Stake | Private | Gửi token nhận lãi | ✅ |
-| Swap | Private | Hoán đổi token nội bộ | ✅ |
-| Search | Private | Chỉ tìm tx của bản thân | ✅ |
-| Donate | Private / Embedded | Donate cho streamer | ✅ |
-| Lì Xì | Private | Phát lì xì qua QR code | ✅ |
-| Settings | Private | Bảo mật, privacy | ✅ |
+- **Mục đích:** hiển thị các game trong hệ sinh thái Mezon có tích hợp token MEZ.  
+- **Nội dung hiển thị:**
+  - Danh sách game (icon + mô tả ngắn + link).  
+  - Game category: Action, Puzzle, Strategy, Social, Sport.  
+  - Hiển thị “Reward pool” bằng MEZ token.  
+- **Menu:** “🎮 Mezon Game”  
+- **URL:** `/game` hoặc `https://explorer.mezon.io/game`
+- **Tích hợp tương lai:** có thể hiển thị “On-chain leaderboard” hoặc “Top players earn MEZ”.
+
+---
+
+### 4.5. Lì Xì / Red Envelope
+
+- Không thay đổi core logic.  
+- Khi phát lì xì → hệ thống gắn tag `type=lixi` và public transaction như bình thường.  
+- Người xem có thể tra cứu toàn bộ lịch sử lì xì đã diễn ra (minh bạch quà tặng).  
+
+---
+
+## 🧱 5. Navigation Structure (Cập nhật)
+
+Explorer
+├── Dashboard
+├── Blocks
+├── Transactions
+├── Accounts
+│ ├── Top Accounts
+│ └── Account Detail
+└── Search
+
+Finance
+├── Stake
+├── Swap
+├── Give Coffee
+├── Donate
+└── Lì Xì
+
+Community
+├── Donation Feed
+├── Top Supporters
+├── My Activity
+└── Notifications
+
+Ecosystem
+├── Cobar.vn
+├── Mezon Game
+└── Developers (Docs)
+
+Settings
+├── Profile
+├── 2FA Security
+├── Privacy Notice
+└── Logout
+
+
+---
+
+## 🎨 6. UI/UX Guidelines
+
+> **🎨 Màu chủ đạo:** `#6941c6` (Mezon Purple)  
+> **Tone:** Hiện đại – tin cậy – công nghệ cao – minh bạch.  
+> **Phong cách:** Tech Blueprint / Gradient Purple / Neon Highlights.
+
+| Thành phần | Hướng dẫn |
+|-------------|------------|
+| **Header** | Logo Mezon, nút “Login with Mezon”, dropdown user menu |
+| **Sidebar** | Cấu trúc 5 nhóm menu (Explorer, Finance, Community, Ecosystem, Settings) |
+| **Main cards** | Số liệu thống kê, có hiệu ứng hover, border glow tím |
+| **Tables** | Giao diện giống explorer truyền thống, phân trang, filter |
+| **Badges / Tags** | Color code theo loại giao dịch: `donate=purple`, `stake=blue`, `swap=orange`, `lixi=pink` |
+| **Privacy Note** | “🔒 Some data is private to logged-in users only.” |
+| **Call to action (CTA)** | Nút gradient từ `#6941c6` → `#8b6af0`, bo tròn, shadow nhẹ |
+| **Responsive** | Sidebar collapse thành icon khi < 960px |
+
+---
+
+## 📊 7. Data Transparency Policy
+
+| Loại dữ liệu | Public | Private | Ghi chú |
+|---------------|---------|----------|---------|
+| Balance, Tx History | ✅ | — | Minh bạch on-chain |
+| Donation list | ✅ | — | Public cho cộng đồng |
+| Lì xì list | ✅ | — | Hiển thị người tạo & người nhận (ẩn tên nếu chọn private) |
+| Stake info | ✅ (read-only) | — | Lãi suất, kỳ hạn hiển thị công khai |
+| Personal Notification | — | ✅ | Chỉ riêng user |
+| 2FA, Settings | — | ✅ | Bảo mật cá nhân |
+
+---
+
+## 🧩 8. Gợi ý UI Layout chính
+
+**Header (Top bar):**
+[Logo Mezon Explorer] [Explorer] [Finance] [Community] [Ecosystem] [Settings] [🔐 Login with Mezon]
+
+**Sidebar (nếu dùng layout 2 cột):**
+Explorer
+Finance
+Community
+Ecosystem
+Settings
+
+
+**Footer:**
+Mezon Explorer © 2025 – Transparency by Design
+
