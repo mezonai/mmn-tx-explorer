@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Top Supporters | Mezon Explorer</title>
+    <link rel="icon" href="../assets/logo.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="../theme.css" />
+    <link rel="stylesheet" href="../style.css" />
+    <script src="../main.js" defer></script>
+  </head>
+  <body data-page="community-top-supporters">
+    <header class="app-header">
+      <button class="btn-primary" type="button" data-toggle-sidebar aria-label="Thu gọn menu">
+        ☰
+      </button>
+      <a class="app-header__brand" href="../index.html">
+        <img src="../assets/logo.svg" alt="Mezon Explorer logo" />
+        Mezon Explorer
+      </a>
+      <nav class="app-header__nav" aria-label="Điều hướng chính">
+        <a data-top-nav="explorer" href="../explorer/dashboard.html">Explorer</a>
+        <a data-top-nav="finance" href="../finance/stake.html">Finance</a>
+        <a data-top-nav="community" href="../community/community.html">Community</a>
+        <a data-top-nav="ecosystem" href="../ecosystem/cobar.html">Ecosystem</a>
+        <a data-top-nav="settings" href="../settings/profile.html">Settings</a>
+      </nav>
+      <div class="app-header__cta">
+        <button class="btn-primary" type="button">Login with Mezon</button>
+      </div>
+    </header>
+
+    <aside class="sidebar" aria-label="Danh mục Explorer">
+      <section class="sidebar-group">
+        <span class="sidebar-group__label">Explorer</span>
+        <nav class="sidebar-nav">
+          <a class="sidebar-link" data-nav="explorer-dashboard" href="../explorer/dashboard.html">Dashboard</a>
+          <a class="sidebar-link" data-nav="explorer-blocks" href="../explorer/blocks.html">Blocks</a>
+          <a class="sidebar-link" data-nav="explorer-transactions" href="../explorer/transactions.html">Transactions</a>
+          <a class="sidebar-link" data-nav="explorer-accounts" href="../explorer/accounts.html">Accounts</a>
+          <a class="sidebar-link" data-nav="explorer-account-detail" href="../explorer/account-detail.html">Account Detail</a>
+          <a class="sidebar-link" data-nav="explorer-search" href="../explorer/search.html">Search</a>
+        </nav>
+      </section>
+      <section class="sidebar-group">
+        <span class="sidebar-group__label">Finance</span>
+        <nav class="sidebar-nav">
+          <a class="sidebar-link" data-nav="finance-stake" href="../finance/stake.html">Stake</a>
+          <a class="sidebar-link" data-nav="finance-swap" href="../finance/swap.html">Swap</a>
+          <a class="sidebar-link" data-nav="finance-give-coffee" href="../finance/give-coffee.html">Give Coffee</a>
+          <a class="sidebar-link" data-nav="finance-donate" href="../finance/donate.html">Donate</a>
+          <a class="sidebar-link" data-nav="finance-lixi" href="../finance/lixi.html">Lì Xì</a>
+        </nav>
+      </section>
+      <section class="sidebar-group">
+        <span class="sidebar-group__label">Community</span>
+        <nav class="sidebar-nav">
+          <a class="sidebar-link" data-nav="community-overview" href="../community/community.html">Overview</a>
+          <a class="sidebar-link" data-nav="community-donation-feed" href="../community/donation-feed.html">Donation Feed</a>
+          <a class="sidebar-link" data-nav="community-top-supporters" href="../community/top-supporters.html">Top Supporters</a>
+          <a class="sidebar-link" data-nav="community-my-activity" href="../community/my-activity.html">My Activity</a>
+          <a class="sidebar-link" data-nav="community-notifications" href="../community/notifications.html">Notifications</a>
+        </nav>
+      </section>
+      <section class="sidebar-group">
+        <span class="sidebar-group__label">Ecosystem</span>
+        <nav class="sidebar-nav">
+          <a class="sidebar-link" data-nav="ecosystem-cobar" href="../ecosystem/cobar.html">Cobar.vn</a>
+          <a class="sidebar-link" data-nav="ecosystem-game" href="../ecosystem/game.html">Mezon Game</a>
+          <a class="sidebar-link" data-nav="ecosystem-developers" href="../ecosystem/developers.html">Developers</a>
+        </nav>
+      </section>
+      <section class="sidebar-group">
+        <span class="sidebar-group__label">Settings</span>
+        <nav class="sidebar-nav">
+          <a class="sidebar-link" data-nav="settings-profile" href="../settings/profile.html">Profile</a>
+          <a class="sidebar-link" data-nav="settings-security" href="../settings/security.html">2FA Security</a>
+          <a class="sidebar-link" data-nav="settings-privacy" href="../settings/privacy.html">Privacy Notice</a>
+          <a class="sidebar-link" data-nav="settings-logout" href="../settings/logout.html">Logout</a>
+        </nav>
+      </section>
+    </aside>
+
+    <main class="content">
+      <div class="content-header">
+        <span class="content-header__eyebrow">Community</span>
+        <h1 class="content-header__title">Top Supporters</h1>
+        <p class="content-header__meta">
+          Bảng xếp hạng cộng đồng theo tổng donation, Give Coffee và hoạt động stake hỗ trợ hệ sinh thái.
+        </p>
+      </div>
+
+      <section class="data-section">
+        <div class="tab-group" role="tablist">
+          <button class="tab is-active" type="button">Donation</button>
+          <button class="tab" type="button">Give Coffee</button>
+          <button class="tab" type="button">Stake Support</button>
+        </div>
+        <table class="table" style="margin-top: 20px">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Supporter</th>
+              <th>Tổng MEZ</th>
+              <th>Donation Count</th>
+              <th>Chiến dịch nổi bật</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>wallet.mzn-guardian</td>
+              <td>12,800 MEZ</td>
+              <td>420</td>
+              <td>Nova Charity 2025</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>fan.lily</td>
+              <td>9,420 MEZ</td>
+              <td>356</td>
+              <td>Give Coffee - Saigon</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>wallet.validator-01</td>
+              <td>8,110 MEZ</td>
+              <td>210</td>
+              <td>Streamer Nova</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>wallet.cobar-treasury</td>
+              <td>6,980 MEZ</td>
+              <td>185</td>
+              <td>Cobar Community Fund</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>wallet.mzn-67</td>
+              <td>5,420 MEZ</td>
+              <td>162</td>
+              <td>Give Coffee Hanoi</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+
+    <footer class="app-footer">Mezon Explorer © 2025 — Transparency by Design</footer>
+  </body>
+</html>

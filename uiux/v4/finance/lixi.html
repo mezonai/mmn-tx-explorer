@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lì Xì | Mezon Explorer</title>
+    <link rel="icon" href="../assets/logo.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="../theme.css" />
+    <link rel="stylesheet" href="../style.css" />
+    <script src="../main.js" defer></script>
+  </head>
+  <body data-page="finance-lixi">
+    <header class="app-header">
+      <button class="btn-primary" type="button" data-toggle-sidebar aria-label="Thu gọn menu">
+        ☰
+      </button>
+      <a class="app-header__brand" href="../index.html">
+        <img src="../assets/logo.svg" alt="Mezon Explorer logo" />
+        Mezon Explorer
+      </a>
+      <nav class="app-header__nav" aria-label="Điều hướng chính">
+        <a data-top-nav="explorer" href="../explorer/dashboard.html">Explorer</a>
+        <a data-top-nav="finance" href="../finance/stake.html">Finance</a>
+        <a data-top-nav="community" href="../community/community.html">Community</a>
+        <a data-top-nav="ecosystem" href="../ecosystem/cobar.html">Ecosystem</a>
+        <a data-top-nav="settings" href="../settings/profile.html">Settings</a>
+      </nav>
+      <div class="app-header__cta">
+        <button class="btn-primary" type="button">Login with Mezon</button>
+      </div>
+    </header>
+
+    <aside class="sidebar" aria-label="Danh mục Explorer">
+      <section class="sidebar-group">
+        <span class="sidebar-group__label">Explorer</span>
+        <nav class="sidebar-nav">
+          <a class="sidebar-link" data-nav="explorer-dashboard" href="../explorer/dashboard.html">Dashboard</a>
+          <a class="sidebar-link" data-nav="explorer-blocks" href="../explorer/blocks.html">Blocks</a>
+          <a class="sidebar-link" data-nav="explorer-transactions" href="../explorer/transactions.html">Transactions</a>
+          <a class="sidebar-link" data-nav="explorer-accounts" href="../explorer/accounts.html">Accounts</a>
+          <a class="sidebar-link" data-nav="explorer-account-detail" href="../explorer/account-detail.html">Account Detail</a>
+          <a class="sidebar-link" data-nav="explorer-search" href="../explorer/search.html">Search</a>
+        </nav>
+      </section>
+      <section class="sidebar-group">
+        <span class="sidebar-group__label">Finance</span>
+        <nav class="sidebar-nav">
+          <a class="sidebar-link" data-nav="finance-stake" href="../finance/stake.html">Stake</a>
+          <a class="sidebar-link" data-nav="finance-swap" href="../finance/swap.html">Swap</a>
+          <a class="sidebar-link" data-nav="finance-give-coffee" href="../finance/give-coffee.html">Give Coffee</a>
+          <a class="sidebar-link" data-nav="finance-donate" href="../finance/donate.html">Donate</a>
+          <a class="sidebar-link" data-nav="finance-lixi" href="../finance/lixi.html">Lì Xì</a>
+        </nav>
+      </section>
+      <section class="sidebar-group">
+        <span class="sidebar-group__label">Community</span>
+        <nav class="sidebar-nav">
+          <a class="sidebar-link" data-nav="community-overview" href="../community/community.html">Overview</a>
+          <a class="sidebar-link" data-nav="community-donation-feed" href="../community/donation-feed.html">Donation Feed</a>
+          <a class="sidebar-link" data-nav="community-top-supporters" href="../community/top-supporters.html">Top Supporters</a>
+          <a class="sidebar-link" data-nav="community-my-activity" href="../community/my-activity.html">My Activity</a>
+          <a class="sidebar-link" data-nav="community-notifications" href="../community/notifications.html">Notifications</a>
+        </nav>
+      </section>
+      <section class="sidebar-group">
+        <span class="sidebar-group__label">Ecosystem</span>
+        <nav class="sidebar-nav">
+          <a class="sidebar-link" data-nav="ecosystem-cobar" href="../ecosystem/cobar.html">Cobar.vn</a>
+          <a class="sidebar-link" data-nav="ecosystem-game" href="../ecosystem/game.html">Mezon Game</a>
+          <a class="sidebar-link" data-nav="ecosystem-developers" href="../ecosystem/developers.html">Developers</a>
+        </nav>
+      </section>
+      <section class="sidebar-group">
+        <span class="sidebar-group__label">Settings</span>
+        <nav class="sidebar-nav">
+          <a class="sidebar-link" data-nav="settings-profile" href="../settings/profile.html">Profile</a>
+          <a class="sidebar-link" data-nav="settings-security" href="../settings/security.html">2FA Security</a>
+          <a class="sidebar-link" data-nav="settings-privacy" href="../settings/privacy.html">Privacy Notice</a>
+          <a class="sidebar-link" data-nav="settings-logout" href="../settings/logout.html">Logout</a>
+        </nav>
+      </section>
+    </aside>
+
+    <main class="content">
+      <div class="content-header">
+        <span class="content-header__eyebrow">Finance</span>
+        <h1 class="content-header__title">Lì Xì / Red Envelope</h1>
+        <p class="content-header__meta">
+          Tạo phong bao lì xì blockchain, chia ngẫu nhiên hoặc đều cho người nhận, kèm thông điệp và thời gian
+          hết hạn. Tất cả giao dịch đều gắn tag <code>type=lixi</code> để cộng đồng cùng theo dõi.
+        </p>
+      </div>
+
+      <section class="data-section">
+        <div class="grid-two-column">
+          <form class="form-grid">
+            <div class="form-control">
+              <label for="lixi-total">Tổng MEZ</label>
+              <input id="lixi-total" type="number" placeholder="Nhập tổng số MEZ" />
+            </div>
+            <div class="form-control">
+              <label for="lixi-receivers">Số người nhận</label>
+              <input id="lixi-receivers" type="number" placeholder="Ví dụ: 20" />
+            </div>
+            <div class="form-control">
+              <label for="lixi-min">Min mỗi người</label>
+              <input id="lixi-min" type="number" placeholder="Ví dụ: 5 MEZ" />
+            </div>
+            <div class="form-control">
+              <label for="lixi-max">Max mỗi người</label>
+              <input id="lixi-max" type="number" placeholder="Ví dụ: 50 MEZ" />
+            </div>
+            <div class="form-control">
+              <label for="lixi-random">Phân phối</label>
+              <select id="lixi-random">
+                <option>Ngẫu nhiên</option>
+                <option>Chia đều</option>
+              </select>
+            </div>
+            <div class="form-control">
+              <label for="lixi-message">Thông điệp</label>
+              <textarea id="lixi-message" placeholder="Chúc mừng năm mới..."></textarea>
+            </div>
+            <button class="btn-primary" type="button">Generate QR</button>
+          </form>
+          <div class="qr-preview">
+            <div class="chart-placeholder" style="height: 200px">QR Preview</div>
+            <span>mezon://lixi/drop-2025</span>
+            <button class="btn-primary" type="button">Copy link chia sẻ</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="data-section">
+        <div class="data-section__header">
+          <h2 class="data-section__title">Danh sách người nhận</h2>
+        </div>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Ví nhận</th>
+              <th>Số lượng</th>
+              <th>Thời gian claim</th>
+              <th>Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>wallet.mzn-88</td>
+              <td>24 MEZ</td>
+              <td>1 phút trước</td>
+              <td><span class="badge badge--success">Claimed</span></td>
+            </tr>
+            <tr>
+              <td>wallet.mzn-23</td>
+              <td>14 MEZ</td>
+              <td>3 phút trước</td>
+              <td><span class="badge badge--pending">Pending</span></td>
+            </tr>
+            <tr>
+              <td>wallet.mzn-41</td>
+              <td>30 MEZ</td>
+              <td>5 phút trước</td>
+              <td><span class="badge badge--success">Claimed</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+
+    <footer class="app-footer">Mezon Explorer © 2025 — Transparency by Design</footer>
+  </body>
+</html>

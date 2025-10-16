@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Search | Mezon Explorer</title>
+    <link rel="icon" href="../assets/logo.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="../theme.css" />
+    <link rel="stylesheet" href="../style.css" />
+    <script src="../main.js" defer></script>
+  </head>
+  <body data-page="explorer-search">
+    <header class="app-header">
+      <button class="btn-primary" type="button" data-toggle-sidebar aria-label="Thu gọn menu">
+        ☰
+      </button>
+      <a class="app-header__brand" href="../index.html">
+        <img src="../assets/logo.svg" alt="Mezon Explorer logo" />
+        Mezon Explorer
+      </a>
+      <nav class="app-header__nav" aria-label="Điều hướng chính">
+        <a data-top-nav="explorer" href="../explorer/dashboard.html">Explorer</a>
+        <a data-top-nav="finance" href="../finance/stake.html">Finance</a>
+        <a data-top-nav="community" href="../community/community.html">Community</a>
+        <a data-top-nav="ecosystem" href="../ecosystem/cobar.html">Ecosystem</a>
+        <a data-top-nav="settings" href="../settings/profile.html">Settings</a>
+      </nav>
+      <div class="app-header__cta">
+        <button class="btn-primary" type="button">Login with Mezon</button>
+      </div>
+    </header>
+
+    <aside class="sidebar" aria-label="Danh mục Explorer">
+      <section class="sidebar-group">
+        <span class="sidebar-group__label">Explorer</span>
+        <nav class="sidebar-nav">
+          <a class="sidebar-link" data-nav="explorer-dashboard" href="../explorer/dashboard.html">Dashboard</a>
+          <a class="sidebar-link" data-nav="explorer-blocks" href="../explorer/blocks.html">Blocks</a>
+          <a class="sidebar-link" data-nav="explorer-transactions" href="../explorer/transactions.html">Transactions</a>
+          <a class="sidebar-link" data-nav="explorer-accounts" href="../explorer/accounts.html">Accounts</a>
+          <a class="sidebar-link" data-nav="explorer-account-detail" href="../explorer/account-detail.html">Account Detail</a>
+          <a class="sidebar-link" data-nav="explorer-search" href="../explorer/search.html">Search</a>
+        </nav>
+      </section>
+      <section class="sidebar-group">
+        <span class="sidebar-group__label">Finance</span>
+        <nav class="sidebar-nav">
+          <a class="sidebar-link" data-nav="finance-stake" href="../finance/stake.html">Stake</a>
+          <a class="sidebar-link" data-nav="finance-swap" href="../finance/swap.html">Swap</a>
+          <a class="sidebar-link" data-nav="finance-give-coffee" href="../finance/give-coffee.html">Give Coffee</a>
+          <a class="sidebar-link" data-nav="finance-donate" href="../finance/donate.html">Donate</a>
+          <a class="sidebar-link" data-nav="finance-lixi" href="../finance/lixi.html">Lì Xì</a>
+        </nav>
+      </section>
+      <section class="sidebar-group">
+        <span class="sidebar-group__label">Community</span>
+        <nav class="sidebar-nav">
+          <a class="sidebar-link" data-nav="community-overview" href="../community/community.html">Overview</a>
+          <a class="sidebar-link" data-nav="community-donation-feed" href="../community/donation-feed.html">Donation Feed</a>
+          <a class="sidebar-link" data-nav="community-top-supporters" href="../community/top-supporters.html">Top Supporters</a>
+          <a class="sidebar-link" data-nav="community-my-activity" href="../community/my-activity.html">My Activity</a>
+          <a class="sidebar-link" data-nav="community-notifications" href="../community/notifications.html">Notifications</a>
+        </nav>
+      </section>
+      <section class="sidebar-group">
+        <span class="sidebar-group__label">Ecosystem</span>
+        <nav class="sidebar-nav">
+          <a class="sidebar-link" data-nav="ecosystem-cobar" href="../ecosystem/cobar.html">Cobar.vn</a>
+          <a class="sidebar-link" data-nav="ecosystem-game" href="../ecosystem/game.html">Mezon Game</a>
+          <a class="sidebar-link" data-nav="ecosystem-developers" href="../ecosystem/developers.html">Developers</a>
+        </nav>
+      </section>
+      <section class="sidebar-group">
+        <span class="sidebar-group__label">Settings</span>
+        <nav class="sidebar-nav">
+          <a class="sidebar-link" data-nav="settings-profile" href="../settings/profile.html">Profile</a>
+          <a class="sidebar-link" data-nav="settings-security" href="../settings/security.html">2FA Security</a>
+          <a class="sidebar-link" data-nav="settings-privacy" href="../settings/privacy.html">Privacy Notice</a>
+          <a class="sidebar-link" data-nav="settings-logout" href="../settings/logout.html">Logout</a>
+        </nav>
+      </section>
+    </aside>
+
+    <main class="content">
+      <div class="content-header">
+        <span class="content-header__eyebrow">Explorer</span>
+        <h1 class="content-header__title">Tìm kiếm nâng cao</h1>
+        <p class="content-header__meta">
+          Nhập hash giao dịch, block height hoặc địa chỉ ví để truy xuất dữ liệu tức thời. Bộ gợi ý nhanh giúp
+          phân loại kết quả theo loại đối tượng.
+        </p>
+      </div>
+
+      <section class="data-section">
+        <div class="form-grid">
+          <div class="form-control">
+            <label for="instant-search">Từ khóa</label>
+            <input id="instant-search" type="search" placeholder="Ví dụ: 0x54a9...c312 hoặc wallet.mzn-guardian" />
+          </div>
+          <div class="form-control">
+            <label for="search-scope">Phạm vi</label>
+            <select id="search-scope">
+              <option>Tất cả</option>
+              <option>Transactions</option>
+              <option>Blocks</option>
+              <option>Accounts</option>
+              <option>Donation Campaign</option>
+            </select>
+          </div>
+          <button class="btn-primary" type="button">Tìm kiếm</button>
+        </div>
+      </section>
+
+      <section class="data-section">
+        <div class="data-section__header">
+          <h2 class="data-section__title">Kết quả nổi bật</h2>
+        </div>
+        <div class="grid-two-column">
+          <div>
+            <h3>Transactions</h3>
+            <ul class="list-plain">
+              <li>
+                <strong>0x54a9...c312</strong>
+                <span><span class="badge badge--donate">Donate</span> • 450 MEZ • 2 phút trước</span>
+              </li>
+              <li>
+                <strong>0xb141...72d0</strong>
+                <span><span class="badge badge--stake">Stake</span> • 8,000 MEZ • 21 phút trước</span>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3>Accounts</h3>
+            <ul class="list-plain">
+              <li>
+                <strong>wallet.mzn-guardian</strong>
+                <span>Balance 28,500,000 MEZ • 12,800 MEZ donate</span>
+              </li>
+              <li>
+                <strong>streamer.novah</strong>
+                <span>Donations received 98,200 MEZ • 4,540 supporters</span>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3>Blocks</h3>
+            <ul class="list-plain">
+              <li>
+                <strong>#2,185,440</strong>
+                <span>162 tx • validator.mzn-08 • 3.2 MEZ reward</span>
+              </li>
+              <li>
+                <strong>#2,185,422</strong>
+                <span>132 tx • validator.mzn-02 • 3.1 MEZ reward</span>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3>Donation Campaign</h3>
+            <ul class="list-plain">
+              <li>
+                <strong>Give Coffee - Saigon</strong>
+                <span>Goal 50,000 MEZ • Đạt 62%</span>
+              </li>
+              <li>
+                <strong>Nova Charity 2025</strong>
+                <span>Goal 120,000 MEZ • Đạt 88%</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">Mezon Explorer © 2025 — Transparency by Design</footer>
+  </body>
+</html>

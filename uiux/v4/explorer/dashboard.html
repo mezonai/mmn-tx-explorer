@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Explorer Dashboard | Mezon Explorer</title>
+    <link rel="icon" href="../assets/logo.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="../theme.css" />
+    <link rel="stylesheet" href="../style.css" />
+    <script src="../main.js" defer></script>
+  </head>
+  <body data-page="explorer-dashboard">
+    <header class="app-header">
+      <button class="btn-primary" type="button" data-toggle-sidebar aria-label="Thu gọn menu">
+        ☰
+      </button>
+      <a class="app-header__brand" href="../index.html">
+        <img src="../assets/logo.svg" alt="Mezon Explorer logo" />
+        Mezon Explorer
+      </a>
+      <nav class="app-header__nav" aria-label="Điều hướng chính">
+        <a data-top-nav="explorer" href="../explorer/dashboard.html">Explorer</a>
+        <a data-top-nav="finance" href="../finance/stake.html">Finance</a>
+        <a data-top-nav="community" href="../community/community.html">Community</a>
+        <a data-top-nav="ecosystem" href="../ecosystem/cobar.html">Ecosystem</a>
+        <a data-top-nav="settings" href="../settings/profile.html">Settings</a>
+      </nav>
+      <div class="app-header__cta">
+        <button class="btn-primary" type="button">Login with Mezon</button>
+      </div>
+    </header>
+
+    <aside class="sidebar" aria-label="Danh mục Explorer">
+      <section class="sidebar-group">
+        <span class="sidebar-group__label">Explorer</span>
+        <nav class="sidebar-nav">
+          <a class="sidebar-link" data-nav="explorer-dashboard" href="../explorer/dashboard.html">Dashboard</a>
+          <a class="sidebar-link" data-nav="explorer-blocks" href="../explorer/blocks.html">Blocks</a>
+          <a class="sidebar-link" data-nav="explorer-transactions" href="../explorer/transactions.html">Transactions</a>
+          <a class="sidebar-link" data-nav="explorer-accounts" href="../explorer/accounts.html">Accounts</a>
+          <a class="sidebar-link" data-nav="explorer-account-detail" href="../explorer/account-detail.html">Account Detail</a>
+          <a class="sidebar-link" data-nav="explorer-search" href="../explorer/search.html">Search</a>
+        </nav>
+      </section>
+      <section class="sidebar-group">
+        <span class="sidebar-group__label">Finance</span>
+        <nav class="sidebar-nav">
+          <a class="sidebar-link" data-nav="finance-stake" href="../finance/stake.html">Stake</a>
+          <a class="sidebar-link" data-nav="finance-swap" href="../finance/swap.html">Swap</a>
+          <a class="sidebar-link" data-nav="finance-give-coffee" href="../finance/give-coffee.html">Give Coffee</a>
+          <a class="sidebar-link" data-nav="finance-donate" href="../finance/donate.html">Donate</a>
+          <a class="sidebar-link" data-nav="finance-lixi" href="../finance/lixi.html">Lì Xì</a>
+        </nav>
+      </section>
+      <section class="sidebar-group">
+        <span class="sidebar-group__label">Community</span>
+        <nav class="sidebar-nav">
+          <a class="sidebar-link" data-nav="community-overview" href="../community/community.html">Overview</a>
+          <a class="sidebar-link" data-nav="community-donation-feed" href="../community/donation-feed.html">Donation Feed</a>
+          <a class="sidebar-link" data-nav="community-top-supporters" href="../community/top-supporters.html">Top Supporters</a>
+          <a class="sidebar-link" data-nav="community-my-activity" href="../community/my-activity.html">My Activity</a>
+          <a class="sidebar-link" data-nav="community-notifications" href="../community/notifications.html">Notifications</a>
+        </nav>
+      </section>
+      <section class="sidebar-group">
+        <span class="sidebar-group__label">Ecosystem</span>
+        <nav class="sidebar-nav">
+          <a class="sidebar-link" data-nav="ecosystem-cobar" href="../ecosystem/cobar.html">Cobar.vn</a>
+          <a class="sidebar-link" data-nav="ecosystem-game" href="../ecosystem/game.html">Mezon Game</a>
+          <a class="sidebar-link" data-nav="ecosystem-developers" href="../ecosystem/developers.html">Developers</a>
+        </nav>
+      </section>
+      <section class="sidebar-group">
+        <span class="sidebar-group__label">Settings</span>
+        <nav class="sidebar-nav">
+          <a class="sidebar-link" data-nav="settings-profile" href="../settings/profile.html">Profile</a>
+          <a class="sidebar-link" data-nav="settings-security" href="../settings/security.html">2FA Security</a>
+          <a class="sidebar-link" data-nav="settings-privacy" href="../settings/privacy.html">Privacy Notice</a>
+          <a class="sidebar-link" data-nav="settings-logout" href="../settings/logout.html">Logout</a>
+        </nav>
+      </section>
+    </aside>
+
+    <main class="content">
+      <div class="content-header">
+        <span class="content-header__eyebrow">Explorer</span>
+        <h1 class="content-header__title">Tổng quan mạng lưới Mezon Mainnet</h1>
+        <p class="content-header__meta">
+          Số liệu cập nhật theo thời gian thực về block, giao dịch, ví và hoạt động donation trên mạng lưới. Dùng
+          dashboard này để đánh giá tình trạng hệ thống trước khi đi vào chi tiết từng danh mục.
+        </p>
+      </div>
+
+      <div class="card-grid">
+        <article class="stat-card">
+          <span class="stat-card__label">Total Blocks</span>
+          <p class="stat-card__value">2,185,440</p>
+          <span class="stat-card__trend stat-card__trend--up">+1.8% / 24h</span>
+        </article>
+        <article class="stat-card">
+          <span class="stat-card__label">Transactions (24h)</span>
+          <p class="stat-card__value">182,904</p>
+          <span class="stat-card__trend stat-card__trend--up">+4.2% / 24h</span>
+        </article>
+        <article class="stat-card">
+          <span class="stat-card__label">Average Block Time</span>
+          <p class="stat-card__value">3.24s</p>
+          <span class="stat-card__trend stat-card__trend--down">-0.5% / 24h</span>
+        </article>
+        <article class="stat-card">
+          <span class="stat-card__label">Active Wallets</span>
+          <p class="stat-card__value">412,580</p>
+          <span class="stat-card__trend stat-card__trend--up">+620 users</span>
+        </article>
+        <article class="stat-card">
+          <span class="stat-card__label">Donation Volume</span>
+          <p class="stat-card__value">98,540 MEZ</p>
+          <span class="stat-card__trend stat-card__trend--up">+12% / 7d</span>
+        </article>
+      </div>
+
+      <section class="data-section">
+        <div class="data-section__header">
+          <h2 class="data-section__title">Biểu đồ giao dịch 24h</h2>
+          <div class="tab-group" role="tablist">
+            <button class="tab is-active" type="button">Transactions</button>
+            <button class="tab" type="button">Donations</button>
+            <button class="tab" type="button">Stake</button>
+          </div>
+        </div>
+        <div class="chart-placeholder">[Chart API Placeholder]</div>
+      </section>
+
+      <section class="data-section">
+        <div class="data-section__header">
+          <h2 class="data-section__title">Sức khỏe mạng lưới</h2>
+          <a class="cta-link" href="../explorer/blocks.html">
+            Xem chi tiết block
+            <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+        <div class="grid-two-column">
+          <ul class="list-plain">
+            <li><strong>Current Epoch</strong> <span>312</span></li>
+            <li><strong>Validators Online</strong> <span>124 / 130</span></li>
+            <li><strong>Network Uptime (30d)</strong> <span>99.98%</span></li>
+          </ul>
+          <ul class="list-plain">
+            <li><strong>MEZ Price (USD)</strong> <span>$0.84</span></li>
+            <li><strong>Gas Price</strong> <span>4.9 Gwei</span></li>
+            <li><strong>Donation TPS</strong> <span>48 tx/s</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="data-section">
+        <div class="data-section__header">
+          <h2 class="data-section__title">Block mới nhất</h2>
+          <a class="cta-link" href="../explorer/transactions.html">
+            Xem giao dịch
+            <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Block</th>
+              <th>Thời gian</th>
+              <th>Tx</th>
+              <th>Validator</th>
+              <th>Reward</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>#2,185,440</td>
+              <td>14s trước</td>
+              <td>162</td>
+              <td>validator.mzn-08</td>
+              <td>3.2 MEZ</td>
+            </tr>
+            <tr>
+              <td>#2,185,439</td>
+              <td>41s trước</td>
+              <td>148</td>
+              <td>validator.mzn-03</td>
+              <td>3.2 MEZ</td>
+            </tr>
+            <tr>
+              <td>#2,185,438</td>
+              <td>68s trước</td>
+              <td>151</td>
+              <td>validator.mzn-12</td>
+              <td>3.1 MEZ</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+
+    <footer class="app-footer">Mezon Explorer © 2025 — Transparency by Design</footer>
+  </body>
+</html>
