@@ -2120,7 +2120,7 @@ func (p *PostgresConnector) GetTotalTransactions(ctx context.Context) (uint64, e
 }
 
 // GetTransactionsByWalletPaginated retrieves paginated transactions for a wallet with sorting
-func (p *PostgresConnector) GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit, offset int, sortBy, sortOrder string) ([]common.Transaction, error) {
+func (p *PostgresConnector) GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit, offset int, sortBy, sortOrder string, startTime, endTime int64) ([]common.Transaction, error) {
 	columns := p.buildSelectFields([]string{}, defaultTransactionFields)
 
 	// Validate sort parameters
@@ -2135,6 +2135,8 @@ func (p *PostgresConnector) GetTransactionsByWalletPaginated(ctx context.Context
 		(
 			SELECT %s FROM transactions
 			WHERE from_address = $1
+            AND transaction_timestamp >= to_timestamp($5)
+            AND transaction_timestamp <= to_timestamp($6)
 			ORDER BY %s %s
 			LIMIT $2
 		)
@@ -2142,6 +2144,8 @@ func (p *PostgresConnector) GetTransactionsByWalletPaginated(ctx context.Context
 		(
 			SELECT %s FROM transactions
 			WHERE to_address = $1
+            AND transaction_timestamp >= to_timestamp($5)
+            AND transaction_timestamp <= to_timestamp($6)
 			ORDER BY %s %s
 			LIMIT $2
 		)
@@ -2149,7 +2153,7 @@ func (p *PostgresConnector) GetTransactionsByWalletPaginated(ctx context.Context
 		LIMIT $3 OFFSET $4;
 	`, columns, sortBy, sortOrder, columns, sortBy, sortOrder, sortBy, sortOrder)
 
-	args := []any{walletAddress, limit + offset, limit, offset}
+	args := []any{walletAddress, limit + offset, limit, offset, startTime, endTime}
 
 	// Execute optimized query
 	rows, err := p.db.QueryContext(ctx, query, args...)
@@ -2168,17 +2172,21 @@ func (p *PostgresConnector) GetTransactionsByWalletPaginated(ctx context.Context
 }
 
 // GetTransactionsByWalletCount gets the total count of transactions for a wallet
-func (p *PostgresConnector) GetTransactionsByWalletCount(ctx context.Context, walletAddress string) (uint64, error) {
+func (p *PostgresConnector) GetTransactionsByWalletCount(ctx context.Context, walletAddress string, startTime, endTime int64) (uint64, error) {
 	query := `
 		SELECT COUNT(*) FROM (
 			SELECT 1 FROM transactions WHERE from_address = $1
+            AND transaction_timestamp >= to_timestamp($2)
+            AND transaction_timestamp <= to_timestamp($3)
 			UNION ALL
 			SELECT 1 FROM transactions WHERE to_address = $1
+            AND transaction_timestamp >= to_timestamp($2)
+            AND transaction_timestamp <= to_timestamp($3)
 		) AS wallet_txs
 	`
 
 	var count uint64
-	err := p.db.QueryRowContext(ctx, query, walletAddress).Scan(&count)
+	err := p.db.QueryRowContext(ctx, query, walletAddress, startTime, endTime).Scan(&count)
 	if err != nil {
 		return 0, err
 	}

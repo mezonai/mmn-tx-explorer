@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"fmt"
-	"net/http"
-
 	"math"
+	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
@@ -153,7 +153,10 @@ func handleTransactionsRequest(c *gin.Context) {
 		Aggregations: nil,
 	}
 	if walletAddress != "" {
-		totalItems, err := mainStorage.GetTransactionsByWalletCount(ctx, walletAddress)
+		// Get start and end time for filtering
+		startTime, endTime := getTimeRangeFromParams(queryParams.FilterParams, queryParams)
+
+		totalItems, err := mainStorage.GetTransactionsByWalletCount(ctx, walletAddress, startTime, endTime)
 		if err != nil {
 			log.Error().Err(err).Msg("Error getting transactions count")
 			api.InternalErrorHandler(c)
@@ -168,6 +171,8 @@ func handleTransactionsRequest(c *gin.Context) {
 			offset,
 			queryParams.SortBy,
 			queryParams.SortOrder,
+			startTime,
+			endTime,
 		)
 		if err != nil {
 			log.Error().Err(err).Msg("Error querying transactions")
@@ -238,6 +243,36 @@ func serializeTransactions(transactions []common.Transaction) []common.Transacti
 		transactionModels = append(transactionModels, transaction.Serialize())
 	}
 	return transactionModels
+}
+
+// getTimeRangeFromParams parses start and end times in YYYY-MM-DD format.
+// Defaults to last 7 days if not provided, with max 1 year lookback.
+func getTimeRangeFromParams(filterParams map[string]string, queryParams api.QueryParams) (int64, int64) {
+    now := time.Now()
+    defaultStartTime := now.AddDate(0, 0, -7).Unix() // 7 days ago
+    oneYearAgo := now.AddDate(-1, 0, 0).Unix()       // 1 year ago
+
+    endTime := now.Unix()
+
+    if queryParams.EndTime != "" {
+        if parsedTime, err := time.Parse("2006-01-02", queryParams.EndTime); err == nil {
+            parsedTime = parsedTime.Add(24*time.Hour - time.Second)
+            endTime = parsedTime.Unix()
+        }
+    }
+
+    startTime := defaultStartTime
+    if queryParams.StartTime != "" {
+        if parsedTime, err := time.Parse("2006-01-02", queryParams.StartTime); err == nil {
+            startTime = parsedTime.Unix()
+
+            if startTime < oneYearAgo {
+                startTime = oneYearAgo
+            }
+        }
+    }
+    
+    return startTime, endTime
 }
 
 // PendingTransactionModel return type for Swagger documentation
