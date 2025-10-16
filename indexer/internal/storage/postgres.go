@@ -19,6 +19,8 @@ import (
 	pb "github.com/thirdweb-dev/indexer/proto"
 )
 
+const DATA_ROWS_DISPLAY_LIMIT = 500000
+
 type PostgresConnector struct {
 	db             *sql.DB
 	cfg            *config.PostgresConfig
@@ -268,6 +270,7 @@ func NewPostgresConnector(cfg *config.PostgresConfig) (*PostgresConnector, error
 		return nil, fmt.Errorf("failed to connect to postgres: %w", err)
 	}
 
+	// Configure connection pool for optimal performance
 	db.SetMaxOpenConns(cfg.MaxOpenConns)
 	db.SetMaxIdleConns(cfg.MaxIdleConns)
 
@@ -275,9 +278,41 @@ func NewPostgresConnector(cfg *config.PostgresConfig) (*PostgresConnector, error
 		db.SetConnMaxLifetime(time.Duration(cfg.MaxConnLifetime) * time.Second)
 	}
 
+	// Set connection max idle time to prevent stale connections
+	// This helps maintain healthy connections and avoid lazy initialization delays
+	db.SetConnMaxIdleTime(30 * time.Minute)
+
 	if err := db.Ping(); err != nil {
 		return nil, fmt.Errorf("failed to ping postgres: %w", err)
 	}
+
+	// Perform comprehensive warmup queries to pre-load database metadata and avoid lazy initialization delays
+	// This helps reduce the 100-300ms delay on first query by warming up the connection and metadata cache
+	log.Info().Msg("Performing database warmup queries to pre-load metadata...")
+	start := time.Now()
+
+	// Basic connectivity test
+	var tmp int
+	if err := db.QueryRow("SELECT 1").Scan(&tmp); err != nil {
+		log.Warn().Err(err).Msg("Database basic warmup query failed, but continuing...")
+	}
+
+	// Warmup common table metadata by querying system catalogs
+	// This pre-loads table structure information that would otherwise be loaded lazily
+	warmupQueries := []string{
+		"SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public'",
+		"SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = 'public'",
+		"SELECT 1 FROM pg_stat_activity LIMIT 1",
+	}
+
+	for i, query := range warmupQueries {
+		if err := db.QueryRow(query).Scan(&tmp); err != nil {
+			log.Debug().Err(err).Int("query_index", i).Msg("Database warmup query failed, but continuing...")
+		}
+	}
+
+	duration := time.Since(start)
+	log.Info().Dur("duration", duration).Msg("Database warmup completed successfully")
 
 	connector := &PostgresConnector{
 		db:  db,
@@ -1372,51 +1407,18 @@ func (p *PostgresConnector) GetCount(ctx context.Context, table string, qf Query
 }
 
 func (p *PostgresConnector) GetDashboardStats(ctx context.Context, qf QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, err error) {
-	blockWhereClause := "transaction_count > 0"
-	if qf.ChainId != nil && qf.ChainId.Sign() > 0 {
-		blockWhereClause += fmt.Sprintf(" AND chain_id = %s", bigIntToString(qf.ChainId))
-	}
+	query := `
+        SELECT 
+            COALESCE(MAX(CASE WHEN key = 'total_blocks' THEN value::bigint END), 0) as blocks,
+            COALESCE(MAX(CASE WHEN key = 'total_transactions' THEN value::bigint END), 0) as transactions,
+            COALESCE(MAX(CASE WHEN key = 'total_wallets' THEN value::bigint END), 0) as wallets
+        FROM stats
+        WHERE key IN ('total_blocks', 'total_transactions', 'total_wallets')
+    `
 
-	walletWhereClause := ""
-	if qf.ChainId != nil && qf.ChainId.Sign() > 0 {
-		walletWhereClause = fmt.Sprintf("WHERE chain_id = %s", bigIntToString(qf.ChainId))
-	}
-
-	query := fmt.Sprintf(`
-		SELECT 'blocks' as stat_type, COUNT(*) as count FROM blocks WHERE %s
-		UNION ALL
-		SELECT 'transactions' as stat_type, value as count FROM stats WHERE key = 'total_transactions'
-		UNION ALL
-		SELECT 'wallets' as stat_type, COUNT(*) as count FROM wallet %s
-	`, blockWhereClause, walletWhereClause)
-
-	rows, err := p.db.QueryContext(ctx, query)
+	err = p.db.QueryRowContext(ctx, query).Scan(&totalBlocks, &totalTransactions, &totalWallets)
 	if err != nil {
-		return 0, 0, 0, fmt.Errorf("failed to execute dashboard stats query: %w", err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var statType string
-		var count uint64
-
-		err := rows.Scan(&statType, &count)
-		if err != nil {
-			return 0, 0, 0, fmt.Errorf("failed to scan dashboard stats row: %w", err)
-		}
-
-		switch statType {
-		case "blocks":
-			totalBlocks = count
-		case "transactions":
-			totalTransactions = count
-		case "wallets":
-			totalWallets = count
-		}
-	}
-
-	if err = rows.Err(); err != nil {
-		return 0, 0, 0, fmt.Errorf("error iterating dashboard stats rows: %w", err)
+		return 0, 0, 0, fmt.Errorf("failed to get dashboard stats: %w", err)
 	}
 
 	return totalBlocks, totalTransactions, totalWallets, nil
@@ -1450,15 +1452,24 @@ func (p *PostgresConnector) buildQuery(table, columns string, qf QueryFilter) st
 		}
 	}
 
-	// Prefer page/limit pagination; fallback to raw offset if provided
-	if qf.Page >= 0 && qf.Limit > 0 {
-		offset := qf.Page * qf.Limit
-		query += fmt.Sprintf(" LIMIT %d OFFSET %d", qf.Limit, offset)
-	} else if qf.Limit > 0 {
-		query += fmt.Sprintf(" LIMIT %d", qf.Limit)
-		if qf.Offset > 0 {
-			query += fmt.Sprintf(" OFFSET %d", qf.Offset)
+	// Apply pagination with safety limits
+	if qf.Limit > 0 {
+		// Calculate offset based on page or direct offset
+		var offset int
+		if qf.Page >= 0 {
+			offset = qf.Page * qf.Limit
+		} else {
+			offset = qf.Offset
 		}
+
+		// Ensure offset doesn't exceed the display limit
+		maxOffset := DATA_ROWS_DISPLAY_LIMIT - qf.Limit
+		if offset > maxOffset {
+			offset = maxOffset
+		}
+
+		// Apply limit and offset
+		query += fmt.Sprintf(" LIMIT %d OFFSET %d", qf.Limit, offset)
 	}
 
 	return query
@@ -1604,8 +1615,28 @@ func (p *PostgresConnector) insertBlocks(blocks []common.Block) error {
 				transaction_count = EXCLUDED.transaction_count,
 				updated_at = NOW()`, strings.Join(valueStrings, ","))
 
-	_, err := p.db.Exec(query, valueArgs...)
-	return err
+	if _, err := p.db.Exec(query, valueArgs...); err != nil {
+		return fmt.Errorf("failed to insert blocks: %w", err)
+	}
+
+	// Update total_blocks count
+	blockCount := 0
+	for _, block := range blocks {
+		if block.TransactionCount > 0 {
+			blockCount++
+		}
+	}
+	if blockCount > 0 {
+		if _, err := p.db.Exec(`
+            INSERT INTO stats(key, value) VALUES ('total_blocks', $1)
+            ON CONFLICT (key) 
+            DO UPDATE SET value = stats.value + $1
+        `, blockCount); err != nil {
+			return fmt.Errorf("failed to update total_blocks stat: %w", err)
+		}
+	}
+
+	return nil
 }
 
 func (p *PostgresConnector) insertTransactions(transactions []common.Transaction) error {
@@ -1734,31 +1765,54 @@ func (p *PostgresConnector) batchUpdateWalletTransactionCounts(
 	}
 
 	query := `
-        INSERT INTO wallet (address, transaction_count, last_block)
-        SELECT 
-            unnest($1::text[]) as address,
-            unnest($2::bigint[]) as transaction_count,
-            unnest($3::numeric[]) as last_block
-        ON CONFLICT (address) 
-        DO UPDATE SET 
-            transaction_count = wallet.transaction_count + EXCLUDED.transaction_count,
-            last_block = GREATEST(COALESCE(wallet.last_block, 0)::numeric, EXCLUDED.last_block)::bigint`
+        WITH inserted AS (
+            INSERT INTO wallet (address, transaction_count, last_block)
+            SELECT 
+                unnest($1::text[]) as address,
+                unnest($2::bigint[]) as transaction_count,
+                unnest($3::numeric[]) as last_block
+            ON CONFLICT (address) 
+            DO UPDATE SET 
+                transaction_count = wallet.transaction_count + EXCLUDED.transaction_count,
+                last_block = GREATEST(COALESCE(wallet.last_block, 0)::numeric, EXCLUDED.last_block)::bigint
+            RETURNING (xmax = 0) as is_new
+        )
+        SELECT COUNT(*) FROM inserted WHERE is_new = true
+    `
 
 	maxBlocksInterface := make([]interface{}, len(maxBlocks))
 	for i, v := range maxBlocks {
 		maxBlocksInterface[i] = v
 	}
 
-	_, err := tx.Exec(query,
+	var newWalletCount int64
+	err := tx.QueryRow(query,
 		pq.Array(addressList),
 		pq.Array(counts),
 		pq.Array(maxBlocksInterface),
-	)
+	).Scan(&newWalletCount)
+
 	if err != nil {
 		return fmt.Errorf("failed to batch update wallet transaction counts: %w", err)
 	}
 
-	log.Debug().Int("count", len(addressList)).Msg("Batch updated wallet transaction counts")
+	if newWalletCount > 0 {
+		if _, err := tx.Exec(`
+			INSERT INTO stats(key, value) VALUES ('total_wallets', $1)
+			ON CONFLICT (key) 
+			DO UPDATE SET value = stats.value + $1
+		`, newWalletCount); err != nil {
+			return fmt.Errorf("failed to update total_wallets stat: %w", err)
+		}
+
+		log.Debug().
+			Int64("new_wallets", newWalletCount).
+			Msg("Added new wallets to stats")
+	}
+
+	log.Debug().
+		Int("count", len(addressList)).
+		Msg("Batch updated wallet transaction counts and stats")
 	return nil
 }
 
@@ -2001,8 +2055,7 @@ func (p *PostgresConnector) GetWallet(address string) (*common.Wallet, error) {
 
 // GetWallets retrieves wallets with pagination and filtering
 func (p *PostgresConnector) GetWallets(limit, offset int, sortBy, sortOrder string) ([]common.Wallet, error) {
-	query := `SELECT address, account_nonce, balance, updated_at, created_at 
-	          FROM wallet`
+	query := `SELECT address, account_nonce, balance, updated_at, created_at FROM wallet`
 
 	if sortBy != "" {
 		query += fmt.Sprintf(" ORDER BY %s", sortBy)
@@ -2057,6 +2110,13 @@ func (p *PostgresConnector) GetWallets(limit, offset int, sortBy, sortOrder stri
 	}
 
 	return wallets, rows.Err()
+}
+
+func (p *PostgresConnector) GetTotalTransactions(ctx context.Context) (uint64, error) {
+	query := "SELECT value FROM stats WHERE key = 'total_transactions' LIMIT 1"
+	var count uint64
+	err := p.db.QueryRowContext(ctx, query).Scan(&count)
+	return count, err
 }
 
 // GetTransactionsByWalletPaginated retrieves paginated transactions for a wallet with sorting

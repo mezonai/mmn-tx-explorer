@@ -171,7 +171,7 @@ func searchByFunctionSelectorOptimistically(ctx context.Context, mainStorage sto
 		ChainId:   chainId,
 		Signature: functionSelector,
 		FilterParams: map[string]string{
-			"block_timestamp_gte": strconv.FormatInt(thirtyDaysAgo.Unix(), 10),
+			"transaction_timestamp_gte": strconv.FormatInt(thirtyDaysAgo.Unix(), 10),
 		},
 		SortBy:    "block_number",
 		SortOrder: "desc",
@@ -185,7 +185,7 @@ func searchByFunctionSelectorOptimistically(ctx context.Context, mainStorage sto
 			ChainId:   chainId,
 			Signature: functionSelector,
 			FilterParams: map[string]string{
-				"block_timestamp_lte": strconv.FormatInt(thirtyDaysAgo.Unix(), 10),
+				"transaction_timestamp_lte": strconv.FormatInt(thirtyDaysAgo.Unix(), 10),
 			},
 			SortBy:    "block_number",
 			SortOrder: "desc",
@@ -390,11 +390,11 @@ func searchTransactionsByTimeRange(ctx context.Context, mainStorage storage.IMai
 	}
 	if startOffsetDays > 0 {
 		startTime := now.AddDate(0, 0, -startOffsetDays)
-		filters["block_timestamp_gte"] = strconv.FormatInt(startTime.Unix(), 10)
+		filters["transaction_timestamp_gte"] = strconv.FormatInt(startTime.Unix(), 10)
 	}
 	if endOffsetDays > 0 {
 		endTime := now.AddDate(0, 0, -endOffsetDays)
-		filters["block_timestamp_lte"] = strconv.FormatInt(endTime.Unix(), 10)
+		filters["transaction_timestamp_lte"] = strconv.FormatInt(endTime.Unix(), 10)
 	}
 
 	txResult, err := mainStorage.GetTransactions(ctx, storage.QueryFilter{

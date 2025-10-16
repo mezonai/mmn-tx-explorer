@@ -200,42 +200,31 @@ func handleTransactionsRequest(c *gin.Context) {
 	}
 
 	// Get the total number of items
-	totalItems, err := mainStorage.GetCount(ctx, "transactions", countQf)
+	var totalItems uint64
+	if len(countQf.FilterParams) > 0 {
+		totalItems, err = mainStorage.GetCount(ctx, "transactions", countQf)
+	} else {
+		totalItems, err = mainStorage.GetTotalTransactions(ctx)
+	}
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting count")
 		api.InternalErrorHandler(c)
 		return
 	}
 
-	// If aggregates or groupings are specified, retrieve them
-	if len(queryParams.Aggregates) > 0 || len(queryParams.GroupBy) > 0 {
-		qf.Aggregates = queryParams.Aggregates
-		qf.GroupBy = queryParams.GroupBy
-
-		aggregatesResult, err := mainStorage.GetAggregations(c.Request.Context(), "transactions", qf)
-		if err != nil {
-			log.Error().Err(err).Msg("Error querying aggregates")
-			// TODO: might want to choose BadRequestError if it's due to not-allowed functions
-			api.InternalErrorHandler(c)
-			return
-		}
-		queryResult.Aggregations = &aggregatesResult.Aggregates
-		queryResult.Meta.TotalItems = len(aggregatesResult.Aggregates)
-	} else {
-		// Retrieve logs data
-		transactionsResult, err := mainStorage.GetTransactions(ctx, qf)
-		if err != nil {
-			log.Error().Err(err).Msg("Error querying transactions")
-			// TODO: might want to choose BadRequestError if it's due to not-allowed functions
-			api.InternalErrorHandler(c)
-			return
-		}
-
-		var data interface{} = serializeTransactions(transactionsResult.Data)
-		queryResult.Data = &data
-		queryResult.Meta.TotalItems = int(totalItems)
-		queryResult.Meta.TotalPages = int(math.Ceil(float64(totalItems) / float64(queryParams.Limit)))
+	transactionsResult, err := mainStorage.GetTransactions(ctx, qf)
+	if err != nil {
+		log.Error().Err(err).Msg("Error querying transactions")
+		// TODO: might want to choose BadRequestError if it's due to not-allowed functions
+		api.InternalErrorHandler(c)
+		return
 	}
+
+	var data interface{} = serializeTransactions(transactionsResult.Data)
+	queryResult.Data = &data
+	queryResult.Meta.TotalItems = int(totalItems)
+	maxItemsDisplayed := min(totalItems, storage.DATA_ROWS_DISPLAY_LIMIT)
+	queryResult.Meta.TotalPages = int(math.Ceil(float64(maxItemsDisplayed) / float64(queryParams.Limit)))
 
 	c.JSON(http.StatusOK, queryResult)
 }

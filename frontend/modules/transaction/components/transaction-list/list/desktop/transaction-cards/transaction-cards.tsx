@@ -1,4 +1,3 @@
-import { APP_CONFIG } from '@/configs/app.config';
 import { PAGINATION } from '@/constant';
 import { cn } from '@/lib/utils';
 import { ITransaction } from '@/modules/transaction';
@@ -30,7 +29,7 @@ export const TransactionCardsDesktop = ({
           <span>From/to</span>
         </div>
         <div>
-          <span>Value {APP_CONFIG.CHAIN_SYMBOL}</span>
+          <span>Value</span>
         </div>
       </div>
 
