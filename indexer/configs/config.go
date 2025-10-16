@@ -8,6 +8,17 @@ import (
 	"github.com/spf13/viper"
 )
 
+type OauthConfig struct {
+	ClientID     string `mapstructure:"client_id"`
+	ClientSecret string `mapstructure:"client_secret"`
+	TokenURL     string `mapstructure:"token_url"`
+	UserInfoURL  string `mapstructure:"user_info_url"`
+}
+
+type JWTConfig struct {
+	Secret string `mapstructure:"secret"`
+}
+
 type LogConfig struct {
 	Level    string `mapstructure:"level"`
 	Prettify bool   `mapstructure:"prettify"`
@@ -186,6 +197,8 @@ type Config struct {
 	Publisher        PublisherConfig        `mapstructure:"publisher"`
 	WorkMode         WorkModeConfig         `mapstructure:"workMode"`
 	Validation       ValidationConfig       `mapstructure:"validation"`
+	JWT              JWTConfig              `mapstructure:"jwt"`
+	Oauth            OauthConfig            `mapstructure:"oauth"`
 }
 
 var Cfg Config
