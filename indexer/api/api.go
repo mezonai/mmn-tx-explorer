@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/schema"
@@ -51,7 +52,7 @@ type QueryParams struct {
 	WalletAddress string `schema:"wallet_address"`
 
 	// @Description Timestamp less than (for infinite scroll)
-    TimestampLt int64 `schema:"timestamp_lt"`
+    TimestampLt time.Time `schema:"timestamp_lt"`
 
 	// @Description Transaction hash for pagination when timestamps are identical
     LastHash string `schema:"last_hash"`
@@ -77,7 +78,7 @@ type Meta struct {
     // @Description Flag indicating if there are more items to load
     HasMore bool `json:"has_more,omitempty"`
     // @Description Timestamp to use for the next request
-    NextTimestamp int64 `json:"next_timestamp,omitempty"`
+    NextTimestamp time.Time `json:"next_timestamp,omitempty"`
     // @Description Hash to use for the next request when timestamps are identical
     NextHash string `json:"next_hash,omitempty"`
 }

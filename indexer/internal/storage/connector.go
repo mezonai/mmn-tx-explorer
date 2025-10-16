@@ -3,6 +3,7 @@ package storage
 import (
 	"fmt"
 	"math/big"
+	"time"
 
 	"context"
 
@@ -143,7 +144,7 @@ type IMainStorage interface {
 	GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit, offset int, sortBy, sortOrder string) ([]common.Transaction, error)
 	GetTransactionsByWalletCount(ctx context.Context, walletAddress string) (uint64, error)
 	GetTotalTransactions(ctx context.Context) (uint64, error)
-	GetTransactionsByWalletWithTimestamp(ctx context.Context, walletAddress string, limit int, timestampLt int64, lastHash string) ([]common.Transaction, error)
+	GetTransactionsByWalletWithTimestamp(ctx context.Context, walletAddress string, limit int, timestampLt time.Time, lastHash string) ([]common.Transaction, error)
 }
 
 func NewStorageConnector(cfg *config.StorageConfig) (IStorage, error) {

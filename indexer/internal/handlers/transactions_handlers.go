@@ -2,8 +2,9 @@ package handlers
 
 import (
 	"fmt"
-	"net/http"
 	"math"
+	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
@@ -309,11 +310,11 @@ func handleTransactionsInfiniteRequest(c *gin.Context) {
 		transactions = transactions[:queryParams.Limit]
 	}
 
-	var nextTimestamp int64
+	var nextTimestamp time.Time
 	var nextHash string
 	if len(transactions) > 0 {
 		lastTx := transactions[len(transactions)-1]
-		nextTimestamp = lastTx.TransactionTimestamp.UnixMilli()
+		nextTimestamp = lastTx.TransactionTimestamp
 		nextHash = lastTx.Hash
 	}
 
