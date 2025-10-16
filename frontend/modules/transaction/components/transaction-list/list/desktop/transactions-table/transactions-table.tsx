@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { Clock } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import { Table } from '@/components/ui/table';
-import { APP_CONFIG } from '@/configs/app.config';
 import { ETransactionOrientation, ETransactionStatus, ITransaction } from '@/modules/transaction';
 import { TTableColumn } from '@/types';
 import {
@@ -101,8 +100,8 @@ export const TransactionsTable = ({
       skeletonContent: <FromToAddressesSkeleton orientation={ETransactionOrientation.Vertical} />,
     },
     {
-      headerContent: `Value ${APP_CONFIG.CHAIN_SYMBOL}`,
-      renderCell: (row) => <TransactionValue value={row.value} />,
+      headerContent: 'Value',
+      renderCell: (row) => <TransactionValue value={row.value} showSymbol />,
       skeletonContent: <TransactionValueSkeleton />,
     },
   ];
