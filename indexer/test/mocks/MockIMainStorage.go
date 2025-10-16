@@ -1055,9 +1055,9 @@ func (_c *MockIMainStorage_GetTransactions_Call) RunAndReturn(run func(context.C
 	return _c
 }
 
-// GetTransactionsByWalletCount provides a mock function with given fields: ctx, walletAddress
-func (_m *MockIMainStorage) GetTransactionsByWalletCount(ctx context.Context, walletAddress string) (uint64, error) {
-	ret := _m.Called(ctx, walletAddress)
+// GetTransactionsByWalletCount provides a mock function with given fields: ctx, walletAddress, startTime, endTime
+func (_m *MockIMainStorage) GetTransactionsByWalletCount(ctx context.Context, walletAddress string, startTime int64, endTime int64) (uint64, error) {
+	ret := _m.Called(ctx, walletAddress, startTime, endTime)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetTransactionsByWalletCount")
@@ -1065,17 +1065,17 @@ func (_m *MockIMainStorage) GetTransactionsByWalletCount(ctx context.Context, wa
 
 	var r0 uint64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (uint64, error)); ok {
-		return rf(ctx, walletAddress)
+	if rf, ok := ret.Get(0).(func(context.Context, string, int64, int64) (uint64, error)); ok {
+		return rf(ctx, walletAddress, startTime, endTime)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) uint64); ok {
-		r0 = rf(ctx, walletAddress)
+	if rf, ok := ret.Get(0).(func(context.Context, string, int64, int64) uint64); ok {
+		r0 = rf(ctx, walletAddress, startTime, endTime)
 	} else {
 		r0 = ret.Get(0).(uint64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, walletAddress)
+	if rf, ok := ret.Get(1).(func(context.Context, string, int64, int64) error); ok {
+		r1 = rf(ctx, walletAddress, startTime, endTime)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1091,13 +1091,15 @@ type MockIMainStorage_GetTransactionsByWalletCount_Call struct {
 // GetTransactionsByWalletCount is a helper method to define mock.On call
 //   - ctx context.Context
 //   - walletAddress string
-func (_e *MockIMainStorage_Expecter) GetTransactionsByWalletCount(ctx interface{}, walletAddress interface{}) *MockIMainStorage_GetTransactionsByWalletCount_Call {
-	return &MockIMainStorage_GetTransactionsByWalletCount_Call{Call: _e.mock.On("GetTransactionsByWalletCount", ctx, walletAddress)}
+//   - startTime int64
+//   - endTime int64
+func (_e *MockIMainStorage_Expecter) GetTransactionsByWalletCount(ctx interface{}, walletAddress interface{}, startTime interface{}, endTime interface{}) *MockIMainStorage_GetTransactionsByWalletCount_Call {
+	return &MockIMainStorage_GetTransactionsByWalletCount_Call{Call: _e.mock.On("GetTransactionsByWalletCount", ctx, walletAddress, startTime, endTime)}
 }
 
-func (_c *MockIMainStorage_GetTransactionsByWalletCount_Call) Run(run func(ctx context.Context, walletAddress string)) *MockIMainStorage_GetTransactionsByWalletCount_Call {
+func (_c *MockIMainStorage_GetTransactionsByWalletCount_Call) Run(run func(ctx context.Context, walletAddress string, startTime int64, endTime int64)) *MockIMainStorage_GetTransactionsByWalletCount_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(int64), args[3].(int64))
 	})
 	return _c
 }
@@ -1107,14 +1109,14 @@ func (_c *MockIMainStorage_GetTransactionsByWalletCount_Call) Return(_a0 uint64,
 	return _c
 }
 
-func (_c *MockIMainStorage_GetTransactionsByWalletCount_Call) RunAndReturn(run func(context.Context, string) (uint64, error)) *MockIMainStorage_GetTransactionsByWalletCount_Call {
+func (_c *MockIMainStorage_GetTransactionsByWalletCount_Call) RunAndReturn(run func(context.Context, string, int64, int64) (uint64, error)) *MockIMainStorage_GetTransactionsByWalletCount_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetTransactionsByWalletPaginated provides a mock function with given fields: ctx, walletAddress, limit, offset, sortBy, sortOrder
-func (_m *MockIMainStorage) GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit int, offset int, sortBy string, sortOrder string) ([]common.Transaction, error) {
-	ret := _m.Called(ctx, walletAddress, limit, offset, sortBy, sortOrder)
+// GetTransactionsByWalletPaginated provides a mock function with given fields: ctx, walletAddress, limit, offset, sortBy, sortOrder, startTime, endTime
+func (_m *MockIMainStorage) GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit int, offset int, sortBy string, sortOrder string, startTime int64, endTime int64) ([]common.Transaction, error) {
+	ret := _m.Called(ctx, walletAddress, limit, offset, sortBy, sortOrder, startTime, endTime)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetTransactionsByWalletPaginated")
@@ -1122,19 +1124,19 @@ func (_m *MockIMainStorage) GetTransactionsByWalletPaginated(ctx context.Context
 
 	var r0 []common.Transaction
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, int, int, string, string) ([]common.Transaction, error)); ok {
-		return rf(ctx, walletAddress, limit, offset, sortBy, sortOrder)
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, int, string, string, int64, int64) ([]common.Transaction, error)); ok {
+		return rf(ctx, walletAddress, limit, offset, sortBy, sortOrder, startTime, endTime)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, int, int, string, string) []common.Transaction); ok {
-		r0 = rf(ctx, walletAddress, limit, offset, sortBy, sortOrder)
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, int, string, string, int64, int64) []common.Transaction); ok {
+		r0 = rf(ctx, walletAddress, limit, offset, sortBy, sortOrder, startTime, endTime)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]common.Transaction)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, int, int, string, string) error); ok {
-		r1 = rf(ctx, walletAddress, limit, offset, sortBy, sortOrder)
+	if rf, ok := ret.Get(1).(func(context.Context, string, int, int, string, string, int64, int64) error); ok {
+		r1 = rf(ctx, walletAddress, limit, offset, sortBy, sortOrder, startTime, endTime)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1154,13 +1156,15 @@ type MockIMainStorage_GetTransactionsByWalletPaginated_Call struct {
 //   - offset int
 //   - sortBy string
 //   - sortOrder string
-func (_e *MockIMainStorage_Expecter) GetTransactionsByWalletPaginated(ctx interface{}, walletAddress interface{}, limit interface{}, offset interface{}, sortBy interface{}, sortOrder interface{}) *MockIMainStorage_GetTransactionsByWalletPaginated_Call {
-	return &MockIMainStorage_GetTransactionsByWalletPaginated_Call{Call: _e.mock.On("GetTransactionsByWalletPaginated", ctx, walletAddress, limit, offset, sortBy, sortOrder)}
+//   - startTime int64
+//   - endTime int64
+func (_e *MockIMainStorage_Expecter) GetTransactionsByWalletPaginated(ctx interface{}, walletAddress interface{}, limit interface{}, offset interface{}, sortBy interface{}, sortOrder interface{}, startTime interface{}, endTime interface{}) *MockIMainStorage_GetTransactionsByWalletPaginated_Call {
+	return &MockIMainStorage_GetTransactionsByWalletPaginated_Call{Call: _e.mock.On("GetTransactionsByWalletPaginated", ctx, walletAddress, limit, offset, sortBy, sortOrder, startTime, endTime)}
 }
 
-func (_c *MockIMainStorage_GetTransactionsByWalletPaginated_Call) Run(run func(ctx context.Context, walletAddress string, limit int, offset int, sortBy string, sortOrder string)) *MockIMainStorage_GetTransactionsByWalletPaginated_Call {
+func (_c *MockIMainStorage_GetTransactionsByWalletPaginated_Call) Run(run func(ctx context.Context, walletAddress string, limit int, offset int, sortBy string, sortOrder string, startTime int64, endTime int64)) *MockIMainStorage_GetTransactionsByWalletPaginated_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(int), args[3].(int), args[4].(string), args[5].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(int), args[3].(int), args[4].(string), args[5].(string), args[6].(int64), args[7].(int64))
 	})
 	return _c
 }
@@ -1170,7 +1174,7 @@ func (_c *MockIMainStorage_GetTransactionsByWalletPaginated_Call) Return(_a0 []c
 	return _c
 }
 
-func (_c *MockIMainStorage_GetTransactionsByWalletPaginated_Call) RunAndReturn(run func(context.Context, string, int, int, string, string) ([]common.Transaction, error)) *MockIMainStorage_GetTransactionsByWalletPaginated_Call {
+func (_c *MockIMainStorage_GetTransactionsByWalletPaginated_Call) RunAndReturn(run func(context.Context, string, int, int, string, string, int64, int64) ([]common.Transaction, error)) *MockIMainStorage_GetTransactionsByWalletPaginated_Call {
 	_c.Call.Return(run)
 	return _c
 }
