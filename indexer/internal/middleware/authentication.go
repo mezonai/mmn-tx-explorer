@@ -9,9 +9,7 @@ import (
 	config "github.com/thirdweb-dev/indexer/configs"
 )
 
-
 func Authentication(c *gin.Context) {
-
 
 	tokenString := ""
 	authHeader := c.GetHeader("Authorization")
@@ -43,6 +41,11 @@ func Authentication(c *gin.Context) {
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		
+		if t, _ := claims["type"].(string); t != "access" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "token is not an access token"})
+			return
+		}
 		c.Set("user", claims)
 	}
 

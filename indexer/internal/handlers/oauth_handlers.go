@@ -2,13 +2,14 @@ package handlers
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	config "github.com/thirdweb-dev/indexer/configs"
 )
 
@@ -45,7 +46,6 @@ func OauthTokenHandler(c *gin.Context) {
 		return
 	}
 
-	// 1. Exchange code for access_token
 	form := url.Values{}
 	form.Set("grant_type", "authorization_code")
 	form.Set("code", req.Code)
@@ -59,14 +59,13 @@ func OauthTokenHandler(c *gin.Context) {
 		return
 	}
 	defer tokenResp.Body.Close()
-	body, _ := ioutil.ReadAll(tokenResp.Body)
+	body, _ := io.ReadAll(tokenResp.Body)
 	var tokenData OauthTokenResponse
 	if err := json.Unmarshal(body, &tokenData); err != nil || tokenData.AccessToken == "" {
 		c.JSON(http.StatusBadGateway, gin.H{"error": "Invalid token response"})
 		return
 	}
 
-	
 	userForm := url.Values{}
 	userForm.Set("access_token", tokenData.AccessToken)
 	userInfoResp, err := http.PostForm(config.Cfg.Oauth.UserInfoURL, userForm)
@@ -75,7 +74,7 @@ func OauthTokenHandler(c *gin.Context) {
 		return
 	}
 	defer userInfoResp.Body.Close()
-	userBody, _ := ioutil.ReadAll(userInfoResp.Body)
+	userBody, _ := io.ReadAll(userInfoResp.Body)
 	var userInfo OauthUserInfo
 	if err := json.Unmarshal(userBody, &userInfo); err != nil {
 		c.JSON(http.StatusBadGateway, gin.H{
@@ -86,23 +85,47 @@ func OauthTokenHandler(c *gin.Context) {
 		return
 	}
 
-	// 3. Generate internal JWT
 	jwtSecret := config.Cfg.JWT.Secret
-	claims := jwt.MapClaims{
-		"user_id": userInfo.UserID,
-		"email":   userInfo.Email,
-		"exp":     time.Now().Add(24 * time.Hour).Unix(),
+	if jwtSecret == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "jwt secret not configured"})
+		return
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signedToken, err := token.SignedString([]byte(jwtSecret))
+
+
+	tokenID := uuid.NewString()
+
+
+	accessClaims := jwt.MapClaims{
+		"token_id": tokenID,
+		"user_id":  userInfo.UserID,
+		"type":     "access",
+		"exp":      time.Now().Add(15 * time.Minute).Unix(),
+	}
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
+	signedAccess, err := accessToken.SignedString([]byte(jwtSecret))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to sign JWT"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to sign access token"})
+		return
+	}
+
+
+	refreshClaims := jwt.MapClaims{
+		"token_id": tokenID,
+		"user_id":  userInfo.UserID,
+		"type":     "refresh",
+		"exp":      time.Now().Add(7 * 24 * time.Hour).Unix(),
+	}
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
+	signedRefresh, err := refreshToken.SignedString([]byte(jwtSecret))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to sign refresh token"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"jwt":        signedToken,
-		"auth_token": tokenData.AccessToken,
-		"user":       userInfo,
+		"access_token":  signedAccess,
+		"refresh_token": signedRefresh,
+		"auth_token":    tokenData.AccessToken,
+		"user":          userInfo,
 	})
 }

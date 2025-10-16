@@ -64,21 +64,20 @@ func RunApi(cmd *cobra.Command, args []string) {
 		c.Header("Content-Type", "application/json")
 		c.String(http.StatusOK, doc)
 	})
-    
 
-    private := r.Group("/api")
+	private := r.Group("/auth")
 	{
 		private.Use(middleware.Authentication)
 		private.Use(middleware.Cors)
 
-		private.GET("/transactions_account", handlers.GetTransactions)
 	}
+
 	root := r.Group("/:chainId")
-	{
+	{  
 		root.Use(middleware.Authorization)
 		root.Use(middleware.Cors)
-
 		root.POST("/oauth", handlers.OauthTokenHandler)
+        root.POST("/auth/refresh", handlers.RefreshHandler)
 		// wildcard queries
 		root.GET("/transactions", handlers.GetTransactions)
 		root.GET("/pending-transactions", handlers.GetPendingTransactions)
