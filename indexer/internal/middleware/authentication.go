@@ -37,7 +37,7 @@ func Authentication(c *gin.Context) {
 		return []byte(secret), nil
 	})
 	if err != nil || !token.Valid {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired access token"})
 		return
 	}
 
@@ -55,7 +55,7 @@ func Authentication(c *gin.Context) {
 		}
 		ok, _, err := storage.Get(tokenID)
 		if err != nil || !ok {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "token not whitelisted"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "access token not whitelisted"})
 			return
 		}
 		c.Set("user", claims)

@@ -1,64 +1,44 @@
 package storage
 
 import (
-	"database/sql"
+	"context"
 	"log"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/redis/go-redis/v9"
 )
 
-var db *sql.DB
+var RedisClient *redis.Client
+var ctx = context.Background()
 
 func init() {
-	var err error
+	RedisClient = redis.NewClient(&redis.Options{
+		Addr:     "redis:6379",
+		Password: "",
+		DB:       0,
+	})
 
-	db, err = sql.Open("sqlite3", "./whitelist.db")
+	_, err := RedisClient.Ping(ctx).Result()
 	if err != nil {
-		log.Fatalf("Failed to connect to SQLite database: %v", err)
+		log.Fatalf("Failed to connect to Redis: %v", err)
 	}
-
-
-	createTable := `
-	CREATE TABLE IF NOT EXISTS whitelist (
-		token_id TEXT PRIMARY KEY,
-		user_id TEXT NOT NULL,
-		expiry DATETIME NOT NULL
-	);`
-	if _, err = db.Exec(createTable); err != nil {
-		log.Fatalf("Failed to create table: %v", err)
-	}
+	log.Println("Connected to Redis successfully")
 }
 
 func Set(tokenID, userID string, ttl time.Duration) error {
-	expiry := time.Now().Add(ttl)
-	query := `INSERT INTO whitelist (token_id, user_id, expiry) VALUES (?, ?, ?)`
-	_, err := db.Exec(query, tokenID, userID, expiry)
-	return err
+	return RedisClient.Set(ctx, tokenID, userID, ttl).Err()
 }
 
 func Get(tokenID string) (bool, string, error) {
-	query := `SELECT user_id, expiry FROM whitelist WHERE token_id = ?`
-	row := db.QueryRow(query, tokenID)
-
-	var userID string
-	var expiry time.Time
-	if err := row.Scan(&userID, &expiry); err != nil {
-		if err == sql.ErrNoRows {
-			return false, "", nil
-		}
-		return false, "", err
-	}
-
-	if time.Now().After(expiry) {
-		_ = Delete(tokenID)
+	userID, err := RedisClient.Get(ctx, tokenID).Result()
+	if err == redis.Nil {
 		return false, "", nil
+	} else if err != nil {
+		return false, "", err
 	}
 	return true, userID, nil
 }
 
 func Delete(tokenID string) error {
-	query := `DELETE FROM whitelist WHERE token_id = ?`
-	_, err := db.Exec(query, tokenID)
-	return err
+	return RedisClient.Del(ctx, tokenID).Err()
 }

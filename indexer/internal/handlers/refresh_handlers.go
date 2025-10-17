@@ -41,7 +41,7 @@ func RefreshHandler(c *gin.Context) {
 		return []byte(secret), nil
 	})
 	if err != nil || !token.Valid {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid refresh token"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired refresh token!"})
 		return
 	}
 

@@ -75,7 +75,7 @@ func RunApi(cmd *cobra.Command, args []string) {
 
 	root := r.Group("/:chainId")
 	{
-		root.Use(middleware.Authorization)
+		// root.Use(middleware.Authorization)
 		root.Use(middleware.Cors)
 		root.POST("/oauth", handlers.OauthTokenHandler)
 		root.POST("/refresh/token", handlers.RefreshHandler)
