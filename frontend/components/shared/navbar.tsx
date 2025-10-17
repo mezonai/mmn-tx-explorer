@@ -14,19 +14,17 @@ import { useRouteMatcher } from '@/hooks';
 function NavbarItem({ item }: { item: NavItem }) {
   const isActive = useRouteMatcher(item.href);
   return (
-    <NavigationMenuLink asChild>
-      <Link
-        key={item.href}
-        href={item.href}
-        target={item.target}
-        className={cn(
-          'hover:bg-sidebar-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground hover:text-primary block cursor-pointer space-y-1 rounded-sm px-4 py-3 text-sm leading-none no-underline transition-colors outline-none select-none',
-          isActive ? 'text-foreground' : 'text-muted-foreground'
-        )}
-      >
-        {item.title}
-      </Link>
-    </NavigationMenuLink>
+    <Link
+      key={item.href}
+      href={item.href}
+      target={item.target}
+      className={cn(
+        'hover:bg-sidebar-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground hover:text-primary block cursor-pointer space-y-1 rounded-sm px-4 py-3 text-sm leading-none no-underline transition-colors outline-none select-none',
+        isActive ? 'text-primary' : 'text-muted-foreground'
+      )}
+    >
+      {item.title}
+    </Link>
   );
 }
 
@@ -42,7 +40,9 @@ function NavbarMenu() {
             <NavigationMenuContent className="bg-background min-w-56 p-3">
               <div className="flex flex-col">
                 {item.items?.map((subItem) => (
-                  <NavbarItem key={subItem.title} item={subItem} />
+                  <NavigationMenuLink asChild key={subItem.title}>
+                    <NavbarItem item={subItem} />
+                  </NavigationMenuLink>
                 ))}
               </div>
             </NavigationMenuContent>
@@ -53,4 +53,4 @@ function NavbarMenu() {
   );
 }
 
-export { NavbarMenu };
+export { NavbarItem, NavbarMenu };
