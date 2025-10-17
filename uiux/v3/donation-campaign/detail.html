@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Build a School Campaign · Donation Detail</title>
+    <script>
+      (function () {
+        const storedTheme = localStorage.getItem("theme");
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        if (storedTheme === "dark" || (!storedTheme && prefersDark)) {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+      })();
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#6941c6",
+              "primary-light": "#8b5cf6",
+              "primary-dark": "#553c9a",
+              dark: "#0B1533",
+              "dark-light": "#1e293b",
+              neon: "#00f5ff"
+            },
+            fontFamily: {
+              inter: ["Inter", "sans-serif"],
+              mono: ["JetBrains Mono", "monospace"]
+            }
+          }
+        }
+      };
+    </script>
+  </head>
+  <body class="bg-white text-gray-900 font-inter transition-colors duration-300 dark:bg-dark dark:text-white">
+    <div class="min-h-screen flex flex-col">
+      <header class="sticky top-0 z-30 border-b border-gray-200/80 bg-white/80 backdrop-blur-sm dark:border-gray-800 dark:bg-dark/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex h-16 items-center gap-3">
+            <a href="../index.html" class="flex items-center gap-2">
+              <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">MEZ</span>
+              <span class="text-lg font-semibold tracking-wide text-gray-900 dark:text-white">Mezon Explorer</span>
+            </a>
+            <nav class="hidden md:flex flex-1 items-center justify-end gap-6 text-sm text-gray-600 dark:text-gray-300">
+              <a href="index.html" class="font-medium transition hover:text-primary dark:hover:text-white">Campaign list</a>
+              <a href="../donate.html" class="font-medium transition hover:text-primary dark:hover:text-white">Donate</a>
+              <a href="../search.html" class="font-medium transition hover:text-primary dark:hover:text-white">Search</a>
+              <button id="theme-toggle" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition hover:border-primary hover:text-primary dark:border-white/10 dark:text-gray-300 dark:hover:border-primary-light dark:hover:text-white" aria-label="Toggle theme">
+                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path d="M10 2.5a.75.75 0 0 1 .75.75V5a.75.75 0 0 1-1.5 0V3.25A.75.75 0 0 1 10 2.5zM15.303 4.697a.75.75 0 0 1 1.06 1.06l-1.24 1.24a.75.75 0 0 1-1.061-1.06zM4.697 4.697a.75.75 0 0 1 1.06 0l1.24 1.24a.75.75 0 0 1-1.06 1.061l-1.24-1.24a.75.75 0 0 1 0-1.061zM10 6.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zm0 1.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7.5 2.75a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5a.75.75 0 0 1 .75-.75zm-15 0a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5a.75.75 0 0 1 .75-.75zm2.647 4.803a.75.75 0 0 1 1.06 0l1.24 1.24a.75.75 0 0 1-1.06 1.06l-1.24-1.24a.75.75 0 0 1 0-1.06zm9.412 0a.75.75 0 0 1 1.06 1.06l-1.24 1.24a.75.75 0 0 1-1.061-1.06zM10 15a.75.75 0 0 1 .75.75V17a.75.75 0 0 1-1.5 0v-1.25A.75.75 0 0 1 10 15z" />
+                </svg>
+              </button>
+            </nav>
+            <div class="flex flex-1 justify-end md:hidden">
+              <button class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition hover:border-primary hover:text-primary dark:border-white/10 dark:text-gray-300 dark:hover:border-primary-light dark:hover:text-white" aria-label="Open menu">
+                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path d="M3.75 5a.75.75 0 0 1 .75-.75h11a.75.75 0 0 1 0 1.5h-11A.75.75 0 0 1 3.75 5zm0 5a.75.75 0 0 1 .75-.75h11a.75.75 0 0 1 0 1.5h-11A.75.75 0 0 1 3.75 10zm0 5a.75.75 0 0 1 .75-.75h11a.75.75 0 0 1 0 1.5h-11a.75.75 0 0 1-.75-.75z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1">
+        <section class="relative overflow-hidden bg-gradient-to-br from-primary/10 via-white to-white dark:from-primary/20 dark:via-dark dark:to-dark">
+          <div class="absolute inset-x-0 top-0 h-40 bg-[url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1350&q=80')] bg-cover bg-center opacity-20 mix-blend-multiply dark:opacity-30"></div>
+          <div class="relative max-w-7xl mx-auto px-4 pb-12 pt-16 sm:px-6 lg:px-8 lg:pt-20">
+            <div class="flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+              <a href="../index.html" class="inline-flex items-center gap-1 font-medium transition hover:text-primary dark:hover:text-primary-light">
+                Home
+              </a>
+              <span>/</span>
+              <a href="index.html" class="inline-flex items-center gap-1 font-medium transition hover:text-primary dark:hover:text-primary-light">
+                Donation campaigns
+              </a>
+              <span>/</span>
+              <span class="text-gray-600 dark:text-gray-300">Build a School for Điện Biên</span>
+            </div>
+            <div class="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_23rem]">
+              <div class="space-y-6">
+                <div class="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300">
+                  Active campaign
+                </div>
+                <h1 class="text-3xl font-semibold text-gray-900 dark:text-white sm:text-4xl">Build a School for Điện Biên</h1>
+                <p class="text-sm leading-6 text-gray-700 dark:text-gray-300 max-w-3xl">
+                  Join Mezon and the Na Tau commune (Điện Biên) to construct three boarding classrooms, a mini library, and a safe playground for 180 ethnic-minority students. Every MMN token is recorded transparently on-chain.
+                </p>
+                <div class="grid gap-4 sm:grid-cols-2">
+                  <div class="rounded-3xl border border-gray-200 bg-white/90 p-5 shadow-sm dark:border-white/10 dark:bg-dark-light/80">
+                    <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Raised to date</p>
+                    <p class="mt-2 text-3xl font-semibold text-gray-900 dark:text-white">12,450 <span class="text-sm font-medium text-gray-500 dark:text-gray-400">MMN</span></p>
+                    <p class="mt-1 text-xs text-emerald-500 dark:text-emerald-300">+418 MMN today</p>
+                    <div class="mt-4 h-2 rounded-full bg-gray-100 dark:bg-white/5">
+                      <div class="h-full w-[62%] rounded-full bg-gradient-to-r from-primary to-primary-light"></div>
+                    </div>
+                    <div class="mt-2 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                      <span>Goal 20,000 MMN</span>
+                      <span>62% funded</span>
+                    </div>
+                  </div>
+                  <div class="rounded-3xl border border-gray-200 bg-white/90 p-5 shadow-sm dark:border-white/10 dark:bg-dark-light/80">
+                    <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Campaign insights</p>
+                    <dl class="mt-3 space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                      <div class="flex items-center justify-between gap-4">
+                        <dt>Contributors</dt>
+                        <dd class="font-semibold text-gray-900 dark:text-white">48 supporters</dd>
+                      </div>
+                      <div class="flex items-center justify-between gap-4">
+                        <dt>Time remaining</dt>
+                        <dd class="font-semibold text-gray-900 dark:text-white">23 days</dd>
+                      </div>
+                      <div class="flex items-center justify-between gap-4">
+                        <dt>Campaign owner</dt>
+                        <dd class="font-semibold text-gray-900 dark:text-white">Mezon CSR · Minh Anh Le</dd>
+                      </div>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+              <aside class="rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-lg shadow-primary/10 dark:border-white/10 dark:bg-dark-light/80">
+                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Donate</p>
+                <h2 class="mt-3 text-xl font-semibold text-gray-900 dark:text-white">Send MMN tokens</h2>
+                <p class="mt-3 text-sm text-gray-600 dark:text-gray-400">
+                  100% of your contribution is allocated to construction, learning resources, and student well-being. Transactions appear instantly in the Recent activity log.
+                </p>
+                <div class="mt-6 space-y-4">
+                  <div class="rounded-2xl border border-gray-200 bg-white/70 p-4 dark:border-white/10 dark:bg-dark-light/70">
+                    <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Wallet address</p>
+                    <div class="mt-2 flex items-center justify-between gap-2">
+                      <p class="truncate font-mono text-sm text-gray-900 dark:text-gray-100">0x3fB2...a7C4Ed90</p>
+                      <button class="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-3 py-1 text-xs font-semibold text-primary transition hover:bg-primary hover:text-white dark:bg-primary/15 dark:text-primary-light dark:hover:bg-primary-light dark:hover:text-white">
+                        Copy
+                      </button>
+                    </div>
+                    <a href="../account-detail.html" class="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary transition hover:text-primary-light">View on explorer</a>
+                  </div>
+                  <div class="rounded-2xl border border-dashed border-primary/40 bg-primary/5 p-4 dark:border-primary/40 dark:bg-primary/15">
+                    <p class="text-xs font-semibold uppercase tracking-widest text-primary dark:text-primary-light">Scan QR</p>
+                    <div class="mt-4 flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div class="h-28 w-28 rounded-2xl bg-white p-3 shadow-inner dark:bg-dark">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=0x3fB2a7C4Ed90" alt="QR donate" class="h-full w-full rounded-xl object-cover" />
+                      </div>
+                      <div class="flex-1 text-xs text-primary/90 dark:text-primary-light/80">
+                        Open your MMN wallet, scan the code, and specify the number of tokens. Helpful hint: 100 MMN ≈ 500,000 VND.
+                      </div>
+                    </div>
+                  </div>
+                  <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition hover:bg-primary-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                    Donate now
+                  </button>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    Keep your transaction hash for reconciliation. Payments triggered from the Timesheet portal are reconciled automatically.
+                  </p>
+                </div>
+              </aside>
+            </div>
+          </div>
+        </section>
+
+        <section class="border-t border-gray-200 bg-white/90 py-14 dark:border-gray-800 dark:bg-dark">
+          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Fundraising activity</h2>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Live events streaming directly from the MMN chain with full transparency.</p>
+              </div>
+              <div class="flex items-center gap-3 text-xs">
+                <button class="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 font-medium text-gray-600 transition hover:border-primary hover:text-primary dark:border-white/10 dark:text-gray-300 dark:hover:border-primary-light dark:hover:text-white">
+                  Export CSV
+                </button>
+                <button class="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 font-medium text-gray-600 transition hover:border-primary hover:text-primary dark:border-white/10 dark:text-gray-300 dark:hover:border-primary-light dark:hover:text-white">
+                  Subscribe updates
+                </button>
+              </div>
+            </div>
+
+            <div class="mt-10 rounded-3xl border border-gray-200 bg-white p-2 shadow-sm dark:border-white/10 dark:bg-dark-light/80">
+              <div class="flex flex-wrap gap-2 rounded-2xl bg-gray-50 p-1 text-xs font-semibold text-gray-500 dark:bg-white/5 dark:text-gray-300">
+                <button class="inline-flex flex-1 items-center justify-center rounded-xl bg-white px-4 py-2 text-primary shadow-sm transition dark:bg-dark dark:text-primary-light">Recent activity</button>
+                <button class="inline-flex flex-1 items-center justify-center rounded-xl px-4 py-2 transition hover:text-primary dark:hover:text-primary-light">Top contributors</button>
+                <button class="inline-flex flex-1 items-center justify-center rounded-xl px-4 py-2 transition hover:text-primary dark:hover:text-primary-light">About</button>
+              </div>
+
+              <div class="mt-6 space-y-6">
+                <div class="rounded-2xl border border-gray-200 bg-white/90 p-6 shadow-sm dark:border-white/10 dark:bg-dark-light/80">
+                  <div class="flex flex-wrap items-center justify-between gap-3">
+                    <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Recent activity</h3>
+                    <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                      <span>Live feed</span>
+                      <span class="inline-flex h-2 w-2 animate-pulse rounded-full bg-emerald-500"></span>
+                    </div>
+                  </div>
+                  <div class="mt-4 overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-100 text-sm dark:divide-white/10">
+                      <thead class="text-left text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                        <tr>
+                          <th class="px-4 py-3 font-medium">Sender</th>
+                          <th class="px-4 py-3 font-medium">Amount (MMN)</th>
+                          <th class="px-4 py-3 font-medium">Timestamp</th>
+                          <th class="px-4 py-3 font-medium">Tx hash</th>
+                          <th class="px-4 py-3 font-medium text-right">Source</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-gray-100 text-sm text-gray-700 dark:divide-white/5 dark:text-gray-300">
+                        <tr class="transition hover:bg-gray-50/70 dark:hover:bg-white/5">
+                          <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">timesheet_207</td>
+                          <td class="px-4 py-3 font-semibold text-emerald-500 dark:text-emerald-300">120</td>
+                          <td class="px-4 py-3">17/10/2025 · 09:24</td>
+                          <td class="px-4 py-3 font-mono text-xs">
+                            <a href="../transaction.html" class="text-primary transition hover:text-primary-light">0x9a72...e1c5</a>
+                          </td>
+                          <td class="px-4 py-3 text-right">Timesheet penalty</td>
+                        </tr>
+                        <tr class="transition hover:bg-gray-50/70 dark:hover:bg-white/5">
+                          <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">mezon.dao</td>
+                          <td class="px-4 py-3 font-semibold text-emerald-500 dark:text-emerald-300">500</td>
+                          <td class="px-4 py-3">17/10/2025 · 08:18</td>
+                          <td class="px-4 py-3 font-mono text-xs">
+                            <a href="../transaction.html" class="text-primary transition hover:text-primary-light">0x45db...9921</a>
+                          </td>
+                          <td class="px-4 py-3 text-right">CSR grant</td>
+                        </tr>
+                        <tr class="transition hover:bg-gray-50/70 dark:hover:bg-white/5">
+                          <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">linh.hr</td>
+                          <td class="px-4 py-3 font-semibold text-emerald-500 dark:text-emerald-300">80</td>
+                          <td class="px-4 py-3">17/10/2025 · 07:55</td>
+                          <td class="px-4 py-3 font-mono text-xs">
+                            <a href="../transaction.html" class="text-primary transition hover:text-primary-light">0xaf12...88ab</a>
+                          </td>
+                          <td class="px-4 py-3 text-right">Timesheet penalty</td>
+                        </tr>
+                        <tr class="transition hover:bg-gray-50/70 dark:hover:bg-white/5">
+                          <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">anonymous_04</td>
+                          <td class="px-4 py-3 font-semibold text-emerald-500 dark:text-emerald-300">50</td>
+                          <td class="px-4 py-3">16/10/2025 · 23:18</td>
+                          <td class="px-4 py-3 font-mono text-xs">
+                            <a href="../transaction.html" class="text-primary transition hover:text-primary-light">0xff51...bb32</a>
+                          </td>
+                          <td class="px-4 py-3 text-right">Community</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="mt-4 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                    <span>Showing 20 of 284 transactions</span>
+                    <a href="../transaction.html" class="inline-flex items-center gap-1 font-medium text-primary transition hover:text-primary-light">
+                      View full activity
+                      <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M7.22 5.22a.75.75 0 0 1 1.06 0l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06L10.94 10 7.22 6.28a.75.75 0 0 1 0-1.06z" clip-rule="evenodd" />
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+
+                <div class="rounded-2xl border border-gray-200 bg-white/90 p-6 shadow-sm dark:border-white/10 dark:bg-dark-light/80">
+                  <div class="flex flex-wrap items-center justify-between gap-3">
+                    <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Top contributors</h3>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Refreshes every 6 hours</span>
+                  </div>
+                  <div class="mt-4 space-y-4">
+                    <div class="flex items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-white/70 p-4 dark:border-white/10 dark:bg-dark-light/70">
+                      <div class="flex items-center gap-4">
+                        <span class="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-primary text-sm font-semibold text-white">1</span>
+                        <div>
+                          <p class="text-sm font-semibold text-gray-900 dark:text-white">mezon.dao</p>
+                          <p class="text-xs text-gray-500 dark:text-gray-400">CSR grant</p>
+                        </div>
+                      </div>
+                      <div class="text-right">
+                        <p class="text-sm font-semibold text-emerald-500 dark:text-emerald-300">2,000 MMN</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">16% of total</p>
+                      </div>
+                    </div>
+                    <div class="flex items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-white/70 p-4 dark:border-white/10 dark:bg-dark-light/70">
+                      <div class="flex items-center gap-4">
+                        <span class="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-primary/80 text-sm font-semibold text-white">2</span>
+                        <div>
+                          <p class="text-sm font-semibold text-gray-900 dark:text-white">linh.hr</p>
+                          <p class="text-xs text-gray-500 dark:text-gray-400">Employee contributor</p>
+                        </div>
+                      </div>
+                      <div class="text-right">
+                        <p class="text-sm font-semibold text-emerald-500 dark:text-emerald-300">1,250 MMN</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">10% of total</p>
+                      </div>
+                    </div>
+                    <div class="flex items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-white/70 p-4 dark:border-white/10 dark:bg-dark-light/70">
+                      <div class="flex items-center gap-4">
+                        <span class="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-primary/60 text-sm font-semibold text-white">3</span>
+                        <div>
+                          <p class="text-sm font-semibold text-gray-900 dark:text-white">anonymous_04</p>
+                          <p class="text-xs text-gray-500 dark:text-gray-400">Community donor</p>
+                        </div>
+                      </div>
+                      <div class="text-right">
+                        <p class="text-sm font-semibold text-emerald-500 dark:text-emerald-300">1,000 MMN</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">8% of total</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="rounded-2xl border border-gray-200 bg-white/90 p-6 shadow-sm dark:border-white/10 dark:bg-dark-light/80">
+                  <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-semibold text-gray-900 dark:text-white">About campaign</h3>
+                    <a href="../features.html" class="text-xs font-medium text-primary transition hover:text-primary-light">Download proposal</a>
+                  </div>
+                  <div class="mt-4 space-y-4 text-sm leading-6 text-gray-700 dark:text-gray-300">
+                    <p>
+                      “Build a School for Điện Biên” aims to replace temporary bamboo shelters with three resilient classrooms, a reading corner, and a safe play zone. Once completed, 180 pupils will study in a weather-proof environment and have access to curated books for the first time.
+                    </p>
+                    <p>
+                      The total budget is 20,000 MMN (≈ 1B VND). 60% covers construction materials and labor, 20% equips classrooms with desks, chairs, and solar lighting, 10% funds the library, and 10% supports teacher training and student life-skills workshops.
+                    </p>
+                    <p>
+                      Key milestones:
+                    </p>
+                    <ul class="list-disc space-y-2 pl-5">
+                      <li>Oct 2025 · Complete legal paperwork, select local contractor.</li>
+                      <li>Nov–Dec 2025 · Build classrooms and playground foundations.</li>
+                      <li>Jan 2026 · Install library shelves, books, and electrical systems.</li>
+                      <li>Feb 2026 · Handover ceremony and on-site life-skills festival.</li>
+                    </ul>
+                    <p>
+                      Monthly transparency reports will be shared with donors, including photos, expense breakdowns, and blockchain transaction links. Mezon CSR performs internal audits to ensure compliance and maximize impact.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="border-t border-gray-200 bg-white py-12 dark:border-gray-800 dark:bg-dark">
+          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid gap-8 lg:grid-cols-3">
+              <div class="rounded-3xl border border-primary/30 bg-primary/10 p-6 shadow-sm dark:border-primary/40 dark:bg-primary/15">
+                <h3 class="text-sm font-semibold uppercase tracking-widest text-primary dark:text-primary-light">Impact snapshot</h3>
+                <p class="mt-3 text-sm text-primary/90 dark:text-primary-light/80">
+                  180 students will learn in safe classrooms, three additional teachers will be onboarded, and a community mini-library will open by February 2026.
+                </p>
+              </div>
+              <div class="rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm dark:border-white/10 dark:bg-dark-light/80">
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Campaign contact</h3>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Email: csr@mezon.ai · Telegram: @mezoncsr</p>
+                <a href="mailto:csr@mezon.ai" class="mt-4 inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-light">Send email</a>
+              </div>
+              <div class="rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm dark:border-white/10 dark:bg-dark-light/80">
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Already donated?</h3>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Share an encouragement message for the students and the Mezon volunteer crew.</p>
+                <button class="mt-4 inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-primary hover:text-primary dark:border-white/10 dark:text-gray-200 dark:hover:border-primary-light dark:hover:text-white">
+                  Leave a message
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="border-t border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-dark-light/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between text-sm text-gray-600 dark:text-gray-400">
+            <div class="flex items-center space-x-2">
+              <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">MEZ</span>
+              <span>Mezon Explorer · Donation Module</span>
+            </div>
+            <div class="flex items-center space-x-6">
+              <a class="transition hover:text-primary dark:hover:text-white" href="../privacy.html">Privacy</a>
+              <a class="transition hover:text-primary dark:hover:text-white" href="../terms.html">Terms</a>
+              <a class="transition hover:text-primary dark:hover:text-white" href="../support.html">Support</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+    <script>
+      (function () {
+        const themeToggle = document.getElementById("theme-toggle");
+        if (!themeToggle) return;
+        const applyState = () => {
+          const isDark = document.documentElement.classList.contains("dark");
+          themeToggle.setAttribute("aria-pressed", isDark ? "true" : "false");
+        };
+        applyState();
+        themeToggle.addEventListener("click", () => {
+          const isDark = document.documentElement.classList.toggle("dark");
+          localStorage.setItem("theme", isDark ? "dark" : "light");
+          applyState();
+        });
+      })();
+    </script>
+  </body>
+</html>
