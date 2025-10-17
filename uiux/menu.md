@@ -1,0 +1,59 @@
+- menu: ngang, gom nhung gi?
+    - original:
+        - Dashboard
+        - Blocks
+        - Transactions
+        - Top accounts
+    - v1: only dashboard
+    - v2:
+        - dashboard public
+        - My dashboard
+        - Account detail
+        - Give coffee
+        - Stake
+        - Swap
+        - Donate
+        - Li xi
+        - Search
+        - Setting
+    - v3:
+        - Explorer
+            - Public dashboard
+            - Personal dashboard
+            - Account detail
+            - Search
+        - Finance
+            - Stake
+            - Swap
+            - Give coffee
+            - Donate
+            - Li xi
+        - Community
+            - Donation feed
+            - Top supporter
+            - My activity
+        - Ecosystem
+            - cobar
+            - mezon games
+            - developer
+    - v4:
+        - Explorer
+            - Dashboard
+            - Blocks
+            - Transactions
+            - Account
+            - Search
+        - Finance
+            - Stake
+            - Swap
+            - Give coffee
+            - Donate
+            - Li xi
+        - Community
+            - Donation feed
+            - Top supporter
+            - My activity
+        - Ecosystem
+            - cobar
+            - mezon games
+            - developer

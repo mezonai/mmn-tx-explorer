@@ -1,0 +1,58 @@
+- public dashboard
+    - original:
+        - total blocks
+        - total txs
+        - average block time
+        - total wallet
+        - latest blocks list
+        - latest txs list
+    - v2:
+        - total blocks
+        - total txs
+        - average block time
+        - total wallets
+        - total coffee gifts -> add
+    - v3:
+        - total blocks
+        - total txs
+        - average block time
+        - total wallets
+        - total coffee gifts
+        - Throughput Trend -> giong grafana
+        - Latest validators -> remove
+        - Ecosystem acitivity
+            - give coffee 24h
+            - stake
+            - swaps
+            - donate
+    - v4:
+        - total blocks
+        - total txs
+        - average block time
+        - total wallets
+        - donation volume
+        - chart txs 24h
+        - list latest block
+- personal dashboard
+    - v1:
+        - balance
+        - total transaction
+        - staking
+        - coffee
+        - recent transactions
+        - quick actions: give coffee, stake, swap
+        - transaction activity chart 24h
+        - my stake
+        - coffee activity
+    - v2:
+        - balance
+        - txs: 24h/pending/total
+        - stake
+        - coffee
+    - v3:
+        - balance
+        - reward
+        - stake
+        - pending
+        - action center: give coffeee, stake, swap, lixi
+        - recent activity: give coffee, stake, swap, lixi

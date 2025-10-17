@@ -1,0 +1,36 @@
+- support dark mode + light mode
+- global search giong original
+- menu:
+        - Explorer
+            - Dashboard
+            - Blocks
+            - Transactions
+            - Account
+        - Finance
+            - Stake
+            - Swap
+            - Give coffee
+            - Donate
+            - Li xi
+        - Community
+            - Donation feed
+            - Top supporter
+            - My activity
+        - Ecosystem
+            - cobar
+            - mezon games
+            - developer
+        - button login v3
+- dashboard:
+        - total blocks
+        - total txs
+        - average block time
+        - total wallets
+        - total coffee gifts
+        - Throughput Trend -> giong grafana
+        - Latest validators -> remove
+        - Ecosystem acitivity
+            - give coffee 24h
+            - stake
+            - swaps
+            - donate

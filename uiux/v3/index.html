@@ -1,9 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mezon Explorer · Public Dashboard</title>
+  <title>Mezon Explorer - Public Dashboard</title>
+  <script>
+    (function () {
+      const storedTheme = localStorage.getItem("theme");
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      if (storedTheme === "dark" || (!storedTheme && prefersDark)) {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+    })();
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -26,91 +37,108 @@
     };
   </script>
 </head>
-<body class="bg-dark text-white font-inter">
+<body class="bg-white text-gray-900 font-inter transition-colors duration-300 dark:bg-dark dark:text-white">
   <div class="min-h-screen flex flex-col">
-    <header class="bg-dark/80 border-b border-gray-800 backdrop-blur z-10">
+        <header class="sticky top-0 z-20 border-b border-gray-200/80 bg-white/80 backdrop-blur dark:border-gray-800 dark:bg-dark/80">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex h-16 items-center justify-between">
+        <div class="flex h-16 items-center gap-3">
           <a href="index.html" class="flex items-center gap-2">
-            <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/30 text-primary">
+            <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
               MEZ
             </span>
-            <span class="text-lg font-semibold tracking-wide">Mezon Explorer</span>
+            <span class="text-lg font-semibold tracking-wide text-gray-900 dark:text-white">Mezon Explorer</span>
           </a>
-          <nav class="hidden md:flex items-center gap-6 text-sm">
+          <form action="search.html" method="get" class="relative hidden md:flex flex-1 items-center">
+            <span class="pointer-events-none absolute left-4 text-gray-400 dark:text-gray-500">
+              <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M13.78 12.72a6 6 0 1 0-.98.98l3.24 3.25a.75.75 0 1 0 1.06-1.06l-3.32-3.17zM8.5 13a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z" clip-rule="evenodd" />
+              </svg>
+            </span>
+            <input type="search" name="q" aria-label="Global search" placeholder="Search by hash, block, or address" class="w-full rounded-xl border border-gray-200 bg-white/80 py-2 pl-11 pr-4 text-sm text-gray-700 shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30 dark:border-gray-700 dark:bg-dark-light/80 dark:text-gray-100 dark:focus:border-primary-light" />
+          </form>
+          <nav class="hidden md:flex items-center gap-6 text-sm text-gray-600 dark:text-gray-300">
             <div class="relative group">
-              <button class="inline-flex items-center gap-2 font-medium text-gray-300 transition hover:text-white">
+              <button class="inline-flex items-center gap-2 font-medium transition hover:text-primary dark:hover:text-white">
                 <span>Explorer</span>
                 <svg class="h-3.5 w-3.5 text-primary transition group-hover:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" clip-rule="evenodd" />
                 </svg>
               </button>
-              <div class="absolute left-0 top-full z-30 mt-0 w-56 rounded-2xl border border-white/10 bg-dark-light/95 p-3 text-sm shadow-2xl shadow-primary/10 ring-1 ring-black/30 opacity-0 translate-y-1 pointer-events-none transition-all duration-150 ease-out hover:visible group-hover:visible group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
-                <a href="index.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Public Dashboard</a>
-                <a href="dashboard.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Personal Dashboard</a>
-                <a href="account-detail.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Account Detail</a>
-                <a href="search.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Universal Search</a>
+              <div class="pointer-events-none absolute left-0 top-full z-30 mt-0 w-56 rounded-2xl border border-gray-200 bg-white/95 p-3 text-sm text-gray-600 opacity-0 shadow-lg shadow-primary/10 transition-all duration-150 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-hover:shadow-xl group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 dark:border-white/10 dark:bg-dark-light/95 dark:text-gray-300 dark:shadow-black/40">
+                <a href="index.html" class="block rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/5 dark:hover:text-white">Public Dashboard</a>
+                <a href="dashboard.html" class="block rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/5 dark:hover:text-white">Personal Dashboard</a>
+                <a href="account-detail.html" class="block rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/5 dark:hover:text-white">Account Detail</a>
+                <a href="search.html" class="block rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/5 dark:hover:text-white">Universal Search</a>
               </div>
             </div>
             <div class="relative group">
-              <button class="inline-flex items-center gap-2 font-medium text-gray-300 transition hover:text-white">
+              <button class="inline-flex items-center gap-2 font-medium transition hover:text-primary dark:hover:text-white">
                 <span>Finance</span>
                 <svg class="h-3.5 w-3.5 text-primary transition group-hover:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" clip-rule="evenodd" />
                 </svg>
               </button>
-              <div class="absolute left-0 top-full z-30 mt-0 w-52 rounded-2xl border border-white/10 bg-dark-light/95 p-3 text-sm shadow-2xl shadow-primary/10 ring-1 ring-black/30 opacity-0 translate-y-1 invisible pointer-events-none transition-all duration-150 ease-out group-hover:visible group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
-                <a href="stake.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Stake</a>
-                <a href="swap.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Swap</a>
-                <a href="give-coffee.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Give Coffee</a>
-                <a href="donate.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Donate</a>
-                <a href="red-envelope.html" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Li Xi</a>
+              <div class="pointer-events-none absolute left-0 top-full z-30 mt-0 w-52 rounded-2xl border border-gray-200 bg-white/95 p-3 text-sm text-gray-600 opacity-0 shadow-lg shadow-primary/10 transition-all duration-150 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-hover:shadow-xl group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 dark:border-white/10 dark:bg-dark-light/95 dark:text-gray-300 dark:shadow-black/40">
+                <a href="stake.html" class="block rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/5 dark:hover:text-white">Stake</a>
+                <a href="swap.html" class="block rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/5 dark:hover:text-white">Swap</a>
+                <a href="give-coffee.html" class="block rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/5 dark:hover:text-white">Give Coffee</a>
+                <a href="donate.html" class="block rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/5 dark:hover:text-white">Donate</a>
+                <a href="red-envelope.html" class="block rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/5 dark:hover:text-white">Li Xi</a>
               </div>
             </div>
             <div class="relative group">
-              <button class="inline-flex items-center gap-2 font-medium text-gray-300 transition hover:text-white">
+              <button class="inline-flex items-center gap-2 font-medium transition hover:text-primary dark:hover:text-white">
                 <span>Community</span>
                 <svg class="h-3.5 w-3.5 text-primary transition group-hover:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" clip-rule="evenodd" />
                 </svg>
               </button>
-              <div class="absolute left-0 top-full z-30 mt-0 w-56 rounded-2xl border border-white/10 bg-dark-light/95 p-3 text-sm shadow-2xl shadow-primary/10 ring-1 ring-black/30 opacity-0 translate-y-1 invisible pointer-events-none transition-all duration-150 ease-out group-hover:visible group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
-                <a href="donate.html#feed" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Donation Feed</a>
-                <a href="donate.html#top-supporters" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Top Supporters</a>
-                <a href="dashboard.html#activity" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">My Activity</a>
-                <a href="dashboard.html#notifications" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Notifications</a>
+              <div class="pointer-events-none absolute left-0 top-full z-30 mt-0 w-56 rounded-2xl border border-gray-200 bg-white/95 p-3 text-sm text-gray-600 opacity-0 shadow-lg shadow-primary/10 transition-all duration-150 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-hover:shadow-xl group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 dark:border-white/10 dark:bg-dark-light/95 dark:text-gray-300 dark:shadow-black/40">
+                <a href="donate.html#feed" class="block rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/5 dark:hover:text-white">Donation Feed</a>
+                <a href="donate.html#top-supporters" class="block rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/5 dark:hover:text-white">Top Supporters</a>
+                <a href="dashboard.html#activity" class="block rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/5 dark:hover:text-white">My Activity</a>
+                <a href="dashboard.html#notifications" class="block rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/5 dark:hover:text-white">Notifications</a>
               </div>
             </div>
             <div class="relative group">
-              <button class="inline-flex items-center gap-2 font-medium text-gray-300 transition hover:text-white">
+              <button class="inline-flex items-center gap-2 font-medium transition hover:text-primary dark:hover:text-white">
                 <span>Ecosystem</span>
                 <svg class="h-3.5 w-3.5 text-primary transition group-hover:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" clip-rule="evenodd" />
                 </svg>
               </button>
-              <div class="absolute left-0 top-full z-30 mt-0 w-56 rounded-2xl border border-white/10 bg-dark-light/95 p-3 text-sm shadow-2xl shadow-primary/10 ring-1 ring-black/30 opacity-0 translate-y-1 invisible pointer-events-none transition-all duration-150 ease-out group-hover:visible group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
-                <a href="https://cobar.vn" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white" target="_blank" rel="noopener">Cobar.vn</a>
-                <a href="https://explorer.mezon.io/game" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white" target="_blank" rel="noopener">Mezon Game</a>
-                <a href="https://docs.mezon.io" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white" target="_blank" rel="noopener">Developers</a>
+              <div class="pointer-events-none absolute left-0 top-full z-30 mt-0 w-56 rounded-2xl border border-gray-200 bg-white/95 p-3 text-sm text-gray-600 opacity-0 shadow-lg shadow-primary/10 transition-all duration-150 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-hover:shadow-xl group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 dark:border-white/10 dark:bg-dark-light/95 dark:text-gray-300 dark:shadow-black/40">
+                <a href="https://cobar.vn" class="block rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/5 dark:hover:text-white" target="_blank" rel="noopener">Cobar.vn</a>
+                <a href="https://explorer.mezon.io/game" class="block rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/5 dark:hover:text-white" target="_blank" rel="noopener">Mezon Game</a>
+                <a href="https://docs.mezon.io" class="block rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/5 dark:hover:text-white" target="_blank" rel="noopener">Developers</a>
               </div>
             </div>
             <div class="relative group">
-              <button class="inline-flex items-center gap-2 font-medium text-gray-300 transition hover:text-white">
+              <button class="inline-flex items-center gap-2 font-medium transition hover:text-primary dark:hover:text-white">
                 <span>Settings</span>
                 <svg class="h-3.5 w-3.5 text-primary transition group-hover:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" clip-rule="evenodd" />
                 </svg>
               </button>
-              <div class="absolute left-0 top-full z-30 mt-0 w-56 rounded-2xl border border-white/10 bg-dark-light/95 p-3 text-sm shadow-2xl shadow-primary/10 ring-1 ring-black/30 opacity-0 translate-y-1 invisible pointer-events-none transition-all duration-150 ease-out group-hover:visible group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
-                <a href="settings.html#profile" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Profile</a>
-                <a href="settings.html#security" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">2FA Security</a>
-                <a href="settings.html#privacy" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Privacy Notice</a>
-                <a href="settings.html#logout" class="block rounded-lg px-3 py-2 text-gray-300 transition hover:bg-white/5 hover:text-white">Logout</a>
+              <div class="pointer-events-none absolute left-0 top-full z-30 mt-0 w-56 rounded-2xl border border-gray-200 bg-white/95 p-3 text-sm text-gray-600 opacity-0 shadow-lg shadow-primary/10 transition-all duration-150 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-hover:shadow-xl group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 dark:border-white/10 dark:bg-dark-light/95 dark:text-gray-300 dark:shadow-black/40">
+                <a href="settings.html#profile" class="block rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/5 dark:hover:text-white">Profile</a>
+                <a href="settings.html#security" class="block rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/5 dark:hover:text-white">2FA Security</a>
+                <a href="settings.html#privacy" class="block rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/5 dark:hover:text-white">Privacy Notice</a>
+                <a href="settings.html#logout" class="block rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/5 dark:hover:text-white">Logout</a>
               </div>
             </div>
           </nav>
-          <div class="flex items-center gap-3">
-            <a href="https://auth.mezon.io/login" class="hidden sm:inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition hover:bg-primary-light">
+          <div class="flex items-center gap-2">
+            <button type="button" id="theme-toggle" class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:border-primary/60 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:border-gray-700 dark:bg-dark-light dark:text-gray-200 dark:hover:border-primary-light/60">
+              <span class="sr-only">Toggle theme</span>
+              <svg class="h-5 w-5 text-amber-500 dark:hidden" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12ZM12 1.5a.75.75 0 0 1 .75.75V4a.75.75 0 0 1-1.5 0V2.25A.75.75 0 0 1 12 1.5Zm0 16.5a.75.75 0 0 1 .75.75V22a.75.75 0 0 1-1.5 0v-3.25A.75.75 0 0 1 12 18Zm10.5-6a.75.75 0 0 1-.75.75H20a.75.75 0 0 1 0-1.5h1.75a.75.75 0 0 1 .75.75ZM5 12a.75.75 0 0 1-.75.75H2.5a.75.75 0 0 1 0-1.5H4.25A.75.75 0 0 1 5 12Zm13.485 7.485a.75.75 0 0 1-1.06 0l-1.237-1.238a.75.75 0 0 1 1.063-1.06l1.237 1.236a.75.75 0 0 1-.003 1.062Zm-9.87-9.87a.75.75 0 0 1-1.06 0L6.318 8.76A.75.75 0 1 1 7.38 7.7l1.237 1.237a.75.75 0 0 1 0 1.06Zm0 9.87a.75.75 0 0 1-1.06 0L6.318 18.63a.75.75 0 1 1 1.06-1.06l1.237 1.236a.75.75 0 0 1 0 1.06Zm9.87-9.87a.75.75 0 0 1-1.06 0L16.188 8.76a.75.75 0 1 1 1.06-1.06l1.237 1.236a.75.75 0 0 1 0 1.06Z" />
+              </svg>
+              <svg class="hidden h-5 w-5 text-sky-400 dark:block" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M21 12.75a8.25 8.25 0 0 1-8.25 8.25A8.25 8.25 0 0 1 7.7 5.318 6.75 6.75 0 0 0 18.682 16.3 8.3 8.3 0 0 1 21 12.75Z" />
+              </svg>
+            </button>
+            <a href="https://auth.mezon.io/login" class="hidden sm:inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition hover:bg-primary-light">
               <span>Login with Mezon</span>
               <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path d="M3 10a.75.75 0 0 1 .75-.75h8.69L9.22 6.03a.75.75 0 1 1 1.06-1.06l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06l3.22-3.22H3.75A.75.75 0 0 1 3 10z" />
@@ -118,60 +146,43 @@
               </svg>
             </a>
             <details class="relative md:hidden">
-              <summary class="list-none inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-gray-300">
+              <summary class="list-none inline-flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-600 transition hover:border-primary/60 hover:text-primary dark:border-white/10 dark:text-gray-300 dark:hover:text-white">
                 <span>Menu</span>
                 <svg class="h-4 w-4 text-primary" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" clip-rule="evenodd" />
                 </svg>
               </summary>
-              <div class="absolute right-0 mt-3 w-72 rounded-2xl border border-white/10 bg-dark-light/95 p-4 text-sm shadow-2xl shadow-black/40">
+              <div class="absolute right-0 mt-3 w-72 rounded-2xl border border-gray-200 bg-white/95 p-4 text-sm text-gray-600 shadow-2xl shadow-gray-900/10 dark:border-white/10 dark:bg-dark-light/95 dark:text-gray-200 dark:shadow-black/50">
                 <div class="space-y-4">
                   <div>
-                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Explorer</p>
-                    <div class="mt-2 grid gap-2 text-gray-300">
-                      <a href="index.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Public Dashboard</a>
-                      <a href="dashboard.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Personal Dashboard</a>
-                      <a href="account-detail.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Account Detail</a>
-                      <a href="search.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Universal Search</a>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Explorer</p>
+                    <div class="mt-2 grid gap-2">
+                      <a href="index.html" class="rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/10 dark:hover:text-white">Public Dashboard</a>
+                      <a href="dashboard.html" class="rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/10 dark:hover:text-white">Personal Dashboard</a>
+                      <a href="account-detail.html" class="rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/10 dark:hover:text-white">Account Detail</a>
+                      <a href="search.html" class="rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/10 dark:hover:text-white">Universal Search</a>
                     </div>
                   </div>
                   <div>
-                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Finance</p>
-                    <div class="mt-2 grid gap-2 text-gray-300">
-                      <a href="stake.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Stake</a>
-                      <a href="swap.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Swap</a>
-                      <a href="give-coffee.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Give Coffee</a>
-                      <a href="donate.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Donate</a>
-                      <a href="red-envelope.html" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Li Xi</a>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Finance</p>
+                    <div class="mt-2 grid gap-2">
+                      <a href="stake.html" class="rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/10 dark:hover:text-white">Stake</a>
+                      <a href="swap.html" class="rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/10 dark:hover:text-white">Swap</a>
+                      <a href="give-coffee.html" class="rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/10 dark:hover:text-white">Give Coffee</a>
+                      <a href="donate.html" class="rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/10 dark:hover:text-white">Donate</a>
+                      <a href="red-envelope.html" class="rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/10 dark:hover:text-white">Li Xi</a>
                     </div>
                   </div>
                   <div>
-                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Community</p>
-                    <div class="mt-2 grid gap-2 text-gray-300">
-                      <a href="donate.html#feed" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Donation Feed</a>
-                      <a href="donate.html#top-supporters" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Top Supporters</a>
-                      <a href="dashboard.html#activity" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">My Activity</a>
-                      <a href="dashboard.html#notifications" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Notifications</a>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Settings</p>
+                    <div class="mt-2 grid gap-2">
+                      <a href="settings.html#profile" class="rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/10 dark:hover:text-white">Profile</a>
+                      <a href="settings.html#security" class="rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/10 dark:hover:text-white">2FA Security</a>
+                      <a href="settings.html#privacy" class="rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/10 dark:hover:text-white">Privacy Notice</a>
+                      <a href="settings.html#logout" class="rounded-lg px-3 py-2 transition hover:bg-gray-50 hover:text-primary dark:hover:bg-white/10 dark:hover:text-white">Logout</a>
                     </div>
                   </div>
-                  <div>
-                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Ecosystem</p>
-                    <div class="mt-2 grid gap-2 text-gray-300">
-                      <a href="https://cobar.vn" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition" target="_blank" rel="noopener">Cobar.vn</a>
-                      <a href="https://explorer.mezon.io/game" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition" target="_blank" rel="noopener">Mezon Game</a>
-                      <a href="https://docs.mezon.io" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition" target="_blank" rel="noopener">Developers</a>
-                    </div>
-                  </div>
-                  <div>
-                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Settings</p>
-                    <div class="mt-2 grid gap-2 text-gray-300">
-                      <a href="settings.html#profile" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Profile</a>
-                      <a href="settings.html#security" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">2FA Security</a>
-                      <a href="settings.html#privacy" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Privacy Notice</a>
-                      <a href="settings.html#logout" class="rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition">Logout</a>
-                    </div>
-                  </div>
-                  <a href="https://auth.mezon.io/login" class="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition hover:bg-primary-light">
+                  <a href="https://auth.mezon.io/login" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition hover:bg-primary-light">
                     <span>Login with Mezon</span>
                     <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                       <path d="M3 10a.75.75 0 0 1 .75-.75h8.69L9.22 6.03a.75.75 0 1 1 1.06-1.06l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06l3.22-3.22H3.75A.75.75 0 0 1 3 10z" />
@@ -183,195 +194,257 @@
             </details>
           </div>
         </div>
+        <form action="search.html" method="get" class="relative pb-4 md:hidden">
+          <span class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500">
+            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M13.78 12.72a6 6 0 1 0-.98.98l3.24 3.25a.75.75 0 1 0 1.06-1.06l-3.32-3.17zM8.5 13a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z" clip-rule="evenodd" />
+            </svg>
+          </span>
+          <input type="search" name="q" aria-label="Global search" placeholder="Search by hash, block, or address" class="w-full rounded-xl border border-gray-200 bg-white/80 py-2 pl-11 pr-4 text-sm text-gray-700 shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30 dark:border-gray-700 dark:bg-dark-light/80 dark:text-gray-100 dark:focus:border-primary-light" />
+        </form>
       </div>
     </header>
 
-
-
     <main class="flex-1">
-      <section class="relative overflow-hidden">
-        <div class="absolute inset-0 opacity-60">
-          <div class="pointer-events-none absolute -left-32 top-10 h-64 w-64 rounded-full bg-primary/30 blur-3xl"></div>
-          <div class="pointer-events-none absolute right-0 top-20 h-72 w-72 rounded-full bg-neon/20 blur-3xl"></div>
-        </div>
-        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div class="max-w-3xl">
-            <div class="inline-flex items-center space-x-2 rounded-full bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-primary-light">
-              <span class="h-2 w-2 rounded-full bg-neon animate-pulse"></span>
-              <span>Network Status · Private Mainnet</span>
-            </div>
-            <h1 class="mt-6 text-4xl sm:text-5xl font-bold tracking-tight leading-tight">
-              Transparently monitor Mezon's private mainnet performance.
-            </h1>
-            <p class="mt-6 text-base text-gray-300 sm:text-lg">
-              Check live blocks, transactions, and donations at a glance while keeping individual wallets private.
-            </p>
-            <div class="mt-8 flex flex-wrap items-center gap-4">
-              <a href="dashboard.html" class="inline-flex items-center space-x-2 rounded-lg bg-primary px-5 py-3 text-sm font-semibold shadow-lg shadow-primary/30 transition hover:bg-primary-light">
-                <span>View Personal Dashboard</span>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-                </svg>
-              </a>
-              <a href="https://auth.mezon.io/login" class="text-sm font-medium text-gray-300 hover:text-white transition">Sign in for full access →</a>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-        <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-5">
-          <div class="rounded-2xl border border-white/5 bg-white/5 p-6 backdrop-blur">
-            <p class="text-sm text-gray-400">Total Blocks</p>
-            <p class="mt-3 text-3xl font-semibold">1,245,908</p>
-            <span class="mt-4 inline-flex items-center space-x-1 text-xs text-emerald-400">
+        <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-5">
+          <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition dark:border-white/10 dark:bg-dark-light/70">
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Blocks</p>
+            <p class="mt-3 text-3xl font-semibold text-gray-900 dark:text-white">1,245,908</p>
+            <span class="mt-4 inline-flex items-center gap-1 text-xs font-medium text-emerald-500 dark:text-emerald-300">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M5 10a.75.75 0 01.75-.75h5.69l-1.72-1.72a.75.75 0 111.06-1.06l3.25 3.25a.75.75 0 010 1.06l-3.25 3.25a.75.75 0 11-1.06-1.06l1.72-1.72H5.75A.75.75 0 015 10z" clip-rule="evenodd"/>
+                <path fill-rule="evenodd" d="M5 10a.75.75 0 0 1 .75-.75h5.69l-1.72-1.72a.75.75 0 1 1 1.06-1.06l3.25 3.25a.75.75 0 0 1 0 1.06l-3.25 3.25a.75.75 0 1 1-1.06-1.06l1.72-1.72H5.75A.75.75 0 0 1 5 10z" clip-rule="evenodd"/>
               </svg>
               <span>+0.8% 24h</span>
             </span>
           </div>
-          <div class="rounded-2xl border border-white/5 bg-white/5 p-6 backdrop-blur">
-            <p class="text-sm text-gray-400">Total Transactions</p>
-            <p class="mt-3 text-3xl font-semibold">82,430,554</p>
-            <p class="mt-4 text-xs text-gray-400">Last 24h · 1,245,980</p>
+          <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition dark:border-white/10 dark:bg-dark-light/70">
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Transactions</p>
+            <p class="mt-3 text-3xl font-semibold text-gray-900 dark:text-white">82,430,554</p>
+            <p class="mt-4 text-xs text-gray-500 dark:text-gray-400">1,245,980 processed in the last 24h</p>
           </div>
-          <div class="rounded-2xl border border-white/5 bg-white/5 p-6 backdrop-blur">
-            <p class="text-sm text-gray-400">Average Block Time</p>
-            <p class="mt-3 text-3xl font-semibold">2.8s</p>
-            <p class="mt-4 text-xs text-gray-400">SLA target 3s</p>
+          <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition dark:border-white/10 dark:bg-dark-light/70">
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Average Block Time</p>
+            <p class="mt-3 text-3xl font-semibold text-gray-900 dark:text-white">2.8s</p>
+            <p class="mt-4 text-xs text-gray-500 dark:text-gray-400">SLA target 3s</p>
           </div>
-          <div class="rounded-2xl border border-white/5 bg-white/5 p-6 backdrop-blur">
-            <p class="text-sm text-gray-400">Total Wallets</p>
-            <p class="mt-3 text-3xl font-semibold">418,902</p>
-            <p class="mt-4 text-xs text-gray-400">+3,418 new wallets this week</p>
+          <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition dark:border-white/10 dark:bg-dark-light/70">
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Wallets</p>
+            <p class="mt-3 text-3xl font-semibold text-gray-900 dark:text-white">418,902</p>
+            <p class="mt-4 text-xs text-gray-500 dark:text-gray-400">3,418 wallets joined this week</p>
           </div>
-          <div class="rounded-2xl border border-white/5 bg-white/5 p-6 backdrop-blur">
-            <p class="text-sm text-gray-400">Coffee Gifts Issued</p>
-            <p class="mt-3 text-3xl font-semibold">12,448</p>
-            <p class="mt-4 text-xs text-gray-400">On-chain token &amp; Stripe gifts combined</p>
+          <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition dark:border-white/10 dark:bg-dark-light/70">
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Coffee Gifts Issued</p>
+            <p class="mt-3 text-3xl font-semibold text-gray-900 dark:text-white">12,448</p>
+            <p class="mt-4 text-xs text-gray-500 dark:text-gray-400">On-chain token and Stripe gifts</p>
           </div>
         </div>
 
-        <div class="mt-12 grid gap-8 lg:grid-cols-3">
-          <div class="lg:col-span-2 rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-dark-light/40 to-dark-light/80 p-8 relative overflow-hidden">
-            <div class="absolute right-10 top-10 h-32 w-32 rounded-full bg-primary/30 blur-3xl"></div>
-            <div class="absolute -bottom-10 -left-10 h-56 w-56 rounded-full bg-neon/10 blur-3xl"></div>
-            <div class="relative">
-              <div class="flex items-center justify-between">
-                <div>
-                  <h2 class="text-lg font-semibold">Throughput Trend</h2>
-                  <p class="mt-2 text-sm text-gray-300">Transactions per second across the last 24 hours.</p>
-                </div>
-                <span class="rounded-full border border-white/10 bg-black/40 px-3 py-1 text-xs text-gray-300">Auto-refresh · 30s</span>
+        <div class="mt-12 grid gap-8 lg:grid-cols-[1.35fr_1fr]">
+          <div class="grid gap-8 lg:grid-cols-2">
+            <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm transition dark:border-white/10 dark:bg-dark-light/70">
+              <div class="flex items-center justify-between gap-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Latest Blocks</h3>
+                <a href="blocks.html" class="text-xs font-semibold uppercase tracking-wide text-primary hover:text-primary-light">View all</a>
               </div>
-              <div class="mt-8 h-60 rounded-2xl bg-black/30 p-6">
-                <div class="h-full w-full rounded-xl bg-gradient-to-t from-primary/10 via-primary/40 to-neon/30 opacity-80"></div>
+              <ul class="mt-6 space-y-4 text-sm">
+                <li class="flex items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-gray-50/80 px-4 py-3 dark:border-white/5 dark:bg-white/5">
+                  <div>
+                    <p class="font-semibold text-gray-900 dark:text-white">#2,239,663</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">25 minutes ago</p>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-xs uppercase text-gray-500 dark:text-gray-400">Transactions</p>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">1</p>
+                  </div>
+                </li>
+                <li class="flex items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-gray-50/80 px-4 py-3 dark:border-white/5 dark:bg-white/5">
+                  <div>
+                    <p class="font-semibold text-gray-900 dark:text-white">#2,239,662</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">42 minutes ago</p>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-xs uppercase text-gray-500 dark:text-gray-400">Transactions</p>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">18</p>
+                  </div>
+                </li>
+                <li class="flex items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-gray-50/80 px-4 py-3 dark:border-white/5 dark:bg-white/5">
+                  <div>
+                    <p class="font-semibold text-gray-900 dark:text-white">#2,239,661</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">1h 05m ago</p>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-xs uppercase text-gray-500 dark:text-gray-400">Transactions</p>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">12</p>
+                  </div>
+                </li>
+                <li class="flex items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-gray-50/80 px-4 py-3 dark:border-white/5 dark:bg-white/5">
+                  <div>
+                    <p class="font-semibold text-gray-900 dark:text-white">#2,239,660</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">1h 27m ago</p>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-xs uppercase text-gray-500 dark:text-gray-400">Transactions</p>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">9</p>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm transition dark:border-white/10 dark:bg-dark-light/70">
+              <div class="flex items-center justify-between gap-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Latest Transactions</h3>
+                <a href="transactions.html" class="text-xs font-semibold uppercase tracking-wide text-primary hover:text-primary-light">View all</a>
               </div>
-              <dl class="mt-6 grid gap-4 sm:grid-cols-3 text-sm text-gray-300">
-                <div>
-                  <dt>Peak TPS</dt>
-                  <dd class="text-white font-semibold">312</dd>
-                </div>
-                <div>
-                  <dt>Average TPS</dt>
-                  <dd class="text-white font-semibold">218</dd>
-                </div>
-                <div>
-                  <dt>Finalised Blocks</dt>
-                  <dd class="text-white font-semibold">27,540</dd>
-                </div>
-              </dl>
+              <ul class="mt-6 space-y-4 text-sm">
+                <li class="rounded-2xl border border-gray-100 bg-gray-50/80 p-4 dark:border-white/5 dark:bg-white/5">
+                  <div class="flex items-center justify-between gap-4">
+                    <span class="font-medium text-primary dark:text-primary-light">0x94ab..4e91</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">32 seconds ago</span>
+                  </div>
+                  <div class="mt-3 grid grid-cols-2 gap-3 text-xs text-gray-500 dark:text-gray-400">
+                    <div>
+                      <p class="uppercase tracking-wide text-[11px] text-gray-500 dark:text-gray-400">From</p>
+                      <p class="font-medium text-gray-900 dark:text-gray-100">mez.sum</p>
+                    </div>
+                    <div>
+                      <p class="uppercase tracking-wide text-[11px] text-gray-500 dark:text-gray-400">To</p>
+                      <p class="font-medium text-gray-900 dark:text-gray-100">cafe.node</p>
+                    </div>
+                  </div>
+                  <div class="mt-3 flex items-center justify-between">
+                    <p class="text-sm font-semibold text-gray-900 dark:text-white">24.60 MEZ</p>
+                    <span class="inline-flex items-center rounded-full border border-emerald-400/50 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-500 dark:border-emerald-400/40 dark:text-emerald-300">Success</span>
+                  </div>
+                </li>
+                <li class="rounded-2xl border border-gray-100 bg-gray-50/80 p-4 dark:border-white/5 dark:bg-white/5">
+                  <div class="flex items-center justify-between gap-4">
+                    <span class="font-medium text-primary dark:text-primary-light">0xa31c..d2ff</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">4 minutes ago</span>
+                  </div>
+                  <div class="mt-3 grid grid-cols-2 gap-3 text-xs text-gray-500 dark:text-gray-400">
+                    <div>
+                      <p class="uppercase tracking-wide text-[11px] text-gray-500 dark:text-gray-400">From</p>
+                      <p class="font-medium text-gray-900 dark:text-gray-100">glow.wallet</p>
+                    </div>
+                    <div>
+                      <p class="uppercase tracking-wide text-[11px] text-gray-500 dark:text-gray-400">To</p>
+                      <p class="font-medium text-gray-900 dark:text-gray-100">validators.hub</p>
+                    </div>
+                  </div>
+                  <div class="mt-3 flex items-center justify-between">
+                    <p class="text-sm font-semibold text-gray-900 dark:text-white">1,250 MEZ</p>
+                    <span class="inline-flex items-center rounded-full border border-amber-400/60 bg-amber-400/10 px-3 py-1 text-xs font-semibold text-amber-500 dark:border-amber-400/40 dark:text-amber-300">Pending</span>
+                  </div>
+                </li>
+                <li class="rounded-2xl border border-gray-100 bg-gray-50/80 p-4 dark:border-white/5 dark:bg-white/5">
+                  <div class="flex items-center justify-between gap-4">
+                    <span class="font-medium text-primary dark:text-primary-light">0x73dd..b910</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">9 minutes ago</span>
+                  </div>
+                  <div class="mt-3 grid grid-cols-2 gap-3 text-xs text-gray-500 dark:text-gray-400">
+                    <div>
+                      <p class="uppercase tracking-wide text-[11px] text-gray-500 dark:text-gray-400">From</p>
+                      <p class="font-medium text-gray-900 dark:text-gray-100">mezon.qa</p>
+                    </div>
+                    <div>
+                      <p class="uppercase tracking-wide text-[11px] text-gray-500 dark:text-gray-400">To</p>
+                      <p class="font-medium text-gray-900 dark:text-gray-100">brew.pool</p>
+                    </div>
+                  </div>
+                  <div class="mt-3 flex items-center justify-between">
+                    <p class="text-sm font-semibold text-gray-900 dark:text-white">98.00 MEZ</p>
+                    <span class="inline-flex items-center rounded-full border border-rose-400/60 bg-rose-400/10 px-3 py-1 text-xs font-semibold text-rose-500 dark:border-rose-400/40 dark:text-rose-300">Failed</span>
+                  </div>
+                </li>
+              </ul>
             </div>
           </div>
 
           <div class="space-y-6">
-            <div class="rounded-3xl border border-white/10 bg-white/5 p-6">
-              <h3 class="text-lg font-semibold">Latest Validators</h3>
-              <ul class="mt-4 space-y-4 text-sm">
-                <li class="flex items-center justify-between border-b border-white/5 pb-3">
-                  <span class="text-gray-200">mezon-core-01</span>
-                  <span class="rounded-full border border-emerald-400/40 bg-emerald-400/10 px-3 py-1 text-emerald-400">Healthy</span>
-                </li>
-                <li class="flex items-center justify-between border-b border-white/5 pb-3">
-                  <span class="text-gray-200">mezon-core-02</span>
-                  <span class="rounded-full border border-emerald-400/40 bg-emerald-400/10 px-3 py-1 text-emerald-400">Healthy</span>
-                </li>
-                <li class="flex items-center justify-between">
-                  <span class="text-gray-200">mezon-archive-01</span>
-                  <span class="rounded-full border border-amber-400/40 bg-amber-400/10 px-3 py-1 text-amber-300">Syncing</span>
-                </li>
-              </ul>
-            </div>
-
-            <div class="rounded-3xl border border-white/10 bg-white/5 p-6">
-              <h3 class="text-lg font-semibold">Ecosystem Activity</h3>
+            <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm transition dark:border-white/10 dark:bg-dark-light/70">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Ecosystem Activity</h3>
               <ul class="mt-4 space-y-4 text-sm">
                 <li class="flex items-start justify-between gap-4">
                   <div>
-                    <p class="font-medium">Give Coffee</p>
-                    <p class="text-gray-400">1,204 gifts sent · last 24h</p>
+                    <p class="font-medium text-gray-900 dark:text-white">Give Coffee (24h)</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">1,204 gifts sent</p>
                   </div>
-                  <span class="text-emerald-400">+18%</span>
+                  <span class="text-sm font-semibold text-emerald-500 dark:text-emerald-300">+18%</span>
                 </li>
                 <li class="flex items-start justify-between gap-4">
                   <div>
-                    <p class="font-medium">Stake</p>
-                    <p class="text-gray-400">54 new delegations</p>
+                    <p class="font-medium text-gray-900 dark:text-white">Stake</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">54 new delegations</p>
                   </div>
-                  <span class="text-emerald-400">+6%</span>
+                  <span class="text-sm font-semibold text-emerald-500 dark:text-emerald-300">+6%</span>
                 </li>
                 <li class="flex items-start justify-between gap-4">
                   <div>
-                    <p class="font-medium">Swaps</p>
-                    <p class="text-gray-400">$2.4M TVL</p>
+                    <p class="font-medium text-gray-900 dark:text-white">Swaps</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">$2.4M TVL</p>
                   </div>
-                  <span class="text-amber-300">Stable</span>
+                  <span class="text-sm font-semibold text-amber-500 dark:text-amber-300">Stable</span>
                 </li>
                 <li class="flex items-start justify-between gap-4">
                   <div>
-                    <p class="font-medium">Donate</p>
-                    <p class="text-gray-400">342 live streams integrated</p>
+                    <p class="font-medium text-gray-900 dark:text-white">Donate</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">342 live streams connected</p>
                   </div>
-                  <span class="text-emerald-400">+9%</span>
+                  <span class="text-sm font-semibold text-emerald-500 dark:text-emerald-300">+9%</span>
                 </li>
               </ul>
             </div>
           </div>
         </div>
-
-        <div class="mt-16 rounded-3xl border border-primary/30 bg-primary/10 p-10">
+        <div class="mt-16 rounded-3xl border border-primary/30 bg-white p-10 shadow-sm dark:border-primary/40 dark:bg-primary/10">
           <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h2 class="text-2xl font-semibold">Privacy-first by design</h2>
-              <p class="mt-2 max-w-xl text-sm text-gray-300">
+              <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Privacy-first by design</h2>
+              <p class="mt-2 max-w-xl text-sm text-gray-600 dark:text-gray-300">
                 Sign in for wallet history, staking controls, and Li Xi gifting with privacy baked in.
               </p>
             </div>
-            <div class="flex gap-3">
-              <a href="https://auth.mezon.io/login" class="inline-flex items-center justify-center rounded-xl bg-white text-dark px-5 py-3 text-sm font-semibold shadow-lg shadow-white/40 transition hover:bg-gray-100">Secure Login</a>
-              <a href="features.html" class="inline-flex items-center justify-center rounded-xl border border-white/20 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10 transition">Read Feature Specification</a>
+            <div class="flex flex-wrap gap-3">
+              <a href="https://auth.mezon.io/login" class="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition hover:bg-primary-light">Secure Login</a>
+              <a href="features.html" class="inline-flex items-center justify-center rounded-xl border border-gray-200 px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-primary hover:text-primary dark:border-white/20 dark:text-gray-200 dark:hover:border-primary-light dark:hover:text-white">Read Feature Specification</a>
             </div>
           </div>
         </div>
       </section>
     </main>
 
-    <footer class="bg-dark-light/70 border-t border-gray-800">
+    <footer class="border-t border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-dark-light/80">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between text-sm text-gray-400">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between text-sm text-gray-600 dark:text-gray-400">
           <div class="flex items-center space-x-2">
-            <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/40 text-primary">MEZ</span>
-            <span>Mezon Explorer · Public Overview</span>
+            <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">MEZ</span>
+            <span>Mezon Explorer - Public Overview</span>
           </div>
           <div class="flex items-center space-x-6">
-            <a class="hover:text-white transition" href="privacy.html">Privacy Policy</a>
-            <a class="hover:text-white transition" href="terms.html">Terms</a>
-            <a class="hover:text-white transition" href="support.html">Support</a>
+            <a class="transition hover:text-primary dark:hover:text-white" href="privacy.html">Privacy Policy</a>
+            <a class="transition hover:text-primary dark:hover:text-white" href="terms.html">Terms</a>
+            <a class="transition hover:text-primary dark:hover:text-white" href="support.html">Support</a>
           </div>
         </div>
       </div>
     </footer>
   </div>
+  <script>
+    (function () {
+      const themeToggle = document.getElementById("theme-toggle");
+      if (!themeToggle) return;
+      const applyState = () => {
+        const isDark = document.documentElement.classList.contains("dark");
+        themeToggle.setAttribute("aria-pressed", isDark ? "true" : "false");
+      };
+      applyState();
+      themeToggle.addEventListener("click", () => {
+        const isDark = document.documentElement.classList.toggle("dark");
+        localStorage.setItem("theme", isDark ? "dark" : "light");
+        applyState();
+      });
+    })();
+  </script>
 </body>
 </html>
