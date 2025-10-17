@@ -7,7 +7,7 @@ import { ROUTES } from '@/configs/routes.config';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuth, useAuthActions } from '@/providers/AppProvider';
 import { NavbarMenu } from '@/components/shared/navbar';
-import { SearchMd } from '@/assets/icons';
+import { GlobalSearch } from '@/modules/global-search/components';
 
 export function AppNavbar() {
   const { isAuthenticated } = useAuth();
@@ -25,10 +25,7 @@ export function AppNavbar() {
             <Link href={ROUTES.HOME}>
               <AppLogo />
             </Link>
-            <Button onClick={() => {}} variant={'outline'} className="hidden rounded-md md:flex">
-              <SearchMd className="text-foreground-quaternary-400 size-5" strokeWidth={1.5} />
-              <p className="w-32 text-start">Search</p>
-            </Button>
+            <GlobalSearch className="hidden w-64 md:flex" />
           </div>
 
           <nav className="hidden md:flex">
