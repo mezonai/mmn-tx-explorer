@@ -1,6 +1,6 @@
 FROM golang:1.23-alpine AS build
 
-RUN apk add --no-cache git bash
+RUN apk add --no-cache git bash gcc musl-dev
 
 WORKDIR /app
 
@@ -9,7 +9,7 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o /bin/app -tags=production main.go
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o /bin/app -tags=production main.go
 
 FROM alpine:3.18
 

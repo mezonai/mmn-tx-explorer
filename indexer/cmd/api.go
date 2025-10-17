@@ -69,15 +69,17 @@ func RunApi(cmd *cobra.Command, args []string) {
 	{
 		private.Use(middleware.Authentication)
 		private.Use(middleware.Cors)
+		private.POST("/test", handlers.TestHandler)
 
 	}
 
 	root := r.Group("/:chainId")
-	{  
+	{
 		root.Use(middleware.Authorization)
 		root.Use(middleware.Cors)
 		root.POST("/oauth", handlers.OauthTokenHandler)
-        root.POST("/auth/refresh", handlers.RefreshHandler)
+		root.POST("/refresh/token", handlers.RefreshHandler)
+		root.POST("/logout", handlers.LogoutHandler)
 		// wildcard queries
 		root.GET("/transactions", handlers.GetTransactions)
 		root.GET("/pending-transactions", handlers.GetPendingTransactions)

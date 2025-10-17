@@ -11,6 +11,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	config "github.com/thirdweb-dev/indexer/configs"
+	"github.com/thirdweb-dev/indexer/internal/storage"
 )
 
 type OauthTokenRequest struct {
@@ -91,9 +92,7 @@ func OauthTokenHandler(c *gin.Context) {
 		return
 	}
 
-
 	tokenID := uuid.NewString()
-
 
 	accessClaims := jwt.MapClaims{
 		"token_id": tokenID,
@@ -108,7 +107,6 @@ func OauthTokenHandler(c *gin.Context) {
 		return
 	}
 
-
 	refreshClaims := jwt.MapClaims{
 		"token_id": tokenID,
 		"user_id":  userInfo.UserID,
@@ -119,6 +117,13 @@ func OauthTokenHandler(c *gin.Context) {
 	signedRefresh, err := refreshToken.SignedString([]byte(jwtSecret))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to sign refresh token"})
+		return
+	}
+
+
+	refreshTTL := 7 * 24 * time.Hour
+	if err := storage.Set(tokenID, userInfo.UserID, refreshTTL); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store token"})
 		return
 	}
 

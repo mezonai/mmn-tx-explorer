@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	config "github.com/thirdweb-dev/indexer/configs"
+	"github.com/thirdweb-dev/indexer/internal/storage"
 )
 
 func Authentication(c *gin.Context) {
@@ -41,9 +42,20 @@ func Authentication(c *gin.Context) {
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok {
-		
+
 		if t, _ := claims["type"].(string); t != "access" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "token is not an access token"})
+			return
+		}
+
+		tokenID, _ := claims["token_id"].(string)
+		if tokenID == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing token_id in token"})
+			return
+		}
+		ok, _, err := storage.Get(tokenID)
+		if err != nil || !ok {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "token not whitelisted"})
 			return
 		}
 		c.Set("user", claims)

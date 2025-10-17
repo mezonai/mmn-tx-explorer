@@ -8,6 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	config "github.com/thirdweb-dev/indexer/configs"
+	"github.com/thirdweb-dev/indexer/internal/storage"
 )
 
 type RefreshRequest struct {
@@ -19,7 +20,6 @@ type TokenResponse struct {
 	RefreshToken string `json:"refresh_token"`
 	UserID       string `json:"user_id"`
 }
-
 
 func RefreshHandler(c *gin.Context) {
 	var req RefreshRequest
@@ -51,7 +51,6 @@ func RefreshHandler(c *gin.Context) {
 		return
 	}
 
-
 	if t, _ := claims["type"].(string); t != "refresh" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "token is not a refresh token"})
 		return
@@ -60,6 +59,20 @@ func RefreshHandler(c *gin.Context) {
 	userID, _ := claims["user_id"].(string)
 	if userID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid refresh token (missing user_id)"})
+		return
+	}
+
+	oldTokenID, _ := claims["token_id"].(string)
+
+	exists, _, err := storage.Get(oldTokenID)
+	if err != nil || !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "refresh token not found on whitelist"})
+		return
+	}
+
+
+	if err := storage.Delete(oldTokenID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete old refresh token"})
 		return
 	}
 
@@ -87,6 +100,12 @@ func RefreshHandler(c *gin.Context) {
 	signedRefresh, err := refreshToken.SignedString([]byte(secret))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to sign refresh token"})
+		return
+	}
+
+	refreshTTL := 7 * 24 * time.Hour
+	if err := storage.Set(newTokenID, userID, refreshTTL); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to store new refresh token"})
 		return
 	}
 
