@@ -322,7 +322,7 @@ func handleTransactionsInfiniteRequest(c *gin.Context) {
 	queryResult.Data = &data
 	
     queryResult.Meta.HasMore = hasMore  
-    queryResult.Meta.NextTimestamp = nextTimestamp
+    queryResult.Meta.NextTimestamp = &nextTimestamp
     queryResult.Meta.NextHash = nextHash
 
 	c.JSON(http.StatusOK, queryResult)

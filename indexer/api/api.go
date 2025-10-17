@@ -78,7 +78,7 @@ type Meta struct {
     // @Description Flag indicating if there are more items to load
     HasMore bool `json:"has_more,omitempty"`
     // @Description Timestamp to use for the next request
-    NextTimestamp time.Time `json:"next_timestamp,omitempty"`
+    NextTimestamp *time.Time `json:"next_timestamp,omitempty"`
     // @Description Hash to use for the next request when timestamps are identical
     NextHash string `json:"next_hash,omitempty"`
 }
