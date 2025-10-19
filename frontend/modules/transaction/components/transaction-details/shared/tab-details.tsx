@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ITransaction } from '@/modules/transaction/types';
 import { DateTimeUtil, NumberUtil } from '@/utils';
 import { ClientTimeDisplay } from './client-time-display';
+import { APP_CONFIG } from '@/configs/app.config';
 
 interface TabDetailsProps {
   transaction?: ITransaction;
@@ -118,7 +119,9 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
         data={transaction}
         render={(transaction) => (
           <div className="flex items-center">
-            <span>{NumberUtil.formatWithCommasAndScale(transaction.value)}</span>
+            <span>
+              {NumberUtil.formatWithCommasAndScale(transaction.value)} {APP_CONFIG.CHAIN_SYMBOL}
+            </span>
           </div>
         )}
         skeleton={<Skeleton className="h-5 w-20" />}

@@ -18,6 +18,8 @@ const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
   sort_order: ESortOrder.DESC,
 } as const;
 
+const TRANSACTION_DISPLAY_LIMIT = 500000;
+
 export const TransactionsList = () => {
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
   const { value: tab, handleChangeValue: handleChangeTab } = useQueryParam<ETransactionTab>({
@@ -42,6 +44,10 @@ export const TransactionsList = () => {
   // Determine which data to show based on tab
   const transactions = tab === ETransactionTab.Pending ? pendingTransactionsResponse?.data : transactionsResponse?.data;
   const pagination = tab === ETransactionTab.Pending ? pendingTransactionsResponse?.meta : transactionsResponse?.meta;
+  const totalItems =
+    pagination?.total_items && pagination.total_items > TRANSACTION_DISPLAY_LIMIT
+      ? TRANSACTION_DISPLAY_LIMIT
+      : pagination?.total_items;
   return (
     <div className="space-y-6 md:space-y-8">
       <h1 className="text-2xl font-semibold">Transactions</h1>
@@ -65,7 +71,7 @@ export const TransactionsList = () => {
             page={page}
             limit={limit}
             totalPages={pagination?.total_pages ?? 0}
-            totalItems={pagination?.total_items ?? 0}
+            totalItems={totalItems ?? 0}
             isLoading={isLoading}
             className="w-full lg:w-auto"
             onChangePage={handleChangePage}
@@ -73,6 +79,13 @@ export const TransactionsList = () => {
           />
         </div>
 
+        {pagination?.total_items && pagination.total_items > TRANSACTION_DISPLAY_LIMIT && (
+          <div className="text-muted-foreground pt-1 pb-0 text-left text-sm">
+            More than {pagination.total_items.toLocaleString()} transactions found
+            <br />
+            (Showing the last 500k records)
+          </div>
+        )}
         <TransactionCollection transactions={transactions} isLoading={isLoading} />
       </div>
     </div>
