@@ -4,29 +4,33 @@ import Image from 'next/image';
 import { Eye, EyeOff, Copy, Check } from 'lucide-react';
 
 interface User {
+  aud?: string[];
+  auth_time?: number;
   avatar?: string;
   display_name?: string;
+  email?: string;
+  iat?: number;
+  iss?: string;
+  mezon_id?: string;
+  rat?: number;
+  sub?: string;
+  user_id?: string;
   username?: string;
-  [key: string]: unknown;
 }
 
 interface UserDetailPopoverProps {
   user: User;
-  showSensitive: Record<string, boolean>;
-  setShowSensitive: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   copiedKey: string | null;
   setCopiedKey: React.Dispatch<React.SetStateAction<string | null>>;
   popoverPos: { top: number; left: number };
 }
 
-export const UserDetailPopover: React.FC<UserDetailPopoverProps> = ({
-  user,
-  showSensitive,
-  setShowSensitive,
-  copiedKey,
-  setCopiedKey,
-  popoverPos,
-}) => {
+export const UserDetailPopover: React.FC<UserDetailPopoverProps> = ({ user, copiedKey, setCopiedKey, popoverPos }) => {
+  const [showAuthTime, setShowAuthTime] = React.useState(false);
+  const [showMezonId, setShowMezonId] = React.useState(false);
+  const [showUserId, setShowUserId] = React.useState(false);
+  const [showAud, setShowAud] = React.useState(false);
+
   return (
     <div
       className="animate-fade-in fixed z-[9999] rounded-xl border border-gray-200 bg-white p-0 shadow-2xl"
@@ -57,47 +61,119 @@ export const UserDetailPopover: React.FC<UserDetailPopoverProps> = ({
         {typeof user.email === 'string' && user.email && (
           <div className="mb-2 text-center text-xs text-gray-600">{user.email}</div>
         )}
+
         <div className="rounded-lg bg-gray-50 p-1" style={{ width: '100%', marginBottom: 0 }}>
-          {['auth_time', 'mezon_id', 'user_id', 'aud'].map((key) => (
-            <div key={key} className="flex items-center justify-between py-1">
-              <span className="text-xs font-medium text-gray-500 capitalize">{key.replace(/_/g, ' ')}</span>
-              <div className="flex items-center gap-1">
-                <span className="font-mono text-xs text-gray-700">
-                  {showSensitive[key]
-                    ? key === 'aud'
-                      ? Array.isArray(user[key])
-                        ? String((user[key] as string[]).join(', '))
-                        : String(user[key] ?? '')
-                      : String(user[key] ?? '')
-                    : '••••••••'}
-                </span>
-                <button
-                  className="ml-1 text-gray-400 hover:text-gray-700"
-                  onClick={() => setShowSensitive((s) => ({ ...s, [key]: !s[key] }))}
-                  title={showSensitive[key] ? 'Ẩn' : 'Hiện'}
-                >
-                  {showSensitive[key] ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-                <button
-                  className="ml-1 text-gray-400 hover:text-gray-700"
-                  onClick={() => {
-                    navigator.clipboard.writeText(
-                      key === 'aud'
-                        ? Array.isArray(user[key])
-                          ? (user[key] as string[]).join(', ')
-                          : String(user[key])
-                        : String(user[key])
-                    );
-                    setCopiedKey(key);
-                    setTimeout(() => setCopiedKey(null), 1000);
-                  }}
-                  title="Copy"
-                >
-                  {copiedKey === key ? <Check size={17} className="text-green-600" /> : <Copy size={15} />}
-                </button>
-              </div>
+          {/* auth_time */}
+          <div className="flex items-center justify-between py-1">
+            <span className="text-xs font-medium text-gray-500 capitalize">Auth time</span>
+            <div className="flex items-center gap-1">
+              <span className="font-mono text-xs text-gray-700">
+                {showAuthTime ? String(user.auth_time ?? '') : '••••••••'}
+              </span>
+              <button
+                className="ml-1 text-gray-400 hover:text-gray-700"
+                onClick={() => setShowAuthTime((v) => !v)}
+                title={showAuthTime ? 'Ẩn' : 'Hiện'}
+              >
+                {showAuthTime ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+              <button
+                className="ml-1 text-gray-400 hover:text-gray-700"
+                onClick={() => {
+                  navigator.clipboard.writeText(String(user.auth_time ?? ''));
+                  setCopiedKey('auth_time');
+                  setTimeout(() => setCopiedKey(null), 1000);
+                }}
+                title="Copy"
+              >
+                {copiedKey === 'auth_time' ? <Check size={17} className="text-green-600" /> : <Copy size={15} />}
+              </button>
             </div>
-          ))}
+          </div>
+
+          {/* mezon_id */}
+          <div className="flex items-center justify-between py-1">
+            <span className="text-xs font-medium text-gray-500 capitalize">Mezon ID</span>
+            <div className="flex items-center gap-1">
+              <span className="font-mono text-xs text-gray-700">
+                {showMezonId ? String(user.mezon_id ?? '') : '••••••••'}
+              </span>
+              <button
+                className="ml-1 text-gray-400 hover:text-gray-700"
+                onClick={() => setShowMezonId((v) => !v)}
+                title={showMezonId ? 'Ẩn' : 'Hiện'}
+              >
+                {showMezonId ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+              <button
+                className="ml-1 text-gray-400 hover:text-gray-700"
+                onClick={() => {
+                  navigator.clipboard.writeText(String(user.mezon_id ?? ''));
+                  setCopiedKey('mezon_id');
+                  setTimeout(() => setCopiedKey(null), 1000);
+                }}
+                title="Copy"
+              >
+                {copiedKey === 'mezon_id' ? <Check size={17} className="text-green-600" /> : <Copy size={15} />}
+              </button>
+            </div>
+          </div>
+
+          {/* user_id */}
+          <div className="flex items-center justify-between py-1">
+            <span className="text-xs font-medium text-gray-500 capitalize">User ID</span>
+            <div className="flex items-center gap-1">
+              <span className="font-mono text-xs text-gray-700">
+                {showUserId ? String(user.user_id ?? '') : '••••••••'}
+              </span>
+              <button
+                className="ml-1 text-gray-400 hover:text-gray-700"
+                onClick={() => setShowUserId((v) => !v)}
+                title={showUserId ? 'Ẩn' : 'Hiện'}
+              >
+                {showUserId ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+              <button
+                className="ml-1 text-gray-400 hover:text-gray-700"
+                onClick={() => {
+                  navigator.clipboard.writeText(String(user.user_id ?? ''));
+                  setCopiedKey('user_id');
+                  setTimeout(() => setCopiedKey(null), 1000);
+                }}
+                title="Copy"
+              >
+                {copiedKey === 'user_id' ? <Check size={17} className="text-green-600" /> : <Copy size={15} />}
+              </button>
+            </div>
+          </div>
+
+          {/* aud */}
+          <div className="flex items-center justify-between py-1">
+            <span className="text-xs font-medium text-gray-500 capitalize">Aud</span>
+            <div className="flex items-center gap-1">
+              <span className="font-mono text-xs text-gray-700">
+                {showAud ? (Array.isArray(user.aud) ? user.aud.join(', ') : String(user.aud ?? '')) : '••••••••'}
+              </span>
+              <button
+                className="ml-1 text-gray-400 hover:text-gray-700"
+                onClick={() => setShowAud((v) => !v)}
+                title={showAud ? 'Ẩn' : 'Hiện'}
+              >
+                {showAud ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+              <button
+                className="ml-1 text-gray-400 hover:text-gray-700"
+                onClick={() => {
+                  navigator.clipboard.writeText(Array.isArray(user.aud) ? user.aud.join(', ') : String(user.aud ?? ''));
+                  setCopiedKey('aud');
+                  setTimeout(() => setCopiedKey(null), 1000);
+                }}
+                title="Copy"
+              >
+                {copiedKey === 'aud' ? <Check size={17} className="text-green-600" /> : <Copy size={15} />}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
