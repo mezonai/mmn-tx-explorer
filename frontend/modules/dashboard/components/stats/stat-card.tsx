@@ -27,9 +27,11 @@ export const StatCard = ({ icon: Icon, title, value, subValue }: StatCardProps) 
             <Skeleton className="h-9 w-28" />
           ) : (
             <div>
-              <span className="text-3xl font-semibold">{NumberUtil.formatWithCommas(value ?? 0)}</span>
+              <span className="text-tertiary-600 text-3xl font-semibold">
+                {NumberUtil.formatWithCommas(value ?? 0)}
+              </span>
               <span>&nbsp;</span>
-              <span className="text-base font-medium">{subValue}</span>
+              <span className="text-tertiary-600 text-base font-medium">{subValue}</span>
             </div>
           )}
         </div>
