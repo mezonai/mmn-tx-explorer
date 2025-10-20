@@ -36,6 +36,6 @@ run dong service
     cd indexer
     docker-compose up -d postgres
     go build -o main -tags=production
-    ./main migrate-postgres # Run migration dong server
+    ./main dong-migrate-postgres # Run migration dong server
     ./main dong-service # Starts dong API server
 ```

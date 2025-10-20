@@ -35,12 +35,12 @@ func RunDongMigratePostgres(cmd *cobra.Command, args []string) {
 
 func LoadPostgresConfigFromEnv() *migration.ConfigPostgres {
 	return &migration.ConfigPostgres{
-		Host:     getEnvOrDefault("STORAGE_MAIN_POSTGRES_HOST", "localhost"),
-		Port:     getEnvOrDefaultInt("STORAGE_MAIN_POSTGRES_PORT", 5432),
-		Username: getEnvOrDefault("STORAGE_MAIN_POSTGRES_USERNAME", "admin"),
-		Password: getEnvOrDefault("STORAGE_MAIN_POSTGRES_PASSWORD", "password"),
-		Database: getEnvOrDefault("STORAGE_MAIN_POSTGRES_DATABASE", "dong-services"),
-		SSLMode:  getEnvOrDefault("STORAGE_MAIN_POSTGRES_SSLMODE", "disable"),
+		Host:     getEnvOrDefault("DONG_POSTGRES_HOST", "localhost"),
+		Port:     getEnvOrDefaultInt("STORAGE_DONG_POSTGRES_PORT", 5432),
+		Username: getEnvOrDefault("DONG_POSTGRES_USERNAME", "admin"),
+		Password: getEnvOrDefault("DONG_POSTGRES_PASSWORD", "password"),
+		Database: getEnvOrDefault("DONG_POSTGRES_DATABASE", "dong-services"),
+		SSLMode:  getEnvOrDefault("DONG_POSTGRES_SSLMODE", "disable"),
 	}
 }
 
