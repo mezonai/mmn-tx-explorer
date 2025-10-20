@@ -55,6 +55,7 @@ type StorageConfig struct {
 	Staging      StorageConnectionConfig `mapstructure:"staging"`
 	Main         StorageConnectionConfig `mapstructure:"main"`
 	Orchestrator StorageConnectionConfig `mapstructure:"orchestrator"`
+	Dong         StorageConnectionConfig `mapstructure:"dong"`
 }
 type StorageType string
 
@@ -62,6 +63,7 @@ const (
 	StorageTypeMain         StorageType = "main"
 	StorageTypeStaging      StorageType = "staging"
 	StorageTypeOrchestrator StorageType = "orchestrator"
+	StorageTypeDong         StorageType = "dong"
 )
 
 type StorageConnectionConfig struct {
