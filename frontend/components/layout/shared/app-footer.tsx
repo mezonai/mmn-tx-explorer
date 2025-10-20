@@ -27,7 +27,7 @@ export function AppFooter() {
         </div>
 
         <p className="text-quaternary-500 text-base font-normal">
-          © {format(Date.now(), YEAR_FORMAT)} MMN Explorer. All rights reserved.
+          © {format(Date.now(), YEAR_FORMAT)} Mezon Đồng. All rights reserved.
         </p>
       </div>
     </footer>
