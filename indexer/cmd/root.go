@@ -3,10 +3,10 @@ package cmd
 import (
 	"os"
 
+	configs "github.com/mezonai/mmn-tx-explorer/indexer/configs"
+	customLogger "github.com/mezonai/mmn-tx-explorer/indexer/internal/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	configs "github.com/thirdweb-dev/indexer/configs"
-	customLogger "github.com/thirdweb-dev/indexer/internal/log"
 )
 
 var (
@@ -274,6 +274,7 @@ func init() {
 	rootCmd.AddCommand(validateCmd)
 	rootCmd.AddCommand(migrateValidationCmd)
 	rootCmd.AddCommand(migratePostgresCmd)
+	rootCmd.AddCommand(dongServiceCmd)
 }
 
 func initConfig() {

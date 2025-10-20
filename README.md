@@ -29,4 +29,5 @@ run indexer with go for development
     ./main migrate-postgres
     ./main orchestrator   # Starts the indexer
     ./main api           # Starts the API server
+    ./main dong-service # Starts dong API server
 ```

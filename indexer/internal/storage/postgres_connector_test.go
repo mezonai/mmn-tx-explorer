@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
+	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	config "github.com/thirdweb-dev/indexer/configs"
-	"github.com/thirdweb-dev/indexer/internal/common"
 )
 
 func TestPostgresConnector_BlockFailures(t *testing.T) {

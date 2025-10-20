@@ -5,10 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
+	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/rs/zerolog/pkgerrors"
-	config "github.com/thirdweb-dev/indexer/configs"
 )
 
 func InitLogger() {
@@ -27,7 +27,7 @@ func NewLogger(name string) zerolog.Logger {
 
 	// Create multi-writer for both console and file output
 	var writers []io.Writer
-	
+
 	// Console output (always enabled)
 	consoleWriter := os.Stderr
 	if config.Cfg.Log.Prettify {
@@ -35,7 +35,7 @@ func NewLogger(name string) zerolog.Logger {
 	} else {
 		writers = append(writers, consoleWriter)
 	}
-	
+
 	// File output (if enabled)
 	if config.Cfg.Log.FileEnabled && config.Cfg.Log.FilePath != "" {
 		// Ensure log directory exists
@@ -52,7 +52,7 @@ func NewLogger(name string) zerolog.Logger {
 			}
 		}
 	}
-	
+
 	// Create multi-writer
 	var output io.Writer
 	if len(writers) == 1 {
@@ -63,7 +63,7 @@ func NewLogger(name string) zerolog.Logger {
 
 	logger := zerolog.New(output).With().Timestamp().Str("component", name).Logger()
 	logger = logger.With().Caller().Logger()
-	
+
 	return logger
 }
 
@@ -75,7 +75,7 @@ func createFileWriter(logConfig config.LogConfig) (io.Writer, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Note: For production use, consider implementing log rotation
 	// using a library like gopkg.in/natefinch/lumberjack.v2
 	return file, nil

@@ -6,7 +6,7 @@ package rpc
 // 	"time"
 
 // 	"github.com/rs/zerolog/log"
-// 	"github.com/thirdweb-dev/indexer/internal/common"
+// 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
 // )
 
 type RPCFetchBatchResult[K any, T any] struct {

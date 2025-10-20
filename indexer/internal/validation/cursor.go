@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"os"
 
-	"github.com/thirdweb-dev/indexer/internal/storage"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
 )
 
 type Cursor struct {
