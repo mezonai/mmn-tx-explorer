@@ -1,6 +1,5 @@
 'use client';
 
-import { GlobalSearch } from '@/modules/global-search/components';
 import { SidebarInset, SidebarProvider } from '../ui/sidebar';
 import { AppFooter, AppNavbar, AppSidebar } from './shared';
 
