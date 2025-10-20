@@ -25,8 +25,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | MMN Explorer',
-    default: 'MMN Explorer',
+    template: '%s | Mezon Đồng',
+    default: 'Mezon Đồng',
   },
   description: 'Mezon Mainnet Transaction Explorer',
 };
