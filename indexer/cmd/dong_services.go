@@ -30,12 +30,15 @@ func RunDongServiceApi(cmd *cobra.Command, args []string) {
 	r := gin.New()
 	r.Use(middleware.Logger())
 	r.Use(gin.Recovery())
-
+    
 	root := r.Group("/services")
 	{
 		// root.Use(middleware.Authorization)
 		root.Use(middleware.Cors)
 		root.POST("/campaign/create", dong_handlers.CreateCampaign)
+	    root.GET("/campaign/list", dong_handlers.ListCampaigns)
+		root.GET("/campaign/:id", dong_handlers.GetCampaign)
+		root.POST("/donation/update", dong_handlers.UpdateCampaign)
 	}
 
 	r.GET("/health", func(c *gin.Context) {
