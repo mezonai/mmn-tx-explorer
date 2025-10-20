@@ -1,49 +1,50 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
-  const state = searchParams.get('state');
-  const cookieStore = await cookies();
-  const storedState = cookieStore.get('oauth_state')?.value;
+  const redirect_uri = process.env.NEXT_PUBLIC_OAUTH2_REDIRECT_URI || '';
+  const backendRaw = process.env.NEXT_PUBLIC_APP_API_URL || process.env.NEXT_PUBLIC_BACKEND_API_URL || '';
+  const backend = backendRaw.replace(/\/$/, '');
 
-  if (!code || !state || state !== storedState) {
-    const baseUrl = `${request.headers.get('x-forwarded-proto') || 'https'}://${request.headers.get('host')}`;
-    const response = NextResponse.redirect(`${baseUrl}/user?error=invalid_state`);
-    response.cookies.set('oauth_state', '', { maxAge: 0, path: '/' });
-    return response;
+  if (!code) {
+    return NextResponse.redirect('/?error=missing_code');
   }
 
   try {
-    const tokenRes = await fetch(`${process.env.NEXT_PUBLIC_OAUTH2_API_URL}/oauth2/token`, {
+    const response = await fetch(`${backend}/1337/oauth`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'authorization_code',
-        code,
-        client_id: process.env.NEXT_PUBLIC_OAUTH2_CLIENT_ID!,
-        client_secret: process.env.OAUTH2_CLIENT_SECRET!,
-        redirect_uri: process.env.NEXT_PUBLIC_OAUTH2_REDIRECT_URI!,
-      }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, redirect_uri }),
     });
-    const tokenData = await tokenRes.json();
-    if (!tokenData.access_token) throw new Error('No access token');
 
-    const baseUrl = `${request.headers.get('x-forwarded-proto') || 'https'}://${request.headers.get('host')}`;
-    const response = NextResponse.redirect(`${baseUrl}/`);
-    response.cookies.set('auth_token', tokenData.access_token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      path: '/',
+    if (!response.ok) {
+      console.error('Failed to exchange code with backend:', response.status);
+      return NextResponse.redirect('/?error=oauth_failed');
+    }
+
+    const oauthData = await response.json();
+    console.log('OAuth data received from backend:', oauthData);
+    // Trả về HTML có script lưu vào localStorage rồi redirect
+    const html = `<!DOCTYPE html>
+      <html lang="en">
+      <head><meta charset="UTF-8"><title>OAuth Callback</title></head>
+      <body>
+        <script>
+          window.localStorage.setItem('oauth_data', ${JSON.stringify(JSON.stringify(oauthData))});
+          window.location.href = '/';
+        </script>
+        <noscript>Vui lòng bật Javascript để tiếp tục.</noscript>
+      </body>
+      </html>`;
+    return new Response(html, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html',
+      },
     });
-    response.cookies.set('oauth_state', '', { maxAge: 0, path: '/' });
-    return response;
-  } catch {
-    const baseUrl = `${request.headers.get('x-forwarded-proto') || 'https'}://${request.headers.get('host')}`;
-    const response = NextResponse.redirect(`${baseUrl}/?error=auth_failed`);
-    response.cookies.set('oauth_state', '', { maxAge: 0, path: '/' });
-    return response;
+  } catch (error) {
+    console.error('Error during OAuth callback processing:', error);
+    return NextResponse.redirect('/?error=oauth_error');
   }
 }
