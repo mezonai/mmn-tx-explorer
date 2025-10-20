@@ -275,6 +275,7 @@ func init() {
 	rootCmd.AddCommand(migrateValidationCmd)
 	rootCmd.AddCommand(migratePostgresCmd)
 	rootCmd.AddCommand(dongServiceCmd)
+	rootCmd.AddCommand(dongMigratePostgresCmd)
 }
 
 func initConfig() {
