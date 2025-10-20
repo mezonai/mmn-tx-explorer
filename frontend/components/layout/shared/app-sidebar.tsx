@@ -44,7 +44,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <GlobalSearch className="mb-5 w-full" />
-            <Accordion type="single" className="w-full" defaultValue="item-0">
+            <Accordion type="multiple" className="w-full">
               {navGroupItems.map((group, index) => (
                 <AccordionItem key={group.title} value={`item-${index}`} className="border-none">
                   <AccordionTrigger className="hover:bg-accent hover:text-accent-foreground rounded-md px-3 py-2 text-sm font-medium hover:no-underline">
