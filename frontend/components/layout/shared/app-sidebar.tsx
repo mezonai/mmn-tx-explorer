@@ -19,7 +19,9 @@ import {
 import { ROUTES } from '@/configs/routes.config';
 import { cn } from '@/lib/utils';
 import { sidebarNavItems } from '../navigation/nav-items';
+
 import { AppSidebarItem } from './app-sidebar-item';
+import { SidebarUserInfo } from './sidebar-user-info';
 
 export function AppSidebar() {
   const { toggleSidebar, state } = useSidebar();
@@ -49,8 +51,8 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-2 py-4">
-        <SidebarGroup>
+      <SidebarContent className="flex h-full flex-col px-2 py-4">
+        <SidebarGroup className="flex-1">
           <SidebarGroupContent>
             <SidebarMenu>
               {sidebarNavItems.map((item) => (
@@ -59,6 +61,7 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        <SidebarUserInfo />
       </SidebarContent>
     </Sidebar>
   );
