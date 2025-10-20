@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { AppLogo, ThemeToggle } from '@/components/shared';
+import { AppLogo } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/configs/routes.config';
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -18,10 +18,6 @@ export function AppNavbar() {
     <header className="bg-card border-border supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 border-b backdrop-blur">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          <div className="sm:hidden">
-            <SidebarTrigger />
-          </div>
-
           <div className="flex items-center gap-4">
             <Link href={ROUTES.HOME}>
               <AppLogo />
@@ -34,7 +30,7 @@ export function AppNavbar() {
           </nav>
 
           <div className="flex items-center gap-4">
-            <ThemeToggle />
+            {/* <ThemeToggle /> */}
             <Button
               onClick={isAuthenticated ? logout : login}
               className={`hidden rounded-lg md:flex ${
@@ -52,6 +48,10 @@ export function AppNavbar() {
                 `Logout`
               )}
             </Button>
+          </div>
+
+          <div className="sm:hidden">
+            <SidebarTrigger />
           </div>
         </div>
       </div>
