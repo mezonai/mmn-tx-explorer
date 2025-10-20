@@ -185,13 +185,6 @@ type ValidationConfig struct {
 	Mode string `mapstructure:"mode"` // "disabled", "minimal", "strict"
 }
 
-type RedisConfig struct {
-	Host     string `mapstructure:"host"`
-	Port     string `mapstructure:"port"`
-	Password string `mapstructure:"password"`
-	DB       int    `mapstructure:"db"`
-}
-
 type Config struct {
 	RPC              RPCConfig              `mapstructure:"rpc"`
 	Log              LogConfig              `mapstructure:"log"`
@@ -206,7 +199,6 @@ type Config struct {
 	Validation       ValidationConfig       `mapstructure:"validation"`
 	JWT              JWTConfig              `mapstructure:"jwt"`
 	Oauth            OauthConfig            `mapstructure:"oauth"`
-	Redis            RedisConfig            `mapstructure:"redis"`
 }
 
 var Cfg Config
