@@ -34,7 +34,7 @@ function NavbarMenu() {
       <NavigationMenuList>
         {navGroupItems.map((item) => (
           <NavigationMenuItem key={item.title} className="relative">
-            <NavigationMenuTrigger className="group text-foreground flex items-center justify-between gap-1 rounded-md px-3 py-2 text-sm font-medium transition-colors outline-none select-none">
+            <NavigationMenuTrigger className="group hover:text-primary text-secondary-foreground flex items-center justify-between gap-1 rounded-md px-3 py-2 text-sm font-medium transition-colors outline-none select-none">
               {item.title}
             </NavigationMenuTrigger>
             <NavigationMenuContent className="bg-background min-w-56 p-3">

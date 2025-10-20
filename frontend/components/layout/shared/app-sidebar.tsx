@@ -20,6 +20,7 @@ import { NavbarItem } from '@/components/shared/navbar';
 import { Button } from '@/components/ui/button';
 import { useAuth, useAuthActions } from '@/providers';
 import { GlobalSearch } from '@/modules/global-search/components';
+import { ArrowRightToLine } from 'lucide-react';
 
 export function AppSidebar() {
   const { isAuthenticated } = useAuth();
@@ -70,7 +71,14 @@ export function AppSidebar() {
               : 'text-foreground bg-background hover:bg-active hover:text-quaternary-500 dark:bg-input/30 dark:border-input dark:hover:bg-input/50 border shadow-xs'
           }`}
         >
-          {!isAuthenticated ? `Login with Mezon` : `Logout`}
+          {!isAuthenticated ? (
+            <>
+              <span>Login with Mezon</span>
+              <ArrowRightToLine />
+            </>
+          ) : (
+            `Logout`
+          )}
         </Button>
       </SidebarContent>
     </Sidebar>
