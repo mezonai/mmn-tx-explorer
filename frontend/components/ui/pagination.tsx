@@ -217,7 +217,7 @@ export const Pagination = ({
           role="button"
           tabIndex={-1}
         >
-          <span className="text-secondary-hover text-sm font-semibold">{currentPage}</span>
+          <span className="text-secondary-700 text-sm font-semibold">{currentPage}</span>
         </div>
 
         {/* Next page number */}
