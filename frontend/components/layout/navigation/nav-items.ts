@@ -8,7 +8,7 @@ export interface NavItem {
   title: string;
   href: string;
   target?: string;
-  icon: ComponentType<SVGProps<SVGSVGElement>>;
+  icon?: ComponentType<SVGProps<SVGSVGElement>>;
 }
 
 export interface NavGroup {
@@ -72,21 +72,15 @@ export const navGroupItems: NavGroup[] = [
     items: [
       {
         title: 'Cobar.vn',
-        href: 'https://cobar.vn',
-        target: '_blank',
-        icon: BarChartSquare02,
+        href: ROUTES.COBAR,
       },
       {
         title: 'Mezon Game',
-        href: 'https://top.mezon.ai',
-        target: '_blank',
-        icon: BarChartSquare02,
+        href: ROUTES.MEZON_GAME,
       },
       {
         title: 'Developer',
-        href: 'https://mezon.ai/developers',
-        target: '_blank',
-        icon: BarChartSquare02,
+        href: ROUTES.DEVELOPER,
       },
     ],
   },
@@ -95,8 +89,7 @@ export const navGroupItems: NavGroup[] = [
     items: [
       {
         title: 'Profile',
-        href: '#',
-        icon: BarChartSquare02,
+        href: ROUTES.PROFILE,
       },
     ],
   },

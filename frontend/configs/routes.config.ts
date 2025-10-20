@@ -10,4 +10,8 @@ export const ROUTES = {
   TRANSFER: '/transfer',
   SWAP: '/swap',
   STAKE: '/stake',
+  COBAR: '/cobar',
+  MEZON_GAME: '/mezon-game',
+  DEVELOPER: '/developer',
+  PROFILE: '/profile',
 } as const;
