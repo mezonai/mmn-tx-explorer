@@ -70,7 +70,7 @@ export const navGroupItems: NavGroup[] = [
         href: ROUTES.DONATION_CAMPAIGN,
       },
       {
-        title: 'Li Xì',
+        title: 'Lì Xì',
         href: ROUTES.LI_XI,
       },
     ],
