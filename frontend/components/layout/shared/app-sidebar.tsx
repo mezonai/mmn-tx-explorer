@@ -2,9 +2,7 @@
 
 import Link from 'next/link';
 
-import { ChevronLeft } from '@/assets/icons';
 import { AppLogo } from '@/components/shared';
-import { Button } from '@/components/ui/button';
 import {
   Sidebar,
   SidebarContent,
@@ -15,17 +13,22 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from '@/components/ui/sidebar';
 import { ROUTES } from '@/configs/routes.config';
-import { cn } from '@/lib/utils';
-import { sidebarNavItems } from '../navigation/nav-items';
-import { AppSidebarItem } from './app-sidebar-item';
-import { SidebarAuthPanel } from '@/modules/auth/components/account-section/account-section';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { navGroupItems } from '../navigation/nav-items';
+import { NavbarItem } from '@/components/shared/navbar';
+import { Button } from '@/components/ui/button';
+import { useAuth, useAuthActions } from '@/providers';
+import { GlobalSearch } from '@/modules/global-search/components';
+import { ArrowRightToLine } from 'lucide-react';
+
 export function AppSidebar() {
-  const { toggleSidebar, state } = useSidebar();
+  const { isAuthenticated } = useAuth();
+  const { login, logout } = useAuthActions();
+
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="md:hidden">
       <SidebarHeader className="relative px-4">
         <SidebarMenu>
           <SidebarMenuItem>
@@ -36,28 +39,48 @@ export function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-
-        <div className="pointer-events-none absolute top-1/2 right-0 hidden translate-x-1/2 -translate-y-1/2 md:block md:opacity-0 md:transition-opacity md:group-hover:pointer-events-auto md:group-hover:opacity-100">
-          <Button variant="outline" size="icon" className="aspect-square size-fit p-1.5" onClick={toggleSidebar}>
-            <ChevronLeft
-              className={cn(
-                'text-foreground-quaternary-400 size-4 transition-transform',
-                state === 'collapsed' && 'rotate-180'
-              )}
-            />
-          </Button>
-        </div>
       </SidebarHeader>
-      <SidebarContent className="px-2 py-4">
+
+      <SidebarContent className="justify-between px-2 py-4">
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {sidebarNavItems.map((item) => (
-                <AppSidebarItem key={item.href} item={item} />
+            <GlobalSearch className="mb-5 w-full" />
+            <Accordion type="multiple" className="w-full">
+              {navGroupItems.map((group, index) => (
+                <AccordionItem key={group.title} value={`item-${index}`} className="border-none">
+                  <AccordionTrigger className="hover:bg-accent hover:text-accent-foreground rounded-md px-3 py-2 text-sm font-medium hover:no-underline">
+                    {group.title}
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-2">
+                    <div className="ml-4 space-y-1">
+                      {group.items.map((item) => (
+                        <NavbarItem key={item.href} item={item} />
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
               ))}
-            </SidebarMenu>
+            </Accordion>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        <Button
+          onClick={isAuthenticated ? logout : login}
+          className={`${
+            !isAuthenticated
+              ? 'bg-brand-secondary-700 hover:bg-brand-secondary-700/90 font-semibold text-white shadow-xs'
+              : 'text-foreground bg-background hover:bg-active hover:text-quaternary-500 dark:bg-input/30 dark:border-input dark:hover:bg-input/50 border shadow-xs'
+          }`}
+        >
+          {!isAuthenticated ? (
+            <>
+              <span>Login with Mezon</span>
+              <ArrowRightToLine />
+            </>
+          ) : (
+            `Logout`
+          )}
+        </Button>
       </SidebarContent>
       <SidebarFooter>
         <SidebarAuthPanel />
