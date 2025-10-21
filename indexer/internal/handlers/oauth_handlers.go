@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"time"
-
+	"log"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -61,7 +61,10 @@ func OauthTokenHandler(c *gin.Context) {
 	}
 	defer tokenResp.Body.Close()
 	body, _ := io.ReadAll(tokenResp.Body)
+	// print token data log
+	log.Printf("Token data: %s", string(body))
 	var tokenData OauthTokenResponse
+
 	if err := json.Unmarshal(body, &tokenData); err != nil || tokenData.AccessToken == "" {
 		c.JSON(http.StatusBadGateway, gin.H{"error": "Invalid token response"})
 		return
