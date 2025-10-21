@@ -1,5 +1,6 @@
 'use client';
 
+import axios from 'axios';
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 interface AppContextType {
@@ -70,13 +71,21 @@ export function useAuthActions() {
   const { setIsAuthenticated, setUser } = useApp();
 
   const login = () => {
-    setIsAuthenticated(true);
-    setUser(MOCK_USER);
+    window.location.href = '/oauth2/login';
   };
 
   const logout = () => {
-    setIsAuthenticated(false);
+    const refreshToken = localStorage.getItem('refresh_token');
+    axios.post('/oauth2/logout', { refresh_token: refreshToken });
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('key_pair');
+    localStorage.removeItem('zkProof');
     setUser(null);
+    setIsAuthenticated(false);
+    window.location.href = '/';
   };
 
   return { login, logout };

@@ -6,9 +6,8 @@ import React, { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AuthenticationService } from '@/modules/auth/api';
 import type { LoginResponse } from '@/modules/auth/type';
-import axios from 'axios';
 import { MmnClient, ZkClient } from 'mmn-client-js';
-import { useUser, useAuth } from '@/providers/AppProvider';
+import { useUser, useAuth, useAuthActions } from '@/providers/AppProvider';
 
 const mmnURL = process.env.NEXT_PUBLIC_CHAT_APP_MMN_API_URL ?? '';
 const zkURL = process.env.NEXT_PUBLIC_CHAT_APP_ZK_API_URL ?? '';
@@ -26,20 +25,7 @@ export const SidebarAuthPanel = () => {
   const { user, setUser } = useUser();
   const { setIsAuthenticated } = useAuth();
   const code = searchParams.get('code');
-
-  const mezonLogin = () => {
-    window.location.href = '/oauth2/login';
-  };
-
-  useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (stored && !user) {
-      try {
-        setUser(JSON.parse(stored));
-        setIsAuthenticated(true);
-      } catch {}
-    }
-  }, [setUser, setIsAuthenticated, user]);
+  const { login, logout } = useAuthActions();
 
   useEffect(() => {
     if (!code) return;
@@ -83,30 +69,14 @@ export const SidebarAuthPanel = () => {
             {user.avatar && <img src={user.avatar} alt="avatar" className="h-8 w-8 rounded-full" />}
             <span className="flex-1 truncate">{user.username || user.email}</span>
           </div>
-          <Button
-            className="mt-3 w-full"
-            variant="outline"
-            onClick={() => {
-              const refreshToken = localStorage.getItem('refresh_token');
-              axios.post('/oauth2/logout', { refresh_token: refreshToken });
-              localStorage.removeItem('access_token');
-              localStorage.removeItem('auth_token');
-              localStorage.removeItem('refresh_token');
-              localStorage.removeItem('user');
-              localStorage.removeItem('key_pair');
-              localStorage.removeItem('zkProof');
-              setUser(null);
-              setIsAuthenticated(false);
-              window.location.href = '/';
-            }}
-          >
+          <Button className="mt-3 w-full" variant="outline" onClick={logout}>
             Logout
           </Button>
         </SidebarGroupContent>
       </SidebarGroup>
     </SidebarContent>
   ) : (
-    <Button onClick={mezonLogin}>
+    <Button onClick={login}>
       <Circle />
       Login with Mezon
     </Button>
