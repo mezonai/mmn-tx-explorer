@@ -25,16 +25,26 @@ export const navGroupItems: NavGroup[] = [
         href: ROUTES.HOME,
         icon: BarChartSquare02,
       },
+      {
+        title: 'Transactions',
+        href: ROUTES.TRANSACTIONS,
+        icon: CreditCardRefresh,
+      },
+      {
+        title: 'Blocks',
+        href: ROUTES.BLOCKS,
+        icon: Cube01,
+      },
+      {
+        title: 'Top accounts',
+        href: ROUTES.WALLETS,
+        icon: Award04,
+      },
     ],
   },
   {
     title: 'Finance',
     items: [
-      {
-        title: 'Give coffee',
-        href: ROUTES.TRANSFER,
-        icon: CircleDollarSign,
-      },
       {
         title: 'Swap',
         href: ROUTES.SWAP,
@@ -51,19 +61,17 @@ export const navGroupItems: NavGroup[] = [
     title: 'Community',
     items: [
       {
-        title: 'Transactions',
-        href: ROUTES.TRANSACTIONS,
-        icon: CreditCardRefresh,
+        title: 'Give Coffee',
+        href: ROUTES.TRANSFER,
+        icon: CircleDollarSign,
       },
       {
-        title: 'Blocks',
-        href: ROUTES.BLOCKS,
-        icon: Cube01,
+        title: 'Donation Campaign',
+        href: ROUTES.DONATION_CAMPAIGN,
       },
       {
-        title: 'Top accounts',
-        href: ROUTES.WALLETS,
-        icon: Award04,
+        title: 'Li Xì',
+        href: ROUTES.LI_XI,
       },
     ],
   },
