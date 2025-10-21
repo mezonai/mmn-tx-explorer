@@ -1,0 +1,21 @@
+# Server Configuration
+server:
+  host: 0.0.0.0
+  port: 8888
+  gin_mode: debug
+
+database:
+  host: localhost
+  port: 5432
+  user: postgres
+  password: postgres
+  name: dong_db
+  sslmode: disable
+  max_open_conns: 25
+  max_idle_conns: 5
+
+cors:
+  allow_origins: "*"
+  allow_methods: "POST, OPTIONS, GET, PUT, DELETE, PATCH"
+  allow_headers: "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With"
+  allow_credentials: true

@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16.10-alpine3.22
+    container_name: dong-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dong_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - dong-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  dong-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dong-service
+    environment:
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 8888
+      GIN_MODE: debug
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      DATABASE_NAME: dong_db
+      DATABASE_SSLMODE: disable
+      DATABASE_MAX_OPEN_CONNS: 25
+      DATABASE_MAX_IDLE_CONNS: 5
+    ports:
+      - "8888:8888"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - dong-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  dong-network:
+    driver: bridge
+
