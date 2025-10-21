@@ -14,6 +14,7 @@ interface User {
   username: string;
   email?: string;
   avatar?: string;
+  walletAdress: string;
 }
 
 interface AppProviderProps {
@@ -28,6 +29,7 @@ const MOCK_USER: User = {
   username: 'john.doe',
   email: 'john@example.com',
   avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face',
+  walletAdress: 'example.adresss',
 };
 
 export function AppProvider({ children }: AppProviderProps) {

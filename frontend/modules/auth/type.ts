@@ -2,9 +2,9 @@ export interface LoginResponse {
   access_token: string;
   auth_token: string;
   refresh_token: string;
-  user: UserInfo;
+  user: UserInfoResponse;
 }
-export interface UserInfo {
+export interface UserInfoResponse {
   aud: string[];
   auth_time: number;
   avatar: string;

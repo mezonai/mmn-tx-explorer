@@ -4,7 +4,6 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const refresh_token = body.refresh_token;
-    console.log(refresh_token);
     const backend = process.env.NEXT_PUBLIC_APP_API_URL?.replace(/\/$/, '');
     let beRes = null;
     let beStatus = 500;
