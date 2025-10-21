@@ -16,8 +16,11 @@ type OauthConfig struct {
 }
 
 type JWTConfig struct {
-	Secret string `mapstructure:"secret"`
+	Secret      string `mapstructure:"secret"`
+	Refresh_Exp int    `mapstructure:"refresh_exp"`
+	Access_Exp  int    `mapstructure:"access_exp"`
 }
+
 
 type LogConfig struct {
 	Level    string `mapstructure:"level"`

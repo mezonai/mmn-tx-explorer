@@ -3,10 +3,10 @@ package handlers
 import (
 	"encoding/json"
 	"io"
+	// "log"
 	"net/http"
 	"net/url"
 	"time"
-	"log"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -61,8 +61,8 @@ func OauthTokenHandler(c *gin.Context) {
 	}
 	defer tokenResp.Body.Close()
 	body, _ := io.ReadAll(tokenResp.Body)
-	// print token data log
-	log.Printf("Token data: %s", string(body))
+	// // print token data log
+	// log.Printf("Token data: %s", string(body))
 	var tokenData OauthTokenResponse
 
 	if err := json.Unmarshal(body, &tokenData); err != nil || tokenData.AccessToken == "" {
@@ -101,7 +101,7 @@ func OauthTokenHandler(c *gin.Context) {
 		"token_id": tokenID,
 		"user_id":  userInfo.UserID,
 		"type":     "access",
-		"exp":      time.Now().Add(15 * time.Minute).Unix(),
+		"exp":      time.Now().Add(time.Duration(config.Cfg.JWT.Access_Exp) * time.Second).Unix(),
 	}
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
 	signedAccess, err := accessToken.SignedString([]byte(jwtSecret))
@@ -114,7 +114,7 @@ func OauthTokenHandler(c *gin.Context) {
 		"token_id": tokenID,
 		"user_id":  userInfo.UserID,
 		"type":     "refresh",
-		"exp":      time.Now().Add(7 * 24 * time.Hour).Unix(),
+		"exp":      time.Now().Add(time.Duration(config.Cfg.JWT.Refresh_Exp) * time.Second).Unix(),
 	}
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
 	signedRefresh, err := refreshToken.SignedString([]byte(jwtSecret))
@@ -124,8 +124,9 @@ func OauthTokenHandler(c *gin.Context) {
 	}
 
 
-	refreshTTL := 7 * 24 * time.Hour
-	if err := storage.Set(tokenID, userInfo.UserID, refreshTTL); err != nil {
+	tokenTTL := time.Duration(config.Cfg.JWT.Refresh_Exp) * time.Second
+
+	if err := storage.Set(tokenID, userInfo.UserID, tokenTTL); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store token"})
 		return
 	}

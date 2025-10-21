@@ -70,7 +70,6 @@ func RefreshHandler(c *gin.Context) {
 		return
 	}
 
-
 	if err := storage.Delete(oldTokenID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete old refresh token"})
 		return
@@ -81,7 +80,7 @@ func RefreshHandler(c *gin.Context) {
 		"token_id": newTokenID,
 		"user_id":  userID,
 		"type":     "access",
-		"exp":      time.Now().Add(15 * time.Minute).Unix(),
+		"exp":      time.Now().Add(time.Duration(config.Cfg.JWT.Access_Exp) * time.Second).Unix(),
 	}
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
 	signedAccess, err := accessToken.SignedString([]byte(secret))
@@ -94,7 +93,7 @@ func RefreshHandler(c *gin.Context) {
 		"token_id": newTokenID,
 		"user_id":  userID,
 		"type":     "refresh",
-		"exp":      time.Now().Add(7 * 24 * time.Hour).Unix(),
+		"exp":      time.Now().Add(time.Duration(config.Cfg.JWT.Refresh_Exp) * time.Second).Unix(),
 	}
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
 	signedRefresh, err := refreshToken.SignedString([]byte(secret))
@@ -103,8 +102,9 @@ func RefreshHandler(c *gin.Context) {
 		return
 	}
 
-	refreshTTL := 7 * 24 * time.Hour
-	if err := storage.Set(newTokenID, userID, refreshTTL); err != nil {
+	tokenTTL := time.Duration(config.Cfg.JWT.Refresh_Exp) * time.Second
+
+	if err := storage.Set(newTokenID, userID, tokenTTL); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to store new refresh token"})
 		return
 	}
