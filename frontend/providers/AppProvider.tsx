@@ -24,15 +24,6 @@ interface AppProviderProps {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-// Mock user data
-const MOCK_USER: User = {
-  id: '1',
-  username: 'john.doe',
-  email: 'john@example.com',
-  avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face',
-  walletAdress: 'example.adresss',
-};
-
 export function AppProvider({ children }: AppProviderProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);

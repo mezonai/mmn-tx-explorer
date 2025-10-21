@@ -1,10 +1,9 @@
 'use client';
-import React, { useActionState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AuthenticationService } from '@/modules/auth/api';
 import type { LoginResponse } from '@/modules/auth/type';
-import axios from 'axios';
 import { MmnClient, ZkClient } from 'mmn-client-js';
 import { Circle } from 'lucide-react';
 import { useUser, useAuth, useAuthActions } from '@/providers/AppProvider';
@@ -19,11 +18,7 @@ export const zkClient = new ZkClient({
   timeout: 30000,
 });
 
-interface NavBarAuthPanelProps {
-  className?: string;
-}
-
-export const NavBarAuthPanel: React.FC<NavBarAuthPanelProps> = ({ className = '' }) => {
+export const NavBarAuthPanel: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, setUser } = useUser();
@@ -68,7 +63,7 @@ export const NavBarAuthPanel: React.FC<NavBarAuthPanelProps> = ({ className = ''
   }, [code, router, setIsAuthenticated, setUser]);
 
   return user ? (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={'hidden items-center gap-2 md:flex'}>
       <img src={user.avatar} alt="avatar" className="h-8 w-8 rounded-full" width={32} height={32} />
       <span className="max-w-[120px] truncate">{user.username || user.email}</span>
       <Button size="sm" variant="outline" onClick={logout}>
@@ -76,7 +71,7 @@ export const NavBarAuthPanel: React.FC<NavBarAuthPanelProps> = ({ className = ''
       </Button>
     </div>
   ) : (
-    <Button className={className} onClick={login}>
+    <Button className={'hidden md:flex'} onClick={login}>
       <span className="flex items-center gap-2">
         <Circle />
         Login with Mezon
