@@ -21,48 +21,9 @@ import { ROUTES } from '@/configs/routes.config';
 import { cn } from '@/lib/utils';
 import { sidebarNavItems } from '../navigation/nav-items';
 import { AppSidebarItem } from './app-sidebar-item';
-import { Circle } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { MmnClient } from 'mmn-client-js';
+import { SidebarAuthPanel } from '@/modules/auth/components/account-section/account-section';
 export function AppSidebar() {
   const { toggleSidebar, state } = useSidebar();
-  const [user, setUser] = useState(null);
-  const [userid, setUserid] = useState(null);
-  const mmnURL = process.env.NEXT_PUBLIC_CHAT_APP_MMN_API_URL ?? '';
-  const [loading, setLoading] = useState(true);
-  const logoutItem = sidebarNavItems.find((item) => item.title === 'Log Out');
-  const mmnClient = new MmnClient({
-    baseUrl: mmnURL,
-  });
-  const mezonLogin = () => {
-    window.location.href = '/oauth2/login';
-  };
-  const mezonLogout = () => {
-    window.location.href = '/oauth2/logout';
-    setUser(null);
-  };
-
-  useEffect(() => {
-    async function fetchUser() {
-      try {
-        const res = await fetch('/oauth2/userinfo');
-        if (!res.ok) {
-          setUser(null);
-        } else {
-          const data = await res.json();
-          console.log(data);
-          setUserid(data.user_id);
-          setUser(data);
-        }
-      } catch (e) {
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchUser();
-  }, []);
-
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="relative px-4">
@@ -99,34 +60,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        {loading ? (
-          <Button disabled>Loading</Button>
-        ) : user ? (
-          <SidebarContent className="px-2 py-4">
-            <SidebarGroup>
-              <SidebarGroupContent>
-                <div className="flex w-full items-center gap-2 pl-3">
-                  {user.avatar && <img src={user.avatar} alt="avatar" className="h-8 w-8 rounded-full" />}
-                  <span className="flex-1 truncate">{user.name || user.username || user.email}</span>
-                </div>
-                <SidebarMenu>
-                  <AppSidebarItem key={logoutItem!.href} item={logoutItem!} />
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-        ) : (
-          <Button onClick={mezonLogin}>
-            {state === 'collapsed' ? (
-              <Circle className="h-10 w-10" />
-            ) : (
-              <>
-                <Circle />
-                Login with Mezon
-              </>
-            )}
-          </Button>
-        )}
+        <SidebarAuthPanel />
       </SidebarFooter>
     </Sidebar>
   );

@@ -1,18 +1,31 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 
-export async function GET() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('auth_token')?.value;
-  if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+export async function GET(request: Request) {
+  const { searchParams, origin } = new URL(request.url);
+  const code = searchParams.get('code');
+  const redirect_uri = process.env.NEXT_PUBLIC_OAUTH2_REDIRECT_URI || '';
+  const backendRaw = process.env.NEXT_PUBLIC_APP_API_URL || process.env.NEXT_PUBLIC_BACKEND_API_URL || '';
+  const backend = backendRaw.replace(/\/$/, '');
+  if (!code) {
+    return NextResponse.redirect(`${origin}/?error=missing_code`);
+  }
 
-  const userRes = await fetch(`${process.env.NEXT_PUBLIC_OAUTH2_API_URL}/userinfo`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ access_token: token }),
-  });
-  if (!userRes.ok) return NextResponse.json({ error: 'Auth failed' }, { status: 401 });
+  try {
+    const response = await fetch(`${backend}/1337/oauth`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, redirect_uri }),
+    });
 
-  const userData = await userRes.json();
-  return NextResponse.json(userData);
+    if (!response.ok) {
+      console.error('Failed to exchange code with backend:', response.status);
+      return NextResponse.redirect(`${origin}/?error=oauth_failed`);
+    }
+
+    const oauthData = await response.json();
+    return NextResponse.json(oauthData);
+  } catch (error) {
+    console.error('Error during OAuth callback processing:', error);
+    return NextResponse.redirect(`${origin}/?error=oauth_error`);
+  }
 }

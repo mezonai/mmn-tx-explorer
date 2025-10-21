@@ -46,5 +46,5 @@ export const sidebarNavItems: NavItem[] = [
     href: ROUTES.STAKE,
     icon: Sprout,
   },
-  { title: 'Log Out', href: ROUTES.LOGOUT, icon: LogOut },
 ];
+export const authenticationItems: NavItem[] = [{ title: 'Log Out', href: ROUTES.LOGOUT, icon: LogOut }];
