@@ -4,19 +4,9 @@ import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AuthenticationService } from '@/modules/auth/api';
 import type { LoginResponse } from '@/modules/auth/type';
-import { MmnClient, ZkClient } from 'mmn-client-js';
 import { Circle } from 'lucide-react';
 import { useUser, useAuth, useAuthActions } from '@/providers/AppProvider';
-
-const mmnURL = process.env.NEXT_PUBLIC_CHAT_APP_MMN_API_URL ?? '';
-const zkURL = process.env.NEXT_PUBLIC_CHAT_APP_ZK_API_URL ?? '';
-export const mmnClient = new MmnClient({
-  baseUrl: mmnURL,
-});
-export const zkClient = new ZkClient({
-  endpoint: zkURL,
-  timeout: 30000,
-});
+import { mmnClient, zkClient } from '../../utils';
 
 export const NavBarAuthPanel: React.FC = () => {
   const router = useRouter();
