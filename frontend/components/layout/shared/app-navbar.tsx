@@ -25,7 +25,7 @@ export function AppNavbar() {
           </nav>
 
           <div className="flex items-center gap-4">
-            <NavBarAuthPanel className="hidden rounded-lg md:flex" />
+            <NavBarAuthPanel />
           </div>
 
           <div className="sm:hidden">
