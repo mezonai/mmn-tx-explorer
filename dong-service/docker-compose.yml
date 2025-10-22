@@ -37,6 +37,16 @@ services:
       DATABASE_SSLMODE: disable
       DATABASE_MAX_OPEN_CONNS: 25
       DATABASE_MAX_IDLE_CONNS: 5
+      JWT_SECRET: "a75081d475a4cd4e130916f26e3e8d3ebc376fa132e873c057c5a0c5ab26cc06"
+      JWT_REFRESH_EXP: 432000
+      JWT_ACCESS_EXP: 3600
+      OAUTH_CLIENT_ID: "1976233808680194048"
+      OAUTH_CLIENT_SECRET: ">cxIm=C8v[Be0XE0@bius4UhLqu{P&8="
+      OAUTH_TOKEN_URL: "https://oauth2.mezon.ai/oauth2/token"
+      OAUTH_USER_INFO_URL: "https://oauth2.mezon.ai/userinfo"
+      REDIS_ADDRESS: redis:6379
+      REDIS_PASSWORD: ""
+      REDIS_DB: 0
     ports:
       - "8888:8888"
     depends_on:
