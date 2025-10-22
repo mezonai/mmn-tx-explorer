@@ -4,11 +4,11 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const refresh_token = body.refresh_token;
-    const backend = process.env.NEXT_PUBLIC_APP_API_URL?.replace(/\/$/, '');
+    const backend = process.env.NEXT_PUBLIC_BACKEND_API_URL?.replace(/\/$/, '');
     let beRes = null;
     let beStatus = 500;
     if (refresh_token && backend) {
-      const res = await fetch(`${backend}/1337/logout`, {
+      const res = await fetch(`${backend}/logout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refresh_token }),

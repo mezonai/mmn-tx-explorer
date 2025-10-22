@@ -4,14 +4,14 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
   const redirect_uri = process.env.NEXT_PUBLIC_OAUTH2_REDIRECT_URI || '';
-  const backendRaw = process.env.NEXT_PUBLIC_APP_API_URL || process.env.NEXT_PUBLIC_BACKEND_API_URL || '';
+  const backendRaw = process.env.NEXT_PUBLIC_BACKEND_API_URL || '';
   const backend = backendRaw.replace(/\/$/, '');
   if (!code) {
     return NextResponse.redirect(`${origin}/?error=missing_code`);
   }
 
   try {
-    const response = await fetch(`${backend}/1337/oauth`, {
+    const response = await fetch(`${backend}/oauth`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code, redirect_uri }),
