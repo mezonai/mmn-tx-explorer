@@ -1,77 +1,4 @@
 definitions:
-  handlers.LogoutRequest:
-    properties:
-      refresh_token:
-        type: string
-    required:
-    - refresh_token
-    type: object
-  handlers.OauthRequest:
-    properties:
-      code:
-        type: string
-      redirect_uri:
-        type: string
-    required:
-    - code
-    - redirect_uri
-    type: object
-  handlers.OauthResponse:
-    properties:
-      access_token:
-        type: string
-      auth_token:
-        type: string
-      refresh_token:
-        type: string
-      user:
-        $ref: '#/definitions/handlers.OauthUserInfo'
-    type: object
-  handlers.OauthUserInfo:
-    properties:
-      aud:
-        items:
-          type: string
-        type: array
-      auth_time:
-        type: integer
-      avatar:
-        type: string
-      display_name:
-        type: string
-      email:
-        type: string
-      iat:
-        type: integer
-      iss:
-        type: string
-      mezon_id:
-        type: string
-      rat:
-        type: integer
-      sub:
-        type: string
-      user_id:
-        type: string
-      username:
-        type: string
-    type: object
-  handlers.RefreshRequest:
-    properties:
-      refresh_token:
-        type: string
-    required:
-    - refresh_token
-    type: object
-  handlers.RefreshResponse:
-    properties:
-      access_token:
-        type: string
-      refresh_token:
-        type: string
-      user_id:
-        type: string
-    type: object
   models.CreateDonationCampaignRequest:
     properties:
       creator:
@@ -118,6 +45,88 @@ definitions:
       url:
         type: string
     type: object
+  models.HealthResponse:
+    properties:
+      message:
+        type: string
+      status:
+        type: string
+      time:
+        type: string
+    type: object
+  models.LogoutRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  models.OauthRequest:
+    properties:
+      code:
+        type: string
+      redirect_uri:
+        type: string
+    required:
+    - code
+    - redirect_uri
+    type: object
+  models.OauthResponse:
+    properties:
+      access_token:
+        type: string
+      auth_token:
+        type: string
+      refresh_token:
+        type: string
+      user:
+        $ref: '#/definitions/models.OauthUserInfo'
+    type: object
+  models.OauthUserInfo:
+    properties:
+      aud:
+        items:
+          type: string
+        type: array
+      auth_time:
+        type: integer
+      avatar:
+        type: string
+      display_name:
+        type: string
+      email:
+        type: string
+      iat:
+        type: integer
+      iss:
+        type: string
+      mezon_id:
+        type: string
+      rat:
+        type: integer
+      sub:
+        type: string
+      user_id:
+        type: string
+      username:
+        type: string
+    type: object
+  models.RefreshRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  models.RefreshResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+      user_id:
+        type: string
+    type: object
   models.Response:
     properties:
       code:
@@ -152,41 +161,7 @@ info:
   title: Dong Service API
   version: "1.0"
 paths:
-  /api/v1/campaigns:
-    get:
-      description: Get a list of all donation campaigns with pagination
-      parameters:
-      - default: 1
-        description: Page number
-        in: query
-        name: page
-        type: integer
-      - default: 10
-        description: Items per page
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/models.Response'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/models.DonationCampaignResponse'
-                  type: array
-              type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/models.Response'
-      summary: List all donation campaigns
-      tags:
-      - campaigns
+  /api/v1/admin/campaigns:
     post:
       consumes:
       - application/json
@@ -221,42 +196,7 @@ paths:
       summary: Create a new donation campaign
       tags:
       - campaigns
-  /api/v1/campaigns/{id}:
-    get:
-      description: Get details of a specific donation campaign
-      parameters:
-      - description: Campaign ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/models.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.DonationCampaignResponse'
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/models.Response'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/models.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/models.Response'
-      summary: Get a donation campaign by ID
-      tags:
-      - campaigns
+  /api/v1/admin/campaigns/{id}:
     put:
       consumes:
       - application/json
@@ -300,7 +240,7 @@ paths:
       summary: Update a donation campaign
       tags:
       - campaigns
-  /api/v1/campaigns/{id}/activate:
+  /api/v1/admin/campaigns/{id}/activate:
     patch:
       description: Set campaign status to Active
       parameters:
@@ -336,7 +276,7 @@ paths:
       summary: Activate a donation campaign
       tags:
       - campaigns
-  /api/v1/campaigns/{id}/close:
+  /api/v1/admin/campaigns/{id}/close:
     patch:
       description: Set campaign status to Closed
       parameters:
@@ -372,6 +312,77 @@ paths:
       summary: Close a donation campaign
       tags:
       - campaigns
+  /api/v1/campaigns:
+    get:
+      description: Get a list of all donation campaigns with pagination
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.DonationCampaignResponse'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: List all donation campaigns
+      tags:
+      - campaigns
+  /api/v1/campaigns/{id}:
+    get:
+      description: Get details of a specific donation campaign
+      parameters:
+      - description: Campaign ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.DonationCampaignResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Get a donation campaign by ID
+      tags:
+      - campaigns
   /health:
     get:
       consumes:
@@ -383,8 +394,7 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.HealthResponse'
       summary: Health check
       tags:
       - health
@@ -400,16 +410,14 @@ paths:
         name: LogoutRequest
         required: true
         schema:
-          $ref: '#/definitions/handlers.LogoutRequest'
+          $ref: '#/definitions/models.LogoutRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Logout status message (see Description for possible values)
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.Response'
       summary: Logout and revoke refresh token
       tags:
       - Auth
@@ -425,32 +433,26 @@ paths:
         name: OauthRequest
         required: true
         schema:
-          $ref: '#/definitions/handlers.OauthRequest'
+          $ref: '#/definitions/models.OauthRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Access and Refresh token (JWT) and user info
           schema:
-            $ref: '#/definitions/handlers.OauthResponse'
+            $ref: '#/definitions/models.OauthResponse'
         "400":
           description: Missing code or invalid request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.Response'
         "500":
           description: Internal server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.Response'
         "502":
           description: Failed to exchange code or get user info
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.Response'
       summary: OAuth login
       tags:
       - Auth
@@ -466,32 +468,26 @@ paths:
         name: RefreshRequest
         required: true
         schema:
-          $ref: '#/definitions/handlers.RefreshRequest'
+          $ref: '#/definitions/models.RefreshRequest'
       produces:
       - application/json
       responses:
         "200":
           description: New JWT tokens
           schema:
-            $ref: '#/definitions/handlers.RefreshResponse'
+            $ref: '#/definitions/models.RefreshResponse'
         "400":
           description: Missing or invalid refresh token
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.Response'
         "401":
           description: Unauthorized or token not found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.Response'
         "500":
           description: Internal server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.Response'
       summary: Refresh access token
       tags:
       - Auth

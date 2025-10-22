@@ -23,62 +23,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/v1/campaigns": {
-            "get": {
-                "description": "Get a list of all donation campaigns with pagination",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "campaigns"
-                ],
-                "summary": "List all donation campaigns",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 10,
-                        "description": "Items per page",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/models.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/models.DonationCampaignResponse"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    }
-                }
-            },
+        "/api/v1/admin/campaigns": {
             "post": {
                 "description": "Create a new donation campaign",
                 "consumes": [
@@ -136,64 +81,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/campaigns/{id}": {
-            "get": {
-                "description": "Get details of a specific donation campaign",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "campaigns"
-                ],
-                "summary": "Get a donation campaign by ID",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Campaign ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/models.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/models.DonationCampaignResponse"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    }
-                }
-            },
+        "/api/v1/admin/campaigns/{id}": {
             "put": {
                 "description": "Update an existing donation campaign",
                 "consumes": [
@@ -264,7 +152,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/campaigns/{id}/activate": {
+        "/api/v1/admin/campaigns/{id}/activate": {
             "patch": {
                 "description": "Set campaign status to Active",
                 "produces": [
@@ -323,7 +211,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/campaigns/{id}/close": {
+        "/api/v1/admin/campaigns/{id}/close": {
             "patch": {
                 "description": "Set campaign status to Closed",
                 "produces": [
@@ -333,6 +221,122 @@ const docTemplate = `{
                     "campaigns"
                 ],
                 "summary": "Close a donation campaign",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Campaign ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.DonationCampaignResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/campaigns": {
+            "get": {
+                "description": "Get a list of all donation campaigns with pagination",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "campaigns"
+                ],
+                "summary": "List all donation campaigns",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Items per page",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.DonationCampaignResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/campaigns/{id}": {
+            "get": {
+                "description": "Get details of a specific donation campaign",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "campaigns"
+                ],
+                "summary": "Get a donation campaign by ID",
                 "parameters": [
                     {
                         "type": "integer",
@@ -399,8 +403,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/models.HealthResponse"
                         }
                     }
                 }
@@ -426,7 +429,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.LogoutRequest"
+                            "$ref": "#/definitions/models.LogoutRequest"
                         }
                     }
                 ],
@@ -434,10 +437,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Logout status message (see Description for possible values)",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.Response"
                         }
                     }
                 }
@@ -463,7 +463,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.OauthRequest"
+                            "$ref": "#/definitions/models.OauthRequest"
                         }
                     }
                 ],
@@ -471,34 +471,25 @@ const docTemplate = `{
                     "200": {
                         "description": "Access and Refresh token (JWT) and user info",
                         "schema": {
-                            "$ref": "#/definitions/handlers.OauthResponse"
+                            "$ref": "#/definitions/models.OauthResponse"
                         }
                     },
                     "400": {
                         "description": "Missing code or invalid request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.Response"
                         }
                     },
                     "502": {
                         "description": "Failed to exchange code or get user info",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.Response"
                         }
                     }
                 }
@@ -524,7 +515,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.RefreshRequest"
+                            "$ref": "#/definitions/models.RefreshRequest"
                         }
                     }
                 ],
@@ -532,34 +523,25 @@ const docTemplate = `{
                     "200": {
                         "description": "New JWT tokens",
                         "schema": {
-                            "$ref": "#/definitions/handlers.RefreshResponse"
+                            "$ref": "#/definitions/models.RefreshResponse"
                         }
                     },
                     "400": {
                         "description": "Missing or invalid refresh token",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized or token not found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.Response"
                         }
                     }
                 }
@@ -567,118 +549,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "handlers.LogoutRequest": {
-            "type": "object",
-            "required": [
-                "refresh_token"
-            ],
-            "properties": {
-                "refresh_token": {
-                    "type": "string"
-                }
-            }
-        },
-        "handlers.OauthRequest": {
-            "type": "object",
-            "required": [
-                "code",
-                "redirect_uri"
-            ],
-            "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "redirect_uri": {
-                    "type": "string"
-                }
-            }
-        },
-        "handlers.OauthResponse": {
-            "type": "object",
-            "properties": {
-                "access_token": {
-                    "type": "string"
-                },
-                "auth_token": {
-                    "type": "string"
-                },
-                "refresh_token": {
-                    "type": "string"
-                },
-                "user": {
-                    "$ref": "#/definitions/handlers.OauthUserInfo"
-                }
-            }
-        },
-        "handlers.OauthUserInfo": {
-            "type": "object",
-            "properties": {
-                "aud": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "auth_time": {
-                    "type": "integer"
-                },
-                "avatar": {
-                    "type": "string"
-                },
-                "display_name": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "iat": {
-                    "type": "integer"
-                },
-                "iss": {
-                    "type": "string"
-                },
-                "mezon_id": {
-                    "type": "string"
-                },
-                "rat": {
-                    "type": "integer"
-                },
-                "sub": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "handlers.RefreshRequest": {
-            "type": "object",
-            "required": [
-                "refresh_token"
-            ],
-            "properties": {
-                "refresh_token": {
-                    "type": "string"
-                }
-            }
-        },
-        "handlers.RefreshResponse": {
-            "type": "object",
-            "properties": {
-                "access_token": {
-                    "type": "string"
-                },
-                "refresh_token": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
-                }
-            }
-        },
         "models.CreateDonationCampaignRequest": {
             "type": "object",
             "required": [
@@ -744,6 +614,132 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.HealthResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "time": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.LogoutRequest": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.OauthRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "redirect_uri"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "redirect_uri": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.OauthResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "auth_token": {
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/models.OauthUserInfo"
+                }
+            }
+        },
+        "models.OauthUserInfo": {
+            "type": "object",
+            "properties": {
+                "aud": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "auth_time": {
+                    "type": "integer"
+                },
+                "avatar": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "iat": {
+                    "type": "integer"
+                },
+                "iss": {
+                    "type": "string"
+                },
+                "mezon_id": {
+                    "type": "string"
+                },
+                "rat": {
+                    "type": "integer"
+                },
+                "sub": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.RefreshRequest": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.RefreshResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "type": "string"
+                },
+                "user_id": {
                     "type": "string"
                 }
             }

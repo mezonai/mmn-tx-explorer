@@ -40,3 +40,9 @@ func PaginatedSuccessResponse(data interface{}, total int64, page, perPage int) 
 		PerPage: perPage,
 	}
 }
+
+type HealthResponse struct {
+	Status  string `json:"status"`
+	Message string `json:"message"`
+	Time    string `json:"time"`
+}
