@@ -5,10 +5,10 @@ outpkg: mocks
 dir: test/mocks
 mock-build-tags: "!production"
 packages:
-    github.com/thirdweb-dev/indexer/internal/rpc:
+    github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc:
         interfaces:
             IRPCClient:
-    github.com/thirdweb-dev/indexer/internal/storage:
+    github.com/mezonai/mmn-tx-explorer/indexer/internal/storage:
         interfaces:
             IStorage:
             IMainStorage:

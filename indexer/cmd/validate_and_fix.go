@@ -5,13 +5,13 @@ import (
 	"math/big"
 	"strconv"
 
+	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/orchestrator"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/validation"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
-	config "github.com/thirdweb-dev/indexer/configs"
-	"github.com/thirdweb-dev/indexer/internal/orchestrator"
-	"github.com/thirdweb-dev/indexer/internal/rpc"
-	"github.com/thirdweb-dev/indexer/internal/storage"
-	"github.com/thirdweb-dev/indexer/internal/validation"
 )
 
 var (

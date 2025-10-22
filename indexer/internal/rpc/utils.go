@@ -1,7 +1,7 @@
 package rpc
 
 import (
-	config "github.com/thirdweb-dev/indexer/configs"
+	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 )
 
 // TODO: we should detect this automatically

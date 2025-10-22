@@ -4,10 +4,10 @@ import (
 	"math/big"
 	"testing"
 
+	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
+	"github.com/mezonai/mmn-tx-explorer/indexer/test/mocks"
 	"github.com/stretchr/testify/assert"
-	config "github.com/thirdweb-dev/indexer/configs"
-	"github.com/thirdweb-dev/indexer/internal/storage"
-	"github.com/thirdweb-dev/indexer/test/mocks"
 )
 
 // setupTestConfig initializes the global config for testing
