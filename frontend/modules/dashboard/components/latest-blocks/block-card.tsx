@@ -18,7 +18,7 @@ interface BlockCardProps {
 
 export const BlockCard = ({ block }: BlockCardProps) => {
   return (
-    <Card className="p-0">
+    <Card className="bg-card p-0">
       <CardContent className="space-y-2 p-5">
         <div className="flex w-full items-center justify-between gap-3">
           <div className="flex items-center gap-2">
