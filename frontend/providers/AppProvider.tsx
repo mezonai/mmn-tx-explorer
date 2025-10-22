@@ -7,6 +7,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import { AuthenticationService } from '@/modules/auth/api';
 import type { LoginResponse } from '@/modules/auth/type';
 import { mmnClient, zkClient } from '@/modules/auth/utils';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 interface AppContextType {
   isAuthenticated: boolean;
@@ -32,17 +33,21 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export function AppProvider({ children }: AppProviderProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
   useEffect(() => {
     const userStored = localStorage.getItem(STORAGE_KEYS.USER_INFO);
-    if (userStored) setUser(JSON.parse(userStored));
-    if (user) return;
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
+    if (userStored) {
+      setUser(JSON.parse(userStored));
+      return;
+    }
+    const code = searchParams.get('code');
     if (!code) return;
     const fetchUserInfo = async () => {
       try {
         const userInfo: LoginResponse = await AuthenticationService.getUserInfo(code);
         setIsAuthenticated(true);
+        router.replace('/');
         localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, userInfo.access_token);
         localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, userInfo.auth_token);
         localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, userInfo.refresh_token);
