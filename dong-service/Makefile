@@ -1,10 +1,16 @@
-.PHONY: help build run test swagger
+.PHONY: help build run test swagger security-scan osv-scan govulncheck install-security-tools
 
 help: ## Show this help message
-	@echo 'Usage: make [target]'
-	@echo ''
-	@echo 'Available targets:'
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo Available targets:
+	@echo "  help                     - Show this help message"
+	@echo "  build                    - Build the application"
+	@echo "  run                      - Run the application"
+	@echo "  test                     - Run tests"
+	@echo "  swagger                  - Generate swagger documentation"
+	@echo "  install-security-tools   - Install security scanning tools"
+	@echo "  govulncheck              - Run Go vulnerability check"
+	@echo "  osv-scan                 - Run OSV scanner"
+	@echo "  security-scan            - Run all security scans"
 
 build: ## Build the application
 	go build -o main .
@@ -17,4 +23,22 @@ test: ## Run tests
 
 swagger: ## Generate swagger documentation
 	swag init
+
+install-security-tools: ## Install security scanning tools
+	@echo Installing govulncheck...
+	@go install golang.org/x/vuln/cmd/govulncheck@latest
+	@echo Installing osv-scanner...
+	@go install github.com/google/osv-scanner/cmd/osv-scanner@latest
+	@echo Security tools installed successfully!
+
+govulncheck: ## Run Go vulnerability check
+	@echo Running govulncheck...
+	@govulncheck ./...
+
+osv-scan: ## Run OSV scanner
+	@echo Running OSV scanner...
+	@osv-scanner --lockfile=go.mod
+
+security-scan: govulncheck osv-scan ## Run all security scans
+	@echo All security scans completed!
 

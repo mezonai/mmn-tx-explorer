@@ -12,16 +12,19 @@ A RESTful API service to manage donation campaigns, built with the Gin Gonic fra
 - ✅ Status filtering and ordering in the list API
 - ✅ Swagger/OpenAPI documentation
 - ✅ Docker & Docker Compose support
-- ✅ Environment-based configuration
+- ✅ YAML-based configuration with Viper
+- ✅ Environment variable override support
 - ✅ CORS middleware
 - ✅ Custom logging middleware
 - ✅ File-based database migrations
 - ✅ Migration tracking system
 - ✅ Pagination support
+- ✅ **Security scanning with OSV Scanner & govulncheck**
+- ✅ **Automated vulnerability detection via GitHub Actions**
 
 ## 📋 Requirements
 
-- Go 1.21 or higher
+- Go 1.24 or higher
 - PostgreSQL 15
 - Docker & Docker Compose (optional)
 
@@ -41,30 +44,37 @@ go mod download
 
 ### 3. Configure environment
 
-Create a `.env` file from the example:
+The application uses a YAML configuration file located at `config/config.yml`.
 
-```bash
-cp env.example .env
-```
+Edit the `config/config.yml` file with your configuration:
 
-Edit the `.env` file with your configuration:
-
-```env
+```yaml
 # Server Configuration
-SERVER_HOST=0.0.0.0
-SERVER_PORT=8888
-GIN_MODE=debug
+server:
+  host: 0.0.0.0
+  port: 8888
+  gin_mode: debug
 
 # Database Configuration
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=postgres
-DB_NAME=dong_db
-DB_SSLMODE=disable
-DB_MAX_OPEN_CONNS=25
-DB_MAX_IDLE_CONNS=5
+database:
+  host: localhost
+  port: 5432
+  user: postgres
+  password: postgres
+  name: dong_db
+  sslmode: disable
+  max_open_conns: 25
+  max_idle_conns: 5
+
+# CORS Configuration
+cors:
+  allow_origins: "*"
+  allow_methods: "POST, OPTIONS, GET, PUT, DELETE, PATCH"
+  allow_headers: "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With"
+  allow_credentials: true
 ```
+
+**Note:** Environment variables can override config file values using the format: `SERVER_HOST`, `DATABASE_PORT`, etc.
 
 ## 🚀 Run the application
 
@@ -118,6 +128,12 @@ make test
 
 # Generate Swagger docs
 make swagger
+
+# Security scanning
+make install-security-tools  # Install security tools (first time only)
+make security-scan          # Run all security scans
+make govulncheck           # Run Go vulnerability check
+make osv-scan              # Run OSV scanner
 
 # Docker commands
 make docker-build
@@ -234,47 +250,50 @@ curl -X PATCH http://localhost:8888/api/v1/campaigns/1/close
 
 ```
 dong-service/
-├── cmd/                 # Command-line tools
-│   └── migrate/         # Migration CLI tool
-│       └── main.go
 ├── config/              # Configuration management
-│   └── config.go
+│   ├── config.go        # Configuration loader using Viper
+│   └── config.yml       # YAML configuration file
 ├── database/            # Database connection & migrations
 │   ├── database.go      # Database initialization
 │   └── migrations.go    # Migration tracking logic
 ├── handlers/            # HTTP request handlers
-│   ├── health.go
-│   └── donation_campaign.go
+│   ├── health.go        # Health check handler
+│   └── donation_campaign.go  # Campaign CRUD handlers
 ├── middleware/          # Custom middleware
-│   ├── cors.go
-│   └── logger.go
+│   ├── cors.go          # CORS middleware
+│   └── logger.go        # Request logging middleware
 ├── models/              # Data models & DTOs
-│   ├── donation_campaign.go
-│   └── response.go
+│   ├── donation_campaign.go  # Campaign model & DTOs
+│   └── response.go      # API response structures
 ├── constants/           # Application constants
 │   └── status.go        # Campaign status constants
 ├── repository/          # Data access layer (Repository pattern)
-│   └── donation_campaign_repository.go
+│   └── donation_campaign_repository.go  # Campaign repository
 ├── routes/              # Route definitions
-│   └── routes.go
+│   └── routes.go        # API route setup
 ├── migrations/          # SQL migration files
 │   └── 001_create_donation_campaign_table.sql
-├── docs/                # Swagger documentation
-│   └── docs.go
+├── docs/                # Swagger documentation (auto-generated)
+│   ├── docs.go
+│   ├── swagger.json
+│   └── swagger.yaml
 ├── main.go              # Application entry point
-├── Dockerfile
-├── docker-compose.yml
-├── Makefile
-└── .env.example
 ├── go.mod               # Go module dependencies
+├── go.sum               # Go module checksums
 ├── Dockerfile           # Docker image definition
 ├── docker-compose.yml   # Docker compose configuration
 ├── Makefile             # Build automation
-├── env.example          # Environment variables example
 └── README.md            # This file
 ```
 
 ## 🔧 Development
+
+### Configuration Management
+
+The application uses **Viper** for configuration management with the following features:
+- YAML-based configuration file (`config/config.yml`)
+- Environment variable override support
+- Format: `SERVER_HOST`, `DATABASE_PORT`, etc.
 
 ### Generate Swagger Documentation
 
@@ -310,6 +329,7 @@ The database will auto-migrate on application startup. SQL migrations are read f
 **Create a new migration:**
 ```bash
 # Create a new migration file in the migrations/ directory
+# Format: XXX_description.sql (e.g., 002_add_new_feature.sql)
 touch migrations/002_add_new_feature.sql
 ```
 
@@ -399,6 +419,35 @@ docker run -p 8888:8888 \
 - Status constants to avoid magic numbers
 - Immutable fields (donation_wallet) after creation
 - Proper error handling and logging
+- **Automated vulnerability scanning** with OSV Scanner and govulncheck
+- **GitHub Actions security workflows** for continuous monitoring
+- **Weekly automated security scans** to detect new vulnerabilities
+
+### Security Scanning
+
+This project includes comprehensive security scanning tools:
+
+```bash
+# First-time setup (install security tools)
+make install-security-tools
+
+# Or use automated scripts
+./scripts/setup-security.sh      # Linux/macOS
+.\scripts\setup-security.ps1     # Windows
+
+# Run security scans
+make security-scan               # Run all scans
+make govulncheck                # Go vulnerability check only
+make osv-scan                   # OSV scanner only
+```
+
+**Automated Security Checks:**
+- ✅ Runs on every push to main/develop branches
+- ✅ Runs on all pull requests
+- ✅ Weekly scheduled scans (Monday 9:00 AM)
+- ✅ Dependency review for PRs
+
+See [SECURITY.md](SECURITY.md) for detailed security documentation.
 
 ## 📝 TODO
 
@@ -407,7 +456,8 @@ docker run -p 8888:8888 \
 - [ ] Caching with Redis
 - [ ] Unit tests
 - [ ] Integration tests
-- [ ] CI/CD pipeline
+- [x] Security scanning (OSV Scanner, govulncheck)
+- [x] GitHub Actions CI/CD pipeline
 - [ ] Monitoring & Logging
 - [ ] API versioning
 

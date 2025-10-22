@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	pb "github.com/thirdweb-dev/indexer/proto"
+	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
 )
 
 // MMNGrpcService manages a shared gRPC connection for block operations
