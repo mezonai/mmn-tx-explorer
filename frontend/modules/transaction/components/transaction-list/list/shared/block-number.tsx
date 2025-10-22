@@ -21,7 +21,7 @@ export const BlockNumber = ({ blockNumber, className }: BlockNumberProps) => {
   return (
     <Button
       variant={buttonVariant}
-      className={cn('text-brand-secondary-700 size-fit p-0 text-sm font-semibold', className)}
+      className={cn('text-brand-primary size-fit p-0 text-sm font-semibold', className)}
       asChild
     >
       {isPending ? <span>{blockNumber}</span> : <Link href={ROUTES.BLOCK(Number(blockNumber))}>{blockNumber}</Link>}

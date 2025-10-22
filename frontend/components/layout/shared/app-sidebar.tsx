@@ -67,7 +67,7 @@ export function AppSidebar() {
           onClick={isAuthenticated ? logout : login}
           className={`${
             !isAuthenticated
-              ? 'bg-brand-secondary-700 hover:bg-brand-secondary-700/90 font-semibold text-white shadow-xs'
+              ? 'bg-brand-primary hover:bg-brand-primary/90 font-semibold text-white shadow-xs'
               : 'text-foreground bg-background hover:bg-active hover:text-quaternary-500 dark:bg-input/30 dark:border-input dark:hover:bg-input/50 border shadow-xs'
           }`}
         >
