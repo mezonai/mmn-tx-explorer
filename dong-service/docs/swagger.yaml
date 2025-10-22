@@ -152,41 +152,7 @@ info:
   title: Dong Service API
   version: "1.0"
 paths:
-  /api/v1/campaigns:
-    get:
-      description: Get a list of all donation campaigns with pagination
-      parameters:
-      - default: 1
-        description: Page number
-        in: query
-        name: page
-        type: integer
-      - default: 10
-        description: Items per page
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/models.Response'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/models.DonationCampaignResponse'
-                  type: array
-              type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/models.Response'
-      summary: List all donation campaigns
-      tags:
-      - campaigns
+  /api/v1/prv_campaigns:
     post:
       consumes:
       - application/json
@@ -221,42 +187,7 @@ paths:
       summary: Create a new donation campaign
       tags:
       - campaigns
-  /api/v1/campaigns/{id}:
-    get:
-      description: Get details of a specific donation campaign
-      parameters:
-      - description: Campaign ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/models.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.DonationCampaignResponse'
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/models.Response'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/models.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/models.Response'
-      summary: Get a donation campaign by ID
-      tags:
-      - campaigns
+  /api/v1/prv_campaigns/{id}:
     put:
       consumes:
       - application/json
@@ -300,7 +231,7 @@ paths:
       summary: Update a donation campaign
       tags:
       - campaigns
-  /api/v1/campaigns/{id}/activate:
+  /api/v1/prv_campaigns/{id}/activate:
     patch:
       description: Set campaign status to Active
       parameters:
@@ -336,7 +267,7 @@ paths:
       summary: Activate a donation campaign
       tags:
       - campaigns
-  /api/v1/campaigns/{id}/close:
+  /api/v1/prv_campaigns/{id}/close:
     patch:
       description: Set campaign status to Closed
       parameters:
@@ -372,6 +303,77 @@ paths:
       summary: Close a donation campaign
       tags:
       - campaigns
+  /api/v1/pub_campaigns:
+    get:
+      description: Get a list of all donation campaigns with pagination
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.DonationCampaignResponse'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: List all donation campaigns
+      tags:
+      - campaigns
+  /api/v1/pub_campaigns/{id}:
+    get:
+      description: Get details of a specific donation campaign
+      parameters:
+      - description: Campaign ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.DonationCampaignResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Get a donation campaign by ID
+      tags:
+      - campaigns
   /health:
     get:
       consumes:
@@ -405,11 +407,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: Logout status message (see Description for possible values)
+          description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.Response'
       summary: Logout and revoke refresh token
       tags:
       - Auth
@@ -434,23 +434,17 @@ paths:
           schema:
             $ref: '#/definitions/handlers.OauthResponse'
         "400":
-          description: Missing code or invalid request
+          description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.Response'
         "500":
-          description: Internal server error
+          description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.Response'
         "502":
-          description: Failed to exchange code or get user info
+          description: Bad Gateway
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.Response'
       summary: OAuth login
       tags:
       - Auth
@@ -475,23 +469,17 @@ paths:
           schema:
             $ref: '#/definitions/handlers.RefreshResponse'
         "400":
-          description: Missing or invalid refresh token
+          description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.Response'
         "401":
-          description: Unauthorized or token not found
+          description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.Response'
         "500":
-          description: Internal server error
+          description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.Response'
       summary: Refresh access token
       tags:
       - Auth

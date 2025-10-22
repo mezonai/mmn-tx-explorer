@@ -23,62 +23,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/v1/campaigns": {
-            "get": {
-                "description": "Get a list of all donation campaigns with pagination",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "campaigns"
-                ],
-                "summary": "List all donation campaigns",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 10,
-                        "description": "Items per page",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/models.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/models.DonationCampaignResponse"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    }
-                }
-            },
+        "/api/v1/prv_campaigns": {
             "post": {
                 "description": "Create a new donation campaign",
                 "consumes": [
@@ -136,64 +81,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/campaigns/{id}": {
-            "get": {
-                "description": "Get details of a specific donation campaign",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "campaigns"
-                ],
-                "summary": "Get a donation campaign by ID",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Campaign ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/models.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/models.DonationCampaignResponse"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    }
-                }
-            },
+        "/api/v1/prv_campaigns/{id}": {
             "put": {
                 "description": "Update an existing donation campaign",
                 "consumes": [
@@ -264,7 +152,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/campaigns/{id}/activate": {
+        "/api/v1/prv_campaigns/{id}/activate": {
             "patch": {
                 "description": "Set campaign status to Active",
                 "produces": [
@@ -323,7 +211,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/campaigns/{id}/close": {
+        "/api/v1/prv_campaigns/{id}/close": {
             "patch": {
                 "description": "Set campaign status to Closed",
                 "produces": [
@@ -333,6 +221,122 @@ const docTemplate = `{
                     "campaigns"
                 ],
                 "summary": "Close a donation campaign",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Campaign ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.DonationCampaignResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/pub_campaigns": {
+            "get": {
+                "description": "Get a list of all donation campaigns with pagination",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "campaigns"
+                ],
+                "summary": "List all donation campaigns",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Items per page",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.DonationCampaignResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/pub_campaigns/{id}": {
+            "get": {
+                "description": "Get details of a specific donation campaign",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "campaigns"
+                ],
+                "summary": "Get a donation campaign by ID",
                 "parameters": [
                     {
                         "type": "integer",
@@ -432,12 +436,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Logout status message (see Description for possible values)",
+                        "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.Response"
                         }
                     }
                 }
@@ -475,30 +476,21 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Missing code or invalid request",
+                        "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.Response"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.Response"
                         }
                     },
                     "502": {
-                        "description": "Failed to exchange code or get user info",
+                        "description": "Bad Gateway",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.Response"
                         }
                     }
                 }
@@ -536,30 +528,21 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Missing or invalid refresh token",
+                        "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.Response"
                         }
                     },
                     "401": {
-                        "description": "Unauthorized or token not found",
+                        "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.Response"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.Response"
                         }
                     }
                 }

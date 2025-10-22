@@ -31,9 +31,9 @@ type RefreshResponse struct {
 // @Produce json
 // @Param RefreshRequest body RefreshRequest true "Refresh token to validate"
 // @Success 200 {object} RefreshResponse "New JWT tokens"
-// @Failure 400 {object} models.Response "Missing or invalid refresh token"
-// @Failure 401 {object} models.Response "Unauthorized or token not found"
-// @Failure 500 {object} models.Response "Internal server error"
+// @Failure 400 {object} models.Response 
+// @Failure 401 {object} models.Response
+// @Failure 500 {object} models.Response
 // @Router /refresh [post]
 func RefreshHandler(c *gin.Context) {
 	var req RefreshRequest

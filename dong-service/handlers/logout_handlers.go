@@ -20,7 +20,7 @@ type LogoutRequest struct {
 // @Accept json
 // @Produce json
 // @Param LogoutRequest body LogoutRequest true "Refresh token to revoke"
-// @Success 200 models.Response "Logout status message (see Description for possible values)"
+// @Success 200 {object} models.Response
 // @Router /logout [post]
 func LogoutHandler(c *gin.Context) {
 	var req LogoutRequest

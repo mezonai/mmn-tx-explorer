@@ -51,9 +51,9 @@ type OauthUserInfo struct {
 // @Produce json
 // @Param OauthRequest body OauthRequest true "OAuth code and redirect URI"
 // @Success 200 {object} OauthResponse "Access and Refresh token (JWT) and user info"
-// @Failure 400 {object} models.Response "Missing code or invalid request"
-// @Failure 502 {object} models.Response "Failed to exchange code or get user info"
-// @Failure 500 {object} models.Response "Internal server error"
+// @Failure 400 {object} models.Response 
+// @Failure 502 {object} models.Response 
+// @Failure 500 {object} models.Response
 // @Router /oauth [post]
 func OauthHandler(c *gin.Context) {
 	var req OauthRequest
