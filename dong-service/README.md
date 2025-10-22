@@ -19,10 +19,12 @@ A RESTful API service to manage donation campaigns, built with the Gin Gonic fra
 - ✅ File-based database migrations
 - ✅ Migration tracking system
 - ✅ Pagination support
+- ✅ **Security scanning with OSV Scanner & govulncheck**
+- ✅ **Automated vulnerability detection via GitHub Actions**
 
 ## 📋 Requirements
 
-- Go 1.21 or higher
+- Go 1.24 or higher
 - PostgreSQL 15
 - Docker & Docker Compose (optional)
 
@@ -126,6 +128,12 @@ make test
 
 # Generate Swagger docs
 make swagger
+
+# Security scanning
+make install-security-tools  # Install security tools (first time only)
+make security-scan          # Run all security scans
+make govulncheck           # Run Go vulnerability check
+make osv-scan              # Run OSV scanner
 
 # Docker commands
 make docker-build
@@ -411,6 +419,35 @@ docker run -p 8888:8888 \
 - Status constants to avoid magic numbers
 - Immutable fields (donation_wallet) after creation
 - Proper error handling and logging
+- **Automated vulnerability scanning** with OSV Scanner and govulncheck
+- **GitHub Actions security workflows** for continuous monitoring
+- **Weekly automated security scans** to detect new vulnerabilities
+
+### Security Scanning
+
+This project includes comprehensive security scanning tools:
+
+```bash
+# First-time setup (install security tools)
+make install-security-tools
+
+# Or use automated scripts
+./scripts/setup-security.sh      # Linux/macOS
+.\scripts\setup-security.ps1     # Windows
+
+# Run security scans
+make security-scan               # Run all scans
+make govulncheck                # Go vulnerability check only
+make osv-scan                   # OSV scanner only
+```
+
+**Automated Security Checks:**
+- ✅ Runs on every push to main/develop branches
+- ✅ Runs on all pull requests
+- ✅ Weekly scheduled scans (Monday 9:00 AM)
+- ✅ Dependency review for PRs
+
+See [SECURITY.md](SECURITY.md) for detailed security documentation.
 
 ## 📝 TODO
 
@@ -419,7 +456,8 @@ docker run -p 8888:8888 \
 - [ ] Caching with Redis
 - [ ] Unit tests
 - [ ] Integration tests
-- [ ] CI/CD pipeline
+- [x] Security scanning (OSV Scanner, govulncheck)
+- [x] GitHub Actions CI/CD pipeline
 - [ ] Monitoring & Logging
 - [ ] API versioning
 
