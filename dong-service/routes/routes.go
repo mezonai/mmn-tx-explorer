@@ -5,7 +5,7 @@ import (
 	_ "dong-service/docs" // Import docs to load swagger documentation
 	"dong-service/handlers"
 	"dong-service/repository"
-
+    "dong-service/middleware"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -21,6 +21,10 @@ func SetupRoutes(router *gin.Engine) {
 	// Swagger documentation
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
+    router.POST("/oauth", handlers.OauthHandler)
+	router.POST("/refresh", handlers.RefreshHandler)
+	router.POST("/logout", handlers.LogoutHandler)
+
 	// API v1 routes
 	v1 := router.Group("/api/v1")
 	{
@@ -31,14 +35,19 @@ func SetupRoutes(router *gin.Engine) {
 		campaignHandler := handlers.NewDonationCampaignHandler(campaignRepo)
 
 		// Campaign routes
-		campaigns := v1.Group("/campaigns")
+		campaigns_private := v1.Group("/prv_campaigns")
+		{ 
+		    campaigns_private.Use(middleware.Authentication)	
+			campaigns_private.POST("", campaignHandler.CreateCampaign)
+			campaigns_private.PUT("/:id", campaignHandler.UpdateCampaign)
+			campaigns_private.PATCH("/:id/activate", campaignHandler.ActivateCampaign)
+			campaigns_private.PATCH("/:id/close", campaignHandler.CloseCampaign)
+		}
+
+		campaigns_public := v1.Group("/pub_campaigns")
 		{
-			campaigns.POST("", campaignHandler.CreateCampaign)
-			campaigns.GET("", campaignHandler.ListCampaigns)
-			campaigns.GET("/:id", campaignHandler.GetCampaign)
-			campaigns.PUT("/:id", campaignHandler.UpdateCampaign)
-			campaigns.PATCH("/:id/activate", campaignHandler.ActivateCampaign)
-			campaigns.PATCH("/:id/close", campaignHandler.CloseCampaign)
+			campaigns_public.GET("", campaignHandler.ListCampaigns)
+			campaigns_public.GET("/:id", campaignHandler.GetCampaign)
 		}
 	}
 }

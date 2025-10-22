@@ -6,11 +6,14 @@ import (
 
 	"github.com/spf13/viper"
 )
-
+var Cfg *Config
 type Config struct {
 	Server   ServerConfig   `mapstructure:"server"`
 	Database DatabaseConfig `mapstructure:"database"`
 	CORS     CORSConfig     `mapstructure:"cors"`
+	JWT      JWTConfig      `mapstructure:"jwt"`
+	Oauth    OauthConfig    `mapstructure:"oauth"`
+	Redis    RedisConfig    `mapstructure:"redis"`
 }
 
 type ServerConfig struct {
@@ -18,7 +21,24 @@ type ServerConfig struct {
 	Port    string `mapstructure:"port"`
 	GinMode string `mapstructure:"gin_mode"` // debug, release, test
 }
+type JWTConfig struct {
+	Secret      string `mapstructure:"secret"`
+	Refresh_Exp int    `mapstructure:"refresh_exp"`
+	Access_Exp  int    `mapstructure:"access_exp"`
+}
 
+type RedisConfig struct {
+	Address  string `mapstructure:"address"`
+	Password string `mapstructure:"password"`
+	DB       int    `mapstructure:"db"`
+}
+
+type OauthConfig struct {
+	ClientID     string `mapstructure:"client_id"`
+	ClientSecret string `mapstructure:"client_secret"`
+	TokenURL     string `mapstructure:"token_url"`
+	UserInfoURL  string `mapstructure:"user_info_url"`
+}
 type DatabaseConfig struct {
 	Host         string `mapstructure:"host"`
 	Port         string `mapstructure:"port"`
