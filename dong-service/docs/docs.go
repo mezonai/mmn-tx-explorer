@@ -25,6 +25,11 @@ const docTemplate = `{
     "paths": {
         "/api/v1/admin/campaigns": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Create a new donation campaign",
                 "consumes": [
                     "application/json"
@@ -83,6 +88,11 @@ const docTemplate = `{
         },
         "/api/v1/admin/campaigns/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Update an existing donation campaign",
                 "consumes": [
                     "application/json"
@@ -154,6 +164,11 @@ const docTemplate = `{
         },
         "/api/v1/admin/campaigns/{id}/activate": {
             "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Set campaign status to Active",
                 "produces": [
                     "application/json"
@@ -213,6 +228,11 @@ const docTemplate = `{
         },
         "/api/v1/admin/campaigns/{id}/close": {
             "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Set campaign status to Closed",
                 "produces": [
                     "application/json"
@@ -775,6 +795,14 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Type \"Bearer\" followed by a space and JWT token.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

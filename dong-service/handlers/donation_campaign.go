@@ -29,6 +29,7 @@ func NewDonationCampaignHandler(repo *repository.DonationCampaignRepository) *Do
 // @Success 201 {object} models.Response{data=models.DonationCampaignResponse}
 // @Failure 400 {object} models.Response
 // @Failure 500 {object} models.Response
+// @Security BearerAuth
 // @Router /api/v1/admin/campaigns [post]
 func (h *DonationCampaignHandler) CreateCampaign(c *gin.Context) {
 	var req models.CreateDonationCampaignRequest
@@ -160,6 +161,7 @@ func (h *DonationCampaignHandler) ListCampaigns(c *gin.Context) {
 // @Failure 400 {object} models.Response
 // @Failure 404 {object} models.Response
 // @Failure 500 {object} models.Response
+// @Security BearerAuth
 // @Router /api/v1/admin/campaigns/{id} [put]
 func (h *DonationCampaignHandler) UpdateCampaign(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -201,6 +203,7 @@ func (h *DonationCampaignHandler) UpdateCampaign(c *gin.Context) {
 // @Failure 400 {object} models.Response
 // @Failure 404 {object} models.Response
 // @Failure 500 {object} models.Response
+// @Security BearerAuth
 // @Router /api/v1/admin/campaigns/{id}/activate [patch]
 func (h *DonationCampaignHandler) ActivateCampaign(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -236,6 +239,7 @@ func (h *DonationCampaignHandler) ActivateCampaign(c *gin.Context) {
 // @Failure 400 {object} models.Response
 // @Failure 404 {object} models.Response
 // @Failure 500 {object} models.Response
+// @Security BearerAuth
 // @Router /api/v1/admin/campaigns/{id}/close [patch]
 func (h *DonationCampaignHandler) CloseCampaign(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)

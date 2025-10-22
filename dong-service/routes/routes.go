@@ -35,7 +35,7 @@ func SetupRoutes(router *gin.Engine) {
 		campaignHandler := handlers.NewDonationCampaignHandler(campaignRepo)
 
 		// Campaign routes
-		campaigns_private := v1.Group("admin/campaigns")
+		campaigns_private := v1.Group("/admin/campaigns")
 		{ 
 			campaigns_private.Use(middleware.Authentication)	
 			campaigns_private.POST("", campaignHandler.CreateCampaign)

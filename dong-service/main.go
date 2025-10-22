@@ -25,6 +25,11 @@ import (
 
 // @host      localhost:8888
 // @schemes http https
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 func main() {
 	// Command-line flag for config file
 	configFile := flag.String("f", "config/config.yml", "the config file")

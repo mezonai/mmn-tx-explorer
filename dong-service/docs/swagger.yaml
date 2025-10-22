@@ -193,6 +193,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/models.Response'
+      security:
+      - BearerAuth: []
       summary: Create a new donation campaign
       tags:
       - campaigns
@@ -237,6 +239,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/models.Response'
+      security:
+      - BearerAuth: []
       summary: Update a donation campaign
       tags:
       - campaigns
@@ -273,6 +277,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/models.Response'
+      security:
+      - BearerAuth: []
       summary: Activate a donation campaign
       tags:
       - campaigns
@@ -309,6 +315,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/models.Response'
+      security:
+      - BearerAuth: []
       summary: Close a donation campaign
       tags:
       - campaigns
@@ -494,4 +502,10 @@ paths:
 schemes:
 - http
 - https
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"
