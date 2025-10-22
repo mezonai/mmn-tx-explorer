@@ -5,7 +5,7 @@ import (
 	"dong-service/database"
 	"net/http"
 	"time"
-
+    "dong-service/models"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -31,20 +31,20 @@ type RefreshResponse struct {
 // @Produce json
 // @Param RefreshRequest body RefreshRequest true "Refresh token to validate"
 // @Success 200 {object} RefreshResponse "New JWT tokens"
-// @Failure 400 {object} map[string]string "Missing or invalid refresh token"
-// @Failure 401 {object} map[string]string "Unauthorized or token not found"
-// @Failure 500 {object} map[string]string "Internal server error"
+// @Failure 400 {object} models.Response "Missing or invalid refresh token"
+// @Failure 401 {object} models.Response "Unauthorized or token not found"
+// @Failure 500 {object} models.Response "Internal server error"
 // @Router /refresh [post]
 func RefreshHandler(c *gin.Context) {
 	var req RefreshRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "missing refresh_token"})
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "missing refresh_token"))
 		return
 	}
 
 	secret := config.Cfg.JWT.Secret
 	if secret == "" {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "jwt secret not configured"})
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "jwt secret not configured"))
 		return
 	}
 
@@ -55,24 +55,24 @@ func RefreshHandler(c *gin.Context) {
 		return []byte(secret), nil
 	})
 	if err != nil || !token.Valid {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired refresh token!"})
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "Invalid or expired refresh token!"))
 		return
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid claims"})
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "invalid claims"))
 		return
 	}
 
 	if t, _ := claims["type"].(string); t != "refresh" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "token is not a refresh token"})
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "token is not a refresh token"))
 		return
 	}
 
 	userID, _ := claims["user_id"].(string)
 	if userID == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid refresh token (missing user_id)"})
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "invalid refresh token (missing user_id)"))
 		return
 	}
 
@@ -80,12 +80,12 @@ func RefreshHandler(c *gin.Context) {
 
 	exists, _, err := database.Get(oldTokenID)
 	if err != nil || !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "refresh token not found on whitelist"})
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "refresh token not found on whitelist"))
 		return
 	}
 
 	if err := database.Delete(oldTokenID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete old refresh token"})
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to delete old refresh token"))
 		return
 	}
 
@@ -99,7 +99,7 @@ func RefreshHandler(c *gin.Context) {
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
 	signedAccess, err := accessToken.SignedString([]byte(secret))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to sign access token"})
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to sign access token"))
 		return
 	}
 
@@ -112,14 +112,14 @@ func RefreshHandler(c *gin.Context) {
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
 	signedRefresh, err := refreshToken.SignedString([]byte(secret))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to sign refresh token"})
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to sign refresh token"))
 		return
 	}
 
 	tokenTTL := time.Duration(config.Cfg.JWT.Refresh_Exp) * time.Second
 
 	if err := database.Set(newTokenID, userID, tokenTTL); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to store new refresh token"})
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to store new refresh token"))
 		return
 	}
 

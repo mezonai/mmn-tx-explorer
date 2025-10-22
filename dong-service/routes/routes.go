@@ -35,15 +35,19 @@ func SetupRoutes(router *gin.Engine) {
 		campaignHandler := handlers.NewDonationCampaignHandler(campaignRepo)
 
 		// Campaign routes
-		campaigns := v1.Group("/campaigns")
+		campaigns_private := v1.Group("/prv_campaigns")
 		{ 
-		    campaigns.Use(middleware.Authentication)	
-			campaigns.POST("", campaignHandler.CreateCampaign)
-			campaigns.GET("", campaignHandler.ListCampaigns)
-			campaigns.GET("/:id", campaignHandler.GetCampaign)
-			campaigns.PUT("/:id", campaignHandler.UpdateCampaign)
-			campaigns.PATCH("/:id/activate", campaignHandler.ActivateCampaign)
-			campaigns.PATCH("/:id/close", campaignHandler.CloseCampaign)
+		    campaigns_private.Use(middleware.Authentication)	
+			campaigns_private.POST("", campaignHandler.CreateCampaign)
+			campaigns_private.PUT("/:id", campaignHandler.UpdateCampaign)
+			campaigns_private.PATCH("/:id/activate", campaignHandler.ActivateCampaign)
+			campaigns_private.PATCH("/:id/close", campaignHandler.CloseCampaign)
+		}
+
+		campaigns_public := v1.Group("/pub_campaigns")
+		{
+			campaigns_public.GET("", campaignHandler.ListCampaigns)
+			campaigns_public.GET("/:id", campaignHandler.GetCampaign)
 		}
 	}
 }

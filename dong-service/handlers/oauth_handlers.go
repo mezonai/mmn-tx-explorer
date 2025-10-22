@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"time"
-
+	"dong-service/models"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -51,9 +51,9 @@ type OauthUserInfo struct {
 // @Produce json
 // @Param OauthRequest body OauthRequest true "OAuth code and redirect URI"
 // @Success 200 {object} OauthResponse "Access and Refresh token (JWT) and user info"
-// @Failure 400 {object} map[string]string "Missing code or invalid request"
-// @Failure 502 {object} map[string]string "Failed to exchange code or get user info"
-// @Failure 500 {object} map[string]string "Internal server error"
+// @Failure 400 {object} models.Response "Missing code or invalid request"
+// @Failure 502 {object} models.Response "Failed to exchange code or get user info"
+// @Failure 500 {object} models.Response "Internal server error"
 // @Router /oauth [post]
 func OauthHandler(c *gin.Context) {
 	var req OauthRequest
@@ -70,7 +70,7 @@ func OauthHandler(c *gin.Context) {
 
 	tokenResp, err := http.PostForm(config.Cfg.Oauth.TokenURL, form)
 	if err != nil {
-		c.JSON(http.StatusBadGateway, gin.H{"error": "Failed to exchange code"})
+		c.JSON(http.StatusBadGateway, models.ErrorResponse(http.StatusBadGateway, "Failed to exchange code: "+err.Error()))
 		return
 	}
 	defer tokenResp.Body.Close()
@@ -83,7 +83,8 @@ func OauthHandler(c *gin.Context) {
 	}
 
 	if err := json.Unmarshal(body, &tokenData); err != nil || tokenData.AccessToken == "" {
-		c.JSON(http.StatusBadGateway, gin.H{"error": "Invalid token response"})
+
+	    c.JSON(http.StatusBadGateway, models.ErrorResponse(http.StatusBadGateway, "Invalid token response when exchanging code"))
 		return
 	}
 
@@ -91,7 +92,7 @@ func OauthHandler(c *gin.Context) {
 	userForm.Set("access_token", tokenData.AccessToken)
 	userInfoResp, err := http.PostForm(config.Cfg.Oauth.UserInfoURL, userForm)
 	if err != nil {
-		c.JSON(http.StatusBadGateway, gin.H{"error": "Failed to get user info"})
+		c.JSON(http.StatusBadGateway, models.ErrorResponse(http.StatusBadGateway, "Failed to get user info: "+err.Error()))
 		return
 	}
 	defer userInfoResp.Body.Close()
@@ -108,7 +109,7 @@ func OauthHandler(c *gin.Context) {
 
 	jwtSecret := config.Cfg.JWT.Secret
 	if jwtSecret == "" {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "jwt secret not configured"})
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "jwt secret not configured"))
 		return
 	}
 
@@ -123,7 +124,7 @@ func OauthHandler(c *gin.Context) {
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
 	signedAccess, err := accessToken.SignedString([]byte(jwtSecret))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to sign access token"})
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to sign access token: "+err.Error()))
 		return
 	}
 
@@ -136,14 +137,14 @@ func OauthHandler(c *gin.Context) {
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
 	signedRefresh, err := refreshToken.SignedString([]byte(jwtSecret))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to sign refresh token"})
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to sign refresh token: "+err.Error()))
 		return
 	}
 
 	tokenTTL := time.Duration(config.Cfg.JWT.Refresh_Exp) * time.Second
 
 	if err := database.Set(tokenID, userInfo.UserID, tokenTTL); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store token"})
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to store token: "+err.Error()))
 		return
 	}
 
