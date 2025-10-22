@@ -19,3 +19,20 @@ cors:
   allow_methods: "POST, OPTIONS, GET, PUT, DELETE, PATCH"
   allow_headers: "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With"
   allow_credentials: true
+
+
+jwt:
+  secret: "a75081d475a4cd4e130916f26e3e8d3ebc376fa132e873c057c5a0c5ab26cc06"
+  refresh_exp: 432000
+  access_exp: 3600
+
+oauth:
+  client_id: "1976233808680194048"
+  client_secret: ">cxIm=C8v[Be0XE0@bius4UhLqu{P&8="
+  token_url: "https://oauth2.mezon.ai/oauth2/token"
+  user_info_url: "https://oauth2.mezon.ai/userinfo"
+
+redis:
+  address: "redis:6379"
+  password: ""
+  db: 0

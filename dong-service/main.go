@@ -35,6 +35,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
+    config.Cfg = cfg
 
 	// Set Gin mode
 	gin.SetMode(cfg.Server.GinMode)
@@ -42,6 +43,10 @@ func main() {
 	// Initialize database
 	if err := database.InitDatabase(&cfg.Database); err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
+	}
+
+	if err := database.InitRedisWhiteList(&cfg.Redis); err != nil {
+		log.Fatalf("Failed to initialize Redis whitelist: %v", err)
 	}
 
 	// Create Gin router

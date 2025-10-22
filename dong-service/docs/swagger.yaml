@@ -1,4 +1,77 @@
 definitions:
+  handlers.LogoutRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  handlers.OauthRequest:
+    properties:
+      code:
+        type: string
+      redirect_uri:
+        type: string
+    required:
+    - code
+    - redirect_uri
+    type: object
+  handlers.OauthResponse:
+    properties:
+      access_token:
+        type: string
+      auth_token:
+        type: string
+      refresh_token:
+        type: string
+      user:
+        $ref: '#/definitions/handlers.OauthUserInfo'
+    type: object
+  handlers.OauthUserInfo:
+    properties:
+      aud:
+        items:
+          type: string
+        type: array
+      auth_time:
+        type: integer
+      avatar:
+        type: string
+      display_name:
+        type: string
+      email:
+        type: string
+      iat:
+        type: integer
+      iss:
+        type: string
+      mezon_id:
+        type: string
+      rat:
+        type: integer
+      sub:
+        type: string
+      user_id:
+        type: string
+      username:
+        type: string
+    type: object
+  handlers.RefreshRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  handlers.RefreshResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+      user_id:
+        type: string
+    type: object
   models.CreateDonationCampaignRequest:
     properties:
       creator:
@@ -315,6 +388,113 @@ paths:
       summary: Health check
       tags:
       - health
+  /logout:
+    post:
+      consumes:
+      - application/json
+      description: 'Invalidate the provided refresh token and remove it from Redis
+        whitelist. Always returns HTTP 200 with different message responses:'
+      parameters:
+      - description: Refresh token to revoke
+        in: body
+        name: LogoutRequest
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.LogoutRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Logout status message (see Description for possible values)
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Logout and revoke refresh token
+      tags:
+      - Auth
+  /oauth:
+    post:
+      consumes:
+      - application/json
+      description: Exchange OAuth code for access/refresh tokens, fetch user info,
+        and store token in Redis whitelist. Returns JWT tokens and user info.
+      parameters:
+      - description: OAuth code and redirect URI
+        in: body
+        name: OauthRequest
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.OauthRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Access and Refresh token (JWT) and user info
+          schema:
+            $ref: '#/definitions/handlers.OauthResponse'
+        "400":
+          description: Missing code or invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "502":
+          description: Failed to exchange code or get user info
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: OAuth login
+      tags:
+      - Auth
+  /refresh:
+    post:
+      consumes:
+      - application/json
+      description: Validate refresh token, rotate token ID, issue new access/refresh
+        tokens, and update Redis whitelist. Returns new JWT tokens.
+      parameters:
+      - description: Refresh token to validate
+        in: body
+        name: RefreshRequest
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: New JWT tokens
+          schema:
+            $ref: '#/definitions/handlers.RefreshResponse'
+        "400":
+          description: Missing or invalid refresh token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized or token not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Refresh access token
+      tags:
+      - Auth
 schemes:
 - http
 - https

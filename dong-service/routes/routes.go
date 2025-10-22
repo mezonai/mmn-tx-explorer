@@ -5,7 +5,7 @@ import (
 	_ "dong-service/docs" // Import docs to load swagger documentation
 	"dong-service/handlers"
 	"dong-service/repository"
-
+    "dong-service/middleware"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -21,6 +21,10 @@ func SetupRoutes(router *gin.Engine) {
 	// Swagger documentation
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
+    router.POST("/oauth", handlers.OauthHandler)
+	router.POST("/refresh", handlers.RefreshHandler)
+	router.POST("/logout", handlers.LogoutHandler)
+
 	// API v1 routes
 	v1 := router.Group("/api/v1")
 	{
@@ -32,7 +36,8 @@ func SetupRoutes(router *gin.Engine) {
 
 		// Campaign routes
 		campaigns := v1.Group("/campaigns")
-		{
+		{ 
+		    campaigns.Use(middleware.Authentication)	
 			campaigns.POST("", campaignHandler.CreateCampaign)
 			campaigns.GET("", campaignHandler.ListCampaigns)
 			campaigns.GET("/:id", campaignHandler.GetCampaign)
