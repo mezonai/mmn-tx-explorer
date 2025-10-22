@@ -11,11 +11,5 @@ export async function GET() {
     `state=${state}`;
 
   const response = NextResponse.redirect(authUrl);
-  response.cookies.set('oauth_state', state, {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'lax',
-    path: '/',
-  });
   return response;
 }
