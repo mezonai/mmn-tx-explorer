@@ -57,7 +57,7 @@ func GetTransactions(c *gin.Context) {
 // @Failure 500 {object} api.Error
 // @Router /{chainId}/transactions/infinite [get]
 func GetTransactionsInfinite(c *gin.Context) {
-    handleTransactionsInfiniteRequest(c)
+	handleTransactionsInfiniteRequest(c)
 }
 
 // @Summary Get wallet transactions
@@ -259,14 +259,23 @@ func handleTransactionsInfiniteRequest(c *gin.Context) {
 	}
 
 	walletAddress := queryParams.WalletAddress
+	var fromAddress, toAddress string
 
-	if walletAddress == "" {
-		api.BadRequestErrorHandler(c, fmt.Errorf("wallet_address is required"))
+	if filterParams, ok := queryParams.FilterParams["from_address"]; ok {
+		fromAddress = filterParams
+	}
+
+	if filterParams, ok := queryParams.FilterParams["to_address"]; ok {
+		toAddress = filterParams
+	}
+
+	if walletAddress == "" && fromAddress == "" && toAddress == "" {
+		api.BadRequestErrorHandler(c, fmt.Errorf("at least one of wallet_address, filter_from_address, or filter_to_address is required"))
 		return
 	}
 
-    timestampLt := queryParams.TimestampLt
-    lastHash := queryParams.LastHash
+	timestampLt := queryParams.TimestampLt
+	lastHash := queryParams.LastHash
 
 	chainId, err := api.GetChainId(c)
 	if err != nil {
@@ -292,17 +301,64 @@ func handleTransactionsInfiniteRequest(c *gin.Context) {
 		Data: nil,
 	}
 
-	transactions, err := mainStorage.GetTransactionsByWalletWithTimestamp(
-		ctx,
-		walletAddress,
-		queryParams.Limit+1, 
-		timestampLt,
-		lastHash,
-	)
-	if err != nil {
-		log.Error().Err(err).Msg("Error querying transactions")
-		api.InternalErrorHandler(c)
-		return
+	var transactions []common.Transaction
+
+	if walletAddress != "" {
+		txs, err := mainStorage.GetTransactionsByWalletWithTimestamp(
+			ctx,
+			walletAddress,
+			queryParams.Limit+1,
+			timestampLt,
+			lastHash,
+		)
+		if err != nil {
+			log.Error().Err(err).Msg("Error querying transactions by wallet")
+			api.InternalErrorHandler(c)
+			return
+		}
+		transactions = txs
+	} else if fromAddress != "" {
+		txs, err := mainStorage.GetTransactionsByWalletWithTimestamp(
+			ctx,
+			fromAddress,
+			queryParams.Limit*2+1,
+			timestampLt,
+			lastHash,
+		)
+		if err != nil {
+			log.Error().Err(err).Msg("Error querying transactions by from_address")
+			api.InternalErrorHandler(c)
+			return
+		}
+
+		filteredTxs := make([]common.Transaction, 0)
+		for _, tx := range txs {
+			if tx.FromAddress == fromAddress {
+				filteredTxs = append(filteredTxs, tx)
+			}
+		}
+		transactions = filteredTxs
+	} else {
+		txs, err := mainStorage.GetTransactionsByWalletWithTimestamp(
+			ctx,
+			toAddress,
+			queryParams.Limit*2+1,
+			timestampLt,
+			lastHash,
+		)
+		if err != nil {
+			log.Error().Err(err).Msg("Error querying transactions by to_address")
+			api.InternalErrorHandler(c)
+			return
+		}
+
+		filteredTxs := make([]common.Transaction, 0)
+		for _, tx := range txs {
+			if tx.ToAddress == toAddress {
+				filteredTxs = append(filteredTxs, tx)
+			}
+		}
+		transactions = filteredTxs
 	}
 
 	hasMore := len(transactions) > queryParams.Limit
@@ -320,10 +376,10 @@ func handleTransactionsInfiniteRequest(c *gin.Context) {
 
 	var data interface{} = serializeTransactions(transactions)
 	queryResult.Data = &data
-	
-    queryResult.Meta.HasMore = hasMore  
-    queryResult.Meta.NextTimestamp = &nextTimestamp
-    queryResult.Meta.NextHash = nextHash
+
+	queryResult.Meta.HasMore = hasMore
+	queryResult.Meta.NextTimestamp = &nextTimestamp
+	queryResult.Meta.NextHash = nextHash
 
 	c.JSON(http.StatusOK, queryResult)
 }
