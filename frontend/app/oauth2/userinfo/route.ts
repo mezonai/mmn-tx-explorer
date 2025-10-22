@@ -3,9 +3,8 @@ import { NextResponse } from 'next/server';
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const redirect_uri = process.env.NEXT_PUBLIC_OAUTH2_REDIRECT_URI || '';
-  const backendRaw = process.env.NEXT_PUBLIC_BACKEND_API_URL || '';
-  const backend = backendRaw.replace(/\/$/, '');
+  const redirect_uri = process.env.NEXT_PUBLIC_OAUTH2_REDIRECT_URI;
+  const backend = process.env.NEXT_PUBLIC_BACKEND_API_URL;
   if (!code) {
     return NextResponse.redirect(`${origin}/?error=missing_code`);
   }

@@ -59,9 +59,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
-        <SidebarAuthPanel />
-      </SidebarFooter>
+      <SidebarFooter>{/* <SidebarAuthPanel /> */}</SidebarFooter>
     </Sidebar>
   );
 }
