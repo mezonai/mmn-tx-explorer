@@ -37,6 +37,12 @@ jobs:
           cd indexer
           GOOS=linux GOARCH=amd64 go build -o ../build/indexer .
 
+      - name: Build Dong Service binary
+        run: |
+          mkdir -p build
+          cd dong-service
+          GOOS=linux GOARCH=amd64 go build -o ../build/dong-service .
+
       - name: Get short SHA
         id: get_sha
         run: echo "git_sha=$(git rev-parse --short=8 HEAD)" >> $GITHUB_OUTPUT
@@ -82,6 +88,14 @@ jobs:
           POSTGRES_PORT: ${{ vars.POSTGRES_PORT }}
           NEXT_PUBLIC_APP_API_URL: ${{ vars.NEXT_PUBLIC_APP_API_URL }}
           APP_API_URL_INTERNAL: ${{ vars.APP_API_URL_INTERNAL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          OAUTH_CLIENT_ID: ${{ vars.OAUTH_CLIENT_ID }}
+          OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
+          OAUTH_TOKEN_URL: ${{ vars.OAUTH_TOKEN_URL }}
+          OAUTH_USER_INFO_URL: ${{ vars.OAUTH_USER_INFO_URL }}
+          REDIS_ADDRESS: ${{ vars.REDIS_ADDRESS }}
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+          REDIS_DB: ${{ vars.REDIS_DB }}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
@@ -90,6 +104,7 @@ jobs:
           SHA="$1"
           echo "==> Preparing deployment directories and configs..."
           sudo mkdir -p /opt/indexer/bin /opt/indexer/config /opt/indexer/migrations /opt/indexer/logs
+          sudo mkdir -p /opt/dong-service/bin /opt/dong-service/config /opt/dong-service/migrations /opt/dong-service/logs
           
           echo "==> Writing environment configs..."
           sudo tee /opt/indexer/config/indexer.env > /dev/null <<EON
@@ -107,6 +122,32 @@ jobs:
           APP_API_URL_INTERNAL=${APP_API_URL_INTERNAL}
           EON
 
+          sudo tee /opt/dong-service/config/dong-service.env > /dev/null <<EON
+          DATABASE_HOST=${POSTGRES_HOST}
+          DATABASE_PORT=${POSTGRES_PORT}
+          DATABASE_USER=${POSTGRES_USER}
+          DATABASE_PASSWORD=${POSTGRES_PASSWORD}
+          DATABASE_NAME=${POSTGRES_DB}
+          JWT_SECRET=${JWT_SECRET}
+          OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}
+          OAUTH_CLIENT_SECRET=${OAUTH_CLIENT_SECRET}
+          OAUTH_TOKEN_URL=${OAUTH_TOKEN_URL}
+          OAUTH_USER_INFO_URL=${OAUTH_USER_INFO_URL}
+          REDIS_ADDRESS=${REDIS_ADDRESS}
+          REDIS_PASSWORD=${REDIS_PASSWORD}
+          REDIS_DB=${REDIS_DB}
+          EON
+
+          sudo chown -R mmn:mmn /opt/dong-service
+          sudo chmod 600 /opt/dong-service/config/dong-service.env
+
+          echo "==> Deploying new dong-service binary to staging path..."
+          sudo install -m 0755 /tmp/dong-service /opt/dong-service/bin/dong-service-${SHA}
+
+          echo "==> Deploying migrations for dong-service..."
+          sudo rm -rf /opt/dong-service/migrations/postgres
+          sudo mv /tmp/postgres-dong-service /opt/dong-service/migrations/
+
           sudo chown -R mmn:mmn /opt/indexer
           sudo chown -R mmn:mmn /opt/frontend
           sudo chmod 600 /opt/indexer/config/indexer.env
@@ -117,29 +158,50 @@ jobs:
 
           echo "==> Deploying migrations..."
           sudo rm -rf /opt/indexer/migrations/postgres
-          sudo mv /tmp/postgres /opt/indexer/migrations/
+          sudo mv /tmp/postgres-indexer /opt/indexer/migrations/
 
           echo "==> Preparation complete!"
           EOF
           chmod +x remote_setup.sh
 
-          echo "# Explorer env generated at $(date)" > explorer_env.sh
-          printf "export POSTGRES_DB=%q\n" "$POSTGRES_DB" >> explorer_env.sh
-          printf "export POSTGRES_USER=%q\n" "$POSTGRES_USER" >> explorer_env.sh
-          printf "export POSTGRES_PASSWORD=%q\n" "$POSTGRES_PASSWORD" >> explorer_env.sh
-          printf "export POSTGRES_HOST=%q\n" "$POSTGRES_HOST" >> explorer_env.sh
-          printf "export POSTGRES_PORT=%q\n" "$POSTGRES_PORT" >> explorer_env.sh
-          printf "export NEXT_PUBLIC_APP_API_URL=%q\n" "$NEXT_PUBLIC_APP_API_URL" >> explorer_env.sh
-          printf "export APP_API_URL_INTERNAL=%q\n" "$APP_API_URL_INTERNAL" >> explorer_env.sh
-          echo "==> Generated explorer_env.sh"
+          echo "# Remote env generated at $(date)" > remote_env.sh
+          printf "export POSTGRES_DB=%q\n" "$POSTGRES_DB" >> remote_env.sh
+          printf "export POSTGRES_USER=%q\n" "$POSTGRES_USER" >> remote_env.sh
+          printf "export POSTGRES_PASSWORD=%q\n" "$POSTGRES_PASSWORD" >> remote_env.sh
+          printf "export POSTGRES_HOST=%q\n" "$POSTGRES_HOST" >> remote_env.sh
+          printf "export POSTGRES_PORT=%q\n" "$POSTGRES_PORT" >> remote_env.sh
+          printf "export NEXT_PUBLIC_APP_API_URL=%q\n" "$NEXT_PUBLIC_APP_API_URL" >> remote_env.sh
+          printf "export APP_API_URL_INTERNAL=%q\n" "$APP_API_URL_INTERNAL" >> remote_env.sh
+          printf "export DATABASE_HOST=%q\n" "$POSTGRES_HOST" >> remote_env.sh
+          printf "export DATABASE_PORT=%q\n" "$POSTGRES_PORT" >> remote_env.sh
+          printf "export DATABASE_USER=%q\n" "$POSTGRES_USER" >> remote_env.sh
+          printf "export DATABASE_PASSWORD=%q\n" "$POSTGRES_PASSWORD" >> remote_env.sh
+          printf "export DATABASE_NAME=%q\n" "$POSTGRES_DB" >> remote_env.sh
+          printf "export JWT_SECRET=%q\n" "$JWT_SECRET" >> remote_env.sh
+          printf "export OAUTH_CLIENT_ID=%q\n" "$OAUTH_CLIENT_ID" >> remote_env.sh
+          printf "export OAUTH_CLIENT_SECRET=%q\n" "$OAUTH_CLIENT_SECRET" >> remote_env.sh
+          printf "export OAUTH_TOKEN_URL=%q\n" "$OAUTH_TOKEN_URL" >> remote_env.sh
+          printf "export OAUTH_USER_INFO_URL=%q\n" "$OAUTH_USER_INFO_URL" >> remote_env.sh
+          printf "export REDIS_ADDRESS=%q\n" "$REDIS_ADDRESS" >> remote_env.sh
+          printf "export REDIS_PASSWORD=%q\n" "$REDIS_PASSWORD" >> remote_env.sh
+          printf "export REDIS_DB=%q\n" "$REDIS_DB" >> remote_env.sh
 
       - name: Prepare and deploy to target server
         run: |
           set -e
-          echo "==> Copying build to target server..."
+          echo "==> Copying binaries to target server..."
           scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} build/indexer ${{ vars.HOST_ALIAS }}:/tmp/
-          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} -r indexer/internal/tools/postgres ${{ vars.HOST_ALIAS }}:/tmp/
-          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} remote_setup.sh explorer_env.sh ${{ vars.HOST_ALIAS }}:/tmp/
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} build/dong-service ${{ vars.HOST_ALIAS }}:/tmp/
+          
+          echo "==> Copying migrations to target server..."
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} -r indexer/internal/tools/postgres ${{ vars.HOST_ALIAS }}:/tmp/postgres-indexer
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} -r dong-service/migrations/postgres ${{ vars.HOST_ALIAS }}:/tmp/postgres-dong-service
+
+          echo "==> Copying static config for dong-service..."
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} dong-service/config.yml ${{ vars.HOST_ALIAS }}:/tmp/dong-service-config.yml
+
+          echo "==> Copying setup scripts to target server..."
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} remote_setup.sh remote_env.sh ${{ vars.HOST_ALIAS }}:/tmp/
 
           echo "==> Syncing Frontend build to target..."
           rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" frontend/.next/standalone/ ${{ vars.HOST_ALIAS }}:/opt/frontend/.next/standalone/
@@ -149,10 +211,13 @@ jobs:
           echo "==> Running remote setup script..."
           ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "
             set -e
-            source /tmp/explorer_env.sh
+            source /tmp/remote_env.sh
             bash /tmp/remote_setup.sh \"$GIT_SHA\"
-            rm -f /tmp/indexer /tmp/remote_setup.sh /tmp/explorer_env.sh
-            rm -rf /tmp/postgres
+            
+            echo '==> Cleaning up temp files...'
+            rm -f /tmp/indexer /tmp/dong-service
+            rm -f /tmp/remote_setup.sh /tmp/remote_env.sh
+            rm -rf /tmp/postgres-indexer /tmp/postgres-dong-service
           "
 
       - name: Atomic swap + restart services
@@ -203,26 +268,35 @@ jobs:
             -e "s|__MMN_GRPC_URL__|$MMN_GRPC_URL|g" \
             /opt/mezon/explorer/config/secrets.example.yml \
             | sudo tee /etc/mezon/secrets.yml >/dev/null
+          
+          sudo mv /tmp/dong-service-config.yml /etc/mezon/dong-service-config.yml
 
           echo "==> Stopping services..."
           sudo systemctl stop frontend-explorer || true
           sudo systemctl stop indexer-api || true
           sudo systemctl stop indexer-orchestrator || true
+          sudo systemctl stop dong-service || true
 
           echo "==> Atomically swapping to new indexer binary..."
           sudo ln -sfn indexer-${GIT_SHA} /opt/indexer/bin/indexer
 
+          echo "==> Atomically swapping to new binary..."
+          sudo ln -sfn dong-service-${GIT_SHA} /opt/dong-service/bin/dong-service
+
           echo "==> Running database migrations..."
           set -a
           source /opt/indexer/config/indexer.env
+          source /opt/dong-service/config/dong-service.env
           set +a
           /opt/indexer/bin/indexer migrate-postgres
+          /opt/dong-service/bin/dong-service migrate up
 
           echo "==> Reloading and starting services..."
           sudo systemctl daemon-reload
           sudo systemctl start indexer-orchestrator
           sudo systemctl start indexer-api
           sudo systemctl start frontend-explorer
+          sudo systemctl start dong-service
 
           echo "==> Reloading Nginx..."
           sudo nginx -t && sudo systemctl reload nginx
@@ -240,3 +314,6 @@ jobs:
 
           echo "==> Checking Frontend status..."
           ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "systemctl is-active frontend-explorer"
+
+          echo "==> Checking Dong Service systemd status..."
+          ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "systemctl is-active dong-service"
