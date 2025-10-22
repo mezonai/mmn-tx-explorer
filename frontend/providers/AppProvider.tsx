@@ -3,7 +3,10 @@
 import { STORAGE_KEYS } from '@/constant';
 import { AUTHENCATION_ENDPOINT } from '@/modules/auth';
 import axios from 'axios';
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { AuthenticationService } from '@/modules/auth/api';
+import type { LoginResponse } from '@/modules/auth/type';
+import { mmnClient, zkClient } from '@/modules/auth/utils';
 
 interface AppContextType {
   isAuthenticated: boolean;
@@ -29,7 +32,46 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export function AppProvider({ children }: AppProviderProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
-
+  useEffect(() => {
+    const userStored = localStorage.getItem(STORAGE_KEYS.USER_INFO);
+    if (userStored) setUser(JSON.parse(userStored));
+    if (user) return;
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (!code) return;
+    const fetchUserInfo = async () => {
+      try {
+        const userInfo: LoginResponse = await AuthenticationService.getUserInfo(code);
+        setIsAuthenticated(true);
+        localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, userInfo.access_token);
+        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, userInfo.auth_token);
+        localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, userInfo.refresh_token);
+        const keypair = mmnClient.generateEphemeralKeyPair();
+        localStorage.setItem(STORAGE_KEYS.KEY_PAIR, JSON.stringify(keypair));
+        const senderAddress = mmnClient.getAddressFromUserId(userInfo.user.user_id || userInfo.user.sub);
+        const userObj = {
+          id: userInfo.user.user_id || userInfo.user.sub,
+          username: userInfo.user.username || userInfo.user.display_name || '',
+          email: userInfo.user.email,
+          avatar: userInfo.user.avatar,
+          walletAdress: senderAddress,
+        };
+        setUser(userObj);
+        localStorage.setItem(STORAGE_KEYS.USER_INFO, JSON.stringify(userObj));
+        const zkProof = await zkClient.getZkProofs({
+          userId: userInfo.user.user_id,
+          ephemeralPublicKey: keypair.publicKey,
+          jwt: userInfo.auth_token,
+          address: senderAddress,
+        });
+        localStorage.setItem(STORAGE_KEYS.ZK_PROOF, JSON.stringify(zkProof.proof || zkProof));
+        window.location.replace('/');
+      } catch (error) {
+        console.error('Error fetching user info in AppProvider', error);
+      }
+    };
+    fetchUserInfo();
+  }, []);
   const value: AppContextType = {
     isAuthenticated,
     setIsAuthenticated,
