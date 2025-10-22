@@ -7,6 +7,7 @@ import type { LoginResponse } from '@/modules/auth/type';
 import { Circle } from 'lucide-react';
 import { useUser, useAuth, useAuthActions } from '@/providers/AppProvider';
 import { mmnClient, zkClient } from '../../utils';
+import { STORAGE_KEYS } from '@/constant';
 
 export const NavBarAuthPanel: React.FC = () => {
   const router = useRouter();
@@ -24,12 +25,12 @@ export const NavBarAuthPanel: React.FC = () => {
         const userInfo: LoginResponse = await AuthenticationService.getUserInfo(code);
 
         setIsAuthenticated(true);
-        localStorage.setItem('access_token', userInfo.access_token);
-        localStorage.setItem('auth_token', userInfo.auth_token);
-        localStorage.setItem('refresh_token', userInfo.refresh_token);
-        localStorage.setItem('user', JSON.stringify(userInfo.user));
+        localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, userInfo.access_token);
+        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, userInfo.auth_token);
+        localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, userInfo.refresh_token);
+        localStorage.setItem(STORAGE_KEYS.USER_INFO, JSON.stringify(userInfo.user));
         const keypair = mmnClient.generateEphemeralKeyPair();
-        localStorage.setItem('key_pair', JSON.stringify(keypair));
+        localStorage.setItem(STORAGE_KEYS.KEY_PAIR, JSON.stringify(keypair));
         const senderAddress = mmnClient.getAddressFromUserId(userInfo.user.user_id);
         setUser({
           id: userInfo.user.user_id || userInfo.user.sub,

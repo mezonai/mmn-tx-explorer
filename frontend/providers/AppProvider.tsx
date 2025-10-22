@@ -1,5 +1,7 @@
 'use client';
 
+import { STORAGE_KEYS } from '@/constant';
+import { AUTHENCATION_ENDPOINT } from '@/modules/auth';
 import axios from 'axios';
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
@@ -62,18 +64,18 @@ export function useAuthActions() {
   const { setIsAuthenticated, setUser } = useApp();
 
   const login = () => {
-    window.location.href = '/oauth2/login';
+    window.location.href = AUTHENCATION_ENDPOINT.LOGIN;
   };
 
   const logout = () => {
-    const refreshToken = localStorage.getItem('refresh_token');
-    axios.post('/oauth2/logout', { refresh_token: refreshToken });
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('key_pair');
-    localStorage.removeItem('zkProof');
+    const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+    axios.post(AUTHENCATION_ENDPOINT.LOGOUT, { refresh_token: refreshToken });
+    localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.USER_INFO);
+    localStorage.removeItem(STORAGE_KEYS.KEY_PAIR);
+    localStorage.removeItem(STORAGE_KEYS.ZK_PROOF);
     setUser(null);
     setIsAuthenticated(false);
     window.location.href = '/';
