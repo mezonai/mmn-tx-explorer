@@ -26,11 +26,11 @@ export const NavBarAuthPanel: React.FC = () => {
   return user ? (
     <div className="relative hidden items-center md:flex" ref={panelRef}>
       <div
-        className={`flex cursor-pointer items-center gap-2 rounded-lg border-2 px-2 py-1 transition-all duration-150 ${open ? 'bg-[#9e77ed80]/50 shadow-md' : 'bg-white'} hover:bg-[#9e77ed80]/50 hover:shadow-md`}
+        className={`flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-all duration-150 ${open ? 'bg-[#9e77ed80]/50 shadow-md' : 'bg-white'} hover:bg-[#9e77ed80]/50 hover:shadow-md`}
         onClick={() => setOpen((v) => !v)}
       >
-        <img src={user.avatar} alt="avatar" className="h-8 w-8 rounded-full border" width={32} height={32} />
-        <span className="max-w-[120px] truncate text-sm font-medium">{user.username || user.email}</span>
+        <img src={user.avatar} alt="avatar" className="h-10 w-10 rounded-full border" width={32} height={32} />
+        <span className="text-md max-w-[120px] truncate font-medium">{user.username || user.email}</span>
       </div>
       {open && (
         <div className="absolute top-12 right-0 z-50 flex min-w-[220px] flex-col gap-2 rounded-lg border bg-white p-4 shadow-lg">
