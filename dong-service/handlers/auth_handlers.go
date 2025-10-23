@@ -4,6 +4,7 @@ import (
 	"dong-service/config"
 	"dong-service/constants"
 	"dong-service/database"
+	"dong-service/logger"
 	"dong-service/models"
 	"encoding/json"
 	"io"
@@ -35,8 +36,11 @@ func NewAuthHandler(cfg *config.Config) *AuthHandler {
 // @Success 200 {object} models.Response "Logout status message (see Description for possible values)"
 // @Router /logout [post]
 func (h *AuthHandler) LogoutHandler(c *gin.Context) {
+	logger.Info().Msg("Logout request received")
+
 	var req models.LogoutRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Error().Err(err).Msg("Failed to bind logout request")
 		c.JSON(http.StatusOK, models.Response{
 			Code:    http.StatusOK,
 			Message: constants.MsgLogoutSuccessButTokenInvalidMissingRefreshToken,
@@ -102,14 +106,16 @@ func (h *AuthHandler) LogoutHandler(c *gin.Context) {
 	}
 
 	if err := database.Delete(oldTokenID); err != nil {
+		logger.Error().Err(err).Str("token_id", oldTokenID).Msg("Failed to delete token from Redis")
 		c.JSON(http.StatusOK, models.Response{
 			Code:    http.StatusOK,
 			Message: constants.MsgLogoutSuccessButTokenInvalidFailedToDelete,
-			Data:   nil,
+			Data:    nil,
 		})
 		return
 	}
 
+	logger.Info().Str("token_id", oldTokenID).Msg("User logged out successfully")
 	c.JSON(http.StatusOK, models.Response{
 		Code:    http.StatusOK,
 		Message: constants.MsgLogoutSuccessTokenDeleted,
@@ -130,8 +136,11 @@ func (h *AuthHandler) LogoutHandler(c *gin.Context) {
 // @Failure 500 {object} models.Response "Internal server error"
 // @Router /oauth [post]
 func (h *AuthHandler) OauthHandler(c *gin.Context) {
+	logger.Info().Msg("OAuth login request received")
+
 	var req models.OauthRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Error().Err(err).Msg("Failed to bind OAuth request")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing code"})
 		return
 	}
@@ -145,6 +154,7 @@ func (h *AuthHandler) OauthHandler(c *gin.Context) {
 
 	tokenResp, err := http.PostForm(config.Oauth.TokenURL, form)
 	if err != nil {
+		logger.Error().Err(err).Str("token_url", config.Oauth.TokenURL).Msg("Failed to exchange OAuth code")
 		c.JSON(http.StatusBadGateway, models.ErrorResponse(http.StatusBadGateway, "Failed to exchange code: "+err.Error()))
 		return
 	}
@@ -218,9 +228,16 @@ func (h *AuthHandler) OauthHandler(c *gin.Context) {
 	tokenTTL := time.Duration(config.JWT.Refresh_Exp) * time.Second
 
 	if err := database.Set(tokenID, userInfo.UserID, tokenTTL); err != nil {
+		logger.Error().Err(err).Str("token_id", tokenID).Str("user_id", userInfo.UserID).Msg("Failed to store token in Redis")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to store token: "+err.Error()))
 		return
 	}
+
+	logger.Info().
+		Str("user_id", userInfo.UserID).
+		Str("username", userInfo.Username).
+		Str("token_id", tokenID).
+		Msg("User authenticated successfully via OAuth")
 
 	c.JSON(http.StatusOK, models.OauthResponse{
 		AccessToken:  signedAccess,
@@ -243,8 +260,11 @@ func (h *AuthHandler) OauthHandler(c *gin.Context) {
 // @Failure 500 {object} models.Response "Internal server error"
 // @Router /refresh [post]
 func (h *AuthHandler) RefreshHandler(c *gin.Context) {
+	logger.Info().Msg("Token refresh request received")
+
 	var req models.RefreshRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Error().Err(err).Msg("Failed to bind refresh request")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "missing refresh_token"))
 		return
 	}
@@ -327,9 +347,16 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	tokenTTL := time.Duration(config.JWT.Refresh_Exp) * time.Second
 
 	if err := database.Set(newTokenID, userID, tokenTTL); err != nil {
+		logger.Error().Err(err).Str("token_id", newTokenID).Str("user_id", userID).Msg("Failed to store new refresh token")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to store new refresh token"))
 		return
 	}
+
+	logger.Info().
+		Str("user_id", userID).
+		Str("old_token_id", oldTokenID).
+		Str("new_token_id", newTokenID).
+		Msg("Token refreshed successfully")
 
 	c.JSON(http.StatusOK, models.RefreshResponse{
 		AccessToken:  signedAccess,

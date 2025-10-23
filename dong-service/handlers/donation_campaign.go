@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"dong-service/constants"
+	"dong-service/logger"
 	"dong-service/models"
 	"dong-service/repository"
 	"dong-service/utils"
@@ -36,22 +37,28 @@ func NewDonationCampaignHandler(repo *repository.DonationCampaignRepository) *Do
 func (h *DonationCampaignHandler) CreateCampaign(c *gin.Context) {
 	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
+		logger.Error().Err(err).Msg("Unauthorized campaign creation attempt")
 		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
 		return
 	}
 
 	var req models.CreateDonationCampaignRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Error().Err(err).Int64("user_id", userID).Msg("Invalid request body for campaign creation")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+err.Error()))
 		return
 	}
 
+	logger.Info().Int64("user_id", userID).Str("name", req.Name).Msg("Creating new donation campaign")
+
 	campaign, err := h.repo.Create(&req, userID)
 	if err != nil {
+		logger.Error().Err(err).Int64("user_id", userID).Str("name", req.Name).Msg("Failed to create campaign")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToCreateCampaign+": "+err.Error()))
 		return
 	}
 
+	logger.Info().Int64("user_id", userID).Int64("campaign_id", campaign.ID).Str("name", campaign.Name).Msg("Campaign created successfully")
 	c.JSON(http.StatusCreated, models.SuccessResponseWithMessage(constants.MsgCampaignCreated, campaign.ToResponse()))
 }
 
@@ -69,20 +76,26 @@ func (h *DonationCampaignHandler) CreateCampaign(c *gin.Context) {
 func (h *DonationCampaignHandler) GetCampaign(c *gin.Context) {
 	id, err := utils.ParseInt64Param(c, "id")
 	if err != nil {
+		logger.Error().Err(err).Msg("Invalid campaign ID parameter")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidCampaignID))
 		return
 	}
 
+	logger.Debug().Int64("campaign_id", id).Msg("Fetching campaign details")
+
 	campaign, err := h.repo.GetByID(id)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
+			logger.Warn().Int64("campaign_id", id).Msg("Campaign not found")
 			c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, constants.ErrCampaignNotFound))
 			return
 		}
+		logger.Error().Err(err).Int64("campaign_id", id).Msg("Failed to get campaign")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToGetCampaign+": "+err.Error()))
 		return
 	}
 
+	logger.Debug().Int64("campaign_id", id).Str("name", campaign.Name).Msg("Campaign retrieved successfully")
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgCampaignRetrieved, campaign.ToResponse()))
 }
 
@@ -100,8 +113,15 @@ func (h *DonationCampaignHandler) ListCampaigns(c *gin.Context) {
 	pagination := utils.GetPaginationParams(c)
 	statusPtr := utils.ParseInt16Query(c, "status")
 
+	logger.Debug().
+		Int("page", pagination.Page).
+		Int("limit", pagination.Limit).
+		Interface("status", statusPtr).
+		Msg("Listing campaigns")
+
 	campaigns, err := h.repo.GetAll(pagination.Limit, pagination.Offset, statusPtr, pagination.Order)
 	if err != nil {
+		logger.Error().Err(err).Msg("Failed to get campaigns list")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToGetCampaigns+": "+err.Error()))
 		return
 	}
@@ -109,6 +129,7 @@ func (h *DonationCampaignHandler) ListCampaigns(c *gin.Context) {
 	// Get total count
 	total, err := h.repo.Count(statusPtr)
 	if err != nil {
+		logger.Error().Err(err).Msg("Failed to count campaigns")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToGetCampaigns+": "+err.Error()))
 		return
 	}
@@ -119,6 +140,7 @@ func (h *DonationCampaignHandler) ListCampaigns(c *gin.Context) {
 		responses[i] = campaign.ToResponse()
 	}
 
+	logger.Debug().Int("count", len(campaigns)).Int64("total", total).Msg("Campaigns retrieved successfully")
 	c.JSON(http.StatusOK, models.PaginatedSuccessResponse(constants.MsgCampaignsRetrieved, responses, pagination.Page, pagination.Limit, total))
 }
 
@@ -139,18 +161,21 @@ func (h *DonationCampaignHandler) ListCampaigns(c *gin.Context) {
 func (h *DonationCampaignHandler) UpdateCampaign(c *gin.Context) {
 	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
+		logger.Error().Err(err).Msg("Unauthorized campaign update attempt")
 		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
 		return
 	}
 
 	id, err := utils.ParseInt64Param(c, "id")
 	if err != nil {
+		logger.Error().Err(err).Int64("user_id", userID).Msg("Invalid campaign ID for update")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidCampaignID))
 		return
 	}
 
 	var req models.UpdateDonationCampaignRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Error().Err(err).Int64("user_id", userID).Int64("campaign_id", id).Msg("Invalid request body for campaign update")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+err.Error()))
 		return
 	}
@@ -158,16 +183,21 @@ func (h *DonationCampaignHandler) UpdateCampaign(c *gin.Context) {
 	// Check if campaign exists and belongs to creator
 	_, err = h.repo.GetByIDAndCreator(id, userID)
 	if err != nil {
+		logger.Error().Err(err).Int64("user_id", userID).Int64("campaign_id", id).Msg("Campaign not found or no permission to update")
 		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, constants.ErrCampaignNotFoundOrNoPermission))
 		return
 	}
 
+	logger.Info().Int64("user_id", userID).Int64("campaign_id", id).Msg("Updating campaign")
+
 	campaign, err := h.repo.Update(id, userID, &req)
 	if err != nil {
+		logger.Error().Err(err).Int64("user_id", userID).Int64("campaign_id", id).Msg("Failed to update campaign")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToUpdateCampaign+": "+err.Error()))
 		return
 	}
 
+	logger.Info().Int64("user_id", userID).Int64("campaign_id", id).Str("name", campaign.Name).Msg("Campaign updated successfully")
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgCampaignUpdated, campaign.ToResponse()))
 }
 
@@ -186,12 +216,14 @@ func (h *DonationCampaignHandler) UpdateCampaign(c *gin.Context) {
 func (h *DonationCampaignHandler) ActivateCampaign(c *gin.Context) {
 	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
+		logger.Error().Err(err).Msg("Unauthorized campaign activation attempt")
 		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
 		return
 	}
 
 	id, err := utils.ParseInt64Param(c, "id")
 	if err != nil {
+		logger.Error().Err(err).Int64("user_id", userID).Msg("Invalid campaign ID for activation")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidCampaignID))
 		return
 	}
@@ -199,16 +231,21 @@ func (h *DonationCampaignHandler) ActivateCampaign(c *gin.Context) {
 	// Check if campaign exists and belongs to creator
 	_, err = h.repo.GetByIDAndCreator(id, userID)
 	if err != nil {
+		logger.Error().Err(err).Int64("user_id", userID).Int64("campaign_id", id).Msg("Campaign not found or no permission to activate")
 		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, constants.ErrCampaignNotFoundOrNoPermission))
 		return
 	}
 
+	logger.Info().Int64("user_id", userID).Int64("campaign_id", id).Msg("Activating campaign")
+
 	campaign, err := h.repo.Activate(id, userID)
 	if err != nil {
+		logger.Error().Err(err).Int64("user_id", userID).Int64("campaign_id", id).Msg("Failed to activate campaign")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToActivateCampaign+": "+err.Error()))
 		return
 	}
 
+	logger.Info().Int64("user_id", userID).Int64("campaign_id", id).Str("name", campaign.Name).Msg("Campaign activated successfully")
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgCampaignActivated, campaign.ToResponse()))
 }
 
@@ -227,12 +264,14 @@ func (h *DonationCampaignHandler) ActivateCampaign(c *gin.Context) {
 func (h *DonationCampaignHandler) CloseCampaign(c *gin.Context) {
 	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
+		logger.Error().Err(err).Msg("Unauthorized campaign close attempt")
 		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
 		return
 	}
 
 	id, err := utils.ParseInt64Param(c, "id")
 	if err != nil {
+		logger.Error().Err(err).Int64("user_id", userID).Msg("Invalid campaign ID for closing")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidCampaignID))
 		return
 	}
@@ -240,15 +279,20 @@ func (h *DonationCampaignHandler) CloseCampaign(c *gin.Context) {
 	// Check if campaign exists and belongs to creator
 	_, err = h.repo.GetByIDAndCreator(id, userID)
 	if err != nil {
+		logger.Error().Err(err).Int64("user_id", userID).Int64("campaign_id", id).Msg("Campaign not found or no permission to close")
 		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, constants.ErrCampaignNotFoundOrNoPermission))
 		return
 	}
 
+	logger.Info().Int64("user_id", userID).Int64("campaign_id", id).Msg("Closing campaign")
+
 	campaign, err := h.repo.Close(id, userID)
 	if err != nil {
+		logger.Error().Err(err).Int64("user_id", userID).Int64("campaign_id", id).Msg("Failed to close campaign")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToCloseCampaign+": "+err.Error()))
 		return
 	}
 
+	logger.Info().Int64("user_id", userID).Int64("campaign_id", id).Str("name", campaign.Name).Msg("Campaign closed successfully")
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgCampaignClosed, campaign.ToResponse()))
 }

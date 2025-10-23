@@ -29,8 +29,15 @@ services:
       REDIS_ADDRESS: redis:6379
       REDIS_PASSWORD: ""
       REDIS_DB: 0
+      LOGGING_LEVEL: "debug"
+      LOGGING_OUTPUT: "stdout"
+      LOGGING_FILE_PATH: "/app/logs/dong-service.log"
+      LOGGING_MAX_SIZE: 100
+      LOGGING_MAX_AGE: 30
     ports:
       - "8888:8888"
+    volumes:
+      - dong_logs:/app/logs
     depends_on:
       redis:
         condition: service_healthy
@@ -50,6 +57,6 @@ services:
       retries: 5
 
 volumes:
-  postgres_data:
   redis_data:
+  dong_logs:
 

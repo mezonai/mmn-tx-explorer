@@ -3,6 +3,7 @@ package main
 import (
 	"dong-service/config"
 	"dong-service/database"
+	"dong-service/logger"
 	"dong-service/middleware"
 	"dong-service/routes"
 	"flag"
@@ -41,16 +42,26 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
+	// Initialize logger
+	if err := logger.InitLogger(&cfg.Logging); err != nil {
+		log.Fatalf("Failed to initialize logger: %v", err)
+	}
+
+	logger.Info().
+		Str("config_file", *configFile).
+		Str("gin_mode", cfg.Server.GinMode).
+		Msg("Dong Service starting")
+
 	// Set Gin mode
 	gin.SetMode(cfg.Server.GinMode)
 
 	// Initialize database
 	if err := database.InitDatabase(&cfg.Database); err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
+		logger.Fatal().Err(err).Msg("Failed to initialize database")
 	}
 
 	if err := database.InitRedisWhiteList(&cfg.Redis); err != nil {
-		log.Fatalf("Failed to initialize Redis whitelist: %v", err)
+		logger.Fatal().Err(err).Msg("Failed to initialize Redis whitelist")
 	}
 
 	// Create Gin router
@@ -66,9 +77,9 @@ func main() {
 
 	// Start server
 	addr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)
-	log.Printf("Starting server on %s", addr)
+	logger.Info().Str("address", addr).Msg("Starting HTTP server")
 
 	if err := r.Run(addr); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+		logger.Fatal().Err(err).Str("address", addr).Msg("Failed to start server")
 	}
 }

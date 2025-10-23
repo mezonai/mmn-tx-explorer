@@ -21,6 +21,9 @@ A RESTful API service to manage donation campaigns, built with the Gin Gonic fra
 - ✅ Pagination support
 - ✅ **Security scanning with OSV Scanner & govulncheck**
 - ✅ **Automated vulnerability detection via GitHub Actions**
+- ✅ **Structured logging with Zerolog**
+- ✅ **Log rotation with Lumberjack**
+- ✅ **Configurable log levels and outputs**
 
 ## 📋 Requirements
 
@@ -72,9 +75,38 @@ cors:
   allow_methods: "POST, OPTIONS, GET, PUT, DELETE, PATCH"
   allow_headers: "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With"
   allow_credentials: true
+
+# Logging Configuration
+logging:
+  level: "info"           # debug, info, warn, error, fatal, panic
+  output: "stdout"        # stdout or file
+  file_path: "logs/dong-service.log"  # required when output=file
+  max_size: 100           # max size in MB before rotation (default: 100)
+  max_age: 30             # max age in days to retain old logs (default: 30)
 ```
 
-**Note:** Environment variables can override config file values using the format: `SERVER_HOST`, `DATABASE_PORT`, etc.
+**Note:** Environment variables can override config file values using the format: `SERVER_HOST`, `DATABASE_PORT`, `LOGGING_LEVEL`, etc.
+
+### Logging Configuration
+
+The application uses **Zerolog** for structured logging with the following features:
+
+- **Log Levels**: `debug`, `info`, `warn`, `error`, `fatal`, `panic`
+- **Output Options**:
+  - `stdout`: Console output with colored formatting (default)
+  - `file`: Write logs to file with automatic rotation
+- **Log Rotation** (when `output=file`):
+  - `max_size`: Maximum file size in MB before rotation (default: 100MB)
+  - `max_age`: Maximum days to retain old log files (default: 30 days)
+  - `max_backups`: Maximum number of old log files to keep (fixed: 10)
+  - `compress`: Automatically compress rotated logs to `.gz` format
+
+**Environment Variables:**
+- `LOGGING_LEVEL`: Set log level
+- `LOGGING_OUTPUT`: Set output type (stdout/file)
+- `LOGGING_FILE_PATH`: Set log file path
+- `LOGGING_MAX_SIZE`: Set max file size in MB
+- `LOGGING_MAX_AGE`: Set max age in days
 
 ## 🚀 Run the application
 
@@ -259,6 +291,8 @@ dong-service/
 ├── handlers/            # HTTP request handlers
 │   ├── health.go        # Health check handler
 │   └── donation_campaign.go  # Campaign CRUD handlers
+├── logger/              # Logging package
+│   └── logger.go        # Zerolog logger with rotation support
 ├── middleware/          # Custom middleware
 │   ├── cors.go          # CORS middleware
 │   └── logger.go        # Request logging middleware
@@ -451,15 +485,11 @@ See [SECURITY.md](SECURITY.md) for detailed security documentation.
 
 ## 📝 TODO
 
-- [ ] Authentication & Authorization (JWT)
-- [ ] Rate limiting
-- [ ] Caching with Redis
-- [ ] Unit tests
-- [ ] Integration tests
+- [x] Authentication & Authorization (JWT)
 - [x] Security scanning (OSV Scanner, govulncheck)
 - [x] GitHub Actions CI/CD pipeline
-- [ ] Monitoring & Logging
-- [ ] API versioning
+- [x] Structured logging with Zerolog
+- [x] Log rotation with Lumberjack
 
 ## 📄 License
 

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"dong-service/logger"
 	"fmt"
 	"strings"
 
@@ -9,12 +10,13 @@ import (
 
 // Config represents the application configuration
 type Config struct {
-	Server   ServerConfig   `mapstructure:"server"`
-	Database DatabaseConfig `mapstructure:"database"`
-	CORS     CORSConfig     `mapstructure:"cors"`
-	JWT      JWTConfig      `mapstructure:"jwt"`
-	Oauth    OauthConfig    `mapstructure:"oauth"`
-	Redis    RedisConfig    `mapstructure:"redis"`
+	Server   ServerConfig     `mapstructure:"server"`
+	Database DatabaseConfig   `mapstructure:"database"`
+	CORS     CORSConfig       `mapstructure:"cors"`
+	JWT      JWTConfig        `mapstructure:"jwt"`
+	Oauth    OauthConfig      `mapstructure:"oauth"`
+	Redis    RedisConfig      `mapstructure:"redis"`
+	Logging  logger.LogConfig `mapstructure:"logging"`
 }
 
 type ServerConfig struct {
