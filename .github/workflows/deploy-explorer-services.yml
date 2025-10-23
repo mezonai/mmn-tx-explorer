@@ -289,7 +289,7 @@ jobs:
           source /opt/dong-service/config/dong-service.env
           set +a
           /opt/indexer/bin/indexer migrate-postgres
-          /opt/dong-service/bin/dong-service -config /etc/mezon/dong-service-config.yml migrate up
+          /opt/dong-service/bin/dong-service -f /etc/mezon/dong-service-config.yml migrate up
 
           echo "==> Reloading and starting services..."
           sudo systemctl daemon-reload
