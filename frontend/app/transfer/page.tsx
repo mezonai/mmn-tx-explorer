@@ -8,8 +8,8 @@ export const metadata: Metadata = {
 
 export default function TransferPage() {
   return (
-    // <RequireAuth title={String(metadata.title) || 'Give Coffee'}>
+    <RequireAuth title={String(metadata.title) || 'Give Coffee'}>
       <Transfer />
-    // </RequireAuth>
+    </RequireAuth>
   );
 }

@@ -1,6 +1,6 @@
 import { TransferInput, TransferResult } from '../types';
 import { useEffect, useState } from 'react';
-import { mmnClient, zkClient } from '@/modules/auth/utils';
+import { mmnClient } from '@/modules/auth/utils';
 import { ETransferType } from 'mmn-client-js';
 import { STORAGE_KEYS } from '@/constant';
 import type { UserInfoResponse } from '@/modules/auth/type';

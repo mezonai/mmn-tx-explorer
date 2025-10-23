@@ -1,7 +1,7 @@
 'use client';
-
-import { ReactNode } from 'react';
-import { useAuth, useAuthActions } from '@/providers/AppProvider';
+import { ReactNode, useEffect, useState } from 'react';
+import { useAuthActions, useUser } from '@/providers/AppProvider';
+import { STORAGE_KEYS } from '@/constant';
 import { PageHeader } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 
@@ -19,8 +19,25 @@ export const RequireAuth = ({
   children,
 }: RequireAuthProps) => {
   const { login } = useAuthActions();
-  const { isAuthenticated } = useAuth();
-  if (!isAuthenticated) {
+  const { user } = useUser();
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasUser, setHasUser] = useState(false);
+
+  useEffect(() => {
+    const userStored = localStorage.getItem(STORAGE_KEYS.USER_INFO);
+    setHasUser(!!userStored || !!user);
+    setIsLoading(false);
+  }, [user]);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full w-full items-center justify-center px-4 sm:px-6 lg:px-8">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!hasUser) {
     return (
       <div className="h-full w-full px-4 sm:px-6 lg:px-8">
         <PageHeader title={title} header={header} description={description} />
