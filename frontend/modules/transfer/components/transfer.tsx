@@ -37,17 +37,19 @@ export const Transfer = () => {
     [storage.user]
   );
 
-  useEffect(() => {
+  const refreshBalance = useCallback(async () => {
     if (!userId) return;
-    mmnClient
-      .getAccountByUserId(userId)
-      .then((acc) => {
-        setSenderBalance(acc.balance);
-      })
-      .catch((err) => {
-        console.error('Failed to load sender account:', err);
-      });
+    try {
+      const account = await mmnClient.getAccountByUserId(userId);
+      setSenderBalance(account.balance);
+    } catch (err) {
+      console.error('Failed to load balance:', err);
+    }
   }, [userId]);
+
+  useEffect(() => {
+    refreshBalance();
+  }, [refreshBalance]);
 
   const handleInputChange = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -82,17 +84,11 @@ export const Transfer = () => {
       });
 
       if (result.success) {
-        try {
-          const account = await mmnClient.getAccountByUserId(userId);
-          setSenderBalance(account.balance);
-
-          toast.success('Transfer successful!');
-          resetForm();
-        } catch (err) {
-          console.error('Failed to update balance:', err);
-          toast.success('Transfer successful! (Balance may take a moment to update)');
-          resetForm();
-        }
+        toast.success('Transfer successful!');
+        resetForm();
+        setTimeout(() => {
+          refreshBalance();
+        }, 1000);
       } else {
         toast.error(result.error || 'Transfer failed. Please try again.');
       }
@@ -100,7 +96,7 @@ export const Transfer = () => {
       console.error('Transfer error:', error);
       toast.error(error?.message || 'Unexpected error occurred during transfer.');
     }
-  }, [form, transfer, userId, setSenderBalance]);
+  }, [form, transfer, refreshBalance]);
 
   return (
     <div className="h-full w-full px-4 sm:px-6 lg:px-8">
