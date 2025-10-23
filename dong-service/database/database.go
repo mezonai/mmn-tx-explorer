@@ -21,6 +21,17 @@ func InitDatabase(cfg *config.DatabaseConfig) error {
 		return fmt.Errorf("failed to open database: %w", err)
 	}
 
+	schema := cfg.Schema
+	_, err = DB.Exec(fmt.Sprintf(`CREATE SCHEMA IF NOT EXISTS %s`, schema))
+	if err != nil {
+		return fmt.Errorf("failed to create schema: %w", err)
+	}
+
+	_, err = DB.Exec(fmt.Sprintf(`SET search_path TO %s`, schema))
+	if err != nil {
+		return fmt.Errorf("failed to set schema: %w", err)
+	}
+
 	// Test connection
 	if err := DB.Ping(); err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
