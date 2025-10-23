@@ -174,6 +174,11 @@ type ValidationConfig struct {
 	Mode string `mapstructure:"mode"` // "disabled", "minimal", "strict"
 }
 
+type StatsWorkerConfig struct {
+	Enabled         bool `mapstructure:"enabled"`
+	IntervalMinutes int  `mapstructure:"intervalMinutes"`
+}
+
 type Config struct {
 	RPC              RPCConfig              `mapstructure:"rpc"`
 	Log              LogConfig              `mapstructure:"log"`
@@ -186,11 +191,16 @@ type Config struct {
 	Publisher        PublisherConfig        `mapstructure:"publisher"`
 	WorkMode         WorkModeConfig         `mapstructure:"workMode"`
 	Validation       ValidationConfig       `mapstructure:"validation"`
+	StatsWorker      StatsWorkerConfig      `mapstructure:"statsWorker"`
 }
 
 var Cfg Config
 
 func LoadConfig(cfgFile string) error {
+	// Set default values for StatsWorker
+	viper.SetDefault("statsWorker.enabled", true)
+	viper.SetDefault("statsWorker.intervalMinutes", 5)
+
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 		if err := viper.ReadInConfig(); err != nil {

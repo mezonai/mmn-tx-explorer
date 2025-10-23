@@ -108,6 +108,10 @@ reorgHandler:
   # Whether to force starting from fromBlock for reorg detection
   forceFromBlock: false
 
+statsWorker:
+  enabled: true
+  intervalMinutes: 60 
+
 # Storage configuration for different components
 storage:
   # Main storage configuration - Primary data storage

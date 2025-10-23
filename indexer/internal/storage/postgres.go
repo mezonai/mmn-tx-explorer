@@ -2186,6 +2186,69 @@ func (p *PostgresConnector) GetTransactionsByWalletCount(ctx context.Context, wa
 	return count, nil
 }
 
+func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
+    tx, err := p.db.BeginTx(ctx, nil)
+    if err != nil {
+        return fmt.Errorf("failed to begin transaction: %w", err)
+    }
+    defer tx.Rollback()
+
+    var totalBlocks int64
+    err = tx.QueryRowContext(ctx, `
+        SELECT COUNT(DISTINCT block_number) 
+        FROM blocks 
+        WHERE transaction_count > 0
+    `).Scan(&totalBlocks)
+    if err != nil {
+        return fmt.Errorf("failed to count blocks: %w", err)
+    }
+
+    var totalTransactions int64
+    err = tx.QueryRowContext(ctx, `
+        SELECT COUNT(*) 
+        FROM transactions
+    `).Scan(&totalTransactions)
+    if err != nil {
+        return fmt.Errorf("failed to count transactions: %w", err)
+    }
+
+    var totalWallets int64
+    err = tx.QueryRowContext(ctx, `
+        SELECT COUNT(*) 
+        FROM wallet
+    `).Scan(&totalWallets)
+    if err != nil {
+        return fmt.Errorf("failed to count wallets: %w", err)
+    }
+
+    statsUpdates := []struct {
+        key   string
+        value int64
+    }{
+        {"total_blocks", totalBlocks},
+        {"total_transactions", totalTransactions},
+        {"total_wallets", totalWallets},
+    }
+
+    for _, stat := range statsUpdates {
+        _, err = tx.ExecContext(ctx, `
+            INSERT INTO stats(key, value) 
+            VALUES ($1, $2)
+            ON CONFLICT (key) 
+            DO UPDATE SET value = $2
+        `, stat.key, stat.value)
+        if err != nil {
+            return fmt.Errorf("failed to update %s stat: %w", stat.key, err)
+        }
+    }
+
+    if err := tx.Commit(); err != nil {
+        return fmt.Errorf("failed to commit transaction: %w", err)
+    }
+
+    return nil
+}
+
 func (p *PostgresConnector) scanRowsToTransactions(rows *sql.Rows) ([]common.Transaction, error) {
 	transactions := make([]common.Transaction, 0)
 

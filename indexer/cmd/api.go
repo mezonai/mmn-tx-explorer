@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os/signal"
 	"syscall"
@@ -16,6 +17,8 @@ import (
 
 	"github.com/thirdweb-dev/indexer/internal/handlers"
 	"github.com/thirdweb-dev/indexer/internal/middleware"
+	"github.com/thirdweb-dev/indexer/internal/storage"
+	"github.com/thirdweb-dev/indexer/internal/worker"
 
 	// Import the generated Swagger docs
 	config "github.com/thirdweb-dev/indexer/configs"
@@ -41,11 +44,39 @@ var (
 // @BasePath /
 // @Security BasicAuth
 // @securityDefinitions.basic BasicAuth
+// getMainStorage returns the main storage connector
+func getMainStorage() (storage.IMainStorage, error) {
+	var err error
+	var mainStorage storage.IMainStorage
+	
+	if config.Cfg.Storage.Main.Postgres != nil {
+		mainStorage, err = storage.NewPostgresConnector(config.Cfg.Storage.Main.Postgres)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, fmt.Errorf("no main storage driver configured")
+	}
+	
+	return mainStorage, nil
+}
+
 func RunApi(cmd *cobra.Command, args []string) {
 	docs.SwaggerInfo.Host = config.Cfg.API.Host
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	mainStorage, err := getMainStorage()
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to create storage connector")
+	}
+
+	if config.Cfg.StatsWorker.Enabled {
+		log.Info().Int("intervalMinutes", config.Cfg.StatsWorker.IntervalMinutes).Msg("Starting stats recalculation worker")
+		statsWorker := worker.NewStatsRecalculationWorker(mainStorage, config.Cfg.StatsWorker.IntervalMinutes)
+		statsWorker.Start()
+	}
 
 	r := gin.New()
 	r.Use(middleware.Logger())
@@ -121,7 +152,7 @@ func RunApi(cmd *cobra.Command, args []string) {
 	})
 
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":3000",
 		Handler: r,
 	}
 
