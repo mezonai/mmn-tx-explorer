@@ -95,7 +95,8 @@ export function AppProvider({ children }: AppProviderProps) {
           address: senderAddress,
           clientType: EZkClientType.OAUTH,
         });
-        localStorage.setItem(STORAGE_KEYS.ZK_PROOF, JSON.stringify(zkProof.proof || zkProof));
+        localStorage.setItem(STORAGE_KEYS.ZK_PROOF, JSON.stringify(zkProof));
+        window.location.replace('/');
       } catch (error) {
         console.error('Error fetching user info in AppProvider', error);
       }
