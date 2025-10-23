@@ -1,13 +1,14 @@
 'use client';
 
 import { STORAGE_KEYS } from '@/constant';
-import { AUTHENCATION_ENDPOINT } from '@/modules/auth';
+import { AUTHENTICATION_ENDPOINT } from '@/modules/auth';
 import axios from 'axios';
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { AuthenticationService } from '@/modules/auth/api';
 import type { LoginResponse } from '@/modules/auth/type';
 import { mmnClient, zkClient } from '@/modules/auth/utils';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { EZkClientType } from 'mmn-client-js';
 
 interface AppContextType {
   isAuthenticated: boolean;
@@ -21,7 +22,7 @@ interface User {
   username: string;
   email?: string;
   avatar?: string;
-  walletAdress: string;
+  walletAddress: string;
 }
 
 interface AppProviderProps {
@@ -36,21 +37,45 @@ export function AppProvider({ children }: AppProviderProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   useEffect(() => {
+    const localTokenStr = localStorage.getItem(STORAGE_KEYS.TOKEN);
+    const localToken = localTokenStr ? JSON.parse(localTokenStr) : null;
+    if (localToken) {
+      (async () => {
+        try {
+          const response = await AuthenticationService.refreshLogin(localToken.refresh_token);
+          localStorage.setItem(
+            STORAGE_KEYS.TOKEN,
+            JSON.stringify({
+              access_token: response.access_token,
+              refresh_token: response.refresh_token,
+            })
+          );
+        } catch (error) {
+          console.error('Error:', error);
+        }
+      })();
+    }
     const userStored = localStorage.getItem(STORAGE_KEYS.USER_INFO);
     if (userStored) {
       setUser(JSON.parse(userStored));
       return;
     }
     const code = searchParams.get('code');
+    console.log(code);
     if (!code) return;
     const fetchUserInfo = async () => {
       try {
         const userInfo: LoginResponse = await AuthenticationService.getUserInfo(code);
         setIsAuthenticated(true);
         router.replace('/');
-        localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, userInfo.access_token);
+        localStorage.setItem(
+          STORAGE_KEYS.TOKEN,
+          JSON.stringify({
+            access_token: userInfo.access_token,
+            refresh_token: userInfo.refresh_token,
+          })
+        );
         localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, userInfo.auth_token);
-        localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, userInfo.refresh_token);
         const keypair = mmnClient.generateEphemeralKeyPair();
         localStorage.setItem(STORAGE_KEYS.KEY_PAIR, JSON.stringify(keypair));
         const senderAddress = mmnClient.getAddressFromUserId(userInfo.user.user_id || userInfo.user.sub);
@@ -59,7 +84,7 @@ export function AppProvider({ children }: AppProviderProps) {
           username: userInfo.user.username || userInfo.user.display_name || '',
           email: userInfo.user.email,
           avatar: userInfo.user.avatar,
-          walletAdress: senderAddress,
+          walletAddress: senderAddress,
         };
         setUser(userObj);
         localStorage.setItem(STORAGE_KEYS.USER_INFO, JSON.stringify(userObj));
@@ -68,9 +93,9 @@ export function AppProvider({ children }: AppProviderProps) {
           ephemeralPublicKey: keypair.publicKey,
           jwt: userInfo.auth_token,
           address: senderAddress,
+          clientType: EZkClientType.OAUTH,
         });
         localStorage.setItem(STORAGE_KEYS.ZK_PROOF, JSON.stringify(zkProof.proof || zkProof));
-        window.location.replace('/');
       } catch (error) {
         console.error('Error fetching user info in AppProvider', error);
       }
@@ -111,12 +136,12 @@ export function useAuthActions() {
   const { setIsAuthenticated, setUser } = useApp();
 
   const login = () => {
-    window.location.href = AUTHENCATION_ENDPOINT.LOGIN;
+    window.location.href = AUTHENTICATION_ENDPOINT.LOGIN;
   };
 
   const logout = () => {
     const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
-    axios.post(AUTHENCATION_ENDPOINT.LOGOUT, { refresh_token: refreshToken });
+    axios.post(AUTHENTICATION_ENDPOINT.LOGOUT, { refresh_token: refreshToken });
     localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
