@@ -1,28 +1,49 @@
 package models
 
+import "net/http"
+
+// Response represents a standard API response
 type Response struct {
-	Code    int         `json:"code"`
-	Message string      `json:"message"`
-	Data    interface{} `json:"data,omitempty"`
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data    any    `json:"data,omitempty"`
 }
 
+// PaginationMeta contains pagination metadata
+type PaginationMeta struct {
+	Page      int   `json:"page"`
+	Limit     int   `json:"limit"`
+	Total     int64 `json:"total"`
+	TotalPage int64 `json:"total_page"`
+}
+
+// PaginatedResponse represents a paginated API response
 type PaginatedResponse struct {
-	Code    int         `json:"code"`
-	Message string      `json:"message"`
-	Data    interface{} `json:"data"`
-	Total   int64       `json:"total"`
-	Page    int         `json:"page"`
-	PerPage int         `json:"per_page"`
+	Success    bool           `json:"success"`
+	Message    string         `json:"message"`
+	Data       any            `json:"data"`
+	Pagination PaginationMeta `json:"pagination"`
 }
 
-func SuccessResponse(data interface{}) Response {
+// SuccessResponse creates a successful response with data
+func SuccessResponse(data any) Response {
 	return Response{
-		Code:    200,
+		Code:    http.StatusOK,
 		Message: "Success",
 		Data:    data,
 	}
 }
 
+// SuccessResponseWithMessage creates a successful response with custom message
+func SuccessResponseWithMessage(message string, data any) Response {
+	return Response{
+		Code:    http.StatusOK,
+		Message: message,
+		Data:    data,
+	}
+}
+
+// ErrorResponse creates an error response
 func ErrorResponse(code int, message string) Response {
 	return Response{
 		Code:    code,
@@ -30,17 +51,24 @@ func ErrorResponse(code int, message string) Response {
 	}
 }
 
-func PaginatedSuccessResponse(data interface{}, total int64, page, perPage int) PaginatedResponse {
+// PaginatedSuccessResponse creates a paginated success response
+func PaginatedSuccessResponse(message string, data any, page, limit int, total int64) PaginatedResponse {
+	totalPage := max((total+int64(limit)-1)/int64(limit), 0)
+
 	return PaginatedResponse{
-		Code:    200,
-		Message: "Success",
+		Success: true,
+		Message: message,
 		Data:    data,
-		Total:   total,
-		Page:    page,
-		PerPage: perPage,
+		Pagination: PaginationMeta{
+			Page:      page,
+			Limit:     limit,
+			Total:     total,
+			TotalPage: totalPage,
+		},
 	}
 }
 
+// HealthResponse represents a health check response
 type HealthResponse struct {
 	Status  string `json:"status"`
 	Message string `json:"message"`

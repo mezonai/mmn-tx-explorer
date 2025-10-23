@@ -572,14 +572,10 @@ const docTemplate = `{
         "models.CreateDonationCampaignRequest": {
             "type": "object",
             "required": [
-                "creator",
                 "donation_wallet",
                 "name"
             ],
             "properties": {
-                "creator": {
-                    "type": "integer"
-                },
                 "description": {
                     "type": "string"
                 },
@@ -607,7 +603,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "creator": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "description": {
                     "type": "string"
@@ -622,7 +618,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"
