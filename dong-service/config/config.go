@@ -43,12 +43,13 @@ type OauthConfig struct {
 type DatabaseConfig struct {
 	Host         string `mapstructure:"host"`
 	Port         string `mapstructure:"port"`
-	User         string `mapstructure:"user"`
+	UserName     string `mapstructure:"username"`
 	Password     string `mapstructure:"password"`
-	DBName       string `mapstructure:"name"`
+	Name         string `mapstructure:"name"`
 	SSLMode      string `mapstructure:"sslmode"`
 	MaxOpenConns int    `mapstructure:"max_open_conns"`
 	MaxIdleConns int    `mapstructure:"max_idle_conns"`
+	Schema       string `mapstructure:"schema"`
 }
 
 type CORSConfig struct {
@@ -83,5 +84,5 @@ func LoadConfig(cfgFile string) (*Config, error) {
 
 func (c *DatabaseConfig) GetDSN() string {
 	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		c.Host, c.Port, c.User, c.Password, c.DBName, c.SSLMode)
+		c.Host, c.Port, c.UserName, c.Password, c.Name, c.SSLMode)
 }
