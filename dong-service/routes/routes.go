@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"dong-service/config"
 	"dong-service/database"
 	_ "dong-service/docs" // Import docs to load swagger documentation
 	"dong-service/handlers"
@@ -12,18 +13,21 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-// SetupRoutes configures all application routes
-func SetupRoutes(router *gin.Engine) {
-
+// SetupRoutes configures all application routes with dependency injection
+func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 	// Health check endpoint
 	router.GET("/health", handlers.Health)
 
 	// Swagger documentation
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-    router.POST("/oauth", handlers.OauthHandler)
-	router.POST("/refresh", handlers.RefreshHandler)
-	router.POST("/logout", handlers.LogoutHandler)
+	// Initialize auth handler with config
+	authHandler := handlers.NewAuthHandler(cfg)
+
+	// Auth routes
+	router.POST("/oauth", authHandler.OauthHandler)
+	router.POST("/refresh", authHandler.RefreshHandler)
+	router.POST("/logout", authHandler.LogoutHandler)
 
 	// API v1 routes
 	v1 := router.Group("/api/v1")
@@ -34,16 +38,17 @@ func SetupRoutes(router *gin.Engine) {
 		// Initialize handlers
 		campaignHandler := handlers.NewDonationCampaignHandler(campaignRepo)
 
-		// Campaign routes
+		// Campaign routes (protected)
 		campaigns_private := v1.Group("/admin/campaigns")
-		{ 
-			campaigns_private.Use(middleware.Authentication)	
+		{
+			campaigns_private.Use(middleware.Authentication(cfg.JWT.Secret))
 			campaigns_private.POST("", campaignHandler.CreateCampaign)
 			campaigns_private.PUT("/:id", campaignHandler.UpdateCampaign)
 			campaigns_private.PATCH("/:id/activate", campaignHandler.ActivateCampaign)
 			campaigns_private.PATCH("/:id/close", campaignHandler.CloseCampaign)
 		}
 
+		// Campaign routes (public)
 		campaigns_public := v1.Group("/campaigns")
 		{
 			campaigns_public.GET("", campaignHandler.ListCampaigns)

@@ -2,6 +2,7 @@ package models
 
 import (
 	"dong-service/constants"
+	"fmt"
 	"time"
 )
 
@@ -28,7 +29,6 @@ type CreateDonationCampaignRequest struct {
 	URL            *string `json:"url,omitempty"`
 	EndDate        *string `json:"end_date,omitempty"`
 	DonationWallet string  `json:"donation_wallet" binding:"required"`
-	Creator        int64   `json:"creator" binding:"required"`
 }
 
 // UpdateDonationCampaignRequest represents the request body for updating a campaign
@@ -42,14 +42,14 @@ type UpdateDonationCampaignRequest struct {
 
 // DonationCampaignResponse represents the response for a campaign
 type DonationCampaignResponse struct {
-	ID             int64   `json:"id"`
+	ID             string  `json:"id"`
 	Name           string  `json:"name"`
 	Description    *string `json:"description,omitempty"`
 	Goal           *int64  `json:"goal,omitempty"`
 	URL            *string `json:"url,omitempty"`
 	EndDate        *string `json:"end_date,omitempty"`
 	DonationWallet string  `json:"donation_wallet"`
-	Creator        int64   `json:"creator"`
+	Creator        string  `json:"creator"`
 	Status         int16   `json:"status"`
 	CreatedAt      string  `json:"created_at"`
 	UpdatedAt      string  `json:"updated_at"`
@@ -58,14 +58,14 @@ type DonationCampaignResponse struct {
 // ToResponse converts DonationCampaign to DonationCampaignResponse
 func (dc *DonationCampaign) ToResponse() DonationCampaignResponse {
 	return DonationCampaignResponse{
-		ID:             dc.ID,
+		ID:             fmt.Sprintf("%d", dc.ID),
 		Name:           dc.Name,
 		Description:    dc.Description,
 		Goal:           dc.Goal,
 		URL:            dc.URL,
 		EndDate:        dc.EndDate,
 		DonationWallet: dc.DonationWallet,
-		Creator:        dc.Creator,
+		Creator:        fmt.Sprintf("%d", dc.Creator),
 		Status:         dc.Status,
 		CreatedAt:      dc.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:      dc.UpdatedAt.Format(time.RFC3339),

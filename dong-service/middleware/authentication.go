@@ -4,62 +4,94 @@ import (
 	"net/http"
 	"strings"
 
-	"dong-service/config"
+	"dong-service/constants"
 	"dong-service/database"
+	"dong-service/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func Authentication(c *gin.Context) {
-	tokenString := ""
+// Authentication returns a middleware that validates JWT tokens and checks whitelist
+func Authentication(jwtSecret string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tokenString := extractBearerToken(c)
+		if tokenString == "" {
+			abortWithError(c, http.StatusUnauthorized, constants.ErrInvalidToken)
+			return
+		}
+
+		if jwtSecret == "" {
+			abortWithError(c, http.StatusInternalServerError, "JWT secret not configured")
+			return
+		}
+
+		token, err := parseToken(tokenString, jwtSecret)
+		if err != nil {
+			abortWithError(c, http.StatusUnauthorized, constants.ErrInvalidToken)
+			return
+		}
+
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			abortWithError(c, http.StatusUnauthorized, constants.ErrInvalidToken)
+			return
+		}
+
+		if err := validateClaims(claims); err != nil {
+			abortWithError(c, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		c.Set("user", claims)
+		c.Next()
+	}
+}
+
+// extractBearerToken extracts the token from the Authorization header
+func extractBearerToken(c *gin.Context) string {
 	authHeader := c.GetHeader("Authorization")
-	if strings.HasPrefix(authHeader, "Bearer ") {
-		tokenString = strings.TrimPrefix(authHeader, "Bearer ")
+	token, found := strings.CutPrefix(authHeader, "Bearer ")
+	if found {
+		return token
 	}
+	return ""
+}
 
-	if tokenString == "" {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Missing or invalid token"})
-		return
-	}
-
-	secret := config.Cfg.JWT.Secret
-	if secret == "" {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "JWT secret not configured"})
-		return
-	}
-
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-
+// parseToken parses and validates the JWT token
+func parseToken(tokenString, secret string) (*jwt.Token, error) {
+	return jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, jwt.ErrSignatureInvalid
 		}
 		return []byte(secret), nil
 	})
-	if err != nil || !token.Valid {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired access token"})
-		return
+}
+
+// validateClaims validates the token claims
+func validateClaims(claims jwt.MapClaims) error {
+	// Check token type
+	tokenType, _ := claims["type"].(string)
+	if tokenType != "access" {
+		return jwt.ErrTokenInvalidClaims
 	}
 
-	if claims, ok := token.Claims.(jwt.MapClaims); ok {
-
-		if t, _ := claims["type"].(string); t != "access" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "token is not an access token"})
-			return
-		}
-
-		tokenID, _ := claims["token_id"].(string)
-		if tokenID == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing token_id in token"})
-			return
-		}
-		ok, _, err := database.Get(tokenID)
-		if err != nil || !ok {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "access token not whitelisted"})
-			return
-		}
-		c.Set("user", claims)
+	// Check token ID
+	tokenID, _ := claims["token_id"].(string)
+	if tokenID == "" {
+		return jwt.ErrTokenInvalidClaims
 	}
 
-	c.Next()
+	// Check whitelist
+	ok, _, err := database.Get(tokenID)
+	if err != nil || !ok {
+		return jwt.ErrTokenInvalidClaims
+	}
+
+	return nil
+}
+
+// abortWithError aborts the request with a standardized error response
+func abortWithError(c *gin.Context, statusCode int, message string) {
+	c.AbortWithStatusJSON(statusCode, models.ErrorResponse(statusCode, message))
 }

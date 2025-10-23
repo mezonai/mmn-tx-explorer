@@ -4,9 +4,17 @@ import (
 	"database/sql"
 	"dong-service/constants"
 	"dong-service/models"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
+)
+
+// Custom repository errors
+var (
+	ErrNotFound         = errors.New("donation campaign not found")
+	ErrPermissionDenied = errors.New("donation campaign not found or you don't have permission")
+	ErrNoFieldsToUpdate = errors.New("no fields to update")
 )
 
 // DonationCampaignRepository handles database operations for donation campaigns
@@ -20,7 +28,7 @@ func NewDonationCampaignRepository(db *sql.DB) *DonationCampaignRepository {
 }
 
 // Create creates a new donation campaign
-func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampaignRequest) (*models.DonationCampaign, error) {
+func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampaignRequest, creator int64) (*models.DonationCampaign, error) {
 	query := `
 		INSERT INTO donation_campaign (name, description, goal, url, end_date, donation_wallet, creator, status)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -36,7 +44,7 @@ func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampa
 		campaign.URL,
 		campaign.EndDate,
 		campaign.DonationWallet,
-		campaign.Creator,
+		creator,
 		constants.CampaignStatusDraft,
 	).Scan(
 		&result.ID,
@@ -83,7 +91,40 @@ func (r *DonationCampaignRepository) GetByID(id int64) (*models.DonationCampaign
 	)
 
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("donation campaign not found")
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get donation campaign: %w", err)
+	}
+
+	return &campaign, nil
+}
+
+// GetByIDAndCreator retrieves a donation campaign by ID and creator
+func (r *DonationCampaignRepository) GetByIDAndCreator(id int64, creator int64) (*models.DonationCampaign, error) {
+	query := `
+		SELECT id, name, description, goal, url, end_date, donation_wallet, creator, status, created_at, updated_at
+		FROM donation_campaign
+		WHERE id = $1 AND creator = $2
+	`
+
+	var campaign models.DonationCampaign
+	err := r.db.QueryRow(query, id, creator).Scan(
+		&campaign.ID,
+		&campaign.Name,
+		&campaign.Description,
+		&campaign.Goal,
+		&campaign.URL,
+		&campaign.EndDate,
+		&campaign.DonationWallet,
+		&campaign.Creator,
+		&campaign.Status,
+		&campaign.CreatedAt,
+		&campaign.UpdatedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, ErrPermissionDenied
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get donation campaign: %w", err)
@@ -100,7 +141,7 @@ func (r *DonationCampaignRepository) GetAll(limit, offset int, status *int16, or
 
 	var (
 		whereClauses []string
-		args         []interface{}
+		args         []any
 		argCount     = 1
 	)
 
@@ -154,10 +195,10 @@ func (r *DonationCampaignRepository) GetAll(limit, offset int, status *int16, or
 }
 
 // Update updates a donation campaign
-func (r *DonationCampaignRepository) Update(id int64, req *models.UpdateDonationCampaignRequest) (*models.DonationCampaign, error) {
+func (r *DonationCampaignRepository) Update(id int64, creator int64, req *models.UpdateDonationCampaignRequest) (*models.DonationCampaign, error) {
 	// Build dynamic update query
 	var setClauses []string
-	var args []interface{}
+	var args []any
 	argCount := 1
 
 	if req.Name != nil {
@@ -187,7 +228,7 @@ func (r *DonationCampaignRepository) Update(id int64, req *models.UpdateDonation
 	}
 
 	if len(setClauses) == 0 {
-		return nil, fmt.Errorf("no fields to update")
+		return nil, ErrNoFieldsToUpdate
 	}
 
 	// Always update updated_at
@@ -195,15 +236,19 @@ func (r *DonationCampaignRepository) Update(id int64, req *models.UpdateDonation
 	args = append(args, time.Now())
 	argCount++
 
-	// Add ID to args
+	// Add ID and creator to args for WHERE clause
 	args = append(args, id)
+	idArgNum := argCount
+	argCount++
+	args = append(args, creator)
+	creatorArgNum := argCount
 
 	query := fmt.Sprintf(`
 		UPDATE donation_campaign
 		SET %s
-		WHERE id = $%d
+		WHERE id = $%d AND creator = $%d
 		RETURNING id, name, description, goal, url, end_date, donation_wallet, creator, status, created_at, updated_at
-	`, strings.Join(setClauses, ", "), argCount)
+	`, strings.Join(setClauses, ", "), idArgNum, creatorArgNum)
 
 	var campaign models.DonationCampaign
 	err := r.db.QueryRow(query, args...).Scan(
@@ -221,7 +266,7 @@ func (r *DonationCampaignRepository) Update(id int64, req *models.UpdateDonation
 	)
 
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("donation campaign not found")
+		return nil, ErrPermissionDenied
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to update donation campaign: %w", err)
@@ -231,11 +276,11 @@ func (r *DonationCampaignRepository) Update(id int64, req *models.UpdateDonation
 }
 
 // Activate sets a campaign status to Active
-func (r *DonationCampaignRepository) Activate(id int64) (*models.DonationCampaign, error) {
+func (r *DonationCampaignRepository) Activate(id int64, creator int64) (*models.DonationCampaign, error) {
 	query := `
         UPDATE donation_campaign
         SET status = $1, updated_at = $2
-        WHERE id = $3
+        WHERE id = $3 AND creator = $4
         RETURNING id, name, description, goal, url, end_date, donation_wallet, creator, status, created_at, updated_at
     `
 
@@ -245,6 +290,7 @@ func (r *DonationCampaignRepository) Activate(id int64) (*models.DonationCampaig
 		constants.CampaignStatusActive,
 		time.Now(),
 		id,
+		creator,
 	).Scan(
 		&campaign.ID,
 		&campaign.Name,
@@ -260,7 +306,7 @@ func (r *DonationCampaignRepository) Activate(id int64) (*models.DonationCampaig
 	)
 
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("donation campaign not found")
+		return nil, ErrPermissionDenied
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to activate donation campaign: %w", err)
@@ -270,11 +316,11 @@ func (r *DonationCampaignRepository) Activate(id int64) (*models.DonationCampaig
 }
 
 // Close sets a campaign status to Closed
-func (r *DonationCampaignRepository) Close(id int64) (*models.DonationCampaign, error) {
+func (r *DonationCampaignRepository) Close(id int64, creator int64) (*models.DonationCampaign, error) {
 	query := `
 		UPDATE donation_campaign
 		SET status = $1, updated_at = $2
-		WHERE id = $3
+		WHERE id = $3 AND creator = $4
 		RETURNING id, name, description, goal, url, end_date, donation_wallet, creator, status, created_at, updated_at
 	`
 
@@ -284,6 +330,7 @@ func (r *DonationCampaignRepository) Close(id int64) (*models.DonationCampaign, 
 		constants.CampaignStatusClosed,
 		time.Now(),
 		id,
+		creator,
 	).Scan(
 		&campaign.ID,
 		&campaign.Name,
@@ -299,7 +346,7 @@ func (r *DonationCampaignRepository) Close(id int64) (*models.DonationCampaign, 
 	)
 
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("donation campaign not found")
+		return nil, ErrPermissionDenied
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to close donation campaign: %w", err)
@@ -313,7 +360,7 @@ func (r *DonationCampaignRepository) Count(status *int16) (int64, error) {
 	query := `SELECT COUNT(*) FROM donation_campaign`
 	var (
 		whereClauses []string
-		args         []interface{}
+		args         []any
 	)
 
 	if status != nil {

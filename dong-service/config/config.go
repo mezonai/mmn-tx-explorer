@@ -6,7 +6,8 @@ import (
 
 	"github.com/spf13/viper"
 )
-var Cfg *Config
+
+// Config represents the application configuration
 type Config struct {
 	Server   ServerConfig   `mapstructure:"server"`
 	Database DatabaseConfig `mapstructure:"database"`

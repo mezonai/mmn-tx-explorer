@@ -1,8 +1,6 @@
 definitions:
   models.CreateDonationCampaignRequest:
     properties:
-      creator:
-        type: integer
       description:
         type: string
       donation_wallet:
@@ -16,7 +14,6 @@ definitions:
       url:
         type: string
     required:
-    - creator
     - donation_wallet
     - name
     type: object
@@ -25,7 +22,7 @@ definitions:
       created_at:
         type: string
       creator:
-        type: integer
+        type: string
       description:
         type: string
       donation_wallet:
@@ -35,7 +32,7 @@ definitions:
       goal:
         type: integer
       id:
-        type: integer
+        type: string
       name:
         type: string
       status:

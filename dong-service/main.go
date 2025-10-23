@@ -40,7 +40,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
-    config.Cfg = cfg
 
 	// Set Gin mode
 	gin.SetMode(cfg.Server.GinMode)
@@ -62,8 +61,8 @@ func main() {
 	r.Use(middleware.Logger())
 	r.Use(middleware.CORS(&cfg.CORS))
 
-	// Setup routes
-	routes.SetupRoutes(r)
+	// Setup routes with dependency injection
+	routes.SetupRoutes(r, cfg)
 
 	// Start server
 	addr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)

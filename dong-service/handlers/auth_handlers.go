@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"dong-service/config"
+	"dong-service/constants"
 	"dong-service/database"
 	"dong-service/models"
 	"encoding/json"
@@ -15,6 +16,15 @@ import (
 	"github.com/google/uuid"
 )
 
+type AuthHandler struct {
+	cfg *config.Config
+}
+
+// NewDonationCampaignHandler creates a new donation campaign handler
+func NewAuthHandler(cfg *config.Config) *AuthHandler {
+	return &AuthHandler{cfg: cfg}
+}
+
 // LogoutHandler godoc
 // @Summary Logout and revoke refresh token
 // @Description Invalidate the provided refresh token and remove it from Redis whitelist. Always returns HTTP 200 with different message responses:
@@ -24,22 +34,22 @@ import (
 // @Param LogoutRequest body models.LogoutRequest true "Refresh token to revoke"
 // @Success 200 {object} models.Response "Logout status message (see Description for possible values)"
 // @Router /logout [post]
-func LogoutHandler(c *gin.Context) {
+func (h *AuthHandler) LogoutHandler(c *gin.Context) {
 	var req models.LogoutRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusOK, models.Response{
 			Code:    http.StatusOK,
-			Message: "Logout successful but token invalid: missing refresh_token",
+			Message: constants.MsgLogoutSuccessButTokenInvalidMissingRefreshToken,
 			Data:    nil,
 		})
 		return
 	}
 
-	secret := config.Cfg.JWT.Secret
+	secret := h.cfg.JWT.Secret
 	if secret == "" {
 		c.JSON(http.StatusOK, models.Response{
 			Code:    http.StatusOK,
-			Message: "Logout successful but token invalid: jwt secret not configured",
+			Message: constants.MsgLogoutSuccessButTokenInvalidJWTSecretNotConfigured,
 			Data:    nil,
 		})
 		return
@@ -54,7 +64,7 @@ func LogoutHandler(c *gin.Context) {
 	if err != nil || !token.Valid {
 		c.JSON(http.StatusOK, models.Response{
 			Code:    http.StatusOK,
-			Message: "Logout successful but token invalid: invalid refresh token",
+			Message: constants.MsgLogoutSuccessButTokenInvalidInvalidRefreshToken,
 			Data:    nil,
 		})
 		return
@@ -64,7 +74,7 @@ func LogoutHandler(c *gin.Context) {
 	if !ok {
 		c.JSON(http.StatusOK, models.Response{
 			Code:    http.StatusOK,
-			Message: "Logout successful but token invalid: invalid claims",
+			Message: constants.MsgLogoutSuccessButTokenInvalidInvalidClaims,
 			Data:    nil,
 		})
 		return
@@ -73,7 +83,7 @@ func LogoutHandler(c *gin.Context) {
 	if t, _ := claims["type"].(string); t != "refresh" {
 		c.JSON(http.StatusOK, models.Response{
 			Code:    http.StatusOK,
-			Message: "Logout successful but token invalid: token is not a refresh token",
+			Message: constants.MsgLogoutSuccessButTokenInvalidNotRefreshToken,
 			Data:    nil,
 		})
 		return
@@ -85,7 +95,7 @@ func LogoutHandler(c *gin.Context) {
 	if err != nil || !exists {
 		c.JSON(http.StatusOK, models.Response{
 			Code:    http.StatusOK,
-			Message: "Logout successful but token invalid: token ID not found in whitelist",
+			Message: constants.MsgLogoutSuccessButTokenInvalidTokenIDNotFound,
 			Data:    nil,
 		})
 		return
@@ -94,7 +104,7 @@ func LogoutHandler(c *gin.Context) {
 	if err := database.Delete(oldTokenID); err != nil {
 		c.JSON(http.StatusOK, models.Response{
 			Code:    http.StatusOK,
-			Message: "Logout successful but token invalid: failed to delete refresh token",
+			Message: constants.MsgLogoutSuccessButTokenInvalidFailedToDelete,
 			Data:   nil,
 		})
 		return
@@ -102,7 +112,7 @@ func LogoutHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.Response{
 		Code:    http.StatusOK,
-		Message: "Logout successful, token deleted from whitelist",
+		Message: constants.MsgLogoutSuccessTokenDeleted,
 		Data:    nil,
 	})
 }
@@ -119,20 +129,21 @@ func LogoutHandler(c *gin.Context) {
 // @Failure 502 {object} models.Response "Failed to exchange code or get user info"
 // @Failure 500 {object} models.Response "Internal server error"
 // @Router /oauth [post]
-func OauthHandler(c *gin.Context) {
+func (h *AuthHandler) OauthHandler(c *gin.Context) {
 	var req models.OauthRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing code"})
 		return
 	}
+	config := h.cfg
 	form := url.Values{}
 	form.Set("grant_type", "authorization_code")
 	form.Set("code", req.Code)
-	form.Set("client_id", config.Cfg.Oauth.ClientID)
-	form.Set("client_secret", config.Cfg.Oauth.ClientSecret)
+	form.Set("client_id", config.Oauth.ClientID)
+	form.Set("client_secret", config.Oauth.ClientSecret)
 	form.Set("redirect_uri", req.RedirectURI)
 
-	tokenResp, err := http.PostForm(config.Cfg.Oauth.TokenURL, form)
+	tokenResp, err := http.PostForm(config.Oauth.TokenURL, form)
 	if err != nil {
 		c.JSON(http.StatusBadGateway, models.ErrorResponse(http.StatusBadGateway, "Failed to exchange code: "+err.Error()))
 		return
@@ -153,7 +164,7 @@ func OauthHandler(c *gin.Context) {
 
 	userForm := url.Values{}
 	userForm.Set("access_token", tokenData.AccessToken)
-	userInfoResp, err := http.PostForm(config.Cfg.Oauth.UserInfoURL, userForm)
+	userInfoResp, err := http.PostForm(config.Oauth.UserInfoURL, userForm)
 	if err != nil {
 		c.JSON(http.StatusBadGateway, models.ErrorResponse(http.StatusBadGateway, "Failed to get user info: "+err.Error()))
 		return
@@ -170,7 +181,7 @@ func OauthHandler(c *gin.Context) {
 		return
 	}
 
-	jwtSecret := config.Cfg.JWT.Secret
+	jwtSecret := config.JWT.Secret
 	if jwtSecret == "" {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "jwt secret not configured"))
 		return
@@ -182,7 +193,7 @@ func OauthHandler(c *gin.Context) {
 		"token_id": tokenID,
 		"user_id":  userInfo.UserID,
 		"type":     "access",
-		"exp":      time.Now().Add(time.Duration(config.Cfg.JWT.Access_Exp) * time.Second).Unix(),
+		"exp":      time.Now().Add(time.Duration(config.JWT.Access_Exp) * time.Second).Unix(),
 	}
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
 	signedAccess, err := accessToken.SignedString([]byte(jwtSecret))
@@ -195,7 +206,7 @@ func OauthHandler(c *gin.Context) {
 		"token_id": tokenID,
 		"user_id":  userInfo.UserID,
 		"type":     "refresh",
-		"exp":      time.Now().Add(time.Duration(config.Cfg.JWT.Refresh_Exp) * time.Second).Unix(),
+		"exp":      time.Now().Add(time.Duration(config.JWT.Refresh_Exp) * time.Second).Unix(),
 	}
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
 	signedRefresh, err := refreshToken.SignedString([]byte(jwtSecret))
@@ -204,7 +215,7 @@ func OauthHandler(c *gin.Context) {
 		return
 	}
 
-	tokenTTL := time.Duration(config.Cfg.JWT.Refresh_Exp) * time.Second
+	tokenTTL := time.Duration(config.JWT.Refresh_Exp) * time.Second
 
 	if err := database.Set(tokenID, userInfo.UserID, tokenTTL); err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to store token: "+err.Error()))
@@ -231,14 +242,15 @@ func OauthHandler(c *gin.Context) {
 // @Failure 401 {object} models.Response "Unauthorized or token not found"
 // @Failure 500 {object} models.Response "Internal server error"
 // @Router /refresh [post]
-func RefreshHandler(c *gin.Context) {
+func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	var req models.RefreshRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "missing refresh_token"))
 		return
 	}
 
-	secret := config.Cfg.JWT.Secret
+	config := h.cfg
+	secret := config.JWT.Secret
 	if secret == "" {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "jwt secret not configured"))
 		return
@@ -251,7 +263,7 @@ func RefreshHandler(c *gin.Context) {
 		return []byte(secret), nil
 	})
 	if err != nil || !token.Valid {
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "Invalid or expired refresh token!"))
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrInvalidOrExpiredRefreshToken))
 		return
 	}
 
@@ -290,7 +302,7 @@ func RefreshHandler(c *gin.Context) {
 		"token_id": newTokenID,
 		"user_id":  userID,
 		"type":     "access",
-		"exp":      time.Now().Add(time.Duration(config.Cfg.JWT.Access_Exp) * time.Second).Unix(),
+		"exp":      time.Now().Add(time.Duration(config.JWT.Access_Exp) * time.Second).Unix(),
 	}
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
 	signedAccess, err := accessToken.SignedString([]byte(secret))
@@ -303,7 +315,7 @@ func RefreshHandler(c *gin.Context) {
 		"token_id": newTokenID,
 		"user_id":  userID,
 		"type":     "refresh",
-		"exp":      time.Now().Add(time.Duration(config.Cfg.JWT.Refresh_Exp) * time.Second).Unix(),
+		"exp":      time.Now().Add(time.Duration(config.JWT.Refresh_Exp) * time.Second).Unix(),
 	}
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
 	signedRefresh, err := refreshToken.SignedString([]byte(secret))
@@ -312,7 +324,7 @@ func RefreshHandler(c *gin.Context) {
 		return
 	}
 
-	tokenTTL := time.Duration(config.Cfg.JWT.Refresh_Exp) * time.Second
+	tokenTTL := time.Duration(config.JWT.Refresh_Exp) * time.Second
 
 	if err := database.Set(newTokenID, userID, tokenTTL); err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to store new refresh token"))
