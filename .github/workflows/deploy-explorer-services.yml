@@ -145,8 +145,8 @@ jobs:
           sudo install -m 0755 /tmp/dong-service /opt/dong-service/bin/dong-service-${SHA}
 
           echo "==> Deploying migrations for dong-service..."
-          sudo rm -rf /opt/dong-service/migrations/postgres
-          sudo mv /tmp/postgres-dong-service /opt/dong-service/migrations/
+          sudo rm -rf /opt/dong-service/migrations
+          sudo mv /tmp/postgres-dong-service /opt/dong-service/migrations
 
           sudo chown -R mmn:mmn /opt/indexer
           sudo chown -R mmn:mmn /opt/frontend
@@ -158,7 +158,7 @@ jobs:
 
           echo "==> Deploying migrations..."
           sudo rm -rf /opt/indexer/migrations/postgres
-          sudo mv /tmp/postgres-indexer /opt/indexer/migrations/
+          sudo mv /tmp/postgres-indexer /opt/indexer/migrations/postgres
 
           echo "==> Preparation complete!"
           EOF
@@ -194,11 +194,11 @@ jobs:
           scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} build/dong-service ${{ vars.HOST_ALIAS }}:/tmp/
           
           echo "==> Copying migrations to target server..."
-          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} -r indexer/internal/tools/postgres ${{ vars.HOST_ALIAS }}:/tmp/postgres-indexer
-          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} -r dong-service/migrations/postgres ${{ vars.HOST_ALIAS }}:/tmp/postgres-dong-service
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} -r indexer/internal/tools/postgres ${{ vars.HOST_ALIAS }}:/tmp/postgres-indexer/
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} -r dong-service/migrations ${{ vars.HOST_ALIAS }}:/tmp/postgres-dong-service/
 
           echo "==> Copying static config for dong-service..."
-          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} dong-service/config.yml ${{ vars.HOST_ALIAS }}:/tmp/dong-service-config.yml
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} dong-service/config/config.yml ${{ vars.HOST_ALIAS }}:/tmp/dong-service-config.yml
 
           echo "==> Copying setup scripts to target server..."
           scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} remote_setup.sh remote_env.sh ${{ vars.HOST_ALIAS }}:/tmp/
@@ -289,7 +289,7 @@ jobs:
           source /opt/dong-service/config/dong-service.env
           set +a
           /opt/indexer/bin/indexer migrate-postgres
-          /opt/dong-service/bin/dong-service migrate up
+          /opt/dong-service/bin/dong-service -config /etc/mezon/dong-service-config.yml migrate up
 
           echo "==> Reloading and starting services..."
           sudo systemctl daemon-reload
