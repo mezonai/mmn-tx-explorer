@@ -1,0 +1,14 @@
+export const DONATION_ENDPOINTS = {
+  CAMPAIGNS: '/campaigns',
+  CAMPAIGN_BY_ID: (id: string) => `/campaigns/${id}`,
+  STATS: '/campaigns/stats',
+  DONATIONS: '/donations',
+  MY_DONATIONS: '/donations/my-donations',
+} as const;
+
+export const QUERY_KEYS = {
+  CAMPAIGNS: 'campaigns',
+  CAMPAIGN: 'campaign',
+  CAMPAIGN_STATS: 'campaign-stats',
+  USER_DONATIONS: 'user-donations',
+} as const;
