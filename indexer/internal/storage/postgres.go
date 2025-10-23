@@ -2006,16 +2006,16 @@ func (p *PostgresConnector) refreshWalletFromService(ctx context.Context, addres
 		return nil
 	}
 
-	resp, err := p.mmnGrpcService.GetAccountByAddress(ctx, address)
+	resp, err := p.mmnGrpcService.GetAccount(ctx, address)
 	if err != nil {
 		return err
 	}
 
-	if resp == nil || resp.Account == nil {
+	if resp == nil {
 		return nil
 	}
 
-	return p.insertWallet(ctx, address, resp.Account.Nonce, resp.Account.Balance)
+	return p.insertWallet(ctx, address, resp.Nonce, resp.Balance)
 }
 
 // GetWallet retrieves wallet information by address
