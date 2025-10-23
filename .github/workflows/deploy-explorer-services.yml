@@ -145,8 +145,8 @@ jobs:
           sudo install -m 0755 /tmp/dong-service /opt/dong-service/bin/dong-service-${SHA}
 
           echo "==> Deploying migrations for dong-service..."
-          sudo rm -rf /opt/dong-service/migrations/postgres
-          sudo mv /tmp/postgres-dong-service /opt/dong-service/migrations/
+          sudo rm -rf /opt/dong-service/migrations
+          sudo mv /tmp/postgres-dong-service /opt/dong-service/migrations
 
           sudo chown -R mmn:mmn /opt/indexer
           sudo chown -R mmn:mmn /opt/frontend
@@ -198,7 +198,7 @@ jobs:
           scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} -r dong-service/migrations ${{ vars.HOST_ALIAS }}:/tmp/postgres-dong-service
 
           echo "==> Copying static config for dong-service..."
-          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} dong-service/config.yml ${{ vars.HOST_ALIAS }}:/tmp/dong-service-config.yml
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} dong-service/config/config.yml ${{ vars.HOST_ALIAS }}:/tmp/dong-service-config.yml
 
           echo "==> Copying setup scripts to target server..."
           scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} remote_setup.sh remote_env.sh ${{ vars.HOST_ALIAS }}:/tmp/
