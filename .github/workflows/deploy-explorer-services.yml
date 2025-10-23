@@ -158,7 +158,7 @@ jobs:
 
           echo "==> Deploying migrations..."
           sudo rm -rf /opt/indexer/migrations/postgres
-          sudo mv /tmp/postgres-indexer /opt/indexer/migrations/
+          sudo mv /tmp/postgres-indexer /opt/indexer/migrations/postgres
 
           echo "==> Preparation complete!"
           EOF
@@ -194,8 +194,8 @@ jobs:
           scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} build/dong-service ${{ vars.HOST_ALIAS }}:/tmp/
           
           echo "==> Copying migrations to target server..."
-          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} -r indexer/internal/tools/postgres ${{ vars.HOST_ALIAS }}:/tmp/postgres-indexer
-          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} -r dong-service/migrations ${{ vars.HOST_ALIAS }}:/tmp/postgres-dong-service
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} -r indexer/internal/tools/postgres ${{ vars.HOST_ALIAS }}:/tmp/postgres-indexer/
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} -r dong-service/migrations ${{ vars.HOST_ALIAS }}:/tmp/postgres-dong-service/
 
           echo "==> Copying static config for dong-service..."
           scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} dong-service/config/config.yml ${{ vars.HOST_ALIAS }}:/tmp/dong-service-config.yml
