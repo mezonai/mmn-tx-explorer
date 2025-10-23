@@ -5,6 +5,7 @@ export async function GET(request: Request) {
   const code = searchParams.get('code');
   const redirect_uri = process.env.NEXT_PUBLIC_OAUTH2_REDIRECT_URI;
   const backend = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+
   if (!code) {
     return NextResponse.redirect(`${origin}/?error=missing_code`);
   }

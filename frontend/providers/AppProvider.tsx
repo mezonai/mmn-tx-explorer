@@ -61,7 +61,6 @@ export function AppProvider({ children }: AppProviderProps) {
       return;
     }
     const code = searchParams.get('code');
-    console.log(code);
     if (!code) return;
     const fetchUserInfo = async () => {
       try {
@@ -95,7 +94,7 @@ export function AppProvider({ children }: AppProviderProps) {
           address: senderAddress,
           clientType: EZkClientType.OAUTH,
         });
-        localStorage.setItem(STORAGE_KEYS.ZK_PROOF, JSON.stringify(zkProof.proof || zkProof));
+        localStorage.setItem(STORAGE_KEYS.ZK_PROOF, JSON.stringify(zkProof));
       } catch (error) {
         console.error('Error fetching user info in AppProvider', error);
       }
@@ -142,12 +141,7 @@ export function useAuthActions() {
   const logout = () => {
     const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
     axios.post(AUTHENTICATION_ENDPOINT.LOGOUT, { refresh_token: refreshToken });
-    localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-    localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-    localStorage.removeItem(STORAGE_KEYS.USER_INFO);
-    localStorage.removeItem(STORAGE_KEYS.KEY_PAIR);
-    localStorage.removeItem(STORAGE_KEYS.ZK_PROOF);
+    localStorage.clear();
     setUser(null);
     setIsAuthenticated(false);
     window.location.href = '/';
