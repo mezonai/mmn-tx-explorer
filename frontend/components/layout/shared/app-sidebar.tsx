@@ -19,7 +19,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { navGroupItems } from '../navigation/nav-items';
 import { NavbarItem } from '@/components/shared/navbar';
 import { GlobalSearch } from '@/modules/global-search/components';
-import { SidebarAuthPanel } from '@/modules/auth/components/account-section/side-bar-auth-panel';
+import { SidebarAuthPanel } from '@/modules/auth/components';
 
 export function AppSidebar() {
   return (
