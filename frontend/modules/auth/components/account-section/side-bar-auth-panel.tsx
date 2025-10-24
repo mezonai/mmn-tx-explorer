@@ -3,13 +3,17 @@ import { Button } from '@/components/ui/button';
 import { Circle, Copy } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { useUser, useAuthActions } from '@/providers/AppProvider';
+import { cn } from '@/lib/utils';
 
 export const SidebarAuthPanel = () => {
   const { user } = useUser();
   const { login, logout } = useAuthActions();
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
-
+  const classname = cn(
+    'hover:bg-brand-primary flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-all duration-150 hover:shadow-md',
+    open ? 'bg-brand-primary shadow-md' : 'bg-background'
+  );
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
@@ -26,10 +30,7 @@ export const SidebarAuthPanel = () => {
 
   return user ? (
     <div className="relative" ref={panelRef}>
-      <div
-        className={`flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-all duration-150 ${open ? 'bg-violet-100 shadow-md' : 'bg-white'} hover:border-violet-400 hover:bg-violet-100 hover:shadow-md`}
-        onClick={() => setOpen((v) => !v)}
-      >
+      <div className={classname} onClick={() => setOpen((v) => !v)}>
         {user.avatar && (
           <img src={user.avatar} alt="avatar" className="h-10 w-10 rounded-full border" width={40} height={40} />
         )}

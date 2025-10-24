@@ -3,7 +3,6 @@
 import { SidebarInset, SidebarProvider } from '../ui/sidebar';
 import { AppFooter, AppNavbar, AppSidebar } from './shared';
 import { Toaster } from 'sonner';
-
 interface MainLayoutProps {
   children: React.ReactNode;
 }
@@ -24,6 +23,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           <AppFooter />
         </div>
       </SidebarInset>
+      <Toaster />
     </SidebarProvider>
   );
 }

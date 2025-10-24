@@ -16,7 +16,6 @@ export async function POST(request: Request) {
       beStatus = res.status;
       beRes = await res.json().catch(() => null);
     }
-    console.log('Logout response:', beStatus, beRes);
     return NextResponse.json({ status: beStatus, data: beRes }, { status: 200 });
   } catch (err) {
     return NextResponse.json({ error: 'Logout proxy error', detail: String(err) }, { status: 500 });
