@@ -14,6 +14,7 @@ import {
 import axios from 'axios';
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 
 interface AppContextType {
   isAuthenticated: boolean;
@@ -55,9 +56,7 @@ export function AppProvider({ children }: AppProviderProps) {
               refresh_token: response.refresh_token,
             })
           );
-        } catch (error) {
-          console.error('Error:', error);
-        }
+        } catch {}
       })();
     }
     const userStored = localStorage.getItem(STORAGE_KEYS.USER_INFO);
@@ -74,14 +73,15 @@ export function AppProvider({ children }: AppProviderProps) {
         const userInfo: LoginResponse = await AuthenticationService.getUserInfo(authCode);
         setIsAuthenticated(true);
         router.replace('/');
+        toast.success('Login successful!');
         handleTokenStorage(userInfo);
         const keypair = generateAndStoreKeyPair();
         const senderAddress = mmnClient.getAddressFromUserId(userInfo.user.user_id || userInfo.user.sub);
         const userObject = processAndStoreUser(userInfo.user, senderAddress);
         setUser(userObject);
         await fetchAndStoreZkProof(userInfo.user.user_id, keypair.publicKey, userInfo.auth_token, senderAddress);
-      } catch (error) {
-        console.error('Login fail', error);
+      } catch {
+        toast.success('Login failed!');
         router.push('/');
       }
     };
