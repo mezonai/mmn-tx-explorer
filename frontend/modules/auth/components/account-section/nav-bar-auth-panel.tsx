@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Circle, Copy } from 'lucide-react';
 import { useUser, useAuthActions } from '@/providers/AppProvider';
 import { cn } from '@/lib/utils';
+import { CopyButton } from '@/components/ui/copy-button';
 export const NavBarAuthPanel: React.FC = () => {
   const { user } = useUser();
   const { login, logout } = useAuthActions();
@@ -34,7 +35,7 @@ export const NavBarAuthPanel: React.FC = () => {
         <span className="text-md max-w-[120px] truncate font-medium">{user.username || user.email}</span>
       </div>
       {open && (
-        <div className="absolute top-12 right-0 z-50 flex min-w-[220px] flex-col gap-2 rounded-lg border bg-white p-4 shadow-lg">
+        <div className="bg-background absolute top-12 right-0 z-50 flex size-56 flex-col gap-2 rounded-lg border p-4 shadow-lg">
           <div className="mb-2 flex items-center gap-2">
             <img src={user.avatar} alt="avatar" className="h-8 w-8 rounded-full" width={32} height={32} />
             <div>
@@ -43,24 +44,12 @@ export const NavBarAuthPanel: React.FC = () => {
             </div>
           </div>
           <div className="mb-2 flex flex-col gap-1 text-xs text-gray-700">
-            <div className="flex items-center gap-2 break-all">
+            <div className="flex items-center gap-x-0.5 gap-y-2 break-all">
               <span className="font-medium">Wallet:</span>
-              <span className="rounded px-2 py-0.5 text-gray-800">
-                {user.walletAddress ? `${user.walletAddress.slice(0, 5)}...${user.walletAddress.slice(-4)}` : 'N/A'}
+              <span className="rounded py-0.5 text-gray-800">
+                {user.walletAddress ? `${user.walletAddress.slice(0, 3)}...${user.walletAddress.slice(-4)}` : 'N/A'}
               </span>
-              {user.walletAddress && (
-                <Button
-                  onClick={() => {
-                    navigator.clipboard.writeText(user.walletAddress);
-                  }}
-                  title="Copy wallet address"
-                  size="icon"
-                  variant="ghost"
-                  className="ml-1"
-                >
-                  <Copy size={16} />
-                </Button>
-              )}
+              {user.walletAddress && <CopyButton textToCopy={user.walletAddress} className="ml-2" />}
             </div>
             {user.email && (
               <div className="flex items-center gap-2">
