@@ -12,6 +12,25 @@ import (
 )
 
 // GetWallets returns wallet list with sorting and pagination (default sort by balance desc)
+// @Summary Get wallets
+// @Description Retrieve a list of wallets with sorting, filtering, and pagination
+// @Tags wallet
+// @Accept json
+// @Produce json
+// @Security BasicAuth
+// @Param chainId path string true "Chain ID"
+// @Param filter query string false "Filter parameters (e.g. balance>1000)"
+// @Param group_by query string false "Field to group results by"
+// @Param sort_by query string false "Field to sort results by (default: balance)"
+// @Param sort_order query string false "Sort order (asc or desc, default: desc)"
+// @Param page query int false "Page number for pagination"
+// @Param limit query int false "Number of items per page" default(5)
+// @Param force_consistent_data query bool false "Force consistent data at the expense of query speed"
+// @Success 200 {object} api.QueryResponse{data=[]map[string]interface{}}
+// @Failure 400 {object} api.Error
+// @Failure 401 {object} api.Error
+// @Failure 500 {object} api.Error
+// @Router /{chainId}/wallets [get]
 func GetWallets(c *gin.Context) {
 	// Parse common query params for consistency
 	queryParams, err := api.ParseQueryParams(c.Request)
