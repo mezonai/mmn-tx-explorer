@@ -1,12 +1,34 @@
 import Link from 'next/link';
+import { useState, useMemo } from 'react';
 import { CampaignCard } from './campaign-card';
 import { ContactCard } from './contact-card';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/configs/routes.config';
 import { useCampaigns } from '../../../hooks/useCampaigns';
+import { CampaignStatus } from '../../../type';
 
 export const ActiveCampaign = () => {
   const { campaigns, isLoading, error } = useCampaigns();
+  const [selectedStatus, setSelectedStatus] = useState<CampaignStatus | 'all'>('all');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // Filter campaigns based on selected status
+  const filteredCampaigns = useMemo(() => {
+    if (selectedStatus === 'all') {
+      return campaigns;
+    }
+    return campaigns.filter(campaign => campaign.status === selectedStatus);
+  }, [campaigns, selectedStatus]);
+
+  // Status options for dropdown
+  const statusOptions = [
+    { value: 'all', label: 'All statuses' },
+    { value: CampaignStatus.Active, label: 'Active' },
+    { value: CampaignStatus.Draft, label: 'Draft' },
+    { value: CampaignStatus.Closed, label: 'Closed' },
+  ];
+
+  const selectedLabel = statusOptions.find(option => option.value === selectedStatus)?.label || 'All statuses';
 
   if (isLoading) {
     return (
@@ -27,7 +49,7 @@ export const ActiveCampaign = () => {
         {error && (
           <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
             <p className="text-sm text-amber-800 dark:text-amber-200">
-              Failed to load campaigns from API. Showing sample campaigns for demonstration.
+              Failed to load campaigns from API.
             </p>
           </div>
         )}
@@ -40,16 +62,47 @@ export const ActiveCampaign = () => {
             </p>
           </div>
           <div className="flex flex-wrap gap-3 text-sm">
-            <button className="hover:border-primary hover:text-primary dark:hover:border-primary-light inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 font-medium text-gray-600 transition dark:border-white/10 dark:text-gray-300 dark:hover:text-white">
-              All statuses
-              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path
-                  fillRule="evenodd"
-                  d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="hover:border-primary hover:text-primary dark:hover:border-primary-light inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 font-medium text-gray-600 transition dark:border-white/10 dark:text-gray-300 dark:hover:text-white"
+              >
+                {selectedLabel}
+                <svg 
+                  className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} 
+                  viewBox="0 0 20 20" 
+                  fill="currentColor" 
+                  aria-hidden="true"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
+              
+              {isDropdownOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-gray-200 bg-white py-2 shadow-lg dark:border-white/10 dark:bg-gray-800 z-10">
+                  {statusOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => {
+                        setSelectedStatus(option.value as CampaignStatus | 'all');
+                        setIsDropdownOpen(false);
+                      }}
+                      className={`w-full px-4 py-2 text-left text-sm transition hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                        selectedStatus === option.value 
+                          ? 'text-primary bg-primary/5 dark:text-primary-light dark:bg-primary/10' 
+                          : 'text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <button className="hover:border-primary hover:text-primary dark:hover:border-primary-light inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 font-medium text-gray-600 transition dark:border-white/10 dark:text-gray-300 dark:hover:text-white">
               Sort by newest
               <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -60,8 +113,8 @@ export const ActiveCampaign = () => {
         </div>
 
         <div className="mt-10 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-          {campaigns.length > 0 ? (
-            campaigns.map((campaign) => <CampaignCard key={campaign.id} campaign={campaign} />)
+          {filteredCampaigns.length > 0 ? (
+            filteredCampaigns.map((campaign) => <CampaignCard key={campaign.id} campaign={campaign} />)
           ) : (
             <div className="col-span-full py-12 text-center">
               <p className="text-gray-500 dark:text-gray-400">
