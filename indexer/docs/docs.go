@@ -9,10 +9,14 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "contact": {},
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "email": "support@example.com"
+        },
         "license": {
             "name": "Apache 2.0",
-            "url": "https://github.com/thirdweb-dev/indexer/blob/main/LICENSE"
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
         },
         "version": "{{.Version}}"
     },
@@ -307,6 +311,74 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/{chainId}/blocks/{blockNumber}/detail": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Retrieve detailed information about a specific block including all transactions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "detail"
+                ],
+                "summary": "Get block detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Chain ID",
+                        "name": "chainId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Block number",
+                        "name": "blockNumber",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.BlockDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/api.Error"
                         }
@@ -785,6 +857,76 @@ const docTemplate = `{
                                             "type": "array",
                                             "items": {
                                                 "$ref": "#/definitions/handlers.HolderModel"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/{chainId}/pending-transactions": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Retrieve all pending transactions from mempool",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transactions"
+                ],
+                "summary": "Get pending transactions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Chain ID",
+                        "name": "chainId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.QueryResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/handlers.PendingTransactionModel"
                                             }
                                         }
                                     }
@@ -1306,6 +1448,74 @@ const docTemplate = `{
                 }
             }
         },
+        "/{chainId}/transactions/{txHash}/detail": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Retrieve detailed information about a specific transaction including logs and traces",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "detail"
+                ],
+                "summary": "Get transaction detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Chain ID",
+                        "name": "chainId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Transaction hash",
+                        "name": "txHash",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.TransactionDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/{chainId}/transfers": {
             "get": {
                 "security": [
@@ -1576,6 +1786,74 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/{chainId}/wallets/{address}/detail": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Retrieve detailed information about a specific wallet",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wallet"
+                ],
+                "summary": "Get wallet detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Chain ID",
+                        "name": "chainId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Wallet address",
+                        "name": "address",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.WalletDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1659,9 +1937,6 @@ const docTemplate = `{
         "common.BlockModel": {
             "type": "object",
             "properties": {
-                "base_fee_per_gas": {
-                    "type": "integer"
-                },
                 "block_hash": {
                     "type": "string"
                 },
@@ -1674,56 +1949,11 @@ const docTemplate = `{
                 "chain_id": {
                     "type": "string"
                 },
-                "difficulty": {
-                    "type": "string"
-                },
-                "extra_data": {
-                    "type": "string"
-                },
-                "gas_limit": {
-                    "type": "string"
-                },
-                "gas_used": {
-                    "type": "string"
-                },
-                "logs_bloom": {
-                    "type": "string"
-                },
-                "miner": {
-                    "type": "string"
-                },
-                "mix_hash": {
-                    "type": "string"
-                },
-                "nonce": {
-                    "type": "string"
-                },
                 "parent_hash": {
-                    "type": "string"
-                },
-                "receipts_root": {
-                    "type": "string"
-                },
-                "sha3_uncles": {
-                    "type": "string"
-                },
-                "size": {
-                    "type": "integer"
-                },
-                "state_root": {
-                    "type": "string"
-                },
-                "total_difficulty": {
                     "type": "string"
                 },
                 "transaction_count": {
                     "type": "integer"
-                },
-                "transactions_root": {
-                    "type": "string"
-                },
-                "withdrawals_root": {
-                    "type": "string"
                 }
             }
         },
@@ -1803,92 +2033,44 @@ const docTemplate = `{
         "common.DecodedTransactionModel": {
             "type": "object",
             "properties": {
-                "access_list_json": {
-                    "type": "string"
-                },
-                "blob_gas_price": {
-                    "type": "string"
-                },
-                "blob_gas_used": {
-                    "type": "integer"
-                },
                 "block_hash": {
                     "type": "string"
                 },
                 "block_number": {
                     "type": "integer"
                 },
-                "block_timestamp": {
-                    "type": "integer"
-                },
                 "chain_id": {
-                    "type": "string"
-                },
-                "contract_address": {
-                    "type": "string"
-                },
-                "cumulative_gas_used": {
-                    "type": "integer"
-                },
-                "data": {
                     "type": "string"
                 },
                 "decoded": {
                     "$ref": "#/definitions/common.DecodedTransactionDataModel"
                 },
-                "effective_gas_price": {
+                "extra_info": {
                     "type": "string"
                 },
                 "from_address": {
                     "type": "string"
                 },
-                "function_selector": {
-                    "type": "string"
-                },
-                "gas": {
-                    "type": "integer"
-                },
-                "gas_price": {
-                    "type": "string"
-                },
-                "gas_used": {
-                    "type": "integer"
-                },
                 "hash": {
-                    "type": "string"
-                },
-                "logs_bloom": {
-                    "type": "string"
-                },
-                "max_fee_per_gas": {
-                    "type": "string"
-                },
-                "max_priority_fee_per_gas": {
                     "type": "string"
                 },
                 "nonce": {
                     "type": "integer"
                 },
-                "r": {
-                    "type": "string"
-                },
-                "s": {
-                    "type": "string"
-                },
                 "status": {
                     "type": "integer"
+                },
+                "text_data": {
+                    "type": "string"
                 },
                 "to_address": {
                     "type": "string"
                 },
-                "transaction_index": {
+                "transaction_timestamp": {
                     "type": "integer"
                 },
                 "transaction_type": {
                     "type": "integer"
-                },
-                "v": {
-                    "type": "string"
                 },
                 "value": {
                     "type": "string"
@@ -1936,89 +2118,41 @@ const docTemplate = `{
         "common.TransactionModel": {
             "type": "object",
             "properties": {
-                "access_list_json": {
-                    "type": "string"
-                },
-                "blob_gas_price": {
-                    "type": "string"
-                },
-                "blob_gas_used": {
-                    "type": "integer"
-                },
                 "block_hash": {
                     "type": "string"
                 },
                 "block_number": {
                     "type": "integer"
                 },
-                "block_timestamp": {
-                    "type": "integer"
-                },
                 "chain_id": {
                     "type": "string"
                 },
-                "contract_address": {
-                    "type": "string"
-                },
-                "cumulative_gas_used": {
-                    "type": "integer"
-                },
-                "data": {
-                    "type": "string"
-                },
-                "effective_gas_price": {
+                "extra_info": {
                     "type": "string"
                 },
                 "from_address": {
                     "type": "string"
                 },
-                "function_selector": {
-                    "type": "string"
-                },
-                "gas": {
-                    "type": "integer"
-                },
-                "gas_price": {
-                    "type": "string"
-                },
-                "gas_used": {
-                    "type": "integer"
-                },
                 "hash": {
-                    "type": "string"
-                },
-                "logs_bloom": {
-                    "type": "string"
-                },
-                "max_fee_per_gas": {
-                    "type": "string"
-                },
-                "max_priority_fee_per_gas": {
                     "type": "string"
                 },
                 "nonce": {
                     "type": "integer"
                 },
-                "r": {
-                    "type": "string"
-                },
-                "s": {
-                    "type": "string"
-                },
                 "status": {
                     "type": "integer"
+                },
+                "text_data": {
+                    "type": "string"
                 },
                 "to_address": {
                     "type": "string"
                 },
-                "transaction_index": {
+                "transaction_timestamp": {
                     "type": "integer"
                 },
                 "transaction_type": {
                     "type": "integer"
-                },
-                "v": {
-                    "type": "string"
                 },
                 "value": {
                     "type": "string"
@@ -2042,6 +2176,19 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.BlockDetailResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "block": {
+                            "$ref": "#/definitions/common.BlockModel"
+                        }
+                    }
+                }
+            }
+        },
         "handlers.HolderModel": {
             "type": "object",
             "properties": {
@@ -2055,6 +2202,35 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "token_type": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.PendingTransactionModel": {
+            "type": "object",
+            "properties": {
+                "from_address": {
+                    "type": "string"
+                },
+                "hash": {
+                    "type": "string"
+                },
+                "nonce": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "to_address": {
+                    "type": "string"
+                },
+                "transaction_timestamp": {
+                    "type": "integer"
+                },
+                "transaction_type": {
+                    "type": "integer"
+                },
+                "value": {
                     "type": "string"
                 }
             }
@@ -2082,6 +2258,13 @@ const docTemplate = `{
                 },
                 "type": {
                     "$ref": "#/definitions/handlers.SearchResultType"
+                },
+                "wallets": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                    }
                 }
             }
         },
@@ -2093,7 +2276,8 @@ const docTemplate = `{
                 "event_signature",
                 "function_signature",
                 "address",
-                "contract"
+                "contract",
+                "wallet"
             ],
             "x-enum-varnames": [
                 "SearchResultTypeBlock",
@@ -2101,7 +2285,8 @@ const docTemplate = `{
                 "SearchResultTypeEventSignature",
                 "SearchResultTypeFunctionSignature",
                 "SearchResultTypeAddress",
-                "SearchResultTypeContract"
+                "SearchResultTypeContract",
+                "SearchResultTypeWallet"
             ]
         },
         "handlers.TokenIdModel": {
@@ -2112,6 +2297,19 @@ const docTemplate = `{
                 },
                 "token_type": {
                     "type": "string"
+                }
+            }
+        },
+        "handlers.TransactionDetailResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "transaction": {
+                            "$ref": "#/definitions/common.TransactionModel"
+                        }
+                    }
                 }
             }
         },
@@ -2149,28 +2347,27 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "handlers.WalletDetailResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "additionalProperties": true
+                }
+            }
         }
-    },
-    "securityDefinitions": {
-        "BasicAuth": {
-            "type": "basic"
-        }
-    },
-    "security": [
-        {
-            "BasicAuth": []
-        }
-    ]
+    }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "v0.0.1-beta",
-	Host:             "",
-	BasePath:         "/",
-	Schemes:          []string{},
-	Title:            "Thirdweb Insight",
-	Description:      "API for querying blockchain transactions and events",
+	Version:          "1.0",
+	Host:             "localhost:8080",
+	BasePath:         "",
+	Schemes:          []string{"http", "https"},
+	Title:            "Indexer API",
+	Description:      "API for indexing blockchain data.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

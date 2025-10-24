@@ -1,4 +1,3 @@
-basePath: /
 definitions:
   api.Error:
     description: Error represents an API error response
@@ -56,8 +55,6 @@ definitions:
     type: object
   common.BlockModel:
     properties:
-      base_fee_per_gas:
-        type: integer
       block_hash:
         type: string
       block_number:
@@ -66,40 +63,10 @@ definitions:
         type: integer
       chain_id:
         type: string
-      difficulty:
-        type: string
-      extra_data:
-        type: string
-      gas_limit:
-        type: string
-      gas_used:
-        type: string
-      logs_bloom:
-        type: string
-      miner:
-        type: string
-      mix_hash:
-        type: string
-      nonce:
-        type: string
       parent_hash:
-        type: string
-      receipts_root:
-        type: string
-      sha3_uncles:
-        type: string
-      size:
-        type: integer
-      state_root:
-        type: string
-      total_difficulty:
         type: string
       transaction_count:
         type: integer
-      transactions_root:
-        type: string
-      withdrawals_root:
-        type: string
     type: object
   common.DecodedLogDataModel:
     properties:
@@ -151,64 +118,32 @@ definitions:
     type: object
   common.DecodedTransactionModel:
     properties:
-      access_list_json:
-        type: string
-      blob_gas_price:
-        type: string
-      blob_gas_used:
-        type: integer
       block_hash:
         type: string
       block_number:
         type: integer
-      block_timestamp:
-        type: integer
       chain_id:
-        type: string
-      contract_address:
-        type: string
-      cumulative_gas_used:
-        type: integer
-      data:
         type: string
       decoded:
         $ref: '#/definitions/common.DecodedTransactionDataModel'
-      effective_gas_price:
+      extra_info:
         type: string
       from_address:
         type: string
-      function_selector:
-        type: string
-      gas:
-        type: integer
-      gas_price:
-        type: string
-      gas_used:
-        type: integer
       hash:
-        type: string
-      logs_bloom:
-        type: string
-      max_fee_per_gas:
-        type: string
-      max_priority_fee_per_gas:
         type: string
       nonce:
         type: integer
-      r:
-        type: string
-      s:
-        type: string
       status:
         type: integer
+      text_data:
+        type: string
       to_address:
         type: string
-      transaction_index:
+      transaction_timestamp:
         type: integer
       transaction_type:
         type: integer
-      v:
-        type: string
       value:
         type: string
     type: object
@@ -239,62 +174,30 @@ definitions:
     type: object
   common.TransactionModel:
     properties:
-      access_list_json:
-        type: string
-      blob_gas_price:
-        type: string
-      blob_gas_used:
-        type: integer
       block_hash:
         type: string
       block_number:
         type: integer
-      block_timestamp:
-        type: integer
       chain_id:
         type: string
-      contract_address:
-        type: string
-      cumulative_gas_used:
-        type: integer
-      data:
-        type: string
-      effective_gas_price:
+      extra_info:
         type: string
       from_address:
         type: string
-      function_selector:
-        type: string
-      gas:
-        type: integer
-      gas_price:
-        type: string
-      gas_used:
-        type: integer
       hash:
-        type: string
-      logs_bloom:
-        type: string
-      max_fee_per_gas:
-        type: string
-      max_priority_fee_per_gas:
         type: string
       nonce:
         type: integer
-      r:
-        type: string
-      s:
-        type: string
       status:
         type: integer
+      text_data:
+        type: string
       to_address:
         type: string
-      transaction_index:
+      transaction_timestamp:
         type: integer
       transaction_type:
         type: integer
-      v:
-        type: string
       value:
         type: string
     type: object
@@ -309,6 +212,14 @@ definitions:
       token_type:
         type: string
     type: object
+  handlers.BlockDetailResponse:
+    properties:
+      data:
+        properties:
+          block:
+            $ref: '#/definitions/common.BlockModel'
+        type: object
+    type: object
   handlers.HolderModel:
     properties:
       balance:
@@ -318,6 +229,25 @@ definitions:
       token_id:
         type: string
       token_type:
+        type: string
+    type: object
+  handlers.PendingTransactionModel:
+    properties:
+      from_address:
+        type: string
+      hash:
+        type: string
+      nonce:
+        type: integer
+      status:
+        type: integer
+      to_address:
+        type: string
+      transaction_timestamp:
+        type: integer
+      transaction_type:
+        type: integer
+      value:
         type: string
     type: object
   handlers.SearchResultModel:
@@ -336,6 +266,11 @@ definitions:
         type: array
       type:
         $ref: '#/definitions/handlers.SearchResultType'
+      wallets:
+        items:
+          additionalProperties: true
+          type: object
+        type: array
     type: object
   handlers.SearchResultType:
     enum:
@@ -345,6 +280,7 @@ definitions:
     - function_signature
     - address
     - contract
+    - wallet
     type: string
     x-enum-varnames:
     - SearchResultTypeBlock
@@ -353,12 +289,21 @@ definitions:
     - SearchResultTypeFunctionSignature
     - SearchResultTypeAddress
     - SearchResultTypeContract
+    - SearchResultTypeWallet
   handlers.TokenIdModel:
     properties:
       token_id:
         type: string
       token_type:
         type: string
+    type: object
+  handlers.TransactionDetailResponse:
+    properties:
+      data:
+        properties:
+          transaction:
+            $ref: '#/definitions/common.TransactionModel'
+        type: object
     type: object
   handlers.TransferModel:
     properties:
@@ -383,14 +328,24 @@ definitions:
       transaction_hash:
         type: string
     type: object
+  handlers.WalletDetailResponse:
+    properties:
+      data:
+        additionalProperties: true
+        type: object
+    type: object
+host: localhost:8080
 info:
-  contact: {}
-  description: API for querying blockchain transactions and events
+  contact:
+    email: support@example.com
+    name: API Support
+  description: API for indexing blockchain data.
   license:
     name: Apache 2.0
-    url: https://github.com/thirdweb-dev/indexer/blob/main/LICENSE
-  title: Thirdweb Insight
-  version: v0.0.1-beta
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Indexer API
+  version: "1.0"
 paths:
   /{chainId}/balances/{owner}/{type}:
     get:
@@ -536,6 +491,51 @@ paths:
       summary: Get all blocks
       tags:
       - blocks
+  /{chainId}/blocks/{blockNumber}/detail:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve detailed information about a specific block including
+        all transactions
+      parameters:
+      - description: Chain ID
+        in: path
+        name: chainId
+        required: true
+        type: string
+      - description: Block number
+        in: path
+        name: blockNumber
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.BlockDetailResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - BasicAuth: []
+      summary: Get block detail
+      tags:
+      - detail
   /{chainId}/events:
     get:
       consumes:
@@ -852,6 +852,48 @@ paths:
       summary: Get holders of a token
       tags:
       - holders
+  /{chainId}/pending-transactions:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all pending transactions from mempool
+      parameters:
+      - description: Chain ID
+        in: path
+        name: chainId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.QueryResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/handlers.PendingTransactionModel'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - BasicAuth: []
+      summary: Get pending transactions
+      tags:
+      - transactions
   /{chainId}/tokens/{address}:
     get:
       consumes:
@@ -1168,6 +1210,51 @@ paths:
       summary: Get transactions by contract and signature
       tags:
       - transactions
+  /{chainId}/transactions/{txHash}/detail:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve detailed information about a specific transaction including
+        logs and traces
+      parameters:
+      - description: Chain ID
+        in: path
+        name: chainId
+        required: true
+        type: string
+      - description: Transaction hash
+        in: path
+        name: txHash
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.TransactionDetailResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - BasicAuth: []
+      summary: Get transaction detail
+      tags:
+      - detail
   /{chainId}/transfers:
     get:
       consumes:
@@ -1342,6 +1429,50 @@ paths:
       summary: Get wallet transactions
       tags:
       - wallet
+  /{chainId}/wallets/{address}/detail:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve detailed information about a specific wallet
+      parameters:
+      - description: Chain ID
+        in: path
+        name: chainId
+        required: true
+        type: string
+      - description: Wallet address
+        in: path
+        name: address
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.WalletDetailResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - BasicAuth: []
+      summary: Get wallet detail
+      tags:
+      - wallet
   /search/:input:
     get:
       consumes:
@@ -1387,9 +1518,7 @@ paths:
       summary: Search blockchain data
       tags:
       - search
-security:
-- BasicAuth: []
-securityDefinitions:
-  BasicAuth:
-    type: basic
+schemes:
+- http
+- https
 swagger: "2.0"
