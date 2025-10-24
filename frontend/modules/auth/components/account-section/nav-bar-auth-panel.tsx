@@ -3,11 +3,16 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Circle, Copy } from 'lucide-react';
 import { useUser, useAuthActions } from '@/providers/AppProvider';
+import { cn } from '@/lib/utils';
 export const NavBarAuthPanel: React.FC = () => {
   const { user } = useUser();
   const { login, logout } = useAuthActions();
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  const classname = cn(
+    'hover:bg-brand-primary flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-all duration-150 hover:shadow-md',
+    open ? 'bg-brand-primary' : 'bg-background'
+  );
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
@@ -24,10 +29,7 @@ export const NavBarAuthPanel: React.FC = () => {
 
   return user ? (
     <div className="relative hidden items-center md:flex" ref={panelRef}>
-      <div
-        className={`flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-all duration-150 ${open ? 'bg-[#9e77ed80]/50 shadow-md' : 'bg-white'} hover:bg-[#9e77ed80]/50 hover:shadow-md`}
-        onClick={() => setOpen((v) => !v)}
-      >
+      <div className={classname} onClick={() => setOpen((v) => !v)}>
         <img src={user.avatar} alt="avatar" className="h-10 w-10 rounded-full border" width={32} height={32} />
         <span className="text-md max-w-[120px] truncate font-medium">{user.username || user.email}</span>
       </div>
