@@ -8,6 +8,7 @@ import (
 	"dong-service/utils"
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -295,4 +296,92 @@ func (h *DonationCampaignHandler) CloseCampaign(c *gin.Context) {
 
 	logger.Info().Int64("user_id", userID).Int64("campaign_id", id).Str("name", campaign.Name).Msg("Campaign closed successfully")
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgCampaignClosed, campaign.ToResponse()))
+}
+
+// GetStats godoc
+// @Summary Get donation campaign statistics
+// @Description Get overall statistics for all donation campaigns
+// @Tags campaigns
+// @Produce json
+// @Success 200 {object} models.Response{data=models.CampaignStatsResponse}
+// @Failure 500 {object} models.Response
+// @Router /api/v1/campaigns/stats [get]
+func (h *DonationCampaignHandler) GetStats(c *gin.Context) {
+	logger.Debug().Msg("Fetching campaign statistics")
+
+	stats, err := h.repo.GetStats()
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to get campaign statistics")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToGetCampaigns+": "+err.Error()))
+		return
+	}
+
+	logger.Debug().
+		Int64("total_campaigns_active", stats.TotalCampaignsActive).
+		Int64("total_amount", stats.TotalAmount).
+		Int64("total_contributors", stats.TotalContributors).
+		Msg("Campaign statistics retrieved successfully")
+
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgCampaignsRetrieved, stats))
+}
+
+// GetTopContributors godoc
+// @Summary Get top contributors for a campaign
+// @Description Get the top contributors for a specific donation campaign
+// @Tags campaigns
+// @Produce json
+// @Param id path int true "Campaign ID"
+// @Param limit query int false "Number of top contributors to return" default(10) maximum(10)
+// @Success 200 {object} models.Response{data=models.TopContributorsResponse}
+// @Failure 400 {object} models.Response
+// @Failure 404 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Router /api/v1/campaigns/{id}/top-contributors [get]
+func (h *DonationCampaignHandler) GetTopContributors(c *gin.Context) {
+	id, err := utils.ParseInt64Param(c, "id")
+	if err != nil {
+		logger.Error().Err(err).Msg("Invalid campaign ID parameter for top contributors")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidCampaignID))
+		return
+	}
+
+	// Parse limit parameter with validation
+	limit := 10 // default limit
+	if limitStr := c.Query("limit"); limitStr != "" {
+		limit, err = strconv.Atoi(limitStr)
+		if err != nil {
+			logger.Error().Err(err).Int64("campaign_id", id).Msg("Invalid limit parameter")
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid limit parameter"))
+			return
+		}
+
+		// Enforce maximum limit of 10
+		if limit > 10 {
+			limit = 10
+		}
+		if limit < 1 {
+			limit = 1
+		}
+	}
+
+	logger.Debug().Int64("campaign_id", id).Int("limit", limit).Msg("Fetching top contributors")
+
+	topContributors, err := h.repo.GetTopContributors(id, limit)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			logger.Warn().Int64("campaign_id", id).Msg("Campaign not found for top contributors")
+			c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, constants.ErrCampaignNotFound))
+			return
+		}
+		logger.Error().Err(err).Int64("campaign_id", id).Msg("Failed to get top contributors")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to get top contributors: "+err.Error()))
+		return
+	}
+
+	logger.Debug().
+		Int64("campaign_id", id).
+		Int("contributors_count", len(topContributors.Contributors)).
+		Msg("Top contributors retrieved successfully")
+
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Top contributors retrieved successfully", topContributors))
 }

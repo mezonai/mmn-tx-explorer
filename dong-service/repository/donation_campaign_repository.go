@@ -29,15 +29,22 @@ func NewDonationCampaignRepository(db *sql.DB) *DonationCampaignRepository {
 
 // Create creates a new donation campaign
 func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampaignRequest, creator int64) (*models.DonationCampaign, error) {
-	query := `
+	tx, err := r.db.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	// Insert donation campaign
+	campaignQuery := `
 		INSERT INTO donation_campaign (name, description, goal, url, end_date, donation_wallet, creator, status)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id, name, description, goal, url, end_date, donation_wallet, creator, status, created_at, updated_at
 	`
 
 	var result models.DonationCampaign
-	err := r.db.QueryRow(
-		query,
+	err = tx.QueryRow(
+		campaignQuery,
 		campaign.Name,
 		campaign.Description,
 		campaign.Goal,
@@ -62,6 +69,21 @@ func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampa
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create donation campaign: %w", err)
+	}
+
+	// Insert campaign statistics
+	statsQuery := `
+		INSERT INTO campaign_statistics (campaign_id, campaign_wallet, total_amount, total_contributor)
+		VALUES ($1, $2, $3, $4)
+	`
+
+	_, err = tx.Exec(statsQuery, result.ID, result.DonationWallet, 0, 0)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create campaign statistics: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return &result, nil
@@ -376,4 +398,89 @@ func (r *DonationCampaignRepository) Count(status *int16) (int64, error) {
 	}
 
 	return count, nil
+}
+
+// GetStats returns campaign statistics
+func (r *DonationCampaignRepository) GetStats() (*models.CampaignStatsResponse, error) {
+	query := `
+		SELECT 
+			COUNT(CASE WHEN dc.status = $1 THEN 1 END) as total_campaigns_active,
+			SUM(cs.total_amount) as total_amount,
+			SUM(cs.total_contributor) as total_contributors
+		FROM donation_campaign dc
+		JOIN campaign_statistics cs ON dc.id = cs.campaign_id
+	`
+
+	var stats models.CampaignStatsResponse
+	err := r.db.QueryRow(query, constants.CampaignStatusActive).Scan(
+		&stats.TotalCampaignsActive,
+		&stats.TotalAmount,
+		&stats.TotalContributors,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get campaign stats: %w", err)
+	}
+
+	return &stats, nil
+}
+
+// GetTopContributors returns top contributors for a specific campaign
+func (r *DonationCampaignRepository) GetTopContributors(campaignID int64, limit int) (*models.TopContributorsResponse, error) {
+	// Single optimized query with JOIN
+	query := `
+		SELECT 
+			cc.sender_wallet, 
+			cc.total_donate,
+			cs.total_amount
+		FROM campaign_contributor cc
+		JOIN donation_campaign dc ON cc.campaign_wallet = dc.donation_wallet
+		JOIN campaign_statistics cs ON dc.id = cs.campaign_id
+		WHERE dc.id = $1
+		ORDER BY cc.total_donate DESC
+		LIMIT $2
+	`
+
+	rows, err := r.db.Query(query, campaignID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get top contributors: %w", err)
+	}
+	defer rows.Close()
+
+	var contributors []models.TopContributor
+	var campaignTotalAmount int64
+	var hasData bool
+
+	for rows.Next() {
+		var contributor models.TopContributor
+
+		err := rows.Scan(&contributor.SenderWallet, &contributor.TotalDonate, &campaignTotalAmount)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan contributor: %w", err)
+		}
+
+		// Calculate percentage of total campaign amount
+		if campaignTotalAmount > 0 {
+			contributor.Percentage = float64(contributor.TotalDonate) / float64(campaignTotalAmount) * 100
+		} else {
+			contributor.Percentage = 0
+		}
+
+		contributors = append(contributors, contributor)
+		hasData = true
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate contributors: %w", err)
+	}
+
+	// If no data found, campaign doesn't exist
+	if !hasData {
+		return nil, ErrNotFound
+	}
+
+	return &models.TopContributorsResponse{
+		CampaignID:   campaignID,
+		Contributors: contributors,
+	}, nil
 }

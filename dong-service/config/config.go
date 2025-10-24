@@ -10,13 +10,15 @@ import (
 
 // Config represents the application configuration
 type Config struct {
-	Server   ServerConfig     `mapstructure:"server"`
-	Database DatabaseConfig   `mapstructure:"database"`
-	CORS     CORSConfig       `mapstructure:"cors"`
-	JWT      JWTConfig        `mapstructure:"jwt"`
-	Oauth    OauthConfig      `mapstructure:"oauth"`
-	Redis    RedisConfig      `mapstructure:"redis"`
-	Logging  logger.LogConfig `mapstructure:"logging"`
+	Server    ServerConfig     `mapstructure:"server"`
+	Database  DatabaseConfig   `mapstructure:"database"`
+	Indexer   IndexerConfig    `mapstructure:"indexer"`
+	CORS      CORSConfig       `mapstructure:"cors"`
+	JWT       JWTConfig        `mapstructure:"jwt"`
+	Oauth     OauthConfig      `mapstructure:"oauth"`
+	Redis     RedisConfig      `mapstructure:"redis"`
+	Logging   logger.LogConfig `mapstructure:"logging"`
+	Scheduler SchedulerConfig  `mapstructure:"scheduler"`
 }
 
 type ServerConfig struct {
@@ -43,15 +45,17 @@ type OauthConfig struct {
 	UserInfoURL  string `mapstructure:"user_info_url"`
 }
 type DatabaseConfig struct {
-	Host         string `mapstructure:"host"`
-	Port         string `mapstructure:"port"`
-	UserName     string `mapstructure:"username"`
-	Password     string `mapstructure:"password"`
-	Name         string `mapstructure:"name"`
-	SSLMode      string `mapstructure:"sslmode"`
-	MaxOpenConns int    `mapstructure:"max_open_conns"`
-	MaxIdleConns int    `mapstructure:"max_idle_conns"`
-	Schema       string `mapstructure:"schema"`
+	Host            string `mapstructure:"host"`
+	Port            string `mapstructure:"port"`
+	UserName        string `mapstructure:"username"`
+	Password        string `mapstructure:"password"`
+	Name            string `mapstructure:"name"`
+	SSLMode         string `mapstructure:"sslmode"`
+	MaxOpenConns    int    `mapstructure:"max_open_conns"`
+	MaxIdleConns    int    `mapstructure:"max_idle_conns"`
+	ConnMaxLifetime int    `mapstructure:"conn_max_lifetime"`  // in seconds
+	ConnMaxIdleTime int    `mapstructure:"conn_max_idle_time"` // in seconds
+	Schema          string `mapstructure:"schema"`
 }
 
 type CORSConfig struct {
@@ -59,6 +63,14 @@ type CORSConfig struct {
 	AllowMethods string `mapstructure:"allow_methods"`
 	AllowHeaders string `mapstructure:"allow_headers"`
 	AllowCreds   bool   `mapstructure:"allow_credentials"`
+}
+
+type IndexerConfig struct {
+	Schema string `mapstructure:"schema"`
+}
+
+type SchedulerConfig struct {
+	SyncContributorsInterval int `mapstructure:"sync_contributors_interval"` // in seconds
 }
 
 func LoadConfig(cfgFile string) (*Config, error) {

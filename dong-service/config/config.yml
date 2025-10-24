@@ -12,8 +12,13 @@ database:
   name: indexer
   schema: dong_schema
   sslmode: disable
-  max_open_conns: 25
-  max_idle_conns: 5
+  max_open_conns: 50        # Increased for better concurrency
+  max_idle_conns: 10        # Increased for better connection reuse
+  conn_max_lifetime: 300    # 5 minutes - connections will be refreshed
+  conn_max_idle_time: 60    # 1 minute - idle connections will be closed
+
+indexer:
+  schema: public
 
 cors:
   allow_origins: "*"
@@ -45,3 +50,7 @@ logging:
   file_path: "logs/dong-service.log"  # required when output=file
   max_size: 100           # max size in MB before rotation (default: 100)
   max_age: 30             # max age in days to retain old logs (default: 30)
+
+# Scheduler Configuration
+scheduler:
+  sync_contributors_interval: 600  # sync every 10 minutes (600 seconds)

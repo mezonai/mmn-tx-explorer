@@ -24,7 +24,7 @@ COMMENT ON COLUMN donation_campaign.id IS 'Campaign unique identifier';
 COMMENT ON COLUMN donation_campaign.name IS 'Campaign name';
 COMMENT ON COLUMN donation_campaign.description IS 'Campaign description';
 COMMENT ON COLUMN donation_campaign.goal IS 'Donation goal amount';
-COMMENT ON COLUMN donation_campaign.url IS 'Campaign URL';
+COMMENT ON COLUMN donation_campaign.url IS 'Campaign banner URL';
 COMMENT ON COLUMN donation_campaign.end_date IS 'Campaign end date';
 COMMENT ON COLUMN donation_campaign.donation_wallet IS 'Wallet address for donations';
 COMMENT ON COLUMN donation_campaign.creator IS 'Creator user ID';

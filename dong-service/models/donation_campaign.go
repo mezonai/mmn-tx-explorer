@@ -91,3 +91,23 @@ func (dc *DonationCampaign) IsClosed() bool {
 func (dc *DonationCampaign) GetStatusName() string {
 	return constants.GetStatusName(dc.Status)
 }
+
+// CampaignStatsResponse represents the response for campaign statistics
+type CampaignStatsResponse struct {
+	TotalCampaignsActive int64 `json:"total_campaigns_active"`
+	TotalAmount          int64 `json:"total_amount"`
+	TotalContributors    int64 `json:"total_contributors"`
+}
+
+// TopContributor represents a top contributor for a campaign
+type TopContributor struct {
+	SenderWallet string  `json:"sender_wallet"`
+	TotalDonate  int64   `json:"total_donate"`
+	Percentage   float64 `json:"percentage"`
+}
+
+// TopContributorsResponse represents the response for top contributors
+type TopContributorsResponse struct {
+	CampaignID   int64            `json:"campaign_id"`
+	Contributors []TopContributor `json:"contributors"`
+}

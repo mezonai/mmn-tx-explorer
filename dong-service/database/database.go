@@ -5,6 +5,7 @@ import (
 	"dong-service/config"
 	"dong-service/logger"
 	"fmt"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -51,6 +52,14 @@ func InitDatabase(cfg *config.DatabaseConfig) error {
 	// Set connection pool settings
 	DB.SetMaxOpenConns(cfg.MaxOpenConns)
 	DB.SetMaxIdleConns(cfg.MaxIdleConns)
+
+	// Set connection lifetime settings if configured
+	if cfg.ConnMaxLifetime > 0 {
+		DB.SetConnMaxLifetime(time.Duration(cfg.ConnMaxLifetime) * time.Second)
+	}
+	if cfg.ConnMaxIdleTime > 0 {
+		DB.SetConnMaxIdleTime(time.Duration(cfg.ConnMaxIdleTime) * time.Second)
+	}
 
 	logger.Info().
 		Int("max_open_conns", cfg.MaxOpenConns).

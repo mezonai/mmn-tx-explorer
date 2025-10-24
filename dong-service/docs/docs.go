@@ -347,6 +347,44 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/campaigns/stats": {
+            "get": {
+                "description": "Get overall statistics for all donation campaigns",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "campaigns"
+                ],
+                "summary": "Get donation campaign statistics",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.CampaignStatsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/campaigns/{id}": {
             "get": {
                 "description": "Get details of a specific donation campaign",
@@ -379,6 +417,73 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/models.DonationCampaignResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/campaigns/{id}/top-contributors": {
+            "get": {
+                "description": "Get the top contributors for a specific donation campaign",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "campaigns"
+                ],
+                "summary": "Get top contributors for a campaign",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Campaign ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "maximum": 10,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Number of top contributors to return",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.TopContributorsResponse"
                                         }
                                     }
                                 }
@@ -569,6 +674,20 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "models.CampaignStatsResponse": {
+            "type": "object",
+            "properties": {
+                "total_amount": {
+                    "type": "integer"
+                },
+                "total_campaigns_active": {
+                    "type": "integer"
+                },
+                "total_contributors": {
+                    "type": "integer"
+                }
+            }
+        },
         "models.CreateDonationCampaignRequest": {
             "type": "object",
             "required": [
@@ -769,6 +888,34 @@ const docTemplate = `{
                 "data": {},
                 "message": {
                     "type": "string"
+                }
+            }
+        },
+        "models.TopContributor": {
+            "type": "object",
+            "properties": {
+                "percentage": {
+                    "type": "number"
+                },
+                "sender_wallet": {
+                    "type": "string"
+                },
+                "total_donate": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.TopContributorsResponse": {
+            "type": "object",
+            "properties": {
+                "campaign_id": {
+                    "type": "integer"
+                },
+                "contributors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.TopContributor"
+                    }
                 }
             }
         },
