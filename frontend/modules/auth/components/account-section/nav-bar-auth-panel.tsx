@@ -1,9 +1,8 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Circle } from 'lucide-react';
+import { Circle, Copy } from 'lucide-react';
 import { useUser, useAuthActions } from '@/providers/AppProvider';
-
 export const NavBarAuthPanel: React.FC = () => {
   const { user } = useUser();
   const { login, logout } = useAuthActions();
@@ -26,11 +25,11 @@ export const NavBarAuthPanel: React.FC = () => {
   return user ? (
     <div className="relative hidden items-center md:flex" ref={panelRef}>
       <div
-        className={`flex cursor-pointer items-center gap-2 rounded-lg border-2 px-2 py-1 transition-all duration-150 ${open ? 'bg-[#9e77ed80]/50 shadow-md' : 'bg-white'} hover:bg-[#9e77ed80]/50 hover:shadow-md`}
+        className={`flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-all duration-150 ${open ? 'bg-[#9e77ed80]/50 shadow-md' : 'bg-white'} hover:bg-[#9e77ed80]/50 hover:shadow-md`}
         onClick={() => setOpen((v) => !v)}
       >
-        <img src={user.avatar} alt="avatar" className="h-8 w-8 rounded-full border" width={32} height={32} />
-        <span className="max-w-[120px] truncate text-sm font-medium">{user.username || user.email}</span>
+        <img src={user.avatar} alt="avatar" className="h-10 w-10 rounded-full border" width={32} height={32} />
+        <span className="text-md max-w-[120px] truncate font-medium">{user.username || user.email}</span>
       </div>
       {open && (
         <div className="absolute top-12 right-0 z-50 flex min-w-[220px] flex-col gap-2 rounded-lg border bg-white p-4 shadow-lg">
@@ -41,8 +40,32 @@ export const NavBarAuthPanel: React.FC = () => {
               <div className="text-xs text-gray-500">ID: {user.id}</div>
             </div>
           </div>
-          <div className="mb-2 text-xs break-all text-gray-700">
-            <span className="font-medium">Wallet:</span> {user.walletAddress || 'N/A'}
+          <div className="mb-2 flex flex-col gap-1 text-xs text-gray-700">
+            <div className="flex items-center gap-2 break-all">
+              <span className="font-medium">Wallet:</span>
+              <span className="rounded px-2 py-0.5 text-gray-800">
+                {user.walletAddress ? `${user.walletAddress.slice(0, 5)}...${user.walletAddress.slice(-4)}` : 'N/A'}
+              </span>
+              {user.walletAddress && (
+                <Button
+                  onClick={() => {
+                    navigator.clipboard.writeText(user.walletAddress);
+                  }}
+                  title="Copy wallet address"
+                  size="icon"
+                  variant="ghost"
+                  className="ml-1"
+                >
+                  <Copy size={16} />
+                </Button>
+              )}
+            </div>
+            {user.email && (
+              <div className="flex items-center gap-2">
+                <span className="font-medium">Email:</span>
+                <span className="truncate">{user.email}</span>
+              </div>
+            )}
           </div>
           <Button size="sm" variant="outline" onClick={logout}>
             Logout

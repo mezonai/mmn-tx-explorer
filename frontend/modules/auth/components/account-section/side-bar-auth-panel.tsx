@@ -1,6 +1,6 @@
 'use client';
 import { Button } from '@/components/ui/button';
-import { Circle } from 'lucide-react';
+import { Circle, Copy } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { useUser, useAuthActions } from '@/providers/AppProvider';
 
@@ -47,7 +47,31 @@ export const SidebarAuthPanel = () => {
             </div>
           </div>
           <div className="mb-2 text-center text-xs break-all text-gray-700">
-            <span className="font-medium">Wallet:</span> {user.walletAddress || 'N/A'}
+            <div className="flex items-center gap-2 break-all">
+              <span className="font-medium">Wallet:</span>
+              <span className="rounded px-2 py-0.5 text-gray-800">
+                {user.walletAddress ? `${user.walletAddress.slice(0, 5)}...${user.walletAddress.slice(-4)}` : 'N/A'}
+              </span>
+              {user.walletAddress && (
+                <Button
+                  onClick={() => {
+                    navigator.clipboard.writeText(user.walletAddress);
+                  }}
+                  title="Copy wallet address"
+                  size="icon"
+                  variant="ghost"
+                  className="ml-1"
+                >
+                  <Copy size={16} />
+                </Button>
+              )}
+            </div>
+            {user.email && (
+              <div className="flex items-center gap-2">
+                <span className="font-medium">Email:</span>
+                <span className="truncate">{user.email}</span>
+              </div>
+            )}
           </div>
           <Button size="sm" variant="outline" onClick={logout}>
             Logout
