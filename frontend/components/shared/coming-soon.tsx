@@ -15,7 +15,7 @@ export const ComingSoon = ({
 
       <div className="flex flex-col items-center justify-center py-20">
         <h1 className="text-primary z-10 mb-8 text-3xl font-bold md:text-5xl">Coming Soon</h1>
-        <p className="text-quaternary-500 text-lg">{description}</p>
+        <p className="text-quaternary-500 text-center text-lg">{description}</p>
       </div>
     </div>
   );

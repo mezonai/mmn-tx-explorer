@@ -13,3 +13,4 @@ export * from './metric-card';
 export * from './section-container';
 export * from './section-header';
 export * from './page-header';
+export * from './theme-toggle';
