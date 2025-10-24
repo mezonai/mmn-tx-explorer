@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Circle, Copy } from 'lucide-react';
+import { Circle } from 'lucide-react';
 import { useUser, useAuthActions } from '@/providers/AppProvider';
 import { cn } from '@/lib/utils';
 import { CopyButton } from '@/components/ui/copy-button';

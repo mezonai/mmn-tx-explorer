@@ -1,6 +1,6 @@
 'use client';
 import { Button } from '@/components/ui/button';
-import { Circle, Copy } from 'lucide-react';
+import { Circle } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { useUser, useAuthActions } from '@/providers/AppProvider';
 import { cn } from '@/lib/utils';
