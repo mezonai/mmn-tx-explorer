@@ -1,34 +1,30 @@
-import { format } from 'date-fns';
 import Link from 'next/link';
 
-import { Button } from '@/components/ui/button';
-import { YEAR_FORMAT } from '@/constant';
-import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 export function AppFooter() {
   return (
-    <footer className="bg-muted">
-      <div className="container mx-auto flex flex-col items-center justify-between gap-y-12 px-4 py-6 md:px-8 lg:gap-y-4">
-        <div
-          className={cn(
-            'flex flex-col items-center gap-x-8 gap-y-3 lg:flex-row',
-            '[&>*]:text-tertiary-600 [&>*]:size-fit [&>*]:p-0 [&>*]:text-base [&>*]:font-semibold'
-          )}
-        >
-          <Button variant="link" asChild>
-            <Link href="#">Privacy Policy</Link>
-          </Button>
-          <Button variant="link" asChild>
-            <Link href="#">Terms of Service</Link>
-          </Button>
-          <Button variant="link" asChild>
-            <Link href="#">Contact</Link>
-          </Button>
+    <footer className="bg-card border-t border-gray-200 dark:border-gray-800">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-4 text-sm text-gray-600 md:flex-row md:items-center md:justify-between dark:text-gray-400">
+          <div className="flex items-center gap-3">
+            <div className="flex aspect-square size-9 items-center justify-center overflow-hidden rounded-lg">
+              <Image src="/images/logo.webp" alt="Mezon Đồng Logo" width={36} height={36} />
+            </div>
+            <span>Mezon Đồng - Public Overview</span>
+          </div>
+          <div className="flex items-center gap-6">
+            <Link href="#" className="hover:text-primary transition dark:hover:text-white">
+              Privacy Policy
+            </Link>
+            <Link href="#" className="hover:text-primary transition dark:hover:text-white">
+              Terms of Service
+            </Link>
+            <Link href="#" className="hover:text-primary transition dark:hover:text-white">
+              Contact
+            </Link>
+          </div>
         </div>
-
-        <p className="text-quaternary-500 text-base font-normal">
-          © {format(Date.now(), YEAR_FORMAT)} MMN Explorer. All rights reserved.
-        </p>
       </div>
     </footer>
   );
