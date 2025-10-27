@@ -14,9 +14,11 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/swag"
 
-	"github.com/thirdweb-dev/indexer/internal/handlers"
-	"github.com/thirdweb-dev/indexer/internal/middleware"
-	_ "github.com/thirdweb-dev/indexer/docs"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/handlers"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/middleware"
+
+
+	_ "github.com/mezonai/mmn-tx-explorer/indexer/docs"
 )
 
 var (
@@ -34,7 +36,7 @@ var (
 // @version v0.0.1-beta
 // @description API for querying blockchain transactions and events
 // @license.name Apache 2.0
-// @license.url https://github.com/thirdweb-dev/indexer/blob/main/LICENSE
+// @license.url https://github.com/mezonai/mmn-tx-explorer/indexer/blob/main/LICENSE
 // @BasePath /
 // @Security BasicAuth
 // @securityDefinitions.basic BasicAuth

@@ -1,6 +1,6 @@
 package main
 
-import "github.com/thirdweb-dev/indexer/cmd"
+import "github.com/mezonai/mmn-tx-explorer/indexer/cmd"
 // @title           Indexer API
 // @version         1.0
 // @description     API for indexing blockchain data.
