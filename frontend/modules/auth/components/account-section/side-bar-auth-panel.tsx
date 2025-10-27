@@ -12,8 +12,8 @@ export const SidebarAuthPanel = () => {
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const classname = cn(
-    'hover:bg-brand-primary flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-all duration-150 hover:shadow-md',
-    open ? 'bg-brand-primary shadow-md' : 'bg-background'
+    'hover:bg-brand-primary-background flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-all duration-150 hover:shadow-md',
+    open ? 'bg-brand-primary-background shadow-md' : 'bg-background'
   );
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
