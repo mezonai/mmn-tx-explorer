@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	pb "github.com/thirdweb-dev/indexer/proto"
+	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
 )
 
 // MMNGrpcService manages a shared gRPC connection for block operations
@@ -105,7 +105,7 @@ func (mmn *MMNGrpcService) GetBlockNumber(ctx context.Context) (*pb.GetBlockNumb
 }
 
 // GetAccountByAddress retrieves an account by address
-func (mmn *MMNGrpcService) GetAccountByAddress(ctx context.Context, address string) (*pb.GetAccountByAddressResponse, error) {
+func (mmn *MMNGrpcService) GetAccount(ctx context.Context, address string) (*pb.GetAccountResponse, error) {
 	if err := mmn.ensureConnection(); err != nil {
 		return nil, fmt.Errorf("connection error: %w", err)
 	}
@@ -117,7 +117,7 @@ func (mmn *MMNGrpcService) GetAccountByAddress(ctx context.Context, address stri
 		return nil, fmt.Errorf("service not connected")
 	}
 
-	return mmn.accountClient.GetAccountByAddress(ctx, &pb.GetAccountByAddressRequest{Address: address})
+	return mmn.accountClient.GetAccount(ctx, &pb.GetAccountRequest{Address: address})
 }
 
 // GetPendingTransactions retrieves all pending transactions from mempool

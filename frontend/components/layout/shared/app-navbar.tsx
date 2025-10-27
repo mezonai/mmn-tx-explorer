@@ -2,18 +2,13 @@
 
 import Link from 'next/link';
 import { AppLogo } from '@/components/shared';
-import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/configs/routes.config';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { useAuth, useAuthActions } from '@/providers/AppProvider';
 import { NavbarMenu } from '@/components/shared/navbar';
 import { GlobalSearch } from '@/modules/global-search/components';
-import { ArrowRightToLine } from 'lucide-react';
+import { NavBarAuthPanel } from '@/modules/auth/components';
 
 export function AppNavbar() {
-  const { isAuthenticated } = useAuth();
-  const { login, logout } = useAuthActions();
-
   return (
     <header className="bg-card border-border supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 border-b backdrop-blur">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -30,24 +25,7 @@ export function AppNavbar() {
           </nav>
 
           <div className="flex items-center gap-4">
-            {/* <ThemeToggle /> */}
-            <Button
-              onClick={isAuthenticated ? logout : login}
-              className={`hidden rounded-lg md:flex ${
-                !isAuthenticated
-                  ? 'bg-brand-primary hover:bg-brand-primary/90 font-semibold text-white shadow-xs'
-                  : 'text-secondary-foreground bg-background hover:bg-active hover:text-quaternary-500 dark:bg-input/30 dark:border-input dark:hover:bg-input/50 border shadow-xs'
-              }`}
-            >
-              {!isAuthenticated ? (
-                <>
-                  <span>Login with Mezon</span>
-                  <ArrowRightToLine />
-                </>
-              ) : (
-                `Logout`
-              )}
-            </Button>
+            <NavBarAuthPanel />
           </div>
 
           <div className="sm:hidden">
