@@ -1,0 +1,206 @@
+name: Deploy Dong Service
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: "Environment (dev|prod)"
+        required: true
+        default: "dev"
+      ref:
+        description: "Git ref (branch, tag, or commit)"
+        required: true
+        default: "master"
+
+  workflow_call:
+    inputs:
+      env:
+        type: string
+        required: true
+      ref:
+        type: string
+        required: true
+    secrets:
+      POSTGRES_PASSWORD:
+        required: true
+      JWT_SECRET:
+        required: true
+      OAUTH_CLIENT_SECRET:
+        required: true
+      REDIS_PASSWORD:
+        required: true
+
+jobs:
+  build:
+    runs-on: [self-hosted, Linux, mezon-runner]
+    environment: ${{ inputs.env }}
+    outputs:
+      git_sha: ${{ steps.get_sha.outputs.git_sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache: true
+          check-latest: false
+
+      - name: Build Dong Service binary
+        run: |
+          mkdir -p build
+          cd dong-service
+          GOOS=linux GOARCH=amd64 go build -o ../build/dong-service .
+
+      - name: Get short SHA
+        id: get_sha
+        run: echo "git_sha=$(git rev-parse --short=8 HEAD)" >> $GITHUB_OUTPUT
+
+  deploy:
+    needs: build
+    runs-on: [self-hosted, Linux, mezon-runner]
+    environment: ${{ inputs.env }}
+    env:
+      TARGET_HOST: ${{ inputs.env == 'prod' && 'prod-indexer' || 'dev-indexer' }}
+      GIT_SHA: ${{ needs.build.outputs.git_sha }}
+
+    steps:
+      - name: Generate remote setup script
+        env:
+          POSTGRES_DB: ${{ vars.POSTGRES_DB }}
+          POSTGRES_USER: ${{ vars.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_HOST: ${{ vars.POSTGRES_HOST }}
+          POSTGRES_PORT: ${{ vars.POSTGRES_PORT }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          OAUTH_CLIENT_ID: ${{ vars.OAUTH_CLIENT_ID }}
+          OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
+          OAUTH_TOKEN_URL: ${{ vars.OAUTH_TOKEN_URL }}
+          OAUTH_USER_INFO_URL: ${{ vars.OAUTH_USER_INFO_URL }}
+          REDIS_ADDRESS: ${{ vars.REDIS_ADDRESS }}
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+          REDIS_DB: ${{ vars.REDIS_DB }}
+          GIN_MODE: release
+        run: |
+          cat > remote_setup.sh <<'EOF'
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          SHA="$1"
+          echo "==> Preparing deployment directories and configs..."
+          sudo mkdir -p /opt/dong-service/bin /opt/dong-service/config /opt/dong-service/migrations /opt/dong-service/logs
+          
+          echo "==> Writing environment configs..."
+          sudo tee /opt/dong-service/config/dong-service.env > /dev/null <<EON
+          DATABASE_HOST='${POSTGRES_HOST}'
+          DATABASE_PORT='${POSTGRES_PORT}'
+          DATABASE_USER='${POSTGRES_USER}'
+          DATABASE_PASSWORD='${POSTGRES_PASSWORD}'
+          DATABASE_NAME='${POSTGRES_DB}'
+          JWT_SECRET='${JWT_SECRET}'
+          OAUTH_CLIENT_ID='${OAUTH_CLIENT_ID}'
+          OAUTH_CLIENT_SECRET='${OAUTH_CLIENT_SECRET}'
+          OAUTH_TOKEN_URL='${OAUTH_TOKEN_URL}'
+          OAUTH_USER_INFO_URL='${OAUTH_USER_INFO_URL}'
+          REDIS_ADDRESS='${REDIS_ADDRESS}'
+          REDIS_PASSWORD='${REDIS_PASSWORD}'
+          REDIS_DB='${REDIS_DB}'
+          GIN_MODE='${GIN_MODE}'
+          EON
+
+          sudo chown -R mmn:mmn /opt/dong-service
+          sudo chmod 600 /opt/dong-service/config/dong-service.env
+
+          echo "==> Deploying new dong-service binary to staging path..."
+          sudo install -m 0755 /tmp/dong-service /opt/dong-service/bin/dong-service-${SHA}
+
+          echo "==> Deploying migrations for dong-service..."
+          sudo rm -rf /opt/dong-service/migrations
+          sudo mv /tmp/postgres-dong-service /opt/dong-service/migrations
+
+          echo "==> Preparation complete!"
+          EOF
+          chmod +x remote_setup.sh
+
+          echo "# Remote env generated at $(date)" > remote_env.sh
+          printf "export POSTGRES_DB=%q\n" "$POSTGRES_DB" >> remote_env.sh
+          printf "export POSTGRES_USER=%q\n" "$POSTGRES_USER" >> remote_env.sh
+          printf "export POSTGRES_PASSWORD=%q\n" "$POSTGRES_PASSWORD" >> remote_env.sh
+          printf "export POSTGRES_HOST=%q\n" "$POSTGRES_HOST" >> remote_env.sh
+          printf "export POSTGRES_PORT=%q\n" "$POSTGRES_PORT" >> remote_env.sh
+          printf "export DATABASE_HOST=%q\n" "$POSTGRES_HOST" >> remote_env.sh
+          printf "export DATABASE_PORT=%q\n" "$POSTGRES_PORT" >> remote_env.sh
+          printf "export DATABASE_USER=%q\n" "$POSTGRES_USER" >> remote_env.sh
+          printf "export DATABASE_PASSWORD=%q\n" "$POSTGRES_PASSWORD" >> remote_env.sh
+          printf "export DATABASE_NAME=%q\n" "$POSTGRES_DB" >> remote_env.sh
+          printf "export JWT_SECRET=%q\n" "$JWT_SECRET" >> remote_env.sh
+          printf "export OAUTH_CLIENT_ID=%q\n" "$OAUTH_CLIENT_ID" >> remote_env.sh
+          printf "export OAUTH_CLIENT_SECRET=%q\n" "$OAUTH_CLIENT_SECRET" >> remote_env.sh
+          printf "export OAUTH_TOKEN_URL=%q\n" "$OAUTH_TOKEN_URL" >> remote_env.sh
+          printf "export OAUTH_USER_INFO_URL=%q\n" "$OAUTH_USER_INFO_URL" >> remote_env.sh
+          printf "export REDIS_ADDRESS=%q\n" "$REDIS_ADDRESS" >> remote_env.sh
+          printf "export REDIS_PASSWORD=%q\n" "$REDIS_PASSWORD" >> remote_env.sh
+          printf "export REDIS_DB=%q\n" "$REDIS_DB" >> remote_env.sh
+          printf "export GIN_MODE=%q\n" "$GIN_MODE" >> remote_env.sh
+
+      - name: Prepare and deploy to target server
+        run: |
+          set -e
+          echo "==> Copying binaries to target server..."
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} build/dong-service ${{ vars.HOST_ALIAS }}:/tmp/
+          
+          echo "==> Copying migrations to target server..."
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} -r dong-service/migrations ${{ vars.HOST_ALIAS }}:/tmp/postgres-dong-service/
+
+          echo "==> Copying static config for dong-service..."
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} dong-service/config/config.yml ${{ vars.HOST_ALIAS }}:/tmp/dong-service-config.yml
+
+          echo "==> Copying setup scripts to target server..."
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} remote_setup.sh remote_env.sh ${{ vars.HOST_ALIAS }}:/tmp/
+
+          echo "==> Running remote setup script..."
+          ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "
+            set -e
+            source /tmp/remote_env.sh
+            bash /tmp/remote_setup.sh \"$GIT_SHA\"
+            
+            echo '==> Cleaning up temp files...'
+            rm -f /tmp/dong-service
+            rm -f /tmp/remote_setup.sh /tmp/remote_env.sh
+            rm -rf /tmp/postgres-dong-service
+          "
+
+      - name: Atomic swap + restart services
+        run: |
+          ssh -i ${{vars.SSH_PRIVATE_KEY_PATH}} ${{vars.HOST_ALIAS}} <<EOF
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          echo "==> Generating final config files on target server..."
+          sudo mkdir -p /etc/mezon
+          
+          sudo mv /tmp/dong-service-config.yml /etc/mezon/dong-service-config.yml
+
+          echo "==> Stopping services..."
+          sudo systemctl stop dong-service || true
+
+          echo "==> Atomically swapping to new binary..."
+          sudo ln -sfn dong-service-${GIT_SHA} /opt/dong-service/bin/dong-service
+
+          echo "==> Reloading and starting services..."
+          sudo systemctl daemon-reload
+          sudo systemctl start dong-service
+
+          echo "==> Reloading Nginx..."
+          sudo nginx -t && sudo systemctl reload nginx
+
+          echo "==> Activation complete!"
+          EOF
+
+      - name: Health check after deployment
+        run: |
+          echo "==> Checking Dong Service systemd status..."
+          ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "systemctl is-active dong-service"

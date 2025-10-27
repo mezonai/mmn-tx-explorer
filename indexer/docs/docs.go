@@ -12,7 +12,7 @@ const docTemplate = `{
         "contact": {},
         "license": {
             "name": "Apache 2.0",
-            "url": "https://github.com/thirdweb-dev/indexer/blob/main/LICENSE"
+            "url": "https://github.com/mezonai/mmn-tx-explorer/indexer/blob/main/LICENSE"
         },
         "version": "{{.Version}}"
     },
