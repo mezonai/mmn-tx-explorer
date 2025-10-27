@@ -14,7 +14,7 @@ import (
 
 	proto "github.com/mezonai/mmn-tx-explorer/indexer/proto"
   
-  storage "github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
+    storage "github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
 
 	time "time"
 )
