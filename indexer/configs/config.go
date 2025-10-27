@@ -199,7 +199,7 @@ var Cfg Config
 func LoadConfig(cfgFile string) error {
 	// Set default values for StatsWorker
 	viper.SetDefault("statsWorker.enabled", true)
-	viper.SetDefault("statsWorker.intervalMinutes", 5)
+	viper.SetDefault("statsWorker.intervalMinutes", 60)
 
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
