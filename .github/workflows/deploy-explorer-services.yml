@@ -143,22 +143,21 @@ jobs:
           EOF
           chmod +x remote_setup.sh
 
-          echo "# Explorer env generated at $(date)" > explorer_env.sh
-          printf "export POSTGRES_DB=%q\n" "$POSTGRES_DB" >> explorer_env.sh
-          printf "export POSTGRES_USER=%q\n" "$POSTGRES_USER" >> explorer_env.sh
-          printf "export POSTGRES_PASSWORD=%q\n" "$POSTGRES_PASSWORD" >> explorer_env.sh
-          printf "export POSTGRES_HOST=%q\n" "$POSTGRES_HOST" >> explorer_env.sh
-          printf "export POSTGRES_PORT=%q\n" "$POSTGRES_PORT" >> explorer_env.sh
-          printf "export NEXT_PUBLIC_APP_API_URL=%q\n" "$NEXT_PUBLIC_APP_API_URL" >> explorer_env.sh
-          printf "export APP_API_URL_INTERNAL=%q\n" "$APP_API_URL_INTERNAL" >> explorer_env.sh
-          printf "export NEXT_PUBLIC_CHAT_APP_MMN_API_URL=%q\n" "$NEXT_PUBLIC_CHAT_APP_MMN_API_URL" >> explorer_env.sh
-          printf "export NEXT_PUBLIC_CHAT_APP_ZK_API_URL=%q\n" "$NEXT_PUBLIC_CHAT_APP_ZK_API_URL" >> explorer_env.sh
-          printf "export NEXT_PUBLIC_BACKEND_API_URL=%q\n" "$NEXT_PUBLIC_BACKEND_API_URL" >> explorer_env.sh
-          printf "export NEXT_PUBLIC_OAUTH2_API_URL=%q\n" "$NEXT_PUBLIC_OAUTH2_API_URL" >> explorer_env.sh
-          printf "export NEXT_PUBLIC_OAUTH2_CLIENT_ID=%q\n" "$NEXT_PUBLIC_OAUTH2_CLIENT_ID" >> explorer_env.sh
-          printf "export OAUTH2_CLIENT_SECRET=%q\n" "$OAUTH2_CLIENT_SECRET" >> explorer_env.sh
-          printf "export NEXT_PUBLIC_OAUTH2_REDIRECT_URI=%q\n" "$NEXT_PUBLIC_OAUTH2_REDIRECT_URI" >> explorer_env.sh
-          echo "==> Generated explorer_env.sh"
+          echo "# Remote env generated at $(date)" > remote_env.sh
+          printf "export POSTGRES_DB=%q\n" "$POSTGRES_DB" >> remote_env.sh
+          printf "export POSTGRES_USER=%q\n" "$POSTGRES_USER" >> remote_env.sh
+          printf "export POSTGRES_PASSWORD=%q\n" "$POSTGRES_PASSWORD" >> remote_env.sh
+          printf "export POSTGRES_HOST=%q\n" "$POSTGRES_HOST" >> remote_env.sh
+          printf "export POSTGRES_PORT=%q\n" "$POSTGRES_PORT" >> remote_env.sh
+          printf "export NEXT_PUBLIC_APP_API_URL=%q\n" "$NEXT_PUBLIC_APP_API_URL" >> remote_env.sh
+          printf "export APP_API_URL_INTERNAL=%q\n" "$APP_API_URL_INTERNAL" >> remote_env.sh
+                    printf "export NEXT_PUBLIC_CHAT_APP_MMN_API_URL=%q\n" "$NEXT_PUBLIC_CHAT_APP_MMN_API_URL" >> remote_env.sh
+          printf "export NEXT_PUBLIC_CHAT_APP_ZK_API_URL=%q\n" "$NEXT_PUBLIC_CHAT_APP_ZK_API_URL" >>  remote_env.sh
+          printf "export NEXT_PUBLIC_BACKEND_API_URL=%q\n" "$NEXT_PUBLIC_BACKEND_API_URL" >> remote_env.sh
+          printf "export NEXT_PUBLIC_OAUTH2_API_URL=%q\n" "$NEXT_PUBLIC_OAUTH2_API_URL" >> remote_env.sh
+          printf "export NEXT_PUBLIC_OAUTH2_CLIENT_ID=%q\n" "$NEXT_PUBLIC_OAUTH2_CLIENT_ID" >> remote_env.sh
+          printf "export OAUTH2_CLIENT_SECRET=%q\n" "$OAUTH2_CLIENT_SECRET" >> remote_env.sh
+          printf "export NEXT_PUBLIC_OAUTH2_REDIRECT_URI=%q\n" "$NEXT_PUBLIC_OAUTH2_REDIRECT_URI" >> remote_env.sh
 
       - name: Prepare and deploy to target server
         run: |
