@@ -7,8 +7,8 @@ export function InsightsCard({
   owner,
 }: {
   contributors: number;
-  daysRemaining: number;
-  owner: { name: string; wallet: string; verified: boolean };
+  daysRemaining?: number | string;
+  owner: string;
 }) {
   return (
     <Card className="dark:bg-dark-light/80 rounded-3xl border-gray-200 bg-white/90 shadow-sm dark:border-white/10">
@@ -39,8 +39,8 @@ export function InsightsCard({
               <span>Campaign owner</span>
             </dt>
             <dd className="font-semibold text-gray-900 dark:text-white">
-              <span>{owner.name}</span>
-              {owner.verified && <span className="text-primary dark:text-primary-light ml-1 text-xs">✔</span>}
+              <span>{owner}</span>
+              {/* {owner.verified && <span className="text-primary dark:text-primary-light ml-1 text-xs">✔</span>} */}
             </dd>
           </div>
         </dl>

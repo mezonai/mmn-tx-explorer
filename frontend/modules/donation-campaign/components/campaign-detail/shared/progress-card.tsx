@@ -2,7 +2,7 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 
 export function ProgressCard({ raised, goal }: { raised: number; goal: number }) {
   const progress = Math.min((raised / goal) * 100, 100);
-
+  console.log('raised:', raised);
   return (
     <Card className="dark:bg-dark-light/80 rounded-3xl border-gray-200 bg-white/90 shadow-sm dark:border-white/10">
       <CardContent>

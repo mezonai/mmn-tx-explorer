@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Circle } from 'lucide-react';
+import { ArrowRightToLine } from 'lucide-react';
 import { useUser, useAuthActions } from '@/providers/AppProvider';
 import { cn } from '@/lib/utils';
 import { CopyButton } from '@/components/ui/copy-button';
@@ -11,7 +11,7 @@ export const NavBarAuthPanel: React.FC = () => {
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const classname = cn(
-    'hover:bg-brand-primary flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-all duration-150 hover:shadow-md',
+    'hover:bg-brand-primary-background flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-all duration-150 hover:shadow-md',
     open ? 'bg-brand-primary' : 'bg-background'
   );
   useEffect(() => {
@@ -65,11 +65,11 @@ export const NavBarAuthPanel: React.FC = () => {
       )}
     </div>
   ) : (
-    <Button className={'hidden md:flex'} onClick={login}>
-      <span className="flex items-center gap-2">
-        <Circle />
-        Login with Mezon
-      </span>
+    <Button onClick={login} className={'bg-brand-primary hidden rounded-lg font-semibold text-white shadow-xs md:flex'}>
+      <>
+        <span>Login with Mezon</span>
+        <ArrowRightToLine />
+      </>
     </Button>
   );
 };

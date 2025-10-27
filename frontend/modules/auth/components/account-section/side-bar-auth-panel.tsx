@@ -1,6 +1,6 @@
 'use client';
 import { Button } from '@/components/ui/button';
-import { Circle } from 'lucide-react';
+import { ArrowRightToLine } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { useUser, useAuthActions } from '@/providers/AppProvider';
 import { cn } from '@/lib/utils';
@@ -70,9 +70,14 @@ export const SidebarAuthPanel = () => {
       )}
     </div>
   ) : (
-    <Button onClick={login} className="mt-4 w-full">
-      <Circle className="mr-2" />
-      Login with Mezon
+    <Button
+      onClick={login}
+      className={'bg-brand-primary hover:bg-brand-primary/90 rounded-lg font-semibold text-white shadow-xs'}
+    >
+      <>
+        <span>Login with Mezon</span>
+        <ArrowRightToLine />
+      </>
     </Button>
   );
 };

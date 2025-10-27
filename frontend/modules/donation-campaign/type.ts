@@ -13,11 +13,11 @@ export interface DonationCampaign {
   wallet: string;
   creator: string;
   status: CampaignStatus;
-  // startDate: string;
   end_date: string;
-  // createdBy: string;
   created_at: string;
   updated_at: string;
+  total_amount: number | 0;
+  total_contributors: number | 0;
 }
 
 export interface CreateCampaignRequest {

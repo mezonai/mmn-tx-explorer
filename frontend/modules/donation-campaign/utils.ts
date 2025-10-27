@@ -12,5 +12,15 @@ const getCampaignStatusVariant = (status: CampaignStatus) => {
       return `default`;
   }
 };
+const getDaysRemaining = (dateString: string): number => {
+  if (!dateString) return 0;
 
-export { getCampaignStatusVariant };
+  const targetDate = new Date(dateString);
+  const now = new Date();
+
+  const diffTime = targetDate.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  return diffDays > 0 ? diffDays : 0;
+};
+export { getCampaignStatusVariant, getDaysRemaining };

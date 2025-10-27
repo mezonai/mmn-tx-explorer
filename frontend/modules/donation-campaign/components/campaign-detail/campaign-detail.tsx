@@ -4,6 +4,7 @@ import { DonationSidebar } from './shared/donation-sidebar';
 import { CampaignActivity } from './shared/campaign-activity';
 import { CampaignHeader } from './shared/campaign-header';
 import { CampaignExtras } from './shared/campaign-extras';
+import { DonationCampaignService } from '../../api';
 
 interface CampaignDetailProps {
   campaignId: string;
@@ -12,11 +13,28 @@ const breadcrumbs: IBreadcrumb[] = [
   { label: 'Donation campaign', href: '/donation-campaign' },
   { label: 'Campaign Details', href: '#' },
 ] as const;
+const campaign = {
+  created_at: '2025-12-24T08:55:12Z',
+  creator: '1946198449917530112',
+  description:
+    'Provide insulated jackets, gloves, and heaters for 800 students living in remote northern mountains ahead of winter.',
+  wallet: '9PPsJBJpVYAKYVzxfCgH3HRkvGfw4sTvEF5dzq5jc1tX',
+  end_date: '2025-12-31T23:59:59Z',
+  goal: 1000000,
+  id: '3',
+  name: 'Warm Clothes for Highland Kids',
+  status: 2,
+  total_amount: 250000,
+  total_contributors: 42,
+  updated_at: '2025-10-24T08:55:40Z',
+  url: 'http://88/swa',
+};
+
 const mockCampaign = {
   id: '1',
   title: 'Hope for Tomorrow: Building Futures for Children',
   description:
-    'Support our mission to provide education, healthcare, and brighter futures for children in underserved communities across Southeast Asia.',
+    'Support our mission to provide education, healthcare, and brighter futures for children in undeserved communities across Southeast Asia.',
   status: 'Active campaign',
   image: '/images/campaign-hero.jpg',
 
@@ -86,6 +104,8 @@ const mockCampaign = {
 };
 
 export const CampaignDetail = async ({ campaignId }: CampaignDetailProps) => {
+  // const campaignDetail = await DonationCampaignService.getCampaignById(campaignId);
+  // console.log(campaignDetail);
   return (
     <div className="space-y-8">
       <div className="space-y-4">
@@ -93,10 +113,10 @@ export const CampaignDetail = async ({ campaignId }: CampaignDetailProps) => {
       </div>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <div className="md:col-span-2">
-          <CampaignHeader campaign={mockCampaign} />
+          <CampaignHeader campaign={campaign} />
         </div>
         <div>
-          <DonationSidebar campaign={mockCampaign} />
+          <DonationSidebar campaign={campaign} />
         </div>
       </div>
       <CampaignActivity campaign={mockCampaign} />
