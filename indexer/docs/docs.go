@@ -633,6 +633,114 @@ const docTemplate = `{
                 }
             }
         },
+        "/{chainId}/transactions/infinite": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Retrieve transactions with cursor-based pagination for infinite scroll",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transactions"
+                ],
+                "summary": "Get transactions for infinite scroll",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Chain ID",
+                        "name": "chainId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Timestamp less than (from last page) in ISO 8601 format (e.g., 2025-10-11T11:00:21.203Z)",
+                        "name": "timestamp_lt",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Last transaction hash (for pagination)",
+                        "name": "last_hash",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Number of items per page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Wallet address to filter transactions",
+                        "name": "wallet_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "From address to filter transactions",
+                        "name": "filter_from_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "To address to filter transactions",
+                        "name": "filter_to_address",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.QueryResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/common.TransactionModel"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/{chainId}/tx/{txHash}/detail": {
             "get": {
                 "security": [
@@ -915,9 +1023,21 @@ const docTemplate = `{
                     "description": "@Description Chain ID of the blockchain",
                     "type": "integer"
                 },
+                "has_more": {
+                    "description": "@Description Flag indicating if there are more items to load",
+                    "type": "boolean"
+                },
                 "limit": {
                     "description": "@Description Number of items per page",
                     "type": "integer"
+                },
+                "next_hash": {
+                    "description": "@Description Hash to use for the next request when timestamps are identical",
+                    "type": "string"
+                },
+                "next_timestamp": {
+                    "description": "@Description Timestamp to use for the next request",
+                    "type": "string"
                 },
                 "page": {
                     "description": "@Description Current page number",

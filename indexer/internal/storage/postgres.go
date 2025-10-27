@@ -2273,6 +2273,88 @@ func (p *PostgresConnector) GetTransactionsByWalletWithTimestamp(ctx context.Con
 	return transactions, rows.Err()
 }
 
+// GetTransactionsByFromAddressWithTimestamp retrieves transactions where the specified address is the sender
+func (p *PostgresConnector) GetTransactionsByFromAddressWithTimestamp(ctx context.Context, fromAddress string, limit int, timestampLt time.Time, lastHash string) ([]common.Transaction, error) {
+	columns := p.buildSelectFields([]string{}, defaultTransactionFields)
+
+	query := fmt.Sprintf(
+		"SELECT %s FROM transactions WHERE from_address = $1",
+		columns,
+	)
+
+	args := []interface{}{fromAddress}
+	argIndex := 2
+	var zeroTime time.Time
+	if !timestampLt.Equal(zeroTime) {
+		if lastHash != "" {
+			query += " AND (transaction_timestamp < $2 OR (transaction_timestamp = $2 AND hash < $3))"
+			args = append(args, timestampLt, lastHash)
+			argIndex += 2
+		} else {
+			query += " AND transaction_timestamp < $2"
+			args = append(args, timestampLt)
+			argIndex++
+		}
+	}
+
+	query += " ORDER BY transaction_timestamp DESC, hash DESC LIMIT $" + strconv.Itoa(argIndex)
+	args = append(args, limit)
+
+	rows, err := p.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	transactions, err := p.scanRowsToTransactions(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return transactions, rows.Err()
+}
+
+// GetTransactionsByToAddressWithTimestamp retrieves transactions where the specified address is the receiver
+func (p *PostgresConnector) GetTransactionsByToAddressWithTimestamp(ctx context.Context, toAddress string, limit int, timestampLt time.Time, lastHash string) ([]common.Transaction, error) {
+	columns := p.buildSelectFields([]string{}, defaultTransactionFields)
+
+	query := fmt.Sprintf(
+		"SELECT %s FROM transactions WHERE to_address = $1",
+		columns,
+	)
+
+	args := []interface{}{toAddress}
+	argIndex := 2
+	var zeroTime time.Time
+	if !timestampLt.Equal(zeroTime) {
+		if lastHash != "" {
+			query += " AND (transaction_timestamp < $2 OR (transaction_timestamp = $2 AND hash < $3))"
+			args = append(args, timestampLt, lastHash)
+			argIndex += 2
+		} else {
+			query += " AND transaction_timestamp < $2"
+			args = append(args, timestampLt)
+			argIndex++
+		}
+	}
+
+	query += " ORDER BY transaction_timestamp DESC, hash DESC LIMIT $" + strconv.Itoa(argIndex)
+	args = append(args, limit)
+
+	rows, err := p.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	transactions, err := p.scanRowsToTransactions(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return transactions, rows.Err()
+}
+
 func (p *PostgresConnector) scanRowsToTransactions(rows *sql.Rows) ([]common.Transaction, error) {
 	transactions := make([]common.Transaction, 0)
 

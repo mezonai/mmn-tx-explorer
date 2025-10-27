@@ -46,12 +46,12 @@ func GetTransactions(c *gin.Context) {
 // @Produce json
 // @Security BasicAuth
 // @Param chainId path string true "Chain ID"
-// @Param timestamp_lt query int false "Timestamp less than (from last page)"
+// @Param timestamp_lt query string false "Timestamp less than (from last page) in ISO 8601 format (e.g., 2025-10-11T11:00:21.203Z)" format(date-time)
+// @Param last_hash query string false "Last transaction hash (for pagination)"
 // @Param limit query int false "Number of items per page" default(20)
 // @Param wallet_address query string false "Wallet address to filter transactions"
-// @Param from_address query string false "From address to filter transactions"
-// @Param to_address query string false "To address to filter transactions"
-// @Param force_consistent_data query bool false "Force consistent data at the expense of query speed"
+// @Param filter_from_address query string false "From address to filter transactions"
+// @Param filter_to_address query string false "To address to filter transactions"
 // @Success 200 {object} api.QueryResponse{data=[]common.TransactionModel}
 // @Failure 400 {object} api.Error
 // @Failure 401 {object} api.Error
@@ -243,10 +243,10 @@ func handleTransactionsInfiniteRequest(c *gin.Context) {
 		}
 		transactions = txs
 	} else if fromAddress != "" {
-		txs, err := mainStorage.GetTransactionsByWalletWithTimestamp(
+		txs, err := mainStorage.GetTransactionsByFromAddressWithTimestamp(
 			ctx,
 			fromAddress,
-			queryParams.Limit*2+1,
+			queryParams.Limit+1,
 			timestampLt,
 			lastHash,
 		)
@@ -255,19 +255,12 @@ func handleTransactionsInfiniteRequest(c *gin.Context) {
 			api.InternalErrorHandler(c)
 			return
 		}
-
-		filteredTxs := make([]common.Transaction, 0)
-		for _, tx := range txs {
-			if tx.FromAddress == fromAddress {
-				filteredTxs = append(filteredTxs, tx)
-			}
-		}
-		transactions = filteredTxs
+		transactions = txs
 	} else {
-		txs, err := mainStorage.GetTransactionsByWalletWithTimestamp(
+		txs, err := mainStorage.GetTransactionsByToAddressWithTimestamp(
 			ctx,
 			toAddress,
-			queryParams.Limit*2+1,
+			queryParams.Limit+1,
 			timestampLt,
 			lastHash,
 		)
@@ -276,14 +269,7 @@ func handleTransactionsInfiniteRequest(c *gin.Context) {
 			api.InternalErrorHandler(c)
 			return
 		}
-
-		filteredTxs := make([]common.Transaction, 0)
-		for _, tx := range txs {
-			if tx.ToAddress == toAddress {
-				filteredTxs = append(filteredTxs, tx)
-			}
-		}
-		transactions = filteredTxs
+		transactions = txs
 	}
 
 	hasMore := len(transactions) > queryParams.Limit

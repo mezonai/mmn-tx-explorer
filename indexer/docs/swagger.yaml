@@ -21,9 +21,19 @@ definitions:
       chain_id:
         description: '@Description Chain ID of the blockchain'
         type: integer
+      has_more:
+        description: '@Description Flag indicating if there are more items to load'
+        type: boolean
       limit:
         description: '@Description Number of items per page'
         type: integer
+      next_hash:
+        description: '@Description Hash to use for the next request when timestamps
+          are identical'
+        type: string
+      next_timestamp:
+        description: '@Description Timestamp to use for the next request'
+        type: string
       page:
         description: '@Description Current page number'
         type: integer
@@ -593,6 +603,76 @@ paths:
       security:
       - BasicAuth: []
       summary: Get all transactions
+      tags:
+      - transactions
+  /{chainId}/transactions/infinite:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve transactions with cursor-based pagination for infinite
+        scroll
+      parameters:
+      - description: Chain ID
+        in: path
+        name: chainId
+        required: true
+        type: string
+      - description: Timestamp less than (from last page) in ISO 8601 format (e.g.,
+          2025-10-11T11:00:21.203Z)
+        format: date-time
+        in: query
+        name: timestamp_lt
+        type: string
+      - description: Last transaction hash (for pagination)
+        in: query
+        name: last_hash
+        type: string
+      - default: 20
+        description: Number of items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Wallet address to filter transactions
+        in: query
+        name: wallet_address
+        type: string
+      - description: From address to filter transactions
+        in: query
+        name: filter_from_address
+        type: string
+      - description: To address to filter transactions
+        in: query
+        name: filter_to_address
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.QueryResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/common.TransactionModel'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - BasicAuth: []
+      summary: Get transactions for infinite scroll
       tags:
       - transactions
   /{chainId}/tx/{txHash}/detail:

@@ -13,8 +13,8 @@ import (
 	mock "github.com/stretchr/testify/mock"
 
 	proto "github.com/mezonai/mmn-tx-explorer/indexer/proto"
-  
-    storage "github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
+
+	storage "github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
 
 	time "time"
 )
@@ -1053,6 +1053,130 @@ func (_c *MockIMainStorage_GetTransactions_Call) Return(transactions storage.Que
 }
 
 func (_c *MockIMainStorage_GetTransactions_Call) RunAndReturn(run func(context.Context, storage.QueryFilter, ...string) (storage.QueryResult[common.Transaction], error)) *MockIMainStorage_GetTransactions_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetTransactionsByFromAddressWithTimestamp provides a mock function with given fields: ctx, fromAddress, limit, timestampLt, lastHash
+func (_m *MockIMainStorage) GetTransactionsByFromAddressWithTimestamp(ctx context.Context, fromAddress string, limit int, timestampLt time.Time, lastHash string) ([]common.Transaction, error) {
+	ret := _m.Called(ctx, fromAddress, limit, timestampLt, lastHash)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTransactionsByFromAddressWithTimestamp")
+	}
+
+	var r0 []common.Transaction
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, time.Time, string) ([]common.Transaction, error)); ok {
+		return rf(ctx, fromAddress, limit, timestampLt, lastHash)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, time.Time, string) []common.Transaction); ok {
+		r0 = rf(ctx, fromAddress, limit, timestampLt, lastHash)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]common.Transaction)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, int, time.Time, string) error); ok {
+		r1 = rf(ctx, fromAddress, limit, timestampLt, lastHash)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockIMainStorage_GetTransactionsByFromAddressWithTimestamp_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTransactionsByFromAddressWithTimestamp'
+type MockIMainStorage_GetTransactionsByFromAddressWithTimestamp_Call struct {
+	*mock.Call
+}
+
+// GetTransactionsByFromAddressWithTimestamp is a helper method to define mock.On call
+//   - ctx context.Context
+//   - fromAddress string
+//   - limit int
+//   - timestampLt time.Time
+//   - lastHash string
+func (_e *MockIMainStorage_Expecter) GetTransactionsByFromAddressWithTimestamp(ctx interface{}, fromAddress interface{}, limit interface{}, timestampLt interface{}, lastHash interface{}) *MockIMainStorage_GetTransactionsByFromAddressWithTimestamp_Call {
+	return &MockIMainStorage_GetTransactionsByFromAddressWithTimestamp_Call{Call: _e.mock.On("GetTransactionsByFromAddressWithTimestamp", ctx, fromAddress, limit, timestampLt, lastHash)}
+}
+
+func (_c *MockIMainStorage_GetTransactionsByFromAddressWithTimestamp_Call) Run(run func(ctx context.Context, fromAddress string, limit int, timestampLt time.Time, lastHash string)) *MockIMainStorage_GetTransactionsByFromAddressWithTimestamp_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(int), args[3].(time.Time), args[4].(string))
+	})
+	return _c
+}
+
+func (_c *MockIMainStorage_GetTransactionsByFromAddressWithTimestamp_Call) Return(_a0 []common.Transaction, _a1 error) *MockIMainStorage_GetTransactionsByFromAddressWithTimestamp_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockIMainStorage_GetTransactionsByFromAddressWithTimestamp_Call) RunAndReturn(run func(context.Context, string, int, time.Time, string) ([]common.Transaction, error)) *MockIMainStorage_GetTransactionsByFromAddressWithTimestamp_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetTransactionsByToAddressWithTimestamp provides a mock function with given fields: ctx, toAddress, limit, timestampLt, lastHash
+func (_m *MockIMainStorage) GetTransactionsByToAddressWithTimestamp(ctx context.Context, toAddress string, limit int, timestampLt time.Time, lastHash string) ([]common.Transaction, error) {
+	ret := _m.Called(ctx, toAddress, limit, timestampLt, lastHash)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTransactionsByToAddressWithTimestamp")
+	}
+
+	var r0 []common.Transaction
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, time.Time, string) ([]common.Transaction, error)); ok {
+		return rf(ctx, toAddress, limit, timestampLt, lastHash)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, time.Time, string) []common.Transaction); ok {
+		r0 = rf(ctx, toAddress, limit, timestampLt, lastHash)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]common.Transaction)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, int, time.Time, string) error); ok {
+		r1 = rf(ctx, toAddress, limit, timestampLt, lastHash)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockIMainStorage_GetTransactionsByToAddressWithTimestamp_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTransactionsByToAddressWithTimestamp'
+type MockIMainStorage_GetTransactionsByToAddressWithTimestamp_Call struct {
+	*mock.Call
+}
+
+// GetTransactionsByToAddressWithTimestamp is a helper method to define mock.On call
+//   - ctx context.Context
+//   - toAddress string
+//   - limit int
+//   - timestampLt time.Time
+//   - lastHash string
+func (_e *MockIMainStorage_Expecter) GetTransactionsByToAddressWithTimestamp(ctx interface{}, toAddress interface{}, limit interface{}, timestampLt interface{}, lastHash interface{}) *MockIMainStorage_GetTransactionsByToAddressWithTimestamp_Call {
+	return &MockIMainStorage_GetTransactionsByToAddressWithTimestamp_Call{Call: _e.mock.On("GetTransactionsByToAddressWithTimestamp", ctx, toAddress, limit, timestampLt, lastHash)}
+}
+
+func (_c *MockIMainStorage_GetTransactionsByToAddressWithTimestamp_Call) Run(run func(ctx context.Context, toAddress string, limit int, timestampLt time.Time, lastHash string)) *MockIMainStorage_GetTransactionsByToAddressWithTimestamp_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(int), args[3].(time.Time), args[4].(string))
+	})
+	return _c
+}
+
+func (_c *MockIMainStorage_GetTransactionsByToAddressWithTimestamp_Call) Return(_a0 []common.Transaction, _a1 error) *MockIMainStorage_GetTransactionsByToAddressWithTimestamp_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockIMainStorage_GetTransactionsByToAddressWithTimestamp_Call) RunAndReturn(run func(context.Context, string, int, time.Time, string) ([]common.Transaction, error)) *MockIMainStorage_GetTransactionsByToAddressWithTimestamp_Call {
 	_c.Call.Return(run)
 	return _c
 }

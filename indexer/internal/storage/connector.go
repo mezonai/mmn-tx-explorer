@@ -140,11 +140,19 @@ type IMainStorage interface {
 	 */
 	GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error)
 
-	// Optimized methods for pagination
+	/**
+	 * Optimized methods for pagination
+	 */
 	GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit, offset int, sortBy, sortOrder string) ([]common.Transaction, error)
 	GetTransactionsByWalletCount(ctx context.Context, walletAddress string) (uint64, error)
 	GetTotalTransactions(ctx context.Context) (uint64, error)
+
+	/**
+	 * Timestamp-based cursor pagination methods for transactions
+	 */
 	GetTransactionsByWalletWithTimestamp(ctx context.Context, walletAddress string, limit int, timestampLt time.Time, lastHash string) ([]common.Transaction, error)
+	GetTransactionsByFromAddressWithTimestamp(ctx context.Context, fromAddress string, limit int, timestampLt time.Time, lastHash string) ([]common.Transaction, error)
+	GetTransactionsByToAddressWithTimestamp(ctx context.Context, toAddress string, limit int, timestampLt time.Time, lastHash string) ([]common.Transaction, error)
 }
 
 func NewStorageConnector(cfg *config.StorageConfig) (IStorage, error) {
