@@ -1,76 +1,59 @@
 import Link from 'next/link';
+import { useState, useMemo } from 'react';
 import { CampaignCard } from './campaign-card';
-import { CampaignStatus, DonationCampaign } from '../../../type';
 import { ContactCard } from './contact-card';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/configs/routes.config';
-
-const campaignMockData: DonationCampaign[] = [
-  {
-    id: '1',
-    title: 'Xây Trường Cho Em',
-    status: CampaignStatus.Active,
-    endDate: '2023-12-31',
-    description:
-      'Raise funds to build three resilient classrooms and a community library for children in Điện Biên province.',
-    currentAmount: 10000,
-    targetAmount: 50000,
-    contributors: 48,
-    lastDonation: '2025-10-22T08:26:38.349Z',
-  },
-  {
-    id: '2',
-    title: 'Warm Clothes for Highland Kids',
-    status: CampaignStatus.Active,
-    endDate: '2023-12-31',
-    description:
-      'Provide insulated jackets, gloves, and heaters for 800 students living in remote northern mountains ahead of winter.',
-    currentAmount: 10000,
-    targetAmount: 50000,
-    contributors: 48,
-    lastDonation: '2025-10-22T08:26:38.349Z',
-  },
-  {
-    id: '3',
-    title: 'Digital Classroom Launchpad',
-    status: CampaignStatus.Draft,
-    endDate: '2023-12-31',
-    description: 'Build a mini computer lab with 20 devices and STEM mentoring sessions for secondary school students.',
-    currentAmount: 10000,
-    targetAmount: 50000,
-    contributors: 48,
-    lastDonation: '2025-10-22T08:26:38.349Z',
-  },
-  {
-    id: '4',
-    title: 'Water Access for Border Guards',
-    status: CampaignStatus.Active,
-    endDate: '2023-12-31',
-    description:
-      'Install a 10,000-liter filtration and storage system for a border guard station and the households nearby.',
-    currentAmount: 10000,
-    targetAmount: 50000,
-    contributors: 48,
-    lastDonation: '2025-10-22T08:26:38.349Z',
-  },
-  {
-    id: '5',
-    title: 'Library for Coastal Kids',
-    status: CampaignStatus.Closed,
-    endDate: '2023-12-31',
-    description:
-      'Deliver a floating library and life-skills workshops for island communities with over 5,000 curated books.',
-    currentAmount: 10000,
-    targetAmount: 50000,
-    contributors: 48,
-    lastDonation: '2025-10-22T08:26:38.349Z',
-  },
-];
+import { useCampaigns } from '../../../hooks/useCampaigns';
+import { CampaignStatus } from '../../../type';
 
 export const ActiveCampaign = () => {
+  const { campaigns, isLoading, error } = useCampaigns();
+  const [selectedStatus, setSelectedStatus] = useState<CampaignStatus | 'all'>('all');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // Filter campaigns based on selected status
+  const filteredCampaigns = useMemo(() => {
+    if (selectedStatus === 'all') {
+      return campaigns;
+    }
+    return campaigns.filter(campaign => campaign.status === selectedStatus);
+  }, [campaigns, selectedStatus]);
+
+  // Status options for dropdown
+  const statusOptions = [
+    { value: 'all', label: 'All statuses' },
+    { value: CampaignStatus.Active, label: 'Active' },
+    { value: CampaignStatus.Draft, label: 'Draft' },
+    { value: CampaignStatus.Closed, label: 'Closed' },
+  ];
+
+  const selectedLabel = statusOptions.find(option => option.value === selectedStatus)?.label || 'All statuses';
+
+  if (isLoading) {
+    return (
+      <section className="">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="border-primary/30 border-t-primary mx-auto h-12 w-12 animate-spin rounded-full border-4"></div>
+            <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">Loading campaigns...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="">
       <div className="">
+        {error && (
+          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
+            <p className="text-sm text-amber-800 dark:text-amber-200">
+              Failed to load campaigns from API.
+            </p>
+          </div>
+        )}
+
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Active campaigns</h2>
@@ -79,16 +62,47 @@ export const ActiveCampaign = () => {
             </p>
           </div>
           <div className="flex flex-wrap gap-3 text-sm">
-            <button className="hover:border-primary hover:text-primary dark:hover:border-primary-light inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 font-medium text-gray-600 transition dark:border-white/10 dark:text-gray-300 dark:hover:text-white">
-              All statuses
-              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path
-                  fillRule="evenodd"
-                  d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="hover:border-primary hover:text-primary dark:hover:border-primary-light inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 font-medium text-gray-600 transition dark:border-white/10 dark:text-gray-300 dark:hover:text-white"
+              >
+                {selectedLabel}
+                <svg 
+                  className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} 
+                  viewBox="0 0 20 20" 
+                  fill="currentColor" 
+                  aria-hidden="true"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
+              
+              {isDropdownOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-gray-200 bg-white py-2 shadow-lg dark:border-white/10 dark:bg-gray-800 z-10">
+                  {statusOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => {
+                        setSelectedStatus(option.value as CampaignStatus | 'all');
+                        setIsDropdownOpen(false);
+                      }}
+                      className={`w-full px-4 py-2 text-left text-sm transition hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                        selectedStatus === option.value 
+                          ? 'text-primary bg-primary/5 dark:text-primary-light dark:bg-primary/10' 
+                          : 'text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <button className="hover:border-primary hover:text-primary dark:hover:border-primary-light inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 font-medium text-gray-600 transition dark:border-white/10 dark:text-gray-300 dark:hover:text-white">
               Sort by newest
               <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -99,10 +113,15 @@ export const ActiveCampaign = () => {
         </div>
 
         <div className="mt-10 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-          {campaignMockData.map((campaign) => (
-            <CampaignCard key={campaign.id} campaign={campaign} />
-          ))}
-
+          {filteredCampaigns.length > 0 ? (
+            filteredCampaigns.map((campaign) => <CampaignCard key={campaign.id} campaign={campaign} />)
+          ) : (
+            <div className="col-span-full py-12 text-center">
+              <p className="text-gray-500 dark:text-gray-400">
+                {error ? 'Failed to load campaigns' : 'No campaigns found'}
+              </p>
+            </div>
+          )}
           {/* Create New Campaign Card */}
           <article className="group border-primary/40 bg-primary/5 text-primary hover:border-primary/60 hover:bg-primary/10 dark:border-primary/40 dark:bg-primary/10 dark:text-primary-light flex flex-col rounded-3xl border border-dashed p-6 text-center text-sm shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
             <div className="bg-primary/20 text-primary dark:bg-primary/30 dark:text-primary-light mx-auto flex h-14 w-14 items-center justify-center rounded-2xl">
@@ -122,12 +141,14 @@ export const ActiveCampaign = () => {
               approve.
             </p>
 
-            <Button
-              variant="link"
-              className="bg-primary hover:bg-primary-light mt-6 inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-white transition"
-            >
-              <Link href={ROUTES.CREATE_CAMPAIGN}>Get started</Link>
-            </Button>
+            <Link href={ROUTES.CREATE_CAMPAIGN}>
+              <Button
+                variant="link"
+                className="bg-primary hover:bg-primary-light mt-6 inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-white transition"
+              >
+                Get started
+              </Button>
+            </Link>
           </article>
         </div>
 

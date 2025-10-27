@@ -1,6 +1,20 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { STORAGE_KEYS } from '@/constant';
+import {
+  AUTHENTICATION_ENDPOINT,
+  AuthenticationService,
+  fetchAndStoreZkProof,
+  generateAndStoreKeyPair,
+  handleTokenStorage,
+  LoginResponse,
+  mmnClient,
+  processAndStoreUser,
+} from '@/modules/auth';
+import axios from 'axios';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 
 interface AppContextType {
   isAuthenticated: boolean;
@@ -14,6 +28,7 @@ interface User {
   username: string;
   email?: string;
   avatar?: string;
+  walletAddress: string;
 }
 
 interface AppProviderProps {
@@ -22,18 +37,57 @@ interface AppProviderProps {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-// Mock user data
-const MOCK_USER: User = {
-  id: '1',
-  username: 'john.doe',
-  email: 'john@example.com',
-  avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face',
-};
-
 export function AppProvider({ children }: AppProviderProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const localTokenStr = localStorage.getItem(STORAGE_KEYS.TOKEN);
+    const localToken = localTokenStr ? JSON.parse(localTokenStr) : null;
+    if (localToken) {
+      (async () => {
+        try {
+          const response = await AuthenticationService.refreshLogin(localToken.refresh_token);
+          localStorage.setItem(
+            STORAGE_KEYS.TOKEN,
+            JSON.stringify({
+              access_token: response.access_token,
+              refresh_token: response.refresh_token,
+            })
+          );
+        } catch {}
+      })();
+    }
+    const userStored = localStorage.getItem(STORAGE_KEYS.USER_INFO);
+    if (userStored) {
+      setUser(JSON.parse(userStored));
+      setIsAuthenticated(true);
+      return;
+    }
+    const code = searchParams.get('code');
+    if (!code) return;
 
+    const handleAuthentication = async (authCode: string) => {
+      try {
+        const userInfo: LoginResponse = await AuthenticationService.getUserInfo(authCode);
+        setIsAuthenticated(true);
+        router.replace('/');
+        toast.success('Login successful!');
+        handleTokenStorage(userInfo);
+        const keypair = generateAndStoreKeyPair();
+        const senderAddress = mmnClient.getAddressFromUserId(userInfo.user.user_id || userInfo.user.sub);
+        const userObject = processAndStoreUser(userInfo.user, senderAddress);
+        setUser(userObject);
+        await fetchAndStoreZkProof(userInfo.user.user_id, keypair.publicKey, userInfo.auth_token, senderAddress);
+      } catch {
+        toast.error('Login failed!');
+        router.push('/');
+      }
+    };
+
+    handleAuthentication(code);
+  }, [router, searchParams]);
   const value: AppContextType = {
     isAuthenticated,
     setIsAuthenticated,
@@ -68,13 +122,16 @@ export function useAuthActions() {
   const { setIsAuthenticated, setUser } = useApp();
 
   const login = () => {
-    setIsAuthenticated(true);
-    setUser(MOCK_USER);
+    window.location.href = AUTHENTICATION_ENDPOINT.LOGIN;
   };
 
   const logout = () => {
-    setIsAuthenticated(false);
+    const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+    axios.post(AUTHENTICATION_ENDPOINT.LOGOUT, { refresh_token: refreshToken });
+    localStorage.clear();
     setUser(null);
+    setIsAuthenticated(false);
+    window.location.href = '/';
   };
 
   return { login, logout };

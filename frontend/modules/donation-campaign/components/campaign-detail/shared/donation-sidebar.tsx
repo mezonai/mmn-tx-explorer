@@ -1,0 +1,78 @@
+'use client';
+
+import { Button } from '@/components/ui/button';
+import { CopyButton } from '@/components/ui/copy-button';
+import { useAuth } from '@/providers';
+
+// Helper function to truncate wallet address
+const truncateWalletAddress = (address: string, chars = 6) => {
+  if (!address) return '';
+  return `${address.substring(0, chars)}...${address.substring(address.length - chars)}`;
+};
+
+export function DonationSidebar({ campaign }: { campaign: any }) {
+  const { isAuthenticated } = useAuth();
+
+  return (
+    <aside className="border-border bg-card/90 shadow-primary/10 dark:bg-dark-light/80 rounded-3xl border p-6 shadow-lg dark:border-white/10">
+      <p className="text-primary text-xs font-semibold tracking-[0.3em] uppercase">Donate</p>
+      <h2 className="text-foreground mt-3 text-xl font-semibold dark:text-white">Send MMN tokens</h2>
+      <p className="text-muted-foreground mt-3 text-sm dark:text-gray-400">
+        100% of your contribution is allocated to construction, learning resources, and student well-being. Transactions
+        appear instantly in the Recent activity log.
+      </p>
+
+      <div className="mt-6 space-y-4">
+        <div className="border-border bg-background/70 dark:bg-dark-light/70 rounded-2xl border p-4 dark:border-white/10">
+          <p className="text-muted-foreground text-xs tracking-wide uppercase dark:text-gray-400">Wallet address</p>
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <p className="text-foreground truncate font-mono text-sm dark:text-gray-100">
+              {truncateWalletAddress(campaign.walletAddress)}
+            </p>
+            <CopyButton textToCopy={campaign.walletAddress} />
+          </div>
+          <a
+            href="#"
+            className="text-primary hover:text-primary-light mt-3 inline-flex items-center gap-1 text-xs font-medium transition"
+          >
+            View on explorer
+          </a>
+        </div>
+
+        <div className="border-primary/40 bg-primary/5 dark:border-primary/40 dark:bg-primary/15 rounded-2xl border border-dashed p-4">
+          <p className="text-primary dark:text-primary-light text-xs font-semibold tracking-widest uppercase">
+            Scan QR
+          </p>
+          <div className="mt-4 flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="dark:bg-dark h-28 w-28 rounded-2xl bg-white p-3 shadow-inner">
+              <img
+                src={campaign.qrCodeUrl}
+                alt="QR Code for donation"
+                className="h-full w-full rounded-xl object-cover"
+              />
+            </div>
+            <div className="text-primary/90 dark:text-primary-light/80 flex-1 text-xs">
+              Open your MMN wallet, scan the code, and specify the number of tokens. Helpful hint: 100 MMN ≈ 500,000
+              VND.
+            </div>
+          </div>
+        </div>
+
+        {/* Donate Button */}
+        {isAuthenticated && (
+          <Button
+            size="lg"
+            className="bg-primary shadow-primary/30 hover:bg-primary-light focus-visible:outline-primary inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white shadow-lg transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            Donate Now
+          </Button>
+        )}
+
+        <p className="text-muted-foreground text-center text-xs dark:text-gray-400">
+          💡 Keep your transaction hash for reconciliation. Payments triggered from the Timesheet portal are reconciled
+          automatically.
+        </p>
+      </div>
+    </aside>
+  );
+}
