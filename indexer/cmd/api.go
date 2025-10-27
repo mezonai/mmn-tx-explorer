@@ -16,9 +16,6 @@ import (
 
 	"github.com/thirdweb-dev/indexer/internal/handlers"
 	"github.com/thirdweb-dev/indexer/internal/middleware"
-
-
-	// config "github.com/thirdweb-dev/indexer/configs"
 	_ "github.com/thirdweb-dev/indexer/docs"
 )
 
@@ -42,7 +39,6 @@ var (
 // @Security BasicAuth
 // @securityDefinitions.basic BasicAuth
 func RunApi(cmd *cobra.Command, args []string) {
-	// docs.SwaggerInfo.Host = config.Cfg.API.Host
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -75,7 +71,6 @@ func RunApi(cmd *cobra.Command, args []string) {
 		root.GET("/pending-tx/:transaction_hash/detail", handlers.GetPendingTransactionDetail)
 		root.GET("/events", handlers.GetLogs)
 
-
 		// wallet queries
 		root.GET("/wallets", handlers.GetWallets)
 		root.GET("/wallets/:address/detail", handlers.GetWalletDetail)
@@ -90,15 +85,12 @@ func RunApi(cmd *cobra.Command, args []string) {
 		root.GET("/stats/dashboard", handlers.GetDashboardStats)
 		root.GET("/stats/transactions", handlers.GetTransactionStats)
 
-
 		// search
 		root.GET("/search/:input", handlers.Search)
 	}
 
-	r.GET("/health", func(c *gin.Context) {
-		// TODO: implement a simple query before going live
-		c.String(http.StatusOK, "ok")
-	})
+
+	r.GET("/health", handlers.Health)
 
 	srv := &http.Server{
 		Addr:    ":8080",

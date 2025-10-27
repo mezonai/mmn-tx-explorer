@@ -130,6 +130,15 @@ definitions:
             $ref: '#/definitions/common.BlockModel'
         type: object
     type: object
+  handlers.HealthResponse:
+    properties:
+      message:
+        type: string
+      status:
+        type: string
+      time:
+        type: string
+    type: object
   handlers.PendingTransactionModel:
     properties:
       from_address:
@@ -747,6 +756,21 @@ paths:
       summary: Get wallet detail
       tags:
       - wallet
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: Check if the service is running
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.HealthResponse'
+      summary: Health check
+      tags:
+      - health
 schemes:
 - http
 - https
