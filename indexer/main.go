@@ -1,6 +1,6 @@
 package main
 
-import "github.com/thirdweb-dev/indexer/cmd"
+import "github.com/mezonai/mmn-tx-explorer/indexer/cmd"
 
 func main() {
 	cmd.Execute()

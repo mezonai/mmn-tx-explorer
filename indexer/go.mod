@@ -1,4 +1,4 @@
-module github.com/thirdweb-dev/indexer
+module github.com/mezonai/mmn-tx-explorer/indexer
 
 go 1.23.0
 

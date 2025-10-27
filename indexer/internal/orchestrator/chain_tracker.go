@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/metrics"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc"
 	"github.com/rs/zerolog/log"
-	"github.com/thirdweb-dev/indexer/internal/metrics"
-	"github.com/thirdweb-dev/indexer/internal/rpc"
 )
 
 const DEFAULT_CHAIN_TRACKER_POLL_INTERVAL = 300000 // 5 minutes
