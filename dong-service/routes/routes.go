@@ -33,7 +33,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 	v1 := router.Group("/api/v1")
 	{
 		// Initialize repositories
-		campaignRepo := repository.NewDonationCampaignRepository(database.GetDB())
+		campaignRepo := repository.NewDonationCampaignRepository(database.GetDB(), cfg.Database.Schema)
 		statsRepo := repository.NewCampaignStatisticsRepository(database.GetDB(), cfg.Indexer.Schema, cfg.Database.Schema)
 
 		// Initialize handlers
