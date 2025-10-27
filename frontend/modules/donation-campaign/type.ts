@@ -1,21 +1,23 @@
 export enum CampaignStatus {
-  Active = 'active',
-  Draft = 'draft',
-  Closed = 'closed',
+  Active = 1,
+  Draft = 0,
+  Closed = 2,
 }
 
 export interface DonationCampaign {
   id: string;
-  title: string;
+  name: string;
   description: string;
+  goal: number;
+  url: string;
+  wallet: string;
+  creator: string;
   status: CampaignStatus;
-  targetAmount: number;
-  currentAmount: number;
   // startDate: string;
-  endDate: string;
+  end_date: string;
   // createdBy: string;
-  contributors: number;
-  lastDonation?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface CreateCampaignRequest {

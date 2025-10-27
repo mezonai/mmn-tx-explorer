@@ -1,3 +1,4 @@
+'use client';
 import { Separator } from '@/components/ui/separator';
 import { CSRDonation } from './csr-donation';
 import { ActiveCampaign } from './active-campaign';

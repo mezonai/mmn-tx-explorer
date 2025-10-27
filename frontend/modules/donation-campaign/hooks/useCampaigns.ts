@@ -4,8 +4,18 @@ import type { CampaignListParams } from '../type';
 import { QUERY_KEYS } from '../constants';
 
 export const useCampaigns = (params: CampaignListParams = {}) => {
-  return useQuery({
+  const {
+    data: campaignsResponse,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: [QUERY_KEYS.CAMPAIGNS, params],
     queryFn: () => DonationCampaignService.getCampaigns(params),
   });
+
+  return {
+    campaigns: campaignsResponse?.data || [],
+    isLoading,
+    error,
+  };
 };
