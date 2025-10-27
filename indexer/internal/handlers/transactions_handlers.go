@@ -27,6 +27,7 @@ import (
 // @Param sort_order query string false "Sort order (asc or desc)"
 // @Param page query int false "Page number for pagination"
 // @Param limit query int false "Number of items per page" default(5)
+// @Param wallet_address query string false "Wallet address to filter transactions (optional)"
 // @Param aggregate query []string false "List of aggregate functions to apply"
 // @Param force_consistent_data query bool false "Force consistent data at the expense of query speed"
 // @Success 200 {object} api.QueryResponse{data=[]common.TransactionModel}
@@ -38,81 +39,8 @@ func GetTransactions(c *gin.Context) {
 	handleTransactionsRequest(c)
 }
 
-// @Summary Get wallet transactions
-// @Description Retrieve all incoming and outgoing transactions for a specific wallet address
-// @Tags wallet
-// @Accept json
-// @Produce json
-// @Security BasicAuth
-// @Param chainId path string true "Chain ID"
-// @Param wallet_address path string true "Wallet address"
-// @Param filter query string false "Filter parameters"
-// @Param group_by query string false "Field to group results by"
-// @Param sort_by query string false "Field to sort results by"
-// @Param sort_order query string false "Sort order (asc or desc)"
-// @Param page query int false "Page number for pagination"
-// @Param limit query int false "Number of items per page" default(5)
-// @Param force_consistent_data query bool false "Force consistent data at the expense of query speed"
-// @Param decode query bool false "Decode transaction data"
-// @Success 200 {object} api.QueryResponse{data=[]common.DecodedTransactionModel}
-// @Failure 400 {object} api.Error
-// @Failure 401 {object} api.Error
-// @Failure 500 {object} api.Error
-// @Router /{chainId}/wallet-transactions [get]
-func GetWalletTransactions(c *gin.Context) {
-	handleTransactionsRequest(c)
-}
 
-// @Summary Get transactions by contract
-// @Description Retrieve transactions for a specific contract
-// @Tags transactions
-// @Accept json
-// @Produce json
-// @Security BasicAuth
-// @Param chainId path string true "Chain ID"
-// @Param to path string true "Contract address"
-// @Param filter query string false "Filter parameters"
-// @Param group_by query string false "Field to group results by"
-// @Param sort_by query string false "Field to sort results by"
-// @Param sort_order query string false "Sort order (asc or desc)"
-// @Param page query int false "Page number for pagination"
-// @Param limit query int false "Number of items per page" default(5)
-// @Param aggregate query []string false "List of aggregate functions to apply"
-// @Param force_consistent_data query bool false "Force consistent data at the expense of query speed"
-// @Success 200 {object} api.QueryResponse{data=[]common.TransactionModel}
-// @Failure 400 {object} api.Error
-// @Failure 401 {object} api.Error
-// @Failure 500 {object} api.Error
-// @Router /{chainId}/transactions/{to} [get]
-func GetTransactionsByContract(c *gin.Context) {
-	handleTransactionsRequest(c)
-}
 
-// @Summary Get transactions by contract and signature
-// @Description Retrieve transactions for a specific contract and signature. When a valid function signature is provided, the response includes decoded transaction data with function inputs.
-// @Tags transactions
-// @Accept json
-// @Produce json
-// @Security BasicAuth
-// @Param chainId path string true "Chain ID"
-// @Param to path string true "Contract address"
-// @Param signature path string true "Function signature (e.g., 'transfer(address,uint256)')"
-// @Param filter query string false "Filter parameters"
-// @Param group_by query string false "Field to group results by"
-// @Param sort_by query string false "Field to sort results by"
-// @Param sort_order query string false "Sort order (asc or desc)"
-// @Param page query int false "Page number for pagination"
-// @Param limit query int false "Number of items per page" default(5)
-// @Param aggregate query []string false "List of aggregate functions to apply"
-// @Param force_consistent_data query bool false "Force consistent data at the expense of query speed"
-// @Success 200 {object} api.QueryResponse{data=[]common.DecodedTransactionModel}
-// @Failure 400 {object} api.Error
-// @Failure 401 {object} api.Error
-// @Failure 500 {object} api.Error
-// @Router /{chainId}/transactions/{to}/{signature} [get]
-func GetTransactionsByContractAndSignature(c *gin.Context) {
-	handleTransactionsRequest(c)
-}
 
 func handleTransactionsRequest(c *gin.Context) {
 	walletAddress := c.Param("wallet_address")

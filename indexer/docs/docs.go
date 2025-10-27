@@ -9,24 +9,23 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "contact": {},
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "email": "support@example.com"
+        },
         "license": {
             "name": "Apache 2.0",
-            "url": "https://github.com/mezonai/mmn-tx-explorer/indexer/blob/main/LICENSE"
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
         },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/search/:input": {
+        "/health": {
             "get": {
-                "security": [
-                    {
-                        "BasicAuth": []
-                    }
-                ],
-                "description": "Search blocks, transactions and events",
+                "description": "Check if the service is running",
                 "consumes": [
                     "application/json"
                 ],
@@ -34,164 +33,14 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "search"
+                    "health"
                 ],
-                "summary": "Search blockchain data",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Chain ID",
-                        "name": "chainId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Search input",
-                        "name": "input",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
+                "summary": "Health check",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/api.QueryResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/handlers.SearchResultModel"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/api.Error"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/api.Error"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/api.Error"
-                        }
-                    }
-                }
-            }
-        },
-        "/{chainId}/balances/{owner}/{type}": {
-            "get": {
-                "security": [
-                    {
-                        "BasicAuth": []
-                    }
-                ],
-                "description": "Retrieve token balances of an address by type",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "balances"
-                ],
-                "summary": "Get token balances of an address by type",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Chain ID",
-                        "name": "chainId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Owner address",
-                        "name": "owner",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Type of token balance",
-                        "name": "type",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Hide zero balances",
-                        "name": "hide_zero_balances",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Page number for pagination",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 5,
-                        "description": "Number of items per page",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/api.QueryResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/handlers.BalanceModel"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/api.Error"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/api.Error"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/api.Error"
+                            "$ref": "#/definitions/handlers.HealthResponse"
                         }
                     }
                 }
@@ -307,6 +156,74 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/{chainId}/blocks/{blockNumber}/detail": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Retrieve detailed information about a specific block including all transactions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "detail"
+                ],
+                "summary": "Get block detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Chain ID",
+                        "name": "chainId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Block number",
+                        "name": "blockNumber",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.BlockDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/api.Error"
                         }
@@ -443,14 +360,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/{chainId}/events/{contract}": {
+        "/{chainId}/pending-transactions": {
             "get": {
                 "security": [
                     {
                         "BasicAuth": []
                     }
                 ],
-                "description": "Retrieve logs for a specific contract",
+                "description": "Retrieve all pending transactions from mempool",
                 "consumes": [
                     "application/json"
                 ],
@@ -458,9 +375,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "events"
+                    "transactions"
                 ],
-                "summary": "Get logs by contract",
+                "summary": "Get pending transactions",
                 "parameters": [
                     {
                         "type": "string",
@@ -468,66 +385,6 @@ const docTemplate = `{
                         "name": "chainId",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Contract address",
-                        "name": "contract",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter parameters",
-                        "name": "filter",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Field to group results by",
-                        "name": "group_by",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Field to sort results by",
-                        "name": "sort_by",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Sort order (asc or desc)",
-                        "name": "sort_order",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Page number for pagination",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 5,
-                        "description": "Number of items per page",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "List of aggregate functions to apply",
-                        "name": "aggregate",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Force consistent data at the expense of query speed",
-                        "name": "force_consistent_data",
-                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -544,7 +401,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/common.LogModel"
+                                                "$ref": "#/definitions/handlers.PendingTransactionModel"
                                             }
                                         }
                                     }
@@ -573,14 +430,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/{chainId}/events/{contract}/{signature}": {
+        "/{chainId}/search/{input}": {
             "get": {
                 "security": [
                     {
                         "BasicAuth": []
                     }
                 ],
-                "description": "Retrieve logs for a specific contract and event signature. When a valid event signature is provided, the response includes decoded log data with both indexed and non-indexed parameters.",
+                "description": "Search blocks, transactions and events",
                 "consumes": [
                     "application/json"
                 ],
@@ -588,9 +445,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "events"
+                    "search"
                 ],
-                "summary": "Get logs by contract and event signature",
+                "summary": "Search blockchain data",
                 "parameters": [
                     {
                         "type": "string",
@@ -601,70 +458,10 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Contract address",
-                        "name": "contract",
+                        "description": "Search input",
+                        "name": "input",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Event signature (e.g., 'Transfer(address,address,uint256)')",
-                        "name": "signature",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter parameters",
-                        "name": "filter",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Field to group results by",
-                        "name": "group_by",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Field to sort results by",
-                        "name": "sort_by",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Sort order (asc or desc)",
-                        "name": "sort_order",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Page number for pagination",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 5,
-                        "description": "Number of items per page",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "List of aggregate functions to apply",
-                        "name": "aggregate",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Force consistent data at the expense of query speed",
-                        "name": "force_consistent_data",
-                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -679,216 +476,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/common.DecodedLogModel"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/api.Error"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/api.Error"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/api.Error"
-                        }
-                    }
-                }
-            }
-        },
-        "/{chainId}/holders/{address}": {
-            "get": {
-                "security": [
-                    {
-                        "BasicAuth": []
-                    }
-                ],
-                "description": "Retrieve holders of a token",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "holders"
-                ],
-                "summary": "Get holders of a token",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Chain ID",
-                        "name": "chainId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Address of the token",
-                        "name": "address",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Type of token",
-                        "name": "token_type",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Hide zero balances",
-                        "name": "hide_zero_balances",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Page number for pagination",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 5,
-                        "description": "Number of items per page",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/api.QueryResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/handlers.HolderModel"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/api.Error"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/api.Error"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/api.Error"
-                        }
-                    }
-                }
-            }
-        },
-        "/{chainId}/tokens/{address}": {
-            "get": {
-                "security": [
-                    {
-                        "BasicAuth": []
-                    }
-                ],
-                "description": "Retrieve token IDs by type for a specific token address",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "tokens"
-                ],
-                "summary": "Get token IDs by type for a specific token address",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Chain ID",
-                        "name": "chainId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Token address",
-                        "name": "address",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Type of token (erc721 or erc1155)",
-                        "name": "token_type",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Hide zero balances",
-                        "name": "hide_zero_balances",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Page number for pagination",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 5,
-                        "description": "Number of items per page",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/api.QueryResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/handlers.TokenIdModel"
-                                            }
+                                            "$ref": "#/definitions/handlers.SearchResultModel"
                                         }
                                     }
                                 }
@@ -980,133 +568,9 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "List of aggregate functions to apply",
-                        "name": "aggregate",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Force consistent data at the expense of query speed",
-                        "name": "force_consistent_data",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/api.QueryResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/common.TransactionModel"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/api.Error"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/api.Error"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/api.Error"
-                        }
-                    }
-                }
-            }
-        },
-        "/{chainId}/transactions/{to}": {
-            "get": {
-                "security": [
-                    {
-                        "BasicAuth": []
-                    }
-                ],
-                "description": "Retrieve transactions for a specific contract",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "transactions"
-                ],
-                "summary": "Get transactions by contract",
-                "parameters": [
-                    {
                         "type": "string",
-                        "description": "Chain ID",
-                        "name": "chainId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Contract address",
-                        "name": "to",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter parameters",
-                        "name": "filter",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Field to group results by",
-                        "name": "group_by",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Field to sort results by",
-                        "name": "sort_by",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Sort order (asc or desc)",
-                        "name": "sort_order",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Page number for pagination",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 5,
-                        "description": "Number of items per page",
-                        "name": "limit",
+                        "description": "Wallet address to filter transactions (optional)",
+                        "name": "wallet_address",
                         "in": "query"
                     },
                     {
@@ -1169,14 +633,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/{chainId}/transactions/{to}/{signature}": {
+        "/{chainId}/tx/{txHash}/detail": {
             "get": {
                 "security": [
                     {
                         "BasicAuth": []
                     }
                 ],
-                "description": "Retrieve transactions for a specific contract and signature. When a valid function signature is provided, the response includes decoded transaction data with function inputs.",
+                "description": "Retrieve detailed information about a specific transaction including logs and traces",
                 "consumes": [
                     "application/json"
                 ],
@@ -1184,9 +648,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "transactions"
+                    "detail"
                 ],
-                "summary": "Get transactions by contract and signature",
+                "summary": "Get transaction detail",
                 "parameters": [
                     {
                         "type": "string",
@@ -1194,240 +658,20 @@ const docTemplate = `{
                         "name": "chainId",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Contract address",
-                        "name": "to",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Function signature (e.g., 'transfer(address,uint256)')",
-                        "name": "signature",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter parameters",
-                        "name": "filter",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Field to group results by",
-                        "name": "group_by",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Field to sort results by",
-                        "name": "sort_by",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Sort order (asc or desc)",
-                        "name": "sort_order",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Page number for pagination",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 5,
-                        "description": "Number of items per page",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "List of aggregate functions to apply",
-                        "name": "aggregate",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Force consistent data at the expense of query speed",
-                        "name": "force_consistent_data",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/api.QueryResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/common.DecodedTransactionModel"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/api.Error"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/api.Error"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/api.Error"
-                        }
-                    }
-                }
-            }
-        },
-        "/{chainId}/transfers": {
-            "get": {
-                "security": [
-                    {
-                        "BasicAuth": []
-                    }
-                ],
-                "description": "Retrieve token transfers by various filters",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "transfers"
-                ],
-                "summary": "Get token transfers",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Chain ID",
-                        "name": "chainId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "Token types (erc721, erc1155, erc20)",
-                        "name": "token_type",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Token contract address",
-                        "name": "token_address",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Wallet address",
-                        "name": "wallet",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Start block number",
-                        "name": "start_block",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "End block number",
-                        "name": "end_block",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Start timestamp (RFC3339 format)",
-                        "name": "start_timestamp",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "End timestamp (RFC3339 format)",
-                        "name": "end_timestamp",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "Token IDs",
-                        "name": "token_id",
-                        "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "Transaction hash",
-                        "name": "transaction_hash",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Page number for pagination",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 20,
-                        "description": "Number of items per page",
-                        "name": "limit",
-                        "in": "query"
+                        "name": "txHash",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/api.QueryResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/handlers.TransferModel"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
+                            "$ref": "#/definitions/handlers.TransactionDetailResponse"
                         }
                     },
                     "400": {
@@ -1442,6 +686,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/api.Error"
                         }
                     },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -1451,14 +701,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/{chainId}/wallet-transactions": {
+        "/{chainId}/wallets": {
             "get": {
                 "security": [
                     {
                         "BasicAuth": []
                     }
                 ],
-                "description": "Retrieve all incoming and outgoing transactions for a specific wallet address",
+                "description": "Retrieve a list of wallets with sorting, filtering, and pagination",
                 "consumes": [
                     "application/json"
                 ],
@@ -1468,7 +718,7 @@ const docTemplate = `{
                 "tags": [
                     "wallet"
                 ],
-                "summary": "Get wallet transactions",
+                "summary": "Get wallets",
                 "parameters": [
                     {
                         "type": "string",
@@ -1479,14 +729,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Wallet address",
-                        "name": "wallet_address",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter parameters",
+                        "description": "Filter parameters (e.g. balance\u003e1000)",
                         "name": "filter",
                         "in": "query"
                     },
@@ -1498,13 +741,13 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Field to sort results by",
+                        "description": "Field to sort results by (default: balance)",
                         "name": "sort_by",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Sort order (asc or desc)",
+                        "description": "Sort order (asc or desc, default: desc)",
                         "name": "sort_order",
                         "in": "query"
                     },
@@ -1526,12 +769,6 @@ const docTemplate = `{
                         "description": "Force consistent data at the expense of query speed",
                         "name": "force_consistent_data",
                         "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Decode transaction data",
-                        "name": "decode",
-                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1548,7 +785,8 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/common.DecodedTransactionModel"
+                                                "type": "object",
+                                                "additionalProperties": true
                                             }
                                         }
                                     }
@@ -1564,6 +802,74 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/{chainId}/wallets/{address}/detail": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Retrieve detailed information about a specific wallet",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wallet"
+                ],
+                "summary": "Get wallet detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Chain ID",
+                        "name": "chainId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Wallet address",
+                        "name": "address",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.WalletDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/api.Error"
                         }
@@ -1659,9 +965,6 @@ const docTemplate = `{
         "common.BlockModel": {
             "type": "object",
             "properties": {
-                "base_fee_per_gas": {
-                    "type": "integer"
-                },
                 "block_hash": {
                     "type": "string"
                 },
@@ -1672,226 +975,13 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "chain_id": {
-                    "type": "string"
-                },
-                "difficulty": {
-                    "type": "string"
-                },
-                "extra_data": {
-                    "type": "string"
-                },
-                "gas_limit": {
-                    "type": "string"
-                },
-                "gas_used": {
-                    "type": "string"
-                },
-                "logs_bloom": {
-                    "type": "string"
-                },
-                "miner": {
-                    "type": "string"
-                },
-                "mix_hash": {
-                    "type": "string"
-                },
-                "nonce": {
                     "type": "string"
                 },
                 "parent_hash": {
                     "type": "string"
                 },
-                "receipts_root": {
-                    "type": "string"
-                },
-                "sha3_uncles": {
-                    "type": "string"
-                },
-                "size": {
-                    "type": "integer"
-                },
-                "state_root": {
-                    "type": "string"
-                },
-                "total_difficulty": {
-                    "type": "string"
-                },
                 "transaction_count": {
                     "type": "integer"
-                },
-                "transactions_root": {
-                    "type": "string"
-                },
-                "withdrawals_root": {
-                    "type": "string"
-                }
-            }
-        },
-        "common.DecodedLogDataModel": {
-            "type": "object",
-            "properties": {
-                "indexed_params": {
-                    "type": "object"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "non_indexed_params": {
-                    "type": "object"
-                },
-                "signature": {
-                    "type": "string"
-                }
-            }
-        },
-        "common.DecodedLogModel": {
-            "type": "object",
-            "properties": {
-                "address": {
-                    "type": "string"
-                },
-                "block_hash": {
-                    "type": "string"
-                },
-                "block_number": {
-                    "type": "integer"
-                },
-                "block_timestamp": {
-                    "type": "integer"
-                },
-                "chain_id": {
-                    "type": "string"
-                },
-                "data": {
-                    "type": "string"
-                },
-                "decoded": {
-                    "$ref": "#/definitions/common.DecodedLogDataModel"
-                },
-                "log_index": {
-                    "type": "integer"
-                },
-                "topics": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "transaction_hash": {
-                    "type": "string"
-                },
-                "transaction_index": {
-                    "type": "integer"
-                }
-            }
-        },
-        "common.DecodedTransactionDataModel": {
-            "type": "object",
-            "properties": {
-                "inputs": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "name": {
-                    "type": "string"
-                },
-                "signature": {
-                    "type": "string"
-                }
-            }
-        },
-        "common.DecodedTransactionModel": {
-            "type": "object",
-            "properties": {
-                "access_list_json": {
-                    "type": "string"
-                },
-                "blob_gas_price": {
-                    "type": "string"
-                },
-                "blob_gas_used": {
-                    "type": "integer"
-                },
-                "block_hash": {
-                    "type": "string"
-                },
-                "block_number": {
-                    "type": "integer"
-                },
-                "block_timestamp": {
-                    "type": "integer"
-                },
-                "chain_id": {
-                    "type": "string"
-                },
-                "contract_address": {
-                    "type": "string"
-                },
-                "cumulative_gas_used": {
-                    "type": "integer"
-                },
-                "data": {
-                    "type": "string"
-                },
-                "decoded": {
-                    "$ref": "#/definitions/common.DecodedTransactionDataModel"
-                },
-                "effective_gas_price": {
-                    "type": "string"
-                },
-                "from_address": {
-                    "type": "string"
-                },
-                "function_selector": {
-                    "type": "string"
-                },
-                "gas": {
-                    "type": "integer"
-                },
-                "gas_price": {
-                    "type": "string"
-                },
-                "gas_used": {
-                    "type": "integer"
-                },
-                "hash": {
-                    "type": "string"
-                },
-                "logs_bloom": {
-                    "type": "string"
-                },
-                "max_fee_per_gas": {
-                    "type": "string"
-                },
-                "max_priority_fee_per_gas": {
-                    "type": "string"
-                },
-                "nonce": {
-                    "type": "integer"
-                },
-                "r": {
-                    "type": "string"
-                },
-                "s": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "integer"
-                },
-                "to_address": {
-                    "type": "string"
-                },
-                "transaction_index": {
-                    "type": "integer"
-                },
-                "transaction_type": {
-                    "type": "integer"
-                },
-                "v": {
-                    "type": "string"
-                },
-                "value": {
-                    "type": "string"
                 }
             }
         },
@@ -1936,74 +1026,85 @@ const docTemplate = `{
         "common.TransactionModel": {
             "type": "object",
             "properties": {
-                "access_list_json": {
-                    "type": "string"
-                },
-                "blob_gas_price": {
-                    "type": "string"
-                },
-                "blob_gas_used": {
-                    "type": "integer"
-                },
                 "block_hash": {
                     "type": "string"
                 },
                 "block_number": {
                     "type": "integer"
                 },
-                "block_timestamp": {
-                    "type": "integer"
-                },
                 "chain_id": {
                     "type": "string"
                 },
-                "contract_address": {
-                    "type": "string"
-                },
-                "cumulative_gas_used": {
-                    "type": "integer"
-                },
-                "data": {
-                    "type": "string"
-                },
-                "effective_gas_price": {
+                "extra_info": {
                     "type": "string"
                 },
                 "from_address": {
                     "type": "string"
                 },
-                "function_selector": {
-                    "type": "string"
-                },
-                "gas": {
-                    "type": "integer"
-                },
-                "gas_price": {
-                    "type": "string"
-                },
-                "gas_used": {
-                    "type": "integer"
-                },
                 "hash": {
-                    "type": "string"
-                },
-                "logs_bloom": {
-                    "type": "string"
-                },
-                "max_fee_per_gas": {
-                    "type": "string"
-                },
-                "max_priority_fee_per_gas": {
                     "type": "string"
                 },
                 "nonce": {
                     "type": "integer"
                 },
-                "r": {
+                "status": {
+                    "type": "integer"
+                },
+                "text_data": {
                     "type": "string"
                 },
-                "s": {
+                "to_address": {
                     "type": "string"
+                },
+                "transaction_timestamp": {
+                    "type": "integer"
+                },
+                "transaction_type": {
+                    "type": "integer"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.BlockDetailResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "block": {
+                            "$ref": "#/definitions/common.BlockModel"
+                        }
+                    }
+                }
+            }
+        },
+        "handlers.HealthResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "time": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.PendingTransactionModel": {
+            "type": "object",
+            "properties": {
+                "from_address": {
+                    "type": "string"
+                },
+                "hash": {
+                    "type": "string"
+                },
+                "nonce": {
+                    "type": "integer"
                 },
                 "status": {
                     "type": "integer"
@@ -2011,50 +1112,13 @@ const docTemplate = `{
                 "to_address": {
                     "type": "string"
                 },
-                "transaction_index": {
+                "transaction_timestamp": {
                     "type": "integer"
                 },
                 "transaction_type": {
                     "type": "integer"
                 },
-                "v": {
-                    "type": "string"
-                },
                 "value": {
-                    "type": "string"
-                }
-            }
-        },
-        "handlers.BalanceModel": {
-            "type": "object",
-            "properties": {
-                "balance": {
-                    "type": "string"
-                },
-                "token_address": {
-                    "type": "string"
-                },
-                "token_id": {
-                    "type": "string"
-                },
-                "token_type": {
-                    "type": "string"
-                }
-            }
-        },
-        "handlers.HolderModel": {
-            "type": "object",
-            "properties": {
-                "balance": {
-                    "type": "string"
-                },
-                "holder_address": {
-                    "type": "string"
-                },
-                "token_id": {
-                    "type": "string"
-                },
-                "token_type": {
                     "type": "string"
                 }
             }
@@ -2082,6 +1146,13 @@ const docTemplate = `{
                 },
                 "type": {
                     "$ref": "#/definitions/handlers.SearchResultType"
+                },
+                "wallets": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                    }
                 }
             }
         },
@@ -2093,7 +1164,8 @@ const docTemplate = `{
                 "event_signature",
                 "function_signature",
                 "address",
-                "contract"
+                "contract",
+                "wallet"
             ],
             "x-enum-varnames": [
                 "SearchResultTypeBlock",
@@ -2101,76 +1173,43 @@ const docTemplate = `{
                 "SearchResultTypeEventSignature",
                 "SearchResultTypeFunctionSignature",
                 "SearchResultTypeAddress",
-                "SearchResultTypeContract"
+                "SearchResultTypeContract",
+                "SearchResultTypeWallet"
             ]
         },
-        "handlers.TokenIdModel": {
+        "handlers.TransactionDetailResponse": {
             "type": "object",
             "properties": {
-                "token_id": {
-                    "type": "string"
-                },
-                "token_type": {
-                    "type": "string"
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "transaction": {
+                            "$ref": "#/definitions/common.TransactionModel"
+                        }
+                    }
                 }
             }
         },
-        "handlers.TransferModel": {
+        "handlers.WalletDetailResponse": {
             "type": "object",
             "properties": {
-                "amount": {
-                    "type": "string"
-                },
-                "block_number": {
-                    "type": "string"
-                },
-                "block_timestamp": {
-                    "type": "string"
-                },
-                "from_address": {
-                    "type": "string"
-                },
-                "log_index": {
-                    "type": "integer"
-                },
-                "to_address": {
-                    "type": "string"
-                },
-                "token_address": {
-                    "type": "string"
-                },
-                "token_id": {
-                    "type": "string"
-                },
-                "token_type": {
-                    "type": "string"
-                },
-                "transaction_hash": {
-                    "type": "string"
+                "data": {
+                    "type": "object",
+                    "additionalProperties": true
                 }
             }
         }
-    },
-    "securityDefinitions": {
-        "BasicAuth": {
-            "type": "basic"
-        }
-    },
-    "security": [
-        {
-            "BasicAuth": []
-        }
-    ]
+    }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "v0.0.1-beta",
-	Host:             "",
-	BasePath:         "/",
-	Schemes:          []string{},
-	Title:            "Thirdweb Insight",
-	Description:      "API for querying blockchain transactions and events",
+	Version:          "1.0",
+	Host:             "localhost:8080",
+	BasePath:         "",
+	Schemes:          []string{"http", "https"},
+	Title:            "Indexer API",
+	Description:      "API for indexing blockchain data.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",
