@@ -493,7 +493,7 @@ paths:
       summary: Get top contributors for a campaign
       tags:
       - campaigns
-  /api/v1/campaigns/stats:
+  /api/v1/stats/campaign:
     get:
       description: Get overall statistics for all donation campaigns
       produces:
