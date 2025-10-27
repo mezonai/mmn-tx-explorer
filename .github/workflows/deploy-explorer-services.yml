@@ -47,7 +47,6 @@ jobs:
           node-version: "20"
           cache: ""
 
-
       - name: Build Frontend
         env:
           NEXT_PUBLIC_APP_API_URL: ${{ vars.NEXT_PUBLIC_APP_API_URL }}
@@ -59,7 +58,7 @@ jobs:
           npm run build
           cd ..
 
-  deploy:
+  deploy-explorer:
     needs: build
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
@@ -117,29 +116,32 @@ jobs:
 
           echo "==> Deploying migrations..."
           sudo rm -rf /opt/indexer/migrations/postgres
-          sudo mv /tmp/postgres /opt/indexer/migrations/
+          sudo mv /tmp/postgres-indexer /opt/indexer/migrations/postgres
 
           echo "==> Preparation complete!"
           EOF
           chmod +x remote_setup.sh
 
-          echo "# Explorer env generated at $(date)" > explorer_env.sh
-          printf "export POSTGRES_DB=%q\n" "$POSTGRES_DB" >> explorer_env.sh
-          printf "export POSTGRES_USER=%q\n" "$POSTGRES_USER" >> explorer_env.sh
-          printf "export POSTGRES_PASSWORD=%q\n" "$POSTGRES_PASSWORD" >> explorer_env.sh
-          printf "export POSTGRES_HOST=%q\n" "$POSTGRES_HOST" >> explorer_env.sh
-          printf "export POSTGRES_PORT=%q\n" "$POSTGRES_PORT" >> explorer_env.sh
-          printf "export NEXT_PUBLIC_APP_API_URL=%q\n" "$NEXT_PUBLIC_APP_API_URL" >> explorer_env.sh
-          printf "export APP_API_URL_INTERNAL=%q\n" "$APP_API_URL_INTERNAL" >> explorer_env.sh
-          echo "==> Generated explorer_env.sh"
+          echo "# Remote env generated at $(date)" > remote_env.sh
+          printf "export POSTGRES_DB=%q\n" "$POSTGRES_DB" >> remote_env.sh
+          printf "export POSTGRES_USER=%q\n" "$POSTGRES_USER" >> remote_env.sh
+          printf "export POSTGRES_PASSWORD=%q\n" "$POSTGRES_PASSWORD" >> remote_env.sh
+          printf "export POSTGRES_HOST=%q\n" "$POSTGRES_HOST" >> remote_env.sh
+          printf "export POSTGRES_PORT=%q\n" "$POSTGRES_PORT" >> remote_env.sh
+          printf "export NEXT_PUBLIC_APP_API_URL=%q\n" "$NEXT_PUBLIC_APP_API_URL" >> remote_env.sh
+          printf "export APP_API_URL_INTERNAL=%q\n" "$APP_API_URL_INTERNAL" >> remote_env.sh
 
       - name: Prepare and deploy to target server
         run: |
           set -e
-          echo "==> Copying build to target server..."
+          echo "==> Copying binaries to target server..."
           scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} build/indexer ${{ vars.HOST_ALIAS }}:/tmp/
-          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} -r indexer/internal/tools/postgres ${{ vars.HOST_ALIAS }}:/tmp/
-          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} remote_setup.sh explorer_env.sh ${{ vars.HOST_ALIAS }}:/tmp/
+          
+          echo "==> Copying migrations to target server..."
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} -r indexer/internal/tools/postgres ${{ vars.HOST_ALIAS }}:/tmp/postgres-indexer/
+
+          echo "==> Copying setup scripts to target server..."
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} remote_setup.sh remote_env.sh ${{ vars.HOST_ALIAS }}:/tmp/
 
           echo "==> Syncing Frontend build to target..."
           rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" frontend/.next/standalone/ ${{ vars.HOST_ALIAS }}:/opt/frontend/.next/standalone/
@@ -149,10 +151,13 @@ jobs:
           echo "==> Running remote setup script..."
           ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "
             set -e
-            source /tmp/explorer_env.sh
+            source /tmp/remote_env.sh
             bash /tmp/remote_setup.sh \"$GIT_SHA\"
-            rm -f /tmp/indexer /tmp/remote_setup.sh /tmp/explorer_env.sh
-            rm -rf /tmp/postgres
+            
+            echo '==> Cleaning up temp files...'
+            rm -f /tmp/indexer
+            rm -f /tmp/remote_setup.sh /tmp/remote_env.sh
+            rm -rf /tmp/postgres-indexer
           "
 
       - name: Atomic swap + restart services
@@ -240,3 +245,15 @@ jobs:
 
           echo "==> Checking Frontend status..."
           ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "systemctl is-active frontend-explorer"
+  
+  deploy-dong:
+    needs: build
+    uses: ./.github/workflows/deploy-dong-service.yml
+    with:
+      env: ${{ inputs.env }}
+      ref: ${{ inputs.ref }}
+    secrets:
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
+      REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}

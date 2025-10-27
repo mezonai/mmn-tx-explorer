@@ -12,11 +12,11 @@ import (
 	"time"
 
 	"github.com/lib/pq"
+	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc"
+	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
 	"github.com/rs/zerolog/log"
-	config "github.com/thirdweb-dev/indexer/configs"
-	"github.com/thirdweb-dev/indexer/internal/common"
-	"github.com/thirdweb-dev/indexer/internal/rpc"
-	pb "github.com/thirdweb-dev/indexer/proto"
 )
 
 const DATA_ROWS_DISPLAY_LIMIT = 500000
