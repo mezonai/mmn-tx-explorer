@@ -14,7 +14,6 @@ export function MainLayout({ children }: MainLayoutProps) {
       <AppSidebar />
 
       <SidebarInset>
-        <Toaster />
         <div className="flex min-h-screen flex-col">
           <main className="flex-1">
             <div className="container mx-auto px-4 py-8 md:px-8">{children}</div>
@@ -23,7 +22,12 @@ export function MainLayout({ children }: MainLayoutProps) {
           <AppFooter />
         </div>
       </SidebarInset>
-      <Toaster />
+      <Toaster
+        toastOptions={{
+          unstyled: true,
+          className:'bg-white text-primary border font-semibold border-primary/80 w-full p-3 rounded-md'
+        }}
+      />
     </SidebarProvider>
   );
 }
