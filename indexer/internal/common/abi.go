@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
+	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	"github.com/rs/zerolog/log"
-	config "github.com/thirdweb-dev/indexer/configs"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 )

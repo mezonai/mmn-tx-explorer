@@ -6,6 +6,7 @@ import { AppLogo } from '@/components/shared';
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
@@ -17,15 +18,10 @@ import { ROUTES } from '@/configs/routes.config';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { navGroupItems } from '../navigation/nav-items';
 import { NavbarItem } from '@/components/shared/navbar';
-import { Button } from '@/components/ui/button';
-import { useAuth, useAuthActions } from '@/providers';
 import { GlobalSearch } from '@/modules/global-search/components';
-import { ArrowRightToLine } from 'lucide-react';
+import { SidebarAuthPanel } from '@/modules/auth/components';
 
 export function AppSidebar() {
-  const { isAuthenticated } = useAuth();
-  const { login, logout } = useAuthActions();
-
   return (
     <Sidebar collapsible="icon" className="md:hidden">
       <SidebarHeader className="relative px-4">
@@ -62,25 +58,10 @@ export function AppSidebar() {
             </Accordion>
           </SidebarGroupContent>
         </SidebarGroup>
-
-        <Button
-          onClick={isAuthenticated ? logout : login}
-          className={`${
-            !isAuthenticated
-              ? 'bg-brand-secondary-700 hover:bg-brand-secondary-700/90 font-semibold text-white shadow-xs'
-              : 'text-foreground bg-background hover:bg-active hover:text-quaternary-500 dark:bg-input/30 dark:border-input dark:hover:bg-input/50 border shadow-xs'
-          }`}
-        >
-          {!isAuthenticated ? (
-            <>
-              <span>Login with Mezon</span>
-              <ArrowRightToLine />
-            </>
-          ) : (
-            `Logout`
-          )}
-        </Button>
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarAuthPanel />
+      </SidebarFooter>
     </Sidebar>
   );
 }

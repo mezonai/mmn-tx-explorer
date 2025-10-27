@@ -21,8 +21,8 @@ import (
 	"github.com/thirdweb-dev/indexer/internal/worker"
 
 	// Import the generated Swagger docs
-	config "github.com/thirdweb-dev/indexer/configs"
-	"github.com/thirdweb-dev/indexer/docs"
+	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
+	"github.com/mezonai/mmn-tx-explorer/indexer/docs"
 )
 
 var (
@@ -40,7 +40,7 @@ var (
 // @version v0.0.1-beta
 // @description API for querying blockchain transactions and events
 // @license.name Apache 2.0
-// @license.url https://github.com/thirdweb-dev/indexer/blob/main/LICENSE
+// @license.url https://github.com/mezonai/mmn-tx-explorer/indexer/blob/main/LICENSE
 // @BasePath /
 // @Security BasicAuth
 // @securityDefinitions.basic BasicAuth

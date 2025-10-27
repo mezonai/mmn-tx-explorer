@@ -5,8 +5,8 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
 	"github.com/stretchr/testify/assert"
-	"github.com/thirdweb-dev/indexer/internal/common"
 )
 
 func TestParseSearchInput(t *testing.T) {
