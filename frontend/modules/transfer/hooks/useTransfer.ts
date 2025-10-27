@@ -56,7 +56,6 @@ export const useTransfer = () => {
         extraInfo: {
           UserSenderId: userId,
           UserSenderUsername: userName,
-          UserReceiverId: input.recipientAddress,
           type: ETransferType.GiveCoffee,
         },
       });
