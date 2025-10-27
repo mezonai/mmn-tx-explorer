@@ -28,6 +28,8 @@ import (
 // @Param page query int false "Page number for pagination"
 // @Param limit query int false "Number of items per page" default(5)
 // @Param wallet_address query string false "Wallet address to filter transactions (optional)"
+// @Param start_time query string false "Start date in YYYY-MM-DD format (defaults to 7 days ago)"
+// @Param end_time query string false "End date in YYYY-MM-DD format (defaults to current date)"
 // @Param aggregate query []string false "List of aggregate functions to apply"
 // @Param force_consistent_data query bool false "Force consistent data at the expense of query speed"
 // @Success 200 {object} api.QueryResponse{data=[]common.TransactionModel}
@@ -38,9 +40,6 @@ import (
 func GetTransactions(c *gin.Context) {
 	handleTransactionsRequest(c)
 }
-
-
-
 
 func handleTransactionsRequest(c *gin.Context) {
 	walletAddress := c.Param("wallet_address")
