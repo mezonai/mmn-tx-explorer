@@ -46,6 +46,10 @@ definitions:
         type: string
       status:
         type: integer
+      total_amount:
+        type: integer
+      total_contributors:
+        type: integer
       updated_at:
         type: string
       url:
@@ -413,6 +417,38 @@ paths:
           schema:
             $ref: '#/definitions/models.Response'
       summary: Get a donation campaign by ID
+      tags:
+      - campaigns
+  /api/v1/campaigns/{id}/sync:
+    post:
+      description: Manually trigger synchronization of contributors and statistics
+        for a specific campaign
+      parameters:
+      - description: Campaign ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Sync contributors and statistics for a campaign
       tags:
       - campaigns
   /api/v1/campaigns/{id}/top-contributors:

@@ -21,7 +21,7 @@ type AuthHandler struct {
 	cfg *config.Config
 }
 
-// NewDonationCampaignHandler creates a new donation campaign handler
+// NewAuthHandler creates a new auth handler
 func NewAuthHandler(cfg *config.Config) *AuthHandler {
 	return &AuthHandler{cfg: cfg}
 }

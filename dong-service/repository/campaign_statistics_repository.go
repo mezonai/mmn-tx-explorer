@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"dong-service/constants"
+	"dong-service/models"
 	"fmt"
 )
 
@@ -61,8 +62,6 @@ func (r *CampaignStatisticsRepository) GetActiveCampaigns(ctx context.Context) (
 
 // SyncCampaignTransactions syncs transactions for a specific campaign
 func (r *CampaignStatisticsRepository) SyncCampaignTransactions(ctx context.Context, campaign Campaign) (processed, inserted, updated int, err error) {
-	const TransactionStatus_FINALIZED = 2
-
 	// Use a single query to upsert all contributors at once
 	query := fmt.Sprintf(`
 		INSERT INTO %s.campaign_contributor 
@@ -82,7 +81,7 @@ func (r *CampaignStatisticsRepository) SyncCampaignTransactions(ctx context.Cont
 			updated_at = NOW()
 	`, r.dongSchema, r.indexerSchema)
 
-	result, err := r.db.ExecContext(ctx, query, campaign.DonationWallet, TransactionStatus_FINALIZED)
+	result, err := r.db.ExecContext(ctx, query, campaign.DonationWallet, constants.TransactionStatus_FINALIZED)
 	if err != nil {
 		return 0, 0, 0, fmt.Errorf("failed to upsert contributors: %w", err)
 	}
@@ -137,4 +136,97 @@ func (r *CampaignStatisticsRepository) UpdateCampaignStatistics(ctx context.Cont
 	}
 
 	return rowsAffected, nil
+}
+
+// SyncCampaignByID syncs contributors and statistics for a specific campaign by ID
+func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, campaignID int64) error {
+	// Get the campaign details
+	campaignQuery := fmt.Sprintf(`
+		SELECT id, donation_wallet
+		FROM %s.donation_campaign
+		WHERE id = $1
+	`, r.dongSchema)
+
+	var campaign Campaign
+	err := r.db.QueryRowContext(ctx, campaignQuery, campaignID).Scan(&campaign.ID, &campaign.DonationWallet)
+	if err != nil {
+		return fmt.Errorf("failed to get campaign: %w", err)
+	}
+
+	// Sync contributors for this campaign
+	query := fmt.Sprintf(`
+		INSERT INTO %s.campaign_contributor 
+			(sender_wallet, campaign_wallet, total_donate)
+		SELECT 
+			from_address,
+			to_address,
+			SUM(value)
+		FROM %s.transactions
+		WHERE to_address = $1
+			AND status = $2
+			AND value > 0
+		GROUP BY from_address, to_address
+		ON CONFLICT (sender_wallet, campaign_wallet)
+		DO UPDATE SET
+			total_donate = EXCLUDED.total_donate,
+			updated_at = NOW()
+	`, r.dongSchema, r.indexerSchema)
+
+	_, err = r.db.ExecContext(ctx, query, campaign.DonationWallet, constants.TransactionStatus_FINALIZED)
+	if err != nil {
+		return fmt.Errorf("failed to sync contributors: %w", err)
+	}
+
+	// Update statistics for this specific campaign
+	updateStatsQuery := fmt.Sprintf(`
+		UPDATE %s.campaign_statistics cs
+		SET 
+			total_amount = cc_stats.total_amount,
+			total_contributor = cc_stats.contributor_count,
+			updated_at = NOW()
+		FROM %s.donation_campaign dc
+		INNER JOIN (
+			SELECT 
+				campaign_wallet,
+				SUM(total_donate) as total_amount,
+				COUNT(DISTINCT sender_wallet) as contributor_count
+			FROM %s.campaign_contributor
+			WHERE campaign_wallet = $1
+			GROUP BY campaign_wallet
+		) cc_stats ON dc.donation_wallet = cc_stats.campaign_wallet
+		WHERE cs.campaign_wallet = dc.donation_wallet
+		AND dc.id = $2
+	`, r.dongSchema, r.dongSchema, r.dongSchema)
+
+	_, err = r.db.ExecContext(ctx, updateStatsQuery, campaign.DonationWallet, campaignID)
+	if err != nil {
+		return fmt.Errorf("failed to update campaign statistics: %w", err)
+	}
+
+	return nil
+}
+
+// GetStats returns campaign statistics
+func (r *CampaignStatisticsRepository) GetStats() (*models.CampaignStatsResponse, error) {
+	query := fmt.Sprintf(`
+		SELECT 
+			COUNT(CASE WHEN dc.status = $1 THEN 1 END) as total_campaigns_active,
+			SUM(cs.total_amount) as total_amount,
+			SUM(cs.total_contributor) as total_contributors
+		FROM %s.donation_campaign dc
+		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
+	`, r.dongSchema, r.dongSchema)
+
+	var stats models.CampaignStatsResponse
+	err := r.db.QueryRow(query, constants.CampaignStatusActive).Scan(
+		&stats.TotalCampaignsActive,
+		&stats.TotalAmount,
+		&stats.TotalContributors,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get campaign stats: %w", err)
+	}
+
+	return &stats, nil
 }

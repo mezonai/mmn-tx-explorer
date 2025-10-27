@@ -298,33 +298,6 @@ func (h *DonationCampaignHandler) CloseCampaign(c *gin.Context) {
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgCampaignClosed, campaign.ToResponse()))
 }
 
-// GetStats godoc
-// @Summary Get donation campaign statistics
-// @Description Get overall statistics for all donation campaigns
-// @Tags campaigns
-// @Produce json
-// @Success 200 {object} models.Response{data=models.CampaignStatsResponse}
-// @Failure 500 {object} models.Response
-// @Router /api/v1/campaigns/stats [get]
-func (h *DonationCampaignHandler) GetStats(c *gin.Context) {
-	logger.Debug().Msg("Fetching campaign statistics")
-
-	stats, err := h.repo.GetStats()
-	if err != nil {
-		logger.Error().Err(err).Msg("Failed to get campaign statistics")
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToGetCampaigns+": "+err.Error()))
-		return
-	}
-
-	logger.Debug().
-		Int64("total_campaigns_active", stats.TotalCampaignsActive).
-		Int64("total_amount", stats.TotalAmount).
-		Int64("total_contributors", stats.TotalContributors).
-		Msg("Campaign statistics retrieved successfully")
-
-	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgCampaignsRetrieved, stats))
-}
-
 // GetTopContributors godoc
 // @Summary Get top contributors for a campaign
 // @Description Get the top contributors for a specific donation campaign

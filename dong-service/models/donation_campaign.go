@@ -8,17 +8,19 @@ import (
 
 // DonationCampaign represents a donation campaign
 type DonationCampaign struct {
-	ID             int64     `json:"id" db:"id"`
-	Name           string    `json:"name" db:"name" binding:"required"`
-	Description    *string   `json:"description,omitempty" db:"description"`
-	Goal           *int64    `json:"goal,omitempty" db:"goal"`
-	URL            *string   `json:"url,omitempty" db:"url"`
-	EndDate        *string   `json:"end_date,omitempty" db:"end_date"`
-	DonationWallet string    `json:"donation_wallet" db:"donation_wallet" binding:"required"`
-	Creator        int64     `json:"creator" db:"creator" binding:"required"`
-	Status         int16     `json:"status" db:"status"` // 0=Draft, 1=Active, 2=Closed
-	CreatedAt      time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at" db:"updated_at"`
+	ID                int64     `json:"id" db:"id"`
+	Name              string    `json:"name" db:"name" binding:"required"`
+	Description       *string   `json:"description,omitempty" db:"description"`
+	Goal              *int64    `json:"goal,omitempty" db:"goal"`
+	URL               *string   `json:"url,omitempty" db:"url"`
+	EndDate           *string   `json:"end_date,omitempty" db:"end_date"`
+	DonationWallet    string    `json:"donation_wallet" db:"donation_wallet" binding:"required"`
+	Creator           int64     `json:"creator" db:"creator" binding:"required"`
+	Status            int16     `json:"status" db:"status"` // 0=Draft, 1=Active, 2=Closed
+	CreatedAt         time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at" db:"updated_at"`
+	TotalAmount       *int64    `json:"total_amount,omitempty" db:"total_amount"`
+	TotalContributors *int32    `json:"total_contributors,omitempty" db:"total_contributor"`
 }
 
 // CreateDonationCampaignRequest represents the request body for creating a campaign
@@ -42,33 +44,37 @@ type UpdateDonationCampaignRequest struct {
 
 // DonationCampaignResponse represents the response for a campaign
 type DonationCampaignResponse struct {
-	ID             string  `json:"id"`
-	Name           string  `json:"name"`
-	Description    *string `json:"description,omitempty"`
-	Goal           *int64  `json:"goal,omitempty"`
-	URL            *string `json:"url,omitempty"`
-	EndDate        *string `json:"end_date,omitempty"`
-	DonationWallet string  `json:"donation_wallet"`
-	Creator        string  `json:"creator"`
-	Status         int16   `json:"status"`
-	CreatedAt      string  `json:"created_at"`
-	UpdatedAt      string  `json:"updated_at"`
+	ID                string  `json:"id"`
+	Name              string  `json:"name"`
+	Description       *string `json:"description,omitempty"`
+	Goal              *int64  `json:"goal,omitempty"`
+	URL               *string `json:"url,omitempty"`
+	EndDate           *string `json:"end_date,omitempty"`
+	DonationWallet    string  `json:"donation_wallet"`
+	Creator           string  `json:"creator"`
+	Status            int16   `json:"status"`
+	CreatedAt         string  `json:"created_at"`
+	UpdatedAt         string  `json:"updated_at"`
+	TotalAmount       *int64  `json:"total_amount,omitempty"`
+	TotalContributors *int32  `json:"total_contributors,omitempty"`
 }
 
 // ToResponse converts DonationCampaign to DonationCampaignResponse
 func (dc *DonationCampaign) ToResponse() DonationCampaignResponse {
 	return DonationCampaignResponse{
-		ID:             fmt.Sprintf("%d", dc.ID),
-		Name:           dc.Name,
-		Description:    dc.Description,
-		Goal:           dc.Goal,
-		URL:            dc.URL,
-		EndDate:        dc.EndDate,
-		DonationWallet: dc.DonationWallet,
-		Creator:        fmt.Sprintf("%d", dc.Creator),
-		Status:         dc.Status,
-		CreatedAt:      dc.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:      dc.UpdatedAt.Format(time.RFC3339),
+		ID:                fmt.Sprintf("%d", dc.ID),
+		Name:              dc.Name,
+		Description:       dc.Description,
+		Goal:              dc.Goal,
+		URL:               dc.URL,
+		EndDate:           dc.EndDate,
+		DonationWallet:    dc.DonationWallet,
+		Creator:           fmt.Sprintf("%d", dc.Creator),
+		Status:            dc.Status,
+		CreatedAt:         dc.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:         dc.UpdatedAt.Format(time.RFC3339),
+		TotalAmount:       dc.TotalAmount,
+		TotalContributors: dc.TotalContributors,
 	}
 }
 

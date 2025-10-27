@@ -92,9 +92,12 @@ func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampa
 // GetByID retrieves a donation campaign by ID
 func (r *DonationCampaignRepository) GetByID(id int64) (*models.DonationCampaign, error) {
 	query := `
-		SELECT id, name, description, goal, url, end_date, donation_wallet, creator, status, created_at, updated_at
-		FROM donation_campaign
-		WHERE id = $1
+		SELECT 
+			dc.id, dc.name, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.status, dc.created_at, dc.updated_at,
+			cs.total_amount, cs.total_contributor
+		FROM donation_campaign dc
+		JOIN campaign_statistics cs ON dc.id = cs.campaign_id
+		WHERE dc.id = $1
 	`
 
 	var campaign models.DonationCampaign
@@ -110,6 +113,8 @@ func (r *DonationCampaignRepository) GetByID(id int64) (*models.DonationCampaign
 		&campaign.Status,
 		&campaign.CreatedAt,
 		&campaign.UpdatedAt,
+		&campaign.TotalAmount,
+		&campaign.TotalContributors,
 	)
 
 	if err == sql.ErrNoRows {
@@ -125,9 +130,12 @@ func (r *DonationCampaignRepository) GetByID(id int64) (*models.DonationCampaign
 // GetByIDAndCreator retrieves a donation campaign by ID and creator
 func (r *DonationCampaignRepository) GetByIDAndCreator(id int64, creator int64) (*models.DonationCampaign, error) {
 	query := `
-		SELECT id, name, description, goal, url, end_date, donation_wallet, creator, status, created_at, updated_at
-		FROM donation_campaign
-		WHERE id = $1 AND creator = $2
+		SELECT 
+			dc.id, dc.name, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.status, dc.created_at, dc.updated_at,
+			cs.total_amount, cs.total_contributor
+		FROM donation_campaign dc
+		JOIN campaign_statistics cs ON dc.id = cs.campaign_id
+		WHERE dc.id = $1 AND dc.creator = $2
 	`
 
 	var campaign models.DonationCampaign
@@ -143,6 +151,8 @@ func (r *DonationCampaignRepository) GetByIDAndCreator(id int64, creator int64) 
 		&campaign.Status,
 		&campaign.CreatedAt,
 		&campaign.UpdatedAt,
+		&campaign.TotalAmount,
+		&campaign.TotalContributors,
 	)
 
 	if err == sql.ErrNoRows {
@@ -158,8 +168,11 @@ func (r *DonationCampaignRepository) GetByIDAndCreator(id int64, creator int64) 
 // GetAll retrieves all donation campaigns with pagination
 func (r *DonationCampaignRepository) GetAll(limit, offset int, status *int16, order string) ([]models.DonationCampaign, error) {
 	base := `
-        SELECT id, name, description, goal, url, end_date, donation_wallet, creator, status, created_at, updated_at
-        FROM donation_campaign`
+        SELECT 
+			dc.id, dc.name, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.status, dc.created_at, dc.updated_at,
+			cs.total_amount, cs.total_contributor
+        FROM donation_campaign dc
+		JOIN campaign_statistics cs ON dc.id = cs.campaign_id`
 
 	var (
 		whereClauses []string
@@ -168,7 +181,7 @@ func (r *DonationCampaignRepository) GetAll(limit, offset int, status *int16, or
 	)
 
 	if status != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("status = $%d", argCount))
+		whereClauses = append(whereClauses, fmt.Sprintf("dc.status = $%d", argCount))
 		args = append(args, *status)
 		argCount++
 	}
@@ -182,7 +195,7 @@ func (r *DonationCampaignRepository) GetAll(limit, offset int, status *int16, or
 		orderBy = "ASC"
 	}
 
-	base += fmt.Sprintf("\nORDER BY created_at %s\nLIMIT $%d OFFSET $%d", orderBy, argCount, argCount+1)
+	base += fmt.Sprintf("\nORDER BY dc.created_at %s\nLIMIT $%d OFFSET $%d", orderBy, argCount, argCount+1)
 	args = append(args, limit, offset)
 
 	rows, err := r.db.Query(base, args...)
@@ -206,6 +219,8 @@ func (r *DonationCampaignRepository) GetAll(limit, offset int, status *int16, or
 			&campaign.Status,
 			&campaign.CreatedAt,
 			&campaign.UpdatedAt,
+			&campaign.TotalAmount,
+			&campaign.TotalContributors,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan donation campaign: %w", err)
@@ -398,31 +413,6 @@ func (r *DonationCampaignRepository) Count(status *int16) (int64, error) {
 	}
 
 	return count, nil
-}
-
-// GetStats returns campaign statistics
-func (r *DonationCampaignRepository) GetStats() (*models.CampaignStatsResponse, error) {
-	query := `
-		SELECT 
-			COUNT(CASE WHEN dc.status = $1 THEN 1 END) as total_campaigns_active,
-			SUM(cs.total_amount) as total_amount,
-			SUM(cs.total_contributor) as total_contributors
-		FROM donation_campaign dc
-		JOIN campaign_statistics cs ON dc.id = cs.campaign_id
-	`
-
-	var stats models.CampaignStatsResponse
-	err := r.db.QueryRow(query, constants.CampaignStatusActive).Scan(
-		&stats.TotalCampaignsActive,
-		&stats.TotalAmount,
-		&stats.TotalContributors,
-	)
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to get campaign stats: %w", err)
-	}
-
-	return &stats, nil
 }
 
 // GetTopContributors returns top contributors for a specific campaign

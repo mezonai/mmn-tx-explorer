@@ -12,6 +12,12 @@ const (
 	CampaignStatusClosed int16 = 2
 )
 
+// Transaction Status Constants
+const (
+	// TransactionStatus_FINALIZED represents a finalized transaction
+	TransactionStatus_FINALIZED int16 = 2
+)
+
 // GetStatusName returns the human-readable name for a status code
 func GetStatusName(status int16) string {
 	switch status {

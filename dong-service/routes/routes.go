@@ -34,9 +34,11 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 	{
 		// Initialize repositories
 		campaignRepo := repository.NewDonationCampaignRepository(database.GetDB())
+		statsRepo := repository.NewCampaignStatisticsRepository(database.GetDB(), cfg.Indexer.Schema, cfg.Database.Schema)
 
 		// Initialize handlers
 		campaignHandler := handlers.NewDonationCampaignHandler(campaignRepo)
+		statsHandler := handlers.NewCampaignStatisticsHandler(statsRepo)
 
 		// Campaign routes (protected)
 		campaigns_private := v1.Group("/admin/campaigns")
@@ -52,9 +54,10 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		campaigns_public := v1.Group("/campaigns")
 		{
 			campaigns_public.GET("", campaignHandler.ListCampaigns)
-			campaigns_public.GET("/stats", campaignHandler.GetStats)
+			campaigns_public.GET("/stats", statsHandler.GetStats)
 			campaigns_public.GET("/:id", campaignHandler.GetCampaign)
 			campaigns_public.GET("/:id/top-contributors", campaignHandler.GetTopContributors)
+			campaigns_public.POST("/:id/sync", statsHandler.SyncCampaign)
 		}
 	}
 }
