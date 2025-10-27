@@ -6,7 +6,7 @@ import { ROUTES } from '@/configs/routes.config';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { NavbarMenu } from '@/components/shared/navbar';
 import { GlobalSearch } from '@/modules/global-search/components';
-import { NavBarAuthPanel } from '@/modules/auth/components/account-section/nav-bar-auth-panel';
+import { NavBarAuthPanel } from '@/modules/auth/components';
 
 export function AppNavbar() {
   return (

@@ -81,7 +81,7 @@ export function AppProvider({ children }: AppProviderProps) {
         setUser(userObject);
         await fetchAndStoreZkProof(userInfo.user.user_id, keypair.publicKey, userInfo.auth_token, senderAddress);
       } catch {
-        toast.success('Login failed!');
+        toast.error('Login failed!');
         router.push('/');
       }
     };
