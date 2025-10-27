@@ -18,7 +18,7 @@ const safeValidateAddress = (address: string): boolean => {
 };
 
 export const Transfer = () => {
-  const { transfer, loading, storage } = useTransfer();
+  const { transfer, loading, user } = useTransfer();
   const [form, setForm] = useState({
     address: '',
     note: '',
@@ -27,15 +27,7 @@ export const Transfer = () => {
   const [senderBalance, setSenderBalance] = useState<string>('0');
 
   const ScaleDownBalance = NumberUtil.formatWithCommasAndScale(senderBalance);
-  const userId = useMemo(
-    () =>
-      storage.user?.user_id ||
-      (storage.user as any)?.sub ||
-      (storage.user as any)?.mezon_id ||
-      (storage.user as any)?.id ||
-      '',
-    [storage.user]
-  );
+  const userId = useMemo(() => user?.id || (user as any)?.id || '', [user]);
 
   const refreshBalance = useCallback(async () => {
     if (!userId) return;

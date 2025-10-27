@@ -21,6 +21,10 @@ interface AppContextType {
   setIsAuthenticated: (value: boolean) => void;
   user: User | null;
   setUser: (user: User | null) => void;
+  zkProof: ZkProof | null;
+  setZkProof: (zk: ZkProof | null) => void;
+  keypair: Keypair | null;
+  setKeypair: (keypair: Keypair | null) => void;
 }
 
 interface User {
@@ -29,6 +33,16 @@ interface User {
   email?: string;
   avatar?: string;
   walletAddress: string;
+}
+
+interface Keypair {
+  publicKey: string;
+  privateKey: string;
+}
+
+interface ZkProof {
+  proof: string;
+  public_input: string;
 }
 
 interface AppProviderProps {
@@ -40,6 +54,8 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export function AppProvider({ children }: AppProviderProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
+  const [zkProof, setZkProof] = useState<ZkProof | null>(null);
+  const [keypair, setKeypair] = useState<Keypair | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   useEffect(() => {
@@ -61,8 +77,17 @@ export function AppProvider({ children }: AppProviderProps) {
     }
     const userStored = localStorage.getItem(STORAGE_KEYS.USER_INFO);
     if (userStored) {
-      setUser(JSON.parse(userStored));
+      const u = JSON.parse(userStored) as User;
+      setUser(u);
       setIsAuthenticated(true);
+      try {
+        const zkStr = localStorage.getItem(STORAGE_KEYS.ZK_PROOF);
+        if (zkStr) setZkProof(JSON.parse(zkStr) as ZkProof);
+      } catch {}
+      try {
+        const kpStr = localStorage.getItem(STORAGE_KEYS.KEY_PAIR);
+        if (kpStr) setKeypair(JSON.parse(kpStr) as Keypair);
+      } catch {}
       return;
     }
     const code = searchParams.get('code');
@@ -76,10 +101,22 @@ export function AppProvider({ children }: AppProviderProps) {
         toast.success('Login successful!');
         handleTokenStorage(userInfo);
         const keypair = generateAndStoreKeyPair();
+        setKeypair(keypair as Keypair);
         const senderAddress = mmnClient.getAddressFromUserId(userInfo.user.user_id || userInfo.user.sub);
         const userObject = processAndStoreUser(userInfo.user, senderAddress);
         setUser(userObject);
-        await fetchAndStoreZkProof(userInfo.user.user_id, keypair.publicKey, userInfo.auth_token, senderAddress);
+        await fetchAndStoreZkProof(
+          userInfo.user.user_id || userInfo.user.sub,
+          keypair.publicKey,
+          userInfo.auth_token,
+          senderAddress
+        );
+        const zkStr = localStorage.getItem(STORAGE_KEYS.ZK_PROOF);
+        if (zkStr) {
+          try {
+            setZkProof(JSON.parse(zkStr) as ZkProof);
+          } catch {}
+        }
       } catch {
         toast.error('Login failed!');
         router.push('/');
@@ -93,6 +130,10 @@ export function AppProvider({ children }: AppProviderProps) {
     setIsAuthenticated,
     user,
     setUser,
+    zkProof,
+    setZkProof,
+    keypair,
+    setKeypair,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
@@ -118,8 +159,18 @@ export function useUser() {
   return { user, setUser };
 }
 
+export function useZkProof() {
+  const { zkProof, setZkProof } = useApp();
+  return { zkProof, setZkProof };
+}
+
+export function useKeypair() {
+  const { keypair, setKeypair } = useApp();
+  return { keypair, setKeypair };
+}
+
 export function useAuthActions() {
-  const { setIsAuthenticated, setUser } = useApp();
+  const { setIsAuthenticated, setUser, setZkProof, setKeypair } = useApp();
 
   const login = () => {
     window.location.href = AUTHENTICATION_ENDPOINT.LOGIN;
@@ -130,6 +181,8 @@ export function useAuthActions() {
     axios.post(AUTHENTICATION_ENDPOINT.LOGOUT, { refresh_token: refreshToken });
     localStorage.clear();
     setUser(null);
+    setZkProof(null);
+    setKeypair(null);
     setIsAuthenticated(false);
     window.location.href = '/';
   };
