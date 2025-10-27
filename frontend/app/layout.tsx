@@ -40,13 +40,13 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${manrope.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ThemeProvider defaultTheme="light">
-          <AppProvider>
-            <ErrorBoundary>
-              <Suspense fallback={null}>
+          <ErrorBoundary>
+            <Suspense fallback={null}>
+              <AppProvider>
                 <Providers>{children}</Providers>
-              </Suspense>
-            </ErrorBoundary>
-          </AppProvider>
+              </AppProvider>
+            </Suspense>
+          </ErrorBoundary>
         </ThemeProvider>
       </body>
     </html>
