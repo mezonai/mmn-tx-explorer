@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
+import { DialogTrigger } from '@/components/ui/dialog';
 import { DonationCampaign } from '@/modules/donation-campaign/type';
 import { useAuth } from '@/providers';
 
@@ -57,12 +58,14 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
 
         {/* Donate Button */}
         {isAuthenticated && (
-          <Button
-            size="lg"
-            className="bg-primary shadow-primary/30 hover:bg-primary-light focus-visible:outline-primary inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white shadow-lg transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-          >
-            Donate Now
-          </Button>
+          <DialogTrigger asChild>
+            <Button
+              size="lg"
+              className="bg-primary shadow-primary/30 hover:bg-primary-light focus-visible:outline-primary inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white shadow-lg transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+            >
+              Donate Now
+            </Button>
+          </DialogTrigger>
         )}
 
         <p className="text-muted-foreground text-center text-xs dark:text-gray-400">
