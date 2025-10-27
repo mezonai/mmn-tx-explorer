@@ -9,9 +9,6 @@ export const useTransfer = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<TransferResult | null>(null);
   const [storage, setStorage] = useState<{
-    accessToken?: string;
-    authToken?: string;
-    refreshToken?: string;
     user?: UserInfoResponse | null;
     keyPair?: { publicKey: string; privateKey: string } | null;
     zkProof?: unknown;
@@ -22,14 +19,13 @@ export const useTransfer = () => {
 
     const safeParseJSON = <T>(key: string, raw: string | null): T | null => {
       if (!raw || raw === 'undefined' || raw === 'null' || raw.trim() === '') {
-        console.warn(`[useTransfer] Empty or invalid value for ${key}:`, raw);
         return null;
       }
       try {
         const parsed = JSON.parse(raw) as T;
         return parsed;
       } catch (e) {
-        console.error(`[useTransfer] Failed to parse ${key}:`, { raw: raw.slice(0, 100), error: e });
+
         localStorage.removeItem(key);
         return null;
       }
@@ -46,7 +42,7 @@ export const useTransfer = () => {
 
       setStorage({ user, keyPair, zkProof });
     } catch (e) {
-      console.error('[useTransfer] Failed to read from localStorage:', e);
+      console.error('[useTransfer] Failed to read from localStorage:');
     }
   }, []);
 
@@ -75,7 +71,6 @@ export const useTransfer = () => {
           success: false,
           error: 'Missing zero-knowledge proof. Please log in again.',
         };
-        console.error('[useTransfer] Missing zkProof:', zkProofData);
         setResult(errResult);
         return errResult;
       }
@@ -97,6 +92,7 @@ export const useTransfer = () => {
         extraInfo: {
           UserSenderId: userId,
           UserSenderUsername: userName,
+          UserReceiverId: input.recipientAddress,
           type: ETransferType.GiveCoffee,
         },
       });
