@@ -151,7 +151,7 @@ jobs:
           printf "export POSTGRES_PORT=%q\n" "$POSTGRES_PORT" >> remote_env.sh
           printf "export NEXT_PUBLIC_APP_API_URL=%q\n" "$NEXT_PUBLIC_APP_API_URL" >> remote_env.sh
           printf "export APP_API_URL_INTERNAL=%q\n" "$APP_API_URL_INTERNAL" >> remote_env.sh
-                    printf "export NEXT_PUBLIC_CHAT_APP_MMN_API_URL=%q\n" "$NEXT_PUBLIC_CHAT_APP_MMN_API_URL" >> remote_env.sh
+          printf "export NEXT_PUBLIC_CHAT_APP_MMN_API_URL=%q\n" "$NEXT_PUBLIC_CHAT_APP_MMN_API_URL" >> remote_env.sh
           printf "export NEXT_PUBLIC_CHAT_APP_ZK_API_URL=%q\n" "$NEXT_PUBLIC_CHAT_APP_ZK_API_URL" >>  remote_env.sh
           printf "export NEXT_PUBLIC_BACKEND_API_URL=%q\n" "$NEXT_PUBLIC_BACKEND_API_URL" >> remote_env.sh
           printf "export NEXT_PUBLIC_OAUTH2_API_URL=%q\n" "$NEXT_PUBLIC_OAUTH2_API_URL" >> remote_env.sh
