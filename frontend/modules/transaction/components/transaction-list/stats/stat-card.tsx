@@ -19,9 +19,9 @@ export const StatCard = ({ title, value, subValue }: StatCardProps) => {
           <Skeleton className="h-9 w-20" />
         ) : (
           <div>
-            <span className="text-3xl font-semibold">{value}</span>
+            <span className="text-tertiary-600 text-3xl font-semibold">{value}</span>
             <span>&nbsp;</span>
-            <span className="text-base font-medium">{subValue}</span>
+            <span className="text-tertiary-600 text-base font-medium">{subValue}</span>
           </div>
         )}
       </CardContent>

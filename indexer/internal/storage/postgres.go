@@ -12,11 +12,11 @@ import (
 	"time"
 
 	"github.com/lib/pq"
+	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc"
+	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
 	"github.com/rs/zerolog/log"
-	config "github.com/thirdweb-dev/indexer/configs"
-	"github.com/thirdweb-dev/indexer/internal/common"
-	"github.com/thirdweb-dev/indexer/internal/rpc"
-	pb "github.com/thirdweb-dev/indexer/proto"
 )
 
 const DATA_ROWS_DISPLAY_LIMIT = 500000
@@ -2037,16 +2037,16 @@ func (p *PostgresConnector) refreshWalletFromService(ctx context.Context, addres
 		return nil
 	}
 
-	resp, err := p.mmnGrpcService.GetAccountByAddress(ctx, address)
+	resp, err := p.mmnGrpcService.GetAccount(ctx, address)
 	if err != nil {
 		return err
 	}
 
-	if resp == nil || resp.Account == nil {
+	if resp == nil {
 		return nil
 	}
 
-	return p.insertWallet(ctx, address, resp.Account.Nonce, resp.Account.Balance)
+	return p.insertWallet(ctx, address, resp.Nonce, resp.Balance)
 }
 
 // GetWallet retrieves wallet information by address

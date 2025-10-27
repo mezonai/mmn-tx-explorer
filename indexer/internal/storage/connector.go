@@ -7,9 +7,9 @@ import (
 
 	"context"
 
-	config "github.com/thirdweb-dev/indexer/configs"
-	"github.com/thirdweb-dev/indexer/internal/common"
-	pb "github.com/thirdweb-dev/indexer/proto"
+	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
+	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
 )
 
 type QueryFilter struct {

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"math/big"
 
+	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
+	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
 	"github.com/rs/zerolog/log"
-	config "github.com/thirdweb-dev/indexer/configs"
-	"github.com/thirdweb-dev/indexer/internal/common"
-	pb "github.com/thirdweb-dev/indexer/proto"
 )
 
 type GetFullBlockResult struct {

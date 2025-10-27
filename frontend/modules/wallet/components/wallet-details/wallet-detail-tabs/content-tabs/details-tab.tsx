@@ -27,7 +27,7 @@ export const DetailsTab = ({ walletDetails }: TabDetailsProps) => {
 
       <ItemAttribute
         label="Balance"
-        description={`${APP_CONFIG.CHAIN_SYMBOL} balance`}
+        description={'Balance of the wallet'}
         data={walletDetails}
         render={(walletDetails) => (
           <span>

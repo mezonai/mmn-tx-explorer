@@ -1,0 +1,105 @@
+'use client';
+
+import * as React from 'react';
+import * as NavigationMenuPrimitive from '@radix-ui/react-navigation-menu';
+import { ChevronDownIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+const NavigationMenu = ({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<typeof NavigationMenuPrimitive.Root>) => (
+  <NavigationMenuPrimitive.Root
+    className={cn('relative z-10 flex max-w-max flex-1 items-center justify-center', className)}
+    {...props}
+  >
+    {children}
+  </NavigationMenuPrimitive.Root>
+);
+
+const NavigationMenuList = ({ className, ...props }: React.ComponentProps<typeof NavigationMenuPrimitive.List>) => (
+  <NavigationMenuPrimitive.List
+    className={cn('group flex flex-1 list-none items-center justify-center space-x-1', className)}
+    {...props}
+  />
+);
+
+const NavigationMenuItem = ({ className, ...props }: React.ComponentProps<typeof NavigationMenuPrimitive.Item>) => (
+  <NavigationMenuPrimitive.Item className={cn('relative', className)} {...props} />
+);
+
+const navigationMenuTriggerStyle = cn(
+  'group bg-background hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground data-[active]:bg-accent/50 data-[state=open]:bg-accent/50 inline-flex h-10 w-max items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus:outline-none disabled:pointer-events-none disabled:opacity-50'
+);
+
+const NavigationMenuTrigger = ({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<typeof NavigationMenuPrimitive.Trigger>) => (
+  <NavigationMenuPrimitive.Trigger className={cn('group', className)} {...props}>
+    {children}
+    <ChevronDownIcon
+      className="relative top-[1px] ml-1 h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"
+      aria-hidden="true"
+    />
+  </NavigationMenuPrimitive.Trigger>
+);
+
+const NavigationMenuContent = ({
+  className,
+  ...props
+}: React.ComponentProps<typeof NavigationMenuPrimitive.Content>) => (
+  <NavigationMenuPrimitive.Content
+    className={cn(
+      'bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 absolute top-full left-0 w-auto min-w-[8rem] overflow-hidden rounded-md border p-1 shadow-md',
+      className
+    )}
+    {...props}
+  />
+);
+
+const NavigationMenuLink = NavigationMenuPrimitive.Link;
+
+const NavigationMenuViewport = ({
+  className,
+  ...props
+}: React.ComponentProps<typeof NavigationMenuPrimitive.Viewport>) => (
+  <div className={cn('absolute top-full left-0 flex justify-center')}>
+    <NavigationMenuPrimitive.Viewport
+      className={cn(
+        'origin-top-center bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-90 relative mt-1.5 h-[var(--radix-navigation-menu-viewport-height)] w-full overflow-hidden rounded-md border shadow-lg md:w-[var(--radix-navigation-menu-viewport-width)]',
+        className
+      )}
+      {...props}
+    />
+  </div>
+);
+
+const NavigationMenuIndicator = ({
+  className,
+  ...props
+}: React.ComponentProps<typeof NavigationMenuPrimitive.Indicator>) => (
+  <NavigationMenuPrimitive.Indicator
+    className={cn(
+      'data-[state=visible]:animate-in data-[state=hidden]:animate-out data-[state=hidden]:fade-out data-[state=visible]:fade-in top-full z-[1] flex h-1.5 items-end justify-center overflow-hidden',
+      className
+    )}
+    {...props}
+  >
+    <div className="bg-border relative top-[60%] h-2 w-2 rotate-45 rounded-tl-sm shadow-md" />
+  </NavigationMenuPrimitive.Indicator>
+);
+
+export {
+  navigationMenuTriggerStyle,
+  NavigationMenu,
+  NavigationMenuList,
+  NavigationMenuItem,
+  NavigationMenuContent,
+  NavigationMenuTrigger,
+  NavigationMenuLink,
+  NavigationMenuIndicator,
+  NavigationMenuViewport,
+};

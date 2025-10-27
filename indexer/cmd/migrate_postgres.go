@@ -1,8 +1,8 @@
 package cmd
 
 import (
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/migration"
 	"github.com/spf13/cobra"
-	"github.com/thirdweb-dev/indexer/internal/migration"
 )
 
 var (
@@ -19,13 +19,13 @@ var (
 func RunMigratePostgres(cmd *cobra.Command, args []string) {
 	// Load configuration from environment
 	config := migration.LoadPostgresConfigFromEnv()
-	
+
 	// Get migrations path using common function
 	migrationsPath := migration.GetMigrationsPath("postgres")
-	
+
 	if err := migration.RunPostgresMigrations(config, migrationsPath); err != nil {
 		migration.LogMigrationError("PostgreSQL", err)
 	}
-	
+
 	migration.LogMigrationSuccess("PostgreSQL")
 }

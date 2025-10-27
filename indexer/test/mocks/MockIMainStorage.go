@@ -8,13 +8,13 @@ import (
 	context "context"
 	big "math/big"
 
-	common "github.com/thirdweb-dev/indexer/internal/common"
+	common "github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
 
 	mock "github.com/stretchr/testify/mock"
 
-	proto "github.com/thirdweb-dev/indexer/proto"
-
-	storage "github.com/thirdweb-dev/indexer/internal/storage"
+	proto "github.com/mezonai/mmn-tx-explorer/indexer/proto"
+  
+  storage "github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
 
 	time "time"
 )
