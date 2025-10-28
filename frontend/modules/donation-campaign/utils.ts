@@ -1,16 +1,29 @@
-import { CampaignStatus } from './type';
+import { ECampaignStatus } from './type';
 
-const getCampaignStatusVariant = (status: CampaignStatus) => {
+const getCampaignStatusLabel = (status: ECampaignStatus) => {
   switch (status) {
-    case CampaignStatus.Active:
+    case ECampaignStatus.Active:
+      return 'Active';
+    case ECampaignStatus.Draft:
+      return 'Draft';
+    case ECampaignStatus.Closed:
+      return 'Closed';
+    default:
+      return 'Unknown';
+  }
+};
+
+const getCampaignStatusVariant = (status: ECampaignStatus) => {
+  switch (status) {
+    case ECampaignStatus.Active:
       return `success`;
-    case CampaignStatus.Draft:
+    case ECampaignStatus.Draft:
       return `warning`;
-    case CampaignStatus.Closed:
+    case ECampaignStatus.Closed:
       return `error`;
     default:
       return `default`;
   }
 };
 
-export { getCampaignStatusVariant };
+export { getCampaignStatusLabel, getCampaignStatusVariant };

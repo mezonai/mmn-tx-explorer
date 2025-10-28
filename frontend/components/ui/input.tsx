@@ -16,9 +16,9 @@ function Input({ className, type, label, suffix, ...props }: InputProps) {
           type={type}
           data-slot="input"
           className={cn(
-            'bg-background text-foreground mt-2 h-12 w-full rounded-lg border border-white/10 px-4 text-sm placeholder:text-gray-500',
+            'border-input bg-background text-foreground flex w-full min-w-0 rounded-lg border px-3.5 py-3 text-sm shadow-xs transition-[color,box-shadow] outline-none placeholder:text-gray-500',
             'focus:ring-primary dark:focus:ring-primary-light focus:ring-1 focus:outline-none',
-            'file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-white',
+            'file:text-foreground file:inline-flex file:border-0 file:bg-transparent file:text-sm file:font-medium',
             'disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
             'selection:bg-primary selection:text-primary-foreground',
             'transition-all',

@@ -5,11 +5,11 @@ import { ContactCard } from './contact-card';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/configs/routes.config';
 import { useCampaigns } from '../../../hooks/useCampaigns';
-import { CampaignStatus } from '../../../type';
+import { ECampaignStatus } from '../../../type';
 
 export const ActiveCampaign = () => {
   const { campaigns, isLoading, error } = useCampaigns();
-  const [selectedStatus, setSelectedStatus] = useState<CampaignStatus | 'all'>('all');
+  const [selectedStatus, setSelectedStatus] = useState<ECampaignStatus | 'all'>('all');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Filter campaigns based on selected status
@@ -17,18 +17,18 @@ export const ActiveCampaign = () => {
     if (selectedStatus === 'all') {
       return campaigns;
     }
-    return campaigns.filter(campaign => campaign.status === selectedStatus);
+    return campaigns.filter((campaign) => campaign.status === selectedStatus);
   }, [campaigns, selectedStatus]);
 
   // Status options for dropdown
   const statusOptions = [
     { value: 'all', label: 'All statuses' },
-    { value: CampaignStatus.Active, label: 'Active' },
-    { value: CampaignStatus.Draft, label: 'Draft' },
-    { value: CampaignStatus.Closed, label: 'Closed' },
+    { value: ECampaignStatus.Active, label: 'Active' },
+    { value: ECampaignStatus.Draft, label: 'Draft' },
+    { value: ECampaignStatus.Closed, label: 'Closed' },
   ];
 
-  const selectedLabel = statusOptions.find(option => option.value === selectedStatus)?.label || 'All statuses';
+  const selectedLabel = statusOptions.find((option) => option.value === selectedStatus)?.label || 'All statuses';
 
   if (isLoading) {
     return (
@@ -48,9 +48,7 @@ export const ActiveCampaign = () => {
       <div className="">
         {error && (
           <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
-            <p className="text-sm text-amber-800 dark:text-amber-200">
-              Failed to load campaigns from API.
-            </p>
+            <p className="text-sm text-amber-800 dark:text-amber-200">Failed to load campaigns from API.</p>
           </div>
         )}
 
@@ -63,15 +61,15 @@ export const ActiveCampaign = () => {
           </div>
           <div className="flex flex-wrap gap-3 text-sm">
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="hover:border-primary hover:text-primary dark:hover:border-primary-light inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 font-medium text-gray-600 transition dark:border-white/10 dark:text-gray-300 dark:hover:text-white"
               >
                 {selectedLabel}
-                <svg 
-                  className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} 
-                  viewBox="0 0 20 20" 
-                  fill="currentColor" 
+                <svg
+                  className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
                   aria-hidden="true"
                 >
                   <path
@@ -81,19 +79,19 @@ export const ActiveCampaign = () => {
                   />
                 </svg>
               </button>
-              
+
               {isDropdownOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-gray-200 bg-white py-2 shadow-lg dark:border-white/10 dark:bg-gray-800 z-10">
+                <div className="absolute top-full right-0 z-10 mt-2 w-48 rounded-xl border border-gray-200 bg-white py-2 shadow-lg dark:border-white/10 dark:bg-gray-800">
                   {statusOptions.map((option) => (
                     <button
                       key={option.value}
                       onClick={() => {
-                        setSelectedStatus(option.value as CampaignStatus | 'all');
+                        setSelectedStatus(option.value as ECampaignStatus | 'all');
                         setIsDropdownOpen(false);
                       }}
                       className={`w-full px-4 py-2 text-left text-sm transition hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                        selectedStatus === option.value 
-                          ? 'text-primary bg-primary/5 dark:text-primary-light dark:bg-primary/10' 
+                        selectedStatus === option.value
+                          ? 'text-primary bg-primary/5 dark:text-primary-light dark:bg-primary/10'
                           : 'text-gray-700 dark:text-gray-300'
                       }`}
                     >
