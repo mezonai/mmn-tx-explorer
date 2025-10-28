@@ -63,6 +63,46 @@ func (h *DonationCampaignHandler) CreateCampaign(c *gin.Context) {
 	c.JSON(http.StatusCreated, models.SuccessResponseWithMessage(constants.MsgCampaignCreated, campaign.ToResponse()))
 }
 
+// CreateAndActiveCampaign godoc
+// @Summary Create and immediately activate a new donation campaign
+// @Description Create a new donation campaign and set its status to Active
+// @Tags campaigns
+// @Accept json
+// @Produce json
+// @Param campaign body models.CreateDonationCampaignRequest true "Campaign data"
+// @Success 201 {object} models.Response{data=models.DonationCampaignResponse}
+// @Failure 400 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Security BearerAuth
+// @Router /api/v1/admin/campaigns/create-active [post]
+func (h *DonationCampaignHandler) CreateAndActiveCampaign(c *gin.Context) {
+	userID, err := utils.GetUserIDFromContext(c)
+	if err != nil {
+		logger.Error().Err(err).Msg("Unauthorized campaign creation and activation attempt")
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
+		return
+	}
+
+	var req models.CreateDonationCampaignRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Error().Err(err).Int64("user_id", userID).Msg("Invalid request body for campaign creation and activation")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+err.Error()))
+		return
+	}
+
+	logger.Info().Int64("user_id", userID).Str("name", req.Name).Msg("Creating and activating new donation campaign")
+
+	campaign, err := h.repo.CreateAndActive(&req, userID)
+	if err != nil {
+		logger.Error().Err(err).Int64("user_id", userID).Str("name", req.Name).Msg("Failed to create and activate campaign")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToCreateAndActiveCampaign+": "+err.Error()))
+		return
+	}
+
+	logger.Info().Int64("user_id", userID).Int64("campaign_id", campaign.ID).Str("name", campaign.Name).Msg("Campaign created and activated successfully")
+	c.JSON(http.StatusCreated, models.SuccessResponseWithMessage(constants.MsgCampaignCreatedAndActivated, campaign.ToResponse()))
+}
+
 // GetCampaign godoc
 // @Summary Get a donation campaign by ID
 // @Description Get details of a specific donation campaign

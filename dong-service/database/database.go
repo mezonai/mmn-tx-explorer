@@ -22,25 +22,16 @@ func InitDatabase(cfg *config.DatabaseConfig) error {
 		Str("schema", cfg.Schema).
 		Msg("Initializing database connection")
 
-	dsn := cfg.GetDSN()
+	if err := CreateSchema(cfg); err != nil {
+		logger.Error().Err(err).Msg("Failed to create schema")
+		return fmt.Errorf("failed to create schema: %w", err)
+	}
 
+	dsn := cfg.GetDSN()
 	DB, err = sql.Open("postgres", dsn)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to open database connection")
 		return fmt.Errorf("failed to open database: %w", err)
-	}
-
-	schema := cfg.Schema
-	_, err = DB.Exec(fmt.Sprintf(`CREATE SCHEMA IF NOT EXISTS %s`, schema))
-	if err != nil {
-		logger.Error().Err(err).Str("schema", schema).Msg("Failed to create schema")
-		return fmt.Errorf("failed to create schema: %w", err)
-	}
-
-	_, err = DB.Exec(fmt.Sprintf(`SET search_path TO %s`, schema))
-	if err != nil {
-		logger.Error().Err(err).Str("schema", schema).Msg("Failed to set schema")
-		return fmt.Errorf("failed to set schema: %w", err)
 	}
 
 	// Test connection
@@ -71,6 +62,32 @@ func InitDatabase(cfg *config.DatabaseConfig) error {
 		logger.Error().Err(err).Msg("Failed to run database migrations")
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
+
+	return nil
+}
+
+func CreateSchema(cfg *config.DatabaseConfig) error {
+	db, err := sql.Open("postgres", cfg.GetDSNWithoutSchema())
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to open database connection")
+		return fmt.Errorf("failed to open database: %w", err)
+	}
+
+	// Test connection
+	if err := db.Ping(); err != nil {
+		logger.Error().Err(err).Msg("Failed to ping database")
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+
+	// Create schema
+	_, err = db.Exec(fmt.Sprintf(`CREATE SCHEMA IF NOT EXISTS %s`, cfg.Schema))
+	if err != nil {
+		logger.Error().Err(err).Str("schema", cfg.Schema).Msg("Failed to create schema")
+		return fmt.Errorf("failed to create schema: %w", err)
+	}
+	defer db.Close()
+
+	logger.Info().Str("schema", cfg.Schema).Msg("Schema created successfully")
 
 	return nil
 }
