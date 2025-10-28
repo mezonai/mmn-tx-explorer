@@ -10,7 +10,7 @@ on:
       ref:
         description: "Git ref (branch, tag, or commit)"
         required: true
-        default: "master"
+        default: "main"
 
 jobs:
   build:
@@ -23,6 +23,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
+          clean: false
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -275,7 +276,6 @@ jobs:
           ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "systemctl is-active frontend-explorer"
   
   deploy-dong:
-    needs: build
     uses: ./.github/workflows/deploy-dong-service.yml
     with:
       env: ${{ inputs.env }}

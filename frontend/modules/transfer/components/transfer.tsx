@@ -5,7 +5,7 @@ import { NumberUtil } from '@/utils';
 import { useTransfer } from '../hooks/useTransfer';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/text-area';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/shared/page-header';
 import { APP_CONFIG } from '@/configs/app.config';
@@ -126,7 +126,7 @@ export const Transfer = () => {
                 <Input
                   placeholder="Recipent's Address"
                   label="Recipient"
-                  className="mt-2"
+                  className="mt-2 border-transparent"
                   type="text"
                   value={form.address}
                   onChange={handleInputChange('address')}
@@ -135,7 +135,7 @@ export const Transfer = () => {
               <div>
                 <Input
                   label="Amount"
-                  className="mt-2"
+                  className="mt-2 border-transparent"
                   type="text"
                   value={NumberUtil.formatWithCommas(form.amount)}
                   suffix={APP_CONFIG.CHAIN_SYMBOL}
@@ -153,7 +153,7 @@ export const Transfer = () => {
                 <Textarea
                   placeholder="Leave a note..."
                   label="Message (optional)"
-                  className="bg-background mt-2"
+                  className="mt-2 border-transparent"
                   value={form.note}
                   onChange={handleInputChange('note')}
                 />

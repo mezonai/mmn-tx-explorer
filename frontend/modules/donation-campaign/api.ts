@@ -26,7 +26,23 @@ export class DonationCampaignService {
   }
 
   static async createCampaign(campaignData: CreateCampaignRequest): Promise<DonationCampaign> {
-    const { data } = await apiDongClient.post<{ data: DonationCampaign }>(DONATION_ENDPOINTS.CAMPAIGNS, campaignData);
+    const { data } = await apiDongClient.post<{ data: DonationCampaign }>(
+      DONATION_ENDPOINTS.CREATE_CAMPAIGN,
+      campaignData
+    );
+    return data.data;
+  }
+
+  static async publishCampaign(id: string): Promise<DonationCampaign> {
+    const { data } = await apiDongClient.patch<{ data: DonationCampaign }>(DONATION_ENDPOINTS.PUBLISH_CAMPAIGN(id));
+    return data.data;
+  }
+
+  static async createAndPublishCampaign(campaignData: CreateCampaignRequest): Promise<DonationCampaign> {
+    const { data } = await apiDongClient.post<{ data: DonationCampaign }>(
+      DONATION_ENDPOINTS.CREATE_AND_PUBLISH_CAMPAIGN,
+      campaignData
+    );
     return data.data;
   }
 
@@ -49,8 +65,8 @@ export class DonationCampaignService {
     return data;
   }
 
-  static async makeDonation(donationData: { campaignId: string; amount: number; message?: string }) {
-    const { data } = await apiDongClient.post(DONATION_ENDPOINTS.DONATIONS, donationData);
+  static async closeCampaign(id: string): Promise<any> {
+    const { data } = await apiDongClient.patch(DONATION_ENDPOINTS.CLOSE_CAMPAIGN(id));
     return data;
   }
   static async getTopContributor(campaignId: string): Promise<TopContributorsResponse['data']> {

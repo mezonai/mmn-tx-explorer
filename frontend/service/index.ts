@@ -1,3 +1,4 @@
+import { clearAuthStorage } from '@/utils';
 import axios from 'axios';
 
 const isServer = typeof window === 'undefined';
@@ -34,9 +35,7 @@ apiDongClient.interceptors.response.use(
     if (error.response?.status === 401) {
       // Clear auth data on unauthorized
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user_info');
+        clearAuthStorage();
       }
     }
     return Promise.reject(error);

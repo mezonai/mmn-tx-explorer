@@ -2,9 +2,9 @@ import { TEXT_CONSTANT } from '@/constant';
 import { NumberUtil } from '@/utils';
 import Link from 'next/link';
 import { useMemo } from 'react';
-import { CampaignStatus, DonationCampaign } from '../../../type';
+import { ECampaignStatus, DonationCampaign } from '../../../type';
 import { Chip } from '@/components/shared';
-import { getCampaignStatusVariant } from '../../../utils';
+import { getCampaignStatusLabel, getCampaignStatusVariant } from '../../../utils';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/configs/routes.config';
 import { formatDistanceToNow } from 'date-fns';
@@ -14,47 +14,40 @@ interface CampaignCardProps {
 }
 
 export const CampaignCard = ({ campaign }: CampaignCardProps) => {
-  const { id, name, description, goal, url, wallet, end_date, creator, status, created_at, updated_at } = campaign;
+  const { id, name, description, goal, end_date, status, updated_at } = campaign;
   const currentAmount = 620; // Placeholder for current amount raised
   const contributors = 100; // Placeholder for number of contributors
 
-  const capitalizedStatus = useMemo(() => {
-    if (status === CampaignStatus.Active) return 'Active';
-    if (status === CampaignStatus.Draft) return 'Draft';
-    if (status === CampaignStatus.Closed) return 'Closed';
-    return 'Unknown';
-  }, [status]);
-
   const daysLeft = useMemo(() => {
-    if (status === CampaignStatus.Draft) {
+    if (status === ECampaignStatus.Draft) {
       return 'Draft';
     }
-    if (status === CampaignStatus.Closed) {
+    if (status === ECampaignStatus.Closed) {
       return 'Goal achieved';
     }
     return `${end_date ? Math.ceil((new Date(end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 0} days left`;
   }, [status, end_date]);
 
   const progress = useMemo(() => {
-    if (status === CampaignStatus.Draft) {
+    if (status === ECampaignStatus.Draft) {
       return 'Not launched';
     }
     return `${Math.min(Math.floor((currentAmount / goal) * 100), 100)} % funded`;
   }, [status, currentAmount]);
 
   const contributorsNumber = useMemo(() => {
-    if (status === CampaignStatus.Draft) {
+    if (status === ECampaignStatus.Draft) {
       return 'Pending launch';
     }
     return `${contributors} contributors`;
   }, [status]);
 
   const lastTime = useMemo(() => {
-    if (status === CampaignStatus.Draft) {
+    if (status === ECampaignStatus.Draft) {
       return '';
     }
 
-    if (status === CampaignStatus.Closed) {
+    if (status === ECampaignStatus.Closed) {
       return `Ended ${formatDistanceToNow(new Date(updated_at), { addSuffix: true })}`;
     }
     return `Last gift ${formatDistanceToNow(new Date(updated_at), { addSuffix: true })}`;
@@ -63,7 +56,7 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
   return (
     <article className="group hover:border-primary/60 dark:bg-dark-light/80 flex flex-col rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10">
       <div className="flex items-center justify-between gap-4">
-        <Chip variant={getCampaignStatusVariant(status)}>{capitalizedStatus}</Chip>
+        <Chip variant={getCampaignStatusVariant(status)}>{getCampaignStatusLabel(status)}</Chip>
         <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{daysLeft}</span>
       </div>
       <h3 className="group-hover:text-primary dark:group-hover:text-primary-light mt-4 text-lg font-semibold text-gray-900 transition dark:text-white">
@@ -92,11 +85,11 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
         asChild
       >
         <Link href={ROUTES.CAMPAIGN(id)}>
-          {status === CampaignStatus.Draft
+          {status === ECampaignStatus.Draft
             ? 'Review and publish'
-            : status === CampaignStatus.Active
+            : status === ECampaignStatus.Active
               ? 'View details'
-              : status === CampaignStatus.Closed
+              : status === ECampaignStatus.Closed
                 ? 'View Impact Report'
                 : 'View details'}
         </Link>
