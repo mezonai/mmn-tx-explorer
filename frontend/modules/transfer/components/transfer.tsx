@@ -25,7 +25,7 @@ export const Transfer = () => {
     amount: '',
   });
   const [senderBalance, setSenderBalance] = useState<string>('0');
-  const ScaleDownBalance = NumberUtil.formatWithCommasAndScale(senderBalance);
+  const scaleDownBalance = NumberUtil.formatWithCommasAndScale(senderBalance);
   const userId = useMemo(() => user?.id || '', [user]);
 
   const refreshBalance = useCallback(async () => {
@@ -73,7 +73,9 @@ export const Transfer = () => {
       if (result.success) {
         toast.success('Transfer successful!');
         resetForm();
-        r
+        setTimeout(() => {
+          refreshBalance();
+        }, 1000);
       } else {
         toast.error(result.error || 'Transfer failed. Please try again.');
       }
@@ -136,7 +138,7 @@ export const Transfer = () => {
 
               <div className="flex justify-end">
                 <span className="text-primary text-sm">
-                  Balance: {ScaleDownBalance} {APP_CONFIG.CHAIN_SYMBOL}
+                  Balance: {scaleDownBalance} {APP_CONFIG.CHAIN_SYMBOL}
                 </span>
               </div>
 
