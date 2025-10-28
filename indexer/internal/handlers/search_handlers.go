@@ -70,7 +70,7 @@ func Search(c *gin.Context) {
 		return
 	}
 
-	mainStorage, err := getMainStorage()
+	mainStorage, err := storage.GetMainStorage()
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting main storage")
 		api.InternalErrorHandler(c)

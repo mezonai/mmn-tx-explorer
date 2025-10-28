@@ -1,14 +1,21 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"math/big"
-
-	"context"
+	"sync"
 
 	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
 	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
+	"github.com/rs/zerolog/log"
+)
+
+var (
+	storageOnce   sync.Once
+	mainStorage   IMainStorage
+	storageErr    error
 )
 
 type QueryFilter struct {
@@ -197,17 +204,16 @@ func NewConnector[T any](cfg *config.StorageConnectionConfig) (T, error) {
 }
 
 func GetMainStorage() (IMainStorage, error) {
-	var err error
-	var mainStorage IMainStorage
-
-	if config.Cfg.Storage.Main.Postgres != nil {
-		mainStorage, err = NewPostgresConnector(config.Cfg.Storage.Main.Postgres)
-		if err != nil {
-			return nil, err
+	storageOnce.Do(func() {
+		if config.Cfg.Storage.Main.Postgres != nil {
+			mainStorage, storageErr = NewConnector[IMainStorage](&config.Cfg.Storage.Main)
+			if storageErr != nil {
+				log.Error().Err(storageErr).Msg("Error creating storage connector")
+			}
+		} else {
+			storageErr = fmt.Errorf("no main storage driver configured")
 		}
-	} else {
-		return nil, fmt.Errorf("no main storage driver configured")
-	}
+	})
 
-	return mainStorage, nil
+	return mainStorage, storageErr
 }

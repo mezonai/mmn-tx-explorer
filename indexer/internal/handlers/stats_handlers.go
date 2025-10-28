@@ -16,7 +16,7 @@ import (
 // handleTransactionStats builds and returns only transactions page stats fields
 func handleTransactionStats(c *gin.Context) {
 	ctx := c.Request.Context()
-	mainStorage, err := getMainStorage()
+	mainStorage, err := storage.GetMainStorage()
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting main storage")
 		api.InternalErrorHandler(c)
@@ -105,7 +105,7 @@ func GetTransactionStats(c *gin.Context) {
 // handleDashboardStats builds and returns only dashboard stats fields
 func handleDashboardStats(c *gin.Context) {
 	ctx := c.Request.Context()
-	mainStorage, err := getMainStorage()
+	mainStorage, err := storage.GetMainStorage()
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting main storage")
 		api.InternalErrorHandler(c)
