@@ -65,46 +65,49 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
         {name}
       </h3>
       <p className="mt-2 line-clamp-3 text-sm leading-6 text-gray-600 dark:text-gray-400">{description}</p>
-      <div className="mt-6">
-        <div className="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
-          <span>
-            {NumberUtil.formatWithCommasAndScale(total_amount)} / {NumberUtil.formatWithCommas(goal)}{' '}
-            {TEXT_CONSTANT.CURRENCY}
-          </span>
-          <span>{progress}</span>
-        </div>
-        <div
-          className="mt-2 h-2 rounded-full bg-gray-100 dark:bg-white/5"
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={progressPercent}
-        >
+      <div className="mt-auto flex flex-col gap-6 pt-6">
+        <div>
+          <div className="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
+            <span>
+              {NumberUtil.formatWithCommasAndScale(total_amount)} / {NumberUtil.formatWithCommas(goal)}{' '}
+              {TEXT_CONSTANT.CURRENCY}
+            </span>
+            <span>{progress}</span>
+          </div>
           <div
-            className="dark:from-brand-primary dark:to-brand-primary/20 from-primary to-primary-light h-full rounded-full bg-gradient-to-r transition-[width] duration-500 ease-out"
-            style={{ width: `${progressPercent}%` }}
-          />
+            className="mt-2 h-2 rounded-full bg-gray-100 dark:bg-white/5"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progressPercent}
+          >
+            <div
+              className="dark:from-brand-primary dark:to-brand-primary/20 from-primary to-primary-light h-full rounded-full bg-gradient-to-r transition-[width] duration-500 ease-out"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
         </div>
-      </div>
-      <div className="mt-6 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-        <span>{contributorsNumber}</span>
-        <span>{lastTime}</span>
-      </div>
 
-      <Button
-        className="bg-primary/10 text-primary dark:hover:bg-brand-primary dark:bg-brand-primary/10 dark:border-brand-primary dark:text-primary-light mt-auto inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition hover:text-white dark:border dark:hover:text-white"
-        asChild
-      >
-        <Link href={ROUTES.CAMPAIGN(id)}>
-          {status === ECampaignStatus.Draft
-            ? 'Review and publish'
-            : status === ECampaignStatus.Active
-              ? 'View details'
-              : status === ECampaignStatus.Closed
-                ? 'View Impact Report'
-                : 'View details'}
-        </Link>
-      </Button>
+        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+          <span>{contributorsNumber}</span>
+          <span>{lastTime}</span>
+        </div>
+
+        <Button
+          className="bg-primary/10 text-primary dark:hover:bg-brand-primary dark:bg-brand-primary/10 dark:border-brand-primary dark:text-primary-light inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition hover:text-white dark:border dark:hover:text-white"
+          asChild
+        >
+          <Link href={ROUTES.CAMPAIGN(id)}>
+            {status === ECampaignStatus.Draft
+              ? 'Review and publish'
+              : status === ECampaignStatus.Active
+                ? 'View details'
+                : status === ECampaignStatus.Closed
+                  ? 'View Impact Report'
+                  : 'View details'}
+          </Link>
+        </Button>
+      </div>
     </article>
   );
 };

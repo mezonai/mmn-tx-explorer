@@ -8,15 +8,15 @@ import { ROUTES } from '@/configs/routes.config';
 import { useCampaigns } from '../../../hooks/useCampaigns';
 import { ECampaignStatus } from '../../../type';
 import { toast } from 'sonner';
-import { ArrowDown, ChevronDownIcon } from 'lucide-react';
+import { ArrowDown } from 'lucide-react';
 import { usePaginationQueryParam } from '@/hooks';
 import { getCampaignStatusLabel } from '@/modules/donation-campaign/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export const ActiveCampaign = () => {
   const [selectedStatus, setSelectedStatus] = useState<ECampaignStatus | 'all'>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest');
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const { campaigns, meta, isLoading, error } = useCampaigns({
     page,
@@ -63,34 +63,25 @@ export const ActiveCampaign = () => {
           </div>
           <div className="flex flex-wrap gap-3 text-sm">
             <div className="relative">
-              <Button
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="hover:border-primary hover:text-primary dark:bg-background dark:hover:border-primary-light inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 font-medium text-gray-600 transition hover:bg-white dark:border-white/10 dark:text-gray-300 dark:hover:text-white"
+              <Select
+                size="sm"
+                value={String(selectedStatus)}
+                onValueChange={(val) => {
+                  const next = val === 'all' ? 'all' : (Number(val) as ECampaignStatus);
+                  setSelectedStatus(next);
+                }}
               >
-                {selectedLabel}
-                <ChevronDownIcon className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-              </Button>
-
-              {isDropdownOpen && (
-                <div className="absolute top-full right-0 z-10 w-48 rounded-xl border border-gray-200 bg-white shadow-lg dark:border-white/10 dark:bg-gray-800">
+                <SelectTrigger className="hover:border-primary hover:text-primary dark:bg-background dark:hover:border-primary-light inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 font-medium text-gray-600 transition hover:bg-white dark:border-white/10 dark:text-gray-300 dark:hover:text-white">
+                  <SelectValue placeholder="All statuses">{selectedLabel}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
                   {statusOptions.map((option) => (
-                    <Button
-                      key={String(option.value)}
-                      onClick={() => {
-                        setSelectedStatus(option.value as ECampaignStatus | 'all');
-                        setIsDropdownOpen(false);
-                      }}
-                      className={`bg-background w-full px-4 py-2 text-left text-sm transition hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                        selectedStatus === option.value
-                          ? 'text-primary bg-primary/5 dark:text-primary-light dark:bg-primary/10'
-                          : 'text-gray-700 dark:text-gray-300'
-                      }`}
-                    >
+                    <SelectItem key={String(option.value)} value={String(option.value)}>
                       {option.label}
-                    </Button>
+                    </SelectItem>
                   ))}
-                </div>
-              )}
+                </SelectContent>
+              </Select>
             </div>
             <Button
               onClick={() => setSortBy((prev) => (prev === 'newest' ? 'oldest' : 'newest'))}
