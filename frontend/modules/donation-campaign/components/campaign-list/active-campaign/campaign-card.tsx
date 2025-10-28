@@ -29,7 +29,7 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
     if (status === CampaignStatus.Closed) {
       return 'Goal achieved';
     }
-    return `${end_date ? Math.ceil((new Date(end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 0} days left`;
+    return `${formatDistanceToNow(new Date(updated_at), { addSuffix: true })} days left`;
   }, [status, end_date]);
 
   const progress = useMemo(() => {

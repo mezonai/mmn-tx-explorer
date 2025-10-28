@@ -4,6 +4,7 @@ import { ROUTES } from '@/configs/routes.config';
 import { Button } from '@/components/ui/button';
 import { useCampaignStats } from '@/modules/donation-campaign/hooks';
 import { NumberUtil } from '@/utils';
+import { PageHeader } from '@/components/shared';
 
 export const CSRDonation = () => {
   const { stats } = useCampaignStats();
@@ -26,14 +27,12 @@ export const CSRDonation = () => {
   return (
     <section className="">
       <div className="max-w-4xl">
-        <p className="text-primary text-xs font-semibold tracking-[0.3em] uppercase">CSR Donation</p>
-        <h1 className="mt-4 text-3xl font-semibold text-gray-900 sm:text-4xl dark:text-white">
-          Mezon Donation Campaigns
-        </h1>
-        <p className="mt-4 text-sm leading-6 text-gray-600 dark:text-gray-300">
-          Discover active CSR initiatives, monitor fundraising progress in real time, and help the Mezon team deliver
-          meaningful impact to local communities.
-        </p>
+        <PageHeader
+          title="CSR Donation"
+          header="Mezon Donation Campaigns"
+          description="Discover active CSR initiatives, monitor fundraising progress in real time, and help the Mezon team deliver
+          meaningful impact to local communities."
+        />
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <Button
             variant="link"

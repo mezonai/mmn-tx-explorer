@@ -1,25 +1,28 @@
 import Link from 'next/link';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { CampaignCard } from './campaign-card';
 import { ContactCard } from './contact-card';
 import { Button } from '@/components/ui/button';
+import { Pagination } from '@/components/ui/pagination';
 import { ROUTES } from '@/configs/routes.config';
 import { useCampaigns } from '../../../hooks/useCampaigns';
 import { CampaignStatus } from '../../../type';
 import { toast } from 'sonner';
 import { ArrowDown } from 'lucide-react';
-import { sortCampaigns } from '@/modules/donation-campaign/utils';
+import { PAGINATION } from '@/constant';
 
 export const ActiveCampaign = () => {
-  const { campaigns, isLoading, error } = useCampaigns();
   const [selectedStatus, setSelectedStatus] = useState<CampaignStatus | 'all'>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest');
+  const [page, setPage] = useState<number>(PAGINATION.DEFAULT_PAGE);
+  const [limit, setLimit] = useState<number>(PAGINATION.DEFAULT_LIMIT);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-  const filteredCampaigns = useMemo(() => {
-    const byStatus = selectedStatus === 'all' ? campaigns : campaigns.filter((c) => c.status === selectedStatus);
-    return sortCampaigns(byStatus, sortBy);
-  }, [campaigns, selectedStatus, sortBy]);
+  const { campaigns, meta, isLoading, error } = useCampaigns({
+    page,
+    limit,
+    ...(selectedStatus !== 'all' ? { status: String(selectedStatus) } : {}),
+    order: sortBy === 'newest' ? 'desc' : 'asc',
+  });
 
   const statusOptions = [
     { value: 'all', label: 'All statuses' },
@@ -111,8 +114,8 @@ export const ActiveCampaign = () => {
         </div>
 
         <div className="mt-10 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-          {filteredCampaigns.length > 0 ? (
-            filteredCampaigns.map((campaign) => <CampaignCard key={campaign.id} campaign={campaign} />)
+          {campaigns.length > 0 ? (
+            campaigns.map((campaign) => <CampaignCard key={campaign.id} campaign={campaign} />)
           ) : (
             <div></div>
           )}
@@ -144,7 +147,19 @@ export const ActiveCampaign = () => {
             </Link>
           </article>
         </div>
-
+        <Pagination
+          page={page}
+          limit={limit}
+          totalPages={meta?.total_pages || 1}
+          totalItems={meta?.total_items || 0}
+          isLoading={isLoading}
+          onChangePage={(p) => setPage(p)}
+          onChangeLimit={(l) => {
+            setLimit(l);
+            setPage(PAGINATION.DEFAULT_PAGE);
+          }}
+          className="mt-6"
+        />
         <ContactCard />
       </div>
     </section>

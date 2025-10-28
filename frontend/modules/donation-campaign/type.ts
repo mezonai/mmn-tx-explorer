@@ -53,9 +53,7 @@ export interface CampaignListParams {
   page?: number;
   limit?: number;
   status?: string;
-  category?: string;
-  sortBy?: 'newest' | 'oldest' | 'amount' | 'progress';
-  search?: string;
+  order?: 'asc' | 'desc';
 }
 
 export interface CampaignStats {
