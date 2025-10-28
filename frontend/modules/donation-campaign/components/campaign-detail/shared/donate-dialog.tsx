@@ -13,6 +13,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useTransfer } from '@/modules/transfer/hooks/useTransfer';
 import { NumberUtil } from '@/utils';
 import { APP_CONFIG } from '@/configs/app.config';
+import { CopyButton } from '@/components/ui/copy-button';
+import { truncateWalletAddress } from '@/modules/donation-campaign/utils';
 
 export function DonateDialog({ walletAddress }: { walletAddress: string }) {
   const { transfer, loading, user } = useTransfer();
@@ -22,7 +24,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
     note: '',
   });
   const [senderBalance, setSenderBalance] = useState<string>('0');
-
+  const [transactionHash, setTransactionHash] = useState<string>('');
   const refreshBalance = useCallback(async () => {
     if (!user?.id) return;
     try {
@@ -69,7 +71,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
       if (result.success) {
         toast.success('Donation success!');
         resetForm();
-        setIsDialogOpen(false);
+        setTransactionHash(result.txHash || '');
       } else {
         toast.error(result.error || 'Donation fail. Please try again.');
       }
@@ -127,7 +129,17 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
               Số dư: {NumberUtil.formatWithCommasAndScale(senderBalance)} {APP_CONFIG.CHAIN_SYMBOL}
             </span>
           </div>
-
+          {transactionHash && (
+            <div className="flex flex-col space-y-2">
+              <span className="text-primary text-sm font-medium">Transaction Hash:</span>
+              <div className="flex items-center gap-2 rounded-md bg-gray-100 p-2">
+                <p className="flex-1 truncate border-0 bg-inherit p-0 font-mono text-sm text-gray-800">
+                  {transactionHash}
+                </p>
+                <CopyButton textToCopy={transactionHash} />
+              </div>
+            </div>
+          )}
           <div>
             <Textarea
               id="note"
@@ -139,6 +151,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
               disabled={loading}
             />
           </div>
+
           <Button
             onClick={handleDonate}
             disabled={isButtonDisabled}
