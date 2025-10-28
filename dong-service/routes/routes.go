@@ -45,6 +45,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		{
 			campaigns_private.Use(middleware.Authentication(cfg.JWT.Secret))
 			campaigns_private.POST("", campaignHandler.CreateCampaign)
+			campaigns_private.POST("/create-active", campaignHandler.CreateAndActiveCampaign)
 			campaigns_private.PUT("/:id", campaignHandler.UpdateCampaign)
 			campaigns_private.PATCH("/:id/activate", campaignHandler.ActivateCampaign)
 			campaigns_private.PATCH("/:id/close", campaignHandler.CloseCampaign)

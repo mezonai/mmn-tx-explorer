@@ -10,6 +10,13 @@ A RESTful API service to manage donation campaigns, built with the Gin Gonic fra
 - ✅ CRUD operations for donation campaign management
 - ✅ Campaign status management (Draft/Active/Closed)
 - ✅ Status filtering and ordering in the list API
+- ✅ **JWT-based authentication with OAuth2 integration**
+- ✅ **Token refresh mechanism with Redis whitelist**
+- ✅ **Campaign ownership and creator management**
+- ✅ **Campaign statistics and analytics**
+- ✅ **Top contributors tracking**
+- ✅ **Manual campaign synchronization**
+- ✅ **Owner/partner information support**
 - ✅ Swagger/OpenAPI documentation
 - ✅ Docker & Docker Compose support
 - ✅ YAML-based configuration with Viper
@@ -180,6 +187,12 @@ make docker-logs
 
 - `GET /health` - Health check endpoint
 
+### Authentication
+
+- `POST /oauth` - OAuth2 login (exchange code for JWT tokens)
+- `POST /refresh` - Refresh access token using refresh token
+- `POST /logout` - Logout and revoke refresh token
+
 ### Donation Campaign Management
 
 #### Campaign Status
@@ -189,14 +202,24 @@ Each campaign has a status (`status`) with 3 values:
 - **Active (1)**: The campaign is active and accepting donations
 - **Closed (2)**: The campaign is closed and no longer accepting donations
 
-#### Endpoints
+#### Public Endpoints (No Authentication Required)
 
-- `POST /api/v1/campaigns` - Create a new campaign (status = Draft)
 - `GET /api/v1/campaigns` - List campaigns (with pagination, filter, sort)
 - `GET /api/v1/campaigns/:id` - Get campaign by ID
-- `PUT /api/v1/campaigns/:id` - Update campaign (cannot update status/wallet)
-- `PATCH /api/v1/campaigns/:id/activate` - Activate campaign (Draft → Active)
-- `PATCH /api/v1/campaigns/:id/close` - Close campaign (Active → Closed)
+- `GET /api/v1/campaigns/:id/top-contributors` - Get top contributors for a campaign
+- `POST /api/v1/campaigns/:id/sync` - Manually sync campaign statistics
+
+#### Admin Endpoints (Authentication Required)
+
+- `POST /api/v1/admin/campaigns` - Create a new campaign (status = Draft)
+- `POST /api/v1/admin/campaigns/create-active` - Create and immediately activate campaign
+- `PUT /api/v1/admin/campaigns/:id` - Update campaign (cannot update status/wallet)
+- `PATCH /api/v1/admin/campaigns/:id/activate` - Activate campaign (Draft → Active)
+- `PATCH /api/v1/admin/campaigns/:id/close` - Close campaign (Active → Closed)
+
+### Statistics
+
+- `GET /api/v1/stats/campaign` - Get overall campaign statistics
 
 ### Swagger Documentation
 
@@ -204,11 +227,45 @@ Each campaign has a status (`status`) with 3 values:
 
 ## 📝 API Examples
 
-### Create Campaign
+### Authentication
+
+#### OAuth Login
 
 ```bash
-curl -X POST http://localhost:8888/api/v1/campaigns \
+curl -X POST http://localhost:8888/oauth \
   -H "Content-Type: application/json" \
+  -d '{
+    "code": "oauth_authorization_code",
+    "redirect_uri": "https://your-app.com/callback"
+  }'
+```
+
+#### Refresh Token
+
+```bash
+curl -X POST http://localhost:8888/refresh \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refresh_token": "your_refresh_token_here"
+  }'
+```
+
+#### Logout
+
+```bash
+curl -X POST http://localhost:8888/logout \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refresh_token": "your_refresh_token_here"
+  }'
+```
+
+### Create Campaign (Admin)
+
+```bash
+curl -X POST http://localhost:8888/api/v1/admin/campaigns \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your_access_token" \
   -d '{
     "name": "Help Children in Need",
     "description": "Support education for underprivileged children",
@@ -216,11 +273,28 @@ curl -X POST http://localhost:8888/api/v1/campaigns \
     "url": "https://example.com/campaign/1",
     "end_date": "2025-12-31",
     "donation_wallet": "0x1234567890abcdef",
-    "creator": 1
+    "owner": "Partner Organization"
   }'
 ```
 
-**Note:** Status is automatically set to `Draft (0)` when creating a new campaign. You do not need to include the `status` field in the request.
+**Note:** Status is automatically set to `Draft (0)` when creating a new campaign. The `creator` field is automatically set from the authenticated user.
+
+### Create and Activate Campaign (Admin)
+
+```bash
+curl -X POST http://localhost:8888/api/v1/admin/campaigns/create-active \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your_access_token" \
+  -d '{
+    "name": "Emergency Relief Fund",
+    "description": "Immediate assistance for disaster victims",
+    "goal": 500000,
+    "url": "https://example.com/emergency",
+    "end_date": "2025-12-31",
+    "donation_wallet": "0x1234567890abcdef",
+    "owner": "Emergency Response Team"
+  }'
+```
 
 ### Get Campaign
 
@@ -250,32 +324,54 @@ curl "http://localhost:8888/api/v1/campaigns?status=1&order=desc&page=1&limit=10
 - `status`: Filter by status (0=Draft, 1=Active, 2=Closed)
 - `order`: Sort order (asc/desc, default: desc)
 
-### Update Campaign
+### Update Campaign (Admin)
 
 ```bash
-curl -X PUT http://localhost:8888/api/v1/campaigns/1 \
+curl -X PUT http://localhost:8888/api/v1/admin/campaigns/1 \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your_access_token" \
   -d '{
     "name": "Updated Campaign Name",
     "description": "Updated description",
     "goal": 2000000,
     "url": "https://example.com/updated",
-    "end_date": "2025-12-31"
+    "end_date": "2025-12-31",
+    "owner": "Updated Partner Organization"
   }'
 ```
 
 **Note:** You cannot update `status` and `donation_wallet` via this endpoint. Use `/activate` or `/close` to change status.
 
-### Activate Campaign
+### Activate Campaign (Admin)
 
 ```bash
-curl -X PATCH http://localhost:8888/api/v1/campaigns/1/activate
+curl -X PATCH http://localhost:8888/api/v1/admin/campaigns/1/activate \
+  -H "Authorization: Bearer your_access_token"
 ```
 
-### Close Campaign
+### Close Campaign (Admin)
 
 ```bash
-curl -X PATCH http://localhost:8888/api/v1/campaigns/1/close
+curl -X PATCH http://localhost:8888/api/v1/admin/campaigns/1/close \
+  -H "Authorization: Bearer your_access_token"
+```
+
+### Get Top Contributors
+
+```bash
+curl "http://localhost:8888/api/v1/campaigns/1/top-contributors?limit=5"
+```
+
+### Get Campaign Statistics
+
+```bash
+curl http://localhost:8888/api/v1/stats/campaign
+```
+
+### Sync Campaign Statistics
+
+```bash
+curl -X POST http://localhost:8888/api/v1/campaigns/1/sync
 ```
 
 ## 📁 Project Structure
@@ -287,26 +383,37 @@ dong-service/
 │   └── config.yml       # YAML configuration file
 ├── database/            # Database connection & migrations
 │   ├── database.go      # Database initialization
-│   └── migrations.go    # Migration tracking logic
+│   ├── migrations.go    # Migration tracking logic
+│   └── whitelist.go     # Redis whitelist for JWT tokens
 ├── handlers/            # HTTP request handlers
-│   ├── health.go        # Health check handler
-│   └── donation_campaign.go  # Campaign CRUD handlers
+│   ├── auth_handlers.go # Authentication handlers (OAuth, refresh, logout)
+│   ├── campaign_statistics.go  # Campaign statistics handlers
+│   ├── donation_campaign.go    # Campaign CRUD handlers
+│   └── health.go        # Health check handler
 ├── logger/              # Logging package
 │   └── logger.go        # Zerolog logger with rotation support
 ├── middleware/          # Custom middleware
+│   ├── authentication.go # JWT authentication middleware
 │   ├── cors.go          # CORS middleware
 │   └── logger.go        # Request logging middleware
 ├── models/              # Data models & DTOs
+│   ├── auth.go          # Authentication models (OAuth, JWT)
 │   ├── donation_campaign.go  # Campaign model & DTOs
 │   └── response.go      # API response structures
 ├── constants/           # Application constants
+│   ├── errors.go        # Error messages and constants
 │   └── status.go        # Campaign status constants
 ├── repository/          # Data access layer (Repository pattern)
-│   └── donation_campaign_repository.go  # Campaign repository
+│   ├── campaign_statistics_repository.go  # Statistics repository
+│   └── donation_campaign_repository.go    # Campaign repository
 ├── routes/              # Route definitions
 │   └── routes.go        # API route setup
 ├── migrations/          # SQL migration files
-│   └── 001_create_donation_campaign_table.sql
+│   ├── 001_create_donation_campaign_table.sql
+│   ├── 002_create_campaign_contributor_table.sql
+│   ├── 003_create_campaign_statistics_table.sql
+│   ├── 004_add_owner_column_to_donation_campaign.sql
+│   └── 005_alter_text_columns_to_varchar.sql
 ├── docs/                # Swagger documentation (auto-generated)
 │   ├── docs.go
 │   ├── swagger.json
@@ -405,6 +512,47 @@ docker run -p 8888:8888 \
   dong-service
 ```
 
+## 🔐 Authentication & Authorization
+
+### JWT Token Management
+
+The service uses JWT tokens for authentication with the following features:
+
+- **Access Tokens**: Short-lived tokens for API access (configurable expiration)
+- **Refresh Tokens**: Long-lived tokens for obtaining new access tokens
+- **Token Rotation**: Refresh tokens are rotated on each use for security
+- **Redis Whitelist**: Active tokens are stored in Redis for validation
+- **OAuth2 Integration**: Supports OAuth2 code exchange for user authentication
+
+### Authentication Flow
+
+1. **Login**: User authenticates via OAuth2 and receives JWT tokens
+2. **API Access**: Include `Authorization: Bearer <access_token>` header
+3. **Token Refresh**: Use refresh token to get new access token
+4. **Logout**: Revoke refresh token from whitelist
+
+### Campaign Ownership
+
+- Campaigns are created by authenticated users (creator field)
+- Only campaign creators can update, activate, or close their campaigns
+- Owner field allows storing partner organization information
+- Public endpoints don't require authentication for viewing campaigns
+
+## 📊 Campaign Statistics
+
+### Statistics Features
+
+- **Overall Statistics**: Total active campaigns, total amount raised, total contributors
+- **Top Contributors**: Per-campaign contributor rankings with donation amounts
+- **Manual Sync**: Trigger statistics synchronization for specific campaigns
+- **Real-time Updates**: Statistics are updated based on transaction data
+
+### Statistics Endpoints
+
+- `GET /api/v1/stats/campaign` - Get overall campaign statistics
+- `GET /api/v1/campaigns/:id/top-contributors` - Get top contributors for a campaign
+- `POST /api/v1/campaigns/:id/sync` - Manually sync campaign statistics
+
 ## 📊 Response Format
 
 ### Success Response
@@ -486,6 +634,11 @@ See [SECURITY.md](SECURITY.md) for detailed security documentation.
 ## 📝 TODO
 
 - [x] Authentication & Authorization (JWT)
+- [x] OAuth2 integration with token refresh
+- [x] Campaign ownership and creator management
+- [x] Campaign statistics and analytics
+- [x] Top contributors tracking
+- [x] Owner/partner information support
 - [x] Security scanning (OSV Scanner, govulncheck)
 - [x] GitHub Actions CI/CD pipeline
 - [x] Structured logging with Zerolog
