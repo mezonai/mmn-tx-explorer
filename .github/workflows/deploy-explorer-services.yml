@@ -65,6 +65,13 @@ jobs:
           npm run build
           cd ..
 
+      - name: Upload Indexer Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: indexer-artifacts
+          path: |
+            build/indexer
+
   deploy-explorer:
     needs: build
     runs-on: [self-hosted, Linux, mezon-runner]
@@ -74,6 +81,12 @@ jobs:
       GIT_SHA: ${{ needs.build.outputs.git_sha }}
 
     steps:
+      - name: Download Indexer Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: indexer-artifacts
+          path: .
+
       - name: Copy config and secrets to target
         run: |
           scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} indexer/configs/config.example.yml ${{ vars.HOST_ALIAS }}:/opt/mezon/explorer/config/
