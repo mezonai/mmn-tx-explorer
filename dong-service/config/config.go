@@ -97,6 +97,11 @@ func LoadConfig(cfgFile string) (*Config, error) {
 }
 
 func (c *DatabaseConfig) GetDSN() string {
+	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s search_path=%s",
+		c.Host, c.Port, c.UserName, c.Password, c.Name, c.SSLMode, c.Schema)
+}
+
+func (c *DatabaseConfig) GetDSNWithoutSchema() string {
 	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		c.Host, c.Port, c.UserName, c.Password, c.Name, c.SSLMode)
 }

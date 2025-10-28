@@ -15,12 +15,18 @@ import axios from 'axios';
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
+import { IZkProof, IEphemeralKeyPair } from 'mmn-client-js';
+import { safeJsonParse, clearAuthStorage } from '@/utils';
 
 interface AppContextType {
   isAuthenticated: boolean;
   setIsAuthenticated: (value: boolean) => void;
   user: User | null;
   setUser: (user: User | null) => void;
+  zkProof: IZkProof | null;
+  setZkProof: (zk: IZkProof | null) => void;
+  keypair: IEphemeralKeyPair | null;
+  setKeypair: (keypair: IEphemeralKeyPair | null) => void;
 }
 
 interface User {
@@ -40,11 +46,13 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export function AppProvider({ children }: AppProviderProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
+  const [zkProof, setZkProof] = useState<IZkProof | null>(null);
+  const [keypair, setKeypair] = useState<IEphemeralKeyPair | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   useEffect(() => {
     const localTokenStr = localStorage.getItem(STORAGE_KEYS.TOKEN);
-    const localToken = localTokenStr ? JSON.parse(localTokenStr) : null;
+    const localToken = localTokenStr ? safeJsonParse(localTokenStr) : null;
     if (localToken) {
       (async () => {
         try {
@@ -61,8 +69,14 @@ export function AppProvider({ children }: AppProviderProps) {
     }
     const userStored = localStorage.getItem(STORAGE_KEYS.USER_INFO);
     if (userStored) {
-      setUser(JSON.parse(userStored));
+      const u = safeJsonParse(userStored);
+      setUser(u);
       setIsAuthenticated(true);
+      const zkStr = localStorage.getItem(STORAGE_KEYS.ZK_PROOF);
+      if (zkStr) setZkProof(safeJsonParse(zkStr));
+
+      const kpStr = localStorage.getItem(STORAGE_KEYS.KEY_PAIR);
+      if (kpStr) setKeypair(safeJsonParse(kpStr));
       return;
     }
     const code = searchParams.get('code');
@@ -76,12 +90,23 @@ export function AppProvider({ children }: AppProviderProps) {
         toast.success('Login successful!');
         handleTokenStorage(userInfo);
         const keypair = generateAndStoreKeyPair();
-        const senderAddress = mmnClient.getAddressFromUserId(userInfo.user.user_id || userInfo.user.sub);
+        setKeypair(keypair);
+        const senderAddress = mmnClient.getAddressFromUserId(userInfo.user.user_id);
         const userObject = processAndStoreUser(userInfo.user, senderAddress);
         setUser(userObject);
-        await fetchAndStoreZkProof(userInfo.user.user_id, keypair.publicKey, userInfo.auth_token, senderAddress);
+
+        const fetchedZk = await fetchAndStoreZkProof(
+          userInfo.user.user_id || userInfo.user.sub,
+          keypair.publicKey,
+          userInfo.auth_token,
+          senderAddress
+        );
+        if (fetchedZk) {
+          setZkProof(fetchedZk);
+        }
       } catch {
         toast.error('Login failed!');
+        clearAuthStorage();
         router.push('/');
       }
     };
@@ -93,6 +118,10 @@ export function AppProvider({ children }: AppProviderProps) {
     setIsAuthenticated,
     user,
     setUser,
+    zkProof,
+    setZkProof,
+    keypair,
+    setKeypair,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
@@ -118,8 +147,18 @@ export function useUser() {
   return { user, setUser };
 }
 
+export function useZkProof() {
+  const { zkProof, setZkProof } = useApp();
+  return { zkProof, setZkProof };
+}
+
+export function useKeypair() {
+  const { keypair, setKeypair } = useApp();
+  return { keypair, setKeypair };
+}
+
 export function useAuthActions() {
-  const { setIsAuthenticated, setUser } = useApp();
+  const { setIsAuthenticated, setUser, setZkProof, setKeypair } = useApp();
 
   const login = () => {
     window.location.href = AUTHENTICATION_ENDPOINT.LOGIN;
@@ -128,8 +167,10 @@ export function useAuthActions() {
   const logout = () => {
     const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
     axios.post(AUTHENTICATION_ENDPOINT.LOGOUT, { refresh_token: refreshToken });
-    localStorage.clear();
+    clearAuthStorage();
     setUser(null);
+    setZkProof(null);
+    setKeypair(null);
     setIsAuthenticated(false);
     window.location.href = '/';
   };
