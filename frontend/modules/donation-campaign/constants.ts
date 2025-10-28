@@ -4,6 +4,7 @@ export const DONATION_ENDPOINTS = {
   STATS: '/campaigns/stats',
   DONATIONS: '/donations',
   MY_DONATIONS: '/donations/my-donations',
+  TOP_CONTRIBUTOR: (campaignId: string) => `/api/v1/campaigns/${campaignId}/top-contributors`,
 } as const;
 
 export const QUERY_KEYS = {

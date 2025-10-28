@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { DonationCampaign } from '@/modules/donation-campaign/type';
 
-export function CampaignExtras({ campaign }: { campaign: any }) {
+export function CampaignExtras({ campaign }: { campaign: DonationCampaign }) {
   const [message, setMessage] = useState('');
 
   const handleSend = () => {
@@ -24,18 +25,18 @@ export function CampaignExtras({ campaign }: { campaign: any }) {
         <CardHeader>
           <CardTitle>Campaign Impact</CardTitle>
         </CardHeader>
-        <CardContent className="text-muted-foreground space-y-4 text-sm">
+        {/* <CardContent className="text-muted-foreground space-y-4 text-sm">
           {campaign.impact.map((item: string, idx: number) => (
             <p key={idx}>• {item.text}</p>
           ))}
-        </CardContent>
+        </CardContent> */}
       </Card>
 
       <Card>
         <CardHeader>
           <CardTitle>Contact Owner</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3 text-sm">
+        {/* <CardContent className="space-y-3 text-sm">
           <p>
             <b>Name:</b> {campaign.owner.name}
           </p>
@@ -48,7 +49,7 @@ export function CampaignExtras({ campaign }: { campaign: any }) {
           <Button onClick={() => toast.success('Opening email client...')} className="w-full">
             Send Email
           </Button>
-        </CardContent>
+        </CardContent> */}
       </Card>
 
       {/* 3️⃣ Message Form */}

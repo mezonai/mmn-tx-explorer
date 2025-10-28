@@ -23,4 +23,8 @@ const getDaysRemaining = (dateString: string): number => {
 
   return diffDays > 0 ? diffDays : 0;
 };
-export { getCampaignStatusVariant, getDaysRemaining };
+const truncateWalletAddress = (address: string, chars = 6) => {
+  if (!address) return '';
+  return `${address.substring(0, chars)}...${address.substring(address.length - chars)}`;
+};
+export { getCampaignStatusVariant, getDaysRemaining, truncateWalletAddress };

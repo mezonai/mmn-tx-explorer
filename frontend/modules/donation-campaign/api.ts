@@ -1,6 +1,10 @@
 import { apiDongClient } from '@/service';
 import { IPaginatedResponse } from '@/types';
-import { CampaignListParams, CampaignStats, CreateCampaignRequest, DonationCampaign } from './type';
+import { CampaignListParams } from './type';
+import { CampaignStats } from './type';
+import { CreateCampaignRequest } from './type';
+import { DonationCampaign } from './type';
+import { TopContributorsResponse } from './type';
 import { DONATION_ENDPOINTS } from './constants';
 
 export class DonationCampaignService {
@@ -22,10 +26,7 @@ export class DonationCampaignService {
   }
 
   static async createCampaign(campaignData: CreateCampaignRequest): Promise<DonationCampaign> {
-    const { data } = await apiDongClient.post<{ data: DonationCampaign }>(
-      DONATION_ENDPOINTS.CAMPAIGNS,
-      campaignData
-    );
+    const { data } = await apiDongClient.post<{ data: DonationCampaign }>(DONATION_ENDPOINTS.CAMPAIGNS, campaignData);
     return data.data;
   }
 
@@ -51,5 +52,9 @@ export class DonationCampaignService {
   static async makeDonation(donationData: { campaignId: string; amount: number; message?: string }) {
     const { data } = await apiDongClient.post(DONATION_ENDPOINTS.DONATIONS, donationData);
     return data;
+  }
+  static async getTopContributor(campaignId: string): Promise<TopContributorsResponse['data']> {
+    const { data } = await apiDongClient.get<TopContributorsResponse>(DONATION_ENDPOINTS.TOP_CONTRIBUTOR(campaignId));
+    return data.data;
   }
 }

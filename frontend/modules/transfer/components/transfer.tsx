@@ -66,11 +66,14 @@ export const Transfer = () => {
   const handleTransfer = useCallback(async () => {
     const { address, amount, note } = form;
     try {
-      const result = await transfer({
-        recipientAddress: address,
-        amount: amount,
-        note,
-      });
+      const result = await transfer(
+        {
+          recipientAddress: address,
+          amount: amount,
+          note,
+        },
+        'dong-give-coffee'
+      );
 
       if (result.success) {
         toast.success('Transfer successful!');

@@ -10,7 +10,7 @@ export interface DonationCampaign {
   description: string;
   goal: number;
   url: string;
-  wallet: string;
+  donation_wallet: string;
   creator: string;
   status: CampaignStatus;
   end_date: string;
@@ -64,4 +64,18 @@ export interface CampaignStats {
   totalRaised: number;
   totalContributors: number;
   completedCampaigns: number;
+}
+export interface TopContributor {
+  sender_wallet: string;
+  total_donate: number;
+  percentage: number;
+}
+
+export interface TopContributorsResponse {
+  code: number;
+  message: string;
+  data: {
+    campaign_id: number;
+    contributors: TopContributor[];
+  };
 }
