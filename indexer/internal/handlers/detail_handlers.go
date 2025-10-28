@@ -57,7 +57,7 @@ func GetBlockDetail(c *gin.Context) {
 // @Failure 401 {object} api.Error
 // @Failure 404 {object} api.Error
 // @Failure 500 {object} api.Error
-// @Router /{chainId}/transactions/{txHash}/detail [get]
+// @Router /{chainId}/tx/{txHash}/detail [get]
 func GetTransactionDetail(c *gin.Context) {
 	handleTransactionDetailRequest(c)
 }

@@ -53,6 +53,7 @@ export const fetchAndStoreZkProof = async (
       clientType: EZkClientType.OAUTH,
     });
     localStorage.setItem(STORAGE_KEYS.ZK_PROOF, JSON.stringify(zkProof));
+    return zkProof;
   } catch (error) {
     console.error('Error fetching ZK proofs', error);
   }

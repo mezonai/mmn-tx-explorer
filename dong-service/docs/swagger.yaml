@@ -20,6 +20,8 @@ definitions:
         type: integer
       name:
         type: string
+      owner:
+        type: string
       url:
         type: string
     required:
@@ -43,6 +45,8 @@ definitions:
       id:
         type: string
       name:
+        type: string
+      owner:
         type: string
       status:
         type: integer
@@ -172,6 +176,8 @@ definitions:
       goal:
         type: integer
       name:
+        type: string
+      owner:
         type: string
       url:
         type: string
@@ -348,6 +354,43 @@ paths:
       summary: Close a donation campaign
       tags:
       - campaigns
+  /api/v1/admin/campaigns/create-active:
+    post:
+      consumes:
+      - application/json
+      description: Create a new donation campaign and set its status to Active
+      parameters:
+      - description: Campaign data
+        in: body
+        name: campaign
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateDonationCampaignRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.DonationCampaignResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - BearerAuth: []
+      summary: Create and immediately activate a new donation campaign
+      tags:
+      - campaigns
   /api/v1/campaigns:
     get:
       description: Get a list of all donation campaigns with pagination
@@ -493,7 +536,7 @@ paths:
       summary: Get top contributors for a campaign
       tags:
       - campaigns
-  /api/v1/campaigns/stats:
+  /api/v1/stats/campaign:
     get:
       description: Get overall statistics for all donation campaigns
       produces:

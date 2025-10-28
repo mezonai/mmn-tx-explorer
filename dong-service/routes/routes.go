@@ -33,7 +33,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 	v1 := router.Group("/api/v1")
 	{
 		// Initialize repositories
-		campaignRepo := repository.NewDonationCampaignRepository(database.GetDB())
+		campaignRepo := repository.NewDonationCampaignRepository(database.GetDB(), cfg.Database.Schema)
 		statsRepo := repository.NewCampaignStatisticsRepository(database.GetDB(), cfg.Indexer.Schema, cfg.Database.Schema)
 
 		// Initialize handlers
@@ -45,6 +45,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		{
 			campaigns_private.Use(middleware.Authentication(cfg.JWT.Secret))
 			campaigns_private.POST("", campaignHandler.CreateCampaign)
+			campaigns_private.POST("/create-active", campaignHandler.CreateAndActiveCampaign)
 			campaigns_private.PUT("/:id", campaignHandler.UpdateCampaign)
 			campaigns_private.PATCH("/:id/activate", campaignHandler.ActivateCampaign)
 			campaigns_private.PATCH("/:id/close", campaignHandler.CloseCampaign)
@@ -54,10 +55,14 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		campaigns_public := v1.Group("/campaigns")
 		{
 			campaigns_public.GET("", campaignHandler.ListCampaigns)
-			campaigns_public.GET("/stats", statsHandler.GetStats)
 			campaigns_public.GET("/:id", campaignHandler.GetCampaign)
 			campaigns_public.GET("/:id/top-contributors", campaignHandler.GetTopContributors)
 			campaigns_public.POST("/:id/sync", statsHandler.SyncCampaign)
+		}
+
+		stats_public := v1.Group("/stats")
+		{
+			stats_public.GET("/campaign", statsHandler.GetCampaignStats)
 		}
 	}
 }
