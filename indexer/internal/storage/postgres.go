@@ -1765,7 +1765,6 @@ func (p *PostgresConnector) batchUpdateWalletTransactionCounts(
 	}
 
 	query := `
-        WITH inserted AS (
             INSERT INTO wallet (address, transaction_count, last_block)
             SELECT 
                 unnest($1::text[]) as address,
@@ -1775,9 +1774,6 @@ func (p *PostgresConnector) batchUpdateWalletTransactionCounts(
             DO UPDATE SET 
                 transaction_count = wallet.transaction_count + EXCLUDED.transaction_count,
                 last_block = GREATEST(COALESCE(wallet.last_block, 0)::numeric, EXCLUDED.last_block)::bigint
-            RETURNING (xmax = 0) as is_new
-        )
-        SELECT COUNT(*) FROM inserted WHERE is_new = true
     `
 
 	maxBlocksInterface := make([]interface{}, len(maxBlocks))
@@ -1794,20 +1790,6 @@ func (p *PostgresConnector) batchUpdateWalletTransactionCounts(
 
 	if err != nil {
 		return fmt.Errorf("failed to batch update wallet transaction counts: %w", err)
-	}
-
-	if newWalletCount > 0 {
-		if _, err := tx.Exec(`
-			INSERT INTO stats(key, value) VALUES ('total_wallets', $1)
-			ON CONFLICT (key) 
-			DO UPDATE SET value = stats.value + $1
-		`, newWalletCount); err != nil {
-			return fmt.Errorf("failed to update total_wallets stat: %w", err)
-		}
-
-		log.Debug().
-			Int64("new_wallets", newWalletCount).
-			Msg("Added new wallets to stats")
 	}
 
 	log.Debug().
@@ -2026,22 +2008,19 @@ func (p *PostgresConnector) insertWallet(ctx context.Context, address string, no
 			INSERT INTO stats(key, value) VALUES ('total_wallets', $1)
 			ON CONFLICT (key) 
 			DO UPDATE SET value = stats.value + $1
-		`, newWalletCount); 
+		`, newWalletCount)
 		if err != nil {
 			return fmt.Errorf("failed to update total_wallets stat: %w", err)
 		}
 	}
 
-	err = tx.Commit(); 
+	err = tx.Commit()
 	if err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return nil
 }
-
-
-
 
 // refreshWalletFromService fetches wallet data from MMN gRPC service and writes to DB
 func (p *PostgresConnector) refreshWalletFromService(ctx context.Context, address string) error {
