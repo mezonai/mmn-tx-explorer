@@ -177,6 +177,7 @@ type ValidationConfig struct {
 type StatsWorkerConfig struct {
 	Enabled         bool `mapstructure:"enabled"`
 	IntervalMinutes int  `mapstructure:"intervalMinutes"`
+	TimeoutMinutes  int  `mapstructure:"timeoutMinutes"`
 }
 
 type Config struct {
@@ -199,7 +200,8 @@ var Cfg Config
 func LoadConfig(cfgFile string) error {
 	// Set default values for StatsWorker
 	viper.SetDefault("statsWorker.enabled", true)
-	viper.SetDefault("statsWorker.intervalMinutes", 60)
+	viper.SetDefault("statsWorker.intervalMinutes", 120)
+	viper.SetDefault("statsWorker.timeoutMinutes", 10)
 
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)

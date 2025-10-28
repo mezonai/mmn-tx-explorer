@@ -111,6 +111,7 @@ reorgHandler:
 statsWorker:
   enabled: true
   intervalMinutes: 120
+  timeoutMinutes: 10
 
 # Storage configuration for different components
 storage:

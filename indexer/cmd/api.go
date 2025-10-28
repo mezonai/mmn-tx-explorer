@@ -72,8 +72,8 @@ func RunApi(cmd *cobra.Command, args []string) {
 	}
 
 	if config.Cfg.StatsWorker.Enabled {
-		log.Info().Int("intervalMinutes", config.Cfg.StatsWorker.IntervalMinutes).Msg("Starting stats recalculation worker")
-		statsWorker := worker.NewStatsRecalculationWorker(mainStorage, config.Cfg.StatsWorker.IntervalMinutes)
+		log.Info().Int("intervalMinutes", config.Cfg.StatsWorker.IntervalMinutes).Int("timeoutMinutes", config.Cfg.StatsWorker.TimeoutMinutes).Msg("Starting stats recalculation worker")
+		statsWorker := worker.NewStatsRecalculationWorker(mainStorage, config.Cfg.StatsWorker.IntervalMinutes, config.Cfg.StatsWorker.TimeoutMinutes)
 		statsWorker.Start()
 	}
 

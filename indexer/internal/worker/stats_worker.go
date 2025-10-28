@@ -11,25 +11,32 @@ import (
 
 // StatsRecalculationWorker handles periodic stats recalculation
 type StatsRecalculationWorker struct {
-	mainStorage storage.IMainStorage
-	interval    time.Duration
-	stopCh      chan struct{}
-	wg          sync.WaitGroup
-	running     bool
-	mutex       sync.Mutex
+	mainStorage     storage.IMainStorage
+	intervalMinutes int
+	timeoutMinutes  int
+	ticker          *time.Ticker
+	stopChan        chan struct{}
+	mutex           sync.Mutex
+	isRunning       bool
+	wg              sync.WaitGroup
 }
 
 // NewStatsRecalculationWorker creates a new stats recalculation worker
-func NewStatsRecalculationWorker(mainStorage storage.IMainStorage, intervalMinutes int) *StatsRecalculationWorker {
+func NewStatsRecalculationWorker(mainStorage storage.IMainStorage, intervalMinutes int, timeoutMinutes int) *StatsRecalculationWorker {
 	if intervalMinutes <= 0 {
-		intervalMinutes = 120 // Default to 2 hour if invalid interval
+		intervalMinutes = 120 // Default to 2 hours if invalid interval
+	}
+	
+	if timeoutMinutes <= 0 {
+		timeoutMinutes = 10 // Default to 10 minutes if invalid timeout
 	}
 	
 	return &StatsRecalculationWorker{
-		mainStorage: mainStorage,
-		interval:    time.Duration(intervalMinutes) * time.Minute,
-		stopCh:      make(chan struct{}),
-		running:     false,
+		mainStorage:     mainStorage,
+		intervalMinutes: intervalMinutes,
+		timeoutMinutes:  timeoutMinutes,
+		stopChan:        make(chan struct{}),
+		isRunning:       false,
 	}
 }
 
@@ -38,11 +45,11 @@ func (w *StatsRecalculationWorker) Start() {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 
-	if w.running {
+	if w.isRunning {
 		return
 	}
 
-	w.running = true
+	w.isRunning = true
 	w.wg.Add(1)
 
 	go func() {
@@ -51,14 +58,14 @@ func (w *StatsRecalculationWorker) Start() {
 		// Run once immediately at startup
 		w.recalculateStats()
 		
-		ticker := time.NewTicker(w.interval)
-		defer ticker.Stop()
+		w.ticker = time.NewTicker(time.Duration(w.intervalMinutes) * time.Minute)
+		defer w.ticker.Stop()
 
 		for {
 			select {
-			case <-ticker.C:
+			case <-w.ticker.C:
 				w.recalculateStats()
-			case <-w.stopCh:
+			case <-w.stopChan:
 				log.Info().Msg("Stats recalculation worker stopped")
 				return
 			}
@@ -66,7 +73,8 @@ func (w *StatsRecalculationWorker) Start() {
 	}()
 
 	log.Info().
-		Dur("interval", w.interval).
+		Int("intervalMinutes", w.intervalMinutes).
+		Int("timeoutMinutes", w.timeoutMinutes).
 		Msg("Stats recalculation worker started")
 }
 
@@ -75,13 +83,13 @@ func (w *StatsRecalculationWorker) Stop() {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 
-	if !w.running {
+	if !w.isRunning {
 		return
 	}
 
-	close(w.stopCh)
+	close(w.stopChan)
 	w.wg.Wait()
-	w.running = false
+	w.isRunning = false
 }
 
 // recalculateStats performs the actual stats recalculation
@@ -89,8 +97,8 @@ func (w *StatsRecalculationWorker) recalculateStats() {
 	log.Info().Msg("Starting scheduled stats recalculation")
 	start := time.Now()
 
-	// Create context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	// Create context with timeout from config
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(w.timeoutMinutes)*time.Minute)
 	defer cancel()
 
 	// Recalculate stats
