@@ -15,7 +15,7 @@ interface CampaignCardProps {
 
 export const CampaignCard = ({ campaign }: CampaignCardProps) => {
   const { id, name, description, goal, end_date, status, updated_at, total_amount, total_contributors } = campaign;
-  const capitalizedStatus = useMemo(() => {
+  const selectedStatus = useMemo(() => {
     if (status === CampaignStatus.Active) return 'Active';
     if (status === CampaignStatus.Draft) return 'Draft';
     if (status === CampaignStatus.Closed) return 'Closed';
@@ -36,13 +36,13 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
     if (status === CampaignStatus.Draft) {
       return 'Not launched';
     }
-    return `${Math.min(Math.floor((total_amount / (goal || 1)) * 100), 100)} % funded`;
+    return `${Math.min(Math.floor((Number(NumberUtil.scaleDown(total_amount)) / goal) * 100), 100)} % funded`;
   }, [status, total_amount, goal]);
 
   const progressPercent = useMemo(() => {
     if (status === CampaignStatus.Draft) return 0;
     if (goal <= 0) return 0;
-    return Math.min(Math.max(Math.floor((total_amount / goal) * 100), 0), 100);
+    return Math.min(Math.max(Math.floor((NumberUtil.scaleDown(total_amount) / goal) * 100), 0), 100);
   }, [status, total_amount, goal]);
 
   const contributorsNumber = useMemo(() => {
@@ -60,13 +60,12 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
     if (status === CampaignStatus.Closed) {
       return `Ended ${formatDistanceToNow(new Date(updated_at), { addSuffix: true })}`;
     }
-    return `Last gift ${DateTimeUtil.formatRelativeTime(new Date(updated_at))}`;
   }, [status, updated_at]);
 
   return (
     <article className="group hover:border-primary/60 dark:bg-dark-light/80 flex flex-col rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10">
       <div className="flex items-center justify-between gap-4">
-        <Chip variant={getCampaignStatusVariant(status)}>{capitalizedStatus}</Chip>
+        <Chip variant={getCampaignStatusVariant(status)}>{selectedStatus}</Chip>
         <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{daysLeft}</span>
       </div>
       <h3 className="group-hover:text-primary dark:group-hover:text-primary-light mt-4 text-lg font-semibold text-gray-900 transition dark:text-white">
@@ -76,7 +75,7 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
       <div className="mt-6">
         <div className="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
           <span>
-            {NumberUtil.formatWithCommasAndScale(total_amount)} / {NumberUtil.formatWithCommasAndScale(goal)}{' '}
+            {NumberUtil.formatWithCommasAndScale(total_amount)} / {NumberUtil.formatWithCommas(goal)}{' '}
             {TEXT_CONSTANT.CURRENCY}
           </span>
           <span>{progress}</span>

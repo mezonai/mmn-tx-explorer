@@ -15,11 +15,11 @@ export const CSRDonation = () => {
     },
     {
       title: 'Total raised (MMN)',
-      value: NumberUtil.scaleDown(stats.total_amount),
+      value: NumberUtil.formatWithCommasAndScale(stats.total_amount),
     },
     {
       title: 'Contributors',
-      value: stats.total_contributors,
+      value: NumberUtil.formatWithCommas(stats.total_contributors),
     },
   ];
 
