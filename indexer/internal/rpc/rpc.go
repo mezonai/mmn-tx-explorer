@@ -58,7 +58,7 @@ type Client struct {
 }
 
 func Initialize() (IRPCClient, error) {
-	mmnService, err := NewMMNGrpcService(config.Cfg.RPC.MMNGRPCURL)
+	mmnService, err := NewMMNGrpcService(config.Cfg.RPC.MMNGRPCURL, config.Cfg.RPC.MMNGRPCUseTLS)
 	if err != nil {
 		log.Warn().Err(err).Msg("Failed to initialize MMNGrpcService, continuing without it")
 	}
@@ -66,20 +66,6 @@ func Initialize() (IRPCClient, error) {
 	rpc := &Client{
 		mmnService:       mmnService,
 		blocksPerRequest: GetBlockPerRequestConfig(),
-	}
-
-	rpc.chainID = big.NewInt(1337)
-	return IRPCClient(rpc), nil
-}
-
-func InitializeSimpleRPCWithUrl(url string) (IRPCClient, error) {
-	mmnService, err := NewMMNGrpcService(url)
-	if err != nil {
-		log.Warn().Err(err).Msg("Failed to initialize MMNGrpcService, continuing without it")
-	}
-
-	rpc := &Client{
-		mmnService: mmnService,
 	}
 
 	rpc.chainID = big.NewInt(1337)

@@ -36,6 +36,7 @@ type WalletUpdateBatcher struct {
 	mmnQueue         chan string
 	mmnBatchSize     int
 	mmnBatchTimeout  time.Duration
+	mmnConcurrency   int
 	connector        *PostgresConnector
 	stopChan         chan struct{}
 }
@@ -49,9 +50,10 @@ type WalletStats struct {
 func NewWalletUpdateBatcher(connector *PostgresConnector) *WalletUpdateBatcher {
 	batcher := &WalletUpdateBatcher{
 		pendingAddresses: make(map[string]int64),
-		mmnQueue:         make(chan string, 1000), // Buffer for 1000 addresses
-		mmnBatchSize:     50,                      // Process 50 addresses per batch
-		mmnBatchTimeout:  2 * time.Second,         // Max wait time for batch
+		mmnQueue:         make(chan string, 10000), // Buffer for 10000 addresses
+		mmnBatchSize:     50,                       // Process 50 addresses per batch
+		mmnBatchTimeout:  2 * time.Second,          // Max wait time for batch
+		mmnConcurrency:   10,                       // Max concurrent MMN calls
 		connector:        connector,
 		stopChan:         make(chan struct{}),
 	}
@@ -197,7 +199,7 @@ func (wub *WalletUpdateBatcher) processMMNBatch(addresses []string) {
 	log.Debug().Int("count", len(addresses)).Msg("Processing MMN service batch")
 
 	// Process addresses in parallel with limited concurrency
-	semaphore := make(chan struct{}, 10) // Max 10 concurrent calls
+	semaphore := make(chan struct{}, wub.mmnConcurrency)
 	var wg sync.WaitGroup
 
 	for _, address := range addresses {
@@ -321,7 +323,7 @@ func NewPostgresConnector(cfg *config.PostgresConfig) (*PostgresConnector, error
 
 	// Initialize MMN gRPC service if URL is provided
 	if config.Cfg.RPC.MMNGRPCURL != "" {
-		mmn, err := rpc.NewMMNGrpcService(config.Cfg.RPC.MMNGRPCURL)
+		mmn, err := rpc.NewMMNGrpcService(config.Cfg.RPC.MMNGRPCURL, config.Cfg.RPC.MMNGRPCUseTLS)
 		if err != nil {
 			log.Warn().Err(err).Msg("Failed to init MMNGrpcService; wallet sync disabled")
 		} else {
@@ -1679,7 +1681,10 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 
 	defer func() {
 		if err != nil {
-			tx.Rollback()
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Error().Err(rollbackErr).Msg("Failed to rollback transaction")
+			}
 		}
 	}()
 

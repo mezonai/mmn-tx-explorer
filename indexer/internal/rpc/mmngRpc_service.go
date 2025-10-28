@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
 	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
@@ -19,13 +20,15 @@ type MMNGrpcService struct {
 	accountClient pb.AccountServiceClient
 	mu            sync.RWMutex
 	url           string
+	useTLS        bool
 	isConnected   bool
 }
 
 // NewMMNGrpcService creates a new MMNGrpcService with connection to MMN gRPC
-func NewMMNGrpcService(url string) (*MMNGrpcService, error) {
+func NewMMNGrpcService(url string, useTLS bool) (*MMNGrpcService, error) {
 	service := &MMNGrpcService{
-		url: url,
+		url:    url,
+		useTLS: useTLS,
 	}
 
 	if err := service.connect(); err != nil {
@@ -44,7 +47,17 @@ func (mmn *MMNGrpcService) connect() error {
 		return nil
 	}
 
-	conn, err := grpc.NewClient(mmn.url, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	var creds credentials.TransportCredentials
+
+	if mmn.useTLS {
+		creds = credentials.NewTLS(nil)
+	} else {
+		creds = insecure.NewCredentials()
+	}
+	conn, err := grpc.NewClient(
+		mmn.url,
+		grpc.WithTransportCredentials(creds),
+	)
 	if err != nil {
 		return fmt.Errorf("failed to connect to %s: %w", mmn.url, err)
 	}
