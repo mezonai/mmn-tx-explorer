@@ -63,7 +63,7 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
   }, [status, updated_at]);
 
   return (
-    <article className="group hover:border-primary/60 dark:bg-dark-light/80 flex flex-col rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10">
+    <article className="group hover:border-primary/60 dark:bg-card flex flex-col rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10">
       <div className="flex items-center justify-between gap-4">
         <Chip variant={getCampaignStatusVariant(status)}>{selectedStatus}</Chip>
         <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{daysLeft}</span>
@@ -88,7 +88,7 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
           aria-valuenow={progressPercent}
         >
           <div
-            className="from-primary to-primary-light h-full rounded-full bg-gradient-to-r transition-[width] duration-500 ease-out"
+            className="dark:from-brand-primary dark:to-brand-primary/20 from-primary to-primary-light h-full rounded-full bg-gradient-to-r transition-[width] duration-500 ease-out"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
@@ -99,7 +99,7 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
       </div>
 
       <Button
-        className="bg-primary/10 text-primary hover:bg-primary dark:bg-primary/15 dark:text-primary-light dark:hover:bg-primary-light mt-6 inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition hover:text-white dark:hover:text-white"
+        className="bg-primary/10 text-primary dark:hover:bg-brand-primary dark:bg-brand-primary/10 dark:border-brand-primary dark:text-primary-light mt-6 inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition hover:text-white dark:border dark:hover:text-white"
         asChild
       >
         <Link href={ROUTES.CAMPAIGN(id)}>

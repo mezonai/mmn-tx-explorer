@@ -38,7 +38,7 @@ export const CSRDonation = () => {
           <Button
             variant="link"
             size="lg"
-            className="bg-brand-primary shadow-primary/30 hover:bg-brand-primary/80 focus-visible:outline-primary dark:hover:bg-brand-primary/90 border-1px border-primary inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="bg-brand-primary shadow-primary/30 hover:bg-brand-primary/80 focus-visible:outline-primary dark:hover:bg-brand-primary/90 border-1px border-primary inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 dark:shadow-none"
           >
             <Link href={ROUTES.CREATE_CAMPAIGN}>+ Create campaign</Link>
           </Button>
@@ -51,7 +51,12 @@ export const CSRDonation = () => {
         </div>
         <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3">
           {statCards.map((item) => (
-            <StatCard key={item.title} title={item.title} value={item.value} className="uppercase" />
+            <StatCard
+              key={item.title}
+              title={item.title}
+              value={item.value}
+              className="dark:border-primary/15 uppercase"
+            />
           ))}
         </div>
       </div>
