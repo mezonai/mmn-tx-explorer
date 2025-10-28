@@ -42,30 +42,6 @@ jobs:
         id: get_sha
         run: echo "git_sha=$(git rev-parse --short=8 HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: "20"
-          cache: ""
-
-      - name: Build Frontend
-        env:
-          NEXT_PUBLIC_APP_API_URL: ${{ vars.NEXT_PUBLIC_APP_API_URL }}
-          APP_API_URL_INTERNAL: ${{ vars.APP_API_URL_INTERNAL }}
-          NEXT_PUBLIC_CHAT_APP_MMN_API_URL: ${{ vars.NEXT_PUBLIC_CHAT_APP_MMN_API_URL }}
-          NEXT_PUBLIC_CHAT_APP_ZK_API_URL: ${{ vars.NEXT_PUBLIC_CHAT_APP_ZK_API_URL }}
-          NEXT_PUBLIC_BACKEND_API_URL: ${{ vars.NEXT_PUBLIC_BACKEND_API_URL }}
-          NEXT_PUBLIC_OAUTH2_API_URL: ${{ vars.NEXT_PUBLIC_OAUTH2_API_URL }}
-          NEXT_PUBLIC_OAUTH2_CLIENT_ID: ${{ vars.OAUTH_CLIENT_ID }}
-          OAUTH2_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
-          NEXT_PUBLIC_OAUTH2_REDIRECT_URI: ${{ vars.NEXT_PUBLIC_OAUTH2_REDIRECT_URI }}
-        run: |
-          cd frontend
-          npm install
-          rm -rf .next
-          npm run build
-          cd ..
-
   deploy-explorer:
     needs: build
     runs-on: [self-hosted, Linux, mezon-runner]
@@ -87,15 +63,6 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_HOST: ${{ vars.POSTGRES_HOST }}
           POSTGRES_PORT: ${{ vars.POSTGRES_PORT }}
-          NEXT_PUBLIC_APP_API_URL: ${{ vars.NEXT_PUBLIC_APP_API_URL }}
-          APP_API_URL_INTERNAL: ${{ vars.APP_API_URL_INTERNAL }}
-          NEXT_PUBLIC_CHAT_APP_MMN_API_URL: ${{ vars.NEXT_PUBLIC_CHAT_APP_MMN_API_URL }}
-          NEXT_PUBLIC_CHAT_APP_ZK_API_URL: ${{ vars.NEXT_PUBLIC_CHAT_APP_ZK_API_URL }}
-          NEXT_PUBLIC_BACKEND_API_URL: ${{ vars.NEXT_PUBLIC_BACKEND_API_URL }}
-          NEXT_PUBLIC_OAUTH2_API_URL: ${{ vars.NEXT_PUBLIC_OAUTH2_API_URL }}
-          NEXT_PUBLIC_OAUTH2_CLIENT_ID: ${{ vars.OAUTH_CLIENT_ID }}
-          OAUTH2_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
-          NEXT_PUBLIC_OAUTH2_REDIRECT_URI: ${{ vars.NEXT_PUBLIC_OAUTH2_REDIRECT_URI }}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
@@ -116,22 +83,8 @@ jobs:
           MIGRATIONS_PATH=/opt/indexer/migrations/postgres
           EON
 
-          sudo tee /opt/frontend/frontend.env > /dev/null <<EON
-          NEXT_PUBLIC_APP_API_URL=${NEXT_PUBLIC_APP_API_URL}
-          APP_API_URL_INTERNAL=${APP_API_URL_INTERNAL}
-          NEXT_PUBLIC_CHAT_APP_MMN_API_URL=${NEXT_PUBLIC_CHAT_APP_MMN_API_URL}
-          NEXT_PUBLIC_CHAT_APP_ZK_API_URL=${NEXT_PUBLIC_CHAT_APP_ZK_API_URL}
-          NEXT_PUBLIC_BACKEND_API_URL=${NEXT_PUBLIC_BACKEND_API_URL}
-          NEXT_PUBLIC_OAUTH2_API_URL=${NEXT_PUBLIC_OAUTH2_API_URL}
-          NEXT_PUBLIC_OAUTH2_CLIENT_ID=${NEXT_PUBLIC_OAUTH2_CLIENT_ID}
-          OAUTH2_CLIENT_SECRET=${OAUTH2_CLIENT_SECRET}
-          NEXT_PUBLIC_OAUTH2_REDIRECT_URI=${NEXT_PUBLIC_OAUTH2_REDIRECT_URI}
-          EON
-
           sudo chown -R mmn:mmn /opt/indexer
-          sudo chown -R mmn:mmn /opt/frontend
           sudo chmod 600 /opt/indexer/config/indexer.env
-          sudo chmod 644 /opt/frontend/frontend.env
 
           echo "==> Deploying new indexer binary to staging path..."
           sudo install -m 0755 /tmp/indexer /opt/indexer/bin/indexer-${SHA}
@@ -150,15 +103,6 @@ jobs:
           printf "export POSTGRES_PASSWORD=%q\n" "$POSTGRES_PASSWORD" >> remote_env.sh
           printf "export POSTGRES_HOST=%q\n" "$POSTGRES_HOST" >> remote_env.sh
           printf "export POSTGRES_PORT=%q\n" "$POSTGRES_PORT" >> remote_env.sh
-          printf "export NEXT_PUBLIC_APP_API_URL=%q\n" "$NEXT_PUBLIC_APP_API_URL" >> remote_env.sh
-          printf "export APP_API_URL_INTERNAL=%q\n" "$APP_API_URL_INTERNAL" >> remote_env.sh
-          printf "export NEXT_PUBLIC_CHAT_APP_MMN_API_URL=%q\n" "$NEXT_PUBLIC_CHAT_APP_MMN_API_URL" >> remote_env.sh
-          printf "export NEXT_PUBLIC_CHAT_APP_ZK_API_URL=%q\n" "$NEXT_PUBLIC_CHAT_APP_ZK_API_URL" >>  remote_env.sh
-          printf "export NEXT_PUBLIC_BACKEND_API_URL=%q\n" "$NEXT_PUBLIC_BACKEND_API_URL" >> remote_env.sh
-          printf "export NEXT_PUBLIC_OAUTH2_API_URL=%q\n" "$NEXT_PUBLIC_OAUTH2_API_URL" >> remote_env.sh
-          printf "export NEXT_PUBLIC_OAUTH2_CLIENT_ID=%q\n" "$NEXT_PUBLIC_OAUTH2_CLIENT_ID" >> remote_env.sh
-          printf "export OAUTH2_CLIENT_SECRET=%q\n" "$OAUTH2_CLIENT_SECRET" >> remote_env.sh
-          printf "export NEXT_PUBLIC_OAUTH2_REDIRECT_URI=%q\n" "$NEXT_PUBLIC_OAUTH2_REDIRECT_URI" >> remote_env.sh
 
       - name: Prepare and deploy to target server
         run: |
@@ -171,11 +115,6 @@ jobs:
 
           echo "==> Copying setup scripts to target server..."
           scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} remote_setup.sh remote_env.sh ${{ vars.HOST_ALIAS }}:/tmp/
-
-          echo "==> Syncing Frontend build to target..."
-          rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" frontend/.next/standalone/ ${{ vars.HOST_ALIAS }}:/opt/frontend/.next/standalone/
-          rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" frontend/public/ ${{ vars.HOST_ALIAS }}:/opt/frontend/.next/standalone/public/
-          rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" frontend/.next/static/ ${{ vars.HOST_ALIAS }}:/opt/frontend/.next/standalone/.next/static/
 
           echo "==> Running remote setup script..."
           ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "
@@ -239,7 +178,6 @@ jobs:
             | sudo tee /etc/mezon/secrets.yml >/dev/null
 
           echo "==> Stopping services..."
-          sudo systemctl stop frontend-explorer || true
           sudo systemctl stop indexer-api || true
           sudo systemctl stop indexer-orchestrator || true
 
@@ -256,7 +194,6 @@ jobs:
           sudo systemctl daemon-reload
           sudo systemctl start indexer-orchestrator
           sudo systemctl start indexer-api
-          sudo systemctl start frontend-explorer
 
           echo "==> Reloading Nginx..."
           sudo nginx -t && sudo systemctl reload nginx
@@ -271,9 +208,6 @@ jobs:
 
           echo "==> Checking Orchestrator status..."
           ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "systemctl is-active indexer-orchestrator"
-
-          echo "==> Checking Frontend status..."
-          ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "systemctl is-active frontend-explorer"
   
   deploy-dong:
     uses: ./.github/workflows/deploy-dong-service.yml
@@ -285,3 +219,11 @@ jobs:
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
       OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
       REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+  
+  deploy-frontend:
+    uses: ./.github/workflows/deploy-frontend-service.yml
+    with:
+      env: ${{ inputs.env }}
+      ref: ${{ inputs.ref }}
+    secrets:
+      OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
