@@ -39,7 +39,6 @@ export function GoalsAndTiming() {
           <div>
             <label className="text-foreground mb-2 block text-sm font-medium">Fundraising goal (MMN)</label>
             <Input
-              type="number"
               placeholder="e.g. 20000"
               value={form.fundraisingGoal || ''}
               onChange={(e) => handleInputChange('fundraisingGoal', e.target.value ? Number(e.target.value) : null)}
