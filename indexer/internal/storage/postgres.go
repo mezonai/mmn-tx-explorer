@@ -1781,12 +1781,11 @@ func (p *PostgresConnector) batchUpdateWalletTransactionCounts(
 		maxBlocksInterface[i] = v
 	}
 
-	var newWalletCount int64
-	err := tx.QueryRow(query,
-		pq.Array(addressList),
-		pq.Array(counts),
-		pq.Array(maxBlocksInterface),
-	).Scan(&newWalletCount)
+    _, err := tx.Exec(query,
+       pq.Array(addressList),
+       pq.Array(counts),
+       pq.Array(maxBlocksInterface),
+    )
 
 	if err != nil {
 		return fmt.Errorf("failed to batch update wallet transaction counts: %w", err)
