@@ -15,13 +15,14 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/swag"
 
-	"github.com/thirdweb-dev/indexer/internal/handlers"
-	"github.com/thirdweb-dev/indexer/internal/middleware"
-	"github.com/thirdweb-dev/indexer/internal/storage"
-	"github.com/thirdweb-dev/indexer/internal/worker"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/handlers"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/middleware"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/worker"
 
-
+	// Import the generated Swagger docs
 	_ "github.com/mezonai/mmn-tx-explorer/indexer/docs"
+	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 )
 
 var (

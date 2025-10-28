@@ -153,7 +153,7 @@ func init() {
 	rootCmd.PersistentFlags().Int64("workMode-liveModeThreshold", 500, "How many blocks the indexer can be behind before switching to live mode")
 	rootCmd.PersistentFlags().String("validation-mode", "strict", "Validation mode. Strict will validate logsBloom and transactionsRoot. Minimal will validate transaction count and logs existence.")
 	rootCmd.PersistentFlags().Bool("stats-worker-enabled", true, "Enable stats recalculation worker")
-	rootCmd.PersistentFlags().Int("stats-worker-interval", 60, "Stats recalculation interval in minutes")
+	rootCmd.PersistentFlags().Int("stats-worker-interval", 120, "Stats recalculation interval in minutes")
 	viper.BindPFlag("rpc.url", rootCmd.PersistentFlags().Lookup("rpc-url"))
 	viper.BindPFlag("rpc.blocks.blocksPerRequest", rootCmd.PersistentFlags().Lookup("rpc-blocks-blocksPerRequest"))
 	viper.BindPFlag("rpc.blocks.batchDelay", rootCmd.PersistentFlags().Lookup("rpc-blocks-batchDelay"))

@@ -130,9 +130,9 @@ type IMainStorage interface {
 	GetCount(ctx context.Context, table string, qf QueryFilter) (uint64, error)
 
 	/**
-	 * Gets dashboard stats (totalBlocks, totalTransactions, totalWallets) in a single call.
+	 * Gets dashboard stats (totalBlocks, totalTransactions, totalWallets, averageBlockTime) in a single call.
 	 */
-	GetDashboardStats(ctx context.Context, qf QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, err error)
+	GetDashboardStats(ctx context.Context, qf QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, averageBlockTime float64, err error)
 
 	/**
 	 * Gets pending transactions from MMN service.

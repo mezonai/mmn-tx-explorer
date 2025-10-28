@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/thirdweb-dev/indexer/internal/storage"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
 )
 
 // StatsRecalculationWorker handles periodic stats recalculation
@@ -22,7 +22,7 @@ type StatsRecalculationWorker struct {
 // NewStatsRecalculationWorker creates a new stats recalculation worker
 func NewStatsRecalculationWorker(mainStorage storage.IMainStorage, intervalMinutes int) *StatsRecalculationWorker {
 	if intervalMinutes <= 0 {
-		intervalMinutes = 60 // Default to 1 hour if invalid interval
+		intervalMinutes = 120 // Default to 2 hour if invalid interval
 	}
 	
 	return &StatsRecalculationWorker{
