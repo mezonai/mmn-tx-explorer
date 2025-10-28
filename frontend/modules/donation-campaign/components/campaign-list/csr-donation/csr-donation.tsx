@@ -1,51 +1,49 @@
-import { CreditCardRefresh, Cube01, Hourglass01 } from '@/assets/icons';
 import Link from 'next/link';
 import { StatCard } from '@/components/shared';
 import { ROUTES } from '@/configs/routes.config';
 import { Button } from '@/components/ui/button';
+import { useCampaignStats } from '@/modules/donation-campaign/hooks';
+import { NumberUtil } from '@/utils';
+import { PageHeader } from '@/components/shared';
 
 export const CSRDonation = () => {
+  const { stats } = useCampaignStats();
+
   const statCards = [
     {
-      icon: Cube01,
       title: 'Campaigns live',
-      value: 62000,
+      value: stats.total_campaigns_active,
     },
     {
-      icon: CreditCardRefresh,
       title: 'Total raised (MMN)',
-      value: 1000,
+      value: NumberUtil.formatWithCommasAndScale(stats.total_amount),
     },
     {
-      icon: Hourglass01,
       title: 'Contributors',
-      value: 8,
-      subValue: '(s)',
+      value: NumberUtil.formatWithCommas(stats.total_contributors),
     },
   ];
 
   return (
     <section className="">
       <div className="max-w-4xl">
-        <p className="text-primary text-xs font-semibold tracking-[0.3em] uppercase">CSR Donation</p>
-        <h1 className="mt-4 text-3xl font-semibold text-gray-900 sm:text-4xl dark:text-white">
-          Mezon Donation Campaigns
-        </h1>
-        <p className="mt-4 text-sm leading-6 text-gray-600 dark:text-gray-300">
-          Discover active CSR initiatives, monitor fundraising progress in real time, and help the Mezon team deliver
-          meaningful impact to local communities.
-        </p>
+        <PageHeader
+          title="CSR Donation"
+          header="Mezon Donation Campaigns"
+          description="Discover active CSR initiatives, monitor fundraising progress in real time, and help the Mezon team deliver
+          meaningful impact to local communities."
+        />
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <Button
             variant="link"
             size="lg"
-            className="bg-brand-primary shadow-primary/30 hover:bg-brand-primary/90 focus-visible:outline-primary dark:hover:bg-brand-primary/90 inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-white shadow-lg transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="bg-brand-primary shadow-primary/30 hover:bg-brand-primary/80 focus-visible:outline-primary dark:hover:bg-brand-primary/90 border-1px border-primary inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 dark:shadow-none"
           >
             <Link href={ROUTES.CREATE_CAMPAIGN}>+ Create campaign</Link>
           </Button>
           <Link
             href="#"
-            className="hover:border-primary hover:text-primary dark:hover:border-primary-light inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 transition dark:border-white/20 dark:text-gray-200 dark:hover:text-white"
+            className="hover:border-primary hover:text-primary dark:hover:border-primary-light inline-flex items-center justify-center rounded-lg border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 transition dark:border-white/20 dark:text-gray-200 dark:hover:text-white"
           >
             Contribution guide
           </Link>
@@ -54,11 +52,9 @@ export const CSRDonation = () => {
           {statCards.map((item) => (
             <StatCard
               key={item.title}
-              icon={item.icon}
               title={item.title}
               value={item.value}
-              subValue={item.subValue}
-              className="uppercase"
+              className="dark:border-primary/15 uppercase"
             />
           ))}
         </div>

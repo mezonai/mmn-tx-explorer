@@ -16,6 +16,8 @@ export interface DonationCampaign {
   end_date: string;
   created_at: string;
   updated_at: string;
+  total_amount: number;
+  total_contributors: number;
 }
 
 export interface CreateCampaignRequest {
@@ -51,17 +53,13 @@ export interface CampaignListParams {
   page?: number;
   limit?: number;
   status?: string;
-  category?: string;
-  sortBy?: 'newest' | 'oldest' | 'amount' | 'progress';
-  search?: string;
+  order?: 'asc' | 'desc';
 }
 
 export interface CampaignStats {
-  totalCampaigns: number;
-  activeCampaigns: number;
-  totalRaised: number;
-  totalContributors: number;
-  completedCampaigns: number;
+  total_campaigns_active: number;
+  total_amount: number;
+  total_contributors: number;
 }
 
 export interface CreateCampaignForm {
