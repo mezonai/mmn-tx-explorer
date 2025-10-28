@@ -139,7 +139,7 @@ type IMainStorage interface {
 	 */
 	GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error)
 
-    /**
+	/**
 	 * Optimized methods for pagination
 	 */
 	GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit, offset int, sortBy, sortOrder string) ([]common.Transaction, error)
@@ -147,9 +147,9 @@ type IMainStorage interface {
 	GetTotalTransactions(ctx context.Context) (uint64, error)
 
 	/**
-     * Recalculates and updates all statistics in the stats table
-     */
-    RecalculateStats(ctx context.Context) error
+	 * Recalculates and updates all statistics in the stats table
+	 */
+	RecalculateStats(ctx context.Context) error
 }
 
 func NewStorageConnector(cfg *config.StorageConfig) (IStorage, error) {
@@ -194,4 +194,20 @@ func NewConnector[T any](cfg *config.StorageConnectionConfig) (T, error) {
 	}
 
 	return typedConn, nil
+}
+
+func GetMainStorage() (IMainStorage, error) {
+	var err error
+	var mainStorage IMainStorage
+
+	if config.Cfg.Storage.Main.Postgres != nil {
+		mainStorage, err = NewPostgresConnector(config.Cfg.Storage.Main.Postgres)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, fmt.Errorf("no main storage driver configured")
+	}
+
+	return mainStorage, nil
 }

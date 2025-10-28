@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os/signal"
 	"syscall"
@@ -23,6 +22,7 @@ import (
 	// Import the generated Swagger docs
 	_ "github.com/mezonai/mmn-tx-explorer/indexer/docs"
 	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
+	_ "github.com/mezonai/mmn-tx-explorer/indexer/docs"
 )
 
 var (
@@ -36,7 +36,7 @@ var (
 	}
 )
 
-// @title Thirdweb Insight
+// @title Mezon Dong
 // @version v0.0.1-beta
 // @description API for querying blockchain transactions and events
 // @license.name Apache 2.0
@@ -44,29 +44,12 @@ var (
 // @BasePath /
 // @Security BasicAuth
 // @securityDefinitions.basic BasicAuth
-// getMainStorage returns the main storage connector
-func getMainStorage() (storage.IMainStorage, error) {
-	var err error
-	var mainStorage storage.IMainStorage
-	
-	if config.Cfg.Storage.Main.Postgres != nil {
-		mainStorage, err = storage.NewPostgresConnector(config.Cfg.Storage.Main.Postgres)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		return nil, fmt.Errorf("no main storage driver configured")
-	}
-	
-	return mainStorage, nil
-}
-
 func RunApi(cmd *cobra.Command, args []string) {
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	mainStorage, err := getMainStorage()
+    mainStorage, err := storage.GetMainStorage()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to create storage connector")
 	}
@@ -122,7 +105,6 @@ func RunApi(cmd *cobra.Command, args []string) {
 		// search
 		root.GET("/search/:input", handlers.Search)
 	}
-
 
 	r.GET("/health", handlers.Health)
 
