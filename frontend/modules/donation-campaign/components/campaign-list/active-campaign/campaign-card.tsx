@@ -55,6 +55,16 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
     }
   }, [status, updated_at]);
 
+  const buttonLabel = useMemo(() => {
+    switch (status) {
+      case ECampaignStatus.Draft:
+        return 'Review and publish';
+      case ECampaignStatus.Closed:
+        return 'View Impact Report';
+      default:
+        return 'View details';
+    }
+  }, [status]);
   return (
     <article className="group hover:border-primary/60 dark:bg-card flex h-full flex-col rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10">
       <div className="flex items-center justify-between gap-4">
@@ -97,15 +107,7 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
           className="bg-primary/10 text-primary dark:hover:bg-brand-primary dark:bg-brand-primary/10 dark:border-brand-primary dark:text-primary-light inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition hover:text-white dark:border dark:hover:text-white"
           asChild
         >
-          <Link href={ROUTES.CAMPAIGN(id)}>
-            {status === ECampaignStatus.Draft
-              ? 'Review and publish'
-              : status === ECampaignStatus.Active
-                ? 'View details'
-                : status === ECampaignStatus.Closed
-                  ? 'View Impact Report'
-                  : 'View details'}
-          </Link>
+          <Link href={ROUTES.CAMPAIGN(id)}>{buttonLabel}</Link>
         </Button>
       </div>
     </article>

@@ -30,10 +30,11 @@ export const ActiveCampaign = () => {
     }
   }, [error]);
 
-  const statusEnumValues = Object.values(ECampaignStatus).filter((v): v is ECampaignStatus => typeof v === 'number');
   const statusOptions = [
     { value: 'all', label: 'All statuses' },
-    ...statusEnumValues.map((status) => ({ value: status, label: getCampaignStatusLabel(status) })),
+    { value: ECampaignStatus.Active, label: getCampaignStatusLabel(ECampaignStatus.Active) },
+    { value: ECampaignStatus.Draft, label: getCampaignStatusLabel(ECampaignStatus.Draft) },
+    { value: ECampaignStatus.Closed, label: getCampaignStatusLabel(ECampaignStatus.Closed) },
   ];
 
   const selectedLabel = selectedStatus === 'all' ? 'All statuses' : getCampaignStatusLabel(selectedStatus);
