@@ -1,7 +1,6 @@
 import { TransferInput, TransferResult } from '../types';
 import { useState } from 'react';
 import { mmnClient } from '@/modules/auth/utils';
-import { ETransferType } from 'mmn-client-js';
 import { useUser, useKeypair, useZkProof } from '@/providers';
 
 export const useTransfer = () => {
@@ -15,7 +14,7 @@ export const useTransfer = () => {
   const transfer = async (input: TransferInput) => {
     setLoading(true);
     try {
-      const userId = user?.id || (user as any)?.id || '';
+      const userId = user?.id || '';
       const userName = user?.username || '';
 
       if (!userId) {
@@ -56,7 +55,7 @@ export const useTransfer = () => {
         extraInfo: {
           UserSenderId: userId,
           UserSenderUsername: userName,
-          type: ETransferType.GiveCoffee,
+          type: "dong_give_coffee",
         },
       });
 

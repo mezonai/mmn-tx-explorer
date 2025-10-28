@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Transfer } from '@/modules/transfer/components';
-import { RequireAuth } from '@/modules/auth/components/requireAuth';
+import { ProtectedRoute } from '@/modules/auth/components/ProtectedRoute';
 
 export const metadata: Metadata = {
   title: 'Give Coffee',
@@ -8,8 +8,8 @@ export const metadata: Metadata = {
 
 export default function TransferPage() {
   return (
-    <RequireAuth title={String(metadata.title) || 'Give Coffee'}>
+    <ProtectedRoute title={String(metadata.title) || 'Give Coffee'}>
       <Transfer />
-    </RequireAuth>
+    </ProtectedRoute>
   );
 }

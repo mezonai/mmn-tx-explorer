@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils';
 interface PageHeaderProps {
   title: string;
   header?: string;
@@ -7,7 +8,7 @@ interface PageHeaderProps {
 
 export const PageHeader = ({ title, header, className = '', description = '' }: PageHeaderProps) => {
   return (
-    <div className={`space-y-2 ${className}`}>
+    <div className={cn('space-y-2', className)}>
       <h6 className="text-primary text-xs font-semibold tracking-[0.3em] uppercase">{title}</h6>
 
       {header && <h1 className="text-primary mt-3 text-4xl font-bold dark:text-white">{header}</h1>}

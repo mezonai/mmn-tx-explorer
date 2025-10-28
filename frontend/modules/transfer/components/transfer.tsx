@@ -4,7 +4,7 @@ import { mmnClient } from '@/modules/auth/utils';
 import { NumberUtil } from '@/utils';
 import { useTransfer } from '../hooks/useTransfer';
 import { toast } from 'sonner';
-import { InputForm } from '@/components/ui/input-form';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/shared/page-header';
 import { APP_CONFIG } from '@/configs/app.config';
@@ -27,7 +27,7 @@ export const Transfer = () => {
   const [senderBalance, setSenderBalance] = useState<string>('0');
 
   const ScaleDownBalance = NumberUtil.formatWithCommasAndScale(senderBalance);
-  const userId = useMemo(() => user?.id || (user as any)?.id || '', [user]);
+  const userId = useMemo(() => user?.id || '', [user]);
 
   const refreshBalance = useCallback(async () => {
     if (!userId) return;
@@ -121,7 +121,7 @@ export const Transfer = () => {
             </p>
             <div className="mt-6 flex-1 space-y-5 text-sm text-gray-200">
               <div>
-                <InputForm
+                <Input
                   placeholder="Recipent's Address"
                   label="Recipient"
                   className="mt-2"
@@ -131,7 +131,7 @@ export const Transfer = () => {
                 />
               </div>
               <div>
-                <InputForm
+                <Input
                   label="Amount"
                   className="mt-2"
                   type="text"
@@ -148,7 +148,7 @@ export const Transfer = () => {
               </div>
 
               <div>
-                <InputForm
+                <Input
                   placeholder="Leave a note..."
                   label="Message (optional)"
                   className="mt-2 h-[5rem]"
@@ -180,13 +180,13 @@ export const Transfer = () => {
             </p>
             <div className="mt-6 flex-1 space-y-5 text-sm text-gray-200">
               <div>
-                <InputForm placeholder="bob.mez or bob@email.com" label="Receiver wallet / email" className="mt-2" />
+                <Input placeholder="bob.mez or bob@email.com" label="Receiver wallet / email" className="mt-2" />
               </div>
               <div>
-                <InputForm placeholder="Card ending ••42" label="Payment method" className="mt-2" />
+                <Input placeholder="Card ending ••42" label="Payment method" className="mt-2" />
               </div>
               <div>
-                <InputForm
+                <Input
                   placeholder="Add a note for the recipient"
                   label="Message (optional)"
                   className="mt-2 h-[5rem]"

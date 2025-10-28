@@ -1,31 +1,29 @@
 'use client';
 import { ReactNode, useEffect, useState } from 'react';
 import { useAuthActions, useUser } from '@/providers/AppProvider';
-import { STORAGE_KEYS } from '@/constant';
 import { PageHeader } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 
-interface RequireAuthProps {
+interface ProtectedRouteProps {
   title?: string;
   header?: string;
   description?: string;
   children: ReactNode;
 }
 
-export const RequireAuth = ({
+export const ProtectedRoute = ({
   title = 'Protected Page',
   header = 'Login Required',
   description = 'You must be logged in to access this page.',
   children,
-}: RequireAuthProps) => {
+}: ProtectedRouteProps) => {
   const { login } = useAuthActions();
   const { user } = useUser();
   const [isLoading, setIsLoading] = useState(true);
   const [hasUser, setHasUser] = useState(false);
 
   useEffect(() => {
-    const userStored = localStorage.getItem(STORAGE_KEYS.USER_INFO);
-    setHasUser(!!userStored || !!user);
+    setHasUser(!!user);
     setIsLoading(false);
   }, [user]);
 

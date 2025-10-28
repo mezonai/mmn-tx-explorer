@@ -22,12 +22,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           <AppFooter />
         </div>
       </SidebarInset>
-      <Toaster
-        toastOptions={{
-          unstyled: true,
-          className:'bg-white text-primary border font-semibold border-primary/80 w-full p-3 rounded-md flex gap-3 shadow-md',
-        }}
-      />
+      <Toaster richColors />
     </SidebarProvider>
   );
 }
