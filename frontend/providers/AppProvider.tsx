@@ -16,7 +16,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { IZkProof, IEphemeralKeyPair } from 'mmn-client-js';
-import { safeJsonParse } from '@/utils';
+import { safeJsonParse, clearAuthStorage } from '@/utils';
 
 interface AppContextType {
   isAuthenticated: boolean;
@@ -69,17 +69,14 @@ export function AppProvider({ children }: AppProviderProps) {
     }
     const userStored = localStorage.getItem(STORAGE_KEYS.USER_INFO);
     if (userStored) {
-      const u = safeJsonParse(userStored) as User;
+      const u = safeJsonParse(userStored);
       setUser(u);
       setIsAuthenticated(true);
-      try {
-        const zkStr = localStorage.getItem(STORAGE_KEYS.ZK_PROOF);
-        if (zkStr) setZkProof(safeJsonParse(zkStr));
-      } catch {}
-      try {
-        const kpStr = localStorage.getItem(STORAGE_KEYS.KEY_PAIR);
-        if (kpStr) setKeypair(safeJsonParse(kpStr));
-      } catch {}
+      const zkStr = localStorage.getItem(STORAGE_KEYS.ZK_PROOF);
+      if (zkStr) setZkProof(safeJsonParse(zkStr));
+
+      const kpStr = localStorage.getItem(STORAGE_KEYS.KEY_PAIR);
+      if (kpStr) setKeypair(safeJsonParse(kpStr));
       return;
     }
     const code = searchParams.get('code');
@@ -94,7 +91,7 @@ export function AppProvider({ children }: AppProviderProps) {
         handleTokenStorage(userInfo);
         const keypair = generateAndStoreKeyPair();
         setKeypair(keypair);
-        const senderAddress = mmnClient.getAddressFromUserId(userInfo.user.user_id || userInfo.user.sub);
+        const senderAddress = mmnClient.getAddressFromUserId(userInfo.user.user_id);
         const userObject = processAndStoreUser(userInfo.user, senderAddress);
         setUser(userObject);
 
@@ -109,6 +106,7 @@ export function AppProvider({ children }: AppProviderProps) {
         }
       } catch {
         toast.error('Login failed!');
+        clearAuthStorage();
         router.push('/');
       }
     };
@@ -169,7 +167,7 @@ export function useAuthActions() {
   const logout = () => {
     const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
     axios.post(AUTHENTICATION_ENDPOINT.LOGOUT, { refresh_token: refreshToken });
-    localStorage.clear();
+    clearAuthStorage();
     setUser(null);
     setZkProof(null);
     setKeypair(null);

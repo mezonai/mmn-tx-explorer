@@ -5,6 +5,7 @@ import { NumberUtil } from '@/utils';
 import { useTransfer } from '../hooks/useTransfer';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/text-area';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/shared/page-header';
 import { APP_CONFIG } from '@/configs/app.config';
@@ -42,22 +43,23 @@ export const Transfer = () => {
     refreshBalance();
   }, [refreshBalance]);
 
-  const handleInputChange = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  const handleInputChange =
+    (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const value = e.target.value;
 
-    if (field === 'amount') {
-      const numeric = value.replace(/[^0-9.]/g, '');
-      const parts = numeric.split('.');
-      const cleanNumeric = parts[0] + (parts.length > 1 ? '.' + parts[1] : '');
+      if (field === 'amount') {
+        const numeric = value.replace(/[^0-9.]/g, '');
+        const parts = numeric.split('.');
+        const cleanNumeric = parts[0] + (parts.length > 1 ? '.' + parts[1] : '');
 
-      setForm((prev) => ({
-        ...prev,
-        amount: cleanNumeric,
-      }));
-    } else {
-      setForm((prev) => ({ ...prev, [field]: value }));
-    }
-  };
+        setForm((prev) => ({
+          ...prev,
+          amount: cleanNumeric,
+        }));
+      } else {
+        setForm((prev) => ({ ...prev, [field]: value }));
+      }
+    };
 
   const resetForm = () => setForm({ address: '', note: '', amount: '' });
 
@@ -73,6 +75,8 @@ export const Transfer = () => {
       if (result.success) {
         toast.success('Transfer successful!');
         resetForm();
+
+        //Check timeout
         setTimeout(() => {
           refreshBalance();
         }, 1000);
@@ -143,11 +147,10 @@ export const Transfer = () => {
               </div>
 
               <div>
-                <Input
+                <Textarea
                   placeholder="Leave a note..."
                   label="Message (optional)"
-                  className="mt-2 h-[5rem]"
-                  type="text"
+                  className="bg-background mt-2"
                   value={form.note}
                   onChange={handleInputChange('note')}
                 />
@@ -162,7 +165,7 @@ export const Transfer = () => {
                   !mmnClient.validateAmount(senderBalance, mmnClient.scaleAmountToDecimals(form.amount))
                 }
                 type="submit"
-                className="bg-primary shadow-primary/30 hover:bg-primary-light w-full rounded-xl py-3 text-sm font-semibold text-white shadow-lg transition"
+                className="bg-primary shadow-primary/30 hover:bg-primary-light dark:text-background w-full rounded-xl py-3 text-sm font-semibold text-white shadow-lg transition"
               >
                 {loading ? 'Sending...' : 'Give Coffee'}
               </Button>
