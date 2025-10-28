@@ -37,12 +37,6 @@ func InitDatabase(cfg *config.DatabaseConfig) error {
 		return fmt.Errorf("failed to create schema: %w", err)
 	}
 
-	_, err = DB.Exec(fmt.Sprintf(`SET search_path TO %s`, schema))
-	if err != nil {
-		logger.Error().Err(err).Str("schema", schema).Msg("Failed to set schema")
-		return fmt.Errorf("failed to set schema: %w", err)
-	}
-
 	// Test connection
 	if err := DB.Ping(); err != nil {
 		logger.Error().Err(err).Msg("Failed to ping database")
