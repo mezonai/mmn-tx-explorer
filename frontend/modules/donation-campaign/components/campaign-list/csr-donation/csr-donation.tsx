@@ -1,26 +1,24 @@
-import { CreditCardRefresh, Cube01, Hourglass01 } from '@/assets/icons';
 import Link from 'next/link';
 import { StatCard } from '@/components/shared';
 import { ROUTES } from '@/configs/routes.config';
 import { Button } from '@/components/ui/button';
+import { useCampaignStats } from '@/modules/donation-campaign/hooks';
 
 export const CSRDonation = () => {
+  const { stats} = useCampaignStats();
+
   const statCards = [
     {
-      icon: Cube01,
       title: 'Campaigns live',
-      value: 62000,
+      value: stats.total_campaigns_active,
     },
     {
-      icon: CreditCardRefresh,
       title: 'Total raised (MMN)',
-      value: 1000,
+      value: stats.total_amount,
     },
     {
-      icon: Hourglass01,
       title: 'Contributors',
-      value: 8,
-      subValue: '(s)',
+      value: stats.total_contributors,
     },
   ];
 
@@ -39,13 +37,13 @@ export const CSRDonation = () => {
           <Button
             variant="link"
             size="lg"
-            className="bg-brand-primary shadow-primary/30 hover:bg-brand-primary/90 focus-visible:outline-primary dark:hover:bg-brand-primary/90 inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-white shadow-lg transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="bg-brand-primary shadow-primary/30 hover:bg-brand-primary/80 focus-visible:outline-primary dark:hover:bg-brand-primary/90 inline-flex items-center justify-center rounded-lg px-5 py-3 border-1px border-primary text-sm font-semibold text-white shadow-lg transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 hover:no-underline"
           >
             <Link href={ROUTES.CREATE_CAMPAIGN}>+ Create campaign</Link>
           </Button>
           <Link
             href="#"
-            className="hover:border-primary hover:text-primary dark:hover:border-primary-light inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 transition dark:border-white/20 dark:text-gray-200 dark:hover:text-white"
+            className="hover:border-primary hover:text-primary dark:hover:border-primary-light inline-flex items-center justify-center rounded-lg border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 transition dark:border-white/20 dark:text-gray-200 dark:hover:text-white"
           >
             Contribution guide
           </Link>
@@ -54,10 +52,8 @@ export const CSRDonation = () => {
           {statCards.map((item) => (
             <StatCard
               key={item.title}
-              icon={item.icon}
               title={item.title}
               value={item.value}
-              subValue={item.subValue}
               className="uppercase"
             />
           ))}

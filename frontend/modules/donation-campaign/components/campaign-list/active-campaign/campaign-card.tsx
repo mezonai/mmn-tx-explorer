@@ -14,9 +14,21 @@ interface CampaignCardProps {
 }
 
 export const CampaignCard = ({ campaign }: CampaignCardProps) => {
-  const { id, name, description, goal, url, wallet, end_date, creator, status, created_at, updated_at } = campaign;
-  const currentAmount = 620; // Placeholder for current amount raised
-  const contributors = 100; // Placeholder for number of contributors
+  const { id, name, description, goal, end_date, status, updated_at, total_amount, total_contributors } = campaign;
+
+  // Safeguards for potentially undefined/NaN values
+  const safeGoal = useMemo(() => {
+    const g = Number(goal);
+    return Number.isFinite(g) && g > 0 ? g : 0;
+  }, [goal]);
+  const safeAmount = useMemo(() => {
+    const a = Number(total_amount);
+    return Number.isFinite(a) && a >= 0 ? a : 0;
+  }, [total_amount]);
+  const safeContributors = useMemo(() => {
+    const c = Number(total_contributors);
+    return Number.isFinite(c) && c >= 0 ? c : 0;
+  }, [total_contributors]);
 
   const capitalizedStatus = useMemo(() => {
     if (status === CampaignStatus.Active) return 'Active';
@@ -39,14 +51,20 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
     if (status === CampaignStatus.Draft) {
       return 'Not launched';
     }
-    return `${Math.min(Math.floor((currentAmount / goal) * 100), 100)} % funded`;
-  }, [status, currentAmount]);
+    return `${Math.min(Math.floor((safeAmount / (safeGoal || 1)) * 100), 100)} % funded`;
+  }, [status, safeAmount, safeGoal]);
+
+  const progressPercent = useMemo(() => {
+    if (status === CampaignStatus.Draft) return 0;
+    if (safeGoal <= 0) return 0;
+    return Math.min(Math.max(Math.floor((safeAmount / safeGoal) * 100), 0), 100);
+  }, [status, safeAmount, safeGoal]);
 
   const contributorsNumber = useMemo(() => {
     if (status === CampaignStatus.Draft) {
       return 'Pending launch';
     }
-    return `${contributors} contributors`;
+    return `${safeContributors} contributors`;
   }, [status]);
 
   const lastTime = useMemo(() => {
@@ -73,13 +91,21 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
       <div className="mt-6">
         <div className="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
           <span>
-            {NumberUtil.formatWithCommas(currentAmount ?? 0)} / {NumberUtil.formatWithCommas(goal ?? 0)}{' '}
-            {TEXT_CONSTANT.CURRENCY}
+            {NumberUtil.formatWithCommas(safeAmount)} / {NumberUtil.formatWithCommas(safeGoal)} {TEXT_CONSTANT.CURRENCY}
           </span>
           <span>{progress}</span>
         </div>
-        <div className="mt-2 h-2 rounded-full bg-gray-100 dark:bg-white/5">
-          <div className="from-primary to-primary-light h-full w-[62%] rounded-full bg-gradient-to-r"></div>
+        <div
+          className="mt-2 h-2 rounded-full bg-gray-100 dark:bg-white/5"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={progressPercent}
+        >
+          <div
+            className="from-primary to-primary-light h-full rounded-full bg-gradient-to-r transition-[width] duration-500 ease-out"
+            style={{ width: `${progressPercent}%` }}
+          />
         </div>
       </div>
       <div className="mt-6 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
