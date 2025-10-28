@@ -1,5 +1,5 @@
 import { TEXT_CONSTANT } from '@/constant';
-import { NumberUtil } from '@/utils';
+import { NumberUtil, DateTimeUtil } from '@/utils';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { CampaignStatus, DonationCampaign } from '../../../type';
@@ -15,21 +15,6 @@ interface CampaignCardProps {
 
 export const CampaignCard = ({ campaign }: CampaignCardProps) => {
   const { id, name, description, goal, end_date, status, updated_at, total_amount, total_contributors } = campaign;
-
-  // Safeguards for potentially undefined/NaN values
-  const safeGoal = useMemo(() => {
-    const g = Number(goal);
-    return Number.isFinite(g) && g > 0 ? g : 0;
-  }, [goal]);
-  const safeAmount = useMemo(() => {
-    const a = Number(total_amount);
-    return Number.isFinite(a) && a >= 0 ? a : 0;
-  }, [total_amount]);
-  const safeContributors = useMemo(() => {
-    const c = Number(total_contributors);
-    return Number.isFinite(c) && c >= 0 ? c : 0;
-  }, [total_contributors]);
-
   const capitalizedStatus = useMemo(() => {
     if (status === CampaignStatus.Active) return 'Active';
     if (status === CampaignStatus.Draft) return 'Draft';
@@ -51,20 +36,20 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
     if (status === CampaignStatus.Draft) {
       return 'Not launched';
     }
-    return `${Math.min(Math.floor((safeAmount / (safeGoal || 1)) * 100), 100)} % funded`;
-  }, [status, safeAmount, safeGoal]);
+    return `${Math.min(Math.floor((total_amount / (goal || 1)) * 100), 100)} % funded`;
+  }, [status, total_amount, goal]);
 
   const progressPercent = useMemo(() => {
     if (status === CampaignStatus.Draft) return 0;
-    if (safeGoal <= 0) return 0;
-    return Math.min(Math.max(Math.floor((safeAmount / safeGoal) * 100), 0), 100);
-  }, [status, safeAmount, safeGoal]);
+    if (goal <= 0) return 0;
+    return Math.min(Math.max(Math.floor((total_amount / goal) * 100), 0), 100);
+  }, [status, total_amount, goal]);
 
   const contributorsNumber = useMemo(() => {
     if (status === CampaignStatus.Draft) {
       return 'Pending launch';
     }
-    return `${safeContributors} contributors`;
+    return `${total_contributors} contributors`;
   }, [status]);
 
   const lastTime = useMemo(() => {
@@ -75,7 +60,7 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
     if (status === CampaignStatus.Closed) {
       return `Ended ${formatDistanceToNow(new Date(updated_at), { addSuffix: true })}`;
     }
-    return `Last gift ${formatDistanceToNow(new Date(updated_at), { addSuffix: true })}`;
+    return `Last gift ${DateTimeUtil.formatRelativeTime(new Date(updated_at))}`;
   }, [status, updated_at]);
 
   return (
@@ -91,7 +76,8 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
       <div className="mt-6">
         <div className="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
           <span>
-            {NumberUtil.formatWithCommas(safeAmount)} / {NumberUtil.formatWithCommas(safeGoal)} {TEXT_CONSTANT.CURRENCY}
+            {NumberUtil.formatWithCommasAndScale(total_amount)} / {NumberUtil.formatWithCommasAndScale(goal)}{' '}
+            {TEXT_CONSTANT.CURRENCY}
           </span>
           <span>{progress}</span>
         </div>

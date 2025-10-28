@@ -13,9 +13,7 @@ export interface DonationCampaign {
   wallet: string;
   creator: string;
   status: CampaignStatus;
-  // startDate: string;
   end_date: string;
-  // createdBy: string;
   created_at: string;
   updated_at: string;
   total_amount: number;
@@ -61,9 +59,7 @@ export interface CampaignListParams {
 }
 
 export interface CampaignStats {
-  // totalCampaigns: number;
   total_campaigns_active: number;
   total_amount: number;
   total_contributors: number;
-  // completedCampaigns: number;
 }

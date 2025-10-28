@@ -3,9 +3,10 @@ import { StatCard } from '@/components/shared';
 import { ROUTES } from '@/configs/routes.config';
 import { Button } from '@/components/ui/button';
 import { useCampaignStats } from '@/modules/donation-campaign/hooks';
+import { NumberUtil } from '@/utils';
 
 export const CSRDonation = () => {
-  const { stats} = useCampaignStats();
+  const { stats } = useCampaignStats();
 
   const statCards = [
     {
@@ -14,7 +15,7 @@ export const CSRDonation = () => {
     },
     {
       title: 'Total raised (MMN)',
-      value: stats.total_amount,
+      value: NumberUtil.scaleDown(stats.total_amount),
     },
     {
       title: 'Contributors',
@@ -37,7 +38,7 @@ export const CSRDonation = () => {
           <Button
             variant="link"
             size="lg"
-            className="bg-brand-primary shadow-primary/30 hover:bg-brand-primary/80 focus-visible:outline-primary dark:hover:bg-brand-primary/90 inline-flex items-center justify-center rounded-lg px-5 py-3 border-1px border-primary text-sm font-semibold text-white shadow-lg transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 hover:no-underline"
+            className="bg-brand-primary shadow-primary/30 hover:bg-brand-primary/80 focus-visible:outline-primary dark:hover:bg-brand-primary/90 border-1px border-primary inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
           >
             <Link href={ROUTES.CREATE_CAMPAIGN}>+ Create campaign</Link>
           </Button>
@@ -50,12 +51,7 @@ export const CSRDonation = () => {
         </div>
         <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3">
           {statCards.map((item) => (
-            <StatCard
-              key={item.title}
-              title={item.title}
-              value={item.value}
-              className="uppercase"
-            />
+            <StatCard key={item.title} title={item.title} value={item.value} className="uppercase" />
           ))}
         </div>
       </div>
