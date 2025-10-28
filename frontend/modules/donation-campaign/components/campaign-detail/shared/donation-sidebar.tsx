@@ -7,8 +7,6 @@ import { DonateDialog } from './donate-dialog';
 import { truncateWalletAddress } from '@/modules/donation-campaign/utils';
 import Link from 'next/link';
 
-// Helper function to truncate wallet address
-
 export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
   const { isAuthenticated } = useAuth();
 

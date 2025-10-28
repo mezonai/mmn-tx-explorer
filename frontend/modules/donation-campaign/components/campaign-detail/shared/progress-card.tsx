@@ -23,7 +23,9 @@ export function ProgressCard({ raised, goal }: { raised: number; goal: number })
       </CardContent>
 
       <CardFooter className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-        <span>Goal {NumberUtil.formatWithCommas(goal)} MMN</span>
+        <span>
+          Goal {NumberUtil.formatWithCommas(goal)} {APP_CONFIG.CHAIN_SYMBOL}
+        </span>
         <span>{progress.toFixed(1)}% funded</span>
       </CardFooter>
     </Card>

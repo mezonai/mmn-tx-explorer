@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { DatePicker } from '@/components/ui/datepicker';
 import { useCreateCampaignContext } from '@/modules/donation-campaign/context';
+import { NumberUtil } from '@/utils';
 
 export function GoalsAndTiming() {
   const { form, updateField } = useCreateCampaignContext();
@@ -40,8 +41,11 @@ export function GoalsAndTiming() {
             <label className="text-foreground mb-2 block text-sm font-medium">Fundraising goal (MMN)</label>
             <Input
               placeholder="e.g. 20000"
-              value={form.fundraisingGoal || ''}
-              onChange={(e) => handleInputChange('fundraisingGoal', e.target.value ? Number(e.target.value) : null)}
+              value={form.fundraisingGoal ? NumberUtil.formatWithCommas(form.fundraisingGoal) : ''}
+              onChange={(e) => {
+                const rawValue = e.target.value.replace(/[^\d]/g, '');
+                handleInputChange('fundraisingGoal', rawValue ? rawValue : '');
+              }}
             />
           </div>
           <div>

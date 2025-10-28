@@ -1,5 +1,6 @@
 import { Users, Clock, ShieldCheck } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'; // Giả sử đường dẫn này là chính xác
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatDistanceToNow } from 'date-fns';
 
 export function InsightsCard({
   contributors,
@@ -7,7 +8,7 @@ export function InsightsCard({
   owner,
 }: {
   contributors: number;
-  daysRemaining?: number | string;
+  daysRemaining: number | string;
   owner: string;
 }) {
   return (
@@ -31,7 +32,9 @@ export function InsightsCard({
               <Clock className="text-primary h-4 w-4" />
               <span>Time remaining</span>
             </dt>
-            <dd className="font-semibold text-gray-900 dark:text-white">{daysRemaining} days</dd>
+            <dd className="font-semibold text-gray-900 dark:text-white">
+              {formatDistanceToNow(new Date(daysRemaining))}
+            </dd>
           </div>
           <div className="flex items-center justify-between gap-4">
             <dt className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
@@ -40,7 +43,6 @@ export function InsightsCard({
             </dt>
             <dd className="font-semibold text-gray-900 dark:text-white">
               <span>{owner}</span>
-              {/* {owner.verified && <span className="text-primary dark:text-primary-light ml-1 text-xs">✔</span>} */}
             </dd>
           </div>
         </dl>

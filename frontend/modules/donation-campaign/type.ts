@@ -90,3 +90,30 @@ export interface CampaignPreview {
   daysRemaining: string;
   status: ECampaignStatus;
 }
+export interface Transaction {
+  chain_id: string;
+  hash: string;
+  nonce: number;
+  block_hash: string;
+  block_number: number;
+  from_address: string;
+  to_address: string;
+  value: string;
+  transaction_type: number;
+  status: number;
+  transaction_timestamp: number;
+}
+export interface TopContributor {
+  sender_wallet: string;
+  total_donate: number;
+  percentage: number;
+}
+
+export interface TopContributorsResponse {
+  code: number;
+  message: string;
+  data: {
+    campaign_id: number;
+    contributors: TopContributor[];
+  };
+}

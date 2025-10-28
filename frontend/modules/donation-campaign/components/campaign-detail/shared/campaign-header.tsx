@@ -4,7 +4,7 @@ import { InsightsCard } from './insights-card';
 import { ECampaignStatus, DonationCampaign } from '@/modules/donation-campaign/type';
 import { useMemo } from 'react';
 import { Chip } from '@/components/shared';
-import { getCampaignStatusVariant, getDaysRemaining } from '@/modules/donation-campaign/utils';
+import { getCampaignStatusVariant } from '@/modules/donation-campaign/utils';
 
 export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
   const status = campaign.status;
@@ -14,7 +14,6 @@ export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
     if (status === ECampaignStatus.Closed) return 'Closed';
     return 'Unknown';
   }, [status]);
-  const daysRemaining = getDaysRemaining(campaign.created_at);
 
   return (
     <div className="space-y-4">
@@ -29,7 +28,7 @@ export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
         <ProgressCard raised={campaign.total_amount} goal={campaign.goal} />
         <InsightsCard
           contributors={campaign.total_contributors}
-          daysRemaining={daysRemaining}
+          daysRemaining={campaign.end_date}
           owner={campaign.creator}
         />
       </div>

@@ -2,10 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
-
 import { mmnClient } from '@/modules/auth/utils';
-
-// Import các component UI
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger, DialogHeader } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -14,7 +11,6 @@ import { useTransfer } from '@/modules/transfer/hooks/useTransfer';
 import { NumberUtil } from '@/utils';
 import { APP_CONFIG } from '@/configs/app.config';
 import { CopyButton } from '@/components/ui/copy-button';
-import { truncateWalletAddress } from '@/modules/donation-campaign/utils';
 
 export function DonateDialog({ walletAddress }: { walletAddress: string }) {
   const { transfer, loading, user } = useTransfer();
@@ -126,7 +122,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
 
           <div className="flex justify-end text-sm text-gray-500">
             <span>
-              Số dư: {NumberUtil.formatWithCommasAndScale(senderBalance)} {APP_CONFIG.CHAIN_SYMBOL}
+              Balance: {NumberUtil.formatWithCommasAndScale(senderBalance)} {APP_CONFIG.CHAIN_SYMBOL}
             </span>
           </div>
           {transactionHash && (
