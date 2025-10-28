@@ -9,3 +9,4 @@ export * from './error-boundary';
 export * from './error-screen';
 export * from './item-attribute';
 export * from './theme-toggle';
+export * from './page-header';
