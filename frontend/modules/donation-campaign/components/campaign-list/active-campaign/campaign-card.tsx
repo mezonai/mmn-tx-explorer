@@ -1,5 +1,5 @@
 import { TEXT_CONSTANT } from '@/constant';
-import { NumberUtil, DateTimeUtil } from '@/utils';
+import { NumberUtil } from '@/utils';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { ECampaignStatus, DonationCampaign } from '../../../type';
@@ -7,7 +7,7 @@ import { Chip } from '@/components/shared';
 import { getCampaignStatusLabel, getCampaignStatusVariant } from '../../../utils';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/configs/routes.config';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, formatDistance } from 'date-fns';
 
 interface CampaignCardProps {
   campaign: DonationCampaign;
@@ -15,13 +15,6 @@ interface CampaignCardProps {
 
 export const CampaignCard = ({ campaign }: CampaignCardProps) => {
   const { id, name, description, goal, end_date, status, updated_at, total_amount, total_contributors } = campaign;
-  const selectedStatus = useMemo(() => {
-    if (status === ECampaignStatus.Active) return 'Active';
-    if (status === ECampaignStatus.Draft) return 'Draft';
-    if (status === ECampaignStatus.Closed) return 'Closed';
-    return 'Unknown';
-  }, [status]);
-
   const daysLeft = useMemo(() => {
     if (status === ECampaignStatus.Draft) {
       return 'Draft';
@@ -29,14 +22,14 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
     if (status === ECampaignStatus.Closed) {
       return 'Goal achieved';
     }
-    return `${formatDistanceToNow(new Date(updated_at), { addSuffix: true })} days left`;
+    return `${formatDistance(new Date(end_date), new Date(), { addSuffix: true })}`;
   }, [status, end_date]);
 
   const progress = useMemo(() => {
     if (status === ECampaignStatus.Draft) {
       return 'Not launched';
     }
-    return `${Math.min(Math.floor((Number(NumberUtil.scaleDown(total_amount)) / goal) * 100), 100)} % funded`;
+    return `${Math.floor((Number(NumberUtil.scaleDown(total_amount)) / goal) * 100)} % funded`;
   }, [status, total_amount, goal]);
 
   const progressPercent = useMemo(() => {

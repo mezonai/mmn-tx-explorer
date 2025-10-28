@@ -8,34 +8,35 @@ import { ROUTES } from '@/configs/routes.config';
 import { useCampaigns } from '../../../hooks/useCampaigns';
 import { ECampaignStatus } from '../../../type';
 import { toast } from 'sonner';
-import { ArrowDown } from 'lucide-react';
-import { PAGINATION } from '@/constant';
+import { ArrowDown, ChevronDownIcon } from 'lucide-react';
+import { usePaginationQueryParam } from '@/hooks';
+import { getCampaignStatusLabel } from '@/modules/donation-campaign/utils';
 
 export const ActiveCampaign = () => {
   const [selectedStatus, setSelectedStatus] = useState<ECampaignStatus | 'all'>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest');
-  const [page, setPage] = useState<number>(PAGINATION.DEFAULT_PAGE);
-  const [limit, setLimit] = useState<number>(PAGINATION.DEFAULT_LIMIT);
+  const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  useEffect(() => {
-    setPage(PAGINATION.DEFAULT_PAGE);
-  }, [selectedStatus, sortBy]);
   const { campaigns, meta, isLoading, error } = useCampaigns({
     page,
     limit,
     ...(selectedStatus !== 'all' ? { status: String(selectedStatus) } : {}),
     order: sortBy === 'newest' ? 'desc' : 'asc',
   });
+  useEffect(() => {
+    if (error) {
+      toast.error('Failed to load campaigns. Please try again later.');
+    }
+  }, [error]);
 
+  const statusEnumValues = Object.values(ECampaignStatus).filter((v): v is ECampaignStatus => typeof v === 'number');
   const statusOptions = [
     { value: 'all', label: 'All statuses' },
-    { value: ECampaignStatus.Active, label: 'Active' },
-    { value: ECampaignStatus.Draft, label: 'Draft' },
-    { value: ECampaignStatus.Closed, label: 'Closed' },
+    ...statusEnumValues.map((status) => ({ value: status, label: getCampaignStatusLabel(status) })),
   ];
 
-  const selectedLabel = statusOptions.find((option) => option.value === selectedStatus)?.label || 'All statuses';
+  const selectedLabel = selectedStatus === 'all' ? 'All statuses' : getCampaignStatusLabel(selectedStatus);
 
   if (isLoading) {
     return (
@@ -48,10 +49,6 @@ export const ActiveCampaign = () => {
         </div>
       </section>
     );
-  }
-
-  if (error) {
-    toast.error('Failed to load campaigns. Please try again later.');
   }
 
   return (
@@ -68,54 +65,41 @@ export const ActiveCampaign = () => {
             <div className="relative">
               <Button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="bg-white hover:bg-white hover:border-primary hover:text-primary dark:bg-background dark:hover:border-primary-light inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 font-medium text-gray-600 transition dark:border-white/10 dark:text-gray-300 dark:hover:text-white"
+                className="hover:border-primary hover:text-primary dark:bg-background dark:hover:border-primary-light inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 font-medium text-gray-600 transition hover:bg-white dark:border-white/10 dark:text-gray-300 dark:hover:text-white"
               >
                 {selectedLabel}
-                <svg
-                  className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+                <ChevronDownIcon className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
               </Button>
 
-
               {isDropdownOpen && (
-                <div className="absolute top-full right-0 z-10 mt-2 w-48 rounded-xl border border-gray-200 bg-white py-2 shadow-lg dark:border-white/10 dark:bg-gray-800">
+                <div className="absolute top-full right-0 z-10 w-48 rounded-xl border border-gray-200 bg-white shadow-lg dark:border-white/10 dark:bg-gray-800">
                   {statusOptions.map((option) => (
-                    <button
+                    <Button
                       key={String(option.value)}
                       onClick={() => {
                         setSelectedStatus(option.value as ECampaignStatus | 'all');
                         setIsDropdownOpen(false);
-                        setPage(PAGINATION.DEFAULT_PAGE);
                       }}
-                      className={`w-full px-4 py-2 text-left text-sm transition hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                      className={`bg-background w-full px-4 py-2 text-left text-sm transition hover:bg-gray-50 dark:hover:bg-gray-700 ${
                         selectedStatus === option.value
                           ? 'text-primary bg-primary/5 dark:text-primary-light dark:bg-primary/10'
                           : 'text-gray-700 dark:text-gray-300'
                       }`}
                     >
                       {option.label}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               )}
             </div>
-            <button
+            <Button
               onClick={() => setSortBy((prev) => (prev === 'newest' ? 'oldest' : 'newest'))}
-              className="hover:border-primary hover:text-primary dark:hover:border-primary-light inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 font-medium text-gray-600 transition dark:border-white/10 dark:text-gray-300 dark:hover:text-white"
+              className="bg-background hover:bg-background hover:border-primary hover:text-primary dark:hover:border-primary-light inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 font-medium text-gray-600 transition dark:border-white/10 dark:text-gray-300 dark:hover:text-white"
               aria-label={`Toggle sort order (currently ${sortBy})`}
             >
               Sort by {sortBy === 'newest' ? 'newest' : 'oldest'}
               <ArrowDown className={`h-4 w-4 transition-transform ${sortBy === 'oldest' ? 'rotate-180' : ''}`} />
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -159,11 +143,8 @@ export const ActiveCampaign = () => {
           totalPages={meta?.total_pages || 1}
           totalItems={meta?.total_items || 0}
           isLoading={isLoading}
-          onChangePage={(p) => setPage(p)}
-          onChangeLimit={(l) => {
-            setLimit(l);
-            setPage(PAGINATION.DEFAULT_PAGE);
-          }}
+          onChangePage={handleChangePage}
+          onChangeLimit={handleChangeLimit}
           className="mt-6"
         />
         <ContactCard />
