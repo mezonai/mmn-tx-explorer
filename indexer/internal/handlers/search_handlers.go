@@ -57,7 +57,7 @@ type SearchInput struct {
 // @Failure 400 {object} api.Error
 // @Failure 401 {object} api.Error
 // @Failure 500 {object} api.Error
-// @Router /search/:input [GET]
+// @Router /{chainId}/search/{input} [GET]
 func Search(c *gin.Context) {
 	chainId, err := api.GetChainId(c)
 	if err != nil {

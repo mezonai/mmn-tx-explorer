@@ -19,12 +19,13 @@ var (
 
 // DonationCampaignRepository handles database operations for donation campaigns
 type DonationCampaignRepository struct {
-	db *sql.DB
+	db         *sql.DB
+	dongSchema string
 }
 
 // NewDonationCampaignRepository creates a new donation campaign repository
-func NewDonationCampaignRepository(db *sql.DB) *DonationCampaignRepository {
-	return &DonationCampaignRepository{db: db}
+func NewDonationCampaignRepository(db *sql.DB, dongSchema string) *DonationCampaignRepository {
+	return &DonationCampaignRepository{db: db, dongSchema: dongSchema}
 }
 
 // Create creates a new donation campaign
@@ -36,11 +37,11 @@ func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampa
 	defer tx.Rollback()
 
 	// Insert donation campaign
-	campaignQuery := `
-		INSERT INTO donation_campaign (name, description, goal, url, end_date, donation_wallet, creator, status)
+	campaignQuery := fmt.Sprintf(`
+		INSERT INTO %s.donation_campaign (name, description, goal, url, end_date, donation_wallet, creator, status)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id, name, description, goal, url, end_date, donation_wallet, creator, status, created_at, updated_at
-	`
+	`, r.dongSchema)
 
 	var result models.DonationCampaign
 	err = tx.QueryRow(
@@ -72,10 +73,10 @@ func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampa
 	}
 
 	// Insert campaign statistics
-	statsQuery := `
-		INSERT INTO campaign_statistics (campaign_id, campaign_wallet, total_amount, total_contributor)
+	statsQuery := fmt.Sprintf(`
+		INSERT INTO %s.campaign_statistics (campaign_id, campaign_wallet, total_amount, total_contributor)
 		VALUES ($1, $2, $3, $4)
-	`
+	`, r.dongSchema)
 
 	_, err = tx.Exec(statsQuery, result.ID, result.DonationWallet, 0, 0)
 	if err != nil {

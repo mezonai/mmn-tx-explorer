@@ -30,8 +30,8 @@ func NewCampaignStatisticsHandler(statsRepo *repository.CampaignStatisticsReposi
 // @Produce json
 // @Success 200 {object} models.Response{data=models.CampaignStatsResponse}
 // @Failure 500 {object} models.Response
-// @Router /api/v1/campaigns/stats [get]
-func (h *CampaignStatisticsHandler) GetStats(c *gin.Context) {
+// @Router /api/v1/stats/campaign [get]
+func (h *CampaignStatisticsHandler) GetCampaignStats(c *gin.Context) {
 	logger.Debug().Msg("Fetching campaign statistics")
 
 	stats, err := h.statsRepo.GetStats()

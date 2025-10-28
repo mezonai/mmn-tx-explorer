@@ -347,44 +347,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/campaigns/stats": {
-            "get": {
-                "description": "Get overall statistics for all donation campaigns",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "campaigns"
-                ],
-                "summary": "Get donation campaign statistics",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/models.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/models.CampaignStatsResponse"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/campaigns/{id}": {
             "get": {
                 "description": "Get details of a specific donation campaign",
@@ -547,6 +509,44 @@ const docTemplate = `{
                         "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/stats/campaign": {
+            "get": {
+                "description": "Get overall statistics for all donation campaigns",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "campaigns"
+                ],
+                "summary": "Get donation campaign statistics",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.CampaignStatsResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "500": {
