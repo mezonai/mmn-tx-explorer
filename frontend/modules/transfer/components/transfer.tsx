@@ -99,10 +99,10 @@ export const Transfer = () => {
       <div className="border-primary/50 mx-auto mt-8 w-full max-w-3xl rounded-3xl border bg-white/5 p-6 text-left shadow-md dark:border-white/10">
         <div className="mx-auto grid max-w-3xl gap-3 text-sm sm:grid-cols-1">
           <div className="bg-primary/10 shadow-primary/20 flex flex-col rounded-2xl border-none px-2 py-2 text-left shadow-md">
-            <div className="text-primary dark:text-primary-light shadow-primary/20 px-2 text-left text-lg text-sm font-semibold">
+            <div className="text-primary dark:text-primary-light shadow-primary/20 px-2 text-left text-lg font-semibold">
               Send Mezon Đồng
             </div>
-            <p className="text-primary-light mt-2 px-2 text-left text-sm text-xs">Transfer funds wallet-to-wallet</p>
+            <p className="text-primary-light mt-2 px-2 text-left text-sm">Transfer funds wallet-to-wallet</p>
           </div>
           <div className="hidden rounded-2xl px-2 py-2 text-left">
             <div className="text-gray hover:border-primary/40 px-2 text-left text-lg text-sm font-semibold transition hover:text-white">
