@@ -25,7 +25,6 @@ export const Transfer = () => {
     amount: '',
   });
   const [senderBalance, setSenderBalance] = useState<string>('0');
-
   const ScaleDownBalance = NumberUtil.formatWithCommasAndScale(senderBalance);
   const userId = useMemo(() => user?.id || '', [user]);
 
@@ -65,10 +64,6 @@ export const Transfer = () => {
   const handleTransfer = useCallback(async () => {
     const { address, amount, note } = form;
     try {
-      if (!amount.trim() || Number(amount) <= 0) {
-        toast.error('Please enter a valid amount');
-        return;
-      }
       const result = await transfer({
         recipientAddress: address,
         amount: amount,
@@ -78,9 +73,7 @@ export const Transfer = () => {
       if (result.success) {
         toast.success('Transfer successful!');
         resetForm();
-        setTimeout(() => {
-          refreshBalance();
-        }, 1000);
+        r
       } else {
         toast.error(result.error || 'Transfer failed. Please try again.');
       }

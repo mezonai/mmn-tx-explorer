@@ -16,6 +16,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { IZkProof, IEphemeralKeyPair } from 'mmn-client-js';
+import { safeJsonParse } from '@/utils';
 
 interface AppContextType {
   isAuthenticated: boolean;
@@ -51,7 +52,7 @@ export function AppProvider({ children }: AppProviderProps) {
   const searchParams = useSearchParams();
   useEffect(() => {
     const localTokenStr = localStorage.getItem(STORAGE_KEYS.TOKEN);
-    const localToken = localTokenStr ? JSON.parse(localTokenStr) : null;
+    const localToken = localTokenStr ? safeJsonParse(localTokenStr) : null;
     if (localToken) {
       (async () => {
         try {
@@ -68,16 +69,16 @@ export function AppProvider({ children }: AppProviderProps) {
     }
     const userStored = localStorage.getItem(STORAGE_KEYS.USER_INFO);
     if (userStored) {
-      const u = JSON.parse(userStored) as User;
+      const u = safeJsonParse(userStored) as User;
       setUser(u);
       setIsAuthenticated(true);
       try {
         const zkStr = localStorage.getItem(STORAGE_KEYS.ZK_PROOF);
-        if (zkStr) setZkProof(JSON.parse(zkStr));
+        if (zkStr) setZkProof(safeJsonParse(zkStr));
       } catch {}
       try {
         const kpStr = localStorage.getItem(STORAGE_KEYS.KEY_PAIR);
-        if (kpStr) setKeypair(JSON.parse(kpStr));
+        if (kpStr) setKeypair(safeJsonParse(kpStr));
       } catch {}
       return;
     }
@@ -97,16 +98,14 @@ export function AppProvider({ children }: AppProviderProps) {
         const userObject = processAndStoreUser(userInfo.user, senderAddress);
         setUser(userObject);
 
-        const zkStr = await fetchAndStoreZkProof(
+        const fetchedZk = await fetchAndStoreZkProof(
           userInfo.user.user_id || userInfo.user.sub,
           keypair.publicKey,
           userInfo.auth_token,
           senderAddress
         );
-        if (zkStr) {
-          try {
-            setZkProof(zkStr);
-          } catch {}
+        if (fetchedZk) {
+          setZkProof(fetchedZk);
         }
       } catch {
         toast.error('Login failed!');

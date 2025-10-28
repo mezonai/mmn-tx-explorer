@@ -1,7 +1,8 @@
 import { TransferInput, TransferResult } from '../types';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { mmnClient } from '@/modules/auth/utils';
 import { useUser, useKeypair, useZkProof } from '@/providers';
+import { IZkProof } from 'mmn-client-js';
 
 export const useTransfer = () => {
   const [loading, setLoading] = useState(false);
@@ -11,33 +12,18 @@ export const useTransfer = () => {
   const { keypair } = useKeypair();
   const { zkProof } = useZkProof();
 
-  const transfer = async (input: TransferInput) => {
+  const transfer = useCallback(async (input: TransferInput) => {
     setLoading(true);
     try {
       const userId = user?.id || '';
       const userName = user?.username || '';
+      const publicKey = keypair?.publicKey;
+      const privateKey = keypair?.privateKey;
+      const zk = zkProof as IZkProof | null;
 
-      if (!userId) {
-        const errResult: TransferResult = { success: false, error: 'Missing user info. Please log in again.' };
-        setResult(errResult);
-        return errResult;
-      }
-
-      if (!keypair?.publicKey || !keypair?.privateKey) {
-        const errResult: TransferResult = { success: false, error: 'Missing cryptographic keys. Please log in again.' };
-        setResult(errResult);
-        return errResult;
-      }
-
-      const zkProofData = zkProof as { proof: string; public_input: string } | null;
-      if (!zkProofData?.proof || !zkProofData?.public_input) {
-        const errResult: TransferResult = {
-          success: false,
-          error: 'Missing zero-knowledge proof. Please log in again.',
-        };
-        setResult(errResult);
-        return errResult;
-      }
+      if (!userId) throw new Error('Missing user info. Please log in again.');
+      if (!publicKey || !privateKey) throw new Error('Missing cryptographic keys. Please log in again.');
+      if (!zk?.proof || !zk?.public_input) throw new Error('Missing zero-knowledge proof. Please log in again.');
 
       const nonceResponse = await mmnClient.getCurrentNonce(userId);
       const currentNonce = Number(nonceResponse.nonce) || 0;
@@ -48,10 +34,10 @@ export const useTransfer = () => {
         amount: mmnClient.scaleAmountToDecimals(input.amount),
         nonce: currentNonce + 1,
         textData: input.note || '',
-        publicKey: keypair?.publicKey || '',
-        privateKey: keypair?.privateKey || '',
-        zkProof: zkProofData.proof,
-        zkPub: zkProofData.public_input,
+        publicKey: publicKey,
+        privateKey: privateKey ,
+        zkProof: zk.proof,
+        zkPub: zk.public_input,
         extraInfo: {
           UserSenderId: userId,
           UserSenderUsername: userName,
@@ -72,7 +58,7 @@ export const useTransfer = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, keypair, zkProof]);
 
   return {
     transfer,
