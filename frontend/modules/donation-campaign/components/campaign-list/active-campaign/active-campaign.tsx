@@ -1,22 +1,26 @@
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CampaignCard } from './campaign-card';
 import { ContactCard } from './contact-card';
 import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
 import { ROUTES } from '@/configs/routes.config';
 import { useCampaigns } from '../../../hooks/useCampaigns';
-import { CampaignStatus } from '../../../type';
+import { ECampaignStatus } from '../../../type';
 import { toast } from 'sonner';
 import { ArrowDown } from 'lucide-react';
 import { PAGINATION } from '@/constant';
 
 export const ActiveCampaign = () => {
-  const [selectedStatus, setSelectedStatus] = useState<CampaignStatus | 'all'>('all');
+  const [selectedStatus, setSelectedStatus] = useState<ECampaignStatus | 'all'>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest');
   const [page, setPage] = useState<number>(PAGINATION.DEFAULT_PAGE);
   const [limit, setLimit] = useState<number>(PAGINATION.DEFAULT_LIMIT);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    setPage(PAGINATION.DEFAULT_PAGE);
+  }, [selectedStatus, sortBy]);
   const { campaigns, meta, isLoading, error } = useCampaigns({
     page,
     limit,
@@ -26,9 +30,9 @@ export const ActiveCampaign = () => {
 
   const statusOptions = [
     { value: 'all', label: 'All statuses' },
-    { value: CampaignStatus.Active, label: 'Active' },
-    { value: CampaignStatus.Draft, label: 'Draft' },
-    { value: CampaignStatus.Closed, label: 'Closed' },
+    { value: ECampaignStatus.Active, label: 'Active' },
+    { value: ECampaignStatus.Draft, label: 'Draft' },
+    { value: ECampaignStatus.Closed, label: 'Closed' },
   ];
 
   const selectedLabel = statusOptions.find((option) => option.value === selectedStatus)?.label || 'All statuses';
@@ -62,9 +66,9 @@ export const ActiveCampaign = () => {
           </div>
           <div className="flex flex-wrap gap-3 text-sm">
             <div className="relative">
-              <button
+              <Button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="hover:border-primary hover:text-primary dark:hover:border-primary-light inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 font-medium text-gray-600 transition dark:border-white/10 dark:text-gray-300 dark:hover:text-white"
+                className="bg-white hover:bg-white hover:border-primary hover:text-primary dark:bg-background dark:hover:border-primary-light inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 font-medium text-gray-600 transition dark:border-white/10 dark:text-gray-300 dark:hover:text-white"
               >
                 {selectedLabel}
                 <svg
@@ -79,16 +83,18 @@ export const ActiveCampaign = () => {
                     clipRule="evenodd"
                   />
                 </svg>
-              </button>
+              </Button>
+
 
               {isDropdownOpen && (
                 <div className="absolute top-full right-0 z-10 mt-2 w-48 rounded-xl border border-gray-200 bg-white py-2 shadow-lg dark:border-white/10 dark:bg-gray-800">
                   {statusOptions.map((option) => (
                     <button
-                      key={option.value}
+                      key={String(option.value)}
                       onClick={() => {
-                        setSelectedStatus(option.value as CampaignStatus | 'all');
+                        setSelectedStatus(option.value as ECampaignStatus | 'all');
                         setIsDropdownOpen(false);
+                        setPage(PAGINATION.DEFAULT_PAGE);
                       }}
                       className={`w-full px-4 py-2 text-left text-sm transition hover:bg-gray-50 dark:hover:bg-gray-700 ${
                         selectedStatus === option.value

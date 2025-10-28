@@ -2,9 +2,9 @@ import { TEXT_CONSTANT } from '@/constant';
 import { NumberUtil, DateTimeUtil } from '@/utils';
 import Link from 'next/link';
 import { useMemo } from 'react';
-import { CampaignStatus, DonationCampaign } from '../../../type';
+import { ECampaignStatus, DonationCampaign } from '../../../type';
 import { Chip } from '@/components/shared';
-import { getCampaignStatusVariant } from '../../../utils';
+import { getCampaignStatusLabel, getCampaignStatusVariant } from '../../../utils';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/configs/routes.config';
 import { formatDistanceToNow } from 'date-fns';
@@ -16,48 +16,48 @@ interface CampaignCardProps {
 export const CampaignCard = ({ campaign }: CampaignCardProps) => {
   const { id, name, description, goal, end_date, status, updated_at, total_amount, total_contributors } = campaign;
   const selectedStatus = useMemo(() => {
-    if (status === CampaignStatus.Active) return 'Active';
-    if (status === CampaignStatus.Draft) return 'Draft';
-    if (status === CampaignStatus.Closed) return 'Closed';
+    if (status === ECampaignStatus.Active) return 'Active';
+    if (status === ECampaignStatus.Draft) return 'Draft';
+    if (status === ECampaignStatus.Closed) return 'Closed';
     return 'Unknown';
   }, [status]);
 
   const daysLeft = useMemo(() => {
-    if (status === CampaignStatus.Draft) {
+    if (status === ECampaignStatus.Draft) {
       return 'Draft';
     }
-    if (status === CampaignStatus.Closed) {
+    if (status === ECampaignStatus.Closed) {
       return 'Goal achieved';
     }
     return `${formatDistanceToNow(new Date(updated_at), { addSuffix: true })} days left`;
   }, [status, end_date]);
 
   const progress = useMemo(() => {
-    if (status === CampaignStatus.Draft) {
+    if (status === ECampaignStatus.Draft) {
       return 'Not launched';
     }
     return `${Math.min(Math.floor((Number(NumberUtil.scaleDown(total_amount)) / goal) * 100), 100)} % funded`;
   }, [status, total_amount, goal]);
 
   const progressPercent = useMemo(() => {
-    if (status === CampaignStatus.Draft) return 0;
+    if (status === ECampaignStatus.Draft) return 0;
     if (goal <= 0) return 0;
     return Math.min(Math.max(Math.floor((NumberUtil.scaleDown(total_amount) / goal) * 100), 0), 100);
   }, [status, total_amount, goal]);
 
   const contributorsNumber = useMemo(() => {
-    if (status === CampaignStatus.Draft) {
+    if (status === ECampaignStatus.Draft) {
       return 'Pending launch';
     }
     return `${total_contributors} contributors`;
   }, [status]);
 
   const lastTime = useMemo(() => {
-    if (status === CampaignStatus.Draft) {
+    if (status === ECampaignStatus.Draft) {
       return '';
     }
 
-    if (status === CampaignStatus.Closed) {
+    if (status === ECampaignStatus.Closed) {
       return `Ended ${formatDistanceToNow(new Date(updated_at), { addSuffix: true })}`;
     }
   }, [status, updated_at]);
@@ -65,7 +65,7 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
   return (
     <article className="group hover:border-primary/60 dark:bg-card flex flex-col rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10">
       <div className="flex items-center justify-between gap-4">
-        <Chip variant={getCampaignStatusVariant(status)}>{selectedStatus}</Chip>
+        <Chip variant={getCampaignStatusVariant(status)}>{getCampaignStatusLabel(status)}</Chip>
         <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{daysLeft}</span>
       </div>
       <h3 className="group-hover:text-primary dark:group-hover:text-primary-light mt-4 text-lg font-semibold text-gray-900 transition dark:text-white">
@@ -103,11 +103,11 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
         asChild
       >
         <Link href={ROUTES.CAMPAIGN(id)}>
-          {status === CampaignStatus.Draft
+          {status === ECampaignStatus.Draft
             ? 'Review and publish'
-            : status === CampaignStatus.Active
+            : status === ECampaignStatus.Active
               ? 'View details'
-              : status === CampaignStatus.Closed
+              : status === ECampaignStatus.Closed
                 ? 'View Impact Report'
                 : 'View details'}
         </Link>

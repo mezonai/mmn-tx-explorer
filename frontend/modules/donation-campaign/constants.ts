@@ -2,8 +2,12 @@ export const DONATION_ENDPOINTS = {
   CAMPAIGNS: '/api/v1/campaigns',
   CAMPAIGN_BY_ID: (id: string) => `/api/v1/campaigns/${id}`,
   STATS: '/api/v1/stats/campaign',
+  CLOSE_CAMPAIGN: (id: string) => `/api/v1/admin/campaigns/${id}/close`,
+  CREATE_AND_PUBLISH_CAMPAIGN: '/api/v1/admin/campaigns/create-active',
+  CREATE_CAMPAIGN: '/api/v1/admin/campaigns',
   DONATIONS: '/donations',
   MY_DONATIONS: '/donations/my-donations',
+  PUBLISH_CAMPAIGN: (id: string) => `/api/v1/campaigns/${id}/activate`,
 } as const;
 
 export const QUERY_KEYS = {
