@@ -23,9 +23,6 @@ export function CampaignSidebar() {
     percentage: 0,
     contributors: 0,
     daysRemaining: `${form.endDate ? formatDistanceToNow(new Date(form.endDate)) : `0 day`} remaining`,
-    // daysRemaining: form.endDate
-    //   ? Math.max(0, Math.ceil((new Date(form.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
-    //   : 0,
     status: ECampaignStatus.Draft,
   };
 
