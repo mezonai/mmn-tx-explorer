@@ -7,6 +7,7 @@ export const DONATION_ENDPOINTS = {
   DONATIONS: '/donations',
   MY_DONATIONS: '/donations/my-donations',
   PUBLISH_CAMPAIGN: (id: string) => `/api/v1/campaigns/${id}/activate`,
+  TOP_CONTRIBUTOR: (id: string) => `/api/v1/campaigns/${id}/top-contributors`,
   STATS: '/campaigns/stats',
 } as const;
 

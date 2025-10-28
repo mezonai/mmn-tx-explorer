@@ -1,7 +1,7 @@
 'use client';
 import { ProgressCard } from './progress-card';
 import { InsightsCard } from './insights-card';
-import { CampaignStatus, DonationCampaign } from '@/modules/donation-campaign/type';
+import { ECampaignStatus, DonationCampaign } from '@/modules/donation-campaign/type';
 import { useMemo } from 'react';
 import { Chip } from '@/components/shared';
 import { getCampaignStatusVariant, getDaysRemaining } from '@/modules/donation-campaign/utils';
@@ -9,9 +9,9 @@ import { getCampaignStatusVariant, getDaysRemaining } from '@/modules/donation-c
 export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
   const status = campaign.status;
   const capitalizedStatus = useMemo(() => {
-    if (status === CampaignStatus.Active) return 'Active';
-    if (status === CampaignStatus.Draft) return 'Draft';
-    if (status === CampaignStatus.Closed) return 'Closed';
+    if (status === ECampaignStatus.Active) return 'Active';
+    if (status === ECampaignStatus.Draft) return 'Draft';
+    if (status === ECampaignStatus.Closed) return 'Closed';
     return 'Unknown';
   }, [status]);
   const daysRemaining = getDaysRemaining(campaign.created_at);
