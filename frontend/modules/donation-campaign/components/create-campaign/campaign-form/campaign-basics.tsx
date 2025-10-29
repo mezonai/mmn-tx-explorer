@@ -18,7 +18,7 @@ export function CampaignBasics() {
       <CardHeader>
         <div className="flex items-center justify-between gap-4">
           <div>
-            <CardTitle className="text-lg">Campaign basics</CardTitle>
+            <CardTitle className="text-foreground text-lg">Campaign basics</CardTitle>
             <p className="text-muted-foreground mt-1 text-sm">
               This information appears in the list view and helps donors understand the intent at a glance.
             </p>

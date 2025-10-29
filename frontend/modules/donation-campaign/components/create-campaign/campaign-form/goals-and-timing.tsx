@@ -5,12 +5,21 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { DatePicker } from '@/components/ui/datepicker';
 import { useCreateCampaignContext } from '@/modules/donation-campaign/context';
+import { APP_CONFIG } from '@/configs/app.config';
+import { NumberUtil } from '@/utils';
 
 export function GoalsAndTiming() {
   const { form, updateField } = useCreateCampaignContext();
 
-  const handleInputChange = (field: keyof typeof form, value: any) => {
-    updateField(field, value);
+  const handleInputChange = (field: keyof typeof form, value: string) => {
+    if (field === 'fundraisingGoal') {
+      const numeric = value.replace(/[^0-9.]/g, '');
+      const parts = numeric.split('.');
+      const cleanNumeric = parts[0] + (parts.length > 1 ? '.' + parts[1] : '');
+      updateField(field, cleanNumeric);
+    } else {
+      updateField(field, value);
+    }
   };
 
   const handleDateChange = (date: Date | null) => {
@@ -23,7 +32,7 @@ export function GoalsAndTiming() {
       <CardHeader>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle className="text-lg">Goals & timing</CardTitle>
+            <CardTitle className="text-foreground text-lg">Goals & timing</CardTitle>
             <p className="text-muted-foreground mt-1 text-sm">
               Set targets so the progress bar and reports stay accurate.
             </p>
@@ -37,12 +46,14 @@ export function GoalsAndTiming() {
       <CardContent className="space-y-5">
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
-            <label className="text-foreground mb-2 block text-sm font-medium">Fundraising goal (MMN)</label>
+            <label className="text-foreground mb-2 block text-sm font-medium">
+              Fundraising goal ({APP_CONFIG.CHAIN_SYMBOL})
+            </label>
             <Input
-              type="number"
               placeholder="e.g. 20000"
-              value={form.fundraisingGoal || ''}
-              onChange={(e) => handleInputChange('fundraisingGoal', e.target.value ? Number(e.target.value) : null)}
+              type="text"
+              value={form.fundraisingGoal ? NumberUtil.formatWithCommas(form.fundraisingGoal || '') : undefined}
+              onChange={(e) => handleInputChange('fundraisingGoal', e.target.value)}
             />
           </div>
           <div>
