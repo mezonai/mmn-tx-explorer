@@ -91,9 +91,13 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
         </Button>
       </DialogTrigger>
 
-      <DialogContent>
+      <DialogContent
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+        }}
+      >
         <DialogHeader>
-          <DialogTitle>Donation campaign</DialogTitle>
+          <DialogTitle className="text-brand-primary text-left text-lg font-semibold">Donation campaign</DialogTitle>
         </DialogHeader>
 
         <div className="mt-4 flex flex-col space-y-4">
@@ -101,7 +105,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
             <Input
               label="Recipient's address"
               id="recipient-address"
-              className="mt-1"
+              className="bg-brand-primary/10 border-brand-primary/40 mt-1 focus:ring-0 focus:outline-none"
               type="text"
               value={walletAddress}
               readOnly
@@ -112,7 +116,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
               label="Amount"
               id="amount"
               placeholder="0.0"
-              className="mt-1"
+              className="bg-brand-primary/10 border-brand-primary/40 mt-1 focus:ring-0 focus:outline-none"
               type="text"
               value={NumberUtil.formatWithCommas(form.amount)}
               onChange={handleInputChange('amount')}
@@ -120,7 +124,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
             />
           </div>
 
-          <div className="flex justify-end text-sm text-gray-500">
+          <div className="text-brand-primary flex justify-end text-sm">
             <span>
               Balance: {NumberUtil.formatWithCommasAndScale(senderBalance)} {APP_CONFIG.CHAIN_SYMBOL}
             </span>
@@ -152,7 +156,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
             onClick={handleDonate}
             disabled={isButtonDisabled}
             type="submit"
-            className="bg-primary shadow-primary/30 hover:bg-primary-light w-full rounded-xl py-3 text-sm font-semibold text-white shadow-lg transition"
+            className="bg-brand-primary shadow-primary/30 hover:bg-primary-light w-full rounded-xl py-3 text-sm font-semibold text-white shadow-lg transition"
           >
             {loading ? 'Donating' : 'Confirm'}
           </Button>

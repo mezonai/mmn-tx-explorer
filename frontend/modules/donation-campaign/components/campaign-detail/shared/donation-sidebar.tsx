@@ -55,8 +55,7 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
         {/* Donate Button */}
         {isAuthenticated && <DonateDialog walletAddress={campaign.donation_wallet} />}
         <p className="text-muted-foreground text-center text-xs dark:text-gray-400">
-          💡 Keep your transaction hash for reconciliation. Payments triggered from the Timesheet portal are reconciled
-          automatically.
+          💡 Keep your transaction hash for reconciliation.
         </p>
       </div>
     </aside>
