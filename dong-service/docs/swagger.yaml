@@ -125,6 +125,27 @@ definitions:
       username:
         type: string
     type: object
+  models.PaginatedResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+      meta:
+        $ref: '#/definitions/models.PaginationMeta'
+      success:
+        type: boolean
+    type: object
+  models.PaginationMeta:
+    properties:
+      limit:
+        type: integer
+      page:
+        type: integer
+      total_items:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
   models.RefreshRequest:
     properties:
       refresh_token:
@@ -395,7 +416,7 @@ paths:
     get:
       description: Get a list of all donation campaigns with pagination
       parameters:
-      - default: 1
+      - default: 0
         description: Page number
         in: query
         name: page
@@ -412,8 +433,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/models.Response'
+            - $ref: '#/definitions/models.PaginatedResponse'
             - properties:
+                ' meta':
+                  $ref: '#/definitions/models.PaginationMeta'
                 data:
                   items:
                     $ref: '#/definitions/models.DonationCampaignResponse'

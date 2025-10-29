@@ -15,7 +15,7 @@ export class DonationCampaignService {
     return data.data;
   }
 
-  static async getCampaigns(params: CampaignListParams = {}): Promise<IPaginatedResponse<DonationCampaign[]>> {
+  static async getCampaigns(params: CampaignListParams): Promise<IPaginatedResponse<DonationCampaign[]>> {
     const { data } = await apiDongClient.get<IPaginatedResponse<DonationCampaign[]>>(DONATION_ENDPOINTS.CAMPAIGNS, {
       params,
     });

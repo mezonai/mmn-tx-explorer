@@ -158,7 +158,14 @@ func (h *AuthHandler) OauthHandler(c *gin.Context) {
 		c.JSON(http.StatusBadGateway, models.ErrorResponse(http.StatusBadGateway, "Failed to exchange code: "+err.Error()))
 		return
 	}
-	defer tokenResp.Body.Close()
+	defer func() {
+		if err != nil {
+			errClose := tokenResp.Body.Close()
+			if errClose != nil {
+				logger.Error().Err(errClose).Msg("Failed to close token response body")
+			}
+		}
+	}()
 	body, _ := io.ReadAll(tokenResp.Body)
 
 	var tokenData struct {
@@ -179,7 +186,14 @@ func (h *AuthHandler) OauthHandler(c *gin.Context) {
 		c.JSON(http.StatusBadGateway, models.ErrorResponse(http.StatusBadGateway, "Failed to get user info: "+err.Error()))
 		return
 	}
-	defer userInfoResp.Body.Close()
+	defer func() {
+		if err != nil {
+			errClose := userInfoResp.Body.Close()
+			if errClose != nil {
+				logger.Error().Err(errClose).Msg("Failed to close user info response body")
+			}
+		}
+	}()
 	userBody, _ := io.ReadAll(userInfoResp.Body)
 	var userInfo models.OauthUserInfo
 	if err := json.Unmarshal(userBody, &userInfo); err != nil {
