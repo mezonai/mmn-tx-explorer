@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mezon Mainnet · Public Roadmap</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#6941c6',
+            primaryDark: '#5533b0',
+            ink: '#0B1533',
+          },
+          boxShadow: {
+            glow: '0 0 0 3px rgba(105,65,198,0.25)',
+          }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/js/all.min.js"></script>
+  <style>
+    :root { color-scheme: dark; }
+    body { font-family: Inter, sans-serif; }
+    .glass { background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04)); }
+    .gradient { background: radial-gradient(80% 60% at 50% 0%, rgba(105,65,198,0.3) 0%, rgba(105,65,198,0.1) 40%, transparent 70%); }
+  </style>
+</head>
+<body class="bg-ink text-white">
+  <header class="relative gradient pb-12">
+    <div class="mx-auto max-w-7xl px-6 pt-10">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-xl bg-primary flex items-center justify-center shadow-glow"><i class="fa-solid fa-cubes text-white"></i></div>
+        <div>
+          <h1 class="text-3xl font-extrabold">Mezon Mainnet — Public Roadmap</h1>
+        </div>
+      </div>
+      <p class="mt-5 max-w-3xl text-white/80">Key milestones and feature rollout plan for Mezon Mainnet ecosystem.</p>
+    </div>
+  </header>
+
+  <section class="mx-auto max-w-7xl px-6 py-8">
+    <div class="glass rounded-2xl p-6 border border-white/10 shadow-xl">
+      <h2 class="text-lg font-semibold mb-4">📅 Timeline</h2>
+      <ol class="relative border-s border-white/10 ms-3 text-sm">
+        <li class="mb-10 ms-6">
+          <span class="absolute -start-3.5 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white shadow-glow"><span class="h-2 w-2 rounded-full bg-white"></span></span>
+          <h3 class="font-semibold">Q4/2025 — Now</h3>
+          <p class="mt-1 text-white/75">Preparing final release for Donation Campaign and integrating external systems (cobar.vn & Mezon Game).</p>
+          <div class="mt-2 flex flex-wrap gap-2 text-xs">
+            <span class="px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-300">Donation Campaign</span>
+            <span class="px-2 py-1 rounded-full bg-sky-500/15 text-sky-300">Give Coffee (Token version done)</span>
+            <span class="px-2 py-1 rounded-full bg-white/10">cobar.vn Integration</span>
+            <span class="px-2 py-1 rounded-full bg-white/10">Mezon Game Integration</span>
+          </div>
+        </li>
+        <li class="mb-10 ms-6">
+          <span class="absolute -start-3.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/20"><span class="h-2 w-2 rounded-full bg-primary"></span></span>
+          <h3 class="font-semibold">Q4/2025 — Next</h3>
+          <p class="mt-1 text-white/75">Starting Swap feature implementation, following Donation Campaign completion.</p>
+          <div class="mt-2 flex flex-wrap gap-2 text-xs">
+            <span class="px-2 py-1 rounded-full bg-primary/20 text-primary">Swap (Discovery → In Progress)</span>
+          </div>
+        </li>
+        <li class="mb-10 ms-6">
+          <span class="absolute -start-3.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/20"><span class="h-2 w-2 rounded-full bg-primary"></span></span>
+          <h3 class="font-semibold">Q1/2026 — Following</h3>
+          <p class="mt-1 text-white/75">Implementing staking mechanisms after Swap delivery.</p>
+          <div class="mt-2 flex flex-wrap gap-2 text-xs">
+            <span class="px-2 py-1 rounded-full bg-sky-500/15 text-sky-300">Stake (Design → In Progress)</span>
+          </div>
+        </li>
+        <li class="ms-6">
+          <span class="absolute -start-3.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/20"><span class="h-2 w-2 rounded-full bg-primary"></span></span>
+          <h3 class="font-semibold">Q1/2026+ — Later</h3>
+          <p class="mt-1 text-white/75">Exploring Give Coffee Payment Gateway implementation and broader integrations.</p>
+          <div class="mt-2 flex flex-wrap gap-2 text-xs">
+            <span class="px-2 py-1 rounded-full bg-amber-500/15 text-amber-300">Give Coffee (Payment Gateway)</span>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-7xl px-6 pb-16 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+    <article class="glass p-5 rounded-2xl border border-white/10 shadow-xl">
+      <div class="flex items-center gap-3"><i class="fa-solid fa-hand-holding-heart text-primary text-xl"></i><h3 class="font-semibold text-lg">Donation Campaign</h3></div>
+      <p class="mt-3 text-sm text-white/80">Transparent fundraising campaigns — launching end of Oct 2025.</p>
+    </article>
+    <article class="glass p-5 rounded-2xl border border-white/10 shadow-xl">
+      <div class="flex items-center gap-3"><i class="fa-solid fa-right-left text-primary text-xl"></i><h3 class="font-semibold text-lg">Swap</h3></div>
+      <p class="mt-3 text-sm text-white/80">Next milestone after Donation Campaign to enable on-chain token swaps.</p>
+    </article>
+    <article class="glass p-5 rounded-2xl border border-white/10 shadow-xl">
+      <div class="flex items-center gap-3"><i class="fa-solid fa-coins text-primary text-xl"></i><h3 class="font-semibold text-lg">Stake</h3></div>
+      <p class="mt-3 text-sm text-white/80">Planned right after Swap; introducing token staking and yield mechanisms.</p>
+    </article>
+    <article class="glass p-5 rounded-2xl border border-white/10 shadow-xl">
+      <div class="flex items-center gap-3"><i class="fa-solid fa-mug-hot text-primary text-xl"></i><h3 class="font-semibold text-lg">Give Coffee</h3></div>
+      <p class="mt-3 text-sm text-white/80">Token gifting is complete; payment gateway version under investigation.</p>
+    </article>
+    <article class="glass p-5 rounded-2xl border border-white/10 shadow-xl">
+      <div class="flex items-center gap-3"><i class="fa-solid fa-store text-primary text-xl"></i><h3 class="font-semibold text-lg">cobar.vn Integration</h3></div>
+      <p class="mt-3 text-sm text-white/80">Simple integration; expected to complete alongside Donation Campaign.</p>
+    </article>
+    <article class="glass p-5 rounded-2xl border border-white/10 shadow-xl">
+      <div class="flex items-center gap-3"><i class="fa-solid fa-gamepad text-primary text-xl"></i><h3 class="font-semibold text-lg">Mezon Game</h3></div>
+      <p class="mt-3 text-sm text-white/80">Integration-only feature; will be delivered soon with lightweight deployment.</p>
+    </article>
+  </section>
+
+  <footer class="border-t border-white/10 text-sm text-white/60">
+    <div class="mx-auto max-w-7xl px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div>© 2025 Mezon. Roadmap may change based on priorities.</div>
+      <div class="flex gap-3">
+        <a href="#" class="hover:text-white"><i class="fa-brands fa-github"></i> GitHub</a>
+        <a href="#" class="hover:text-white"><i class="fa-brands fa-x-twitter"></i> Updates</a>
+        <a href="#" class="hover:text-white"><i class="fa-solid fa-rss"></i> Changelog</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const dt = new Date();
+    const fmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit' });
+    document.getElementById('lastUpdated').textContent = fmt.format(dt);
+  </script>
+</body>
+</html>
