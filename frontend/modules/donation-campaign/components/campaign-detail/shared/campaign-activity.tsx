@@ -100,14 +100,14 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
               </table>
             </CardContent>
             <CardFooter>
-              <div className="mt-4 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                <span>{`Showing ${PAGINATION.DEFAULT_LIMIT} of total ${totalTransaction}`}</span>
+              <div className="mt-4 flex w-full items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                <span className="order-1">{`Showing ${transactions.length} of total ${totalTransaction}`}</span>
                 <Link
                   href={ROUTES.WALLET(walletAddress)}
-                  className="text-brand-primary hover:text-brand-primary/70 inline-flex items-center font-medium transition"
+                  className="text-brand-primary hover:text-brand-primary/70 order-2 inline-flex items-center font-medium transition"
                 >
                   View full activity
-                  <ChevronRight className="text-sm" />
+                  <ChevronRight className="ml-1 text-sm" />
                 </Link>
               </div>
             </CardFooter>
