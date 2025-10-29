@@ -33,15 +33,19 @@ export const SidebarAuthPanel = () => {
     <div className="relative" ref={panelRef}>
       <div className={classname} onClick={() => setOpen((v) => !v)}>
         {user.avatar && (
-          <img src={user.avatar} alt="avatar" className="h-10 w-10 rounded-full border" width={40} height={40} />
+          <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full border">
+            <img src={user.avatar} alt="avatar" className="h-full w-full object-cover object-center" />
+          </div>
         )}
         <span className="max-w-[120px] truncate text-base font-medium">{user.username || user.email}</span>
       </div>
       {open && (
-        <div className="bg-background absolute bottom-full left-1/2 z-50 mb-2 flex size-56 -translate-x-1/2 flex-col gap-2 rounded-lg border p-4 shadow-lg">
+        <div className="bg-background absolute bottom-full left-1/2 z-50 mb-2 flex w-56 -translate-x-1/2 flex-col gap-2 rounded-lg border p-4 shadow-lg">
           <div className="mb-2 flex items-center justify-center gap-2">
             {user.avatar && (
-              <img src={user.avatar} alt="avatar" className="h-8 w-8 rounded-full" width={32} height={32} />
+              <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border">
+                <img src={user.avatar} alt="avatar" className="h-full w-full object-cover object-center" />
+              </div>
             )}
             <div>
               <div className="text-sm font-semibold">{user.username || user.email}</div>
