@@ -11,8 +11,8 @@ export const NavBarAuthPanel: React.FC = () => {
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const classname = cn(
-    'hover:bg-brand-primary flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-all duration-150 hover:shadow-md',
-    open ? 'bg-brand-primary' : 'bg-background'
+    'hover:bg-brand-primary-background flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-all duration-150 hover:shadow-md',
+    open ? 'bg-brand-primary-background' : 'bg-background'
   );
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

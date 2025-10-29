@@ -1770,7 +1770,6 @@ func (p *PostgresConnector) batchUpdateWalletTransactionCounts(
 	}
 
 	query := `
-        WITH inserted AS (
             INSERT INTO wallet (address, transaction_count, last_block)
             SELECT 
                 unnest($1::text[]) as address,
@@ -1780,9 +1779,6 @@ func (p *PostgresConnector) batchUpdateWalletTransactionCounts(
             DO UPDATE SET 
                 transaction_count = wallet.transaction_count + EXCLUDED.transaction_count,
                 last_block = GREATEST(COALESCE(wallet.last_block, 0)::numeric, EXCLUDED.last_block)::bigint
-            RETURNING (xmax = 0) as is_new
-        )
-        SELECT COUNT(*) FROM inserted WHERE is_new = true
     `
 
 	maxBlocksInterface := make([]interface{}, len(maxBlocks))
@@ -1790,29 +1786,14 @@ func (p *PostgresConnector) batchUpdateWalletTransactionCounts(
 		maxBlocksInterface[i] = v
 	}
 
-	var newWalletCount int64
-	err := tx.QueryRow(query,
-		pq.Array(addressList),
-		pq.Array(counts),
-		pq.Array(maxBlocksInterface),
-	).Scan(&newWalletCount)
+    _, err := tx.Exec(query,
+       pq.Array(addressList),
+       pq.Array(counts),
+       pq.Array(maxBlocksInterface),
+    )
 
 	if err != nil {
 		return fmt.Errorf("failed to batch update wallet transaction counts: %w", err)
-	}
-
-	if newWalletCount > 0 {
-		if _, err := tx.Exec(`
-			INSERT INTO stats(key, value) VALUES ('total_wallets', $1)
-			ON CONFLICT (key) 
-			DO UPDATE SET value = stats.value + $1
-		`, newWalletCount); err != nil {
-			return fmt.Errorf("failed to update total_wallets stat: %w", err)
-		}
-
-		log.Debug().
-			Int64("new_wallets", newWalletCount).
-			Msg("Added new wallets to stats")
 	}
 
 	log.Debug().
@@ -1993,16 +1974,56 @@ func (p *PostgresConnector) insertWallet(ctx context.Context, address string, no
 		balanceBig = big.NewInt(0)
 	}
 
-	query := `INSERT INTO wallet (address, account_nonce, balance, transaction_count, updated_at, created_at) 
+	tx, err := p.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Error().Err(rollbackErr).Msg("Failed to rollback transaction")
+			}
+		}
+	}()
+
+	query := `
+		WITH inserted AS (
+			INSERT INTO wallet (address, account_nonce, balance, transaction_count, updated_at, created_at) 
 			VALUES ($1, $2, $3, 0, NOW(), NOW())
 			ON CONFLICT (address) 
 			DO UPDATE SET 
 				account_nonce = EXCLUDED.account_nonce,
 				balance = EXCLUDED.balance,
-				updated_at = NOW()`
+				updated_at = NOW()
+			RETURNING (xmax = 0) as is_new
+		)
+		SELECT COUNT(*) FROM inserted WHERE is_new = true
+	`
 
-	_, err := p.db.ExecContext(ctx, query, address, nonce, bigIntToString(balanceBig))
-	return err
+	var newWalletCount int64
+	err = tx.QueryRowContext(ctx, query, address, nonce, bigIntToString(balanceBig)).Scan(&newWalletCount)
+	if err != nil {
+		return fmt.Errorf("failed to insert wallet: %w", err)
+	}
+
+	if newWalletCount > 0 {
+		_, err = tx.ExecContext(ctx, `
+			INSERT INTO stats(key, value) VALUES ('total_wallets', $1)
+			ON CONFLICT (key) 
+			DO UPDATE SET value = stats.value + $1
+		`, newWalletCount)
+		if err != nil {
+			return fmt.Errorf("failed to update total_wallets stat: %w", err)
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
 }
 
 // refreshWalletFromService fetches wallet data from MMN gRPC service and writes to DB

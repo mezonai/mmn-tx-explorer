@@ -1,4 +1,4 @@
-import apiClient from '@/service';
+import { apiClient } from '@/service';
 import { buildPathWithChain } from '@/service/utils';
 import { IPaginatedResponse } from '@/types';
 import { TRANSACTION_ENDPOINTS } from './constants';

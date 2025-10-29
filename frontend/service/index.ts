@@ -1,3 +1,4 @@
+import { clearAuthStorage } from '@/utils';
 import axios from 'axios';
 
 const isServer = typeof window === 'undefined';
@@ -10,10 +11,35 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
 });
-export const apiDongClient = axios.create({
+
+const apiDongClient = axios.create({
   baseURL: dongServiceURL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
-export default apiClient;
+
+// Add interceptor for authentication
+apiDongClient.interceptors.request.use((config) => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Handle token refresh on 401 errors
+apiDongClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      // Clear auth data on unauthorized
+      if (typeof window !== 'undefined') {
+        clearAuthStorage();
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+export { apiClient, apiDongClient };

@@ -165,8 +165,11 @@ export function useAuthActions() {
   };
 
   const logout = () => {
-    const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
-    axios.post(AUTHENTICATION_ENDPOINT.LOGOUT, { refresh_token: refreshToken });
+    const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+    const refreshToken = token ? safeJsonParse(token).refresh_token : null;
+    if (refreshToken) {
+      axios.post(AUTHENTICATION_ENDPOINT.LOGOUT, { refresh_token: refreshToken });
+    }
     clearAuthStorage();
     setUser(null);
     setZkProof(null);

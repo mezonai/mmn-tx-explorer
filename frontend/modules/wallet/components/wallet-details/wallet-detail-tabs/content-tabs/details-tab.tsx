@@ -54,7 +54,7 @@ export const DetailsTab = ({ walletDetails }: TabDetailsProps) => {
         render={(walletDetails) => (
           <div className="flex items-center gap-1">
             <Cube01 className="text-foreground-quaternary-400 size-4" />
-            <Button variant="link" className="text-brand-secondary-700 size-fit p-0 text-sm font-normal" asChild>
+            <Button variant="link" className="text-brand-primary size-fit p-0 text-sm font-normal" asChild>
               <Link href={ROUTES.BLOCK(Number(walletDetails?.last_balance_update ?? 0))}>
                 {walletDetails?.last_balance_update ?? 0}
               </Link>
