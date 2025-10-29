@@ -10,7 +10,7 @@ on:
       ref:
         description: "Git ref (branch, tag, or commit)"
         required: true
-        default: "master"
+        default: "main"
   workflow_call:
     inputs:
       env:
