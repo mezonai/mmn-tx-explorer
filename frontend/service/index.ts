@@ -1,4 +1,5 @@
-import { clearAuthStorage } from '@/utils';
+import { STORAGE_KEYS } from '@/constant';
+import { clearAuthStorage, safeJsonParse } from '@/utils';
 import axios from 'axios';
 
 const isServer = typeof window === 'undefined';
@@ -21,7 +22,9 @@ const apiDongClient = axios.create({
 
 // Add interceptor for authentication
 apiDongClient.interceptors.request.use((config) => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  const tokenAccess = localStorage.getItem(STORAGE_KEYS.TOKEN);
+  const accessToken = tokenAccess ? safeJsonParse(tokenAccess)?.access_token : null;
+  const token = typeof window !== 'undefined' ? accessToken : null;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
