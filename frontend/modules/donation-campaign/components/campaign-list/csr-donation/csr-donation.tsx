@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useCampaignStats } from '@/modules/donation-campaign/hooks';
 import { NumberUtil } from '@/utils';
 import { PageHeader } from '@/components/shared';
+import { TEXT_CONSTANT } from '@/constant';
 
 export const CSRDonation = () => {
   const { stats } = useCampaignStats();
@@ -15,7 +16,7 @@ export const CSRDonation = () => {
       value: stats.total_campaigns_active,
     },
     {
-      title: 'Total raised (Đồng)',
+      title: `Total raised (${TEXT_CONSTANT.CURRENCY})`,
       value: NumberUtil.formatWithCommasAndScale(stats.total_amount),
     },
     {
