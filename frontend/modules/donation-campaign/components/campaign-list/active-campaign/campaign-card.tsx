@@ -30,7 +30,7 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
       return 'Not launched';
     }
     const rawPercentage = (Number(NumberUtil.scaleDown(total_amount)) / goal) * 100;
-    const formattedPercentage = rawPercentage < 1 ? parseFloat(rawPercentage.toFixed(1)) : Math.floor(rawPercentage);
+    const formattedPercentage = parseFloat(rawPercentage.toFixed(2));
     return `${formattedPercentage} % funded`;
   }, [status, total_amount, goal]);
 

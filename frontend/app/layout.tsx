@@ -39,7 +39,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${manrope.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <ThemeProvider defaultTheme="dark">
+        <ThemeProvider defaultTheme="light">
           <ErrorBoundary>
             <Suspense fallback={null}>
               <AppProvider>

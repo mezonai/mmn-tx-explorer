@@ -36,6 +36,7 @@ export const ActiveCampaign = () => {
     { value: ECampaignStatus.Draft, label: getCampaignStatusLabel(ECampaignStatus.Draft) },
     { value: ECampaignStatus.Closed, label: getCampaignStatusLabel(ECampaignStatus.Closed) },
   ];
+  const selectedLabel = selectedStatus === 'all' ? 'All statuses' : getCampaignStatusLabel(selectedStatus);
 
   if (isLoading) {
     return (
@@ -50,7 +51,7 @@ export const ActiveCampaign = () => {
     );
   }
 
-  const selectedLabel = selectedStatus === 'all' ? 'All statuses' : getCampaignStatusLabel(selectedStatus);
+  
   return (
     <section className="">
       <div className="">
@@ -132,7 +133,7 @@ export const ActiveCampaign = () => {
         <Pagination
           page={page}
           limit={limit}
-          totalPages={meta?.total_pages || 3}
+          totalPages={meta?.total_pages || 1}
           totalItems={meta?.total_items || 0}
           isLoading={isLoading}
           onChangePage={handleChangePage}
