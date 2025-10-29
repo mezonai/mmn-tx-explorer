@@ -122,7 +122,6 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
             owner: form.owner,
             end_date: form.endDate,
           };
-          console.log('🚀 ~ CreateCampaignProvider ~ campaignData:', campaignData);
 
           if (id) {
             // Edit

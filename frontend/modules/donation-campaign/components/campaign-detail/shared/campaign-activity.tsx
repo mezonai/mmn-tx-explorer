@@ -9,7 +9,6 @@ import { DATE_TIME_FORMAT, PAGINATION } from '@/constant';
 import { ESortOrder } from '@/enums';
 import { useTopContributor } from '@/modules/donation-campaign/hooks/useTopContributor';
 import { Transaction } from '@/modules/donation-campaign/type';
-import { truncateWalletAddress } from '@/modules/donation-campaign/utils';
 import { ITransactionListParams } from '@/modules/transaction';
 import { TxnHashLink } from '@/modules/transaction/components/transaction-list/list/shared';
 import { useTransactions } from '@/modules/transaction/hooks/useTransactions';
@@ -35,7 +34,6 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
   const { data: transactionsResponse } = useTransactions(searchTransactionParams);
 
   const transactions = transactionsResponse?.data ?? [];
-  console.log(transactions);
   const contributors = topContributorsData?.contributors ?? [];
   const totalTransaction = transactionsResponse?.meta.total_items ?? 0;
   return (
