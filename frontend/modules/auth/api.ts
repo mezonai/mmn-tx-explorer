@@ -9,7 +9,7 @@ export class AuthenticationService {
       params: { code },
     });
 
-    apiDongClient.defaults.headers.common['Authorization'] = `Bearer ${response.data.auth_token}`;
+    apiDongClient.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;
 
     return response.data;
   }

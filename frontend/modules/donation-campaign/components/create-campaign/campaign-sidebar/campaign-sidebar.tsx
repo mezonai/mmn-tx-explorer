@@ -12,7 +12,6 @@ import { formatDistanceToNow } from 'date-fns';
 
 export function CampaignSidebar() {
   const { form, validation, handleSubmit } = useCreateCampaignContext();
-  console.log('-', formatDistanceToNow(new Date(form.endDate || 0)));
 
   // Calculate preview data
   const preview: CampaignPreview = {

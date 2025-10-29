@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { AlertTriangle } from 'lucide-react';
 import { CopyButton } from '@/components/ui/copy-button';
 import { useCreateCampaignContext } from '../../../context/CreateCampaignContext';
+import { APP_CONFIG } from '@/configs/app.config';
 
 export function DonationWallet() {
   const { form, generateWallet } = useCreateCampaignContext();
@@ -17,9 +18,9 @@ export function DonationWallet() {
       <CardHeader>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle className="text-lg">Donation wallet</CardTitle>
+            <CardTitle className="text-foreground text-lg">Donation wallet</CardTitle>
             <p className="text-muted-foreground mt-1 text-sm">
-              Generate a dedicated wallet or paste an existing address to receive MMN tokens.
+              Generate a dedicated wallet or paste an existing address to receive {APP_CONFIG.CHAIN_SYMBOL}.
             </p>
           </div>
           <Badge className="bg-primary/10 text-primary">Required</Badge>
@@ -27,11 +28,11 @@ export function DonationWallet() {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="border-brand-primary/40 bg-brand-primary/5 dark:bg-brand-primary/10 rounded-2xl border border-dashed p-5">
+        <div className="border-brand-primary/40 bg-brand-primary/5 dark:bg-brand-primary/5 rounded-2xl border border-dashed p-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="flex-1">
-              <p className="text-primary font-semibold">Generate wallet keypair</p>
-              <p className="text-primary/80 mt-1 text-xs">
+              <p className="text-brand-primary font-semibold">Generate wallet keypair</p>
+              <p className="text-brand-primary/80 mt-1 text-xs">
                 Create a one-time address/private key pair for this campaign. Store the private key securely—we will not
                 display it again after closing the modal.
               </p>
