@@ -31,7 +31,7 @@ export const StatCard = ({ icon: Icon, title, value, subValue, className }: Stat
             <div className="relative flex items-baseline whitespace-nowrap">
               <span className="text-foreground text-2xl font-bold">{value}</span>
               <span>&nbsp;</span>
-              <span className="text-tertiary-600 text-xs font-medium">{subValue}</span>
+              <span className="text-tertiary-600 text-sm font-medium">{subValue}</span>
             </div>
           )}
         </div>

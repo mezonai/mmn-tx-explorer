@@ -57,7 +57,7 @@ export const CSRDonation = () => {
               title={item.title}
               value={item.value}
               subValue={item.subValue}
-              className="dark:border-primary/15 uppercase"
+              className="dark:border-primary/15"
             />
           ))}
         </div>
