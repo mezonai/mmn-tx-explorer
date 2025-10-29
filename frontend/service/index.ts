@@ -1,4 +1,5 @@
 import { STORAGE_KEYS } from '@/constant';
+import { AUTHENTICATION_ENDPOINT, AuthenticationService } from '@/modules/auth';
 import { clearAuthStorage, safeJsonParse } from '@/utils';
 import axios from 'axios';
 
@@ -25,13 +26,28 @@ apiDongClient.interceptors.request.use((config) => {
   return config;
 });
 
+let retry = 0;
 // Handle token refresh on 401 errors
 apiDongClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
-      if (typeof window !== 'undefined') {
-        clearAuthStorage();
+    if (error.response?.status === 401 && error.response.config.url !== AUTHENTICATION_ENDPOINT.REFRESH) {
+      console.log(error.response.config.url);
+
+      if (retry < 1) {
+        retry++;
+        try {
+          const localToken = safeJsonParse(localStorage.getItem(STORAGE_KEYS.TOKEN));
+          await AuthenticationService.refreshLogin(localToken?.refresh_token);
+          error.response.data.retry = true;
+          retry = 0;
+        } catch (error) {
+          console.error('Failed to refresh token', error);
+          // Clear auth data on unauthorized
+          if (typeof window !== 'undefined') {
+            clearAuthStorage();
+          }
+        }
       }
     }
     return Promise.reject(error);
