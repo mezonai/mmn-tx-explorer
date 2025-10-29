@@ -1,5 +1,4 @@
 import { ComponentType, SVGProps } from 'react';
-
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NumberUtil } from '@/utils';
@@ -14,7 +13,7 @@ interface StatCardProps {
 
 export const StatCard = ({ icon: Icon, title, value, subValue }: StatCardProps) => {
   const isLoading = value === undefined;
-  const cardClassName = cn('p-0', isLoading ? 'bg-background' : 'bg-brand-primary');
+  const cardClassName = cn('p-0', isLoading ? 'bg-background' : 'bg-brand-primary-background');
   return (
     <Card className={cardClassName}>
       <CardContent className="space-y-5 p-5">

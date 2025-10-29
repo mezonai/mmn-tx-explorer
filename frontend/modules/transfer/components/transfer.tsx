@@ -5,7 +5,7 @@ import { NumberUtil } from '@/utils';
 import { useTransfer } from '../hooks/useTransfer';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/text-area';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/shared/page-header';
 import { APP_CONFIG } from '@/configs/app.config';
@@ -99,10 +99,10 @@ export const Transfer = () => {
       <div className="border-primary/50 mx-auto mt-8 w-full max-w-3xl rounded-3xl border bg-white/5 p-6 text-left shadow-md dark:border-white/10">
         <div className="mx-auto grid max-w-3xl gap-3 text-sm sm:grid-cols-1">
           <div className="bg-primary/10 shadow-primary/20 flex flex-col rounded-2xl border-none px-2 py-2 text-left shadow-md">
-            <div className="text-primary dark:text-primary-light shadow-primary/20 px-2 text-left text-lg text-sm font-semibold">
+            <div className="text-primary dark:text-primary-light shadow-primary/20 px-2 text-left text-lg font-semibold">
               Send Mezon Đồng
             </div>
-            <p className="text-primary-light mt-2 px-2 text-left text-sm text-xs">Transfer funds wallet-to-wallet</p>
+            <p className="text-primary-light mt-2 px-2 text-left text-sm">Transfer funds wallet-to-wallet</p>
           </div>
           <div className="hidden rounded-2xl px-2 py-2 text-left">
             <div className="text-gray hover:border-primary/40 px-2 text-left text-lg text-sm font-semibold transition hover:text-white">
@@ -123,7 +123,7 @@ export const Transfer = () => {
                 <Input
                   placeholder="Recipent's Address"
                   label="Recipient"
-                  className="mt-2"
+                  className="mt-2 border-transparent"
                   type="text"
                   value={form.address}
                   onChange={handleInputChange('address')}
@@ -132,7 +132,7 @@ export const Transfer = () => {
               <div>
                 <Input
                   label="Amount"
-                  className="mt-2"
+                  className="mt-2 border-transparent"
                   type="text"
                   value={NumberUtil.formatWithCommas(form.amount)}
                   suffix={APP_CONFIG.CHAIN_SYMBOL}
@@ -150,7 +150,7 @@ export const Transfer = () => {
                 <Textarea
                   placeholder="Leave a note..."
                   label="Message (optional)"
-                  className="bg-background mt-2"
+                  className="mt-2 border-transparent"
                   value={form.note}
                   onChange={handleInputChange('note')}
                 />

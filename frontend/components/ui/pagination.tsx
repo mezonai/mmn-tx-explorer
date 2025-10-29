@@ -1,5 +1,4 @@
 import { ComponentType, SVGProps } from 'react';
-
 import { ChevronLeft, ChevronLeftDouble, ChevronRight, ChevronRightDouble } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import { LIMITS, PAGINATION } from '@/constant';
@@ -212,7 +211,7 @@ export const Pagination = ({
 
         {/* Current page indicator */}
         <div
-          className="bg-brand-primary -ml-px flex h-10 min-w-10 cursor-default items-center justify-center border p-2.5"
+          className="dark:bg-background bg-brand-primary-background -ml-px flex h-10 min-w-10 cursor-default items-center justify-center border p-2.5 dark:text-white"
           aria-current="page"
           role="button"
           tabIndex={-1}
