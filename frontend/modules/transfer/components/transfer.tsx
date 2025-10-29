@@ -101,11 +101,11 @@ export const Transfer = () => {
       />
       <div className="border-primary/50 mx-auto mt-8 w-full max-w-3xl rounded-3xl border bg-white/5 p-6 text-left shadow-md dark:border-white/10">
         <div className="mx-auto grid max-w-3xl gap-3 text-sm sm:grid-cols-1">
-          <div className="bg-primary/10 shadow-primary/20 flex flex-col rounded-2xl border-none px-2 py-2 text-left shadow-md">
-            <div className="text-primary dark:text-primary-light shadow-primary/20 px-2 text-left text-lg font-semibold">
+          <div className="bg-brand-primary/10 shadow-brand-primary/20 flex flex-col rounded-2xl border-none px-2 py-2 text-left shadow-md">
+            <div className="text-brand-primary dark:text-primary-light shadow-primary/20 px-2 text-left text-lg font-semibold">
               Send Mezon Đồng
             </div>
-            <p className="text-primary-light mt-2 px-2 text-left text-sm">Transfer funds wallet-to-wallet</p>
+            <p className="text-brand-primary/90 mt-2 px-2 text-left text-sm">Transfer funds wallet-to-wallet</p>
           </div>
           <div className="hidden rounded-2xl px-2 py-2 text-left">
             <div className="text-gray hover:border-primary/40 px-2 text-left text-lg text-sm font-semibold transition hover:text-white">
@@ -116,9 +116,9 @@ export const Transfer = () => {
         </div>
 
         <div className="mx-auto mt-2 grid max-w-3xl gap-8 py-7">
-          <div className="bg-primary/10 border-primary/40 shadow-primary/20 flex flex-col rounded-3xl border p-6 text-left shadow-lg lg:p-8">
-            <div className="text-primary dark:text-primary-light text-left text-lg font-semibold">Send Mezon Đồng</div>
-            <p className="text-primary-light/80 mt-2 text-left text-sm">
+          <div className="bg-brand-primary/10 border-brand-primary/40 shadow-primary/20 flex flex-col rounded-3xl border p-6 text-left shadow-lg lg:p-8">
+            <div className="text-brand-primary text-left text-lg font-semibold">Send Mezon Đồng</div>
+            <p className="text-brand-primary/90 mt-2 text-left text-sm">
               Funds are transferred instantly once the transaction is confirmed on-chain.
             </p>
             <div className="mt-6 flex-1 space-y-5 text-sm text-gray-200">
@@ -126,7 +126,7 @@ export const Transfer = () => {
                 <Input
                   placeholder="Recipent's Address"
                   label="Recipient"
-                  className="mt-2 border-transparent"
+                  className="mt-2 border-transparent dark:focus:border-brand-primary"
                   type="text"
                   value={form.address}
                   onChange={handleInputChange('address')}
@@ -135,7 +135,7 @@ export const Transfer = () => {
               <div>
                 <Input
                   label="Amount"
-                  className="mt-2 border-transparent"
+                  className="mt-2 border-transparent dark:focus:border-brand-primary"
                   type="text"
                   value={NumberUtil.formatWithCommas(form.amount)}
                   suffix={APP_CONFIG.CHAIN_SYMBOL}
@@ -144,7 +144,7 @@ export const Transfer = () => {
               </div>
 
               <div className="flex justify-end">
-                <span className="text-primary text-sm">
+                <span className="text-brand-primary text-sm">
                   Balance: {scaleDownBalance} {APP_CONFIG.CHAIN_SYMBOL}
                 </span>
               </div>
@@ -153,7 +153,7 @@ export const Transfer = () => {
                 <Textarea
                   placeholder="Leave a note..."
                   label="Message (optional)"
-                  className="mt-2 border-transparent"
+                  className="mt-2 border-transparent dark:focus:border-brand-primary"
                   value={form.note}
                   onChange={handleInputChange('note')}
                 />
@@ -168,7 +168,7 @@ export const Transfer = () => {
                   !mmnClient.validateAmount(senderBalance, mmnClient.scaleAmountToDecimals(form.amount))
                 }
                 type="submit"
-                className="bg-primary shadow-primary/30 hover:bg-primary-light dark:text-background w-full rounded-xl py-3 text-sm font-semibold text-white shadow-lg transition"
+                className="bg-brand-primary shadow-brand-primary/30 hover:bg-brand-primary/80 w-full rounded-xl py-3 text-sm font-semibold text-white shadow-lg transition"
               >
                 {loading ? 'Sending...' : 'Give Coffee'}
               </Button>
