@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { AppLogo } from '@/components/shared';
+import { AppLogo, ThemeToggle } from '@/components/shared';
 import { ROUTES } from '@/configs/routes.config';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { NavbarMenu } from '@/components/shared/navbar';
@@ -25,11 +25,11 @@ export function AppNavbar() {
           </nav>
 
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             <NavBarAuthPanel />
-          </div>
-
-          <div className="sm:hidden">
-            <SidebarTrigger />
+            <div className="sm:hidden">
+              <SidebarTrigger />
+            </div>
           </div>
         </div>
       </div>

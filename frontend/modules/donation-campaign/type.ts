@@ -50,8 +50,8 @@ export interface DonationResponse {
 }
 
 export interface CampaignListParams {
-  page?: number;
-  limit?: number;
+  page: number;
+  limit: number;
   status?: string;
   order?: 'asc' | 'desc';
 }
