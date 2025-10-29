@@ -2,15 +2,17 @@
 
 import { CopyButton } from '@/components/ui/copy-button';
 import { DonationCampaign } from '@/modules/donation-campaign/type';
-import { useAuth } from '@/providers';
+import { useAuth, useHidden } from '@/providers';
 import { DonateDialog } from './donate-dialog';
 import { truncateWalletAddress } from '@/modules/donation-campaign/utils';
 import Link from 'next/link';
 import { ROUTES } from '@/configs/routes.config';
 import { APP_CONFIG } from '@/configs/app.config';
+import { cn } from '@/lib/utils';
 
 export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
   const { isAuthenticated } = useAuth();
+  const { hidden } = useHidden();
 
   return (
     <aside className="border-border bg-card/90 shadow-primary/10 dark:bg-dark-light/80 rounded-3xl border p-6 dark:border-white/10">
@@ -32,7 +34,12 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
           </div>
           <Link
             href={ROUTES.WALLET(campaign.donation_wallet)}
-            className="text-brand-primary hover:text-primary-light mt-3 inline-flex items-center gap-1 text-xs font-medium transition"
+            className={cn(
+              'text-brand-primary hover:text-primary-light mt-3 inline-flex items-center gap-1 text-xs font-medium transition',
+              {
+                hidden: !hidden,
+              }
+            )}
           >
             View on explorer
           </Link>

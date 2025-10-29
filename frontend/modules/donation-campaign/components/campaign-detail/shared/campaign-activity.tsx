@@ -7,11 +7,13 @@ import { APP_CONFIG } from '@/configs/app.config';
 import { ROUTES } from '@/configs/routes.config';
 import { DATE_TIME_FORMAT, PAGINATION } from '@/constant';
 import { ESortOrder } from '@/enums';
+import { cn } from '@/lib/utils';
 import { useTopContributor } from '@/modules/donation-campaign/hooks/useTopContributor';
 import { Transaction } from '@/modules/donation-campaign/type';
 import { ITransactionListParams } from '@/modules/transaction';
 import { TxnHashLink } from '@/modules/transaction/components/transaction-list/list/shared';
 import { useTransactions } from '@/modules/transaction/hooks/useTransactions';
+import { useHidden } from '@/providers';
 import { DateTimeUtil, NumberUtil } from '@/utils';
 import { format } from 'date-fns';
 import { ChevronRight } from 'lucide-react';
@@ -36,6 +38,8 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
   const transactions = transactionsResponse?.data ?? [];
   const contributors = topContributorsData?.contributors ?? [];
   const totalTransaction = transactionsResponse?.meta.total_items ?? 0;
+  const { hidden, setHidden } = useHidden();
+  setHidden(transactions.length > 0);
   return (
     <Card className="dark:border-primary/20 p-2">
       <Tabs defaultValue="recent">
@@ -102,7 +106,12 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
                 <span className="order-1">{`Showing ${transactions.length} of total ${totalTransaction}`}</span>
                 <Link
                   href={ROUTES.WALLET(walletAddress)}
-                  className="text-brand-primary hover:text-brand-primary/70 order-2 inline-flex items-center font-medium transition"
+                  className={cn(
+                    'text-brand-primary hover:text-brand-primary/70 order-2 inline-flex items-center font-medium transition',
+                    {
+                      hidden: !hidden,
+                    }
+                  )}
                 >
                   View full activity
                   <ChevronRight className="ml-1 text-sm" />
