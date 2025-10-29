@@ -22,14 +22,6 @@ const apiDongClient = axios.create({
 
 // Add interceptor for authentication
 apiDongClient.interceptors.request.use((config) => {
-  let token = null;
-  if (typeof window !== 'undefined') {
-    const tokenAccess = localStorage.getItem(STORAGE_KEYS.TOKEN);
-    token = tokenAccess ? safeJsonParse(tokenAccess)?.access_token : null;
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  }
   return config;
 });
 
@@ -38,7 +30,6 @@ apiDongClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      // Clear auth data on unauthorized
       if (typeof window !== 'undefined') {
         clearAuthStorage();
       }
