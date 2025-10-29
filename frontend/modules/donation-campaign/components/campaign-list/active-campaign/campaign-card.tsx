@@ -1,4 +1,4 @@
-import { TEXT_CONSTANT } from '@/constant';
+import { APP_CONFIG } from '@/configs/app.config';
 import { NumberUtil } from '@/utils';
 import Link from 'next/link';
 import { useMemo } from 'react';
@@ -30,7 +30,7 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
       return 'Not launched';
     }
     const rawPercentage = (Number(NumberUtil.scaleDown(total_amount)) / goal) * 100;
-    const formattedPercentage = parseFloat(rawPercentage.toFixed(1));
+    const formattedPercentage = rawPercentage < 1 ? parseFloat(rawPercentage.toFixed(1)) : Math.floor(rawPercentage);
     return `${formattedPercentage} % funded`;
   }, [status, total_amount, goal]);
 
@@ -73,7 +73,7 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
         <Chip variant={getCampaignStatusVariant(status)}>{getCampaignStatusLabel(status)}</Chip>
         <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{daysLeft}</span>
       </div>
-      <h3 className="group-hover:text-primary dark:group-hover:text-primary-light mt-4 text-lg font-semibold text-gray-900 transition dark:text-white">
+      <h3 className="dark:group-hover:text-brand-primary group-hover:text-primary dark:group-hover:text-primary-light mt-4 text-lg font-semibold text-gray-900 transition dark:text-white">
         {name}
       </h3>
       <p className="mt-2 line-clamp-3 text-sm leading-6 text-gray-600 dark:text-gray-400">{description}</p>
@@ -82,7 +82,7 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
           <div className="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
             <span>
               {NumberUtil.formatWithCommasAndScale(total_amount)} / {NumberUtil.formatWithCommas(goal)}{' '}
-              {TEXT_CONSTANT.CURRENCY}
+              {APP_CONFIG.CHAIN_SYMBOL}
             </span>
             <span>{progress}</span>
           </div>
@@ -106,7 +106,7 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
         </div>
 
         <Button
-          className="bg-primary/10 text-primary dark:hover:bg-brand-primary dark:bg-brand-primary/10 dark:border-brand-primary dark:text-primary-light inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition hover:text-white dark:border dark:hover:text-white"
+          className="bg-primary/10 text-brand-primary dark:hover:bg-brand-primary dark:bg-brand-primary/10 dark:border-brand-primary dark:text-primary-light inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition hover:text-white dark:border dark:hover:text-white"
           asChild
         >
           <Link href={ROUTES.CAMPAIGN(id)}>{buttonLabel}</Link>

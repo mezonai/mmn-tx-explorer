@@ -211,12 +211,12 @@ export const Pagination = ({
 
         {/* Current page indicator */}
         <div
-          className="dark:bg-background bg-brand-primary-background -ml-px flex h-10 min-w-10 cursor-default items-center justify-center border p-2.5 dark:text-white"
+          className=" bg-background -ml-px flex h-10 min-w-10 cursor-default items-center justify-center border p-2.5"
           aria-current="page"
           role="button"
           tabIndex={-1}
         >
-          <span className="text-secondary-700 text-sm font-semibold">{currentPage}</span>
+          <span className="text-secondary-700 dark:text-white text-sm font-semibold">{currentPage}</span>
         </div>
 
         {/* Next page number */}
