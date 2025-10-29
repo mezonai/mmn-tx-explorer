@@ -211,7 +211,7 @@ export const Pagination = ({
 
         {/* Current page indicator */}
         <div
-          className="bg-background -ml-px flex h-10 min-w-10 cursor-default items-center justify-center border p-2.5"
+          className="dark:bg-background bg-brand-primary-background -ml-px flex h-10 min-w-10 cursor-default items-center justify-center border p-2.5"
           aria-current="page"
           role="button"
           tabIndex={-1}
