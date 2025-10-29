@@ -145,9 +145,9 @@ func (h *DonationCampaignHandler) GetCampaign(c *gin.Context) {
 // @Description Get a list of all donation campaigns with pagination
 // @Tags campaigns
 // @Produce json
-// @Param page query int false "Page number" default(1)
+// @Param page query int false "Page number" default(0)
 // @Param limit query int false "Items per page" default(10)
-// @Success 200 {object} models.Response{data=[]models.DonationCampaignResponse}
+// @Success 200 {object} models.PaginatedResponse{data=[]models.DonationCampaignResponse, meta=models.PaginationMeta}
 // @Failure 500 {object} models.Response
 // @Router /api/v1/campaigns [get]
 func (h *DonationCampaignHandler) ListCampaigns(c *gin.Context) {

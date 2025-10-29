@@ -366,7 +366,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "default": 1,
+                        "default": 0,
                         "description": "Page number",
                         "name": "page",
                         "in": "query"
@@ -385,11 +385,14 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/models.Response"
+                                    "$ref": "#/definitions/models.PaginatedResponse"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
+                                        " meta": {
+                                            "$ref": "#/definitions/models.PaginationMeta"
+                                        },
                                         "data": {
                                             "type": "array",
                                             "items": {
@@ -973,6 +976,38 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "models.PaginatedResponse": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "message": {
+                    "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/models.PaginationMeta"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "models.PaginationMeta": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total_items": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
                 }
             }
         },
