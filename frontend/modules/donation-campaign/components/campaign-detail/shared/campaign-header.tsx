@@ -1,19 +1,13 @@
 'use client';
 import { ProgressCard } from './progress-card';
 import { InsightsCard } from './insights-card';
-import { ECampaignStatus, DonationCampaign } from '@/modules/donation-campaign/type';
-import { useMemo } from 'react';
+import { DonationCampaign } from '@/modules/donation-campaign/type';
 import { Chip } from '@/components/shared';
 import { getCampaignStatusVariant } from '@/modules/donation-campaign/utils';
 
 export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
   const status = campaign.status;
-  const capitalizedStatus = useMemo(() => {
-    if (status === ECampaignStatus.Active) return 'Active';
-    if (status === ECampaignStatus.Draft) return 'Draft';
-    if (status === ECampaignStatus.Closed) return 'Closed';
-    return 'Unknown';
-  }, [status]);
+  const capitalizedStatus = getCampaignStatusVariant(status);
 
   return (
     <div className="space-y-4">
