@@ -22,11 +22,13 @@ const apiDongClient = axios.create({
 
 // Add interceptor for authentication
 apiDongClient.interceptors.request.use((config) => {
-  const tokenAccess = localStorage.getItem(STORAGE_KEYS.TOKEN);
-  const accessToken = tokenAccess ? safeJsonParse(tokenAccess)?.access_token : null;
-  const token = typeof window !== 'undefined' ? accessToken : null;
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  let token = null;
+  if (typeof window !== 'undefined') {
+    const tokenAccess = localStorage.getItem(STORAGE_KEYS.TOKEN);
+    token = tokenAccess ? safeJsonParse(tokenAccess)?.access_token : null;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
   return config;
 });
