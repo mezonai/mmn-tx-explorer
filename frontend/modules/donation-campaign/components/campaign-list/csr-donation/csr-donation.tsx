@@ -17,7 +17,8 @@ export const CSRDonation = () => {
     },
     {
       title: 'Total raised',
-      value: `${NumberUtil.formatWithCommasAndScale(stats.total_amount)} ${APP_CONFIG.CHAIN_SYMBOL}`,
+      value: `${NumberUtil.formatWithCommasAndScale(stats.total_amount)}`,
+      subValue: ` ${APP_CONFIG.CHAIN_SYMBOL}`,
     },
     {
       title: 'Contributors',
@@ -55,6 +56,7 @@ export const CSRDonation = () => {
               key={item.title}
               title={item.title}
               value={item.value}
+              subValue={item.subValue}
               className="dark:border-primary/15 uppercase"
             />
           ))}
