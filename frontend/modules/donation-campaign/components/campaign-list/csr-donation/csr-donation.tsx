@@ -15,7 +15,7 @@ export const CSRDonation = () => {
       value: stats.total_campaigns_active,
     },
     {
-      title: 'Total raised (MMN)',
+      title: 'Total raised (Đồng)',
       value: NumberUtil.formatWithCommasAndScale(stats.total_amount),
     },
     {

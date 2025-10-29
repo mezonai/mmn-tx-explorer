@@ -7,7 +7,7 @@ import { Chip } from '@/components/shared';
 import { getCampaignStatusLabel, getCampaignStatusVariant } from '../../../utils';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/configs/routes.config';
-import { formatDistanceToNow, formatDistance } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 
 interface CampaignCardProps {
   campaign: DonationCampaign;
@@ -22,14 +22,16 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
     if (status === ECampaignStatus.Closed) {
       return 'Goal achieved';
     }
-    return `${formatDistance(new Date(end_date), new Date(), { addSuffix: true })}`;
+    return `${formatDistanceToNow(new Date(end_date), { addSuffix: true })}`;
   }, [status, end_date]);
 
   const progress = useMemo(() => {
     if (status === ECampaignStatus.Draft) {
       return 'Not launched';
     }
-    return `${Math.floor((Number(NumberUtil.scaleDown(total_amount)) / goal) * 100)} % funded`;
+    const rawPercentage = (Number(NumberUtil.scaleDown(total_amount)) / goal) * 100;
+    const formattedPercantage = parseFloat(rawPercentage.toFixed(1)).toString();
+    return `${formattedPercantage} % funded`;
   }, [status, total_amount, goal]);
 
   const progressPercent = useMemo(() => {

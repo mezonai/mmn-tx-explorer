@@ -59,7 +59,7 @@ export const ActiveCampaign = () => {
           <div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Active campaigns</h2>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-              Real-time snapshots from the MMN chain. Select a campaign to view detail and donate.
+              Select a campaign to view detail and donate.
             </p>
           </div>
           <div className="flex flex-wrap gap-3 text-sm">
