@@ -26,7 +26,7 @@ export const PrePublishChecklist = ({ items }: PrePublishChecklistProps) => {
                 className={`mt-1 inline-flex h-5 w-5 min-w-5 items-center justify-center rounded-full text-[11px] font-semibold ${
                   item.completed
                     ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300'
-                    : 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-light'
+                    : 'bg-brand-primary/10 text-brand-primary dark:bg-brand-primary/20'
                 }`}
               >
                 {item.completed ? '✓' : item.id}
