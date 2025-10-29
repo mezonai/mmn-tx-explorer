@@ -43,7 +43,7 @@ export const ActiveCampaign = () => {
       <section className="">
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
-            <div className="border-primary/30 border-t-primary mx-auto h-12 w-12 animate-spin rounded-full border-4"></div>
+            <div className="border-brand-primary/30 border-t-brand-primary mx-auto h-12 w-12 animate-spin rounded-full border-4"></div>
             <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">Loading campaigns...</p>
           </div>
         </div>
@@ -72,7 +72,7 @@ export const ActiveCampaign = () => {
                   setSelectedStatus(next);
                 }}
               >
-                <SelectTrigger className="hover:border-primary hover:text-primary dark:bg-background dark:hover:border-primary-light inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 font-medium text-gray-600 transition hover:bg-white dark:border-white/10 dark:text-gray-300 dark:hover:text-white">
+                <SelectTrigger className="hover:border-brand-primary hover:text-brand-primary dark:bg-background dark:hover:border-brand-primary-light inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 font-medium text-gray-600 transition hover:bg-white dark:border-white/10 dark:text-gray-300 dark:hover:text-white">
                   <SelectValue placeholder="All statuses">{selectedLabel}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
@@ -86,7 +86,7 @@ export const ActiveCampaign = () => {
             </div>
             <Button
               onClick={() => setSortBy((prev) => (prev === 'newest' ? 'oldest' : 'newest'))}
-              className="bg-background hover:bg-background hover:border-primary hover:text-primary dark:hover:border-primary-light inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 font-medium text-gray-600 transition dark:border-white/10 dark:text-gray-300 dark:hover:text-white"
+              className="bg-background hover:bg-background hover:border-brand-primary hover:text-brand-primary dark:hover:border-brand-primary-light inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 font-medium text-gray-600 transition dark:border-white/10 dark:text-gray-300 dark:hover:text-white"
               aria-label={`Toggle sort order (currently ${sortBy})`}
             >
               Sort by {sortBy === 'newest' ? 'newest' : 'oldest'}

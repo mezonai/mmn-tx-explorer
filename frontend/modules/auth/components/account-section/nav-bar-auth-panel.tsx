@@ -5,6 +5,7 @@ import { Circle } from 'lucide-react';
 import { useUser, useAuthActions } from '@/providers/AppProvider';
 import { cn } from '@/lib/utils';
 import { CopyButton } from '@/components/ui/copy-button';
+
 export const NavBarAuthPanel: React.FC = () => {
   const { user } = useUser();
   const { login, logout } = useAuthActions();
