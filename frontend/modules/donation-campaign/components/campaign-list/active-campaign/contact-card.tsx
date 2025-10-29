@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 export const ContactCard = () => {
   return (
-    <div className="dark:bg-dark-light/80 mt-16 rounded-3xl border border-gray-200 bg-white px-6 py-8 shadow-sm sm:px-8 dark:border-white/10">
+    <div className="dark:bg-card mt-16 rounded-3xl border border-gray-200 bg-white px-6 py-8 shadow-sm sm:px-8 dark:border-white/10">
       <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Need a bespoke campaign?</h3>
@@ -14,7 +14,7 @@ export const ContactCard = () => {
         <div className="flex flex-wrap gap-3">
           <Link
             href="mailto:csr@mezon.ai"
-            className="bg-primary shadow-primary/30 hover:bg-primary-light inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-lg transition"
+            className="dark:bg-brand-primary dark:hover:bg-brand-primary/80 bg-primary shadow-primary/30 hover:bg-primary-light inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-lg transition dark:shadow-none"
           >
             Contact CSR team
           </Link>

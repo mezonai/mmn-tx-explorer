@@ -2,13 +2,12 @@ import { ComponentType, SVGProps } from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { NumberUtil } from '@/utils';
 import { cn } from '@/lib/utils';
 
 interface StatCardProps {
   icon?: ComponentType<SVGProps<SVGSVGElement>>;
   title: string;
-  value?: number;
+  value?: string | number;
   subValue?: string;
   className?: string;
 }
@@ -30,7 +29,7 @@ export const StatCard = ({ icon: Icon, title, value, subValue, className }: Stat
             <Skeleton className="h-9 w-28" />
           ) : (
             <div>
-              <span className="text-foreground text-2xl font-bold">{NumberUtil.formatWithCommas(value ?? 0)}</span>
+              <span className="text-foreground text-2xl font-bold">{value}</span>
               <span>&nbsp;</span>
               <span className="text-tertiary-600 text-base font-medium">{subValue}</span>
             </div>

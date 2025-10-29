@@ -15,6 +15,7 @@ export const useCampaigns = (params: CampaignListParams = {}) => {
 
   return {
     campaigns: campaignsResponse?.data || [],
+    meta: campaignsResponse?.meta,
     isLoading,
     error,
   };
