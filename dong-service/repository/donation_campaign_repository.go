@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"dong-service/constants"
+	"dong-service/logger"
 	"dong-service/models"
 	"errors"
 	"fmt"
@@ -34,7 +35,14 @@ func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampa
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				logger.Error().Err(rollbackErr).Msg("Failed to rollback transaction")
+			}
+		}
+	}()
 
 	// Insert donation campaign
 	campaignQuery := fmt.Sprintf(`
@@ -98,7 +106,14 @@ func (r *DonationCampaignRepository) CreateAndActive(campaign *models.CreateDona
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				logger.Error().Err(rollbackErr).Msg("Failed to rollback transaction")
+			}
+		}
+	}()
 
 	// Insert donation campaign with Active status
 	campaignQuery := fmt.Sprintf(`
