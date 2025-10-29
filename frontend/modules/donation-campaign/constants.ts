@@ -16,4 +16,5 @@ export const QUERY_KEYS = {
   CAMPAIGN: 'campaign',
   CAMPAIGN_STATS: 'campaign-stats',
   USER_DONATIONS: 'user-donations',
+  TOP_CONTRIBUTOR: 'top-contributors',
 } as const;

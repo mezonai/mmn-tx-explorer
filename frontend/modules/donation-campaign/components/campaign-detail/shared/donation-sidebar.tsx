@@ -6,6 +6,7 @@ import { useAuth } from '@/providers';
 import { DonateDialog } from './donate-dialog';
 import { truncateWalletAddress } from '@/modules/donation-campaign/utils';
 import Link from 'next/link';
+import { ROUTES } from '@/configs/routes.config';
 
 export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
   const { isAuthenticated } = useAuth();
@@ -29,7 +30,7 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
             <CopyButton textToCopy={campaign.donation_wallet} />
           </div>
           <Link
-            href={`/wallets/${campaign.donation_wallet}`}
+            href={ROUTES.WALLET(campaign.donation_wallet)}
             className="text-primary hover:text-primary-light mt-3 inline-flex items-center gap-1 text-xs font-medium transition"
           >
             View on explorer

@@ -3,7 +3,8 @@ import { APP_CONFIG } from '@/configs/app.config';
 import { NumberUtil } from '@/utils';
 
 export function ProgressCard({ raised, goal }: { raised: number; goal: number }) {
-  const progress = Math.min((raised / 1000000 / goal) * 100, 100);
+  const raisedScaleDown = Number(NumberUtil.formatWithCommasAndScale(raised).replace(/,/g, ''));
+  const progress = (raisedScaleDown / goal) * 100;
   return (
     <Card className="dark:bg-dark-light/80 rounded-3xl border-gray-200 bg-white/90 shadow-sm dark:border-white/10">
       <CardContent>
@@ -26,7 +27,7 @@ export function ProgressCard({ raised, goal }: { raised: number; goal: number })
         <span>
           Goal {NumberUtil.formatWithCommas(goal)} {APP_CONFIG.CHAIN_SYMBOL}
         </span>
-        <span>{progress.toFixed(1)}% funded</span>
+        <span>{progress.toFixed(2)}% funded</span>
       </CardFooter>
     </Card>
   );

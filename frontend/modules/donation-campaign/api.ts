@@ -1,10 +1,12 @@
 import { apiDongClient } from '@/service';
 import { IPaginatedResponse } from '@/types';
-import { CampaignListParams } from './type';
-import { CampaignStats } from './type';
-import { CreateCampaignRequest } from './type';
-import { DonationCampaign } from './type';
-import { TopContributorsResponse } from './type';
+import {
+  CampaignListParams,
+  CampaignStats,
+  CreateCampaignRequest,
+  DonationCampaign,
+  TopContributorsResponse,
+} from './type';
 import { DONATION_ENDPOINTS } from './constants';
 
 export class DonationCampaignService {

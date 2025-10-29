@@ -6,7 +6,6 @@ import { APP_CONFIG } from '@/configs/app.config';
 import { ROUTES } from '@/configs/routes.config';
 import { DATE_TIME_FORMAT, PAGINATION } from '@/constant';
 import { ESortOrder } from '@/enums';
-import { usePaginationQueryParam } from '@/hooks';
 import { useTopContributor } from '@/modules/donation-campaign/hooks/useTopContributor';
 import { Transaction } from '@/modules/donation-campaign/type';
 import { truncateWalletAddress } from '@/modules/donation-campaign/utils';
@@ -25,11 +24,8 @@ const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
 export function CampaignActivity({ campaignId, walletAddress }: { campaignId: string; walletAddress: string }) {
   const { data: topContributorsData } = useTopContributor(campaignId);
 
-  const { page, limit } = usePaginationQueryParam();
   const searchParams: ITransactionListParams = {
     ...DEFAULT_VALUE_DATA_SEARCH,
-    page,
-    limit,
     filter_to_address: walletAddress,
   };
 

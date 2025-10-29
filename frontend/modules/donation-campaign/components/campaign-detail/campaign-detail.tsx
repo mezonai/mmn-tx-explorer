@@ -2,12 +2,13 @@ import { BreadcrumbNavigation } from '@/components/shared';
 import { DonationCampaignService } from '../../api';
 import { IBreadcrumb } from '@/types';
 import { CampaignActivity, CampaignHeader, DonationSidebar } from './shared';
+import { ROUTES } from '@/configs/routes.config';
 
 interface CampaignDetailProps {
   campaignId: string;
 }
 const breadcrumbs: IBreadcrumb[] = [
-  { label: 'Donation campaign', href: '/donation-campaign' },
+  { label: 'Donation campaign', href: ROUTES.DONATION_CAMPAIGN },
   { label: 'Campaign Details', href: '#' },
 ] as const;
 export const CampaignDetail = async ({ campaignId }: CampaignDetailProps) => {
