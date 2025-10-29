@@ -71,8 +71,16 @@ export class DonationCampaignService {
     const { data } = await apiDongClient.patch(DONATION_ENDPOINTS.CLOSE_CAMPAIGN(id));
     return data;
   }
-  static async getTopContributor(campaignId: string): Promise<TopContributorsResponse['data']> {
-    const { data } = await apiDongClient.get<TopContributorsResponse>(DONATION_ENDPOINTS.TOP_CONTRIBUTOR(campaignId));
+  static async getTopContributor({
+    campaignId,
+    params,
+  }: {
+    campaignId: string;
+    params: { limit: number };
+  }): Promise<TopContributorsResponse['data']> {
+    const { data } = await apiDongClient.get<TopContributorsResponse>(DONATION_ENDPOINTS.TOP_CONTRIBUTOR(campaignId), {
+      params,
+    });
     return data.data;
   }
 }

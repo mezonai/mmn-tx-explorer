@@ -9,7 +9,6 @@ export const DONATION_ENDPOINTS = {
   MY_DONATIONS: '/donations/my-donations',
   PUBLISH_CAMPAIGN: (id: string) => `/api/v1/campaigns/${id}/activate`,
   TOP_CONTRIBUTOR: (id: string) => `/api/v1/campaigns/${id}/top-contributors`,
-  STATS: '/campaigns/stats',
 } as const;
 
 export const QUERY_KEYS = {

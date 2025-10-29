@@ -1,5 +1,6 @@
 'use client';
 
+import { AddressDisplay } from '@/components/shared';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { APP_CONFIG } from '@/configs/app.config';
@@ -10,50 +11,53 @@ import { useTopContributor } from '@/modules/donation-campaign/hooks/useTopContr
 import { Transaction } from '@/modules/donation-campaign/type';
 import { truncateWalletAddress } from '@/modules/donation-campaign/utils';
 import { ITransactionListParams } from '@/modules/transaction';
+import { TxnHashLink } from '@/modules/transaction/components/transaction-list/list/shared';
 import { useTransactions } from '@/modules/transaction/hooks/useTransactions';
 import { DateTimeUtil, NumberUtil } from '@/utils';
 import { format } from 'date-fns';
+import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 
 const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
   page: PAGINATION.DEFAULT_PAGE,
-  limit: PAGINATION.DEFAULT_LIMIT,
+  limit: PAGINATION.RECENT_ACTIVITY_LIMITS,
   sort_by: 'transaction_timestamp',
   sort_order: ESortOrder.DESC,
 } as const;
 export function CampaignActivity({ campaignId, walletAddress }: { campaignId: string; walletAddress: string }) {
-  const { data: topContributorsData } = useTopContributor(campaignId);
-
-  const searchParams: ITransactionListParams = {
+  const searchTBParams = { limit: 5 };
+  const searchTransactionParams: ITransactionListParams = {
     ...DEFAULT_VALUE_DATA_SEARCH,
     filter_to_address: walletAddress,
   };
+  const { data: topContributorsData } = useTopContributor({ params: searchTBParams, campaignId });
 
-  const { data: transactionsResponse } = useTransactions(searchParams);
+  const { data: transactionsResponse } = useTransactions(searchTransactionParams);
 
   const transactions = transactionsResponse?.data ?? [];
+  console.log(transactions);
   const contributors = topContributorsData?.contributors ?? [];
-
+  const totalTransaction = transactionsResponse?.meta.total_items ?? 0;
   return (
-    <Card className="p-2">
+    <Card className="dark:border-primary/20 p-2">
       <Tabs defaultValue="recent">
-        <TabsList className="w-full">
+        <TabsList className="dark:bg-background/90 w-full rounded-3xl">
           <TabsTrigger
             value="recent"
-            className="data-[state=active]:text-primary hover:text-primary dark:bg-dark dark:text-primary-light"
+            className="data-[state=active]:text-brand-primary hover:text-brand-primary dark:data-[state=active]:text-brand-primary dark:hover:text-brand-primary dark:data-[state=active]:bg-background rounded-2xl"
           >
             Recent Activity
           </TabsTrigger>
           <TabsTrigger
             value="top"
-            className="data-[state=active]:text-primary hover:text-primary dark:bg-dark dark:text-primary-light"
+            className="data-[state=active]:text-brand-primary hover:text-brand-primary dark:data-[state=active]:text-brand-primary dark:hover:text-brand-primary dark:data-[state=active]:bg-background rounded-2xl"
           >
             Top Contributors
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="recent">
-          <Card className="overflow-x-auto p-4">
+          <Card className="dark:border-primary/20 overflow-x-auto p-4">
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>
             </CardHeader>
@@ -72,7 +76,7 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
                     transactions.map((tx: Transaction, i: number) => (
                       <tr key={i} className="hover:bg-muted/30 border-b">
                         <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                          {truncateWalletAddress(tx.from_address)}
+                          <AddressDisplay address={tx.from_address} href={ROUTES.WALLET(tx.from_address)} />
                         </td>
                         <td className="px-4 py-3 font-semibold text-emerald-500 dark:text-emerald-300">
                           {NumberUtil.formatWithCommasAndScale(tx.value)}
@@ -80,8 +84,8 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
                         <td className="px-4 py-3 font-semibold">
                           {format(DateTimeUtil.toMilliseconds(tx.transaction_timestamp), DATE_TIME_FORMAT.DATE_TIME)}
                         </td>
-                        <td className="text-primary dark:text-primary px-4 py-3 font-semibold">
-                          {truncateWalletAddress(tx.hash)}
+                        <td className="px-4 py-3 font-semibold">
+                          <TxnHashLink hash={tx.hash} isPending={false} />
                         </td>
                       </tr>
                     ))
@@ -97,11 +101,13 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
             </CardContent>
             <CardFooter>
               <div className="mt-4 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                <span>{`Showing ${PAGINATION.DEFAULT_LIMIT} of total ${totalTransaction}`}</span>
                 <Link
                   href={ROUTES.WALLET(walletAddress)}
-                  className="text-primary hover:text-primary-light inline-flex items-center gap-1 font-medium transition"
+                  className="text-brand-primary hover:text-brand-primary/70 inline-flex items-center font-medium transition"
                 >
                   View full activity
+                  <ChevronRight className="text-sm" />
                 </Link>
               </div>
             </CardFooter>
@@ -109,8 +115,8 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
         </TabsContent>
 
         <TabsContent value="top">
-          <Card className="space-y-3 p-4">
-            <CardHeader className="flex justify-between gap-2">
+          <Card className="dark:border-primary/20 space-y-3 p-4">
+            <CardHeader className="flex flex-col justify-between gap-2 sm:flex-row">
               <CardTitle>Top contributor</CardTitle>
               <span className="text-xs text-gray-500 dark:text-gray-400">Refreshes every 10 minutes</span>
             </CardHeader>
@@ -119,19 +125,19 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
                 contributors.map((contrib, i) => (
                   <div
                     key={i}
-                    className="dark:bg-dark-light/70 flex items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-white/70 p-4 dark:border-white/10"
+                    className="dark:bg-card mb-1 flex flex-col items-start gap-2 rounded-2xl border border-gray-100 bg-white/70 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 dark:border-white/10"
                   >
                     <div className="flex items-center gap-4">
-                      <span className="bg-primary inline-flex h-9 w-9 items-center justify-center rounded-2xl text-sm font-semibold text-white">
+                      <span className="bg-brand-primary inline-flex h-9 w-9 items-center justify-center rounded-2xl text-sm font-semibold text-white">
                         {i + 1}
                       </span>
                       <div>
                         <p className="font-mono text-sm font-semibold dark:text-white">
-                          {truncateWalletAddress(contrib.sender_wallet)}
+                          <AddressDisplay address={contrib.sender_wallet} href={ROUTES.WALLET(contrib.sender_wallet)} />
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="w-full text-left sm:w-auto sm:text-right">
                       <p className="text-sm font-semibold text-emerald-500 dark:text-emerald-300">
                         {NumberUtil.formatWithCommasAndScale(contrib.total_donate)} {APP_CONFIG.CHAIN_SYMBOL}
                       </p>

@@ -85,7 +85,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
       <DialogTrigger asChild>
         <Button
           size="lg"
-          className="bg-primary shadow-primary/30 hover:bg-primary-light focus-visible:outline-primary inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white shadow-lg transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="bg-brand-primary hover:bg-brand-primary/70 focus-visible:outline-primary inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white shadow-lg transition focus-visible:outline-offset-2"
         >
           Donate Now
         </Button>

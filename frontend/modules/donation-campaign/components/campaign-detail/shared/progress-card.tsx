@@ -6,19 +6,17 @@ export function ProgressCard({ raised, goal }: { raised: number; goal: number })
   const raisedScaleDown = Number(NumberUtil.formatWithCommasAndScale(raised).replace(/,/g, ''));
   const progress = (raisedScaleDown / goal) * 100;
   return (
-    <Card className="dark:bg-dark-light/80 rounded-3xl border-gray-200 bg-white/90 shadow-sm dark:border-white/10">
+    <Card className="dark:bg-dark dark:bg-card rounded-3xl border-gray-200 bg-white/90 shadow-sm dark:border-white/10">
       <CardContent>
         <p className="text-xs tracking-wide text-gray-500 uppercase dark:text-gray-400">Raised to date</p>
-
         <p className="mt-2 text-3xl font-semibold text-gray-900 dark:text-white">
           {NumberUtil.formatWithCommasAndScale(raised)}
-          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{APP_CONFIG.CHAIN_SYMBOL}</span>
+          <span className="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400">{APP_CONFIG.CHAIN_SYMBOL}</span>
         </p>
-
-        <div className="mt-4 h-2 w-full rounded-full bg-gray-100 dark:bg-white">
+        <div className="relative mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
           <div
-            className="from-primary to-primary-light h-full rounded-full bg-gradient-to-r transition-all"
-            style={{ width: `${progress}%` }}
+            className="bg-brand-primary h-full rounded-full transition-all duration-500 ease-out"
+            style={{ width: `${Math.min(progress, 100)}%` }}
           />
         </div>
       </CardContent>

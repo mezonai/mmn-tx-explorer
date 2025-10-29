@@ -7,14 +7,15 @@ import { DonateDialog } from './donate-dialog';
 import { truncateWalletAddress } from '@/modules/donation-campaign/utils';
 import Link from 'next/link';
 import { ROUTES } from '@/configs/routes.config';
+import { APP_CONFIG } from '@/configs/app.config';
 
 export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
   const { isAuthenticated } = useAuth();
 
   return (
-    <aside className="border-border bg-card/90 shadow-primary/10 dark:bg-dark-light/80 rounded-3xl border p-6 shadow-lg dark:border-white/10">
-      <p className="text-primary text-xs font-semibold tracking-[0.3em] uppercase">Donate</p>
-      <h2 className="text-foreground mt-3 text-xl font-semibold dark:text-white">Send MMN tokens</h2>
+    <aside className="border-border bg-card/90 shadow-primary/10 dark:bg-dark-light/80 rounded-3xl border p-6 dark:border-white/10">
+      <p className="text-brand-primary text-xs font-semibold tracking-[0.3em] uppercase">Donate</p>
+      <h2 className="text-foreground mt-3 text-xl font-semibold dark:text-white">Send {APP_CONFIG.CHAIN_SYMBOL}</h2>
       <p className="text-muted-foreground mt-3 text-sm dark:text-gray-400">
         100% of your contribution is allocated to construction, learning resources, and student well-being. Transactions
         appear instantly in the Recent activity log.
@@ -31,7 +32,7 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
           </div>
           <Link
             href={ROUTES.WALLET(campaign.donation_wallet)}
-            className="text-primary hover:text-primary-light mt-3 inline-flex items-center gap-1 text-xs font-medium transition"
+            className="text-brand-primary hover:text-primary-light mt-3 inline-flex items-center gap-1 text-xs font-medium transition"
           >
             View on explorer
           </Link>
