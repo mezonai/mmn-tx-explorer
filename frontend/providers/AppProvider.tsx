@@ -50,21 +50,17 @@ export function AppProvider({ children }: AppProviderProps) {
   const [keypair, setKeypair] = useState<IEphemeralKeyPair | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
+
   useEffect(() => {
     const localTokenStr = localStorage.getItem(STORAGE_KEYS.TOKEN);
     const localToken = localTokenStr ? safeJsonParse(localTokenStr) : null;
     if (localToken) {
       (async () => {
         try {
-          const response = await AuthenticationService.refreshLogin(localToken.refresh_token);
-          localStorage.setItem(
-            STORAGE_KEYS.TOKEN,
-            JSON.stringify({
-              access_token: response.access_token,
-              refresh_token: response.refresh_token,
-            })
-          );
-        } catch {}
+          await AuthenticationService.refreshLogin(localToken.refresh_token);
+        } catch {
+          toast.error('Session expired, please log in again.');
+        }
       })();
     }
     const userStored = localStorage.getItem(STORAGE_KEYS.USER_INFO);
@@ -112,7 +108,8 @@ export function AppProvider({ children }: AppProviderProps) {
     };
 
     handleAuthentication(code);
-  }, [router, searchParams]);
+  }, []);
+
   const value: AppContextType = {
     isAuthenticated,
     setIsAuthenticated,
