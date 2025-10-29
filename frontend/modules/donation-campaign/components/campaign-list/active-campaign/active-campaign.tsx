@@ -37,6 +37,19 @@ export const ActiveCampaign = () => {
     { value: ECampaignStatus.Closed, label: getCampaignStatusLabel(ECampaignStatus.Closed) },
   ];
 
+  if (isLoading) {
+    return (
+      <section className="">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="border-primary/30 border-t-primary mx-auto h-12 w-12 animate-spin rounded-full border-4"></div>
+            <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">Loading campaigns...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   const selectedLabel = selectedStatus === 'all' ? 'All statuses' : getCampaignStatusLabel(selectedStatus);
   return (
     <section className="">
@@ -89,18 +102,18 @@ export const ActiveCampaign = () => {
           )}
           <article className="group border-primary/40 bg-primary/5 text-primary hover:border-primary/60 hover:bg-primary/10 dark:border-brand-primary/40 dark:bg-brand-primary/10 dark:text-primary-light flex h-full flex-col rounded-3xl border border-dashed p-6 text-center text-sm shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
             <div className="bg-brand-primary/20 dark:text-primary-light mx-auto flex h-14 w-14 items-center justify-center rounded-2xl">
-              <svg className="h-6 w-6 " viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path
                   d="M12 5v14m7-7H5"
                   stroke="currentColor"
                   strokeWidth="1.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className='text-brand-primary'
+                  className="text-brand-primary"
                 ></path>
               </svg>
             </div>
-            <h3 className="mt-4 text-lg font-semibold text-brand-primary">Launch a new campaign</h3>
+            <h3 className="text-brand-primary mt-4 text-lg font-semibold">Launch a new campaign</h3>
             <p className="text-brand-primary mt-2 text-sm leading-6">
               Prepare your storyline, media assets, and fundraising targets so you can publish as soon as stakeholders
               approve.
@@ -109,7 +122,7 @@ export const ActiveCampaign = () => {
             <Link href={ROUTES.CREATE_CAMPAIGN} className="mt-auto">
               <Button
                 variant="link"
-                className="bg-brand-primary dark:hover:bg-brand-primary dark:bg-brand-primary/50 inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-white transition hover:no-underline"
+                className="bg-brand-primary dark:hover:bg-brand-primary dark:bg-brand-primary/50 mt-6 inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-white transition hover:no-underline"
               >
                 Get started
               </Button>
@@ -119,7 +132,7 @@ export const ActiveCampaign = () => {
         <Pagination
           page={page}
           limit={limit}
-          totalPages={meta?.total_pages || 1}
+          totalPages={meta?.total_pages || 3}
           totalItems={meta?.total_items || 0}
           isLoading={isLoading}
           onChangePage={handleChangePage}
