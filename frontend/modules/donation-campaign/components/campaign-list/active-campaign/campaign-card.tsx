@@ -30,8 +30,8 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
       return 'Not launched';
     }
     const rawPercentage = (Number(NumberUtil.scaleDown(total_amount)) / goal) * 100;
-    const formattedPercantage = parseFloat(rawPercentage.toFixed(1)).toString();
-    return `${formattedPercantage} % funded`;
+    const formattedPercentage = parseFloat(rawPercentage.toFixed(1));
+    return `${formattedPercentage} % funded`;
   }, [status, total_amount, goal]);
 
   const progressPercent = useMemo(() => {
