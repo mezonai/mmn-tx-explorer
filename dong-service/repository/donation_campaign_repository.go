@@ -287,7 +287,14 @@ func (r *DonationCampaignRepository) GetAll(limit, offset int, status *int16, or
 	if err != nil {
 		return nil, fmt.Errorf("failed to get donation campaigns: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err != nil {
+			errClose := rows.Close()
+			if errClose != nil {
+				logger.Error().Err(errClose).Msg("Failed to close rows")
+			}
+		}
+	}()
 
 	var campaigns []models.DonationCampaign
 	for rows.Next() {
@@ -529,7 +536,14 @@ func (r *DonationCampaignRepository) GetTopContributors(campaignID int64, limit 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get top contributors: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err != nil {
+			errClose := rows.Close()
+			if errClose != nil {
+				logger.Error().Err(errClose).Msg("Failed to close rows")
+			}
+		}
+	}()
 
 	var contributors []models.TopContributor
 	var campaignTotalAmount int64

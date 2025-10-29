@@ -85,7 +85,14 @@ func CreateSchema(cfg *config.DatabaseConfig) error {
 		logger.Error().Err(err).Str("schema", cfg.Schema).Msg("Failed to create schema")
 		return fmt.Errorf("failed to create schema: %w", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err != nil {
+			errClose := db.Close()
+			if errClose != nil {
+				logger.Error().Err(errClose).Msg("Failed to close database connection")
+			}
+		}
+	}()
 
 	logger.Info().Str("schema", cfg.Schema).Msg("Schema created successfully")
 
