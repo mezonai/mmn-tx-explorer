@@ -27,8 +27,6 @@ interface AppContextType {
   setZkProof: (zk: IZkProof | null) => void;
   keypair: IEphemeralKeyPair | null;
   setKeypair: (keypair: IEphemeralKeyPair | null) => void;
-  hidden: boolean;
-  setHidden: (hidden: boolean) => void;
 }
 
 interface User {
@@ -52,7 +50,6 @@ export function AppProvider({ children }: AppProviderProps) {
   const [keypair, setKeypair] = useState<IEphemeralKeyPair | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [hidden, setHidden] = useState<boolean>(false);
   useEffect(() => {
     const localTokenStr = localStorage.getItem(STORAGE_KEYS.TOKEN);
     const localToken = localTokenStr ? safeJsonParse(localTokenStr) : null;
@@ -125,8 +122,6 @@ export function AppProvider({ children }: AppProviderProps) {
     setZkProof,
     keypair,
     setKeypair,
-    hidden,
-    setHidden,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
@@ -161,10 +156,7 @@ export function useKeypair() {
   const { keypair, setKeypair } = useApp();
   return { keypair, setKeypair };
 }
-export function useHidden() {
-  const { hidden, setHidden } = useApp();
-  return { hidden, setHidden };
-}
+
 export function useAuthActions() {
   const { setIsAuthenticated, setUser, setZkProof, setKeypair } = useApp();
 

@@ -2,13 +2,14 @@
 
 import { CopyButton } from '@/components/ui/copy-button';
 import { DonationCampaign } from '@/modules/donation-campaign/type';
-import { useAuth, useHidden } from '@/providers';
+import { useAuth } from '@/providers';
 import { DonateDialog } from './donate-dialog';
 import { truncateWalletAddress } from '@/modules/donation-campaign/utils';
 import Link from 'next/link';
 import { ROUTES } from '@/configs/routes.config';
 import { APP_CONFIG } from '@/configs/app.config';
 import { cn } from '@/lib/utils';
+import { useHidden } from '../provider';
 
 export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
   const { isAuthenticated } = useAuth();
