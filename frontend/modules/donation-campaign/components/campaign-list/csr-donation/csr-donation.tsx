@@ -16,8 +16,8 @@ export const CSRDonation = () => {
       value: stats.total_campaigns_active,
     },
     {
-      title: `Total raised (${APP_CONFIG.CHAIN_SYMBOL})`,
-      value: NumberUtil.formatWithCommasAndScale(stats.total_amount),
+      title: 'Total raised',
+      value: `${NumberUtil.formatWithCommasAndScale(stats.total_amount)} ${APP_CONFIG.CHAIN_SYMBOL}`,
     },
     {
       title: 'Contributors',
