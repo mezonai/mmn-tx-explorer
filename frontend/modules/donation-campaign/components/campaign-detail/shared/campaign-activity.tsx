@@ -132,9 +132,7 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
                         {i + 1}
                       </span>
                       <div>
-                        <p className="font-mono text-sm font-semibold dark:text-white">
-                          <AddressDisplay address={contrib.sender_wallet} href={ROUTES.WALLET(contrib.sender_wallet)} />
-                        </p>
+                        <AddressDisplay address={contrib.sender_wallet} href={ROUTES.WALLET(contrib.sender_wallet)} />
                       </div>
                     </div>
                     <div className="w-full text-left sm:w-auto sm:text-right">
