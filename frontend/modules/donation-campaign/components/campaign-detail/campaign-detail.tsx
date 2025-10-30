@@ -1,5 +1,4 @@
 import { BreadcrumbNavigation } from '@/components/shared';
-import { DonationCampaignService } from '../../api';
 import { IBreadcrumb } from '@/types';
 import { CampaignActivity, CampaignHeader, DonationSidebar } from './shared';
 import { ROUTES } from '@/configs/routes.config';

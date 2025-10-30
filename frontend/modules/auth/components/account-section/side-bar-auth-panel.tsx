@@ -12,8 +12,9 @@ export const SidebarAuthPanel = () => {
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const classname = cn(
-    'hover:bg-brand-primary-background flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-all duration-150 hover:shadow-md',
-    open ? 'bg-brand-primary-background shadow-md' : 'bg-background'
+    'hover:bg-brand-primary-background dark:hover:bg-card flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-all duration-150 hover:shadow-md',
+    open ? 'bg-brand-primary-background' : 'bg-background',
+    open ? 'dark:bg-card' : 'bg-background'
   );
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -37,7 +38,7 @@ export const SidebarAuthPanel = () => {
             <img src={user.avatar} alt="avatar" className="h-full w-full object-cover object-center" />
           </div>
         )}
-        <span className="max-w-[120px] truncate text-base font-medium">{user.username || user.email}</span>
+        <span className="max-w-[120px] truncate text-base font-medium">{user.username}</span>
       </div>
       {open && (
         <div className="bg-background absolute bottom-full left-1/2 z-50 mb-2 flex w-56 -translate-x-1/2 flex-col gap-2 rounded-lg border p-4 shadow-lg">
@@ -48,20 +49,20 @@ export const SidebarAuthPanel = () => {
               </div>
             )}
             <div>
-              <div className="text-sm font-semibold">{user.username || user.email}</div>
-              <div className="text-xs text-gray-500">ID: {user.id}</div>
+              <div className="max-w-[120px] truncate text-sm font-semibold">{user.username}</div>
+              <div className="text-card-foreground text-xs">ID:{user.id}</div>
             </div>
           </div>
           <div className="mb-2 text-center text-xs break-all text-gray-700">
-            <div className="flex items-center gap-x-0.5 gap-y-2 break-all">
+            <div className="text-card-foreground flex items-center gap-x-0.5 gap-y-2 break-all">
               <span className="font-medium">Wallet:</span>
-              <span className="rounded py-0.5 text-gray-800">
+              <span className="rounded py-0.5">
                 {user.walletAddress ? `${user.walletAddress.slice(0, 5)}...${user.walletAddress.slice(-4)}` : 'N/A'}
               </span>
               {user.walletAddress && <CopyButton textToCopy={user.walletAddress} className="ml-1" />}
             </div>
             {user.email && (
-              <div className="flex items-center gap-2">
+              <div className="text-card-foreground flex items-center gap-2">
                 <span className="font-medium">Email:</span>
                 <span className="truncate">{user.email}</span>
               </div>
