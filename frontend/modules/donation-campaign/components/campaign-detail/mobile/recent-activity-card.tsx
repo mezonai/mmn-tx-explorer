@@ -25,6 +25,7 @@ export function RecentActivityCardsMobile({
   walletAddress,
   hidden,
 }: RecentActivityCardsMobileProps) {
+  const queryParams = 'tab=received-transactions';
   return (
     <Card className="dark:border-primary/20 px-1 py-4">
       <CardHeader>
@@ -64,7 +65,7 @@ export function RecentActivityCardsMobile({
         <div className="mt-4 flex w-full items-center justify-between text-xs text-gray-500 dark:text-gray-400">
           <span className="order-1">{`Showing ${transactions.length} of total ${totalTransaction}`}</span>
           <Link
-            href={ROUTES.WALLET(walletAddress)}
+            href={ROUTES.WALLET(walletAddress, queryParams)}
             className={cn(
               'text-brand-primary hover:text-brand-primary/70 order-2 inline-flex items-center font-medium transition',
               {
