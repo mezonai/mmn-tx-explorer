@@ -99,10 +99,10 @@ export const Transfer = () => {
         header="Send Mezon Đồng to another address."
         description="Show some love—send a coffee to support someone’s day."
       />
-      <div className="border-primary/50 mx-auto mt-8 w-full max-w-3xl rounded-3xl border bg-white/5 p-6 text-left shadow-md dark:border-white/10">
+      <div className="border-brand-primary/50 mx-auto mt-8 w-full max-w-3xl rounded-3xl border bg-white/5 p-6 text-left shadow-md dark:border-white/10">
         <div className="mx-auto grid max-w-3xl gap-3 text-sm sm:grid-cols-1">
           <div className="bg-brand-primary/10 shadow-brand-primary/20 flex flex-col rounded-2xl border-none px-2 py-2 text-left shadow-md">
-            <div className="text-brand-primary dark:text-primary-light shadow-primary/20 px-2 text-left text-lg font-semibold">
+            <div className="text-brand-primary shadow-brand-primary/20 px-2 text-left text-lg font-semibold">
               Send Mezon Đồng
             </div>
             <p className="text-brand-primary/90 mt-2 px-2 text-left text-sm">Transfer funds wallet-to-wallet</p>
@@ -116,7 +116,7 @@ export const Transfer = () => {
         </div>
 
         <div className="mx-auto mt-2 grid max-w-3xl gap-8 py-7">
-          <div className="bg-brand-primary/10 border-brand-primary/40 shadow-primary/20 flex flex-col rounded-3xl border p-6 text-left shadow-lg lg:p-8">
+          <div className="bg-brand-primary/10 border-brand-primary/40 shadow-brand-primary/20 flex flex-col rounded-3xl border p-6 text-left shadow-lg lg:p-8">
             <div className="text-brand-primary text-left text-lg font-semibold">Send Mezon Đồng</div>
             <p className="text-brand-primary/90 mt-2 text-left text-sm">
               Funds are transferred instantly once the transaction is confirmed on-chain.
