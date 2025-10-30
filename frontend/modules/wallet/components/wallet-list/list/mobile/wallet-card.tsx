@@ -16,7 +16,7 @@ interface WalletCardProps {
 
 export const WalletCard = ({ wallet }: WalletCardProps) => {
   return (
-    <div className="text-secondary-700 space-y-2 border-b py-2 text-sm font-medium [&>*]:w-full [&>*]:gap-5">
+    <div className="text-foreground space-y-2 border-b py-2 text-sm font-medium [&>*]:w-full [&>*]:gap-5">
       <div className="flex items-center justify-between">
         <span>Rank</span>
         {wallet ? <RankBadge rank={wallet.rank} /> : <RankBadgeSkeleton />}
@@ -32,9 +32,9 @@ export const WalletCard = ({ wallet }: WalletCardProps) => {
       <div className="flex items-center justify-between">
         <span>Balance</span>
         {wallet ? (
-          <BalanceAmount balance={wallet.balance} className="text-tertiary-600 font-normal" />
+          <BalanceAmount balance={wallet.balance} className="text-card-foreground font-normal" />
         ) : (
-          <BalanceAmountSkeleton className="text-tertiary-600 font-normal" />
+          <BalanceAmountSkeleton className="text-card-foreground font-normal" />
         )}
       </div>
       <div className="flex items-center justify-between">

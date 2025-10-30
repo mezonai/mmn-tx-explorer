@@ -14,7 +14,7 @@ interface BlockCardProps {
 
 export const BlockCard = ({ block }: BlockCardProps) => {
   return (
-    <div className="text-secondary-700 space-y-2 border-b py-2 text-sm font-medium [&>*]:w-full [&>*]:gap-5">
+    <div className="text-foreground space-y-2 border-b py-2 text-sm font-medium [&>*]:w-full [&>*]:gap-5">
       {block ? (
         <BlockNumberField
           blockNumber={block.block_number}
@@ -41,14 +41,14 @@ export const BlockCard = ({ block }: BlockCardProps) => {
           <HashFieldSkeleton className="w-40" />
         )}
       </div> */}
-      <div className="flex items-center justify-between">
+      {/* <div className="flex items-center justify-between">
         <span>Validator</span>
         {block ? (
           <HashField hash={block.miner} className="w-40" addressClassName="text-foreground" />
         ) : (
           <HashFieldSkeleton className="w-40" />
         )}
-      </div>
+      </div> */}
       <div className="flex items-center justify-between">
         <span>Txn</span>
         {block ? <TxnLink count={block.transaction_count} blockNumber={block.block_number} /> : <TxnLinkSkeleton />}
