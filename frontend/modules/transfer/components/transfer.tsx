@@ -52,10 +52,10 @@ export const Transfer = () => {
         if (numeric.length > 1 && numeric.startsWith('0')) {
           numeric = numeric.replace(/^0+/, '');
         }
-        const limitdValue = numeric.slice(0, 15);
+        const limitedValue = numeric.slice(0, 15);
         setForm((prev) => ({
           ...prev,
-          amount: limitdValue,
+          amount: limitedValue,
         }));
       } else {
         setForm((prev) => ({ ...prev, [field]: value }));

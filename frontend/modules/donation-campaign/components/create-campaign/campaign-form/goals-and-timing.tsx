@@ -19,8 +19,8 @@ export function GoalsAndTiming() {
       if (numeric.length > 1 && numeric.startsWith('0')) {
         numeric = numeric.replace(/^0+/, '');
       }
-      const limitdValue = numeric.slice(0, 15);
-      updateField(field, limitdValue);
+      const limitedValue = numeric.slice(0, 15);
+      updateField(field, limitedValue);
     } else {
       updateField(field, value);
     }
