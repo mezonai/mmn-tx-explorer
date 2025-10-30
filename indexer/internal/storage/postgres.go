@@ -19,6 +19,7 @@ import (
 )
 
 const DATA_ROWS_DISPLAY_LIMIT = 500000
+const InsertBlockDataTimeout = 10 * time.Minute
 
 type PostgresConnector struct {
 	db             *sql.DB
@@ -657,30 +658,167 @@ func (p *PostgresConnector) DeleteOlderThan(chainId *big.Int, blockNumber *big.I
 }
 
 // Main Storage Implementation
-
 func (p *PostgresConnector) InsertBlockData(data []common.BlockData) error {
 	if len(data) == 0 {
 		return nil
 	}
 
-	// Insert blocks
-	blocks := make([]common.Block, len(data))
-	for i, blockData := range data {
-		blocks[i] = blockData.Block
+	// Run per-block insert concurrently; cancel on first error
+	ctx, cancel := context.WithTimeout(context.Background(), InsertBlockDataTimeout)
+	defer cancel()
+
+	errCh := make(chan error, 1)
+	var wg sync.WaitGroup
+
+	// Determine a safe concurrency level
+	concurrency := p.getDbConnectionConcurrencySyncBlocks(len(data))
+
+	sem := make(chan struct{}, concurrency)
+
+loop:
+	for _, blockData := range data {
+		bd := blockData // capture loop variable
+		// Respect cancellation before acquiring a slot
+		select {
+		case <-ctx.Done():
+			break loop
+		case sem <- struct{}{}:
+		}
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			defer func() { <-sem }()
+
+			// Double-check cancel before heavy work
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+
+			if err := p.insertBlockAndTransactions(ctx, bd); err != nil {
+				// Try to send the first error and cancel others
+				select {
+				case errCh <- err:
+					cancel()
+				default:
+				}
+			}
+		}()
 	}
-	if err := p.insertBlocks(blocks); err != nil {
+
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case err := <-errCh:
+		// Wait for goroutines to finish cleanup before returning
+		<-done
+		return err
+	case <-done:
+		return nil
+	}
+}
+
+func (p *PostgresConnector) getDbConnectionConcurrencySyncBlocks(total int) int {
+	maxOpen := p.db.Stats().MaxOpenConnections
+	if maxOpen <= 0 && p.cfg != nil {
+		maxOpen = p.cfg.MaxOpenConns
+	}
+	if maxOpen <= 0 {
+		maxOpen = 1
+	}
+
+	concurrency := maxOpen / 2
+	if concurrency < 1 {
+		concurrency = 1
+	}
+	if total > 0 && concurrency > total {
+		concurrency = total
+	}
+
+	return concurrency
+}
+
+// insertBlockAndTransactions inserts a single block and all its transactions atomically in sequence.
+func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, blockData common.BlockData) (err error) {
+	tx, err := p.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+
+	defer func() {
+		if err != nil {
+			if rbErr := tx.Rollback(); rbErr != nil {
+				log.Error().Err(rbErr).Msg("failed to rollback block+txs transaction")
+			}
+		}
+	}()
+
+	// Insert single block inside transaction
+	if err = p.insertBlockTx(ctx, tx, blockData.Block); err != nil {
 		return err
 	}
 
-	// Insert transactions
-	for _, blockData := range data {
-		if len(blockData.Transactions) > 0 {
-			if err := p.insertTransactions(blockData.Transactions); err != nil {
-				return err
-			}
+	// Insert all transactions for this block inside the same transaction
+	var addressStats map[string]WalletStats
+	if len(blockData.Transactions) > 0 {
+		addressStats, err = p.insertTransactionsTx(ctx, tx, blockData.Transactions)
+		if err != nil {
+			return err
 		}
 	}
 
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit block+txs transaction: %w", err)
+	}
+
+	for _, w := range addressStats {
+		p.walletUpdateBatcher.QueueMMNServiceCall(w)
+	}
+
+	return nil
+}
+
+// insertBlockTx inserts or upsert a single block within a provided transaction and context,
+// and updates the total_blocks stat if the block has transactions.
+func (p *PostgresConnector) insertBlockTx(ctx context.Context, tx *sql.Tx, block common.Block) error {
+	const blockInsert = `INSERT INTO blocks (chain_id, block_number, block_timestamp, hash, parent_hash, transaction_count)
+			VALUES ($1, $2, $3, $4, $5, $6)
+			ON CONFLICT (chain_id, block_number)
+			DO UPDATE SET 
+				block_timestamp = EXCLUDED.block_timestamp,
+				hash = EXCLUDED.hash,
+				parent_hash = EXCLUDED.parent_hash,
+				transaction_count = EXCLUDED.transaction_count,
+				updated_at = NOW()
+			RETURNING (xmax = 0) AS inserted`
+
+	var inserted bool
+	if err := tx.QueryRowContext(ctx, blockInsert,
+		bigIntToString(block.ChainId),
+		bigIntToString(block.Number),
+		block.Timestamp,
+		block.Hash,
+		block.ParentHash,
+		block.TransactionCount,
+	).Scan(&inserted); err != nil {
+		return fmt.Errorf("failed to insert block: %w", err)
+	}
+
+	if inserted && block.TransactionCount > 0 {
+		if _, err := tx.ExecContext(ctx, `
+			INSERT INTO stats(key, value) VALUES ('total_blocks', $1)
+				ON CONFLICT (key) 
+				DO UPDATE SET value = stats.value + $1
+			`, 1); err != nil {
+			return fmt.Errorf("failed to update total_blocks stat: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -1356,166 +1494,90 @@ func looksLikeTimestampColumn(col string) bool {
 	return strings.Contains(colLower, "timestamp") || strings.HasSuffix(colLower, "_time") || strings.HasSuffix(colLower, "time")
 }
 
-func (p *PostgresConnector) insertBlocks(blocks []common.Block) error {
-	if len(blocks) == 0 {
-		return nil
-	}
-
-	valueStrings := make([]string, 0, len(blocks))
-	valueArgs := make([]interface{}, 0, len(blocks)*6)
-
-	for i, block := range blocks {
-		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)",
-			i*6+1, i*6+2, i*6+3, i*6+4, i*6+5, i*6+6))
-		valueArgs = append(valueArgs,
-			bigIntToString(block.ChainId),
-			bigIntToString(block.Number),
-			block.Timestamp,
-			block.Hash,
-			block.ParentHash,
-			block.TransactionCount,
-		)
-	}
-
-	query := fmt.Sprintf(`INSERT INTO blocks (chain_id, block_number, block_timestamp, hash, parent_hash, transaction_count)
-			VALUES %s
-			ON CONFLICT (chain_id, block_number) 
-			DO UPDATE SET 
-				block_timestamp = EXCLUDED.block_timestamp,
-				hash = EXCLUDED.hash,
-				parent_hash = EXCLUDED.parent_hash,
-				transaction_count = EXCLUDED.transaction_count,
-				updated_at = NOW()`, strings.Join(valueStrings, ","))
-
-	if _, err := p.db.Exec(query, valueArgs...); err != nil {
-		return fmt.Errorf("failed to insert blocks: %w", err)
-	}
-
-	// Update total_blocks count
-	blockCount := 0
-	for _, block := range blocks {
-		if block.TransactionCount > 0 {
-			blockCount++
-		}
-	}
-	if blockCount > 0 {
-		if _, err := p.db.Exec(`
-            INSERT INTO stats(key, value) VALUES ('total_blocks', $1)
-            ON CONFLICT (key) 
-            DO UPDATE SET value = stats.value + $1
-        `, blockCount); err != nil {
-			return fmt.Errorf("failed to update total_blocks stat: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func (p *PostgresConnector) insertTransactions(transactions []common.Transaction) error {
+func (p *PostgresConnector) insertTransactionsTx(ctx context.Context, tx *sql.Tx, transactions []common.Transaction) (map[string]WalletStats, error) {
 	if len(transactions) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	valueStrings := make([]string, 0, len(transactions))
 	valueArgs := make([]interface{}, 0, len(transactions)*13)
 
-	for i, tx := range transactions {
+	for i, t := range transactions {
 		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
 			i*13+1, i*13+2, i*13+3, i*13+4, i*13+5, i*13+6, i*13+7, i*13+8, i*13+9, i*13+10, i*13+11, i*13+12, i*13+13))
 
 		valueArgs = append(valueArgs,
-			bigIntToString(tx.ChainId),
-			tx.Hash,
-			tx.Nonce,
-			tx.BlockHash,
-			bigIntToString(tx.BlockNumber),
-			tx.FromAddress,
-			tx.ToAddress,
-			tx.TransactionTimestamp,
-			tx.Value,
-			tx.TransactionType,
-			tx.Status,
-			tx.TextData,
-			tx.ExtraInfo,
+			bigIntToString(t.ChainId),
+			t.Hash,
+			t.Nonce,
+			t.BlockHash,
+			bigIntToString(t.BlockNumber),
+			t.FromAddress,
+			t.ToAddress,
+			t.TransactionTimestamp,
+			t.Value,
+			t.TransactionType,
+			t.Status,
+			t.TextData,
+			t.ExtraInfo,
 		)
 	}
 
-	tx, err := p.db.Begin()
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
+	insertTransactionsQuery := fmt.Sprintf(`WITH inserted AS (
+                INSERT INTO transactions (chain_id, hash, nonce, block_hash, block_number, from_address, to_address, transaction_timestamp, value, transaction_type, status, text_data, extra_info)
+                VALUES %s
+                ON CONFLICT (chain_id, block_number, hash) 
+                DO UPDATE SET 
+                    nonce = EXCLUDED.nonce,
+                    block_hash = EXCLUDED.block_hash,
+                    from_address = EXCLUDED.from_address,
+                    to_address = EXCLUDED.to_address,
+                    transaction_timestamp = EXCLUDED.transaction_timestamp,
+                    value = EXCLUDED.value,
+                    transaction_type = EXCLUDED.transaction_type,
+                    status = EXCLUDED.status,
+                    text_data = EXCLUDED.text_data,
+                    extra_info = EXCLUDED.extra_info,
+                    updated_at = NOW()
+                RETURNING (xmax = 0) AS is_new
+            )
+            SELECT COUNT(*) FROM inserted WHERE is_new`, strings.Join(valueStrings, ","))
+
+	// Count only newly inserted rows to compute accurate stats increment
+	var insertedCount int
+	if err := tx.QueryRowContext(ctx, insertTransactionsQuery, valueArgs...).Scan(&insertedCount); err != nil {
+		return nil, fmt.Errorf("failed to execute insert transactions count query: %w", err)
 	}
 
-	defer func() {
-		if err != nil {
-			rollbackErr := tx.Rollback()
-			if rollbackErr != nil {
-				log.Error().Err(rollbackErr).Msg("Failed to rollback transaction")
-			}
-		}
-	}()
-
-	insertTransactionsQuery := fmt.Sprintf(`INSERT INTO transactions (chain_id, hash, nonce, block_hash, block_number, from_address, to_address, transaction_timestamp, value, transaction_type, status, text_data, extra_info)
-			VALUES %s
-			ON CONFLICT (chain_id, block_number, hash) 
-			DO UPDATE SET 
-				nonce = EXCLUDED.nonce,
-				block_hash = EXCLUDED.block_hash,
-				from_address = EXCLUDED.from_address,
-				to_address = EXCLUDED.to_address,
-				transaction_timestamp = EXCLUDED.transaction_timestamp,
-				value = EXCLUDED.value,
-				transaction_type = EXCLUDED.transaction_type,
-				status = EXCLUDED.status,
-				text_data = EXCLUDED.text_data,
-				extra_info = EXCLUDED.extra_info,
-				updated_at = NOW()`, strings.Join(valueStrings, ","))
-	_, err = tx.Exec(insertTransactionsQuery, valueArgs...)
-	if err != nil {
-		return fmt.Errorf("failed to execute insert transactions query: %w", err)
-	}
-
-	txCount := len(transactions)
-	if txCount > 0 {
-		updateStatsQuery := "INSERT INTO stats(key, value) VALUES ('total_transactions', 0) ON CONFLICT (key) DO UPDATE SET value = stats.value + $1"
-		_, err = tx.Exec(updateStatsQuery, txCount)
-		if err != nil {
-			return fmt.Errorf("failed to execute update stats query: %w", err)
+	if insertedCount > 0 {
+		if _, err := tx.ExecContext(ctx, "INSERT INTO stats(key, value) VALUES ('total_transactions', $1) ON CONFLICT (key) DO UPDATE SET value = stats.value + $1", insertedCount); err != nil {
+			return nil, fmt.Errorf("failed to execute update stats query: %w", err)
 		}
 	}
 
 	addressStats := make(map[string]WalletStats)
-
-	for _, tx := range transactions {
-		if tx.FromAddress != "" {
-			stat := addressStats[tx.FromAddress]
-			stat.Address = tx.FromAddress
+	for _, t := range transactions {
+		if t.FromAddress != "" {
+			stat := addressStats[t.FromAddress]
+			stat.Address = t.FromAddress
 			stat.TransactionCount++
-			if stat.MaxBlock == nil || tx.BlockNumber.Cmp(stat.MaxBlock) > 0 {
-				stat.MaxBlock = new(big.Int).Set(tx.BlockNumber)
+			if stat.MaxBlock == nil || t.BlockNumber.Cmp(stat.MaxBlock) > 0 {
+				stat.MaxBlock = new(big.Int).Set(t.BlockNumber)
 			}
-			addressStats[tx.FromAddress] = stat
+			addressStats[t.FromAddress] = stat
 		}
-
-		if tx.ToAddress != "" {
-			stat := addressStats[tx.ToAddress]
-			stat.Address = tx.ToAddress
+		if t.ToAddress != "" {
+			stat := addressStats[t.ToAddress]
+			stat.Address = t.ToAddress
 			stat.TransactionCount++
-			if stat.MaxBlock == nil || tx.BlockNumber.Cmp(stat.MaxBlock) > 0 {
-				stat.MaxBlock = new(big.Int).Set(tx.BlockNumber)
+			if stat.MaxBlock == nil || t.BlockNumber.Cmp(stat.MaxBlock) > 0 {
+				stat.MaxBlock = new(big.Int).Set(t.BlockNumber)
 			}
-			addressStats[tx.ToAddress] = stat
+			addressStats[t.ToAddress] = stat
 		}
 	}
 
-	for _, walletStats := range addressStats {
-		p.walletUpdateBatcher.QueueMMNServiceCall(walletStats)
-	}
-	err = tx.Commit()
-	if err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
-	}
-
-	return nil
+	return addressStats, nil
 }
 
 func (p *PostgresConnector) scanBlock(rows *sql.Rows, block *common.Block) error {
