@@ -60,7 +60,7 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
           </div>
         </div> */}
         {/* Donate Button */}
-        {isAuthenticated && campaign.status !== ECampaignStatus.Closed && (
+        {isAuthenticated && campaign.status == ECampaignStatus.Active && (
           <DonateDialog walletAddress={campaign.donation_wallet} />
         )}
         <p className="text-muted-foreground text-center text-xs dark:text-gray-400">
