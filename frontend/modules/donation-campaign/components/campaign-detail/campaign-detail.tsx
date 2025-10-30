@@ -4,16 +4,17 @@ import { IBreadcrumb } from '@/types';
 import { CampaignActivity, CampaignHeader, DonationSidebar } from './shared';
 import { ROUTES } from '@/configs/routes.config';
 import { CampaignDetailProvider } from './provider/campaignProvider';
+import { DonationCampaign } from '../../type';
 
 interface CampaignDetailProps {
-  campaignId: string;
+  campaign: DonationCampaign;
 }
 const breadcrumbs: IBreadcrumb[] = [
   { label: 'Donation campaign', href: ROUTES.DONATION_CAMPAIGN },
   { label: 'Campaign Details', href: '#' },
 ] as const;
-export const CampaignDetail = async ({ campaignId }: CampaignDetailProps) => {
-  const campaign = await DonationCampaignService.getCampaignById(campaignId);
+
+export const CampaignDetail = async ({ campaign }: CampaignDetailProps) => {
   return (
     <div className="space-y-8">
       <div className="space-y-4">
@@ -28,7 +29,7 @@ export const CampaignDetail = async ({ campaignId }: CampaignDetailProps) => {
             <DonationSidebar campaign={campaign} />
           </div>
         </div>
-        <CampaignActivity campaignId={campaignId} walletAddress={campaign.donation_wallet} />
+        <CampaignActivity campaignId={campaign.id} walletAddress={campaign.donation_wallet} />
       </CampaignDetailProvider>
     </div>
   );
