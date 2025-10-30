@@ -89,7 +89,6 @@ export function AppProvider({ children }: AppProviderProps) {
         const senderAddress = mmnClient.getAddressFromUserId(userInfo.user.user_id);
         const userObject = processAndStoreUser(userInfo.user, senderAddress);
         setUser(userObject);
-        toast.success('Login successful!');
         const fetchedZk = await fetchAndStoreZkProof(
           userInfo.user.user_id || userInfo.user.sub,
           keypair.publicKey,
@@ -99,6 +98,7 @@ export function AppProvider({ children }: AppProviderProps) {
         if (fetchedZk) {
           setZkProof(fetchedZk);
         }
+        toast.success('Login successful!');
       } catch {
         toast.error('Login failed!');
         clearAuthStorage();
