@@ -48,7 +48,7 @@ export const Transfer = () => {
       const value = e.target.value;
 
       if (field === 'amount') {
-        const numeric = value.replace(/[^0-9.]/g, '');
+        const numeric = value.replace(/[^0-9]/g, '');
         const parts = numeric.split('.');
         const cleanNumeric = parts[0] + (parts.length > 1 ? '.' + parts[1] : '');
 

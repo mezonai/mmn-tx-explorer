@@ -42,7 +42,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
     (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const { value } = e.target;
       if (field === 'amount') {
-        const numeric = value.replace(/[^0-9.]/g, '');
+        const numeric = value.replace(/[^0-9]/g, '');
         const parts = numeric.split('.');
         const cleanNumeric = parts[0] + (parts.length > 1 ? '.' + parts[1] : '');
         setForm((prev) => ({ ...prev, amount: cleanNumeric }));
