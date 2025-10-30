@@ -8,6 +8,7 @@ export const DONATION_ENDPOINTS = {
   DONATIONS: '/donations',
   MY_DONATIONS: '/donations/my-donations',
   PUBLISH_CAMPAIGN: (id: string) => `/api/v1/campaigns/${id}/activate`,
+  TOP_CONTRIBUTOR: (id: string) => `/api/v1/campaigns/${id}/top-contributors`,
 } as const;
 
 export const QUERY_KEYS = {
@@ -15,4 +16,5 @@ export const QUERY_KEYS = {
   CAMPAIGN: 'campaign',
   CAMPAIGN_STATS: 'campaign-stats',
   USER_DONATIONS: 'user-donations',
+  TOP_CONTRIBUTOR: 'top-contributors',
 } as const;

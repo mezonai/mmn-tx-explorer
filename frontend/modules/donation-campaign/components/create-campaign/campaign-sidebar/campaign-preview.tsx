@@ -4,6 +4,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Chip } from '@/components/shared/chip';
 import { getCampaignStatusLabel, getCampaignStatusVariant } from '../../../utils';
 import { CampaignPreview } from '@/modules/donation-campaign/type';
+import { APP_CONFIG } from '@/configs/app.config';
+import { NumberUtil } from '@/utils';
 
 interface CampaignPreviewProps {
   preview: CampaignPreview;
@@ -11,8 +13,8 @@ interface CampaignPreviewProps {
 
 export const CampaignPreviewCard = ({ preview }: CampaignPreviewProps) => {
   return (
-    <div className="border-primary/30 bg-primary/10 text-primary dark:border-primary/40 dark:bg-primary/15 dark:text-primary-light rounded-3xl border p-6 shadow-sm">
-      <h3 className="text-sm font-semibold tracking-widest uppercase">Preview card</h3>
+    <div className="border-brand-primary/30 bg-brand-primary/10 text-brand-primary dark:border-brand-primary/40 dark:bg-brand-primary/15 dark:text-brand-primary-light rounded-3xl border p-6 shadow-sm">
+      <h3 className="text-brand-primary text-sm font-semibold tracking-widest uppercase">Preview card</h3>
 
       <Card className="border-primary/30 dark:border-primary/30 bg-background/80 mt-4 py-5">
         <CardContent className="px-5">
@@ -28,7 +30,7 @@ export const CampaignPreviewCard = ({ preview }: CampaignPreviewProps) => {
             {preview.name || 'Campaign name goes here'}
           </p>
 
-          <p className="mt-2 line-clamp-3 text-xs text-gray-600 dark:text-gray-400">
+          <p className="mt-2 line-clamp-3 text-xs break-all text-gray-600 dark:text-gray-400">
             {preview.shortDescription ||
               'Short description helps donors grasp the impact and call to action in seconds.'}
           </p>
@@ -36,7 +38,8 @@ export const CampaignPreviewCard = ({ preview }: CampaignPreviewProps) => {
           <div className="mt-5">
             <div className="flex items-center justify-between text-[11px] font-medium text-gray-500 dark:text-gray-400">
               <span>
-                {preview.currentFunding} / {preview.targetFunding || 0} MMN
+                {NumberUtil.formatWithCommas(preview.currentFunding)} /{' '}
+                {NumberUtil.formatWithCommas(preview.targetFunding) || 0} {APP_CONFIG.CHAIN_SYMBOL}
               </span>
               <span>{preview.percentage}% funded</span>
             </div>

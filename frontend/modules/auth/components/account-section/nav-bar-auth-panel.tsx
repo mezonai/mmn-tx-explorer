@@ -1,10 +1,11 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Circle } from 'lucide-react';
+import { ArrowRightToLine } from 'lucide-react';
 import { useUser, useAuthActions } from '@/providers/AppProvider';
 import { cn } from '@/lib/utils';
 import { CopyButton } from '@/components/ui/copy-button';
+
 export const NavBarAuthPanel: React.FC = () => {
   const { user } = useUser();
   const { login, logout } = useAuthActions();
@@ -31,13 +32,17 @@ export const NavBarAuthPanel: React.FC = () => {
   return user ? (
     <div className="relative hidden items-center md:flex" ref={panelRef}>
       <div className={classname} onClick={() => setOpen((v) => !v)}>
-        <img src={user.avatar} alt="avatar" className="h-10 w-10 rounded-full border" width={32} height={32} />
+        <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full border">
+          <img src={user.avatar} alt="avatar" className="h-full w-full object-cover object-center" />
+        </div>
         <span className="text-md max-w-[120px] truncate font-medium">{user.username || user.email}</span>
       </div>
       {open && (
-        <div className="bg-background absolute top-12 right-0 z-50 flex size-56 flex-col gap-2 rounded-lg border p-4 shadow-lg">
+        <div className="bg-background absolute top-12 right-0 z-50 flex w-56 flex-col gap-2 rounded-lg border p-4 shadow-lg">
           <div className="mb-2 flex items-center gap-2">
-            <img src={user.avatar} alt="avatar" className="h-8 w-8 rounded-full" width={32} height={32} />
+            <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border">
+              <img src={user.avatar} alt="avatar" className="h-full w-full object-cover object-center" />
+            </div>
             <div>
               <div className="text-sm font-semibold">{user.username || user.email}</div>
               <div className="text-xs text-gray-500">ID: {user.id}</div>
@@ -65,11 +70,11 @@ export const NavBarAuthPanel: React.FC = () => {
       )}
     </div>
   ) : (
-    <Button className={'hidden md:flex'} onClick={login}>
-      <span className="flex items-center gap-2">
-        <Circle />
-        Login with Mezon
-      </span>
+    <Button onClick={login} className={'bg-brand-primary hidden rounded-lg font-semibold text-white shadow-xs md:flex'}>
+      <>
+        <span>Login with Mezon</span>
+        <ArrowRightToLine />
+      </>
     </Button>
   );
 };

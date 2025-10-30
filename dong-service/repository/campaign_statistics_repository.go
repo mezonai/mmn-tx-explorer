@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"dong-service/constants"
+	"dong-service/logger"
 	"dong-service/models"
 	"fmt"
 )
@@ -42,7 +43,14 @@ func (r *CampaignStatisticsRepository) GetActiveCampaigns(ctx context.Context) (
 	if err != nil {
 		return nil, fmt.Errorf("failed to query campaigns: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err != nil {
+			errClose := rows.Close()
+			if errClose != nil {
+				logger.Error().Err(errClose).Msg("Failed to close rows")
+			}
+		}
+	}()
 
 	campaigns := make([]Campaign, 0)
 	for rows.Next() {

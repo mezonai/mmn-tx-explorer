@@ -36,7 +36,6 @@ export const ActiveCampaign = () => {
     { value: ECampaignStatus.Draft, label: getCampaignStatusLabel(ECampaignStatus.Draft) },
     { value: ECampaignStatus.Closed, label: getCampaignStatusLabel(ECampaignStatus.Closed) },
   ];
-
   const selectedLabel = selectedStatus === 'all' ? 'All statuses' : getCampaignStatusLabel(selectedStatus);
 
   if (isLoading) {
@@ -44,7 +43,7 @@ export const ActiveCampaign = () => {
       <section className="">
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
-            <div className="border-primary/30 border-t-primary mx-auto h-12 w-12 animate-spin rounded-full border-4"></div>
+            <div className="border-brand-primary/30 border-t-brand-primary mx-auto h-12 w-12 animate-spin rounded-full border-4"></div>
             <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">Loading campaigns...</p>
           </div>
         </div>
@@ -52,6 +51,7 @@ export const ActiveCampaign = () => {
     );
   }
 
+  
   return (
     <section className="">
       <div className="">
@@ -59,7 +59,7 @@ export const ActiveCampaign = () => {
           <div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Active campaigns</h2>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-              Real-time snapshots from the MMN chain. Select a campaign to view detail and donate.
+              Select a campaign to view detail and donate.
             </p>
           </div>
           <div className="flex flex-wrap gap-3 text-sm">
@@ -72,7 +72,7 @@ export const ActiveCampaign = () => {
                   setSelectedStatus(next);
                 }}
               >
-                <SelectTrigger className="hover:border-primary hover:text-primary dark:bg-background dark:hover:border-primary-light inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 font-medium text-gray-600 transition hover:bg-white dark:border-white/10 dark:text-gray-300 dark:hover:text-white">
+                <SelectTrigger className="hover:border-brand-primary hover:text-brand-primary dark:bg-background dark:hover:border-brand-primary-light inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 font-medium text-gray-600 transition hover:bg-white dark:border-white/10 dark:text-gray-300 dark:hover:text-white">
                   <SelectValue placeholder="All statuses">{selectedLabel}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
@@ -86,7 +86,7 @@ export const ActiveCampaign = () => {
             </div>
             <Button
               onClick={() => setSortBy((prev) => (prev === 'newest' ? 'oldest' : 'newest'))}
-              className="bg-background hover:bg-background hover:border-primary hover:text-primary dark:hover:border-primary-light inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 font-medium text-gray-600 transition dark:border-white/10 dark:text-gray-300 dark:hover:text-white"
+              className="bg-background hover:bg-background hover:border-brand-primary hover:text-brand-primary dark:hover:border-brand-primary-light inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 font-medium text-gray-600 transition dark:border-white/10 dark:text-gray-300 dark:hover:text-white"
               aria-label={`Toggle sort order (currently ${sortBy})`}
             >
               Sort by {sortBy === 'newest' ? 'newest' : 'oldest'}
@@ -101,8 +101,8 @@ export const ActiveCampaign = () => {
           ) : (
             <div></div>
           )}
-          <article className="group border-primary/40 bg-primary/5 text-primary hover:border-primary/60 hover:bg-primary/10 dark:border-primary/40 dark:bg-primary/10 dark:text-primary-light flex flex-col rounded-3xl border border-dashed p-6 text-center text-sm shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-            <div className="bg-primary/20 text-primary dark:bg-primary/30 dark:text-primary-light mx-auto flex h-14 w-14 items-center justify-center rounded-2xl">
+          <article className="group border-primary/40 bg-primary/5 text-primary hover:border-primary/60 hover:bg-primary/10 dark:border-brand-primary/40 dark:bg-brand-primary/10 dark:text-primary-light flex h-full flex-col rounded-3xl border border-dashed p-6 text-center text-sm shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+            <div className="bg-brand-primary/20 dark:text-primary-light mx-auto flex h-14 w-14 items-center justify-center rounded-2xl">
               <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path
                   d="M12 5v14m7-7H5"
@@ -110,19 +110,20 @@ export const ActiveCampaign = () => {
                   strokeWidth="1.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
+                  className="text-brand-primary"
                 ></path>
               </svg>
             </div>
-            <h3 className="mt-4 text-lg font-semibold">Launch a new campaign</h3>
-            <p className="text-primary/80 dark:text-primary-light/80 mt-2 text-sm leading-6">
+            <h3 className="text-brand-primary mt-4 text-lg font-semibold">Launch a new campaign</h3>
+            <p className="text-brand-primary mt-2 text-sm leading-6">
               Prepare your storyline, media assets, and fundraising targets so you can publish as soon as stakeholders
               approve.
             </p>
 
-            <Link href={ROUTES.CREATE_CAMPAIGN}>
+            <Link href={ROUTES.CREATE_CAMPAIGN} className="mt-auto">
               <Button
                 variant="link"
-                className="bg-brand-primary dark:hover:bg-brand-primary dark:bg-brand-primary/50 mt-6 inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-white transition"
+                className="bg-brand-primary dark:hover:bg-brand-primary dark:bg-brand-primary/50 mt-6 inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-white transition hover:no-underline"
               >
                 Get started
               </Button>

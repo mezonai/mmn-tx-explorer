@@ -6,6 +6,7 @@ import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import 'react-datepicker/dist/react-datepicker.css';
 import '@/styles/datepicker.css';
+import { DATE_FORMAT } from '@/constant';
 
 interface DatePickerProps {
   selected?: Date | null;
@@ -26,7 +27,7 @@ interface DatePickerProps {
 }
 
 const DatePicker = forwardRef<ReactDatePicker, DatePickerProps>(
-  ({ className, placeholder = 'Select date', onChange, dateFormat = 'dd/MM/yyyy', ...props }, ref) => {
+  ({ className, placeholder = 'Select date', onChange, dateFormat = DATE_FORMAT, ...props }, ref) => {
     return (
       <div className="relative">
         <ReactDatePicker

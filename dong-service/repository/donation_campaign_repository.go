@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"dong-service/constants"
+	"dong-service/logger"
 	"dong-service/models"
 	"errors"
 	"fmt"
@@ -34,7 +35,14 @@ func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampa
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				logger.Error().Err(rollbackErr).Msg("Failed to rollback transaction")
+			}
+		}
+	}()
 
 	// Insert donation campaign
 	campaignQuery := fmt.Sprintf(`
@@ -98,7 +106,14 @@ func (r *DonationCampaignRepository) CreateAndActive(campaign *models.CreateDona
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				logger.Error().Err(rollbackErr).Msg("Failed to rollback transaction")
+			}
+		}
+	}()
 
 	// Insert donation campaign with Active status
 	campaignQuery := fmt.Sprintf(`
@@ -272,7 +287,14 @@ func (r *DonationCampaignRepository) GetAll(limit, offset int, status *int16, or
 	if err != nil {
 		return nil, fmt.Errorf("failed to get donation campaigns: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err != nil {
+			errClose := rows.Close()
+			if errClose != nil {
+				logger.Error().Err(errClose).Msg("Failed to close rows")
+			}
+		}
+	}()
 
 	var campaigns []models.DonationCampaign
 	for rows.Next() {
@@ -514,7 +536,14 @@ func (r *DonationCampaignRepository) GetTopContributors(campaignID int64, limit 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get top contributors: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err != nil {
+			errClose := rows.Close()
+			if errClose != nil {
+				logger.Error().Err(errClose).Msg("Failed to close rows")
+			}
+		}
+	}()
 
 	var contributors []models.TopContributor
 	var campaignTotalAmount int64
