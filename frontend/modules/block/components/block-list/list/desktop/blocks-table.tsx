@@ -69,13 +69,13 @@ export const BlocksTable = ({ blocks, skeletonLength = PAGINATION.DEFAULT_LIMIT,
     //   ),
     //   skeletonContent: <HashFieldSkeleton />,
     // },
-    {
-      headerContent: 'Validator',
-      renderCell: (row) => (
-        <HashField hash={row.miner} className="w-60 lg:w-40 xl:w-60" addressClassName="text-foreground" />
-      ),
-      skeletonContent: <HashFieldSkeleton />,
-    },
+    // {
+    //   headerContent: 'Validator',
+    //   renderCell: (row) => (
+    //     <HashField hash={row.miner} className="w-60 lg:w-40 xl:w-60" addressClassName="text-foreground" />
+    //   ),
+    //   skeletonContent: <HashFieldSkeleton />,
+    // },
     {
       headerContent: 'Txn',
       renderCell: (row) => <TxnLink count={row.transaction_count} blockNumber={row.block_number} />,

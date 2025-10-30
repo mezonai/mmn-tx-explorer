@@ -14,7 +14,7 @@ interface StatCardProps {
 
 export const StatCard = ({ icon: Icon, title, value, subValue, className }: StatCardProps) => {
   const isLoading = value === undefined;
-  const cardClassName = cn('p-0', isLoading ? 'bg-background' : 'bg-card', className);
+  const cardClassName = cn('p-0', isLoading ? 'bg-background' : 'bg-card', 'dark:border-primary/15', className);
   return (
     <Card className={cardClassName}>
       <CardContent className="space-y-5 p-5">
@@ -31,7 +31,7 @@ export const StatCard = ({ icon: Icon, title, value, subValue, className }: Stat
             <div className="relative flex items-baseline whitespace-nowrap">
               <span className="text-foreground text-2xl font-bold">{value}</span>
               <span>&nbsp;</span>
-              <span className="text-tertiary-600 text-sm font-medium">{subValue}</span>
+              <span className="text-card-foreground text-sm font-medium">{subValue}</span>
             </div>
           )}
         </div>
