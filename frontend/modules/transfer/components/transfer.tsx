@@ -48,16 +48,17 @@ export const Transfer = () => {
       const value = e.target.value;
 
       if (field === 'amount') {
-        const numeric = value.replace(/[^0-9.]/g, '');
-        const parts = numeric.split('.');
-        const cleanNumeric = parts[0] + (parts.length > 1 ? '.' + parts[1] : '');
-
+        let numeric = value.replace(/[^0-9]/g, '');
+        if (numeric.length > 1 && numeric.startsWith('0')) {
+          numeric = numeric.replace(/^0+/, '');
+        }
+        const limitedValue = numeric.slice(0, 15);
         setForm((prev) => ({
           ...prev,
-          amount: cleanNumeric,
+          amount: limitedValue,
         }));
       } else {
-        setForm((prev) => ({ ...prev, [field]: value }));
+        setForm((prev) => ({ ...prev, [field]: value.trim() }));
       }
     };
 
@@ -126,7 +127,7 @@ export const Transfer = () => {
                 <Input
                   placeholder="Recipent's Address"
                   label="Recipient"
-                  className="mt-2 border-transparent dark:focus:border-brand-primary"
+                  className="dark:focus:border-brand-primary mt-2 border-transparent"
                   type="text"
                   value={form.address}
                   onChange={handleInputChange('address')}
@@ -135,7 +136,7 @@ export const Transfer = () => {
               <div>
                 <Input
                   label="Amount"
-                  className="mt-2 border-transparent dark:focus:border-brand-primary"
+                  className="dark:focus:border-brand-primary mt-2 border-transparent"
                   type="text"
                   value={NumberUtil.formatWithCommas(form.amount)}
                   suffix={APP_CONFIG.CHAIN_SYMBOL}
@@ -153,7 +154,7 @@ export const Transfer = () => {
                 <Textarea
                   placeholder="Leave a note..."
                   label="Message (optional)"
-                  className="mt-2 border-transparent dark:focus:border-brand-primary"
+                  className="dark:focus:border-brand-primary mt-2 border-transparent"
                   value={form.note}
                   onChange={handleInputChange('note')}
                 />
