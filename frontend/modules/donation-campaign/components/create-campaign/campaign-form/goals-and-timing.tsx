@@ -22,7 +22,7 @@ export function GoalsAndTiming() {
       const limitedValue = numeric.slice(0, 15);
       updateField(field, limitedValue);
     } else {
-      updateField(field, value);
+      updateField(field, value.trim());
     }
   };
 

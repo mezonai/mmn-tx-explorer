@@ -49,7 +49,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
         const limitedValue = numeric.slice(0, 15);
         setForm((prev) => ({ ...prev, amount: limitedValue }));
       } else {
-        setForm((prev) => ({ ...prev, [field]: value }));
+        setForm((prev) => ({ ...prev, [field]: value.trim() }));
       }
     };
 

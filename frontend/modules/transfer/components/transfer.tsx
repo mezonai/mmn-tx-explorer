@@ -58,7 +58,7 @@ export const Transfer = () => {
           amount: limitedValue,
         }));
       } else {
-        setForm((prev) => ({ ...prev, [field]: value }));
+        setForm((prev) => ({ ...prev, [field]: value.trim() }));
       }
     };
 
