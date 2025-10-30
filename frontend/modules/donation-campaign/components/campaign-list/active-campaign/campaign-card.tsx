@@ -64,8 +64,6 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
     switch (status) {
       case ECampaignStatus.Draft:
         return 'Review and publish';
-      case ECampaignStatus.Closed:
-        return 'View Impact Report';
       default:
         return 'View details';
     }
