@@ -20,8 +20,7 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
       <p className="text-brand-primary text-xs font-semibold tracking-[0.3em] uppercase">Donate</p>
       <h2 className="text-foreground mt-3 text-xl font-semibold dark:text-white">Send {APP_CONFIG.CHAIN_SYMBOL}</h2>
       <p className="text-muted-foreground mt-3 text-sm dark:text-gray-400">
-        100% of your contribution is allocated to construction, learning resources, and student well-being. Transactions
-        appear instantly in the Recent activity log.
+        Transactions appear instantly in the Recent activity log.
       </p>
 
       <div className="mt-6 space-y-4">
