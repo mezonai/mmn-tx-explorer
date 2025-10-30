@@ -91,7 +91,7 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
                 contributors.map((contrib, i) => (
                   <div
                     key={i}
-                    className="dark:bg-card mb-1 flex flex-col items-start gap-2 border-b border-gray-100 bg-white/70 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:rounded-2xl sm:border dark:border-white/10"
+                    className="dark:bg-card mb-1 flex items-start gap-2 border-b border-gray-100 bg-white/70 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:rounded-2xl sm:border dark:border-white/10"
                   >
                     <div className="flex items-center gap-4">
                       <span className="bg-brand-primary inline-flex h-9 w-9 items-center justify-center rounded-2xl text-sm font-semibold text-white">
@@ -101,7 +101,7 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
                         <AddressDisplay address={contrib.sender_wallet} href={ROUTES.WALLET(contrib.sender_wallet)} />
                       </div>
                     </div>
-                    <div className="w-full text-left sm:w-auto sm:text-right">
+                    <div className="w-full text-right sm:w-auto">
                       <p className="text-sm font-semibold text-emerald-500 dark:text-emerald-300">
                         {NumberUtil.formatWithCommasAndScale(contrib.total_donate)} {APP_CONFIG.CHAIN_SYMBOL}
                       </p>
