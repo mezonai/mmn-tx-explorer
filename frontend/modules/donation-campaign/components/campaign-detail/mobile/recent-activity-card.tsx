@@ -27,15 +27,12 @@ export function RecentActivityCardsMobile({
 }: RecentActivityCardsMobileProps) {
   const queryParams = 'tab=received-transactions';
   return (
-    <Card className="dark:border-primary/20 px-1 py-4">
-      <CardHeader>
-        <CardTitle>Recent Activity</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
+    <Card className="dark:border-primary/20 gap-0 px-1 py-4">
+      <CardContent className="flex flex-col">
         {transactions.length > 0 ? (
           transactions.map((tx: Transaction, i: number) => (
-            <div key={i} className="dark:bg-card rounded-lg border p-4 text-sm dark:border-white/10">
-              <div className="mb-2 flex justify-between border-b pb-2">
+            <div key={i} className="dark:bg-card text-sm dark:border-white/10">
+              <div className="flex justify-between">
                 <span className="text-muted-foreground">Sender</span>
                 <AddressDisplay address={tx.from_address} href={ROUTES.WALLET(tx.from_address)} />
               </div>
@@ -51,7 +48,7 @@ export function RecentActivityCardsMobile({
                   {format(DateTimeUtil.toMilliseconds(tx.transaction_timestamp), DATE_TIME_FORMAT.DATE_TIME)}
                 </span>
               </div>
-              <div className="mt-1 flex justify-between pb-2">
+              <div className="mt-1 mb-2 flex justify-between border-b pb-2">
                 <span className="text-muted-foreground pr-1">Tx Hash</span>
                 <TxnHashLink hash={tx.hash} isPending={false} />
               </div>
