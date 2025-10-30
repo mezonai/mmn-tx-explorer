@@ -1,3 +1,4 @@
+import { DonationCampaignService } from '@/modules/donation-campaign';
 import { CampaignDetail } from '@/modules/donation-campaign/components';
 import { Metadata } from 'next';
 
@@ -9,9 +10,10 @@ interface CampaignDetailPageProps {
 
 export async function generateMetadata({ params }: CampaignDetailPageProps): Promise<Metadata> {
   const { campaignId } = await params;
+  const campaign = await DonationCampaignService.getCampaignById(campaignId);
 
   return {
-    title: `Campaign ${campaignId}`,
+    title: campaign.name || `Campaign ${campaignId}`,
   };
 }
 

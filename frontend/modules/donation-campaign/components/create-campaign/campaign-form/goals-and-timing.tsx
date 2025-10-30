@@ -72,7 +72,7 @@ export function GoalsAndTiming() {
             <label className="text-foreground mb-2 block text-sm font-medium">Partner / campaign owner</label>
             <Input
               type="text"
-              placeholder="e.g. Mezon CSR Team, Na Tau Commune"
+              placeholder="e.g. Mezon Team"
               value={form.owner}
               onChange={(e) => handleInputChange('owner', e.target.value)}
             />
