@@ -1,7 +1,7 @@
 'use client';
 
 import { AddressDisplay } from '@/components/shared';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { ROUTES } from '@/configs/routes.config';
 import { DATE_TIME_FORMAT } from '@/constant';
 import { cn } from '@/lib/utils';
