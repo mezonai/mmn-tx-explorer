@@ -7,6 +7,7 @@ import { APP_CONFIG } from '@/configs/app.config';
 import { ROUTES } from '@/configs/routes.config';
 import { DATE_TIME_FORMAT, PAGINATION } from '@/constant';
 import { ESortOrder } from '@/enums';
+import { cn } from '@/lib/utils';
 import { useTopContributor } from '@/modules/donation-campaign/hooks/useTopContributor';
 import { Transaction } from '@/modules/donation-campaign/type';
 import { ITransactionListParams } from '@/modules/transaction';
@@ -16,6 +17,8 @@ import { DateTimeUtil, NumberUtil } from '@/utils';
 import { format } from 'date-fns';
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { useHidden } from '../provider';
+import { useEffect, useMemo } from 'react';
 
 const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
   page: PAGINATION.DEFAULT_PAGE,
@@ -33,9 +36,13 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
 
   const { data: transactionsResponse } = useTransactions(searchTransactionParams);
 
-  const transactions = transactionsResponse?.data ?? [];
+  const transactions = useMemo(() => transactionsResponse?.data ?? [], [transactionsResponse]);
   const contributors = topContributorsData?.contributors ?? [];
   const totalTransaction = transactionsResponse?.meta.total_items ?? 0;
+  const { hidden, setHidden } = useHidden();
+  useEffect(() => {
+    setHidden(transactions.length > 0);
+  }, [setHidden, transactions]);
   return (
     <Card className="dark:border-primary/20 p-2">
       <Tabs defaultValue="recent">
@@ -102,7 +109,12 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
                 <span className="order-1">{`Showing ${transactions.length} of total ${totalTransaction}`}</span>
                 <Link
                   href={ROUTES.WALLET(walletAddress)}
-                  className="text-brand-primary hover:text-brand-primary/70 order-2 inline-flex items-center font-medium transition"
+                  className={cn(
+                    'text-brand-primary hover:text-brand-primary/70 order-2 inline-flex items-center font-medium transition',
+                    {
+                      hidden: !hidden,
+                    }
+                  )}
                 >
                   View full activity
                   <ChevronRight className="ml-1 text-sm" />
