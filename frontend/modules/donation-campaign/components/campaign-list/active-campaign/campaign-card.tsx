@@ -20,10 +20,13 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
       return 'Draft';
     }
     if (status === ECampaignStatus.Closed) {
-      return 'Goal achieved';
+      return '';
+    }
+    if (NumberUtil.scaleDown(total_amount) >= goal) {
+      return 'Goal Achieved';
     }
     return `${formatDistanceToNow(new Date(end_date), { addSuffix: true })}`;
-  }, [status, end_date]);
+  }, [status, end_date, total_amount, goal]);
 
   const progress = useMemo(() => {
     if (status === ECampaignStatus.Draft) {
@@ -61,8 +64,6 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
     switch (status) {
       case ECampaignStatus.Draft:
         return 'Review and publish';
-      case ECampaignStatus.Closed:
-        return 'View Impact Report';
       default:
         return 'View details';
     }
