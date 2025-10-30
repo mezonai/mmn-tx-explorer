@@ -10,7 +10,7 @@ export interface DonationCampaign {
   description: string;
   goal: number;
   url: string;
-  wallet: string;
+  donation_wallet: string;
   creator: string;
   status: ECampaignStatus;
   end_date: string;
@@ -18,6 +18,7 @@ export interface DonationCampaign {
   updated_at: string;
   total_amount: number;
   total_contributors: number;
+  owner: string;
 }
 
 export interface CreateCampaignRequest {
@@ -85,4 +86,31 @@ export interface CampaignPreview {
   contributors: number;
   daysRemaining: string;
   status: ECampaignStatus;
+}
+export interface Transaction {
+  chain_id: string;
+  hash: string;
+  nonce: number;
+  block_hash: string;
+  block_number: number;
+  from_address: string;
+  to_address: string;
+  value: string;
+  transaction_type: number;
+  status: number;
+  transaction_timestamp: number;
+}
+export interface TopContributor {
+  sender_wallet: string;
+  total_donate: number;
+  percentage: number;
+}
+
+export interface TopContributorsResponse {
+  code: number;
+  message: string;
+  data: {
+    campaign_id: number;
+    contributors: TopContributor[];
+  };
 }

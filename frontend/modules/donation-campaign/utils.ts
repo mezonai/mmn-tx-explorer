@@ -25,5 +25,8 @@ const getCampaignStatusVariant = (status: ECampaignStatus) => {
       return `default`;
   }
 };
-
-export { getCampaignStatusLabel, getCampaignStatusVariant };
+const truncateWalletAddress = (address: string, chars = 6) => {
+  if (!address) return '';
+  return `${address.substring(0, chars)}...${address.substring(address.length - chars)}`;
+};
+export { getCampaignStatusLabel, getCampaignStatusVariant, truncateWalletAddress };

@@ -20,6 +20,14 @@ export class AuthenticationService {
 
     apiDongClient.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;
 
+    localStorage.setItem(
+      STORAGE_KEYS.TOKEN,
+      JSON.stringify({
+        access_token: response.data.access_token,
+        refresh_token: response.data.refresh_token,
+      })
+    );
+
     return response.data;
   }
 }

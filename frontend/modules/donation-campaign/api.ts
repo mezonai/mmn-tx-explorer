@@ -1,6 +1,12 @@
 import { apiDongClient } from '@/service';
 import { IPaginatedResponse } from '@/types';
-import { CampaignListParams, CampaignStats, CreateCampaignRequest, DonationCampaign } from './type';
+import {
+  CampaignListParams,
+  CampaignStats,
+  CreateCampaignRequest,
+  DonationCampaign,
+  TopContributorsResponse,
+} from './type';
 import { DONATION_ENDPOINTS } from './constants';
 
 export class DonationCampaignService {
@@ -64,5 +70,17 @@ export class DonationCampaignService {
   static async closeCampaign(id: string): Promise<any> {
     const { data } = await apiDongClient.patch(DONATION_ENDPOINTS.CLOSE_CAMPAIGN(id));
     return data;
+  }
+  static async getTopContributor({
+    campaignId,
+    params,
+  }: {
+    campaignId: string;
+    params: { limit: number };
+  }): Promise<TopContributorsResponse['data']> {
+    const { data } = await apiDongClient.get<TopContributorsResponse>(DONATION_ENDPOINTS.TOP_CONTRIBUTOR(campaignId), {
+      params,
+    });
+    return data.data;
   }
 }

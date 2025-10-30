@@ -5,6 +5,7 @@ import { Chip } from '@/components/shared/chip';
 import { getCampaignStatusLabel, getCampaignStatusVariant } from '../../../utils';
 import { CampaignPreview } from '@/modules/donation-campaign/type';
 import { APP_CONFIG } from '@/configs/app.config';
+import { NumberUtil } from '@/utils';
 
 interface CampaignPreviewProps {
   preview: CampaignPreview;
@@ -37,7 +38,8 @@ export const CampaignPreviewCard = ({ preview }: CampaignPreviewProps) => {
           <div className="mt-5">
             <div className="flex items-center justify-between text-[11px] font-medium text-gray-500 dark:text-gray-400">
               <span>
-                {preview.currentFunding} / {preview.targetFunding || 0} {APP_CONFIG.CHAIN_SYMBOL}
+                {NumberUtil.formatWithCommas(preview.currentFunding)} /{' '}
+                {NumberUtil.formatWithCommas(preview.targetFunding) || 0} {APP_CONFIG.CHAIN_SYMBOL}
               </span>
               <span>{preview.percentage}% funded</span>
             </div>

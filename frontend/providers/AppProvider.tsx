@@ -50,21 +50,17 @@ export function AppProvider({ children }: AppProviderProps) {
   const [keypair, setKeypair] = useState<IEphemeralKeyPair | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
+
   useEffect(() => {
     const localTokenStr = localStorage.getItem(STORAGE_KEYS.TOKEN);
     const localToken = localTokenStr ? safeJsonParse(localTokenStr) : null;
     if (localToken) {
       (async () => {
         try {
-          const response = await AuthenticationService.refreshLogin(localToken.refresh_token);
-          localStorage.setItem(
-            STORAGE_KEYS.TOKEN,
-            JSON.stringify({
-              access_token: response.access_token,
-              refresh_token: response.refresh_token,
-            })
-          );
-        } catch {}
+          await AuthenticationService.refreshLogin(localToken.refresh_token);
+        } catch {
+          toast.error('Session expired, please log in again.');
+        }
       })();
     }
     const userStored = localStorage.getItem(STORAGE_KEYS.USER_INFO);
@@ -87,14 +83,12 @@ export function AppProvider({ children }: AppProviderProps) {
         const userInfo: LoginResponse = await AuthenticationService.getUserInfo(authCode);
         setIsAuthenticated(true);
         router.replace('/');
-        toast.success('Login successful!');
         handleTokenStorage(userInfo);
         const keypair = generateAndStoreKeyPair();
         setKeypair(keypair);
         const senderAddress = mmnClient.getAddressFromUserId(userInfo.user.user_id);
         const userObject = processAndStoreUser(userInfo.user, senderAddress);
         setUser(userObject);
-
         const fetchedZk = await fetchAndStoreZkProof(
           userInfo.user.user_id || userInfo.user.sub,
           keypair.publicKey,
@@ -104,6 +98,7 @@ export function AppProvider({ children }: AppProviderProps) {
         if (fetchedZk) {
           setZkProof(fetchedZk);
         }
+        toast.success('Login successful!');
       } catch {
         toast.error('Login failed!');
         clearAuthStorage();
@@ -112,7 +107,8 @@ export function AppProvider({ children }: AppProviderProps) {
     };
 
     handleAuthentication(code);
-  }, [router, searchParams]);
+  }, []);
+
   const value: AppContextType = {
     isAuthenticated,
     setIsAuthenticated,

@@ -7,6 +7,8 @@ import { DatePicker } from '@/components/ui/datepicker';
 import { useCreateCampaignContext } from '@/modules/donation-campaign/context';
 import { APP_CONFIG } from '@/configs/app.config';
 import { NumberUtil } from '@/utils';
+import { format } from 'date-fns';
+import { DATE_FORMAT } from '@/constant';
 
 export function GoalsAndTiming() {
   const { form, updateField } = useCreateCampaignContext();
@@ -23,7 +25,7 @@ export function GoalsAndTiming() {
   };
 
   const handleDateChange = (date: Date | null) => {
-    const dateString = date ? date.toISOString().split('T')[0] : '';
+    const dateString = date ? format(date, DATE_FORMAT) : '';
     handleInputChange('endDate', dateString);
   };
 
@@ -52,7 +54,7 @@ export function GoalsAndTiming() {
             <Input
               placeholder="e.g. 20000"
               type="text"
-              value={form.fundraisingGoal ? NumberUtil.formatWithCommas(form.fundraisingGoal || '') : undefined}
+              value={form.fundraisingGoal ? NumberUtil.formatWithCommas(form.fundraisingGoal || '') : ''}
               onChange={(e) => handleInputChange('fundraisingGoal', e.target.value)}
             />
           </div>
