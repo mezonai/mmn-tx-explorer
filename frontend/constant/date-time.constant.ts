@@ -6,3 +6,4 @@ export const DATE_TIME_FORMAT = {
 } as const;
 
 export const YEAR_FORMAT = 'yyyy';
+export const DATE_FORMAT = 'yyyy/MM/dd';

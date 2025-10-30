@@ -1,5 +1,4 @@
 import { ComponentType, SVGProps } from 'react';
-
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NumberUtil } from '@/utils';
@@ -14,7 +13,7 @@ interface StatCardProps {
 
 export const StatCard = ({ icon: Icon, title, value, subValue }: StatCardProps) => {
   const isLoading = value === undefined;
-  const cardClassName = cn('p-0', isLoading ? 'bg-background' : 'bg-brand-primary');
+  const cardClassName = cn('p-0', isLoading ? 'bg-background' : 'bg-brand-primary-background');
   return (
     <Card className={cardClassName}>
       <CardContent className="space-y-5 p-5">
@@ -27,9 +26,11 @@ export const StatCard = ({ icon: Icon, title, value, subValue }: StatCardProps) 
             <Skeleton className="h-9 w-28" />
           ) : (
             <div>
-              <span className="text-3xl font-semibold">{NumberUtil.formatWithCommas(value ?? 0)}</span>
+              <span className="text-tertiary-600 text-3xl font-semibold">
+                {NumberUtil.formatWithCommas(value ?? 0)}
+              </span>
               <span>&nbsp;</span>
-              <span className="text-base font-medium">{subValue}</span>
+              <span className="text-tertiary-600 text-base font-medium">{subValue}</span>
             </div>
           )}
         </div>

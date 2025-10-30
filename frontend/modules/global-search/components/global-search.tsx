@@ -1,14 +1,14 @@
 'use client';
 
-import { ChangeEvent, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 
-import { SearchMd, XCircle } from '@/assets/icons';
-import { Input } from '@/components/ui/input';
+import { SearchMd } from '@/assets/icons';
 import { useDebounce } from '@/hooks';
 import { cn } from '@/lib/utils';
 import { SearchService } from '../api';
 import { ISearchResult } from '../types';
-import { SearchResults } from './search-results';
+import { Button } from '@/components/ui/button';
+import { SearchModal } from './search-modal';
 
 interface GlobalSearchProps {
   className?: string;
@@ -16,15 +16,29 @@ interface GlobalSearchProps {
 
 export const GlobalSearch = ({ className }: GlobalSearchProps) => {
   const [query, setQuery] = useState<string>('');
-  const [isFocused, setIsFocused] = useState<boolean>(false);
+  const [isSheetOpen, setIsSheetOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [searchResults, setSearchResults] = useState<ISearchResult | null>(null);
   const debouncedQuery = useDebounce(query, 400);
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const isShowSearchResults = isFocused && query && searchResults;
+
+  const openSheet = () => {
+    setIsSheetOpen(true);
+  };
+
+  const handleSheetOpenChange = (open: boolean) => {
+    setIsSheetOpen(open);
+    if (!open) {
+      setQuery('');
+      setSearchResults(null);
+    }
+  };
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     setQuery(event.target.value);
+  };
+
+  const handleClearQuery = () => {
+    setQuery('');
   };
 
   useEffect(() => {
@@ -62,46 +76,38 @@ export const GlobalSearch = ({ className }: GlobalSearchProps) => {
   }, [debouncedQuery]);
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsFocused(false);
+    const handleCommandK = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+        event.preventDefault();
+        openSheet();
       }
+    };
+
+    if (!isSheetOpen) {
+      document.addEventListener('keydown', handleCommandK);
     }
 
-    document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleCommandK);
     };
-  }, []);
+  }, [isSheetOpen]);
 
   return (
-    <div className={cn('relative flex-1', className)} ref={containerRef} onFocus={() => setIsFocused(true)}>
-      <SearchMd
-        className="text-foreground-quaternary-400 absolute top-1/2 left-3 size-5 -translate-y-1/2 transform"
-        strokeWidth={1.5}
-      />
-      <Input
-        placeholder="Search by txn hash / block number / wallet address"
-        className={cn('pl-10', query && 'pr-9')}
-        value={query}
-        onChange={handleChange}
-      />
-      {query && (
-        <button
-          className="text-muted-foreground absolute top-1/2 right-0 size-fit -translate-y-1/2 transform cursor-pointer p-2"
-          onClick={() => setQuery('')}
-        >
-          <XCircle className="text-foreground-quaternary-400 size-5" strokeWidth={1} />
-        </button>
-      )}
+    <>
+      <Button onClick={openSheet} variant={'outline'} className={cn('justify-start rounded-md', className)}>
+        <SearchMd className="text-foreground-quaternary-400 size-5" strokeWidth={1.5} />
+        <p className="text-foreground-quaternary-400">Search</p>
+      </Button>
 
-      {isShowSearchResults && (
-        <div className="bg-popover text-popover-foreground absolute top-full right-0 left-0 z-50 mt-2 max-h-[50dvh] overflow-y-auto rounded-md border shadow-md">
-          <div className="text-muted-foreground px-3.5 py-4 text-sm">
-            <SearchResults isLoading={isLoading} searchResults={searchResults} />
-          </div>
-        </div>
-      )}
-    </div>
+      <SearchModal
+        isOpen={isSheetOpen}
+        onOpenChange={handleSheetOpenChange}
+        query={query}
+        onQueryChange={handleChange}
+        onClearQuery={handleClearQuery}
+        isLoading={isLoading}
+        searchResults={searchResults}
+      />
+    </>
   );
 };

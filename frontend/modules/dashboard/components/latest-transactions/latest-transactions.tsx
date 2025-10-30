@@ -38,7 +38,7 @@ export const LatestTransactions = ({ className }: LatestTransactionsProps) => {
         </div>
       </div>
       <div className="flex w-full justify-center">
-        <Button variant="link" className="text-brand-secondary-700 size-fit p-0 font-semibold" asChild>
+        <Button variant="link" className="text-brand-primary size-fit p-0 font-semibold" asChild>
           <Link href={ROUTES.TRANSACTIONS}>View all transactions</Link>
         </Button>
       </div>

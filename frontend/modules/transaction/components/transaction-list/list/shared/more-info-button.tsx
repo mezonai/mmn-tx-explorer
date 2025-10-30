@@ -36,7 +36,7 @@ export const MoreInfoButton = ({ transaction }: MoreInfoButtonProps) => {
             </div>
           </div>
         </div>
-        <Button variant="link" className="text-brand-secondary-700 size-fit p-0 text-sm font-semibold">
+        <Button variant="link" className="text-brand-primary size-fit p-0 text-sm font-semibold">
           <Link href={ROUTES.TRANSACTION(transaction.hash)}>More details</Link>
         </Button>
       </PopoverContent>

@@ -18,13 +18,13 @@ interface BlockCardProps {
 
 export const BlockCard = ({ block }: BlockCardProps) => {
   return (
-    <Card className="p-0">
+    <Card className="bg-card p-0">
       <CardContent className="space-y-2 p-5">
         <div className="flex w-full items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Cube01 className="text-foreground-brand-secondary-500 size-6" />
             {block ? (
-              <Button variant="link" asChild className="text-brand-secondary-700 size-fit p-0 text-xl font-medium">
+              <Button variant="link" asChild className="text-brand-primary size-fit p-0 text-xl font-medium">
                 <Link href={ROUTES.BLOCK(block.block_number)}>{block.block_number}</Link>
               </Button>
             ) : (

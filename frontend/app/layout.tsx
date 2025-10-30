@@ -1,30 +1,23 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono, Manrope } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import { Suspense } from 'react';
 
 import './globals.css';
 import { ErrorBoundary } from '@/components/shared';
+import { AppProvider } from '@/providers/AppProvider';
 import Providers from '@/providers/QueryClientProvider';
+import { ThemeProvider } from '@/providers/ThemeProvider';
 
-const manrope = Manrope({
-  variable: '--font-manrope',
+const inter = Inter({
+  variable: '--font-inter',
   subsets: ['latin'],
-});
-
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | MMN Explorer',
-    default: 'MMN Explorer',
+    template: '%s | Mezon Đồng',
+    default: 'Mezon Đồng',
   },
   description: 'Mezon Mainnet Transaction Explorer',
 };
@@ -35,13 +28,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${manrope.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <ErrorBoundary>
-          <Suspense fallback={null}>
-            <Providers>{children}</Providers>
-          </Suspense>
-        </ErrorBoundary>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.variable} antialiased`}>
+        <ThemeProvider defaultTheme="light">
+          <ErrorBoundary>
+            <Suspense fallback={null}>
+              <AppProvider>
+                <Providers>{children}</Providers>
+              </AppProvider>
+            </Suspense>
+          </ErrorBoundary>
+        </ThemeProvider>
       </body>
     </html>
   );

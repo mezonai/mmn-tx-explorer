@@ -16,7 +16,7 @@ export const SearchResultItem = ({ href, icon: Icon, title, timestamp }: SearchR
   return (
     <Link
       href={href}
-      className="focus:bg-brand-primary active:bg-brand-primary hover:bg-brand-primary flex flex-col items-start justify-between gap-1 rounded p-2 lg:flex-row lg:items-center lg:gap-2"
+      className="focus:bg-brand-primary-background active:bg-brand-primary-background hover:bg-sidebar-accent flex flex-col items-start justify-between gap-1 rounded p-2 lg:flex-row lg:items-center lg:gap-2"
     >
       <div className="flex w-full flex-1 items-center justify-start gap-2 lg:w-auto">
         <Icon className="text-foreground-quaternary-400 size-5" />
