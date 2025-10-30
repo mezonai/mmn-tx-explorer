@@ -11,10 +11,10 @@ type Response struct {
 
 // PaginationMeta contains pagination metadata
 type PaginationMeta struct {
-	Page      int   `json:"page"`
-	Limit     int   `json:"limit"`
-	Total     int64 `json:"total"`
-	TotalPage int64 `json:"total_page"`
+	Page       int   `json:"page"`
+	Limit      int   `json:"limit,omitempty"`
+	TotalItems int64 `json:"total_items,omitempty"`
+	TotalPages int64 `json:"total_pages,omitempty"`
 }
 
 // PaginatedResponse represents a paginated API response
@@ -22,7 +22,7 @@ type PaginatedResponse struct {
 	Success    bool           `json:"success"`
 	Message    string         `json:"message"`
 	Data       any            `json:"data"`
-	Pagination PaginationMeta `json:"pagination"`
+	Pagination PaginationMeta `json:"meta"`
 }
 
 // SuccessResponse creates a successful response with data
@@ -60,10 +60,10 @@ func PaginatedSuccessResponse(message string, data any, page, limit int, total i
 		Message: message,
 		Data:    data,
 		Pagination: PaginationMeta{
-			Page:      page,
-			Limit:     limit,
-			Total:     total,
-			TotalPage: totalPage,
+			Page:       page,
+			Limit:      limit,
+			TotalItems: total,
+			TotalPages: totalPage,
 		},
 	}
 }

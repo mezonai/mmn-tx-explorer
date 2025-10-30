@@ -26,8 +26,8 @@ export const TransactionValue = ({
   if (showLabel) {
     return (
       <div className={cn('flex w-full justify-between gap-2 text-sm font-medium', className)}>
-        <span className="text-secondary-700">Value</span>
-        <span className="text-tertiary-600 font-normal">{formattedValue}</span>
+        <span className="text-foreground">Value</span>
+        <span className="text-card-foreground font-normal">{formattedValue}</span>
       </div>
     );
   }

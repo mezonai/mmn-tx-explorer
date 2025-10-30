@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useCampaignStats } from '@/modules/donation-campaign/hooks';
 import { NumberUtil } from '@/utils';
 import { PageHeader } from '@/components/shared';
+import { APP_CONFIG } from '@/configs/app.config';
 
 export const CSRDonation = () => {
   const { stats } = useCampaignStats();
@@ -15,8 +16,9 @@ export const CSRDonation = () => {
       value: stats.total_campaigns_active,
     },
     {
-      title: 'Total raised (MMN)',
-      value: NumberUtil.formatWithCommasAndScale(stats.total_amount),
+      title: 'Total raised',
+      value: `${NumberUtil.formatWithCommasAndScale(stats.total_amount)}`,
+      subValue: ` ${APP_CONFIG.CHAIN_SYMBOL}`,
     },
     {
       title: 'Contributors',
@@ -50,12 +52,7 @@ export const CSRDonation = () => {
         </div>
         <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3">
           {statCards.map((item) => (
-            <StatCard
-              key={item.title}
-              title={item.title}
-              value={item.value}
-              className="dark:border-primary/15 uppercase"
-            />
+            <StatCard key={item.title} title={item.title} value={item.value} subValue={item.subValue} />
           ))}
         </div>
       </div>

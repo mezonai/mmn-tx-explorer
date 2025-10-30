@@ -116,13 +116,12 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
           const campaignData = {
             name: form.name,
             description: form.shortDescription,
-            goal: form.fundraisingGoal || 0,
+            goal: Number(form.fundraisingGoal || 0),
             url: form.bannerImageUrl,
             donation_wallet: form.donationWallet.address,
             owner: form.owner,
             end_date: form.endDate,
           };
-          console.log('🚀 ~ CreateCampaignProvider ~ campaignData:', campaignData);
 
           if (id) {
             // Edit

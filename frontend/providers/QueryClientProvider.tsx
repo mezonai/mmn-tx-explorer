@@ -4,6 +4,7 @@
 import { DEFAULT_STALE_TIME } from '@/constant';
 // Since QueryClientProvider relies on useContext under the hood, we have to put 'use client' on top
 import { isServer, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 
 function makeQueryClient() {
   return new QueryClient({
@@ -14,6 +15,18 @@ function makeQueryClient() {
         retry: 1,
         refetchOnWindowFocus: false,
         refetchOnReconnect: true,
+      },
+      mutations: {
+        retry: (failureCount, error) => {
+          if (error instanceof Error && 'response' in error) {
+            const axiosError = error as AxiosError;
+            if (axiosError.response?.status === 401 && !!(axiosError.response?.data as any)?.retry) {
+              return failureCount < 1;
+            }
+          }
+
+          return false;
+        },
       },
     },
   });

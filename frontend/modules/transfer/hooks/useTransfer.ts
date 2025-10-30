@@ -12,7 +12,7 @@ export const useTransfer = () => {
   const { zkProof } = useZkProof();
 
   const transfer = useCallback(
-    async (input: TransferInput) => {
+    async (input: TransferInput, transaction_type: string) => {
       setLoading(true);
       try {
         const userId = user?.id || '';
@@ -41,7 +41,7 @@ export const useTransfer = () => {
           extraInfo: {
             UserSenderId: userId,
             UserSenderUsername: userName,
-            type: 'dong_give_coffee',
+            type: transaction_type,
           },
         });
 

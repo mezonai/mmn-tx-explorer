@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lib/pq"
 	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc"
@@ -31,16 +30,16 @@ type PostgresConnector struct {
 
 // WalletUpdateBatcher manages batched wallet updates and realtime MMN service calls
 type WalletUpdateBatcher struct {
-	mu               sync.RWMutex
-	pendingAddresses map[string]int64
-	mmnQueue         chan string
-	mmnBatchSize     int
-	mmnBatchTimeout  time.Duration
-	connector        *PostgresConnector
-	stopChan         chan struct{}
+	mu              sync.RWMutex
+	mmnQueue        chan WalletStats
+	mmnBatchSize    int
+	mmnBatchTimeout time.Duration
+	connector       *PostgresConnector
+	stopChan        chan struct{}
 }
 
 type WalletStats struct {
+	Address          string
 	TransactionCount int64
 	MaxBlock         *big.Int
 }
@@ -48,12 +47,11 @@ type WalletStats struct {
 // NewWalletUpdateBatcher creates a new wallet update batcher
 func NewWalletUpdateBatcher(connector *PostgresConnector) *WalletUpdateBatcher {
 	batcher := &WalletUpdateBatcher{
-		pendingAddresses: make(map[string]int64),
-		mmnQueue:         make(chan string, 1000), // Buffer for 1000 addresses
-		mmnBatchSize:     50,                      // Process 50 addresses per batch
-		mmnBatchTimeout:  2 * time.Second,         // Max wait time for batch
-		connector:        connector,
-		stopChan:         make(chan struct{}),
+		mmnQueue:        make(chan WalletStats, 10000), // Buffer for 10000 addresses
+		mmnBatchSize:    50,                            // Process 50 addresses per batch
+		mmnBatchTimeout: 2 * time.Second,               // Max wait time for batch
+		connector:       connector,
+		stopChan:        make(chan struct{}),
 	}
 
 	// Start the MMN batch processor
@@ -62,101 +60,33 @@ func NewWalletUpdateBatcher(connector *PostgresConnector) *WalletUpdateBatcher {
 	return batcher
 }
 
-// AddWalletTransactionCount adds transaction count for addresses (thread-safe)
-func (wub *WalletUpdateBatcher) AddWalletTransactionCount(addresses map[string]int64) {
-	if len(addresses) == 0 {
-		return
-	}
-
-	wub.mu.Lock()
-	defer wub.mu.Unlock()
-
-	for address, count := range addresses {
-		if address != "" {
-			wub.pendingAddresses[address] += count
-		}
-	}
-}
-
-// BatchUpdateWalletTransactionCounts performs batched wallet transaction count updates
-func (wub *WalletUpdateBatcher) BatchUpdateWalletTransactionCounts(tx *sql.Tx) error {
-	wub.mu.Lock()
-	defer wub.mu.Unlock()
-
-	if len(wub.pendingAddresses) == 0 {
-		return nil
-	}
-
-	// Process in batches to avoid query size limits
-	addresses := make([]string, 0, len(wub.pendingAddresses))
-	counts := make([]int64, 0, len(wub.pendingAddresses))
-
-	for address, count := range wub.pendingAddresses {
-		addresses = append(addresses, address)
-		counts = append(counts, count)
-	}
-
-	// Clear pending addresses
-	wub.pendingAddresses = make(map[string]int64)
-
-	// Batch update using VALUES clause
-	if len(addresses) > 0 {
-		valueStrings := make([]string, len(addresses))
-		valueArgs := make([]interface{}, len(addresses)*2)
-
-		for i, address := range addresses {
-			valueStrings[i] = fmt.Sprintf("($%d, $%d)", i*2+1, i*2+2)
-			valueArgs[i*2] = address
-			valueArgs[i*2+1] = counts[i]
-		}
-
-		query := fmt.Sprintf(`
-			INSERT INTO wallet(address, transaction_count) 
-			VALUES %s
-			ON CONFLICT (address) 
-			DO UPDATE SET 
-				transaction_count = COALESCE(wallet.transaction_count, 0) + EXCLUDED.transaction_count,
-				updated_at = NOW()`,
-			strings.Join(valueStrings, ","))
-
-		_, err := tx.Exec(query, valueArgs...)
-		if err != nil {
-			return fmt.Errorf("failed to batch update wallet transaction counts: %w", err)
-		}
-
-		log.Debug().Int("count", len(addresses)).Msg("Batch updated wallet transaction counts")
-	}
-
-	return nil
-}
-
 // QueueMMNServiceCall queues an address for batch MMN service processing
-func (wub *WalletUpdateBatcher) QueueMMNServiceCall(address string) {
-	if address == "" || wub.connector.mmnGrpcService == nil {
+func (wub *WalletUpdateBatcher) QueueMMNServiceCall(walletStats WalletStats) {
+	if walletStats.Address == "" || wub.connector.mmnGrpcService == nil {
 		return
 	}
 
 	// Non-blocking send to queue
 	select {
-	case wub.mmnQueue <- address:
+	case wub.mmnQueue <- walletStats:
 		// Successfully queued
 	default:
 		// Queue is full, skip this address
-		log.Debug().Str("address", address).Msg("MMN queue is full, skipping address")
+		log.Debug().Str("address", walletStats.Address).Msg("MMN queue is full, skipping address")
 	}
 }
 
 // processMMNQueue processes MMN service calls in batches
 func (wub *WalletUpdateBatcher) processMMNQueue() {
-	batch := make([]string, 0, wub.mmnBatchSize)
+	batch := make([]WalletStats, 0, wub.mmnBatchSize)
 	timer := time.NewTimer(wub.mmnBatchTimeout)
 	timer.Stop()
 
 	for {
 		select {
-		case address := <-wub.mmnQueue:
+		case walletStats := <-wub.mmnQueue:
 			// Add address to current batch
-			batch = append(batch, address)
+			batch = append(batch, walletStats)
 
 			// Start timer if this is the first address in batch
 			if len(batch) == 1 {
@@ -189,20 +119,20 @@ func (wub *WalletUpdateBatcher) processMMNQueue() {
 }
 
 // processMMNBatch processes a batch of addresses for MMN service calls
-func (wub *WalletUpdateBatcher) processMMNBatch(addresses []string) {
-	if len(addresses) == 0 {
+func (wub *WalletUpdateBatcher) processMMNBatch(walletStatsBatch []WalletStats) {
+	if len(walletStatsBatch) == 0 {
 		return
 	}
 
-	log.Debug().Int("count", len(addresses)).Msg("Processing MMN service batch")
+	log.Debug().Int("count", len(walletStatsBatch)).Msg("Processing MMN service batch")
 
 	// Process addresses in parallel with limited concurrency
 	semaphore := make(chan struct{}, 10) // Max 10 concurrent calls
 	var wg sync.WaitGroup
 
-	for _, address := range addresses {
+	for _, walletStats := range walletStatsBatch {
 		wg.Add(1)
-		go func(addr string) {
+		go func(walletStats WalletStats) {
 			defer wg.Done()
 
 			// Acquire semaphore
@@ -213,14 +143,14 @@ func (wub *WalletUpdateBatcher) processMMNBatch(addresses []string) {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
-			if err := wub.connector.refreshWalletFromService(ctx, addr); err != nil {
-				log.Debug().Err(err).Str("address", addr).Msg("Failed to refresh wallet from MMN service")
+			if err := wub.connector.refreshWalletFromService(ctx, walletStats); err != nil {
+				log.Debug().Err(err).Str("address", walletStats.Address).Msg("Failed to refresh wallet from MMN service")
 			}
-		}(address)
+		}(walletStats)
 	}
 
 	wg.Wait()
-	log.Debug().Int("count", len(addresses)).Msg("Completed MMN service batch")
+	log.Debug().Int("count", len(walletStatsBatch)).Msg("Completed MMN service batch")
 }
 
 // Stop gracefully stops the MMN batch processor
@@ -1666,10 +1596,6 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 			tx.TextData,
 			tx.ExtraInfo,
 		)
-
-		// Queue MMN service calls for wallet data refresh
-		p.walletUpdateBatcher.QueueMMNServiceCall(tx.FromAddress)
-		p.walletUpdateBatcher.QueueMMNServiceCall(tx.ToAddress)
 	}
 
 	tx, err := p.db.Begin()
@@ -1717,6 +1643,7 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 	for _, tx := range transactions {
 		if tx.FromAddress != "" {
 			stat := addressStats[tx.FromAddress]
+			stat.Address = tx.FromAddress
 			stat.TransactionCount++
 			if stat.MaxBlock == nil || tx.BlockNumber.Cmp(stat.MaxBlock) > 0 {
 				stat.MaxBlock = new(big.Int).Set(tx.BlockNumber)
@@ -1726,6 +1653,7 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 
 		if tx.ToAddress != "" {
 			stat := addressStats[tx.ToAddress]
+			stat.Address = tx.ToAddress
 			stat.TransactionCount++
 			if stat.MaxBlock == nil || tx.BlockNumber.Cmp(stat.MaxBlock) > 0 {
 				stat.MaxBlock = new(big.Int).Set(tx.BlockNumber)
@@ -1734,66 +1662,14 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 		}
 	}
 
-	if len(addressStats) > 0 {
-		if err := p.batchUpdateWalletTransactionCounts(tx, addressStats); err != nil {
-			return fmt.Errorf("failed to batch update wallet transaction counts: %w", err)
-		}
+	for _, walletStats := range addressStats {
+		p.walletUpdateBatcher.QueueMMNServiceCall(walletStats)
 	}
 	err = tx.Commit()
 	if err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
-	return nil
-}
-
-func (p *PostgresConnector) batchUpdateWalletTransactionCounts(
-	tx *sql.Tx,
-	addressStats map[string]WalletStats) error {
-	if len(addressStats) == 0 {
-		return nil
-	}
-
-	addressList := make([]string, 0, len(addressStats))
-	counts := make([]int64, 0, len(addressStats))
-	maxBlocks := make([]string, 0, len(addressStats))
-
-	for addr, stat := range addressStats {
-		addressList = append(addressList, addr)
-		counts = append(counts, stat.TransactionCount)
-		maxBlocks = append(maxBlocks, stat.MaxBlock.String())
-	}
-
-	query := `
-            INSERT INTO wallet (address, transaction_count, last_block)
-            SELECT 
-                unnest($1::text[]) as address,
-                unnest($2::bigint[]) as transaction_count,
-                unnest($3::numeric[]) as last_block
-            ON CONFLICT (address) 
-            DO UPDATE SET 
-                transaction_count = wallet.transaction_count + EXCLUDED.transaction_count,
-                last_block = GREATEST(COALESCE(wallet.last_block, 0)::numeric, EXCLUDED.last_block)::bigint
-    `
-
-	maxBlocksInterface := make([]interface{}, len(maxBlocks))
-	for i, v := range maxBlocks {
-		maxBlocksInterface[i] = v
-	}
-
-    _, err := tx.Exec(query,
-       pq.Array(addressList),
-       pq.Array(counts),
-       pq.Array(maxBlocksInterface),
-    )
-
-	if err != nil {
-		return fmt.Errorf("failed to batch update wallet transaction counts: %w", err)
-	}
-
-	log.Debug().
-		Int("count", len(addressList)).
-		Msg("Batch updated wallet transaction counts and stats")
 	return nil
 }
 
@@ -1958,8 +1834,8 @@ func bigIntToString(bi *big.Int) string {
 }
 
 // Wallet Management
-func (p *PostgresConnector) insertWallet(ctx context.Context, address string, nonce uint64, balance string) error {
-	if address == "" {
+func (p *PostgresConnector) insertWallet(ctx context.Context, walletStats WalletStats, nonce uint64, balance string) error {
+	if walletStats.Address == "" {
 		return nil
 	}
 
@@ -1984,12 +1860,14 @@ func (p *PostgresConnector) insertWallet(ctx context.Context, address string, no
 
 	query := `
 		WITH inserted AS (
-			INSERT INTO wallet (address, account_nonce, balance, transaction_count, updated_at, created_at) 
-			VALUES ($1, $2, $3, 0, NOW(), NOW())
+			INSERT INTO wallet (address, account_nonce, balance, transaction_count, last_block, updated_at, created_at) 
+			VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
 			ON CONFLICT (address) 
 			DO UPDATE SET 
 				account_nonce = EXCLUDED.account_nonce,
 				balance = EXCLUDED.balance,
+				transaction_count = wallet.transaction_count + EXCLUDED.transaction_count,
+                last_block = GREATEST(COALESCE(wallet.last_block, 0)::numeric, EXCLUDED.last_block)::bigint,
 				updated_at = NOW()
 			RETURNING (xmax = 0) as is_new
 		)
@@ -1997,7 +1875,7 @@ func (p *PostgresConnector) insertWallet(ctx context.Context, address string, no
 	`
 
 	var newWalletCount int64
-	err = tx.QueryRowContext(ctx, query, address, nonce, bigIntToString(balanceBig)).Scan(&newWalletCount)
+	err = tx.QueryRowContext(ctx, query, walletStats.Address, nonce, bigIntToString(balanceBig), walletStats.TransactionCount, bigIntToString(walletStats.MaxBlock)).Scan(&newWalletCount)
 	if err != nil {
 		return fmt.Errorf("failed to insert wallet: %w", err)
 	}
@@ -2022,56 +1900,22 @@ func (p *PostgresConnector) insertWallet(ctx context.Context, address string, no
 }
 
 // refreshWalletFromService fetches wallet data from MMN gRPC service and writes to DB
-func (p *PostgresConnector) refreshWalletFromService(ctx context.Context, address string) error {
-	if p.mmnGrpcService == nil || address == "" {
+func (p *PostgresConnector) refreshWalletFromService(ctx context.Context, walletStats WalletStats) error {
+	if p.mmnGrpcService == nil || walletStats.Address == "" {
 		return nil
 	}
 
-	resp, err := p.mmnGrpcService.GetAccount(ctx, address)
+	resp, err := p.mmnGrpcService.GetAccount(ctx, walletStats.Address)
 	if err != nil {
-		return err
+		log.Error().Err(err).Str("address", walletStats.Address).Msg("Failed to get account from MMN service")
+		return p.insertWallet(ctx, walletStats, 0, "0")
 	}
 
 	if resp == nil {
 		return nil
 	}
 
-	return p.insertWallet(ctx, address, resp.Nonce, resp.Balance)
-}
-
-// GetWallet retrieves wallet information by address
-func (p *PostgresConnector) GetWallet(address string) (*common.Wallet, error) {
-	query := `SELECT address, account_nonce, balance, updated_at, created_at 
-	          FROM wallet WHERE address = $1`
-
-	var wallet common.Wallet
-	var balanceStr string
-	var nonce *uint64
-
-	err := p.db.QueryRow(query, address).Scan(
-		&wallet.Address,
-		&nonce,
-		&balanceStr,
-		&wallet.UpdatedAt,
-		&wallet.CreatedAt,
-	)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil // Wallet not found
-		}
-		return nil, err
-	}
-
-	wallet.AccountNonce = nonce
-
-	// Convert balance string to big.Int
-	balance, ok := new(big.Int).SetString(balanceStr, 10)
-	if !ok {
-		balance = big.NewInt(0)
-	}
-	wallet.Balance = balance
-
-	return &wallet, nil
+	return p.insertWallet(ctx, walletStats, resp.Nonce, resp.Balance)
 }
 
 // GetWallets retrieves wallets with pagination and filtering
