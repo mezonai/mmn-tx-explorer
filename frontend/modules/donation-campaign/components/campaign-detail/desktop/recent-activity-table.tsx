@@ -2,21 +2,28 @@
 
 import { AddressDisplay } from '@/components/shared';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table } from '@/components/ui/table';
 import { ROUTES } from '@/configs/routes.config';
-import { DATE_TIME_FORMAT } from '@/constant';
 import { cn } from '@/lib/utils';
 import { Transaction } from '@/modules/donation-campaign/type';
-import { TxnHashLink } from '@/modules/transaction/components/transaction-list/list/shared';
-import { DateTimeUtil, NumberUtil } from '@/utils';
-import { format } from 'date-fns';
+import {
+  TransactionTime,
+  TransactionTimeSkeleton,
+  TransactionValueSkeleton,
+  TxnHashLink,
+  TxnHashLinkSkeleton,
+} from '@/modules/transaction/components/transaction-list/list/shared';
+import { TTableColumn } from '@/types';
+import { NumberUtil } from '@/utils';
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 
 export interface RecentActivityTableProps {
-  transactions: Transaction[];
+  transactions?: Transaction[];
   totalTransaction: number;
   walletAddress: string;
   hidden: boolean;
+  isLoading?: boolean;
 }
 
 export function RecentActivityTable({
@@ -24,53 +31,57 @@ export function RecentActivityTable({
   totalTransaction,
   walletAddress,
   hidden,
+  isLoading = false,
 }: RecentActivityTableProps) {
+  const columns: TTableColumn<Transaction>[] = [
+    {
+      headerContent: 'Sender',
+      dataKey: 'from_address',
+      renderCell: (tx) => <AddressDisplay address={tx.from_address} href={ROUTES.WALLET(tx.from_address)} />,
+      skeletonContent: <div className="h-5 w-32 rounded bg-gray-200 dark:bg-gray-700" />,
+    },
+    {
+      headerContent: 'Amount',
+      dataKey: 'value',
+      renderCell: (tx) => (
+        <span className="font-semibold text-emerald-500 dark:text-emerald-300">
+          {NumberUtil.formatWithCommasAndScale(tx.value)}
+        </span>
+      ),
+      skeletonContent: <TransactionValueSkeleton />,
+    },
+    {
+      headerContent: 'Time',
+      dataKey: 'transaction_timestamp',
+      renderCell: (tx) => <TransactionTime transactionTimestamp={tx.transaction_timestamp} showAbsolute={true} />,
+      skeletonContent: <TransactionTimeSkeleton />,
+    },
+    {
+      headerContent: 'Tx Hash',
+      dataKey: 'hash',
+      renderCell: (tx) => <TxnHashLink hash={tx.hash} isPending={false} />,
+      skeletonContent: <TxnHashLinkSkeleton className="w-40" />,
+    },
+  ];
+
   return (
     <Card className="dark:border-primary/20 overflow-x-auto p-4">
       <CardHeader>
         <CardTitle>Recent Activity</CardTitle>
       </CardHeader>
-      <CardContent>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-muted-foreground border-b text-left">
-              <th className="px-4 py-3">Sender</th>
-              <th className="px-4 py-3">Amount</th>
-              <th className="px-4 py-3">Time</th>
-              <th className="px-4 py-3">Tx Hash</th>
-            </tr>
-          </thead>
-          <tbody>
-            {transactions.length > 0 ? (
-              transactions.map((tx: Transaction, i: number) => (
-                <tr key={i} className="hover:bg-muted/30 border-b">
-                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                    <AddressDisplay address={tx.from_address} href={ROUTES.WALLET(tx.from_address)} />
-                  </td>
-                  <td className="px-4 py-3 font-semibold text-emerald-500 dark:text-emerald-300">
-                    {NumberUtil.formatWithCommasAndScale(tx.value)}
-                  </td>
-                  <td className="px-4 py-3 font-semibold">
-                    {format(DateTimeUtil.toMilliseconds(tx.transaction_timestamp), DATE_TIME_FORMAT.DATE_TIME)}
-                  </td>
-                  <td className="px-4 py-3 font-semibold">
-                    <TxnHashLink hash={tx.hash} isPending={false} />
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={4} className="py-6 text-center text-gray-500 dark:text-gray-400">
-                  No recent activity found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      <CardContent className="p-0">
+        <Table<Transaction>
+          columns={columns}
+          rows={transactions}
+          isLoading={isLoading}
+          getRowKey={(tx) => tx.hash}
+          nullDataContext="No recent activity found."
+          classNameLayout="border-none"
+        />
       </CardContent>
       <CardFooter>
         <div className="mt-4 flex w-full items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-          <span className="order-1">{`Showing ${transactions.length} of total ${totalTransaction}`}</span>
+          <span className="order-1">{`Showing ${transactions?.length ?? 0} of total ${totalTransaction}`}</span>
           <Link
             href={ROUTES.WALLET(walletAddress)}
             className={cn(

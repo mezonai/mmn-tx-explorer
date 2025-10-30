@@ -51,8 +51,8 @@ export function RecentActivityCardsMobile({
                 </span>
               </div>
               <div className="mt-1 flex justify-between pb-2">
-                <span className="text-muted-foreground">Tx Hash</span>
-                <TxnHashLink hash={tx.hash} isPending={false} className="flex-0" />
+                <span className="text-muted-foreground pr-1">Tx Hash</span>
+                <TxnHashLink hash={tx.hash} isPending={false} />
               </div>
             </div>
           ))
