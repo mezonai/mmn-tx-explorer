@@ -80,7 +80,10 @@ func (rh *ReorgHandler) Start(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			log.Info().Msg("Reorg handler shutting down")
-			rh.publisher.Close()
+			err := rh.publisher.Close()
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to close publisher")
+			}
 			return
 		case <-ticker.C:
 			mostRecentBlockChecked, err := rh.RunFromBlock(ctx, rh.lastCheckedBlock)

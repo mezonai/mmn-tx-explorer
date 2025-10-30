@@ -30,7 +30,6 @@ type PostgresConnector struct {
 
 // WalletUpdateBatcher manages batched wallet updates and realtime MMN service calls
 type WalletUpdateBatcher struct {
-	mu              sync.RWMutex
 	mmnQueue        chan WalletStats
 	mmnBatchSize    int
 	mmnBatchTimeout time.Duration
@@ -699,7 +698,12 @@ func (p *PostgresConnector) GetBlocks(qf QueryFilter, fields ...string) (QueryRe
 	if err != nil {
 		return QueryResult[common.Block]{}, err
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close rows in GetBlocks")
+		}
+	}()
 
 	var blocks []common.Block
 	for rows.Next() {
@@ -722,7 +726,12 @@ func (p *PostgresConnector) GetTransactions(ctx context.Context, qf QueryFilter,
 	if err != nil {
 		return QueryResult[common.Transaction]{}, err
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close rows in GetTransactions")
+		}
+	}()
 
 	var transactions []common.Transaction
 	for rows.Next() {
@@ -745,7 +754,12 @@ func (p *PostgresConnector) GetLogs(qf QueryFilter, fields ...string) (QueryResu
 	if err != nil {
 		return QueryResult[common.Log]{}, err
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close rows in GetLogs")
+		}
+	}()
 
 	var logs []common.Log
 	for rows.Next() {
@@ -768,7 +782,12 @@ func (p *PostgresConnector) GetTraces(qf QueryFilter, fields ...string) (QueryRe
 	if err != nil {
 		return QueryResult[common.Trace]{}, err
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close rows in GetTraces")
+		}
+	}()
 
 	var traces []common.Trace
 	for rows.Next() {
@@ -819,10 +838,15 @@ func (p *PostgresConnector) GetAggregations(ctx context.Context, table string, q
 	if err != nil {
 		return QueryResult[interface{}]{}, err
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close rows in GetAggregations")
+		}
+	}()
 
 	// Initialize as empty slice to avoid null in JSON when no rows
-	var aggregates []map[string]interface{} = make([]map[string]interface{}, 0)
+	var aggregates = make([]map[string]interface{}, 0)
 	for rows.Next() {
 		columns, err := rows.Columns()
 		if err != nil {
@@ -902,15 +926,20 @@ func (p *PostgresConnector) GetMaxBlockNumberInRange(chainId *big.Int, startBloc
 
 func (p *PostgresConnector) GetBlockHeadersDescending(chainId *big.Int, from *big.Int, to *big.Int) ([]common.BlockHeader, error) {
 	query := `SELECT block_number, hash, parent_hash 
-	          FROM blocks 
-	          WHERE chain_id = $1 AND block_number BETWEEN $2 AND $3 
-	          ORDER BY block_number DESC`
+		FROM blocks 
+		WHERE chain_id = $1 AND block_number BETWEEN $2 AND $3 
+		ORDER BY block_number DESC`
 
 	rows, err := p.db.Query(query, bigIntToString(chainId), bigIntToString(from), bigIntToString(to))
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close rows in GetBlockHeadersDescending")
+		}
+	}()
 
 	var headers []common.BlockHeader
 	for rows.Next() {
@@ -930,227 +959,23 @@ func (p *PostgresConnector) GetBlockHeadersDescending(chainId *big.Int, from *bi
 	return headers, rows.Err()
 }
 
-func (p *PostgresConnector) GetTokenBalances(qf BalancesQueryFilter, fields ...string) (QueryResult[common.TokenBalance], error) {
-	columns := p.buildSelectFields(fields, []string{
-		"token_type", "chain_id", "owner", "address", "token_id", "balance",
-	})
-
-	query := fmt.Sprintf("SELECT %s FROM token_balances WHERE 1=1", columns)
-	args := []interface{}{}
-	argCount := 0
-
-	if qf.ChainId != nil && qf.ChainId.Sign() > 0 {
-		argCount++
-		query += fmt.Sprintf(" AND chain_id = $%d", argCount)
-		args = append(args, bigIntToString(qf.ChainId))
-	}
-
-	if len(qf.TokenTypes) > 0 {
-		placeholders := make([]string, len(qf.TokenTypes))
-		for i, tokenType := range qf.TokenTypes {
-			argCount++
-			placeholders[i] = fmt.Sprintf("$%d", argCount)
-			args = append(args, tokenType)
-		}
-		query += fmt.Sprintf(" AND token_type IN (%s)", strings.Join(placeholders, ","))
-	}
-
-	if qf.TokenAddress != "" {
-		argCount++
-		query += fmt.Sprintf(" AND address = $%d", argCount)
-		args = append(args, qf.TokenAddress)
-	}
-
-	if qf.Owner != "" {
-		argCount++
-		query += fmt.Sprintf(" AND owner = $%d", argCount)
-		args = append(args, qf.Owner)
-	}
-
-	if len(qf.TokenIds) > 0 {
-		placeholders := make([]string, len(qf.TokenIds))
-		for i, tokenId := range qf.TokenIds {
-			argCount++
-			placeholders[i] = fmt.Sprintf("$%d", argCount)
-			args = append(args, bigIntToString(tokenId))
-		}
-		query += fmt.Sprintf(" AND token_id IN (%s)", strings.Join(placeholders, ","))
-	}
-
-	if qf.ZeroBalance {
-		query += " AND balance = 0"
-	}
-
-	if qf.SortBy != "" {
-		query += fmt.Sprintf(" ORDER BY %s", qf.SortBy)
-		if qf.SortOrder != "" {
-			query += " " + qf.SortOrder
-		}
-	}
-
-	if qf.Limit > 0 {
-		argCount++
-		query += fmt.Sprintf(" LIMIT $%d", argCount)
-		args = append(args, qf.Limit)
-	}
-
-	if qf.Offset > 0 {
-		argCount++
-		query += fmt.Sprintf(" OFFSET $%d", argCount)
-		args = append(args, qf.Offset)
-	}
-
-	rows, err := p.db.Query(query, args...)
-	if err != nil {
-		return QueryResult[common.TokenBalance]{}, err
-	}
-	defer rows.Close()
-
-	var balances []common.TokenBalance
-	for rows.Next() {
-		var balance common.TokenBalance
-		var chainIdStr, tokenIdStr, balanceStr string
-
-		err := rows.Scan(&balance.TokenType, &chainIdStr, &balance.Owner, &balance.TokenAddress, &tokenIdStr, &balanceStr)
-		if err != nil {
-			return QueryResult[common.TokenBalance]{}, err
-		}
-
-		balance.ChainId, _ = new(big.Int).SetString(chainIdStr, 10)
-		balance.TokenId, _ = new(big.Int).SetString(tokenIdStr, 10)
-		balance.Balance, _ = new(big.Int).SetString(balanceStr, 10)
-
-		balances = append(balances, balance)
-	}
-
-	return QueryResult[common.TokenBalance]{Data: balances}, rows.Err()
-}
-
-func (p *PostgresConnector) GetTokenTransfers(qf TransfersQueryFilter, fields ...string) (QueryResult[common.TokenTransfer], error) {
-	columns := p.buildSelectFields(fields, []string{
-		"token_type", "chain_id", "token_address", "from_address", "to_address", "block_number",
-		"block_timestamp", "transaction_hash", "token_id", "amount", "log_index",
-	})
-
-	query := fmt.Sprintf("SELECT %s FROM token_transfers WHERE 1=1", columns)
-	args := []interface{}{}
-	argCount := 0
-
-	if qf.ChainId != nil && qf.ChainId.Sign() > 0 {
-		argCount++
-		query += fmt.Sprintf(" AND chain_id = $%d", argCount)
-		args = append(args, bigIntToString(qf.ChainId))
-	}
-
-	if len(qf.TokenTypes) > 0 {
-		placeholders := make([]string, len(qf.TokenTypes))
-		for i, tokenType := range qf.TokenTypes {
-			argCount++
-			placeholders[i] = fmt.Sprintf("$%d", argCount)
-			args = append(args, tokenType)
-		}
-		query += fmt.Sprintf(" AND token_type IN (%s)", strings.Join(placeholders, ","))
-	}
-
-	if qf.TokenAddress != "" {
-		argCount++
-		query += fmt.Sprintf(" AND token_address = $%d", argCount)
-		args = append(args, qf.TokenAddress)
-	}
-
-	if qf.WalletAddress != "" {
-		argCount++
-		query += fmt.Sprintf(" AND (from_address = $%d OR to_address = $%d)", argCount, argCount)
-		args = append(args, qf.WalletAddress, qf.WalletAddress)
-	}
-
-	if len(qf.TokenIds) > 0 {
-		placeholders := make([]string, len(qf.TokenIds))
-		for i, tokenId := range qf.TokenIds {
-			argCount++
-			placeholders[i] = fmt.Sprintf("$%d", argCount)
-			args = append(args, bigIntToString(tokenId))
-		}
-		query += fmt.Sprintf(" AND token_id IN (%s)", strings.Join(placeholders, ","))
-	}
-
-	if qf.TransactionHash != "" {
-		argCount++
-		query += fmt.Sprintf(" AND transaction_hash = $%d", argCount)
-		args = append(args, qf.TransactionHash)
-	}
-
-	if qf.StartBlockNumber != nil && qf.EndBlockNumber != nil {
-		argCount++
-		query += fmt.Sprintf(" AND block_number BETWEEN $%d AND $%d", argCount, argCount+1)
-		args = append(args, bigIntToString(qf.StartBlockNumber), bigIntToString(qf.EndBlockNumber))
-		argCount++ // Increment once more since we used two args
-	}
-
-	if qf.SortBy != "" {
-		query += fmt.Sprintf(" ORDER BY %s", qf.SortBy)
-		if qf.SortOrder != "" {
-			query += " " + qf.SortOrder
-		}
-	} else {
-		query += " ORDER BY block_number DESC, log_index ASC"
-	}
-
-	if qf.Limit > 0 {
-		argCount++
-		query += fmt.Sprintf(" LIMIT $%d", argCount)
-		args = append(args, qf.Limit)
-	}
-
-	if qf.Offset > 0 {
-		argCount++
-		query += fmt.Sprintf(" OFFSET $%d", argCount)
-		args = append(args, qf.Offset)
-	}
-
-	rows, err := p.db.Query(query, args...)
-	if err != nil {
-		return QueryResult[common.TokenTransfer]{}, err
-	}
-	defer rows.Close()
-
-	var transfers []common.TokenTransfer
-	for rows.Next() {
-		var transfer common.TokenTransfer
-		var chainIdStr, blockNumberStr, tokenIdStr, amountStr string
-		var timestamp time.Time
-
-		err := rows.Scan(&transfer.TokenType, &chainIdStr, &transfer.TokenAddress, &transfer.FromAddress,
-			&transfer.ToAddress, &blockNumberStr, &timestamp, &transfer.TransactionHash,
-			&tokenIdStr, &amountStr, &transfer.LogIndex)
-		if err != nil {
-			return QueryResult[common.TokenTransfer]{}, err
-		}
-
-		transfer.ChainID, _ = new(big.Int).SetString(chainIdStr, 10)
-		transfer.BlockNumber, _ = new(big.Int).SetString(blockNumberStr, 10)
-		transfer.BlockTimestamp = timestamp
-		transfer.TokenID, _ = new(big.Int).SetString(tokenIdStr, 10)
-		transfer.Amount, _ = new(big.Int).SetString(amountStr, 10)
-
-		transfers = append(transfers, transfer)
-	}
-
-	return QueryResult[common.TokenTransfer]{Data: transfers}, rows.Err()
-}
-
 func (p *PostgresConnector) GetValidationBlockData(chainId *big.Int, startBlock *big.Int, endBlock *big.Int) ([]common.BlockData, error) {
 	// Get blocks with minimal data for validation
 	query := `SELECT chain_id, block_number, hash, parent_hash, block_timestamp 
-	          FROM blocks 
-	          WHERE chain_id = $1 AND block_number BETWEEN $2 AND $3 
-	          ORDER BY block_number ASC`
+		FROM blocks 
+		WHERE chain_id = $1 AND block_number BETWEEN $2 AND $3 
+		ORDER BY block_number ASC`
 
 	rows, err := p.db.Query(query, bigIntToString(chainId), bigIntToString(startBlock), bigIntToString(endBlock))
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close rows in GetValidationBlockData")
+		}
+	}()
 
 	var blockDataList []common.BlockData
 	for rows.Next() {
@@ -1203,7 +1028,12 @@ func (p *PostgresConnector) FindMissingBlockNumbers(chainId *big.Int, startBlock
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close rows in FindMissingBlockNumbers")
+		}
+	}()
 
 	var missingBlocks []*big.Int
 	for rows.Next() {
@@ -1245,7 +1075,12 @@ func (p *PostgresConnector) GetFullBlockData(chainId *big.Int, blockNumbers []*b
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close rows in GetFullBlockData")
+		}
+	}()
 
 	blockDataMap := make(map[string]*common.BlockData)
 	for rows.Next() {
@@ -1281,7 +1116,12 @@ func (p *PostgresConnector) GetFullBlockData(chainId *big.Int, blockNumbers []*b
 	if err != nil {
 		return nil, err
 	}
-	defer txRows.Close()
+	defer func() {
+		err := txRows.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close txRows in GetFullBlockData")
+		}
+	}()
 
 	for txRows.Next() {
 		var tx common.Transaction
@@ -1948,7 +1788,12 @@ func (p *PostgresConnector) GetWallets(limit, offset int, sortBy, sortOrder stri
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close rows in GetWallets")
+		}
+	}()
 
 	var wallets []common.Wallet
 	for rows.Next() {
@@ -2026,7 +1871,12 @@ func (p *PostgresConnector) GetTransactionsByWalletPaginated(ctx context.Context
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close rows in GetTransactionsByWalletPaginated")
+		}
+	}()
 
 	// Initialize as empty slice to avoid null in JSON when no rows
 	transactions, err := p.scanRowsToTransactions(rows)
@@ -2075,7 +1925,10 @@ func (p *PostgresConnector) scanRowsToTransactions(rows *sql.Rows) ([]common.Tra
 // Close closes the database connection
 func (p *PostgresConnector) Close() error {
 	if p.mmnGrpcService != nil {
-		p.mmnGrpcService.Close()
+		err := p.mmnGrpcService.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close MMN gRPC service")
+		}
 	}
 
 	// Stop wallet update batcher

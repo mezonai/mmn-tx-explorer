@@ -176,7 +176,10 @@ func (rpc *Client) SupportsBlockReceipts() bool {
 
 func (rpc *Client) Close() {
 	if rpc.mmnService != nil {
-		rpc.mmnService.Close()
+		err := rpc.mmnService.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close MMN gRPC service")
+		}
 	}
 }
 
