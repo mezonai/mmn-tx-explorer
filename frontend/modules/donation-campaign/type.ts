@@ -18,6 +18,7 @@ export interface DonationCampaign {
   updated_at: string;
   total_amount: number;
   total_contributors: number;
+  owner: string;
 }
 
 export interface CreateCampaignRequest {

@@ -34,15 +34,17 @@ export function InsightsCard({
             </dt>
             <dd className="font-bold text-gray-900 dark:text-white">{formatDistanceToNow(new Date(daysRemaining))}</dd>
           </div>
-          <div className="flex items-center justify-between gap-4">
-            <dt className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-              <ShieldCheck className="text-brand-primary h-4 w-4" />
-              <span>Campaign owner</span>
-            </dt>
-            <dd className="font-bold text-gray-900 dark:text-white">
-              <span>{owner}</span>
-            </dd>
-          </div>
+          {owner && (
+            <div className="flex items-center justify-between gap-4">
+              <dt className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                <ShieldCheck className="text-brand-primary h-4 w-4" />
+                <span>Campaign owner</span>
+              </dt>
+              <dd className="font-bold text-gray-900 dark:text-white">
+                <span>{owner}</span>
+              </dd>
+            </div>
+          )}
         </dl>
       </CardContent>
     </Card>

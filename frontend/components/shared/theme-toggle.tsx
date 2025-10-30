@@ -14,7 +14,7 @@ export function ThemeToggle() {
   const isDark = theme === 'dark';
 
   return (
-    <Button variant="outline" size="icon" className="relative overflow-hidden" onClick={toggleTheme}>
+    <Button variant="outline" size="icon" className="relative hidden overflow-hidden" onClick={toggleTheme}>
       <Sun
         className={`h-[1.2rem] w-[1.2rem] text-amber-500 transition-all duration-300 ${
           isDark ? 'scale-0 rotate-90' : 'scale-100 rotate-0'

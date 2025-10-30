@@ -23,7 +23,7 @@ export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
         <InsightsCard
           contributors={campaign.total_contributors}
           daysRemaining={campaign.end_date}
-          owner={campaign.creator}
+          owner={campaign.owner}
         />
       </div>
     </div>
