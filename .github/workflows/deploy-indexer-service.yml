@@ -20,6 +20,12 @@ on:
       ref:
         type: string
         required: true
+      git_sha:
+        type: string
+        required: false
+      source_artifact:
+        type: string
+        required: false
     secrets:
       POSTGRES_PASSWORD:
         required: true
@@ -32,11 +38,19 @@ jobs:
       git_sha: ${{ steps.get_sha.outputs.git_sha }}
     steps:
       - name: Checkout
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
           clean: false
-  
+
+      - name: Download source (from Artifact)
+        if: github.event_name == 'workflow_call'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.source_artifact }}
+          path: .
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
@@ -52,7 +66,12 @@ jobs:
 
       - name: Get short SHA
         id: get_sha
-        run: echo "git_sha=$(git rev-parse --short=8 HEAD)" >> $GITHUB_OUTPUT
+        run: |
+          if [ -n "${{ inputs.git_sha }}" ]; then
+            echo "git_sha=${{ inputs.git_sha }}" >> $GITHUB_OUTPUT
+          else
+            echo "git_sha=$(git rev-parse --short=8 HEAD)" >> $GITHUB_OUTPUT
+          fi
 
   deploy-indexer:
     needs: build
