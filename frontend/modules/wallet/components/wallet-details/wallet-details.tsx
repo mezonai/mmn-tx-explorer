@@ -1,4 +1,4 @@
-import { BackButton, BreadcrumbTrail } from '@/components/shared';
+import { BackButton, BreadcrumbNavigation, BreadcrumbTrail } from '@/components/shared';
 import { ROUTES } from '@/configs/routes.config';
 import { IBreadcrumb } from '@/types';
 import { WalletDetailTabs } from './wallet-detail-tabs';
@@ -19,7 +19,7 @@ export const WalletDetails = async ({ address }: WalletDetailsProps) => {
     <div className="space-y-8">
       <div className="mb-0 space-y-4">
         <div>
-          <BreadcrumbTrail breadcrumbs={breadcrumbs} className="hidden md:block" />
+          <BreadcrumbNavigation breadcrumbs={breadcrumbs} className="hidden md:block" />
           <BackButton href={ROUTES.WALLETS} className="md:hidden" />
         </div>
         <h1 className="text-2xl font-semibold">Account Details</h1>

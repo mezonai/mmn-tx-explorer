@@ -52,13 +52,7 @@ export const CSRDonation = () => {
         </div>
         <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3">
           {statCards.map((item) => (
-            <StatCard
-              key={item.title}
-              title={item.title}
-              value={item.value}
-              subValue={item.subValue}
-              className="dark:border-primary/15"
-            />
+            <StatCard key={item.title} title={item.title} value={item.value} subValue={item.subValue} />
           ))}
         </div>
       </div>
