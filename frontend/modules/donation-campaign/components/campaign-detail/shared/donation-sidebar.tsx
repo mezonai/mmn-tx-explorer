@@ -1,7 +1,7 @@
 'use client';
 
 import { CopyButton } from '@/components/ui/copy-button';
-import { DonationCampaign } from '@/modules/donation-campaign/type';
+import { DonationCampaign, ECampaignStatus } from '@/modules/donation-campaign/type';
 import { useAuth } from '@/providers';
 import { DonateDialog } from './donate-dialog';
 import { truncateWalletAddress } from '@/modules/donation-campaign/utils';
@@ -60,7 +60,9 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
           </div>
         </div> */}
         {/* Donate Button */}
-        {isAuthenticated && <DonateDialog walletAddress={campaign.donation_wallet} />}
+        {isAuthenticated && campaign.status !== ECampaignStatus.Closed && (
+          <DonateDialog walletAddress={campaign.donation_wallet} />
+        )}
         <p className="text-muted-foreground text-center text-xs dark:text-gray-400">
           💡 Keep your transaction hash for reconciliation.
         </p>
