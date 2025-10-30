@@ -15,10 +15,12 @@ export function GoalsAndTiming() {
 
   const handleInputChange = (field: keyof typeof form, value: string) => {
     if (field === 'fundraisingGoal') {
-      const numeric = value.replace(/[^0-9.]/g, '');
-      const parts = numeric.split('.');
-      const cleanNumeric = parts[0] + (parts.length > 1 ? '.' + parts[1] : '');
-      updateField(field, cleanNumeric);
+      let numeric = value.replace(/[^0-9]/g, '');
+      if (numeric.length > 1 && numeric.startsWith('0')) {
+        numeric = numeric.replace(/^0+/, '');
+      }
+      const limitdValue = numeric.slice(0, 15);
+      updateField(field, limitdValue);
     } else {
       updateField(field, value);
     }
