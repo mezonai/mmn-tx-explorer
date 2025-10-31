@@ -1,4 +1,3 @@
-import NotFound from '@/app/not-found';
 import { DonationCampaignService } from '@/modules/donation-campaign';
 import { CampaignDetail } from '@/modules/donation-campaign/components';
 import { Metadata } from 'next';
