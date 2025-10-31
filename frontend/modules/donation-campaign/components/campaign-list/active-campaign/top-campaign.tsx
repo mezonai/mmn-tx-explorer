@@ -42,7 +42,7 @@ export const TopCampaign = () => {
     <>
       <section className="">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Featured Campaigns</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Featured campaigns</h2>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
             Discover the most successful campaigns making a real impact in our community.
           </p>
