@@ -20,7 +20,7 @@ export const TransactionTime = ({ transactionTimestamp, showAbsolute = false, cl
     ? format(DateTimeUtil.toMilliseconds(transactionTimestamp), DATE_TIME_FORMAT.HUMAN_READABLE_SHORT)
     : DateTimeUtil.formatRelativeTimeSec(transactionTimestamp);
 
-  return <span className={cn('text-quaternary-500 text-sm', className)}>{timeDisplay}</span>;
+  return <span className={cn('text-card-foreground text-sm', className)}>{timeDisplay}</span>;
 };
 
 export const TransactionTimeSkeleton = ({ className }: TransactionTimeSkeletonProps) => {

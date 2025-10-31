@@ -9,14 +9,16 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from '../ui/breadcrumb';
+import { cn } from '@/lib/utils';
 
 interface BreadcrumbNavigationProps {
   breadcrumbs: IBreadcrumb[];
+  className?: string;
 }
 
-export function BreadcrumbNavigation({ breadcrumbs }: BreadcrumbNavigationProps) {
+export function BreadcrumbNavigation({ breadcrumbs, className }: BreadcrumbNavigationProps) {
   return (
-    <BreadcrumbComponent>
+    <BreadcrumbComponent className={cn(className)}>
       <BreadcrumbList>
         {breadcrumbs.map((breadcrumb, index) => {
           const isLast = index === breadcrumbs.length - 1;

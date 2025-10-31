@@ -30,7 +30,7 @@ export const ProtectedRoute = ({
   if (isLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center px-4 sm:px-6 lg:px-8">
-        <p className="text-muted-foreground">Loading...</p>
+        <p className="text-primary">Loading...</p>
       </div>
     );
   }
@@ -39,9 +39,9 @@ export const ProtectedRoute = ({
     return (
       <div className="h-full w-full px-4 sm:px-6 lg:px-8">
         <PageHeader title={title} header={header} description={description} />
-        <div className="border-primary/50 mx-auto mt-8 w-full max-w-3xl rounded-3xl border bg-white/5 p-6 text-center shadow-md dark:border-white/10">
-          <p className="text-muted-foreground mb-4 text-sm">You must be logged in to use this feature.</p>
-          <Button onClick={login} className="bg-primary hover:bg-primary-light rounded-xl px-6 py-3 text-white">
+        <div className="shadow-brand-primary/20 border-brand-primary/50 mx-auto mt-8 w-full max-w-3xl rounded-3xl border p-6 text-center shadow-md">
+          <p className="text-primary mb-4 text-sm">You must be logged in to use this feature.</p>
+          <Button onClick={login} className="bg-brand-primary hover:bg-brand-primary/40 text-brand-primary-background rounded-xl px-6 py-3">
             Log in
           </Button>
         </div>

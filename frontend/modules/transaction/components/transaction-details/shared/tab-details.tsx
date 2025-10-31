@@ -126,6 +126,23 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
         )}
         skeleton={<Skeleton className="h-5 w-20" />}
       />
+      {!!transaction?.text_data && (
+        <ItemAttribute
+          label="Note"
+          description="The note attached to the transaction"
+          data={transaction}
+          render={(tx) => (
+            <div className="flex items-center gap-2">
+              <div className="flex-grow md:flex-grow-0">
+                <Truncate className="md:hidden">{tx.text_data}</Truncate>
+                <span className="hidden md:block">{tx.text_data}</span>
+              </div>
+              <CopyButton textToCopy={tx.text_data ?? ''} className="text-muted-foreground size-fit flex-shrink-0" />
+            </div>
+          )}
+          skeleton={<Skeleton className="h-5 w-20" />}
+        />
+      )}
     </div>
   );
 };
