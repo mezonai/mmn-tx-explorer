@@ -54,7 +54,12 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
     };
 
   const resetForm = () => setForm({ amount: '', note: '' });
-
+  const onOpenChange = (open: boolean) => {
+    setIsDialogOpen(open);
+    if (!open && transactionHash) {
+      window.location.reload();
+    }
+  };
   const handleDonate = useCallback(async () => {
     try {
       const result = await transfer(
@@ -83,7 +88,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
     loading || !form.amount || !mmnClient.validateAmount(senderBalance, mmnClient.scaleAmountToDecimals(form.amount));
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+    <Dialog open={isDialogOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button
           size="lg"
