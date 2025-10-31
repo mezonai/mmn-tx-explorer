@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Separator } from '@/components/ui/separator';
 
 export const TopCampaign = () => {
+  // Fetch top 3 active campaigns sorted by total amount raised
   const { campaigns, isLoading, error } = useCampaigns({
     page: 1,
     limit: 3,
