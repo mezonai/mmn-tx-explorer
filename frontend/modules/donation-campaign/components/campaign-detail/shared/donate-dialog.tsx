@@ -1,3 +1,4 @@
+'use client';
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { mmnClient } from '@/modules/auth/utils';
@@ -9,17 +10,9 @@ import { useTransfer } from '@/modules/transfer/hooks/useTransfer';
 import { NumberUtil } from '@/utils';
 import { APP_CONFIG } from '@/configs/app.config';
 import { CopyButton } from '@/components/ui/copy-button';
-import { ITransactionListParams, TRANSACTIONS_QUERY_KEY } from '@/modules/transaction';
-import { PAGINATION } from '@/constant';
-import { ESortOrder } from '@/enums';
+import { TRANSACTIONS_QUERY_KEY } from '@/modules/transaction';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTransactions } from '@/modules/transaction/hooks/useTransactions';
-const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
-  page: PAGINATION.DEFAULT_PAGE,
-  limit: PAGINATION.RECENT_ACTIVITY_LIMITS,
-  sort_by: 'transaction_timestamp',
-  sort_order: ESortOrder.DESC,
-} as const;
+
 export function DonateDialog({ walletAddress }: { walletAddress: string }) {
   const { transfer, loading, user } = useTransfer();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -27,10 +20,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
     amount: '',
     note: '',
   });
-  const searchTransactionParams: ITransactionListParams = {
-    ...DEFAULT_VALUE_DATA_SEARCH,
-    filter_to_address: walletAddress,
-  };
+
   const queryClient = useQueryClient();
   const [senderBalance, setSenderBalance] = useState<string>('0');
   const [transactionHash, setTransactionHash] = useState<string>('');

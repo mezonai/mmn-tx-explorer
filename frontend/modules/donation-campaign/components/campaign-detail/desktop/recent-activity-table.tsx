@@ -66,7 +66,7 @@ export function RecentActivityTable({
   const queryParams = 'tab=received-transactions';
   return (
     <Card className="dark:border-primary/20 overflow-x-auto p-4">
-      <CardHeader className="px-3">
+      <CardHeader>
         <CardTitle>Recent Activity</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
