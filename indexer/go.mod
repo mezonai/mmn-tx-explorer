@@ -17,6 +17,7 @@ require (
 	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.3
 	github.com/twmb/franz-go v1.18.1
+	golang.org/x/time v0.9.0
 	google.golang.org/grpc v1.75.0
 	google.golang.org/protobuf v1.36.6
 )

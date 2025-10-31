@@ -51,7 +51,7 @@ func NewWalletUpdateBatcher(connector *PostgresConnector) *WalletUpdateBatcher {
 		mmnQueue:        make(chan WalletStats, 100000), // Buffer for 100000 addresses
 		mmnBatchSize:    50,                             // Process 50 addresses per batch
 		mmnBatchTimeout: 2 * time.Second,                // Max wait time for batch
-		mmnConcurrency:  10,                             // Max concurrent MMN calls
+		mmnConcurrency:  4,                              // Max concurrent MMN calls
 		connector:       connector,
 		stopChan:        make(chan struct{}),
 	}
