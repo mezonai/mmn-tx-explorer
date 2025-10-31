@@ -56,6 +56,7 @@ export interface CampaignListParams {
   limit: number;
   status?: string;
   order?: 'asc' | 'desc';
+  order_by?: 'total_amount' | 'created_at';
 }
 
 export interface CampaignStats {
