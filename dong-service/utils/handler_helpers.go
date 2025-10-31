@@ -37,10 +37,11 @@ func ParseInt64Param(c *gin.Context, paramName string) (int64, error) {
 
 // PaginationParams represents pagination query parameters
 type PaginationParams struct {
-	Page   int
-	Limit  int
-	Offset int
-	Order  string
+	Page    int
+	Limit   int
+	Offset  int
+	Order   string
+	OrderBy string
 }
 
 // GetPaginationParams extracts and validates pagination parameters from query string
@@ -48,6 +49,7 @@ func GetPaginationParams(c *gin.Context) PaginationParams {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	order := c.DefaultQuery("order", "desc")
+	orderBy := c.DefaultQuery("order_by", "created_at")
 
 	// Validate and normalize
 	if page < 0 {
@@ -60,10 +62,11 @@ func GetPaginationParams(c *gin.Context) PaginationParams {
 	offset := page * limit
 
 	return PaginationParams{
-		Page:   page,
-		Limit:  limit,
-		Offset: offset,
-		Order:  order,
+		Page:    page,
+		Limit:   limit,
+		Offset:  offset,
+		Order:   order,
+		OrderBy: orderBy,
 	}
 }
 

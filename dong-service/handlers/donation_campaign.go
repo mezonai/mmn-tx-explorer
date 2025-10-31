@@ -147,6 +147,9 @@ func (h *DonationCampaignHandler) GetCampaign(c *gin.Context) {
 // @Produce json
 // @Param page query int false "Page number" default(0)
 // @Param limit query int false "Items per page" default(10)
+// @Param status query int false "Filter by status (e.g., 0=draft,1=active,2=closed)"
+// @Param order query string false "Sort direction" Enums(asc,desc) default(desc)
+// @Param order_by query string false "Sort field" Enums(created_at,total_amount) default(created_at)
 // @Success 200 {object} models.PaginatedResponse{data=[]models.DonationCampaignResponse, meta=models.PaginationMeta}
 // @Failure 500 {object} models.Response
 // @Router /api/v1/campaigns [get]
@@ -158,9 +161,11 @@ func (h *DonationCampaignHandler) ListCampaigns(c *gin.Context) {
 		Int("page", pagination.Page).
 		Int("limit", pagination.Limit).
 		Interface("status", statusPtr).
+		Str("order", pagination.Order).
+		Str("order_by", pagination.OrderBy).
 		Msg("Listing campaigns")
 
-	campaigns, err := h.repo.GetAll(pagination.Limit, pagination.Offset, statusPtr, pagination.Order)
+	campaigns, err := h.repo.GetAll(statusPtr, pagination)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to get campaigns list")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToGetCampaigns+": "+err.Error()))
@@ -381,11 +386,6 @@ func (h *DonationCampaignHandler) GetTopContributors(c *gin.Context) {
 
 	topContributors, err := h.repo.GetTopContributors(id, limit)
 	if err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
-			logger.Warn().Int64("campaign_id", id).Msg("Campaign not found for top contributors")
-			c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, constants.ErrCampaignNotFound))
-			return
-		}
 		logger.Error().Err(err).Int64("campaign_id", id).Msg("Failed to get top contributors")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to get top contributors: "+err.Error()))
 		return
