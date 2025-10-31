@@ -4,6 +4,7 @@ import { AddressDisplay, RefreshButton } from '@/components/shared';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table } from '@/components/ui/table';
 import { ROUTES } from '@/configs/routes.config';
+import { DEFAULT_DEBOUNCE_TIME } from '@/hooks';
 import { cn } from '@/lib/utils';
 import { Transaction } from '@/modules/donation-campaign/type';
 import {
@@ -70,7 +71,7 @@ export function RecentActivityTable({
     <Card className="dark:border-primary/20 overflow-x-auto p-6">
       <CardHeader className="m-0 flex items-center justify-between gap-2 px-3 py-0">
         <CardTitle>Recent Activity</CardTitle>
-        <RefreshButton onClick={refetch} isLoading={isLoading} startDelay={2000} />
+        <RefreshButton onClick={refetch} isLoading={isLoading} startDelay={DEFAULT_DEBOUNCE_TIME} />
       </CardHeader>
       <CardContent className="p-0">
         <Table<Transaction>

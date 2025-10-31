@@ -13,7 +13,7 @@ import { useTransactions } from '@/modules/transaction/hooks/useTransactions';
 import { NumberUtil } from '@/utils';
 import { useHidden } from '../provider';
 import { useEffect, useMemo } from 'react';
-import { useBreakpoint } from '@/hooks';
+import { DEFAULT_DEBOUNCE_TIME, useBreakpoint } from '@/hooks';
 import { RecentActivityTable } from '../desktop/recent-activity-table';
 import { RecentActivityCardsMobile } from '../mobile/recent-activity-card';
 
@@ -95,7 +95,7 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
                 <CardTitle>Top contributor</CardTitle>
                 <span className="text-xs text-gray-500 dark:text-gray-400">Refreshes every 10 minutes</span>
               </div>
-              <RefreshButton onClick={refetch} isLoading={isPending} startDelay={2000} />
+              <RefreshButton onClick={refetch} isLoading={isPending} startDelay={DEFAULT_DEBOUNCE_TIME} />
             </CardHeader>
             <CardContent className="p-0">
               {contributors.length > 0 ? (

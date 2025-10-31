@@ -11,6 +11,7 @@ const chipVariants = cva('inline-flex items-center rounded-full px-3 py-1 text-x
       info: 'bg-blue-100 text-blue-600 dark:bg-blue-500/10 dark:text-blue-300',
       primary: 'bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary-light',
       secondary: 'bg-gray-500/10 text-gray-700 dark:bg-gray-400/10 dark:text-gray-300',
+      brand: 'bg-brand-primary/10 text-brand-primary dark:bg-brand-primary/10',
       // Outline variants with borders
       'outline-default': 'border border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-300',
       'outline-success': 'border border-emerald-300 text-emerald-600 dark:border-emerald-500 dark:text-emerald-300',
@@ -19,6 +20,8 @@ const chipVariants = cva('inline-flex items-center rounded-full px-3 py-1 text-x
       'outline-info': 'border border-blue-300 text-blue-600 dark:border-blue-500 dark:text-blue-300',
       'outline-primary': 'border border-primary text-primary dark:border-primary-light dark:text-primary-light',
       'outline-secondary': 'border border-gray-400 text-gray-700 dark:border-gray-500 dark:text-gray-300',
+      'outline-brand':
+        'border border-brand-primary text-brand-primary dark:border-brand-primary dark:text-brand-primary',
     },
     size: {
       sm: 'px-2 py-0.5 text-xs',

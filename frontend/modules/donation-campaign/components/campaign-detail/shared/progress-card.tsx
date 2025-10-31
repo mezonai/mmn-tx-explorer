@@ -23,7 +23,10 @@ export function ProgressCard({ raised, goal, campaignId, onRefresh }: ProgressCa
 
   const progress = useMemo(() => {
     const raisedScaleDown = NumberUtil.scaleDown(raised);
-    return (raisedScaleDown / goal) * 100;
+    if (!goal) {
+      return 0;
+    }
+    return Number(((raisedScaleDown / goal) * 100).toFixed(2));
   }, [raised, goal]);
 
   return (
@@ -41,7 +44,7 @@ export function ProgressCard({ raised, goal, campaignId, onRefresh }: ProgressCa
         <div className="relative mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
           <div
             className="bg-brand-primary h-full rounded-full transition-all duration-500 ease-out"
-            style={{ width: `${Math.min(progress, 100)}%` }}
+            style={{ width: `${!goal && !!raised ? 100 : Math.min(progress, 100)}%` }}
           />
         </div>
       </CardContent>
@@ -50,7 +53,7 @@ export function ProgressCard({ raised, goal, campaignId, onRefresh }: ProgressCa
         <span>
           Goal {NumberUtil.formatWithCommas(goal)} {APP_CONFIG.CHAIN_SYMBOL}
         </span>
-        <span>{progress.toFixed(2)}% funded</span>
+        <span>{progress}% funded</span>
       </CardFooter>
     </Card>
   );

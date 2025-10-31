@@ -5,11 +5,10 @@ import { DonationCampaign } from '@/modules/donation-campaign/type';
 import { Chip } from '@/components/shared';
 import { getCampaignStatusLabel, getCampaignStatusVariant } from '@/modules/donation-campaign/utils';
 import { useState } from 'react';
+import { BadgeCheck } from 'lucide-react';
 
 export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
   const [currentCampaign, setCurrentCampaign] = useState(campaign);
-  const status = currentCampaign.status;
-  const capitalizedStatus = getCampaignStatusLabel(status);
 
   const handleRefreshData = (newRaisedAmount?: number) => {
     if (newRaisedAmount !== undefined) {
@@ -23,7 +22,13 @@ export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <Chip variant={getCampaignStatusVariant(status)}>{capitalizedStatus}</Chip>
+        <Chip variant={getCampaignStatusVariant(campaign.status)}>{getCampaignStatusLabel(campaign.status)}</Chip>
+        {campaign.verified && (
+          <Chip variant="brand">
+            <span>Verified</span>
+            <BadgeCheck size={18} className="ml-2 fill-emerald-400" color="white" />
+          </Chip>
+        )}
       </div>
 
       <h1 className="text-3xl font-bold">{currentCampaign.name}</h1>

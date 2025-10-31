@@ -9,7 +9,7 @@ interface UseDebounceFunction<T extends (...args: any[]) => any> {
   onDebounceEnd?: () => void;
 }
 
-export const DEFAULT_DEBOUNCE_TIME = 10 * 1000; // 10 seconds
+export const DEFAULT_DEBOUNCE_TIME = 1000;
 export function useDebounceFunction<T extends (...args: any[]) => any>({
   fn,
   delay = DEFAULT_DEBOUNCE_TIME,

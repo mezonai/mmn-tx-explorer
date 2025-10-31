@@ -14,6 +14,7 @@ export const DONATION_ENDPOINTS = {
 
 export const QUERY_KEYS = {
   CAMPAIGNS: 'campaigns',
+  TOP_CAMPAIGNS: 'top-campaigns',
   CAMPAIGN: 'campaign',
   CAMPAIGN_STATS: 'campaign-stats',
   USER_DONATIONS: 'user-donations',
