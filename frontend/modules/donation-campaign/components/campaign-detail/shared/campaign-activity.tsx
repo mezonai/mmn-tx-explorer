@@ -58,17 +58,11 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
   return (
     <Card className="dark:border-primary/20 p-2">
       <Tabs defaultValue="recent">
-        <TabsList className="dark:bg-background/90 w-full rounded-3xl">
-          <TabsTrigger
-            value="recent"
-            className="data-[state=active]:text-brand-primary hover:text-brand-primary dark:data-[state=active]:text-brand-primary dark:hover:text-brand-primary dark:data-[state=active]:bg-background rounded-2xl"
-          >
+        <TabsList className="mb-3 w-full rounded-2xl">
+          <TabsTrigger value="recent" className="rounded-xl text-xs">
             Recent Activity
           </TabsTrigger>
-          <TabsTrigger
-            value="top"
-            className="data-[state=active]:text-brand-primary hover:text-brand-primary dark:data-[state=active]:text-brand-primary dark:hover:text-brand-primary dark:data-[state=active]:bg-background rounded-2xl"
-          >
+          <TabsTrigger value="top" className="rounded-xl text-xs">
             Top Contributors
           </TabsTrigger>
         </TabsList>
@@ -92,7 +86,7 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
           <Card className="dark:border-primary/20 space-y-3 p-2 sm:p-6">
             <CardHeader className="m-0 flex items-center justify-between gap-2 p-4 pb-0 sm:px-3 sm:py-0">
               <div className="">
-                <CardTitle>Top contributor</CardTitle>
+                <CardTitle className="text-foreground">Top contributor</CardTitle>
                 <span className="text-xs text-gray-500 dark:text-gray-400">Refreshes every 10 minutes</span>
               </div>
               <RefreshButton onClick={refetch} isLoading={isPending} startDelay={DEFAULT_DEBOUNCE_TIME} />

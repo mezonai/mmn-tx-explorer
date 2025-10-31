@@ -3,12 +3,14 @@ import { CampaignCard } from './campaign-card';
 import { useCampaigns } from '../../../hooks/useCampaigns';
 import { toast } from 'sonner';
 import { Separator } from '@/components/ui/separator';
+import { ECampaignStatus } from '@/modules/donation-campaign/type';
 
 export const TopCampaign = () => {
+  // Fetch top 3 active campaigns sorted by total amount raised
   const { campaigns, isLoading, error } = useCampaigns({
     page: 1,
     limit: 3,
-    status: 'active',
+    status: String(ECampaignStatus.Active),
     order: 'desc',
     order_by: 'total_amount',
   });
@@ -40,7 +42,7 @@ export const TopCampaign = () => {
     <>
       <section className="">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">🏆 Featured Campaigns</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Featured campaigns</h2>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
             Discover the most successful campaigns making a real impact in our community.
           </p>
