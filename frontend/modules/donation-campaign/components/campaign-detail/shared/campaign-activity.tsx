@@ -1,6 +1,6 @@
 'use client';
 
-import { AddressDisplay } from '@/components/shared';
+import { AddressDisplay, RefreshButton } from '@/components/shared';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { APP_CONFIG } from '@/configs/app.config';
@@ -30,9 +30,13 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
     ...DEFAULT_VALUE_DATA_SEARCH,
     filter_to_address: walletAddress,
   };
-  const { data: topContributorsData } = useTopContributor({ params: searchTBParams, campaignId });
+  const { data: topContributorsData, refetch, isPending } = useTopContributor({ params: searchTBParams, campaignId });
 
-  const { data: transactionsResponse } = useTransactions(searchTransactionParams);
+  const {
+    data: transactionsResponse,
+    refetch: refetchTransactions,
+    isPending: isPendingTransactions,
+  } = useTransactions(searchTransactionParams);
 
   const transactions = useMemo(() => transactionsResponse?.data ?? [], [transactionsResponse]);
   const contributors = topContributorsData?.contributors ?? [];
@@ -41,12 +45,16 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
   useEffect(() => {
     setHidden(transactions.length > 0);
   }, [setHidden, transactions]);
+
   const recentActivityProps = {
     transactions,
     totalTransaction,
     walletAddress,
     hidden,
+    isLoading: isPendingTransactions,
+    refetch: refetchTransactions,
   };
+
   return (
     <Card className="dark:border-primary/20 p-2">
       <Tabs defaultValue="recent">
@@ -81,10 +89,13 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
           )}
         </TabsContent>
         <TabsContent value="top">
-          <Card className="dark:border-primary/20 space-y-3 p-4">
-            <CardHeader className="hidden flex-col justify-between gap-2 sm:flex-row md:block">
-              <CardTitle>Top contributor</CardTitle>
-              <span className="text-xs text-gray-500 dark:text-gray-400">Refreshes every 10 minutes</span>
+          <Card className="dark:border-primary/20 space-y-3 p-2 sm:p-6">
+            <CardHeader className="m-0 flex items-center justify-between gap-2 p-4 pb-0 sm:px-3 sm:py-0">
+              <div className="">
+                <CardTitle>Top contributor</CardTitle>
+                <span className="text-xs text-gray-500 dark:text-gray-400">Refreshes every 10 minutes</span>
+              </div>
+              <RefreshButton onClick={refetch} isLoading={isPending} startDelay={2000} />
             </CardHeader>
             <CardContent className="p-0">
               {contributors.length > 0 ? (

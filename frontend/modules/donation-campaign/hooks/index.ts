@@ -4,3 +4,4 @@ export * from './useCampaign';
 export * from './useCreateCampaign';
 export * from './useUserDonations';
 export * from './useCloseCampaign';
+export * from './useRefreshCampaignRaised';
