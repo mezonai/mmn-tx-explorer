@@ -19,6 +19,7 @@ export interface DonationCampaign {
   total_amount: number;
   total_contributors: number;
   owner: string;
+  verified: boolean;
 }
 
 export interface CreateCampaignRequest {
