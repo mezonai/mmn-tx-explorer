@@ -70,7 +70,7 @@ export function RecentActivityTable({
   return (
     <Card className="dark:border-primary/20 overflow-x-auto p-6">
       <CardHeader className="m-0 flex items-center justify-between gap-2 px-3 py-0">
-        <CardTitle>Recent Activity</CardTitle>
+        <CardTitle className="text-foreground">Recent Activity</CardTitle>
         <RefreshButton onClick={refetch} isLoading={isLoading} startDelay={DEFAULT_DEBOUNCE_TIME} />
       </CardHeader>
       <CardContent className="p-0">
