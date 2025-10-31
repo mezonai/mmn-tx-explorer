@@ -14,12 +14,11 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/swag"
 
-	"github.com/thirdweb-dev/indexer/internal/handlers"
-	"github.com/thirdweb-dev/indexer/internal/middleware"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/handlers"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/middleware"
 
-	// Import the generated Swagger docs
-	config "github.com/thirdweb-dev/indexer/configs"
-	"github.com/thirdweb-dev/indexer/docs"
+
+	_ "github.com/mezonai/mmn-tx-explorer/indexer/docs"
 )
 
 var (
@@ -37,12 +36,11 @@ var (
 // @version v0.0.1-beta
 // @description API for querying blockchain transactions and events
 // @license.name Apache 2.0
-// @license.url https://github.com/thirdweb-dev/indexer/blob/main/LICENSE
+// @license.url https://github.com/mezonai/mmn-tx-explorer/indexer/blob/main/LICENSE
 // @BasePath /
 // @Security BasicAuth
 // @securityDefinitions.basic BasicAuth
 func RunApi(cmd *cobra.Command, args []string) {
-	docs.SwaggerInfo.Host = config.Cfg.API.Host
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -74,15 +72,6 @@ func RunApi(cmd *cobra.Command, args []string) {
 		root.GET("/pending-transactions", handlers.GetPendingTransactions)
 		root.GET("/pending-tx/:transaction_hash/detail", handlers.GetPendingTransactionDetail)
 		root.GET("/events", handlers.GetLogs)
-		root.GET("/wallet-transactions/:wallet_address", handlers.GetWalletTransactions)
-
-		// contract scoped queries
-		root.GET("/transactions/:to", handlers.GetTransactionsByContract)
-		root.GET("/events/:contract", handlers.GetLogsByContract)
-
-		// signature scoped queries
-		root.GET("/transactions/:to/:signature", handlers.GetTransactionsByContractAndSignature)
-		root.GET("/events/:contract/:signature", handlers.GetLogsByContractAndSignature)
 
 		// wallet queries
 		root.GET("/wallets", handlers.GetWallets)
@@ -98,27 +87,12 @@ func RunApi(cmd *cobra.Command, args []string) {
 		root.GET("/stats/dashboard", handlers.GetDashboardStats)
 		root.GET("/stats/transactions", handlers.GetTransactionStats)
 
-		// token balance queries
-		root.GET("/balances/:owner/:type", handlers.GetTokenBalancesByType)
-
-		root.GET("/balances/:owner", handlers.GetTokenBalancesByType)
-
-		// token holder queries
-		root.GET("/holders/:address", handlers.GetTokenHoldersByType)
-
-		// token transfers queries
-		root.GET("/transfers", handlers.GetTokenTransfers)
-		// token ID queries
-		root.GET("/tokens/:address", handlers.GetTokenIdsByType)
-
 		// search
 		root.GET("/search/:input", handlers.Search)
 	}
 
-	r.GET("/health", func(c *gin.Context) {
-		// TODO: implement a simple query before going live
-		c.String(http.StatusOK, "ok")
-	})
+
+	r.GET("/health", handlers.Health)
 
 	srv := &http.Server{
 		Addr:    ":8080",

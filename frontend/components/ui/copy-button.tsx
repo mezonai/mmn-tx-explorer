@@ -1,7 +1,7 @@
 'use client';
 
 import { CheckCheck } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { Copy01 } from '@/assets/icons';
 import { cn } from '@/lib/utils';
@@ -36,7 +36,8 @@ export const CopyButton = ({ textToCopy, className }: CopyButtonProps) => {
     }
   };
 
-  const handleCopy = async () => {
+  const handleCopy = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     if (navigator?.clipboard?.writeText) {
       try {
         await navigator.clipboard.writeText(textToCopy);
@@ -71,7 +72,7 @@ export const CopyButton = ({ textToCopy, className }: CopyButtonProps) => {
           )}
           onClick={handleCopy}
         >
-          {isCopied ? <CheckCheck strokeWidth={1.5} /> : <Copy01 strokeWidth={1.5} />}
+          {isCopied ? <CheckCheck strokeWidth={1.5} color="green" /> : <Copy01 strokeWidth={1.5} />}
         </Button>
       </TooltipTrigger>
       <TooltipContent>{isCopied ? 'Copied' : 'Copy to clipboard'}</TooltipContent>

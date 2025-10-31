@@ -44,7 +44,10 @@ export const TransactionsList = () => {
   // Determine which data to show based on tab
   const transactions = tab === ETransactionTab.Pending ? pendingTransactionsResponse?.data : transactionsResponse?.data;
   const pagination = tab === ETransactionTab.Pending ? pendingTransactionsResponse?.meta : transactionsResponse?.meta;
-  const totalItems = pagination?.total_items && pagination.total_items > TRANSACTION_DISPLAY_LIMIT ? TRANSACTION_DISPLAY_LIMIT : pagination?.total_items;
+  const totalItems =
+    pagination?.total_items && pagination.total_items > TRANSACTION_DISPLAY_LIMIT
+      ? TRANSACTION_DISPLAY_LIMIT
+      : pagination?.total_items;
   return (
     <div className="space-y-6 md:space-y-8">
       <h1 className="text-2xl font-semibold">Transactions</h1>
@@ -77,7 +80,7 @@ export const TransactionsList = () => {
         </div>
 
         {pagination?.total_items && pagination.total_items > TRANSACTION_DISPLAY_LIMIT && (
-          <div className="text-sm text-muted-foreground text-left pt-1 pb-0">
+          <div className="text-muted-foreground pt-1 pb-0 text-left text-sm">
             More than {pagination.total_items.toLocaleString()} transactions found
             <br />
             (Showing the last 500k records)

@@ -1,0 +1,662 @@
+# Dong Service - Donation Campaign API
+
+A RESTful API service to manage donation campaigns, built with the Gin Gonic framework and PostgreSQL.
+
+## 🚀 Features
+
+- ✅ RESTful API using Gin Gonic
+- ✅ PostgreSQL database with database/sql and lib/pq driver
+- ✅ Repository pattern for the data access layer
+- ✅ CRUD operations for donation campaign management
+- ✅ Campaign status management (Draft/Active/Closed)
+- ✅ Status filtering and ordering in the list API
+- ✅ **JWT-based authentication with OAuth2 integration**
+- ✅ **Token refresh mechanism with Redis whitelist**
+- ✅ **Campaign ownership and creator management**
+- ✅ **Campaign statistics and analytics**
+- ✅ **Top contributors tracking**
+- ✅ **Manual campaign synchronization**
+- ✅ **Owner/partner information support**
+- ✅ Swagger/OpenAPI documentation
+- ✅ Docker & Docker Compose support
+- ✅ YAML-based configuration with Viper
+- ✅ Environment variable override support
+- ✅ CORS middleware
+- ✅ Custom logging middleware
+- ✅ File-based database migrations
+- ✅ Migration tracking system
+- ✅ Pagination support
+- ✅ **Security scanning with OSV Scanner & govulncheck**
+- ✅ **Automated vulnerability detection via GitHub Actions**
+- ✅ **Structured logging with Zerolog**
+- ✅ **Log rotation with Lumberjack**
+- ✅ **Configurable log levels and outputs**
+
+## 📋 Requirements
+
+- Go 1.24 or higher
+- PostgreSQL 15
+- Docker & Docker Compose (optional)
+
+## 🛠️ Setup
+
+### 1. Clone repository
+
+```bash
+cd dong-service
+```
+
+### 2. Install dependencies
+
+```bash
+go mod download
+```
+
+### 3. Configure environment
+
+The application uses a YAML configuration file located at `config/config.yml`.
+
+Edit the `config/config.yml` file with your configuration:
+
+```yaml
+# Server Configuration
+server:
+  host: 0.0.0.0
+  port: 8888
+  gin_mode: debug
+
+# Database Configuration
+database:
+  host: localhost
+  port: 5432
+  user: postgres
+  password: postgres
+  name: dong_db
+  sslmode: disable
+  max_open_conns: 25
+  max_idle_conns: 5
+
+# CORS Configuration
+cors:
+  allow_origins: "*"
+  allow_methods: "POST, OPTIONS, GET, PUT, DELETE, PATCH"
+  allow_headers: "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With"
+  allow_credentials: true
+
+# Logging Configuration
+logging:
+  level: "info"           # debug, info, warn, error, fatal, panic
+  output: "stdout"        # stdout or file
+  file_path: "logs/dong-service.log"  # required when output=file
+  max_size: 100           # max size in MB before rotation (default: 100)
+  max_age: 30             # max age in days to retain old logs (default: 30)
+```
+
+**Note:** Environment variables can override config file values using the format: `SERVER_HOST`, `DATABASE_PORT`, `LOGGING_LEVEL`, etc.
+
+### Logging Configuration
+
+The application uses **Zerolog** for structured logging with the following features:
+
+- **Log Levels**: `debug`, `info`, `warn`, `error`, `fatal`, `panic`
+- **Output Options**:
+  - `stdout`: Console output with colored formatting (default)
+  - `file`: Write logs to file with automatic rotation
+- **Log Rotation** (when `output=file`):
+  - `max_size`: Maximum file size in MB before rotation (default: 100MB)
+  - `max_age`: Maximum days to retain old log files (default: 30 days)
+  - `max_backups`: Maximum number of old log files to keep (fixed: 10)
+  - `compress`: Automatically compress rotated logs to `.gz` format
+
+**Environment Variables:**
+- `LOGGING_LEVEL`: Set log level
+- `LOGGING_OUTPUT`: Set output type (stdout/file)
+- `LOGGING_FILE_PATH`: Set log file path
+- `LOGGING_MAX_SIZE`: Set max file size in MB
+- `LOGGING_MAX_AGE`: Set max age in days
+
+## 🚀 Run the application
+
+### Using Docker Compose (recommended)
+
+```bash
+# Build and start all services
+docker-compose up --build
+
+# Or run in the background
+docker-compose up -d
+
+# Tail logs
+docker-compose logs -f dong-service
+
+# Stop services
+docker-compose down
+```
+
+### Run directly with Go
+
+1. Ensure PostgreSQL is running
+
+2. Run the app:
+
+```bash
+# Development mode
+make dev
+
+# Or
+go run main.go
+
+# Production mode
+make prod
+```
+
+### Using the Makefile
+
+```bash
+# Show all commands
+make help
+
+# Build application
+make build
+
+# Run application
+make run
+
+# Run tests
+make test
+
+# Generate Swagger docs
+make swagger
+
+# Security scanning
+make install-security-tools  # Install security tools (first time only)
+make security-scan          # Run all security scans
+make govulncheck           # Run Go vulnerability check
+make osv-scan              # Run OSV scanner
+
+# Docker commands
+make docker-build
+make docker-up
+make docker-down
+make docker-logs
+```
+
+## 📡 API Endpoints
+
+### Health Check
+
+- `GET /health` - Health check endpoint
+
+### Authentication
+
+- `POST /oauth` - OAuth2 login (exchange code for JWT tokens)
+- `POST /refresh` - Refresh access token using refresh token
+- `POST /logout` - Logout and revoke refresh token
+
+### Donation Campaign Management
+
+#### Campaign Status
+
+Each campaign has a status (`status`) with 3 values:
+- **Draft (0)**: Default when creating a new campaign
+- **Active (1)**: The campaign is active and accepting donations
+- **Closed (2)**: The campaign is closed and no longer accepting donations
+
+#### Public Endpoints (No Authentication Required)
+
+- `GET /api/v1/campaigns` - List campaigns (with pagination, filter, sort)
+- `GET /api/v1/campaigns/:id` - Get campaign by ID
+- `GET /api/v1/campaigns/:id/top-contributors` - Get top contributors for a campaign
+- `POST /api/v1/campaigns/:id/sync` - Manually sync campaign statistics
+
+#### Admin Endpoints (Authentication Required)
+
+- `POST /api/v1/admin/campaigns` - Create a new campaign (status = Draft)
+- `POST /api/v1/admin/campaigns/create-active` - Create and immediately activate campaign
+- `PUT /api/v1/admin/campaigns/:id` - Update campaign (cannot update status/wallet)
+- `PATCH /api/v1/admin/campaigns/:id/activate` - Activate campaign (Draft → Active)
+- `PATCH /api/v1/admin/campaigns/:id/close` - Close campaign (Active → Closed)
+
+### Statistics
+
+- `GET /api/v1/stats/campaign` - Get overall campaign statistics
+
+### Swagger Documentation
+
+- `GET /swagger/index.html` - Swagger UI
+
+## 📝 API Examples
+
+### Authentication
+
+#### OAuth Login
+
+```bash
+curl -X POST http://localhost:8888/oauth \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "oauth_authorization_code",
+    "redirect_uri": "https://your-app.com/callback"
+  }'
+```
+
+#### Refresh Token
+
+```bash
+curl -X POST http://localhost:8888/refresh \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refresh_token": "your_refresh_token_here"
+  }'
+```
+
+#### Logout
+
+```bash
+curl -X POST http://localhost:8888/logout \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refresh_token": "your_refresh_token_here"
+  }'
+```
+
+### Create Campaign (Admin)
+
+```bash
+curl -X POST http://localhost:8888/api/v1/admin/campaigns \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your_access_token" \
+  -d '{
+    "name": "Help Children in Need",
+    "description": "Support education for underprivileged children",
+    "goal": 1000000,
+    "url": "https://example.com/campaign/1",
+    "end_date": "2025-12-31",
+    "donation_wallet": "0x1234567890abcdef",
+    "owner": "Partner Organization"
+  }'
+```
+
+**Note:** Status is automatically set to `Draft (0)` when creating a new campaign. The `creator` field is automatically set from the authenticated user.
+
+### Create and Activate Campaign (Admin)
+
+```bash
+curl -X POST http://localhost:8888/api/v1/admin/campaigns/create-active \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your_access_token" \
+  -d '{
+    "name": "Emergency Relief Fund",
+    "description": "Immediate assistance for disaster victims",
+    "goal": 500000,
+    "url": "https://example.com/emergency",
+    "end_date": "2025-12-31",
+    "donation_wallet": "0x1234567890abcdef",
+    "owner": "Emergency Response Team"
+  }'
+```
+
+### Get Campaign
+
+```bash
+curl http://localhost:8888/api/v1/campaigns/1
+```
+
+### List Campaigns (with pagination, filter, sort)
+
+```bash
+# Get all campaigns with pagination
+curl "http://localhost:8888/api/v1/campaigns?page=1&limit=10"
+
+# Filter by status (0=Draft, 1=Active, 2=Closed)
+curl "http://localhost:8888/api/v1/campaigns?status=1&page=1&limit=10"
+
+# Sort by created_at (asc/desc)
+curl "http://localhost:8888/api/v1/campaigns?order=asc&page=1&limit=10"
+
+# Combine filter and sort
+curl "http://localhost:8888/api/v1/campaigns?status=1&order=desc&page=1&limit=10"
+```
+
+**Query Parameters:**
+- `page`: Page number (default: 1)
+- `limit`: Items per page (default: 10, max: 100)
+- `status`: Filter by status (0=Draft, 1=Active, 2=Closed)
+- `order`: Sort order (asc/desc, default: desc)
+
+### Update Campaign (Admin)
+
+```bash
+curl -X PUT http://localhost:8888/api/v1/admin/campaigns/1 \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your_access_token" \
+  -d '{
+    "name": "Updated Campaign Name",
+    "description": "Updated description",
+    "goal": 2000000,
+    "url": "https://example.com/updated",
+    "end_date": "2025-12-31",
+    "owner": "Updated Partner Organization"
+  }'
+```
+
+**Note:** You cannot update `status` and `donation_wallet` via this endpoint. Use `/activate` or `/close` to change status.
+
+### Activate Campaign (Admin)
+
+```bash
+curl -X PATCH http://localhost:8888/api/v1/admin/campaigns/1/activate \
+  -H "Authorization: Bearer your_access_token"
+```
+
+### Close Campaign (Admin)
+
+```bash
+curl -X PATCH http://localhost:8888/api/v1/admin/campaigns/1/close \
+  -H "Authorization: Bearer your_access_token"
+```
+
+### Get Top Contributors
+
+```bash
+curl "http://localhost:8888/api/v1/campaigns/1/top-contributors?limit=5"
+```
+
+### Get Campaign Statistics
+
+```bash
+curl http://localhost:8888/api/v1/stats/campaign
+```
+
+### Sync Campaign Statistics
+
+```bash
+curl -X POST http://localhost:8888/api/v1/campaigns/1/sync
+```
+
+## 📁 Project Structure
+
+```
+dong-service/
+├── config/              # Configuration management
+│   ├── config.go        # Configuration loader using Viper
+│   └── config.yml       # YAML configuration file
+├── database/            # Database connection & migrations
+│   ├── database.go      # Database initialization
+│   ├── migrations.go    # Migration tracking logic
+│   └── whitelist.go     # Redis whitelist for JWT tokens
+├── handlers/            # HTTP request handlers
+│   ├── auth_handlers.go # Authentication handlers (OAuth, refresh, logout)
+│   ├── campaign_statistics.go  # Campaign statistics handlers
+│   ├── donation_campaign.go    # Campaign CRUD handlers
+│   └── health.go        # Health check handler
+├── logger/              # Logging package
+│   └── logger.go        # Zerolog logger with rotation support
+├── middleware/          # Custom middleware
+│   ├── authentication.go # JWT authentication middleware
+│   ├── cors.go          # CORS middleware
+│   └── logger.go        # Request logging middleware
+├── models/              # Data models & DTOs
+│   ├── auth.go          # Authentication models (OAuth, JWT)
+│   ├── donation_campaign.go  # Campaign model & DTOs
+│   └── response.go      # API response structures
+├── constants/           # Application constants
+│   ├── errors.go        # Error messages and constants
+│   └── status.go        # Campaign status constants
+├── repository/          # Data access layer (Repository pattern)
+│   ├── campaign_statistics_repository.go  # Statistics repository
+│   └── donation_campaign_repository.go    # Campaign repository
+├── routes/              # Route definitions
+│   └── routes.go        # API route setup
+├── migrations/          # SQL migration files
+│   ├── 001_create_donation_campaign_table.sql
+│   ├── 002_create_campaign_contributor_table.sql
+│   ├── 003_create_campaign_statistics_table.sql
+│   ├── 004_add_owner_column_to_donation_campaign.sql
+│   └── 005_alter_text_columns_to_varchar.sql
+├── docs/                # Swagger documentation (auto-generated)
+│   ├── docs.go
+│   ├── swagger.json
+│   └── swagger.yaml
+├── main.go              # Application entry point
+├── go.mod               # Go module dependencies
+├── go.sum               # Go module checksums
+├── Dockerfile           # Docker image definition
+├── docker-compose.yml   # Docker compose configuration
+├── Makefile             # Build automation
+└── README.md            # This file
+```
+
+## 🔧 Development
+
+### Configuration Management
+
+The application uses **Viper** for configuration management with the following features:
+- YAML-based configuration file (`config/config.yml`)
+- Environment variable override support
+- Format: `SERVER_HOST`, `DATABASE_PORT`, etc.
+
+### Generate Swagger Documentation
+
+```bash
+# Install swag CLI
+go install github.com/swaggo/swag/cmd/swag@latest
+
+# Generate docs
+swag init
+
+# Or use make
+make swagger
+```
+
+### Run Tests
+
+```bash
+go test -v ./...
+
+# Or
+make test
+```
+
+### Database Migration
+
+The database will auto-migrate on application startup. SQL migrations are read from the `migrations/` directory and executed in order.
+
+**Migration Tracking:**
+- The system automatically tracks applied migrations in the `schema_migrations` table
+- Each migration runs only once
+- Already-applied migrations are skipped automatically
+
+**Create a new migration:**
+```bash
+# Create a new migration file in the migrations/ directory
+# Format: XXX_description.sql (e.g., 002_add_new_feature.sql)
+touch migrations/002_add_new_feature.sql
+```
+
+**Run migrations:**
+```bash
+# Auto-run on app start
+go run main.go
+```
+
+**Check migration status:**
+```bash
+# Query the database directly
+psql -h localhost -U postgres -d dong_db -c "SELECT * FROM schema_migrations ORDER BY applied_at DESC;"
+```
+
+## 🐳 Docker
+
+### Build Docker Image
+
+```bash
+docker build -t dong-service .
+```
+
+### Run with Docker
+
+```bash
+docker run -p 8888:8888 \
+  -e SERVER_HOST=0.0.0.0 \
+  -e SERVER_PORT=8888 \
+  -e GIN_MODE=debug \
+  -e DB_HOST=host.docker.internal \
+  -e DB_PORT=5432 \
+  -e DB_USER=postgres \
+  -e DB_PASSWORD=postgres \
+  -e DB_NAME=dong_db \
+  -e DB_SSLMODE=disable \
+  -e DB_MAX_OPEN_CONNS=25 \
+  -e DB_MAX_IDLE_CONNS=5 \
+  dong-service
+```
+
+## 🔐 Authentication & Authorization
+
+### JWT Token Management
+
+The service uses JWT tokens for authentication with the following features:
+
+- **Access Tokens**: Short-lived tokens for API access (configurable expiration)
+- **Refresh Tokens**: Long-lived tokens for obtaining new access tokens
+- **Token Rotation**: Refresh tokens are rotated on each use for security
+- **Redis Whitelist**: Active tokens are stored in Redis for validation
+- **OAuth2 Integration**: Supports OAuth2 code exchange for user authentication
+
+### Authentication Flow
+
+1. **Login**: User authenticates via OAuth2 and receives JWT tokens
+2. **API Access**: Include `Authorization: Bearer <access_token>` header
+3. **Token Refresh**: Use refresh token to get new access token
+4. **Logout**: Revoke refresh token from whitelist
+
+### Campaign Ownership
+
+- Campaigns are created by authenticated users (creator field)
+- Only campaign creators can update, activate, or close their campaigns
+- Owner field allows storing partner organization information
+- Public endpoints don't require authentication for viewing campaigns
+
+## 📊 Campaign Statistics
+
+### Statistics Features
+
+- **Overall Statistics**: Total active campaigns, total amount raised, total contributors
+- **Top Contributors**: Per-campaign contributor rankings with donation amounts
+- **Manual Sync**: Trigger statistics synchronization for specific campaigns
+- **Real-time Updates**: Statistics are updated based on transaction data
+
+### Statistics Endpoints
+
+- `GET /api/v1/stats/campaign` - Get overall campaign statistics
+- `GET /api/v1/campaigns/:id/top-contributors` - Get top contributors for a campaign
+- `POST /api/v1/campaigns/:id/sync` - Manually sync campaign statistics
+
+## 📊 Response Format
+
+### Success Response
+
+```json
+{
+  "code": 200,
+  "message": "Success",
+  "data": {
+    "id": 1,
+    "username": "john_doe",
+    "email": "john@example.com",
+    "created_at": "2025-10-21T04:20:00Z",
+    "updated_at": "2025-10-21T04:20:00Z"
+  }
+}
+```
+
+### Error Response
+
+```json
+{
+  "code": 400,
+  "message": "Invalid request data"
+}
+```
+
+### Paginated Response
+
+```json
+{
+  "code": 200,
+  "message": "Success",
+  "data": [...],
+  "total": 100,
+  "page": 1,
+  "per_page": 10
+}
+```
+
+## 🔐 Security
+
+- CORS configuration
+- Input validation with Gin binding
+- SQL injection protection with prepared statements (database/sql)
+- Status constants to avoid magic numbers
+- Immutable fields (donation_wallet) after creation
+- Proper error handling and logging
+- **Automated vulnerability scanning** with OSV Scanner and govulncheck
+- **GitHub Actions security workflows** for continuous monitoring
+- **Weekly automated security scans** to detect new vulnerabilities
+
+### Security Scanning
+
+This project includes comprehensive security scanning tools:
+
+```bash
+# First-time setup (install security tools)
+make install-security-tools
+
+# Or use automated scripts
+./scripts/setup-security.sh      # Linux/macOS
+.\scripts\setup-security.ps1     # Windows
+
+# Run security scans
+make security-scan               # Run all scans
+make govulncheck                # Go vulnerability check only
+make osv-scan                   # OSV scanner only
+```
+
+**Automated Security Checks:**
+- ✅ Runs on every push to main/develop branches
+- ✅ Runs on all pull requests
+- ✅ Weekly scheduled scans (Monday 9:00 AM)
+- ✅ Dependency review for PRs
+
+See [SECURITY.md](SECURITY.md) for detailed security documentation.
+
+## 📝 TODO
+
+- [x] Authentication & Authorization (JWT)
+- [x] OAuth2 integration with token refresh
+- [x] Campaign ownership and creator management
+- [x] Campaign statistics and analytics
+- [x] Top contributors tracking
+- [x] Owner/partner information support
+- [x] Security scanning (OSV Scanner, govulncheck)
+- [x] GitHub Actions CI/CD pipeline
+- [x] Structured logging with Zerolog
+- [x] Log rotation with Lumberjack
+
+## 📄 License
+
+MIT License
+
+## 👥 Author
+
+Mezon Team
+
+## 🤝 Contributing
+
+Contributions, issues and feature requests are welcome!
+
+## ⭐ Show your support
+
+Give a ⭐️ if this project helped you!
+
