@@ -1,5 +1,5 @@
 const STORAGE_KEYS = {
-  THEME: 'mezon_theme',
+  THEME: 'theme',
   LANGUAGE: 'mezon_language',
   SEARCH_HISTORY: 'mezon_search_history',
   AUTH_TOKEN: 'auth_token',
