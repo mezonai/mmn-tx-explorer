@@ -38,8 +38,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
     if (isDialogOpen && user?.id) {
       refreshBalance();
     }
-    setRefetchTransaction(true);
-  }, [isDialogOpen, user?.id, refreshBalance, setRefetchTransaction]);
+  }, [isDialogOpen, user?.id, refreshBalance]);
 
   const handleInputChange =
     (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -70,6 +69,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
 
       if (result.success) {
         toast.success('Donation success!');
+        setRefetchTransaction(true);
         resetForm();
         setTransactionHash(result.txHash || '');
       } else {
@@ -79,7 +79,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
       console.error('Donation error:', error);
       toast.error('Something is broken');
     }
-  }, [form, walletAddress, transfer, refreshBalance]);
+  }, [form, walletAddress, transfer, setRefetchTransaction]);
 
   const isButtonDisabled =
     loading || !form.amount || !mmnClient.validateAmount(senderBalance, mmnClient.scaleAmountToDecimals(form.amount));
