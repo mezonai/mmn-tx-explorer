@@ -1,9 +1,26 @@
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
+'use client';
+
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { APP_CONFIG } from '@/configs/app.config';
 import { NumberUtil } from '@/utils';
 import { useMemo } from 'react';
+import { useRefreshCampaignRaised } from '../../../hooks';
+import { RefreshButton } from '@/components/shared';
+import { DEFAULT_DEBOUNCE_TIME } from '@/hooks';
 
-export function ProgressCard({ raised, goal }: { raised: number; goal: number }) {
+interface ProgressCardProps {
+  raised: number;
+  goal: number;
+  campaignId: string;
+  onRefresh?: (newRaisedAmount: number, newTotalAmount: number) => void;
+}
+export function ProgressCard({ raised, goal, campaignId, onRefresh }: ProgressCardProps) {
+  const { mutate, isPending } = useRefreshCampaignRaised({
+    onSuccess: ({ total_amount, total_contributors }) => {
+      onRefresh?.(total_amount, total_contributors);
+    },
+  });
+
   const progress = useMemo(() => {
     const raisedScaleDown = NumberUtil.scaleDown(raised);
     if (!goal) {
@@ -13,10 +30,14 @@ export function ProgressCard({ raised, goal }: { raised: number; goal: number })
   }, [raised, goal]);
 
   return (
-    <Card className="dark:bg-dark dark:bg-card rounded-3xl border-gray-200 bg-white/90 shadow-sm dark:border-white/10">
-      <CardContent>
+    <Card className="dark:bg-dark dark:bg-card gap-4 rounded-3xl border-gray-200 bg-white/90 shadow-sm dark:border-white/10">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <p className="text-xs tracking-wide text-gray-500 uppercase dark:text-gray-400">Raised to date</p>
-        <p className="mt-2 text-3xl font-semibold text-gray-900 dark:text-white">
+        <RefreshButton onClick={() => mutate(campaignId)} isLoading={isPending} startDelay={DEFAULT_DEBOUNCE_TIME} />
+      </CardHeader>
+
+      <CardContent className="pt-0">
+        <p className="text-3xl font-semibold text-gray-900 dark:text-white">
           {NumberUtil.formatWithCommasAndScale(raised)}
           <span className="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400">{APP_CONFIG.CHAIN_SYMBOL}</span>
         </p>
@@ -28,7 +49,7 @@ export function ProgressCard({ raised, goal }: { raised: number; goal: number })
         </div>
       </CardContent>
 
-      <CardFooter className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+      <CardFooter className="mt-2 flex justify-between text-xs text-gray-500 dark:text-gray-400">
         <span>
           Goal {NumberUtil.formatWithCommas(goal)} {APP_CONFIG.CHAIN_SYMBOL}
         </span>
