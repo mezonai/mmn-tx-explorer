@@ -1,6 +1,6 @@
 'use client';
 
-import { AddressDisplay } from '@/components/shared';
+import { AddressDisplay, RefreshButton } from '@/components/shared';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table } from '@/components/ui/table';
 import { ROUTES } from '@/configs/routes.config';
@@ -24,6 +24,7 @@ export interface RecentActivityTableProps {
   walletAddress: string;
   hidden: boolean;
   isLoading?: boolean;
+  refetch: () => void;
 }
 
 export function RecentActivityTable({
@@ -32,6 +33,7 @@ export function RecentActivityTable({
   walletAddress,
   hidden,
   isLoading = false,
+  refetch,
 }: RecentActivityTableProps) {
   const columns: TTableColumn<Transaction>[] = [
     {
@@ -65,9 +67,10 @@ export function RecentActivityTable({
   ];
   const queryParams = 'tab=received-transactions';
   return (
-    <Card className="dark:border-primary/20 overflow-x-auto p-4">
-      <CardHeader>
+    <Card className="dark:border-primary/20 overflow-x-auto p-6">
+      <CardHeader className="m-0 flex items-center justify-between gap-2 px-3 py-0">
         <CardTitle>Recent Activity</CardTitle>
+        <RefreshButton onClick={refetch} isLoading={isLoading} startDelay={2000} />
       </CardHeader>
       <CardContent className="p-0">
         <Table<Transaction>

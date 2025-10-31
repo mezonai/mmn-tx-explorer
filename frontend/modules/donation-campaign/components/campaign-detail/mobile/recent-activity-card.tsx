@@ -1,7 +1,7 @@
 'use client';
 
-import { AddressDisplay } from '@/components/shared';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { AddressDisplay, RefreshButton } from '@/components/shared';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ROUTES } from '@/configs/routes.config';
 import { DATE_TIME_FORMAT } from '@/constant';
 import { cn } from '@/lib/utils';
@@ -17,6 +17,8 @@ interface RecentActivityCardsMobileProps {
   totalTransaction: number;
   walletAddress: string;
   hidden: boolean;
+  isLoading?: boolean;
+  refetch: () => void;
 }
 
 export function RecentActivityCardsMobile({
@@ -24,10 +26,16 @@ export function RecentActivityCardsMobile({
   totalTransaction,
   walletAddress,
   hidden,
+  isLoading = false,
+  refetch,
 }: RecentActivityCardsMobileProps) {
   const queryParams = 'tab=received-transactions';
   return (
-    <Card className="dark:border-primary/20 gap-0 px-1 py-4">
+    <Card className="dark:border-primary/20 gap-0 gap-6 px-0 py-4">
+      <CardHeader className="m-0 flex items-center justify-between gap-2 px-6">
+        <CardTitle>Recent Activity</CardTitle>
+        <RefreshButton onClick={refetch} isLoading={isLoading} startDelay={2000} />
+      </CardHeader>
       <CardContent className="flex flex-col">
         {transactions.length > 0 ? (
           transactions.map((tx: Transaction, i: number) => (
@@ -59,7 +67,7 @@ export function RecentActivityCardsMobile({
         )}
       </CardContent>
       <CardFooter>
-        <div className="mt-4 flex w-full items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+        <div className="flex w-full items-center justify-between text-xs text-gray-500 dark:text-gray-400">
           <span className="order-1">{`Showing ${transactions.length} of total ${totalTransaction}`}</span>
           <Link
             href={ROUTES.WALLET(walletAddress, queryParams)}
