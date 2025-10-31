@@ -77,6 +77,15 @@ export interface CreateCampaignForm {
   };
 }
 
+export interface UpdateCampaignForm {
+  name?: string;
+  shortDescription?: string;
+  bannerImageUrl?: string;
+  fundraisingGoal?: number | null;
+  endDate?: string;
+  owner?: string;
+}
+
 export interface CampaignPreview {
   name: string;
   shortDescription: string;

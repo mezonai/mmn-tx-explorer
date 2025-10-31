@@ -5,6 +5,7 @@ export const DONATION_ENDPOINTS = {
   CLOSE_CAMPAIGN: (id: string) => `/api/v1/admin/campaigns/${id}/close`,
   CREATE_AND_PUBLISH_CAMPAIGN: '/api/v1/admin/campaigns/create-active',
   CREATE_CAMPAIGN: '/api/v1/admin/campaigns',
+  UPDATE_CAMPAIGN: (id: string) => `/api/v1/admin/campaigns/${id}`,
   DONATIONS: '/donations',
   MY_DONATIONS: '/donations/my-donations',
   PUBLISH_CAMPAIGN: (id: string) => `/api/v1/campaigns/${id}/activate`,
