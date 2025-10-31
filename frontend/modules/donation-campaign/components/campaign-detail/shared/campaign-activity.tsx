@@ -1,24 +1,21 @@
 'use client';
 
 import { AddressDisplay } from '@/components/shared';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { APP_CONFIG } from '@/configs/app.config';
 import { ROUTES } from '@/configs/routes.config';
-import { DATE_TIME_FORMAT, PAGINATION } from '@/constant';
-import { ESortOrder } from '@/enums';
-import { cn } from '@/lib/utils';
+import { PAGINATION } from '@/constant';
+import { EBreakpoint, ESortOrder } from '@/enums';
 import { useTopContributor } from '@/modules/donation-campaign/hooks/useTopContributor';
-import { Transaction } from '@/modules/donation-campaign/type';
 import { ITransactionListParams } from '@/modules/transaction';
-import { TxnHashLink } from '@/modules/transaction/components/transaction-list/list/shared';
 import { useTransactions } from '@/modules/transaction/hooks/useTransactions';
-import { DateTimeUtil, NumberUtil } from '@/utils';
-import { format } from 'date-fns';
-import { ChevronRight } from 'lucide-react';
-import Link from 'next/link';
+import { NumberUtil } from '@/utils';
 import { useHidden } from '../provider';
 import { useEffect, useMemo } from 'react';
+import { useBreakpoint } from '@/hooks';
+import { RecentActivityTable } from '../desktop/recent-activity-table';
+import { RecentActivityCardsMobile } from '../mobile/recent-activity-card';
 
 const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
   page: PAGINATION.DEFAULT_PAGE,
@@ -27,6 +24,7 @@ const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
   sort_order: ESortOrder.DESC,
 } as const;
 export function CampaignActivity({ campaignId, walletAddress }: { campaignId: string; walletAddress: string }) {
+  const isDesktop = useBreakpoint(EBreakpoint.LG);
   const searchTBParams = { limit: 5 };
   const searchTransactionParams: ITransactionListParams = {
     ...DEFAULT_VALUE_DATA_SEARCH,
@@ -43,6 +41,12 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
   useEffect(() => {
     setHidden(transactions.length > 0);
   }, [setHidden, transactions]);
+  const recentActivityProps = {
+    transactions,
+    totalTransaction,
+    walletAddress,
+    hidden,
+  };
   return (
     <Card className="dark:border-primary/20 p-2">
       <Tabs defaultValue="recent">
@@ -60,82 +64,34 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
             Top Contributors
           </TabsTrigger>
         </TabsList>
-
         <TabsContent value="recent">
-          <Card className="dark:border-primary/20 overflow-x-auto p-4">
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-muted-foreground border-b text-left">
-                    <th className="px-4 py-3">Sender</th>
-                    <th className="px-4 py-3">Amount</th>
-                    <th className="px-4 py-3">Time</th>
-                    <th className="px-4 py-3">Tx Hash</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {transactions.length > 0 ? (
-                    transactions.map((tx: Transaction, i: number) => (
-                      <tr key={i} className="hover:bg-muted/30 border-b">
-                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                          <AddressDisplay address={tx.from_address} href={ROUTES.WALLET(tx.from_address)} />
-                        </td>
-                        <td className="px-4 py-3 font-semibold text-emerald-500 dark:text-emerald-300">
-                          {NumberUtil.formatWithCommasAndScale(tx.value)}
-                        </td>
-                        <td className="px-4 py-3 font-semibold">
-                          {format(DateTimeUtil.toMilliseconds(tx.transaction_timestamp), DATE_TIME_FORMAT.DATE_TIME)}
-                        </td>
-                        <td className="px-4 py-3 font-semibold">
-                          <TxnHashLink hash={tx.hash} isPending={false} />
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={4} className="py-6 text-center text-gray-500 dark:text-gray-400">
-                        No recent activity found.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </CardContent>
-            <CardFooter>
-              <div className="mt-4 flex w-full items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                <span className="order-1">{`Showing ${transactions.length} of total ${totalTransaction}`}</span>
-                <Link
-                  href={ROUTES.WALLET(walletAddress)}
-                  className={cn(
-                    'text-brand-primary hover:text-brand-primary/70 order-2 inline-flex items-center font-medium transition',
-                    {
-                      hidden: !hidden,
-                    }
-                  )}
-                >
-                  View full activity
-                  <ChevronRight className="ml-1 text-sm" />
-                </Link>
+          {isDesktop === undefined ? (
+            <>
+              <div className="hidden lg:block">
+                <RecentActivityTable {...recentActivityProps} />
               </div>
-            </CardFooter>
-          </Card>
+              <div className="block lg:hidden">
+                <RecentActivityCardsMobile {...recentActivityProps} />
+              </div>
+            </>
+          ) : isDesktop ? (
+            <RecentActivityTable {...recentActivityProps} />
+          ) : (
+            <RecentActivityCardsMobile {...recentActivityProps} />
+          )}
         </TabsContent>
-
         <TabsContent value="top">
           <Card className="dark:border-primary/20 space-y-3 p-4">
-            <CardHeader className="flex flex-col justify-between gap-2 sm:flex-row">
+            <CardHeader className="hidden flex-col justify-between gap-2 sm:flex-row md:block">
               <CardTitle>Top contributor</CardTitle>
               <span className="text-xs text-gray-500 dark:text-gray-400">Refreshes every 10 minutes</span>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               {contributors.length > 0 ? (
                 contributors.map((contrib, i) => (
                   <div
                     key={i}
-                    className="dark:bg-card mb-1 flex flex-col items-start gap-2 rounded-2xl border border-gray-100 bg-white/70 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 dark:border-white/10"
+                    className="dark:bg-card mb-1 flex items-start gap-2 border-b border-gray-100 bg-white/70 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:rounded-2xl sm:border dark:border-white/10"
                   >
                     <div className="flex items-center gap-4">
                       <span className="bg-brand-primary inline-flex h-9 w-9 items-center justify-center rounded-2xl text-sm font-semibold text-white">
@@ -145,7 +101,7 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
                         <AddressDisplay address={contrib.sender_wallet} href={ROUTES.WALLET(contrib.sender_wallet)} />
                       </div>
                     </div>
-                    <div className="w-full text-left sm:w-auto sm:text-right">
+                    <div className="w-full text-right sm:w-auto">
                       <p className="text-sm font-semibold text-emerald-500 dark:text-emerald-300">
                         {NumberUtil.formatWithCommasAndScale(contrib.total_donate)} {APP_CONFIG.CHAIN_SYMBOL}
                       </p>
