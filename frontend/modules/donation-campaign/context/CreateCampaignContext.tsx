@@ -37,17 +37,19 @@ interface CreateCampaignContextType {
   setForm: (form: CreateCampaignForm) => void;
   isSaving: boolean;
   setIsSaving: (isSaving: boolean) => void;
+  isWalletDownloaded: boolean;
+  setIsWalletDownloaded: (isDownloaded: boolean) => void;
   validation: CreateCampaignValidation;
   saveDraft: () => Promise<void>;
   deleteDraft: () => void;
   handleSubmit: (action: 'draft' | 'publish') => void;
-  generateWallet: () => Promise<void>;
+  generateWallet: () => Promise<boolean>;
 }
 
-function validateForm(form: CreateCampaignForm) {
+function validateForm(form: CreateCampaignForm, isWalletDownloaded: boolean): CreateCampaignValidation {
   const isBasicsComplete = !!(form.name && form.shortDescription);
-  const isGoalsComplete = !!(form.fundraisingGoal && form.endDate);
-  const isWalletComplete = !!(form.donationWallet.address && form.donationWallet.privateKey);
+  const isGoalsComplete = true;
+  const isWalletComplete = !!(form.donationWallet.address && form.donationWallet.privateKey && isWalletDownloaded);
   const isDescriptionComplete = true;
 
   return {
@@ -72,8 +74,9 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
   const router = useRouter();
   const [form, setForm] = useState<CreateCampaignForm>(INITIAL_FORM);
   const [isSaving, setIsSaving] = useState(false);
+  const [isWalletDownloaded, setIsWalletDownloaded] = useState(false);
 
-  const validation = useMemo(() => validateForm(form), [form]);
+  const validation = useMemo(() => validateForm(form, isWalletDownloaded), [form, isWalletDownloaded]);
 
   const updateField = useCallback((field: keyof CreateCampaignForm, value: any) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -92,9 +95,11 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
         privateKey: wallet.privateKey,
       });
       toast.success('Wallet generated successfully');
+      return true;
     } catch (error) {
       console.error('Error generating wallet:', error);
       toast.error('Failed to generate wallet');
+      return false;
     } finally {
       setIsSaving(false);
     }
@@ -147,6 +152,8 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
     setForm,
     isSaving,
     setIsSaving,
+    isWalletDownloaded,
+    setIsWalletDownloaded,
     validation,
     saveDraft,
     deleteDraft,
