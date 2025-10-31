@@ -1,10 +1,17 @@
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { APP_CONFIG } from '@/configs/app.config';
 import { NumberUtil } from '@/utils';
+import { useMemo } from 'react';
 
 export function ProgressCard({ raised, goal }: { raised: number; goal: number }) {
-  const raisedScaleDown = Number(NumberUtil.formatWithCommasAndScale(raised).replace(/,/g, ''));
-  const progress = (raisedScaleDown / goal) * 100;
+  const progress = useMemo(() => {
+    const raisedScaleDown = NumberUtil.scaleDown(raised);
+    if (!goal) {
+      return 0;
+    }
+    return Number(((raisedScaleDown / goal) * 100).toFixed(2));
+  }, [raised, goal]);
+
   return (
     <Card className="dark:bg-dark dark:bg-card rounded-3xl border-gray-200 bg-white/90 shadow-sm dark:border-white/10">
       <CardContent>
@@ -16,7 +23,7 @@ export function ProgressCard({ raised, goal }: { raised: number; goal: number })
         <div className="relative mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
           <div
             className="bg-brand-primary h-full rounded-full transition-all duration-500 ease-out"
-            style={{ width: `${Math.min(progress, 100)}%` }}
+            style={{ width: `${!goal && !!raised ? 100 : Math.min(progress, 100)}%` }}
           />
         </div>
       </CardContent>
@@ -25,7 +32,7 @@ export function ProgressCard({ raised, goal }: { raised: number; goal: number })
         <span>
           Goal {NumberUtil.formatWithCommas(goal)} {APP_CONFIG.CHAIN_SYMBOL}
         </span>
-        <span>{progress.toFixed(2)}% funded</span>
+        <span>{progress}% funded</span>
       </CardFooter>
     </Card>
   );

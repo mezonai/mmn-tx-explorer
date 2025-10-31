@@ -48,7 +48,7 @@ interface CreateCampaignContextType {
 
 function validateForm(form: CreateCampaignForm, isWalletDownloaded: boolean): CreateCampaignValidation {
   const isBasicsComplete = !!(form.name && form.shortDescription);
-  const isGoalsComplete = !!(form.fundraisingGoal && form.endDate);
+  const isGoalsComplete = true;
   const isWalletComplete = !!(form.donationWallet.address && form.donationWallet.privateKey && isWalletDownloaded);
   const isDescriptionComplete = true;
 
