@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { mmnClient } from '@/modules/auth/utils';
@@ -11,16 +9,29 @@ import { useTransfer } from '@/modules/transfer/hooks/useTransfer';
 import { NumberUtil } from '@/utils';
 import { APP_CONFIG } from '@/configs/app.config';
 import { CopyButton } from '@/components/ui/copy-button';
-import { useTransactionStatus } from '../provider';
-
+import { ITransactionListParams, TRANSACTIONS_QUERY_KEY } from '@/modules/transaction';
+import { PAGINATION } from '@/constant';
+import { ESortOrder } from '@/enums';
+import { useQueryClient } from '@tanstack/react-query';
+import { useTransactions } from '@/modules/transaction/hooks/useTransactions';
+const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
+  page: PAGINATION.DEFAULT_PAGE,
+  limit: PAGINATION.RECENT_ACTIVITY_LIMITS,
+  sort_by: 'transaction_timestamp',
+  sort_order: ESortOrder.DESC,
+} as const;
 export function DonateDialog({ walletAddress }: { walletAddress: string }) {
   const { transfer, loading, user } = useTransfer();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { setRefetchTransaction } = useTransactionStatus();
   const [form, setForm] = useState({
     amount: '',
     note: '',
   });
+  const searchTransactionParams: ITransactionListParams = {
+    ...DEFAULT_VALUE_DATA_SEARCH,
+    filter_to_address: walletAddress,
+  };
+  const queryClient = useQueryClient();
   const [senderBalance, setSenderBalance] = useState<string>('0');
   const [transactionHash, setTransactionHash] = useState<string>('');
   const refreshBalance = useCallback(async () => {
@@ -33,13 +44,11 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
       toast.error('Failed to load balance.');
     }
   }, [user?.id]);
-
   useEffect(() => {
     if (isDialogOpen && user?.id) {
       refreshBalance();
     }
   }, [isDialogOpen, user?.id, refreshBalance]);
-
   const handleInputChange =
     (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const { value } = e.target;
@@ -54,7 +63,6 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
         setForm((prev) => ({ ...prev, [field]: value.trim() }));
       }
     };
-
   const resetForm = () => setForm({ amount: '', note: '' });
   const handleDonate = useCallback(async () => {
     try {
@@ -66,12 +74,11 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
         },
         'donation-campaign'
       );
-
       if (result.success) {
         toast.success('Donation success!');
-        setRefetchTransaction(true);
         resetForm();
         setTransactionHash(result.txHash || '');
+        await queryClient.invalidateQueries({ queryKey: [TRANSACTIONS_QUERY_KEY] });
       } else {
         toast.error(result.error || 'Donation fail. Please try again.');
       }
@@ -79,11 +86,9 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
       console.error('Donation error:', error);
       toast.error('Something is broken');
     }
-  }, [form, walletAddress, transfer, setRefetchTransaction]);
-
+  }, [form, walletAddress, transfer, queryClient]);
   const isButtonDisabled =
     loading || !form.amount || !mmnClient.validateAmount(senderBalance, mmnClient.scaleAmountToDecimals(form.amount));
-
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
@@ -94,7 +99,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
           Donate Now
         </Button>
       </DialogTrigger>
-
+      code Code
       <DialogContent
         onOpenAutoFocus={(e) => {
           e.preventDefault();

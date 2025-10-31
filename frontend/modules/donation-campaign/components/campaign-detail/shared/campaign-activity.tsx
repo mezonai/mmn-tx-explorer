@@ -11,7 +11,7 @@ import { useTopContributor } from '@/modules/donation-campaign/hooks/useTopContr
 import { ITransactionListParams } from '@/modules/transaction';
 import { useTransactions } from '@/modules/transaction/hooks/useTransactions';
 import { NumberUtil } from '@/utils';
-import { useHidden, useTransactionStatus } from '../provider';
+import { useHidden } from '../provider';
 import { useEffect, useMemo } from 'react';
 import { useBreakpoint } from '@/hooks';
 import { RecentActivityTable } from '../desktop/recent-activity-table';
@@ -25,7 +25,6 @@ const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
 } as const;
 export function CampaignActivity({ campaignId, walletAddress }: { campaignId: string; walletAddress: string }) {
   const isDesktop = useBreakpoint(EBreakpoint.LG);
-  const { refetchTransaction, setRefetchTransaction } = useTransactionStatus();
   const searchTBParams = { limit: 5 };
   const searchTransactionParams: ITransactionListParams = {
     ...DEFAULT_VALUE_DATA_SEARCH,
@@ -41,11 +40,7 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
   const { hidden, setHidden } = useHidden();
   useEffect(() => {
     setHidden(transactions.length > 0);
-    if (refetchTransaction) {
-      refetch();
-      setRefetchTransaction(false);
-    }
-  }, [setHidden, transactions, refetch, refetchTransaction, setRefetchTransaction]);
+  }, [setHidden, transactions, refetch]);
   const recentActivityProps = {
     transactions,
     totalTransaction,
