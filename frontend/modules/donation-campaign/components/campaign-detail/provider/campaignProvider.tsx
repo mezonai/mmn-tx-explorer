@@ -3,6 +3,8 @@ import { createContext, ReactNode, useContext, useState } from 'react';
 interface CampaignDetailContextType {
   hidden: boolean;
   setHidden: (hidden: boolean) => void;
+  refetchTransaction: boolean;
+  setRefetchTransaction: (hidden: boolean) => void;
 }
 interface CampaignDetailProviderProps {
   children: ReactNode;
@@ -10,9 +12,12 @@ interface CampaignDetailProviderProps {
 const CampaignDetailContext = createContext<CampaignDetailContextType | undefined>(undefined);
 export function CampaignDetailProvider({ children }: CampaignDetailProviderProps) {
   const [hidden, setHidden] = useState<boolean>(false);
+  const [refetchTransaction, setRefetchTransaction] = useState<boolean>(false);
   const value: CampaignDetailContextType = {
     hidden,
     setHidden,
+    refetchTransaction,
+    setRefetchTransaction,
   };
   return <CampaignDetailContext.Provider value={value}>{children}</CampaignDetailContext.Provider>;
 }
@@ -28,4 +33,8 @@ export function useCampaignDetail(): CampaignDetailContextType {
 export function useHidden() {
   const { hidden, setHidden } = useCampaignDetail();
   return { hidden, setHidden };
+}
+export function useTransactionStatus() {
+  const { refetchTransaction, setRefetchTransaction } = useCampaignDetail();
+  return { refetchTransaction, setRefetchTransaction };
 }

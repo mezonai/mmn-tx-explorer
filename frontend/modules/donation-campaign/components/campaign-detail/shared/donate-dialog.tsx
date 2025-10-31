@@ -11,10 +11,12 @@ import { useTransfer } from '@/modules/transfer/hooks/useTransfer';
 import { NumberUtil } from '@/utils';
 import { APP_CONFIG } from '@/configs/app.config';
 import { CopyButton } from '@/components/ui/copy-button';
+import { useTransactionStatus } from '../provider';
 
 export function DonateDialog({ walletAddress }: { walletAddress: string }) {
   const { transfer, loading, user } = useTransfer();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { setRefetchTransaction } = useTransactionStatus();
   const [form, setForm] = useState({
     amount: '',
     note: '',
@@ -36,7 +38,8 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
     if (isDialogOpen && user?.id) {
       refreshBalance();
     }
-  }, [isDialogOpen, user?.id, refreshBalance]);
+    setRefetchTransaction(true);
+  }, [isDialogOpen, user?.id, refreshBalance, setRefetchTransaction]);
 
   const handleInputChange =
     (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -54,12 +57,6 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
     };
 
   const resetForm = () => setForm({ amount: '', note: '' });
-  const onOpenChange = (open: boolean) => {
-    setIsDialogOpen(open);
-    if (!open && transactionHash) {
-      window.location.reload();
-    }
-  };
   const handleDonate = useCallback(async () => {
     try {
       const result = await transfer(
@@ -82,13 +79,13 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
       console.error('Donation error:', error);
       toast.error('Something is broken');
     }
-  }, [form, walletAddress, transfer]);
+  }, [form, walletAddress, transfer, refreshBalance]);
 
   const isButtonDisabled =
     loading || !form.amount || !mmnClient.validateAmount(senderBalance, mmnClient.scaleAmountToDecimals(form.amount));
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
         <Button
           size="lg"

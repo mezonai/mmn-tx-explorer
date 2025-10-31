@@ -11,7 +11,7 @@ import { useTopContributor } from '@/modules/donation-campaign/hooks/useTopContr
 import { ITransactionListParams } from '@/modules/transaction';
 import { useTransactions } from '@/modules/transaction/hooks/useTransactions';
 import { NumberUtil } from '@/utils';
-import { useHidden } from '../provider';
+import { useHidden, useTransactionStatus } from '../provider';
 import { useEffect, useMemo } from 'react';
 import { useBreakpoint } from '@/hooks';
 import { RecentActivityTable } from '../desktop/recent-activity-table';
@@ -25,6 +25,7 @@ const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
 } as const;
 export function CampaignActivity({ campaignId, walletAddress }: { campaignId: string; walletAddress: string }) {
   const isDesktop = useBreakpoint(EBreakpoint.LG);
+  const { refetchTransaction, setRefetchTransaction } = useTransactionStatus();
   const searchTBParams = { limit: 5 };
   const searchTransactionParams: ITransactionListParams = {
     ...DEFAULT_VALUE_DATA_SEARCH,
@@ -32,7 +33,7 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
   };
   const { data: topContributorsData } = useTopContributor({ params: searchTBParams, campaignId });
 
-  const { data: transactionsResponse } = useTransactions(searchTransactionParams);
+  const { data: transactionsResponse, refetch } = useTransactions(searchTransactionParams);
 
   const transactions = useMemo(() => transactionsResponse?.data ?? [], [transactionsResponse]);
   const contributors = topContributorsData?.contributors ?? [];
@@ -40,7 +41,11 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
   const { hidden, setHidden } = useHidden();
   useEffect(() => {
     setHidden(transactions.length > 0);
-  }, [setHidden, transactions]);
+    if (refetchTransaction) {
+      refetch();
+      setRefetchTransaction(false);
+    }
+  }, [setHidden, transactions, refetch, refetchTransaction, setRefetchTransaction]);
   const recentActivityProps = {
     transactions,
     totalTransaction,
@@ -82,7 +87,7 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
         </TabsContent>
         <TabsContent value="top">
           <Card className="dark:border-primary/20 space-y-3 p-4">
-            <CardHeader className="hidden flex-col justify-between gap-2 sm:flex-row md:block">
+            <CardHeader className="hidden gap-2 sm:flex sm:flex-row sm:items-center sm:justify-between">
               <CardTitle>Top contributor</CardTitle>
               <span className="text-xs text-gray-500 dark:text-gray-400">Refreshes every 10 minutes</span>
             </CardHeader>
