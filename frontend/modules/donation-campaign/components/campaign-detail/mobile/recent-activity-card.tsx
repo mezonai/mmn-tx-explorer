@@ -4,6 +4,7 @@ import { AddressDisplay, RefreshButton } from '@/components/shared';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ROUTES } from '@/configs/routes.config';
 import { DATE_TIME_FORMAT } from '@/constant';
+import { DEFAULT_DEBOUNCE_TIME } from '@/hooks';
 import { cn } from '@/lib/utils';
 import { Transaction } from '@/modules/donation-campaign/type';
 import { TxnHashLink } from '@/modules/transaction/components/transaction-list/list/shared';
@@ -34,7 +35,7 @@ export function RecentActivityCardsMobile({
     <Card className="dark:border-primary/20 gap-0 gap-6 px-0 py-4">
       <CardHeader className="m-0 flex items-center justify-between gap-2 px-6">
         <CardTitle>Recent Activity</CardTitle>
-        <RefreshButton onClick={refetch} isLoading={isLoading} startDelay={2000} />
+        <RefreshButton onClick={refetch} isLoading={isLoading} startDelay={DEFAULT_DEBOUNCE_TIME} />
       </CardHeader>
       <CardContent className="flex flex-col">
         {transactions.length > 0 ? (
