@@ -38,6 +38,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
   useEffect(() => {
     if (isDialogOpen && user?.id) {
       refreshBalance();
+      setTransactionHash('');
     }
   }, [isDialogOpen, user?.id, refreshBalance]);
 
