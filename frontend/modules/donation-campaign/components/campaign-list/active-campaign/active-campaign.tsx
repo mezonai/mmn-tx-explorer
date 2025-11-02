@@ -14,7 +14,7 @@ import { getCampaignStatusLabel } from '@/modules/donation-campaign/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export const ActiveCampaign = () => {
-  const [selectedStatus, setSelectedStatus] = useState<ECampaignStatus | 'all'>('all');
+  const [selectedStatus, setSelectedStatus] = useState<ECampaignStatus | 'all'>(ECampaignStatus.Active);
   const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest');
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
 
@@ -51,7 +51,6 @@ export const ActiveCampaign = () => {
     );
   }
 
-  
   return (
     <section className="">
       <div className="">

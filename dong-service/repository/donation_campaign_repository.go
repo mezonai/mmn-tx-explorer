@@ -5,6 +5,7 @@ import (
 	"dong-service/constants"
 	"dong-service/logger"
 	"dong-service/models"
+	"dong-service/utils"
 	"errors"
 	"fmt"
 	"strings"
@@ -46,10 +47,10 @@ func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampa
 
 	// Insert donation campaign
 	campaignQuery := fmt.Sprintf(`
-		INSERT INTO %s.donation_campaign (name, description, goal, url, end_date, donation_wallet, creator, owner, status)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		RETURNING id, name, description, goal, url, end_date, donation_wallet, creator, owner, status, created_at, updated_at
-	`, r.dongSchema)
+        INSERT INTO %s.donation_campaign (name, description, goal, url, end_date, donation_wallet, creator, owner, status)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        RETURNING id, name, description, goal, url, end_date, donation_wallet, creator, owner, verified, status, created_at, updated_at
+    `, r.dongSchema)
 
 	var result models.DonationCampaign
 	err = tx.QueryRow(
@@ -73,6 +74,7 @@ func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampa
 		&result.DonationWallet,
 		&result.Creator,
 		&result.Owner,
+		&result.Verified,
 		&result.Status,
 		&result.CreatedAt,
 		&result.UpdatedAt,
@@ -117,10 +119,10 @@ func (r *DonationCampaignRepository) CreateAndActive(campaign *models.CreateDona
 
 	// Insert donation campaign with Active status
 	campaignQuery := fmt.Sprintf(`
-		INSERT INTO %s.donation_campaign (name, description, goal, url, end_date, donation_wallet, creator, owner, status)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		RETURNING id, name, description, goal, url, end_date, donation_wallet, creator, owner, status, created_at, updated_at
-	`, r.dongSchema)
+        INSERT INTO %s.donation_campaign (name, description, goal, url, end_date, donation_wallet, creator, owner, status)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        RETURNING id, name, description, goal, url, end_date, donation_wallet, creator, owner, verified, status, created_at, updated_at
+    `, r.dongSchema)
 
 	var result models.DonationCampaign
 	err = tx.QueryRow(
@@ -144,6 +146,7 @@ func (r *DonationCampaignRepository) CreateAndActive(campaign *models.CreateDona
 		&result.DonationWallet,
 		&result.Creator,
 		&result.Owner,
+		&result.Verified,
 		&result.Status,
 		&result.CreatedAt,
 		&result.UpdatedAt,
@@ -175,7 +178,7 @@ func (r *DonationCampaignRepository) CreateAndActive(campaign *models.CreateDona
 func (r *DonationCampaignRepository) GetByID(id int64) (*models.DonationCampaign, error) {
 	query := fmt.Sprintf(`
 		SELECT 
-			dc.id, dc.name, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.status, dc.created_at, dc.updated_at,
+            dc.id, dc.name, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
 			cs.total_amount, cs.total_contributor
 		FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
@@ -193,6 +196,7 @@ func (r *DonationCampaignRepository) GetByID(id int64) (*models.DonationCampaign
 		&campaign.DonationWallet,
 		&campaign.Creator,
 		&campaign.Owner,
+		&campaign.Verified,
 		&campaign.Status,
 		&campaign.CreatedAt,
 		&campaign.UpdatedAt,
@@ -214,7 +218,7 @@ func (r *DonationCampaignRepository) GetByID(id int64) (*models.DonationCampaign
 func (r *DonationCampaignRepository) GetByIDAndCreator(id int64, creator int64) (*models.DonationCampaign, error) {
 	query := fmt.Sprintf(`
 		SELECT 
-			dc.id, dc.name, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.status, dc.created_at, dc.updated_at,
+            dc.id, dc.name, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
 			cs.total_amount, cs.total_contributor
 		FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
@@ -232,6 +236,7 @@ func (r *DonationCampaignRepository) GetByIDAndCreator(id int64, creator int64) 
 		&campaign.DonationWallet,
 		&campaign.Creator,
 		&campaign.Owner,
+		&campaign.Verified,
 		&campaign.Status,
 		&campaign.CreatedAt,
 		&campaign.UpdatedAt,
@@ -250,10 +255,10 @@ func (r *DonationCampaignRepository) GetByIDAndCreator(id int64, creator int64) 
 }
 
 // GetAll retrieves all donation campaigns with pagination
-func (r *DonationCampaignRepository) GetAll(limit, offset int, status *int16, order string) ([]models.DonationCampaign, error) {
+func (r *DonationCampaignRepository) GetAll(status *int16, pagination utils.PaginationParams) ([]models.DonationCampaign, error) {
 	base := fmt.Sprintf(`
         SELECT 
-			dc.id, dc.name, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.status, dc.created_at, dc.updated_at,
+            dc.id, dc.name, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
 			cs.total_amount, cs.total_contributor
         FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
@@ -275,13 +280,24 @@ func (r *DonationCampaignRepository) GetAll(limit, offset int, status *int16, or
 		base += "\nWHERE " + strings.Join(whereClauses, " AND ")
 	}
 
-	orderBy := "DESC"
-	if strings.EqualFold(order, "asc") {
-		orderBy = "ASC"
+	orderDir := "DESC"
+	if strings.EqualFold(pagination.Order, "asc") {
+		orderDir = "ASC"
 	}
 
-	base += fmt.Sprintf("\nORDER BY dc.created_at %s\nLIMIT $%d OFFSET $%d", orderBy, argCount, argCount+1)
-	args = append(args, limit, offset)
+	// Whitelist allowed order_by columns to prevent SQL injection
+	var orderByExpr string
+	switch strings.ToLower(pagination.OrderBy) {
+	case "created_at":
+		orderByExpr = "dc.created_at"
+	case "total_amount":
+		orderByExpr = "cs.total_amount"
+	default:
+		orderByExpr = "dc.created_at"
+	}
+
+	base += fmt.Sprintf("\nORDER BY %s %s\nLIMIT $%d OFFSET $%d", orderByExpr, orderDir, argCount, argCount+1)
+	args = append(args, pagination.Limit, pagination.Offset)
 
 	rows, err := r.db.Query(base, args...)
 	if err != nil {
@@ -309,6 +325,7 @@ func (r *DonationCampaignRepository) GetAll(limit, offset int, status *int16, or
 			&campaign.DonationWallet,
 			&campaign.Creator,
 			&campaign.Owner,
+			&campaign.Verified,
 			&campaign.Status,
 			&campaign.CreatedAt,
 			&campaign.UpdatedAt,
@@ -382,7 +399,7 @@ func (r *DonationCampaignRepository) Update(id int64, creator int64, req *models
 		UPDATE %s.donation_campaign
 		SET %s
 		WHERE id = $%d AND creator = $%d
-		RETURNING id, name, description, goal, url, end_date, donation_wallet, creator, owner, status, created_at, updated_at
+        RETURNING id, name, description, goal, url, end_date, donation_wallet, creator, owner, verified, status, created_at, updated_at
 	`, r.dongSchema, strings.Join(setClauses, ", "), idArgNum, creatorArgNum)
 
 	var campaign models.DonationCampaign
@@ -396,6 +413,7 @@ func (r *DonationCampaignRepository) Update(id int64, creator int64, req *models
 		&campaign.DonationWallet,
 		&campaign.Creator,
 		&campaign.Owner,
+		&campaign.Verified,
 		&campaign.Status,
 		&campaign.CreatedAt,
 		&campaign.UpdatedAt,
@@ -417,7 +435,7 @@ func (r *DonationCampaignRepository) Activate(id int64, creator int64) (*models.
         UPDATE %s.donation_campaign
         SET status = $1, updated_at = $2
         WHERE id = $3 AND creator = $4
-        RETURNING id, name, description, goal, url, end_date, donation_wallet, creator, owner, status, created_at, updated_at
+        RETURNING id, name, description, goal, url, end_date, donation_wallet, creator, owner, verified, status, created_at, updated_at
     `, r.dongSchema)
 
 	var campaign models.DonationCampaign
@@ -437,6 +455,7 @@ func (r *DonationCampaignRepository) Activate(id int64, creator int64) (*models.
 		&campaign.DonationWallet,
 		&campaign.Creator,
 		&campaign.Owner,
+		&campaign.Verified,
 		&campaign.Status,
 		&campaign.CreatedAt,
 		&campaign.UpdatedAt,
@@ -458,7 +477,7 @@ func (r *DonationCampaignRepository) Close(id int64, creator int64) (*models.Don
 		UPDATE %s.donation_campaign
 		SET status = $1, updated_at = $2
 		WHERE id = $3 AND creator = $4
-		RETURNING id, name, description, goal, url, end_date, donation_wallet, creator, owner, status, created_at, updated_at
+        RETURNING id, name, description, goal, url, end_date, donation_wallet, creator, owner, verified, status, created_at, updated_at
 	`, r.dongSchema)
 
 	var campaign models.DonationCampaign
@@ -478,6 +497,7 @@ func (r *DonationCampaignRepository) Close(id int64, creator int64) (*models.Don
 		&campaign.DonationWallet,
 		&campaign.Creator,
 		&campaign.Owner,
+		&campaign.Verified,
 		&campaign.Status,
 		&campaign.CreatedAt,
 		&campaign.UpdatedAt,
@@ -574,7 +594,10 @@ func (r *DonationCampaignRepository) GetTopContributors(campaignID int64, limit 
 
 	// If no data found, campaign doesn't exist
 	if !hasData {
-		return nil, ErrNotFound
+		return &models.TopContributorsResponse{
+			CampaignID:   campaignID,
+			Contributors: []models.TopContributor{},
+		}, nil
 	}
 
 	return &models.TopContributorsResponse{
