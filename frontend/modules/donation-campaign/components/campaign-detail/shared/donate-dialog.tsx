@@ -20,10 +20,10 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
     amount: '',
     note: '',
   });
-
   const queryClient = useQueryClient();
   const [senderBalance, setSenderBalance] = useState<string>('0');
   const [transactionHash, setTransactionHash] = useState<string>('');
+
   const refreshBalance = useCallback(async () => {
     if (!user?.id) return;
     try {
@@ -34,11 +34,13 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
       toast.error('Failed to load balance.');
     }
   }, [user?.id]);
+
   useEffect(() => {
     if (isDialogOpen && user?.id) {
       refreshBalance();
     }
   }, [isDialogOpen, user?.id, refreshBalance]);
+
   const handleInputChange =
     (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const { value } = e.target;
@@ -54,6 +56,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
       }
     };
   const resetForm = () => setForm({ amount: '', note: '' });
+
   const handleDonate = useCallback(async () => {
     try {
       const result = await transfer(
@@ -77,8 +80,10 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
       toast.error('Something is broken');
     }
   }, [form, walletAddress, transfer, queryClient]);
+
   const isButtonDisabled =
     loading || !form.amount || !mmnClient.validateAmount(senderBalance, mmnClient.scaleAmountToDecimals(form.amount));
+
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
@@ -89,7 +94,6 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
           Donate Now
         </Button>
       </DialogTrigger>
-      code Code
       <DialogContent
         onOpenAutoFocus={(e) => {
           e.preventDefault();

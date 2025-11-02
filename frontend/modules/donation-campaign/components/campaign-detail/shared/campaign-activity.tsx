@@ -32,7 +32,7 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
   };
   const { data: topContributorsData } = useTopContributor({ params: searchTBParams, campaignId });
 
-  const { data: transactionsResponse, refetch } = useTransactions(searchTransactionParams);
+  const { data: transactionsResponse } = useTransactions(searchTransactionParams);
 
   const transactions = useMemo(() => transactionsResponse?.data ?? [], [transactionsResponse]);
   const contributors = topContributorsData?.contributors ?? [];
@@ -40,7 +40,7 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
   const { hidden, setHidden } = useHidden();
   useEffect(() => {
     setHidden(transactions.length > 0);
-  }, [setHidden, transactions, refetch]);
+  }, [setHidden, transactions]);
   const recentActivityProps = {
     transactions,
     totalTransaction,
