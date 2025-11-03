@@ -1,16 +1,16 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useUpdateCampaignContext } from '@/modules/donation-campaign/context/UpdateCampaignContext';
+import { useEditCampaignContext } from '@/modules/donation-campaign/context/EditCampaignContext';
 import { CampaignPreviewCard } from './campaign-review';
 import { CampaignPreview, ECampaignStatus } from '../../../type';
 import { formatDistanceToNow } from 'date-fns';
 import { useParams } from 'next/navigation';
 
 export function CampaignSidebar() {
-  const { form, saveChanges } = useUpdateCampaignContext();
+  const { form, saveChanges } = useEditCampaignContext();
   const params = useParams<{ campaignId: string }>();
   const campaignId = params?.campaignId ? String(params.campaignId) : '';
 

@@ -48,9 +48,9 @@ export class DonationCampaignService {
     return data.data;
   }
 
-  static async updateCampaign(id: string, campaignData: Partial<CreateCampaignRequest>): Promise<DonationCampaign> {
+  static async editCampaign(id: string, campaignData: Partial<CreateCampaignRequest>): Promise<DonationCampaign> {
     const { data } = await apiDongClient.put<{ data: DonationCampaign }>(
-      DONATION_ENDPOINTS.UPDATE_CAMPAIGN(id),
+      DONATION_ENDPOINTS.EDIT_CAMPAIGN(id),
       campaignData
     );
     return data.data;

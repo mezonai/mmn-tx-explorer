@@ -79,7 +79,7 @@ export interface CreateCampaignForm {
   };
 }
 
-export interface UpdateCampaignForm {
+export interface EditCampaignForm {
   name?: string;
   shortDescription?: string;
   bannerImageUrl?: string;

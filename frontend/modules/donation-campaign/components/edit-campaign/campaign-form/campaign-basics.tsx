@@ -4,13 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useUpdateCampaignContext } from '@/modules/donation-campaign/context/UpdateCampaignContext';
-
+import { useEditCampaignContext } from '@/modules/donation-campaign/context/EditCampaignContext';
 export function CampaignBasics() {
-  const { form, updateField } = useUpdateCampaignContext();
+  const { form, editField } = useEditCampaignContext();
 
   const handleInputChange = (field: keyof typeof form, value: any) => {
-    updateField(field, value);
+    editField(field, value);
   };
 
   return (
@@ -35,6 +34,7 @@ export function CampaignBasics() {
             placeholder="e.g. Build a School for Điện Biên Kids"
             value={form.name}
             onChange={(e) => handleInputChange('name', e.target.value)}
+            disabled
           />
         </div>
 

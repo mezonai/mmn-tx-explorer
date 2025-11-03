@@ -6,14 +6,17 @@ import { Chip } from '@/components/shared';
 import { getCampaignStatusLabel, getCampaignStatusVariant } from '@/modules/donation-campaign/utils';
 import Link from 'next/link';
 import { ROUTES } from '@/configs/routes.config';
-import { InfoSquare } from '@/assets/icons';
+import { Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipTrigger } from '@radix-ui/react-tooltip';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useState } from 'react';
 import { BadgeCheck } from 'lucide-react';
+import { useUser } from '@/providers';
 
 export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
   const [currentCampaign, setCurrentCampaign] = useState(campaign);
+
+  const { user } = useUser();
 
   const handleRefreshData = (newRaisedAmount?: number) => {
     if (newRaisedAmount !== undefined) {
@@ -38,15 +41,24 @@ export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
 
       <div className="flex flex-row items-center space-x-2">
         <h1 className="text-3xl font-bold">{campaign.name}</h1>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Link href={ROUTES.CAMPAIGN_EDIT(campaign.id)}>
-              <Button variant="ghost" size="icon" aria-label="Edit campaign" title="Edit campaign">
-                <InfoSquare className="h-5 w-5 text-gray-500" />
-              </Button>
-            </Link>
-          </TooltipTrigger>
-        </Tooltip>
+        {user?.id === campaign.creator && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link href={ROUTES.CAMPAIGN_EDIT(campaign.id)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Edit campaign"
+                  title="Edit campaign"
+                  className="dark:hover:bg-brand-primary/20"
+                >
+                  <Pencil className="h-5 w-5" />
+                </Button>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent>Edit campaign</TooltipContent>
+          </Tooltip>
+        )}
       </div>
       <p className="text-muted-foreground max-w-2xl">{campaign.description}</p>
 

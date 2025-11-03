@@ -1,16 +1,16 @@
 import type { Metadata } from 'next';
 
-import { UpdateCampaign } from '@/modules/donation-campaign/components';
+import { EditCampaign } from '@/modules/donation-campaign/components';
 import { ProtectedRoute } from '@/modules/auth/components/ProtectedRoute';
 
 export const metadata: Metadata = {
-  title: 'Update Campaign',
+  title: 'Edit Campaign',
 };
 
-export default function UpdateCampaignPage() {
+export default function EditCampaignPage() {
   return (
     <ProtectedRoute title={String(metadata.title)}>
-      <UpdateCampaign />
+      <EditCampaign />
     </ProtectedRoute>
   );
 }

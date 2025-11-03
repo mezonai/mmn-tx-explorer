@@ -1,1 +1,1 @@
-export * from "./update-campaign"
+export * from "./edit-campaign"

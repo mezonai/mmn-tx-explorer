@@ -1,5 +1,5 @@
 'use client';
-import { UpdateCampaignProvider, useUpdateCampaignContext } from '../../context/UpdateCampaignContext';
+import { EditCampaignProvider, useEditCampaignContext } from '../../context/EditCampaignContext';
 import { CampaignSidebar } from './campaign-sidebar';
 import { CampaignEditor } from './campaign-editor.tsx';
 import { Separator } from '@/components/ui/separator';
@@ -8,11 +8,11 @@ import { useParams } from 'next/navigation';
 import { useCampaign } from '@/modules/donation-campaign/hooks/useCampaign';
 import { useEffect } from 'react';
 
-function UpdateCampaignContent() {
+function EditCampaignContent() {
   const params = useParams<{ campaignId: string }>();
   const id = params?.campaignId ? String(params.campaignId) : '';
   const { data: campaign } = useCampaign(id);
-  const { setForm } = useUpdateCampaignContext();
+  const { setForm } = useEditCampaignContext();
 
   useEffect(() => {
     if (campaign) {
@@ -44,10 +44,10 @@ function UpdateCampaignContent() {
   );
 }
 
-export const UpdateCampaign = () => {
+export const EditCampaign = () => {
   return (
-    <UpdateCampaignProvider>
-      <UpdateCampaignContent />
-    </UpdateCampaignProvider>
+    <EditCampaignProvider>
+      <EditCampaignContent />
+    </EditCampaignProvider>
   );
 };

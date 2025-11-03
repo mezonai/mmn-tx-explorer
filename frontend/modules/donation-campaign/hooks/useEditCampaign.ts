@@ -3,12 +3,12 @@ import { DonationCampaignService } from '../api';
 import type { CreateCampaignRequest } from '../type';
 import { QUERY_KEYS } from '../constants';
 
-export const useUpdateCampaign = () => {
+export const useEditCampaign = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<CreateCampaignRequest> }) =>
-      DonationCampaignService.updateCampaign(id, data),
+      DonationCampaignService.editCampaign(id, data),
 
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CAMPAIGNS] });
