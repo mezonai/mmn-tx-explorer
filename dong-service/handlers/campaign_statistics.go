@@ -56,7 +56,7 @@ func (h *CampaignStatisticsHandler) GetCampaignStats(c *gin.Context) {
 // @Tags campaigns
 // @Produce json
 // @Param id path int true "Campaign ID"
-// @Success 200 {object} models.Response
+// @Success 200 {object} models.Response{data=models.SyncCampaignResponse}
 // @Failure 400 {object} models.Response
 // @Failure 404 {object} models.Response
 // @Failure 500 {object} models.Response
@@ -72,12 +72,13 @@ func (h *CampaignStatisticsHandler) SyncCampaign(c *gin.Context) {
 	logger.Info().Int64("campaign_id", id).Msg("Syncing campaign contributors and statistics")
 
 	// Sync campaign contributors and statistics
-	if err := h.statsRepo.SyncCampaignByID(c.Request.Context(), id); err != nil {
+	syncResponse, err := h.statsRepo.SyncCampaignByID(c.Request.Context(), id)
+	if err != nil {
 		logger.Error().Err(err).Int64("campaign_id", id).Msg("Failed to sync campaign")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to sync campaign: "+err.Error()))
 		return
 	}
 
-	logger.Info().Int64("campaign_id", id).Msg("Campaign synced successfully")
-	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Campaign synced successfully", nil))
+	logger.Info().Int64("campaign_id", id).Int64("total_amount", syncResponse.TotalAmount).Int64("total_contributors", syncResponse.TotalContributors).Msg("Campaign synced successfully")
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Campaign synced successfully", syncResponse))
 }

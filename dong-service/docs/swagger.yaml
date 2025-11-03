@@ -58,6 +58,8 @@ definitions:
         type: string
       url:
         type: string
+      verified:
+        type: boolean
     type: object
   models.HealthResponse:
     properties:
@@ -169,6 +171,13 @@ definitions:
       data: {}
       message:
         type: string
+    type: object
+  models.SyncCampaignResponse:
+    properties:
+      total_amount:
+        type: integer
+      total_contributors:
+        type: integer
     type: object
   models.TopContributor:
     properties:
@@ -426,6 +435,26 @@ paths:
         in: query
         name: limit
         type: integer
+      - description: Filter by status (e.g., 0=draft,1=active,2=closed)
+        in: query
+        name: status
+        type: integer
+      - default: desc
+        description: Sort direction
+        enum:
+        - asc
+        - desc
+        in: query
+        name: order
+        type: string
+      - default: created_at
+        description: Sort field
+        enum:
+        - created_at
+        - total_amount
+        in: query
+        name: order_by
+        type: string
       produces:
       - application/json
       responses:
@@ -501,7 +530,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Response'
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.SyncCampaignResponse'
+              type: object
         "400":
           description: Bad Request
           schema:

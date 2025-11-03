@@ -32,8 +32,6 @@ apiDongClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401 && error.response.config.url !== AUTHENTICATION_ENDPOINT.REFRESH) {
-      console.log(error.response.config.url);
-
       if (retry < 1) {
         retry++;
         try {

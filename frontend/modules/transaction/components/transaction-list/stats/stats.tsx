@@ -5,8 +5,8 @@ import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { TransactionService } from '@/modules/transaction/api';
 import { ITransactionStats } from '@/modules/transaction/types';
-import { StatCard } from './stat-card';
 import { NumberUtil } from '@/utils';
+import { StatCard } from '@/components/shared';
 
 interface StatsProps {
   className?: string;

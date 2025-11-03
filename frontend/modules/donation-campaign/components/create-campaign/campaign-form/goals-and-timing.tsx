@@ -15,12 +15,14 @@ export function GoalsAndTiming() {
 
   const handleInputChange = (field: keyof typeof form, value: string) => {
     if (field === 'fundraisingGoal') {
-      const numeric = value.replace(/[^0-9.]/g, '');
-      const parts = numeric.split('.');
-      const cleanNumeric = parts[0] + (parts.length > 1 ? '.' + parts[1] : '');
-      updateField(field, cleanNumeric);
+      let numeric = value.replace(/[^0-9]/g, '');
+      if (numeric.length > 1 && numeric.startsWith('0')) {
+        numeric = numeric.replace(/^0+/, '');
+      }
+      const limitedValue = numeric.slice(0, 15);
+      updateField(field, limitedValue);
     } else {
-      updateField(field, value);
+      updateField(field, value.trim());
     }
   };
 
@@ -72,7 +74,7 @@ export function GoalsAndTiming() {
             <label className="text-foreground mb-2 block text-sm font-medium">Partner / campaign owner</label>
             <Input
               type="text"
-              placeholder="e.g. Mezon CSR Team, Na Tau Commune"
+              placeholder="e.g. Mezon Team"
               value={form.owner}
               onChange={(e) => handleInputChange('owner', e.target.value)}
             />
