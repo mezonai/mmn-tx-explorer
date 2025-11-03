@@ -8,7 +8,7 @@ import { CampaignPreviewCard } from './campaign-preview';
 import { PrePublishChecklist } from './pre-publish-checklist';
 import { CampaignPreview, ECampaignStatus } from '../../../type';
 import { useMemo } from 'react';
-import { formatDistanceToNow } from 'date-fns';
+import { DateTimeUtil } from '@/utils';
 
 export function CampaignSidebar() {
   const { form, validation, handleSubmit } = useCreateCampaignContext();
@@ -21,7 +21,7 @@ export function CampaignSidebar() {
     targetFunding: form.fundraisingGoal || 0,
     percentage: 0,
     contributors: 0,
-    daysRemaining: `${form.endDate ? formatDistanceToNow(new Date(form.endDate)) : `0 day`} remaining`,
+    daysRemaining: form.endDate ? `${DateTimeUtil.safeFormatDistanceToNow(new Date(form.endDate))} remaining` : ``,
     status: ECampaignStatus.Draft,
   };
 

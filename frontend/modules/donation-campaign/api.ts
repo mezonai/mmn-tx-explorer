@@ -83,4 +83,11 @@ export class DonationCampaignService {
     });
     return data.data;
   }
+
+  static async refreshCampaignRaised(id: string): Promise<DonationCampaign> {
+    const { data } = await apiDongClient.post<{ data: DonationCampaign }>(
+      DONATION_ENDPOINTS.REFRESH_CAMPAIGN_RAISED(id)
+    );
+    return data.data;
+  }
 }

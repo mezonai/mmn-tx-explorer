@@ -1,5 +1,5 @@
 import { APP_CONFIG } from '@/configs/app.config';
-import { NumberUtil } from '@/utils';
+import { DateTimeUtil, NumberUtil } from '@/utils';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { ECampaignStatus, DonationCampaign } from '../../../type';
@@ -7,7 +7,7 @@ import { Chip } from '@/components/shared';
 import { getCampaignStatusLabel, getCampaignStatusVariant } from '../../../utils';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/configs/routes.config';
-import { formatDistanceToNow } from 'date-fns';
+import { BadgeCheck } from 'lucide-react';
 
 interface CampaignCardProps {
   campaign: DonationCampaign;
@@ -19,18 +19,21 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
     if (status === ECampaignStatus.Draft) {
       return 'Draft';
     }
-    if (status === ECampaignStatus.Closed) {
-      return '';
-    }
-    if (NumberUtil.scaleDown(total_amount) >= goal) {
+    if (!!goal && NumberUtil.scaleDown(total_amount) >= goal) {
       return 'Goal Achieved';
     }
-    return `${formatDistanceToNow(new Date(end_date), { addSuffix: true })}`;
+    if (status === ECampaignStatus.Closed || !end_date) {
+      return '';
+    }
+    return `${DateTimeUtil.safeFormatDistanceToNow(new Date(end_date))}`;
   }, [status, end_date, total_amount, goal]);
 
   const progress = useMemo(() => {
     if (status === ECampaignStatus.Draft) {
       return 'Not launched';
+    }
+    if (!goal) {
+      return '';
     }
     const rawPercentage = (Number(NumberUtil.scaleDown(total_amount)) / goal) * 100;
     const formattedPercentage = parseFloat(rawPercentage.toFixed(2));
@@ -38,8 +41,7 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
   }, [status, total_amount, goal]);
 
   const progressPercent = useMemo(() => {
-    if (status === ECampaignStatus.Draft) return 0;
-    if (goal <= 0) return 0;
+    if (goal <= 0) return !total_amount ? 0 : 100;
     return Math.min(Math.max(Math.floor((NumberUtil.scaleDown(total_amount) / goal) * 100), 0), 100);
   }, [status, total_amount, goal]);
 
@@ -56,7 +58,7 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
     }
 
     if (status === ECampaignStatus.Closed) {
-      return `Ended ${formatDistanceToNow(new Date(updated_at), { addSuffix: true })}`;
+      return `Ended ${DateTimeUtil.safeFormatDistanceToNow(new Date(updated_at))}`;
     }
   }, [status, updated_at]);
 
@@ -71,18 +73,27 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
   return (
     <article className="group hover:border-primary/60 dark:bg-card flex h-full flex-col rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10">
       <div className="flex items-center justify-between gap-4">
-        <Chip variant={getCampaignStatusVariant(status)}>{getCampaignStatusLabel(status)}</Chip>
+        <div className="flex items-center gap-2">
+          <Chip variant={getCampaignStatusVariant(status)}>{getCampaignStatusLabel(status)}</Chip>
+          {campaign.verified && (
+            <Chip variant="brand">
+              <span>Verified</span>
+              <BadgeCheck size={18} className="ml-2 fill-emerald-400" color="white" />
+            </Chip>
+          )}
+        </div>
         <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{daysLeft}</span>
       </div>
       <h3 className="dark:group-hover:text-brand-primary group-hover:text-primary dark:group-hover:text-primary-light mt-4 text-lg font-semibold text-gray-900 transition dark:text-white">
-        {name}
+        <Link href={ROUTES.CAMPAIGN(id)}>{name}</Link>
       </h3>
       <p className="mt-2 line-clamp-3 text-sm leading-6 text-gray-600 dark:text-gray-400">{description}</p>
       <div className="mt-auto flex flex-col gap-6 pt-6">
         <div>
           <div className="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
             <span>
-              {NumberUtil.formatWithCommasAndScale(total_amount)} / {NumberUtil.formatWithCommas(goal)}{' '}
+              {NumberUtil.formatWithCommasAndScale(total_amount)}
+              {!!goal ? `/ ${NumberUtil.formatWithCommas(goal)} ` : ' '}
               {APP_CONFIG.CHAIN_SYMBOL}
             </span>
             <span>{progress}</span>
