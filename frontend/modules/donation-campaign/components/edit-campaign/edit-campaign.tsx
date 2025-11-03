@@ -1,5 +1,5 @@
 'use client';
-import { EditCampaignProvider, useEditCampaignContext } from '../../context/EditCampaignContext';
+import { CreateCampaignProvider, useCreateCampaignContext } from '../../context/CreateCampaignContext';
 import { CampaignSidebar } from './campaign-sidebar';
 import { CampaignEditor } from './campaign-editor.tsx';
 import { Separator } from '@/components/ui/separator';
@@ -12,20 +12,18 @@ function EditCampaignContent() {
   const params = useParams<{ campaignId: string }>();
   const id = params?.campaignId ? String(params.campaignId) : '';
   const { data: campaign } = useCampaign(id);
-  const { setForm } = useEditCampaignContext();
+  const { updateField } = useCreateCampaignContext();
 
   useEffect(() => {
     if (campaign) {
-      setForm({
-        name: campaign.name || '',
-        shortDescription: campaign.description || '',
-        bannerImageUrl: campaign.url || '',
-        fundraisingGoal: campaign.goal ?? null,
-        endDate: campaign.end_date || '',
-        owner: campaign.owner || '',
-      });
+      updateField('name', campaign.name || '');
+      updateField('shortDescription', campaign.description || '');
+      updateField('bannerImageUrl', campaign.url || '');
+      updateField('fundraisingGoal', campaign.goal ?? null);
+      updateField('endDate', campaign.end_date || '');
+      updateField('owner', campaign.owner || '');
     }
-  }, [campaign, setForm]);
+  }, [campaign, updateField]);
 
   return (
     <div className="space-y-16 pb-16">
@@ -45,9 +43,11 @@ function EditCampaignContent() {
 }
 
 export const EditCampaign = () => {
+  const params = useParams<{ campaignId: string }>();
+  const id = params?.campaignId ? String(params.campaignId) : '';
   return (
-    <EditCampaignProvider>
+    <CreateCampaignProvider id={id}>
       <EditCampaignContent />
-    </EditCampaignProvider>
+    </CreateCampaignProvider>
   );
 };

@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { ROUTES } from '@/configs/routes.config';
 import { mmnClient } from '@/modules/auth/utils';
 import { useCreateCampaign } from '../hooks';
+import { useEditCampaign } from '../hooks';
 import { CreateCampaignForm } from '../type';
 import { useCreateAndPublishCampaign } from '../hooks/useCreateAndPublishCampaign';
 
@@ -70,6 +71,7 @@ interface CreateCampaignProviderProps {
 
 export function CreateCampaignProvider({ id, children }: CreateCampaignProviderProps) {
   const createMutation = useCreateCampaign();
+  const editMutation = useEditCampaign();
   const createAndPublishMutation = useCreateAndPublishCampaign();
   const router = useRouter();
   const [form, setForm] = useState<CreateCampaignForm>(INITIAL_FORM);
@@ -110,11 +112,6 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
       if (action === 'draft') {
         saveDraft();
       } else {
-        if (!validation.isAllComplete) {
-          toast.error('Please complete all required fields before publishing');
-          return;
-        }
-
         try {
           setIsSaving(true);
 
@@ -129,21 +126,27 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
           };
 
           if (id) {
-            // Edit
+            await editMutation.mutateAsync({ id, data: campaignData });
+            toast.success('Campaign updated successfully');
+            router.push(ROUTES.CAMPAIGN(id));
           } else {
+            if (!validation.isAllComplete) {
+              toast.error('Please complete all required fields before publishing');
+              return;
+            }
             const res = await createAndPublishMutation.mutateAsync(campaignData);
             toast.success('Campaign published successfully');
-            router.push(ROUTES.CAMPAIGN(res.id)); // Navigate to donation list page
+            router.push(ROUTES.CAMPAIGN(res.id));
           }
         } catch (error) {
-          console.error('Error publishing campaign:', error);
-          toast.error('Failed to publish campaign');
+          console.error('Error submitting campaign:', error);
+          toast.error('Failed to submit campaign');
         } finally {
           setIsSaving(false);
         }
       }
     },
-    [form, saveDraft, createMutation, validation.isAllComplete, router]
+    [form, saveDraft, createMutation, createAndPublishMutation, validation.isAllComplete, router, id, editMutation]
   );
 
   const contextValue: CreateCampaignContextType = {

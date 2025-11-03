@@ -4,14 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { DatePicker } from '@/components/ui/datepicker';
-import { useEditCampaignContext } from '@/modules/donation-campaign/context/EditCampaignContext';
+import { useCreateCampaignContext } from '@/modules/donation-campaign/context/CreateCampaignContext';
 import { APP_CONFIG } from '@/configs/app.config';
 import { NumberUtil } from '@/utils';
 import { format } from 'date-fns';
 import { DATE_FORMAT } from '@/constant';
 
 export function GoalsAndTiming() {
-  const { form, editField } = useEditCampaignContext();
+  const { form, updateField } = useCreateCampaignContext();
 
   const handleInputChange = (field: keyof typeof form, value: string) => {
     if (field === 'fundraisingGoal') {
@@ -20,9 +20,9 @@ export function GoalsAndTiming() {
         numeric = numeric.replace(/^0+/, '');
       }
       const limitedValue = numeric.slice(0, 15);
-      editField(field, limitedValue);
+      updateField(field, limitedValue);
     } else {
-      editField(field, value.trim());
+      updateField(field, value.trim());
     }
   };
 

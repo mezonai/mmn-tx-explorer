@@ -4,12 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useEditCampaignContext } from '@/modules/donation-campaign/context/EditCampaignContext';
+import { useCreateCampaignContext } from '@/modules/donation-campaign/context/CreateCampaignContext';
 export function CampaignBasics() {
-  const { form, editField } = useEditCampaignContext();
+  const { form, updateField } = useCreateCampaignContext();
 
   const handleInputChange = (field: keyof typeof form, value: any) => {
-    editField(field, value);
+    updateField(field, value);
   };
 
   return (
@@ -29,20 +29,13 @@ export function CampaignBasics() {
       <CardContent className="space-y-5">
         <div>
           <label className="text-foreground mb-2 block text-sm font-medium">Campaign name</label>
-          <Input
-            type="text"
-            placeholder="e.g. Build a School for Điện Biên Kids"
-            value={form.name}
-            onChange={(e) => handleInputChange('name', e.target.value)}
-            disabled
-          />
+          <Input type="text" value={form.name} onChange={(e) => handleInputChange('name', e.target.value)} disabled />
         </div>
 
         <div>
           <label className="text-foreground mb-2 block text-sm font-medium">Short description (card)</label>
           <Textarea
             rows={3}
-            placeholder="Share the mission and expected impact in two sentences..."
             value={form.shortDescription}
             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
               handleInputChange('shortDescription', e.target.value)
