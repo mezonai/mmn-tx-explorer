@@ -89,6 +89,19 @@ export class DonationCampaignService {
     return data.data;
   }
 
+  static async getTopContributorBySlug({
+    slug,
+    params,
+  }: {
+    slug: string;
+    params: { limit: number };
+  }): Promise<TopContributorsResponse['data']> {
+    const { data } = await apiDongClient.get<TopContributorsResponse>(DONATION_ENDPOINTS.TOP_CONTRIBUTOR_BY_SLUG(slug), {
+      params,
+    });
+    return data.data;
+  }
+
   static async refreshCampaignRaised(id: string): Promise<DonationCampaign> {
     const { data } = await apiDongClient.post<{ data: DonationCampaign }>(
       DONATION_ENDPOINTS.REFRESH_CAMPAIGN_RAISED(id)

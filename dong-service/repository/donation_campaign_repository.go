@@ -743,9 +743,18 @@ func (r *DonationCampaignRepository) GetTopContributors(campaignID int64, limit 
 }
 
 func (r *DonationCampaignRepository) GetTopContributorsBySlug(slug string, limit int) (*models.TopContributorsResponse, error) {
+	var campaignID int64
+	checkQuery := fmt.Sprintf("SELECT id FROM %s.donation_campaign WHERE slug = $1", r.dongSchema)
+	err := r.db.QueryRow(checkQuery, slug).Scan(&campaignID)
+	if err == sql.ErrNoRows {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to check campaign existence: %w", err)
+	}
+
 	query := fmt.Sprintf(`
 		SELECT 
-			dc.id,
 			cc.sender_wallet, 
 			cc.total_donate,
 			cs.total_amount
@@ -771,19 +780,16 @@ func (r *DonationCampaignRepository) GetTopContributorsBySlug(slug string, limit
 	}()
 
 	var contributors []models.TopContributor
-	var campaignID int64
 	var campaignTotalAmount int64
-	var hasData bool
 
 	for rows.Next() {
 		var contributor models.TopContributor
 
-		err := rows.Scan(&campaignID, &contributor.SenderWallet, &contributor.TotalDonate, &campaignTotalAmount)
+		err := rows.Scan(&contributor.SenderWallet, &contributor.TotalDonate, &campaignTotalAmount)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan contributor: %w", err)
 		}
 
-		// Calculate percentage of total campaign amount
 		if campaignTotalAmount > 0 {
 			contributor.Percentage = float64(contributor.TotalDonate) / float64(campaignTotalAmount) * 100
 		} else {
@@ -791,16 +797,14 @@ func (r *DonationCampaignRepository) GetTopContributorsBySlug(slug string, limit
 		}
 
 		contributors = append(contributors, contributor)
-		hasData = true
 	}
 
 	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("failed to iterate contributors: %w", err)
 	}
 
-	// If no data found, campaign doesn't exist
-	if !hasData {
-		return nil, ErrNotFound
+	if contributors == nil {
+		contributors = []models.TopContributor{}
 	}
 
 	return &models.TopContributorsResponse{
