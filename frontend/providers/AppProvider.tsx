@@ -2,6 +2,7 @@
 
 import { STORAGE_KEYS } from '@/constant';
 import {
+  AUTHENTICATION_CONSTANTS,
   AUTHENTICATION_ENDPOINT,
   AuthenticationService,
   fetchAndStoreZkProof,
@@ -76,18 +77,33 @@ export function AppProvider({ children }: AppProviderProps) {
       return;
     }
     const code = searchParams.get('code');
+    const state = searchParams.get('state');
     if (!code) return;
 
     const handleAuthentication = async (authCode: string) => {
       try {
         const userInfo: LoginResponse = await AuthenticationService.getUserInfo(authCode);
         setIsAuthenticated(true);
-        router.replace('/');
+
+        let restored = false;
+        if (state) {
+          const redirectUrl = localStorage.getItem(AUTHENTICATION_CONSTANTS.LOGIN_REDIRECT);
+          if (redirectUrl) {
+            router.replace(redirectUrl);
+            localStorage.removeItem(AUTHENTICATION_CONSTANTS.LOGIN_REDIRECT);
+            restored = true;
+          }
+        }
+        if (!restored) router.replace('/');
+
         handleTokenStorage(userInfo);
+
         const keypair = generateAndStoreKeyPair();
         setKeypair(keypair);
+
         const senderAddress = mmnClient.getAddressFromUserId(userInfo.user.user_id);
         const userObject = processAndStoreUser(userInfo.user, senderAddress);
+
         setUser(userObject);
         const fetchedZk = await fetchAndStoreZkProof(
           userInfo.user.user_id || userInfo.user.sub,
@@ -157,6 +173,7 @@ export function useAuthActions() {
   const { setIsAuthenticated, setUser, setZkProof, setKeypair } = useApp();
 
   const login = () => {
+    localStorage.setItem('login_redirect_', window.location.href);
     window.location.href = AUTHENTICATION_ENDPOINT.LOGIN;
   };
 
@@ -171,7 +188,6 @@ export function useAuthActions() {
     setZkProof(null);
     setKeypair(null);
     setIsAuthenticated(false);
-    window.location.href = '/';
   };
 
   return { login, logout };
