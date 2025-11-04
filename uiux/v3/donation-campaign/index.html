@@ -1,347 +1,462 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mezon Explorer - Donation Campaigns</title>
-    <script>
-      (function () {
-        const storedTheme = localStorage.getItem("theme");
-        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        if (storedTheme === "dark" || (!storedTheme && prefersDark)) {
-          document.documentElement.classList.add("dark");
-        } else {
-          document.documentElement.classList.remove("dark");
-        }
-      })();
-    </script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            colors: {
-              primary: "#6941c6",
-              "primary-light": "#8b5cf6",
-              "primary-dark": "#553c9a",
-              dark: "#0B1533",
-              "dark-light": "#1e293b",
-              neon: "#00f5ff"
-            },
-            fontFamily: {
-              inter: ["Inter", "sans-serif"],
-              mono: ["JetBrains Mono", "monospace"]
-            }
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mezon Explorer - Donation Campaigns</title>
+  <script>
+    (function () {
+      const storedTheme = localStorage.getItem("theme");
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      if (storedTheme === "dark" || (!storedTheme && prefersDark)) {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+    })();
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#6941c6",
+            "primary-light": "#8b5cf6",
+            "primary-dark": "#553c9a",
+            dark: "#0B1533",
+            "dark-light": "#1e293b",
+            neon: "#00f5ff"
+          },
+          fontFamily: {
+            inter: ["Inter", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
           }
         }
-      };
-    </script>
-  </head>
-  <body class="bg-white text-gray-900 font-inter transition-colors duration-300 dark:bg-dark dark:text-white">
-    <div class="min-h-screen flex flex-col">
-      <header class="sticky top-0 z-30 border-b border-gray-200/80 bg-white/80 backdrop-blur-sm dark:border-gray-800 dark:bg-dark/80">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex h-16 items-center gap-3">
-            <a href="../index.html" class="flex items-center gap-2">
-              <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">MEZ</span>
-              <span class="text-lg font-semibold tracking-wide text-gray-900 dark:text-white">Mezon Explorer</span>
-            </a>
-            <nav class="hidden md:flex flex-1 items-center justify-end gap-6 text-sm text-gray-600 dark:text-gray-300">
-              <a href="../index.html" class="font-medium transition hover:text-primary dark:hover:text-white">Public Dashboard</a>
-              <a href="../donate.html" class="font-medium transition hover:text-primary dark:hover:text-white">Donate</a>
-              <a href="../search.html" class="font-medium transition hover:text-primary dark:hover:text-white">Search</a>
-              <button id="theme-toggle" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition hover:border-primary hover:text-primary dark:border-white/10 dark:text-gray-300 dark:hover:border-primary-light dark:hover:text-white" aria-label="Toggle theme">
-                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path d="M10 2.5a.75.75 0 0 1 .75.75V5a.75.75 0 0 1-1.5 0V3.25A.75.75 0 0 1 10 2.5zM15.303 4.697a.75.75 0 0 1 1.06 1.06l-1.24 1.24a.75.75 0 0 1-1.061-1.06zM4.697 4.697a.75.75 0 0 1 1.06 0l1.24 1.24a.75.75 0 0 1-1.06 1.061l-1.24-1.24a.75.75 0 0 1 0-1.061zM10 6.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zm0 1.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7.5 2.75a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5a.75.75 0 0 1 .75-.75zm-15 0a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5a.75.75 0 0 1 .75-.75zm2.647 4.803a.75.75 0 0 1 1.06 0l1.24 1.24a.75.75 0 0 1-1.06 1.06l-1.24-1.24a.75.75 0 0 1 0-1.06zm9.412 0a.75.75 0 0 1 1.06 1.06l-1.24 1.24a.75.75 0 0 1-1.061-1.06zM10 15a.75.75 0 0 1 .75.75V17a.75.75 0 0 1-1.5 0v-1.25A.75.75 0 0 1 10 15z" />
-                </svg>
-              </button>
-            </nav>
-            <div class="flex flex-1 justify-end md:hidden">
-              <button class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition hover:border-primary hover:text-primary dark:border-white/10 dark:text-gray-300 dark:hover:border-primary-light dark:hover:text-white" aria-label="Open menu">
-                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path d="M3.75 5a.75.75 0 0 1 .75-.75h11a.75.75 0 0 1 0 1.5h-11A.75.75 0 0 1 3.75 5zm0 5a.75.75 0 0 1 .75-.75h11a.75.75 0 0 1 0 1.5h-11A.75.75 0 0 1 3.75 10zm0 5a.75.75 0 0 1 .75-.75h11a.75.75 0 0 1 0 1.5h-11a.75.75 0 0 1-.75-.75z" />
-                </svg>
-              </button>
-            </div>
+      }
+    };
+  </script>
+</head>
+
+<body class="bg-white text-gray-900 font-inter transition-colors duration-300 dark:bg-dark dark:text-white">
+  <div class="min-h-screen flex flex-col">
+    <header
+      class="sticky top-0 z-30 border-b border-gray-200/80 bg-white/80 backdrop-blur-sm dark:border-gray-800 dark:bg-dark/80">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex h-16 items-center gap-3">
+          <a href="../index.html" class="flex items-center gap-2">
+            <span
+              class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">MEZ</span>
+            <span class="text-lg font-semibold tracking-wide text-gray-900 dark:text-white">Mezon Explorer</span>
+          </a>
+          <nav class="hidden md:flex flex-1 items-center justify-end gap-6 text-sm text-gray-600 dark:text-gray-300">
+            <a href="../index.html" class="font-medium transition hover:text-primary dark:hover:text-white">Public
+              Dashboard</a>
+            <a href="../donate.html" class="font-medium transition hover:text-primary dark:hover:text-white">Donate</a>
+            <a href="../search.html" class="font-medium transition hover:text-primary dark:hover:text-white">Search</a>
+            <button id="theme-toggle"
+              class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition hover:border-primary hover:text-primary dark:border-white/10 dark:text-gray-300 dark:hover:border-primary-light dark:hover:text-white"
+              aria-label="Toggle theme">
+              <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path
+                  d="M10 2.5a.75.75 0 0 1 .75.75V5a.75.75 0 0 1-1.5 0V3.25A.75.75 0 0 1 10 2.5zM15.303 4.697a.75.75 0 0 1 1.06 1.06l-1.24 1.24a.75.75 0 0 1-1.061-1.06zM4.697 4.697a.75.75 0 0 1 1.06 0l1.24 1.24a.75.75 0 0 1-1.06 1.061l-1.24-1.24a.75.75 0 0 1 0-1.061zM10 6.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zm0 1.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7.5 2.75a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5a.75.75 0 0 1 .75-.75zm-15 0a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5a.75.75 0 0 1 .75-.75zm2.647 4.803a.75.75 0 0 1 1.06 0l1.24 1.24a.75.75 0 0 1-1.06 1.06l-1.24-1.24a.75.75 0 0 1 0-1.06zm9.412 0a.75.75 0 0 1 1.06 1.06l-1.24 1.24a.75.75 0 0 1-1.061-1.06zM10 15a.75.75 0 0 1 .75.75V17a.75.75 0 0 1-1.5 0v-1.25A.75.75 0 0 1 10 15z" />
+              </svg>
+            </button>
+          </nav>
+          <div class="flex flex-1 justify-end md:hidden">
+            <button
+              class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition hover:border-primary hover:text-primary dark:border-white/10 dark:text-gray-300 dark:hover:border-primary-light dark:hover:text-white"
+              aria-label="Open menu">
+              <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path
+                  d="M3.75 5a.75.75 0 0 1 .75-.75h11a.75.75 0 0 1 0 1.5h-11A.75.75 0 0 1 3.75 5zm0 5a.75.75 0 0 1 .75-.75h11a.75.75 0 0 1 0 1.5h-11A.75.75 0 0 1 3.75 10zm0 5a.75.75 0 0 1 .75-.75h11a.75.75 0 0 1 0 1.5h-11a.75.75 0 0 1-.75-.75z" />
+              </svg>
+            </button>
           </div>
         </div>
-      </header>
+      </div>
+    </header>
 
-      <main class="flex-1">
-        <section class="relative overflow-hidden border-b border-gray-200/70 bg-gradient-to-br from-primary/5 via-white to-white dark:border-gray-800 dark:from-primary/15 dark:via-dark dark:to-dark">
-          <div class="pointer-events-none absolute inset-x-0 -top-20 mx-auto h-48 w-48 rounded-full bg-primary/20 blur-3xl dark:bg-primary/40"></div>
-          <div class="max-w-7xl mx-auto px-4 pb-16 pt-14 sm:px-6 lg:px-8 lg:pt-20">
-            <div class="max-w-3xl">
-              <p class="text-xs font-semibold uppercase tracking-[0.3em] text-primary">CSR Donation</p>
-              <h1 class="mt-4 text-3xl font-semibold text-gray-900 dark:text-white sm:text-4xl">Mezon Donation Campaigns</h1>
-              <p class="mt-4 text-sm leading-6 text-gray-600 dark:text-gray-300">
-                Discover active CSR initiatives, monitor fundraising progress in real time, and help the Mezon team deliver meaningful impact to local communities.
+    <main class="flex-1">
+      <section
+        class="relative overflow-hidden border-b border-gray-200/70 bg-gradient-to-br from-primary/5 via-white to-white dark:border-gray-800 dark:from-primary/15 dark:via-dark dark:to-dark">
+
+        <!-- Banner Image at Top -->
+        <div class="w-full h-[60vh] sm:h-[70vh] overflow-hidden">
+          <img src="https://homepage.momocdn.net/img/momo-upload-api-220610222058-637904964587890784.jpg" loading="lazy"
+            class="w-full h-full object-cover" alt="Banner Top" />
+        </div>
+
+        <!-- Content Section -->
+        <div class="max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+
+            <!-- LEFT SIDE: TEXT + BUTTONS + STATS -->
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.1em] text-primary">CSR Donation</p>
+              <h1 class="mt-4 text-3xl font-semibold text-gray-900 dark:text-white sm:text-4xl">
+                Mezon Donation Campaigns
+              </h1>
+              <p class="mt-4 text-sm leading-6 text-gray-600 dark:text-gray-300 max-w-xl">
+                Discover active CSR initiatives, monitor fundraising progress in real time, and help the Mezon team
+                deliver
+                meaningful impact to local communities.
               </p>
+
+              <!-- Buttons -->
               <div class="mt-6 flex flex-wrap items-center gap-3">
-                <a href="create.html" class="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition hover:bg-primary-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:hover:bg-primary-light">
-                  + Create campaign
+                <a href="create.html"
+                  class="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition hover:bg-primary-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:hover:bg-primary-light">
+                  + Create Campaign
                 </a>
-                <a href="../donate.html" class="inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-primary hover:text-primary dark:border-white/20 dark:text-gray-200 dark:hover:border-primary-light dark:hover:text-white">
-                  Contribution guide
+                <a href="../donate.html"
+                  class="inline-flex items-center justify-center rounded-xl border border-blue-400 bg-primary/10 px-4 py-3 text-sm font-semibold text-primary transition hover:bg-primary hover:text-white dark:border-blue-500 dark:bg-primary/15 dark:text-primary-light dark:hover:bg-primary-light dark:hover:text-white">
+                  Contribution Guide
                 </a>
               </div>
-              <div class="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div class="rounded-2xl border border-white/50 bg-white/80 p-4 shadow-sm backdrop-blur dark:border-white/10 dark:bg-dark-light/80">
+
+              <!-- Stats -->
+              <div class="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 text-center max-w-2xl">
+                <div
+                  class="rounded-3xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white/80 p-5 min-w-[200px] max-w-[260px] shadow-md dark:border-white/10 dark:from-dark-light/70 dark:to-dark-light/50">
+                  <div
+                    class="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-primary-light/20 dark:text-primary-light">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6h13V7H4v10h5z" />
+                    </svg>
+                  </div>
                   <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Campaigns live</p>
-                  <p class="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">8</p>
+                  <p class="mt-2 text-3xl font-bold text-gray-900 dark:text-white">8</p>
                 </div>
-                <div class="rounded-2xl border border-white/50 bg-white/80 p-4 shadow-sm backdrop-blur dark:border-white/10 dark:bg-dark-light/80">
+
+                <div
+                  class="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white/80 p-5 min-w-[200px] max-w-[260px] shadow-md dark:border-white/10 dark:from-dark-light/70 dark:to-dark-light/50">
+                  <div
+                    class="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-400/20 dark:text-emerald-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8c-1.657 0-3 1.343-3 3v2h6v-2c0-1.657-1.343-3-3-3z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14v8H5z" />
+                    </svg>
+                  </div>
                   <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Total raised (MMN)</p>
-                  <p class="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">42,760</p>
+                  <p class="mt-2 text-3xl font-bold text-gray-900 dark:text-white">365.699.595</p>
                 </div>
-                <div class="rounded-2xl border border-white/50 bg-white/80 p-4 shadow-sm backdrop-blur dark:border-white/10 dark:bg-dark-light/80">
+
+                <div
+                  class="rounded-3xl border border-purple-100 bg-gradient-to-br from-purple-50 to-white/80 p-5 min-w-[200px] max-w-[260px] shadow-md dark:border-white/10 dark:from-dark-light/70 dark:to-dark-light/50">
+                  <div
+                    class="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 text-purple-600 dark:bg-purple-400/20 dark:text-purple-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M9 20H4v-2a3 3 0 015.356-1.857M15 11a4 4 0 10-8 0 4 4 0 008 0z" />
+                    </svg>
+                  </div>
                   <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Contributors</p>
-                  <p class="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">1,254</p>
+                  <p class="mt-2 text-3xl font-bold text-gray-900 dark:text-white">1.254</p>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
 
-        <section class="py-16">
-          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Active campaigns</h2>
-                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Real-time snapshots from the MMN chain. Select a campaign to view detail and donate.</p>
-              </div>
-              <div class="flex flex-wrap gap-3 text-sm">
-                <button class="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 font-medium text-gray-600 transition hover:border-primary hover:text-primary dark:border-white/10 dark:text-gray-300 dark:hover:border-primary-light dark:hover:text-white">
-                  All statuses
-                  <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" clip-rule="evenodd" />
-                  </svg>
-                </button>
-                <button class="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 font-medium text-gray-600 transition hover:border-primary hover:text-primary dark:border-white/10 dark:text-gray-300 dark:hover:border-primary-light dark:hover:text-white">
-                  Sort by newest
-                  <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path d="M10 3.75a.75.75 0 0 1 .75.75v8.99l2.22-2.22a.75.75 0 0 1 1.06 1.06l-3.5 3.5a.75.75 0 0 1-1.06 0l-3.5-3.5a.75.75 0 0 1 1.06-1.06l2.22 2.22V4.5A.75.75 0 0 1 10 3.75z" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div class="mt-10 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-              <article class="group flex flex-col rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm transition hover:-translate-y-1 hover:border-primary/60 hover:shadow-xl dark:border-white/10 dark:bg-dark-light/80">
-                <div class="flex items-center justify-between gap-4">
-                  <span class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300">Active</span>
-                  <span class="text-xs font-medium text-gray-500 dark:text-gray-400">23 days left</span>
-                </div>
-                <h3 class="mt-4 text-lg font-semibold text-gray-900 transition group-hover:text-primary dark:text-white dark:group-hover:text-primary-light">
-                  Xây Trường Cho Em
-                </h3>
-                <p class="mt-2 text-sm leading-6 text-gray-600 line-clamp-3 dark:text-gray-400">
-                  Raise funds to build three resilient classrooms and a community library for children in Điện Biên province.
-                </p>
-                <div class="mt-6">
-                  <div class="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
-                    <span>12,450 / 20,000 MMN</span>
-                    <span>62% funded</span>
-                  </div>
-                  <div class="mt-2 h-2 rounded-full bg-gray-100 dark:bg-white/5">
-                    <div class="h-full w-[62%] rounded-full bg-gradient-to-r from-primary to-primary-light"></div>
-                  </div>
-                </div>
-                <div class="mt-6 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                  <span>48 contributors</span>
-                  <span>Last gift · 5m ago</span>
-                </div>
-                <a href="detail.html" class="mt-6 inline-flex items-center justify-center rounded-xl bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary hover:text-white dark:bg-primary/15 dark:text-primary-light dark:hover:bg-primary-light dark:hover:text-white">
-                  View details
-                </a>
-              </article>
-
-              <article class="group flex flex-col rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm transition hover:-translate-y-1 hover:border-primary/60 hover:shadow-xl dark:border-white/10 dark:bg-dark-light/80">
-                <div class="flex items-center justify-between gap-4">
-                  <span class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300">Active</span>
-                  <span class="text-xs font-medium text-gray-500 dark:text-gray-400">12 days left</span>
-                </div>
-                <h3 class="mt-4 text-lg font-semibold text-gray-900 transition group-hover:text-primary dark:text-white dark:group-hover:text-primary-light">
-                  Warm Clothes for Highland Kids
-                </h3>
-                <p class="mt-2 text-sm leading-6 text-gray-600 line-clamp-3 dark:text-gray-400">
-                  Provide insulated jackets, gloves, and heaters for 800 students living in remote northern mountains ahead of winter.
-                </p>
-                <div class="mt-6">
-                  <div class="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
-                    <span>3,980 / 16,000 MMN</span>
-                    <span>25% funded</span>
-                  </div>
-                  <div class="mt-2 h-2 rounded-full bg-gray-100 dark:bg-white/5">
-                    <div class="h-full w-[25%] rounded-full bg-gradient-to-r from-primary to-primary-light"></div>
-                  </div>
-                </div>
-                <div class="mt-6 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                  <span>126 contributors</span>
-                  <span>Last gift · 32m ago</span>
-                </div>
-                <a href="detail.html" class="mt-6 inline-flex items-center justify-center rounded-xl bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary hover:text-white dark:bg-primary/15 dark:text-primary-light dark:hover:bg-primary-light dark:hover:text-white">
-                  View details
-                </a>
-              </article>
-
-              <article class="group flex flex-col rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm transition hover:-translate-y-1 hover:border-primary/60 hover:shadow-xl dark:border-white/10 dark:bg-dark-light/80">
-                <div class="flex items-center justify-between gap-4">
-                  <span class="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-600 dark:bg-amber-500/10 dark:text-amber-200">Draft</span>
-                  <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Draft mode</span>
-                </div>
-                <h3 class="mt-4 text-lg font-semibold text-gray-900 transition group-hover:text-primary dark:text-white dark:group-hover:text-primary-light">
-                  Digital Classroom Launchpad
-                </h3>
-                <p class="mt-2 text-sm leading-6 text-gray-600 line-clamp-3 dark:text-gray-400">
-                  Build a mini computer lab with 20 devices and STEM mentoring sessions for secondary school students.
-                </p>
-                <div class="mt-6">
-                  <div class="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
-                    <span>0 / 30,000 MMN</span>
-                    <span>Not launched</span>
-                  </div>
-                  <div class="mt-2 h-2 rounded-full bg-gray-100 dark:bg-white/5">
-                    <div class="h-full w-[0%] rounded-full bg-gradient-to-r from-primary to-primary-light"></div>
-                  </div>
-                </div>
-                <div class="mt-6 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                  <span>Pending launch</span>
-                  <span>-</span>
-                </div>
-                <a href="detail.html" class="mt-6 inline-flex items-center justify-center rounded-xl bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary hover:text-white dark:bg-primary/15 dark:text-primary-light dark:hover:bg-primary-light dark:hover:text-white">
-                  Review & publish
-                </a>
-              </article>
-
-              <article class="group flex flex-col rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm transition hover:-translate-y-1 hover:border-primary/60 hover:shadow-xl dark:border-white/10 dark:bg-dark-light/80">
-                <div class="flex items-center justify-between gap-4">
-                  <span class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300">Active</span>
-                  <span class="text-xs font-medium text-gray-500 dark:text-gray-400">6 days left</span>
-                </div>
-                <h3 class="mt-4 text-lg font-semibold text-gray-900 transition group-hover:text-primary dark:text-white dark:group-hover:text-primary-light">
-                  Water Access for Border Guards
-                </h3>
-                <p class="mt-2 text-sm leading-6 text-gray-600 line-clamp-3 dark:text-gray-400">
-                  Install a 10,000-liter filtration and storage system for a border guard station and the households nearby.
-                </p>
-                <div class="mt-6">
-                  <div class="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
-                    <span>9,420 / 12,000 MMN</span>
-                    <span>78% funded</span>
-                  </div>
-                  <div class="mt-2 h-2 rounded-full bg-gray-100 dark:bg-white/5">
-                    <div class="h-full w-[78%] rounded-full bg-gradient-to-r from-primary to-primary-light"></div>
-                  </div>
-                </div>
-                <div class="mt-6 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                  <span>362 contributors</span>
-                  <span>Last gift · 2h ago</span>
-                </div>
-                <a href="detail.html" class="mt-6 inline-flex items-center justify-center rounded-xl bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary hover:text-white dark:bg-primary/15 dark:text-primary-light dark:hover:bg-primary-light dark:hover:text-white">
-                  View details
-                </a>
-              </article>
-
-              <article class="group flex flex-col rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm transition hover:-translate-y-1 hover:border-primary/60 hover:shadow-xl dark:border-white/10 dark:bg-dark-light/80">
-                <div class="flex items-center justify-between gap-4">
-                  <span class="inline-flex items-center rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-600 dark:bg-rose-500/10 dark:text-rose-300">Closed</span>
-                  <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Goal achieved</span>
-                </div>
-                <h3 class="mt-4 text-lg font-semibold text-gray-900 transition group-hover:text-primary dark:text-white dark:group-hover:text-primary-light">
-                  Library for Coastal Kids
-                </h3>
-                <p class="mt-2 text-sm leading-6 text-gray-600 line-clamp-3 dark:text-gray-400">
-                  Deliver a floating library and life-skills workshops for island communities with over 5,000 curated books.
-                </p>
-                <div class="mt-6">
-                  <div class="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
-                    <span>20,500 / 20,000 MMN</span>
-                    <span>102% funded</span>
-                  </div>
-                  <div class="mt-2 h-2 rounded-full bg-gray-100 dark:bg-white/5">
-                    <div class="h-full w-full rounded-full bg-gradient-to-r from-primary to-primary-light"></div>
-                  </div>
-                </div>
-                <div class="mt-6 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                  <span>602 contributors</span>
-                  <span>Ended · 2 weeks ago</span>
-                </div>
-                <a href="detail.html" class="mt-6 inline-flex items-center justify-center rounded-xl bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary hover:text-white dark:bg-primary/15 dark:text-primary-light dark:hover:bg-primary-light dark:hover:text-white">
-                  View impact report
-                </a>
-              </article>
-
-              <article class="group flex flex-col rounded-3xl border border-dashed border-primary/40 bg-primary/5 p-6 text-center text-sm text-primary shadow-sm transition hover:-translate-y-1 hover:border-primary/60 hover:bg-primary/10 hover:shadow-lg dark:border-primary/40 dark:bg-primary/10 dark:text-primary-light">
-                <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/20 text-primary dark:bg-primary/30 dark:text-primary-light">
-                  <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M12 5v14m7-7H5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-                  </svg>
-                </div>
-                <h3 class="mt-4 text-lg font-semibold">Launch a new campaign</h3>
-                <p class="mt-2 text-sm leading-6 text-primary/80 dark:text-primary-light/80">
-                  Prepare your storyline, media assets, and fundraising targets so you can publish as soon as stakeholders approve.
-                </p>
-                <a href="create.html" class="mt-6 inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-light">
-                  Get started
-                </a>
-              </article>
-            </div>
-
-            <div class="mt-16 rounded-3xl border border-gray-200 bg-white px-6 py-8 shadow-sm dark:border-white/10 dark:bg-dark-light/80 sm:px-8">
-              <div class="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Need a bespoke campaign?</h3>
-                  <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                    Reach out to the CSR taskforce for storytelling support, matching programs, and compliant donation playbooks.
-                  </p>
-                </div>
-                <div class="flex flex-wrap gap-3">
-                  <a href="mailto:csr@mezon.ai" class="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition hover:bg-primary-light">
-                    Contact CSR team
-                  </a>
-                  <a href="../features.html" class="inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-primary hover:text-primary dark:border-white/20 dark:text-gray-200 dark:hover:border-primary-light dark:hover:text-white">
-                    Browse documentation
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <footer class="border-t border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-dark-light/80">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between text-sm text-gray-600 dark:text-gray-400">
-            <div class="flex items-center space-x-2">
-              <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">MEZ</span>
-              <span>Mezon Explorer · Donation Module</span>
-            </div>
-            <div class="flex items-center space-x-6">
-              <a class="transition hover:text-primary dark:hover:text-white" href="../privacy.html">Privacy</a>
-              <a class="transition hover:text-primary dark:hover:text-white" href="../terms.html">Terms</a>
-              <a class="transition hover:text-primary dark:hover:text-white" href="../support.html">Support</a>
+            <!-- RIGHT SIDE: IMAGE -->
+            <div class="flex justify-center lg:justify-end">
+              <img src="https://homepage.momocdn.net/img/momo-upload-api-220610222354-637904966341393543.png"
+                alt="Donation illustration" class="w-full max-w-md  object-contain" loading="lazy" />
             </div>
           </div>
         </div>
-      </footer>
-    </div>
-    <script>
-      (function () {
-        const themeToggle = document.getElementById("theme-toggle");
-        if (!themeToggle) return;
-        const applyState = () => {
-          const isDark = document.documentElement.classList.contains("dark");
-          themeToggle.setAttribute("aria-pressed", isDark ? "true" : "false");
-        };
+      </section>
+
+
+
+      <section class="py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Active campaigns</h2>
+              <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Real-time snapshots from the MMN chain. Select a
+                campaign to view detail and donate.</p>
+            </div>
+            <div class="flex flex-wrap gap-3 text-sm">
+              <button
+                class="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 font-medium text-gray-600 transition hover:border-primary hover:text-primary dark:border-white/10 dark:text-gray-300 dark:hover:border-primary-light dark:hover:text-white">
+                All statuses
+                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd"
+                    d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z"
+                    clip-rule="evenodd" />
+                </svg>
+              </button>
+              <button
+                class="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 font-medium text-gray-600 transition hover:border-primary hover:text-primary dark:border-white/10 dark:text-gray-300 dark:hover:border-primary-light dark:hover:text-white">
+                Sort by newest
+                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path
+                    d="M10 3.75a.75.75 0 0 1 .75.75v8.99l2.22-2.22a.75.75 0 0 1 1.06 1.06l-3.5 3.5a.75.75 0 0 1-1.06 0l-3.5-3.5a.75.75 0 0 1 1.06-1.06l2.22 2.22V4.5A.75.75 0 0 1 10 3.75z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-10 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+            <article
+              class="group flex flex-col rounded-3xl border border-blue-300 bg-blue-50 p-6 shadow-sm transition hover:-translate-y-1 hover:border-blue-500 hover:shadow-xl dark:border-white/10 dark:bg-dark-light/80">
+              <div class="flex items-center justify-between gap-4">
+                <span
+                  class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300">Active</span>
+                <span class="text-xs font-medium text-gray-500 dark:text-gray-400">23 days left</span>
+              </div>
+              <span></span>
+              <img loading="lazy" decoding="async" width="450" height="338"
+                src="https://givenow.vn/wp-content/uploads/2025/07/unnamed-1-450x338.jpg"
+                class="mt-4 mb-3 rounded-xl w-full object-cover max-h-56" alt="" />
+              <h3
+                class="mt-4 text-lg font-semibold text-gray-900 transition group-hover:text-primary dark:text-white dark:group-hover:text-primary-light">
+                Xây Trường Cho Em
+              </h3>
+              <p class="mt-2 text-sm leading-6 text-gray-600 line-clamp-3 dark:text-gray-400">
+                Raise funds to build three resilient classrooms and a community library for children in Điện Biên
+                province.
+              </p>
+              <div class="mt-6">
+                <div class="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
+                  <span>12.450 / 20.000 MMN</span>
+                  <span>62% funded</span>
+                </div>
+                <div class="mt-2 h-2 rounded-full bg-gray-100 dark:bg-white/5">
+                  <div class="h-full w-[62%] rounded-full bg-gradient-to-r from-primary to-primary-light"></div>
+                </div>
+              </div>
+              <div class="mt-6 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                <span>48 contributors</span>
+                <span>Last gift · 5m ago</span>
+              </div>
+              <a href="detail.html"
+                class="mt-6 inline-flex items-center justify-center rounded-xl border border-blue-500 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary hover:text-white dark:border-blue-500 dark:bg-primary/15 dark:text-primary-light dark:hover:bg-primary-light dark:hover:text-white">
+                View details
+              </a>
+            </article>
+            <article
+              class="group flex flex-col rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm transition hover:-translate-y-1 hover:border-primary/60 hover:shadow-xl dark:border-white/10 dark:bg-dark-light/80">
+              <div class="flex items-center justify-between gap-4">
+                <span
+                  class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300">Active</span>
+                <span class="text-xs font-medium text-gray-500 dark:text-gray-400">12 days left</span>
+              </div>
+              <h3
+                class="mt-4 text-lg font-semibold text-gray-900 transition group-hover:text-primary dark:text-white dark:group-hover:text-primary-light">
+                Warm Clothes for Highland Kids
+              </h3>
+              <p class="mt-2 text-sm leading-6 text-gray-600 line-clamp-3 dark:text-gray-400">
+                Provide insulated jackets, gloves, and heaters for 800 students living in remote northern mountains
+                ahead of winter.
+              </p>
+              <div class="mt-6">
+                <div class="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
+                  <span>3,980 / 16,000 MMN</span>
+                  <span>25% funded</span>
+                </div>
+                <div class="mt-2 h-2 rounded-full bg-gray-100 dark:bg-white/5">
+                  <div class="h-full w-[25%] rounded-full bg-gradient-to-r from-primary to-primary-light"></div>
+                </div>
+              </div>
+              <div class="mt-6 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                <span>126 contributors</span>
+                <span>Last gift · 32m ago</span>
+              </div>
+              <a href="detail.html"
+                class="mt-6 inline-flex items-center justify-center rounded-xl bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary hover:text-white dark:bg-primary/15 dark:text-primary-light dark:hover:bg-primary-light dark:hover:text-white">
+                View details
+              </a>
+            </article>
+
+            <article
+              class="group flex flex-col rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm transition hover:-translate-y-1 hover:border-primary/60 hover:shadow-xl dark:border-white/10 dark:bg-dark-light/80">
+              <div class="flex items-center justify-between gap-4">
+                <span
+                  class="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-600 dark:bg-amber-500/10 dark:text-amber-200">Draft</span>
+                <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Draft mode</span>
+              </div>
+              <h3
+                class="mt-4 text-lg font-semibold text-gray-900 transition group-hover:text-primary dark:text-white dark:group-hover:text-primary-light">
+                Digital Classroom Launchpad
+              </h3>
+              <p class="mt-2 text-sm leading-6 text-gray-600 line-clamp-3 dark:text-gray-400">
+                Build a mini computer lab with 20 devices and STEM mentoring sessions for secondary school students.
+              </p>
+              <div class="mt-6">
+                <div class="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
+                  <span>0 / 30,000 MMN</span>
+                  <span>Not launched</span>
+                </div>
+                <div class="mt-2 h-2 rounded-full bg-gray-100 dark:bg-white/5">
+                  <div class="h-full w-[0%] rounded-full bg-gradient-to-r from-primary to-primary-light"></div>
+                </div>
+              </div>
+              <div class="mt-6 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                <span>Pending launch</span>
+                <span>-</span>
+              </div>
+              <a href="detail.html"
+                class="mt-6 inline-flex items-center justify-center rounded-xl bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary hover:text-white dark:bg-primary/15 dark:text-primary-light dark:hover:bg-primary-light dark:hover:text-white">
+                Review & publish
+              </a>
+            </article>
+
+            <article
+              class="group flex flex-col rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm transition hover:-translate-y-1 hover:border-primary/60 hover:shadow-xl dark:border-white/10 dark:bg-dark-light/80">
+              <div class="flex items-center justify-between gap-4">
+                <span
+                  class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300">Active</span>
+                <span class="text-xs font-medium text-gray-500 dark:text-gray-400">6 days left</span>
+              </div>
+              <h3
+                class="mt-4 text-lg font-semibold text-gray-900 transition group-hover:text-primary dark:text-white dark:group-hover:text-primary-light">
+                Water Access for Border Guards
+              </h3>
+              <p class="mt-2 text-sm leading-6 text-gray-600 line-clamp-3 dark:text-gray-400">
+                Install a 10,000-liter filtration and storage system for a border guard station and the households
+                nearby.
+              </p>
+              <div class="mt-6">
+                <div class="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
+                  <span>9,420 / 12,000 MMN</span>
+                  <span>78% funded</span>
+                </div>
+                <div class="mt-2 h-2 rounded-full bg-gray-100 dark:bg-white/5">
+                  <div class="h-full w-[78%] rounded-full bg-gradient-to-r from-primary to-primary-light"></div>
+                </div>
+              </div>
+              <div class="mt-6 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                <span>362 contributors</span>
+                <span>Last gift · 2h ago</span>
+              </div>
+              <a href="detail.html"
+                class="mt-6 inline-flex items-center justify-center rounded-xl bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary hover:text-white dark:bg-primary/15 dark:text-primary-light dark:hover:bg-primary-light dark:hover:text-white">
+                View details
+              </a>
+            </article>
+
+            <article
+              class="group flex flex-col rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm transition hover:-translate-y-1 hover:border-primary/60 hover:shadow-xl dark:border-white/10 dark:bg-dark-light/80">
+              <div class="flex items-center justify-between gap-4">
+                <span
+                  class="inline-flex items-center rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-600 dark:bg-rose-500/10 dark:text-rose-300">Closed</span>
+                <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Goal achieved</span>
+              </div>
+              <h3
+                class="mt-4 text-lg font-semibold text-gray-900 transition group-hover:text-primary dark:text-white dark:group-hover:text-primary-light">
+                Library for Coastal Kids
+              </h3>
+              <p class="mt-2 text-sm leading-6 text-gray-600 line-clamp-3 dark:text-gray-400">
+                Deliver a floating library and life-skills workshops for island communities with over 5,000 curated
+                books.
+              </p>
+              <div class="mt-6">
+                <div class="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
+                  <span>20,500 / 20,000 MMN</span>
+                  <span>102% funded</span>
+                </div>
+                <div class="mt-2 h-2 rounded-full bg-gray-100 dark:bg-white/5">
+                  <div class="h-full w-full rounded-full bg-gradient-to-r from-primary to-primary-light"></div>
+                </div>
+              </div>
+              <div class="mt-6 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                <span>602 contributors</span>
+                <span>Ended · 2 weeks ago</span>
+              </div>
+              <a href="detail.html"
+                class="mt-6 inline-flex items-center justify-center rounded-xl bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary hover:text-white dark:bg-primary/15 dark:text-primary-light dark:hover:bg-primary-light dark:hover:text-white">
+                View impact report
+              </a>
+            </article>
+
+            <article
+              class="group flex flex-col rounded-3xl border border-dashed border-primary/40 bg-primary/5 p-6 text-center text-sm text-primary shadow-sm transition hover:-translate-y-1 hover:border-primary/60 hover:bg-primary/10 hover:shadow-lg dark:border-primary/40 dark:bg-primary/10 dark:text-primary-light">
+              <div
+                class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/20 text-primary dark:bg-primary/30 dark:text-primary-light">
+                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M12 5v14m7-7H5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                    stroke-linejoin="round"></path>
+                </svg>
+              </div>
+              <h3 class="mt-4 text-lg font-semibold">Launch a new campaign</h3>
+              <p class="mt-2 text-sm leading-6 text-primary/80 dark:text-primary-light/80">
+                Prepare your storyline, media assets, and fundraising targets so you can publish as soon as stakeholders
+                approve.
+              </p>
+              <a href="create.html"
+                class="mt-6 inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-light">
+                Get started
+              </a>
+            </article>
+          </div>
+
+          <div
+            class="mt-16 rounded-3xl border border-gray-200 bg-white px-6 py-8 shadow-sm dark:border-white/10 dark:bg-dark-light/80 sm:px-8">
+            <div class="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Need a bespoke campaign?</h3>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                  Reach out to the CSR taskforce for storytelling support, matching programs, and compliant donation
+                  playbooks.
+                </p>
+              </div>
+              <div class="flex flex-wrap gap-3">
+                <a href="mailto:csr@mezon.ai"
+                  class="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-primary/30 transition hover:bg-primary-light">
+                  Contact CSR team
+                </a>
+                <a href="../features.html"
+                  class="inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-primary hover:text-primary dark:border-white/20 dark:text-gray-200 dark:hover:border-primary-light dark:hover:text-white">
+                  Browse documentation
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="border-t border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-dark-light/80">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div
+          class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between text-sm text-gray-600 dark:text-gray-400">
+          <div class="flex items-center space-x-2">
+            <span
+              class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">MEZ</span>
+            <span>Mezon Explorer · Donation Module</span>
+          </div>
+          <div class="flex items-center space-x-6">
+            <a class="transition hover:text-primary dark:hover:text-white" href="../privacy.html">Privacy</a>
+            <a class="transition hover:text-primary dark:hover:text-white" href="../terms.html">Terms</a>
+            <a class="transition hover:text-primary dark:hover:text-white" href="../support.html">Support</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+  <script>
+    (function () {
+      const themeToggle = document.getElementById("theme-toggle");
+      if (!themeToggle) return;
+      const applyState = () => {
+        const isDark = document.documentElement.classList.contains("dark");
+        themeToggle.setAttribute("aria-pressed", isDark ? "true" : "false");
+      };
+      applyState();
+      themeToggle.addEventListener("click", () => {
+        const isDark = document.documentElement.classList.toggle("dark");
+        localStorage.setItem("theme", isDark ? "dark" : "light");
         applyState();
-        themeToggle.addEventListener("click", () => {
-          const isDark = document.documentElement.classList.toggle("dark");
-          localStorage.setItem("theme", isDark ? "dark" : "light");
-          applyState();
-        });
-      })();
-    </script>
-  </body>
+      });
+    })();
+  </script>
+</body>
+
 </html>
