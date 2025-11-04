@@ -93,7 +93,7 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
         goal: Number(form.fundraisingGoal || 0),
         url: form.bannerImageUrl,
         donation_wallet: form.donationWallet.address,
-        owner: form.owner.trim(),
+        owner: form.owner,
         end_date: form.endDate,
       };
       if (!validation.isAllComplete) {
@@ -147,7 +147,7 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
             goal: Number(form.fundraisingGoal || 0),
             url: form.bannerImageUrl,
             donation_wallet: form.donationWallet.address,
-            owner: form.owner,
+            owner: form.owner.trim(),
             end_date: form.endDate,
           };
 
