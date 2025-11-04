@@ -5,30 +5,30 @@ import { notFound } from 'next/navigation';
 
 interface CampaignDetailPageProps {
   params: Promise<{
-    campaignId: string;
+    slug: string;
   }>;
 }
 
 export async function generateMetadata({ params }: CampaignDetailPageProps): Promise<Metadata> {
-  const { campaignId } = await params;
+  const { slug } = await params;
   try {
-    const campaign = await DonationCampaignService.getCampaignById(campaignId);
+    const campaign = await DonationCampaignService.getCampaignBySlug(slug);
 
     return {
-      title: campaign.name || `Campaign ${campaignId}`,
+      title: campaign.name || `Campaign ${slug}`,
       description: campaign.description,
     };
   } catch (error) {
     return {
-      title: `Campaign ${campaignId}`,
+      title: `Campaign ${slug}`,
     };
   }
 }
 
 export default async function DonationCampaignDetailPage({ params }: CampaignDetailPageProps) {
   try {
-    const { campaignId } = await params;
-    const campaign = await DonationCampaignService.getCampaignById(campaignId);
+    const { slug } = await params;
+    const campaign = await DonationCampaignService.getCampaignBySlug(slug);
     return <CampaignDetail campaign={campaign} />;
   } catch (error: unknown) {
     if (error && typeof error === 'object' && 'response' in error) {

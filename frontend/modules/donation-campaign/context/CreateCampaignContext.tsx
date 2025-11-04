@@ -133,7 +133,7 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
           } else {
             const res = await createAndPublishMutation.mutateAsync(campaignData);
             toast.success('Campaign published successfully');
-            router.push(ROUTES.CAMPAIGN(res.id)); // Navigate to donation list page
+            router.push(ROUTES.CAMPAIGN(res.slug));
           }
         } catch (error) {
           console.error('Error publishing campaign:', error);

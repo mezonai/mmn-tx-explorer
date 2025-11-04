@@ -441,6 +441,132 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/campaigns/slug/{slug}": {
+            "get": {
+                "description": "Get details of a specific donation campaign by its slug",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "campaigns"
+                ],
+                "summary": "Get a donation campaign by slug",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Campaign slug",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.DonationCampaignResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/campaigns/slug/{slug}/top-contributors": {
+            "get": {
+                "description": "Get the top contributors by slug for a specific donation campaign",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "campaigns"
+                ],
+                "summary": "Get top contributors for a campaign by slug",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Campaign Slug",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "maximum": 10,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Number of top contributors to return",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.TopContributorsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/campaigns/{id}": {
             "get": {
                 "description": "Get details of a specific donation campaign",
@@ -899,6 +1025,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "owner": {
+                    "type": "string"
+                },
+                "slug": {
                     "type": "string"
                 },
                 "status": {

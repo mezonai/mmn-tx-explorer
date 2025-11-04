@@ -140,6 +140,43 @@ func (h *DonationCampaignHandler) GetCampaign(c *gin.Context) {
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgCampaignRetrieved, campaign.ToResponse()))
 }
 
+// GetCampaignBySlug godoc
+// @Summary Get a donation campaign by slug
+// @Description Get details of a specific donation campaign by its slug
+// @Tags campaigns
+// @Produce json
+// @Param slug path string true "Campaign slug"
+// @Success 200 {object} models.Response{data=models.DonationCampaignResponse}
+// @Failure 400 {object} models.Response
+// @Failure 404 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Router /api/v1/campaigns/slug/{slug} [get]
+func (h *DonationCampaignHandler) GetCampaignBySlug(c *gin.Context) {
+	slug := c.Param("slug")
+	if slug == "" {
+		logger.Error().Msg("Empty campaign slug parameter")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidCampaignID))
+		return
+	}
+
+	logger.Debug().Str("slug", slug).Msg("Fetching campaign details by slug")
+
+	campaign, err := h.repo.GetBySlug(slug)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			logger.Warn().Str("slug", slug).Msg("Campaign not found")
+			c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, constants.ErrCampaignNotFound))
+			return
+		}
+		logger.Error().Err(err).Str("slug", slug).Msg("Failed to get campaign by slug")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToGetCampaign+": "+err.Error()))
+		return
+	}
+
+	logger.Debug().Str("slug", slug).Str("name", campaign.Name).Msg("Campaign retrieved successfully")
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgCampaignRetrieved, campaign.ToResponse()))
+}
+
 // ListCampaigns godoc
 // @Summary List all donation campaigns
 // @Description Get a list of all donation campaigns with pagination
@@ -395,6 +432,65 @@ func (h *DonationCampaignHandler) GetTopContributors(c *gin.Context) {
 		Int64("campaign_id", id).
 		Int("contributors_count", len(topContributors.Contributors)).
 		Msg("Top contributors retrieved successfully")
+
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Top contributors retrieved successfully", topContributors))
+}
+
+// GetTopContributorBySlug godoc
+// @Summary Get top contributors for a campaign by slug
+// @Description Get the top contributors by slug for a specific donation campaign
+// @Tags campaigns
+// @Produce json
+// @Param slug path string true "Campaign Slug"
+// @Param limit query int false "Number of top contributors to return" default(10) maximum(10)
+// @Success 200 {object} models.Response{data=models.TopContributorsResponse}
+// @Failure 400 {object} models.Response
+// @Failure 404 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Router /api/v1/campaigns/slug/{slug}/top-contributors [get]
+func (h *DonationCampaignHandler) GetTopContributorBySlug(c *gin.Context) {
+	slug := c.Param("slug")
+	if slug == "" {
+		logger.Error().Msg("Empty campaign slug parameter for top contributors")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidCampaignID))
+		return
+	}
+
+	limit := 10
+	if limitStr := c.Query("limit"); limitStr != "" {
+		var err error
+		limit, err = strconv.Atoi(limitStr)
+		if err != nil {
+			logger.Error().Err(err).Str("slug", slug).Msg("Invalid limit parameter")
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid limit parameter"))
+			return
+		}
+		if limit > 10 {
+			limit = 10
+		}
+		if limit < 1 {
+			limit = 1
+		}
+	}
+
+	logger.Debug().Str("slug", slug).Int("limit", limit).Msg("Fetching top contributors by slug")
+
+	topContributors, err := h.repo.GetTopContributorsBySlug(slug, limit)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			logger.Warn().Str("slug", slug).Msg("Campaign not found for top contributors")
+			c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, constants.ErrCampaignNotFound))
+			return
+		}
+		logger.Error().Err(err).Str("slug", slug).Msg("Failed to get top contributors by slug")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to get top contributors: "+err.Error()))
+		return
+	}
+
+	logger.Debug().
+		Str("slug", slug).
+		Int("contributors_count", len(topContributors.Contributors)).
+		Msg("Top contributors retrieved successfully by slug")
 
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Top contributors retrieved successfully", topContributors))
 }
