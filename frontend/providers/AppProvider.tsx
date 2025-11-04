@@ -2,6 +2,7 @@
 
 import { STORAGE_KEYS } from '@/constant';
 import {
+  AUTHENTICATION_CONSTANTS,
   AUTHENTICATION_ENDPOINT,
   AuthenticationService,
   decodeState,
@@ -80,7 +81,7 @@ export function AppProvider({ children }: AppProviderProps) {
     }
     const code = searchParams.get('code');
     const state = searchParams.get('state');
-    const csrfTokenFromStorage = sessionStorage.getItem('oauth_csrf_token');
+    const csrfTokenFromStorage = sessionStorage.getItem(AUTHENTICATION_CONSTANTS.CRSF_TOKEN);
     if (!code || !state || !csrfTokenFromStorage) {
       console.error('Missing code, state, or CSRF token in storage.');
       router.replace('/?error=invalid_callback');
@@ -165,17 +166,17 @@ export function useKeypair() {
 
 export function useAuthActions() {
   const { setIsAuthenticated, setUser, setZkProof, setKeypair } = useApp();
-
+  const router = useRouter();
   const login = () => {
     const csrfToken = generateCsrfToken();
-    sessionStorage.setItem('oauth_csrf_token', csrfToken);
+    sessionStorage.setItem(AUTHENTICATION_CONSTANTS.CRSF_TOKEN, csrfToken);
     const currentPath = location.pathname + location.search;
     const stateObject = {
       csrf: csrfToken,
       redirect_uri: currentPath,
     };
     const encodedState = encodeState(stateObject);
-    AuthenticationService.login(encodedState);
+    router.push(`${AUTHENTICATION_ENDPOINT.LOGIN}?state=${encodedState}`);
   };
 
   const logout = () => {

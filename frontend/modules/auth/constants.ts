@@ -5,5 +5,5 @@ export const AUTHENTICATION_ENDPOINT = {
   REFRESH: 'refresh',
 } as const;
 export const AUTHENTICATION_CONSTANTS = {
-  LOGIN_REDIRECT: 'login_redirect_',
+  CRSF_TOKEN: 'csrf_token',
 };
