@@ -11,7 +11,7 @@ import { useMemo } from 'react';
 import { DateTimeUtil } from '@/utils';
 
 export function CampaignSidebar() {
-  const { form, validation, handleSubmit } = useCreateCampaignContext();
+  const { form, validation, handleSubmit, isSaving } = useCreateCampaignContext();
 
   // Calculate preview data
   const preview: CampaignPreview = {
@@ -63,9 +63,16 @@ export function CampaignSidebar() {
           <CardTitle className="text-sm">Actions</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
-          {/* <Button type="button" variant="outline" onClick={() => handleSubmit('draft')} disabled={isSaving}>
+          <Button
+            type="button"
+            onClick={() => handleSubmit('draft')}
+            disabled={isSaving}
+            className={cn(
+              'bg-background text-foreground hover:bg-background hover:border-brand-primary/40 hover:text-brand-primary border border-1 font-semibold'
+            )}
+          >
             {isSaving ? 'Saving...' : 'Save draft'}
-          </Button> */}
+          </Button>
 
           <Button
             type="button"

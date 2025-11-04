@@ -8,6 +8,7 @@ import { CampaignPreviewCard } from './campaign-review';
 import { CampaignPreview, ECampaignStatus } from '../../../type';
 import { formatDistanceToNow } from 'date-fns';
 import { useParams } from 'next/navigation';
+import { CampaignActions } from './campaign-actions';
 
 export function CampaignSidebar() {
   const { form, handleSubmit } = useCreateCampaignContext();
@@ -27,18 +28,7 @@ export function CampaignSidebar() {
   return (
     <aside className="space-y-6">
       <CampaignPreviewCard preview={preview} />
-
-      <Card className="border-border bg-card dark:bg-primary/10 gap-4">
-        <CardContent className="flex flex-col gap-3">
-          <Button
-            type="button"
-            onClick={() => handleSubmit('publish')}
-            className={cn('bg-brand-primary hover:bg-brand-primary/90 shadow-brand-primary/30 text-white shadow-lg')}
-          >
-            Save changes
-          </Button>
-        </CardContent>
-      </Card>
+      <CampaignActions />
     </aside>
   );
 }

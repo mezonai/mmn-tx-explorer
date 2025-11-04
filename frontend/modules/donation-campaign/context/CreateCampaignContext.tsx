@@ -84,7 +84,33 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
     setForm((prev) => ({ ...prev, [field]: value }));
   }, []);
 
-  const saveDraft = useCallback(async () => {}, []);
+  const saveDraft = useCallback(async () => {
+    try {
+      setIsSaving(true);
+      const draftData = {
+        name: form.name,
+        description: form.shortDescription,
+        goal: Number(form.fundraisingGoal || 0),
+        url: form.bannerImageUrl,
+        donation_wallet: form.donationWallet.address,
+        owner: form.owner,
+        end_date: form.endDate,
+      };
+      if (!validation.isAllComplete) {
+        toast.error('Please complete all required fields before publishing');
+        return;
+      }
+      const res = await createMutation.mutateAsync(draftData as any);
+      toast.success('Draft saved');
+      router.push(ROUTES.CAMPAIGN_EDIT(res.id));
+    } catch (error: any) {
+      console.error('Error saving draft campaign:', error);
+      const message = error?.response?.data?.message || 'Failed to save draft';
+      toast.error(message);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [createMutation, form, router]);
 
   const deleteDraft = useCallback(() => {}, []);
 
@@ -110,7 +136,7 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
   const handleSubmit = useCallback(
     async (action: 'draft' | 'publish') => {
       if (action === 'draft') {
-        saveDraft();
+        await saveDraft();
       } else {
         try {
           setIsSaving(true);

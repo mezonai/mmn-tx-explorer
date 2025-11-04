@@ -15,7 +15,6 @@ import { useUser } from '@/providers';
 
 export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
   const [currentCampaign, setCurrentCampaign] = useState(campaign);
-
   const { user } = useUser();
 
   const handleRefreshData = (newRaisedAmount?: number) => {
