@@ -108,7 +108,7 @@ export function AppProvider({ children }: AppProviderProps) {
         if (fetchedZk) {
           setZkProof(fetchedZk);
         }
-        router.replace(originalState.redirect_uri || '/');
+        router.replace(originalState.redirect_url || '/');
         toast.success('Login successful!');
       } catch {
         toast.error('Login failed!');
@@ -173,7 +173,7 @@ export function useAuthActions() {
     const currentPath = location.pathname + location.search;
     const stateObject = {
       csrf: csrfToken,
-      redirect_uri: currentPath,
+      redirect_url: currentPath,
     };
     const encodedState = encodeState(stateObject);
     router.push(`${AUTHENTICATION_ENDPOINT.LOGIN}?state=${encodedState}`);

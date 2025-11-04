@@ -72,7 +72,7 @@ export function decodeState(encodedState: string): StateObject {
     }
     const jsonString = atob(base64String);
     const decodedObject = JSON.parse(jsonString);
-    if (!decodedObject || typeof decodedObject.csrf !== 'string' || typeof decodedObject.redirect_uri !== 'string') {
+    if (!decodedObject || typeof decodedObject.csrf !== 'string' || typeof decodedObject.redirect_url !== 'string') {
       throw new Error('Invalid state object after decoding.');
     }
     return decodedObject;

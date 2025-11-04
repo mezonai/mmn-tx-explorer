@@ -20,5 +20,5 @@ export interface UserInfoResponse {
 }
 export interface StateObject {
   csrf: string;
-  redirect_uri: string;
+  redirect_url: string;
 }
