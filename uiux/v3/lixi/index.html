@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Red Envelope Dashboard · Mezon</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#6941c6",
+            "primary-light": "#8b5cf6",
+            "primary-dark": "#553c9a",
+            dark: "#0B1533",
+            "dark-light": "#1e293b"
+          },
+          fontFamily: { inter: ["Inter", "sans-serif"] }
+        }
+      }
+    };
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous"></script>
+</head>
+
+<body class="bg-dark text-white font-inter">
+
+  <!-- Header -->
+  <header class="bg-dark-light border-b border-gray-700 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-primary rounded-lg flex items-center justify-center">
+          <i class="fa-solid fa-gift text-white text-base"></i>
+        </div>
+        <h1 class="text-lg font-bold tracking-wide">Mezon Red Envelope</h1>
+        <span class="text-xs text-primary bg-primary/15 px-2 py-1 rounded-lg">Dashboard</span>
+      </div>
+
+      <a href="red-envelope.html"
+         class="hidden sm:inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-primary/30 hover:bg-primary-dark transition">
+        <i class="fa-solid fa-plus-circle"></i>
+        <span>Create Lì Xì</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+
+    <!-- Summary -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-dark-light border border-gray-700 rounded-xl p-6 hover:border-primary/50 transition">
+        <div class="flex justify-between items-center mb-3">
+          <div class="flex items-center gap-2 text-xs text-gray-400">
+            <i class="fa-solid fa-paper-plane text-primary"></i>
+            <span>TOTAL SENT</span>
+          </div>
+          <i class="fa-solid fa-arrow-up-right-from-square text-primary-light"></i>
+        </div>
+        <h3 class="text-3xl font-bold text-white font-mono">1,250 đồng</h3>
+        <p class="text-gray-400 text-sm mt-1">Sent to 15 wallets</p>
+      </div>
+
+      <div class="bg-dark-light border border-gray-700 rounded-xl p-6 hover:border-primary/50 transition">
+        <div class="flex justify-between items-center mb-3">
+          <div class="flex items-center gap-2 text-xs text-gray-400">
+            <i class="fa-solid fa-wallet text-primary"></i>
+            <span>TOTAL RECEIVED</span>
+          </div>
+          <i class="fa-solid fa-coins text-primary-light"></i>
+        </div>
+        <h3 class="text-3xl font-bold text-white font-mono">860 đồng</h3>
+        <p class="text-gray-400 text-sm mt-1">From 8 envelopes</p>
+      </div>
+
+      <div class="bg-dark-light border border-gray-700 rounded-xl p-6 hover:border-primary/50 transition">
+        <div class="flex justify-between items-center mb-3">
+          <div class="flex items-center gap-2 text-xs text-gray-400">
+            <i class="fa-solid fa-envelope-open-text text-primary"></i>
+            <span>LIVE ENVELOPES</span>
+          </div>
+          <i class="fa-solid fa-signal text-primary-light"></i>
+        </div>
+        <h3 class="text-3xl font-bold text-white font-mono">2</h3>
+        <p class="text-gray-400 text-sm mt-1">Currently active</p>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <div class="flex justify-center pt-4">
+      <a href="red-envelope.html"
+         class="inline-flex items-center gap-3 bg-primary hover:bg-primary-dark text-white font-semibold px-8 py-4 rounded-2xl shadow-lg shadow-primary/30 transition transform hover:scale-[1.02]">
+        <i class="fa-solid fa-gift"></i>
+        <span>Create New Red Envelope</span>
+      </a>
+    </div>
+
+    <!-- Created -->
+    <section class="space-y-6 pt-10">
+      <h2 class="text-xl font-semibold flex items-center gap-3">
+        <i class="fa-solid fa-paper-plane text-primary"></i>
+        Created Envelopes
+      </h2>
+
+      <div class="space-y-3">
+        <div class="flex justify-between items-center bg-dark-light border border-gray-700 rounded-xl p-4 hover:border-primary/30 transition">
+          <div>
+            <p class="font-medium flex items-center gap-2">
+              <i class="fa-solid fa-fire text-orange-400"></i>
+              Tet 2025 – Team NCC
+            </p>
+            <p class="text-gray-400 text-xs">1,000 đồng · 25 recipients · 18 claimed</p>
+          </div>
+          <span class="text-xs text-green-400 bg-green-500/10 px-3 py-1 rounded-full">🟢 Live</span>
+        </div>
+
+        <div class="flex justify-between items-center bg-dark-light border border-gray-700 rounded-xl p-4 hover:border-primary/30 transition">
+          <div>
+            <p class="font-medium flex items-center gap-2">
+              <i class="fa-solid fa-cake-candles text-pink-400"></i>
+              QA Birthday Celebration
+            </p>
+            <p class="text-gray-400 text-xs">500 đồng · 10 recipients · 10 claimed</p>
+          </div>
+          <span class="text-xs text-gray-400 bg-gray-700/50 px-3 py-1 rounded-full">🔒 Closed</span>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div class="flex justify-between items-center pt-4 text-sm text-gray-400">
+        <button class="px-4 py-2 rounded-lg border border-gray-700 hover:border-primary hover:text-white transition">
+          <i class="fa-solid fa-angle-left mr-1"></i> Prev
+        </button>
+        <span>Page 1 of 5</span>
+        <button class="px-4 py-2 rounded-lg border border-gray-700 hover:border-primary hover:text-white transition">
+          Next <i class="fa-solid fa-angle-right ml-1"></i>
+        </button>
+      </div>
+    </section>
+
+    <!-- Claimed -->
+    <section class="space-y-6 pt-8">
+      <h2 class="text-xl font-semibold flex items-center gap-3">
+        <i class="fa-solid fa-hand-holding-heart text-primary"></i>
+        Claimed Envelopes
+      </h2>
+
+      <div class="space-y-3">
+        <div class="flex justify-between items-center bg-dark-light border border-gray-700 rounded-xl p-4">
+          <div>
+            <p class="font-medium flex items-center gap-2">
+              <i class="fa-solid fa-user text-gray-400"></i>
+              From <span class="text-primary hover:underline cursor-pointer" title="0x8a123feC84B93d7E52fB...c3fE">0x8a12...c3fE</span>
+            </p>
+            <p class="text-gray-400 text-xs">Received 68 đồng · Feb 10, 2025</p>
+          </div>
+          <span class="text-xs text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full">🎁 Claimed</span>
+        </div>
+
+        <div class="flex justify-between items-center bg-dark-light border border-gray-700 rounded-xl p-4">
+          <div>
+            <p class="font-medium flex items-center gap-2">
+              <i class="fa-solid fa-user text-gray-400"></i>
+              From <span class="text-primary hover:underline cursor-pointer" title="0xB74d0E9e9A21EfF45e93...1Dc2">0xB74d...1Dc2</span>
+            </p>
+            <p class="text-gray-400 text-xs">Received 50 đồng · Feb 05, 2025</p>
+          </div>
+          <span class="text-xs text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full">🎁 Claimed</span>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div class="flex justify-between items-center pt-4 text-sm text-gray-400">
+        <button class="px-4 py-2 rounded-lg border border-gray-700 hover:border-primary hover:text-white transition">
+          <i class="fa-solid fa-angle-left mr-1"></i> Prev
+        </button>
+        <span>Page 1 of 3</span>
+        <button class="px-4 py-2 rounded-lg border border-gray-700 hover:border-primary hover:text-white transition">
+          Next <i class="fa-solid fa-angle-right ml-1"></i>
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-dark-light border-t border-gray-700 mt-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex justify-between items-center">
+      <span class="text-gray-400 text-sm">© 2025 Mezon Explorer</span>
+      <div class="flex space-x-6 text-sm text-gray-400">
+        <a href="#" class="hover:text-white">Privacy</a>
+        <a href="#" class="hover:text-white">Terms</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

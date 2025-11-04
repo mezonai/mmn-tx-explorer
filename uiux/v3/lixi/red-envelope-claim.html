@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lì Xì Claim · Mezon</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#6941c6",
+            dark: "#0B1533",
+            "lucky-red": "#ff3b63",
+            "lucky-gold": "#f6c744"
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-dark text-white font-inter min-h-screen flex items-center justify-center">
+  <div class="w-full max-w-sm text-center p-8">
+    <div class="animate-bounce mb-6 text-lucky-gold text-6xl">🧧</div>
+    <h1 class="text-2xl font-bold mb-3 text-lucky-gold">Lì Xì may mắn đang mở!</h1>
+    <p class="text-gray-400 text-sm mb-8">Bạn sắp nhận được một phần quà từ <span class="text-white font-medium">Mezon Red Envelope</span></p>
+
+    <div id="animation" class="bg-lucky-red/30 border border-lucky-gold/50 rounded-3xl py-8 flex flex-col items-center">
+      <p class="text-lucky-gold text-sm mb-3">Mở phong bao...</p>
+      <div class="relative">
+        <div class="w-24 h-24 rounded-full bg-lucky-gold/20 flex items-center justify-center text-lucky-gold font-semibold text-lg animate-pulse">🎁</div>
+      </div>
+    </div>
+
+    <div id="result" class="hidden mt-8">
+      <h2 class="text-3xl font-bold text-lucky-gold">+ 68 MEZ</h2>
+      <p class="mt-3 text-sm text-gray-300 italic">“Chúc bạn vạn sự như ý, phát tài phát lộc!”</p>
+      <button class="mt-6 w-full bg-lucky-red text-lucky-gold font-semibold rounded-2xl py-3 shadow-lg shadow-lucky-red/40 hover:bg-lucky-red/90 transition">Claim to Wallet</button>
+      <button class="mt-3 w-full border border-lucky-gold/40 text-lucky-gold rounded-2xl py-2 hover:bg-lucky-gold/10 transition">Share your luck 🎉</button>
+    </div>
+  </div>
+  <script>
+    // Simulate animation
+    setTimeout(() => {
+      document.getElementById('animation').classList.add('hidden');
+      document.getElementById('result').classList.remove('hidden');
+    }, 2500);
+  </script>
+</body>
+</html>
