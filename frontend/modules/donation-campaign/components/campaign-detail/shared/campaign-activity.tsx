@@ -23,14 +23,14 @@ const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
   sort_by: 'transaction_timestamp',
   sort_order: ESortOrder.DESC,
 } as const;
-export function CampaignActivity({ slug, walletAddress }: { slug: string; walletAddress: string }) {
+export function CampaignActivity({ campaignId, walletAddress }: { campaignId: string; walletAddress: string }) {
   const isDesktop = useBreakpoint(EBreakpoint.LG);
   const searchTBParams = { limit: 5 };
   const searchTransactionParams: ITransactionListParams = {
     ...DEFAULT_VALUE_DATA_SEARCH,
     filter_to_address: walletAddress,
   };
-  const { data: topContributorsData, refetch, isPending } = useTopContributor({ params: searchTBParams, slug });
+  const { data: topContributorsData, refetch, isPending } = useTopContributor({ params: searchTBParams, campaignId });
 
   const {
     data: transactionsResponse,

@@ -631,48 +631,6 @@ paths:
       summary: Get a donation campaign by slug
       tags:
       - campaigns
-  /api/v1/campaigns/slug/{slug}/top-contributors:
-    get:
-      description: Get the top contributors by slug for a specific donation campaign
-      parameters:
-      - description: Campaign Slug
-        in: path
-        name: slug
-        required: true
-        type: string
-      - default: 10
-        description: Number of top contributors to return
-        in: query
-        maximum: 10
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/models.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.TopContributorsResponse'
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/models.Response'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/models.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/models.Response'
-      summary: Get top contributors for a campaign by slug
-      tags:
-      - campaigns
   /api/v1/stats/campaign:
     get:
       description: Get overall statistics for all donation campaigns

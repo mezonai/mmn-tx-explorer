@@ -8,6 +8,8 @@ import (
 	"dong-service/utils"
 	"errors"
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -46,6 +48,10 @@ func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampa
 	}()
 
 	baseSlug := utils.GenerateSlug(campaign.Name)
+	uniqueSlug, slugErr := r.GenerateUniqueSlug(baseSlug)
+	if slugErr != nil {
+		return nil, slugErr
+	}
 
 	campaignQuery := fmt.Sprintf(`
         INSERT INTO %s.donation_campaign (name, slug, description, goal, url, end_date, donation_wallet, creator, owner, status)
@@ -57,7 +63,7 @@ func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampa
 	err = tx.QueryRow(
 		campaignQuery,
 		campaign.Name,
-		baseSlug,
+		uniqueSlug,
 		campaign.Description,
 		campaign.Goal,
 		campaign.URL,
@@ -82,42 +88,6 @@ func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampa
 		&result.CreatedAt,
 		&result.UpdatedAt,
 	)
-
-	if err != nil && strings.Contains(err.Error(), "unique_campaign_slug") {
-		uniqueSlug, slugErr := r.generateUniqueSlugWithFallback(tx, baseSlug)
-		if slugErr != nil {
-			return nil, slugErr
-		}
-
-		err = tx.QueryRow(
-			campaignQuery,
-			campaign.Name,
-			uniqueSlug,
-			campaign.Description,
-			campaign.Goal,
-			campaign.URL,
-			campaign.EndDate,
-			campaign.DonationWallet,
-			creator,
-			campaign.Owner,
-			constants.CampaignStatusDraft,
-		).Scan(
-			&result.ID,
-			&result.Name,
-			&result.Slug,
-			&result.Description,
-			&result.Goal,
-			&result.URL,
-			&result.EndDate,
-			&result.DonationWallet,
-			&result.Creator,
-			&result.Owner,
-			&result.Verified,
-			&result.Status,
-			&result.CreatedAt,
-			&result.UpdatedAt,
-		)
-	}
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create donation campaign: %w", err)
@@ -157,6 +127,11 @@ func (r *DonationCampaignRepository) CreateAndActive(campaign *models.CreateDona
 	}()
 
 	baseSlug := utils.GenerateSlug(campaign.Name)
+	uniqueSlug, slugErr := r.GenerateUniqueSlug(baseSlug)
+
+	if slugErr != nil {
+		return nil, slugErr
+	}
 
 	campaignQuery := fmt.Sprintf(`
         INSERT INTO %s.donation_campaign (name, slug, description, goal, url, end_date, donation_wallet, creator, owner, status)
@@ -169,7 +144,7 @@ func (r *DonationCampaignRepository) CreateAndActive(campaign *models.CreateDona
 	err = tx.QueryRow(
 		campaignQuery,
 		campaign.Name,
-		baseSlug,
+		uniqueSlug,
 		campaign.Description,
 		campaign.Goal,
 		campaign.URL,
@@ -194,42 +169,6 @@ func (r *DonationCampaignRepository) CreateAndActive(campaign *models.CreateDona
 		&result.CreatedAt,
 		&result.UpdatedAt,
 	)
-
-	if err != nil && strings.Contains(err.Error(), "unique_campaign_slug") {
-		uniqueSlug, slugErr := r.generateUniqueSlugWithFallback(tx, baseSlug)
-		if slugErr != nil {
-			return nil, slugErr
-		}
-
-		err = tx.QueryRow(
-			campaignQuery,
-			campaign.Name,
-			uniqueSlug,
-			campaign.Description,
-			campaign.Goal,
-			campaign.URL,
-			campaign.EndDate,
-			campaign.DonationWallet,
-			creator,
-			campaign.Owner,
-			constants.CampaignStatusActive,
-		).Scan(
-			&result.ID,
-			&result.Name,
-			&result.Slug,
-			&result.Description,
-			&result.Goal,
-			&result.URL,
-			&result.EndDate,
-			&result.DonationWallet,
-			&result.Creator,
-			&result.Owner,
-			&result.Verified,
-			&result.Status,
-			&result.CreatedAt,
-			&result.UpdatedAt,
-		)
-	}
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create donation campaign: %w", err)
@@ -332,17 +271,6 @@ func (r *DonationCampaignRepository) GetBySlug(slug string) (*models.DonationCam
 	}
 
 	return &campaign, nil
-}
-
-func (r *DonationCampaignRepository) generateUniqueSlugWithFallback(tx *sql.Tx, baseSlug string) (string, error) {
-	var nextID int64
-	idQuery := fmt.Sprintf("SELECT COALESCE(MAX(id), 0) + 1 FROM %s.donation_campaign", r.dongSchema)
-	err := tx.QueryRow(idQuery).Scan(&nextID)
-	if err != nil {
-		return "", fmt.Errorf("failed to get next ID for unique slug: %w", err)
-	}
-
-	return utils.GenerateUniqueSlug(baseSlug, nextID), nil
 }
 
 // GetByIDAndCreator retrieves a donation campaign by ID and creator
@@ -811,4 +739,75 @@ func (r *DonationCampaignRepository) GetTopContributorsBySlug(slug string, limit
 		CampaignID:   campaignID,
 		Contributors: contributors,
 	}, nil
+}
+
+func (r *DonationCampaignRepository) CheckSlugExists(slug string) (bool, error) {
+	var count int
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s.donation_campaign WHERE slug = $1", r.dongSchema)
+	err := r.db.QueryRow(query, slug).Scan(&count)
+	if err != nil {
+		return false, fmt.Errorf("failed to check slug existence: %w", err)
+	}
+	return count > 0, nil
+}
+
+func (r *DonationCampaignRepository) GenerateUniqueSlug(baseSlug string) (string, error) {
+	exists, err := r.CheckSlugExists(baseSlug)
+	if err != nil {
+		return "", err
+	}
+
+	if !exists {
+		return baseSlug, nil
+	}
+
+	query := fmt.Sprintf(`
+		SELECT slug 
+		FROM %s.donation_campaign 
+		WHERE slug = $1 OR slug ~ $2
+		ORDER BY slug
+	`, r.dongSchema)
+
+	pattern := fmt.Sprintf("^%s-[0-9]+$", regexp.QuoteMeta(baseSlug))
+
+	rows, err := r.db.Query(query, baseSlug, pattern)
+	if err != nil {
+		return "", fmt.Errorf("failed to query existing slugs: %w", err)
+	}
+	defer rows.Close()
+
+	maxIndex := 0
+	hasBaseSlug := false
+
+	for rows.Next() {
+		var existingSlug string
+		if err := rows.Scan(&existingSlug); err != nil {
+			return "", fmt.Errorf("failed to scan slug: %w", err)
+		}
+
+		if existingSlug == baseSlug {
+			hasBaseSlug = true
+			continue
+		}
+
+		suffix := strings.TrimPrefix(existingSlug, baseSlug+"-")
+		if index, err := strconv.Atoi(suffix); err == nil {
+			if index > maxIndex {
+				maxIndex = index
+			}
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return "", fmt.Errorf("failed to iterate slugs: %w", err)
+	}
+
+	var nextIndex int
+	if hasBaseSlug {
+		nextIndex = maxIndex + 1
+	} else {
+		nextIndex = maxIndex + 1
+	}
+
+	return fmt.Sprintf("%s-%d", baseSlug, nextIndex), nil
 }

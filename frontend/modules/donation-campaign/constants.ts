@@ -10,7 +10,6 @@ export const DONATION_ENDPOINTS = {
   MY_DONATIONS: '/donations/my-donations',
   PUBLISH_CAMPAIGN: (id: string) => `/api/v1/campaigns/${id}/activate`,
   TOP_CONTRIBUTOR: (id: string) => `/api/v1/campaigns/${id}/top-contributors`,
-  TOP_CONTRIBUTOR_BY_SLUG: (slug: string) => `/api/v1/campaigns/slug/${slug}/top-contributors`,
   REFRESH_CAMPAIGN_RAISED: (id: string) => `/api/v1/campaigns/${id}/sync`,
 } as const;
 

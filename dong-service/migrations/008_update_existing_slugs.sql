@@ -1,6 +1,4 @@
 CREATE EXTENSION IF NOT EXISTS unaccent;
-ALTER TABLE donation_campaign ADD COLUMN IF NOT EXISTS slug VARCHAR(255);
-
 CREATE OR REPLACE FUNCTION trans_vietnamese(input_text TEXT) 
 RETURNS TEXT AS $$
 BEGIN
@@ -19,14 +17,16 @@ BEGIN
     base_slug := REGEXP_REPLACE(base_slug, '[^a-z0-9]+', '-', 'g');
     base_slug := TRIM(BOTH '-' FROM base_slug);
     base_slug := REGEXP_REPLACE(base_slug, '-+', '-', 'g');
+    
     IF base_slug = '' OR base_slug IS NULL THEN
         base_slug := 'campaign';
     END IF;
+    
     RETURN base_slug;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
-CREATE OR REPLACE FUNCTION generate_unique_campaign_slug(campaign_name TEXT, campaign_id BIGINT)
+CREATE OR REPLACE FUNCTION regenerate_clean_slug(campaign_name TEXT, campaign_id BIGINT)
 RETURNS TEXT AS $$
 DECLARE
     base_slug TEXT;
@@ -62,30 +62,40 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+ALTER TABLE donation_campaign DROP CONSTRAINT IF EXISTS unique_campaign_slug;
+
 DO $$
 DECLARE
     campaign RECORD;
     new_slug TEXT;
+    old_slug TEXT;
 BEGIN
+    RAISE NOTICE 'Starting slug regeneration...';
+    
     FOR campaign IN 
-        SELECT id, name 
+        SELECT id, name, slug 
         FROM donation_campaign 
-        WHERE slug IS NULL 
         ORDER BY id
     LOOP
-        new_slug := generate_unique_campaign_slug(campaign.name, campaign.id);
+        old_slug := campaign.slug;
+        new_slug := regenerate_clean_slug(campaign.name, campaign.id);
         
-        UPDATE donation_campaign 
-        SET slug = new_slug
-        WHERE id = campaign.id;
+        IF old_slug != new_slug THEN
+            UPDATE donation_campaign 
+            SET slug = new_slug
+            WHERE id = campaign.id;
+            
+            RAISE NOTICE 'Campaign ID %: % -> %', campaign.id, old_slug, new_slug;
+        ELSE
+            RAISE NOTICE 'Campaign ID %: % (no change)', campaign.id, old_slug;
+        END IF;
     END LOOP;
+    
+    RAISE NOTICE 'Slug regeneration completed!';
 END $$;
 
-ALTER TABLE donation_campaign ALTER COLUMN slug SET NOT NULL;
 ALTER TABLE donation_campaign ADD CONSTRAINT unique_campaign_slug UNIQUE (slug);
 
-CREATE INDEX IF NOT EXISTS idx_donation_campaign_slug ON donation_campaign(slug);
-
-DROP FUNCTION IF EXISTS generate_unique_campaign_slug(TEXT, BIGINT);
+DROP FUNCTION IF EXISTS regenerate_clean_slug(TEXT, BIGINT);
 DROP FUNCTION IF EXISTS generate_base_slug(TEXT);
-DROP FUNCTION IF EXISTS transliterate_vietnamese(TEXT);
+DROP FUNCTION IF EXISTS trans_vietnamese(TEXT);
