@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode, useMemo } from 'react';
+import { createContext, useContext, useState, useCallback, ReactNode, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ROUTES } from '@/configs/routes.config';
@@ -102,7 +102,7 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
       }
       const res = await createMutation.mutateAsync(draftData as any);
       toast.success('Draft saved');
-      router.push(ROUTES.CAMPAIGN_EDIT(res.id));
+      router.push(ROUTES.CAMPAIGN(res.id));
     } catch (error: any) {
       console.error('Error saving draft campaign:', error);
       const message = error?.response?.data?.message || 'Failed to save draft';

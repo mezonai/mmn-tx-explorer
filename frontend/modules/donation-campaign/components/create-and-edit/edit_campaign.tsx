@@ -1,7 +1,7 @@
 'use client';
 import { CreateCampaignProvider, useCreateCampaignContext } from '../../context/CreateCampaignContext';
 import { CampaignSidebar } from './campaign-sidebar';
-import { CampaignEditor } from './campaign-editor.tsx';
+import { CampaignHeader } from './campaign-header';
 import { Separator } from '@/components/ui/separator';
 import { CampaignForm } from './campaign-form';
 import { useParams } from 'next/navigation';
@@ -28,14 +28,14 @@ function EditCampaignContent() {
   return (
     <div className="space-y-16 pb-16">
       <section className="">
-        <CampaignEditor />
+        <CampaignHeader type="edit" />
       </section>
       <Separator className="bg-gray-200/70 dark:bg-gray-800" />
 
       <section className="">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_22rem]">
-          <CampaignForm />
-          <CampaignSidebar />
+          <CampaignForm type="edit" />
+          <CampaignSidebar type="edit" />
         </div>
       </section>
     </div>

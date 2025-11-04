@@ -5,7 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useCreateCampaignContext } from '@/modules/donation-campaign/context/CreateCampaignContext';
-export function CampaignBasics() {
+
+interface CampaignBasicsProps {
+  disableName?: boolean;
+  disableDescription?: boolean;
+}
+
+export function CampaignBasics({ disableName = false, disableDescription = false }: CampaignBasicsProps) {
   const { form, updateField } = useCreateCampaignContext();
 
   const handleInputChange = (field: keyof typeof form, value: any) => {
@@ -29,7 +35,12 @@ export function CampaignBasics() {
       <CardContent className="space-y-5">
         <div>
           <label className="text-foreground mb-2 block text-sm font-medium">Campaign name</label>
-          <Input type="text" value={form.name} onChange={(e) => handleInputChange('name', e.target.value)} disabled />
+          <Input
+            type="text"
+            value={form.name}
+            onChange={(e) => handleInputChange('name', e.target.value)}
+            disabled={disableName}
+          />
         </div>
 
         <div>
@@ -40,6 +51,7 @@ export function CampaignBasics() {
             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
               handleInputChange('shortDescription', e.target.value)
             }
+            disabled={disableDescription}
           />
         </div>
       </CardContent>
