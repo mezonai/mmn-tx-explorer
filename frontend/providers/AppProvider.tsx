@@ -2,11 +2,13 @@
 
 import { STORAGE_KEYS } from '@/constant';
 import {
-  AUTHENTICATION_CONSTANTS,
   AUTHENTICATION_ENDPOINT,
   AuthenticationService,
+  decodeState,
+  encodeState,
   fetchAndStoreZkProof,
   generateAndStoreKeyPair,
+  generateCsrfToken,
   handleTokenStorage,
   LoginResponse,
   mmnClient,
@@ -78,33 +80,24 @@ export function AppProvider({ children }: AppProviderProps) {
     }
     const code = searchParams.get('code');
     const state = searchParams.get('state');
-    if (!code) return;
+    const csrfTokenFromStorage = sessionStorage.getItem('oauth_csrf_token');
+    if (!code || !state || !csrfTokenFromStorage) {
+      console.error('Missing code, state, or CSRF token in storage.');
+      router.replace('/?error=invalid_callback');
+      return;
+    }
 
     const handleAuthentication = async (authCode: string) => {
       try {
         const userInfo: LoginResponse = await AuthenticationService.getUserInfo(authCode);
         setIsAuthenticated(true);
-
-        let restored = false;
-        if (state) {
-          const redirectUrl = localStorage.getItem(AUTHENTICATION_CONSTANTS.LOGIN_REDIRECT);
-          if (redirectUrl) {
-            router.replace(redirectUrl);
-            localStorage.removeItem(AUTHENTICATION_CONSTANTS.LOGIN_REDIRECT);
-            restored = true;
-          }
-        }
-        if (!restored) router.replace('/');
-
+        const originalState = decodeState(state);
         handleTokenStorage(userInfo);
-
         const keypair = generateAndStoreKeyPair();
         setKeypair(keypair);
-
         const senderAddress = mmnClient.getAddressFromUserId(userInfo.user.user_id);
         const userObject = processAndStoreUser(userInfo.user, senderAddress);
         setUser(userObject);
-
         const fetchedZk = await fetchAndStoreZkProof(
           userInfo.user.user_id || userInfo.user.sub,
           keypair.publicKey,
@@ -114,7 +107,7 @@ export function AppProvider({ children }: AppProviderProps) {
         if (fetchedZk) {
           setZkProof(fetchedZk);
         }
-
+        router.replace(originalState.redirect_uri || '/');
         toast.success('Login successful!');
       } catch {
         toast.error('Login failed!');
@@ -174,8 +167,15 @@ export function useAuthActions() {
   const { setIsAuthenticated, setUser, setZkProof, setKeypair } = useApp();
 
   const login = () => {
-    localStorage.setItem(AUTHENTICATION_CONSTANTS.LOGIN_REDIRECT, window.location.href);
-    window.location.href = AUTHENTICATION_ENDPOINT.LOGIN;
+    const csrfToken = generateCsrfToken();
+    sessionStorage.setItem('oauth_csrf_token', csrfToken);
+    const currentPath = location.pathname + location.search;
+    const stateObject = {
+      csrf: csrfToken,
+      redirect_uri: currentPath,
+    };
+    const encodedState = encodeState(stateObject);
+    AuthenticationService.login(encodedState);
   };
 
   const logout = () => {
