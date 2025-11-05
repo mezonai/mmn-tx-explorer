@@ -13,6 +13,8 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/configs/routes.config';
 import { CampaignModeProps } from '../types';
+import { DeleteConfirmDialog } from './delete-confirm-dialog';
+import { useDeleteCampaign } from '@/modules/donation-campaign/hooks';
 
 const CampaignActions = ({ type = 'create' }: CampaignModeProps) => {
   const { handleSubmit, isSaving, validation } = useCreateCampaignContext();
@@ -22,6 +24,7 @@ const CampaignActions = ({ type = 'create' }: CampaignModeProps) => {
 
   const activateMutation = useActiveCampaign();
   const closeMutation = useCloseCampaign();
+  const deleteMutation = useDeleteCampaign();
 
   const isMutating = activateMutation.isPending || closeMutation.isPending;
 
@@ -49,6 +52,17 @@ const CampaignActions = ({ type = 'create' }: CampaignModeProps) => {
       toast.success('Campaign closed');
     } catch {
       toast.error('Failed to close campaign');
+    }
+  };
+
+  const handleDeleteDraft = async () => {
+    if (!campaignId) return;
+    try {
+      await deleteMutation.mutateAsync(campaignId);
+      toast.success('Campaign deleted');
+      router.push(ROUTES.DONATION_CAMPAIGN);
+    } catch (e) {
+      toast.error('Failed to delete campaign');
     }
   };
   return (
@@ -99,16 +113,35 @@ const CampaignActions = ({ type = 'create' }: CampaignModeProps) => {
           </Button>
 
           {canPublish && (
-            <Button
-              type="button"
-              onClick={handlePublish}
-              disabled={isMutating || isFetching}
-              className={cn(
-                'bg-brand-primary hover:bg-brand-primary/90 shadow-brand-primary/30 font-semibold text-white shadow-lg'
-              )}
-            >
-              {isMutating ? 'Publishing…' : 'Publish campaign'}
-            </Button>
+            <>
+              <Button
+                type="button"
+                onClick={handlePublish}
+                disabled={isMutating || isFetching}
+                className={cn(
+                  'bg-brand-primary hover:bg-brand-primary/90 shadow-brand-primary/30 font-semibold text-white shadow-lg'
+                )}
+              >
+                {isMutating ? 'Publishing…' : 'Publish campaign'}
+              </Button>
+              <DeleteConfirmDialog
+                trigger={
+                  <Button
+                    disabled={!campaign || isFetching || deleteMutation.isPending}
+                    type="button"
+                    variant="outline"
+                    className="border border-rose-600 bg-rose-600 text-white shadow-lg shadow-rose-600/20 hover:bg-rose-600/80 hover:text-white dark:bg-rose-800 dark:hover:bg-rose-800/80"
+                  >
+                    Delete Campaign
+                  </Button>
+                }
+                onConfirm={handleDeleteDraft}
+                title="Delete Campaign?"
+                description="Are you sure you want to delete this campaign? This action cannot be undone."
+                confirmText="Delete"
+                cancelText="Cancel"
+              />
+            </>
           )}
 
           {canClose && (
@@ -123,24 +156,6 @@ const CampaignActions = ({ type = 'create' }: CampaignModeProps) => {
               {isMutating ? 'Closing…' : 'Close campaign'}
             </Button>
           )}
-
-          {/* <DeleteConfirmDialog
-            trigger={
-              <Button
-                disabled={!isSaved}
-                type="button"
-                variant="outline"
-                className="border-rose-200 text-rose-600 hover:border-rose-400 hover:text-rose-500 dark:border-rose-500/20 dark:text-rose-300"
-              >
-                Delete draft
-              </Button>
-            }
-            onConfirm={handleDeleteDraft}
-            title="Delete draft?"
-            description="Are you sure you want to delete this draft? This action cannot be undone."
-            confirmText="Delete"
-            cancelText="Cancel"
-          /> */}
         </CardContent>
       )}
     </Card>

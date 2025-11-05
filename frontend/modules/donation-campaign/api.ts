@@ -57,7 +57,7 @@ export class DonationCampaignService {
   }
 
   static async deleteCampaign(id: string): Promise<void> {
-    await apiDongClient.delete(DONATION_ENDPOINTS.CAMPAIGN_BY_ID(id));
+    await apiDongClient.delete(DONATION_ENDPOINTS.DELETE_CAMPAIGN(id));
   }
 
   static async getUserDonations(params: { page?: number; limit?: number } = {}) {
