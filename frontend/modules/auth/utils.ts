@@ -58,29 +58,7 @@ export const fetchAndStoreZkProof = async (
     console.error('Error fetching ZK proofs', error);
   }
 };
-export function encodeState(stateObject: StateObject): string {
-  const jsonString = JSON.stringify(stateObject);
-  const base64String = btoa(jsonString);
-  return base64String.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-}
 
-export function decodeState(encodedState: string): StateObject {
-  try {
-    let base64String = encodedState.replace(/-/g, '+').replace(/_/g, '/');
-    while (base64String.length % 4) {
-      base64String += '=';
-    }
-    const jsonString = atob(base64String);
-    const decodedObject = JSON.parse(jsonString);
-    if (!decodedObject || typeof decodedObject.csrf !== 'string' || typeof decodedObject.redirect_url !== 'string') {
-      throw new Error('Invalid state object after decoding.');
-    }
-    return decodedObject;
-  } catch (error) {
-    console.error('Error decoding state:', error);
-    throw new Error('Invalid or corrupted state string.');
-  }
-}
 export function generateCsrfToken(length = 32): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';

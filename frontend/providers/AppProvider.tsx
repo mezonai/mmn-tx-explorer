@@ -5,8 +5,6 @@ import {
   AUTHENTICATION_CONSTANTS,
   AUTHENTICATION_ENDPOINT,
   AuthenticationService,
-  decodeState,
-  encodeState,
   fetchAndStoreZkProof,
   generateAndStoreKeyPair,
   generateCsrfToken,
@@ -91,7 +89,7 @@ export function AppProvider({ children }: AppProviderProps) {
       try {
         const userInfo: LoginResponse = await AuthenticationService.getUserInfo(authCode);
         setIsAuthenticated(true);
-        const originalState = decodeState(state);
+        const originalState = JSON.parse(Buffer.from(state, 'base64').toString());
         handleTokenStorage(userInfo);
         const keypair = generateAndStoreKeyPair();
         setKeypair(keypair);
@@ -174,7 +172,7 @@ export function useAuthActions() {
       csrf: csrfToken,
       redirect_url: currentPath,
     };
-    const encodedState = encodeState(stateObject);
+    const encodedState = Buffer.from(JSON.stringify(stateObject)).toString('base64');
     router.push(`${AUTHENTICATION_ENDPOINT.LOGIN}?state=${encodedState}`);
   };
 
