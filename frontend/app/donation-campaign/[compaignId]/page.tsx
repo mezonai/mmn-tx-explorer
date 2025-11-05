@@ -6,41 +6,37 @@ import { notFound, redirect } from 'next/navigation';
 
 interface CampaignDetailPageProps {
   params: Promise<{
-    slug: string;
+    compaignId: string;
   }>;
 }
 
 export async function generateMetadata({ params }: CampaignDetailPageProps): Promise<Metadata> {
-  const { slug } = await params;
+  const { compaignId } = await params;
 
   try {
-    const campaign = await DonationCampaignService.getCampaignByIdOrSlug(slug);
+    const result = await DonationCampaignService.getCampaignByIdOrSlug(compaignId);
     return {
-      title: campaign.name || `Campaign ${slug}`,
-      description: campaign.description,
+      title: result.campaign.name || `Campaign ${compaignId}`,
+      description: result.campaign.description,
     };
   } catch {
     return {
-      title: `Campaign ${slug}`,
+      title: `Campaign ${compaignId}`,
     };
   }
 }
 
 export default async function DonationCampaignDetailPage({ params }: CampaignDetailPageProps) {
   try {
-    const { slug } = await params;
-    const isNumericId = /^\d+$/.test(slug);
+    const { compaignId } = await params;
 
-    if (isNumericId) {
-      const campaign = await DonationCampaignService.getCampaignById(slug);
-      if (campaign.slug) {
-        redirect(ROUTES.CAMPAIGN(campaign.slug));
-      }
-      return <CampaignDetail campaign={campaign} />;
-    } else {
-      const campaign = await DonationCampaignService.getCampaignBySlug(slug);
-      return <CampaignDetail campaign={campaign} />;
+    const result = await DonationCampaignService.getCampaignByIdOrSlug(compaignId);
+
+    if (result.shouldRedirect && result.redirectSlug) {
+      redirect(ROUTES.CAMPAIGN(result.redirectSlug));
     }
+
+    return <CampaignDetail campaign={result.campaign} />;
   } catch (error: unknown) {
     if (error && typeof error === 'object' && 'response' in error) {
       const httpError = error as { response: { status: number } };

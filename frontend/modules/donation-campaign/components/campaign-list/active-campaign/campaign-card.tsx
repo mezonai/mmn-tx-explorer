@@ -85,7 +85,7 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
         <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{daysLeft}</span>
       </div>
       <h3 className="dark:group-hover:text-brand-primary group-hover:text-primary dark:group-hover:text-primary-light mt-4 text-lg font-semibold text-gray-900 transition dark:text-white">
-        <Link href={ROUTES.CAMPAIGN(slug)}>{name}</Link>
+        <Link href={ROUTES.CAMPAIGN(slug || id)}>{name}</Link>
       </h3>
       <p className="mt-2 line-clamp-3 text-sm leading-6 text-gray-600 dark:text-gray-400">{description}</p>
       <div className="mt-auto flex flex-col gap-6 pt-6">
@@ -121,7 +121,7 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
           className="bg-primary/10 text-brand-primary dark:hover:bg-brand-primary dark:bg-brand-primary/10 dark:border-brand-primary dark:text-primary-light inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition hover:text-white dark:border dark:hover:text-white"
           asChild
         >
-          <Link href={ROUTES.CAMPAIGN(slug)}>{buttonLabel}</Link>
+          <Link href={ROUTES.CAMPAIGN(slug || id)}>{buttonLabel}</Link>
         </Button>
       </div>
     </article>

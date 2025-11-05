@@ -36,13 +36,25 @@ export class DonationCampaignService {
     return campaign;
   }
 
-  static async getCampaignByIdOrSlug(idOrSlug: string): Promise<DonationCampaign> {
+  static async getCampaignByIdOrSlug(idOrSlug: string): Promise<{ campaign: DonationCampaign; shouldRedirect: boolean; redirectSlug?: string }> {
     const isNumericId = /^\d+$/.test(idOrSlug);
-    
+
     if (isNumericId) {
-      return this.getCampaignById(idOrSlug);
+      const campaign = await this.getCampaignById(idOrSlug);
+      if (!campaign.slug) {
+        throw new Error('Campaign does not have a slug');
+      }
+      return {
+        campaign,
+        shouldRedirect: true,
+        redirectSlug: campaign.slug
+      };
     } else {
-      return this.getCampaignBySlug(idOrSlug);
+      const campaign = await this.getCampaignBySlug(idOrSlug);
+      return {
+        campaign,
+        shouldRedirect: false
+      };
     }
   }
 
