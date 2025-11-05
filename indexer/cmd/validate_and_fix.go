@@ -80,7 +80,9 @@ func RunValidateAndFix(cmd *cobra.Command, args []string) {
 		}
 
 		startBlock = new(big.Int).Add(batchEndBlock, big.NewInt(1))
-		cursor.Update(batchEndBlock)
+		if err := cursor.Update(batchEndBlock); err != nil {
+			log.Fatal().Err(err).Msgf("failed to update validation cursor %v", cursor)
+		}
 	}
 }
 

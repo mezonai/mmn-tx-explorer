@@ -30,7 +30,6 @@ type PostgresConnector struct {
 
 // WalletUpdateBatcher manages batched wallet updates and realtime MMN service calls
 type WalletUpdateBatcher struct {
-	mu              sync.RWMutex
 	mmnQueue        chan WalletStats
 	mmnBatchSize    int
 	mmnBatchTimeout time.Duration
@@ -1605,7 +1604,9 @@ func (p *PostgresConnector) insertTransactions(transactions []common.Transaction
 
 	defer func() {
 		if err != nil {
-			tx.Rollback()
+			if rbErr := tx.Rollback(); rbErr != nil && rbErr != sql.ErrTxDone {
+				log.Error().Err(rbErr).Msg("Failed to rollback transaction")
+			}
 		}
 	}()
 

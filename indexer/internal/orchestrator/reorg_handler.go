@@ -93,7 +93,9 @@ func (rh *ReorgHandler) Start(ctx context.Context) {
 			}
 
 			rh.lastCheckedBlock = mostRecentBlockChecked
-			rh.storage.OrchestratorStorage.SetLastReorgCheckedBlockNumber(rh.rpc.GetChainID(), mostRecentBlockChecked)
+			if err := rh.storage.OrchestratorStorage.SetLastReorgCheckedBlockNumber(rh.rpc.GetChainID(), mostRecentBlockChecked); err != nil {
+				log.Error().Err(err).Msg("failed to persist last reorg checked block number")
+			}
 			metrics.ReorgHandlerLastCheckedBlock.Set(float64(mostRecentBlockChecked.Int64()))
 		}
 	}
