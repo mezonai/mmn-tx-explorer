@@ -2,10 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { DonationCampaignService } from '../api';
 import { QUERY_KEYS } from '../constants';
 
-export const useCampaign = (slug: string) => {
+export const useCampaign = (campaignId: string) => {
   return useQuery({
-    queryKey: [QUERY_KEYS.CAMPAIGN, slug],
-    queryFn: () => DonationCampaignService.getCampaignBySlug(slug),
-    enabled: !!slug,
+    queryKey: [QUERY_KEYS.CAMPAIGN, campaignId],
+    queryFn: () => DonationCampaignService.getCampaignById(campaignId),
+    enabled: !!campaignId,
   });
 };

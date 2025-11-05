@@ -28,8 +28,22 @@ export class DonationCampaignService {
   }
 
   static async getCampaignBySlug(slug: string): Promise<DonationCampaign> {
-    const { data } = await apiDongClient.get<{ data: DonationCampaign }>(DONATION_ENDPOINTS.CAMPAIGN_BY_SLUG(slug));
-    return data.data;
+    const campaigns = await this.getCampaigns({ page: 0, limit: 1000 });
+    const campaign = campaigns.data.find(c => c.slug === slug);
+    if (!campaign) {
+      throw new Error('Campaign not found');
+    }
+    return campaign;
+  }
+
+  static async getCampaignByIdOrSlug(idOrSlug: string): Promise<DonationCampaign> {
+    const isNumericId = /^\d+$/.test(idOrSlug);
+    
+    if (isNumericId) {
+      return this.getCampaignById(idOrSlug);
+    } else {
+      return this.getCampaignBySlug(idOrSlug);
+    }
   }
 
   static async createCampaign(campaignData: CreateCampaignRequest): Promise<DonationCampaign> {

@@ -233,46 +233,6 @@ func (r *DonationCampaignRepository) GetByID(id int64) (*models.DonationCampaign
 	return &campaign, nil
 }
 
-func (r *DonationCampaignRepository) GetBySlug(slug string) (*models.DonationCampaign, error) {
-	query := fmt.Sprintf(`
-		SELECT 
-            dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
-			cs.total_amount, cs.total_contributor
-		FROM %s.donation_campaign dc
-		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
-		WHERE dc.slug = $1
-	`, r.dongSchema, r.dongSchema)
-
-	var campaign models.DonationCampaign
-	err := r.db.QueryRow(query, slug).Scan(
-		&campaign.ID,
-		&campaign.Name,
-		&campaign.Slug,
-		&campaign.Description,
-		&campaign.Goal,
-		&campaign.URL,
-		&campaign.EndDate,
-		&campaign.DonationWallet,
-		&campaign.Creator,
-		&campaign.Owner,
-		&campaign.Verified,
-		&campaign.Status,
-		&campaign.CreatedAt,
-		&campaign.UpdatedAt,
-		&campaign.TotalAmount,
-		&campaign.TotalContributors,
-	)
-
-	if err == sql.ErrNoRows {
-		return nil, ErrNotFound
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to get donation campaign by slug: %w", err)
-	}
-
-	return &campaign, nil
-}
-
 // GetByIDAndCreator retrieves a donation campaign by ID and creator
 func (r *DonationCampaignRepository) GetByIDAndCreator(id int64, creator int64) (*models.DonationCampaign, error) {
 	query := fmt.Sprintf(`

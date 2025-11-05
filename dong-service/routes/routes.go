@@ -55,7 +55,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		campaigns_public := v1.Group("/campaigns")
 		{
 			campaigns_public.GET("", campaignHandler.ListCampaigns)
-			campaigns_public.GET("/slug/:slug", campaignHandler.GetCampaignBySlug)
 			campaigns_public.GET("/:id", campaignHandler.GetCampaign)
 			campaigns_public.GET("/:id/top-contributors", campaignHandler.GetTopContributors)
 			campaigns_public.POST("/:id/sync", statsHandler.SyncCampaign)
