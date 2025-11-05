@@ -263,6 +263,38 @@ paths:
       tags:
       - campaigns
   /api/v1/admin/campaigns/{id}:
+    delete:
+      description: Delete an existing donation campaign (only the creator can delete)
+      parameters:
+      - description: Campaign ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - BearerAuth: []
+      summary: Delete a donation campaign
+      tags:
+      - campaigns
     put:
       consumes:
       - application/json

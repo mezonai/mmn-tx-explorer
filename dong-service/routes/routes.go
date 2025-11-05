@@ -49,6 +49,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 			campaigns_private.PUT("/:id", campaignHandler.UpdateCampaign)
 			campaigns_private.PATCH("/:id/activate", campaignHandler.ActivateCampaign)
 			campaigns_private.PATCH("/:id/close", campaignHandler.CloseCampaign)
+			campaigns_private.DELETE("/:id", campaignHandler.DeleteCampaign)
 		}
 
 		// Campaign routes (public)

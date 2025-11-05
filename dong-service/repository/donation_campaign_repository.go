@@ -605,3 +605,26 @@ func (r *DonationCampaignRepository) GetTopContributors(campaignID int64, limit 
 		Contributors: contributors,
 	}, nil
 }
+
+// Delete removes a donation campaign by ID if the requester is the creator
+func (r *DonationCampaignRepository) Delete(id int64, creator int64) error {
+	query := fmt.Sprintf(`
+		DELETE FROM %s.donation_campaign
+		WHERE id = $1 AND creator = $2
+	`, r.dongSchema)
+
+	res, err := r.db.Exec(query, id, creator)
+	if err != nil {
+		return fmt.Errorf("failed to delete donation campaign: %w", err)
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to determine delete result: %w", err)
+	}
+	if affected == 0 {
+		return ErrPermissionDenied
+	}
+
+	return nil
+}
