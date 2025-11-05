@@ -1,0 +1,156 @@
+<html class="fontawesome-i2svg-active fontawesome-i2svg-complete">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script> window.FontAwesomeConfig = { autoReplaceSvg: 'nest'};</script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#6941c6',
+            'primary-light': '#8b5cf6',
+            'primary-dark': '#553c9a',
+            dark: '#0B1533',
+            'dark-light': '#1e293b',
+            neon: '#00f5ff'
+          },
+          fontFamily: {
+            inter: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+  <style>
+    body { font-family: 'Inter', sans-serif !important; }
+    .fa, .fas, .far, .fal, .fab { font-family: 'Font Awesome 6 Free', 'Font Awesome 6 Brands' !important; }
+  </style>
+</head>
+<body class="bg-dark text-white">
+  <!-- Header -->
+  <header class="bg-dark-light border-b border-gray-700 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+      <div class="flex items-center space-x-3">
+        <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+          <i class="fa-solid fa-right-left text-white"></i>
+        </div>
+        <h1 class="text-lg font-bold">Mezon Dong Bridge</h1>
+      </div>
+      <div class="flex items-center space-x-4">
+        <button class="bg-primary px-4 py-2 rounded-lg hover:bg-primary-dark transition-colors">
+          Connect MetaMask
+        </button>
+        <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-1.jpg" alt="User" class="w-8 h-8 rounded-full">
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <section class="bg-dark-light border border-gray-700 rounded-xl p-6">
+      <h2 class="text-2xl font-semibold mb-6 text-white">MZĐ ↔ WMZĐ Swap</h2>
+
+      <!-- Swap Direction Tabs -->
+      <div class="flex justify-center space-x-4 mb-6">
+        <button class="px-4 py-2 rounded-lg bg-primary text-white">MZĐ → WMZĐ</button>
+        <button class="px-4 py-2 rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 transition">WMZĐ → MZĐ</button>
+      </div>
+
+      <!-- Amount Input -->
+      <div class="space-y-4 mb-8">
+        <div>
+          <label class="block text-gray-400 text-sm mb-2">Amount</label>
+          <input type="number" placeholder="0.0" class="bg-gray-800 border border-gray-700 rounded-lg w-full p-3 text-white focus:outline-none focus:border-primary" />
+        </div>
+
+        <div class="flex justify-between text-sm text-gray-400">
+          <span>Available: 12,543.00 MZĐ</span>
+          <button class="text-primary hover:text-primary-light">Max</button>
+        </div>
+      </div>
+
+      <!-- Network Information -->
+      <div class="grid grid-cols-2 gap-6 mb-8">
+        <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+          <p class="text-gray-400 text-sm mb-2">From Network</p>
+          <p class="text-white font-semibold">Mezon Mainnet</p>
+        </div>
+        <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+          <p class="text-gray-400 text-sm mb-2">To Network</p>
+          <p class="text-white font-semibold">Binance Smart Chain</p>
+        </div>
+      </div>
+
+      <!-- Conversion Rate -->
+      <div class="text-center text-gray-400 text-sm mb-6">
+        <i class="fa-solid fa-scale-balanced text-primary mr-2"></i>
+        1 MZĐ = 1 WMZĐ (Fee 0.1%)
+      </div>
+
+      <!-- Estimated Output -->
+      <div class="bg-gray-800/40 border border-gray-700 rounded-lg p-4 mb-6">
+        <div class="flex justify-between">
+          <span class="text-gray-300">You’ll receive</span>
+          <span class="text-white font-mono">999.00 WMZĐ</span>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">After fees & bridge confirmation</p>
+      </div>
+
+      <!-- Action Button -->
+      <button class="w-full bg-primary hover:bg-primary-dark py-3 rounded-lg text-white font-semibold transition-colors">
+        Swap Now
+      </button>
+
+      <!-- Swap Progress Section -->
+      <div class="mt-10 bg-gray-800/30 border border-gray-700 rounded-lg p-4">
+        <h3 class="text-lg font-semibold mb-3">Bridge Status</h3>
+        <ul class="space-y-3 text-sm">
+          <li class="flex items-center space-x-2 text-green-400"><i class="fa-solid fa-circle-check"></i><span>Transaction detected on Mezon Mainnet</span></li>
+          <li class="flex items-center space-x-2 text-blue-400"><i class="fa-solid fa-clock"></i><span>Processing bridge off-chain</span></li>
+          <li class="flex items-center space-x-2 text-gray-400"><i class="fa-solid fa-ellipsis"></i><span>Waiting for confirmation on BSC...</span></li>
+        </ul>
+      </div>
+
+      <!-- History -->
+      <div class="mt-10">
+        <h3 class="text-lg font-semibold mb-3">Recent Swaps</h3>
+        <div class="space-y-3">
+          <div class="flex justify-between items-center bg-gray-800/40 p-3 rounded-lg">
+            <div>
+              <p class="text-white text-sm">MZĐ → WMZĐ</p>
+              <p class="text-xs text-gray-400">0x8f1a...c9b3 • 5 min ago</p>
+            </div>
+            <p class="text-green-400 font-mono">+150 WMZĐ</p>
+          </div>
+
+          <div class="flex justify-between items-center bg-gray-800/40 p-3 rounded-lg">
+            <div>
+              <p class="text-white text-sm">WMZĐ → MZĐ</p>
+              <p class="text-xs text-gray-400">0x2d7c...4ab2 • 1 hour ago</p>
+            </div>
+            <p class="text-blue-400 font-mono">+500 MZĐ</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-dark-light border-t border-gray-700 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex justify-between items-center text-sm text-gray-400">
+      <span>© 2025 Mezon Dong — Bridge Service</span>
+      <div class="flex space-x-4">
+        <a href="#" class="hover:text-white">Privacy</a>
+        <a href="#" class="hover:text-white">Terms</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
