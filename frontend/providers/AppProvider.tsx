@@ -84,7 +84,6 @@ export function AppProvider({ children }: AppProviderProps) {
     const csrfTokenFromStorage = sessionStorage.getItem(AUTHENTICATION_CONSTANTS.CRSF_TOKEN);
     if (!code || !state || !csrfTokenFromStorage) {
       console.error('Missing code, state, or CSRF token in storage.');
-      router.replace('/?error=invalid_callback');
       return;
     }
 
