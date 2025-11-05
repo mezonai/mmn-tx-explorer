@@ -12,22 +12,18 @@
         extend: {
           colors: {
             primary: "#6941c6",
-            "primary-light": "#8b5cf6",
             "primary-dark": "#553c9a",
             dark: "#0B1533",
             "dark-light": "#1e293b",
           },
-          fontFamily: {
-            inter: ["Inter", "sans-serif"],
-            mono: ["JetBrains Mono", "monospace"],
-          },
+          fontFamily: { inter: ["Inter", "sans-serif"] },
         },
       },
     };
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
   <style>
-    body { font-family: 'Inter', sans-serif !important; }
+    body { font-family: 'Inter', sans-serif !important; background: #0B1533; color: white; }
     ::-webkit-scrollbar { display: none; }
   </style>
   <title>Account Overview - Mezon Đồng</title>
@@ -65,49 +61,31 @@
     </div>
 
     <!-- Account Summary -->
-    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- Summary Card -->
-      <div class="lg:col-span-2 bg-dark-light border border-gray-700 rounded-2xl p-6 space-y-6">
-        <div class="flex justify-between items-center">
-          <div>
-            <h3 class="text-sm uppercase text-primary tracking-wider font-semibold">Account Summary</h3>
-            <h2 class="text-2xl font-bold mt-1">EAHsmbdscKwasXxe28sP1MAGR...svUM</h2>
-          </div>
-          <span class="text-xs bg-gray-800 px-3 py-1 rounded-lg text-gray-400">Last updated block • 6472602</span>
+    <section class="bg-dark-light border border-gray-700 rounded-2xl p-6 space-y-6">
+      <div class="flex justify-between items-center">
+        <div>
+          <h3 class="text-sm uppercase text-primary tracking-wider font-semibold">Account Summary</h3>
+          <h2 class="text-2xl font-bold mt-1">EAHsmbdscKwasXxe28sP1MAGR...svUM</h2>
         </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-          <div class="bg-gray-800/40 border border-gray-700 rounded-lg p-4">
-            <p class="text-gray-400 text-xs uppercase mb-1">Address</p>
-            <div class="flex items-center space-x-2">
-              <p class="font-mono text-gray-300 truncate">EAHsmbdscKwasXxe28sP1MAGR...svUM</p>
-              <button class="text-gray-400 hover:text-primary" onclick="navigator.clipboard.writeText('EAHsmbdscKwasXxe28sP1MAGR...svUM')"><i class="fa-regular fa-copy text-xs"></i></button>
-            </div>
-          </div>
-          <div class="bg-gray-800/40 border border-gray-700 rounded-lg p-4">
-            <p class="text-gray-400 text-xs uppercase mb-1">Balance</p>
-            <p class="text-lg font-semibold">99,057,770,587 đồng</p>
-          </div>
-          <div class="bg-gray-800/40 border border-gray-700 rounded-lg p-4">
-            <p class="text-gray-400 text-xs uppercase mb-1">Transactions</p>
-            <p class="text-lg font-semibold">9</p>
-          </div>
-          <div class="bg-gray-800/40 border border-gray-700 rounded-lg p-4">
-            <p class="text-gray-400 text-xs uppercase mb-1">Stake / Delegated</p>
-            <p class="text-lg font-semibold">0 đồng</p>
-          </div>
-        </div>
+        <span class="text-xs bg-gray-800 px-3 py-1 rounded-lg text-gray-400">Last updated block • 6472602</span>
       </div>
 
-      <!-- Access Card -->
-      <div class="bg-dark-light border border-gray-700 rounded-2xl p-6">
-        <h3 class="text-sm uppercase text-primary tracking-wider font-semibold mb-2">Access Controls</h3>
-        <ul class="text-sm space-y-2 text-gray-300">
-          <li><span class="text-green-400">●</span> Only you can view this data</li>
-          <li><span class="text-yellow-400">●</span> Time range limited to 12 months</li>
-          <li><span class="text-blue-400">●</span> Rate limit: 20 requests / minute</li>
-        </ul>
-        <button class="mt-4 bg-gray-800 hover:bg-primary-dark px-4 py-2 rounded-lg text-sm font-semibold">Open privacy settings</button>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+        <div class="bg-gray-800/40 border border-gray-700 rounded-lg p-4">
+          <p class="text-gray-400 text-xs uppercase mb-1">Balance</p>
+          <p class="text-lg font-semibold">99,057,770,587 đồng</p>
+        </div>
+        <div class="bg-gray-800/40 border border-gray-700 rounded-lg p-4">
+          <p class="text-gray-400 text-xs uppercase mb-1">Transactions</p>
+          <p class="text-lg font-semibold">9</p>
+        </div>
+        <div class="bg-gray-800/40 border border-gray-700 rounded-lg p-4">
+          <p class="text-gray-400 text-xs uppercase mb-1">Wallet Address</p>
+          <div class="flex items-center space-x-2">
+            <p class="font-mono text-gray-300 truncate">EAHsmbdscKwasXxe28sP1MAGR...svUM</p>
+            <button class="text-gray-400 hover:text-primary" onclick="navigator.clipboard.writeText('EAHsmbdscKwasXxe28sP1MAGR...svUM')"><i class="fa-regular fa-copy text-xs"></i></button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -127,7 +105,6 @@
             <option>Received</option>
             <option>Give Coffee</option>
             <option>Swap</option>
-            <option>Stake</option>
           </select>
           <select class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none focus:border-primary">
             <option>Any Status</option>
@@ -190,23 +167,6 @@
     </section>
 
   </main>
-
-  <!-- Footer -->
-  <footer class="bg-dark-light border-t border-gray-700 mt-16">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex justify-between items-center">
-      <div class="flex items-center space-x-2">
-        <div class="w-6 h-6 bg-primary rounded flex items-center justify-center">
-          <i class="fa-solid fa-cube text-white text-xs"></i>
-        </div>
-        <span class="text-gray-400">MEZON EXPLORER • Private Edition</span>
-      </div>
-      <div class="flex space-x-4 text-sm text-gray-400">
-        <a href="#" class="hover:text-white">Privacy</a>
-        <a href="#" class="hover:text-white">Terms</a>
-        <a href="#" class="hover:text-white">Support</a>
-      </div>
-    </div>
-  </footer>
 
 </body>
 </html>
