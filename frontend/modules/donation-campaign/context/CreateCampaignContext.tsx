@@ -103,10 +103,8 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
       const res = await createMutation.mutateAsync(draftData as any);
       toast.success('Draft saved');
       router.push(ROUTES.CAMPAIGN(res.id));
-    } catch (error: any) {
-      console.error('Error saving draft campaign:', error);
-      const message = error?.response?.data?.message || 'Failed to save draft';
-      toast.error(message);
+    } catch  {
+      toast.error("Failed to save draft");
     } finally {
       setIsSaving(false);
     }
@@ -124,8 +122,7 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
       });
       toast.success('Wallet generated successfully');
       return true;
-    } catch (error) {
-      console.error('Error generating wallet:', error);
+    } catch {
       toast.error('Failed to generate wallet');
       return false;
     } finally {
@@ -164,8 +161,7 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
             toast.success('Campaign published successfully');
             router.push(ROUTES.CAMPAIGN(res.id));
           }
-        } catch (error) {
-          console.error('Error submitting campaign:', error);
+        } catch {
           toast.error('Failed to submit campaign');
         } finally {
           setIsSaving(false);
