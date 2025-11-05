@@ -15,7 +15,6 @@ interface CampaignCardProps {
 
 export const CampaignCard = ({ campaign }: CampaignCardProps) => {
   const { id, slug, name, description, goal, end_date, status, updated_at, total_amount, total_contributors } = campaign;
-  console.log("campaign",campaign)
   const daysLeft = useMemo(() => {
     if (status === ECampaignStatus.Draft) {
       return 'Draft';

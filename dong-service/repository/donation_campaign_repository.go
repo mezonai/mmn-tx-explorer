@@ -666,7 +666,6 @@ func (r *DonationCampaignRepository) GenerateUniqueSlug(baseSlug string) (string
 	defer rows.Close()
 
 	maxIndex := 0
-	hasBaseSlug := false
 
 	for rows.Next() {
 		var existingSlug string
@@ -675,7 +674,6 @@ func (r *DonationCampaignRepository) GenerateUniqueSlug(baseSlug string) (string
 		}
 
 		if existingSlug == baseSlug {
-			hasBaseSlug = true
 			continue
 		}
 
@@ -687,16 +685,7 @@ func (r *DonationCampaignRepository) GenerateUniqueSlug(baseSlug string) (string
 		}
 	}
 
-	if err := rows.Err(); err != nil {
-		return "", fmt.Errorf("failed to iterate slugs: %w", err)
-	}
-
-	var nextIndex int
-	if hasBaseSlug {
-		nextIndex = maxIndex + 1
-	} else {
-		nextIndex = maxIndex + 1
-	}
+	nextIndex := maxIndex + 1
 
 	return fmt.Sprintf("%s-%d", baseSlug, nextIndex), nil
 }
