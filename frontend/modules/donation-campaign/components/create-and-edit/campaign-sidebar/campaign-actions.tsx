@@ -33,6 +33,7 @@ const CampaignActions = ({ type = 'create' }: CampaignModeProps) => {
   const handlePublish = async () => {
     if (!campaignId) return;
     try {
+      handleSubmit('publish');
       await activateMutation.mutateAsync(campaignId);
       toast.success('Campaign published');
       router.push(ROUTES.CAMPAIGN(campaignId));
@@ -46,7 +47,6 @@ const CampaignActions = ({ type = 'create' }: CampaignModeProps) => {
     try {
       await closeMutation.mutateAsync(campaignId);
       toast.success('Campaign closed');
-      router.push(ROUTES.CAMPAIGN(campaignId));
     } catch {
       toast.error('Failed to close campaign');
     }
