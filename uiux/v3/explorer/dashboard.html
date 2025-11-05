@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blockchain Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+    :root {
+      --primary: #6941c6;
+      --primary-light: #8b5cf6;
+      --primary-dark: #553c9a;
+      --dark: #0B1533;
+      --dark-light: #1e293b;
+
+      --bg: linear-gradient(135deg, #f5f3ff, #ede9fe);
+      --card-bg: #ffffff;
+      --text: #111827;
+      --muted: #4b5563;
+      --hover: rgba(139, 92, 246, 0.08);
+    }
+
+    body.dark {
+      --bg: linear-gradient(135deg, var(--dark), var(--dark-light));
+      --card-bg: #111827;
+      --text: #f8fafc;
+      --muted: #9ca3af;
+      --hover: rgba(105, 65, 198, 0.2);
+    }
+
+    * {
+      box-sizing: border-box;
+      transition: all 0.3s ease;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      background: var(--card-bg);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header h1 {
+      font-size: 1.1rem;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      position: relative;
+    }
+
+    .mode-toggle {
+      background: var(--hover);
+      border: none;
+      color: var(--primary);
+      font-size: 1rem;
+      padding: 5px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .user-profile:hover {
+      background: var(--hover);
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary-light), var(--primary));
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      box-shadow: 0 0 8px var(--primary-light);
+    }
+
+    .username {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* Mini Profile (Solid Gradient) */
+    .mini-profile {
+      position: absolute;
+      top: 50px;
+      right: 0;
+      width: 230px;
+      /* Light mode: subtle gradient matching card theme */
+      background: linear-gradient(145deg, #ffffff 0%, #f5f3ff 100%);
+      border-radius: 14px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+      border: 1px solid #ede9fe;
+      padding: 15px;
+      opacity: 0;
+      transform: translateY(-10px);
+      pointer-events: none;
+      color: var(--text);
+    }
+
+    /* Dark mode: deeper gradient for contrast */
+    body.dark .mini-profile {
+      background: linear-gradient(145deg, #2b2a4a 0%, #171a2e 100%);
+      color: #fff;
+      border: 1px solid #312e81;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .mini-profile.active {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .mini-info {
+      font-size: 0.85rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 6px 8px;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .copy-btn {
+      color: #000;
+      border: none;
+      padding: 4px 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .logout-btn {
+      color: #fff;
+      border: none;
+      width: 100%;
+      padding: 12px 0;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 12px;
+      background: linear-gradient(90deg, #ff5851 0%, #ff1e56 100%);
+      box-shadow: 0 2px 16px 0 rgba(255, 30, 86, 0.18), 0 0px 0px 2px rgba(255, 30, 86, 0.10) inset;
+      outline: none;
+      transition: background 0.25s, transform 0.16s, box-shadow 0.25s, filter 0.18s;
+      filter: brightness(1.05) saturate(1.15);
+    }
+
+    .logout-btn:hover,
+    .logout-btn:focus-visible {
+      background: linear-gradient(90deg, #ff1e56 0%, #ff5851 100%);
+      color: #fff;
+      transform: translateY(-3px) scale(1.06);
+      box-shadow: 0 8px 28px 0 rgba(255, 30, 86, 0.22), 0 0px 0px 2.5px rgba(255, 30, 86, 0.13) inset;
+      filter: brightness(1.12) saturate(1.25) drop-shadow(0 0 6px #ff1e56cc);
+    }
+
+    body.dark .logout-btn {
+      background: linear-gradient(90deg, #b91c1c 0%, #ef4444 100%);
+      color: #fff;
+      box-shadow: 0 2px 16px 0 rgba(239, 68, 68, 0.18), 0 0px 0px 2px rgba(239, 68, 68, 0.10) inset;
+      filter: brightness(1.08) saturate(1.18);
+    }
+
+    body.dark .logout-btn:hover,
+    body.dark .logout-btn:focus-visible {
+      background: linear-gradient(90deg, #ef4444 0%, #b91c1c 100%);
+      color: #fff;
+      transform: translateY(-3px) scale(1.06);
+      box-shadow: 0 8px 28px 0 rgba(239, 68, 68, 0.22), 0 0px 0px 2.5px rgba(239, 68, 68, 0.13) inset;
+      filter: brightness(1.15) saturate(1.28) drop-shadow(0 0 8px #ef4444cc);
+    }
+
+    /* Stats */
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 15px;
+      padding: 20px;
+    }
+
+    .stat-box {
+      background: linear-gradient(145deg, var(--primary-light), var(--primary-dark));
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .stat-icon {
+      font-size: 1.8rem;
+      margin-bottom: 6px;
+    }
+
+    .stat-title {
+      font-size: 0.85rem;
+      opacity: 0.9;
+    }
+
+    .stat-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+
+    /* Tables */
+    .main-content {
+      display: flex;
+      gap: 15px; /* match .stats-container gap */
+      justify-content: space-between;
+      align-items: stretch;
+      padding: 0 0 36px 0;
+      min-height: 420px;
+      height: 100%;
+    }
+
+    .table-container {
+      background: var(--card-bg);
+      border-radius: 18px;
+      padding: 28px 24px 24px 24px;
+      box-shadow: 0 6px 32px 0 rgba(105, 65, 198, 0.10);
+      display: flex;
+      flex-direction: column;
+      /* baseline min-height so tables can expand to show multiple rows without scrolling */
+      min-height: 520px;
+      /* allow JS to control inline height for equalization */
+      box-sizing: border-box;
+      overflow: visible !important;
+      border: 1.5px solid #ede9fe;
+      margin-bottom: 0;
+      transition: background 0.3s, border 0.3s;
+    }
+
+    body.dark .table-container {
+      background: #181c2a;
+      border: 1.5px solid #312e81;
+      box-shadow: 0 6px 32px 0 rgba(80, 80, 200, 0.13);
+    }
+
+
+    .table-container.blocks-table-container {
+      margin-right: 0;
+      flex: 0 0 360px;
+      width: 360px;
+      max-width: 360px;
+      min-width: 360px;
+      margin-left: 20px;
+      /* align top padding with other table cards so headings line up */
+      padding: 0px 14px 14px 14px;
+    }
+
+    /* Transactions container should be flexible and not force page overflow */
+    .table-container.transactions-table-container {
+      /* make transactions exactly 3 boxes wide (plus internal gaps between boxes) */
+      flex: 0 0 calc(360px * 3 + 30px);
+      width: calc(360px * 3 + 30px);
+      max-width: calc(360px * 3 + 30px);
+      min-width: calc(360px * 3 + 30px);
+      margin-right: 20px;
+        padding: 0px 14px 14px 14px;
+    }
+
+    .table-container h2 {
+      color: var(--primary-dark);
+      font-weight: 900;
+      font-size: 1.13rem;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      justify-content: space-between;
+      /* enforce a consistent header height and vertical centering */
+      min-height: 48px;
+      line-height: 1;
+      white-space: nowrap; /* avoid header wrapping which causes uneven heights */
+    }
+
+    /* keep the view-all button on a single line and vertically centered */
+    .table-container h2 .view-all-btn {
+      white-space: nowrap;
+      align-self: center;
+      margin-left: 8px;
+    }
+
+    .view-all-btn {
+      background: var(--hover);
+      color: var(--primary);
+      border: none;
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      margin-left: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .view-all-btn:hover,
+    .view-all-btn:focus-visible {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .tx-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+
+    .tx-tag {
+      background: linear-gradient(90deg, #e0e7ff 0%, #f0fdfa 100%);
+      color: #2563eb;
+      font-size: 0.78rem;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 3px 12px 3px 9px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      box-shadow: 0 1px 6px 0 rgba(80, 80, 200, 0.07);
+      letter-spacing: 0.01em;
+      border: 1.5px solid #c7d2fe;
+    }
+
+    .tx-tag i {
+      font-size: 1em;
+      color: #6366f1;
+      margin-right: 2px;
+    }
+
+    .tx-status {
+      background: linear-gradient(90deg, #bbf7d0 0%, #f0fdfa 100%);
+      color: #059669;
+      font-size: 0.78rem;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 3px 12px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      box-shadow: 0 1px 6px 0 rgba(34, 197, 94, 0.08);
+      letter-spacing: 0.01em;
+      border: 1.5px solid #6ee7b7;
+      text-shadow: 0 1px 0 #fff8;
+    }
+
+    .tx-status i {
+      font-size: 1em;
+      color: #22c55e;
+      margin-right: 2px;
+    }
+
+    body.dark .tx-tag {
+      background: linear-gradient(90deg, #312e81 0%, #0f172a 100%);
+      color: #a5b4fc;
+      border: 1.5px solid #6366f1;
+    }
+
+    body.dark .tx-tag i {
+      color: #a5b4fc;
+    }
+
+    body.dark .tx-status {
+      background: linear-gradient(90deg, #14532d 0%, #0f172a 100%);
+      color: #4ade80;
+      border: 1.5px solid #22c55e;
+      text-shadow: 0 1px 0 #0008;
+    }
+
+    body.dark .tx-status i {
+      color: #4ade80;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      height: 100%;
+      min-height: inherit;
+    }
+
+    th,
+    td {
+      padding: 4px 8px;
+      text-align: left;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      vertical-align: middle;
+      background: transparent;
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      line-height: 1.2;
+      height: 32px;
+    }
+
+    .blocks-table th,
+    .blocks-table th,
+    .table-container table th {
+      color: var(--primary);
+      font-weight: 700;
+      background: #f3f0fa;
+      border-bottom: 2px solid #e0e7ff;
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      /* allow wrapping in blocks table header so labels display fully */
+      white-space: normal;
+      font-size: 1.01em;
+      letter-spacing: 0.01em;
+      padding-top: 8px;
+      padding-bottom: 8px;
+      line-height: 1.1;
+    }
+
+    body.dark .table-container table th {
+      color: #a78bfa;
+      background: #23263a;
+      border-bottom: 2px solid #312e81;
+    }
+
+    body.dark .blocks-table th,
+    body.dark .table-container table th {
+      color: #a78bfa;
+    }
+
+    .blocks-table th.block-num,
+    .blocks-table td.block-num {
+      font-family: 'Fira Mono', 'Consolas', monospace;
+      font-weight: 700;
+      color: var(--primary-dark);
+      font-size: 1.08em;
+      letter-spacing: 0.01em;
+      min-width: 80px;
+      text-align: left;
+      width: 80px;
+    }
+
+    /* Make blocks table fit its narrow container */
+    .blocks-table {
+      table-layout: fixed; /* respect explicit column widths */
+      width: 100%;
+    }
+
+    .blocks-table th,
+    .blocks-table td {
+      padding: 4px 6px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      vertical-align: middle;
+      line-height: 1.2;
+      height: 32px;
+    }
+
+    /* tightened column widths so 4 columns fit into the 360px card */
+    .blocks-table td.block-txn {
+      width: 40px;
+      text-align: center;
+    }
+
+    /* validator column widened so header "Validator" displays fully */
+    .blocks-table td.block-validator {
+      width: 100px;
+      text-align: right;
+    }
+
+    /* give Time more room so strings like "2 min ago" don't get ellipsed */
+    .blocks-table td.block-time {
+      width: 110px;
+      text-align: right;
+      white-space: nowrap; /* keep the time on one line */
+    }
+
+    /* allow JS to compute row height so a fixed number of rows can fit the card */
+    .blocks-table tbody tr {
+      height: 32px;
+      vertical-align: middle;
+    }
+
+    .blocks-table .tx-hash span {
+      font-size: 1em;
+      line-height: 1;
+    }
+    
+    /* Ensure content doesn't overflow table cells */
+    .blocks-table td > *,
+    .transactions-table-container td > * {
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .blocks-table .tx-meta,
+    .transactions-table-container .tx-meta {
+      overflow: visible !important;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Transactions table: fixed layout so content fits without causing horizontal scroll */
+    .transactions-table-container {
+      overflow: visible !important;
+    }
+
+    .transactions-table-container table {
+      table-layout: fixed;
+      width: 100%;
+    }
+
+    /* column widths: TX Hash | From→To | Value | Time (percentages chosen to fit) */
+    .transactions-table-container table th:nth-child(1),
+    .transactions-table-container table td:nth-child(1) {
+      width: 42%;
+    }
+
+    .transactions-table-container table th:nth-child(2),
+    .transactions-table-container table td:nth-child(2) {
+      width: 36%;
+    }
+
+    .transactions-table-container table th:nth-child(3),
+    .transactions-table-container table td:nth-child(3) {
+      width: 12%;
+      text-align: right;
+    }
+
+    .transactions-table-container table th:nth-child(4),
+    .transactions-table-container table td:nth-child(4) {
+      width: 10%;
+      text-align: right;
+    }
+
+    .transactions-table-container .tx-hash span {
+      display: inline-block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      line-height: 1.2 !important; /* match table cell line-height for baseline alignment */
+    }
+
+    .transactions-table-container .tx-address {
+      display: inline-block;
+      max-width: 110px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Remove background on From/To chips so text is readable in dark mode */
+    .transactions-table-container td > div > div {
+      background: transparent !important;
+    }
+
+    /* Align TX Hash text with From→To by centering cell content and reducing extra gap */
+    .transactions-table-container td {
+      vertical-align: middle !important;
+    }
+    /* slightly reduce the gap between tag row and the hash for better balance */
+    .transactions-table-container .tx-meta {
+      margin-bottom: -3px !important;
+      position: relative;
+      top: -12px;
+    }
+    /* slightly trim tag pill height to reduce vertical space */
+    .transactions-table-container .tx-tag,
+    .transactions-table-container .tx-status {
+      padding-top: 4px !important;
+      padding-bottom: 4px !important;
+      line-height: 1.05 !important;
+    }
+    /* nudge the hash up a bit to align with From→To text */
+    .transactions-table-container .tx-hash {
+      margin-top: -5px !important;
+    }
+
+    .blocks-table th.block-txn,
+    .blocks-table td.block-txn {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.98em;
+      font-weight: 600;
+      text-align: center;
+      width: 40px;
+      min-width: 36px;
+    }
+
+    .blocks-table th.block-validator,
+    .blocks-table td.block-validator {
+      font-family: 'Fira Mono', 'Consolas', monospace;
+      font-size: 0.97em;
+      max-width: 140px;
+      /* allow the header label to display fully */
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+      position: relative;
+      text-align: right;
+      width: 100px;
+    }
+
+    /* ensure header for Time also aligns and has enough width */
+    .blocks-table th.block-time,
+    .blocks-table td.block-time {
+      width: 110px;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .blocks-table .validator-copy-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+
+    .blocks-table .validator-copy-btn {
+      background: var(--hover);
+      border: none;
+      border-radius: 6px;
+      color: var(--primary);
+      padding: 3px 7px;
+      cursor: pointer;
+      font-size: 1em;
+      margin-left: 6px;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .blocks-table .validator-copy-btn:hover {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    tr:hover {
+      background: var(--hover);
+    }
+    /* Make row hover more prominent in light mode without affecting other components using --hover */
+    body:not(.dark) tr:hover {
+      background: rgba(139, 92, 246, 0.14);
+    }
+
+    .tx-hash {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'Fira Mono', 'Consolas', monospace;
+      font-size: 0.97em;
+      max-width: 220px;
+      min-width: 0;
+    }
+
+    .tx-hash span {
+      display: inline-flex;
+      align-items: center;
+      vertical-align: middle;
+      white-space: nowrap;
+      overflow: hidden;
+      max-width: 420px;
+      min-width: 0;
+      font-family: inherit;
+    }
+
+    .tx-hash .tx-hash-start,
+    .tx-hash .tx-hash-end {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 7.5ch;
+      display: inline-block;
+    }
+
+    .tx-hash .tx-hash-ellipsis {
+      flex-shrink: 0;
+      margin: 0 2px;
+      color: #888;
+      font-weight: bold;
+    }
+
+    .tx-copy {
+      margin-top: 0 !important;
+      min-width: 28px;
+      height: 28px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0 6px;
+    }
+
+    .tx-copy {
+      background: var(--hover);
+      border: none;
+      border-radius: 6px;
+      padding: 3px 5px;
+      color: var(--primary);
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .tx-copy:hover {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    footer {
+      text-align: center;
+      padding: 10px;
+      color: var(--muted);
+      background: var(--card-bg);
+      font-size: 0.8rem;
+    }
+
+    @media (max-width: 768px) {
+      .main-content {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1><i class="fa-solid fa-database"></i> Blockchain Explorer</h1>
+    <div class="header-right">
+      <button class="mode-toggle" id="modeToggle"><i class="fa-solid fa-sun"></i></button>
+      <div class="user-profile" id="userProfile">
+        <div class="avatar"><i class="fa-solid fa-user-gear"></i></div>
+        <span class="username">John Doe</span>
+      </div>
+
+      <div class="mini-profile" id="miniProfile">
+        <div class="mini-info"><strong>ID:</strong> #2025</div>
+        <div class="mini-info">
+          <span><strong>Wallet:</strong> 0xB23F...9A7E</span>
+          <button class="copy-btn" id="copyWallet"><i class="fa-regular fa-copy"></i></button>
+        </div>
+        <div class="mini-info"><strong>Email:</strong> user@web3mail.io</div>
+        <button class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main style="flex:1 0 auto;display:flex;flex-direction:column;">
+    <section class="stats-container">
+      <div class="stat-box"><i class="fa-solid fa-cubes stat-icon"></i>
+        <div class="stat-title">Total Blocks</div>
+        <div class="stat-value">1,245,890</div>
+      </div>
+      <div class="stat-box"><i class="fa-solid fa-chart-column stat-icon"></i>
+        <div class="stat-title">Total Transactions</div>
+        <div class="stat-value">28,674,392</div>
+      </div>
+      <div class="stat-box"><i class="fa-solid fa-gauge-high stat-icon"></i>
+        <div class="stat-title">Avg Block Time</div>
+        <div class="stat-value">12.3s</div>
+      </div>
+      <div class="stat-box"><i class="fa-solid fa-wallet stat-icon"></i>
+        <div class="stat-title">Total Wallets</div>
+        <div class="stat-value">3,278,451</div>
+      </div>
+    </section>
+
+    <section class="main-content">
+      <div class="table-container blocks-table-container"
+        style="display:flex;flex-direction:column;justify-content:stretch;min-height:100%;">
+        <h2><span><i class="fa-solid fa-cube"></i> Latest Blocks</span>
+          <button class="view-all-btn"><i class="fa-solid fa-arrow-right"></i> View all blocks</button>
+        </h2>
+        <table class="blocks-table" style="flex:1 1 auto;">
+          <thead>
+            <tr style="color: var(--primary); font-weight: 700;">
+              <th class="block-num">Block</th>
+              <th class="block-txn" style="text-align:center;">Txn</th>
+              <th class="block-validator" style="text-align:right;">Validator</th>
+              <th class="block-time" style="text-align:right;width:110px;">Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <div class="tx-hash"><span>1245890</span></div>
+              </td>
+              <td class="block-txn" style="text-align:center;">
+                <span>1</span>
+              </td>
+              <td class="block-validator" style="text-align:right;">
+                <span>1</span>
+              </td>
+              <td class="block-time" style="text-align:right;">2 mins ago</td>
+            </tr>
+            <tr>
+              <td>
+                <div class="tx-hash"><span>1245889</span></div>
+              </td>
+              <td class="block-txn" style="text-align:center;">
+                <span>1</span>
+              </td>
+              <td class="block-validator" style="text-align:right;">
+                <span>1</span>
+              </td>
+              <td class="block-time" style="text-align:right;">4 mins ago</td>
+            </tr>
+            <tr>
+              <td>
+                <div class="tx-hash"><span>1245888</span></div>
+              </td>
+              <td class="block-txn" style="text-align:center;">
+                <span>1</span>
+              </td>
+              <td class="block-validator" style="text-align:right;">
+                <span>1</span>
+              </td>
+              <td class="block-time" style="text-align:right;">6 mins ago</td>
+            </tr>
+            <tr>
+              <td>
+                <div class="tx-hash"><span>1245887</span></div>
+              </td>
+              <td class="block-txn" style="text-align:center;">
+                <span>2</span>
+              </td>
+              <td class="block-validator" style="text-align:right;">
+                <span>2</span>
+              </td>
+              <td class="block-time" style="text-align:right;">8 mins ago</td>
+            </tr>
+            <tr>
+              <td>
+                <div class="tx-hash"><span>1245886</span></div>
+              </td>
+              <td class="block-txn" style="text-align:center;">
+                <span>3</span>
+              </td>
+              <td class="block-validator" style="text-align:right;">
+                <span>3</span>
+              </td>
+              <td class="block-time" style="text-align:right;">10 mins ago</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-container transactions-table-container"
+        style="display:flex;flex-direction:column;justify-content:stretch;min-height:100%;">
+        <h2><span><i class="fa-solid fa-bolt"></i> Latest Transactions</span>
+          <button class="view-all-btn"><i class="fa-solid fa-arrow-right"></i> View all transactions</button>
+        </h2>
+        <table style="flex:1 1 auto;">
+          <thead>
+            <tr>
+              <th>TX Hash</th>
+              <th style="min-width:170px;">From <span style="color:#888;">→</span> To</th>
+              <th>Value</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="vertical-align:top;">
+                <div class="tx-meta" style="margin-bottom:0px;">
+                  <span class="tx-tag" style="background:linear-gradient(90deg,#f3e8ff 0%,#f0fdfa 100%);color:#a21caf;border:1.5px solid #c084fc;"><i class="fa-solid fa-arrow-right-arrow-left"></i> Transfer</span>
+                  <span class="tx-status" style="background:linear-gradient(90deg,#dcfce7 0%,#f0fdfa 100%);color:#15803d;border:1.5px solid #4ade80;"><i class="fa-solid fa-circle-check"></i> Success</span>
+                </div>
+                <div class="tx-hash"><span><span class="tx-hash-start">f8671122f651f08457225475ce986f2d396d827be017919d0cb204c634fab4</span><span class="tx-hash-ellipsis">…</span><span class="tx-hash-end">4e6</span></span><button class="tx-copy" data-hash="f8671122f651f08457225475ce986f2d396d827be017919d0cb204c634fab4e6"><i class="fa-regular fa-copy"></i></button></div>
+              </td>
+              <td style="vertical-align:top;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="display:flex;align-items:center;gap:4px;background:#f3e8ff;border-radius:8px;padding:3px 8px;">
+                    <span class="tx-address">0xA1B...</span>
+                    <button class="tx-copy" data-hash="0xA1B..." title="Copy From address"><i class="fa-regular fa-copy"></i></button>
+                  </div>
+                  <span style="color:#888;font-size:1.1em;">→</span>
+                  <div style="display:flex;align-items:center;gap:4px;background:#f3e8ff;border-radius:8px;padding:3px 8px;">
+                    <span class="tx-address">0xB3C...</span>
+                    <button class="tx-copy" data-hash="0xB3C..." title="Copy To address"><i class="fa-regular fa-copy"></i></button>
+                  </div>
+                </div>
+              </td>
+              <td style="vertical-align:top;">2.34 ETH</td>
+              <td style="vertical-align:top;">1 min ago</td>
+            </tr>
+            <tr>
+              <td style="vertical-align:top;">
+                <div class="tx-meta" style="margin-bottom:6px;">
+                  <span class="tx-tag" style="background:linear-gradient(90deg,#f3e8ff 0%,#f0fdfa 100%);color:#a21caf;border:1.5px solid #c084fc;"><i class="fa-solid fa-arrow-right-arrow-left"></i> Transfer</span>
+                  <span class="tx-status" style="background:linear-gradient(90deg,#dcfce7 0%,#f0fdfa 100%);color:#15803d;border:1.5px solid #4ade80;"><i class="fa-solid fa-circle-check"></i> Success</span>
+                </div>
+                <div class="tx-hash"><span><span class="tx-hash-start">f8671122f651f08457225475ce986f2d396d827be017919d0cb204c634fab4</span><span class="tx-hash-ellipsis">…</span><span class="tx-hash-end">4e6</span></span><button class="tx-copy" data-hash="f8671122f651f08457225475ce986f2d396d827be017919d0cb204c634fab4e6"><i class="fa-regular fa-copy"></i></button></div>
+              </td>
+              <td style="vertical-align:top;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="display:flex;align-items:center;gap:4px;background:#f3e8ff;border-radius:8px;padding:3px 8px;">
+                    <span class="tx-address">0xC7D...</span>
+                    <button class="tx-copy" data-hash="0xC7D..." title="Copy From address"><i class="fa-regular fa-copy"></i></button>
+                  </div>
+                  <span style="color:#888;font-size:1.1em;">→</span>
+                  <div style="display:flex;align-items:center;gap:4px;background:#f3e8ff;border-radius:8px;padding:3px 8px;">
+                    <span class="tx-address">0xD9E...</span>
+                    <button class="tx-copy" data-hash="0xD9E..." title="Copy To address"><i class="fa-regular fa-copy"></i></button>
+                  </div>
+                </div>
+              </td>
+              <td style="vertical-align:top;">0.89 ETH</td>
+              <td style="vertical-align:top;">3 mins ago</td>
+            </tr>
+            <tr>
+              <td style="vertical-align:top;">
+                <div class="tx-meta" style="margin-bottom:6px;">
+                  <span class="tx-tag" style="background:linear-gradient(90deg,#f3e8ff 0%,#f0fdfa 100%);color:#a21caf;border:1.5px solid #c084fc;"><i class="fa-solid fa-arrow-right-arrow-left"></i> Transfer</span>
+                  <span class="tx-status" style="background:linear-gradient(90deg,#dcfce7 0%,#f0fdfa 100%);color:#15803d;border:1.5px solid #4ade80;"><i class="fa-solid fa-circle-check"></i> Success</span>
+                </div>
+                <div class="tx-hash"><span><span class="tx-hash-start">f8671122f651f08457225475ce986f2d396d827be017919d0cb204c634fab4</span><span class="tx-hash-ellipsis">…</span><span class="tx-hash-end">4e6</span></span><button class="tx-copy" data-hash="f8671122f651f08457225475ce986f2d396d827be017919d0cb204c634fab4e6"><i class="fa-regular fa-copy"></i></button></div>
+              </td>
+              <td style="vertical-align:top;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="display:flex;align-items:center;gap:4px;background:#f3e8ff;border-radius:8px;padding:3px 8px;">
+                    <span class="tx-address">0xE4F...</span>
+                    <button class="tx-copy" data-hash="0xE4F..." title="Copy From address"><i class="fa-regular fa-copy"></i></button>
+                  </div>
+                  <span style="color:#888;font-size:1.1em;">→</span>
+                  <div style="display:flex;align-items:center;gap:4px;background:#f3e8ff;border-radius:8px;padding:3px 8px;">
+                    <span class="tx-address">0xA2B...</span>
+                    <button class="tx-copy" data-hash="0xA2B..." title="Copy To address"><i class="fa-regular fa-copy"></i></button>
+                  </div>
+                </div>
+              </td>
+              <td style="vertical-align:top;">1.12 ETH</td>
+              <td style="vertical-align:top;">7 mins ago</td>
+            </tr>
+            <tr>
+              <td style="vertical-align:top;">
+                <div class="tx-meta" style="margin-bottom:6px;">
+                  <span class="tx-tag" style="background:linear-gradient(90deg,#f3e8ff 0%,#f0fdfa 100%);color:#a21caf;border:1.5px solid #c084fc;"><i class="fa-solid fa-arrow-right-arrow-left"></i> Transfer</span>
+                  <span class="tx-status" style="background:linear-gradient(90deg,#dcfce7 0%,#f0fdfa 100%);color:#15803d;border:1.5px solid #4ade80;"><i class="fa-solid fa-circle-check"></i> Success</span>
+                </div>
+                <div class="tx-hash"><span><span class="tx-hash-start">a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2</span><span class="tx-hash-ellipsis">…</span><span class="tx-hash-end">abc</span></span><button class="tx-copy" data-hash="a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2abc"><i class="fa-regular fa-copy"></i></button></div>
+              </td>
+              <td style="vertical-align:top;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="display:flex;align-items:center;gap:4px;background:#f3e8ff;border-radius:8px;padding:3px 8px;">
+                    <span class="tx-address">0xF1E...</span>
+                    <button class="tx-copy" data-hash="0xF1E..." title="Copy From address"><i class="fa-regular fa-copy"></i></button>
+                  </div>
+                  <span style="color:#888;font-size:1.1em;">→</span>
+                  <div style="display:flex;align-items:center;gap:4px;background:#f3e8ff;border-radius:8px;padding:3px 8px;">
+                    <span class="tx-address">0xB2C...</span>
+                    <button class="tx-copy" data-hash="0xB2C..." title="Copy To address"><i class="fa-regular fa-copy"></i></button>
+                  </div>
+                </div>
+              </td>
+              <td style="vertical-align:top;">0.55 ETH</td>
+              <td style="vertical-align:top;">12 mins ago</td>
+            </tr>
+            <tr>
+              <td style="vertical-align:top;">
+                <div class="tx-meta" style="margin-bottom:6px;">
+                  <span class="tx-tag" style="background:linear-gradient(90deg,#f3e8ff 0%,#f0fdfa 100%);color:#a21caf;border:1.5px solid #c084fc;"><i class="fa-solid fa-arrow-right-arrow-left"></i> Transfer</span>
+                  <span class="tx-status" style="background:linear-gradient(90deg,#dcfce7 0%,#f0fdfa 100%);color:#15803d;border:1.5px solid #4ade80;"><i class="fa-solid fa-circle-check"></i> Success</span>
+                </div>
+                <div class="tx-hash"><span><span class="tx-hash-start">b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2g3</span><span class="tx-hash-ellipsis">…</span><span class="tx-hash-end">def</span></span><button class="tx-copy" data-hash="b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2g3def"><i class="fa-regular fa-copy"></i></button></div>
+              </td>
+              <td style="vertical-align:top;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="display:flex;align-items:center;gap:4px;background:#f3e8ff;border-radius:8px;padding:3px 8px;">
+                    <span class="tx-address">0xA3D...</span>
+                    <button class="tx-copy" data-hash="0xA3D..." title="Copy From address"><i class="fa-regular fa-copy"></i></button>
+                  </div>
+                  <span style="color:#888;font-size:1.1em;">→</span>
+                  <div style="display:flex;align-items:center;gap:4px;background:#f3e8ff;border-radius:8px;padding:3px 8px;">
+                    <span class="tx-address">0xC4E...</span>
+                    <button class="tx-copy" data-hash="0xC4E..." title="Copy To address"><i class="fa-regular fa-copy"></i></button>
+                  </div>
+                </div>
+              </td>
+              <td style="vertical-align:top;">3.21 ETH</td>
+              <td style="vertical-align:top;">15 mins ago</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer style="flex-shrink:0;">© 2025 Blockchain Explorer | accent Purple Theme</footer>
+
+  <script>
+    const modeToggle = document.getElementById('modeToggle');
+    const userProfile = document.getElementById('userProfile');
+    const miniProfile = document.getElementById('miniProfile');
+    const copyWallet = document.getElementById('copyWallet');
+
+    modeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('dark');
+      const icon = document.body.classList.contains('dark') ? 'fa-moon' : 'fa-sun';
+      modeToggle.innerHTML = `<i class="fa-solid ${icon}"></i>`;
+    });
+
+    userProfile.addEventListener('click', (e) => {
+      e.stopPropagation();
+      miniProfile.classList.toggle('active');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!miniProfile.contains(e.target) && !userProfile.contains(e.target)) {
+        miniProfile.classList.remove('active');
+      }
+    });
+
+    copyWallet.addEventListener('click', () => {
+      navigator.clipboard.writeText('0xB23F...9A7E');
+      copyWallet.innerHTML = '<i class="fa-solid fa-check"></i>';
+      setTimeout(() => (copyWallet.innerHTML = '<i class="fa-regular fa-copy"></i>'), 1500);
+    });
+
+    document.querySelectorAll('.tx-copy').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const hash = btn.getAttribute('data-hash');
+        navigator.clipboard.writeText(hash);
+        btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+        setTimeout(() => (btn.innerHTML = '<i class="fa-regular fa-copy"></i>'), 1500);
+      });
+    });
+    document.querySelectorAll('.validator-copy-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = btn.getAttribute('data-validator');
+        navigator.clipboard.writeText(val);
+        btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+        setTimeout(() => (btn.innerHTML = '<i class="fa-regular fa-copy"></i>'), 1500);
+      });
+    });
+
+    // Equalize heights of the two table cards so they appear balanced
+    // Use minHeight instead of fixed height to allow growth when rows require more space
+    function equalizeTableHeights() {
+      const left = document.querySelector('.blocks-table-container');
+      const right = document.querySelector('.transactions-table-container');
+      if (!left || !right) return;
+      // clear any previously set explicit height so natural sizes compute correctly
+      left.style.height = '';
+      right.style.height = '';
+      // compute current heights
+      const lh = left.offsetHeight;
+      const rh = right.offsetHeight;
+      const max = Math.max(lh, rh);
+      // set minHeight so both cards match the taller one, but still allow expansion later if needed
+      left.style.minHeight = max + 'px';
+      right.style.minHeight = max + 'px';
+    }
+
+    // Fit a fixed number of visible rows inside a table by setting tbody tr inline heights.
+    // tableContainer: the .table-container element, tableSelector: selector for the table inside it,
+    // visibleRows: number of rows to make visible (fit)
+    function fitVisibleRows(tableContainer, tableSelector, visibleRows) {
+      const container = typeof tableContainer === 'string' ? document.querySelector(tableContainer) : tableContainer;
+      if (!container) return;
+      const table = container.querySelector(tableSelector);
+      if (!table) return;
+
+      // get heights taken by heading and table header
+      const heading = container.querySelector('h2');
+      const headingH = heading ? heading.offsetHeight : 0;
+      const thead = table.querySelector('thead');
+      const theadH = thead ? thead.offsetHeight : 0;
+
+      // compute available height inside the container for tbody
+      // use clientHeight to exclude borders
+      const containerInner = container.clientHeight;
+      // subtract heading, table head and some small gaps (padding inside container)
+      const style = window.getComputedStyle(container);
+      const padTop = parseFloat(style.paddingTop) || 0;
+      const padBottom = parseFloat(style.paddingBottom) || 0;
+
+      const available = Math.max(0, containerInner - headingH - theadH - padTop - padBottom - 8); // small fudge
+      // Keep a small visual floor so rows don't collapse completely, but never enable scrolling
+      const MIN_ROW = 32; // px - match cell height
+      let perRow = Math.floor(available / Math.max(1, visibleRows));
+      perRow = Math.max(1, perRow); // avoid zero
+
+      const tbody = table.querySelector('tbody');
+      if (!tbody) return;
+
+      // If computed perRow is less than MIN_ROW, instead of enabling scroll, expand the container
+      if (perRow < MIN_ROW) {
+        const neededTotal = headingH + theadH + padTop + padBottom + (MIN_ROW * visibleRows) + 8;
+        // increase container's minHeight so rows can be at least MIN_ROW and no internal scroll appears
+        container.style.minHeight = neededTotal + 'px';
+        // recompute available & perRow
+        const newContainerInner = container.clientHeight;
+        const newAvailable = Math.max(0, newContainerInner - headingH - theadH - padTop - padBottom - 8);
+        perRow = Math.floor(newAvailable / Math.max(1, visibleRows));
+      }
+
+      // Always show exactly visibleRows rows, add empty rows if needed
+      let rows = Array.from(tbody.querySelectorAll('tr'));
+      const currentRows = rows.length;
+      if (currentRows < visibleRows) {
+        // Determine number of columns
+        let colCount = 0;
+        const ths = table.querySelectorAll('thead th');
+        colCount = ths.length;
+        for (let i = 0; i < visibleRows - currentRows; i++) {
+          const tr = document.createElement('tr');
+          for (let j = 0; j < colCount; j++) {
+            const td = document.createElement('td');
+            td.innerHTML = '&nbsp;';
+            tr.appendChild(td);
+          }
+          tbody.appendChild(tr);
+        }
+        rows = Array.from(tbody.querySelectorAll('tr'));
+      }
+
+      // Set height and show only the first visibleRows rows
+      const finalRow = Math.max(MIN_ROW, perRow);
+      rows.forEach((tr, idx) => {
+        if (idx < visibleRows) {
+          tr.style.display = '';
+          tr.style.height = finalRow + 'px';
+          tr.style.maxHeight = finalRow + 'px';
+          tr.style.overflow = 'hidden';
+        } else {
+          tr.style.display = 'none';
+          tr.style.height = '';
+          tr.style.maxHeight = '';
+          tr.style.overflow = '';
+        }
+      });
+    }
+
+    // debounce helper
+    let _eqTimer = null;
+    function scheduleEqualize() {
+      clearTimeout(_eqTimer);
+      _eqTimer = setTimeout(() => {
+        // First fit rows to compute and apply any needed minHeight increase
+        const VISIBLE_ROWS = 5;
+        fitVisibleRows('.blocks-table-container', '.blocks-table', VISIBLE_ROWS);
+        fitVisibleRows('.transactions-table-container', 'table', VISIBLE_ROWS);
+        // Then equalize based on the updated sizes
+        equalizeTableHeights();
+        // final pass in case fonts/layout shifts changed heights slightly
+        setTimeout(equalizeTableHeights, 40);
+      }, 80);
+    }
+
+    // run after load and on resize/content changes
+    window.addEventListener('load', scheduleEqualize);
+    window.addEventListener('resize', scheduleEqualize);
+    // also try again after fonts load and a short delay — helps when layout shifts
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => setTimeout(scheduleEqualize, 120));
+    }
+    // final safety call after a short delay in case some async content changed heights
+    setTimeout(scheduleEqualize, 240);
+    // also observe mutations inside the main content (e.g., async data) and re-run
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent && window.MutationObserver) {
+      const mo = new MutationObserver(scheduleEqualize);
+      mo.observe(mainContent, { childList: true, subtree: true, characterData: true });
+    }
+  </script>
+</body>
+
+</html>
