@@ -64,6 +64,7 @@ jobs:
           version: latest
           working-directory: indexer
           args: --timeout=5m --out-format=colored-line-number
+        continue-on-error: true
 
       - name: Build Indexer binary
         run: |

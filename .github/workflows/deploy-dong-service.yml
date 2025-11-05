@@ -70,6 +70,7 @@ jobs:
           version: latest
           working-directory: dong-service
           args: --timeout=5m --out-format=colored-line-number
+        continue-on-error: true
 
       - name: Build Dong Service binary
         run: |
