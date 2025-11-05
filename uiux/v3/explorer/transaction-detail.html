@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>window.FontAwesomeConfig = { autoReplaceSvg: 'nest'};</script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#6941c6",
+            "primary-light": "#8b5cf6",
+            "primary-dark": "#553c9a",
+            dark: "#0B1533",
+            "dark-light": "#1e293b",
+          },
+          fontFamily: {
+            inter: ["Inter", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"],
+          },
+        },
+      },
+    };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif !important; }
+    ::-webkit-scrollbar { display: none; }
+  </style>
+  <title>Transaction Detail - Mezon Đồng</title>
+</head>
+
+<body class="bg-dark text-white">
+
+  <!-- Header -->
+  <header class="bg-dark-light border-b border-gray-700 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+            <i class="fa-solid fa-cube text-white text-sm"></i>
+          </div>
+          <h1 class="text-lg font-bold text-white">Mezon Đồng</h1>
+        </div>
+        <nav class="hidden md:flex items-center space-x-6">
+          <a href="dashboard.html" class="text-gray-400 hover:text-primary transition-colors">Dashboard</a>
+          <a href="transactions.html" class="text-gray-400 hover:text-primary transition-colors">Transactions</a>
+          <a href="#" class="text-white hover:text-primary transition-colors">Transaction Detail</a>
+          <a href="#" class="text-gray-400 hover:text-primary transition-colors">Blocks</a>
+        </nav>
+        <div class="flex items-center space-x-3">
+          <div class="relative">
+            <input type="text" placeholder="Search..." class="bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 pl-10 text-sm focus:outline-none focus:border-primary w-56">
+            <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+          </div>
+          <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-1.jpg" class="w-8 h-8 rounded-full" alt="User">
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+
+    <!-- Breadcrumb -->
+    <div class="text-sm text-gray-400 flex items-center space-x-2">
+      <a href="transactions.html" class="hover:text-primary">Transactions</a>
+      <i class="fa-solid fa-chevron-right text-xs"></i>
+      <span class="text-white">Transaction Details</span>
+    </div>
+
+    <!-- Title -->
+    <h2 class="text-2xl font-semibold">Transaction Details</h2>
+
+    <!-- Card -->
+    <section class="bg-dark-light border border-gray-700 rounded-xl p-6 space-y-6">
+      <div class="flex justify-between items-center border-b border-gray-700 pb-4">
+        <div>
+          <p class="text-gray-400 text-sm mb-1">Transaction Hash</p>
+          <div class="flex items-center space-x-2">
+            <p class="font-mono text-primary text-sm break-all">6c2a214b0854f09209c4fa6995ece7641a26482dc6e3ba4157d15932d28d6a4</p>
+            <button class="text-gray-400 hover:text-primary" onclick="navigator.clipboard.writeText('6c2a214b0854f09209c4fa6995ece7641a26482dc6e3ba4157d15932d28d6a4')"><i class="fa-regular fa-copy"></i></button>
+          </div>
+        </div>
+        <div>
+          <span class="bg-green-500/20 text-green-400 px-3 py-1 rounded-lg text-xs font-medium flex items-center space-x-1">
+            <i class="fa-solid fa-circle-check text-xs"></i><span>Passed</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
+        <div>
+          <p class="text-gray-400 mb-1">Block</p>
+          <p class="font-mono text-primary"><a href="#">6497410</a></p>
+        </div>
+        <div>
+          <p class="text-gray-400 mb-1">Timestamp</p>
+          <p class="text-gray-300 flex items-center space-x-2">
+            <i class="fa-regular fa-clock text-gray-500"></i>
+            <span>3m ago • Nov 05 2025 05:28:29 PM (+07:00 UTC)</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-700 pt-4 grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
+        <div>
+          <p class="text-gray-400 mb-1">From</p>
+          <div class="flex items-center space-x-2">
+            <p class="font-mono text-gray-300">CQbBpJNn1pZCEX7uSRWhDmNyMj6X2L2xgNBLNd26ftCT</p>
+            <button class="text-gray-400 hover:text-primary" onclick="navigator.clipboard.writeText('CQbBpJNn1pZCEX7uSRWhDmNyMj6X2L2xgNBLNd26ftCT')"><i class="fa-regular fa-copy text-xs"></i></button>
+          </div>
+        </div>
+        <div>
+          <p class="text-gray-400 mb-1">To</p>
+          <div class="flex items-center space-x-2">
+            <p class="font-mono text-gray-300">Bd8FUb7lrW7JfFSMhurcdyPXZZsBoLse2RMydcFAo9qf</p>
+            <button class="text-gray-400 hover:text-primary" onclick="navigator.clipboard.writeText('Bd8FUb7lrW7JfFSMhurcdyPXZZsBoLse2RMydcFAo9qf')"><i class="fa-regular fa-copy text-xs"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-700 pt-4 grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
+        <div>
+          <p class="text-gray-400 mb-1">Value</p>
+          <p class="font-mono text-lg text-white">22,000 đồng</p>
+        </div>
+        <div>
+          <p class="text-gray-400 mb-1">Note</p>
+          <p class="bg-gray-800/50 border border-gray-700 rounded-lg p-3 text-gray-300 text-sm">hn3 1 swing 1 yomost 1 xúc xích</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-dark-light border-t border-gray-700 mt-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <div class="w-6 h-6 bg-primary rounded flex items-center justify-center">
+          <i class="fa-solid fa-cube text-white text-xs"></i>
+        </div>
+        <span class="text-gray-400">MEZON EXPLORER • Private Edition</span>
+      </div>
+      <div class="flex space-x-4 text-sm text-gray-400">
+        <a href="#" class="hover:text-white">Privacy</a>
+        <a href="#" class="hover:text-white">Terms</a>
+        <a href="#" class="hover:text-white">Support</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>window.FontAwesomeConfig = { autoReplaceSvg: 'nest'};</script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#6941c6",
+            "primary-dark": "#553c9a",
+            dark: "#0B1533",
+            "dark-light": "#1e293b",
+          },
+          fontFamily: { inter: ["Inter", "sans-serif"] },
+        },
+      },
+    };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif !important; background: #0B1533; color: white; }
+    .dropdown-enter { opacity: 0; transform: translateY(-8px); }
+    .dropdown-enter-active { opacity: 1; transform: translateY(0); transition: all 0.15s ease-out; }
+  </style>
+</head>
+<body class="flex justify-center items-center h-screen">
+
+  <!-- Profile Dropdown Example -->
+  <div class="relative">
+    <!-- Trigger -->
+    <button id="profileButton" class="flex items-center space-x-2 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-xl border border-gray-700 transition">
+      <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-1.jpg" class="w-8 h-8 rounded-full border border-gray-600" alt="User Avatar">
+      <span class="text-sm font-medium">tung.nguyen</span>
+      <i class="fa-solid fa-chevron-down text-gray-400 text-xs"></i>
+    </button>
+
+    <!-- Dropdown -->
+    <div id="profileDropdown" class="hidden absolute right-0 mt-2 w-80 bg-dark-light border border-gray-700 rounded-2xl shadow-xl p-4 space-y-4 z-50">
+      <!-- Header -->
+      <div class="flex items-center space-x-3 border-b border-gray-700 pb-3">
+        <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-1.jpg" class="w-10 h-10 rounded-full border border-gray-600" alt="User Avatar">
+        <div>
+          <div class="flex items-center space-x-2">
+            <h3 class="font-semibold text-white">tung.nguyen</h3>
+            <span class="text-green-400 text-xs">● Online</span>
+          </div>
+          <p class="text-gray-400 text-xs">Admin – NCC Software</p>
+        </div>
+      </div>
+
+      <!-- Wallet & Info -->
+      <div class="space-y-2 text-sm">
+        <div class="flex justify-between items-center">
+          <span class="text-gray-400">Wallet</span>
+          <div class="flex items-center space-x-2">
+            <span class="font-mono text-gray-200 text-sm">EFq...fuvg</span>
+            <button class="text-gray-400 hover:text-primary" onclick="navigator.clipboard.writeText('EFq...fuvg')"><i class="fa-regular fa-copy text-xs"></i></button>
+          </div>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-gray-400">Network</span>
+          <span class="text-gray-200 flex items-center space-x-1"><i class="fa-solid fa-globe text-xs"></i><span>Mezon Mainnet</span></span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-gray-400">Email</span>
+          <span class="text-gray-200">tung.nguyen@ncc.asia</span>
+        </div>
+      </div>
+
+      <!-- Divider -->
+      <div class="border-t border-gray-700"></div>
+
+      <!-- Actions -->
+      <div class="space-y-1 text-sm">
+        <button class="flex w-full items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-800 transition">
+          <span class="flex items-center space-x-2"><i class="fa-solid fa-user-cog text-primary"></i><span>Profile Settings</span></span>
+          <i class="fa-solid fa-chevron-right text-gray-500 text-xs"></i>
+        </button>
+        <button class="flex w-full items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-800 transition">
+          <span class="flex items-center space-x-2"><i class="fa-solid fa-lock text-primary"></i><span>Security Settings</span></span>
+          <i class="fa-solid fa-chevron-right text-gray-500 text-xs"></i>
+        </button>
+        <button id="themeToggle" class="flex w-full items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-800 transition">
+          <span class="flex items-center space-x-2"><i class="fa-solid fa-moon text-primary"></i><span>Toggle Dark / Light Mode</span></span>
+          <i class="fa-solid fa-chevron-right text-gray-500 text-xs"></i>
+        </button>
+      </div>
+
+      <!-- Divider -->
+      <div class="border-t border-gray-700"></div>
+
+      <!-- Logout -->
+      <button class="w-full bg-transparent border border-red-500/40 text-red-400 hover:bg-red-500/20 py-2 rounded-lg font-semibold text-sm transition">
+        <i class="fa-solid fa-right-from-bracket mr-2"></i> Logout
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const button = document.getElementById('profileButton');
+    const dropdown = document.getElementById('profileDropdown');
+    button.addEventListener('click', () => {
+      dropdown.classList.toggle('hidden');
+      dropdown.classList.add('dropdown-enter-active');
+    });
+    window.addEventListener('click', (e) => {
+      if (!button.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.add('hidden');
+    });
+  </script>
+</body>
+</html>
