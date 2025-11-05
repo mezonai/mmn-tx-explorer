@@ -7,12 +7,9 @@ import { CampaignPreview, ECampaignStatus } from '../../../type';
 import { useMemo } from 'react';
 import { DateTimeUtil } from '@/utils';
 import { CampaignActions } from './campaign-actions';
+import { CampaignModeProps } from '../types';
 
-interface CampaignSidebarProps {
-  type?: 'create' | 'edit';
-}
-
-export function CampaignSidebar({ type = 'create' }: CampaignSidebarProps) {
+export function CampaignSidebar({ type = 'create' }: CampaignModeProps) {
   const { form, validation } = useCreateCampaignContext();
 
   // Calculate preview data

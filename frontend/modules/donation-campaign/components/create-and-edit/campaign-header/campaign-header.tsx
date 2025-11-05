@@ -1,12 +1,9 @@
 import { APP_CONFIG } from '@/configs/app.config';
 import { memo } from 'react';
 import { PageHeader } from '@/components/shared';
+import { CampaignModeProps } from '../types';
 
-interface CampaignHeaderProps {
-  type?: 'create' | 'edit';
-}
-
-const CampaignHeader = memo(function CampaignHeader({ type = 'create' }: CampaignHeaderProps) {
+const CampaignHeader = memo(function CampaignHeader({ type = 'create' }: CampaignModeProps) {
   return (
     <>
       {type === 'create' && (

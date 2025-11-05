@@ -12,12 +12,9 @@ import { ECampaignStatus } from '@/modules/donation-campaign/type';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/configs/routes.config';
+import { CampaignModeProps } from '../types';
 
-interface CampaignActionsProps {
-  type?: 'create' | 'edit';
-}
-
-const CampaignActions = ({ type = 'create' }: CampaignActionsProps) => {
+const CampaignActions = ({ type = 'create' }: CampaignModeProps) => {
   const { handleSubmit, isSaving, validation } = useCreateCampaignContext();
   const params = useParams<{ campaignId: string }>();
   const campaignId = params?.campaignId ? String(params.campaignId) : '';
