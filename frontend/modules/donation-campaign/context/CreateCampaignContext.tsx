@@ -102,7 +102,7 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
       }
       const res = await createMutation.mutateAsync(draftData as any);
       toast.success('Draft saved');
-      router.push(ROUTES.CAMPAIGN(res.id));
+      router.push(ROUTES.CAMPAIGN(res.slug));
     } catch  {
       toast.error("Failed to save draft");
     } finally {
@@ -149,9 +149,9 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
           };
 
           if (id) {
-            await editMutation.mutateAsync({ id, data: campaignData });
+            const res = await editMutation.mutateAsync({ id, data: campaignData });
             toast.success('Campaign updated successfully');
-            router.push(ROUTES.CAMPAIGN(id));
+            router.push(ROUTES.CAMPAIGN(res.slug));
           } else {
             if (!validation.isAllComplete) {
               toast.error('Please complete all required fields before publishing');
@@ -159,7 +159,7 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
             }
             const res = await createAndPublishMutation.mutateAsync(campaignData);
             toast.success('Campaign published successfully');
-            router.push(ROUTES.CAMPAIGN(res.id));
+            router.push(ROUTES.CAMPAIGN(res.slug));
           }
         } catch {
           toast.error('Failed to submit campaign');

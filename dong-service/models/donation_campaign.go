@@ -10,6 +10,7 @@ import (
 type DonationCampaign struct {
 	ID                int64     `json:"id" db:"id"`
 	Name              string    `json:"name" db:"name" binding:"required"`
+	Slug              string    `json:"slug" db:"slug"`
 	Description       *string   `json:"description,omitempty" db:"description"`
 	Goal              *int64    `json:"goal,omitempty" db:"goal"`
 	URL               *string   `json:"url,omitempty" db:"url"`
@@ -50,6 +51,7 @@ type UpdateDonationCampaignRequest struct {
 type DonationCampaignResponse struct {
 	ID                string  `json:"id"`
 	Name              string  `json:"name"`
+	Slug              string  `json:"slug"`
 	Description       *string `json:"description,omitempty"`
 	Goal              *int64  `json:"goal,omitempty"`
 	URL               *string `json:"url,omitempty"`
@@ -70,6 +72,7 @@ func (dc *DonationCampaign) ToResponse() DonationCampaignResponse {
 	return DonationCampaignResponse{
 		ID:                fmt.Sprintf("%d", dc.ID),
 		Name:              dc.Name,
+		Slug:              dc.Slug,
 		Description:       dc.Description,
 		Goal:              dc.Goal,
 		URL:               dc.URL,

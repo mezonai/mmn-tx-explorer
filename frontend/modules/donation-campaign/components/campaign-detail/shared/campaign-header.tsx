@@ -43,7 +43,7 @@ export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
         {user?.id === campaign.creator && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link href={ROUTES.CAMPAIGN_EDIT(campaign.id)}>
+              <Link href={ROUTES.CAMPAIGN_EDIT(campaign.slug)}>
                 <Button
                   variant="ghost"
                   size="icon"

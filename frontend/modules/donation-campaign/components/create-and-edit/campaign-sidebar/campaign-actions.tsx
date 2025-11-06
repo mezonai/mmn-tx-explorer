@@ -16,9 +16,9 @@ import { CampaignModeProps } from '../types';
 
 const CampaignActions = ({ type = 'create' }: CampaignModeProps) => {
   const { handleSubmit, isSaving, validation } = useCreateCampaignContext();
-  const params = useParams<{ campaignId: string }>();
-  const campaignId = params?.campaignId ? String(params.campaignId) : '';
-  const { data: campaign, isFetching } = useCampaign(campaignId);
+  const params = useParams<{ slug: string }>();
+  const campaignSlug = params?.slug ? String(params.slug) : '';
+  const { data: campaign, isFetching } = useCampaign(campaignSlug);
 
   const activateMutation = useActiveCampaign();
   const closeMutation = useCloseCampaign();
@@ -31,22 +31,23 @@ const CampaignActions = ({ type = 'create' }: CampaignModeProps) => {
   const router = useRouter();
 
   const handlePublish = async () => {
-    if (!campaignId) return;
+    if (!campaign) return;
     try {
       handleSubmit('publish');
-      await activateMutation.mutateAsync(campaignId);
+      await activateMutation.mutateAsync({ id: campaign.id, slug: campaign.slug });
       toast.success('Campaign published');
-      router.push(ROUTES.CAMPAIGN(campaignId));
+      router.push(ROUTES.CAMPAIGN(campaign.slug));
     } catch {
       toast.error('Failed to publish campaign');
     }
   };
 
   const handleClose = async () => {
-    if (!campaignId) return;
+    if (!campaign) return;
     try {
-      await closeMutation.mutateAsync(campaignId);
+      await closeMutation.mutateAsync({ id: campaign.id, slug: campaign.slug });
       toast.success('Campaign closed');
+      router.push(ROUTES.CAMPAIGN(campaign.slug));
     } catch {
       toast.error('Failed to close campaign');
     }
