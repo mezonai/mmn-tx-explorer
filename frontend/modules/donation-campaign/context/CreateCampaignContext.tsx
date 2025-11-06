@@ -48,7 +48,10 @@ interface CreateCampaignContextType {
 }
 
 function validateForm(form: CreateCampaignForm, isWalletDownloaded: boolean): CreateCampaignValidation {
-  const isBasicsComplete = !!(form.name && form.shortDescription);
+  const trimmedName = String(form.name ?? '').trim();
+  const isNameValid = trimmedName.length > 0 && !/^\d+$/.test(trimmedName);
+
+  const isBasicsComplete = !!(isNameValid && form.shortDescription);
   const isGoalsComplete = true;
   const isWalletComplete = !!(form.donationWallet.address && form.donationWallet.privateKey && isWalletDownloaded);
   const isDescriptionComplete = true;
@@ -103,8 +106,8 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
       const res = await createMutation.mutateAsync(draftData as any);
       toast.success('Draft saved');
       router.push(ROUTES.CAMPAIGN(res.id));
-    } catch  {
-      toast.error("Failed to save draft");
+    } catch {
+      toast.error('Failed to save draft');
     } finally {
       setIsSaving(false);
     }
@@ -132,6 +135,11 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
 
   const handleSubmit = useCallback(
     async (action: 'draft' | 'publish') => {
+      const trimmedName = String(form.name ?? '').trim();
+      if (trimmedName !== '' && /^\d+$/.test(trimmedName)) {
+        toast.error("Campaign name can't be only numbers");
+        return;
+      }
       if (action === 'draft') {
         await saveDraft();
       } else {
