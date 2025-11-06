@@ -66,64 +66,62 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
             Top Contributors
           </TabsTrigger>
         </TabsList>
-        <div className="overflow-x-hidden">
-          <TabsContent value="recent">
-            {isDesktop === undefined ? (
-              <>
-                <div className="hidden lg:block">
-                  <RecentActivityTable {...recentActivityProps} />
-                </div>
-                <div className="block lg:hidden">
-                  <RecentActivityCardsMobile {...recentActivityProps} />
-                </div>
-              </>
-            ) : isDesktop ? (
-              <RecentActivityTable {...recentActivityProps} />
-            ) : (
-              <RecentActivityCardsMobile {...recentActivityProps} />
-            )}
-          </TabsContent>
-          <TabsContent value="top">
-            <Card className="dark:border-primary/20 space-y-3 p-2 sm:p-6">
-              <CardHeader className="m-0 flex items-center justify-between gap-2 p-4 pb-0 sm:px-3 sm:py-0">
-                <div className="">
-                  <CardTitle className="text-foreground">Top contributor</CardTitle>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Refreshes every 10 minutes</span>
-                </div>
-                <RefreshButton onClick={refetch} isLoading={isPending} startDelay={DEFAULT_DEBOUNCE_TIME} />
-              </CardHeader>
-              <CardContent className="p-0">
-                {contributors.length > 0 ? (
-                  contributors.map((contrib, i) => (
-                    <div
-                      key={i}
-                      className="dark:bg-card mb-1 flex items-start gap-2 border-b border-gray-100 bg-white/70 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:rounded-2xl sm:border dark:border-white/10"
-                    >
-                      <div className="flex items-center gap-4">
-                        <span className="bg-brand-primary inline-flex h-9 w-9 items-center justify-center rounded-2xl text-sm font-semibold text-white">
-                          {i + 1}
-                        </span>
-                        <div>
-                          <AddressDisplay address={contrib.sender_wallet} href={ROUTES.WALLET(contrib.sender_wallet)} />
-                        </div>
-                      </div>
-                      <div className="w-full text-right sm:w-auto">
-                        <p className="text-sm font-semibold text-emerald-500 dark:text-emerald-300">
-                          {NumberUtil.formatWithCommasAndScale(contrib.total_donate)} {APP_CONFIG.CHAIN_SYMBOL}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {contrib.percentage.toFixed(1)}% of total
-                        </p>
+        <TabsContent value="recent">
+          {isDesktop === undefined ? (
+            <>
+              <div className="hidden lg:block">
+                <RecentActivityTable {...recentActivityProps} />
+              </div>
+              <div className="block lg:hidden">
+                <RecentActivityCardsMobile {...recentActivityProps} />
+              </div>
+            </>
+          ) : isDesktop ? (
+            <RecentActivityTable {...recentActivityProps} />
+          ) : (
+            <RecentActivityCardsMobile {...recentActivityProps} />
+          )}
+        </TabsContent>
+        <TabsContent value="top">
+          <Card className="dark:border-primary/20 space-y-3 p-2 sm:p-6">
+            <CardHeader className="m-0 flex items-center justify-between gap-2 p-4 pb-0 sm:px-3 sm:py-0">
+              <div className="">
+                <CardTitle className="text-foreground">Top contributor</CardTitle>
+                <span className="text-xs text-gray-500 dark:text-gray-400">Refreshes every 10 minutes</span>
+              </div>
+              <RefreshButton onClick={refetch} isLoading={isPending} startDelay={DEFAULT_DEBOUNCE_TIME} />
+            </CardHeader>
+            <CardContent className="p-0">
+              {contributors.length > 0 ? (
+                contributors.map((contrib, i) => (
+                  <div
+                    key={i}
+                    className="dark:bg-card mb-1 flex items-start gap-2 border-b border-gray-100 bg-white/70 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:rounded-2xl sm:border dark:border-white/10"
+                  >
+                    <div className="flex items-center gap-4">
+                      <span className="bg-brand-primary inline-flex h-9 w-9 items-center justify-center rounded-2xl text-sm font-semibold text-white">
+                        {i + 1}
+                      </span>
+                      <div>
+                        <AddressDisplay address={contrib.sender_wallet} href={ROUTES.WALLET(contrib.sender_wallet)} />
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="py-6 text-center text-gray-500 dark:text-gray-400">No top contributors yet.</div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </div>
+                    <div className="w-full text-right sm:w-auto">
+                      <p className="text-sm font-semibold text-emerald-500 dark:text-emerald-300">
+                        {NumberUtil.formatWithCommasAndScale(contrib.total_donate)} {APP_CONFIG.CHAIN_SYMBOL}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {contrib.percentage.toFixed(1)}% of total
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="py-6 text-center text-gray-500 dark:text-gray-400">No top contributors yet.</div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </Card>
   );
