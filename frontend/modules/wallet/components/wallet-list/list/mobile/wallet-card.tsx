@@ -29,14 +29,14 @@ export const WalletCard = ({ wallet }: WalletCardProps) => {
           <WalletAddressDisplaySkeleton className="w-50" />
         )}
       </div>
-      <div className="flex items-center justify-between">
+      {/* <div className="flex items-center justify-between">
         <span>Balance</span>
         {wallet ? (
           <BalanceAmount balance={wallet.balance} className="text-card-foreground font-normal" />
         ) : (
           <BalanceAmountSkeleton className="text-card-foreground font-normal" />
         )}
-      </div>
+      </div> */}
       <div className="flex items-center justify-between">
         <span>Txn Count</span>
         {wallet ? <TxnLink address={wallet.address} accountNonce={wallet.transaction_count} /> : <TxnLinkSkeleton />}
