@@ -41,8 +41,6 @@ interface CreateCampaignContextType {
   isWalletDownloaded: boolean;
   setIsWalletDownloaded: (isDownloaded: boolean) => void;
   validation: CreateCampaignValidation;
-  saveDraft: () => Promise<void>;
-  deleteDraft: () => void;
   handleSubmit: (action: 'draft' | 'publish') => void;
   generateWallet: () => Promise<boolean>;
 }
@@ -87,34 +85,6 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
     setForm((prev) => ({ ...prev, [field]: value }));
   }, []);
 
-  const saveDraft = useCallback(async () => {
-    try {
-      setIsSaving(true);
-      const draftData = {
-        name: form.name,
-        description: form.shortDescription,
-        goal: Number(form.fundraisingGoal || 0),
-        url: form.bannerImageUrl,
-        donation_wallet: form.donationWallet.address,
-        owner: form.owner,
-        end_date: form.endDate,
-      };
-      if (!validation.isAllComplete) {
-        toast.error('Please complete all required fields before publishing');
-        return;
-      }
-      const res = await createMutation.mutateAsync(draftData as any);
-      toast.success('Draft saved');
-      router.push(ROUTES.CAMPAIGN(res.id));
-    } catch {
-      toast.error('Failed to save draft');
-    } finally {
-      setIsSaving(false);
-    }
-  }, [createMutation, form, router]);
-
-  const deleteDraft = useCallback(() => {}, []);
-
   const generateWallet = useCallback(async () => {
     try {
       setIsSaving(true);
@@ -140,43 +110,50 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
         toast.error("Campaign name can't be only numbers");
         return;
       }
-      if (action === 'draft') {
-        await saveDraft();
-      } else {
-        try {
-          setIsSaving(true);
 
-          const campaignData = {
-            name: form.name,
-            description: form.shortDescription,
-            goal: Number(form.fundraisingGoal || 0),
-            url: form.bannerImageUrl,
-            donation_wallet: form.donationWallet.address,
-            owner: form.owner.trim(),
-            end_date: form.endDate,
-          };
+      try {
+        setIsSaving(true);
 
+        const campaignData = {
+          name: form.name,
+          description: form.shortDescription,
+          goal: Number(form.fundraisingGoal || 0),
+          url: form.bannerImageUrl,
+          donation_wallet: form.donationWallet.address,
+          owner: form.owner.trim(),
+          end_date: form.endDate,
+        };
+
+        if (action === 'draft') {
+          if (!validation.isAllComplete) {
+            toast.error('Please complete all required fields');
+            return;
+          }
+          const res = await createMutation.mutateAsync(campaignData as any);
+          toast.success('Draft saved');
+          router.push(ROUTES.CAMPAIGN(res.id));
+        } else {
           if (id) {
             await editMutation.mutateAsync({ id, data: campaignData });
-            toast.success('Campaign updated successfully');
+            toast.success('Campaign edited successfully');
             router.push(ROUTES.CAMPAIGN(id));
           } else {
             if (!validation.isAllComplete) {
-              toast.error('Please complete all required fields before publishing');
+              toast.error('Please complete all required fields');
               return;
             }
             const res = await createAndPublishMutation.mutateAsync(campaignData);
             toast.success('Campaign published successfully');
             router.push(ROUTES.CAMPAIGN(res.id));
           }
-        } catch {
-          toast.error('Failed to submit campaign');
-        } finally {
-          setIsSaving(false);
         }
+      } catch {
+        toast.error(`Failed to ${action === 'draft' ? 'save draft' : 'submit campaign'}`);
+      } finally {
+        setIsSaving(false);
       }
     },
-    [form, saveDraft, createMutation, createAndPublishMutation, validation.isAllComplete, router, id, editMutation]
+    [form, createMutation, createAndPublishMutation, editMutation, validation.isAllComplete, router, id]
   );
 
   const contextValue: CreateCampaignContextType = {
@@ -188,8 +165,6 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
     isWalletDownloaded,
     setIsWalletDownloaded,
     validation,
-    saveDraft,
-    deleteDraft,
     handleSubmit,
     generateWallet,
   };
