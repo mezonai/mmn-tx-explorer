@@ -7,6 +7,7 @@ export enum ECampaignStatus {
 export interface DonationCampaign {
   id: string;
   name: string;
+  slug: string;
   description: string;
   goal: number;
   url: string;

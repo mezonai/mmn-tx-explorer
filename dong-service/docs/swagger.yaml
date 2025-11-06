@@ -48,6 +48,8 @@ definitions:
         type: string
       owner:
         type: string
+      slug:
+        type: string
       status:
         type: integer
       total_amount:
@@ -623,6 +625,42 @@ paths:
           schema:
             $ref: '#/definitions/models.Response'
       summary: Get top contributors for a campaign
+      tags:
+      - campaigns
+  /api/v1/campaigns/slug/{slug}:
+    get:
+      description: Get details of a specific donation campaign by its slug
+      parameters:
+      - description: Campaign slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.DonationCampaignResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Get a donation campaign by slug
       tags:
       - campaigns
   /api/v1/stats/campaign:

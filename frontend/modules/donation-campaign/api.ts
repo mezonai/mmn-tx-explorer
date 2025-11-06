@@ -27,6 +27,11 @@ export class DonationCampaignService {
     return data.data;
   }
 
+  static async getCampaignBySlug(slug: string): Promise<DonationCampaign> {
+    const { data } = await apiDongClient.get<{ data: DonationCampaign }>(DONATION_ENDPOINTS.CAMPAIGN_BY_SLUG(slug));
+    return data.data;
+  }
+
   static async createCampaign(campaignData: CreateCampaignRequest): Promise<DonationCampaign> {
     const { data } = await apiDongClient.post<{ data: DonationCampaign }>(
       DONATION_ENDPOINTS.CREATE_CAMPAIGN,
