@@ -5,13 +5,13 @@ import { CampaignHeader } from './campaign-header';
 import { Separator } from '@/components/ui/separator';
 import { CampaignForm } from './campaign-form';
 import { useParams } from 'next/navigation';
-import { useCampaign } from '@/modules/donation-campaign/hooks/useCampaign';
+import { useCampaign } from '../../hooks';
 import { useEffect } from 'react';
 
 function EditCampaignContent() {
-  const params = useParams<{ campaignId: string }>();
-  const id = params?.campaignId ? String(params.campaignId) : '';
-  const { data: campaign } = useCampaign(id);
+  const params = useParams<{ slug: string }>();
+  const slug = params?.slug ? String(params.slug) : '';
+  const { data: campaign } = useCampaign(slug);
   const { updateField } = useCreateCampaignContext();
 
   useEffect(() => {
@@ -43,10 +43,11 @@ function EditCampaignContent() {
 }
 
 export const EditCampaign = () => {
-  const params = useParams<{ campaignId: string }>();
-  const id = params?.campaignId ? String(params.campaignId) : '';
+  const params = useParams<{ slug: string }>();
+  const slug = params?.slug ? String(params.slug) : '';
+  const { data: campaign } = useCampaign(slug);
   return (
-    <CreateCampaignProvider id={id}>
+    <CreateCampaignProvider id={campaign?.id}>
       <EditCampaignContent />
     </CreateCampaignProvider>
   );

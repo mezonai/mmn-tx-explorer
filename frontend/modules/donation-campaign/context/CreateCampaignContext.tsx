@@ -134,9 +134,9 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
           router.push(ROUTES.CAMPAIGN(res.id));
         } else {
           if (id) {
-            await editMutation.mutateAsync({ id, data: campaignData });
-            toast.success('Campaign edited successfully');
-            router.push(ROUTES.CAMPAIGN(id));
+            const res = await editMutation.mutateAsync({ id, data: campaignData });
+            toast.success('Campaign updated successfully');
+            router.push(ROUTES.CAMPAIGN(res.slug));
           } else {
             if (!validation.isAllComplete) {
               toast.error('Please complete all required fields');
@@ -144,7 +144,7 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
             }
             const res = await createAndPublishMutation.mutateAsync(campaignData);
             toast.success('Campaign published successfully');
-            router.push(ROUTES.CAMPAIGN(res.id));
+            router.push(ROUTES.CAMPAIGN(res.slug));
           }
         }
       } catch {
