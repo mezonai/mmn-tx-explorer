@@ -81,6 +81,7 @@ export function RecentActivityTable({
           getRowKey={(tx) => tx.hash}
           nullDataContext="No recent activity found."
           classNameLayout="border-none"
+          className="table-fixed"
         />
       </CardContent>
       <CardFooter>
