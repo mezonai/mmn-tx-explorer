@@ -398,3 +398,40 @@ func (h *DonationCampaignHandler) GetTopContributors(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Top contributors retrieved successfully", topContributors))
 }
+
+// GetCampaignBySlug godoc
+// @Summary Get a donation campaign by slug
+// @Description Get details of a specific donation campaign by its slug
+// @Tags campaigns
+// @Produce json
+// @Param slug path string true "Campaign slug"
+// @Success 200 {object} models.Response{data=models.DonationCampaignResponse}
+// @Failure 400 {object} models.Response
+// @Failure 404 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Router /api/v1/campaigns/slug/{slug} [get]
+func (h *DonationCampaignHandler) GetCampaignBySlug(c *gin.Context) {
+	slug := c.Param("slug")
+	if slug == "" {
+		logger.Error().Msg("Empty campaign slug parameter")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidCampaignID))
+		return
+	}
+
+	logger.Debug().Str("slug", slug).Msg("Fetching campaign details by slug")
+
+	campaign, err := h.repo.GetBySlug(slug)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			logger.Warn().Str("slug", slug).Msg("Campaign not found")
+			c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, constants.ErrCampaignNotFound))
+			return
+		}
+		logger.Error().Err(err).Str("slug", slug).Msg("Failed to get campaign by slug")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToGetCampaign+": "+err.Error()))
+		return
+	}
+
+	logger.Debug().Str("slug", slug).Str("name", campaign.Name).Msg("Campaign retrieved successfully")
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgCampaignRetrieved, campaign.ToResponse()))
+}
