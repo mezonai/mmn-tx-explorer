@@ -19,7 +19,7 @@ interface TransactionCardProps {
 
 export const TransactionCard = ({ transaction }: TransactionCardProps) => {
   return (
-    <div className="border-secondary grid grid-cols-[1fr_12fr_6fr_4fr] border-b">
+    <div className="bg-card border-secondary dark:border-primary/15 grid grid-cols-[1fr_12fr_6fr_4fr] border-b">
       <div className="flex items-center justify-center">
         {transaction ? <MoreInfoButton transaction={transaction} /> : <MoreInfoButtonSkeleton />}
       </div>
@@ -36,7 +36,7 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
             <TxnHashLinkSkeleton />
           )}
           {transaction ? (
-            <span className="text-quaternary-500 text-sm font-normal whitespace-nowrap">
+            <span className="text-card-foreground text-sm font-normal whitespace-nowrap">
               {DateTimeUtil.formatRelativeTimeSec(transaction.transaction_timestamp)}
             </span>
           ) : (
@@ -57,7 +57,7 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
       </div>
       <div className="flex items-center px-4 py-3">
         {transaction ? (
-          <span className="text-tertiary-600 text-sm font-normal whitespace-nowrap">
+          <span className="text-card-foreground text-sm font-normal whitespace-nowrap">
             {NumberUtil.formatWithCommasAndScale(transaction.value)} {APP_CONFIG.CHAIN_SYMBOL}
           </span>
         ) : (

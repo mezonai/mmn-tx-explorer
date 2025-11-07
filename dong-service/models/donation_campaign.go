@@ -17,6 +17,7 @@ type DonationCampaign struct {
 	DonationWallet    string    `json:"donation_wallet" db:"donation_wallet" binding:"required"`
 	Creator           int64     `json:"creator" db:"creator" binding:"required"`
 	Owner             *string   `json:"owner,omitempty" db:"owner"`
+	Verified          bool      `json:"verified" db:"verified"`
 	Status            int16     `json:"status" db:"status"` // 0=Draft, 1=Active, 2=Closed
 	CreatedAt         time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt         time.Time `json:"updated_at" db:"updated_at"`
@@ -56,6 +57,7 @@ type DonationCampaignResponse struct {
 	DonationWallet    string  `json:"donation_wallet"`
 	Creator           string  `json:"creator"`
 	Owner             *string `json:"owner,omitempty"`
+	Verified          bool    `json:"verified"`
 	Status            int16   `json:"status"`
 	CreatedAt         string  `json:"created_at"`
 	UpdatedAt         string  `json:"updated_at"`
@@ -75,6 +77,7 @@ func (dc *DonationCampaign) ToResponse() DonationCampaignResponse {
 		DonationWallet:    dc.DonationWallet,
 		Creator:           fmt.Sprintf("%d", dc.Creator),
 		Owner:             dc.Owner,
+		Verified:          dc.Verified,
 		Status:            dc.Status,
 		CreatedAt:         dc.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:         dc.UpdatedAt.Format(time.RFC3339),
@@ -121,4 +124,10 @@ type TopContributor struct {
 type TopContributorsResponse struct {
 	CampaignID   int64            `json:"campaign_id"`
 	Contributors []TopContributor `json:"contributors"`
+}
+
+// SyncCampaignResponse represents the response for syncing a campaign
+type SyncCampaignResponse struct {
+	TotalAmount       int64 `json:"total_amount"`
+	TotalContributors int64 `json:"total_contributors"`
 }

@@ -12,8 +12,9 @@ export const NavBarAuthPanel: React.FC = () => {
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const classname = cn(
-    'hover:bg-brand-primary-background flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-all duration-150 hover:shadow-md',
-    open ? 'bg-brand-primary-background' : 'bg-background'
+    'hover:bg-brand-primary-background dark:hover:bg-card flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-all duration-150 hover:shadow-md',
+    open ? 'bg-brand-primary-background' : 'bg-background',
+    open ? 'dark:bg-card' : 'bg-background'
   );
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -35,23 +36,23 @@ export const NavBarAuthPanel: React.FC = () => {
         <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full border">
           <img src={user.avatar} alt="avatar" className="h-full w-full object-cover object-center" />
         </div>
-        <span className="text-md max-w-[120px] truncate font-medium">{user.username || user.email}</span>
+        <span className="text-md max-w-[120px] truncate font-medium">{user.username}</span>
       </div>
       {open && (
-        <div className="bg-background absolute top-12 right-0 z-50 flex w-56 flex-col gap-2 rounded-lg border p-4 shadow-lg">
+        <div className="bg-card absolute top-12 right-0 z-50 flex w-56 flex-col gap-2 rounded-lg border p-4 shadow-lg">
           <div className="mb-2 flex items-center gap-2">
             <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border">
               <img src={user.avatar} alt="avatar" className="h-full w-full object-cover object-center" />
             </div>
             <div>
-              <div className="text-sm font-semibold">{user.username || user.email}</div>
-              <div className="text-xs text-gray-500">ID: {user.id}</div>
+              <div className="max-w-[120px] truncate text-sm font-semibold">{user.username}</div>
+              <div className="text-card-foreground text-xs">ID:{user.id}</div>
             </div>
           </div>
-          <div className="mb-2 flex flex-col gap-1 text-xs text-gray-700">
+          <div className="text-card-foreground mb-2 flex flex-col gap-1 text-xs">
             <div className="flex items-center gap-x-0.5 gap-y-2 break-all">
               <span className="font-medium">Wallet:</span>
-              <span className="rounded py-0.5 text-gray-800">
+              <span className="rounded py-0.5">
                 {user.walletAddress ? `${user.walletAddress.slice(0, 3)}...${user.walletAddress.slice(-4)}` : 'N/A'}
               </span>
               {user.walletAddress && <CopyButton textToCopy={user.walletAddress} className="ml-2" />}

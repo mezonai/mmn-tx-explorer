@@ -9,10 +9,12 @@ export const DONATION_ENDPOINTS = {
   MY_DONATIONS: '/donations/my-donations',
   PUBLISH_CAMPAIGN: (id: string) => `/api/v1/campaigns/${id}/activate`,
   TOP_CONTRIBUTOR: (id: string) => `/api/v1/campaigns/${id}/top-contributors`,
+  REFRESH_CAMPAIGN_RAISED: (id: string) => `/api/v1/campaigns/${id}/sync`,
 } as const;
 
 export const QUERY_KEYS = {
   CAMPAIGNS: 'campaigns',
+  TOP_CAMPAIGNS: 'top-campaigns',
   CAMPAIGN: 'campaign',
   CAMPAIGN_STATS: 'campaign-stats',
   USER_DONATIONS: 'user-donations',
