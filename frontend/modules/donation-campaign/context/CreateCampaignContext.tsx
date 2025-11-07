@@ -135,7 +135,7 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
         } else {
           if (id) {
             const res = await editMutation.mutateAsync({ id, data: campaignData });
-            toast.success('Campaign updated successfully');
+            toast.success('Campaign edited successfully');
             router.push(ROUTES.CAMPAIGN(res.slug));
           } else {
             if (!validation.isAllComplete) {
