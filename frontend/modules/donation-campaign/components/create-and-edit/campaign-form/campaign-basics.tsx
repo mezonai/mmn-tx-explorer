@@ -4,12 +4,27 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useCreateCampaignContext } from '../../../context/CreateCampaignContext';
+import { useCreateCampaignContext } from '@/modules/donation-campaign/context/CreateCampaignContext';
+import { useState } from 'react';
 
-export function CampaignBasics() {
+interface CampaignBasicsProps {
+  disableName?: boolean;
+  disableDescription?: boolean;
+}
+
+export function CampaignBasics({ disableName = false, disableDescription = false }: CampaignBasicsProps) {
   const { form, updateField } = useCreateCampaignContext();
+  const [nameError, setNameError] = useState<string | null>(null);
 
   const handleInputChange = (field: keyof typeof form, value: any) => {
+    if (field === 'name') {
+      const val = String(value ?? '').trim();
+      if (val !== '' && /^\d+$/.test(val)) {
+        setNameError("Name can't be only numbers");
+      } else {
+        setNameError(null);
+      }
+    }
     updateField(field, value);
   };
 
@@ -32,49 +47,30 @@ export function CampaignBasics() {
           <label className="text-foreground mb-2 block text-sm font-medium">Campaign name</label>
           <Input
             type="text"
-            placeholder="e.g. Build a School for Điện Biên Kids"
             value={form.name}
             onChange={(e) => handleInputChange('name', e.target.value)}
+            disabled={disableName}
+            aria-invalid={!!nameError}
+            className={nameError ? 'border-red-500 focus-visible:ring-red-500' : undefined}
           />
+          {nameError && (
+            <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+              {nameError}
+            </p>
+          )}
         </div>
 
         <div>
           <label className="text-foreground mb-2 block text-sm font-medium">Short description (card)</label>
           <Textarea
             rows={3}
-            placeholder="Share the mission and expected impact in two sentences..."
             value={form.shortDescription}
             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
               handleInputChange('shortDescription', e.target.value)
             }
+            disabled={disableDescription}
           />
         </div>
-
-        {/* <div>
-          <label className="text-foreground mb-2 block text-sm font-medium">Banner image URL</label>
-          <Input
-            type="url"
-            placeholder="https://example.com/image.jpg"
-            value={form.bannerImageUrl}
-            onChange={(e) => handleInputChange('bannerImageUrl', e.target.value)}
-          />
-          {form.bannerImageUrl && (
-            <div className="mt-3">
-              <p className="text-muted-foreground mb-2 text-xs">Preview:</p>
-              <div className="max-w-sm overflow-hidden rounded-lg border">
-                <img
-                  src={form.bannerImageUrl}
-                  alt="Banner preview"
-                  className="h-32 w-full object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                  }}
-                />
-              </div>
-            </div>
-          )}
-        </div> */}
       </CardContent>
     </Card>
   );

@@ -73,7 +73,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
       if (result.success) {
         toast.success('Donation success!');
         setTransactionHash(result.txHash || '');
-        await queryClient.invalidateQueries({ queryKey: [TRANSACTIONS_QUERY_KEY] });
+        setTimeout(async () => await queryClient.invalidateQueries({ queryKey: [TRANSACTIONS_QUERY_KEY] }), 1000);
       } else {
         toast.error(result.error || 'Donation fail. Please try again.');
       }
