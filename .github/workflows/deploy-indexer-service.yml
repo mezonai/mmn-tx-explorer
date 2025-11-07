@@ -94,6 +94,7 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_HOST: ${{ vars.POSTGRES_HOST }}
           POSTGRES_PORT: ${{ vars.POSTGRES_PORT }}
+          LOG_LEVEL_VALUE: ${{ inputs.env == 'prod' && 'info' || 'debug' }}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
@@ -112,6 +113,7 @@ jobs:
           STORAGE_MAIN_POSTGRES_DATABASE=${POSTGRES_DB}
           STORAGE_MAIN_POSTGRES_SSLMODE=disable
           MIGRATIONS_PATH=/opt/indexer/migrations/postgres
+          LOG_LEVEL=${LOG_LEVEL_VALUE}
           EON
 
           sudo chown -R mmn:mmn /opt/indexer
