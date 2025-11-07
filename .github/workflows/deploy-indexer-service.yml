@@ -173,7 +173,6 @@ jobs:
           #!/usr/bin/env bash
           set -euo pipefail
 
-          if [ ${{ inputs.env }} = "prod" ]; then
           echo "Log level set to: $LOGLEVEL"
 
           echo "==> Generating final config files on target server..."
