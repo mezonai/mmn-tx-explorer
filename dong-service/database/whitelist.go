@@ -40,7 +40,7 @@ func Set(tokenID, userID string, ttl time.Duration) error {
 	if err != nil {
 		logger.Error().Err(err).Str("token_id", tokenID).Str("user_id", userID).Msg("Failed to set token in Redis")
 	} else {
-		logger.Debug().Str("token_id", tokenID).Str("user_id", userID).Dur("ttl", ttl).Msg("Token stored in Redis")
+		logger.Info().Str("token_id", tokenID).Str("user_id", userID).Dur("ttl", ttl).Msg("Token stored in Redis")
 	}
 	return err
 }
@@ -48,13 +48,13 @@ func Set(tokenID, userID string, ttl time.Duration) error {
 func Get(tokenID string) (bool, string, error) {
 	userID, err := RedisClient.Get(ctx, tokenID).Result()
 	if err == redis.Nil {
-		logger.Debug().Str("token_id", tokenID).Msg("Token not found in Redis")
+		logger.Warn().Str("token_id", tokenID).Msg("Token not found in Redis")
 		return false, "", nil
 	} else if err != nil {
 		logger.Error().Err(err).Str("token_id", tokenID).Msg("Failed to get token from Redis")
 		return false, "", err
 	}
-	logger.Debug().Str("token_id", tokenID).Str("user_id", userID).Msg("Token retrieved from Redis")
+	logger.Info().Str("token_id", tokenID).Str("user_id", userID).Msg("Token retrieved from Redis")
 	return true, userID, nil
 }
 
