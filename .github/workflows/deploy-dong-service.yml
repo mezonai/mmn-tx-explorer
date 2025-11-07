@@ -104,6 +104,8 @@ jobs:
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
           REDIS_DB: ${{ vars.REDIS_DB }}
           SERVER_GIN_MODE: release
+          LOGGING_OUTPUT: "file"
+          LOG_LEVEL: ${{ inputs.env == 'prod' && 'info' || 'debug' }}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
@@ -194,6 +196,8 @@ jobs:
           "
 
       - name: Atomic swap + restart services
+        env:
+          LOGLEVEL: ${{ inputs.env == 'prod' && 'warn' || 'info' }}
         run: |
           ssh -i ${{vars.SSH_PRIVATE_KEY_PATH}} ${{vars.HOST_ALIAS}} <<EOF
           #!/usr/bin/env bash
@@ -201,8 +205,14 @@ jobs:
 
           echo "==> Generating final config files on target server..."
           sudo mkdir -p /etc/mezon
-          
-          sudo mv /tmp/dong-service-config.yml /etc/mezon/dong-service-config.yml
+
+          echo "Log level set to: $LOGLEVEL"
+
+          sed \
+            -e "s|level: \"info\"|level: \"$LOGLEVEL\"|g" \
+            -e "s|output: \"stdout\"|output: \"file\"|g" \
+            /tmp/dong-service-config.yml \
+            | sudo tee /etc/mezon/dong-service-config.yml >/dev/null
 
           echo "==> Stopping services..."
           sudo systemctl stop dong-service || true

@@ -167,10 +167,13 @@ jobs:
           POSTGRES_HOST: ${{ vars.POSTGRES_HOST }}
           POSTGRES_PORT: ${{ vars.POSTGRES_PORT }}
           MMN_GRPC_URL: ${{ vars.MMN_GRPC_URL }}
+          LOGLEVEL: ${{ inputs.env == 'prod' && 'warn' || 'info' }}
         run: |
           ssh -i ${{vars.SSH_PRIVATE_KEY_PATH}} ${{vars.HOST_ALIAS}} <<EOF
           #!/usr/bin/env bash
           set -euo pipefail
+
+          echo "Log level set to: $LOGLEVEL"
 
           echo "==> Generating final config files on target server..."
           sudo mkdir -p /etc/mezon
@@ -182,6 +185,7 @@ jobs:
             -e "s|__POSTGRES_HOST__|$POSTGRES_HOST|g" \
             -e "s|__POSTGRES_PORT__|$POSTGRES_PORT|g" \
             -e "s|__MMN_GRPC_URL__|$MMN_GRPC_URL|g" \
+            -e "s|level: debug|level: $LOGLEVEL|g" \
             -e "s|filePath: /opt/indexer/logs/indexer.log|filePath: /opt/indexer/logs/indexer-api.log|g" \
             /opt/mezon/explorer/config/config.example.yml \
             | sudo tee /etc/mezon/config-api.yml >/dev/null
@@ -194,6 +198,7 @@ jobs:
             -e "s|__POSTGRES_HOST__|$POSTGRES_HOST|g" \
             -e "s|__POSTGRES_PORT__|$POSTGRES_PORT|g" \
             -e "s|__MMN_GRPC_URL__|$MMN_GRPC_URL|g" \
+            -e "s|level: debug|level: $LOGLEVEL|g" \
             -e "s|filePath: /opt/indexer/logs/indexer.log|filePath: /opt/indexer/logs/indexer-orchestrator.log|g" \
             /opt/mezon/explorer/config/config.example.yml \
             | sudo tee /etc/mezon/config-orchestrator.yml >/dev/null
