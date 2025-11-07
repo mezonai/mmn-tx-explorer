@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ITransaction } from '@/modules/transaction/types';
 import { DateTimeUtil, NumberUtil } from '@/utils';
 import { ClientTimeDisplay } from './client-time-display';
+import { APP_CONFIG } from '@/configs/app.config';
 
 interface TabDetailsProps {
   transaction?: ITransaction;
@@ -118,11 +119,30 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
         data={transaction}
         render={(transaction) => (
           <div className="flex items-center">
-            <span>{NumberUtil.formatWithCommasAndScale(transaction.value)}</span>
+            <span>
+              {NumberUtil.formatWithCommasAndScale(transaction.value)} {APP_CONFIG.CHAIN_SYMBOL}
+            </span>
           </div>
         )}
         skeleton={<Skeleton className="h-5 w-20" />}
       />
+      {!!transaction?.text_data && (
+        <ItemAttribute
+          label="Note"
+          description="The note attached to the transaction"
+          data={transaction}
+          render={(tx) => (
+            <div className="flex items-center gap-2">
+              <div className="flex-grow md:flex-grow-0">
+                <Truncate className="md:hidden">{tx.text_data}</Truncate>
+                <span className="hidden md:block">{tx.text_data}</span>
+              </div>
+              <CopyButton textToCopy={tx.text_data ?? ''} className="text-muted-foreground size-fit flex-shrink-0" />
+            </div>
+          )}
+          skeleton={<Skeleton className="h-5 w-20" />}
+        />
+      )}
     </div>
   );
 };

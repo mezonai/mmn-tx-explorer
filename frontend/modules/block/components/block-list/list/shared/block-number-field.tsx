@@ -27,10 +27,10 @@ export const BlockNumberField = ({
 }: BlockNumberFieldProps) => {
   return (
     <div className={cn('flex flex-col items-start', className)}>
-      <Button variant="link" className="text-brand-secondary-700 size-fit p-0 font-semibold" asChild>
+      <Button variant="link" className="text-brand-primary size-fit p-0 font-semibold" asChild>
         <Link href={ROUTES.BLOCK(blockNumber)}>{blockNumber}</Link>
       </Button>
-      <span className="text-quaternary-500 text-sm font-normal whitespace-nowrap">
+      <span className="text-card-foreground text-sm font-normal whitespace-nowrap">
         {showAbsoluteTime
           ? format(DateTimeUtil.toMilliseconds(blockTimestamp), DATE_TIME_FORMAT.HUMAN_READABLE_SHORT)
           : DateTimeUtil.formatRelativeTimeSec(blockTimestamp)}

@@ -125,7 +125,7 @@ function SidebarProvider({
               ...style,
             } as React.CSSProperties
           }
-          className={cn('group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full', className)}
+          className={cn('group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar min-h-svh w-full', className)}
           {...props}
         >
           {children}
@@ -250,7 +250,7 @@ function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<t
       }}
       {...props}
     >
-      <Menu02 className="text-foreground-secondary-700 size-6" />
+      <Menu02 className="text-foreground size-6" />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );

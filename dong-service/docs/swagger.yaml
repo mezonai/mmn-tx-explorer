@@ -1,0 +1,735 @@
+definitions:
+  models.CampaignStatsResponse:
+    properties:
+      total_amount:
+        type: integer
+      total_campaigns_active:
+        type: integer
+      total_contributors:
+        type: integer
+    type: object
+  models.CreateDonationCampaignRequest:
+    properties:
+      description:
+        type: string
+      donation_wallet:
+        type: string
+      end_date:
+        type: string
+      goal:
+        type: integer
+      name:
+        type: string
+      owner:
+        type: string
+      url:
+        type: string
+    required:
+    - donation_wallet
+    - name
+    type: object
+  models.DonationCampaignResponse:
+    properties:
+      created_at:
+        type: string
+      creator:
+        type: string
+      description:
+        type: string
+      donation_wallet:
+        type: string
+      end_date:
+        type: string
+      goal:
+        type: integer
+      id:
+        type: string
+      name:
+        type: string
+      owner:
+        type: string
+      status:
+        type: integer
+      total_amount:
+        type: integer
+      total_contributors:
+        type: integer
+      updated_at:
+        type: string
+      url:
+        type: string
+      verified:
+        type: boolean
+    type: object
+  models.HealthResponse:
+    properties:
+      message:
+        type: string
+      status:
+        type: string
+      time:
+        type: string
+    type: object
+  models.LogoutRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  models.OauthRequest:
+    properties:
+      code:
+        type: string
+      redirect_uri:
+        type: string
+    required:
+    - code
+    - redirect_uri
+    type: object
+  models.OauthResponse:
+    properties:
+      access_token:
+        type: string
+      auth_token:
+        type: string
+      refresh_token:
+        type: string
+      user:
+        $ref: '#/definitions/models.OauthUserInfo'
+    type: object
+  models.OauthUserInfo:
+    properties:
+      aud:
+        items:
+          type: string
+        type: array
+      auth_time:
+        type: integer
+      avatar:
+        type: string
+      display_name:
+        type: string
+      email:
+        type: string
+      iat:
+        type: integer
+      iss:
+        type: string
+      mezon_id:
+        type: string
+      rat:
+        type: integer
+      sub:
+        type: string
+      user_id:
+        type: string
+      username:
+        type: string
+    type: object
+  models.PaginatedResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+      meta:
+        $ref: '#/definitions/models.PaginationMeta'
+      success:
+        type: boolean
+    type: object
+  models.PaginationMeta:
+    properties:
+      limit:
+        type: integer
+      page:
+        type: integer
+      total_items:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  models.RefreshRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  models.RefreshResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+      user_id:
+        type: string
+    type: object
+  models.Response:
+    properties:
+      code:
+        type: integer
+      data: {}
+      message:
+        type: string
+    type: object
+  models.SyncCampaignResponse:
+    properties:
+      total_amount:
+        type: integer
+      total_contributors:
+        type: integer
+    type: object
+  models.TopContributor:
+    properties:
+      percentage:
+        type: number
+      sender_wallet:
+        type: string
+      total_donate:
+        type: integer
+    type: object
+  models.TopContributorsResponse:
+    properties:
+      campaign_id:
+        type: integer
+      contributors:
+        items:
+          $ref: '#/definitions/models.TopContributor'
+        type: array
+    type: object
+  models.UpdateDonationCampaignRequest:
+    properties:
+      description:
+        type: string
+      end_date:
+        type: string
+      goal:
+        type: integer
+      name:
+        type: string
+      owner:
+        type: string
+      url:
+        type: string
+    type: object
+host: localhost:8888
+info:
+  contact:
+    email: support@example.com
+    name: API Support
+  description: API for managing donation campaigns
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Dong Service API
+  version: "1.0"
+paths:
+  /api/v1/admin/campaigns:
+    post:
+      consumes:
+      - application/json
+      description: Create a new donation campaign
+      parameters:
+      - description: Campaign data
+        in: body
+        name: campaign
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateDonationCampaignRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.DonationCampaignResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - BearerAuth: []
+      summary: Create a new donation campaign
+      tags:
+      - campaigns
+  /api/v1/admin/campaigns/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Update an existing donation campaign
+      parameters:
+      - description: Campaign ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Campaign data
+        in: body
+        name: campaign
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateDonationCampaignRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.DonationCampaignResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - BearerAuth: []
+      summary: Update a donation campaign
+      tags:
+      - campaigns
+  /api/v1/admin/campaigns/{id}/activate:
+    patch:
+      description: Set campaign status to Active
+      parameters:
+      - description: Campaign ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.DonationCampaignResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - BearerAuth: []
+      summary: Activate a donation campaign
+      tags:
+      - campaigns
+  /api/v1/admin/campaigns/{id}/close:
+    patch:
+      description: Set campaign status to Closed
+      parameters:
+      - description: Campaign ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.DonationCampaignResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - BearerAuth: []
+      summary: Close a donation campaign
+      tags:
+      - campaigns
+  /api/v1/admin/campaigns/create-active:
+    post:
+      consumes:
+      - application/json
+      description: Create a new donation campaign and set its status to Active
+      parameters:
+      - description: Campaign data
+        in: body
+        name: campaign
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateDonationCampaignRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.DonationCampaignResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - BearerAuth: []
+      summary: Create and immediately activate a new donation campaign
+      tags:
+      - campaigns
+  /api/v1/campaigns:
+    get:
+      description: Get a list of all donation campaigns with pagination
+      parameters:
+      - default: 0
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by status (e.g., 0=draft,1=active,2=closed)
+        in: query
+        name: status
+        type: integer
+      - default: desc
+        description: Sort direction
+        enum:
+        - asc
+        - desc
+        in: query
+        name: order
+        type: string
+      - default: created_at
+        description: Sort field
+        enum:
+        - created_at
+        - total_amount
+        in: query
+        name: order_by
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.PaginatedResponse'
+            - properties:
+                ' meta':
+                  $ref: '#/definitions/models.PaginationMeta'
+                data:
+                  items:
+                    $ref: '#/definitions/models.DonationCampaignResponse'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: List all donation campaigns
+      tags:
+      - campaigns
+  /api/v1/campaigns/{id}:
+    get:
+      description: Get details of a specific donation campaign
+      parameters:
+      - description: Campaign ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.DonationCampaignResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Get a donation campaign by ID
+      tags:
+      - campaigns
+  /api/v1/campaigns/{id}/sync:
+    post:
+      description: Manually trigger synchronization of contributors and statistics
+        for a specific campaign
+      parameters:
+      - description: Campaign ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.SyncCampaignResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Sync contributors and statistics for a campaign
+      tags:
+      - campaigns
+  /api/v1/campaigns/{id}/top-contributors:
+    get:
+      description: Get the top contributors for a specific donation campaign
+      parameters:
+      - description: Campaign ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - default: 10
+        description: Number of top contributors to return
+        in: query
+        maximum: 10
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.TopContributorsResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Get top contributors for a campaign
+      tags:
+      - campaigns
+  /api/v1/stats/campaign:
+    get:
+      description: Get overall statistics for all donation campaigns
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.CampaignStatsResponse'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Get donation campaign statistics
+      tags:
+      - campaigns
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: Check if the service is running
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.HealthResponse'
+      summary: Health check
+      tags:
+      - health
+  /logout:
+    post:
+      consumes:
+      - application/json
+      description: 'Invalidate the provided refresh token and remove it from Redis
+        whitelist. Always returns HTTP 200 with different message responses:'
+      parameters:
+      - description: Refresh token to revoke
+        in: body
+        name: LogoutRequest
+        required: true
+        schema:
+          $ref: '#/definitions/models.LogoutRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Logout status message (see Description for possible values)
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Logout and revoke refresh token
+      tags:
+      - Auth
+  /oauth:
+    post:
+      consumes:
+      - application/json
+      description: Exchange OAuth code for access/refresh tokens, fetch user info,
+        and store token in Redis whitelist. Returns JWT tokens and user info.
+      parameters:
+      - description: OAuth code and redirect URI
+        in: body
+        name: OauthRequest
+        required: true
+        schema:
+          $ref: '#/definitions/models.OauthRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Access and Refresh token (JWT) and user info
+          schema:
+            $ref: '#/definitions/models.OauthResponse'
+        "400":
+          description: Missing code or invalid request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/models.Response'
+        "502":
+          description: Failed to exchange code or get user info
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: OAuth login
+      tags:
+      - Auth
+  /refresh:
+    post:
+      consumes:
+      - application/json
+      description: Validate refresh token, rotate token ID, issue new access/refresh
+        tokens, and update Redis whitelist. Returns new JWT tokens.
+      parameters:
+      - description: Refresh token to validate
+        in: body
+        name: RefreshRequest
+        required: true
+        schema:
+          $ref: '#/definitions/models.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: New JWT tokens
+          schema:
+            $ref: '#/definitions/models.RefreshResponse'
+        "400":
+          description: Missing or invalid refresh token
+          schema:
+            $ref: '#/definitions/models.Response'
+        "401":
+          description: Unauthorized or token not found
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Refresh access token
+      tags:
+      - Auth
+schemes:
+- http
+- https
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

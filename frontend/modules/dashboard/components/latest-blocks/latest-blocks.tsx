@@ -26,7 +26,7 @@ export const LatestBlocks = ({ className }: LatestBlocksProps) => {
           : Array.from({ length: DASHBOARD_BLOCKS_LIMIT }).map((_, index) => <BlockCard key={index} />)}
       </div>
       <div className="flex w-full justify-center">
-        <Button variant="link" className="text-brand-secondary-700 size-fit p-0 font-semibold" asChild>
+        <Button variant="link" className="text-brand-primary size-fit p-0 font-semibold" asChild>
           <Link href={ROUTES.BLOCKS}>View all blocks</Link>
         </Button>
       </div>
