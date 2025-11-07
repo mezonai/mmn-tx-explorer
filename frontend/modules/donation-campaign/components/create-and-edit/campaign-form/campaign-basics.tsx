@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useCreateCampaignContext } from '@/modules/donation-campaign/context/CreateCampaignContext';
+import { useState } from 'react';
 
 interface CampaignBasicsProps {
   disableName?: boolean;
@@ -13,8 +14,17 @@ interface CampaignBasicsProps {
 
 export function CampaignBasics({ disableName = false, disableDescription = false }: CampaignBasicsProps) {
   const { form, updateField } = useCreateCampaignContext();
+  const [nameError, setNameError] = useState<string | null>(null);
 
   const handleInputChange = (field: keyof typeof form, value: any) => {
+    if (field === 'name') {
+      const val = String(value ?? '').trim();
+      if (val !== '' && /^\d+$/.test(val)) {
+        setNameError("Name can't be only numbers");
+      } else {
+        setNameError(null);
+      }
+    }
     updateField(field, value);
   };
 
@@ -40,7 +50,14 @@ export function CampaignBasics({ disableName = false, disableDescription = false
             value={form.name}
             onChange={(e) => handleInputChange('name', e.target.value)}
             disabled={disableName}
+            aria-invalid={!!nameError}
+            className={nameError ? 'border-red-500 focus-visible:ring-red-500' : undefined}
           />
+          {nameError && (
+            <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+              {nameError}
+            </p>
+          )}
         </div>
 
         <div>
