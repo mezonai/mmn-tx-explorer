@@ -341,7 +341,7 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
 	signedAccess, err := accessToken.SignedString([]byte(secret))
 	if err != nil {
-		logger.Error().Err(err).Msg("Failed to sign new access token")
+		logger.Error().Err(err).Str("oldTokenID", oldTokenID).Msg("Failed to sign new access token")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to sign access token"))
 		return
 	}
@@ -355,7 +355,7 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
 	signedRefresh, err := refreshToken.SignedString([]byte(secret))
 	if err != nil {
-		logger.Error().Err(err).Msg("Failed to sign new refresh token")
+		logger.Error().Err(err).Str("oldTokenID", oldTokenID).Msg("Failed to sign new refresh token")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to sign refresh token"))
 		return
 	}
