@@ -104,8 +104,8 @@ jobs:
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
           REDIS_DB: ${{ vars.REDIS_DB }}
           SERVER_GIN_MODE: release
-          LOGGING_OUTPUT_VALUE: "file"
-          LOG_LEVEL_VALUE: ${{ inputs.env == 'prod' && 'info' || 'debug' }}
+          LOGGING_OUTPUT: "file"
+          LOG_LEVEL: ${{ inputs.env == 'prod' && 'info' || 'debug' }}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
@@ -131,8 +131,8 @@ jobs:
           REDIS_PASSWORD='${REDIS_PASSWORD}'
           REDIS_DB='${REDIS_DB}'
           SERVER_GIN_MODE='${SERVER_GIN_MODE}'
-          LOGGING_OUTPUT='${LOGGING_OUTPUT_VALUE}'
-          LOG_LEVEL='${LOG_LEVEL_VALUE}'
+          LOGGING_OUTPUT='${LOGGING_OUTPUT}'
+          LOG_LEVEL='${LOG_LEVEL}'
           EON
 
           sudo chown -R mmn:mmn /opt/dong-service
@@ -169,8 +169,8 @@ jobs:
           printf "export REDIS_PASSWORD=%q\n" "$REDIS_PASSWORD" >> remote_env.sh
           printf "export REDIS_DB=%q\n" "$REDIS_DB" >> remote_env.sh
           printf "export SERVER_GIN_MODE=%q\n" "$SERVER_GIN_MODE" >> remote_env.sh
-          printf "export LOGGING_OUTPUT=%q\n" "$LOGGING_OUTPUT_VALUE" >> remote_env.sh
-          printf "export LOG_LEVEL=%q\n" "$LOG_LEVEL_VALUE" >> remote_env.sh
+          printf "export LOGGING_OUTPUT=%q\n" "$LOGGING_OUTPUT" >> remote_env.sh
+          printf "export LOG_LEVEL=%q\n" "$LOG_LEVEL" >> remote_env.sh
 
       - name: Prepare and deploy to target server
         run: |
