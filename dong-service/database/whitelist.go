@@ -63,7 +63,7 @@ func Delete(tokenID string) error {
 	if err != nil {
 		logger.Error().Err(err).Str("token_id", tokenID).Msg("Failed to delete token from Redis")
 	} else {
-		logger.Debug().Str("token_id", tokenID).Msg("Token deleted from Redis")
+		logger.Info().Str("token_id", tokenID).Msg("Token deleted from Redis")
 	}
 	return err
 }
