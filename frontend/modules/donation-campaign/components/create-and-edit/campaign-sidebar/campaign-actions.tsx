@@ -28,8 +28,9 @@ const CampaignActions = ({ type = 'create' }: CampaignModeProps) => {
 
   const isMutating = activateMutation.isPending || closeMutation.isPending;
 
-  const canPublish = campaign && campaign.status !== ECampaignStatus.Active;
-  const canClose = campaign && campaign.status === ECampaignStatus.Active;
+  const canPublish = campaign && campaign.status !== ECampaignStatus.Active; //draft or closed campaign
+  const canClose = campaign && campaign.status === ECampaignStatus.Active; //published campaign
+  const canDelete = campaign && campaign.status === ECampaignStatus.Draft; //closed campaign only
 
   const router = useRouter();
 
@@ -56,14 +57,14 @@ const CampaignActions = ({ type = 'create' }: CampaignModeProps) => {
     }
   };
 
-  const handleDeleteDraft = async () => {
+  const handleDelete = async () => {
     if (!campaign) return;
     try {
       await deleteMutation.mutateAsync(campaign.id);
-      toast.success('Campaign deleted');
+      toast.success('Draft deleted');
       router.push(ROUTES.DONATION_CAMPAIGN);
     } catch (e) {
-      toast.error('Failed to delete campaign');
+      toast.error('Failed to delete Draft');
     }
   };
   return (
@@ -125,24 +126,27 @@ const CampaignActions = ({ type = 'create' }: CampaignModeProps) => {
               >
                 {isMutating ? 'Publishing…' : 'Publish campaign'}
               </Button>
-              <DeleteConfirmDialog
-                trigger={
-                  <Button
-                    disabled={!campaign || isFetching || deleteMutation.isPending}
-                    type="button"
-                    variant="outline"
-                    className="border border-rose-600 bg-rose-600 text-white shadow-lg shadow-rose-600/20 hover:bg-rose-600/80 hover:text-white dark:bg-rose-800 dark:hover:bg-rose-800/80"
-                  >
-                    Delete Campaign
-                  </Button>
-                }
-                onConfirm={handleDeleteDraft}
-                title="Delete Campaign?"
-                description="Are you sure you want to delete this campaign? This action cannot be undone."
-                confirmText="Delete"
-                cancelText="Cancel"
-              />
             </>
+          )}
+
+          {canDelete && (
+            <DeleteConfirmDialog
+              trigger={
+                <Button
+                  disabled={!campaign || isFetching || deleteMutation.isPending}
+                  type="button"
+                  variant="outline"
+                  className="border border-rose-600 bg-rose-600 text-white shadow-lg shadow-rose-600/20 hover:bg-rose-600/80 hover:text-white dark:bg-rose-800 dark:hover:bg-rose-800/80"
+                >
+                  Delete Draft
+                </Button>
+              }
+              onConfirm={handleDelete}
+              title="Delete Draft?"
+              description="Are you sure you want to delete this draft? This action cannot be undone."
+              confirmText="Delete"
+              cancelText="Cancel"
+            />
           )}
 
           {canClose && (
