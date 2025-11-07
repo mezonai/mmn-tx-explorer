@@ -204,23 +204,30 @@ jobs:
 
           echo "==> Generating final config files on target server..."
           sudo mkdir -p /etc/mezon
+          sed \
+            -e "s|__POSTGRES_DB__|$POSTGRES_DB|g" \
+            -e "s|__POSTGRES_USER__|$POSTGRES_USER|g" \
+            -e "s|__POSTGRES_PASSWORD__|$POSTGRES_PASSWORD|g" \
+            -e "s|__POSTGRES_HOST__|$POSTGRES_HOST|g" \
+            -e "s|__POSTGRES_PORT__|$POSTGRES_PORT|g" \
+            -e "s|__MMN_GRPC_URL__|$MMN_GRPC_URL|g" \
+            -e "s|level: debug|$LOGLEVEL|g" \
+            -e "s|filePath: /opt/indexer/logs/indexer.log|filePath: /opt/indexer/logs/indexer-api.log|g" \
+            /opt/mezon/explorer/config/config.example.yml \
+            | sudo tee /etc/mezon/config-api.yml >/dev/null
           
-          if [ "${APP_ENV}" = "prod" ]; then
-            echo "Setting log level to 'warn' for prod"
-            sed \
-              -e 's/^\( *level: \).*/\1"warn"/' \
-              -e 's/^\( *output: \).*/\1"file"/' \
-              /tmp/dong-service-config.yml \
-              | sudo tee /etc/mezon/dong-service-config.yml >/dev/null
+          if [ ${APP_ENV} = "prod" ]; then
+            LOGLEVEL="level: 'warn'"
           else
-            sed \
-              -e 's/^\( *level: \).*/\1"info"/' \
-              -e 's/^\( *output: \).*/\1"file"/' \
-              /tmp/dong-service-config.yml \
-              | sudo tee /etc/mezon/dong-service-config.yml >/dev/null
+            LOGLEVEL="level: 'info'"
           fi
+          echo "Log level set to: $LOGLEVEL"
 
-          sudo mv /tmp/dong-service-config.yml /etc/mezon/dong-service-config.yml
+          sed \
+            -e 's|level: "info"|LOGLEVEL|g' \
+            -e 's|output: "stdout"|output: file|g' \
+            /tmp/dong-service-config.yml \
+            | sudo tee /etc/mezon/dong-service-config.yml >/dev/null
 
           echo "==> Stopping services..."
           sudo systemctl stop dong-service || true

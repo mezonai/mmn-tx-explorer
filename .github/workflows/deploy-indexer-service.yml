@@ -80,7 +80,6 @@ jobs:
     env:
       TARGET_HOST: ${{ inputs.env == 'prod' && 'prod-indexer' || 'dev-indexer' }}
       GIT_SHA: ${{ needs.build.outputs.git_sha }}
-      APP_ENV: ${{ inputs.env }}
 
     steps:
       - name: Copy config and secrets to target
@@ -173,12 +172,12 @@ jobs:
           #!/usr/bin/env bash
           set -euo pipefail
 
-          if [ "${APP_ENV}" = "prod" ]; then
+          if [ ${{ inputs.env }} = "prod" ]; then
             LOGLEVEL="level: warn"
           else
             LOGLEVEL="level: info"
           fi
-
+          echo "Log level set to: $LOGLEVEL"
 
           echo "==> Generating final config files on target server..."
           sudo mkdir -p /etc/mezon
