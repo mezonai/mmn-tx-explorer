@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mezon Đồng – Campaign Withdraw Popup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#6941c6',
+            'primary-dark': '#5930b3',
+            dark: '#0B1533',
+            'dark-light': '#1E293B',
+            accent: '#8b5cf6',
+            border: '#27334A',
+            text: '#E5E7EB',
+            muted: '#9CA3AF',
+          },
+          fontFamily: {
+            inter: ['Inter', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+</head>
+<body class="bg-dark font-inter text-text">
+  <div class="max-w-5xl mx-auto px-6 py-10 space-y-8">
+    <!-- HEADER -->
+    <div>
+      <h1 class="text-2xl font-semibold text-white">NCC Build School Fund 2025</h1>
+      <p class="text-muted text-sm mt-1">
+        Manage your campaign funds. As campaign creator, you can withdraw tokens using your private key.
+      </p>
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-dark-light border border-border rounded-2xl p-6">
+        <h3 class="text-sm uppercase text-muted mb-2">Raised to Date</h3>
+        <div class="text-3xl font-bold">382,416,815 <span class="text-muted text-base">đồng</span></div>
+        <div class="mt-3 w-full bg-slate-700 rounded-full h-2">
+          <div class="bg-primary h-2 rounded-full" style="width:76.48%"></div>
+        </div>
+        <p class="text-xs text-muted mt-1">Goal: 500,000,000 đồng (76.48% funded)</p>
+      </div>
+
+      <div class="bg-dark-light border border-border rounded-2xl p-6 flex items-center justify-between">
+        <div>
+          <h3 class="text-sm uppercase text-muted mb-2">Campaign Insights</h3>
+          <ul class="space-y-1 text-sm">
+            <li><span class="text-muted">Contributors:</span> 223 supporters</li>
+            <li><span class="text-muted">Time remaining:</span> about 2 months</li>
+            <li><span class="text-muted">Campaign owner:</span> NCC</li>
+          </ul>
+        </div>
+        <button id="openWithdraw" class="px-5 py-2 text-sm font-semibold bg-primary hover:bg-primary-dark rounded-lg text-white shadow-lg shadow-primary/20">
+          Withdraw Funds
+        </button>
+      </div>
+    </div>
+
+    <!-- ACTIVITY (placeholder) -->
+    <div class="bg-dark-light border border-border rounded-2xl p-6">
+      <h2 class="text-lg font-semibold text-white mb-3">Fundraising Activity</h2>
+      <p class="text-muted text-sm">Live transactions streamed from the đồng chain. (Recent Activity section placeholder)</p>
+    </div>
+  </div>
+
+  <!-- POPUP MODAL -->
+  <div id="withdrawModal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50">
+    <div class="bg-dark-light border border-border rounded-2xl w-full max-w-lg mx-auto p-6 shadow-2xl relative">
+      <button id="closeModal" class="absolute top-4 right-4 text-muted hover:text-white">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+      <h2 class="text-xl font-semibold text-white mb-2">Withdraw Funds</h2>
+      <p class="text-muted text-sm mb-5">
+        Current Balance: <span class="text-white font-medium">382,416,815 đồng</span><br />
+        Your private key will never be stored — it’s used locally to sign the transaction.
+      </p>
+
+      <form id="withdraw-form" class="space-y-4">
+        <div>
+          <label class="block text-sm text-muted mb-1">Destination Wallet Address</label>
+          <input id="dest" type="text" placeholder="0xABC123..." class="w-full bg-slate-800 border border-border rounded-lg px-4 py-2 text-sm text-white focus:ring-2 focus:ring-primary focus:outline-none" required>
+        </div>
+
+        <div>
+          <label class="block text-sm text-muted mb-1">Amount (optional)</label>
+          <input id="amount" type="number" placeholder="Leave blank to withdraw all funds" class="w-full bg-slate-800 border border-border rounded-lg px-4 py-2 text-sm text-white focus:ring-2 focus:ring-primary focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block text-sm text-muted mb-1">Private Key</label>
+          <input id="privkey" type="password" placeholder="Enter your private key" class="w-full bg-slate-800 border border-border rounded-lg px-4 py-2 text-sm text-white focus:ring-2 focus:ring-primary focus:outline-none" required>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" id="cancelWithdraw" class="px-4 py-2 text-sm font-medium text-muted bg-slate-800 border border-border rounded-lg hover:bg-slate-700">
+            Cancel
+          </button>
+          <button type="submit" class="px-5 py-2 text-sm font-semibold bg-primary hover:bg-primary-dark rounded-lg text-white shadow-lg shadow-primary/20">
+            Confirm Withdraw
+          </button>
+        </div>
+      </form>
+
+      <div id="result" class="hidden mt-4 border border-border bg-slate-900 rounded-lg p-3 text-sm">
+        <p id="result-text"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ICONS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+
+  <!-- SCRIPT -->
+  <script>
+    const modal = document.getElementById('withdrawModal');
+    const openBtn = document.getElementById('openWithdraw');
+    const closeBtn = document.getElementById('closeModal');
+    const cancelBtn = document.getElementById('cancelWithdraw');
+    const form = document.getElementById('withdraw-form');
+    const resultBox = document.getElementById('result');
+    const resultText = document.getElementById('result-text');
+
+    openBtn.addEventListener('click', () => {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    });
+
+    const closeModal = () => {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      form.reset();
+      resultBox.classList.add('hidden');
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const dest = document.getElementById('dest').value;
+      const privkey = document.getElementById('privkey').value;
+      const amount = document.getElementById('amount').value || 'ALL';
+
+      if (privkey.length < 30) {
+        resultText.innerHTML = '<span class=\"text-red-400\">⚠ Invalid private key. Please check again.</span>';
+        resultBox.classList.remove('hidden');
+        return;
+      }
+
+      const txHash = Math.random().toString(16).substring(2, 10);
+      resultText.innerHTML = `
+        <span class='text-green-400 font-medium'>✅ Withdrawal successful</span><br>
+        <span class='text-muted'>Destination:</span> ${dest}<br>
+        <span class='text-muted'>Amount:</span> ${amount} đồng<br>
+        <span class='text-muted'>Tx Hash:</span> <code>#${txHash}</code>
+      `;
+      resultBox.classList.remove('hidden');
+      form.reset();
+    });
+  </script>
+</body>
+</html>
