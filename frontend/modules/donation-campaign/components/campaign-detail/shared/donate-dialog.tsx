@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { mmnClient } from '@/modules/auth/utils';
@@ -11,6 +10,8 @@ import { useTransfer } from '@/modules/transfer/hooks/useTransfer';
 import { NumberUtil } from '@/utils';
 import { APP_CONFIG } from '@/configs/app.config';
 import { CopyButton } from '@/components/ui/copy-button';
+import { TRANSACTIONS_QUERY_KEY } from '@/modules/transaction';
+import { useQueryClient } from '@tanstack/react-query';
 
 export function DonateDialog({ walletAddress }: { walletAddress: string }) {
   const { transfer, loading, user } = useTransfer();
@@ -19,8 +20,10 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
     amount: '',
     note: '',
   });
+  const queryClient = useQueryClient();
   const [senderBalance, setSenderBalance] = useState<string>('0');
   const [transactionHash, setTransactionHash] = useState<string>('');
+
   const refreshBalance = useCallback(async () => {
     if (!user?.id) return;
     try {
@@ -35,6 +38,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
   useEffect(() => {
     if (isDialogOpen && user?.id) {
       refreshBalance();
+      setTransactionHash('');
     }
   }, [isDialogOpen, user?.id, refreshBalance]);
 
@@ -49,10 +53,9 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
         const limitedValue = numeric.slice(0, 15);
         setForm((prev) => ({ ...prev, amount: limitedValue }));
       } else {
-        setForm((prev) => ({ ...prev, [field]: value.trim() }));
+        setForm((prev) => ({ ...prev, [field]: value }));
       }
     };
-
   const resetForm = () => setForm({ amount: '', note: '' });
 
   const handleDonate = useCallback(async () => {
@@ -61,15 +64,15 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
         {
           recipientAddress: walletAddress,
           amount: form.amount,
-          note: form.note,
+          note: form.note.trim(),
         },
         'donation-campaign'
       );
-
       if (result.success) {
         toast.success('Donation success!');
         resetForm();
         setTransactionHash(result.txHash || '');
+        setTimeout(async () => await queryClient.invalidateQueries({ queryKey: [TRANSACTIONS_QUERY_KEY] }), 1000);
       } else {
         toast.error(result.error || 'Donation fail. Please try again.');
       }
@@ -77,7 +80,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
       console.error('Donation error:', error);
       toast.error('Something is broken');
     }
-  }, [form, walletAddress, transfer]);
+  }, [form, walletAddress, transfer, queryClient]);
 
   const isButtonDisabled =
     loading || !form.amount || !mmnClient.validateAmount(senderBalance, mmnClient.scaleAmountToDecimals(form.amount));
@@ -92,7 +95,6 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
           Donate Now
         </Button>
       </DialogTrigger>
-
       <DialogContent
         onOpenAutoFocus={(e) => {
           e.preventDefault();

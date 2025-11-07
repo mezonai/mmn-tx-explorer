@@ -32,7 +32,7 @@ export function RecentActivityCardsMobile({
 }: RecentActivityCardsMobileProps) {
   const queryParams = 'tab=received-transactions';
   return (
-    <Card className="dark:border-primary/20 gap-0 gap-6 px-0 py-4">
+    <Card className="dark:border-primary/20 gap-6 px-0 py-4">
       <CardHeader className="m-0 flex items-center justify-between gap-2 px-6">
         <CardTitle className="text-foreground">Recent Activity</CardTitle>
         <RefreshButton onClick={refetch} isLoading={isLoading} startDelay={DEFAULT_DEBOUNCE_TIME} />

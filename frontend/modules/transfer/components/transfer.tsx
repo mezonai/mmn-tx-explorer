@@ -58,7 +58,7 @@ export const Transfer = () => {
           amount: limitedValue,
         }));
       } else {
-        setForm((prev) => ({ ...prev, [field]: value.trim() }));
+        setForm((prev) => ({ ...prev, [field]: value }));
       }
     };
 
@@ -69,9 +69,9 @@ export const Transfer = () => {
     try {
       const result = await transfer(
         {
-          recipientAddress: address,
+          recipientAddress: address.trim(),
           amount: amount,
-          note,
+          note: note.trim(),
         },
         'dong-give-coffee'
       );

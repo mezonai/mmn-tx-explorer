@@ -124,7 +124,7 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
             goal: Number(form.fundraisingGoal || 0),
             url: form.bannerImageUrl,
             donation_wallet: form.donationWallet.address,
-            owner: form.owner,
+            owner: form.owner.trim(),
             end_date: form.endDate,
           };
 
@@ -133,7 +133,7 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
           } else {
             const res = await createAndPublishMutation.mutateAsync(campaignData);
             toast.success('Campaign published successfully');
-            router.push(ROUTES.CAMPAIGN(res.id)); // Navigate to donation list page
+            router.push(ROUTES.CAMPAIGN(res.slug));
           }
         } catch (error) {
           console.error('Error publishing campaign:', error);
