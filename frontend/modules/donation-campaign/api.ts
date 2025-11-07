@@ -53,9 +53,9 @@ export class DonationCampaignService {
     return data.data;
   }
 
-  static async updateCampaign(id: string, campaignData: Partial<CreateCampaignRequest>): Promise<DonationCampaign> {
+  static async editCampaign(id: string, campaignData: Partial<CreateCampaignRequest>): Promise<DonationCampaign> {
     const { data } = await apiDongClient.put<{ data: DonationCampaign }>(
-      DONATION_ENDPOINTS.CAMPAIGN_BY_ID(id),
+      DONATION_ENDPOINTS.EDIT_CAMPAIGN(id),
       campaignData
     );
     return data.data;
@@ -74,6 +74,11 @@ export class DonationCampaignService {
 
   static async closeCampaign(id: string): Promise<any> {
     const { data } = await apiDongClient.patch(DONATION_ENDPOINTS.CLOSE_CAMPAIGN(id));
+    return data;
+  }
+
+  static async activateCampaign(id: string): Promise<any> {
+    const { data } = await apiDongClient.patch(DONATION_ENDPOINTS.ACTIVATE_CAMPAIGN(id));
     return data;
   }
   static async getTopContributor({
