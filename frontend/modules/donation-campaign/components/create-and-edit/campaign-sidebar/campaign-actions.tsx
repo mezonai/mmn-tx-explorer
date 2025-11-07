@@ -77,7 +77,7 @@ const CampaignActions = ({ type = 'create' }: CampaignModeProps) => {
           <Button
             type="button"
             onClick={() => handleSubmit('draft')}
-            disabled={isSaving}
+            disabled={!validation.isAllComplete}
             className={cn(
               'bg-background text-foreground hover:bg-background hover:border-brand-primary/40 hover:text-brand-primary border border-1 font-semibold'
             )}
