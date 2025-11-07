@@ -80,6 +80,7 @@ jobs:
     env:
       TARGET_HOST: ${{ inputs.env == 'prod' && 'prod-indexer' || 'dev-indexer' }}
       GIT_SHA: ${{ needs.build.outputs.git_sha }}
+      APP_ENV: ${{ inputs.env }}
 
     steps:
       - name: Copy config and secrets to target
@@ -94,7 +95,6 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_HOST: ${{ vars.POSTGRES_HOST }}
           POSTGRES_PORT: ${{ vars.POSTGRES_PORT }}
-          LOG_LEVEL: ${{ inputs.env == 'prod' && 'info' || 'debug' }}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
@@ -113,7 +113,6 @@ jobs:
           STORAGE_MAIN_POSTGRES_DATABASE=${POSTGRES_DB}
           STORAGE_MAIN_POSTGRES_SSLMODE=disable
           MIGRATIONS_PATH=/opt/indexer/migrations/postgres
-          LOG_LEVEL=${LOG_LEVEL}
           EON
 
           sudo chown -R mmn:mmn /opt/indexer
@@ -136,7 +135,6 @@ jobs:
           printf "export POSTGRES_PASSWORD=%q\n" "$POSTGRES_PASSWORD" >> remote_env.sh
           printf "export POSTGRES_HOST=%q\n" "$POSTGRES_HOST" >> remote_env.sh
           printf "export POSTGRES_PORT=%q\n" "$POSTGRES_PORT" >> remote_env.sh
-          printf "export LOG_LEVEL=%q\n" "$LOG_LEVEL" >> remote_env.sh
 
       - name: Prepare and deploy to target server
         run: |
@@ -175,6 +173,13 @@ jobs:
           #!/usr/bin/env bash
           set -euo pipefail
 
+          if [ "${APP_ENV}" = "prod" ]; then
+            LOGLEVEL="level: warn"
+          else
+            LOGLEVEL="level: info"
+          fi
+
+
           echo "==> Generating final config files on target server..."
           sudo mkdir -p /etc/mezon
           echo "--> Generating config for indexer-api"
@@ -185,6 +190,7 @@ jobs:
             -e "s|__POSTGRES_HOST__|$POSTGRES_HOST|g" \
             -e "s|__POSTGRES_PORT__|$POSTGRES_PORT|g" \
             -e "s|__MMN_GRPC_URL__|$MMN_GRPC_URL|g" \
+            -e "s|level: debug|$LOGLEVEL|g" \
             -e "s|filePath: /opt/indexer/logs/indexer.log|filePath: /opt/indexer/logs/indexer-api.log|g" \
             /opt/mezon/explorer/config/config.example.yml \
             | sudo tee /etc/mezon/config-api.yml >/dev/null
@@ -197,6 +203,7 @@ jobs:
             -e "s|__POSTGRES_HOST__|$POSTGRES_HOST|g" \
             -e "s|__POSTGRES_PORT__|$POSTGRES_PORT|g" \
             -e "s|__MMN_GRPC_URL__|$MMN_GRPC_URL|g" \
+            -e "s|level: debug|$LOGLEVEL|g" \
             -e "s|filePath: /opt/indexer/logs/indexer.log|filePath: /opt/indexer/logs/indexer-orchestrator.log|g" \
             /opt/mezon/explorer/config/config.example.yml \
             | sudo tee /etc/mezon/config-orchestrator.yml >/dev/null
