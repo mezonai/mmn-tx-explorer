@@ -30,10 +30,8 @@ export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
           </Chip>
         )}
       </div>
-
       <h1 className="text-3xl font-bold">{currentCampaign.name}</h1>
-      <p className="text-muted-foreground max-w-2xl">{currentCampaign.description}</p>
-
+      <p className="text-muted-foreground max-w-2xl break-words">{currentCampaign.description}</p>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <ProgressCard
           raised={currentCampaign.total_amount}
