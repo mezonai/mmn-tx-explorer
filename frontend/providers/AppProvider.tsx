@@ -50,7 +50,6 @@ export function AppProvider({ children }: AppProviderProps) {
   const [keypair, setKeypair] = useState<IEphemeralKeyPair | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
-
   useEffect(() => {
     const localTokenStr = localStorage.getItem(STORAGE_KEYS.TOKEN);
     const localToken = localTokenStr ? safeJsonParse(localTokenStr) : null;
@@ -59,6 +58,11 @@ export function AppProvider({ children }: AppProviderProps) {
         try {
           await AuthenticationService.refreshLogin(localToken.refresh_token);
         } catch {
+          clearAuthStorage();
+          setUser(null);
+          setZkProof(null);
+          setKeypair(null);
+          setIsAuthenticated(false);
           toast.error('Session expired, please log in again.');
         }
       })();
