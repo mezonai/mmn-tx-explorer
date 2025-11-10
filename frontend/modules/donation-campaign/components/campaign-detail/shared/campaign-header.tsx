@@ -59,7 +59,7 @@ export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
           </Tooltip>
         )}
       </div>
-      <p className="text-muted-foreground max-w-2xl">{campaign.description}</p>
+      <p className="text-muted-foreground max-w-2xl break-words">{campaign.description}</p>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <ProgressCard
