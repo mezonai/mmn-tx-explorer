@@ -6,3 +6,4 @@ export * from './useCreateCampaign';
 export * from './useRefreshCampaignRaised';
 export * from './useTopCampaigns';
 export * from './useUserDonations';
+export * from './useEditCampaign';

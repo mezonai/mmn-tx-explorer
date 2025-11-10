@@ -33,7 +33,7 @@ export function InsightsCard({
               <Users className="text-brand-primary h-4 w-4" />
               <span>Contributors</span>
             </dt>
-            <dd className="font-bold text-gray-900 dark:text-white">{contributors} supporters</dd>
+            <dd className="font-bold text-gray-900 dark:text-white">{contributors} supporter(s)</dd>
           </div>
           <div className="flex items-center justify-between gap-4">
             <dt className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
