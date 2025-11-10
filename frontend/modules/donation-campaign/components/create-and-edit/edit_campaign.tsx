@@ -35,7 +35,7 @@ function EditCampaignContent() {
       <section className="">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <CampaignForm type="edit" />
-          <CampaignSidebar type="edit" />
+          <CampaignSidebar type="edit" campaign={campaign} />
         </div>
       </section>
     </div>

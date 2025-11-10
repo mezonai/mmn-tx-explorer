@@ -3,25 +3,32 @@
 import { useCreateCampaignContext } from '../../../context/CreateCampaignContext';
 import { CampaignPreviewCard } from './campaign-preview';
 import { PrePublishChecklist } from './pre-publish-checklist';
-import { CampaignPreview, ECampaignStatus } from '../../../type';
+import { CampaignPreview, ECampaignStatus, DonationCampaign } from '../../../type';
 import { useMemo } from 'react';
-import { DateTimeUtil } from '@/utils';
+import { DateTimeUtil, NumberUtil } from '@/utils';
 import { CampaignActions } from './campaign-actions';
 import { CampaignModeProps } from '../types';
 
-export function CampaignSidebar({ type = 'create' }: CampaignModeProps) {
+interface CampaignSidebarProps extends CampaignModeProps {
+  campaign?: DonationCampaign;
+}
+
+export function CampaignSidebar({ type = 'create', campaign }: CampaignSidebarProps) {
   const { form, validation } = useCreateCampaignContext();
 
   // Calculate preview data
   const preview: CampaignPreview = {
     name: form.name,
     shortDescription: form.shortDescription,
-    currentFunding: 0,
+    currentFunding: NumberUtil.scaleDown(campaign?.total_amount || 0),
     targetFunding: form.fundraisingGoal || 0,
-    percentage: 0,
+    percentage:
+      form.fundraisingGoal && form.fundraisingGoal > 0
+        ? parseFloat(((NumberUtil.scaleDown(campaign?.total_amount || 0) / form.fundraisingGoal) * 100).toFixed(2))
+        : 100,
     contributors: 0,
     daysRemaining: form.endDate ? `${DateTimeUtil.safeFormatDistanceToNow(new Date(form.endDate))} remaining` : ``,
-    status: ECampaignStatus.Draft,
+    status: type === 'edit' && campaign ? campaign.status : ECampaignStatus.Draft,
   };
 
   // Checklist items based on validation
