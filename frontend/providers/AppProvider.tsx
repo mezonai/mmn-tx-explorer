@@ -2,10 +2,12 @@
 
 import { STORAGE_KEYS } from '@/constant';
 import {
+  AUTHENTICATION_CONSTANTS,
   AUTHENTICATION_ENDPOINT,
   AuthenticationService,
   fetchAndStoreZkProof,
   generateAndStoreKeyPair,
+  generateCsrfToken,
   handleTokenStorage,
   LoginResponse,
   mmnClient,
@@ -76,13 +78,18 @@ export function AppProvider({ children }: AppProviderProps) {
       return;
     }
     const code = searchParams.get('code');
-    if (!code) return;
+    const state = searchParams.get('state');
+    const csrfTokenFromStorage = sessionStorage.getItem(AUTHENTICATION_CONSTANTS.CRSF_TOKEN);
+    if (!code || !state || !csrfTokenFromStorage) {
+      console.error('Missing code, state, or CSRF token in storage.');
+      return;
+    }
 
     const handleAuthentication = async (authCode: string) => {
       try {
         const userInfo: LoginResponse = await AuthenticationService.getUserInfo(authCode);
         setIsAuthenticated(true);
-        router.replace('/');
+        const originalState = JSON.parse(Buffer.from(state, 'base64').toString());
         handleTokenStorage(userInfo);
         const keypair = generateAndStoreKeyPair();
         setKeypair(keypair);
@@ -98,6 +105,7 @@ export function AppProvider({ children }: AppProviderProps) {
         if (fetchedZk) {
           setZkProof(fetchedZk);
         }
+        router.replace(originalState.redirect_url || '/');
         toast.success('Login successful!');
       } catch {
         toast.error('Login failed!');
@@ -155,9 +163,17 @@ export function useKeypair() {
 
 export function useAuthActions() {
   const { setIsAuthenticated, setUser, setZkProof, setKeypair } = useApp();
-
+  const router = useRouter();
   const login = () => {
-    window.location.href = AUTHENTICATION_ENDPOINT.LOGIN;
+    const csrfToken = generateCsrfToken();
+    sessionStorage.setItem(AUTHENTICATION_CONSTANTS.CRSF_TOKEN, csrfToken);
+    const currentPath = location.pathname + location.search;
+    const stateObject = {
+      csrf: csrfToken,
+      redirect_url: currentPath,
+    };
+    const encodedState = Buffer.from(JSON.stringify(stateObject)).toString('base64');
+    router.push(`${AUTHENTICATION_ENDPOINT.LOGIN}?state=${encodedState}`);
   };
 
   const logout = () => {
@@ -171,7 +187,6 @@ export function useAuthActions() {
     setZkProof(null);
     setKeypair(null);
     setIsAuthenticated(false);
-    window.location.href = '/';
   };
 
   return { login, logout };
