@@ -23,9 +23,20 @@ export function InsightsCard({
   return (
     <Card className="dark:bg-card rounded-3xl border-gray-200 bg-white/90 shadow-sm dark:border-white/10">
       <CardHeader>
-        <CardTitle className="text-xs tracking-wide text-gray-500 uppercase dark:text-gray-400">
-          Campaign insights
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-xs tracking-wide text-gray-500 uppercase dark:text-gray-400">
+            Campaign insights
+          </CardTitle>
+          {currentCampaign.donation_wallet && user?.id === currentCampaign.creator && (
+            <div className="-mr-2">
+              <TransferDialog
+                walletAddress={currentCampaign.donation_wallet}
+                raisedAmount={currentCampaign.total_amount}
+                myWalletAddress={user?.walletAddress}
+              />
+            </div>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="p-5 pt-0">
         <dl className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
@@ -53,16 +64,6 @@ export function InsightsCard({
             </dd>
           </div>
         </dl>
-
-        {currentCampaign.donation_wallet && user?.id === currentCampaign.creator && (
-          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <TransferDialog
-              walletAddress={currentCampaign.donation_wallet}
-              raisedAmount={currentCampaign.total_amount}
-              myWalletAddress={user?.walletAddress}
-            />
-          </div>
-        )}
       </CardContent>
     </Card>
   );

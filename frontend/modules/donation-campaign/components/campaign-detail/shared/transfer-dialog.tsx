@@ -117,7 +117,7 @@ export function TransferDialog({ walletAddress, raisedAmount, myWalletAddress }:
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <button className="bg-brand-primary hover:bg-brand-primary/90 focus-visible:outline-primary inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-md transition focus-visible:outline-offset-2">
+        <button className="px-5 py-2 text-sm font-semibold bg-brand-primary hover:bg-brand-primary/90 rounded-lg text-white shadow-lg shadow-brand-primary/20">
           Withdraw Funds
         </button>
       </DialogTrigger>
@@ -132,15 +132,13 @@ export function TransferDialog({ walletAddress, raisedAmount, myWalletAddress }:
           </DialogTitle>
         </DialogHeader>
 
-        {/* Warning Banner */}
         <div className="bg-yellow-500/10 border-yellow-500/40 rounded-xl border p-3">
           <p className="text-yellow-600 dark:text-yellow-400 text-xs font-medium">
-            ⚠️ Warning: Never share your private key with anyone.
+            Your private key will never be stored — It’s used locally to sign the transaction.
           </p>
         </div>
 
         <div className="mt-2 flex flex-col space-y-4">
-          {/* Current Balance - Moved to top */}
           <div className="text-brand-primary bg-brand-primary/5 text-sm">
             <span className="font-medium">
               Current Balance: {NumberUtil.formatWithCommasAndScale(currentBalanceValue)} {APP_CONFIG.CHAIN_SYMBOL}
