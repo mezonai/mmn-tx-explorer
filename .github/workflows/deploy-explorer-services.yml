@@ -197,6 +197,7 @@ jobs:
           POSTGRES_HOST: ${{ vars.POSTGRES_HOST }}
           POSTGRES_PORT: ${{ vars.POSTGRES_PORT }}
           MMN_GRPC_URL: ${{ vars.MMN_GRPC_URL }}
+          MMN_GRPC_USE_TLS: ${{ vars.MMN_GRPC_USE_TLS }}
         run: |
           ssh -i ${{vars.SSH_PRIVATE_KEY_PATH}} ${{vars.HOST_ALIAS}} <<EOF
           #!/usr/bin/env bash
