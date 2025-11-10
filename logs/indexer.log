@@ -1,0 +1,16 @@
+{"level":"info","component":"indexer","time":"2025-11-10T01:36:08Z","caller":"/app/cmd/orchestrator.go:25","message":"Starting indexer"}
+{"level":"fatal","component":"indexer","error":"failed to create orchestrator storage: no storage driver configured","time":"2025-11-10T01:36:08Z","caller":"/app/cmd/orchestrator.go:34","message":"Failed to create orchestrator"}
+{"level":"info","component":"indexer","time":"2025-11-10T01:36:08Z","caller":"/app/cmd/orchestrator.go:25","message":"Starting indexer"}
+{"level":"fatal","component":"indexer","error":"failed to create orchestrator storage: no storage driver configured","time":"2025-11-10T01:36:08Z","caller":"/app/cmd/orchestrator.go:34","message":"Failed to create orchestrator"}
+{"level":"info","component":"indexer","time":"2025-11-10T01:36:09Z","caller":"/app/cmd/orchestrator.go:25","message":"Starting indexer"}
+{"level":"fatal","component":"indexer","error":"failed to create orchestrator storage: no storage driver configured","time":"2025-11-10T01:36:09Z","caller":"/app/cmd/orchestrator.go:34","message":"Failed to create orchestrator"}
+{"level":"info","component":"indexer","time":"2025-11-10T01:36:09Z","caller":"/app/cmd/orchestrator.go:25","message":"Starting indexer"}
+{"level":"fatal","component":"indexer","error":"failed to create orchestrator storage: no storage driver configured","time":"2025-11-10T01:36:09Z","caller":"/app/cmd/orchestrator.go:34","message":"Failed to create orchestrator"}
+{"level":"info","component":"indexer","time":"2025-11-10T01:36:11Z","caller":"/app/cmd/orchestrator.go:25","message":"Starting indexer"}
+{"level":"fatal","component":"indexer","error":"failed to create orchestrator storage: no storage driver configured","time":"2025-11-10T01:36:11Z","caller":"/app/cmd/orchestrator.go:34","message":"Failed to create orchestrator"}
+{"level":"info","component":"indexer","time":"2025-11-10T01:36:12Z","caller":"/app/cmd/orchestrator.go:25","message":"Starting indexer"}
+{"level":"fatal","component":"indexer","error":"failed to create orchestrator storage: no storage driver configured","time":"2025-11-10T01:36:12Z","caller":"/app/cmd/orchestrator.go:34","message":"Failed to create orchestrator"}
+{"level":"info","component":"indexer","time":"2025-11-10T01:36:16Z","caller":"/app/cmd/orchestrator.go:25","message":"Starting indexer"}
+{"level":"fatal","component":"indexer","error":"failed to create orchestrator storage: no storage driver configured","time":"2025-11-10T01:36:16Z","caller":"/app/cmd/orchestrator.go:34","message":"Failed to create orchestrator"}
+{"level":"info","component":"indexer","time":"2025-11-10T01:36:22Z","caller":"/app/cmd/orchestrator.go:25","message":"Starting indexer"}
+{"level":"fatal","component":"indexer","error":"failed to create orchestrator storage: no storage driver configured","time":"2025-11-10T01:36:22Z","caller":"/app/cmd/orchestrator.go:34","message":"Failed to create orchestrator"}

@@ -18,3 +18,7 @@ export interface UserInfoResponse {
   user_id: string;
   username: string;
 }
+export interface StateObject {
+  csrf: string;
+  redirect_url: string;
+}
