@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { NumberUtil } from '@/utils';
 import { APP_CONFIG } from '@/configs/app.config';
-import { CopyButton } from '@/components/ui/copy-button';
 import { Eye, EyeOff } from 'lucide-react';
 import { WalletService } from '@/modules/wallet';
 import { useTransferByPrivateKey } from '@/modules/transfer/hooks/useTransferByPrivateKey';
