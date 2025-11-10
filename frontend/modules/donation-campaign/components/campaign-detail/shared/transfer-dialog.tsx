@@ -111,7 +111,7 @@ export function TransferDialog({ walletAddress, raisedAmount, myWalletAddress }:
       console.error('Transfer error:', error);
       toast.error(error?.message || 'Something went wrong');
     }
-  }, [form, transfer, walletAddress, fetchBalance, currentBalanceValue, myWalletAddress]);
+  }, [form, transfer, walletAddress, fetchBalance, currentBalanceValue]);
 
   const isButtonDisabled = loading || !form.privateKey.trim() || !form.recipientAddress.trim() || !safeValidateAddress(form.recipientAddress);
   return (
