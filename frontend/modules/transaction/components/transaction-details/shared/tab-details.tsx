@@ -130,12 +130,17 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
     return transaction[item.dataKey as keyof ITransaction];
   };
 
-  const renderLabelValueCell = (label: React.ReactNode, value: React.ReactNode, hideOnDesktop = false) => (
-    <div className={cn('flex w-full flex-col gap-2', hideOnDesktop && 'hidden md:table-cell')}>
-      <span className="text-foreground/70 text-sm font-medium">{label || ''}</span>
-      <div className="break-words">{value !== null && value !== undefined ? value : label ? 'N/A' : ''}</div>
-    </div>
-  );
+  const renderLabelValueCell = (label: React.ReactNode, value: React.ReactNode, hideOnDesktop = false) => {
+    const hasValue = value !== null && value !== undefined;
+    const displayValue = hasValue ? value : label ? 'N/A' : '';
+
+    return (
+      <div className={cn('flex w-full flex-col gap-2', hideOnDesktop && 'hidden md:table-cell')}>
+        {label && <span className="text-foreground/70 text-sm font-medium">{label}</span>}
+        <div className="break-words">{displayValue}</div>
+      </div>
+    );
+  };
 
   const labelValueSkeleton = (
     <div className="flex flex-col gap-2">
