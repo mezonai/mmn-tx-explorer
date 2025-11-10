@@ -4,11 +4,18 @@ import { InsightsCard } from './insights-card';
 import { DonationCampaign } from '@/modules/donation-campaign/type';
 import { Chip } from '@/components/shared';
 import { getCampaignStatusLabel, getCampaignStatusVariant } from '@/modules/donation-campaign/utils';
+import Link from 'next/link';
+import { ROUTES } from '@/configs/routes.config';
+import { Pencil } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useState } from 'react';
 import { BadgeCheck } from 'lucide-react';
+import { useUser } from '@/providers';
 
 export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
   const [currentCampaign, setCurrentCampaign] = useState(campaign);
+  const { user } = useUser();
 
   const handleRefreshData = (newRaisedAmount?: number) => {
     if (newRaisedAmount !== undefined) {
@@ -31,8 +38,28 @@ export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
         )}
       </div>
 
-      <h1 className="text-3xl font-bold">{currentCampaign.name}</h1>
-      <p className="text-muted-foreground max-w-2xl">{currentCampaign.description}</p>
+      <div className="flex flex-row items-center space-x-2">
+        <h1 className="text-3xl font-bold">{campaign.name}</h1>
+        {user?.id === campaign.creator && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link href={ROUTES.CAMPAIGN_EDIT(campaign.slug)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Edit campaign"
+                  title="Edit campaign"
+                  className="dark:hover:bg-brand-primary/20"
+                >
+                  <Pencil className="h-5 w-5" />
+                </Button>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent>Edit campaign</TooltipContent>
+          </Tooltip>
+        )}
+      </div>
+      <p className="text-muted-foreground max-w-2xl">{campaign.description}</p>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <ProgressCard

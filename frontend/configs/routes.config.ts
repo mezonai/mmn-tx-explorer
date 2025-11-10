@@ -1,6 +1,7 @@
 export const ROUTES = {
   BLOCK: (number: number, queryParams?: string) => `/blocks/${number}${queryParams ? `?${queryParams}` : ''}`,
   BLOCKS: '/blocks',
+  CAMPAIGN_EDIT: (slug: string) => `/donation-campaign/${slug}/edit`,
   CAMPAIGN: (slug: string) => `/donation-campaign/${slug}`,
   COBAR: '/cobar',
   CREATE_CAMPAIGN: '/donation-campaign/create',
