@@ -123,7 +123,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
                 <div className="text-center">
                   <p className="text-xs uppercase">Amount Donated</p>
                   <p className="text-brand-primary text-3xl font-bold">
-                    {NumberUtil.formatWithCommas(100000000)}
+                    {NumberUtil.formatWithCommas(form.amount)}
                     <span className="ml-1.5 text-xl font-medium">{APP_CONFIG.CHAIN_SYMBOL}</span>
                   </p>
                 </div>
@@ -133,9 +133,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
                 <div className="w-full space-y-2 text-left">
                   <p className="text-xs uppercase">Transaction Hash</p>
                   <div className="flex items-center gap-2">
-                    <p className="text-card-foreground flex-1 truncate font-mono text-sm">
-                      {'28e28776cfea11ecfb9d5c2aae08fad24b49b8eace453ac5ebf9cb712bdaf9d1'}
-                    </p>
+                    <p className="text-card-foreground flex-1 truncate font-mono text-sm">{transactionHash}</p>
                     <CopyButton textToCopy={transactionHash} />
                   </div>
                 </div>
