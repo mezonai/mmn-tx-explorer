@@ -14,6 +14,7 @@ import { ClientTimeDisplay } from './client-time-display';
 import { APP_CONFIG } from '@/configs/app.config';
 import { TTableColumn } from '@/types';
 import { Table } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 
 interface TabDetailsProps {
   transaction?: ITransaction;
@@ -116,132 +117,77 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
           {
             headerContent: 'Note',
             dataKey: 'text_data' as keyof ITransaction,
-            renderCell: (tx: ITransaction) => (
-              <div className="bg-background/30 border-foreground/20 max-h-[120px] w-full overflow-y-auto border p-3 break-words whitespace-pre-wrap">
-                {tx.text_data}
-              </div>
-            ),
+            renderCell: (tx: ITransaction) => <span className="text-sm">{tx.text_data}</span>,
             skeletonContent: <Skeleton className="h-[60px] w-full" />,
           },
         ]
       : []),
   ];
 
+  const getCellValue = (item: TTableColumn<ITransaction>, index: number) => {
+    if (!transaction) return null;
+    if (item.renderCell) return item.renderCell(transaction, index);
+    return transaction[item.dataKey as keyof ITransaction];
+  };
+
+  const renderLabelValueCell = (label: React.ReactNode, value: React.ReactNode, hideOnDesktop = false) => (
+    <div className={cn('flex w-full flex-col gap-2', hideOnDesktop && 'hidden md:table-cell')}>
+      <span className="text-foreground/70 text-sm font-medium">{label || ''}</span>
+      <div className="break-words">{value !== null && value !== undefined ? value : label ? 'N/A' : ''}</div>
+    </div>
+  );
+
+  const labelValueSkeleton = (
+    <div className="flex flex-col gap-2">
+      <Skeleton className="h-4 w-32" />
+      <Skeleton className="h-5 w-full" />
+    </div>
+  );
+
+  type SingleRow = { label: React.ReactNode; value: React.ReactNode };
+  const singleRows: SingleRow[] = Items.map((item, i) => ({
+    label: item.headerContent,
+    value: getCellValue(item, i),
+  }));
+
+  const singleColumns: TTableColumn<SingleRow>[] = [
+    {
+      headerContent: '',
+      dataKey: 'label',
+      renderCell: (row) => renderLabelValueCell(row.label, row.value),
+      skeletonContent: labelValueSkeleton,
+    },
+  ];
+
   type PairedRow = {
     columnOneLabel: React.ReactNode;
-    columnOnevalue: React.ReactNode;
+    columnOneValue: React.ReactNode;
     columnTwoLabel?: React.ReactNode;
     columnTwoValue?: React.ReactNode;
   };
 
   const pairedRows: PairedRow[] = [];
   for (let i = 0; i < Items.length; i += 2) {
-    const item1 = Items[i];
-    const item2 = Items[i + 1];
-    const getValue1 = () => {
-      if (!transaction) return null;
-      if (item1.renderCell) {
-        return item1.renderCell(transaction, i);
-      }
-      return transaction[item1.dataKey as keyof ITransaction];
-    };
-
-    const getValue2 = () => {
-      if (!transaction || !item2) return null;
-      if (item2.renderCell) {
-        return item2.renderCell(transaction, i + 1);
-      }
-      return transaction[item2.dataKey as keyof ITransaction];
-    };
-
     pairedRows.push({
-      columnOneLabel: item1.headerContent,
-      columnOnevalue: getValue1(),
-      columnTwoLabel: item2?.headerContent,
-      columnTwoValue: getValue2(),
+      columnOneLabel: Items[i].headerContent,
+      columnOneValue: getCellValue(Items[i], i),
+      columnTwoLabel: Items[i + 1]?.headerContent,
+      columnTwoValue: Items[i + 1] ? getCellValue(Items[i + 1], i + 1) : null,
     });
   }
+
   const pairedColumns: TTableColumn<PairedRow>[] = [
     {
       headerContent: '',
       dataKey: 'columnOneLabel',
-      renderCell: (row) => (
-        <div className="flex w-full flex-col gap-2">
-          <span className="text-foreground/70 text-sm font-medium">{row.columnOneLabel}</span>
-          <div className="break-words">
-            {row.columnOnevalue !== null && row.columnOnevalue !== undefined ? row.columnOnevalue : 'N/A'}
-          </div>
-        </div>
-      ),
-      skeletonContent: (
-        <div className="flex flex-col gap-2">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-5 w-full" />
-        </div>
-      ),
+      renderCell: (row) => renderLabelValueCell(row.columnOneLabel, row.columnOneValue),
+      skeletonContent: labelValueSkeleton,
     },
     {
       headerContent: '',
       dataKey: 'columnTwoLabel',
-      renderCell: (row) => (
-        <div className="flex hidden w-full flex-col gap-2 md:table-cell">
-          <span className="text-foreground/70 text-sm font-medium">{row.columnTwoLabel || ''}</span>
-          <div className="break-words">
-            {row.columnTwoValue !== null && row.columnTwoValue !== undefined
-              ? row.columnTwoValue
-              : row.columnTwoLabel
-                ? 'N/A'
-                : ''}
-          </div>
-        </div>
-      ),
-      skeletonContent: (
-        <div className="flex flex-col gap-2">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-5 w-full" />
-        </div>
-      ),
-    },
-  ];
-
-  type SingleRow = {
-    label: React.ReactNode;
-    value: React.ReactNode;
-  };
-
-  const singleRows: SingleRow[] = [];
-  for (let i = 0; i < Items.length; i++) {
-    const item = Items[i];
-    const getValue = () => {
-      if (!transaction) return null;
-      if (item.renderCell) {
-        return item.renderCell(transaction, i);
-      }
-      return transaction[item.dataKey as keyof ITransaction];
-    };
-
-    singleRows.push({
-      label: item.headerContent,
-      value: getValue(),
-    });
-  }
-
-  const singleColumns: TTableColumn<SingleRow>[] = [
-    {
-      headerContent: '',
-      dataKey: 'label',
-      renderCell: (row) => (
-        <div className="flex w-full flex-col gap-2">
-          <span className="text text-foreground/70 text-sm font-medium">{row.label}</span>
-          <div className="break-words">{row.value !== null && row.value !== undefined ? row.value : 'N/A'}</div>
-        </div>
-      ),
-      skeletonContent: (
-        <div className="flex flex-col gap-2">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-5 w-full" />
-        </div>
-      ),
+      renderCell: (row) => renderLabelValueCell(row.columnTwoLabel, row.columnTwoValue, true),
+      skeletonContent: labelValueSkeleton,
     },
   ];
 
@@ -256,7 +202,7 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
             isLoading={!transaction}
             showHeader={false}
             skeletonLength={Items.length}
-            className="text-foreground [&_tbody_tr]:border-b-foreground/10 relative [&_tbody]:bg-transparent"
+            className="text-foreground [&_tbody_tr]:border-b-foreground/10 [&_tbody]:bg-brand-primary/2 relative dark:[&_tbody]:bg-transparent"
           />
         </div>
         {/* Desktop: Two columns */}
@@ -267,7 +213,7 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
             isLoading={!transaction}
             showHeader={false}
             skeletonLength={Math.ceil(Items.length / 2)}
-            className="text-foreground [&_tbody_tr]:border-b-foreground/10 relative dark:[&_tbody]:bg-transparent"
+            className="text-foreground [&_tbody_tr]:border-b-foreground/10 [&_tbody]:bg-brand-primary/2 relative dark:[&_tbody]:bg-transparent"
           />
         </div>
       </CardContent>
