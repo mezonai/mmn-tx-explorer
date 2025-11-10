@@ -47,7 +47,7 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
           <p className="text-brand-primary text-xs font-semibold tracking-widest uppercase">Scan QR</p>
           <div className="mt-4 flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="dark:bg-dark h-28 w-28 rounded-2xl bg-white p-2 shadow-inner">
-              <QRCode value={qrCodeValue} style={{ height: 'auto', maxWidth: '100%', width: '100%' }} />
+              <QRCode value={qrCodeValue} className="h-auto w-full max-w-full" />
             </div>
             <div className="text-brand-primary/90 flex-1 text-xs">
               Open your Mezon App, scan the code, and specify the number of tokens.
