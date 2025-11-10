@@ -24,7 +24,6 @@ const CampaignActions = ({ type = 'create' }: CampaignModeProps) => {
 
   const activateMutation = useActiveCampaign();
   const closeMutation = useCloseCampaign();
-<<<<<<< HEAD
   const deleteMutation = useDeleteCampaign();
 
   const isMutating = activateMutation.isPending || closeMutation.isPending;
@@ -32,13 +31,6 @@ const CampaignActions = ({ type = 'create' }: CampaignModeProps) => {
   const canPublish = campaign && campaign.status !== ECampaignStatus.Active; //draft or closed campaign
   const canClose = campaign && campaign.status === ECampaignStatus.Active; //published campaign
   const canDelete = campaign && campaign.status === ECampaignStatus.Draft; //closed campaign only
-=======
-
-  const isMutating = activateMutation.isPending || closeMutation.isPending;
-
-  const canPublish = campaign && campaign.status !== ECampaignStatus.Active;
-  const canClose = campaign && campaign.status === ECampaignStatus.Active;
->>>>>>> develop
 
   const router = useRouter();
 
@@ -64,7 +56,6 @@ const CampaignActions = ({ type = 'create' }: CampaignModeProps) => {
       toast.error('Failed to close campaign');
     }
   };
-<<<<<<< HEAD
 
   const handleDelete = async () => {
     if (!campaign) return;
@@ -76,8 +67,6 @@ const CampaignActions = ({ type = 'create' }: CampaignModeProps) => {
       toast.error('Failed to delete Draft');
     }
   };
-=======
->>>>>>> develop
   return (
     <Card className="border-border bg-card dark:bg-primary/10 gap-4">
       <CardHeader>
@@ -126,7 +115,6 @@ const CampaignActions = ({ type = 'create' }: CampaignModeProps) => {
           </Button>
 
           {canPublish && (
-<<<<<<< HEAD
             <>
               <Button
                 type="button"
@@ -159,18 +147,6 @@ const CampaignActions = ({ type = 'create' }: CampaignModeProps) => {
               confirmText="Delete"
               cancelText="Cancel"
             />
-=======
-            <Button
-              type="button"
-              onClick={handlePublish}
-              disabled={isMutating || isFetching}
-              className={cn(
-                'bg-brand-primary hover:bg-brand-primary/90 shadow-brand-primary/30 font-semibold text-white shadow-lg'
-              )}
-            >
-              {isMutating ? 'Publishing…' : 'Publish campaign'}
-            </Button>
->>>>>>> develop
           )}
 
           {canClose && (
@@ -185,27 +161,6 @@ const CampaignActions = ({ type = 'create' }: CampaignModeProps) => {
               {isMutating ? 'Closing…' : 'Close campaign'}
             </Button>
           )}
-<<<<<<< HEAD
-=======
-
-          {/* <DeleteConfirmDialog
-            trigger={
-              <Button
-                disabled={!isSaved}
-                type="button"
-                variant="outline"
-                className="border-rose-200 text-rose-600 hover:border-rose-400 hover:text-rose-500 dark:border-rose-500/20 dark:text-rose-300"
-              >
-                Delete draft
-              </Button>
-            }
-            onConfirm={handleDeleteDraft}
-            title="Delete draft?"
-            description="Are you sure you want to delete this draft? This action cannot be undone."
-            confirmText="Delete"
-            cancelText="Cancel"
-          /> */}
->>>>>>> develop
         </CardContent>
       )}
     </Card>
