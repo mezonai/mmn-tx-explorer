@@ -28,9 +28,9 @@ const CampaignActions = ({ type = 'create' }: CampaignModeProps) => {
 
   const isMutating = activateMutation.isPending || closeMutation.isPending;
 
-  const canPublish = campaign && campaign.status !== ECampaignStatus.Active; //draft or closed campaign
-  const canClose = campaign && campaign.status === ECampaignStatus.Active; //published campaign
-  const canDelete = campaign && campaign.status === ECampaignStatus.Draft; //closed campaign only
+  const canPublish = campaign && campaign.status !== ECampaignStatus.Active;
+  const canClose = campaign && campaign.status === ECampaignStatus.Active; 
+  const canDelete = campaign && campaign.status === ECampaignStatus.Draft;
 
   const router = useRouter();
 
