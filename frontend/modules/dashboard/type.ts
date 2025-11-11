@@ -6,5 +6,6 @@ export interface IDashboardStats {
   total_wallets: number;
   transactions_24h: number;
   pending_transactions_30m: number;
+  total_give_coffee?: number;
 }
 

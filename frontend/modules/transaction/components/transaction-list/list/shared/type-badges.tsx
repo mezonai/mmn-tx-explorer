@@ -17,7 +17,7 @@ interface TypeBadgesSkeletonProps {
 const getTransactionTypeInfo = (type: ETransactionType) => {
   switch (type) {
     case ETransactionType.TokenTransfer:
-      return { color: 'bg-utility-warning-50 border-utility-warning-200 text-utility-warning-700' };
+      return { color: 'bg-orange-500/20 text-orange-400 border-0' };
   }
 };
 
@@ -26,9 +26,9 @@ export const TypeBadges = ({ className, type, status }: TypeBadgesProps) => {
 
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      <Badge variant="outline" className={cn(typeInfo.color)}>
-        <span className="text-xs font-medium whitespace-nowrap">{getTransactionTypeLabel(type)}</span>
-      </Badge>
+      <span className={cn('px-2 py-1 rounded text-xs', typeInfo.color)}>
+        {getTransactionTypeLabel(type)}
+      </span>
 
       <TxStatusBadge status={status} />
     </div>

@@ -21,7 +21,7 @@ interface TransactionCardProps {
 
 export const TransactionCard = ({ transaction }: TransactionCardProps) => {
   return (
-    <div className="border-secondary flex flex-col items-start gap-2 border-b pb-4">
+    <div className="border-secondary flex flex-col items-start gap-2 border-b border-gray-300 dark:border-gray-700 pb-4">
       <div className="w-full flex-1 space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-medium">
           {transaction ? (
