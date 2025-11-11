@@ -97,7 +97,13 @@ export const EcosystemHighlights = () => {
           className="bg-card dark:bg-[#1e293b] border border-gray-300 dark:border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-colors flex flex-col"
           style={refHeight ? { minHeight: refHeight } : undefined}
         >
-          <div className="flex items-center justify-between mb-3"><span className="font-semibold flex items-center gap-2">Lì xì <span className="text-[10px] tracking-wide font-semibold rounded px-2 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 uppercase">Coming Soon</span></span><i className="fa-solid fa-gift text-red-400"></i></div>
+          <div className="flex items-center justify-between mb-3">
+            <span className="font-semibold">Lì xì</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] tracking-wide font-semibold rounded px-2 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 uppercase">Coming Soon</span>
+              <i className="fa-solid fa-gift text-red-400"></i>
+            </div>
+          </div>
           <p className="text-gray-600 dark:text-gray-400 text-sm">0 envelopes active • 0 {APP_CONFIG.CHAIN_SYMBOL} total</p>
         </div>
 
@@ -105,7 +111,13 @@ export const EcosystemHighlights = () => {
           className="bg-card dark:bg-[#1e293b] border border-gray-300 dark:border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-colors flex flex-col"
           style={refHeight ? { minHeight: refHeight } : undefined}
         >
-          <div className="flex items-center justify-between mb-3"><span className="font-semibold flex items-center gap-2">Stake <span className="text-[10px] tracking-wide font-semibold rounded px-2 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 uppercase">Coming Soon</span></span><i className="fa-solid fa-seedling text-green-400"></i></div>
+          <div className="flex items-center justify-between mb-3">
+            <span className="font-semibold">Stake</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] tracking-wide font-semibold rounded px-2 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 uppercase">Coming Soon</span>
+              <i className="fa-solid fa-seedling text-green-400"></i>
+            </div>
+          </div>
           <p className="text-gray-600 dark:text-gray-400 text-sm">0 {APP_CONFIG.CHAIN_SYMBOL} staked</p>
         </div>
 
@@ -113,7 +125,13 @@ export const EcosystemHighlights = () => {
           className="bg-card dark:bg-[#1e293b] border border-gray-300 dark:border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-colors flex flex-col"
           style={refHeight ? { minHeight: refHeight } : undefined}
         >
-          <div className="flex items-center justify-between mb-3"><span className="font-semibold flex items-center gap-2">Swap <span className="text-[10px] tracking-wide font-semibold rounded px-2 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 uppercase">Coming Soon</span></span><i className="fa-solid fa-right-left text-blue-400"></i></div>
+          <div className="flex items-center justify-between mb-3">
+            <span className="font-semibold">Swap</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] tracking-wide font-semibold rounded px-2 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 uppercase">Coming Soon</span>
+              <i className="fa-solid fa-right-left text-blue-400"></i>
+            </div>
+          </div>
           <p className="text-gray-600 dark:text-gray-400 text-sm">24h volume: 0 {APP_CONFIG.CHAIN_SYMBOL}</p>
         </div>
 
@@ -121,7 +139,13 @@ export const EcosystemHighlights = () => {
           className="bg-card dark:bg-[#1e293b] border border-gray-300 dark:border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-colors flex flex-col"
           style={refHeight ? { minHeight: refHeight } : undefined}
         >
-          <div className="flex items-center justify-between mb-3"><span className="font-semibold flex items-center gap-2">Cobar.vn <span className="text-[10px] tracking-wide font-semibold rounded px-2 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 uppercase">Coming Soon</span></span><i className="fa-solid fa-store text-orange-400"></i></div>
+          <div className="flex items-center justify-between mb-3">
+            <span className="font-semibold">Cobar.vn</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] tracking-wide font-semibold rounded px-2 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 uppercase">Coming Soon</span>
+              <i className="fa-solid fa-store text-orange-400"></i>
+            </div>
+          </div>
           <p className="text-gray-600 dark:text-gray-400 text-sm">Integrated Mezon payment marketplace</p>
         </div>
 
@@ -129,7 +153,13 @@ export const EcosystemHighlights = () => {
           className="bg-card dark:bg-[#1e293b] border border-gray-300 dark:border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-colors flex flex-col"
           style={refHeight ? { minHeight: refHeight } : undefined}
         >
-          <div className="flex items-center justify-between mb-3"><span className="font-semibold flex items-center gap-2">Mezon Games <span className="text-[10px] tracking-wide font-semibold rounded px-2 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 uppercase">Coming Soon</span></span><i className="fa-solid fa-gamepad text-pink-400"></i></div>
+          <div className="flex items-center justify-between mb-3">
+            <span className="font-semibold">Mezon Games</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] tracking-wide font-semibold rounded px-2 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 uppercase">Coming Soon</span>
+              <i className="fa-solid fa-gamepad text-pink-400"></i>
+            </div>
+          </div>
           <p className="text-gray-600 dark:text-gray-400 text-sm">0 active titles • 0 players online</p>
         </div>
 
