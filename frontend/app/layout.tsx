@@ -30,7 +30,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+       <link
+          rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha512-+1dQKQbQbFZpK1iD7agEXkNKOxPQ0PqSxkbZVqhlV+3I8I4JVXu2fLG3gNsYch0eYRqpMfrQa6RlmK8t2VQ6Xg==" 
+          crossOrigin="anonymous"
+        />
       </head>
       <body className={`${inter.variable} antialiased`}>
         <ThemeProvider defaultTheme="dark">
