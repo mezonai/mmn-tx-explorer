@@ -1,4 +1,4 @@
-import { ETransactionStatus, ITransaction } from '@/modules/transaction';
+import { ETransactionStatus, getTransactionTypeLabel, ITransaction } from '@/modules/transaction';
 import {
   MoreInfoButton,
   MoreInfoButtonSkeleton,
@@ -10,6 +10,7 @@ import { DateTimeUtil, NumberUtil } from '@/utils';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { DATE_TIME_FORMAT } from '@/constant';
+import { Chip } from '@/components/shared';
 
 interface WalletTransactionsCardProps {
   transaction?: ITransaction;
@@ -22,11 +23,15 @@ export const WalletTransactionsCard = ({ transaction, index, walletAddress }: Wa
     return (
       <div key={`skeleton-${index}`} className="border-secondary space-y-2 border-b pb-4">
         <div className="flex items-center justify-between">
-          <TxnHashLinkSkeleton />
-          <MoreInfoButtonSkeleton />
+          <div className="text-quaternary-500 text-xs">Hash</div>
+          <div className="w-40">
+            <TxnHashLinkSkeleton />
+          </div>
         </div>
         <div className="text-quaternary-500 text-xs">Created At</div>
         <TransactionTimeSkeleton />
+        <div className="text-quaternary-500 text-xs">Type</div>
+        <div className="bg-muted h-5 w-24 rounded" />
         <div className="text-quaternary-500 text-xs">Amount</div>
         <div className="bg-muted h-5 w-24 rounded" />
       </div>
@@ -38,14 +43,22 @@ export const WalletTransactionsCard = ({ transaction, index, walletAddress }: Wa
   return (
     <div key={transaction.hash} className="border-secondary space-y-2 border-b pb-4">
       <div className="flex items-center justify-between">
-        <TxnHashLink hash={transaction.hash} isPending={transaction.status === ETransactionStatus.Pending} />
-        <MoreInfoButton transaction={transaction} />
+        <div className="text-foreground text-xs">Hash</div>
+        <div className="w-40">
+          <TxnHashLink hash={transaction.hash} isPending={transaction.status === ETransactionStatus.Pending} />
+        </div>
       </div>
       <div className="flex items-center justify-between gap-2">
         <div className="text-foreground text-xs">Created At</div>
         <div className="text-sm">
           {format(DateTimeUtil.toMilliseconds(transaction.transaction_timestamp), DATE_TIME_FORMAT.DATE_TIME)}
         </div>
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-foreground text-xs">Type</div>
+        <Chip variant="warning" className="gap-1.5 rounded-md">
+          <span>{getTransactionTypeLabel(transaction.transaction_type)}</span>
+        </Chip>
       </div>
       <div className="flex items-center justify-between gap-2">
         <div className="text-foreground text-xs">Amount</div>

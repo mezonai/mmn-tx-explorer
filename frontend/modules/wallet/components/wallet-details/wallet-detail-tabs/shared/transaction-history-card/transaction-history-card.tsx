@@ -36,12 +36,12 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
     const baseWithDate = { ...base, ...dateRange };
 
     if (filters.type === 'Sent') {
-      return { ...baseWithDate, filter_from_address: walletAddress };
+      return { ...base, filter_from_address: walletAddress };
     }
     if (filters.type === 'Received') {
-      return { ...baseWithDate, filter_to_address: walletAddress };
+      return { ...base, filter_to_address: walletAddress };
     }
-    return { ...baseWithDate, wallet_address: walletAddress };
+    return { ...base, wallet_address: walletAddress };
   };
 
   const searchParams: ITransactionListParams = getSearchParams();
@@ -56,33 +56,37 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
 
   return (
     <Card className="dark:border-primary/20">
-      <CardContent>
+      <CardContent className="overflow-x-hidden px-2">
         <CardHeader className="mb-4 flex items-center justify-between gap-2 p-0">
           <CardTitle className="text-brand-primary font-semibold tracking-wider uppercase">
             Transaction history
           </CardTitle>
         </CardHeader>
-        <div className="bg-card sticky top-0 z-10 mb-0 flex justify-end gap-5 py-6 md:pt-8">
-          <Select value={filters.period} onValueChange={(v) => handleFilterChange('period', v)}>
-            <SelectTrigger className="h-10 w-[180px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Last 3 months">Last 3 months</SelectItem>
-              <SelectItem value="Last 6 months">Last 6 months</SelectItem>
-              <SelectItem value="Last 12 months">Last 12 months</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={filters.type} onValueChange={(v) => handleFilterChange('type', v)}>
-            <SelectTrigger className="h-10 w-[170px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="All Transaction">All Transaction</SelectItem>
-              <SelectItem value="Sent">Sent</SelectItem>
-              <SelectItem value="Received">Received</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="bg-card top-0 z-10 mb-0 flex flex-col gap-4 py-6 md:pt-8 lg:flex-row lg:items-center lg:justify-end lg:gap-5">
+          <div className="flex w-full flex-col gap-4 sm:flex-row lg:w-auto">
+            <Select value={filters.period} onValueChange={(v) => handleFilterChange('period', v)}>
+              <SelectTrigger className="h-10 w-full sm:w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Last 3 months">Last 3 months</SelectItem>
+                <SelectItem value="Last 6 months">Last 6 months</SelectItem>
+                <SelectItem value="Last 12 months">Last 12 months</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={filters.type} onValueChange={(v) => handleFilterChange('type', v)}>
+              <SelectTrigger className="h-10 w-full sm:w-[170px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All Transaction">All Transaction</SelectItem>
+                <SelectItem value="Sent">Sent</SelectItem>
+                <SelectItem value="Received">Received</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <Pagination
             page={page}
             limit={limit}
@@ -94,7 +98,6 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
             onChangeLimit={handleChangeLimit}
           />
         </div>
-
         {isDesktop === undefined ? (
           <div>
             <div className="hidden lg:block">
