@@ -57,10 +57,10 @@ export const NavBarAuthPanel: React.FC = () => {
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
-        <img 
-          src={user.avatar} 
-          alt="User Avatar" 
-          className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600" 
+        <img
+          src={user.avatar}
+          alt="User Avatar"
+          className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600"
         />
         <span className="text-sm font-medium text-gray-900 dark:text-white">{user.username}</span>
         <i className={cn("fa-solid fa-chevron-down text-gray-400 text-xs transition-transform", open && "rotate-180")}></i>
@@ -75,10 +75,10 @@ export const NavBarAuthPanel: React.FC = () => {
           )}
         >
           <div className="flex items-center space-x-3 border-b border-gray-300 dark:border-gray-700 pb-3">
-            <img 
+            <img
               src={user.avatar}
               alt="User Avatar"
-              className="w-10 h-10 rounded-full border border-gray-300 dark:border-gray-600" 
+              className="w-10 h-10 rounded-full border border-gray-300 dark:border-gray-600"
             />
             <div>
               <div className="flex items-center space-x-2">
@@ -121,15 +121,15 @@ export const NavBarAuthPanel: React.FC = () => {
           <div className="border-t border-gray-300 dark:border-gray-700"></div>
 
           <div className="space-y-1 text-sm">
-            <a 
-              href={user.walletAddress ? ROUTES.WALLET(user.walletAddress) : ROUTES.PROFILE} 
+            <a
+              href={user.walletAddress ? ROUTES.WALLET(user.walletAddress) : ROUTES.PROFILE}
               className="group flex w-full items-center justify-between px-3 py-2 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
               <span className="flex items-center space-x-2">
                 <i className="fa-solid fa-wallet text-[var(--color-brand-primary)] w-4 text-center"></i>
                 <span className="transition-colors group-hover:text-[var(--color-brand-primary)]">Account Overview</span>
               </span>
-              <i className="fa-solid fa-chevron-right text-gray-500 text-xs transition-all group-hover:translate-x-0.5 group-hover:text-[rgb(105,65,198)]"></i>
+              <i className="fa-solid fa-chevron-right text-gray-500 text-xs transition-all group-hover:translate-x-0.5 group-hover:text-[var(--color-brand-primary)]"></i>
             </a>
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -144,7 +144,7 @@ export const NavBarAuthPanel: React.FC = () => {
           </div>
 
           <div className="border-t border-gray-300 dark:border-gray-700"></div>
-          <button 
+          <button
             onClick={logout}
             className="w-full bg-transparent border border-red-500/40 text-red-400 hover:bg-red-500/20 py-2 rounded-lg font-semibold text-sm transition"
           >
