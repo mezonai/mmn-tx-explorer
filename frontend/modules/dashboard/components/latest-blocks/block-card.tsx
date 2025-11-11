@@ -1,6 +1,5 @@
 import Link from 'next/link';
 
-import { MiddleTruncate } from '@re-dev/react-truncate';
 
 import { Cube01 } from '@/assets/icons';  
 import { Button } from '@/components/ui/button';
