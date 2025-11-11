@@ -126,8 +126,8 @@ export const NavBarAuthPanel: React.FC = () => {
               className="group flex w-full items-center justify-between px-3 py-2 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
               <span className="flex items-center space-x-2">
-                <i className="fa-solid fa-wallet text-[rgb(105,65,198)] w-4 text-center"></i>
-                <span className="transition-colors group-hover:text-[rgb(105,65,198)]">Account Overview</span>
+                <i className="fa-solid fa-wallet text-[var(--color-brand-primary)] w-4 text-center"></i>
+                <span className="transition-colors group-hover:text-[var(--color-brand-primary)]">Account Overview</span>
               </span>
               <i className="fa-solid fa-chevron-right text-gray-500 text-xs transition-all group-hover:translate-x-0.5 group-hover:text-[rgb(105,65,198)]"></i>
             </a>
@@ -136,10 +136,10 @@ export const NavBarAuthPanel: React.FC = () => {
               className="group flex w-full items-center justify-between px-3 py-2 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
               <span className="flex items-center space-x-2">
-                <i className={cn("text-[rgb(105,65,198)] w-4 text-center", theme === 'dark' ? "fa-solid fa-moon" : "fa-solid fa-sun")}></i>
-                <span className="transition-colors group-hover:text-[rgb(105,65,198)]">Toggle {theme === 'dark' ? 'Light' : 'Dark'} Mode</span>
+                <i className={cn("text-[var(--color-brand-primary)] w-4 text-center", theme === 'dark' ? "fa-solid fa-moon" : "fa-solid fa-sun")}></i>
+                <span className="transition-colors group-hover:text-[var(--color-brand-primary)]">Toggle {theme === 'dark' ? 'Light' : 'Dark'} Mode</span>
               </span>
-              <i className="fa-solid fa-chevron-right text-gray-500 text-xs transition-all group-hover:translate-x-0.5 group-hover:text-[rgb(105,65,198)]"></i>
+              <i className="fa-solid fa-chevron-right text-gray-500 text-xs transition-all group-hover:translate-x-0.5 group-hover:text-[var(--color-brand-primary)]"></i>
             </button>
           </div>
 
