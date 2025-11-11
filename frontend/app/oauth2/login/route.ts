@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 
-export async function GET() {
-  const state = Math.random().toString(36).substring(2, 15);
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const state = searchParams.get('state');
   const authUrl =
     `${process.env.NEXT_PUBLIC_OAUTH2_API_URL}/oauth2/auth?` +
     `client_id=${process.env.NEXT_PUBLIC_OAUTH2_CLIENT_ID}&` +

@@ -49,7 +49,7 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
     if (status === ECampaignStatus.Draft) {
       return 'Pending launch';
     }
-    return `${total_contributors} contributors`;
+    return `${total_contributors} contributor(s)`;
   }, [status]);
 
   const lastTime = useMemo(() => {
