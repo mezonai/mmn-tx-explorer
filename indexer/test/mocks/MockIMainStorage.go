@@ -338,7 +338,7 @@ func (_c *MockIMainStorage_GetCount_Call) RunAndReturn(run func(context.Context,
 }
 
 // GetDashboardStats provides a mock function with given fields: ctx, qf
-func (_m *MockIMainStorage) GetDashboardStats(ctx context.Context, qf storage.QueryFilter) (uint64, uint64, uint64, error) {
+func (_m *MockIMainStorage) GetDashboardStats(ctx context.Context, qf storage.QueryFilter) (uint64, uint64, uint64, float64, error) {
 	ret := _m.Called(ctx, qf)
 
 	if len(ret) == 0 {
@@ -348,8 +348,9 @@ func (_m *MockIMainStorage) GetDashboardStats(ctx context.Context, qf storage.Qu
 	var r0 uint64
 	var r1 uint64
 	var r2 uint64
-	var r3 error
-	if rf, ok := ret.Get(0).(func(context.Context, storage.QueryFilter) (uint64, uint64, uint64, error)); ok {
+	var r3 float64
+	var r4 error
+	if rf, ok := ret.Get(0).(func(context.Context, storage.QueryFilter) (uint64, uint64, uint64, float64, error)); ok {
 		return rf(ctx, qf)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, storage.QueryFilter) uint64); ok {
@@ -370,13 +371,19 @@ func (_m *MockIMainStorage) GetDashboardStats(ctx context.Context, qf storage.Qu
 		r2 = ret.Get(2).(uint64)
 	}
 
-	if rf, ok := ret.Get(3).(func(context.Context, storage.QueryFilter) error); ok {
+	if rf, ok := ret.Get(3).(func(context.Context, storage.QueryFilter) float64); ok {
 		r3 = rf(ctx, qf)
 	} else {
-		r3 = ret.Error(3)
+		r3 = ret.Get(3).(float64)
 	}
 
-	return r0, r1, r2, r3
+	if rf, ok := ret.Get(4).(func(context.Context, storage.QueryFilter) error); ok {
+		r4 = rf(ctx, qf)
+	} else {
+		r4 = ret.Error(4)
+	}
+
+	return r0, r1, r2, r3, r4
 }
 
 // MockIMainStorage_GetDashboardStats_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetDashboardStats'
@@ -398,12 +405,12 @@ func (_c *MockIMainStorage_GetDashboardStats_Call) Run(run func(ctx context.Cont
 	return _c
 }
 
-func (_c *MockIMainStorage_GetDashboardStats_Call) Return(totalBlocks uint64, totalTransactions uint64, totalWallets uint64, err error) *MockIMainStorage_GetDashboardStats_Call {
-	_c.Call.Return(totalBlocks, totalTransactions, totalWallets, err)
+func (_c *MockIMainStorage_GetDashboardStats_Call) Return(totalBlocks uint64, totalTransactions uint64, totalWallets uint64, averageBlockTime float64, err error) *MockIMainStorage_GetDashboardStats_Call {
+	_c.Call.Return(totalBlocks, totalTransactions, totalWallets, averageBlockTime, err)
 	return _c
 }
 
-func (_c *MockIMainStorage_GetDashboardStats_Call) RunAndReturn(run func(context.Context, storage.QueryFilter) (uint64, uint64, uint64, error)) *MockIMainStorage_GetDashboardStats_Call {
+func (_c *MockIMainStorage_GetDashboardStats_Call) RunAndReturn(run func(context.Context, storage.QueryFilter) (uint64, uint64, uint64, float64, error)) *MockIMainStorage_GetDashboardStats_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1135,6 +1142,52 @@ func (_c *MockIMainStorage_InsertBlockData_Call) Return(_a0 error) *MockIMainSto
 }
 
 func (_c *MockIMainStorage_InsertBlockData_Call) RunAndReturn(run func([]common.BlockData) error) *MockIMainStorage_InsertBlockData_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// RecalculateStats provides a mock function with given fields: ctx
+func (_m *MockIMainStorage) RecalculateStats(ctx context.Context) error {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RecalculateStats")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MockIMainStorage_RecalculateStats_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RecalculateStats'
+type MockIMainStorage_RecalculateStats_Call struct {
+	*mock.Call
+}
+
+// RecalculateStats is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *MockIMainStorage_Expecter) RecalculateStats(ctx interface{}) *MockIMainStorage_RecalculateStats_Call {
+	return &MockIMainStorage_RecalculateStats_Call{Call: _e.mock.On("RecalculateStats", ctx)}
+}
+
+func (_c *MockIMainStorage_RecalculateStats_Call) Run(run func(ctx context.Context)) *MockIMainStorage_RecalculateStats_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *MockIMainStorage_RecalculateStats_Call) Return(_a0 error) *MockIMainStorage_RecalculateStats_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockIMainStorage_RecalculateStats_Call) RunAndReturn(run func(context.Context) error) *MockIMainStorage_RecalculateStats_Call {
 	_c.Call.Return(run)
 	return _c
 }

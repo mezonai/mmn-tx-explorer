@@ -1316,22 +1316,22 @@ func (p *PostgresConnector) GetCount(ctx context.Context, table string, qf Query
 	return count, err
 }
 
-func (p *PostgresConnector) GetDashboardStats(ctx context.Context, qf QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, err error) {
+func (p *PostgresConnector) GetDashboardStats(ctx context.Context, qf QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, averageBlockTime float64, err error) {
 	query := `
         SELECT 
             COALESCE(MAX(CASE WHEN key = 'total_blocks' THEN value::bigint END), 0) as blocks,
             COALESCE(MAX(CASE WHEN key = 'total_transactions' THEN value::bigint END), 0) as transactions,
-            COALESCE(MAX(CASE WHEN key = 'total_wallets' THEN value::bigint END), 0) as wallets
+            COALESCE(MAX(CASE WHEN key = 'total_wallets' THEN value::bigint END), 0) as wallets,
+            COALESCE(MAX(CASE WHEN key = 'average_block' THEN value::float END) / 1000.0, 0.0) as avg_block_time
         FROM stats
-        WHERE key IN ('total_blocks', 'total_transactions', 'total_wallets')
     `
 
-	err = p.db.QueryRowContext(ctx, query).Scan(&totalBlocks, &totalTransactions, &totalWallets)
+	err = p.db.QueryRowContext(ctx, query).Scan(&totalBlocks, &totalTransactions, &totalWallets, &averageBlockTime)
 	if err != nil {
-		return 0, 0, 0, fmt.Errorf("failed to get dashboard stats: %w", err)
+		return 0, 0, 0, 0, fmt.Errorf("failed to get dashboard stats: %w", err)
 	}
 
-	return totalBlocks, totalTransactions, totalWallets, nil
+	return totalBlocks, totalTransactions, totalWallets, averageBlockTime, nil
 }
 
 func (p *PostgresConnector) GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error) {
@@ -1966,6 +1966,118 @@ func (p *PostgresConnector) GetTransactionsByWalletCount(ctx context.Context, wa
 	}
 
 	return count, nil
+}
+
+func (p *PostgresConnector) calculateAverageBlockTime(ctx context.Context, numberOfBlocks int64) (float64, error) {
+	latestQf := QueryFilter{
+		SortBy:              "block_number",
+		SortOrder:           "desc",
+		Limit:               1,
+		ForceConsistentData: true,
+	}
+	latestBlocks, err := p.GetBlocks(latestQf)
+	if err != nil {
+		return 0, err
+	}
+	if len(latestBlocks.Data) == 0 {
+		return 0, nil
+	}
+
+	latest := latestBlocks.Data[0]
+	latestTimestamp := latest.Timestamp.Unix()
+	latestBlockNumber := latest.Number.Uint64()
+	k := uint64(numberOfBlocks)
+	if latestBlockNumber == 0 {
+		k = 0
+	} else if latestBlockNumber < uint64(numberOfBlocks) {
+		k = latestBlockNumber
+	}
+	if k <= 0 {
+		return 0, nil
+	}
+	targetNum := int64(latestBlockNumber) - int64(k)
+	targetQf := QueryFilter{
+		BlockNumbers:        []*big.Int{big.NewInt(targetNum)},
+		ForceConsistentData: true,
+	}
+
+	targetBlocks, err := p.GetBlocks(targetQf)
+	if err != nil {
+		return 0, err
+	}
+	if len(targetBlocks.Data) == 0 {
+		return 0, nil
+	}
+	timestampMinusK := targetBlocks.Data[0].Timestamp.Unix()
+	avg := float64(latestTimestamp-timestampMinusK) / float64(k)
+
+	if avg <= 0 {
+		return 0, nil
+	}
+
+	return avg, nil
+}
+
+func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
+	var totalBlocks int64
+	var err error
+	err = p.db.QueryRowContext(ctx, `
+        SELECT COUNT(DISTINCT block_number) 
+        FROM blocks 
+        WHERE transaction_count > 0
+    `).Scan(&totalBlocks)
+	if err != nil {
+		return fmt.Errorf("failed to count blocks: %w", err)
+	}
+
+	var totalTransactions int64
+	err = p.db.QueryRowContext(ctx, `
+        SELECT COUNT(*) 
+        FROM transactions
+    `).Scan(&totalTransactions)
+	if err != nil {
+		return fmt.Errorf("failed to count transactions: %w", err)
+	}
+
+	var totalWallets int64
+	err = p.db.QueryRowContext(ctx, `
+        SELECT COUNT(*) 
+        FROM wallet
+    `).Scan(&totalWallets)
+	if err != nil {
+		return fmt.Errorf("failed to count wallets: %w", err)
+	}
+
+	avgBlockTime, err := p.calculateAverageBlockTime(ctx, 100)
+	if err != nil {
+		return fmt.Errorf("failed to calculate average block time: %w", err)
+	}
+
+	averageBlockMs := int64(avgBlockTime * 1000)
+
+	statsUpdates := []struct {
+		key   string
+		value int64
+	}{
+		{"total_blocks", totalBlocks},
+		{"total_transactions", totalTransactions},
+		{"total_wallets", totalWallets},
+		{"average_block", averageBlockMs},
+	}
+
+	for _, stat := range statsUpdates {
+		_, err = p.db.ExecContext(ctx, `
+            INSERT INTO stats(key, value) 
+            VALUES ($1, $2)
+            ON CONFLICT (key) 
+            DO UPDATE SET value = $2
+        `, stat.key, stat.value)
+		if err != nil {
+			return fmt.Errorf("failed to update %s stat: %w", stat.key, err)
+		}
+	}
+
+	return nil
 }
 
 func (p *PostgresConnector) scanRowsToTransactions(rows *sql.Rows) ([]common.Transaction, error) {
