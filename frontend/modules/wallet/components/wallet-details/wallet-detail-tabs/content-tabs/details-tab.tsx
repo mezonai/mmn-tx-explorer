@@ -1,21 +1,21 @@
 import { AddressDisplay, RefreshButton } from '@/components/shared';
 import { APP_CONFIG } from '@/configs/app.config';
-import { IWalletDetails } from '@/modules/wallet/type';
 import { NumberUtil } from '@/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser } from '@/providers';
 import Link from 'next/link';
 import { ROUTES } from '@/configs/routes.config';
 import { Button } from '@/components/ui/button';
+import { useWallet } from '@/modules/wallet/hooks/useWallet';
 
 interface TabDetailsProps {
-  walletDetails: IWalletDetails;
-  refetch: () => void;
-  isLoading: boolean;
+  walletAddress: string;
 }
 
-export const DetailsTab = ({ walletDetails, refetch, isLoading }: TabDetailsProps) => {
+export const DetailsTab = ({ walletAddress }: TabDetailsProps) => {
   const { user } = useUser();
+  const { data: walletDetailsResponse, refetch, isLoading } = useWallet(walletAddress);
+  const walletDetails = walletDetailsResponse?.data;
   return (
     <Card className="dark:border-primary/20">
       <CardContent>
@@ -34,7 +34,7 @@ export const DetailsTab = ({ walletDetails, refetch, isLoading }: TabDetailsProp
           </div>
         </CardHeader>
         <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
-          {user?.walletAddress === walletDetails.address && (
+          {user?.walletAddress === walletDetails?.address && (
             <Card className="dark:border-primary/20">
               <CardContent>
                 <CardHeader className="flex items-center justify-between gap-2 p-0">
@@ -51,7 +51,7 @@ export const DetailsTab = ({ walletDetails, refetch, isLoading }: TabDetailsProp
               <CardHeader className="flex items-center justify-between gap-2 p-0">
                 <CardTitle className="mb-1 text-xs uppercase">Transaction</CardTitle>
               </CardHeader>
-              <p className="dark:text-primary text-lg font-semibold">{walletDetails.transaction_count}</p>
+              <p className="dark:text-primary text-lg font-semibold">{walletDetails?.transaction_count ?? 0}</p>
             </CardContent>
           </Card>
           <Card className="dark:border-primary/20">
@@ -60,10 +60,14 @@ export const DetailsTab = ({ walletDetails, refetch, isLoading }: TabDetailsProp
                 <CardTitle className="mb-1 text-xs uppercase">Wallet Address</CardTitle>
               </CardHeader>
               <div className="flex items-center space-x-2">
-                <AddressDisplay
-                  address={walletDetails.address}
-                  className="dark:text-primary text-lg font-semibold md:w-[300px]"
-                />
+                {walletDetails ? (
+                  <AddressDisplay
+                    address={walletDetails.address}
+                    className="dark:text-primary text-lg font-semibold md:w-[300px]"
+                  />
+                ) : (
+                  <div className="dark:text-primary text-lg font-semibold md:w-[300px]">N/A</div>
+                )}
               </div>
             </CardContent>
           </Card>
