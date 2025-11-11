@@ -77,7 +77,7 @@ func handleLogsRequest(c *gin.Context) {
 		signatureHash = eventABI.ID.Hex()
 	}
 
-	mainStorage, err := getMainStorage()
+	mainStorage, err := storage.GetMainStorage()
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting main storage")
 		api.InternalErrorHandler(c)
@@ -169,18 +169,6 @@ func decodeLogsIfNeeded(chainId string, logs []common.Log, eventABI *abi.Event, 
 		return common.DecodeLogs(chainId, logs)
 	}
 	return nil
-}
-
-func getMainStorage() (storage.IMainStorage, error) {
-	storageOnce.Do(func() {
-		var err error
-		mainStorage, err = storage.NewConnector[storage.IMainStorage](&config.Cfg.Storage.Main)
-		if err != nil {
-			storageErr = err
-			log.Error().Err(err).Msg("Error creating storage connector")
-		}
-	})
-	return mainStorage, storageErr
 }
 
 func sendJSONResponse(c *gin.Context, response interface{}) {
