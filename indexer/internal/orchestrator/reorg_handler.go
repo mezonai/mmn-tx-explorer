@@ -80,7 +80,10 @@ func (rh *ReorgHandler) Start(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			log.Info().Msg("Reorg handler shutting down")
-			rh.publisher.Close()
+			err := rh.publisher.Close()
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to close publisher")
+			}
 			return
 		case <-ticker.C:
 			mostRecentBlockChecked, err := rh.RunFromBlock(ctx, rh.lastCheckedBlock)
@@ -93,8 +96,10 @@ func (rh *ReorgHandler) Start(ctx context.Context) {
 			}
 
 			rh.lastCheckedBlock = mostRecentBlockChecked
-			if err := rh.storage.OrchestratorStorage.SetLastReorgCheckedBlockNumber(rh.rpc.GetChainID(), mostRecentBlockChecked); err != nil {
-				log.Error().Err(err).Msg("failed to persist last reorg checked block number")
+			err = rh.storage.OrchestratorStorage.SetLastReorgCheckedBlockNumber(rh.rpc.GetChainID(), mostRecentBlockChecked)
+			if err != nil {
+				log.Error().Err(err).Msgf("Error setting last reorg checked block number: %s", err.Error())
+				continue
 			}
 			metrics.ReorgHandlerLastCheckedBlock.Set(float64(mostRecentBlockChecked.Int64()))
 		}

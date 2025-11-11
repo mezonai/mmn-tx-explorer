@@ -90,8 +90,10 @@ func writeError(w http.ResponseWriter, message string, code int) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		log.Error().Err(err).Msg("failed to encode error response")
+
+	err := json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to write error response")
 	}
 }
 

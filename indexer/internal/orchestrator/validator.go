@@ -73,11 +73,6 @@ func (v *Validator) ValidateBlock(blockData common.BlockData) (valid bool, err e
 		return false, nil
 	}
 
-	// strict mode also validates logsBloom and transactionsRoot
-	if config.Cfg.Validation.Mode == "strict" {
-		log.Debug().Msg("Strict validation placeholder: extra checks not implemented yet")
-	}
-
 	return true, nil
 }
 

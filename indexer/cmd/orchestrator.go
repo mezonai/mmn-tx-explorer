@@ -37,9 +37,7 @@ func RunOrchestrator(cmd *cobra.Command, args []string) {
 	log.Info().Msg("Starting Metrics Server on port 2112")
 	go func() {
 		http.Handle("/metrics", promhttp.Handler())
-		if err := http.ListenAndServe(":2112", nil); err != nil {
-			log.Fatal().Err(err).Msg("metrics server failed")
-		}
+		http.ListenAndServe(":2112", nil)
 	}()
 
 	orchestrator.Start()
