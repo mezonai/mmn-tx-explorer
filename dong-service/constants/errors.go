@@ -57,7 +57,7 @@ const (
 	MsgCampaignUpdated             = "Campaign updated successfully"
 	MsgCampaignActivated           = "Campaign activated successfully"
 	MsgCampaignClosed              = "Campaign closed successfully"
-	MsgDraftCampaignDeleted        = "Draft Campaign deleted successfully"
+	MsgDraftCampaignDeleted        = "Campaign deleted successfully"
 	MsgCampaignRetrieved           = "Campaign retrieved successfully"
 	MsgCampaignsRetrieved          = "Campaigns retrieved successfully"
 )
