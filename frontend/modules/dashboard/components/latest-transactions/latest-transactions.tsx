@@ -21,7 +21,7 @@ export const LatestTransactions = ({ className }: LatestTransactionsProps) => {
       <div className="p-6 border-b border-gray-300 dark:border-gray-700 flex justify-between items-center flex-shrink-0">
         <h3 className="text-lg font-semibold">Latest Transactions</h3>
           <Button variant="link" className="text-[rgb(105,65,198)] size-fit p-0 text-sm hover:opacity-80 font-normal" asChild>
-          <Link href={ROUTES.BLOCKS}>View all</Link>
+          <Link href={ROUTES.TRANSACTIONS}>View all</Link>
         </Button>
       </div>
       
