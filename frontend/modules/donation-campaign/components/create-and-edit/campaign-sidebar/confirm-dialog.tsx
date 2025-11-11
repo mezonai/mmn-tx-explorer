@@ -91,11 +91,7 @@ export function ConfirmDialog({
           <Button type="button" variant="outline" onClick={handleCancel} className="w-full sm:w-auto">
             {cancelText}
           </Button>
-          <Button 
-            type="button" 
-            onClick={handleConfirm} 
-            className={`w-full sm:w-auto ${config.buttonClass}`}
-          >
+          <Button type="button" onClick={handleConfirm} className={`w-full sm:w-auto ${config.buttonClass}`}>
             {confirmText}
           </Button>
         </DialogFooter>
