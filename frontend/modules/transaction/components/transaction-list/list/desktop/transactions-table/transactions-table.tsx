@@ -26,6 +26,7 @@ import {
 import { PAGINATION } from '@/constant';
 import { usePaginationQueryParam } from '@/hooks';
 import { TEXT_CONSTANT } from '@/constant';
+import { TxStatusBadge } from '@/modules/transaction/components/shared';
 
 interface TransactionsTableProps {
   transactions?: ITransaction[];
@@ -44,10 +45,10 @@ export const TransactionsTable = ({
   };
   const { page, limit } = usePaginationQueryParam();
   const columns: TTableColumn<ITransaction>[] = [
-    {
-      renderCell: (row) => <MoreInfoButton transaction={row} />,
-      skeletonContent: <MoreInfoButtonSkeleton />,
-    },
+    // {
+    //   renderCell: (row) => <MoreInfoButton transaction={row} />,
+    //   skeletonContent: <MoreInfoButtonSkeleton />,
+    // },
     {
       headerContent: (
         <div className="flex items-center gap-1">
@@ -84,10 +85,16 @@ export const TransactionsTable = ({
       skeletonContent: <TypeBadgesSkeleton className="flex-col items-start" />,
     },
     {
-      headerContent: 'Block',
-      renderCell: (row) => <BlockNumber blockNumber={row.block_number || TEXT_CONSTANT.NA} />,
-      skeletonContent: <BlockNumberSkeleton />,
+      headerContent: 'Status',
+      dataKey: 'status',
+      renderCell: (row) => <TxStatusBadge status={row.status} />,
+      skeletonContent: <TypeBadgesSkeleton className="flex-col items-start" />,
     },
+    // {
+    //   headerContent: 'Block',
+    //   renderCell: (row) => <BlockNumber blockNumber={row.block_number || TEXT_CONSTANT.NA} />,
+    //   skeletonContent: <BlockNumberSkeleton />,
+    // },
     {
       headerContent: 'From/To',
       renderCell: (row) => (
@@ -101,21 +108,23 @@ export const TransactionsTable = ({
     },
     {
       headerContent: 'Value',
-      renderCell: (row) => <TransactionValue value={row.value} showSymbol />,
+      renderCell: (row) => <TransactionValue value={row.value} showSymbol className="text-md text-primary" />,
       skeletonContent: <TransactionValueSkeleton />,
     },
   ];
 
   return (
-    <Table
-      key={`${page}-${limit}`}
-      getRowKey={(row) => row.hash}
-      columns={columns}
-      rows={transactions}
-      skeletonLength={skeletonLength}
-      className="[&_thead]:sticky [&_thead]:top-[96px] [&_thead]:z-10"
-      classNameLayout="overflow-x-visible"
-      isLoading={isLoading}
-    />
+    <div className="bg-card border-muted-foreground/30 border-separate rounded-lg border p-3">
+      <Table
+        key={`${page}-${limit}`}
+        getRowKey={(row) => row.hash}
+        columns={columns}
+        rows={transactions}
+        skeletonLength={skeletonLength}
+        className="[&_tbody]:bg-brand-primary/2 rounded-lg dark:[&_tbody]:bg-transparent [&_tbody_tr:last-child_td:first-child]:rounded-bl-lg [&_tbody_tr:last-child_td:last-child]:rounded-br-lg [&_thead]:top-[96px] [&_thead]:uppercase [&_thead]:border-b [&_thead]:z-10 [&_thead]:bg-transparent"
+        classNameLayout="overflow-x-visible"
+        isLoading={isLoading}
+      />
+    </div>
   );
 };

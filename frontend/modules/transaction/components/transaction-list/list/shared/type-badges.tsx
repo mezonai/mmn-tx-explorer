@@ -30,7 +30,7 @@ export const TypeBadges = ({ className, type, status }: TypeBadgesProps) => {
         <span className="text-xs font-medium whitespace-nowrap">{getTransactionTypeLabel(type)}</span>
       </Badge>
 
-      <TxStatusBadge status={status} />
+      {/* <TxStatusBadge status={status} /> */}
     </div>
   );
 };
