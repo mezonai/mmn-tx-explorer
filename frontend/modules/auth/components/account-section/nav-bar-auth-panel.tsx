@@ -42,7 +42,7 @@ export const NavBarAuthPanel: React.FC = () => {
       requestAnimationFrame(() => setEntering(true));
     } else {
       setEntering(false);
-      timeout = window.setTimeout(() => setRenderPanel(false), 160);
+      timeout = window.setTimeout(() => setRenderPanel(false), 150);
     }
     return () => {
       if (timeout) window.clearTimeout(timeout);
