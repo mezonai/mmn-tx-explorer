@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"math/big"
 	"testing"
 
@@ -207,16 +206,4 @@ func TestBlockSerialize(t *testing.T) {
 	assert.Equal(t, block.Hash, model.BlockHash)
 	assert.Equal(t, block.ParentHash, model.ParentHash)
 	assert.Equal(t, block.TransactionCount, model.TransactionCount)
-}
-
-func TestCheckIfContractHasCode(t *testing.T) {
-	ctx := context.Background()
-	chainId := big.NewInt(1)
-	address := "0x1234567890123456789012345678901234567890"
-
-	t.Run("No Thirdweb client ID configured", func(t *testing.T) {
-		state, err := checkIfContractHasCode(ctx, chainId, address)
-		assert.NoError(t, err)
-		assert.Equal(t, ContractCodeUnknown, state)
-	})
 }

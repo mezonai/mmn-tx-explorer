@@ -131,13 +131,19 @@ func (c *Committer) Start(ctx context.Context) {
 		<-ctx.Done()
 		wg.Wait()
 		log.Info().Msg("Committer shutting down")
-		c.publisher.Close()
+		err = c.publisher.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close publisher")
+		}
 		return
 	}
 
 	c.runCommitLoop(ctx, interval)
 	log.Info().Msg("Committer shutting down")
-	c.publisher.Close()
+	err = c.publisher.Close()
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to close publisher")
+	}
 }
 
 func (c *Committer) runCommitLoop(ctx context.Context, interval time.Duration) {
