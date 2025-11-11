@@ -36,12 +36,12 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
     const baseWithDate = { ...base, ...dateRange };
 
     if (filters.type === 'Sent') {
-      return { ...base, filter_from_address: walletAddress };
+      return { ...baseWithDate, filter_from_address: walletAddress };
     }
     if (filters.type === 'Received') {
-      return { ...base, filter_to_address: walletAddress };
+      return { ...baseWithDate, filter_to_address: walletAddress };
     }
-    return { ...base, wallet_address: walletAddress };
+    return { ...baseWithDate, wallet_address: walletAddress };
   };
 
   const searchParams: ITransactionListParams = getSearchParams();

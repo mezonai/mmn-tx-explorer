@@ -1,11 +1,5 @@
 import { ETransactionStatus, getTransactionTypeLabel, ITransaction } from '@/modules/transaction';
-import {
-  MoreInfoButton,
-  MoreInfoButtonSkeleton,
-  TransactionTimeSkeleton,
-  TxnHashLink,
-  TxnHashLinkSkeleton,
-} from '../../shared';
+import { TransactionTimeSkeleton, TxnHashLink, TxnHashLinkSkeleton } from '../../shared';
 import { DateTimeUtil, NumberUtil } from '@/utils';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
