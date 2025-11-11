@@ -2,7 +2,7 @@
 
 import { CreateCampaignProvider } from '../../context/CreateCampaignContext';
 import { CampaignSidebar } from './campaign-sidebar';
-import { CampaignCreator } from './campaign-creator';
+import { CampaignHeader } from './campaign-header';
 import { Separator } from '@/components/ui/separator';
 import { CampaignForm } from './campaign-form';
 
@@ -14,7 +14,7 @@ function CreateCampaignContent() {
   return (
     <div className="space-y-16 pb-16">
       <section className="">
-        <CampaignCreator />
+        <CampaignHeader />
       </section>
       <Separator className="bg-gray-200/70 dark:bg-gray-800" />
 

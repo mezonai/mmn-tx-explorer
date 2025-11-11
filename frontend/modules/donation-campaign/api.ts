@@ -27,6 +27,11 @@ export class DonationCampaignService {
     return data.data;
   }
 
+  static async getCampaignBySlug(slug: string): Promise<DonationCampaign> {
+    const { data } = await apiDongClient.get<{ data: DonationCampaign }>(DONATION_ENDPOINTS.CAMPAIGN_BY_SLUG(slug));
+    return data.data;
+  }
+
   static async createCampaign(campaignData: CreateCampaignRequest): Promise<DonationCampaign> {
     const { data } = await apiDongClient.post<{ data: DonationCampaign }>(
       DONATION_ENDPOINTS.CREATE_CAMPAIGN,
@@ -48,9 +53,9 @@ export class DonationCampaignService {
     return data.data;
   }
 
-  static async updateCampaign(id: string, campaignData: Partial<CreateCampaignRequest>): Promise<DonationCampaign> {
+  static async editCampaign(id: string, campaignData: Partial<CreateCampaignRequest>): Promise<DonationCampaign> {
     const { data } = await apiDongClient.put<{ data: DonationCampaign }>(
-      DONATION_ENDPOINTS.CAMPAIGN_BY_ID(id),
+      DONATION_ENDPOINTS.EDIT_CAMPAIGN(id),
       campaignData
     );
     return data.data;
@@ -71,6 +76,12 @@ export class DonationCampaignService {
     const { data } = await apiDongClient.patch(DONATION_ENDPOINTS.CLOSE_CAMPAIGN(id));
     return data;
   }
+
+  static async activateCampaign(id: string): Promise<any> {
+    const { data } = await apiDongClient.patch(DONATION_ENDPOINTS.ACTIVATE_CAMPAIGN(id));
+    return data;
+  }
+
   static async getTopContributor({
     campaignId,
     params,
@@ -78,9 +89,17 @@ export class DonationCampaignService {
     campaignId: string;
     params: { limit: number };
   }): Promise<TopContributorsResponse['data']> {
+    await this.refreshCampaignRaised(campaignId);
     const { data } = await apiDongClient.get<TopContributorsResponse>(DONATION_ENDPOINTS.TOP_CONTRIBUTOR(campaignId), {
       params,
     });
+    return data.data;
+  }
+
+  static async refreshCampaignRaised(id: string): Promise<DonationCampaign> {
+    const { data } = await apiDongClient.post<{ data: DonationCampaign }>(
+      DONATION_ENDPOINTS.REFRESH_CAMPAIGN_RAISED(id)
+    );
     return data.data;
   }
 }

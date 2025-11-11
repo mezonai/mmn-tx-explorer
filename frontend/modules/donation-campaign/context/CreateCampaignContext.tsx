@@ -1,11 +1,12 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode, useMemo } from 'react';
+import { createContext, useContext, useState, useCallback, ReactNode, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ROUTES } from '@/configs/routes.config';
 import { mmnClient } from '@/modules/auth/utils';
 import { useCreateCampaign } from '../hooks';
+import { useEditCampaign } from '../hooks';
 import { CreateCampaignForm } from '../type';
 import { useCreateAndPublishCampaign } from '../hooks/useCreateAndPublishCampaign';
 
@@ -40,15 +41,16 @@ interface CreateCampaignContextType {
   isWalletDownloaded: boolean;
   setIsWalletDownloaded: (isDownloaded: boolean) => void;
   validation: CreateCampaignValidation;
-  saveDraft: () => Promise<void>;
-  deleteDraft: () => void;
   handleSubmit: (action: 'draft' | 'publish') => void;
   generateWallet: () => Promise<boolean>;
 }
 
 function validateForm(form: CreateCampaignForm, isWalletDownloaded: boolean): CreateCampaignValidation {
-  const isBasicsComplete = !!(form.name && form.shortDescription);
-  const isGoalsComplete = !!(form.fundraisingGoal && form.endDate);
+  const trimmedName = String(form.name ?? '').trim();
+  const isNameValid = trimmedName.length > 0 && !/^\d+$/.test(trimmedName);
+
+  const isBasicsComplete = !!(isNameValid && form.shortDescription);
+  const isGoalsComplete = true;
   const isWalletComplete = !!(form.donationWallet.address && form.donationWallet.privateKey && isWalletDownloaded);
   const isDescriptionComplete = true;
 
@@ -70,6 +72,7 @@ interface CreateCampaignProviderProps {
 
 export function CreateCampaignProvider({ id, children }: CreateCampaignProviderProps) {
   const createMutation = useCreateCampaign();
+  const editMutation = useEditCampaign();
   const createAndPublishMutation = useCreateAndPublishCampaign();
   const router = useRouter();
   const [form, setForm] = useState<CreateCampaignForm>(INITIAL_FORM);
@@ -82,10 +85,6 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
     setForm((prev) => ({ ...prev, [field]: value }));
   }, []);
 
-  const saveDraft = useCallback(async () => {}, []);
-
-  const deleteDraft = useCallback(() => {}, []);
-
   const generateWallet = useCallback(async () => {
     try {
       setIsSaving(true);
@@ -96,8 +95,7 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
       });
       toast.success('Wallet generated successfully');
       return true;
-    } catch (error) {
-      console.error('Error generating wallet:', error);
+    } catch {
       toast.error('Failed to generate wallet');
       return false;
     } finally {
@@ -107,43 +105,55 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
 
   const handleSubmit = useCallback(
     async (action: 'draft' | 'publish') => {
-      if (action === 'draft') {
-        saveDraft();
-      } else {
-        if (!validation.isAllComplete) {
-          toast.error('Please complete all required fields before publishing');
-          return;
-        }
+      const trimmedName = String(form.name ?? '').trim();
+      if (trimmedName !== '' && /^\d+$/.test(trimmedName)) {
+        toast.error("Campaign name can't be only numbers");
+        return;
+      }
 
-        try {
-          setIsSaving(true);
+      try {
+        setIsSaving(true);
 
-          const campaignData = {
-            name: form.name,
-            description: form.shortDescription,
-            goal: Number(form.fundraisingGoal || 0),
-            url: form.bannerImageUrl,
-            donation_wallet: form.donationWallet.address,
-            owner: form.owner,
-            end_date: form.endDate,
-          };
+        const campaignData = {
+          name: form.name,
+          description: form.shortDescription,
+          goal: Number(form.fundraisingGoal || 0),
+          url: form.bannerImageUrl,
+          donation_wallet: form.donationWallet.address,
+          owner: form.owner.trim(),
+          end_date: form.endDate,
+        };
 
+        if (action === 'draft') {
+          if (!validation.isAllComplete) {
+            toast.error('Please complete all required fields');
+            return;
+          }
+          const res = await createMutation.mutateAsync(campaignData as any);
+          toast.success('Draft saved');
+          router.push(ROUTES.CAMPAIGN(res.id));
+        } else {
           if (id) {
-            // Edit
+            const res = await editMutation.mutateAsync({ id, data: campaignData });
+            toast.success('Campaign edited successfully');
+            router.push(ROUTES.CAMPAIGN(res.slug));
           } else {
+            if (!validation.isAllComplete) {
+              toast.error('Please complete all required fields');
+              return;
+            }
             const res = await createAndPublishMutation.mutateAsync(campaignData);
             toast.success('Campaign published successfully');
-            router.push(ROUTES.CAMPAIGN(res.id)); // Navigate to donation list page
+            router.push(ROUTES.CAMPAIGN(res.slug));
           }
-        } catch (error) {
-          console.error('Error publishing campaign:', error);
-          toast.error('Failed to publish campaign');
-        } finally {
-          setIsSaving(false);
         }
+      } catch {
+        toast.error(`Failed to ${action === 'draft' ? 'save draft' : 'submit campaign'}`);
+      } finally {
+        setIsSaving(false);
       }
     },
-    [form, saveDraft, createMutation, validation.isAllComplete, router]
+    [form, createMutation, createAndPublishMutation, editMutation, validation.isAllComplete, router, id]
   );
 
   const contextValue: CreateCampaignContextType = {
@@ -155,8 +165,6 @@ export function CreateCampaignProvider({ id, children }: CreateCampaignProviderP
     isWalletDownloaded,
     setIsWalletDownloaded,
     validation,
-    saveDraft,
-    deleteDraft,
     handleSubmit,
     generateWallet,
   };

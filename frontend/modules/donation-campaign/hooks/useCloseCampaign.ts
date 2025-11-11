@@ -6,12 +6,17 @@ export const useCloseCampaign = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => DonationCampaignService.closeCampaign(id),
-    onSuccess: () => {
-      // Invalidate campaigns to refresh the data
+    mutationFn: ({ id }: { id: string; slug?: string }) => DonationCampaignService.closeCampaign(id),
+    onSuccess: (_data, { id, slug }) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CAMPAIGNS] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CAMPAIGN_STATS] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.USER_DONATIONS] });
+      if (id) {
+        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CAMPAIGN, id] });
+      }
+      if (slug) {
+        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CAMPAIGN, slug] });
+      }
     },
   });
 };

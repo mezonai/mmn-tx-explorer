@@ -1,9 +1,10 @@
 'use client';
 
-import { AddressDisplay } from '@/components/shared';
+import { AddressDisplay, RefreshButton } from '@/components/shared';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table } from '@/components/ui/table';
 import { ROUTES } from '@/configs/routes.config';
+import { DEFAULT_DEBOUNCE_TIME } from '@/hooks';
 import { cn } from '@/lib/utils';
 import { Transaction } from '@/modules/donation-campaign/type';
 import {
@@ -24,6 +25,7 @@ export interface RecentActivityTableProps {
   walletAddress: string;
   hidden: boolean;
   isLoading?: boolean;
+  refetch: () => void;
 }
 
 export function RecentActivityTable({
@@ -32,6 +34,7 @@ export function RecentActivityTable({
   walletAddress,
   hidden,
   isLoading = false,
+  refetch,
 }: RecentActivityTableProps) {
   const columns: TTableColumn<Transaction>[] = [
     {
@@ -65,9 +68,10 @@ export function RecentActivityTable({
   ];
   const queryParams = 'tab=received-transactions';
   return (
-    <Card className="dark:border-primary/20 overflow-x-auto p-4">
-      <CardHeader>
-        <CardTitle>Recent Activity</CardTitle>
+    <Card className="dark:border-primary/20 overflow-x-auto p-6">
+      <CardHeader className="m-0 flex items-center justify-between gap-2 px-3 py-0">
+        <CardTitle className="text-foreground">Recent Activity</CardTitle>
+        <RefreshButton onClick={refetch} isLoading={isLoading} startDelay={DEFAULT_DEBOUNCE_TIME} />
       </CardHeader>
       <CardContent className="p-0">
         <Table<Transaction>
@@ -77,6 +81,7 @@ export function RecentActivityTable({
           getRowKey={(tx) => tx.hash}
           nullDataContext="No recent activity found."
           classNameLayout="border-none"
+          className="table-fixed"
         />
       </CardContent>
       <CardFooter>

@@ -1,6 +1,7 @@
 import { Users, Clock, ShieldCheck } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatDistanceToNow } from 'date-fns';
+import { DateTimeUtil } from '@/utils/date-time.util';
+import { useMemo } from 'react';
 
 export function InsightsCard({
   contributors,
@@ -11,6 +12,13 @@ export function InsightsCard({
   daysRemaining: number | string;
   owner: string;
 }) {
+  const timeRemainingDisplay = useMemo(() => {
+    if (!daysRemaining) {
+      return 'No deadline';
+    }
+    return DateTimeUtil.safeFormatDistanceToNow(new Date(daysRemaining));
+  }, [daysRemaining]);
+
   return (
     <Card className="dark:bg-card rounded-3xl border-gray-200 bg-white/90 shadow-sm dark:border-white/10">
       <CardHeader>
@@ -25,14 +33,14 @@ export function InsightsCard({
               <Users className="text-brand-primary h-4 w-4" />
               <span>Contributors</span>
             </dt>
-            <dd className="font-bold text-gray-900 dark:text-white">{contributors} supporters</dd>
+            <dd className="font-bold text-gray-900 dark:text-white">{contributors} supporter(s)</dd>
           </div>
           <div className="flex items-center justify-between gap-4">
             <dt className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
               <Clock className="text-brand-primary h-4 w-4" />
               <span>Time remaining</span>
             </dt>
-            <dd className="font-bold text-gray-900 dark:text-white">{formatDistanceToNow(new Date(daysRemaining))}</dd>
+            <dd className="font-bold text-gray-900 dark:text-white">{timeRemainingDisplay}</dd>
           </div>
           {owner && (
             <div className="flex items-center justify-between gap-4">

@@ -341,6 +341,7 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
 	signedAccess, err := accessToken.SignedString([]byte(secret))
 	if err != nil {
+		logger.Error().Err(err).Str("oldTokenID", oldTokenID).Msg("Failed to sign new access token")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to sign access token"))
 		return
 	}
@@ -354,6 +355,7 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
 	signedRefresh, err := refreshToken.SignedString([]byte(secret))
 	if err != nil {
+		logger.Error().Err(err).Str("oldTokenID", oldTokenID).Msg("Failed to sign new refresh token")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to sign refresh token"))
 		return
 	}
@@ -361,7 +363,7 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	tokenTTL := time.Duration(config.JWT.Refresh_Exp) * time.Second
 
 	if err := database.Set(newTokenID, userID, tokenTTL); err != nil {
-		logger.Error().Err(err).Str("token_id", newTokenID).Str("user_id", userID).Msg("Failed to store new refresh token")
+		logger.Error().Err(err).Str("oldTokenID", oldTokenID).Str("token_id", newTokenID).Str("user_id", userID).Msg("Failed to store new refresh token")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to store new refresh token"))
 		return
 	}

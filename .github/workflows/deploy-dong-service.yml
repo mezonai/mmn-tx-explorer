@@ -20,6 +20,12 @@ on:
       ref:
         type: string
         required: true
+      git_sha:
+        type: string
+        required: false
+      source_artifact:
+        type: string
+        required: false
     secrets:
       POSTGRES_PASSWORD:
         required: true
@@ -38,10 +44,18 @@ jobs:
       git_sha: ${{ steps.get_sha.outputs.git_sha }}
     steps:
       - name: Checkout
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
           clean: false
+      
+      - name: Download source (from Artifact)
+        if: github.event_name == 'workflow_call'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.source_artifact }}
+          path: .
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -49,6 +63,14 @@ jobs:
           go-version: "1.23"
           cache: true
           check-latest: false
+      
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: latest
+          working-directory: dong-service
+          args: --timeout=5m --out-format=colored-line-number
+        continue-on-error: true
 
       - name: Build Dong Service binary
         run: |
@@ -58,7 +80,12 @@ jobs:
 
       - name: Get short SHA
         id: get_sha
-        run: echo "git_sha=$(git rev-parse --short=8 HEAD)" >> $GITHUB_OUTPUT
+        run: |
+          if [ -n "${{ inputs.git_sha }}" ]; then
+            echo "git_sha=${{ inputs.git_sha }}" >> $GITHUB_OUTPUT
+          else
+            echo "git_sha=$(git rev-parse --short=8 HEAD)" >> $GITHUB_OUTPUT
+          fi
 
   deploy:
     needs: build
@@ -85,6 +112,8 @@ jobs:
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
           REDIS_DB: ${{ vars.REDIS_DB }}
           SERVER_GIN_MODE: release
+          LOGGING_OUTPUT: "file"
+          LOG_LEVEL: ${{ inputs.env == 'prod' && 'info' || 'debug' }}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
@@ -175,6 +204,8 @@ jobs:
           "
 
       - name: Atomic swap + restart services
+        env:
+          LOGLEVEL: ${{ inputs.env == 'prod' && 'warn' || 'info' }}
         run: |
           ssh -i ${{vars.SSH_PRIVATE_KEY_PATH}} ${{vars.HOST_ALIAS}} <<EOF
           #!/usr/bin/env bash
@@ -182,8 +213,14 @@ jobs:
 
           echo "==> Generating final config files on target server..."
           sudo mkdir -p /etc/mezon
-          
-          sudo mv /tmp/dong-service-config.yml /etc/mezon/dong-service-config.yml
+
+          echo "Log level set to: $LOGLEVEL"
+
+          sed \
+            -e "s|level: \"info\"|level: \"$LOGLEVEL\"|g" \
+            -e "s|output: \"stdout\"|output: \"file\"|g" \
+            /tmp/dong-service-config.yml \
+            | sudo tee /etc/mezon/dong-service-config.yml >/dev/null
 
           echo "==> Stopping services..."
           sudo systemctl stop dong-service || true
