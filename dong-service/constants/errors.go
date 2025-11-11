@@ -35,6 +35,7 @@ const (
 	ErrFailedToUpdateCampaign          = "Failed to update campaign"
 	ErrFailedToActivateCampaign        = "Failed to activate campaign"
 	ErrFailedToCloseCampaign           = "Failed to close campaign"
+	ErrFailedToDeleteDraftCampaign     = "Failed to delete campaign"
 	ErrCampaignNotFound                = "Donation campaign not found"
 	ErrDatabaseConnection              = "Database connection error"
 	ErrDatabaseQuery                   = "Database query error"
@@ -56,6 +57,7 @@ const (
 	MsgCampaignUpdated             = "Campaign updated successfully"
 	MsgCampaignActivated           = "Campaign activated successfully"
 	MsgCampaignClosed              = "Campaign closed successfully"
+	MsgDraftCampaignDeleted        = "Campaign deleted successfully"
 	MsgCampaignRetrieved           = "Campaign retrieved successfully"
 	MsgCampaignsRetrieved          = "Campaigns retrieved successfully"
 )

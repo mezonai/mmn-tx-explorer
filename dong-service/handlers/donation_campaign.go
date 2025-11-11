@@ -399,6 +399,60 @@ func (h *DonationCampaignHandler) GetTopContributors(c *gin.Context) {
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Top contributors retrieved successfully", topContributors))
 }
 
+// DeleteCampaign godoc
+// @Summary Delete a drafted campaign
+// @Description Delete a drafted donation campaign (only the creator can delete)
+// @Tags campaigns
+// @Produce json
+// @Param id path int true "Campaign ID"
+// @Success 200 {object} models.Response
+// @Failure 400 {object} models.Response
+// @Failure 403 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Security BearerAuth
+// @Router /api/v1/admin/campaigns/{id} [delete]
+func (h *DonationCampaignHandler) DeleteDraftCampaign(c *gin.Context) {
+	userID, err := utils.GetUserIDFromContext(c)
+	if err != nil {
+		logger.Error().Err(err).Msg("Unauthorized campaign delete attempt")
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
+		return
+	}
+
+	id, err := utils.ParseInt64Param(c, "id")
+	if err != nil {
+		logger.Error().Err(err).Int64("user_id", userID).Msg("Invalid campaign ID for delete")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidCampaignID))
+		return
+	}
+
+	// Check if campaign exists and belongs to creator
+	campaign, err := h.repo.GetByIDAndCreator(id, userID)
+	if err != nil {
+		logger.Error().Err(err).Int64("user_id", userID).Int64("campaign_id", id).Msg("Campaign not found or no permission to delete")
+		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, constants.ErrCampaignNotFoundOrNoPermission))
+		return
+	}
+
+	// Only delete draft campaigns
+	if campaign.Status != constants.CampaignStatusDraft {
+		logger.Error().Int64("user_id", userID).Int64("campaign_id", id).Int16("status", campaign.Status).Msg("Cannot delete non-draft campaign")
+		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, "Only draft campaigns can be deleted"))
+		return
+	}
+
+	logger.Info().Int64("user_id", userID).Int64("campaign_id", id).Msg("Deleting campaign")
+
+	if err := h.repo.DeleteDraft(id, userID); err != nil {
+		logger.Error().Err(err).Int64("user_id", userID).Int64("campaign_id", id).Msg("Failed to delete campaign")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToDeleteDraftCampaign+": "+err.Error()))
+		return
+	}
+
+	logger.Info().Int64("user_id", userID).Int64("campaign_id", id).Msg("Campaign deleted successfully")
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgDraftCampaignDeleted, map[string]any{"id": id}))
+}
+
 // GetCampaignBySlug godoc
 // @Summary Get a donation campaign by slug
 // @Description Get details of a specific donation campaign by its slug
