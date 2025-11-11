@@ -178,6 +178,10 @@ api:
   thirdweb:
     # ThirdWeb client ID for API access
     clientId: 123abc
+  # Time range configuration for API queries
+  timeRange:
+    # Maximum lookback period in years for time-based queries
+    maxLookbackYears: 1
 
 # Publisher configuration - Settings for publishing data to message queues
 publisher:

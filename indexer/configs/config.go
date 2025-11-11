@@ -120,6 +120,10 @@ type ContractApiRequestConfig struct {
 	Timeout             int  `mapstructure:"timeout"`
 }
 
+type TimeRangeConfig struct {
+	MaxLookbackYears int `mapstructure:"maxLookbackYears"`
+}
+
 type APIConfig struct {
 	Host                string                   `mapstructure:"host"`
 	BasicAuth           BasicAuthConfig          `mapstructure:"basicAuth"`
@@ -127,6 +131,7 @@ type APIConfig struct {
 	ContractApiRequest  ContractApiRequestConfig `mapstructure:"contractApiRequest"`
 	AbiDecodingEnabled  bool                     `mapstructure:"abiDecodingEnabled"`
 	Thirdweb            ThirdwebConfig           `mapstructure:"thirdweb"`
+	TimeRange           TimeRangeConfig          `mapstructure:"timeRange"`
 }
 
 type BlockPublisherConfig struct {

@@ -8,11 +8,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mezonai/mmn-tx-explorer/indexer/api"
+	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
 	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
 	"github.com/rs/zerolog/log"
 )
+
+const DateFormat = "2006-01-02"
 
 // @Summary Get all transactions
 // @Description Retrieve all transactions across all contracts
@@ -173,16 +176,22 @@ func serializeTransactions(transactions []common.Transaction) []common.Transacti
 }
 
 // getTimeRangeFromParams parses start and end times in YYYY-MM-DD format.
-// Defaults to last 7 days if not provided, with max 1 year lookback.
+// Defaults to last 7 days if not provided, with configurable max lookback.
 func getTimeRangeFromParams(filterParams map[string]string, queryParams api.QueryParams) (int64, int64) {
     now := time.Now()
     defaultStartTime := now.AddDate(0, 0, -7).Unix() // 7 days ago
-    oneYearAgo := now.AddDate(-1, 0, 0).Unix()       // 1 year ago
+    
+    // Get max lookback years from config, default to 1 year if not set
+    maxLookbackYears := config.Cfg.API.TimeRange.MaxLookbackYears
+    if maxLookbackYears <= 0 {
+        maxLookbackYears = 1
+    }
+    maxLookbackTime := now.AddDate(-maxLookbackYears, 0, 0).Unix()
 
     endTime := now.Unix()
 
     if queryParams.EndTime != "" {
-        if parsedTime, err := time.Parse("2006-01-02", queryParams.EndTime); err == nil {
+        if parsedTime, err := time.Parse(DateFormat, queryParams.EndTime); err == nil {
             parsedTime = parsedTime.Add(24*time.Hour - time.Second)
             endTime = parsedTime.Unix()
         }
@@ -190,11 +199,11 @@ func getTimeRangeFromParams(filterParams map[string]string, queryParams api.Quer
 
     startTime := defaultStartTime
     if queryParams.StartTime != "" {
-        if parsedTime, err := time.Parse("2006-01-02", queryParams.StartTime); err == nil {
+        if parsedTime, err := time.Parse(DateFormat, queryParams.StartTime); err == nil {
             startTime = parsedTime.Unix()
 
-            if startTime < oneYearAgo {
-                startTime = oneYearAgo
+            if startTime < maxLookbackTime {
+                startTime = maxLookbackTime
             }
         }
     }
