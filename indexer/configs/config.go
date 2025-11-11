@@ -100,6 +100,7 @@ type RPCConfig struct {
 	Traces        ToggleableRPCBatchRequestConfig `mapstructure:"traces"`
 	ChainID       string                          `mapstructure:"chainId"`
 	MMNGRPCURL    string                          `mapstructure:"mmnGrpcUrl"`
+	MMNGRPCUseTLS bool                            `mapstructure:"mmnGrpcUseTLS"`
 }
 
 type BasicAuthConfig struct {

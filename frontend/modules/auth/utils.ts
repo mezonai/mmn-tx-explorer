@@ -1,6 +1,6 @@
 import { STORAGE_KEYS } from '@/constant';
 import { EZkClientType, MmnClient, ZkClient } from 'mmn-client-js';
-import { LoginResponse } from './type';
+import { LoginResponse, StateObject } from './type';
 
 const mmnURL = process.env.NEXT_PUBLIC_CHAT_APP_MMN_API_URL ?? '';
 const zkURL = process.env.NEXT_PUBLIC_CHAT_APP_ZK_API_URL ?? '';
@@ -53,7 +53,17 @@ export const fetchAndStoreZkProof = async (
       clientType: EZkClientType.OAUTH,
     });
     localStorage.setItem(STORAGE_KEYS.ZK_PROOF, JSON.stringify(zkProof));
+    return zkProof;
   } catch (error) {
     console.error('Error fetching ZK proofs', error);
   }
 };
+
+export function generateCsrfToken(length = 32): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}

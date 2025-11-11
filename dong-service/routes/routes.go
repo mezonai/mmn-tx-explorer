@@ -49,12 +49,14 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 			campaigns_private.PUT("/:id", campaignHandler.UpdateCampaign)
 			campaigns_private.PATCH("/:id/activate", campaignHandler.ActivateCampaign)
 			campaigns_private.PATCH("/:id/close", campaignHandler.CloseCampaign)
+			campaigns_private.DELETE("/:id", campaignHandler.DeleteDraftCampaign)
 		}
 
 		// Campaign routes (public)
 		campaigns_public := v1.Group("/campaigns")
 		{
 			campaigns_public.GET("", campaignHandler.ListCampaigns)
+			campaigns_public.GET("/slug/:slug", campaignHandler.GetCampaignBySlug)
 			campaigns_public.GET("/:id", campaignHandler.GetCampaign)
 			campaigns_public.GET("/:id/top-contributors", campaignHandler.GetTopContributors)
 			campaigns_public.POST("/:id/sync", statsHandler.SyncCampaign)

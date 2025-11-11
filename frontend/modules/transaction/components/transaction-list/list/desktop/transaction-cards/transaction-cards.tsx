@@ -17,8 +17,8 @@ export const TransactionCardsDesktop = ({
     <div>
       <div
         className={cn(
-          'bg-active border-secondary grid grid-cols-[1fr_12fr_6fr_4fr] border-b',
-          'text-quaternary-500 text-xs font-semibold whitespace-nowrap [&>div]:flex [&>div]:items-center [&>div]:px-4 [&>div]:py-3'
+          'bg-card border-secondary dark:border-primary/15 grid grid-cols-[1fr_12fr_6fr_4fr] border-b',
+          'text-foreground text-xs font-semibold whitespace-nowrap [&>div]:flex [&>div]:items-center [&>div]:px-4 [&>div]:py-3'
         )}
       >
         <div></div>

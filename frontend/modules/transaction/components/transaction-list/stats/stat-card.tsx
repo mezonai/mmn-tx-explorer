@@ -10,7 +10,7 @@ interface StatCardProps {
 
 export const StatCard = ({ title, value, subValue }: StatCardProps) => {
   const isLoading = value === undefined;
-  const cardClassName = cn('p-0', isLoading ? 'bg-background' : 'bg-brand-primary');
+  const cardClassName = cn('p-0', isLoading ? 'bg-background' : 'bg-brand-primary-background');
   return (
     <Card className={cardClassName}>
       <CardContent className="space-y-2 p-5">

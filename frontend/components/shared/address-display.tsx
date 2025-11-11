@@ -17,7 +17,7 @@ export const AddressDisplay = ({ address, className, addressClassName, href }: A
   const addressContent = (
     <MiddleTruncate
       end={ADDRESS_END_VISIBLE_CHARS}
-      className={cn('flex h-6 items-center text-sm', href && 'text-brand-secondary-700', addressClassName)}
+      className={cn('flex h-6 items-center text-sm', href && 'text-primary', addressClassName)}
     >
       {address}
     </MiddleTruncate>

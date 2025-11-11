@@ -24,7 +24,7 @@ export const TxnHashLink = ({ hash, isPending, className }: TxnHashLinkProps) =>
     <div className={cn('flex flex-1 items-center gap-1', className)}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="link" className="size-fit flex-1 p-0" asChild>
+          <Button variant="link" className="dark:text-brand-primary size-fit flex-1 p-0" asChild>
             <Link href={isPending ? ROUTES.PENDING_TRANSACTION(hash) : ROUTES.TRANSACTION(hash)}>
               <MiddleTruncate end={ADDRESS_END_VISIBLE_CHARS} className="font-semibold">
                 {hash}

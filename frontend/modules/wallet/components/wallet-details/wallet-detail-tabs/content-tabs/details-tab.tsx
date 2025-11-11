@@ -9,12 +9,14 @@ import { IWalletDetails } from '@/modules/wallet/type';
 import { NumberUtil } from '@/utils';
 import { TxnLink } from '../../../wallet-list/list/shared';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useUser } from '@/providers';
 
 interface TabDetailsProps {
   walletDetails: IWalletDetails;
 }
 
 export const DetailsTab = ({ walletDetails }: TabDetailsProps) => {
+  const { user } = useUser();
   return (
     <div className="space-y-4 md:min-h-[600px]">
       <ItemAttribute
@@ -25,17 +27,19 @@ export const DetailsTab = ({ walletDetails }: TabDetailsProps) => {
         skeleton={<Skeleton className="h-5 w-30" />}
       />
 
-      <ItemAttribute
-        label="Balance"
-        description={'Balance of the wallet'}
-        data={walletDetails}
-        render={(walletDetails) => (
-          <span>
-            {NumberUtil.formatWithCommasAndScale(walletDetails?.balance ?? 0)} {APP_CONFIG.CHAIN_SYMBOL}
-          </span>
-        )}
-        skeleton={<Skeleton className="h-5 w-20" />}
-      />
+      {user?.walletAddress === walletDetails.address && (
+        <ItemAttribute
+          label="Your Balance"
+          description={"Balance of the current user's wallet"}
+          data={walletDetails}
+          render={(walletDetails) => (
+            <span>
+              {NumberUtil.formatWithCommasAndScale(walletDetails?.balance ?? 0)} {APP_CONFIG.CHAIN_SYMBOL}
+            </span>
+          )}
+          skeleton={<Skeleton className="h-5 w-20" />}
+        />
+      )}
 
       <ItemAttribute
         label="Transactions"
@@ -54,7 +58,7 @@ export const DetailsTab = ({ walletDetails }: TabDetailsProps) => {
         render={(walletDetails) => (
           <div className="flex items-center gap-1">
             <Cube01 className="text-foreground-quaternary-400 size-4" />
-            <Button variant="link" className="text-brand-secondary-700 size-fit p-0 text-sm font-normal" asChild>
+            <Button variant="link" className="text-brand-primary size-fit p-0 text-sm font-normal" asChild>
               <Link href={ROUTES.BLOCK(Number(walletDetails?.last_balance_update ?? 0))}>
                 {walletDetails?.last_balance_update ?? 0}
               </Link>

@@ -54,7 +54,7 @@ export const SearchModal = ({
           {/* Search Input */}
           <div className="relative">
             <SearchMd
-              className="text-foreground-quaternary-400 absolute top-1/2 left-3 size-5 -translate-y-1/2 transform"
+              className="text-foreground-quaternary-400 absolute top-1/2 left-3 z-10 size-5 -translate-y-1/2 transform"
               strokeWidth={1.5}
             />
             <Input
