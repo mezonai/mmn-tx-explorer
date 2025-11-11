@@ -71,7 +71,7 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
       ) : (
         <>
           <div className="flex justify-between items-center">
-            <Skeleton className="h-6 w-24" />
+            <TypeBadgesSkeleton />
             <Skeleton className="h-4 w-20" />
           </div>
           <Skeleton className="h-4 w-full" />
