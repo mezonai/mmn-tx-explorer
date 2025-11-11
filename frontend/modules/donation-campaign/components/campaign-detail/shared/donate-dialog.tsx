@@ -114,8 +114,8 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
                 <Check className="h-7 w-7 text-green-600" />
               </div>
-              <h3 className="text-xl font-semibold text-green-600">Donation Successful!</h3>
-              <p className="text-sm text-gray-500">Thank you for your contribution.</p>
+              <h3 className="text-xl font-semibold text-green-600">Donation confirmed!</h3>
+              <p className="text-sm text-gray-500">You're part of something bigger now.</p>
             </div>
 
             <div className="bg-brand-primary/10 border-brand-primary/40 borde mt-1 w-full rounded-xl p-5 focus:ring-0 focus:outline-none">
