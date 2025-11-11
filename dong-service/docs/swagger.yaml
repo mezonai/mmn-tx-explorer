@@ -266,7 +266,7 @@ paths:
       - campaigns
   /api/v1/admin/campaigns/{id}:
     delete:
-      description: Delete an existing donation campaign (only the creator can delete)
+      description: Delete a drafted donation campaign (only the creator can delete)
       parameters:
       - description: Campaign ID
         in: path
@@ -294,7 +294,7 @@ paths:
             $ref: '#/definitions/models.Response'
       security:
       - BearerAuth: []
-      summary: Delete a donation campaign
+      summary: Delete a drafted donation campaign
       tags:
       - campaigns
     put:
