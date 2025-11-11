@@ -630,8 +630,8 @@ func (r *DonationCampaignRepository) GetTopContributors(campaignID int64, limit 
 	}, nil
 }
 
-// Delete removes a donation campaign by ID if the requester is the creator
-func (r *DonationCampaignRepository) Delete(id int64, creator int64) error {
+// Delete removes a drafted donation campaign by ID if the requester is the creator
+func (r *DonationCampaignRepository) DeleteDraft(id int64, creator int64) error {
 	query := fmt.Sprintf(`
 		DELETE FROM %s.donation_campaign
 		WHERE id = $1 AND creator = $2

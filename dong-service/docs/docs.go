@@ -230,14 +230,14 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Delete an existing donation campaign (only the creator can delete)",
+                "description": "Delete a drafted donation campaign (only the creator can delete)",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "campaigns"
                 ],
-                "summary": "Delete a donation campaign",
+                "summary": "Delete a drafted donation campaign",
                 "parameters": [
                     {
                         "type": "integer",
