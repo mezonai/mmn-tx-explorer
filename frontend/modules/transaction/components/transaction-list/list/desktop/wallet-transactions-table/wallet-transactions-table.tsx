@@ -46,7 +46,7 @@ export const WalletTransactionsTable = ({
         const isSent = walletAddress === tx.from_address;
         return (
           <div>
-            <p className={cn('max-w-3xl font-bold', isSent ? 'text-red-700' : 'text-green-700')}>
+            <p className={cn('max-w-3xl font-bold', isSent ? 'text-error-primary-600' : 'text-utility-success-600')}>
               {isSent ? '-' : '+'} {NumberUtil.formatWithCommasAndScale(tx.value)}
             </p>
           </div>
