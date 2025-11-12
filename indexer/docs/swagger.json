@@ -571,6 +571,18 @@
                         "in": "query"
                     },
                     {
+                        "type": "string",
+                        "description": "Start date in YYYY-MM-DD format (defaults to 7 days ago)",
+                        "name": "start_time",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date in YYYY-MM-DD format (defaults to current date)",
+                        "name": "end_time",
+                        "in": "query"
+                    },
+                    {
                         "type": "array",
                         "items": {
                             "type": "string"

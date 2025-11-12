@@ -11,26 +11,54 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 
-interface DeleteConfirmDialogProps {
+type ConfirmVariant = 'delete' | 'publish' | 'close';
+
+interface ConfirmDialogProps {
   trigger: React.ReactNode;
   onConfirm: () => void;
   title?: string;
   description?: string;
   confirmText?: string;
   cancelText?: string;
+  variant?: ConfirmVariant;
 }
 
-export function DeleteConfirmDialog({
+const variantConfig = {
+  delete: {
+    icon: AlertTriangle,
+    iconBgClass: 'bg-red-600',
+    iconClass: 'text-white',
+    buttonClass: 'bg-red-600 hover:bg-red-600/70 text-white',
+  },
+  publish: {
+    icon: CheckCircle,
+    iconBgClass: 'bg-brand-primary',
+    iconClass: 'text-white',
+    buttonClass: 'bg-brand-primary hover:bg-brand-primary/90 text-white',
+  },
+  close: {
+    icon: XCircle,
+    iconBgClass: 'bg-background border border-rose-400',
+    iconClass: 'text-rose-600 dark:text-rose-300',
+    buttonClass: 'bg-rose-600 hover:bg-rose-600/90 text-white dark:bg-rose-700 dark:hover:bg-rose-700/90',
+  },
+};
+
+export function ConfirmDialog({
   trigger,
   onConfirm,
   title = 'Are you sure?',
   description,
-  confirmText = 'Delete',
+  confirmText = 'Confirm',
   cancelText = 'Cancel',
-}: DeleteConfirmDialogProps) {
+  variant = 'publish',
+}: ConfirmDialogProps) {
   const [open, setOpen] = useState(false);
+
+  const config = variantConfig[variant];
+  const Icon = config.icon;
 
   const handleConfirm = () => {
     onConfirm();
@@ -48,8 +76,8 @@ export function DeleteConfirmDialog({
         <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="flex-shrink-0">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
-                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-500" />
+              <div className={`flex h-10 w-10 items-center justify-center rounded-full ${config.iconBgClass}`}>
+                <Icon className={`h-5 w-5 ${config.iconClass}`} />
               </div>
             </div>
             <div className="flex-1 space-y-2">
@@ -63,7 +91,7 @@ export function DeleteConfirmDialog({
           <Button type="button" variant="outline" onClick={handleCancel} className="w-full sm:w-auto">
             {cancelText}
           </Button>
-          <Button type="button" variant="destructive" onClick={handleConfirm} className="w-full sm:w-auto">
+          <Button type="button" onClick={handleConfirm} className={`w-full sm:w-auto ${config.buttonClass}`}>
             {confirmText}
           </Button>
         </DialogFooter>

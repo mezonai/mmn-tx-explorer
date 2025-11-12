@@ -176,6 +176,7 @@ jobs:
           POSTGRES_PORT: ${{ vars.POSTGRES_PORT }}
           MMN_GRPC_URL: ${{ vars.MMN_GRPC_URL }}
           LOGLEVEL: ${{ inputs.env == 'prod' && 'warn' || 'info' }}
+          MMN_GRPC_USE_TLS: ${{ vars.MMN_GRPC_USE_TLS }}
         run: |
           ssh -i ${{vars.SSH_PRIVATE_KEY_PATH}} ${{vars.HOST_ALIAS}} <<EOF
           #!/usr/bin/env bash
@@ -194,6 +195,7 @@ jobs:
             -e "s|__POSTGRES_PORT__|$POSTGRES_PORT|g" \
             -e "s|__MMN_GRPC_URL__|$MMN_GRPC_URL|g" \
             -e "s|level: debug|level: $LOGLEVEL|g" \
+            -e "s|__MMN_GRPC_USE_TLS__|$MMN_GRPC_USE_TLS|g" \
             -e "s|filePath: /opt/indexer/logs/indexer.log|filePath: /opt/indexer/logs/indexer-api.log|g" \
             /opt/mezon/explorer/config/config.example.yml \
             | sudo tee /etc/mezon/config-api.yml >/dev/null
@@ -207,6 +209,7 @@ jobs:
             -e "s|__POSTGRES_PORT__|$POSTGRES_PORT|g" \
             -e "s|__MMN_GRPC_URL__|$MMN_GRPC_URL|g" \
             -e "s|level: debug|level: $LOGLEVEL|g" \
+            -e "s|__MMN_GRPC_USE_TLS__|$MMN_GRPC_USE_TLS|g" \
             -e "s|filePath: /opt/indexer/logs/indexer.log|filePath: /opt/indexer/logs/indexer-orchestrator.log|g" \
             /opt/mezon/explorer/config/config.example.yml \
             | sudo tee /etc/mezon/config-orchestrator.yml >/dev/null
@@ -218,6 +221,7 @@ jobs:
             -e "s|__POSTGRES_HOST__|$POSTGRES_HOST|g" \
             -e "s|__POSTGRES_PORT__|$POSTGRES_PORT|g" \
             -e "s|__MMN_GRPC_URL__|$MMN_GRPC_URL|g" \
+            -e "s|__MMN_GRPC_USE_TLS__|$MMN_GRPC_USE_TLS|g" \
             /opt/mezon/explorer/config/secrets.example.yml \
             | sudo tee /etc/mezon/secrets.yml >/dev/null
 

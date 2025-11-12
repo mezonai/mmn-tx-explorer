@@ -28,7 +28,12 @@ func TestPostgresConnector_BlockFailures(t *testing.T) {
 
 	conn, err := NewPostgresConnector(cfg)
 	require.NoError(t, err)
-	defer conn.Close()
+	defer func() {
+		err := conn.Close()
+		if err != nil {
+			t.Fatalf("Failed to close connection: %v", err)
+		}
+	}()
 
 	// Test StoreBlockFailures
 	failures := []common.BlockFailure{
@@ -88,7 +93,12 @@ func TestPostgresConnector_Cursors(t *testing.T) {
 
 	conn, err := NewPostgresConnector(cfg)
 	require.NoError(t, err)
-	defer conn.Close()
+	defer func() {
+		err := conn.Close()
+		if err != nil {
+			t.Fatalf("Failed to close connection: %v", err)
+		}
+	}()
 
 	chainId := big.NewInt(1)
 	blockNumber := big.NewInt(67890)
@@ -129,7 +139,12 @@ func TestPostgresConnector_StagingData(t *testing.T) {
 
 	conn, err := NewPostgresConnector(cfg)
 	require.NoError(t, err)
-	defer conn.Close()
+	defer func() {
+		err := conn.Close()
+		if err != nil {
+			t.Fatalf("Failed to close connection: %v", err)
+		}
+	}()
 
 	// Create test block data
 	blockData := []common.BlockData{

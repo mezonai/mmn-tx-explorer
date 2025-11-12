@@ -16,8 +16,12 @@ import (
 
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/handlers"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/middleware"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/worker"
 
-
+	// Import the generated Swagger docs
+	_ "github.com/mezonai/mmn-tx-explorer/indexer/docs"
+	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	_ "github.com/mezonai/mmn-tx-explorer/indexer/docs"
 )
 
@@ -32,7 +36,7 @@ var (
 	}
 )
 
-// @title Thirdweb Insight
+// @title Mezon Dong
 // @version v0.0.1-beta
 // @description API for querying blockchain transactions and events
 // @license.name Apache 2.0
@@ -44,6 +48,17 @@ func RunApi(cmd *cobra.Command, args []string) {
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+    mainStorage, err := storage.GetMainStorage()
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to create storage connector")
+	}
+
+	if config.Cfg.StatsWorker.Enabled {
+		log.Info().Int("intervalMinutes", config.Cfg.StatsWorker.IntervalMinutes).Int("timeoutMinutes", config.Cfg.StatsWorker.TimeoutMinutes).Msg("Starting stats recalculation worker")
+		statsWorker := worker.NewStatsRecalculationWorker(mainStorage, config.Cfg.StatsWorker.IntervalMinutes, config.Cfg.StatsWorker.TimeoutMinutes)
+		statsWorker.Start()
+	}
 
 	r := gin.New()
 	r.Use(middleware.Logger())
@@ -90,7 +105,6 @@ func RunApi(cmd *cobra.Command, args []string) {
 		// search
 		root.GET("/search/:input", handlers.Search)
 	}
-
 
 	r.GET("/health", handlers.Health)
 

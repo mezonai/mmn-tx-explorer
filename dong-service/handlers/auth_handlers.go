@@ -321,13 +321,13 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	oldTokenID, _ := claims["token_id"].(string)
 
 	exists, _, err := database.Get(oldTokenID)
-	if err != nil || !exists {
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "refresh token not found on whitelist"))
+	if err != nil {
+		logger.Error().Err(err).Str("token_id", oldTokenID).Msg("Redis error when checking refresh token")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "internal error when checking refresh token"))
 		return
 	}
-
-	if err := database.Delete(oldTokenID); err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to delete old refresh token"))
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "refresh token not found on whitelist"))
 		return
 	}
 
@@ -365,6 +365,12 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	if err := database.Set(newTokenID, userID, tokenTTL); err != nil {
 		logger.Error().Err(err).Str("oldTokenID", oldTokenID).Str("token_id", newTokenID).Str("user_id", userID).Msg("Failed to store new refresh token")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to store new refresh token"))
+		return
+	}
+
+	if err := database.Delete(oldTokenID); err != nil {
+		logger.Error().Err(err).Str("token_id", oldTokenID).Msg("Failed to delete old refresh token after issuing new one")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to delete old refresh token"))
 		return
 	}
 
