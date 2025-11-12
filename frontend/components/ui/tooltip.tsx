@@ -40,7 +40,10 @@ function TooltipContent({
         {...props}
       >
         {children}
-        <TooltipPrimitive.Arrow className="bg-foreground fill-foreground z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]" style={{ pointerEvents: 'none' }} />
+        <TooltipPrimitive.Arrow
+          className="bg-foreground fill-foreground z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]"
+          style={{ pointerEvents: 'none' }}
+        />
       </TooltipPrimitive.Content>
     </TooltipPrimitive.Portal>
   );
