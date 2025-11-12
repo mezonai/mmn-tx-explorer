@@ -2,17 +2,20 @@ package handlers
 
 import (
 	"fmt"
-	"net/http"
-
 	"math"
+	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mezonai/mmn-tx-explorer/indexer/api"
+	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
 	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
 	"github.com/rs/zerolog/log"
 )
+
+const DateFormat = "2006-01-02"
 
 // @Summary Get all transactions
 // @Description Retrieve all transactions across all contracts
@@ -28,6 +31,8 @@ import (
 // @Param page query int false "Page number for pagination"
 // @Param limit query int false "Number of items per page" default(5)
 // @Param wallet_address query string false "Wallet address to filter transactions (optional)"
+// @Param start_time query string false "Start date in YYYY-MM-DD format (defaults to 7 days ago)"
+// @Param end_time query string false "End date in YYYY-MM-DD format (defaults to current date)"
 // @Param aggregate query []string false "List of aggregate functions to apply"
 // @Param force_consistent_data query bool false "Force consistent data at the expense of query speed"
 // @Success 200 {object} api.QueryResponse{data=[]common.TransactionModel}
@@ -38,9 +43,6 @@ import (
 func GetTransactions(c *gin.Context) {
 	handleTransactionsRequest(c)
 }
-
-
-
 
 func handleTransactionsRequest(c *gin.Context) {
 	walletAddress := c.Param("wallet_address")
@@ -81,7 +83,10 @@ func handleTransactionsRequest(c *gin.Context) {
 		Aggregations: nil,
 	}
 	if walletAddress != "" {
-		totalItems, err := mainStorage.GetTransactionsByWalletCount(ctx, walletAddress)
+		// Get start and end time for filtering
+		startTime, endTime := getTimeRangeFromParams(queryParams.FilterParams, queryParams)
+
+		totalItems, err := mainStorage.GetTransactionsByWalletCount(ctx, walletAddress, startTime, endTime)
 		if err != nil {
 			log.Error().Err(err).Msg("Error getting transactions count")
 			api.InternalErrorHandler(c)
@@ -96,6 +101,8 @@ func handleTransactionsRequest(c *gin.Context) {
 			offset,
 			queryParams.SortBy,
 			queryParams.SortOrder,
+			startTime,
+			endTime,
 		)
 		if err != nil {
 			log.Error().Err(err).Msg("Error querying transactions")
@@ -166,6 +173,42 @@ func serializeTransactions(transactions []common.Transaction) []common.Transacti
 		transactionModels = append(transactionModels, transaction.Serialize())
 	}
 	return transactionModels
+}
+
+// getTimeRangeFromParams parses start and end times in YYYY-MM-DD format.
+// Defaults to last 7 days if not provided, with configurable max lookback.
+func getTimeRangeFromParams(filterParams map[string]string, queryParams api.QueryParams) (int64, int64) {
+    now := time.Now()
+    defaultStartTime := now.AddDate(0, 0, -7).Unix() // 7 days ago
+    
+    // Get max lookback years from config, default to 1 year if not set
+    maxLookbackYears := config.Cfg.API.TimeRange.MaxLookbackYears
+    if maxLookbackYears <= 0 {
+        maxLookbackYears = 1
+    }
+    maxLookbackTime := now.AddDate(-maxLookbackYears, 0, 0).Unix()
+
+    endTime := now.Unix()
+
+    if queryParams.EndTime != "" {
+        if parsedTime, err := time.Parse(DateFormat, queryParams.EndTime); err == nil {
+            parsedTime = parsedTime.Add(24*time.Hour - time.Second)
+            endTime = parsedTime.Unix()
+        }
+    }
+
+    startTime := defaultStartTime
+    if queryParams.StartTime != "" {
+        if parsedTime, err := time.Parse(DateFormat, queryParams.StartTime); err == nil {
+            startTime = parsedTime.Unix()
+
+            if startTime < maxLookbackTime {
+                startTime = maxLookbackTime
+            }
+        }
+    }
+    
+    return startTime, endTime
 }
 
 // PendingTransactionModel return type for Swagger documentation
