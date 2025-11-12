@@ -60,7 +60,7 @@ export const NavBarAuthPanel: React.FC = () => {
         <img
           src={user.avatar}
           alt="User Avatar"
-          className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600"
+          className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600 object-cover"
         />
         <span className="text-sm font-medium text-gray-900 dark:text-white">{user.username}</span>
         <i className={cn("fa-solid fa-chevron-down text-gray-400 text-xs transition-transform", open && "rotate-180")}></i>
@@ -78,7 +78,7 @@ export const NavBarAuthPanel: React.FC = () => {
             <img
               src={user.avatar}
               alt="User Avatar"
-              className="w-10 h-10 rounded-full border border-gray-300 dark:border-gray-600"
+              className="w-10 h-10 rounded-full border border-gray-300 dark:border-gray-600 object-cover"
             />
             <div>
               <div className="flex items-center space-x-2">
@@ -127,9 +127,9 @@ export const NavBarAuthPanel: React.FC = () => {
             >
               <span className="flex items-center space-x-2">
                 <i className="fa-solid fa-wallet text-[var(--color-brand-primary)] w-4 text-center"></i>
-                <span className="transition-colors group-hover:text-[var(--color-brand-primary)]">Account Overview</span>
+                <span className="transition-colors">Account Overview</span>
               </span>
-              <i className="fa-solid fa-chevron-right text-gray-500 text-xs transition-all group-hover:translate-x-0.5 group-hover:text-[var(--color-brand-primary)]"></i>
+              <i className="fa-solid fa-chevron-right text-gray-500 text-xs transition-all group-hover:translate-x-0.5"></i>
             </a>
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -137,9 +137,9 @@ export const NavBarAuthPanel: React.FC = () => {
             >
               <span className="flex items-center space-x-2">
                 <i className={cn("text-[var(--color-brand-primary)] w-4 text-center", theme === 'dark' ? "fa-solid fa-moon" : "fa-solid fa-sun")}></i>
-                <span className="transition-colors group-hover:text-[var(--color-brand-primary)]">Toggle {theme === 'dark' ? 'Light' : 'Dark'} Mode</span>
+                <span className="transition-colors">Toggle {theme === 'dark' ? 'Light' : 'Dark'} Mode</span>
               </span>
-              <i className="fa-solid fa-chevron-right text-gray-500 text-xs transition-all group-hover:translate-x-0.5 group-hover:text-[var(--color-brand-primary)]"></i>
+              <i className="fa-solid fa-chevron-right text-gray-500 text-xs transition-all group-hover:translate-x-0.5"></i>
             </button>
           </div>
 
