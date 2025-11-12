@@ -123,7 +123,7 @@ export const NavBarAuthPanel: React.FC = () => {
           <div className="space-y-1 text-sm">
             <a
               href={user.walletAddress ? ROUTES.WALLET(user.walletAddress) : ROUTES.PROFILE}
-              className="group flex w-full items-center justify-between px-3 py-2 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="group cursor-pointer flex w-full items-center justify-between px-3 py-2 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
               <span className="flex items-center space-x-2">
                 <i className="fa-solid fa-wallet text-[var(--color-brand-primary)] w-4 text-center"></i>
@@ -133,7 +133,7 @@ export const NavBarAuthPanel: React.FC = () => {
             </a>
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="group flex w-full items-center justify-between px-3 py-2 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="group cursor-pointer flex w-full items-center justify-between px-3 py-2 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
               <span className="flex items-center space-x-2">
                 <i className={cn("text-[var(--color-brand-primary)] w-4 text-center", theme === 'dark' ? "fa-solid fa-moon" : "fa-solid fa-sun")}></i>
@@ -146,7 +146,7 @@ export const NavBarAuthPanel: React.FC = () => {
           <div className="border-t border-gray-300 dark:border-gray-700"></div>
           <button
             onClick={logout}
-            className="w-full bg-transparent border border-red-500/40 text-red-400 hover:bg-red-500/20 py-2 rounded-lg font-semibold text-sm transition"
+            className="w-full cursor-pointer bg-transparent border border-red-500/40 text-red-400 hover:bg-red-500/20 py-2 rounded-lg font-semibold text-sm transition"
           >
             <i className="fa-solid fa-right-from-bracket mr-2"></i> Logout
           </button>
