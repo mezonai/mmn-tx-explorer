@@ -7,14 +7,14 @@ export async function GET(request: Request) {
     console.error('Missing state,');
     return NextResponse.redirect(`${origin}/?error=missing_state`);
   }
-  const authUrl =
-    `${process.env.NEXT_PUBLIC_OAUTH2_API_URL}/oauth2/auth?` +
-    `client_id=${process.env.NEXT_PUBLIC_OAUTH2_CLIENT_ID}&` +
-    `redirect_uri=${encodeURIComponent(process.env.NEXT_PUBLIC_OAUTH2_REDIRECT_URI!)}&` +
-    'response_type=code&' +
-    'scope=openid+offline&' +
-    `state=${state}`;
-
+  const params = new URLSearchParams({
+    client_id: process.env.NEXT_PUBLIC_OAUTH2_CLIENT_ID!,
+    redirect_uri: process.env.NEXT_PUBLIC_OAUTH2_REDIRECT_URI!,
+    response_type: 'code',
+    scope: process.env.NEXT_PUBLIC_OAUTH2_SCOPE!,
+    state,
+  });
+  const authUrl = `${process.env.NEXT_PUBLIC_OAUTH2_API_URL}/oauth2/auth?${params.toString()}`;
   const response = NextResponse.redirect(authUrl);
   response.cookies.set('state', state, {
     httpOnly: true,
