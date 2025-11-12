@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-
 import { Clock } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import { Table } from '@/components/ui/table';
@@ -12,8 +11,6 @@ import {
   BlockNumberSkeleton,
   FromToAddresses,
   FromToAddressesSkeleton,
-  MoreInfoButton,
-  MoreInfoButtonSkeleton,
   TransactionTime,
   TransactionTimeSkeleton,
   TransactionValue,
@@ -87,6 +84,11 @@ export const TransactionsTable = ({
       skeletonContent: <TypeBadgesSkeleton className="flex-col items-start" />,
     },
     {
+      headerContent: 'Block',
+      renderCell: (row) => <BlockNumber blockNumber={row.block_number || TEXT_CONSTANT.NA} />,
+      skeletonContent: <BlockNumberSkeleton />,
+    },
+    {
       headerContent: 'From/To',
       renderCell: (row) => (
         <FromToAddresses
@@ -99,7 +101,7 @@ export const TransactionsTable = ({
     },
     {
       headerContent: 'Value',
-      renderCell: (row) => <TransactionValue value={row.value} showSymbol className="text-md text-primary" />,
+      renderCell: (row) => <TransactionValue value={row.value} showSymbol className="text-md" />,
       skeletonContent: <TransactionValueSkeleton />,
     },
   ];
@@ -112,7 +114,7 @@ export const TransactionsTable = ({
         columns={columns}
         rows={transactions}
         skeletonLength={skeletonLength}
-        className="rounded-lg dark:[&_tbody]:bg-transparent [&_tbody_tr:last-child_td:first-child]:rounded-bl-lg [&_tbody_tr:last-child_td:last-child]:rounded-br-lg [&_thead]:top-[96px] [&_thead]:uppercase [&_thead]:border-b [&_thead]:z-10 [&_thead]:text-muted-foreground [&_thead]:bg-transparent"
+        className="[&_thead]:text-muted-foreground rounded-lg dark:[&_tbody]:bg-transparent [&_tbody_tr:last-child_td:first-child]:rounded-bl-lg [&_tbody_tr:last-child_td:last-child]:rounded-br-lg [&_thead]:top-[96px] [&_thead]:z-10 [&_thead]:border-b [&_thead]:bg-transparent [&_thead]:uppercase"
         classNameLayout="overflow-x-visible"
         isLoading={isLoading}
       />

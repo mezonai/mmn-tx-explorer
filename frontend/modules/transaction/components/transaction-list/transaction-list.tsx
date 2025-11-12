@@ -58,10 +58,10 @@ export const TransactionsList = () => {
         <div className="bg-background sticky top-0 z-10 mb-0 flex flex-col items-center justify-between gap-4 py-6 md:pt-8 lg:flex-row">
           <Tabs value={tab} onValueChange={(v) => handleChangeTab(v as ETransactionTab)} className="w-full">
             <TabsList className="w-full lg:w-fit">
-              <TabsTrigger value={ETransactionTab.Validated} disabled={isLoading}>
+              <TabsTrigger value={ETransactionTab.Validated} disabled={isLoading} className='data-[state=active]:bg-brand-primary data-[state=active]:text-white'>
                 Validated
               </TabsTrigger>
-              <TabsTrigger value={ETransactionTab.Pending} disabled={isLoading}>
+              <TabsTrigger value={ETransactionTab.Pending} disabled={isLoading} className='data-[state=active]:bg-brand-primary data-[state=active]:text-white'>
                 Pending
               </TabsTrigger>
             </TabsList>
