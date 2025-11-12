@@ -71,7 +71,7 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
     }
   }, [status]);
   return (
-    <article className="group hover:border-primary/60 dark:bg-card flex h-full flex-col rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10">
+    <article className="group hover:border-primary/60 dark:bg-card flex h-full min-w-0 flex-col rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <Chip variant={getCampaignStatusVariant(status)}>{getCampaignStatusLabel(status)}</Chip>
@@ -87,7 +87,7 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
       <h3 className="dark:group-hover:text-brand-primary group-hover:text-primary dark:group-hover:text-primary-light mt-4 text-lg font-semibold text-gray-900 transition dark:text-white">
         <Link href={ROUTES.CAMPAIGN(slug)}>{name}</Link>
       </h3>
-      <p className="mt-2 max-w-70 text-sm leading-6 break-words text-gray-600 dark:text-gray-400">{description}</p>
+      <p className="mt-2 w-full text-sm leading-6 break-words text-gray-600 dark:text-gray-400">{description}</p>
       <div className="mt-auto flex flex-col gap-6 pt-6">
         <div>
           <div className="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
