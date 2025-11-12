@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>window.FontAwesomeConfig = { autoReplaceSvg: 'nest'};</script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous"></script>
   <script>
     tailwind.config = {
@@ -12,169 +11,217 @@
         extend: {
           colors: {
             primary: "#6941c6",
-            "primary-light": "#8b5cf6",
-            "primary-dark": "#553c9a",
-            dark: "#0B1533",
+            "dark": "#0B1533",
             "dark-light": "#1e293b",
           },
           fontFamily: {
             inter: ["Inter", "sans-serif"],
-            mono: ["JetBrains Mono", "monospace"],
           },
         },
       },
     };
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
-  <style>
-    body { font-family: 'Inter', sans-serif !important; }
-    ::-webkit-scrollbar { display: none; }
-  </style>
-  <title>Block Details - Mezon Đồng</title>
+  <title>Block Details - Mezon Explorer</title>
 </head>
-
-<body class="bg-dark text-white">
+<body class="bg-dark text-white font-inter antialiased">
 
   <!-- Header -->
   <header class="bg-dark-light border-b border-gray-700 sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between items-center h-16">
-        <div class="flex items-center space-x-2">
-          <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <i class="fa-solid fa-cube text-white text-sm"></i>
-          </div>
-          <h1 class="text-lg font-bold text-white">Mezon Đồng</h1>
-        </div>
-        <nav class="hidden md:flex items-center space-x-6">
-          <a href="dashboard.html" class="text-gray-400 hover:text-primary transition-colors">Dashboard</a>
-          <a href="blocks.html" class="text-gray-400 hover:text-primary transition-colors">Blocks</a>
-          <a href="#" class="text-white hover:text-primary transition-colors">Block Details</a>
-        </nav>
-        <div class="flex items-center space-x-3">
-          <div class="relative">
-            <input type="text" placeholder="Search block..." class="bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 pl-10 text-sm focus:outline-none focus:border-primary w-56">
-            <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-          </div>
-          <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-1.jpg" class="w-8 h-8 rounded-full" alt="User">
-        </div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <i class="fa-solid fa-cube text-primary"></i>
+        <h1 class="font-semibold">Mezon Explorer</h1>
       </div>
+      <nav class="hidden sm:flex space-x-4 text-sm">
+        <a href="#" class="text-gray-400 hover:text-primary">Dashboard</a>
+        <a href="#" class="text-gray-400 hover:text-primary">Blocks</a>
+        <a href="#" class="text-gray-400 hover:text-primary">Transactions</a>
+      </nav>
     </div>
   </header>
 
   <!-- Main -->
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
-
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
     <!-- Breadcrumb -->
     <div class="text-sm text-gray-400 flex items-center space-x-2">
-      <a href="blocks.html" class="hover:text-primary">Blocks</a>
+      <a href="#" class="hover:text-primary">Blocks</a>
       <i class="fa-solid fa-chevron-right text-xs"></i>
       <span class="text-white">Block Details</span>
     </div>
 
-    <!-- Title -->
-    <h2 class="text-2xl font-semibold">Block Details</h2>
+    <!-- Block Details -->
+    <section class="bg-dark-light border border-gray-700 rounded-2xl p-6 space-y-6">
+      <h2 class="text-xl font-bold">Block Details</h2>
 
-    <!-- Block Information -->
-    <section class="bg-dark-light border border-gray-700 rounded-xl p-6 space-y-6">
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
-
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
         <div>
-          <p class="text-gray-400 mb-1">Block Height</p>
+          <p class="text-gray-400">Block Height</p>
           <div class="flex items-center space-x-2">
-            <p class="font-mono text-primary font-semibold">6500122</p>
-            <button class="text-gray-400 hover:text-primary" onclick="navigator.clipboard.writeText('6500122')"><i class="fa-regular fa-copy text-xs"></i></button>
+            <a href="#" class="text-primary hover:underline">6500122</a>
+            <button class="text-gray-400 hover:text-primary"><i class="fa-regular fa-copy text-xs"></i></button>
           </div>
         </div>
 
         <div>
-          <p class="text-gray-400 mb-1">Transactions Count</p>
-          <p class="text-white font-semibold">1</p>
+          <p class="text-gray-400">Transactions Count</p>
+          <p class="text-gray-100">1</p>
         </div>
 
         <div>
-          <p class="text-gray-400 mb-1">Block Timestamp</p>
-          <p class="text-gray-300 flex items-center space-x-2">
-            <i class="fa-regular fa-clock text-gray-500"></i>
-            <span>41s ago • Nov 05 2025 05:46:34 PM (+07:00 UTC)</span>
-          </p>
+          <p class="text-gray-400">Block Timestamp</p>
+          <p class="flex items-center space-x-2 text-gray-100"><i class="fa-regular fa-clock text-gray-400"></i><span>41s ago • Nov 05 2025 05:46:34 PM (+07:00 UTC)</span></p>
         </div>
-      </div>
 
-      <div class="border-t border-gray-700 pt-4 grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
-        <div>
+        <div></div>
+
+        <div class="md:col-span-2 border-t border-gray-700 pt-4">
           <p class="text-gray-400 mb-1">Block Hash</p>
-          <div class="flex items-center space-x-2">
-            <p class="font-mono text-gray-300 break-all">9779337c5222a2ac12289b87fa4a268a52e4fa9507c06a58c52e379d2d1ba7c</p>
-            <button class="text-gray-400 hover:text-primary" onclick="navigator.clipboard.writeText('9779337c5222a2ac12289b87fa4a268a52e4fa9507c06a58c52e379d2d1ba7c')"><i class="fa-regular fa-copy text-xs"></i></button>
+          <div class="flex items-center space-x-2 overflow-x-auto">
+            <p class="font-mono text-gray-300 text-xs truncate">9779337c5222a2ac12289b87fa4a268a52e4fa9507c06a58c52e379d2d1ba7c</p>
+            <button class="text-gray-400 hover:text-primary"><i class="fa-regular fa-copy text-xs"></i></button>
           </div>
         </div>
-        <div>
+
+        <div class="md:col-span-2">
           <p class="text-gray-400 mb-1">Parent Hash</p>
-          <div class="flex items-center space-x-2">
-            <p class="font-mono text-gray-300 break-all">80fd1dcc0b29ff8d97b65a836cb85716986153c7d72d192d3ed9405bff55d1</p>
-            <button class="text-gray-400 hover:text-primary" onclick="navigator.clipboard.writeText('80fd1dcc0b29ff8d97b65a836cb85716986153c7d72d192d3ed9405bff55d1')"><i class="fa-regular fa-copy text-xs"></i></button>
+          <div class="flex items-center space-x-2 overflow-x-auto">
+            <p class="font-mono text-gray-300 text-xs truncate">80fd1dcc0b29ff8d97b65a836cb85716986153c7d72d192d3ed9405bfff55d1</p>
+            <button class="text-gray-400 hover:text-primary"><i class="fa-regular fa-copy text-xs"></i></button>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Block Transactions -->
-    <section class="space-y-4">
-      <h3 class="text-xl font-semibold">Transactions in this Block</h3>
+    <!-- Transactions Table -->
+    <!-- Transactions Table (with pagination) -->
+<section class="space-y-4">
+  <h3 class="text-lg font-semibold">Transactions in this Block</h3>
 
-      <div class="bg-dark-light border border-gray-700 rounded-xl overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-700">
-            <thead class="bg-gray-800/60">
-              <tr>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">TXN Hash</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Type</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">From / To</th>
-                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">Value</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-700">
+  <!-- Desktop -->
+  <div class="hidden md:block bg-dark-light border border-gray-700 rounded-2xl overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-700 text-sm">
+      <thead class="bg-gray-800/40 sticky top-0">
+        <tr>
+          <th class="px-6 py-3 text-left text-gray-400 font-semibold">Txn Hash</th>
+          <th class="px-6 py-3 text-left text-gray-400 font-semibold">Type</th>
+          <th class="px-6 py-3 text-left text-gray-400 font-semibold">Status</th>
+          <th class="px-6 py-3 text-left text-gray-400 font-semibold">From / To</th>
+          <th class="px-6 py-3 text-right text-gray-400 font-semibold">Value</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700">
+        <!-- Repeatable row -->
+        <tr class="hover:bg-gray-800/30">
+          <td class="px-6 py-3 text-primary font-mono"><a href="#">0xa1b2...c3d4</a></td>
+          <td class="px-6 py-3"><span class="bg-orange-500/20 text-orange-400 text-xs px-2 py-1 rounded-md">Token Transfer</span></td>
+          <td class="px-6 py-3 text-green-400">Passed</td>
+          <td class="px-6 py-3 text-gray-300">9RE5...XTAm → 6RKo...bsup</td>
+          <td class="px-6 py-3 text-right text-gray-100 font-semibold">400 đồng</td>
+        </tr>
 
-              <tr class="hover:bg-gray-800/40 transition">
-                <td class="px-6 py-4 text-sm font-mono text-primary flex items-center space-x-2">
-                  <a href="#" class="hover:underline">1c5fe72cd64...0d4f</a>
-                  <button class="text-gray-400 hover:text-primary" onclick="navigator.clipboard.writeText('1c5fe72cd64...0d4f')"><i class="fa-regular fa-copy"></i></button>
-                </td>
-                <td class="px-6 py-4 text-sm"><span class="bg-orange-500/20 text-orange-400 px-2 py-1 rounded text-xs">Token Transfer</span></td>
-                <td class="px-6 py-4 text-sm"><span class="text-green-400 flex items-center space-x-1"><i class="fa-solid fa-circle-check"></i><span>Passed</span></span></td>
-                <td class="px-6 py-4 text-sm text-gray-300">
-                  <div class="flex flex-col">
-                    <div class="flex items-center space-x-1"><span class="truncate">9RE5...XTAm</span><button class="text-gray-400 hover:text-primary"><i class="fa-regular fa-copy text-xs"></i></button></div>
-                    <div class="flex items-center space-x-1"><i class="fa-solid fa-arrow-down text-xs text-gray-400"></i><span class="truncate">6RKo...bsup</span></div>
-                  </div>
-                </td>
-                <td class="px-6 py-4 text-right font-mono text-white">400 đồng</td>
-              </tr>
+        <tr class="hover:bg-gray-800/30">
+          <td class="px-6 py-3 text-primary font-mono"><a href="#">0xbeef...0add</a></td>
+          <td class="px-6 py-3"><span class="bg-purple-500/20 text-purple-300 text-xs px-2 py-1 rounded-md">Donation</span></td>
+          <td class="px-6 py-3 text-green-400">Passed</td>
+          <td class="px-6 py-3 text-gray-300">9KKM...cc7x → 7PLu...d92b</td>
+          <td class="px-6 py-3 text-right text-gray-100 font-semibold">10,000 đồng</td>
+        </tr>
 
-            </tbody>
-          </table>
+        <tr class="hover:bg-gray-800/30">
+          <td class="px-6 py-3 text-primary font-mono"><a href="#">0x7ac9...ef12</a></td>
+          <td class="px-6 py-3"><span class="bg-blue-500/20 text-blue-300 text-xs px-2 py-1 rounded-md">Swap</span></td>
+          <td class="px-6 py-3 text-red-400">Failed</td>
+          <td class="px-6 py-3 text-gray-300">8Tqq...qz7v → 3GBv...x8ad</td>
+          <td class="px-6 py-3 text-right text-gray-100 font-semibold">21,000 đồng</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="flex justify-end items-center px-6 py-3 border-t border-gray-700 bg-gray-800/30">
+      <button class="text-gray-400 hover:text-primary px-2"><i class="fa-solid fa-angle-left"></i></button>
+      <span class="text-gray-300 text-sm mx-2">Page 1 of 5</span>
+      <button class="text-gray-400 hover:text-primary px-2"><i class="fa-solid fa-angle-right"></i></button>
+    </div>
+  </div>
+
+  <!-- Mobile -->
+  <!-- Mobile (Responsive Card List) -->
+    <div class="md:hidden space-y-3">
+
+      <!-- Transaction item -->
+      <div class="bg-dark-light border border-gray-700 rounded-xl p-4 space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="text-xs text-gray-400">Txn Hash</span>
+          <div class="flex items-center space-x-1">
+            <a href="#" class="text-primary font-mono text-xs">1c5fe72cd64...0d4f</a>
+            <button class="text-gray-400 hover:text-primary"><i class="fa-regular fa-copy text-[10px]"></i></button>
+          </div>
         </div>
-      </div>
-    </section>
-  </main>
-
-  <!-- Footer -->
-  <footer class="bg-dark-light border-t border-gray-700 mt-16">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex justify-between items-center">
-      <div class="flex items-center space-x-2">
-        <div class="w-6 h-6 bg-primary rounded flex items-center justify-center">
-          <i class="fa-solid fa-cube text-white text-xs"></i>
+        <div class="flex justify-between text-sm">
+          <span class="bg-orange-500/20 text-orange-400 text-[11px] px-2 py-0.5 rounded-md">Token Transfer</span>
+          <span class="text-green-400 text-[11px] flex items-center space-x-1"><i class="fa-solid fa-circle-check text-[10px]"></i><span>Passed</span></span>
         </div>
-        <span class="text-gray-400">MEZON EXPLORER • Private Edition</span>
+        <div class="text-xs text-gray-300 space-y-0.5">
+          <p>From: 9RE5...XTAm <button class="text-gray-400 hover:text-primary"><i class="fa-regular fa-copy text-[10px]"></i></button></p>
+          <p>To: 6RKo...bsup <button class="text-gray-400 hover:text-primary"><i class="fa-regular fa-copy text-[10px]"></i></button></p>
+        </div>
+        <div class="text-right text-gray-100 font-semibold text-sm">400 đồng</div>
       </div>
-      <div class="flex space-x-4 text-sm text-gray-400">
-        <a href="#" class="hover:text-white">Privacy</a>
-        <a href="#" class="hover:text-white">Terms</a>
-        <a href="#" class="hover:text-white">Support</a>
+
+      <!-- Another transaction -->
+      <div class="bg-dark-light border border-gray-700 rounded-xl p-4 space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="text-xs text-gray-400">Txn Hash</span>
+          <div class="flex items-center space-x-1">
+            <a href="#" class="text-primary font-mono text-xs">0xbeef...0add</a>
+            <button class="text-gray-400 hover:text-primary"><i class="fa-regular fa-copy text-[10px]"></i></button>
+          </div>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span class="bg-purple-500/20 text-purple-300 text-[11px] px-2 py-0.5 rounded-md">Donation</span>
+          <span class="text-green-400 text-[11px] flex items-center space-x-1"><i class="fa-solid fa-circle-check text-[10px]"></i><span>Passed</span></span>
+        </div>
+        <div class="text-xs text-gray-300 space-y-0.5">
+          <p>From: 9KKM...cc7x</p>
+          <p>To: 7PLu...d92b</p>
+        </div>
+        <div class="text-right text-gray-100 font-semibold text-sm">10,000 đồng</div>
+      </div>
+
+      <!-- Another transaction -->
+      <div class="bg-dark-light border border-gray-700 rounded-xl p-4 space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="text-xs text-gray-400">Txn Hash</span>
+          <div class="flex items-center space-x-1">
+            <a href="#" class="text-primary font-mono text-xs">0x7ac9...ef12</a>
+            <button class="text-gray-400 hover:text-primary"><i class="fa-regular fa-copy text-[10px]"></i></button>
+          </div>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span class="bg-blue-500/20 text-blue-300 text-[11px] px-2 py-0.5 rounded-md">Swap</span>
+          <span class="text-red-400 text-[11px] flex items-center space-x-1"><i class="fa-solid fa-circle-xmark text-[10px]"></i><span>Failed</span></span>
+        </div>
+        <div class="text-xs text-gray-300 space-y-0.5">
+          <p>From: 8Tqq...qz7v</p>
+          <p>To: 3GBv...x8ad</p>
+        </div>
+        <div class="text-right text-gray-100 font-semibold text-sm">21,000 đồng</div>
+      </div>
+
+      <!-- Load More -->
+      <div class="text-center">
+        <button class="w-full bg-primary hover:bg-primary-dark text-white font-semibold text-sm py-2 rounded-lg transition flex items-center justify-center space-x-2">
+          <i class="fa-solid fa-rotate-right"></i>
+          <span>Load More</span>
+        </button>
       </div>
     </div>
-  </footer>
+  </div>
+</section>
+
+  </main>
 
 </body>
 </html>
