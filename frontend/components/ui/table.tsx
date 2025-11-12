@@ -231,7 +231,7 @@ export const Table = <T,>({
     >
       <table
         className={cn(
-          'text-tertiary-600 w-full text-left text-sm font-normal [&_thead]:top-[96px]',
+          'text-card-foreground w-full rounded-lg text-left text-sm font-normal [&_thead]:top-[96px]',
           className,
           isVirtualized && '[&_thead]:top-[0px]'
         )}
@@ -239,7 +239,7 @@ export const Table = <T,>({
         {...props}
       >
         {showHeader && (
-          <thead className={'bg-active text-quaternary-500 text-xs font-normal'}>
+          <thead className={'bg-card text-foreground text-xs font-normal'}>
             <tr role="row">
               {validColumns.map(({ headerContent }, index) => (
                 <th

@@ -158,7 +158,14 @@ func (h *AuthHandler) OauthHandler(c *gin.Context) {
 		c.JSON(http.StatusBadGateway, models.ErrorResponse(http.StatusBadGateway, "Failed to exchange code: "+err.Error()))
 		return
 	}
-	defer tokenResp.Body.Close()
+	defer func() {
+		if err != nil {
+			errClose := tokenResp.Body.Close()
+			if errClose != nil {
+				logger.Error().Err(errClose).Msg("Failed to close token response body")
+			}
+		}
+	}()
 	body, _ := io.ReadAll(tokenResp.Body)
 
 	var tokenData struct {
@@ -179,7 +186,14 @@ func (h *AuthHandler) OauthHandler(c *gin.Context) {
 		c.JSON(http.StatusBadGateway, models.ErrorResponse(http.StatusBadGateway, "Failed to get user info: "+err.Error()))
 		return
 	}
-	defer userInfoResp.Body.Close()
+	defer func() {
+		if err != nil {
+			errClose := userInfoResp.Body.Close()
+			if errClose != nil {
+				logger.Error().Err(errClose).Msg("Failed to close user info response body")
+			}
+		}
+	}()
 	userBody, _ := io.ReadAll(userInfoResp.Body)
 	var userInfo models.OauthUserInfo
 	if err := json.Unmarshal(userBody, &userInfo); err != nil {
@@ -307,13 +321,13 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	oldTokenID, _ := claims["token_id"].(string)
 
 	exists, _, err := database.Get(oldTokenID)
-	if err != nil || !exists {
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "refresh token not found on whitelist"))
+	if err != nil {
+		logger.Error().Err(err).Str("token_id", oldTokenID).Msg("Redis error when checking refresh token")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "internal error when checking refresh token"))
 		return
 	}
-
-	if err := database.Delete(oldTokenID); err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to delete old refresh token"))
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "refresh token not found on whitelist"))
 		return
 	}
 
@@ -327,6 +341,7 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
 	signedAccess, err := accessToken.SignedString([]byte(secret))
 	if err != nil {
+		logger.Error().Err(err).Str("oldTokenID", oldTokenID).Msg("Failed to sign new access token")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to sign access token"))
 		return
 	}
@@ -340,6 +355,7 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
 	signedRefresh, err := refreshToken.SignedString([]byte(secret))
 	if err != nil {
+		logger.Error().Err(err).Str("oldTokenID", oldTokenID).Msg("Failed to sign new refresh token")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to sign refresh token"))
 		return
 	}
@@ -347,8 +363,14 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	tokenTTL := time.Duration(config.JWT.Refresh_Exp) * time.Second
 
 	if err := database.Set(newTokenID, userID, tokenTTL); err != nil {
-		logger.Error().Err(err).Str("token_id", newTokenID).Str("user_id", userID).Msg("Failed to store new refresh token")
+		logger.Error().Err(err).Str("oldTokenID", oldTokenID).Str("token_id", newTokenID).Str("user_id", userID).Msg("Failed to store new refresh token")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to store new refresh token"))
+		return
+	}
+
+	if err := database.Delete(oldTokenID); err != nil {
+		logger.Error().Err(err).Str("token_id", oldTokenID).Msg("Failed to delete old refresh token after issuing new one")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to delete old refresh token"))
 		return
 	}
 

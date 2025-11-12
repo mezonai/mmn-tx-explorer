@@ -39,7 +39,7 @@ export const TxStatusBadge = ({ status }: TxStatusBadgeProps) => {
   return (
     <Badge variant="outline">
       <StatusIcon className={cn('size-3', statusInfo.iconColor)} strokeWidth={1.5} />
-      <span className="text-secondary-700 text-xs font-medium whitespace-nowrap">
+      <span className="text-card-foreground text-xs font-medium whitespace-nowrap">
         {getTransactionStatusLabel(status)}
       </span>
     </Badge>

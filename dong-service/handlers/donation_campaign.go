@@ -63,6 +63,46 @@ func (h *DonationCampaignHandler) CreateCampaign(c *gin.Context) {
 	c.JSON(http.StatusCreated, models.SuccessResponseWithMessage(constants.MsgCampaignCreated, campaign.ToResponse()))
 }
 
+// CreateAndActiveCampaign godoc
+// @Summary Create and immediately activate a new donation campaign
+// @Description Create a new donation campaign and set its status to Active
+// @Tags campaigns
+// @Accept json
+// @Produce json
+// @Param campaign body models.CreateDonationCampaignRequest true "Campaign data"
+// @Success 201 {object} models.Response{data=models.DonationCampaignResponse}
+// @Failure 400 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Security BearerAuth
+// @Router /api/v1/admin/campaigns/create-active [post]
+func (h *DonationCampaignHandler) CreateAndActiveCampaign(c *gin.Context) {
+	userID, err := utils.GetUserIDFromContext(c)
+	if err != nil {
+		logger.Error().Err(err).Msg("Unauthorized campaign creation and activation attempt")
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
+		return
+	}
+
+	var req models.CreateDonationCampaignRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Error().Err(err).Int64("user_id", userID).Msg("Invalid request body for campaign creation and activation")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+err.Error()))
+		return
+	}
+
+	logger.Info().Int64("user_id", userID).Str("name", req.Name).Msg("Creating and activating new donation campaign")
+
+	campaign, err := h.repo.CreateAndActive(&req, userID)
+	if err != nil {
+		logger.Error().Err(err).Int64("user_id", userID).Str("name", req.Name).Msg("Failed to create and activate campaign")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToCreateAndActiveCampaign+": "+err.Error()))
+		return
+	}
+
+	logger.Info().Int64("user_id", userID).Int64("campaign_id", campaign.ID).Str("name", campaign.Name).Msg("Campaign created and activated successfully")
+	c.JSON(http.StatusCreated, models.SuccessResponseWithMessage(constants.MsgCampaignCreatedAndActivated, campaign.ToResponse()))
+}
+
 // GetCampaign godoc
 // @Summary Get a donation campaign by ID
 // @Description Get details of a specific donation campaign
@@ -105,9 +145,12 @@ func (h *DonationCampaignHandler) GetCampaign(c *gin.Context) {
 // @Description Get a list of all donation campaigns with pagination
 // @Tags campaigns
 // @Produce json
-// @Param page query int false "Page number" default(1)
+// @Param page query int false "Page number" default(0)
 // @Param limit query int false "Items per page" default(10)
-// @Success 200 {object} models.Response{data=[]models.DonationCampaignResponse}
+// @Param status query int false "Filter by status (e.g., 0=draft,1=active,2=closed)"
+// @Param order query string false "Sort direction" Enums(asc,desc) default(desc)
+// @Param order_by query string false "Sort field" Enums(created_at,total_amount) default(created_at)
+// @Success 200 {object} models.PaginatedResponse{data=[]models.DonationCampaignResponse, meta=models.PaginationMeta}
 // @Failure 500 {object} models.Response
 // @Router /api/v1/campaigns [get]
 func (h *DonationCampaignHandler) ListCampaigns(c *gin.Context) {
@@ -118,9 +161,11 @@ func (h *DonationCampaignHandler) ListCampaigns(c *gin.Context) {
 		Int("page", pagination.Page).
 		Int("limit", pagination.Limit).
 		Interface("status", statusPtr).
+		Str("order", pagination.Order).
+		Str("order_by", pagination.OrderBy).
 		Msg("Listing campaigns")
 
-	campaigns, err := h.repo.GetAll(pagination.Limit, pagination.Offset, statusPtr, pagination.Order)
+	campaigns, err := h.repo.GetAll(statusPtr, pagination)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to get campaigns list")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToGetCampaigns+": "+err.Error()))
@@ -341,11 +386,6 @@ func (h *DonationCampaignHandler) GetTopContributors(c *gin.Context) {
 
 	topContributors, err := h.repo.GetTopContributors(id, limit)
 	if err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
-			logger.Warn().Int64("campaign_id", id).Msg("Campaign not found for top contributors")
-			c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, constants.ErrCampaignNotFound))
-			return
-		}
 		logger.Error().Err(err).Int64("campaign_id", id).Msg("Failed to get top contributors")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to get top contributors: "+err.Error()))
 		return
@@ -357,4 +397,95 @@ func (h *DonationCampaignHandler) GetTopContributors(c *gin.Context) {
 		Msg("Top contributors retrieved successfully")
 
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Top contributors retrieved successfully", topContributors))
+}
+
+// DeleteCampaign godoc
+// @Summary Delete a drafted campaign
+// @Description Delete a drafted donation campaign (only the creator can delete)
+// @Tags campaigns
+// @Produce json
+// @Param id path int true "Campaign ID"
+// @Success 200 {object} models.Response
+// @Failure 400 {object} models.Response
+// @Failure 403 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Security BearerAuth
+// @Router /api/v1/admin/campaigns/{id} [delete]
+func (h *DonationCampaignHandler) DeleteDraftCampaign(c *gin.Context) {
+	userID, err := utils.GetUserIDFromContext(c)
+	if err != nil {
+		logger.Error().Err(err).Msg("Unauthorized campaign delete attempt")
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
+		return
+	}
+
+	id, err := utils.ParseInt64Param(c, "id")
+	if err != nil {
+		logger.Error().Err(err).Int64("user_id", userID).Msg("Invalid campaign ID for delete")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidCampaignID))
+		return
+	}
+
+	// Check if campaign exists and belongs to creator
+	campaign, err := h.repo.GetByIDAndCreator(id, userID)
+	if err != nil {
+		logger.Error().Err(err).Int64("user_id", userID).Int64("campaign_id", id).Msg("Campaign not found or no permission to delete")
+		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, constants.ErrCampaignNotFoundOrNoPermission))
+		return
+	}
+
+	// Only delete draft campaigns
+	if campaign.Status != constants.CampaignStatusDraft {
+		logger.Error().Int64("user_id", userID).Int64("campaign_id", id).Int16("status", campaign.Status).Msg("Cannot delete non-draft campaign")
+		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, "Only draft campaigns can be deleted"))
+		return
+	}
+
+	logger.Info().Int64("user_id", userID).Int64("campaign_id", id).Msg("Deleting campaign")
+
+	if err := h.repo.DeleteDraft(id, userID); err != nil {
+		logger.Error().Err(err).Int64("user_id", userID).Int64("campaign_id", id).Msg("Failed to delete campaign")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToDeleteDraftCampaign+": "+err.Error()))
+		return
+	}
+
+	logger.Info().Int64("user_id", userID).Int64("campaign_id", id).Msg("Campaign deleted successfully")
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgDraftCampaignDeleted, map[string]any{"id": id}))
+}
+
+// GetCampaignBySlug godoc
+// @Summary Get a donation campaign by slug
+// @Description Get details of a specific donation campaign by its slug
+// @Tags campaigns
+// @Produce json
+// @Param slug path string true "Campaign slug"
+// @Success 200 {object} models.Response{data=models.DonationCampaignResponse}
+// @Failure 400 {object} models.Response
+// @Failure 404 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Router /api/v1/campaigns/slug/{slug} [get]
+func (h *DonationCampaignHandler) GetCampaignBySlug(c *gin.Context) {
+	slug := c.Param("slug")
+	if slug == "" {
+		logger.Error().Msg("Empty campaign slug parameter")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidCampaignID))
+		return
+	}
+
+	logger.Debug().Str("slug", slug).Msg("Fetching campaign details by slug")
+
+	campaign, err := h.repo.GetBySlug(slug)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			logger.Warn().Str("slug", slug).Msg("Campaign not found")
+			c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, constants.ErrCampaignNotFound))
+			return
+		}
+		logger.Error().Err(err).Str("slug", slug).Msg("Failed to get campaign by slug")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToGetCampaign+": "+err.Error()))
+		return
+	}
+
+	logger.Debug().Str("slug", slug).Str("name", campaign.Name).Msg("Campaign retrieved successfully")
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgCampaignRetrieved, campaign.ToResponse()))
 }

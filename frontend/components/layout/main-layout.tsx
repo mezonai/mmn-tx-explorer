@@ -22,7 +22,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           <AppFooter />
         </div>
       </SidebarInset>
-      <Toaster />
+      <Toaster richColors />
     </SidebarProvider>
   );
 }
