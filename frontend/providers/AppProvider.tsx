@@ -15,7 +15,7 @@ import {
 } from '@/modules/auth';
 import axios from 'axios';
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { IZkProof, IEphemeralKeyPair } from 'mmn-client-js';
 import { safeJsonParse, clearAuthStorage } from '@/utils';
@@ -52,7 +52,6 @@ export function AppProvider({ children }: AppProviderProps) {
   const [keypair, setKeypair] = useState<IEphemeralKeyPair | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const pathname = usePathname();
   useEffect(() => {
     const localTokenStr = localStorage.getItem(STORAGE_KEYS.TOKEN);
     const localToken = localTokenStr ? safeJsonParse(localTokenStr) : null;
@@ -82,9 +81,11 @@ export function AppProvider({ children }: AppProviderProps) {
       if (kpStr) setKeypair(safeJsonParse(kpStr));
       return;
     }
-    const code = searchParams.get('authCode');
-
-    if (!code) {
+    const code = searchParams.get('code');
+    const state = searchParams.get('state');
+    const csrfTokenFromStorage = sessionStorage.getItem(AUTHENTICATION_CONSTANTS.CRSF_TOKEN);
+    if (!code || !state || !csrfTokenFromStorage) {
+      console.error('Missing code, state, or CSRF token in storage.');
       return;
     }
 
@@ -92,6 +93,7 @@ export function AppProvider({ children }: AppProviderProps) {
       try {
         const userInfo: LoginResponse = await AuthenticationService.getUserInfo(authCode);
         setIsAuthenticated(true);
+        const originalState = JSON.parse(Buffer.from(state, 'base64').toString());
         handleTokenStorage(userInfo);
         const keypair = generateAndStoreKeyPair();
         setKeypair(keypair);
@@ -107,15 +109,12 @@ export function AppProvider({ children }: AppProviderProps) {
         if (fetchedZk) {
           setZkProof(fetchedZk);
         }
-        router.replace(pathname);
+        router.replace(originalState.redirect_url || '/');
         toast.success('Login successful!');
       } catch {
-        clearAuthStorage();
-        setUser(null);
-        setZkProof(null);
-        setKeypair(null);
-        setIsAuthenticated(false);
         toast.error('Login failed!');
+        clearAuthStorage();
+        router.push('/');
       }
     };
 
@@ -171,6 +170,7 @@ export function useAuthActions() {
   const router = useRouter();
   const login = () => {
     const csrfToken = generateCsrfToken();
+    sessionStorage.setItem(AUTHENTICATION_CONSTANTS.CRSF_TOKEN, csrfToken);
     const currentPath = location.pathname + location.search;
     const stateObject = {
       csrf: csrfToken,
