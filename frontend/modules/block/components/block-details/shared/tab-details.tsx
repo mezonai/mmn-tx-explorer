@@ -186,7 +186,7 @@ export const TabDetails = ({ blockDetails }: TabDetailsProps) => {
             isLoading={!blockDetails}
             showHeader={false}
             skeletonLength={Items.length}
-            className="text-foreground [&_tbody_tr]:border-b-foreground/10 [&_tbody]:bg-brand-primary/2 relative dark:[&_tbody]:bg-transparent"
+            className="text-foreground [&_tbody_tr]:border-b-foreground/10 relative dark:[&_tbody]:bg-transparent"
           />
         </div>
         {/* Desktop: Two columns */}
@@ -197,7 +197,7 @@ export const TabDetails = ({ blockDetails }: TabDetailsProps) => {
             isLoading={!blockDetails}
             showHeader={false}
             skeletonLength={Math.ceil(Items.length / 2)}
-            className="text-foreground [&_tbody_tr]:border-b-foreground/10 [&_tbody]:bg-brand-primary/2 relative dark:[&_tbody]:bg-transparent"
+            className="text-foreground [&_tbody_tr]:border-b-foreground/10 relative dark:[&_tbody]:bg-transparent"
           />
         </div>
       </CardContent>

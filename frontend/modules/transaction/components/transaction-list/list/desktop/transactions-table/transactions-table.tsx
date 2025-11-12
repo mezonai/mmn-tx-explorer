@@ -45,10 +45,6 @@ export const TransactionsTable = ({
   };
   const { page, limit } = usePaginationQueryParam();
   const columns: TTableColumn<ITransaction>[] = [
-    // {
-    //   renderCell: (row) => <MoreInfoButton transaction={row} />,
-    //   skeletonContent: <MoreInfoButtonSkeleton />,
-    // },
     {
       headerContent: (
         <div className="flex items-center gap-1">
@@ -90,11 +86,6 @@ export const TransactionsTable = ({
       renderCell: (row) => <TxStatusBadge status={row.status} />,
       skeletonContent: <TypeBadgesSkeleton className="flex-col items-start" />,
     },
-    // {
-    //   headerContent: 'Block',
-    //   renderCell: (row) => <BlockNumber blockNumber={row.block_number || TEXT_CONSTANT.NA} />,
-    //   skeletonContent: <BlockNumberSkeleton />,
-    // },
     {
       headerContent: 'From/To',
       renderCell: (row) => (
@@ -121,7 +112,7 @@ export const TransactionsTable = ({
         columns={columns}
         rows={transactions}
         skeletonLength={skeletonLength}
-        className="[&_tbody]:bg-brand-primary/2 rounded-lg dark:[&_tbody]:bg-transparent [&_tbody_tr:last-child_td:first-child]:rounded-bl-lg [&_tbody_tr:last-child_td:last-child]:rounded-br-lg [&_thead]:top-[96px] [&_thead]:uppercase [&_thead]:border-b [&_thead]:z-10 [&_thead]:bg-transparent"
+        className="rounded-lg dark:[&_tbody]:bg-transparent [&_tbody_tr:last-child_td:first-child]:rounded-bl-lg [&_tbody_tr:last-child_td:last-child]:rounded-br-lg [&_thead]:top-[96px] [&_thead]:uppercase [&_thead]:border-b [&_thead]:z-10 [&_thead]:text-muted-foreground [&_thead]:bg-transparent"
         classNameLayout="overflow-x-visible"
         isLoading={isLoading}
       />
