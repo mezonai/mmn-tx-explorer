@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
+  const { searchParams, origin } = new URL(request.url);
   const state = searchParams.get('state');
+  if (!state) {
+    console.error('Missing state,');
+    return NextResponse.redirect(`${origin}/?error=missing_state`);
+  }
   const authUrl =
     `${process.env.NEXT_PUBLIC_OAUTH2_API_URL}/oauth2/auth?` +
     `client_id=${process.env.NEXT_PUBLIC_OAUTH2_CLIENT_ID}&` +
@@ -12,5 +16,11 @@ export async function GET(request: Request) {
     `state=${state}`;
 
   const response = NextResponse.redirect(authUrl);
+  response.cookies.set('state', state, {
+    httpOnly: true,
+    maxAge: 60 * 5,
+    path: '/',
+    sameSite: 'lax',
+  });
   return response;
 }
