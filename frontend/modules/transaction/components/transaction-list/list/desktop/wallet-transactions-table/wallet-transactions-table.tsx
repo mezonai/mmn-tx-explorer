@@ -5,18 +5,13 @@ import { format } from 'date-fns';
 import { Table } from '@/components/ui/table';
 import { DATE_TIME_FORMAT, PAGINATION } from '@/constant';
 import { cn } from '@/lib/utils';
-import {
-  getTransactionStatusLabel,
-  getTransactionStatusVariant,
-  getTransactionTypeLabel,
-  ITransaction,
-} from '@/modules/transaction';
+import { ITransaction } from '@/modules/transaction';
 import { TTableColumn } from '@/types';
 import { DateTimeUtil, NumberUtil } from '@/utils';
-import { TransactionValueSkeleton, TxnHashLink, TxnHashLinkSkeleton } from '../../shared';
+import { TransactionValueSkeleton, TxnHashLink, TxnHashLinkSkeleton, TypeBadges } from '../../shared';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Chip } from '@/components/shared';
 import { Transaction } from '@/modules/donation-campaign';
+import { TxStatusBadge } from '@/modules/transaction/components/shared';
 
 interface WalletTransactionsTableProps {
   walletAddress: string;
@@ -41,11 +36,7 @@ export const WalletTransactionsTable = ({
     {
       headerContent: 'Type',
       dataKey: 'transaction_type',
-      renderCell: (tx) => (
-        <Chip variant="warning" className="gap-1.5 rounded-md">
-          <span>{getTransactionTypeLabel(tx.transaction_type)}</span>
-        </Chip>
-      ),
+      renderCell: (tx) => <TypeBadges type={tx.transaction_type} />,
       skeletonContent: <Skeleton className="h-5.5 w-24" />,
     },
     {
@@ -66,11 +57,7 @@ export const WalletTransactionsTable = ({
     {
       headerContent: 'Status',
       dataKey: 'status',
-      renderCell: (tx) => (
-        <Chip variant={getTransactionStatusVariant(tx.status)} className="gap-1.5">
-          <span>{getTransactionStatusLabel(tx.status)}</span>
-        </Chip>
-      ),
+      renderCell: (tx) => <TxStatusBadge status={tx.status} />,
       skeletonContent: <Skeleton className="h-5.5 w-24" />,
     },
     {
@@ -81,13 +68,12 @@ export const WalletTransactionsTable = ({
   ];
 
   return (
-    <div className="bg-card min-h-[500px]">
+    <div className="bg-card min-h-[300px]">
       <Table
         getRowKey={(row) => row.hash}
         columns={columns}
         rows={transactions}
         skeletonLength={skeletonLength}
-        className="[&_thead]:sticky [&_thead]:z-10"
         classNameLayout="overflow-x-visible"
         isLoading={isLoading}
       />

@@ -34,18 +34,19 @@ export const DetailsTab = ({ walletAddress }: TabDetailsProps) => {
           </div>
         </CardHeader>
         <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
-          {user?.walletAddress === walletDetails?.address && (
-            <Card className="dark:border-primary/20">
-              <CardContent>
-                <CardHeader className="flex items-center justify-between gap-2 p-0">
-                  <CardTitle className="mb-1 text-xs uppercase">Balance</CardTitle>
-                </CardHeader>
-                <p className="dark:text-primary text-lg font-semibold">
-                  {NumberUtil.formatWithCommasAndScale(walletDetails?.balance ?? 0)} {APP_CONFIG.CHAIN_SYMBOL}
-                </p>
-              </CardContent>
-            </Card>
-          )}
+          <Card className="dark:border-primary/20">
+            <CardContent>
+              <CardHeader className="flex items-center justify-between gap-2 p-0">
+                <CardTitle className="mb-1 text-xs uppercase">Balance</CardTitle>
+              </CardHeader>
+              <p className="dark:text-primary text-lg font-semibold">
+                {user?.walletAddress === walletDetails?.address
+                  ? `${NumberUtil.formatWithCommasAndScale(walletDetails?.balance ?? 0)} ${APP_CONFIG.CHAIN_SYMBOL}`
+                  : '••••••••••'}
+              </p>
+            </CardContent>
+          </Card>
+
           <Card className="dark:border-primary/20">
             <CardContent>
               <CardHeader className="flex items-center justify-between gap-2 p-0">

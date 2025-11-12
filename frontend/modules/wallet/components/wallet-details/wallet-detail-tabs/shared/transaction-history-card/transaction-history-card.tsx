@@ -8,7 +8,7 @@ import { WalletTransactionsTable, WalletTransactionsCards } from '@/modules/tran
 import { PAGINATION } from '@/constant';
 import { ITransactionListParams } from '@/modules/transaction';
 import { useTransactions } from '@/modules/transaction/hooks/useTransactions';
-import { computeDateRange } from '@/modules/wallet/utils';
+import { DatePicker } from '@/components/ui/datepicker';
 
 interface TransactionHistoryCardProps {
   walletAddress: string;
@@ -19,12 +19,19 @@ const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
   sort_by: 'transaction_timestamp',
   sort_order: ESortOrder.DESC,
 } as const;
+
+const getThreeMonthsAgo = () => {
+  const today = new Date();
+  const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, today.getDate());
+  return threeMonthsAgo;
+};
+
 export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCardProps) {
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
-  const [filters, setFilters] = useState({
-    period: 'Last 3 months',
-    type: 'All Transaction',
-  });
+  const [startDate, setStartDate] = useState<Date>(getThreeMonthsAgo());
+  const [endDate, setEndDate] = useState<Date>(new Date());
+  const [transactionType, setTransactionType] = useState('All Transaction');
+  const oneYearAgo = new Date(new Date().setFullYear(new Date().getFullYear() - 1));
   const getSearchParams = (): ITransactionListParams => {
     const base = {
       ...DEFAULT_VALUE_DATA_SEARCH,
@@ -32,22 +39,23 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
       limit,
     };
 
-    const dateRange = computeDateRange(filters.period);
-    const baseWithDate = { ...base, ...dateRange };
+    const baseWithDate = {
+      ...base,
+      start_time: startDate.toISOString().split('T')[0],
+      end_time: endDate.toISOString().split('T')[0],
+    };
 
-    if (filters.type === 'Sent') {
+    if (transactionType === 'Sent') {
       return { ...baseWithDate, filter_from_address: walletAddress };
     }
-    if (filters.type === 'Received') {
+    if (transactionType === 'Received') {
       return { ...baseWithDate, filter_to_address: walletAddress };
     }
     return { ...baseWithDate, wallet_address: walletAddress };
   };
 
   const searchParams: ITransactionListParams = getSearchParams();
-  const handleFilterChange = (filterType: 'type' | 'period', value: string) => {
-    setFilters((prevFilters) => ({ ...prevFilters, [filterType]: value }));
-  };
+
   const isDesktop = useBreakpoint(EBreakpoint.LG);
   const { data: transactionsResponse, isLoading: isLoadingTransactions } = useTransactions(searchParams);
   const transactions = transactionsResponse?.data;
@@ -64,18 +72,23 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
         </CardHeader>
         <div className="bg-card top-0 z-10 mb-0 flex flex-col gap-4 py-6 md:pt-8 lg:flex-row lg:items-center lg:justify-end lg:gap-5">
           <div className="flex w-full flex-col gap-4 sm:flex-row lg:w-auto">
-            <Select value={filters.period} onValueChange={(v) => handleFilterChange('period', v)}>
-              <SelectTrigger className="h-10 w-full sm:w-[180px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Last 3 months">Last 3 months</SelectItem>
-                <SelectItem value="Last 6 months">Last 6 months</SelectItem>
-                <SelectItem value="Last 12 months">Last 12 months</SelectItem>
-              </SelectContent>
-            </Select>
+            <DatePicker
+              selected={startDate}
+              onChange={(date) => date && setStartDate(date)}
+              maxDate={endDate}
+              minDate={oneYearAgo}
+              className="bg-card h-10 w-full sm:w-[170px]"
+              placeholder="Start date"
+            />
+            <DatePicker
+              selected={endDate}
+              onChange={(date) => date && setEndDate(date)}
+              minDate={startDate}
+              className="bg-card h-10 w-full sm:w-[170px]"
+              placeholder="End date"
+            />
 
-            <Select value={filters.type} onValueChange={(v) => handleFilterChange('type', v)}>
+            <Select value={transactionType} onValueChange={setTransactionType}>
               <SelectTrigger className="h-10 w-full sm:w-[170px]">
                 <SelectValue />
               </SelectTrigger>
