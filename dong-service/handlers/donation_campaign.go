@@ -337,6 +337,7 @@ func (h *DonationCampaignHandler) CloseCampaign(c *gin.Context) {
 		return
 	}
 
+	//Only close Activated campaigns
 	if campaign.Status != constants.CampaignStatusActive {
 		logger.Error().Int64("user_id", userID).Int64("campaign_id", id).Int16("status", campaign.Status).Msg("Cannot close campaign with current status")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Only activated campaigns can be closed"))
