@@ -32,6 +32,7 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [transactionType, setTransactionType] = useState('All Transaction');
   const oneYearAgo = new Date(new Date().setFullYear(new Date().getFullYear() - 1));
+  const today = new Date();
   const getSearchParams = (): ITransactionListParams => {
     const base = {
       ...DEFAULT_VALUE_DATA_SEARCH,
@@ -84,6 +85,7 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
               selected={endDate}
               onChange={(date) => date && setEndDate(date)}
               minDate={startDate}
+              maxDate={today}
               className="bg-card h-10 w-full sm:w-[170px]"
               placeholder="End date"
             />
