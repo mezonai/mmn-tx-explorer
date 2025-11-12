@@ -69,6 +69,7 @@ jobs:
           NEXT_PUBLIC_OAUTH2_CLIENT_ID: ${{ vars.OAUTH_CLIENT_ID }}
           OAUTH2_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }} 
           NEXT_PUBLIC_OAUTH2_REDIRECT_URI: ${{ vars.NEXT_PUBLIC_OAUTH2_REDIRECT_URI }}
+          NEXT_PUBLIC_OAUTH2_SCOPE: ${{ vars.NEXT_PUBLIC_OAUTH2_SCOPE }}
         run: |
           cd frontend
           npm install
@@ -105,6 +106,7 @@ jobs:
           NEXT_PUBLIC_OAUTH2_CLIENT_ID: ${{ vars.OAUTH_CLIENT_ID }}
           OAUTH2_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
           NEXT_PUBLIC_OAUTH2_REDIRECT_URI: ${{ vars.NEXT_PUBLIC_OAUTH2_REDIRECT_URI }}
+          NEXT_PUBLIC_OAUTH2_SCOPE: ${{ vars.NEXT_PUBLIC_OAUTH2_SCOPE }}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
@@ -122,6 +124,7 @@ jobs:
           NEXT_PUBLIC_OAUTH2_CLIENT_ID=${NEXT_PUBLIC_OAUTH2_CLIENT_ID}
           OAUTH2_CLIENT_SECRET=${OAUTH2_CLIENT_SECRET}
           NEXT_PUBLIC_OAUTH2_REDIRECT_URI=${NEXT_PUBLIC_OAUTH2_REDIRECT_URI}
+          NEXT_PUBLIC_OAUTH2_SCOPE=${NEXT_PUBLIC_OAUTH2_SCOPE}
           EON
 
           sudo chown -R mmn:mmn /opt/frontend
@@ -141,6 +144,7 @@ jobs:
           printf "export NEXT_PUBLIC_OAUTH2_CLIENT_ID=%q\n" "$NEXT_PUBLIC_OAUTH2_CLIENT_ID" >> remote_env.sh
           printf "export OAUTH2_CLIENT_SECRET=%q\n" "$OAUTH2_CLIENT_SECRET" >> remote_env.sh
           printf "export NEXT_PUBLIC_OAUTH2_REDIRECT_URI=%q\n" "$NEXT_PUBLIC_OAUTH2_REDIRECT_URI" >> remote_env.sh
+          printf "export NEXT_PUBLIC_OAUTH2_SCOPE=%q\n" "$NEXT_PUBLIC_OAUTH2_SCOPE" >> remote_env.sh
       
       - name:  Prepare and deploy to target server
         run: |
