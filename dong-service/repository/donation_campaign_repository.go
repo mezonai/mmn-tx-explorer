@@ -369,11 +369,6 @@ func (r *DonationCampaignRepository) Update(id int64, creator int64, req *models
 	var args []any
 	argCount := 1
 
-	if req.Name != nil {
-		setClauses = append(setClauses, fmt.Sprintf("name = $%d", argCount))
-		args = append(args, *req.Name)
-		argCount++
-	}
 	if req.Description != nil {
 		setClauses = append(setClauses, fmt.Sprintf("description = $%d", argCount))
 		args = append(args, *req.Description)
@@ -392,11 +387,6 @@ func (r *DonationCampaignRepository) Update(id int64, creator int64, req *models
 	if req.EndDate != nil {
 		setClauses = append(setClauses, fmt.Sprintf("end_date = $%d", argCount))
 		args = append(args, *req.EndDate)
-		argCount++
-	}
-	if req.Owner != nil {
-		setClauses = append(setClauses, fmt.Sprintf("owner = $%d", argCount))
-		args = append(args, *req.Owner)
 		argCount++
 	}
 
