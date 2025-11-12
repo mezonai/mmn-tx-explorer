@@ -15,6 +15,7 @@ import { APP_CONFIG } from '@/configs/app.config';
 import { TTableColumn } from '@/types';
 import { Table } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import { Textarea } from '@/components/ui/textarea';
 
 interface TabDetailsProps {
   transaction?: ITransaction;
@@ -117,7 +118,11 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
           {
             headerContent: 'Note',
             dataKey: 'text_data' as keyof ITransaction,
-            renderCell: (tx: ITransaction) => <span className="text-sm">{tx.text_data}</span>,
+            renderCell: (tx: ITransaction) => (
+              <Textarea className="bg-primary/5 w-full px-3" readOnly rows={5} cols={50}>
+                {tx.text_data}
+              </Textarea>
+            ),
             skeletonContent: <Skeleton className="h-[60px] w-full" />,
           },
         ]
@@ -137,7 +142,7 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
     return (
       <div className={cn('flex w-full flex-col gap-2', hideOnDesktop && 'hidden md:table-cell')}>
         {label && <span className="text-foreground/70 text-sm font-medium">{label}</span>}
-        <div className="break-words">{displayValue}</div>
+        <div className="w-full break-words">{displayValue}</div>
       </div>
     );
   };
@@ -199,26 +204,26 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
   return (
     <Card className="border-muted-foreground/30 space-y-4 overflow-hidden p-0">
       <CardContent className="p-3">
-        {/* Mobile: Single column */}
-        <div className="md:hidden">
+        {/* Mobile & Tablet: Single column */}
+        <div className="lg:hidden">
           <Table<SingleRow>
             columns={singleColumns}
             rows={singleRows}
             isLoading={!transaction}
             showHeader={false}
             skeletonLength={Items.length}
-            className="text-foreground [&_tbody_tr]:border-b-foreground/10 [&_tbody]:bg-brand-primary/2 relative dark:[&_tbody]:bg-transparent"
+            className="text-foreground [&_tbody_tr]:border-b-foreground/10 relative dark:[&_tbody]:bg-transparent"
           />
         </div>
         {/* Desktop: Two columns */}
-        <div className="hidden md:block">
+        <div className="hidden lg:block">
           <Table<PairedRow>
             columns={pairedColumns}
             rows={pairedRows}
             isLoading={!transaction}
             showHeader={false}
             skeletonLength={Math.ceil(Items.length / 2)}
-            className="text-foreground [&_tbody_tr]:border-b-foreground/10 [&_tbody]:bg-brand-primary/2 relative dark:[&_tbody]:bg-transparent"
+            className="text-foreground [&_tbody_tr]:border-b-foreground/10 relative dark:[&_tbody]:bg-transparent"
           />
         </div>
       </CardContent>
