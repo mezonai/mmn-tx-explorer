@@ -177,7 +177,7 @@ export function useAuthActions() {
       redirect_url: currentPath,
     };
     const encodedState = Buffer.from(JSON.stringify(stateObject)).toString('base64');
-    router.push(`${AUTHENTICATION_ENDPOINT.LOGIN}?state=${encodedState}`);
+    window.location.href = `${AUTHENTICATION_ENDPOINT.LOGIN}?state=${encodedState}`;
   };
 
   const logout = () => {
