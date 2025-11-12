@@ -14,7 +14,7 @@ interface CampaignCardProps {
 }
 
 export const CampaignCard = ({ campaign }: CampaignCardProps) => {
-  const { id, slug, name, description, goal, end_date, status, updated_at, total_amount, total_contributors } = campaign;
+  const { slug, name, description, goal, end_date, status, updated_at, total_amount, total_contributors } = campaign;
   const daysLeft = useMemo(() => {
     if (status === ECampaignStatus.Draft) {
       return 'Draft';
@@ -43,14 +43,14 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
   const progressPercent = useMemo(() => {
     if (goal <= 0) return !total_amount ? 0 : 100;
     return Math.min(Math.max(Math.floor((NumberUtil.scaleDown(total_amount) / goal) * 100), 0), 100);
-  }, [status, total_amount, goal]);
+  }, [total_amount, goal]);
 
   const contributorsNumber = useMemo(() => {
     if (status === ECampaignStatus.Draft) {
       return 'Pending launch';
     }
     return `${total_contributors} contributor(s)`;
-  }, [status]);
+  }, [status, total_contributors]);
 
   const lastTime = useMemo(() => {
     if (status === ECampaignStatus.Draft) {
@@ -71,7 +71,7 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
     }
   }, [status]);
   return (
-    <article className="group hover:border-primary/60 dark:bg-card flex h-full flex-col rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10">
+    <article className="group hover:border-primary/60 dark:bg-card flex h-full min-w-0 flex-col rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <Chip variant={getCampaignStatusVariant(status)}>{getCampaignStatusLabel(status)}</Chip>
@@ -87,7 +87,9 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
       <h3 className="dark:group-hover:text-brand-primary group-hover:text-primary dark:group-hover:text-primary-light mt-4 text-lg font-semibold text-gray-900 transition dark:text-white">
         <Link href={ROUTES.CAMPAIGN(slug)}>{name}</Link>
       </h3>
-      <p className="mt-2 line-clamp-3 text-sm leading-6 text-gray-600 dark:text-gray-400">{description}</p>
+      <p className="mt-2 line-clamp-3 w-full text-sm leading-6 break-words text-gray-600 dark:text-gray-400">
+        {description}
+      </p>
       <div className="mt-auto flex flex-col gap-6 pt-6">
         <div>
           <div className="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
