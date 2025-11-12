@@ -1254,12 +1254,6 @@ const docTemplate = `{
                 "goal": {
                     "type": "integer"
                 },
-                "name": {
-                    "type": "string"
-                },
-                "owner": {
-                    "type": "string"
-                },
                 "url": {
                     "type": "string"
                 }

@@ -275,16 +275,23 @@ func (h *DonationCampaignHandler) ActivateCampaign(c *gin.Context) {
 	}
 
 	// Check if campaign exists and belongs to creator
-	_, err = h.repo.GetByIDAndCreator(id, userID)
+	campaign, err := h.repo.GetByIDAndCreator(id, userID)
 	if err != nil {
 		logger.Error().Err(err).Int64("user_id", userID).Int64("campaign_id", id).Msg("Campaign not found or no permission to activate")
 		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, constants.ErrCampaignNotFoundOrNoPermission))
 		return
 	}
 
+	// Only activate Drafted or Closed Campaign
+	if campaign.Status == constants.CampaignStatusActive {
+		logger.Error().Int64("user_id", userID).Int64("campaign_id", id).Int16("status", campaign.Status).Msg("Cannot activate campaign with current status")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Only draft or closed campaigns can be activated"))
+		return
+	}
+
 	logger.Info().Int64("user_id", userID).Int64("campaign_id", id).Msg("Activating campaign")
 
-	campaign, err := h.repo.Activate(id, userID)
+	campaign, err = h.repo.Activate(id, userID)
 	if err != nil {
 		logger.Error().Err(err).Int64("user_id", userID).Int64("campaign_id", id).Msg("Failed to activate campaign")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToActivateCampaign+": "+err.Error()))
@@ -323,16 +330,22 @@ func (h *DonationCampaignHandler) CloseCampaign(c *gin.Context) {
 	}
 
 	// Check if campaign exists and belongs to creator
-	_, err = h.repo.GetByIDAndCreator(id, userID)
+	campaign, err := h.repo.GetByIDAndCreator(id, userID)
 	if err != nil {
 		logger.Error().Err(err).Int64("user_id", userID).Int64("campaign_id", id).Msg("Campaign not found or no permission to close")
 		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, constants.ErrCampaignNotFoundOrNoPermission))
 		return
 	}
 
+	if campaign.Status != constants.CampaignStatusActive {
+		logger.Error().Int64("user_id", userID).Int64("campaign_id", id).Int16("status", campaign.Status).Msg("Cannot close campaign with current status")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Only activated campaigns can be closed"))
+		return
+	}
+
 	logger.Info().Int64("user_id", userID).Int64("campaign_id", id).Msg("Closing campaign")
 
-	campaign, err := h.repo.Close(id, userID)
+	campaign, err = h.repo.Close(id, userID)
 	if err != nil {
 		logger.Error().Err(err).Int64("user_id", userID).Int64("campaign_id", id).Msg("Failed to close campaign")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToCloseCampaign+": "+err.Error()))
