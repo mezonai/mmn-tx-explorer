@@ -12,6 +12,7 @@ import { TransactionValueSkeleton, TxnHashLink, TxnHashLinkSkeleton, TypeBadges 
 import { Skeleton } from '@/components/ui/skeleton';
 import { Transaction } from '@/modules/donation-campaign';
 import { TxStatusBadge } from '@/modules/transaction/components/shared';
+import { APP_CONFIG } from '@/configs/app.config';
 
 interface WalletTransactionsTableProps {
   walletAddress: string;
@@ -47,7 +48,7 @@ export const WalletTransactionsTable = ({
         return (
           <div>
             <p className={cn('max-w-3xl font-bold', isSent ? 'text-error-primary-600' : 'text-utility-success-600')}>
-              {isSent ? '-' : '+'} {NumberUtil.formatWithCommasAndScale(tx.value)}
+              {isSent ? '-' : '+'} {NumberUtil.formatWithCommasAndScale(tx.value)} {APP_CONFIG.CHAIN_SYMBOL}
             </p>
           </div>
         );
