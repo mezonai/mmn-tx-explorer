@@ -119,7 +119,7 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
             headerContent: 'Note',
             dataKey: 'text_data' as keyof ITransaction,
             renderCell: (tx: ITransaction) => (
-              <Textarea className="bg-primary/5 w-full px-3" readOnly rows={5} cols={40} value={tx.text_data} />
+              <Textarea className="bg-primary/5 w-full px-3" readOnly rows={1} cols={40} value={tx.text_data} />
             ),
             skeletonContent: <Skeleton className="h-[60px] w-full" />,
           },
