@@ -171,7 +171,6 @@ export function useAuthActions() {
   const router = useRouter();
   const login = () => {
     const csrfToken = generateCsrfToken();
-    sessionStorage.setItem(AUTHENTICATION_CONSTANTS.CRSF_TOKEN, csrfToken);
     const currentPath = location.pathname + location.search;
     const stateObject = {
       csrf: csrfToken,
