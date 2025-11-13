@@ -43,7 +43,7 @@ export const StatCard = ({ icon: Icon, faIconClass, title, value, subValue }: St
 
   const cardClassName = cn(
     'p-0',
-    'bg-card dark:bg-[#1e293b] border border-gray-700 rounded-xl hover:border-primary/50 transition-colors'
+    'bg-card dark:bg-slate-800 border border-gray-700 rounded-xl hover:border-primary/50 transition-colors'
   );
 
   return (
