@@ -24,11 +24,7 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
     <div className="border-secondary flex flex-col items-start gap-2 border-b border-gray-300 dark:border-gray-700 pb-4">
       <div className="w-full flex-1 space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-medium">
-          {transaction ? (
-            <TypeBadges type={transaction.transaction_type} status={transaction.status} />
-          ) : (
-            <TypeBadgesSkeleton />
-          )}
+          {transaction ? <TypeBadges type={transaction.transaction_type} /> : <TypeBadgesSkeleton />}
           {transaction ? <MoreInfoButton transaction={transaction} /> : <MoreInfoButtonSkeleton />}
         </div>
         <div className="flex items-center gap-2">
