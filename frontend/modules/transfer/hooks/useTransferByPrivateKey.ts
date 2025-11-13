@@ -24,15 +24,7 @@ export const useTransferByPrivateKey = () => {
           amount: scaledAmount,
           nonce: nonceResponse.nonce + 1,
           textData: input.note || '',
-          publicKey: senderAddress,
-          privateKey: input.privateKey,
-          zkProof: zkProof?.proof || '',
-          zkPub: zkProof?.public_input || '',
-          extraInfo: {
-            UserSenderId: '',
-            UserSenderUsername: '',
-            type: transaction_type,
-          },
+          privateKey: input.privateKey
         });
 
         const txResult: TransferResult = TransferResponse.ok
