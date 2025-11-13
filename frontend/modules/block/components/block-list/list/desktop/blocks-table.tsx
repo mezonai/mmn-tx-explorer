@@ -92,7 +92,7 @@ export const BlocksTable = ({ blocks, skeletonLength = PAGINATION.DEFAULT_LIMIT,
         rows={blocks}
         skeletonLength={skeletonLength}
         className="[&_thead]:text-muted-foreground border-muted-foreground/30 [&_thead>tr>th]:border-muted-foreground/30 rounded-lg [&_tbody]:bg-transparent [&_tbody>tr:last-child>td:first-child]:rounded-bl-lg [&_tbody>tr:last-child>td:last-child]:rounded-br-lg [&_thead]:bg-transparent [&_thead]:uppercase [&_thead>tr>th]:border-b [&_thead>tr>th:first-child]:rounded-tl-lg [&_thead>tr>th:last-child]:rounded-tr-lg"
-        classNameLayout="overflow-hidden overflow-x-visible"
+        classNameLayout="overflow-x-visible overflow-y-hidden"
         isLoading={isLoading}
         estimateRowHeight={72.5}
       />
