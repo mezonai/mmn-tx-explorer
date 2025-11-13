@@ -213,9 +213,10 @@ Each campaign has a status (`status`) with 3 values:
 
 - `POST /api/v1/admin/campaigns` - Create a new campaign (status = Draft)
 - `POST /api/v1/admin/campaigns/create-active` - Create and immediately activate campaign
-- `PUT /api/v1/admin/campaigns/:id` - Update campaign (cannot update status/wallet)
-- `PATCH /api/v1/admin/campaigns/:id/activate` - Activate campaign (Draft → Active)
+- `PUT /api/v1/admin/campaigns/:id` - Update campaign (can only update description, goal, url, end_date)
+- `PATCH /api/v1/admin/campaigns/:id/activate` - Activate campaign (Draft/Closed → Active)
 - `PATCH /api/v1/admin/campaigns/:id/close` - Close campaign (Active → Closed)
+- `DELETE /api/v1/admin/campaigns/:id` - Delete draft campaign (only Draft status)
 
 ### Statistics
 
@@ -331,12 +332,10 @@ curl -X PUT http://localhost:8888/api/v1/admin/campaigns/1 \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your_access_token" \
   -d '{
-    "name": "Updated Campaign Name",
     "description": "Updated description",
     "goal": 2000000,
     "url": "https://example.com/updated",
-    "end_date": "2025-12-31",
-    "owner": "Updated Partner Organization"
+    "end_date": "2025-12-31"
   }'
 ```
 

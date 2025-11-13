@@ -207,10 +207,6 @@ definitions:
         type: string
       goal:
         type: integer
-      name:
-        type: string
-      owner:
-        type: string
       url:
         type: string
     type: object
