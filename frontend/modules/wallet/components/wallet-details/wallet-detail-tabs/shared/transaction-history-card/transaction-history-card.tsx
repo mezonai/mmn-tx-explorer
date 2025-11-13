@@ -22,7 +22,7 @@ const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
 
 const getThreeMonthsAgo = () => {
   const today = new Date();
-  const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, today.getDate());
+  const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
   return threeMonthsAgo;
 };
 
