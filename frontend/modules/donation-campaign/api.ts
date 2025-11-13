@@ -89,7 +89,6 @@ export class DonationCampaignService {
     campaignId: string;
     params: { limit: number };
   }): Promise<TopContributorsResponse['data']> {
-    await this.refreshCampaignRaised(campaignId);
     const { data } = await apiDongClient.get<TopContributorsResponse>(DONATION_ENDPOINTS.TOP_CONTRIBUTOR(campaignId), {
       params,
     });
