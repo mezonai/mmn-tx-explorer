@@ -81,7 +81,7 @@ func GetWallets(c *gin.Context) {
 		Page:                queryParams.Page,
 		Limit:               queryParams.Limit,
 		ForceConsistentData: queryParams.ForceConsistentData,
-		Aggregates:          []string{"address", "account_nonce", "balance", "transaction_count", "rank() OVER (ORDER BY balance DESC) AS rank"},
+		Aggregates:          []string{"address", "account_nonce", "transaction_count", "rank() OVER (ORDER BY balance DESC) AS rank"},
 	}
 
 	// Prepare response
@@ -155,7 +155,7 @@ func GetWalletDetail(c *gin.Context) {
 		FilterParams:        map[string]string{"address": address},
 		Limit:               1,
 		ForceConsistentData: queryParams.ForceConsistentData,
-		Aggregates:          []string{"address", "account_nonce", "balance", "transaction_count", "last_block"},
+		Aggregates:          []string{"address", "account_nonce", "transaction_count", "last_block"},
 	}
 
 	result, err := mainStorage.GetAggregations(c.Request.Context(), "wallet", qf)
