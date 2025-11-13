@@ -12,7 +12,8 @@ import { ITransactionListParams } from '@/modules/transaction';
 import { useTransactions } from '@/modules/transaction/hooks/useTransactions';
 import { NumberUtil } from '@/utils';
 import { useHidden } from '../provider';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { DonationCampaignService } from '@/modules/donation-campaign/api';
 import { DEFAULT_DEBOUNCE_TIME, useBreakpoint } from '@/hooks';
 import { RecentActivityTable } from '../desktop/recent-activity-table';
 import { RecentActivityCardsMobile } from '../mobile/recent-activity-card';
@@ -31,6 +32,19 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
     filter_to_address: walletAddress,
   };
   const { data: topContributorsData, refetch, isPending } = useTopContributor({ params: searchTBParams, campaignId });
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    if (!campaignId) return;
+    try {
+      setIsRefreshing(true);
+      await DonationCampaignService.refreshCampaignRaised(campaignId);
+      await refetch();
+    } catch (err) {
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const {
     data: transactionsResponse,
@@ -90,7 +104,11 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
                   <CardTitle className="text-foreground">Top contributor</CardTitle>
                   <span className="text-xs text-gray-500 dark:text-gray-400">Refreshes every 10 minutes</span>
                 </div>
-                <RefreshButton onClick={refetch} isLoading={isPending} startDelay={DEFAULT_DEBOUNCE_TIME} />
+                <RefreshButton
+                  onClick={handleRefresh}
+                  isLoading={isPending || isRefreshing}
+                  startDelay={DEFAULT_DEBOUNCE_TIME}
+                />
               </CardHeader>
               <CardContent className="p-0">
                 {contributors.length > 0 ? (
