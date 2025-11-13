@@ -22,7 +22,7 @@ export const BlockCard = ({ block }: BlockCardProps) => {
       {block ? (
         <>
           <div>
-            <p className="text-[rgb(105,65,198)] font-mono text-sm mb-0.5">
+            <p className="text-[var(--color-brand-link)] font-mono text-sm mb-0.5">
               <Link href={ROUTES.BLOCK(block.block_number)} className="hover:opacity-80">
                 #{block.block_number}
               </Link>

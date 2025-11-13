@@ -42,24 +42,24 @@ export const EcosystemHighlights = () => {
         <Link
           ref={donationRef}
           href={ROUTES.DONATION_CAMPAIGN}
-          className="block cursor-pointer bg-card dark:bg-[#1e293b] border border-gray-300 dark:border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(105,65,198)]"
+          className="block cursor-pointer bg-card dark:bg-slate-800 border border-gray-300 dark:border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-link)]"
         >
-          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-3">
             <span className="font-semibold flex items-center gap-2">Donation Campaigns</span>
-            <i className="fa-solid fa-hand-holding-heart text-[rgb(105,65,198)]"></i>
+            <i className="fa-solid fa-hand-holding-heart text-[var(--color-brand-link)]"></i>
           </div>
           {isLoading ? (
             <div>
-              <Skeleton className="h-4 w-56 mb-3 bg-gray-200 dark:bg-gray-700" />
+                <Skeleton className="h-4 w-56 mb-3 bg-gray-200 dark:bg-gray-700" />
               <div className="mt-3 rounded-full h-2 overflow-hidden bg-gray-200 dark:bg-gray-700">
-                <Skeleton className="h-2 w-1/2 bg-[rgb(105,65,198)]" />
+                <Skeleton className="h-2 w-1/2 bg-[var(--color-brand-link)]" />
               </div>
             </div>
           ) : campaign ? (
             <div>
               <p className="text-gray-600 dark:text-gray-400 text-sm">
                 <span
-                  className="hover:underline font-medium cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(105,65,198)] rounded-sm"
+                  className="hover:underline font-medium cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-link)] rounded-sm"
                   role="link"
                   tabIndex={0}
                   title={`Open ${campaign.name}`}
@@ -81,7 +81,7 @@ export const EcosystemHighlights = () => {
               </p>
               <div className="mt-3 rounded-full h-2 overflow-hidden bg-gray-200 dark:bg-gray-700">
                 <div
-                  className="h-2 bg-[rgb(105,65,198)]"
+                  className="h-2 bg-[var(--color-brand-link)]"
                   style={{ width: `${barPercentage}%` }}
                 />
               </div>
@@ -94,7 +94,7 @@ export const EcosystemHighlights = () => {
         </Link>
 
         <div
-          className="bg-card dark:bg-[#1e293b] border border-gray-300 dark:border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-colors flex flex-col"
+          className="bg-card dark:bg-slate-800 border border-gray-300 dark:border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-colors flex flex-col"
           style={refHeight ? { minHeight: refHeight } : undefined}
         >
           <div className="flex items-center justify-between mb-3">
@@ -108,7 +108,7 @@ export const EcosystemHighlights = () => {
         </div>
 
         <div
-          className="bg-card dark:bg-[#1e293b] border border-gray-300 dark:border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-colors flex flex-col"
+          className="bg-card dark:bg-slate-800 border border-gray-300 dark:border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-colors flex flex-col"
           style={refHeight ? { minHeight: refHeight } : undefined}
         >
           <div className="flex items-center justify-between mb-3">
@@ -122,7 +122,7 @@ export const EcosystemHighlights = () => {
         </div>
 
         <div
-          className="bg-card dark:bg-[#1e293b] border border-gray-300 dark:border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-colors flex flex-col"
+          className="bg-card dark:bg-slate-800 border border-gray-300 dark:border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-colors flex flex-col"
           style={refHeight ? { minHeight: refHeight } : undefined}
         >
           <div className="flex items-center justify-between mb-3">
@@ -136,7 +136,7 @@ export const EcosystemHighlights = () => {
         </div>
 
         <div
-          className="bg-card dark:bg-[#1e293b] border border-gray-300 dark:border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-colors flex flex-col"
+          className="bg-card dark:bg-slate-800 border border-gray-300 dark:border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-colors flex flex-col"
           style={refHeight ? { minHeight: refHeight } : undefined}
         >
           <div className="flex items-center justify-between mb-3">
@@ -150,7 +150,7 @@ export const EcosystemHighlights = () => {
         </div>
 
         <div
-          className="bg-card dark:bg-[#1e293b] border border-gray-300 dark:border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-colors flex flex-col"
+          className="bg-card dark:bg-slate-800 border border-gray-300 dark:border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-colors flex flex-col"
           style={refHeight ? { minHeight: refHeight } : undefined}
         >
           <div className="flex items-center justify-between mb-3">
@@ -165,7 +165,7 @@ export const EcosystemHighlights = () => {
 
         <Link
           href={ROUTES.TRANSFER}
-          className="block cursor-pointer bg-card dark:bg-[#1e293b] border border-gray-300 dark:border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(105,65,198)] flex flex-col"
+          className="block cursor-pointer bg-card dark:bg-slate-800 border border-gray-300 dark:border-gray-700 rounded-xl p-6 hover:border-primary/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-link)] flex flex-col"
           style={refHeight ? { minHeight: refHeight } : undefined}
           onClick={(e) => {
             e.preventDefault();

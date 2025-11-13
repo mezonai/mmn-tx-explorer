@@ -24,7 +24,7 @@ export const StatCard = ({ icon: Icon, faIconClass, title, value, subValue }: St
     // Use exact RGB color for Total Blocks to match brand purple
     switch (t) {
       case 'Total Blocks':
-        return { bg: 'bg-[rgb(105,65,198)]/20', icon: 'text-[rgb(105,65,198)]' };
+        return { bg: 'bg-[var(--color-brand-link)]/20', icon: 'text-[var(--color-brand-link)]' };
       case 'Total Transactions':
         return { bg: 'bg-blue-500/20', icon: 'text-blue-400' };
       case 'Average Block Time':
@@ -34,7 +34,7 @@ export const StatCard = ({ icon: Icon, faIconClass, title, value, subValue }: St
       case 'Total Give Coffee':
         return { bg: 'bg-yellow-500/20', icon: 'text-yellow-400' };
       default:
-        return { bg: 'bg-[rgb(105,65,198)]/20', icon: 'text-[rgb(105,65,198)]' };
+        return { bg: 'bg-[var(--color-brand-link)]/20', icon: 'text-[var(--color-brand-link)]' };
     }
   };
 

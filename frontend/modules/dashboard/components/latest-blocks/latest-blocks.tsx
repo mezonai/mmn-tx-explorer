@@ -19,7 +19,7 @@ export const LatestBlocks = ({ className }: LatestBlocksProps) => {
     <div className={cn('bg-card dark:bg-[#1e293b] border border-gray-300 dark:border-gray-700 rounded-xl h-full flex flex-col', className)}>
       <div className="p-6 border-b border-gray-300 dark:border-gray-700 flex justify-between items-center flex-shrink-0">
         <h3 className="text-lg font-semibold">Latest Blocks</h3>
-        <Button variant="link" className="text-[rgb(105,65,198)] size-fit p-0 text-sm hover:opacity-80 font-normal" asChild>
+        <Button variant="link" className="text-[var(--color-brand-link)] size-fit p-0 text-sm hover:opacity-80 font-normal" asChild>
           <Link href={ROUTES.BLOCKS}>View all</Link>
         </Button>
       </div>
