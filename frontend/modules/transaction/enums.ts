@@ -7,6 +7,11 @@ export enum ETransactionType {
   TokenTransfer = 0,
 }
 
+export enum ETransferType{
+  DonationCampaign = 'donation-campaign',
+  WithdrawCampaign = 'withdraw-campaign',
+}
+
 export enum ETransactionStatus {
   Pending = 0,
   Confirmed = 1,

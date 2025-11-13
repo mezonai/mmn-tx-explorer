@@ -20,15 +20,15 @@ const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
   sort_order: ESortOrder.DESC,
 } as const;
 
-const getThreeMonthsAgo = () => {
+const getDefaultTimeRangeByMonth = (monthRange: number) => {
   const today = new Date();
-  const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, today.getDate());
+  const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - monthRange, today.getDate());
   return threeMonthsAgo;
 };
 
 export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCardProps) {
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
-  const [startDate, setStartDate] = useState<Date>(getThreeMonthsAgo());
+  const [startDate, setStartDate] = useState<Date>(getDefaultTimeRangeByMonth(1));
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [transactionType, setTransactionType] = useState('All Transaction');
   const oneYearAgo = new Date(new Date().setFullYear(new Date().getFullYear() - 1));
@@ -65,13 +65,11 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
 
   return (
     <Card className="dark:border-primary/20">
-      <CardContent className="overflow-x-hidden px-2">
+      <CardContent className="overflow-x-hidden">
         <CardHeader className="mb-4 flex items-center justify-between gap-2 p-0">
-          <CardTitle className="text-brand-primary font-semibold tracking-wider uppercase">
-            Transaction history
-          </CardTitle>
+          <CardTitle className="text-primary font-semibold tracking-wider uppercase">Transaction history</CardTitle>
         </CardHeader>
-        <div className="bg-card top-0 mb-0 flex flex-col gap-4 py-6 md:pt-8 lg:flex-row lg:items-center lg:justify-end lg:gap-5">
+        <div className="top-0 mb-0 flex flex-col gap-4 py-6 md:pt-8 lg:flex-row lg:items-center lg:justify-end lg:gap-5">
           <div className="flex w-full flex-col gap-4 sm:flex-row lg:w-auto">
             <DatePicker
               selected={startDate}
