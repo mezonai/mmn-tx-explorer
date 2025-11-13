@@ -14,7 +14,7 @@ interface StatCardProps {
 
 export const StatCard = ({ icon: Icon, title, value, subValue, className, iconClassName }: StatCardProps) => {
   const isLoading = value === undefined;
-  const cardClassName = cn('dark:border-primary/15 p-0', isLoading ? 'bg-background' : 'bg-transparent', className);
+  const cardClassName = cn('dark:border-primary/15 p-0', isLoading ? 'bg-background' : 'bg-card', className);
 
   const iconElement = Icon && (
     <div className={cn('text-foreground-secondary-700 w-fit rounded-lg border p-3', iconClassName)}>

@@ -58,25 +58,22 @@ export const TransactionsList = () => {
         <div className="bg-background sticky top-0 z-10 mb-0 flex flex-col items-center justify-between gap-4 py-6 md:pt-8 lg:flex-row">
           <Tabs value={tab} onValueChange={(v) => handleChangeTab(v as ETransactionTab)} className="w-full">
             <TabsList className="w-full lg:w-fit">
-              <TabsTrigger value={ETransactionTab.Validated} disabled={isLoading} className='data-[state=active]:bg-brand-primary data-[state=active]:text-white'>
+              <TabsTrigger
+                value={ETransactionTab.Validated}
+                disabled={isLoading}
+                className="data-[state=active]:bg-brand-primary data-[state=active]:text-white"
+              >
                 Validated
               </TabsTrigger>
-              <TabsTrigger value={ETransactionTab.Pending} disabled={isLoading} className='data-[state=active]:bg-brand-primary data-[state=active]:text-white'>
+              <TabsTrigger
+                value={ETransactionTab.Pending}
+                disabled={isLoading}
+                className="data-[state=active]:bg-brand-primary data-[state=active]:text-white"
+              >
                 Pending
               </TabsTrigger>
             </TabsList>
           </Tabs>
-
-          <Pagination
-            page={page}
-            limit={limit}
-            totalPages={pagination?.total_pages ?? 0}
-            totalItems={totalItems ?? 0}
-            isLoading={isLoading}
-            className="w-full lg:w-auto"
-            onChangePage={handleChangePage}
-            onChangeLimit={handleChangeLimit}
-          />
         </div>
 
         {pagination?.total_items && pagination.total_items > TRANSACTION_DISPLAY_LIMIT && (
@@ -87,6 +84,16 @@ export const TransactionsList = () => {
           </div>
         )}
         <TransactionCollection transactions={transactions} isLoading={isLoading} />
+        <Pagination
+          page={page}
+          limit={limit}
+          totalPages={pagination?.total_pages ?? 0}
+          totalItems={totalItems ?? 0}
+          isLoading={isLoading}
+          className="w-full lg:w-auto"
+          onChangePage={handleChangePage}
+          onChangeLimit={handleChangeLimit}
+        />
       </div>
     </div>
   );
