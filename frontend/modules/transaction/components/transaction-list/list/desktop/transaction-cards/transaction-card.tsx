@@ -1,18 +1,8 @@
 import { Skeleton } from '@/components/ui/skeleton';
-import { CopyButton } from '@/components/ui/copy-button';
-import { ETransactionOrientation, ETransactionStatus, ITransaction } from '@/modules/transaction';
+import { ETransactionStatus, ITransaction } from '@/modules/transaction';
 import { DateTimeUtil, NumberUtil } from '@/utils';
-import {
-  FromToAddresses,
-  FromToAddressesSkeleton,
-  MoreInfoButton,
-  MoreInfoButtonSkeleton,
-  TxnHashLink,
-  TxnHashLinkSkeleton,
-  TypeBadges,
-  TypeBadgesSkeleton,
-} from '../../shared';
 import { APP_CONFIG } from '@/configs/app.config';
+import { TxnHashLink, TypeBadges, TypeBadgesSkeleton } from '../../shared';
 
 interface TransactionCardProps {
   transaction?: ITransaction;
@@ -43,40 +33,49 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
   };
 
   return (
-    <div className="bg-gray-100 dark:bg-gray-800/40 p-4 rounded-lg space-y-2">
+    <div className="space-y-2 rounded-lg bg-gray-100 p-4 dark:bg-gray-800/40">
       {transaction ? (
         <>
-          <div className="flex justify-between items-center">
-            <TypeBadges type={transaction.transaction_type} status={transaction.status} />
+          <div className="flex items-center justify-between">
+            <TypeBadges type={transaction.transaction_type} />
             <div className="flex items-center space-x-2">
-              <span className={`${getStatusColor(transaction.status)} text-xs flex items-center gap-1`}>
+              <span className={`${getStatusColor(transaction.status)} flex items-center gap-1 text-xs`}>
                 {getStatusIcon(transaction.status)} {getStatusText(transaction.status)}
               </span>
-              <CopyButton textToCopy={transaction.hash} />
             </div>
           </div>
-          <p className="text-gray-600 dark:text-gray-400 text-sm font-mono truncate">
-            Hash: {transaction.hash.slice(0, 11)}...{transaction.hash.slice(-6)}
-          </p>
-          <p className="text-gray-600 dark:text-gray-400 text-sm">
-            From: {transaction.from_address.slice(0, 6)}...{transaction.from_address.slice(-4)} → To: {transaction.to_address.slice(0, 6)}...{transaction.to_address.slice(-4)}
-          </p>
-          <div className="flex justify-between items-center">
-            <p className="text-gray-900 dark:text-white font-mono">
+          <div className="flex w-40">
+            <p className="flex font-mono text-sm text-gray-600 dark:text-gray-400">Hash:</p>
+            <TxnHashLink hash={transaction.hash} isPending={false} className="w-40" />
+          </div>
+          <div className="flex">
+            <div className="flex w-50">
+              <span className="gap-2 text-sm text-gray-600 dark:text-gray-400">From: </span>
+              <TxnHashLink hash={transaction.from_address} isPending={false} className="w-30" />{' '}
+            </div>
+            <div className="flex w-50">
+              <span className="gap-2 text-sm text-gray-600 dark:text-gray-400">→ To: </span>
+              <TxnHashLink hash={transaction.to_address} isPending={false} className="w-30" />{' '}
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <p className="font-mono text-gray-900 dark:text-white">
               {NumberUtil.formatWithCommasAndScale(transaction.value)} {APP_CONFIG.CHAIN_SYMBOL}
             </p>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">{DateTimeUtil.formatRelativeTimeSec(transaction.transaction_timestamp)}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {DateTimeUtil.formatRelativeTimeSec(transaction.transaction_timestamp)}
+            </p>
           </div>
         </>
       ) : (
         <>
-          <div className="flex justify-between items-center">
+          <div className="flex items-center justify-between">
             <TypeBadgesSkeleton />
             <Skeleton className="h-4 w-20" />
           </div>
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-3/4" />
-          <div className="flex justify-between items-center">
+          <div className="flex items-center justify-between">
             <Skeleton className="h-5 w-24" />
             <Skeleton className="h-4 w-16" />
           </div>
