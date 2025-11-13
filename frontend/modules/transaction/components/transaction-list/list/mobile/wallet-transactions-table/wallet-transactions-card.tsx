@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { DATE_TIME_FORMAT } from '@/constant';
 import { Chip } from '@/components/shared';
+import { APP_CONFIG } from '@/configs/app.config';
 
 interface WalletTransactionsCardProps {
   transaction?: ITransaction;
@@ -57,9 +58,8 @@ export const WalletTransactionsCard = ({ transaction, index, walletAddress }: Wa
       <div className="flex items-center justify-between gap-2">
         <div className="text-foreground text-xs">Amount</div>
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-card-foreground">{isSent ? 'Sent' : 'Received'}</span>
           <span className={cn('font-bold', isSent ? 'text-error-primary-600' : 'text-utility-success-600')}>
-            {isSent ? '-' : '+'} {NumberUtil.formatWithCommasAndScale(transaction.value)}
+            {isSent ? '-' : '+'} {NumberUtil.formatWithCommasAndScale(transaction.value)} {APP_CONFIG.CHAIN_SYMBOL}
           </span>
         </div>
       </div>
