@@ -553,6 +553,14 @@ paths:
         in: query
         name: wallet_address
         type: string
+      - description: Start date in YYYY-MM-DD format (defaults to 7 days ago)
+        in: query
+        name: start_time
+        type: string
+      - description: End date in YYYY-MM-DD format (defaults to current date)
+        in: query
+        name: end_time
+        type: string
       - collectionFormat: csv
         description: List of aggregate functions to apply
         in: query

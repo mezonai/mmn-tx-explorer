@@ -73,18 +73,6 @@ func (v *Validator) ValidateBlock(blockData common.BlockData) (valid bool, err e
 		return false, nil
 	}
 
-	// strict mode also validates logsBloom and transactionsRoot
-	if config.Cfg.Validation.Mode == "strict" {
-		// Calculate logsBloom from logs
-		// calculatedLogsBloom := validation.CalculateLogsBloom(blockData.Logs)
-		// Compare calculated logsBloom with block's logsBloom
-		// if calculatedLogsBloom != blockData.Block.LogsBloom {
-		// 	log.Error().Msgf("Block verification failed for block %s: logsBloom mismatch: calculated=%s, block=%s", blockData.Block.Number, calculatedLogsBloom, blockData.Block.LogsBloom)
-		// 	return false, nil
-		// }
-
-	}
-
 	return true, nil
 }
 
