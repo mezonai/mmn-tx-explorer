@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { ROUTES } from '@/configs/routes.config';
 import { Button } from '@/components/ui/button';
 import { useWallet } from '@/modules/wallet/hooks/useWallet';
+import { mmnClient } from '@/modules/auth';
+import { useEffect, useState } from 'react';
 
 interface TabDetailsProps {
   walletAddress: string;
@@ -16,6 +18,19 @@ export const DetailsTab = ({ walletAddress }: TabDetailsProps) => {
   const { user } = useUser();
   const { data: walletDetailsResponse, refetch, isLoading } = useWallet(walletAddress);
   const walletDetails = walletDetailsResponse?.data;
+
+  const [userBalance, setUserBalance] = useState<string>('0');
+
+  useEffect(() => {
+    const fetchUserAccount = async () => {
+      if (user?.id) {
+        const userAccount = await mmnClient.getAccountByUserId(user.id);
+        setUserBalance(userAccount.balance);
+      }
+    };
+    fetchUserAccount();
+  }, [user?.id]);
+
   return (
     <Card className="dark:border-primary/20">
       <CardContent className="px-2">
@@ -41,7 +56,7 @@ export const DetailsTab = ({ walletAddress }: TabDetailsProps) => {
               </CardHeader>
               <p className="dark:text-primary text-lg font-semibold">
                 {user?.walletAddress === walletDetails?.address
-                  ? `${NumberUtil.formatWithCommasAndScale(walletDetails?.balance ?? 0)} ${APP_CONFIG.CHAIN_SYMBOL}`
+                  ? `${NumberUtil.formatWithCommasAndScale(userBalance)} ${APP_CONFIG.CHAIN_SYMBOL}`
                   : '••••••••••'}
               </p>
             </CardContent>

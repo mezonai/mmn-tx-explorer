@@ -1,7 +1,7 @@
 'use client';
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
-import { mmnClient } from '@/modules/auth/utils';
+import { mmnClient, indexerClient } from '@/modules/auth/utils';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger, DialogHeader } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { NumberUtil } from '@/utils';
 import { APP_CONFIG } from '@/configs/app.config';
 import { Eye, EyeOff } from 'lucide-react';
-import { WalletService } from '@/modules/wallet';
 import { useTransferByPrivateKey } from '@/modules/transfer/hooks/useTransferByPrivateKey';
 import { ETransferType } from '@/modules/transaction';
 
@@ -21,7 +20,14 @@ const safeValidateAddress = (address: string): boolean => {
   }
 };
 
-export function TransferDialog({ walletAddress, raisedAmount, myWalletAddress }: { walletAddress: string; raisedAmount?: number; myWalletAddress?: string }) {
+export function TransferDialog({
+  walletAddress,
+  myWalletAddress,
+}: {
+  walletAddress: string;
+  raisedAmount?: number;
+  myWalletAddress?: string;
+}) {
   const { transfer, loading } = useTransferByPrivateKey();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [showPrivateKey, setShowPrivateKey] = useState(false);
@@ -31,14 +37,16 @@ export function TransferDialog({ walletAddress, raisedAmount, myWalletAddress }:
     amount: '',
     note: '',
   });
+
   const [currentBalanceValue, setCurrentBalanceValue] = useState<number>(0);
 
   const fetchBalance = useCallback(async () => {
     try {
-      const result = await WalletService.getWalletDetails(walletAddress);
-      const newBalance = Number(result.data?.balance ?? 0);
+      const walletInfo = await indexerClient.getWalletDetail(walletAddress);
+      const newBalance = Number(walletInfo.balance ?? 0);
       setCurrentBalanceValue(newBalance);
     } catch (error) {
+      console.error('Error fetching balance:', error);
       setCurrentBalanceValue(0);
     }
   }, [walletAddress]);
@@ -94,7 +102,7 @@ export function TransferDialog({ walletAddress, raisedAmount, myWalletAddress }:
         {
           privateKey: form.privateKey.trim(),
           recipientAddress: form.recipientAddress.trim(),
-          amount: amountToSend, 
+          amount: amountToSend,
           note: form.note.trim(),
         },
         ETransferType.WithdrawCampaign,
@@ -114,11 +122,12 @@ export function TransferDialog({ walletAddress, raisedAmount, myWalletAddress }:
     }
   }, [form, transfer, walletAddress, fetchBalance, currentBalanceValue]);
 
-  const isButtonDisabled = loading || !form.privateKey.trim() || !form.recipientAddress.trim() || !safeValidateAddress(form.recipientAddress);
+  const isButtonDisabled =
+    loading || !form.privateKey.trim() || !form.recipientAddress.trim() || !safeValidateAddress(form.recipientAddress);
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <button className="px-5 py-2 text-sm font-semibold bg-brand-primary hover:bg-brand-primary/90 rounded-lg text-white shadow-lg shadow-brand-primary/20">
+        <button className="bg-brand-primary hover:bg-brand-primary/90 shadow-brand-primary/20 rounded-lg px-5 py-2 text-sm font-semibold text-white shadow-lg">
           Withdraw Funds
         </button>
       </DialogTrigger>
@@ -128,13 +137,11 @@ export function TransferDialog({ walletAddress, raisedAmount, myWalletAddress }:
         }}
       >
         <DialogHeader>
-          <DialogTitle className="text-brand-primary text-left text-lg font-semibold pb-4">
-            Withdraw Funds
-          </DialogTitle>
+          <DialogTitle className="text-brand-primary pb-4 text-left text-lg font-semibold">Withdraw Funds</DialogTitle>
         </DialogHeader>
 
-        <div className="bg-yellow-500/10 border-yellow-500/40 rounded-xl border p-3">
-          <p className="text-yellow-600 dark:text-yellow-400 text-xs font-medium">
+        <div className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-3">
+          <p className="text-xs font-medium text-yellow-600 dark:text-yellow-400">
             Your private key will never be stored — It’s used locally to sign the transaction.
           </p>
         </div>
@@ -151,7 +158,7 @@ export function TransferDialog({ walletAddress, raisedAmount, myWalletAddress }:
             <div className="relative">
               <Input
                 placeholder="Enter your private key"
-                className="bg-brand-primary/10 border-brand-primary/40 pr-12 font-mono focus:outline-none focus:ring-0"
+                className="bg-brand-primary/10 border-brand-primary/40 pr-12 font-mono focus:ring-0 focus:outline-none"
                 type={showPrivateKey ? 'text' : 'password'}
                 value={form.privateKey}
                 onChange={handleInputChange('privateKey')}
@@ -160,7 +167,7 @@ export function TransferDialog({ walletAddress, raisedAmount, myWalletAddress }:
               <button
                 type="button"
                 onClick={() => setShowPrivateKey(!showPrivateKey)}
-                className="text-brand-primary hover:text-brand-primary/70 absolute right-3 top-1/2 -translate-y-1/2 transition"
+                className="text-brand-primary hover:text-brand-primary/70 absolute top-1/2 right-3 -translate-y-1/2 transition"
               >
                 {showPrivateKey ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
@@ -172,7 +179,7 @@ export function TransferDialog({ walletAddress, raisedAmount, myWalletAddress }:
               label="Destination Wallet Address"
               id="recipient-address"
               placeholder="Enter destination wallet address"
-              className="bg-brand-primary/10 border-brand-primary/40 mt-1 focus:outline-none focus:ring-0"
+              className="bg-brand-primary/10 border-brand-primary/40 mt-1 focus:ring-0 focus:outline-none"
               type="text"
               value={form.recipientAddress}
               onChange={handleInputChange('recipientAddress')}
@@ -185,7 +192,7 @@ export function TransferDialog({ walletAddress, raisedAmount, myWalletAddress }:
               label="Amount (optional)"
               id="amount"
               placeholder="Leave blank to withdraw all funds"
-              className="bg-brand-primary/10 border-brand-primary/40 mt-1 focus:outline-none focus:ring-0"
+              className="bg-brand-primary/10 border-brand-primary/40 mt-1 focus:ring-0 focus:outline-none"
               type="text"
               value={form.amount ? NumberUtil.formatWithCommas(form.amount) : ''}
               onChange={handleInputChange('amount')}
