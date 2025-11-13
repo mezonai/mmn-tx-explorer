@@ -55,7 +55,7 @@ export const TransactionsList = () => {
       <Stats className="mb-1" />
 
       <div className="space-y-6">
-        <div className="bg-background sticky top-0 z-10 mb-0 flex flex-col items-center justify-between gap-4 py-6 md:pt-8 lg:flex-row">
+        <div className="bg-background sticky top-[40px] z-10 mb-0 flex flex-col items-center justify-between gap-4 py-6 md:pt-8 lg:flex-row">
           <Tabs value={tab} onValueChange={(v) => handleChangeTab(v as ETransactionTab)} className="w-full">
             <TabsList className="w-full lg:w-fit">
               <TabsTrigger
@@ -74,8 +74,17 @@ export const TransactionsList = () => {
               </TabsTrigger>
             </TabsList>
           </Tabs>
+          <Pagination
+            page={page}
+            limit={limit}
+            totalPages={pagination?.total_pages ?? 0}
+            totalItems={totalItems ?? 0}
+            isLoading={isLoading}
+            className="w-full lg:w-auto"
+            onChangePage={handleChangePage}
+            onChangeLimit={handleChangeLimit}
+          />
         </div>
-
         {pagination?.total_items && pagination.total_items > TRANSACTION_DISPLAY_LIMIT && (
           <div className="text-muted-foreground pt-1 pb-0 text-left text-sm">
             More than {pagination.total_items.toLocaleString()} transactions found
@@ -84,16 +93,6 @@ export const TransactionsList = () => {
           </div>
         )}
         <TransactionCollection transactions={transactions} isLoading={isLoading} />
-        <Pagination
-          page={page}
-          limit={limit}
-          totalPages={pagination?.total_pages ?? 0}
-          totalItems={totalItems ?? 0}
-          isLoading={isLoading}
-          className="w-full lg:w-auto"
-          onChangePage={handleChangePage}
-          onChangeLimit={handleChangeLimit}
-        />
       </div>
     </div>
   );
