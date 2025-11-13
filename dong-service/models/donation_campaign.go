@@ -39,12 +39,10 @@ type CreateDonationCampaignRequest struct {
 
 // UpdateDonationCampaignRequest represents the request body for updating a campaign
 type UpdateDonationCampaignRequest struct {
-	Name        *string `json:"name,omitempty"`
 	Description *string `json:"description,omitempty"`
 	Goal        *int64  `json:"goal,omitempty"`
 	URL         *string `json:"url,omitempty"`
 	EndDate     *string `json:"end_date,omitempty"`
-	Owner       *string `json:"owner,omitempty"`
 }
 
 // DonationCampaignResponse represents the response for a campaign

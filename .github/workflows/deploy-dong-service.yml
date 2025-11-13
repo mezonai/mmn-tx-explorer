@@ -65,11 +65,11 @@ jobs:
           check-latest: false
       
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v4
+        uses: golangci/golangci-lint-action@v8
         with:
-          version: latest
+          version: v2.5.0
           working-directory: dong-service
-          args: --timeout=5m --out-format=colored-line-number
+          args: --timeout=5m --output.text.print-issued-lines
         continue-on-error: true
 
       - name: Build Dong Service binary

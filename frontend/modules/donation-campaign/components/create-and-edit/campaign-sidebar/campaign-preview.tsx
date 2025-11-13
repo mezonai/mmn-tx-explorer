@@ -38,22 +38,30 @@ export const CampaignPreviewCard = ({ preview }: CampaignPreviewProps) => {
           <div className="mt-5">
             <div className="flex items-center justify-between text-[11px] font-medium text-gray-500 dark:text-gray-400">
               <span>
-                {NumberUtil.formatWithCommas(preview.currentFunding)} /{' '}
-                {NumberUtil.formatWithCommas(preview.targetFunding) || 0} {APP_CONFIG.CHAIN_SYMBOL}
+                {preview.targetFunding === 0 ? (
+                  <>
+                    {NumberUtil.formatWithCommas(preview.currentFunding)} {APP_CONFIG.CHAIN_SYMBOL}
+                  </>
+                ) : (
+                  <>
+                    {NumberUtil.formatWithCommas(preview.currentFunding)} /{' '}
+                    {NumberUtil.formatWithCommas(preview.targetFunding)} {APP_CONFIG.CHAIN_SYMBOL}
+                  </>
+                )}
               </span>
               <span>{preview.percentage}% funded</span>
             </div>
             <div className="mt-2 h-1.5 rounded-full bg-gray-100 dark:bg-white/5">
               <div
-                className="from-primary to-primary-light h-full rounded-full bg-gradient-to-r"
-                style={{ width: `${Math.min(preview.percentage, 100)}%` }}
+                className="from-brand-primary to-brand-primary-light h-full overflow-hidden rounded-full bg-gradient-to-r transition-[width] duration-500 ease-out"
+                style={{ width: `${NumberUtil.formatWithCommas(Math.min(Number(preview.percentage), 100))}%` }}
               />
             </div>
           </div>
 
           <div className="mt-4 text-[11px] text-gray-500 dark:text-gray-400">
             <span>
-              {preview.contributors} contributors · {preview.daysRemaining}
+              {preview.contributors} contributor(s) · {preview.daysRemaining}
             </span>
           </div>
         </CardContent>

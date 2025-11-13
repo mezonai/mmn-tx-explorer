@@ -4,10 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 
-
-	_ "github.com/lib/pq"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/lib/pq"
 	"github.com/rs/zerolog/log"
 )
 
@@ -33,7 +32,6 @@ func LoadPostgresConfigFromEnv() *ConfigPostgres {
 	}
 }
 
-
 // RunPostgresMigrations executes all pending migrations for Postgres
 func RunPostgresMigrations(cfg *ConfigPostgres, migrationsPath string) error {
 	// Build DSN
@@ -52,7 +50,12 @@ func RunPostgresMigrations(cfg *ConfigPostgres, migrationsPath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open database connection: %w", err)
 	}
-	defer db.Close()
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close database connection in RunPostgresMigrations")
+		}
+	}()
 
 	// Create driver instance
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
@@ -63,4 +66,3 @@ func RunPostgresMigrations(cfg *ConfigPostgres, migrationsPath string) error {
 	// Use common migration runner
 	return RunCommonMigrations(db, driver, "postgres", migrationsPath, "PostgreSQL")
 }
-

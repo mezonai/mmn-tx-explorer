@@ -19,3 +19,15 @@ export const getTransactionStatusLabel = (status: ETransactionStatus): string =>
       return 'Failed';
   }
 };
+export const getTransactionStatusVariant = (status: ETransactionStatus) => {
+  switch (status) {
+    case ETransactionStatus.Pending:
+      return 'warning';
+    case ETransactionStatus.Confirmed:
+      return 'success';
+    case ETransactionStatus.Passed:
+      return 'success';
+    case ETransactionStatus.Failed:
+      return 'error';
+  }
+};

@@ -15,7 +15,7 @@ import {
 } from '@/modules/auth';
 import axios from 'axios';
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { IZkProof, IEphemeralKeyPair } from 'mmn-client-js';
 import { safeJsonParse, clearAuthStorage } from '@/utils';
@@ -52,7 +52,7 @@ export function AppProvider({ children }: AppProviderProps) {
   const [keypair, setKeypair] = useState<IEphemeralKeyPair | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
-
+  const pathname = usePathname();
   useEffect(() => {
     const localTokenStr = localStorage.getItem(STORAGE_KEYS.TOKEN);
     const localToken = localTokenStr ? safeJsonParse(localTokenStr) : null;
@@ -61,6 +61,11 @@ export function AppProvider({ children }: AppProviderProps) {
         try {
           await AuthenticationService.refreshLogin(localToken.refresh_token);
         } catch {
+          clearAuthStorage();
+          setUser(null);
+          setZkProof(null);
+          setKeypair(null);
+          setIsAuthenticated(false);
           toast.error('Session expired, please log in again.');
         }
       })();
@@ -77,11 +82,9 @@ export function AppProvider({ children }: AppProviderProps) {
       if (kpStr) setKeypair(safeJsonParse(kpStr));
       return;
     }
-    const code = searchParams.get('code');
-    const state = searchParams.get('state');
-    const csrfTokenFromStorage = sessionStorage.getItem(AUTHENTICATION_CONSTANTS.CRSF_TOKEN);
-    if (!code || !state || !csrfTokenFromStorage) {
-      console.error('Missing code, state, or CSRF token in storage.');
+    const code = searchParams.get('authCode');
+
+    if (!code) {
       return;
     }
 
@@ -89,7 +92,6 @@ export function AppProvider({ children }: AppProviderProps) {
       try {
         const userInfo: LoginResponse = await AuthenticationService.getUserInfo(authCode);
         setIsAuthenticated(true);
-        const originalState = JSON.parse(Buffer.from(state, 'base64').toString());
         handleTokenStorage(userInfo);
         const keypair = generateAndStoreKeyPair();
         setKeypair(keypair);
@@ -105,12 +107,15 @@ export function AppProvider({ children }: AppProviderProps) {
         if (fetchedZk) {
           setZkProof(fetchedZk);
         }
-        router.replace(originalState.redirect_url || '/');
+        router.replace(pathname);
         toast.success('Login successful!');
       } catch {
-        toast.error('Login failed!');
         clearAuthStorage();
-        router.push('/');
+        setUser(null);
+        setZkProof(null);
+        setKeypair(null);
+        setIsAuthenticated(false);
+        toast.error('Login failed!');
       }
     };
 
@@ -166,14 +171,13 @@ export function useAuthActions() {
   const router = useRouter();
   const login = () => {
     const csrfToken = generateCsrfToken();
-    sessionStorage.setItem(AUTHENTICATION_CONSTANTS.CRSF_TOKEN, csrfToken);
     const currentPath = location.pathname + location.search;
     const stateObject = {
       csrf: csrfToken,
       redirect_url: currentPath,
     };
     const encodedState = Buffer.from(JSON.stringify(stateObject)).toString('base64');
-    router.push(`${AUTHENTICATION_ENDPOINT.LOGIN}?state=${encodedState}`);
+    window.location.href = `${AUTHENTICATION_ENDPOINT.LOGIN}?state=${encodedState}`;
   };
 
   const logout = () => {
