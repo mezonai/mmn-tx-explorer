@@ -20,15 +20,15 @@ const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
   sort_order: ESortOrder.DESC,
 } as const;
 
-const getThreeMonthsAgo = () => {
+const getDefaultTimeRangeByMonth = (monthRange: number) => {
   const today = new Date();
-  const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+  const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - monthRange, today.getDate());
   return threeMonthsAgo;
 };
 
 export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCardProps) {
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
-  const [startDate, setStartDate] = useState<Date>(getThreeMonthsAgo());
+  const [startDate, setStartDate] = useState<Date>(getDefaultTimeRangeByMonth(1));
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [transactionType, setTransactionType] = useState('All Transaction');
   const oneYearAgo = new Date(new Date().setFullYear(new Date().getFullYear() - 1));
