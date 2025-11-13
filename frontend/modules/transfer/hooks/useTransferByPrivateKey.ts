@@ -24,7 +24,10 @@ export const useTransferByPrivateKey = () => {
           amount: scaledAmount,
           nonce: nonceResponse.nonce + 1,
           textData: input.note || '',
-          privateKey: input.privateKey
+          privateKey: input.privateKey,
+          extraInfo: {
+            type: transaction_type,
+          },
         });
 
         const txResult: TransferResult = TransferResponse.ok

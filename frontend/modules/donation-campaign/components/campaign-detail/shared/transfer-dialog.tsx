@@ -11,6 +11,7 @@ import { APP_CONFIG } from '@/configs/app.config';
 import { Eye, EyeOff } from 'lucide-react';
 import { WalletService } from '@/modules/wallet';
 import { useTransferByPrivateKey } from '@/modules/transfer/hooks/useTransferByPrivateKey';
+import { ETransferType } from '@/modules/transaction';
 
 const safeValidateAddress = (address: string): boolean => {
   try {
@@ -96,7 +97,7 @@ export function TransferDialog({ walletAddress, raisedAmount, myWalletAddress }:
           amount: amountToSend, 
           note: form.note.trim(),
         },
-        'donation-campaign',
+        ETransferType.WithdrawCampaign,
         walletAddress
       );
 

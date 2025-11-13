@@ -10,7 +10,7 @@ import { useTransfer } from '@/modules/transfer/hooks/useTransfer';
 import { NumberUtil } from '@/utils';
 import { APP_CONFIG } from '@/configs/app.config';
 import { CopyButton } from '@/components/ui/copy-button';
-import { TRANSACTIONS_QUERY_KEY } from '@/modules/transaction';
+import { ETransferType, TRANSACTIONS_QUERY_KEY } from '@/modules/transaction';
 import { useQueryClient } from '@tanstack/react-query';
 import { Check } from 'lucide-react';
 
@@ -68,7 +68,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
           amount: form.amount,
           note: form.note.trim(),
         },
-        'donation-campaign'
+        ETransferType.DonationCampaign
       );
       if (result.success) {
         toast.success('Donation success!');
