@@ -1,8 +1,8 @@
 import { AlertCircle, CheckCircle, XCircle } from '@/assets/icons';
-import { Badge } from '@/components/ui/badge';
+import { Chip } from '@/components/shared';
 import { cn } from '@/lib/utils';
-import { ETransactionStatus, getTransactionStatusLabel } from '@/modules/transaction';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ETransactionStatus, getTransactionStatusLabel, getTransactionStatusVariant } from '@/modules/transaction';
 
 interface TxStatusBadgeProps {
   status: ETransactionStatus;
@@ -11,7 +11,7 @@ interface TypeBadgesSkeletonProps {
   className?: string;
 }
 
-const getTransactionStatusInfo = (status: ETransactionStatus) => {
+const getTransactionStatusIcon = (status: ETransactionStatus) => {
   switch (status) {
     case ETransactionStatus.Pending:
       return {
@@ -37,16 +37,16 @@ const getTransactionStatusInfo = (status: ETransactionStatus) => {
 };
 
 export const TxStatusBadge = ({ status }: TxStatusBadgeProps) => {
-  const statusInfo = getTransactionStatusInfo(status);
+  const statusInfo = getTransactionStatusIcon(status);
   const StatusIcon = statusInfo.icon;
 
   return (
-    <Badge variant="outline">
-      <StatusIcon className={cn('size-3', statusInfo.iconColor)} strokeWidth={1.5} />
-      <span className="text-card-foreground text-xs font-medium whitespace-nowrap">
-        {getTransactionStatusLabel(status)}
-      </span>
-    </Badge>
+    <>
+      <Chip variant={getTransactionStatusVariant(status)} className="gap-1.5">
+        <StatusIcon className={cn('size-3', statusInfo.iconColor)} strokeWidth={1.5} />
+        <span>{getTransactionStatusLabel(status)}</span>
+      </Chip>
+    </>
   );
 };
 

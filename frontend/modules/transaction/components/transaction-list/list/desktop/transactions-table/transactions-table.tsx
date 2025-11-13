@@ -72,9 +72,7 @@ export const TransactionsTable = ({
     {
       headerContent: 'Type',
       dataKey: 'transaction_type',
-      renderCell: (row) => (
-        <TypeBadges className="flex-col items-start" type={row.transaction_type} status={row.status} />
-      ),
+      renderCell: (row) => <TypeBadges className="flex-col items-start" type={row.transaction_type} />,
       skeletonContent: <TypeBadgesSkeleton className="flex-col items-start" />,
     },
     {

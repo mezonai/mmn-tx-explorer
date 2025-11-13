@@ -1,3 +1,4 @@
+import { Chip } from '@/components/shared';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -6,7 +7,6 @@ import { TxStatusBadge } from '@/modules/transaction/components/shared';
 
 interface TypeBadgesProps {
   type: ETransactionType;
-  status: ETransactionStatus;
   className?: string;
 }
 
@@ -17,20 +17,18 @@ interface TypeBadgesSkeletonProps {
 const getTransactionTypeInfo = (type: ETransactionType) => {
   switch (type) {
     case ETransactionType.TokenTransfer:
-      return { color: 'bg-utility-warning-50 border-utility-warning-200 text-utility-warning-700' };
+      return 'warning';
+    default:
+      return 'default';
   }
 };
 
-export const TypeBadges = ({ className, type, status }: TypeBadgesProps) => {
-  const typeInfo = getTransactionTypeInfo(type);
-
+export const TypeBadges = ({ className, type }: TypeBadgesProps) => {
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      <Badge variant="outline" className={cn(typeInfo.color)}>
-        <span className="text-xs font-medium whitespace-nowrap">{getTransactionTypeLabel(type)}</span>
-      </Badge>
-
-      {/* <TxStatusBadge status={status} /> */}
+      <Chip variant={getTransactionTypeInfo(type)} className="gap-1.5 rounded-md">
+        <span>{getTransactionTypeLabel(type)}</span>
+      </Chip>
     </div>
   );
 };

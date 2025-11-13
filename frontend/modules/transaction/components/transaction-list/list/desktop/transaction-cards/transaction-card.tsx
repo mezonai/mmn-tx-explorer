@@ -24,11 +24,7 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
         {transaction ? <MoreInfoButton transaction={transaction} /> : <MoreInfoButtonSkeleton />}
       </div>
       <div className="space-y-2 px-4 py-3">
-        {transaction ? (
-          <TypeBadges type={transaction.transaction_type} status={transaction.status} />
-        ) : (
-          <TypeBadgesSkeleton />
-        )}
+        {transaction ? <TypeBadges type={transaction.transaction_type} /> : <TypeBadgesSkeleton />}
         <div className="flex items-center gap-2">
           {transaction ? (
             <TxnHashLink hash={transaction.hash} isPending={transaction.status === ETransactionStatus.Pending} />
