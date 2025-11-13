@@ -3,6 +3,7 @@ package scheduler
 import (
 	"context"
 	"dong-service/logger"
+	"dong-service/repository"
 	"time"
 )
 
@@ -95,4 +96,15 @@ func (s *Scheduler) runTask(ctx context.Context, task Task) {
 func (s *Scheduler) Stop() {
 	logger.Info().Msg("Stopping scheduler")
 	close(s.stopChan)
+}
+
+func (s *Scheduler) InitializeWalletPoolMaintenanceJob(redEnvelopeWalletRepo *repository.RedEnvelopeWalletRepository) {
+	s.AddTask(Task{
+		Name:     "WalletPoolMaintenance",
+		Interval: 24 * time.Hour,
+		Job: func(ctx context.Context) error {
+			job := NewWalletPoolMaintenanceJob(redEnvelopeWalletRepo)
+			return job.Run(ctx)
+		},
+	})
 }

@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"dong-service/blockchain"
 	"dong-service/config"
 	"dong-service/database"
 	"dong-service/logger"
 	"dong-service/middleware"
 	"dong-service/routes"
 	"dong-service/scheduler"
+	"dong-service/services"
 	"flag"
 	"fmt"
 	"log"
@@ -71,6 +73,25 @@ func main() {
 		logger.Fatal().Err(err).Msg("Failed to initialize Redis whitelist")
 	}
 
+	logger.Info().Str("rpc_url", cfg.Blockchain.RPCURL).Msg("Initializing blockchain service")
+	if err := blockchain.InitBlockchainService(cfg.Blockchain.RPCURL); err != nil {
+		logger.Fatal().Err(err).Msg("Failed to initialize blockchain service")
+	}
+	defer func() {
+		if err := blockchain.CloseBlockchainService(); err != nil {
+			logger.Error().Err(err).Msg("Failed to close blockchain service")
+		}
+	}()
+
+	logger.Info().Msg("Initializing Red Envelope Wallet Pool")
+	startupInit := services.NewStartupInitializer()
+
+	if err := startupInit.Initialize(); err != nil {
+		logger.Error().Err(err).Msg("Failed to initialize wallet pool")
+	}
+	startupInit.StartBackgroundMaintenance()
+	logger.Info().Msg("Background wallet pool maintenance started")
+
 	// Create Gin router
 	r := gin.New()
 
@@ -92,6 +113,10 @@ func main() {
 	syncInterval := time.Duration(cfg.Scheduler.SyncContributorsInterval) * time.Second
 	syncTask := scheduler.CreateSyncContributorsTask(syncInterval, cfg.Indexer.Schema, cfg.Database.Schema)
 	schedulerInstance.AddTask(syncTask)
+
+	expiryCheckInterval := time.Duration(cfg.Scheduler.ExpiredRedEnvelopesInterval) * time.Second
+	expiryRedEnvelopeTask := scheduler.CreateRedEnvelopeExpiryTask(expiryCheckInterval, cfg.Database.Schema)
+	schedulerInstance.AddTask(expiryRedEnvelopeTask)
 
 	// Start scheduler
 	schedulerInstance.Start(ctx)

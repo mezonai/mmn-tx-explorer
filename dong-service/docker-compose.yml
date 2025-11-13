@@ -38,6 +38,7 @@ services:
       SCHEDULER_SYNC_CONTRIBUTORS_INTERVAL: 600
       # Indexer Configuration
       INDEXER_SCHEMA: public
+      RED_ENVELOPE_ENCRYPTION_KEY: xYOCIVnwdAb3F27DpMWYboV94yXDTN8UIvP2WFT1/c0=
     ports:
       - "8888:8888"
     volumes:

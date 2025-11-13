@@ -20,6 +20,9 @@ database:
 indexer:
   schema: public
 
+blockchain:
+  rpc_url: "172.16.100.180:9001"
+
 cors:
   allow_origins: "*"
   allow_methods: "POST, OPTIONS, GET, PUT, DELETE, PATCH"
@@ -45,7 +48,7 @@ redis:
 
 # Logging Configuration
 logging:
-  level: "info"           # debug, info, warn, error, fatal, panic
+  level: "debug"           # debug, info, warn, error, fatal, panic
   output: "stdout"        # stdout or file
   file_path: "logs/dong-service.log"  # required when output=file
   max_size: 100           # max size in MB before rotation (default: 100)
@@ -54,3 +57,4 @@ logging:
 # Scheduler Configuration
 scheduler:
   sync_contributors_interval: 600  # sync every 10 minutes (600 seconds)
+  expired_red_envelopes_interval: 3600  # sync every 60 minutes (3600 seconds)

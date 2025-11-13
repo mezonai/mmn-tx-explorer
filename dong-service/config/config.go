@@ -10,15 +10,16 @@ import (
 
 // Config represents the application configuration
 type Config struct {
-	Server    ServerConfig     `mapstructure:"server"`
-	Database  DatabaseConfig   `mapstructure:"database"`
-	Indexer   IndexerConfig    `mapstructure:"indexer"`
-	CORS      CORSConfig       `mapstructure:"cors"`
-	JWT       JWTConfig        `mapstructure:"jwt"`
-	Oauth     OauthConfig      `mapstructure:"oauth"`
-	Redis     RedisConfig      `mapstructure:"redis"`
-	Logging   logger.LogConfig `mapstructure:"logging"`
-	Scheduler SchedulerConfig  `mapstructure:"scheduler"`
+	Server     ServerConfig     `mapstructure:"server"`
+	Database   DatabaseConfig   `mapstructure:"database"`
+	Indexer    IndexerConfig    `mapstructure:"indexer"`
+	Blockchain BlockchainConfig `mapstructure:"blockchain"`
+	CORS       CORSConfig       `mapstructure:"cors"`
+	JWT        JWTConfig        `mapstructure:"jwt"`
+	Oauth      OauthConfig      `mapstructure:"oauth"`
+	Redis      RedisConfig      `mapstructure:"redis"`
+	Logging    logger.LogConfig `mapstructure:"logging"`
+	Scheduler  SchedulerConfig  `mapstructure:"scheduler"`
 }
 
 type ServerConfig struct {
@@ -69,8 +70,13 @@ type IndexerConfig struct {
 	Schema string `mapstructure:"schema"`
 }
 
+type BlockchainConfig struct {
+	RPCURL string `mapstructure:"rpc_url"`
+}
+
 type SchedulerConfig struct {
-	SyncContributorsInterval int `mapstructure:"sync_contributors_interval"` // in seconds
+	SyncContributorsInterval    int `mapstructure:"sync_contributors_interval"`     // in seconds
+	ExpiredRedEnvelopesInterval int `mapstructure:"expired_red_envelopes_interval"` // in seconds
 }
 
 func LoadConfig(cfgFile string) (*Config, error) {

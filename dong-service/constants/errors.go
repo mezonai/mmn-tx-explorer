@@ -39,6 +39,7 @@ const (
 	ErrCampaignNotFound                = "Donation campaign not found"
 	ErrDatabaseConnection              = "Database connection error"
 	ErrDatabaseQuery                   = "Database query error"
+	ErrInternalServer                  = "Internal server error"
 )
 
 // Business Logic Errors
@@ -60,6 +61,7 @@ const (
 	MsgDraftCampaignDeleted        = "Campaign deleted successfully"
 	MsgCampaignRetrieved           = "Campaign retrieved successfully"
 	MsgCampaignsRetrieved          = "Campaigns retrieved successfully"
+	MsgRedEnvelopeStatsRetrieved   = "Red envelope statistics retrieved successfully"
 )
 
 // Logout Messages

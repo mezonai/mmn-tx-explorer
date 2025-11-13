@@ -1,0 +1,79 @@
+syntax = "proto3";
+package mmn;
+
+option go_package = "dong-service/proto;proto";
+
+// Transaction status enum
+enum TransactionStatus {
+  PENDING = 0;      // Transaction is in mempool
+  CONFIRMED = 1;    // Transaction is included in a block
+  FINALIZED = 2;    // Transaction is finalized (block has enough votes)
+  FAILED = 3;       // Transaction failed validation
+}
+
+// Transaction data structure for transactions
+message TransactionData {
+  string tx_hash = 1;
+  string sender = 2; // sender address
+  string recipient = 3; // recipient address
+  string amount = 4; // amount
+  uint64 nonce = 5; // nonce
+  uint64 timestamp = 6;
+  TransactionStatus status = 7;
+  string text_data = 8;
+  string extra_info = 9;
+}
+
+message TxMsg { 
+  int32 type = 1;
+  string sender = 2;
+  string recipient = 3;
+  string amount = 4;
+  uint64 timestamp = 5;
+  string text_data = 6;
+  uint64 nonce = 7;
+  string extra_info = 8;
+  string zk_proof = 9;
+  string zk_pub = 10;
+}
+
+message SignedTxMsg {
+  TxMsg tx_msg = 1;
+  string signature = 2;
+}
+
+message AddTxResponse {
+  bool   ok      = 1;
+  string tx_hash = 2;
+  string error   = 3;
+}
+
+message GetTxByHashRequest {
+  string tx_hash = 1;
+}
+
+message TxInfo {
+  string sender = 1;
+  string recipient = 2;
+  string amount = 3;
+  uint64 timestamp = 4;
+  string text_data = 5;
+  uint64 nonce = 6;
+  uint64 slot = 7;
+  string blockhash = 8;
+  TransactionStatus status = 9;
+  string err_msg = 10;
+  string extra_info = 11;
+  string tx_hash = 12;
+}
+
+message GetTxByHashResponse {
+  string error = 1;
+  TxInfo tx = 2;
+  uint32 decimals = 3; // Number of fractional digits for amount formatting
+}
+
+service TxService {
+  rpc AddTx(SignedTxMsg) returns (AddTxResponse);
+  rpc GetTxByHash(GetTxByHashRequest) returns (GetTxByHashResponse);  
+}
