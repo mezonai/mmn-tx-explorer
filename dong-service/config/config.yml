@@ -55,8 +55,6 @@ logging:
 scheduler:
   sync_contributors_interval: 600  # sync every 10 minutes (600 seconds)
 
-
-
 # Lock Configuration
 lock:
   Lock_Exp: 3          # Lock expiration time in seconds

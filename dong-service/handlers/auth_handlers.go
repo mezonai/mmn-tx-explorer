@@ -327,17 +327,17 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 		return
 	}
 
+	defer releaseLock(hashLockKey)
+
 	if ok, cachedResp, err := database.GetCacheRequest(hashRequest); err == nil && ok {
 		logger.Info().Str("hash_request", hashRequest).Msg("Cache request exists, returning cached response")
 		c.Data(http.StatusOK, "application/json", []byte(cachedResp))
-		releaseLock(lockKey)
 		return
 	}
 
 	secret := config.JWT.Secret
 	if secret == "" {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "jwt secret not configured"))
-		releaseLock(lockKey)
 		return
 	}
 
@@ -349,27 +349,23 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	})
 	if err != nil || !token.Valid {
 		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrInvalidOrExpiredRefreshToken))
-		releaseLock(lockKey)
 		return
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "invalid claims"))
-		releaseLock(lockKey)
 		return
 	}
 
 	if t, _ := claims["type"].(string); t != "refresh" {
 		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "token is not a refresh token"))
-		releaseLock(lockKey)
 		return
 	}
 
 	userID, _ := claims["user_id"].(string)
 	if userID == "" {
 		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "invalid refresh token (missing user_id)"))
-		releaseLock(lockKey)
 		return
 	}
 
@@ -379,12 +375,10 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	if err != nil {
 		logger.Error().Err(err).Str("token_id", oldTokenID).Msg("Redis error when checking refresh token")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "internal error when checking refresh token"))
-		releaseLock(lockKey)
 		return
 	}
 	if !exists {
 		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "refresh token not found on whitelist"))
-		releaseLock(lockKey)
 		return
 	}
 
@@ -399,7 +393,6 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	signedAccess, err := accessToken.SignedString([]byte(secret))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to sign access token"))
-		releaseLock(lockKey)
 		return
 	}
 
@@ -413,7 +406,6 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	signedRefresh, err := refreshToken.SignedString([]byte(secret))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to sign refresh token"))
-		releaseLock(lockKey)
 		return
 	}
 
@@ -422,14 +414,12 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	if err := database.Set(newTokenID, userID, tokenTTL); err != nil {
 		logger.Error().Err(err).Str("token_id", newTokenID).Str("user_id", userID).Msg("Failed to store new refresh token")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to store new refresh token"))
-		releaseLock(lockKey)
 		return
 	}
 
 	if err := database.Delete(oldTokenID); err != nil {
 		logger.Error().Err(err).Str("token_id", oldTokenID).Msg("Failed to delete old refresh token after issuing new one")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to delete old refresh token"))
-		releaseLock(lockKey)
 		return
 	}
 
@@ -439,15 +429,12 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 		UserID:       userID,
 	}
 
-
 	respData, _ := json.Marshal(resp)
 	if err := database.SetCacheRequest(hashRequest, string(respData), time.Duration(config.CacheRequest.Cache_Exp)*time.Second); err != nil {
 		logger.Error().Err(err).Str("hash_request", hashRequest).Msg("Failed to cache refresh response")
 	} else {
 		logger.Info().Str("hash_request", hashRequest).Msg("Refresh response cache saved successfully")
 	}
-
-	releaseLock(lockKey)
 
 	logger.Info().
 		Str("user_id", userID).
