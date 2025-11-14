@@ -4,6 +4,10 @@ export interface TransferInput {
   note?: string;
 }
 
+export interface TransferByPrivateKeyInput extends TransferInput {
+  privateKey: string;
+}
+
 export interface TransferResult {
   success: boolean;
   txHash?: string;

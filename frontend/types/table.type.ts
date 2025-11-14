@@ -5,4 +5,5 @@ export type TTableColumn<T> = {
   dataKey?: keyof T;
   renderCell?: (row: T, index: number) => ReactNode;
   skeletonContent?: ReactNode;
+  align?: 'left' | 'center' | 'right';
 };

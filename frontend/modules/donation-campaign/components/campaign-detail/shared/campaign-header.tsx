@@ -69,9 +69,7 @@ export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
           onRefresh={handleRefreshData}
         />
         <InsightsCard
-          contributors={currentCampaign.total_contributors}
-          daysRemaining={currentCampaign.end_date}
-          owner={currentCampaign.owner}
+          currentCampaign={currentCampaign}
         />
       </div>
     </div>

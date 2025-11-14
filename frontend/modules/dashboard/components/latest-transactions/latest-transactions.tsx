@@ -17,23 +17,32 @@ export const LatestTransactions = ({ className }: LatestTransactionsProps) => {
   const { data: transactionsResponse, isLoading } = useLatestTransactions();
   const transactions = transactionsResponse?.data;
   return (
-    <div className={cn('bg-card dark:bg-slate-800 border border-gray-300 dark:border-gray-700 rounded-xl h-full flex flex-col', className)}>
-      <div className="p-6 border-b border-gray-300 dark:border-gray-700 flex justify-between items-center flex-shrink-0">
+    <div
+      className={cn(
+        'bg-card flex h-full flex-col rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-slate-800',
+        className
+      )}
+    >
+      <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-300 p-6 dark:border-gray-700">
         <h3 className="text-lg font-semibold">Latest Transactions</h3>
-          <Button variant="link" className="text-[var(--color-brand-link)] size-fit p-0 text-sm hover:opacity-80 font-normal" asChild>
+        <Button
+          variant="link"
+          className="size-fit p-0 text-sm font-normal text-[var(--color-brand-link)] hover:opacity-80"
+          asChild
+        >
           <Link href={ROUTES.TRANSACTIONS}>View all</Link>
         </Button>
       </div>
-      
-      <div className="p-6 space-y-4 flex-1">
-        <div className="hidden lg:block space-y-4">
+
+      <div className="flex-1 space-y-4 p-6">
+        <div className="hidden space-y-4 lg:block">
           <TransactionCardsDesktop
             transactions={transactions}
             skeletonLength={DASHBOARD_TRANSACTIONS_LIMIT}
             isLoading={isLoading}
           />
         </div>
-        <div className="block lg:hidden space-y-4">
+        <div className="block space-y-4 lg:hidden">
           <TransactionCardsMobile
             transactions={transactions}
             skeletonLength={DASHBOARD_TRANSACTIONS_LIMIT}

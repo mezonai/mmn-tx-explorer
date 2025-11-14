@@ -12,7 +12,7 @@ interface TxnLinkProps {
 export const TxnLink = ({ count, blockNumber }: TxnLinkProps) => {
   return (
     <Button variant="link" className="text-brand-primary size-fit p-0 font-normal" asChild>
-      <Link href={ROUTES.BLOCK(blockNumber, 'tab=transactions')}>{count}</Link>
+      <Link href={ROUTES.BLOCK(blockNumber)}>{count}</Link>
     </Button>
   );
 };

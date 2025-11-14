@@ -119,7 +119,13 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
             headerContent: 'Note',
             dataKey: 'text_data' as keyof ITransaction,
             renderCell: (tx: ITransaction) => (
-              <Textarea className="bg-primary/5 w-full px-3 sm:resize-y" readOnly rows={2} cols={40} value={tx.text_data} />
+              <Textarea
+                className="bg-primary/5 w-full px-3 sm:resize-y"
+                readOnly
+                rows={2}
+                cols={40}
+                value={tx.text_data}
+              />
             ),
             skeletonContent: <Skeleton className="h-[60px] w-full" />,
           },
@@ -210,7 +216,7 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
             isLoading={!transaction}
             showHeader={false}
             skeletonLength={Items.length}
-            className="text-foreground [&_tbody_tr]:border-b-foreground/10 relative dark:[&_tbody]:bg-transparent"
+            className="text-foreground [&_tbody_tr]:border-b-foreground/10 relative text-left dark:[&_tbody]:bg-transparent"
           />
         </div>
         {/* Desktop: Two columns */}
@@ -221,7 +227,7 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
             isLoading={!transaction}
             showHeader={false}
             skeletonLength={Math.ceil(Items.length / 2)}
-            className="text-foreground [&_tbody_tr]:border-b-foreground/10 relative dark:[&_tbody]:bg-transparent"
+            className="text-foreground [&_tbody_tr]:border-b-foreground/10 relative text-left dark:[&_tbody]:bg-transparent"
           />
         </div>
       </CardContent>
