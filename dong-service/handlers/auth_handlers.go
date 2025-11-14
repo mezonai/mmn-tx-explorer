@@ -1,18 +1,19 @@
 package handlers
 
 import (
+	"crypto/sha256"
 	"dong-service/config"
 	"dong-service/constants"
 	"dong-service/database"
 	"dong-service/logger"
 	"dong-service/models"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"time"
-	"fmt"
-	"crypto/sha256"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -25,6 +26,32 @@ type AuthHandler struct {
 // NewAuthHandler creates a new auth handler
 func NewAuthHandler(cfg *config.Config) *AuthHandler {
 	return &AuthHandler{cfg: cfg}
+}
+
+// acquireLock tries to acquire a  lock with retries
+func acquireLock(lockKey string, maxRetry int, lockExp, retryDelay time.Duration) (bool, error) {
+	for i := 0; i < maxRetry; i++ {
+		ok, err := database.SetLockKey(lockKey, "1", lockExp)
+		if err != nil {
+			logger.Error().Err(err).Str("lockKey", lockKey).Msg("Lock Key is being held!")
+		}
+		if ok {
+			logger.Info().Str("lockKey", lockKey).Msg("Lock acquired")
+			return true, nil
+		}
+		time.Sleep(retryDelay)
+	}
+	logger.Error().Str("lockKey", lockKey).Msg("Could not acquire lock after retries")
+	return false, fmt.Errorf("could not acquire lock after %d retries", maxRetry)
+}
+
+// releaseLock tries to release a distributed lock and logs the result
+func releaseLock(lockKey string) {
+	if err := database.DeleteLockKey(lockKey); err != nil {
+		logger.Error().Err(err).Str("lockKey", lockKey).Msg("Failed to release lock")
+	} else {
+		logger.Info().Str("lockKey", lockKey).Msg("Lock released")
+	}
 }
 
 // LogoutHandler godoc
@@ -291,44 +318,26 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 
 	lockKey := hashLockKey
 	maxRetry := config.Lock.Cnt_Retry
-	lockAcquired := false
-	for i := 0; i < maxRetry; i++ {
-		ok, err := database.SetLockKey(lockKey, "1", time.Duration(config.Lock.Lock_Exp)*time.Second)
-		if err != nil {
-			logger.Error().Err(err).Str("lockKey", lockKey).Msg("Lock Key is being held!")
-		}
-		if ok {
-			lockAcquired = true
-			logger.Info().Str("lockKey", lockKey).Msg("Lock acquired")
-			break
-		}
-		time.Sleep(time.Duration(config.Lock.Retry_Delay) * time.Millisecond)
-	}
+	lockExp := time.Duration(config.Lock.Lock_Exp) * time.Second
+	retryDelay := time.Duration(config.Lock.Retry_Delay) * time.Millisecond
+	lockAcquired, _ := acquireLock(lockKey, maxRetry, lockExp, retryDelay)
+
 	if !lockAcquired {
-		logger.Error().Str("lockKey", lockKey).Msg("Could not acquire lock after retries")
 		c.JSON(http.StatusTooManyRequests, models.ErrorResponse(http.StatusTooManyRequests, "Server busy, please retry"))
 		return
 	}
-   
+
 	if ok, cachedResp, err := database.GetCacheRequest(hashRequest); err == nil && ok {
 		logger.Info().Str("hash_request", hashRequest).Msg("Cache request exists, returning cached response")
 		c.Data(http.StatusOK, "application/json", []byte(cachedResp))
-		if err := database.DeleteLockKey(lockKey); err != nil {
-			logger.Error().Err(err).Str("lockKey", lockKey).Msg("Failed to release lock")
-		} else {
-			logger.Info().Str("lockKey", lockKey).Msg("Lock released")
-		}
+		releaseLock(lockKey)
 		return
 	}
 
 	secret := config.JWT.Secret
 	if secret == "" {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "jwt secret not configured"))
-		if err := database.DeleteLockKey(lockKey); err != nil {
-			logger.Error().Err(err).Str("lockKey", lockKey).Msg("Failed to release lock")
-		} else {
-			logger.Info().Str("lockKey", lockKey).Msg("Lock released")
-		}
+		releaseLock(lockKey)
 		return
 	}
 
@@ -340,43 +349,27 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	})
 	if err != nil || !token.Valid {
 		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrInvalidOrExpiredRefreshToken))
-		if err := database.DeleteLockKey(lockKey); err != nil {
-			logger.Error().Err(err).Str("lockKey", lockKey).Msg("Failed to release lock")
-		} else {
-			logger.Info().Str("lockKey", lockKey).Msg("Lock released")
-		}
+		releaseLock(lockKey)
 		return
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "invalid claims"))
-		if err := database.DeleteLockKey(lockKey); err != nil {
-			logger.Error().Err(err).Str("lockKey", lockKey).Msg("Failed to release lock")
-		} else {
-			logger.Info().Str("lockKey", lockKey).Msg("Lock released")
-		}
+		releaseLock(lockKey)
 		return
 	}
 
 	if t, _ := claims["type"].(string); t != "refresh" {
 		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "token is not a refresh token"))
-		if err := database.DeleteLockKey(lockKey); err != nil {
-			logger.Error().Err(err).Str("lockKey", lockKey).Msg("Failed to release lock")
-		} else {
-			logger.Info().Str("lockKey", lockKey).Msg("Lock released")
-		}
+		releaseLock(lockKey)
 		return
 	}
 
 	userID, _ := claims["user_id"].(string)
 	if userID == "" {
 		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "invalid refresh token (missing user_id)"))
-		if err := database.DeleteLockKey(lockKey); err != nil {
-			logger.Error().Err(err).Str("lockKey", lockKey).Msg("Failed to release lock")
-		} else {
-			logger.Info().Str("lockKey", lockKey).Msg("Lock released")
-		}
+		releaseLock(lockKey)
 		return
 	}
 
@@ -386,20 +379,12 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	if err != nil {
 		logger.Error().Err(err).Str("token_id", oldTokenID).Msg("Redis error when checking refresh token")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "internal error when checking refresh token"))
-		if err := database.DeleteLockKey(lockKey); err != nil {
-			logger.Error().Err(err).Str("lockKey", lockKey).Msg("Failed to release lock")
-		} else {
-			logger.Info().Str("lockKey", lockKey).Msg("Lock released")
-		}
+		releaseLock(lockKey)
 		return
 	}
 	if !exists {
 		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "refresh token not found on whitelist"))
-		if err := database.DeleteLockKey(lockKey); err != nil {
-			logger.Error().Err(err).Str("lockKey", lockKey).Msg("Failed to release lock")
-		} else {
-			logger.Info().Str("lockKey", lockKey).Msg("Lock released")
-		}
+		releaseLock(lockKey)
 		return
 	}
 
@@ -414,11 +399,7 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	signedAccess, err := accessToken.SignedString([]byte(secret))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to sign access token"))
-		if err := database.DeleteLockKey(lockKey); err != nil {
-			logger.Error().Err(err).Str("lockKey", lockKey).Msg("Failed to release lock")
-		} else {
-			logger.Info().Str("lockKey", lockKey).Msg("Lock released")
-		}
+		releaseLock(lockKey)
 		return
 	}
 
@@ -432,11 +413,7 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	signedRefresh, err := refreshToken.SignedString([]byte(secret))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to sign refresh token"))
-		if err := database.DeleteLockKey(lockKey); err != nil {
-			logger.Error().Err(err).Str("lockKey", lockKey).Msg("Failed to release lock")
-		} else {
-			logger.Info().Str("lockKey", lockKey).Msg("Lock released")
-		}
+		releaseLock(lockKey)
 		return
 	}
 
@@ -445,22 +422,14 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	if err := database.Set(newTokenID, userID, tokenTTL); err != nil {
 		logger.Error().Err(err).Str("token_id", newTokenID).Str("user_id", userID).Msg("Failed to store new refresh token")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to store new refresh token"))
-		if err := database.DeleteLockKey(lockKey); err != nil {
-			logger.Error().Err(err).Str("lockKey", lockKey).Msg("Failed to release lock")
-		} else {
-			logger.Info().Str("lockKey", lockKey).Msg("Lock released")
-		}
+		releaseLock(lockKey)
 		return
 	}
 
 	if err := database.Delete(oldTokenID); err != nil {
 		logger.Error().Err(err).Str("token_id", oldTokenID).Msg("Failed to delete old refresh token after issuing new one")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to delete old refresh token"))
-		if err := database.DeleteLockKey(lockKey); err != nil {
-			logger.Error().Err(err).Str("lockKey", lockKey).Msg("Failed to release lock")
-		} else {
-			logger.Info().Str("lockKey", lockKey).Msg("Lock released")
-		}
+		releaseLock(lockKey)
 		return
 	}
 
@@ -469,8 +438,7 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 		RefreshToken: signedRefresh,
 		UserID:       userID,
 	}
-	logger.Info().Msg("Simulating long processing time")
-	time.Sleep(20 * time.Second)
+
 
 	respData, _ := json.Marshal(resp)
 	if err := database.SetCacheRequest(hashRequest, string(respData), time.Duration(config.CacheRequest.Cache_Exp)*time.Second); err != nil {
@@ -479,11 +447,7 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 		logger.Info().Str("hash_request", hashRequest).Msg("Refresh response cache saved successfully")
 	}
 
-	if err := database.DeleteLockKey(lockKey); err != nil {
-		logger.Error().Err(err).Str("lockKey", lockKey).Msg("Failed to release lock")
-	} else {
-		logger.Info().Str("lockKey", lockKey).Msg("Lock released")
-	}
+	releaseLock(lockKey)
 
 	logger.Info().
 		Str("user_id", userID).
@@ -491,5 +455,5 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 		Str("new_token_id", newTokenID).
 		Msg("Token refreshed successfully")
 
-	c.JSON(http.StatusOK,resp)
+	c.JSON(http.StatusOK, resp)
 }
