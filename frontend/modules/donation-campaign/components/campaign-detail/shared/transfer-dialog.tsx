@@ -12,6 +12,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { useTransferByPrivateKey } from '@/modules/transfer/hooks/useTransferByPrivateKey';
 import { ETransferType } from '@/modules/transaction';
 import { DonationCampaign } from '@/modules/donation-campaign/type';
+import { TransactionComplete, TransactionType } from '@/modules/donation-campaign/components/transaction-complete';
 
 const safeValidateAddress = (address: string): boolean => {
   try {
@@ -42,6 +43,7 @@ export function TransferDialog({
   });
 
   const [currentBalanceValue, setCurrentBalanceValue] = useState<number>(0);
+  const [withdrawSuccess, setWithdrawSuccess] = useState(false);
 
   const fetchBalance = useCallback(async () => {
     try {
@@ -112,7 +114,7 @@ export function TransferDialog({
 
       if (result.success) {
         toast.success('Transfer successful!');
-        resetForm();
+        setWithdrawSuccess(true);
         await fetchBalance();
       } else {
         toast.error(result.error || 'Transfer failed. Please try again.');
@@ -128,7 +130,7 @@ export function TransferDialog({
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <button className="bg-brand-primary hover:bg-brand-primary/90 shadow-brand-primary/20 rounded-lg px-5 py-2 text-sm font-semibold text-white shadow-lg">
+        <button className="px-5 py-2 text-sm font-semibold bg-brand-primary hover:bg-brand-primary/90 rounded-lg text-white shadow-lg shadow-brand-primary/20 cursor-pointer">
           Withdraw Funds
         </button>
       </DialogTrigger>
@@ -140,88 +142,96 @@ export function TransferDialog({
         <DialogHeader>
           <DialogTitle className="text-brand-primary pb-4 text-left text-lg font-semibold">Withdraw Funds</DialogTitle>
         </DialogHeader>
-
-        <div className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-3">
-          <p className="text-xs font-medium text-yellow-600 dark:text-yellow-400">
-            Your private key will never be stored — It’s used locally to sign the transaction.
-          </p>
-        </div>
-
-        <div className="mt-2 flex flex-col space-y-4">
-          <div className="text-brand-primary bg-brand-primary/5 text-sm">
-            <span className="font-medium">
-              Current Balance: {NumberUtil.formatWithCommasAndScale(currentBalanceValue)} {APP_CONFIG.CHAIN_SYMBOL}
-            </span>
-          </div>
-
-          <div>
-            <label className="text-foreground mb-2 block text-sm font-medium">Private Key</label>
-            <div className="relative">
-              <Input
-                placeholder="Enter your private key"
-                className="bg-brand-primary/10 border-brand-primary/40 pr-12 font-mono focus:ring-0 focus:outline-none"
-                type={showPrivateKey ? 'text' : 'password'}
-                value={form.privateKey}
-                onChange={handleInputChange('privateKey')}
-                disabled={loading}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPrivateKey(!showPrivateKey)}
-                className="text-brand-primary hover:text-brand-primary/70 absolute top-1/2 right-3 -translate-y-1/2 transition"
-              >
-                {showPrivateKey ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-              </button>
+        {withdrawSuccess ? (
+          <TransactionComplete
+            amount={form.amount ? Number(form.amount) : NumberUtil.scaleDown(currentBalanceValue)}
+            symbol={APP_CONFIG.CHAIN_SYMBOL}
+            type= {TransactionType.Withdraw}
+            onClose={() => {
+              setWithdrawSuccess(false);
+              setIsDialogOpen(false);
+              resetForm();
+            }}
+          />
+        ) : (
+          <>
+            <div className="bg-yellow-500/10 border-yellow-500/40 rounded-xl border p-3">
+              <p className="text-yellow-600 dark:text-yellow-400 text-xs font-medium">
+                Your private key will never be stored — It’s used locally to sign the transaction.
+              </p>
             </div>
-          </div>
-
-          <div>
-            <Input
-              label="Destination Wallet Address"
-              id="recipient-address"
-              placeholder="Enter destination wallet address"
-              className="bg-brand-primary/10 border-brand-primary/40 mt-1 focus:ring-0 focus:outline-none"
-              type="text"
-              value={form.recipientAddress}
-              onChange={handleInputChange('recipientAddress')}
-              disabled={loading}
-            />
-          </div>
-
-          <div>
-            <Input
-              label="Amount (optional)"
-              id="amount"
-              placeholder="Leave blank to withdraw all funds"
-              className="bg-brand-primary/10 border-brand-primary/40 mt-1 focus:ring-0 focus:outline-none"
-              type="text"
-              value={form.amount ? NumberUtil.formatWithCommas(form.amount) : ''}
-              onChange={handleInputChange('amount')}
-              disabled={loading}
-            />
-          </div>
-
-          <div>
-            <Textarea
-              id="note"
-              label="Message (optional)"
-              placeholder="Leave a message..."
-              className="mt-1"
-              value={form.note}
-              onChange={handleInputChange('note')}
-              disabled={loading}
-            />
-          </div>
-
-          <Button
-            onClick={handleTransfer}
-            disabled={isButtonDisabled}
-            type="submit"
-            className="bg-brand-primary shadow-primary/30 hover:bg-primary-light w-full rounded-xl py-3 text-sm font-semibold text-white shadow-lg transition"
-          >
-            {loading ? 'Withdrawing...' : 'Confirm Withdraw'}
-          </Button>
-        </div>
+            <div className="mt-2 flex flex-col space-y-4">
+              <div className="text-brand-primary bg-brand-primary/5 text-sm">
+                <span className="font-medium">
+                  Current Balance: {NumberUtil.formatWithCommasAndScale(currentBalanceValue)} {APP_CONFIG.CHAIN_SYMBOL}
+                </span>
+              </div>
+              <div>
+                <label className="text-foreground mb-2 block text-sm font-medium">Private Key</label>
+                <div className="relative">
+                  <Input
+                    placeholder="Enter your private key"
+                    className="bg-brand-primary/10 border-brand-primary/40 pr-12 font-mono focus:outline-none focus:ring-0"
+                    type={showPrivateKey ? 'text' : 'password'}
+                    value={form.privateKey}
+                    onChange={handleInputChange('privateKey')}
+                    disabled={loading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPrivateKey(!showPrivateKey)}
+                    className="text-brand-primary hover:text-brand-primary/70 absolute right-3 top-1/2 -translate-y-1/2 transition cursor-pointer"
+                  >
+                    {showPrivateKey ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <Input
+                  label="Destination Wallet Address"
+                  id="recipient-address"
+                  placeholder="Enter destination wallet address"
+                  className="bg-brand-primary/10 border-brand-primary/40 mt-1 focus:outline-none focus:ring-0"
+                  type="text"
+                  value={form.recipientAddress}
+                  onChange={handleInputChange('recipientAddress')}
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <Input
+                  label="Amount (optional)"
+                  id="amount"
+                  placeholder="Leave blank to withdraw all funds"
+                  className="bg-brand-primary/10 border-brand-primary/40 mt-1 focus:outline-none focus:ring-0"
+                  type="text"
+                  value={form.amount ? NumberUtil.formatWithCommas(form.amount) : ''}
+                  onChange={handleInputChange('amount')}
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <Textarea
+                  id="note"
+                  label="Message (optional)"
+                  placeholder="Leave a message..."
+                  className="mt-1"
+                  value={form.note}
+                  onChange={handleInputChange('note')}
+                  disabled={loading}
+                />
+              </div>
+              <Button
+                onClick={handleTransfer}
+                disabled={isButtonDisabled}
+                type="submit"
+                className="bg-brand-primary shadow-primary/30 hover:bg-primary-light w-full rounded-xl py-3 text-sm font-semibold text-white shadow-lg transition"
+              >
+                {loading ? 'Withdrawing...' : 'Confirm Withdraw'}
+              </Button>
+            </div>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
