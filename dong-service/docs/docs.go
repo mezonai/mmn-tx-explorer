@@ -989,6 +989,9 @@ const docTemplate = `{
                 "creator": {
                     "type": "string"
                 },
+                "current_balance": {
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
                 },

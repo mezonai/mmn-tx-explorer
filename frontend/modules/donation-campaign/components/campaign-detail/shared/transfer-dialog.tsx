@@ -9,9 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { NumberUtil } from '@/utils';
 import { APP_CONFIG } from '@/configs/app.config';
 import { Eye, EyeOff } from 'lucide-react';
-import { WalletService } from '@/modules/wallet';
 import { useTransferByPrivateKey } from '@/modules/transfer/hooks/useTransferByPrivateKey';
 import { ETransferType } from '@/modules/transaction';
+import { DonationCampaign } from '@/modules/donation-campaign/type';
 
 const safeValidateAddress = (address: string): boolean => {
   try {
@@ -22,9 +22,11 @@ const safeValidateAddress = (address: string): boolean => {
 };
 
 export function TransferDialog({
+  currentCampaign,
   walletAddress,
   myWalletAddress,
 }: {
+  currentCampaign: DonationCampaign;
   walletAddress: string;
   raisedAmount?: number;
   myWalletAddress?: string;
@@ -43,11 +45,9 @@ export function TransferDialog({
 
   const fetchBalance = useCallback(async () => {
     try {
-      const result = await WalletService.getWalletDetails(walletAddress);
-      const newBalance = Number(result.data?.balance ?? 0);
+      const newBalance = Number(currentCampaign.current_balance ?? 0);
       setCurrentBalanceValue(newBalance);
     } catch (error) {
-      console.error('Error fetching balance:', error);
       setCurrentBalanceValue(0);
     }
   }, [walletAddress]);

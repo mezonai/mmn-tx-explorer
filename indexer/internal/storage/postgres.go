@@ -272,6 +272,31 @@ func (p *PostgresConnector) DB() *sql.DB {
 	return p.db
 }
 
+// GetCampaignWallets fetches all donation_wallet addresses from dong_schema.donation_campaign table
+func (p *PostgresConnector) GetCampaignWallets(ctx context.Context) ([]string, error) {
+	query := "SELECT DISTINCT donation_wallet FROM dong_schema.donation_campaign WHERE donation_wallet IS NOT NULL AND donation_wallet != ''"
+	rows, err := p.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query campaign wallets: %w", err)
+	}
+	defer rows.Close()
+
+	var wallets []string
+	for rows.Next() {
+		var wallet string
+		if err := rows.Scan(&wallet); err != nil {
+			return nil, fmt.Errorf("failed to scan campaign wallet: %w", err)
+		}
+		wallets = append(wallets, wallet)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating campaign wallets: %w", err)
+	}
+
+	return wallets, nil
+}
+
 // Orchestrator Storage Implementation
 
 func (p *PostgresConnector) GetBlockFailures(qf QueryFilter) ([]common.BlockFailure, error) {

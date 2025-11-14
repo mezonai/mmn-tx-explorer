@@ -13,9 +13,9 @@ import (
 )
 
 var (
-	storageOnce   sync.Once
-	mainStorage   IMainStorage
-	storageErr    error
+	storageOnce sync.Once
+	mainStorage IMainStorage
+	storageErr  error
 )
 
 type QueryFilter struct {
@@ -143,8 +143,8 @@ type IMainStorage interface {
 	GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error)
 
 	/**
-     * Optimized methods for pagination
-     */ 
+	 * Optimized methods for pagination
+	 */
 	GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit, offset int, sortBy, sortOrder string, startTime, endTime int64) ([]common.Transaction, error)
 	GetTransactionsByWalletCount(ctx context.Context, walletAddress string, startTime, endTime int64) (uint64, error)
 	GetTotalTransactions(ctx context.Context) (uint64, error)
@@ -153,6 +153,11 @@ type IMainStorage interface {
 	 * Recalculates and updates all statistics in the stats table
 	 */
 	RecalculateStats(ctx context.Context) error
+
+	/**
+	 * Gets campaign wallet addresses from dong_schema.donation_campaign table
+	 */
+	GetCampaignWallets(ctx context.Context) ([]string, error)
 }
 
 func NewStorageConnector(cfg *config.StorageConfig) (IStorage, error) {

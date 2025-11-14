@@ -20,6 +20,7 @@ export const DetailsTab = ({ walletAddress }: TabDetailsProps) => {
   const walletDetails = walletDetailsResponse?.data;
 
   const [userBalance, setUserBalance] = useState<string>('0');
+  const iscCampaign = walletDetails?.balance;
 
   useEffect(() => {
     const fetchUserAccount = async () => {
@@ -55,9 +56,11 @@ export const DetailsTab = ({ walletAddress }: TabDetailsProps) => {
                 <CardTitle className="mb-1 text-xs uppercase">Balance</CardTitle>
               </CardHeader>
               <p className="dark:text-primary text-lg font-semibold">
-                {user?.walletAddress === walletDetails?.address
-                  ? `${NumberUtil.formatWithCommasAndScale(userBalance)} ${APP_CONFIG.CHAIN_SYMBOL}`
-                  : '••••••••••'}
+                {iscCampaign
+                  ? `${NumberUtil.formatWithCommasAndScale(iscCampaign)} ${APP_CONFIG.CHAIN_SYMBOL}`
+                  : user?.walletAddress === walletDetails?.address
+                    ? `${NumberUtil.formatWithCommasAndScale(userBalance)} ${APP_CONFIG.CHAIN_SYMBOL}`
+                    : '••••••••••'}
               </p>
             </CardContent>
           </Card>
