@@ -33,7 +33,7 @@ export const DetailsTab = ({ walletAddress }: TabDetailsProps) => {
 
   return (
     <Card className="dark:border-primary/20">
-      <CardContent className="px-2">
+      <CardContent>
         <CardHeader className="mb-4 flex items-center justify-between gap-2 p-0">
           <CardTitle className="text-brand-primary font-semibold tracking-wider uppercase">Account Summary</CardTitle>
           <div className="flex items-end justify-end">

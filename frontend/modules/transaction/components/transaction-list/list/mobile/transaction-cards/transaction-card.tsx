@@ -3,10 +3,6 @@ import { ETransactionStatus, ITransaction } from '@/modules/transaction';
 import {
   FromToAddresses,
   FromToAddressesSkeleton,
-  MoreInfoButton,
-  MoreInfoButtonSkeleton,
-  TransactionTime,
-  TransactionTimeSkeleton,
   TransactionValue,
   TransactionValueSkeleton,
   TxnHashLink,
@@ -14,6 +10,8 @@ import {
   TypeBadges,
   TypeBadgesSkeleton,
 } from '../../shared';
+import { Card, CardContent } from '@/components/ui/card';
+import { TxStatusBadge, TxStatusSkeleton } from '@/modules/transaction/components/shared';
 
 interface TransactionCardProps {
   transaction?: ITransaction;
@@ -21,41 +19,37 @@ interface TransactionCardProps {
 
 export const TransactionCard = ({ transaction }: TransactionCardProps) => {
   return (
-    <div className="border-secondary flex flex-col items-start gap-2 border-b pb-4">
-      <div className="w-full flex-1 space-y-2">
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-medium">
-          {transaction ? <TypeBadges type={transaction.transaction_type} /> : <TypeBadgesSkeleton />}
-          {transaction ? <MoreInfoButton transaction={transaction} /> : <MoreInfoButtonSkeleton />}
-        </div>
-        <div className="flex items-center gap-2">
-          <Transaction className="text-foreground-quaternary-400 size-6" />
+    <div className="flex flex-col items-start">
+      <Card className="bg-card dark:border-primary/15 w-full p-0">
+        <CardContent className="flex flex-col gap-4 p-5">
+          <div className="flex items-center gap-2">
+            <Transaction className="text-foreground-quaternary-400 size-6" />
+            {transaction ? (
+              <TxnHashLink hash={transaction.hash} isPending={transaction.status === ETransactionStatus.Pending} />
+            ) : (
+              <TxnHashLinkSkeleton />
+            )}
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-medium">
+            {transaction ? (
+              <TypeBadges type={transaction.transaction_type} />
+            ) : (
+              <TypeBadgesSkeleton />
+            )}
+            {transaction ? <TxStatusBadge status={transaction.status} /> : <TxStatusSkeleton className="h-5.5 w-24" />}
+          </div>
           {transaction ? (
-            <TxnHashLink hash={transaction.hash} isPending={transaction.status === ETransactionStatus.Pending} />
+            <FromToAddresses fromAddress={transaction.from_address} toAddress={transaction.to_address} />
           ) : (
-            <TxnHashLinkSkeleton />
+            <FromToAddressesSkeleton />
           )}
           {transaction ? (
-            <TransactionTime
-              transactionTimestamp={transaction.transaction_timestamp}
-              className="font-normal whitespace-nowrap"
-            />
+            <TransactionValue value={transaction.value} showLabel showSymbol />
           ) : (
-            <TransactionTimeSkeleton className="font-normal whitespace-nowrap" />
+            <TransactionValueSkeleton showLabel />
           )}
-        </div>
-      </div>
-
-      {transaction ? (
-        <FromToAddresses fromAddress={transaction.from_address} toAddress={transaction.to_address} />
-      ) : (
-        <FromToAddressesSkeleton />
-      )}
-
-      {transaction ? (
-        <TransactionValue value={transaction.value} showLabel showSymbol />
-      ) : (
-        <TransactionValueSkeleton showLabel />
-      )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

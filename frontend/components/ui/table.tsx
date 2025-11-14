@@ -123,12 +123,20 @@ export const Table = <T,>({
           tabIndex={hasClickHandler ? 0 : undefined}
           onKeyDown={hasClickHandler ? handleKeyDown : undefined}
         >
-          {validColumns.map(({ dataKey, renderCell }, columnIndex) => {
+          {validColumns.map(({ dataKey, renderCell, align }, columnIndex) => {
             const recordRow = row as unknown as Record<string, unknown>;
             const cellValue = dataKey ? recordRow[String(dataKey)] : '';
             return (
               <td key={columnIndex} className="p-4">
-                {renderCell ? renderCell(row, index) : dataKey ? String(cellValue ?? '') : ''}
+                <div
+                  className={cn('flex', {
+                    'justify-center': align === 'center',
+                    'justify-end': align === 'right',
+                    'justify-start': align === 'left' || !align,
+                  })}
+                >
+                  {renderCell ? renderCell(row, index) : dataKey ? String(cellValue ?? '') : ''}
+                </div>
               </td>
             );
           })}
@@ -187,12 +195,20 @@ export const Table = <T,>({
               ref={rowVirtualizer.measureElement}
               data-index={index}
             >
-              {validColumns.map(({ dataKey, renderCell }, columnIndex) => {
+              {validColumns.map(({ dataKey, renderCell, align }, columnIndex) => {
                 const recordRow = row as unknown as Record<string, unknown>;
                 const cellValue = dataKey ? recordRow[String(dataKey)] : '';
                 return (
                   <td key={columnIndex} className="p-4">
-                    {renderCell ? renderCell(row, index) : dataKey ? String(cellValue ?? '') : ''}
+                    <div
+                      className={cn('flex', {
+                        'justify-center': align === 'center',
+                        'justify-end': align === 'right',
+                        'justify-start': align === 'left' || !align,
+                      })}
+                    >
+                      {renderCell ? renderCell(row, index) : dataKey ? String(cellValue ?? '') : ''}
+                    </div>
                   </td>
                 );
               })}
@@ -231,7 +247,7 @@ export const Table = <T,>({
     >
       <table
         className={cn(
-          'text-card-foreground w-full rounded-lg text-left text-sm font-normal [&_thead]:top-[96px]',
+          'text-card-foreground w-full rounded-lg text-center text-sm font-normal [&_thead]:top-[96px]',
           className,
           isVirtualized && '[&_thead]:top-[0px]'
         )}
@@ -239,15 +255,23 @@ export const Table = <T,>({
         {...props}
       >
         {showHeader && (
-          <thead className={'bg-card text-foreground text-xs font-normal'}>
+          <thead className={'bg-card text-card-foreground text-xs font-normal'}>
             <tr role="row">
-              {validColumns.map(({ headerContent }, index) => (
+              {validColumns.map(({ headerContent, align }, index) => (
                 <th
                   key={index}
                   className={cn('px-4 py-3', shouldShowSkeleton && 'pointer-events-none opacity-50')}
                   role="columnheader"
                 >
-                  {headerContent}
+                  <div
+                    className={cn('flex', {
+                      'justify-center': align === 'center',
+                      'justify-end': align === 'right',
+                      'justify-start': align === 'left' || !align,
+                    })}
+                  >
+                    {headerContent}
+                  </div>
                 </th>
               ))}
             </tr>

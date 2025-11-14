@@ -1,10 +1,14 @@
 import { AlertCircle, CheckCircle, XCircle } from '@/assets/icons';
 import { Chip } from '@/components/shared';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ETransactionStatus, getTransactionStatusLabel, getTransactionStatusVariant } from '@/modules/transaction';
 
 interface TxStatusBadgeProps {
   status: ETransactionStatus;
+}
+interface TypeBadgesSkeletonProps {
+  className?: string;
 }
 
 const getTransactionStatusIcon = (status: ETransactionStatus) => {
@@ -44,4 +48,13 @@ export const TxStatusBadge = ({ status }: TxStatusBadgeProps) => {
       </Chip>
     </>
   );
+};
+
+export const TxStatusSkeleton = ({ className }: TypeBadgesSkeletonProps) => {
+  return (
+    <div className={cn('flex items-center gap-2', className)}>
+      <Skeleton className="h-5.5 w-24" />
+      <Skeleton className="h-5.5 w-24" />
+    </div>
+  )
 };

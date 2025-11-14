@@ -84,16 +84,18 @@ export const BlocksTable = ({ blocks, skeletonLength = PAGINATION.DEFAULT_LIMIT,
   ];
 
   return (
-    <Table
-      key={`${page}-${limit}`}
-      getRowKey={(row) => row.block_number}
-      columns={columns}
-      rows={blocks}
-      skeletonLength={skeletonLength}
-      className="[&_thead]:sticky [&_thead]:top-[96px] [&_thead]:z-10"
-      classNameLayout="overflow-x-visible"
-      isLoading={isLoading}
-      estimateRowHeight={72.5}
-    />
+    <div className="bg-card border-muted-foreground/30 border-separate rounded-lg border p-3">
+      <Table
+        key={`${page}-${limit}`}
+        getRowKey={(row) => row.block_number}
+        columns={columns}
+        rows={blocks}
+        skeletonLength={skeletonLength}
+        className="[&_thead]:text-muted-foreground border-muted-foreground/30 [&_thead>tr>th]:border-muted-foreground/30 rounded-lg [&_tbody]:bg-transparent [&_tbody>tr:last-child>td:first-child]:rounded-bl-lg [&_tbody>tr:last-child>td:last-child]:rounded-br-lg [&_thead]:bg-transparent [&_thead]:uppercase [&_thead>tr>th]:border-b [&_thead>tr>th:first-child]:rounded-tl-lg [&_thead>tr>th:last-child]:rounded-tr-lg"
+        classNameLayout="overflow-x-visible overflow-y-hidden"
+        isLoading={isLoading}
+        estimateRowHeight={72.5}
+      />
+    </div>
   );
 };
