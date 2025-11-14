@@ -1,21 +1,16 @@
 import { STORAGE_KEYS } from '@/constant';
 import { EZkClientType, MmnClient, ZkClient, IndexerClient } from 'mmn-client-js';
 import { LoginResponse, StateObject } from './type';
-import { APP_CONFIG } from '@/configs/app.config';
 
 const mmnURL = process.env.NEXT_PUBLIC_CHAT_APP_MMN_API_URL ?? '';
 const zkURL = process.env.NEXT_PUBLIC_CHAT_APP_ZK_API_URL ?? '';
-const indexerURL = process.env.NEXT_PUBLIC_APP_API_URL ?? '';
+
 export const mmnClient = new MmnClient({
   baseUrl: mmnURL,
 });
 export const zkClient = new ZkClient({
   endpoint: zkURL,
   timeout: 30000,
-});
-export const indexerClient = new IndexerClient({
-  endpoint: indexerURL,
-  chainId: APP_CONFIG.CHAIN_ID,
 });
 export const handleTokenStorage = (userInfo: LoginResponse) => {
   const token = {

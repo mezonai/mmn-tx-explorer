@@ -1,7 +1,7 @@
 'use client';
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
-import { mmnClient, indexerClient } from '@/modules/auth/utils';
+import { mmnClient } from '@/modules/auth/utils';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger, DialogHeader } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { NumberUtil } from '@/utils';
 import { APP_CONFIG } from '@/configs/app.config';
 import { Eye, EyeOff } from 'lucide-react';
+import { WalletService } from '@/modules/wallet';
 import { useTransferByPrivateKey } from '@/modules/transfer/hooks/useTransferByPrivateKey';
 import { ETransferType } from '@/modules/transaction';
 
@@ -42,8 +43,8 @@ export function TransferDialog({
 
   const fetchBalance = useCallback(async () => {
     try {
-      const walletInfo = await indexerClient.getWalletDetail(walletAddress);
-      const newBalance = Number(walletInfo.balance ?? 0);
+      const result = await WalletService.getWalletDetails(walletAddress);
+      const newBalance = Number(result.data?.balance ?? 0);
       setCurrentBalanceValue(newBalance);
     } catch (error) {
       console.error('Error fetching balance:', error);
