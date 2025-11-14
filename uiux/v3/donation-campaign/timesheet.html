@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Timesheet Summary</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .tooltip {
+      position: relative;
+      display: inline-block;
+      cursor: help;
+    }
+    .tooltip .tooltip-text {
+      visibility: hidden;
+      opacity: 0;
+      width: 220px;
+      background-color: #111827;
+      color: #e5e7eb;
+      text-align: left;
+      border-radius: 8px;
+      padding: 8px 10px;
+      position: absolute;
+      z-index: 10;
+      bottom: 130%;
+      left: 50%;
+      transform: translateX(-50%);
+      transition: opacity 0.2s;
+      border: 1px solid #374151;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .tooltip:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 font-inter text-gray-800 py-10">
+  <div class="max-w-5xl mx-auto bg-white shadow-md border border-gray-200 rounded-xl p-6">
+    <h2 class="text-lg font-semibold mb-5 text-gray-900">Monthly Summary – October 2025</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 text-center gap-6">
+
+      <!-- Violations -->
+      <div>
+        <div class="text-sm text-gray-500 tooltip">
+          Violations
+          <span class="tooltip-text">
+            Total number of rule violations this month (e.g. missing check-in/out, no daily report, or unapproved timesheet).
+          </span>
+        </div>
+        <div class="text-2xl font-semibold mt-1 text-gray-900">7</div>
+      </div>
+
+      <!-- Total Penalty -->
+      <div>
+        <div class="text-sm text-gray-500 tooltip">
+          Total Penalty
+          <span class="tooltip-text">
+            Total fines applied this month.<br>
+            <b>Paid:</b> amount you've already settled in previous periods.
+          </span>
+        </div>
+        <div class="text-2xl font-semibold mt-1 text-gray-900">40,000</div>
+        <div class="text-xs text-gray-500">(Paid: 170,000)</div>
+      </div>
+
+      <!-- Compensation Points -->
+      <div>
+        <div class="text-sm text-gray-500 tooltip">
+          Compensation Points
+          <span class="tooltip-text">
+            Points refunded when a reported error was found invalid.<br>
+            <b>Used:</b> points applied to reduce this month's penalty.
+          </span>
+        </div>
+        <div class="text-2xl font-semibold mt-1 text-gray-900">30,000</div>
+        <div class="text-xs text-gray-500">(Used: 175,000)</div>
+      </div>
+
+      <!-- Remaining Amount -->
+      <div>
+        <div class="text-sm text-gray-500 tooltip">
+          Remaining Amount
+          <span class="tooltip-text">
+            The actual amount you need to pay after deducting all valid Compensation Points.
+          </span>
+        </div>
+        <div class="text-2xl font-semibold mt-1 text-red-600">10,000</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
