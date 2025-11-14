@@ -2827,10 +2827,10 @@ mkdirp@^3.0.1:
   resolved "https://registry.npmjs.org/mkdirp/-/mkdirp-3.0.1.tgz"
   integrity sha512-+NsyUUAZDmo6YVHzL/stxSu3t9YS1iljliy3BSDrXJ/dkn1KYdmtZODGGjLcc9XLgVVpH4KshHB8XmZgMhaBXg==
 
-mmn-client-js@^1.0.11:
-  version "1.0.11"
-  resolved "https://registry.yarnpkg.com/mmn-client-js/-/mmn-client-js-1.0.11.tgz#7a1dadd1e306ac26d0b98a10f42d6d5b15bcd4bb"
-  integrity sha512-B5xmrUEBukq6JcCu5T/I+8DUJcdWGW5j+GmVwB4L73laRAlJVXu8ONmKvwGJrypwmFVEmG4/eQSz7MAzXGM+Ww==
+mmn-client-js@^1.0.13:
+  version "1.0.13"
+  resolved "https://registry.yarnpkg.com/mmn-client-js/-/mmn-client-js-1.0.13.tgz#cb91444a37b8c97678948fbb5ab1b844d58b91e4"
+  integrity sha512-ZrJsOzKI1yZijLCzp+wMKwdpocilYIpIPLKs2IF+KWLmfQ0paHvgxS789w+qnuH9Aq6zPJJorH7Cw7AMSxxgMw==
   dependencies:
     bip39 "^3.1.0"
     bs58 "^5.0.0"
@@ -3080,6 +3080,11 @@ punycode@^2.1.0:
   resolved "https://registry.npmjs.org/punycode/-/punycode-2.3.1.tgz"
   integrity sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==
 
+qr.js@0.0.0:
+  version "0.0.0"
+  resolved "https://registry.yarnpkg.com/qr.js/-/qr.js-0.0.0.tgz#cace86386f59a0db8050fa90d9b6b0e88a1e364f"
+  integrity sha512-c4iYnWb+k2E+vYpRimHqSu575b1/wKl4XFeJGpFmrJQz5I88v9aY2czh7s0w36srfCM1sXgC/xpoJz5dJfq+OQ==
+
 queue-microtask@^1.2.2:
   version "1.2.3"
   resolved "https://registry.npmjs.org/queue-microtask/-/queue-microtask-1.2.3.tgz"
@@ -3134,6 +3139,14 @@ react-paginate@^8.3.0:
   integrity sha512-TptZE37HPkT3R+7AszWA++LOTIsIHXcCSWMP9WW/abeF8sLpJzExFB/dVs7xbtqteJ5njF6kk+udTDC0AR3y5w==
   dependencies:
     prop-types "^15"
+
+react-qr-code@^2.0.18:
+  version "2.0.18"
+  resolved "https://registry.yarnpkg.com/react-qr-code/-/react-qr-code-2.0.18.tgz#237de8fbab537885d6b2b10f4fd5318b371e3b17"
+  integrity sha512-v1Jqz7urLMhkO6jkgJuBYhnqvXagzceg3qJUWayuCK/c6LTIonpWbwxR1f1APGd4xrW/QcQEovNrAojbUz65Tg==
+  dependencies:
+    prop-types "^15.8.1"
+    qr.js "0.0.0"
 
 react-remove-scroll-bar@^2.3.7:
   version "2.3.8"

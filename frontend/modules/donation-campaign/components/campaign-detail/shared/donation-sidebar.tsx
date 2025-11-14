@@ -10,18 +10,17 @@ import { ROUTES } from '@/configs/routes.config';
 import { APP_CONFIG } from '@/configs/app.config';
 import { cn } from '@/lib/utils';
 import { useHidden } from '../provider';
+import QRCode from 'react-qr-code';
 
 export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
   const { isAuthenticated } = useAuth();
   const { hidden } = useHidden();
-
+  const qrCodeValue = JSON.stringify({ type: 'transfer_wallet', wallet_address: campaign.donation_wallet });
   return (
     <aside className="border-border bg-card/90 shadow-primary/10 dark:bg-dark-light/80 rounded-3xl border p-6 dark:border-white/10">
       <p className="text-brand-primary text-xs font-semibold tracking-[0.3em] uppercase">Donate</p>
       <h2 className="text-foreground mt-3 text-xl font-semibold dark:text-white">Send {APP_CONFIG.CHAIN_SYMBOL}</h2>
-      <p className="text-muted-foreground mt-3 text-sm dark:text-gray-400">
-        Transactions appear instantly in the Recent activity log.
-      </p>
+      <p className="text-muted-foreground mt-3 text-sm">Transactions appear instantly in the Recent Activity log.</p>
 
       <div className="mt-6 space-y-4">
         <div className="border-border bg-background/70 dark:bg-dark-light/70 rounded-2xl border p-4 dark:border-white/10">
@@ -44,28 +43,21 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
             View on explorer
           </Link>
         </div>
-        {/* phase 2 */}
-        {/* <div className="border-primary/40 bg-primary/5 dark:border-primary/40 dark:bg-primary/15 rounded-2xl border border-dashed p-4">
-          <p className="text-primary dark:text-primary-light text-xs font-semibold tracking-widest uppercase">
-            Scan QR
-          </p>
+        <div className="border-brand-primary/40 bg-brand-primary/10 rounded-2xl border border-dashed p-4">
+          <p className="text-brand-primary text-xs font-semibold tracking-widest uppercase">Scan QR</p>
           <div className="mt-4 flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="dark:bg-dark h-28 w-28 rounded-2xl bg-white p-3 shadow-inner">
-              <img src="#" alt="QR Code for donation" className="h-full w-full rounded-xl object-cover" />
+            <div className="dark:bg-dark h-28 w-28 rounded-2xl bg-white p-2 shadow-inner">
+              <QRCode value={qrCodeValue} className="h-auto w-full max-w-full" />
             </div>
-            <div className="text-primary/90 dark:text-primary-light/80 flex-1 text-xs">
-              Open your MMN wallet, scan the code, and specify the number of tokens. Helpful hint: 100 MMN ≈ 500,000
-              VND.
+            <div className="text-brand-primary/90 flex-1 text-xs">
+              Open your Mezon App, scan the code, and specify the number of tokens.
             </div>
           </div>
-        </div> */}
-        {/* Donate Button */}
+        </div>
         {isAuthenticated && campaign.status == ECampaignStatus.Active && (
           <DonateDialog walletAddress={campaign.donation_wallet} />
         )}
-        <p className="text-muted-foreground text-center text-xs dark:text-gray-400">
-          💡 Keep your transaction hash for reconciliation.
-        </p>
+        <p className="text-muted-foreground text-center text-xs">💡 Keep your transaction hash for reconciliation.</p>
       </div>
     </aside>
   );

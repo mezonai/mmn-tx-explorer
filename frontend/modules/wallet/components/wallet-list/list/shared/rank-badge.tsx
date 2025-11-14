@@ -6,7 +6,7 @@ interface RankBadgeProps {
 }
 
 export const RankBadge = ({ rank }: RankBadgeProps) => {
-  return <Badge className="text-utility-warning-700 bg-utility-warning-50 border-utility-warning-200">{rank}</Badge>;
+  return <Badge className="bg-brand-primary min-w-8 text-white">{rank}</Badge>;
 };
 
 export const RankBadgeSkeleton = () => {

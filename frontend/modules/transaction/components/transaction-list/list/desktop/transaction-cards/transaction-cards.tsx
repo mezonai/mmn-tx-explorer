@@ -14,25 +14,7 @@ export const TransactionCardsDesktop = ({
   skeletonLength = PAGINATION.DEFAULT_LIMIT,
 }: TransactionCardsDesktopProps) => {
   return (
-    <div>
-      <div
-        className={cn(
-          'bg-card border-secondary dark:border-primary/15 grid grid-cols-[1fr_12fr_6fr_4fr] border-b',
-          'text-foreground text-xs font-semibold whitespace-nowrap [&>div]:flex [&>div]:items-center [&>div]:px-4 [&>div]:py-3'
-        )}
-      >
-        <div></div>
-        <div>
-          <span>TXN Hash</span>
-        </div>
-        <div>
-          <span>From/to</span>
-        </div>
-        <div>
-          <span>Value</span>
-        </div>
-      </div>
-
+    <div className="space-y-3">
       {transactions
         ? transactions.map((transaction) => <TransactionCard key={transaction.hash} transaction={transaction} />)
         : Array.from({ length: skeletonLength }).map((_, index) => <TransactionCard key={index} />)}

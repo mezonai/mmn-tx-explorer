@@ -53,16 +53,16 @@ export class DonationCampaignService {
     return data.data;
   }
 
-  static async updateCampaign(id: string, campaignData: Partial<CreateCampaignRequest>): Promise<DonationCampaign> {
+  static async editCampaign(id: string, campaignData: Partial<CreateCampaignRequest>): Promise<DonationCampaign> {
     const { data } = await apiDongClient.put<{ data: DonationCampaign }>(
-      DONATION_ENDPOINTS.CAMPAIGN_BY_ID(id),
+      DONATION_ENDPOINTS.EDIT_CAMPAIGN(id),
       campaignData
     );
     return data.data;
   }
 
   static async deleteCampaign(id: string): Promise<void> {
-    await apiDongClient.delete(DONATION_ENDPOINTS.CAMPAIGN_BY_ID(id));
+    await apiDongClient.delete(DONATION_ENDPOINTS.DELETE_CAMPAIGN(id));
   }
 
   static async getUserDonations(params: { page?: number; limit?: number } = {}) {
@@ -76,6 +76,12 @@ export class DonationCampaignService {
     const { data } = await apiDongClient.patch(DONATION_ENDPOINTS.CLOSE_CAMPAIGN(id));
     return data;
   }
+
+  static async activateCampaign(id: string): Promise<any> {
+    const { data } = await apiDongClient.patch(DONATION_ENDPOINTS.ACTIVATE_CAMPAIGN(id));
+    return data;
+  }
+
   static async getTopContributor({
     campaignId,
     params,
