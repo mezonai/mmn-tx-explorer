@@ -3,6 +3,7 @@ import { ETransactionStatus, ITransaction } from '@/modules/transaction';
 import { DateTimeUtil, NumberUtil } from '@/utils';
 import { APP_CONFIG } from '@/configs/app.config';
 import { TxnHashLink, TypeBadges, TypeBadgesSkeleton } from '../../shared';
+import { WalletAddressDisplay } from '@/modules/wallet/components/wallet-list/list/shared';
 
 interface TransactionCardProps {
   transaction?: ITransaction;
@@ -48,14 +49,14 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
             <p className="flex font-mono text-sm text-gray-600 dark:text-gray-400">Hash:</p>
             <TxnHashLink hash={transaction.hash} isPending={false} className="w-40" />
           </div>
-          <div className="flex">
-            <div className="flex w-50">
-              <span className="gap-2 text-sm text-gray-600 dark:text-gray-400">From: </span>
-              <TxnHashLink hash={transaction.from_address} isPending={false} className="w-30" />{' '}
+          <div className="flex w-full">
+            <div className="flex items-center">
+              <span className="w-12 shrink-0 text-sm text-gray-600 dark:text-gray-400">From: </span>
+              <WalletAddressDisplay address={transaction.from_address} className="w-24" />
             </div>
-            <div className="flex w-50">
-              <span className="gap-2 text-sm text-gray-600 dark:text-gray-400">→ To: </span>
-              <TxnHashLink hash={transaction.to_address} isPending={false} className="w-30" />{' '}
+            <div className="ml-5 flex items-center">
+              <span className="w-12 shrink-0 text-sm text-gray-600 dark:text-gray-400">→ To: </span>
+              <WalletAddressDisplay address={transaction.to_address} className="w-24" />
             </div>
           </div>
           <div className="flex items-center justify-between">
