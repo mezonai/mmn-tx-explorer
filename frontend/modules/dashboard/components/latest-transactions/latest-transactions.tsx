@@ -17,12 +17,7 @@ export const LatestTransactions = ({ className }: LatestTransactionsProps) => {
   const { data: transactionsResponse, isLoading } = useLatestTransactions();
   const transactions = transactionsResponse?.data;
   return (
-    <div
-      className={cn(
-        'bg-card flex h-full flex-col rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-slate-800',
-        className
-      )}
-    >
+    <div className={cn('flex h-full flex-col rounded-xl border border-gray-300 dark:border-gray-700', className)}>
       <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-300 p-6 dark:border-gray-700">
         <h3 className="text-lg font-semibold">Latest Transactions</h3>
         <Button
@@ -33,16 +28,15 @@ export const LatestTransactions = ({ className }: LatestTransactionsProps) => {
           <Link href={ROUTES.TRANSACTIONS}>View all</Link>
         </Button>
       </div>
-
-      <div className="flex-1 space-y-4 p-6">
-        <div className="hidden space-y-4 lg:block">
+      <div className="flex-1 space-y-[1.4rem] p-6">
+        <div className="hidden space-y-[1.4rem] lg:block">
           <TransactionCardsDesktop
             transactions={transactions}
             skeletonLength={DASHBOARD_TRANSACTIONS_LIMIT}
             isLoading={isLoading}
           />
         </div>
-        <div className="block space-y-4 lg:hidden">
+        <div className="block space-y-[1.4rem] lg:hidden">
           <TransactionCardsMobile
             transactions={transactions}
             skeletonLength={DASHBOARD_TRANSACTIONS_LIMIT}
