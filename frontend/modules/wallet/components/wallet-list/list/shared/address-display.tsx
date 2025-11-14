@@ -17,7 +17,7 @@ export const WalletAddressDisplay = ({ address, className }: AddressDisplayProps
       address={address}
       href={ROUTES.WALLET(address)}
       className={className}
-      addressClassName="font-semibold text-brand-primary/80"
+      addressClassName="font-semibold text-brand-primary"
     />
   );
 };
