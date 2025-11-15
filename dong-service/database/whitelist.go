@@ -68,7 +68,6 @@ func Delete(tokenID string) error {
 	return err
 }
 
-
 func GetCacheRequest(hashRequest string) (bool, string, error) {
 	reponse, err := RedisClient.Get(ctx, hashRequest).Result()
 	if err == redis.Nil {
@@ -82,7 +81,6 @@ func GetCacheRequest(hashRequest string) (bool, string, error) {
 	return true, reponse, nil
 }
 
-
 func SetCacheRequest(hashRequest string, response string, ttl time.Duration) error {
 	err := RedisClient.SetNX(ctx, hashRequest, response, ttl).Err()
 	if err != nil {
@@ -94,9 +92,6 @@ func SetCacheRequest(hashRequest string, response string, ttl time.Duration) err
 
 }
 
-
-
-
 func SetLockKey(key string, value string, ttl time.Duration) (bool, error) {
 	ok, err := RedisClient.SetNX(ctx, key, value, ttl).Result()
 	if err != nil {
@@ -105,7 +100,6 @@ func SetLockKey(key string, value string, ttl time.Duration) (bool, error) {
 	logger.Debug().Str("key", key).Msg("LockKey saved in Redis")
 	return ok, err
 }
-
 
 func DeleteLockKey(key string) error {
 	err := RedisClient.Del(ctx, key).Err()
