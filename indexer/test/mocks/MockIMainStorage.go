@@ -338,7 +338,7 @@ func (_c *MockIMainStorage_GetCount_Call) RunAndReturn(run func(context.Context,
 }
 
 // GetDashboardStats provides a mock function with given fields: ctx, qf
-func (_m *MockIMainStorage) GetDashboardStats(ctx context.Context, qf storage.QueryFilter) (uint64, uint64, uint64, float64, error) {
+func (_m *MockIMainStorage) GetDashboardStats(ctx context.Context, qf storage.QueryFilter) (uint64, uint64, uint64, float64, uint64, error) {
 	ret := _m.Called(ctx, qf)
 
 	if len(ret) == 0 {
@@ -349,8 +349,9 @@ func (_m *MockIMainStorage) GetDashboardStats(ctx context.Context, qf storage.Qu
 	var r1 uint64
 	var r2 uint64
 	var r3 float64
-	var r4 error
-	if rf, ok := ret.Get(0).(func(context.Context, storage.QueryFilter) (uint64, uint64, uint64, float64, error)); ok {
+	var r4 uint64
+	var r5 error
+	if rf, ok := ret.Get(0).(func(context.Context, storage.QueryFilter) (uint64, uint64, uint64, float64, uint64, error)); ok {
 		return rf(ctx, qf)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, storage.QueryFilter) uint64); ok {
@@ -377,13 +378,19 @@ func (_m *MockIMainStorage) GetDashboardStats(ctx context.Context, qf storage.Qu
 		r3 = ret.Get(3).(float64)
 	}
 
-	if rf, ok := ret.Get(4).(func(context.Context, storage.QueryFilter) error); ok {
+	if rf, ok := ret.Get(4).(func(context.Context, storage.QueryFilter) uint64); ok {
 		r4 = rf(ctx, qf)
 	} else {
-		r4 = ret.Error(4)
+		r4 = ret.Get(4).(uint64)
 	}
 
-	return r0, r1, r2, r3, r4
+	if rf, ok := ret.Get(5).(func(context.Context, storage.QueryFilter) error); ok {
+		r5 = rf(ctx, qf)
+	} else {
+		r5 = ret.Error(5)
+	}
+
+	return r0, r1, r2, r3, r4, r5
 }
 
 // MockIMainStorage_GetDashboardStats_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetDashboardStats'
@@ -405,12 +412,12 @@ func (_c *MockIMainStorage_GetDashboardStats_Call) Run(run func(ctx context.Cont
 	return _c
 }
 
-func (_c *MockIMainStorage_GetDashboardStats_Call) Return(totalBlocks uint64, totalTransactions uint64, totalWallets uint64, averageBlockTime float64, err error) *MockIMainStorage_GetDashboardStats_Call {
-	_c.Call.Return(totalBlocks, totalTransactions, totalWallets, averageBlockTime, err)
+func (_c *MockIMainStorage_GetDashboardStats_Call) Return(totalBlocks uint64, totalTransactions uint64, totalWallets uint64, averageBlockTime float64, totalGiveCoffees uint64, err error) *MockIMainStorage_GetDashboardStats_Call {
+	_c.Call.Return(totalBlocks, totalTransactions, totalWallets, averageBlockTime, totalGiveCoffees, err)
 	return _c
 }
 
-func (_c *MockIMainStorage_GetDashboardStats_Call) RunAndReturn(run func(context.Context, storage.QueryFilter) (uint64, uint64, uint64, float64, error)) *MockIMainStorage_GetDashboardStats_Call {
+func (_c *MockIMainStorage_GetDashboardStats_Call) RunAndReturn(run func(context.Context, storage.QueryFilter) (uint64, uint64, uint64, float64, uint64, error)) *MockIMainStorage_GetDashboardStats_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -30,7 +30,6 @@ export const EcosystemHighlights = () => {
 
   useEffect(() => {
     if (refHeight) {
-      console.log('[EcosystemHighlights] Applying minHeight to other cards:', refHeight);
     }
   }, [refHeight]);
 

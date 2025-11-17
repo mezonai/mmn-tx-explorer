@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -15,6 +16,7 @@ import (
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc"
 	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
@@ -1316,22 +1318,23 @@ func (p *PostgresConnector) GetCount(ctx context.Context, table string, qf Query
 	return count, err
 }
 
-func (p *PostgresConnector) GetDashboardStats(ctx context.Context, qf QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, averageBlockTime float64, err error) {
+func (p *PostgresConnector) GetDashboardStats(ctx context.Context, qf QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, averageBlockTime float64, totalGiveCoffee uint64, err error) {
 	query := `
-        SELECT 
-            COALESCE(MAX(CASE WHEN key = 'total_blocks' THEN value::bigint END), 0) as blocks,
-            COALESCE(MAX(CASE WHEN key = 'total_transactions' THEN value::bigint END), 0) as transactions,
-            COALESCE(MAX(CASE WHEN key = 'total_wallets' THEN value::bigint END), 0) as wallets,
-            COALESCE(MAX(CASE WHEN key = 'average_block' THEN value::float END) / 1000.0, 0.0) as avg_block_time
-        FROM stats
-    `
+		SELECT 
+			COALESCE(MAX(CASE WHEN key = 'total_blocks' THEN value::bigint END), 0) as blocks,
+			COALESCE(MAX(CASE WHEN key = 'total_transactions' THEN value::bigint END), 0) as transactions,
+			COALESCE(MAX(CASE WHEN key = 'total_wallets' THEN value::bigint END), 0) as wallets,
+			COALESCE(MAX(CASE WHEN key = 'average_block' THEN value::float END) / 1000.0, 0.0) as avg_block_time,
+			COALESCE(MAX(CASE WHEN key = 'total_give_coffee' THEN value::bigint END), 0) as give_coffee
+		FROM stats
+	`
 
-	err = p.db.QueryRowContext(ctx, query).Scan(&totalBlocks, &totalTransactions, &totalWallets, &averageBlockTime)
+	err = p.db.QueryRowContext(ctx, query).Scan(&totalBlocks, &totalTransactions, &totalWallets, &averageBlockTime, &totalGiveCoffee)
 	if err != nil {
-		return 0, 0, 0, 0, fmt.Errorf("failed to get dashboard stats: %w", err)
+		return 0, 0, 0, 0, 0, fmt.Errorf("failed to get dashboard stats: %w", err)
 	}
 
-	return totalBlocks, totalTransactions, totalWallets, averageBlockTime, nil
+	return totalBlocks, totalTransactions, totalWallets, averageBlockTime, totalGiveCoffee, nil
 }
 
 func (p *PostgresConnector) GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error) {
@@ -2049,11 +2052,21 @@ func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
 
 	var totalWallets int64
 	err = p.db.QueryRowContext(ctx, `
-        SELECT COUNT(*) 
-        FROM wallet
-    `).Scan(&totalWallets)
+		SELECT COUNT(*) 
+		FROM wallet
+	`).Scan(&totalWallets)
 	if err != nil {
 		return fmt.Errorf("failed to count wallets: %w", err)
+	}
+
+	var totalGiveCoffee int64
+	err = p.db.QueryRowContext(ctx, `
+		SELECT COALESCE(MAX(value::bigint), 0)
+		FROM stats
+		WHERE key = 'total_give_coffee'
+	`).Scan(&totalGiveCoffee)
+	if err != nil {
+		return fmt.Errorf("failed to get total_give_coffee stat: %w", err)
 	}
 
 	avgBlockTime, err := p.calculateAverageBlockTime(ctx, 100)
@@ -2070,6 +2083,7 @@ func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
 		{"total_blocks", totalBlocks},
 		{"total_transactions", totalTransactions},
 		{"total_wallets", totalWallets},
+		{"total_give_coffee", totalGiveCoffee},
 		{"average_block", averageBlockMs},
 	}
 
@@ -2119,4 +2133,45 @@ func (p *PostgresConnector) Close() error {
 	}
 
 	return p.db.Close()
+}
+
+func (p *PostgresConnector) CountTotalGiveCoffee(ctx context.Context, intervalMinutes int) {
+	go func() {
+		ticker := time.NewTicker(time.Duration(intervalMinutes) * time.Minute)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				var totalGiveCoffee int64
+				err := p.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM transactions WHERE extra_info->>'type' = 'dong-give-coffee'`).Scan(&totalGiveCoffee)
+				if err != nil {
+					log := zerolog.New(os.Stdout).With().Timestamp().Logger()
+					log.Error().Err(err).Msg("Failed to recalculate total_give_coffee in cronjob")
+					continue
+				}
+				_, err = p.db.ExecContext(ctx, `
+					INSERT INTO stats(key, value)
+					VALUES ($1, $2)
+					ON CONFLICT (key)
+					DO UPDATE SET value = $2
+				`, "total_give_coffee", totalGiveCoffee)
+				if err != nil {
+					log := zerolog.New(os.Stdout).With().Timestamp().Logger()
+					log.Error().Err(err).Msg("Failed to update total_give_coffee in stats table")
+				} else {
+					log := zerolog.New(os.Stdout).With().Timestamp().Logger()
+					log.Info().Msgf("Successfully updated total_give_coffee to %d", totalGiveCoffee)
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+}
+
+// GetTotalGiveCoffee returns the current total_give_coffee value from the stats table
+func (p *PostgresConnector) GetTotalGiveCoffee(ctx context.Context, intervalMinutes int) (int64, error) {
+	var totalGiveCoffee int64
+	err := p.db.QueryRowContext(ctx, `SELECT value FROM stats WHERE key = 'total_give_coffee'`).Scan(&totalGiveCoffee)
+	return totalGiveCoffee, err
 }

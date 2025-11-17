@@ -13,9 +13,9 @@ import (
 )
 
 var (
-	storageOnce   sync.Once
-	mainStorage   IMainStorage
-	storageErr    error
+	storageOnce sync.Once
+	mainStorage IMainStorage
+	storageErr  error
 )
 
 type QueryFilter struct {
@@ -135,7 +135,7 @@ type IMainStorage interface {
 	/**
 	 * Gets dashboard stats (totalBlocks, totalTransactions, totalWallets, averageBlockTime) in a single call.
 	 */
-	GetDashboardStats(ctx context.Context, qf QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, averageBlockTime float64, err error)
+	GetDashboardStats(ctx context.Context, qf QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, averageBlockTime float64, totalGiveCoffee uint64, err error)
 
 	/**
 	 * Gets pending transactions from MMN service.
@@ -143,11 +143,12 @@ type IMainStorage interface {
 	GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error)
 
 	/**
-     * Optimized methods for pagination
-     */ 
+	 * Optimized methods for pagination
+	 */
 	GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit, offset int, sortBy, sortOrder string, startTime, endTime int64) ([]common.Transaction, error)
 	GetTransactionsByWalletCount(ctx context.Context, walletAddress string, startTime, endTime int64) (uint64, error)
 	GetTotalTransactions(ctx context.Context) (uint64, error)
+	GetTotalGiveCoffee(ctx context.Context, intervalMinutes int) (int64, error)
 
 	/**
 	 * Recalculates and updates all statistics in the stats table

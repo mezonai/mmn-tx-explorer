@@ -20,7 +20,6 @@ import (
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/worker"
 
 	// Import the generated Swagger docs
-	_ "github.com/mezonai/mmn-tx-explorer/indexer/docs"
 	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	_ "github.com/mezonai/mmn-tx-explorer/indexer/docs"
 )
@@ -49,7 +48,7 @@ func RunApi(cmd *cobra.Command, args []string) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-    mainStorage, err := storage.GetMainStorage()
+	mainStorage, err := storage.GetMainStorage()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to create storage connector")
 	}
@@ -59,6 +58,8 @@ func RunApi(cmd *cobra.Command, args []string) {
 		statsWorker := worker.NewStatsRecalculationWorker(mainStorage, config.Cfg.StatsWorker.IntervalMinutes, config.Cfg.StatsWorker.TimeoutMinutes)
 		statsWorker.Start()
 	}
+
+	go mainStorage.GetTotalGiveCoffee(ctx, 1)
 
 	r := gin.New()
 	r.Use(middleware.Logger())
