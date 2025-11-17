@@ -20,7 +20,7 @@ type Transaction struct {
 	TransactionType      uint8     `json:"transaction_type" ch:"transaction_type"`
 	Status               *uint64   `json:"status" ch:"status"`
 	TextData             string    `json:"text_data" ch:"text_data"`
-	ExtraInfo            string    `json:"extra_info" ch:"extra_info"`
+	ExtraInfo            string    `json:"-" ch:"extra_info"`
 }
 
 type DecodedTransactionData struct {
@@ -48,7 +48,6 @@ type TransactionModel struct {
 	Status               *uint64 `json:"status"`
 	TransactionTimestamp uint64  `json:"transaction_timestamp"`
 	TextData             string  `json:"text_data"`
-	ExtraInfo            string  `json:"extra_info"`
 }
 
 type DecodedTransactionDataModel struct {
@@ -76,7 +75,6 @@ func (t *Transaction) Serialize() TransactionModel {
 		Status:               t.Status,
 		TransactionTimestamp: uint64(t.TransactionTimestamp.Unix()),
 		TextData:             t.TextData,
-		ExtraInfo:            t.ExtraInfo,
 	}
 }
 
