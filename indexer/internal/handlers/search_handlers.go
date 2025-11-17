@@ -281,33 +281,6 @@ func searchByHash(ctx context.Context, mainStorage storage.IMainStorage, chainId
 		}
 	}()
 
-	// Try as topic_0 for logs
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		logsResult, err := mainStorage.GetLogs(storage.QueryFilter{
-			ChainId:   chainId,
-			Signature: hash,
-			Limit:     20,
-			SortBy:    "block_number",
-			SortOrder: "desc",
-		})
-		if err != nil {
-			errChan <- err
-			return
-		}
-		if len(logsResult.Data) > 0 {
-			logs := make([]common.LogModel, len(logsResult.Data))
-			for i, log := range logsResult.Data {
-				logs[i] = log.Serialize()
-			}
-			select {
-			case resultChan <- SearchResultModel{Events: logs, Type: SearchResultTypeEventSignature}:
-			case <-doneChan:
-			}
-		}
-	}()
-
 	// Wait for first result or all goroutines to finish
 	go func() {
 		wg.Wait()
