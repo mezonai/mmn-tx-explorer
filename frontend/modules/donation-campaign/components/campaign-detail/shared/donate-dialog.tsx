@@ -12,7 +12,7 @@ import { APP_CONFIG } from '@/configs/app.config';
 import { CopyButton } from '@/components/ui/copy-button';
 import { ETransferType, TRANSACTIONS_QUERY_KEY } from '@/modules/transaction';
 import { useQueryClient } from '@tanstack/react-query';
-import { Check } from 'lucide-react';
+import { TransactionComplete, TransactionType } from '@/modules/donation-campaign/components/transaction-complete';
 
 export function DonateDialog({ walletAddress }: { walletAddress: string }) {
   const { transfer, loading, user } = useTransfer();
@@ -109,44 +109,13 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
         </DialogHeader>
 
         {transactionHash ? (
-          <div className="flex flex-col items-center space-y-5 text-center">
-            <div className="flex flex-col items-center space-y-3">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
-                <Check className="h-7 w-7 text-green-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-green-600">Donation confirmed!</h3>
-              <p className="text-sm text-gray-500">You're part of something bigger now.</p>
-            </div>
-
-            <div className="bg-brand-primary/10 border-brand-primary/40 borde mt-1 w-full rounded-xl p-5 focus:ring-0 focus:outline-none">
-              <div className="flex flex-col items-center space-y-4">
-                <div className="text-center">
-                  <p className="text-xs uppercase">Amount Donated</p>
-                  <p className="text-brand-primary text-3xl font-bold">
-                    {NumberUtil.formatWithCommas(form.amount)}
-                    <span className="ml-1.5 text-xl font-medium">{APP_CONFIG.CHAIN_SYMBOL}</span>
-                  </p>
-                </div>
-
-                <div className="w-full border-t"></div>
-
-                <div className="w-full space-y-2 text-left">
-                  <p className="text-xs uppercase">Transaction Hash</p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-card-foreground flex-1 truncate font-mono text-sm">{transactionHash}</p>
-                    <CopyButton textToCopy={transactionHash} />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <Button
-              onClick={() => setIsDialogOpen(false)}
-              className="bg-brand-primary hover:bg-brand-primary/85 w-full rounded-xl py-3 text-sm font-semibold text-white shadow-lg transition"
-            >
-              Close
-            </Button>
-          </div>
+          <TransactionComplete
+            amount={NumberUtil.formatWithCommas(form.amount)}
+            symbol={APP_CONFIG.CHAIN_SYMBOL}
+            txHash={transactionHash}
+            type={TransactionType.Donation}
+            onClose={() => setIsDialogOpen(false)}
+          />
         ) : (
           <div className="mt-4 flex flex-col space-y-4">
             <div>
