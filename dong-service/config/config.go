@@ -4,21 +4,23 @@ import (
 	"dong-service/logger"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/spf13/viper"
 )
 
 // Config represents the application configuration
 type Config struct {
-	Server    ServerConfig     `mapstructure:"server"`
-	Database  DatabaseConfig   `mapstructure:"database"`
-	Indexer   IndexerConfig    `mapstructure:"indexer"`
-	CORS      CORSConfig       `mapstructure:"cors"`
-	JWT       JWTConfig        `mapstructure:"jwt"`
-	Oauth     OauthConfig      `mapstructure:"oauth"`
-	Redis     RedisConfig      `mapstructure:"redis"`
-	Logging   logger.LogConfig `mapstructure:"logging"`
-	Scheduler SchedulerConfig  `mapstructure:"scheduler"`
+	Server       ServerConfig     `mapstructure:"server"`
+	Database     DatabaseConfig   `mapstructure:"database"`
+	Indexer      IndexerConfig    `mapstructure:"indexer"`
+	CORS         CORSConfig       `mapstructure:"cors"`
+	JWT          JWTConfig        `mapstructure:"jwt"`
+	Oauth        OauthConfig      `mapstructure:"oauth"`
+	Redis        RedisConfig      `mapstructure:"redis"`
+	Logging      logger.LogConfig `mapstructure:"logging"`
+	Scheduler    SchedulerConfig  `mapstructure:"scheduler"`
+	Bridge       BridgeConfig     `mapstructure:"bridge"`
 }
 
 type ServerConfig struct {
@@ -71,6 +73,17 @@ type IndexerConfig struct {
 
 type SchedulerConfig struct {
 	SyncContributorsInterval int `mapstructure:"sync_contributors_interval"` // in seconds
+}
+
+type BridgeConfig struct {
+	BSCWSUrl           string        `mapstructure:"bsc_ws_url"`
+	BSCRPCURL          string        `mapstructure:"bsc_rpc_url"`
+	WMezonAddress      string        `mapstructure:"wmezon_address"`
+	OwnerPrivateKey    string        `mapstructure:"owner_private_key"`
+	StartBlock         uint64        `mapstructure:"start_block"`
+	PollingInterval    time.Duration `mapstructure:"polling_interval"`
+	UsePolling         bool          `mapstructure:"use_polling"`
+	ConfirmationBlocks uint64        `mapstructure:"confirmation_blocks"`
 }
 
 func LoadConfig(cfgFile string) (*Config, error) {

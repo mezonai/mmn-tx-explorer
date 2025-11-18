@@ -111,6 +111,7 @@ jobs:
           REDIS_ADDRESS: ${{ vars.REDIS_ADDRESS }}
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
           REDIS_DB: ${{ vars.REDIS_DB }}
+          BRIDGE_OWNER_PRIVATE_KEY: ${{ secrets.BRIDGE_OWNER_PRIVATE_KEY }}
           SERVER_GIN_MODE: release
           LOGGING_OUTPUT: "file"
           LOG_LEVEL: ${{ inputs.env == 'prod' && 'info' || 'debug' }}
@@ -139,6 +140,7 @@ jobs:
           REDIS_PASSWORD='${REDIS_PASSWORD}'
           REDIS_DB='${REDIS_DB}'
           SERVER_GIN_MODE='${SERVER_GIN_MODE}'
+          BRIDGE_OWNER_PRIVATE_KEY='${BRIDGE_OWNER_PRIVATE_KEY}'
           EON
 
           sudo chown -R mmn:mmn /opt/dong-service
@@ -175,6 +177,7 @@ jobs:
           printf "export REDIS_PASSWORD=%q\n" "$REDIS_PASSWORD" >> remote_env.sh
           printf "export REDIS_DB=%q\n" "$REDIS_DB" >> remote_env.sh
           printf "export SERVER_GIN_MODE=%q\n" "$SERVER_GIN_MODE" >> remote_env.sh
+          printf "export BRIDGE_OWNER_PRIVATE_KEY=%q\n" "$BRIDGE_OWNER_PRIVATE_KEY" >> remote_env.sh
 
       - name: Prepare and deploy to target server
         run: |

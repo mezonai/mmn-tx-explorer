@@ -659,3 +659,8 @@ Contributions, issues and feature requests are welcome!
 
 Give a ⭐️ if this project helped you!
 
+
+Gen file ABI go 
+```bash
+abigen --abi contracts/wmezon.abi --pkg contracts --type WMezon --out contracts/wmezon.go
+```
