@@ -20,7 +20,6 @@ import (
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/worker"
 
 	// Import the generated Swagger docs
-	_ "github.com/mezonai/mmn-tx-explorer/indexer/docs"
 	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	_ "github.com/mezonai/mmn-tx-explorer/indexer/docs"
 )
@@ -97,6 +96,10 @@ func RunApi(cmd *cobra.Command, args []string) {
 		root.GET("/blocks/:blockNumber/detail", handlers.GetBlockDetail)
 
 		root.GET("/tx/:txHash/detail", handlers.GetTransactionDetail)
+
+		// internal endpoints (without extra_info field)
+		root.GET("/internal/transactions", handlers.GetInternalTransactions)
+		root.GET("/internal/tx/:txHash/detail", handlers.GetInternalTransactionDetail)
 
 		// stats queries
 		root.GET("/stats/dashboard", handlers.GetDashboardStats)

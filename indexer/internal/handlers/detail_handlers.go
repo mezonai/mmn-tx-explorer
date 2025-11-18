@@ -26,6 +26,13 @@ type TransactionDetailResponse struct {
 	} `json:"data"`
 }
 
+// InternalTransactionDetailResponse represents the response structure for internal transaction detail
+type InternalTransactionDetailResponse struct {
+	Data struct {
+		Transaction common.InternalTransactionModel `json:"transaction"`
+	} `json:"data"`
+}
+
 // @Summary Get block detail
 // @Description Retrieve detailed information about a specific block including all transactions
 // @Tags detail
@@ -60,6 +67,24 @@ func GetBlockDetail(c *gin.Context) {
 // @Router /{chainId}/tx/{txHash}/detail [get]
 func GetTransactionDetail(c *gin.Context) {
 	handleTransactionDetailRequest(c)
+}
+
+// @Summary Get internal transaction detail
+// @Description Retrieve detailed information about a specific transaction without extra_info field (for internal use)
+// @Tags detail
+// @Accept json
+// @Produce json
+// @Security BasicAuth
+// @Param chainId path string true "Chain ID"
+// @Param txHash path string true "Transaction hash"
+// @Success 200 {object} InternalTransactionDetailResponse
+// @Failure 400 {object} api.Error
+// @Failure 401 {object} api.Error
+// @Failure 404 {object} api.Error
+// @Failure 500 {object} api.Error
+// @Router /{chainId}/internal/tx/{txHash}/detail [get]
+func GetInternalTransactionDetail(c *gin.Context) {
+	handleInternalTransactionDetailRequest(c)
 }
 
 func handleBlockDetailRequest(c *gin.Context) {
@@ -165,6 +190,60 @@ func handleTransactionDetailRequest(c *gin.Context) {
 	transactionDetailResponse := TransactionDetailResponse{
 		Data: struct {
 			Transaction common.TransactionModel `json:"transaction"`
+		}{
+			Transaction: transaction,
+		},
+	}
+
+	c.JSON(http.StatusOK, transactionDetailResponse)
+}
+
+func handleInternalTransactionDetailRequest(c *gin.Context) {
+	chainId, err := api.GetChainId(c)
+	if err != nil {
+		api.BadRequestErrorHandler(c, err)
+		return
+	}
+
+	txHash := c.Param("txHash")
+	if txHash == "" {
+		api.BadRequestErrorHandler(c, fmt.Errorf("transaction hash cannot be empty"))
+		return
+	}
+
+	mainStorage, err := storage.GetMainStorage()
+	if err != nil {
+		log.Error().Err(err).Msg("Error getting main storage")
+		api.InternalErrorHandler(c)
+		return
+	}
+
+	ctx := c.Request.Context()
+	// Get transaction details
+	transactionResult, err := mainStorage.GetTransactions(ctx, storage.QueryFilter{
+		ChainId: chainId,
+		FilterParams: map[string]string{
+			"hash": txHash,
+		},
+		Limit: 1,
+	})
+	if err != nil {
+		log.Error().Err(err).Msg("Error getting transaction details")
+		api.InternalErrorHandler(c)
+		return
+	}
+
+	if len(transactionResult.Data) == 0 {
+		api.NotFoundErrorHandler(c, fmt.Errorf("transaction %s not found", txHash))
+		return
+	}
+
+	transaction := transactionResult.Data[0].SerializeInternal()
+
+	// Initialize the InternalTransactionDetailResponse
+	transactionDetailResponse := InternalTransactionDetailResponse{
+		Data: struct {
+			Transaction common.InternalTransactionModel `json:"transaction"`
 		}{
 			Transaction: transaction,
 		},
