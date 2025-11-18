@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -16,7 +15,6 @@ import (
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc"
 	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
@@ -2133,42 +2131,6 @@ func (p *PostgresConnector) Close() error {
 
 	return p.db.Close()
 }
-
-func (p *PostgresConnector) CountTotalGiveCoffee(ctx context.Context, intervalMinutes int) {
-	go func() {
-		ticker := time.NewTicker(time.Duration(intervalMinutes) * time.Minute)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ticker.C:
-				var totalGiveCoffee int64
-				err := p.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM transactions WHERE extra_info->>'type' = 'dong-give-coffee'`).Scan(&totalGiveCoffee)
-				if err != nil {
-					log := zerolog.New(os.Stdout).With().Timestamp().Logger()
-					log.Error().Err(err).Msg("Failed to recalculate total_give_coffee in cronjob")
-					continue
-				}
-				_, err = p.db.ExecContext(ctx, `
-					INSERT INTO stats(key, value)
-					VALUES ($1, $2)
-					ON CONFLICT (key)
-					DO UPDATE SET value = $2
-				`, "total_give_coffee", totalGiveCoffee)
-				if err != nil {
-					log := zerolog.New(os.Stdout).With().Timestamp().Logger()
-					log.Error().Err(err).Msg("Failed to update total_give_coffee in stats table")
-				} else {
-					log := zerolog.New(os.Stdout).With().Timestamp().Logger()
-					log.Info().Msgf("Successfully updated total_give_coffee to %d", totalGiveCoffee)
-				}
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-}
-
-// GetTotalGiveCoffee returns the current total_give_coffee value from the stats table
 func (p *PostgresConnector) GetTotalGiveCoffee(ctx context.Context, intervalMinutes int) (int64, error) {
 	var totalGiveCoffee int64
 	err := p.db.QueryRowContext(ctx, `SELECT value FROM stats WHERE key = 'total_give_coffee'`).Scan(&totalGiveCoffee)
