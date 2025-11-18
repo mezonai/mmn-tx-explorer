@@ -48,7 +48,7 @@ func RunApi(cmd *cobra.Command, args []string) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-    mainStorage, err := storage.GetMainStorage()
+	mainStorage, err := storage.GetMainStorage()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to create storage connector")
 	}
@@ -85,7 +85,6 @@ func RunApi(cmd *cobra.Command, args []string) {
 		root.GET("/transactions", handlers.GetTransactions)
 		root.GET("/pending-transactions", handlers.GetPendingTransactions)
 		root.GET("/pending-tx/:transaction_hash/detail", handlers.GetPendingTransactionDetail)
-		root.GET("/events", handlers.GetLogs)
 
 		// wallet queries
 		root.GET("/wallets", handlers.GetWallets)
