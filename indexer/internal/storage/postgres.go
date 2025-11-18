@@ -1285,22 +1285,23 @@ func (p *PostgresConnector) GetCount(ctx context.Context, table string, qf Query
 	return count, err
 }
 
-func (p *PostgresConnector) GetDashboardStats(ctx context.Context, qf QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, averageBlockTime float64, err error) {
+func (p *PostgresConnector) GetDashboardStats(ctx context.Context, qf QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, averageBlockTime float64, totalGiveCoffee int64, err error) {
 	query := `
         SELECT 
             COALESCE(MAX(CASE WHEN key = 'total_blocks' THEN value::bigint END), 0) as blocks,
             COALESCE(MAX(CASE WHEN key = 'total_transactions' THEN value::bigint END), 0) as transactions,
             COALESCE(MAX(CASE WHEN key = 'total_wallets' THEN value::bigint END), 0) as wallets,
-            COALESCE(MAX(CASE WHEN key = 'average_block' THEN value::float END) / 1000.0, 0.0) as avg_block_time
+            COALESCE(MAX(CASE WHEN key = 'average_block' THEN value::float END) / 1000.0, 0.0) as avg_block_time,
+            COALESCE(MAX(CASE WHEN key = 'total_give_coffee' THEN value::bigint END), 0) as give_coffee
         FROM stats
     `
 
-	err = p.db.QueryRowContext(ctx, query).Scan(&totalBlocks, &totalTransactions, &totalWallets, &averageBlockTime)
+	err = p.db.QueryRowContext(ctx, query).Scan(&totalBlocks, &totalTransactions, &totalWallets, &averageBlockTime, &totalGiveCoffee)
 	if err != nil {
-		return 0, 0, 0, 0, fmt.Errorf("failed to get dashboard stats: %w", err)
+		return 0, 0, 0, 0, 0, fmt.Errorf("failed to get dashboard stats: %w", err)
 	}
 
-	return totalBlocks, totalTransactions, totalWallets, averageBlockTime, nil
+	return totalBlocks, totalTransactions, totalWallets, averageBlockTime, totalGiveCoffee, nil
 }
 
 func (p *PostgresConnector) GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error) {
@@ -1908,6 +1909,16 @@ func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
 
 	averageBlockMs := int64(avgBlockTime * 1000)
 
+	var totalGiveCoffee int64
+	err = p.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM transactions
+		WHERE extra_info ILIKE '%"type":"dong-give-coffee"%'
+
+	`).Scan(&totalGiveCoffee)
+	if err != nil {
+		return fmt.Errorf("failed to recalculate total_give_coffee: %w", err)
+	}
+
 	statsUpdates := []struct {
 		key   string
 		value int64
@@ -1915,6 +1926,7 @@ func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
 		{"total_blocks", totalBlocks},
 		{"total_transactions", totalTransactions},
 		{"total_wallets", totalWallets},
+		{"total_give_coffee", totalGiveCoffee},
 		{"average_block", averageBlockMs},
 	}
 

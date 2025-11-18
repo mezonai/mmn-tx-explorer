@@ -13,7 +13,6 @@ const FA_ICONS: Record<string, string> = {
 
 export const Stats = () => {
   const stats = useStats();
-  console.log('API stats response:', stats);
   const statCards = [
     { title: 'Total Blocks', value: stats?.total_blocks },
     { title: 'Total Transactions', value: stats?.total_transactions },

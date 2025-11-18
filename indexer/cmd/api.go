@@ -59,8 +59,6 @@ func RunApi(cmd *cobra.Command, args []string) {
 		statsWorker.Start()
 	}
 
-	go mainStorage.GetTotalGiveCoffee(ctx, 1)
-
 	r := gin.New()
 	r.Use(middleware.Logger())
 	r.Use(gin.Recovery())

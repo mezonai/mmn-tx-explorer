@@ -146,7 +146,6 @@ type IMainStorage interface {
 	GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit, offset int, sortBy, sortOrder string, startTime, endTime int64) ([]common.Transaction, error)
 	GetTransactionsByWalletCount(ctx context.Context, walletAddress string, startTime, endTime int64) (uint64, error)
 	GetTotalTransactions(ctx context.Context) (uint64, error)
-	GetTotalGiveCoffee(ctx context.Context, intervalMinutes int) (int64, error)
 
 	/**
 	 * Recalculates and updates all statistics in the stats table
