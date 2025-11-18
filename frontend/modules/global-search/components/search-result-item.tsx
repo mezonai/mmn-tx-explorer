@@ -17,7 +17,7 @@ export const SearchResultItem = ({ href, icon: Icon, title, timestamp, onItemSel
   return (
     <Link
       href={href}
-      className="hover:bg-sidebar-accent flex flex-col items-start justify-between gap-1 rounded p-2 lg:flex-row lg:items-center lg:gap-2"
+      className="hover:bg-sidebar-accent focus:bg-background active:bg-background flex flex-col items-start justify-between gap-1 rounded p-2 lg:flex-row lg:items-center lg:gap-2"
       onClick={onItemSelect}
     >
       <div className="flex w-full flex-1 items-center justify-start gap-2 lg:w-auto">
