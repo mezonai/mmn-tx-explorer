@@ -1,4 +1,3 @@
-basePath: /
 definitions:
   api.Error:
     description: Error represents an API error response
@@ -249,13 +248,18 @@ definitions:
         type: object
     type: object
 info:
-  contact: {}
-  description: API for querying blockchain transactions and events
+host: localhost:8080
+info:
+  contact:
+    email: support@example.com
+    name: API Support
+  description: API for indexing blockchain data.
   license:
     name: Apache 2.0
-    url: https://github.com/mezonai/mmn-tx-explorer/indexer/blob/main/LICENSE
-  title: Mezon Dong
-  version: v0.0.1-beta
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Indexer API
+  version: "1.0"
 paths:
   /{chainId}/blocks:
     get:
