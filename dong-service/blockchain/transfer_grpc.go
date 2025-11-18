@@ -16,9 +16,7 @@ import (
 )
 
 const (
-	TYPE_TX_FAUCET = 1
-	TEXT_DATA = "Red envelope fund"
-	EXTRA_INFO = "lucky-money"
+	TYPE_TX = 1
 	DECIMALS = 6
 )
 
@@ -43,7 +41,7 @@ func NewBlockchainService(rpcURL string) (*BlockchainService, error) {
 	}, nil
 }
 
-func (s *BlockchainService) Transfer(fromAddress, toAddress string, amount int64, privateKeyHex string) (string, error) {
+func (s *BlockchainService) Transfer(fromAddress, toAddress string, amount int64, privateKeyHex, textData, extraInfo string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -67,14 +65,14 @@ func (s *BlockchainService) Transfer(fromAddress, toAddress string, amount int64
 	}
 
 	txMsg := &pb.TxMsg{
-		Type:      int32(TYPE_TX_FAUCET),
+		Type:      int32(TYPE_TX),
 		Sender:    fromAddress,
 		Recipient: toAddress,
 		Amount:    scaleAmount,
 		Timestamp: uint64(time.Now().Unix()),
-		TextData:  TEXT_DATA,
+		TextData:  textData,
 		Nonce:     nonceResp.Nonce,
-		ExtraInfo: EXTRA_INFO,
+		ExtraInfo: extraInfo,
 		ZkProof:   "",
 		ZkPub:     "",
 	}

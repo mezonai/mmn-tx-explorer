@@ -20,6 +20,9 @@ database:
 indexer:
   schema: public
 
+blockchain:
+  rpc_url: "172.16.100.180:9001"
+
 cors:
   allow_origins: "*"
   allow_methods: "POST, OPTIONS, GET, PUT, DELETE, PATCH"
