@@ -8,7 +8,6 @@ export * from './chip';
 export * from './coming-soon';
 export * from './error-boundary';
 export * from './error-screen';
-export * from './feature-card';
 export * from './item-attribute';
 export * from './page-header';
 export * from './refresh-button';
