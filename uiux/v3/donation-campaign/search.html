@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mezon Explorer - Donation Campaigns</title>
+
+    <!-- Theme init -->
+    <script>
+      (function () {
+        const storedTheme = localStorage.getItem("theme");
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        if (storedTheme === "dark" || (!storedTheme && prefersDark)) {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+      })();
+    </script>
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#6941c6",
+              "primary-light": "#8b5cf6",
+              "primary-dark": "#553c9a",
+              dark: "#0B1533",
+              "dark-light": "#1e293b",
+              neon: "#00f5ff"
+            },
+            fontFamily: {
+              inter: ["Inter", "sans-serif"],
+              mono: ["JetBrains Mono", "monospace"]
+            }
+          }
+        }
+      };
+    </script>
+  </head>
+
+  <body class="bg-white text-gray-900 font-inter transition-colors duration-300 dark:bg-dark dark:text-white">
+    <div class="min-h-screen flex flex-col">
+
+      <!-- ================= HEADER ================= -->
+      <header class="sticky top-0 z-30 border-b border-gray-200/80 bg-white/80 backdrop-blur-sm dark:border-gray-800 dark:bg-dark/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex h-16 items-center gap-3">
+
+            <!-- Logo -->
+            <a href="../index.html" class="flex items-center gap-2">
+              <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">MEZ</span>
+              <span class="text-lg font-semibold tracking-wide text-gray-900 dark:text-white">Mezon Explorer</span>
+            </a>
+
+            <!-- Navigation -->
+            <nav class="hidden md:flex flex-1 items-center justify-end gap-6 text-sm text-gray-600 dark:text-gray-300">
+              <a href="../index.html" class="font-medium transition hover:text-primary dark:hover:text-white">Public Dashboard</a>
+              <a href="../donate.html" class="font-medium transition hover:text-primary dark:hover:text-white">Donate</a>
+              <a href="../search.html" class="font-medium transition hover:text-primary dark:hover:text-white">Search</a>
+
+              <!-- Theme toggle -->
+              <button
+                id="theme-toggle"
+                class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition hover:border-primary hover:text-primary dark:border-white/10 dark:text-gray-300 dark:hover:border-primary-light dark:hover:text-white"
+                aria-label="Toggle theme"
+              >
+                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M10 2.5a.75.75 0 0 1 .75.75V5a.75.75 0 0 1-1.5 0V3.25A.75.75 0 0 1 10 2.5zM15.303 4.697a.75.75 0 0 1 1.06 1.06l-1.24 1.24a.75.75 0 0 1-1.061-1.06zM4.697 4.697a.75.75 0 0 1 1.06 0l1.24 1.24a.75.75 0 0 1-1.06 1.061l-1.24-1.24a.75.75 0 0 1 0-1.061zM10 6.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zm0 1.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7.5 2.75a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5a.75.75 0 0 1 .75-.75zm-15 0a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5a.75.75 0 0 1 .75-.75zm2.647 4.803a.75.75 0 0 1 1.06 0l1.24 1.24a.75.75 0 0 1-1.06 1.06l-1.24-1.24a.75.75 0 0 1 0-1.06zm9.412 0a.75.75 0 0 1 1.06 1.06l-1.24 1.24a.75.75 0 0 1-1.061-1.06zM10 15a.75.75 0 0 1 .75.75V17a.75.75 0 0 1-1.5 0v-1.25A.75.75 0 0 1 10 15z" />
+                </svg>
+              </button>
+            </nav>
+
+            <!-- Mobile menu -->
+            <div class="flex flex-1 justify-end md:hidden">
+              <button class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-300 hover:border-primary hover:text-primary dark:hover:border-primary-light dark:hover:text-white">
+                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M3.75 5a.75.75 0 0 1 .75-.75h11a.75.75 0 0 1 0 1.5h-11A.75.75 0 0 1 3.75 5zm0 5a.75.75 0 0 1 .75-.75h11a.75.75 0 0 1 0 1.5h-11A.75.75 0 0 1 3.75 10zm0 5a.75.75 0 0 1 .75-.75h11a.75.75 0 0 1 0 1.5h-11a.75.75 0 0 1-.75-.75z"/>
+                </svg>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </header>
+
+      <!-- ================= HERO SECTION ================= -->
+      <section class="relative overflow-hidden border-b border-gray-200/70 bg-gradient-to-br from-primary/5 via-white to-white dark:border-gray-800 dark:from-primary/15 dark:via-dark dark:to-dark">
+        <div class="pointer-events-none absolute inset-x-0 -top-20 mx-auto h-48 w-48 rounded-full bg-primary/20 blur-3xl dark:bg-primary/40"></div>
+
+        <div class="max-w-7xl mx-auto px-4 pb-16 pt-14 sm:px-6 lg:px-8 lg:pt-20">
+          <div class="max-w-3xl">
+            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-primary">CSR Donation</p>
+
+            <h1 class="mt-4 text-3xl font-semibold sm:text-4xl text-gray-900 dark:text-white">
+              Mezon Donation Campaigns
+            </h1>
+
+            <p class="mt-4 text-sm leading-6 text-gray-600 dark:text-gray-300">
+              Discover active CSR initiatives, monitor fundraising progress in real time, and help the Mezon team deliver meaningful impact to local communities.
+            </p>
+
+            <!-- Buttons -->
+            <div class="mt-6 flex flex-wrap items-center gap-3">
+              <a href="create.html" class="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/30 hover:bg-primary-light">
+                + Create campaign
+              </a>
+
+              <a href="../donate.html" class="inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 hover:border-primary hover:text-primary dark:border-white/20 dark:text-gray-200 dark:hover:text-white">
+                Contribution guide
+              </a>
+            </div>
+
+            <!-- Stats -->
+            <div class="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div class="rounded-2xl border border-white/50 bg-white/80 p-4 shadow-sm backdrop-blur dark:border-white/10 dark:bg-dark-light/80">
+                <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Campaigns live</p>
+                <p class="mt-2 text-2xl font-semibold">8</p>
+              </div>
+
+              <div class="rounded-2xl border border-white/50 bg-white/80 p-4 shadow-sm backdrop-blur dark:border-white/10 dark:bg-dark-light/80">
+                <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Total raised (MMN)</p>
+                <p class="mt-2 text-2xl font-semibold">42,760</p>
+              </div>
+
+              <div class="rounded-2xl border border-white/50 bg-white/80 p-4 shadow-sm backdrop-blur dark:border-white/10 dark:bg-dark-light/80">
+                <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Contributors</p>
+                <p class="mt-2 text-2xl font-semibold">1,254</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+      <!-- ================= FEATURED CAMPAIGNS ================= -->
+      <section class="py-14">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Featured campaigns</h2>
+          <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            Top campaigns with strong impact in the last 14 days.
+          </p>
+
+          <div class="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+
+            <!-- FEATURED example 1 -->
+            <article
+              class="featured-card group flex flex-col rounded-3xl border border-primary/40 bg-primary/5 p-6 shadow-sm transition hover:-translate-y-1 hover:border-primary/60 hover:shadow-lg dark:border-primary/40 dark:bg-primary/10"
+              data-verified="true"
+              data-owner="other"
+              data-status="active"
+              data-title="Xây Trường Cho Em"
+              data-desc="Raise funds to build three resilient classrooms and a library."
+            >
+              <div class="flex items-center justify-between gap-4">
+                <span class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300">
+                  Active
+                </span>
+                <span class="text-xs font-medium text-gray-500 dark:text-gray-400">23 days left</span>
+              </div>
+
+              <h3 class="mt-4 text-lg font-semibold text-gray-900 dark:text-white group-hover:text-primary dark:group-hover:text-primary-light">
+                Xây Trường Cho Em
+              </h3>
+
+              <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-400 line-clamp-3">
+                Raise funds to build three resilient classrooms and a community library for children in Điện Biên province.
+              </p>
+
+              <div class="mt-6">
+                <div class="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
+                  <span>12,450 / 20,000 MMN</span>
+                  <span>62% funded</span>
+                </div>
+                <div class="mt-2 h-2 rounded-full bg-gray-100 dark:bg-white/5">
+                  <div class="h-full w-[62%] rounded-full bg-gradient-to-r from-primary to-primary-light"></div>
+                </div>
+              </div>
+
+              <div class="mt-6 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                <span>48 contributors</span>
+                <span>Last gift · 5m ago</span>
+              </div>
+
+              <a
+                href="detail.html"
+                class="mt-6 inline-flex items-center justify-center rounded-xl bg-primary/10 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary hover:text-white dark:bg-primary/15 dark:text-primary-light dark:hover:bg-primary-light dark:hover:text-white transition"
+              >
+                View details
+              </a>
+            </article>
+
+            <!-- FEATURED example 2 -->
+            <article
+              class="featured-card group flex flex-col rounded-3xl border border-primary/40 bg-primary/5 p-6 shadow-sm transition hover:-translate-y-1 hover:border-primary/60 hover:shadow-lg dark:border-primary/40 dark:bg-primary/10"
+              data-verified="true"
+              data-owner="other"
+              data-status="active"
+              data-title="Warm Clothes for Highland Kids"
+              data-desc="Provide insulated jackets for children in remote mountains."
+            >
+              <div class="flex items-center justify-between gap-4">
+                <span class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300">
+                  Active
+                </span>
+                <span class="text-xs font-medium text-gray-500 dark:text-gray-400">12 days left</span>
+              </div>
+
+              <h3 class="mt-4 text-lg font-semibold text-gray-900 dark:text-white group-hover:text-primary dark:group-hover:text-primary-light">
+                Warm Clothes for Highland Kids
+              </h3>
+
+              <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-400 line-clamp-3">
+                Provide insulated jackets, gloves, and heaters for 800 students living in remote northern mountains.
+              </p>
+
+              <div class="mt-6">
+                <div class="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
+                  <span>3,980 / 16,000 MMN</span>
+                  <span>25% funded</span>
+                </div>
+                <div class="mt-2 h-2 rounded-full bg-gray-100 dark:bg-white/5">
+                  <div class="h-full w-[25%] rounded-full bg-gradient-to-r from-primary to-primary-light"></div>
+                </div>
+              </div>
+
+              <div class="mt-6 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                <span>126 contributors</span>
+                <span>Last gift · 32m ago</span>
+              </div>
+
+              <a
+                href="detail.html"
+                class="mt-6 inline-flex items-center justify-center rounded-xl bg-primary/10 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary hover:text-white dark:bg-primary/15 dark:text-primary-light dark:hover:bg-primary-light dark:hover:text-white transition"
+              >
+                View details
+              </a>
+            </article>
+
+            <!-- FEATURED example 3 -->
+            <article
+              class="featured-card group flex flex-col rounded-3xl border border-primary/40 bg-primary/5 p-6 shadow-sm transition hover:-translate-y-1 hover:border-primary/60 hover:shadow-lg dark:border-primary/40 dark:bg-primary/10"
+              data-verified="false"
+              data-owner="other"
+              data-status="active"
+              data-title="Water Access for Border Guards"
+              data-desc="Install a 10,000-liter water filtration system for border guards."
+            >
+              <div class="flex items-center justify-between gap-4">
+                <span class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300">
+                  Active
+                </span>
+                <span class="text-xs font-medium text-gray-500 dark:text-gray-400">6 days left</span>
+              </div>
+
+              <h3 class="mt-4 text-lg font-semibold text-gray-900 dark:text-white group-hover:text-primary dark:group-hover:text-primary-light">
+                Water Access for Border Guards
+              </h3>
+
+              <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-400 line-clamp-3">
+                Install a 10,000-liter filtration and storage system for a border guard station.
+              </p>
+
+              <div class="mt-6">
+                <div class="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
+                  <span>9,420 / 12,000 MMN</span>
+                  <span>78% funded</span>
+                </div>
+                <div class="mt-2 h-2 rounded-full bg-gray-100 dark:bg-white/5">
+                  <div class="h-full w-[78%] rounded-full bg-gradient-to-r from-primary to-primary-light"></div>
+                </div>
+              </div>
+
+              <div class="mt-6 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                <span>362 contributors</span>
+                <span>Last gift · 2h ago</span>
+              </div>
+
+              <a
+                href="detail.html"
+                class="mt-6 inline-flex items-center justify-center rounded-xl bg-primary/10 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary hover:text-white dark:bg-primary/15 dark:text-primary-light dark:hover:bg-primary-light dark:hover:text-white transition"
+              >
+                View details
+              </a>
+            </article>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= FILTER BAR (Unified) ================= -->
+      <section class="pb-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+          <div class="w-full rounded-2xl border border-gray-200 bg-white/90 p-6 shadow-sm dark:border-white/10 dark:bg-dark-light/80">
+
+            <div class="grid grid-cols-1 gap-5 md:grid-cols-3 lg:grid-cols-5">
+
+              <!-- SEARCH -->
+              <div class="col-span-2">
+                <label class="text-xs font-medium text-gray-600 dark:text-gray-300">Search</label>
+                <div class="relative mt-1">
+                  <span class="absolute inset-y-0 left-3 flex items-center text-gray-400">🔍</span>
+                  <input
+                    id="search-input"
+                    type="text"
+                    placeholder="Search name or description..."
+                    class="w-full rounded-xl border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm text-gray-700 dark:border-white/10 dark:bg-dark dark:text-gray-200 placeholder-gray-400 focus:border-primary focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              <!-- STATUS -->
+              <div>
+                <label class="text-xs font-medium text-gray-600 dark:text-gray-300">Status</label>
+                <select
+                  id="status-filter"
+                  class="mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-dark dark:text-gray-200"
+                >
+                  <option value="all">All statuses</option>
+                  <option value="active">Active</option>
+                  <option value="draft">Draft</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+
+              <!-- SORT -->
+              <div>
+                <label class="text-xs font-medium text-gray-600 dark:text-gray-300">Sort</label>
+                <select
+                  id="sort-filter"
+                  class="mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-dark dark:text-gray-200"
+                >
+                  <option value="newest">Newest</option>
+                  <option value="ending-soon">Ending soon</option>
+                  <option value="most-funded">Most funded</option>
+                </select>
+              </div>
+
+              <!-- VERIFIED -->
+              <div>
+                <label class="text-xs font-medium text-gray-600 dark:text-gray-300">Verified</label>
+                <select
+                  id="verified-filter"
+                  class="mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-dark dark:text-gray-200"
+                >
+                  <option value="all">All</option>
+                  <option value="verified">Verified only</option>
+                  <option value="unverified">Unverified only</option>
+                </select>
+              </div>
+
+              <!-- MY CAMPAIGNS -->
+              <div>
+                <label class="text-xs font-medium text-gray-600 dark:text-gray-300">Mine</label>
+                <button
+                  id="my-campaigns-toggle"
+                  data-active="false"
+                  class="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:border-primary hover:text-primary dark:border-white/10 dark:text-gray-300 dark:hover:border-primary-light dark:hover:text-white"
+                >
+                  👤 My campaigns
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ================= VERIFIED CAMPAIGNS ================= -->
+      <section class="pb-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Verified campaigns</h2>
+          <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">These are CSR-team verified campaigns.</p>
+
+          <div id="verified-campaign-list" class="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+
+            <!-- Example verified card -->
+            <article
+              class="campaign-card group flex flex-col rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm dark:border-white/10 dark:bg-dark-light/80 hover:-translate-y-1 transition"
+              data-verified="true"
+              data-owner="other"
+              data-status="active"
+              data-title="Xây Trường Cho Em"
+              data-desc="Raise funds to build classrooms and a library."
+            >
+              <div class="flex items-center justify-between gap-4">
+                <span class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300">Active</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">23 days left</span>
+              </div>
+
+              <h3 class="mt-4 text-lg font-semibold group-hover:text-primary dark:group-hover:text-primary-light">Xây Trường Cho Em</h3>
+
+              <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-400 line-clamp-3">
+                Raise funds to build three resilient classrooms and a community library.
+              </p>
+
+              <div class="mt-6">
+                <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                  <span>12,450 / 20,000 MMN</span><span>62%</span>
+                </div>
+                <div class="mt-2 h-2 rounded-full bg-gray-100 dark:bg-white/5">
+                  <div class="h-full w-[62%] rounded-full bg-gradient-to-r from-primary to-primary-light"></div>
+                </div>
+              </div>
+
+              <a href="detail.html" class="mt-6 inline-flex items-center justify-center rounded-xl bg-primary/10 px-4 py-2 text-sm text-primary hover:bg-primary hover:text-white dark:bg-primary/15 dark:text-primary-light">
+                View details
+              </a>
+            </article>
+
+          </div>
+
+          <!-- Pagination for verified -->
+          <div id="verified-pagination" class="mt-8 flex justify-center gap-2 text-sm">
+            <button class="px-3 py-1 border border-gray-300 rounded-lg dark:border-white/10">«</button>
+            <button class="px-3 py-1 bg-primary text-white rounded-lg">1</button>
+            <button class="px-3 py-1 border border-gray-300 rounded-lg dark:border-white/10">2</button>
+            <button class="px-3 py-1 border border-gray-300 rounded-lg dark:border-white/10">3</button>
+            <button class="px-3 py-1 border border-gray-300 rounded-lg dark:border-white/10">»</button>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ================= OTHER CAMPAIGNS ================= -->
+      <section class="pb-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Other campaigns</h2>
+          <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Community-led campaigns.</p>
+
+          <div id="other-campaign-list" class="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+
+            <article
+              class="campaign-card group flex flex-col rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm dark:border-white/10 dark:bg-dark-light/80"
+              data-verified="false"
+              data-owner="other"
+              data-status="active"
+              data-title="Warm Clothes for Highland Kids"
+              data-desc="Provide jackets for highland kids."
+            >
+              <div class="flex items-center justify-between">
+                <span class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300">Active</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">12 days left</span>
+              </div>
+
+              <h3 class="mt-4 text-lg font-semibold group-hover:text-primary dark:group-hover:text-primary-light">Warm Clothes for Highland Kids</h3>
+
+              <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-400">
+                Provide insulated jackets, gloves, and heaters for 800 students.
+              </p>
+
+              <div class="mt-6">
+                <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                  <span>3,980 / 16,000 MMN</span><span>25%</span>
+                </div>
+                <div class="mt-2 h-2 rounded-full bg-gray-100 dark:bg-white/5">
+                  <div class="h-full w-[25%] rounded-full bg-gradient-to-r from-primary to-primary-light"></div>
+                </div>
+              </div>
+
+              <a href="detail.html" class="mt-6 inline-flex justify-center items-center rounded-xl bg-primary/10 px-4 py-2 text-sm text-primary hover:bg-primary hover:text-white dark:bg-primary/15 dark:text-primary-light">
+                View details
+              </a>
+            </article>
+
+          </div>
+
+          <!-- Pagination for Other campaigns -->
+          <div id="other-pagination" class="mt-8 flex justify-center gap-2 text-sm">
+            <button class="px-3 py-1 border border-gray-300 rounded-lg dark:border-white/10">«</button>
+            <button class="px-3 py-1 bg-primary text-white rounded-lg">1</button>
+            <button class="px-3 py-1 border border-gray-300 rounded-lg dark:border-white/10">2</button>
+            <button class="px-3 py-1 border border-gray-300 rounded-lg dark:border-white/10">»</button>
+          </div>
+
+        </div>
+      </section>
+      <!-- ================= FOOTER ================= -->
+      <footer class="border-t border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-dark-light/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between text-sm text-gray-600 dark:text-gray-400">
+            <div class="flex items-center space-x-2">
+              <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">MEZ</span>
+              <span>Mezon Explorer · Donation Module</span>
+            </div>
+            <div class="flex items-center space-x-6">
+              <a class="transition hover:text-primary dark:hover:text-white" href="../privacy.html">Privacy</a>
+              <a class="transition hover:text-primary dark:hover:text-white" href="../terms.html">Terms</a>
+              <a class="transition hover:text-primary dark:hover:text-white" href="../support.html">Support</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+    </div> <!-- /min-h-screen wrapper -->
+
+    <!-- ================= THEME TOGGLE SCRIPT ================= -->
+    <script>
+      (function () {
+        const themeToggle = document.getElementById("theme-toggle");
+        if (!themeToggle) return;
+        const applyState = () => {
+          const isDark = document.documentElement.classList.contains("dark");
+          themeToggle.setAttribute("aria-pressed", isDark ? "true" : "false");
+        };
+        applyState();
+        themeToggle.addEventListener("click", () => {
+          const isDark = document.documentElement.classList.toggle("dark");
+          localStorage.setItem("theme", isDark ? "dark" : "light");
+          applyState();
+        });
+      })();
+    </script>
+
+    <!-- ================= FILTER + SORT LOGIC ================= -->
+    <script>
+      (function () {
+        const searchInput     = document.getElementById("search-input");
+        const statusFilter    = document.getElementById("status-filter");
+        const sortFilter      = document.getElementById("sort-filter");
+        const verifiedFilter  = document.getElementById("verified-filter");
+        const myToggle        = document.getElementById("my-campaigns-toggle");
+
+        // All non-featured campaign cards (verified + other)
+        const cards = Array.from(document.querySelectorAll(".campaign-card")).map(card => {
+          const title    = (card.dataset.title || "").toLowerCase();
+          const desc     = (card.dataset.desc || "").toLowerCase();
+          const verified = card.dataset.verified === "true";
+          const owner    = card.dataset.owner || "other";
+          const status   = card.dataset.status || "active";
+          return { card, title, desc, verified, owner, status };
+        });
+
+        function applyFilters() {
+          const q          = (searchInput?.value || "").toLowerCase().trim();
+          const statusVal  = statusFilter?.value   || "all";
+          const sortVal    = sortFilter?.value     || "newest";
+          const verifiedVal= verifiedFilter?.value || "all";
+          const myOnly     = myToggle?.dataset.active === "true";
+
+          // Basic filter
+          let visibleCards = [];
+
+          cards.forEach(item => {
+            let visible = true;
+
+            // Status
+            if (statusVal !== "all" && item.status !== statusVal) {
+              visible = false;
+            }
+
+            // Verified
+            if (verifiedVal === "verified" && !item.verified) visible = false;
+            if (verifiedVal === "unverified" && item.verified) visible = false;
+
+            // My campaigns
+            if (myOnly && item.owner !== "me") visible = false;
+
+            // Search
+            if (q && !item.title.includes(q) && !item.desc.includes(q)) visible = false;
+
+            if (visible) {
+              item.card.classList.remove("hidden");
+              visibleCards.push(item);
+            } else {
+              item.card.classList.add("hidden");
+            }
+          });
+
+          // Sort (UI-level only, không reorder DOM phức tạp trong mock này)
+          // Bạn có thể implement sort thực sự ở backend hoặc bằng cách reorder DOM sau này.
+          if (sortVal === "ending-soon") {
+            // TODO: dùng data-remaining-days nếu backend cung cấp
+          } else if (sortVal === "most-funded") {
+            // TODO: dùng data-funded-percentage nếu backend cung cấp
+          } else {
+            // newest (giữ nguyên thứ tự hiện tại)
+          }
+        }
+
+        if (searchInput)    searchInput.addEventListener("input",  applyFilters);
+        if (statusFilter)   statusFilter.addEventListener("change", applyFilters);
+        if (sortFilter)     sortFilter.addEventListener("change",   applyFilters);
+        if (verifiedFilter) verifiedFilter.addEventListener("change", applyFilters);
+
+        if (myToggle) {
+          myToggle.addEventListener("click", () => {
+            const active = myToggle.dataset.active === "true";
+            myToggle.dataset.active = active ? "false" : "true";
+            myToggle.classList.toggle("bg-primary/10", !active);
+            myToggle.classList.toggle("text-primary", !active);
+            applyFilters();
+          });
+        }
+
+        // Initial
+        applyFilters();
+      })();
+    </script>
+
+  </body>
+</html>
