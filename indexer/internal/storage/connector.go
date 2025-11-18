@@ -13,9 +13,9 @@ import (
 )
 
 var (
-	storageOnce   sync.Once
-	mainStorage   IMainStorage
-	storageErr    error
+	storageOnce sync.Once
+	mainStorage IMainStorage
+	storageErr  error
 )
 
 type QueryFilter struct {
@@ -106,8 +106,6 @@ type IMainStorage interface {
 
 	GetBlocks(qf QueryFilter, fields ...string) (blocks QueryResult[common.Block], err error)
 	GetTransactions(ctx context.Context, qf QueryFilter, fields ...string) (transactions QueryResult[common.Transaction], err error)
-	GetLogs(qf QueryFilter, fields ...string) (logs QueryResult[common.Log], err error)
-	GetTraces(qf QueryFilter, fields ...string) (traces QueryResult[common.Trace], err error)
 	GetAggregations(ctx context.Context, table string, qf QueryFilter) (QueryResult[interface{}], error)
 	GetMaxBlockNumber(chainId *big.Int) (maxBlockNumber *big.Int, err error)
 	GetMaxBlockNumberInRange(chainId *big.Int, startBlock *big.Int, endBlock *big.Int) (maxBlockNumber *big.Int, err error)
@@ -143,8 +141,8 @@ type IMainStorage interface {
 	GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error)
 
 	/**
-     * Optimized methods for pagination
-     */ 
+	 * Optimized methods for pagination
+	 */
 	GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit, offset int, sortBy, sortOrder string, startTime, endTime int64) ([]common.Transaction, error)
 	GetTransactionsByWalletCount(ctx context.Context, walletAddress string, startTime, endTime int64) (uint64, error)
 	GetTotalTransactions(ctx context.Context) (uint64, error)
