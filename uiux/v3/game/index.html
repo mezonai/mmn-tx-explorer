@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mezon Games</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#8566FF",
+                        card: {
+                            light: "#ffffff",
+                            dark: "#111827"
+                        },
+                        border: {
+                            light: "#e5e7eb",
+                            dark: "#ffffff0d"
+                        }
+                    },
+                    borderRadius: {
+                        xl2: "20px"
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-[#0f172a] dark:bg-[#0f172a] text-gray-100">
+
+    <!-- HEADER (simplified version matching dashboard spacing & style) -->
+    <header class="w-full border-b border-white/10 bg-[#0f172a]/80 backdrop-blur">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-5 h-5 rounded-full bg-primary"></div>
+                <span class="font-semibold text-lg">Mezon Đồng</span>
+            </div>
+            <div>
+                <button class="bg-primary hover:bg-primary/80 text-white px-4 py-2 rounded-xl">
+                    Login with Mezon →
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- PAGE TITLE -->
+    <section class="max-w-7xl mx-auto px-6 mt-10">
+
+        <h1 class="text-3xl font-bold mb-2">Mezon Games</h1>
+
+        <!-- small description -->
+        <p class="text-gray-400 text-sm mb-8">
+            Explore blockchain-powered games on Mezon Mainnet. Data powered by 
+            <a href="https://top.mezon.ai" target="_blank"
+               class="underline text-primary hover:text-primary/80">
+                top.mezon.ai
+            </a>
+        </p>
+
+        <!-- SEARCH & SORT -->
+        <div class="flex flex-col md:flex-row items-center gap-4 mb-10">
+
+            <!-- Search -->
+            <div class="relative w-full md:w-1/2">
+                <input 
+                    type="text"
+                    placeholder="Search games..."
+                    class="w-full px-4 py-2 rounded-xl2 bg-[#1e293b] text-gray-200 border border-white/10 focus:ring-primary focus:border-primary outline-none"
+                />
+            </div>
+
+            <!-- Sort -->
+            <select class="px-4 py-2 rounded-xl2 bg-[#1e293b] text-gray-200 border border-white/10">
+                <option>Newest</option>
+                <option>Highest Rating</option>
+            </select>
+
+        </div>
+
+        <!-- GAME LIST GRID -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- CARD TEMPLATE -->
+            <div class="p-5 bg-[#1e293b] border border-white/10 rounded-xl2 shadow flex gap-4">
+                <img src="https://i.imgur.com/jP4QXGx.png"
+                     class="w-24 h-24 rounded-xl2 object-cover" />
+
+                <div class="flex-1">
+                    <div class="flex justify-between items-start">
+                        <h2 class="text-xl font-semibold">Image Clash</h2>
+                        <button class="bg-primary hover:bg-primary/80 text-white px-4 py-2 rounded-xl text-sm">
+                            Play Now
+                        </button>
+                    </div>
+
+                    <div class="flex gap-2 mt-2 text-xs">
+                        <span class="px-2 py-1 bg-blue-500/20 text-blue-300 rounded-md">APP</span>
+                        <span class="px-2 py-1 bg-green-500/20 text-green-300 rounded-md">FREE</span>
+                    </div>
+
+                    <p class="text-gray-400 text-sm mt-2 line-clamp-2">
+                        ImageClash – fun crowd-guessing game powered by Mezon blockchain.
+                    </p>
+                </div>
+            </div>
+
+            <!-- CARD 2 -->
+            <div class="p-5 bg-[#1e293b] border border-white/10 rounded-xl2 shadow flex gap-4">
+                <img src="https://i.imgur.com/TwV9bRz.png"
+                     class="w-24 h-24 rounded-xl2 object-cover" />
+
+                <div class="flex-1">
+                    <div class="flex justify-between items-start">
+                        <h2 class="text-xl font-semibold">P.O.K.E.R</h2>
+                        <button class="bg-primary hover:bg-primary/80 text-white px-4 py-2 rounded-xl text-sm">
+                            Play Now
+                        </button>
+                    </div>
+
+                    <div class="flex gap-2 mt-2 text-xs">
+                        <span class="px-2 py-1 bg-blue-500/20 text-blue-300 rounded-md">BOT</span>
+                        <span class="px-2 py-1 bg-green-500/20 text-green-300 rounded-md">FREE</span>
+                    </div>
+
+                    <p class="text-gray-400 text-sm mt-2 line-clamp-2">
+                        Poker mini-game for friends in Mezon communities.
+                    </p>
+                </div>
+            </div>
+
+            <!-- CARD 3 -->
+            <div class="p-5 bg-[#1e293b] border border-white/10 rounded-xl2 shadow flex gap-4">
+                <img src="https://i.imgur.com/Mx4oQpB.png"
+                     class="w-24 h-24 rounded-xl2 object-cover" />
+
+                <div class="flex-1">
+                    <div class="flex justify-between items-start">
+                        <h2 class="text-xl font-semibold">Play Media</h2>
+                        <button class="bg-primary hover:bg-primary/80 text-white px-4 py-2 rounded-xl text-sm">
+                            Play Now
+                        </button>
+                    </div>
+
+                    <div class="flex gap-2 mt-2 text-xs">
+                        <span class="px-2 py-1 bg-blue-500/20 text-blue-300 rounded-md">BOT</span>
+                        <span class="px-2 py-1 bg-green-500/20 text-green-300 rounded-md">FREE</span>
+                    </div>
+
+                    <p class="text-gray-400 text-sm mt-2 line-clamp-2">
+                        Media service bot for music & video playback.
+                    </p>
+                </div>
+            </div>
+
+            <!-- CARD 4 -->
+            <div class="p-5 bg-[#1e293b] border border-white/10 rounded-xl2 shadow flex gap-4">
+                <img src="https://i.imgur.com/1jDdpgg.png"
+                     class="w-24 h-24 rounded-xl2 object-cover" />
+
+                <div class="flex-1">
+                    <div class="flex justify-between items-start">
+                        <h2 class="text-xl font-semibold">Bầu Cua Bot</h2>
+                        <button class="bg-primary hover:bg-primary/80 text-white px-4 py-2 rounded-xl text-sm">
+                            Play Now
+                        </button>
+                    </div>
+
+                    <div class="flex gap-2 mt-2 text-xs">
+                        <span class="px-2 py-1 bg-blue-500/20 text-blue-300 rounded-md">BOT</span>
+                        <span class="px-2 py-1 bg-green-500/20 text-green-300 rounded-md">FREE</span>
+                    </div>
+
+                    <p class="text-gray-400 text-sm mt-2 line-clamp-2">
+                        Classic Vietnamese dice game with Mezon twist.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="mt-16 border-t border-white/10">
+        <div class="max-w-7xl mx-auto px-6 py-8 text-sm text-gray-400 flex justify-between">
+            <span>Mezon Đồng – Public Overview</span>
+            <div class="flex gap-6">
+                <a href="#" class="hover:text-gray-200">Privacy Policy</a>
+                <a href="#" class="hover:text-gray-200">Terms of Service</a>
+                <a href="#" class="hover:text-gray-200">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
