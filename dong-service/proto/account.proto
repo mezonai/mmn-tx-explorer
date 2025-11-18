@@ -1,0 +1,48 @@
+syntax = "proto3";
+package mmn;
+
+option go_package = "dong-service/proto;proto";
+
+message GetAccountRequest {
+  string address = 1;
+}
+
+message GetAccountResponse {
+  string address = 1;
+  string balance = 2;
+  uint64 nonce   = 3;
+  uint32 decimals = 4; // Number of fractional digits for amount formatting
+}
+
+message TxMeta {
+  string sender    = 1; // sender address
+  string recipient = 2; // recipient address
+  string amount    = 3; // amount
+  uint64 nonce     = 4; // nonce
+  uint64 timestamp = 5;
+  enum Status {
+    PENDING   = 0;
+    CONFIRMED = 1;
+    FINALIZED = 2;
+    FAILED    = 3;
+  }
+  Status status = 6;
+  string extra_info = 7;
+}
+
+message GetCurrentNonceRequest {
+  string address = 1;
+  string tag = 2; // "latest" or "pending"
+}
+
+message GetCurrentNonceResponse {
+  string address = 1;
+  uint64 nonce = 2;
+  string tag = 3;
+  string error = 4;
+}
+
+service AccountService {
+  rpc GetAccount     (GetAccountRequest)     returns (GetAccountResponse);
+  rpc GetCurrentNonce (GetCurrentNonceRequest) returns (GetCurrentNonceResponse);
+}
