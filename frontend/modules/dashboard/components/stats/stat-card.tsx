@@ -43,31 +43,28 @@ export const StatCard = ({ icon: Icon, faIconClass, title, value, subValue }: St
 
   const cardClassName = cn(
     'p-0',
-    'bg-card hover:border-primary/50 rounded-xl border border-gray-700 transition-colors dark:bg-slate-800'
+    'bg-card dark:bg-slate-800 border border-gray-700 rounded-xl hover:border-primary/50 transition-colors'
   );
 
   return (
     <Card className={cardClassName}>
       <CardContent className="p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', accent.bg)}>
+        <div className="flex items-center justify-between mb-4">
+          <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', accent.bg)}>
             {faIconClass ? (
               <i className={cn(faIconClass, accent.icon)} />
             ) : (
               Icon && <Icon className={cn('size-5', accent.icon)} strokeWidth={2} />
             )}
           </div>
-          <span className="font-mono text-xs text-gray-400">{deriveLabel(title)}</span>
+          <span className="text-xs text-gray-400 font-mono">{deriveLabel(title)}</span>
         </div>
         {isLoading ? (
           <Skeleton className="h-9 w-28" />
         ) : (
           <>
-            <h3 className="font-mono text-2xl font-bold">
-              {NumberUtil.formatWithCommas(value ?? 0)}
-              {unit}
-            </h3>
-            <p className="mt-1 text-sm text-gray-400">{title}</p>
+            <h3 className="text-2xl font-bold font-mono">{NumberUtil.formatWithCommas(value ?? 0)}{unit}</h3>
+            <p className="text-gray-400 text-sm mt-1">{title}</p>
           </>
         )}
       </CardContent>
