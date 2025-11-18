@@ -24,7 +24,7 @@ export const DetailsTab = ({ walletAddress }: TabDetailsProps) => {
           <div className="flex items-end justify-end">
             <p className="text-card-foreground rounded-lg p-1 text-xs break-words">
               Last updated block •
-              <Button variant="link" className="text-brand-primary size-fit p-0 text-sm font-normal" asChild>
+              <Button variant="link" className="text-brand-primary ml-0.5 size-fit p-0 text-sm font-normal" asChild>
                 <Link href={ROUTES.BLOCK(Number(walletDetails?.last_balance_update ?? 0))}>
                   {walletDetails?.last_balance_update ?? 0}
                 </Link>
