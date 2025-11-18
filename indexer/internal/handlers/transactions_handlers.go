@@ -41,10 +41,37 @@ const DateFormat = "2006-01-02"
 // @Failure 500 {object} api.Error
 // @Router /{chainId}/transactions [get]
 func GetTransactions(c *gin.Context) {
-	handleTransactionsRequest(c)
+	handleTransactionsRequest(c, false)
 }
 
-func handleTransactionsRequest(c *gin.Context) {
+// @Summary Get all internal transactions
+// @Description Retrieve all transactions without extra_info field
+// @Tags transactions
+// @Accept json
+// @Produce json
+// @Security BasicAuth
+// @Param chainId path string true "Chain ID"
+// @Param filter query string false "Filter parameters"
+// @Param group_by query string false "Field to group results by"
+// @Param sort_by query string false "Field to sort results by"
+// @Param sort_order query string false "Sort order (asc or desc)"
+// @Param page query int false "Page number for pagination"
+// @Param limit query int false "Number of items per page" default(5)
+// @Param wallet_address query string false "Wallet address to filter transactions (optional)"
+// @Param start_time query string false "Start date in YYYY-MM-DD format (defaults to 7 days ago)"
+// @Param end_time query string false "End date in YYYY-MM-DD format (defaults to current date)"
+// @Param aggregate query []string false "List of aggregate functions to apply"
+// @Param force_consistent_data query bool false "Force consistent data at the expense of query speed"
+// @Success 200 {object} api.QueryResponse{data=[]common.InternalTransactionModel}
+// @Failure 400 {object} api.Error
+// @Failure 401 {object} api.Error
+// @Failure 500 {object} api.Error
+// @Router /{chainId}/internal/transactions [get]
+func GetInternalTransactions(c *gin.Context) {
+	handleTransactionsRequest(c, true)
+}
+
+func handleTransactionsRequest(c *gin.Context, isInternalUse bool) {
 	walletAddress := c.Param("wallet_address")
 	queryParams, err := api.ParseQueryParams(c.Request)
 	if err != nil {
@@ -110,7 +137,12 @@ func handleTransactionsRequest(c *gin.Context) {
 			return
 		}
 
-		var data interface{} = serializeTransactions(transactions)
+		var data interface{}
+		if isInternalUse {
+			data = serializeInternalTransactions(transactions)
+		} else {
+			data = serializeTransactions(transactions)
+		}
 		queryResult.Data = &data
 		queryResult.Meta.TotalItems = int(totalItems)
 		queryResult.Meta.TotalPages = int(math.Ceil(float64(totalItems) / float64(queryParams.Limit)))
@@ -155,7 +187,12 @@ func handleTransactionsRequest(c *gin.Context) {
 		return
 	}
 
-	var data interface{} = serializeTransactions(transactionsResult.Data)
+	var data interface{}
+	if isInternalUse {
+		data = serializeInternalTransactions(transactionsResult.Data)
+	} else {
+		data = serializeTransactions(transactionsResult.Data)
+	}
 	queryResult.Data = &data
 	queryResult.Meta.TotalItems = int(totalItems)
 	maxItemsDisplayed := min(totalItems, storage.DATA_ROWS_DISPLAY_LIMIT)
@@ -175,158 +212,11 @@ func serializeTransactions(transactions []common.Transaction) []common.Transacti
 	return transactionModels
 }
 
-// @Summary Get all internal transactions
-// @Description Retrieve all transactions without extra_info field
-// @Tags transactions
-// @Accept json
-// @Produce json
-// @Security BasicAuth
-// @Param chainId path string true "Chain ID"
-// @Param filter query string false "Filter parameters"
-// @Param group_by query string false "Field to group results by"
-// @Param sort_by query string false "Field to sort results by"
-// @Param sort_order query string false "Sort order (asc or desc)"
-// @Param page query int false "Page number for pagination"
-// @Param limit query int false "Number of items per page" default(5)
-// @Param wallet_address query string false "Wallet address to filter transactions (optional)"
-// @Param start_time query string false "Start date in YYYY-MM-DD format (defaults to 7 days ago)"
-// @Param end_time query string false "End date in YYYY-MM-DD format (defaults to current date)"
-// @Param aggregate query []string false "List of aggregate functions to apply"
-// @Param force_consistent_data query bool false "Force consistent data at the expense of query speed"
-// @Success 200 {object} api.QueryResponse{data=[]common.InternalTransactionModel}
-// @Failure 400 {object} api.Error
-// @Failure 401 {object} api.Error
-// @Failure 500 {object} api.Error
-// @Router /{chainId}/internal/transactions [get]
-func GetInternalTransactions(c *gin.Context) {
-	handleInternalTransactionsRequest(c)
-}
-
-func handleInternalTransactionsRequest(c *gin.Context) {
-	walletAddress := c.Param("wallet_address")
-	queryParams, err := api.ParseQueryParams(c.Request)
-	if err != nil {
-		api.BadRequestErrorHandler(c, err)
-		return
-	}
-
-	if walletAddress == "" && queryParams.WalletAddress != "" {
-		walletAddress = queryParams.WalletAddress
-	}
-
-	// Validate GroupBy and SortBy fields
-	if err := api.ValidateGroupByAndSortBy("transactions", queryParams.GroupBy, queryParams.SortBy, queryParams.Aggregates); err != nil {
-		api.BadRequestErrorHandler(c, err)
-		return
-	}
-
-	mainStorage, err := storage.GetMainStorage()
-	if err != nil {
-		log.Error().Err(err).Msg("Error creating storage connector")
-		api.InternalErrorHandler(c)
-		return
-	}
-
-	ctx := c.Request.Context()
-	// Initialize the QueryResult
-	queryResult := api.QueryResponse{
-		Meta: api.Meta{
-			ChainId:    1337,
-			Page:       queryParams.Page,
-			Limit:      queryParams.Limit,
-			TotalItems: 0,
-			TotalPages: 0,
-		},
-		Data:         nil,
-		Aggregations: nil,
-	}
-
-	if walletAddress != "" {
-		// Get start and end time for filtering
-		startTime, endTime := getTimeRangeFromParams(queryParams.FilterParams, queryParams)
-
-		totalItems, err := mainStorage.GetTransactionsByWalletCount(ctx, walletAddress, startTime, endTime)
-		if err != nil {
-			log.Error().Err(err).Msg("Error getting transactions count")
-			api.InternalErrorHandler(c)
-			return
-		}
-
-		offset := queryParams.Page * queryParams.Limit
-		transactions, err := mainStorage.GetTransactionsByWalletPaginated(
-			ctx,
-			walletAddress,
-			queryParams.Limit,
-			offset,
-			queryParams.SortBy,
-			queryParams.SortOrder,
-			startTime,
-			endTime,
-		)
-		if err != nil {
-			log.Error().Err(err).Msg("Error querying transactions")
-			api.InternalErrorHandler(c)
-			return
-		}
-
-		var data interface{} = serializeInternalTransactions(transactions)
-		queryResult.Data = &data
-		queryResult.Meta.TotalItems = int(totalItems)
-		queryResult.Meta.TotalPages = int(math.Ceil(float64(totalItems) / float64(queryParams.Limit)))
-		c.JSON(http.StatusOK, queryResult)
-		return
-	}
-
-	// Prepare the QueryFilter
-	qf := storage.QueryFilter{
-		FilterParams:        queryParams.FilterParams,
-		SortBy:              queryParams.SortBy,
-		SortOrder:           queryParams.SortOrder,
-		Page:                queryParams.Page,
-		Limit:               queryParams.Limit,
-		ForceConsistentData: queryParams.ForceConsistentData,
-	}
-
-	// Prepare the QueryFilter for count
-	countQf := storage.QueryFilter{
-		FilterParams:        queryParams.FilterParams,
-		ForceConsistentData: queryParams.ForceConsistentData,
-	}
-
-	// Get the total number of items
-	var totalItems uint64
-	if len(countQf.FilterParams) > 0 {
-		totalItems, err = mainStorage.GetCount(ctx, "transactions", countQf)
-	} else {
-		totalItems, err = mainStorage.GetTotalTransactions(ctx)
-	}
-	if err != nil {
-		log.Error().Err(err).Msg("Error getting count")
-		api.InternalErrorHandler(c)
-		return
-	}
-
-	transactionsResult, err := mainStorage.GetTransactions(ctx, qf)
-	if err != nil {
-		log.Error().Err(err).Msg("Error querying transactions")
-		api.InternalErrorHandler(c)
-		return
-	}
-
-	var data interface{} = serializeInternalTransactions(transactionsResult.Data)
-	queryResult.Data = &data
-	queryResult.Meta.TotalItems = int(totalItems)
-	maxItemsDisplayed := min(totalItems, storage.DATA_ROWS_DISPLAY_LIMIT)
-	queryResult.Meta.TotalPages = int(math.Ceil(float64(maxItemsDisplayed) / float64(queryParams.Limit)))
-
-	c.JSON(http.StatusOK, queryResult)
-}
-
-func serializeInternalTransactions(transactions []common.Transaction) []common.InternalTransactionModel {
+func serializeInternalTransactions(transactions []common.Transaction) []common.BaseTransactionModel {
 	if len(transactions) == 0 {
-		return []common.InternalTransactionModel{}
+		return []common.BaseTransactionModel{}
 	}
-	transactionModels := make([]common.InternalTransactionModel, 0, len(transactions))
+	transactionModels := make([]common.BaseTransactionModel, 0, len(transactions))
 	for _, transaction := range transactions {
 		transactionModels = append(transactionModels, transaction.SerializeInternal())
 	}

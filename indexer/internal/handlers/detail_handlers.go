@@ -29,7 +29,7 @@ type TransactionDetailResponse struct {
 // InternalTransactionDetailResponse represents the response structure for internal transaction detail
 type InternalTransactionDetailResponse struct {
 	Data struct {
-		Transaction common.InternalTransactionModel `json:"transaction"`
+		Transaction common.BaseTransactionModel `json:"transaction"`
 	} `json:"data"`
 }
 
@@ -66,7 +66,7 @@ func GetBlockDetail(c *gin.Context) {
 // @Failure 500 {object} api.Error
 // @Router /{chainId}/tx/{txHash}/detail [get]
 func GetTransactionDetail(c *gin.Context) {
-	handleTransactionDetailRequest(c)
+	handleTransactionDetailRequest(c, false)
 }
 
 // @Summary Get internal transaction detail
@@ -84,7 +84,7 @@ func GetTransactionDetail(c *gin.Context) {
 // @Failure 500 {object} api.Error
 // @Router /{chainId}/internal/tx/{txHash}/detail [get]
 func GetInternalTransactionDetail(c *gin.Context) {
-	handleInternalTransactionDetailRequest(c)
+	handleTransactionDetailRequest(c, true)
 }
 
 func handleBlockDetailRequest(c *gin.Context) {
@@ -144,7 +144,7 @@ func handleBlockDetailRequest(c *gin.Context) {
 	c.JSON(http.StatusOK, blockDetailResponse)
 }
 
-func handleTransactionDetailRequest(c *gin.Context) {
+func handleTransactionDetailRequest(c *gin.Context, isInternalUse bool) {
 	chainId, err := api.GetChainId(c)
 	if err != nil {
 		api.BadRequestErrorHandler(c, err)
@@ -184,70 +184,25 @@ func handleTransactionDetailRequest(c *gin.Context) {
 		return
 	}
 
-	transaction := transactionResult.Data[0].Serialize()
-
-	// Initialize the TransactionDetailResponse
-	transactionDetailResponse := TransactionDetailResponse{
-		Data: struct {
-			Transaction common.TransactionModel `json:"transaction"`
-		}{
-			Transaction: transaction,
-		},
+	if isInternalUse {
+		transaction := transactionResult.Data[0].SerializeInternal()
+		transactionDetailResponse := InternalTransactionDetailResponse{
+			Data: struct {
+				Transaction common.BaseTransactionModel `json:"transaction"`
+			}{
+				Transaction: transaction,
+			},
+		}
+		c.JSON(http.StatusOK, transactionDetailResponse)
+	} else {
+		transaction := transactionResult.Data[0].Serialize()
+		transactionDetailResponse := TransactionDetailResponse{
+			Data: struct {
+				Transaction common.TransactionModel `json:"transaction"`
+			}{
+				Transaction: transaction,
+			},
+		}
+		c.JSON(http.StatusOK, transactionDetailResponse)
 	}
-
-	c.JSON(http.StatusOK, transactionDetailResponse)
-}
-
-func handleInternalTransactionDetailRequest(c *gin.Context) {
-	chainId, err := api.GetChainId(c)
-	if err != nil {
-		api.BadRequestErrorHandler(c, err)
-		return
-	}
-
-	txHash := c.Param("txHash")
-	if txHash == "" {
-		api.BadRequestErrorHandler(c, fmt.Errorf("transaction hash cannot be empty"))
-		return
-	}
-
-	mainStorage, err := storage.GetMainStorage()
-	if err != nil {
-		log.Error().Err(err).Msg("Error getting main storage")
-		api.InternalErrorHandler(c)
-		return
-	}
-
-	ctx := c.Request.Context()
-	// Get transaction details
-	transactionResult, err := mainStorage.GetTransactions(ctx, storage.QueryFilter{
-		ChainId: chainId,
-		FilterParams: map[string]string{
-			"hash": txHash,
-		},
-		Limit: 1,
-	})
-	if err != nil {
-		log.Error().Err(err).Msg("Error getting transaction details")
-		api.InternalErrorHandler(c)
-		return
-	}
-
-	if len(transactionResult.Data) == 0 {
-		api.NotFoundErrorHandler(c, fmt.Errorf("transaction %s not found", txHash))
-		return
-	}
-
-	transaction := transactionResult.Data[0].SerializeInternal()
-
-	// Initialize the InternalTransactionDetailResponse
-	transactionDetailResponse := InternalTransactionDetailResponse{
-		Data: struct {
-			Transaction common.InternalTransactionModel `json:"transaction"`
-		}{
-			Transaction: transaction,
-		},
-	}
-
-	c.JSON(http.StatusOK, transactionDetailResponse)
 }
