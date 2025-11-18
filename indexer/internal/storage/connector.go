@@ -155,9 +155,9 @@ type IMainStorage interface {
 	RecalculateStats(ctx context.Context) error
 
 	/**
-	 * Gets campaign wallet addresses from dong_schema.donation_campaign table
+	 * Checks if a wallet address exists in dong_schema.donation_campaign table
 	 */
-	GetCampaignWallets(ctx context.Context) ([]string, error)
+	GetCampaignWallet(ctx context.Context, address string) (bool, error)
 }
 
 func NewStorageConnector(cfg *config.StorageConfig) (IStorage, error) {

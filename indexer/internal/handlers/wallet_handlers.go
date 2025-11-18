@@ -155,7 +155,7 @@ func GetWalletDetail(c *gin.Context) {
 		FilterParams:        map[string]string{"address": address},
 		Limit:               1,
 		ForceConsistentData: queryParams.ForceConsistentData,
-		Aggregates:          []string{"address", "account_nonce", "transaction_count", "last_block", "balance"},
+		Aggregates:          []string{"address", "account_nonce", "balance", "transaction_count", "last_block"},
 	}
 
 	result, err := mainStorage.GetAggregations(c.Request.Context(), "wallet", qf)
@@ -172,27 +172,17 @@ func GetWalletDetail(c *gin.Context) {
 	// Prepare base response data from wallet table
 	resp := WalletDetailResponse{Data: result.Aggregates[0]}
 
-	// Get list of donation campaign wallets
-	campaignWallets, err := mainStorage.GetCampaignWallets(c.Request.Context())
+	// Check if wallet is a donation campaign wallet
+	isCampaign, err := mainStorage.GetCampaignWallet(c.Request.Context(), address)
 	if err != nil {
-		log.Error().Err(err).Msg("Error getting campaign wallets")
+		log.Error().Err(err).Msg("Error checking campaign wallet")
 	}
 
 	// Filter balance field - only show for campaign wallets
-	if !isCampaignWallet(address, campaignWallets) {
+	if !isCampaign {
 		delete(resp.Data, "balance")
 	}
 
 	resp.Data["last_balance_update"] = resp.Data["last_block"]
 	sendJSONResponse(c, resp)
-}
-
-// isCampaignWallet checks if a wallet address exists in the campaign wallets list
-func isCampaignWallet(address string, campaignWallets []string) bool {
-	for _, wallet := range campaignWallets {
-		if strings.EqualFold(wallet, address) {
-			return true
-		}
-	}
-	return false
 }

@@ -272,29 +272,16 @@ func (p *PostgresConnector) DB() *sql.DB {
 	return p.db
 }
 
-// GetCampaignWallets fetches all donation_wallet addresses from dong_schema.donation_campaign table
-func (p *PostgresConnector) GetCampaignWallets(ctx context.Context) ([]string, error) {
-	query := "SELECT DISTINCT donation_wallet FROM dong_schema.donation_campaign WHERE donation_wallet IS NOT NULL AND donation_wallet != ''"
-	rows, err := p.db.QueryContext(ctx, query)
+// GetCampaignWallet checks if a specific wallet address exists in dong_schema.donation_campaign table
+func (p *PostgresConnector) GetCampaignWallet(ctx context.Context, address string) (bool, error) {
+	query := "SELECT EXISTS(SELECT 1 FROM dong_schema.donation_campaign WHERE donation_wallet = $1)"
+	var exists bool
+	err := p.db.QueryRowContext(ctx, query, address).Scan(&exists)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query campaign wallets: %w", err)
-	}
-	defer rows.Close()
-
-	var wallets []string
-	for rows.Next() {
-		var wallet string
-		if err := rows.Scan(&wallet); err != nil {
-			return nil, fmt.Errorf("failed to scan campaign wallet: %w", err)
-		}
-		wallets = append(wallets, wallet)
+		return false, fmt.Errorf("failed to check campaign wallet: %w", err)
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating campaign wallets: %w", err)
-	}
-
-	return wallets, nil
+	return exists, nil
 }
 
 // Orchestrator Storage Implementation
