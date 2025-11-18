@@ -17,7 +17,12 @@ export const LatestTransactions = ({ className }: LatestTransactionsProps) => {
   const { data: transactionsResponse, isLoading } = useLatestTransactions();
   const transactions = transactionsResponse?.data;
   return (
-    <div className={cn('flex h-full flex-col rounded-xl border border-gray-300 dark:border-gray-700', className)}>
+    <div
+      className={cn(
+        'bg-card flex h-full flex-col rounded-xl border border-gray-300 shadow-sm dark:border-gray-700',
+        className
+      )}
+    >
       <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-300 p-6 dark:border-gray-700">
         <h3 className="text-lg font-semibold">Latest Transactions</h3>
         <Button
