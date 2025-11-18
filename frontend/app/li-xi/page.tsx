@@ -1,11 +1,16 @@
 import type { Metadata } from 'next';
 
-import { LiXi } from '@/modules/li-xi/components';
+import { ProtectedRoute } from '@/modules/auth/components/ProtectedRoute';
+import { LuckyMoney } from '@/modules/li-xi/components/red-envelope-dashboard';
 
 export const metadata: Metadata = {
-  title: 'Lì Xì',
+  title: 'Luckey Money',
 };
 
 export default function LiXiPage() {
-  return <LiXi />;
+  return (
+    <ProtectedRoute>
+      <LuckyMoney />
+    </ProtectedRoute>
+  );
 }
