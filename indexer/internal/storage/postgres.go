@@ -169,6 +169,16 @@ var defaultTransactionFields = []string{
 	"transaction_timestamp", "value", "transaction_type", "status", "text_data", "extra_info",
 }
 
+var defaultWalletFields = []string{
+	"address", "account_nonce", "balance", "transaction_count", "last_block",
+}
+
+var validSortByColumns = map[string][]string{
+	"blocks":       defaultBlockFields,
+	"transactions": defaultTransactionFields,
+	"wallet":       defaultWalletFields,
+}
+
 func NewPostgresConnector(cfg *config.PostgresConfig) (*PostgresConnector, error) {
 	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s",
 		cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.Database)
@@ -898,9 +908,8 @@ func (p *PostgresConnector) GetAggregations(ctx context.Context, table string, q
 		args["group_by"] = strings.Join(qf.GroupBy, ", ")
 	}
 
-	if qf.SortBy != "" {
-		query += " ORDER BY @sort_by"
-		args["sort_by"] = qf.SortBy
+	if qf.SortBy != "" && p.validateSortByColumn(table, qf.SortBy) {
+		query += " ORDER BY " + qf.SortBy
 		switch strings.ToUpper(qf.SortOrder) {
 		case "ASC":
 			query += " ASC"
@@ -1320,9 +1329,8 @@ func (p *PostgresConnector) buildQueryWithNamedArgs(table string, columns string
 		}
 	}
 
-	if qf.SortBy != "" {
-		query += " ORDER BY @sort_by"
-		args["sort_by"] = qf.SortBy
+	if qf.SortBy != "" && p.validateSortByColumn(table, qf.SortBy) {
+		query += " ORDER BY " + qf.SortBy
 		switch strings.ToUpper(qf.SortOrder) {
 		case "ASC":
 			query += " ASC"
@@ -1964,4 +1972,17 @@ func (p *PostgresConnector) convertQueryNamedArgsToPositional(query string, args
 		query = strings.Replace(query, "@"+key, "$"+strconv.Itoa(len(finalArgs)), -1)
 	}
 	return query, finalArgs
+}
+
+func (p *PostgresConnector) validateSortByColumn(table string, column string) bool {
+	validColumns, exists := validSortByColumns[table]
+	if !exists {
+		return false
+	}
+	for _, validColumn := range validColumns {
+		if column == validColumn {
+			return true
+		}
+	}
+	return false
 }
