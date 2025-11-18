@@ -2061,12 +2061,11 @@ func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
 
 	var totalGiveCoffee int64
 	err = p.db.QueryRowContext(ctx, `
-		SELECT COALESCE(MAX(value::bigint), 0)
-		FROM stats
-		WHERE key = 'total_give_coffee'
+		SELECT COUNT(*) FROM transactions
+		WHERE extra_info ILIKE '%"type":"dong-give-coffee"%'
 	`).Scan(&totalGiveCoffee)
 	if err != nil {
-		return fmt.Errorf("failed to get total_give_coffee stat: %w", err)
+		return fmt.Errorf("failed to recalculate total_give_coffee: %w", err)
 	}
 
 	avgBlockTime, err := p.calculateAverageBlockTime(ctx, 100)
