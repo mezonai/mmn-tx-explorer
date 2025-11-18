@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cobar.vn × Mezon — Overview</title>
+  <script>
+    // Tailwind dark mode via class
+    window.tailwind = { config: { darkMode: 'class' } };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: "#6941c6",
+            "primary-600": "#5531b4",
+            "primary-50": "#f5f3ff",
+            surface: "#ffffff",
+            line: "#e5e7eb",
+            ink: "#0f172a",
+            mute: "#6b7280",
+            "surface-2": "#f8fafc",
+            // dark
+            dBg: "#0B1533",
+            dCard: "#121b3f",
+            dLine: "#263156",
+            dText: "#e5e7eb",
+            dSub: "#9aa5ce",
+          },
+          fontFamily: { inter: ["Inter", "ui-sans-serif", "system-ui"] },
+          boxShadow: {
+            soft: "0 8px 20px rgba(105,65,198,0.10)",
+          },
+        },
+      },
+    };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js" defer></script>
+  <style>
+    /* smooth scroll & focus ring */
+    html { scroll-behavior:smooth; }
+  </style>
+  <script>
+    // Theme: read system + localStorage
+    (function () {
+      const saved = localStorage.getItem("mez-theme");
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const root = document.documentElement;
+      if ((saved === "dark") || (!saved && prefersDark)) root.classList.add("dark");
+    })();
+    function toggleTheme(){
+      const root = document.documentElement;
+      const next = root.classList.toggle("dark") ? "dark" : "light";
+      localStorage.setItem("mez-theme", next);
+    }
+  </script>
+</head>
+
+<body class="min-h-full font-inter bg-surface-2 text-ink dark:bg-dBg dark:text-dText">
+  <!-- Header -->
+  <header class="sticky top-0 z-50 bg-surface/80 backdrop-blur border-b border-line dark:bg-dBg/70 dark:border-dLine">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-primary text-white shadow-soft">
+          <i class="fa-solid fa-cube"></i>
+        </span>
+        <div class="leading-tight">
+          <div class="font-semibold">Mezon Explorer</div>
+          <div class="text-xs text-mute dark:text-dSub">Ecosystem · Public Overview</div>
+        </div>
+      </div>
+
+      <nav class="hidden md:flex items-center gap-6 text-sm">
+        <a class="text-mute hover:text-primary dark:text-dSub" href="#">Dashboard</a>
+        <a class="text-mute hover:text-primary dark:text-dSub" href="#">Finance</a>
+        <a class="text-mute hover:text-primary dark:text-dSub" href="#">Ecosystem</a>
+      </nav>
+
+      <div class="flex items-center gap-3">
+        <button onclick="toggleTheme()" class="px-3 py-2 rounded-lg border border-line hover:bg-primary-50 text-sm dark:border-dLine dark:hover:bg-dCard">
+          <span class="hidden dark:inline-flex items-center gap-2"><i class="fa-solid fa-sun"></i> Light</span>
+          <span class="inline-flex items-center gap-2 dark:hidden"><i class="fa-solid fa-moon"></i> Dark</span>
+        </button>
+        <a href="https://cobar.vn" target="_blank" class="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-white hover:bg-primary-600 text-sm shadow-soft">
+          <i class="fa-solid fa-up-right-from-square"></i> Open Cobar.vn
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+    <!-- Breadcrumb -->
+    <div class="text-xs text-mute dark:text-dSub">
+      Ecosystem <span class="mx-2">›</span> <span class="font-medium text-ink dark:text-dText">Cobar.vn × Mezon</span>
+    </div>
+
+    <!-- Hero -->
+    <section class="rounded-2xl border border-line bg-surface p-6 sm:p-8 shadow-sm dark:bg-dCard dark:border-dLine">
+      <div class="grid lg:grid-cols-2 gap-8">
+        <div>
+          <div class="inline-flex items-center gap-2 text-xs px-2 py-1 rounded-full bg-primary-50 text-primary mb-4">
+            <i class="fa-solid fa-hand-holding-dollar"></i> Marketplace integration
+          </div>
+          <h1 class="text-2xl sm:text-3xl font-bold mb-3">Cobar.vn × Mezon Token</h1>
+          <p class="text-mute dark:text-dSub">
+            Cobar.vn is the official marketplace supporting payments with Mezon Đồng (MEZ). Users can pay
+            directly with MEZ or via a fiat payment gateway. This page shows live statistics and featured items from Cobar.
+          </p>
+
+          <div class="mt-6 flex flex-wrap gap-3">
+            <a href="https://cobar.vn" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white hover:bg-primary-600 shadow-soft">
+              <i class="fa-solid fa-store"></i> Shop on Cobar.vn
+            </a>
+            <a href="#faq" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-line hover:bg-primary-50 text-ink dark:text-dText dark:border-dLine dark:hover:bg-dBg/60">
+              <i class="fa-regular fa-circle-question"></i> How it works
+            </a>
+          </div>
+        </div>
+
+        <!-- Highlight card -->
+        <div class="rounded-xl bg-gradient-to-br from-primary-50 to-white border border-line p-5 dark:from-dBg dark:to-dCard dark:border-dLine">
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-lg bg-primary text-white grid place-items-center"><i class="fa-solid fa-credit-card"></i></div>
+            <div class="flex-1">
+              <div class="font-semibold mb-1">“Shop with Mezon Đồng on Cobar.vn”</div>
+              <p class="text-sm text-mute dark:text-dSub">Fast checkout · Low fees · On-chain transparency</p>
+              <a href="https://cobar.vn" target="_blank" class="mt-4 inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-white hover:bg-primary-600 text-sm">
+                Start shopping <i class="fa-solid fa-arrow-right"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="space-y-4">
+      <h2 class="text-lg font-semibold">Today’s Payments</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="rounded-2xl border border-line bg-surface p-5 dark:bg-dCard dark:border-dLine">
+          <div class="text-xs text-mute dark:text-dSub mb-2">Orders in MEZ</div>
+          <div class="text-3xl font-bold">248</div>
+          <div class="text-xs text-mute dark:text-dSub mt-1"><span class="text-green-600 dark:text-green-400">+18%</span> / 24h</div>
+        </div>
+        <div class="rounded-2xl border border-line bg-surface p-5 dark:bg-dCard dark:border-dLine">
+          <div class="text-xs text-mute dark:text-dSub mb-2">Total MEZ</div>
+          <div class="text-3xl font-bold">32,480</div>
+          <div class="text-xs text-mute dark:text-dSub mt-1">+9.3%</div>
+        </div>
+        <div class="rounded-2xl border border-line bg-surface p-5 dark:bg-dCard dark:border-dLine">
+          <div class="text-xs text-mute dark:text-dSub mb-2">Average Ticket</div>
+          <div class="text-3xl font-bold">131 MEZ</div>
+          <div class="text-xs text-mute dark:text-dSub mt-1">+2%</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Featured Products -->
+    <section class="space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-semibold">Featured Products</h2>
+        <a href="https://cobar.vn" target="_blank" class="text-sm text-primary hover:underline">See more on Cobar.vn</a>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Card 1 -->
+        <article class="rounded-2xl border border-line bg-surface p-5 dark:bg-dCard dark:border-dLine">
+          <div class="flex items-start gap-4">
+            <div class="w-16 h-16 rounded-xl bg-primary-50 grid place-items-center dark:bg-dBg">
+              <i class="fa-solid fa-mug-saucer text-primary"></i>
+            </div>
+            <div class="flex-1">
+              <h3 class="font-semibold">Mezon Barista Coffee Machine</h3>
+              <p class="text-sm text-mute dark:text-dSub mt-1">
+                Price: <span class="font-medium text-ink dark:text-dText">3,200 MEZ</span> · Free nationwide shipping · +120 MEZ referral bonus.
+              </p>
+              <div class="mt-3 flex items-center gap-2 text-xs">
+                <span class="px-2 py-1 rounded-md bg-primary-50 text-primary dark:bg-dBg">Ships today</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Card 2 -->
+        <article class="rounded-2xl border border-line bg-surface p-5 dark:bg-dCard dark:border-dLine">
+          <div class="flex items-start gap-4">
+            <div class="w-16 h-16 rounded-xl bg-primary-50 grid place-items-center dark:bg-dBg">
+              <i class="fa-solid fa-box-open text-primary"></i>
+            </div>
+            <div class="flex-1">
+              <h3 class="font-semibold">Specialty Roasted Beans Combo</h3>
+              <p class="text-sm text-mute dark:text-dSub mt-1">
+                Price: <span class="font-medium text-ink dark:text-dText">450 MEZ</span> · Includes Give Coffee voucher (50 MEZ) for your friends.
+              </p>
+              <div class="mt-3 flex items-center gap-2 text-xs">
+                <span class="px-2 py-1 rounded-md bg-primary-50 text-primary dark:bg-dBg">Popular</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Card 3 -->
+        <article class="rounded-2xl border border-line bg-surface p-5 dark:bg-dCard dark:border-dLine">
+          <div class="flex items-start gap-4">
+            <div class="w-16 h-16 rounded-xl bg-primary-50 grid place-items-center dark:bg-dBg">
+              <i class="fa-solid fa-gift text-primary"></i>
+            </div>
+            <div class="flex-1">
+              <h3 class="font-semibold">Digital Gift Card</h3>
+              <p class="text-sm text-mute dark:text-dSub mt-1">
+                Denominations: 100 / 250 / 500 MEZ · Instant delivery · Redeemable across Cobar partners.
+              </p>
+              <div class="mt-3 flex items-center gap-2 text-xs">
+                <span class="px-2 py-1 rounded-md bg-primary-50 text-primary dark:bg-dBg">Instant</span>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- FAQ / How it works -->
+    <section id="faq" class="space-y-4">
+      <h2 class="text-lg font-semibold">How it works</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="rounded-2xl border border-line bg-surface p-5 dark:bg-dCard dark:border-dLine">
+          <div class="font-semibold mb-1 flex items-center gap-2"><i class="fa-solid fa-wallet text-primary"></i> Pay with MEZ</div>
+          <p class="text-sm text-mute dark:text-dSub">Checkout with your wallet or scan a QR in the Mezon app.</p>
+        </div>
+        <div class="rounded-2xl border border-line bg-surface p-5 dark:bg-dCard dark:border-dLine">
+          <div class="font-semibold mb-1 flex items-center gap-2"><i class="fa-solid fa-shield-halved text-primary"></i> Secure & Transparent</div>
+          <p class="text-sm text-mute dark:text-dSub">On-chain receipts, plus status tracking from your account detail page.</p>
+        </div>
+        <div class="rounded-2xl border border-line bg-surface p-5 dark:bg-dCard dark:border-dLine">
+          <div class="font-semibold mb-1 flex items-center gap-2"><i class="fa-solid fa-arrows-rotate text-primary"></i> Refund-friendly</div>
+          <p class="text-sm text-mute dark:text-dSub">Orders can be refunded to MEZ wallet or fiat per store policy.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="mt-12 border-t border-line dark:border-dLine">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-primary text-white"><i class="fa-solid fa-cube text-[11px]"></i></span>
+        <span class="text-mute dark:text-dSub">Mezon Đồng · Ecosystem Overview</span>
+      </div>
+      <nav class="flex items-center gap-6 text-mute dark:text-dSub">
+        <a href="#" class="hover:text-primary">Privacy</a>
+        <a href="#" class="hover:text-primary">Terms</a>
+        <a href="#" class="hover:text-primary">Support</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>
