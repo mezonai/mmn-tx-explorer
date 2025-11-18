@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"math/big"
 
+	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
+	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
 	"github.com/rs/zerolog/log"
-	config "github.com/thirdweb-dev/indexer/configs"
-	"github.com/thirdweb-dev/indexer/internal/common"
-	pb "github.com/thirdweb-dev/indexer/proto"
 )
 
 type GetFullBlockResult struct {
@@ -58,7 +58,7 @@ type Client struct {
 }
 
 func Initialize() (IRPCClient, error) {
-	mmnService, err := NewMMNGrpcService(config.Cfg.RPC.MMNGRPCURL)
+	mmnService, err := NewMMNGrpcService(config.Cfg.RPC.MMNGRPCURL, config.Cfg.RPC.MMNGRPCUseTLS)
 	if err != nil {
 		log.Warn().Err(err).Msg("Failed to initialize MMNGrpcService, continuing without it")
 	}
@@ -66,20 +66,6 @@ func Initialize() (IRPCClient, error) {
 	rpc := &Client{
 		mmnService:       mmnService,
 		blocksPerRequest: GetBlockPerRequestConfig(),
-	}
-
-	rpc.chainID = big.NewInt(1337)
-	return IRPCClient(rpc), nil
-}
-
-func InitializeSimpleRPCWithUrl(url string) (IRPCClient, error) {
-	mmnService, err := NewMMNGrpcService(url)
-	if err != nil {
-		log.Warn().Err(err).Msg("Failed to initialize MMNGrpcService, continuing without it")
-	}
-
-	rpc := &Client{
-		mmnService: mmnService,
 	}
 
 	rpc.chainID = big.NewInt(1337)
@@ -190,7 +176,10 @@ func (rpc *Client) SupportsBlockReceipts() bool {
 
 func (rpc *Client) Close() {
 	if rpc.mmnService != nil {
-		rpc.mmnService.Close()
+		err := rpc.mmnService.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close MMN gRPC service")
+		}
 	}
 }
 

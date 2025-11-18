@@ -1,14 +1,21 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"math/big"
+	"sync"
 
-	"context"
+	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
+	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
+	"github.com/rs/zerolog/log"
+)
 
-	config "github.com/thirdweb-dev/indexer/configs"
-	"github.com/thirdweb-dev/indexer/internal/common"
-	pb "github.com/thirdweb-dev/indexer/proto"
+var (
+	storageOnce   sync.Once
+	mainStorage   IMainStorage
+	storageErr    error
 )
 
 type QueryFilter struct {
@@ -108,10 +115,6 @@ type IMainStorage interface {
 	 * Get block headers ordered from latest to oldest.
 	 */
 	GetBlockHeadersDescending(chainId *big.Int, from *big.Int, to *big.Int) (blockHeaders []common.BlockHeader, err error)
-
-	GetTokenBalances(qf BalancesQueryFilter, fields ...string) (QueryResult[common.TokenBalance], error)
-	GetTokenTransfers(qf TransfersQueryFilter, fields ...string) (QueryResult[common.TokenTransfer], error)
-
 	/**
 	 * Gets only the data required for validation.
 	 */
@@ -130,19 +133,26 @@ type IMainStorage interface {
 	GetCount(ctx context.Context, table string, qf QueryFilter) (uint64, error)
 
 	/**
-	 * Gets dashboard stats (totalBlocks, totalTransactions, totalWallets) in a single call.
+	 * Gets dashboard stats (totalBlocks, totalTransactions, totalWallets, averageBlockTime) in a single call.
 	 */
-	GetDashboardStats(ctx context.Context, qf QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, err error)
+	GetDashboardStats(ctx context.Context, qf QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, averageBlockTime float64, err error)
 
 	/**
 	 * Gets pending transactions from MMN service.
 	 */
 	GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error)
 
-	// Optimized methods for pagination
-	GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit, offset int, sortBy, sortOrder string) ([]common.Transaction, error)
-	GetTransactionsByWalletCount(ctx context.Context, walletAddress string) (uint64, error)
+	/**
+     * Optimized methods for pagination
+     */ 
+	GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit, offset int, sortBy, sortOrder string, startTime, endTime int64) ([]common.Transaction, error)
+	GetTransactionsByWalletCount(ctx context.Context, walletAddress string, startTime, endTime int64) (uint64, error)
 	GetTotalTransactions(ctx context.Context) (uint64, error)
+
+	/**
+	 * Recalculates and updates all statistics in the stats table
+	 */
+	RecalculateStats(ctx context.Context) error
 }
 
 func NewStorageConnector(cfg *config.StorageConfig) (IStorage, error) {
@@ -187,4 +197,19 @@ func NewConnector[T any](cfg *config.StorageConnectionConfig) (T, error) {
 	}
 
 	return typedConn, nil
+}
+
+func GetMainStorage() (IMainStorage, error) {
+	storageOnce.Do(func() {
+		if config.Cfg.Storage.Main.Postgres != nil {
+			mainStorage, storageErr = NewConnector[IMainStorage](&config.Cfg.Storage.Main)
+			if storageErr != nil {
+				log.Error().Err(storageErr).Msg("Error creating storage connector")
+			}
+		} else {
+			storageErr = fmt.Errorf("no main storage driver configured")
+		}
+	})
+
+	return mainStorage, storageErr
 }

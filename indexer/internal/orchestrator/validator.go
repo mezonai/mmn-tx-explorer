@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"math/big"
 
+	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
 	"github.com/rs/zerolog/log"
-	config "github.com/thirdweb-dev/indexer/configs"
-	"github.com/thirdweb-dev/indexer/internal/common"
-	"github.com/thirdweb-dev/indexer/internal/rpc"
-	"github.com/thirdweb-dev/indexer/internal/storage"
 )
 
 type Validator struct {
@@ -71,18 +71,6 @@ func (v *Validator) ValidateBlock(blockData common.BlockData) (valid bool, err e
 	if blockData.Block.TransactionCount != uint64(len(blockData.Transactions)) {
 		log.Error().Msgf("Block verification failed for block %s: transaction count mismatch: expected=%d, fetched from DB=%d", blockData.Block.Number, blockData.Block.TransactionCount, len(blockData.Transactions))
 		return false, nil
-	}
-
-	// strict mode also validates logsBloom and transactionsRoot
-	if config.Cfg.Validation.Mode == "strict" {
-		// Calculate logsBloom from logs
-		// calculatedLogsBloom := validation.CalculateLogsBloom(blockData.Logs)
-		// Compare calculated logsBloom with block's logsBloom
-		// if calculatedLogsBloom != blockData.Block.LogsBloom {
-		// 	log.Error().Msgf("Block verification failed for block %s: logsBloom mismatch: calculated=%s, block=%s", blockData.Block.Number, calculatedLogsBloom, blockData.Block.LogsBloom)
-		// 	return false, nil
-		// }
-
 	}
 
 	return true, nil

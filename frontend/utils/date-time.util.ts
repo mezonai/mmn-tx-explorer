@@ -1,4 +1,4 @@
-import { formatDistanceToNowStrict } from 'date-fns';
+import { formatDistanceToNow, formatDistanceToNowStrict } from 'date-fns';
 
 export class DateTimeUtil {
   static formatRelativeTime(timeString: Date | string | number): string {
@@ -29,4 +29,12 @@ export class DateTimeUtil {
     // If timestamp is in seconds (10 digits), multiply by 1000
     return numericTimestamp * 1000;
   }
+
+  static safeFormatDistanceToNow = (timeString: Date | string | number, addSuffix: boolean = true) => {
+    try {
+      return formatDistanceToNow(new Date(timeString), { addSuffix });
+    } catch {
+      return 'N/A';
+    }
+  };
 }

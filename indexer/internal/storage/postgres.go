@@ -11,15 +11,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lib/pq"
+	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc"
+	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
 	"github.com/rs/zerolog/log"
-	config "github.com/thirdweb-dev/indexer/configs"
-	"github.com/thirdweb-dev/indexer/internal/common"
-	"github.com/thirdweb-dev/indexer/internal/rpc"
-	pb "github.com/thirdweb-dev/indexer/proto"
 )
 
 const DATA_ROWS_DISPLAY_LIMIT = 500000
+const InsertBlockDataTimeout = 10 * time.Minute
 
 type PostgresConnector struct {
 	db             *sql.DB
@@ -31,16 +31,16 @@ type PostgresConnector struct {
 
 // WalletUpdateBatcher manages batched wallet updates and realtime MMN service calls
 type WalletUpdateBatcher struct {
-	mu               sync.RWMutex
-	pendingAddresses map[string]int64
-	mmnQueue         chan string
-	mmnBatchSize     int
-	mmnBatchTimeout  time.Duration
-	connector        *PostgresConnector
-	stopChan         chan struct{}
+	mmnQueue        chan WalletStats
+	mmnBatchSize    int
+	mmnBatchTimeout time.Duration
+	mmnConcurrency  int
+	connector       *PostgresConnector
+	stopChan        chan struct{}
 }
 
 type WalletStats struct {
+	Address          string
 	TransactionCount int64
 	MaxBlock         *big.Int
 }
@@ -48,12 +48,12 @@ type WalletStats struct {
 // NewWalletUpdateBatcher creates a new wallet update batcher
 func NewWalletUpdateBatcher(connector *PostgresConnector) *WalletUpdateBatcher {
 	batcher := &WalletUpdateBatcher{
-		pendingAddresses: make(map[string]int64),
-		mmnQueue:         make(chan string, 1000), // Buffer for 1000 addresses
-		mmnBatchSize:     50,                      // Process 50 addresses per batch
-		mmnBatchTimeout:  2 * time.Second,         // Max wait time for batch
-		connector:        connector,
-		stopChan:         make(chan struct{}),
+		mmnQueue:        make(chan WalletStats, 100000), // Buffer for 100000 addresses
+		mmnBatchSize:    50,                             // Process 50 addresses per batch
+		mmnBatchTimeout: 2 * time.Second,                // Max wait time for batch
+		mmnConcurrency:  4,                              // Max concurrent MMN calls
+		connector:       connector,
+		stopChan:        make(chan struct{}),
 	}
 
 	// Start the MMN batch processor
@@ -62,101 +62,33 @@ func NewWalletUpdateBatcher(connector *PostgresConnector) *WalletUpdateBatcher {
 	return batcher
 }
 
-// AddWalletTransactionCount adds transaction count for addresses (thread-safe)
-func (wub *WalletUpdateBatcher) AddWalletTransactionCount(addresses map[string]int64) {
-	if len(addresses) == 0 {
-		return
-	}
-
-	wub.mu.Lock()
-	defer wub.mu.Unlock()
-
-	for address, count := range addresses {
-		if address != "" {
-			wub.pendingAddresses[address] += count
-		}
-	}
-}
-
-// BatchUpdateWalletTransactionCounts performs batched wallet transaction count updates
-func (wub *WalletUpdateBatcher) BatchUpdateWalletTransactionCounts(tx *sql.Tx) error {
-	wub.mu.Lock()
-	defer wub.mu.Unlock()
-
-	if len(wub.pendingAddresses) == 0 {
-		return nil
-	}
-
-	// Process in batches to avoid query size limits
-	addresses := make([]string, 0, len(wub.pendingAddresses))
-	counts := make([]int64, 0, len(wub.pendingAddresses))
-
-	for address, count := range wub.pendingAddresses {
-		addresses = append(addresses, address)
-		counts = append(counts, count)
-	}
-
-	// Clear pending addresses
-	wub.pendingAddresses = make(map[string]int64)
-
-	// Batch update using VALUES clause
-	if len(addresses) > 0 {
-		valueStrings := make([]string, len(addresses))
-		valueArgs := make([]interface{}, len(addresses)*2)
-
-		for i, address := range addresses {
-			valueStrings[i] = fmt.Sprintf("($%d, $%d)", i*2+1, i*2+2)
-			valueArgs[i*2] = address
-			valueArgs[i*2+1] = counts[i]
-		}
-
-		query := fmt.Sprintf(`
-			INSERT INTO wallet(address, transaction_count) 
-			VALUES %s
-			ON CONFLICT (address) 
-			DO UPDATE SET 
-				transaction_count = COALESCE(wallet.transaction_count, 0) + EXCLUDED.transaction_count,
-				updated_at = NOW()`,
-			strings.Join(valueStrings, ","))
-
-		_, err := tx.Exec(query, valueArgs...)
-		if err != nil {
-			return fmt.Errorf("failed to batch update wallet transaction counts: %w", err)
-		}
-
-		log.Debug().Int("count", len(addresses)).Msg("Batch updated wallet transaction counts")
-	}
-
-	return nil
-}
-
 // QueueMMNServiceCall queues an address for batch MMN service processing
-func (wub *WalletUpdateBatcher) QueueMMNServiceCall(address string) {
-	if address == "" || wub.connector.mmnGrpcService == nil {
+func (wub *WalletUpdateBatcher) QueueMMNServiceCall(walletStats WalletStats) {
+	if walletStats.Address == "" || wub.connector.mmnGrpcService == nil {
 		return
 	}
 
 	// Non-blocking send to queue
 	select {
-	case wub.mmnQueue <- address:
+	case wub.mmnQueue <- walletStats:
 		// Successfully queued
 	default:
 		// Queue is full, skip this address
-		log.Debug().Str("address", address).Msg("MMN queue is full, skipping address")
+		log.Debug().Str("address", walletStats.Address).Msg("MMN queue is full, skipping address")
 	}
 }
 
 // processMMNQueue processes MMN service calls in batches
 func (wub *WalletUpdateBatcher) processMMNQueue() {
-	batch := make([]string, 0, wub.mmnBatchSize)
+	batch := make([]WalletStats, 0, wub.mmnBatchSize)
 	timer := time.NewTimer(wub.mmnBatchTimeout)
 	timer.Stop()
 
 	for {
 		select {
-		case address := <-wub.mmnQueue:
+		case walletStats := <-wub.mmnQueue:
 			// Add address to current batch
-			batch = append(batch, address)
+			batch = append(batch, walletStats)
 
 			// Start timer if this is the first address in batch
 			if len(batch) == 1 {
@@ -189,20 +121,20 @@ func (wub *WalletUpdateBatcher) processMMNQueue() {
 }
 
 // processMMNBatch processes a batch of addresses for MMN service calls
-func (wub *WalletUpdateBatcher) processMMNBatch(addresses []string) {
-	if len(addresses) == 0 {
+func (wub *WalletUpdateBatcher) processMMNBatch(walletStatsBatch []WalletStats) {
+	if len(walletStatsBatch) == 0 {
 		return
 	}
 
-	log.Debug().Int("count", len(addresses)).Msg("Processing MMN service batch")
+	log.Debug().Int("count", len(walletStatsBatch)).Msg("Processing MMN service batch")
 
 	// Process addresses in parallel with limited concurrency
-	semaphore := make(chan struct{}, 10) // Max 10 concurrent calls
+	semaphore := make(chan struct{}, wub.mmnConcurrency)
 	var wg sync.WaitGroup
 
-	for _, address := range addresses {
+	for _, walletStats := range walletStatsBatch {
 		wg.Add(1)
-		go func(addr string) {
+		go func(walletStats WalletStats) {
 			defer wg.Done()
 
 			// Acquire semaphore
@@ -213,14 +145,14 @@ func (wub *WalletUpdateBatcher) processMMNBatch(addresses []string) {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
-			if err := wub.connector.refreshWalletFromService(ctx, addr); err != nil {
-				log.Debug().Err(err).Str("address", addr).Msg("Failed to refresh wallet from MMN service")
+			if err := wub.connector.refreshWalletFromService(ctx, walletStats); err != nil {
+				log.Debug().Err(err).Str("address", walletStats.Address).Msg("Failed to refresh wallet from MMN service")
 			}
-		}(address)
+		}(walletStats)
 	}
 
 	wg.Wait()
-	log.Debug().Int("count", len(addresses)).Msg("Completed MMN service batch")
+	log.Debug().Int("count", len(walletStatsBatch)).Msg("Completed MMN service batch")
 }
 
 // Stop gracefully stops the MMN batch processor
@@ -321,7 +253,7 @@ func NewPostgresConnector(cfg *config.PostgresConfig) (*PostgresConnector, error
 
 	// Initialize MMN gRPC service if URL is provided
 	if config.Cfg.RPC.MMNGRPCURL != "" {
-		mmn, err := rpc.NewMMNGrpcService(config.Cfg.RPC.MMNGRPCURL)
+		mmn, err := rpc.NewMMNGrpcService(config.Cfg.RPC.MMNGRPCURL, config.Cfg.RPC.MMNGRPCUseTLS)
 		if err != nil {
 			log.Warn().Err(err).Msg("Failed to init MMNGrpcService; wallet sync disabled")
 		} else {
@@ -726,30 +658,167 @@ func (p *PostgresConnector) DeleteOlderThan(chainId *big.Int, blockNumber *big.I
 }
 
 // Main Storage Implementation
-
 func (p *PostgresConnector) InsertBlockData(data []common.BlockData) error {
 	if len(data) == 0 {
 		return nil
 	}
 
-	// Insert blocks
-	blocks := make([]common.Block, len(data))
-	for i, blockData := range data {
-		blocks[i] = blockData.Block
+	// Run per-block insert concurrently; cancel on first error
+	ctx, cancel := context.WithTimeout(context.Background(), InsertBlockDataTimeout)
+	defer cancel()
+
+	errCh := make(chan error, 1)
+	var wg sync.WaitGroup
+
+	// Determine a safe concurrency level
+	concurrency := p.getDbConnectionConcurrencySyncBlocks(len(data))
+
+	sem := make(chan struct{}, concurrency)
+
+loop:
+	for _, blockData := range data {
+		bd := blockData // capture loop variable
+		// Respect cancellation before acquiring a slot
+		select {
+		case <-ctx.Done():
+			break loop
+		case sem <- struct{}{}:
+		}
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			defer func() { <-sem }()
+
+			// Double-check cancel before heavy work
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+
+			if err := p.insertBlockAndTransactions(ctx, bd); err != nil {
+				// Try to send the first error and cancel others
+				select {
+				case errCh <- err:
+					cancel()
+				default:
+				}
+			}
+		}()
 	}
-	if err := p.insertBlocks(blocks); err != nil {
+
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case err := <-errCh:
+		// Wait for goroutines to finish cleanup before returning
+		<-done
+		return err
+	case <-done:
+		return nil
+	}
+}
+
+func (p *PostgresConnector) getDbConnectionConcurrencySyncBlocks(total int) int {
+	maxOpen := p.db.Stats().MaxOpenConnections
+	if maxOpen <= 0 && p.cfg != nil {
+		maxOpen = p.cfg.MaxOpenConns
+	}
+	if maxOpen <= 0 {
+		maxOpen = 1
+	}
+
+	concurrency := maxOpen / 2
+	if concurrency < 1 {
+		concurrency = 1
+	}
+	if total > 0 && concurrency > total {
+		concurrency = total
+	}
+
+	return concurrency
+}
+
+// insertBlockAndTransactions inserts a single block and all its transactions atomically in sequence.
+func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, blockData common.BlockData) (err error) {
+	tx, err := p.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+
+	defer func() {
+		if err != nil {
+			if rbErr := tx.Rollback(); rbErr != nil {
+				log.Error().Err(rbErr).Msg("failed to rollback block+txs transaction")
+			}
+		}
+	}()
+
+	// Insert single block inside transaction
+	if err = p.insertBlockTx(ctx, tx, blockData.Block); err != nil {
 		return err
 	}
 
-	// Insert transactions
-	for _, blockData := range data {
-		if len(blockData.Transactions) > 0 {
-			if err := p.insertTransactions(blockData.Transactions); err != nil {
-				return err
-			}
+	// Insert all transactions for this block inside the same transaction
+	var addressStats map[string]WalletStats
+	if len(blockData.Transactions) > 0 {
+		addressStats, err = p.insertTransactionsTx(ctx, tx, blockData.Transactions)
+		if err != nil {
+			return err
 		}
 	}
 
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit block+txs transaction: %w", err)
+	}
+
+	for _, w := range addressStats {
+		p.walletUpdateBatcher.QueueMMNServiceCall(w)
+	}
+
+	return nil
+}
+
+// insertBlockTx inserts or upsert a single block within a provided transaction and context,
+// and updates the total_blocks stat if the block has transactions.
+func (p *PostgresConnector) insertBlockTx(ctx context.Context, tx *sql.Tx, block common.Block) error {
+	const blockInsert = `INSERT INTO blocks (chain_id, block_number, block_timestamp, hash, parent_hash, transaction_count)
+			VALUES ($1, $2, $3, $4, $5, $6)
+			ON CONFLICT (chain_id, block_number)
+			DO UPDATE SET 
+				block_timestamp = EXCLUDED.block_timestamp,
+				hash = EXCLUDED.hash,
+				parent_hash = EXCLUDED.parent_hash,
+				transaction_count = EXCLUDED.transaction_count,
+				updated_at = NOW()
+			RETURNING (xmax = 0) AS inserted`
+
+	var inserted bool
+	if err := tx.QueryRowContext(ctx, blockInsert,
+		bigIntToString(block.ChainId),
+		bigIntToString(block.Number),
+		block.Timestamp,
+		block.Hash,
+		block.ParentHash,
+		block.TransactionCount,
+	).Scan(&inserted); err != nil {
+		return fmt.Errorf("failed to insert block: %w", err)
+	}
+
+	if inserted && block.TransactionCount > 0 {
+		if _, err := tx.ExecContext(ctx, `
+			INSERT INTO stats(key, value) VALUES ('total_blocks', $1)
+				ON CONFLICT (key) 
+				DO UPDATE SET value = stats.value + $1
+			`, 1); err != nil {
+			return fmt.Errorf("failed to update total_blocks stat: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -767,7 +836,12 @@ func (p *PostgresConnector) GetBlocks(qf QueryFilter, fields ...string) (QueryRe
 	if err != nil {
 		return QueryResult[common.Block]{}, err
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close rows in GetBlocks")
+		}
+	}()
 
 	var blocks []common.Block
 	for rows.Next() {
@@ -790,7 +864,12 @@ func (p *PostgresConnector) GetTransactions(ctx context.Context, qf QueryFilter,
 	if err != nil {
 		return QueryResult[common.Transaction]{}, err
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close rows in GetTransactions")
+		}
+	}()
 
 	var transactions []common.Transaction
 	for rows.Next() {
@@ -813,7 +892,12 @@ func (p *PostgresConnector) GetLogs(qf QueryFilter, fields ...string) (QueryResu
 	if err != nil {
 		return QueryResult[common.Log]{}, err
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close rows in GetLogs")
+		}
+	}()
 
 	var logs []common.Log
 	for rows.Next() {
@@ -836,7 +920,12 @@ func (p *PostgresConnector) GetTraces(qf QueryFilter, fields ...string) (QueryRe
 	if err != nil {
 		return QueryResult[common.Trace]{}, err
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close rows in GetTraces")
+		}
+	}()
 
 	var traces []common.Trace
 	for rows.Next() {
@@ -887,10 +976,15 @@ func (p *PostgresConnector) GetAggregations(ctx context.Context, table string, q
 	if err != nil {
 		return QueryResult[interface{}]{}, err
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close rows in GetAggregations")
+		}
+	}()
 
 	// Initialize as empty slice to avoid null in JSON when no rows
-	var aggregates []map[string]interface{} = make([]map[string]interface{}, 0)
+	var aggregates = make([]map[string]interface{}, 0)
 	for rows.Next() {
 		columns, err := rows.Columns()
 		if err != nil {
@@ -970,15 +1064,20 @@ func (p *PostgresConnector) GetMaxBlockNumberInRange(chainId *big.Int, startBloc
 
 func (p *PostgresConnector) GetBlockHeadersDescending(chainId *big.Int, from *big.Int, to *big.Int) ([]common.BlockHeader, error) {
 	query := `SELECT block_number, hash, parent_hash 
-	          FROM blocks 
-	          WHERE chain_id = $1 AND block_number BETWEEN $2 AND $3 
-	          ORDER BY block_number DESC`
+		FROM blocks 
+		WHERE chain_id = $1 AND block_number BETWEEN $2 AND $3 
+		ORDER BY block_number DESC`
 
 	rows, err := p.db.Query(query, bigIntToString(chainId), bigIntToString(from), bigIntToString(to))
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close rows in GetBlockHeadersDescending")
+		}
+	}()
 
 	var headers []common.BlockHeader
 	for rows.Next() {
@@ -998,227 +1097,23 @@ func (p *PostgresConnector) GetBlockHeadersDescending(chainId *big.Int, from *bi
 	return headers, rows.Err()
 }
 
-func (p *PostgresConnector) GetTokenBalances(qf BalancesQueryFilter, fields ...string) (QueryResult[common.TokenBalance], error) {
-	columns := p.buildSelectFields(fields, []string{
-		"token_type", "chain_id", "owner", "address", "token_id", "balance",
-	})
-
-	query := fmt.Sprintf("SELECT %s FROM token_balances WHERE 1=1", columns)
-	args := []interface{}{}
-	argCount := 0
-
-	if qf.ChainId != nil && qf.ChainId.Sign() > 0 {
-		argCount++
-		query += fmt.Sprintf(" AND chain_id = $%d", argCount)
-		args = append(args, bigIntToString(qf.ChainId))
-	}
-
-	if len(qf.TokenTypes) > 0 {
-		placeholders := make([]string, len(qf.TokenTypes))
-		for i, tokenType := range qf.TokenTypes {
-			argCount++
-			placeholders[i] = fmt.Sprintf("$%d", argCount)
-			args = append(args, tokenType)
-		}
-		query += fmt.Sprintf(" AND token_type IN (%s)", strings.Join(placeholders, ","))
-	}
-
-	if qf.TokenAddress != "" {
-		argCount++
-		query += fmt.Sprintf(" AND address = $%d", argCount)
-		args = append(args, qf.TokenAddress)
-	}
-
-	if qf.Owner != "" {
-		argCount++
-		query += fmt.Sprintf(" AND owner = $%d", argCount)
-		args = append(args, qf.Owner)
-	}
-
-	if len(qf.TokenIds) > 0 {
-		placeholders := make([]string, len(qf.TokenIds))
-		for i, tokenId := range qf.TokenIds {
-			argCount++
-			placeholders[i] = fmt.Sprintf("$%d", argCount)
-			args = append(args, bigIntToString(tokenId))
-		}
-		query += fmt.Sprintf(" AND token_id IN (%s)", strings.Join(placeholders, ","))
-	}
-
-	if qf.ZeroBalance {
-		query += " AND balance = 0"
-	}
-
-	if qf.SortBy != "" {
-		query += fmt.Sprintf(" ORDER BY %s", qf.SortBy)
-		if qf.SortOrder != "" {
-			query += " " + qf.SortOrder
-		}
-	}
-
-	if qf.Limit > 0 {
-		argCount++
-		query += fmt.Sprintf(" LIMIT $%d", argCount)
-		args = append(args, qf.Limit)
-	}
-
-	if qf.Offset > 0 {
-		argCount++
-		query += fmt.Sprintf(" OFFSET $%d", argCount)
-		args = append(args, qf.Offset)
-	}
-
-	rows, err := p.db.Query(query, args...)
-	if err != nil {
-		return QueryResult[common.TokenBalance]{}, err
-	}
-	defer rows.Close()
-
-	var balances []common.TokenBalance
-	for rows.Next() {
-		var balance common.TokenBalance
-		var chainIdStr, tokenIdStr, balanceStr string
-
-		err := rows.Scan(&balance.TokenType, &chainIdStr, &balance.Owner, &balance.TokenAddress, &tokenIdStr, &balanceStr)
-		if err != nil {
-			return QueryResult[common.TokenBalance]{}, err
-		}
-
-		balance.ChainId, _ = new(big.Int).SetString(chainIdStr, 10)
-		balance.TokenId, _ = new(big.Int).SetString(tokenIdStr, 10)
-		balance.Balance, _ = new(big.Int).SetString(balanceStr, 10)
-
-		balances = append(balances, balance)
-	}
-
-	return QueryResult[common.TokenBalance]{Data: balances}, rows.Err()
-}
-
-func (p *PostgresConnector) GetTokenTransfers(qf TransfersQueryFilter, fields ...string) (QueryResult[common.TokenTransfer], error) {
-	columns := p.buildSelectFields(fields, []string{
-		"token_type", "chain_id", "token_address", "from_address", "to_address", "block_number",
-		"block_timestamp", "transaction_hash", "token_id", "amount", "log_index",
-	})
-
-	query := fmt.Sprintf("SELECT %s FROM token_transfers WHERE 1=1", columns)
-	args := []interface{}{}
-	argCount := 0
-
-	if qf.ChainId != nil && qf.ChainId.Sign() > 0 {
-		argCount++
-		query += fmt.Sprintf(" AND chain_id = $%d", argCount)
-		args = append(args, bigIntToString(qf.ChainId))
-	}
-
-	if len(qf.TokenTypes) > 0 {
-		placeholders := make([]string, len(qf.TokenTypes))
-		for i, tokenType := range qf.TokenTypes {
-			argCount++
-			placeholders[i] = fmt.Sprintf("$%d", argCount)
-			args = append(args, tokenType)
-		}
-		query += fmt.Sprintf(" AND token_type IN (%s)", strings.Join(placeholders, ","))
-	}
-
-	if qf.TokenAddress != "" {
-		argCount++
-		query += fmt.Sprintf(" AND token_address = $%d", argCount)
-		args = append(args, qf.TokenAddress)
-	}
-
-	if qf.WalletAddress != "" {
-		argCount++
-		query += fmt.Sprintf(" AND (from_address = $%d OR to_address = $%d)", argCount, argCount)
-		args = append(args, qf.WalletAddress, qf.WalletAddress)
-	}
-
-	if len(qf.TokenIds) > 0 {
-		placeholders := make([]string, len(qf.TokenIds))
-		for i, tokenId := range qf.TokenIds {
-			argCount++
-			placeholders[i] = fmt.Sprintf("$%d", argCount)
-			args = append(args, bigIntToString(tokenId))
-		}
-		query += fmt.Sprintf(" AND token_id IN (%s)", strings.Join(placeholders, ","))
-	}
-
-	if qf.TransactionHash != "" {
-		argCount++
-		query += fmt.Sprintf(" AND transaction_hash = $%d", argCount)
-		args = append(args, qf.TransactionHash)
-	}
-
-	if qf.StartBlockNumber != nil && qf.EndBlockNumber != nil {
-		argCount++
-		query += fmt.Sprintf(" AND block_number BETWEEN $%d AND $%d", argCount, argCount+1)
-		args = append(args, bigIntToString(qf.StartBlockNumber), bigIntToString(qf.EndBlockNumber))
-		argCount++ // Increment once more since we used two args
-	}
-
-	if qf.SortBy != "" {
-		query += fmt.Sprintf(" ORDER BY %s", qf.SortBy)
-		if qf.SortOrder != "" {
-			query += " " + qf.SortOrder
-		}
-	} else {
-		query += " ORDER BY block_number DESC, log_index ASC"
-	}
-
-	if qf.Limit > 0 {
-		argCount++
-		query += fmt.Sprintf(" LIMIT $%d", argCount)
-		args = append(args, qf.Limit)
-	}
-
-	if qf.Offset > 0 {
-		argCount++
-		query += fmt.Sprintf(" OFFSET $%d", argCount)
-		args = append(args, qf.Offset)
-	}
-
-	rows, err := p.db.Query(query, args...)
-	if err != nil {
-		return QueryResult[common.TokenTransfer]{}, err
-	}
-	defer rows.Close()
-
-	var transfers []common.TokenTransfer
-	for rows.Next() {
-		var transfer common.TokenTransfer
-		var chainIdStr, blockNumberStr, tokenIdStr, amountStr string
-		var timestamp time.Time
-
-		err := rows.Scan(&transfer.TokenType, &chainIdStr, &transfer.TokenAddress, &transfer.FromAddress,
-			&transfer.ToAddress, &blockNumberStr, &timestamp, &transfer.TransactionHash,
-			&tokenIdStr, &amountStr, &transfer.LogIndex)
-		if err != nil {
-			return QueryResult[common.TokenTransfer]{}, err
-		}
-
-		transfer.ChainID, _ = new(big.Int).SetString(chainIdStr, 10)
-		transfer.BlockNumber, _ = new(big.Int).SetString(blockNumberStr, 10)
-		transfer.BlockTimestamp = timestamp
-		transfer.TokenID, _ = new(big.Int).SetString(tokenIdStr, 10)
-		transfer.Amount, _ = new(big.Int).SetString(amountStr, 10)
-
-		transfers = append(transfers, transfer)
-	}
-
-	return QueryResult[common.TokenTransfer]{Data: transfers}, rows.Err()
-}
-
 func (p *PostgresConnector) GetValidationBlockData(chainId *big.Int, startBlock *big.Int, endBlock *big.Int) ([]common.BlockData, error) {
 	// Get blocks with minimal data for validation
 	query := `SELECT chain_id, block_number, hash, parent_hash, block_timestamp 
-	          FROM blocks 
-	          WHERE chain_id = $1 AND block_number BETWEEN $2 AND $3 
-	          ORDER BY block_number ASC`
+		FROM blocks 
+		WHERE chain_id = $1 AND block_number BETWEEN $2 AND $3 
+		ORDER BY block_number ASC`
 
 	rows, err := p.db.Query(query, bigIntToString(chainId), bigIntToString(startBlock), bigIntToString(endBlock))
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close rows in GetValidationBlockData")
+		}
+	}()
 
 	var blockDataList []common.BlockData
 	for rows.Next() {
@@ -1271,7 +1166,12 @@ func (p *PostgresConnector) FindMissingBlockNumbers(chainId *big.Int, startBlock
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close rows in FindMissingBlockNumbers")
+		}
+	}()
 
 	var missingBlocks []*big.Int
 	for rows.Next() {
@@ -1313,7 +1213,12 @@ func (p *PostgresConnector) GetFullBlockData(chainId *big.Int, blockNumbers []*b
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close rows in GetFullBlockData")
+		}
+	}()
 
 	blockDataMap := make(map[string]*common.BlockData)
 	for rows.Next() {
@@ -1349,7 +1254,12 @@ func (p *PostgresConnector) GetFullBlockData(chainId *big.Int, blockNumbers []*b
 	if err != nil {
 		return nil, err
 	}
-	defer txRows.Close()
+	defer func() {
+		err := txRows.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close txRows in GetFullBlockData")
+		}
+	}()
 
 	for txRows.Next() {
 		var tx common.Transaction
@@ -1406,22 +1316,22 @@ func (p *PostgresConnector) GetCount(ctx context.Context, table string, qf Query
 	return count, err
 }
 
-func (p *PostgresConnector) GetDashboardStats(ctx context.Context, qf QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, err error) {
+func (p *PostgresConnector) GetDashboardStats(ctx context.Context, qf QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, averageBlockTime float64, err error) {
 	query := `
         SELECT 
             COALESCE(MAX(CASE WHEN key = 'total_blocks' THEN value::bigint END), 0) as blocks,
             COALESCE(MAX(CASE WHEN key = 'total_transactions' THEN value::bigint END), 0) as transactions,
-            COALESCE(MAX(CASE WHEN key = 'total_wallets' THEN value::bigint END), 0) as wallets
+            COALESCE(MAX(CASE WHEN key = 'total_wallets' THEN value::bigint END), 0) as wallets,
+            COALESCE(MAX(CASE WHEN key = 'average_block' THEN value::float END) / 1000.0, 0.0) as avg_block_time
         FROM stats
-        WHERE key IN ('total_blocks', 'total_transactions', 'total_wallets')
     `
 
-	err = p.db.QueryRowContext(ctx, query).Scan(&totalBlocks, &totalTransactions, &totalWallets)
+	err = p.db.QueryRowContext(ctx, query).Scan(&totalBlocks, &totalTransactions, &totalWallets, &averageBlockTime)
 	if err != nil {
-		return 0, 0, 0, fmt.Errorf("failed to get dashboard stats: %w", err)
+		return 0, 0, 0, 0, fmt.Errorf("failed to get dashboard stats: %w", err)
 	}
 
-	return totalBlocks, totalTransactions, totalWallets, nil
+	return totalBlocks, totalTransactions, totalWallets, averageBlockTime, nil
 }
 
 func (p *PostgresConnector) GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error) {
@@ -1584,236 +1494,90 @@ func looksLikeTimestampColumn(col string) bool {
 	return strings.Contains(colLower, "timestamp") || strings.HasSuffix(colLower, "_time") || strings.HasSuffix(colLower, "time")
 }
 
-func (p *PostgresConnector) insertBlocks(blocks []common.Block) error {
-	if len(blocks) == 0 {
-		return nil
-	}
-
-	valueStrings := make([]string, 0, len(blocks))
-	valueArgs := make([]interface{}, 0, len(blocks)*6)
-
-	for i, block := range blocks {
-		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)",
-			i*6+1, i*6+2, i*6+3, i*6+4, i*6+5, i*6+6))
-		valueArgs = append(valueArgs,
-			bigIntToString(block.ChainId),
-			bigIntToString(block.Number),
-			block.Timestamp,
-			block.Hash,
-			block.ParentHash,
-			block.TransactionCount,
-		)
-	}
-
-	query := fmt.Sprintf(`INSERT INTO blocks (chain_id, block_number, block_timestamp, hash, parent_hash, transaction_count)
-			VALUES %s
-			ON CONFLICT (chain_id, block_number) 
-			DO UPDATE SET 
-				block_timestamp = EXCLUDED.block_timestamp,
-				hash = EXCLUDED.hash,
-				parent_hash = EXCLUDED.parent_hash,
-				transaction_count = EXCLUDED.transaction_count,
-				updated_at = NOW()`, strings.Join(valueStrings, ","))
-
-	if _, err := p.db.Exec(query, valueArgs...); err != nil {
-		return fmt.Errorf("failed to insert blocks: %w", err)
-	}
-
-	// Update total_blocks count
-	blockCount := 0
-	for _, block := range blocks {
-		if block.TransactionCount > 0 {
-			blockCount++
-		}
-	}
-	if blockCount > 0 {
-		if _, err := p.db.Exec(`
-            INSERT INTO stats(key, value) VALUES ('total_blocks', $1)
-            ON CONFLICT (key) 
-            DO UPDATE SET value = stats.value + $1
-        `, blockCount); err != nil {
-			return fmt.Errorf("failed to update total_blocks stat: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func (p *PostgresConnector) insertTransactions(transactions []common.Transaction) error {
+func (p *PostgresConnector) insertTransactionsTx(ctx context.Context, tx *sql.Tx, transactions []common.Transaction) (map[string]WalletStats, error) {
 	if len(transactions) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	valueStrings := make([]string, 0, len(transactions))
 	valueArgs := make([]interface{}, 0, len(transactions)*13)
 
-	for i, tx := range transactions {
+	for i, t := range transactions {
 		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
 			i*13+1, i*13+2, i*13+3, i*13+4, i*13+5, i*13+6, i*13+7, i*13+8, i*13+9, i*13+10, i*13+11, i*13+12, i*13+13))
 
 		valueArgs = append(valueArgs,
-			bigIntToString(tx.ChainId),
-			tx.Hash,
-			tx.Nonce,
-			tx.BlockHash,
-			bigIntToString(tx.BlockNumber),
-			tx.FromAddress,
-			tx.ToAddress,
-			tx.TransactionTimestamp,
-			tx.Value,
-			tx.TransactionType,
-			tx.Status,
-			tx.TextData,
-			tx.ExtraInfo,
+			bigIntToString(t.ChainId),
+			t.Hash,
+			t.Nonce,
+			t.BlockHash,
+			bigIntToString(t.BlockNumber),
+			t.FromAddress,
+			t.ToAddress,
+			t.TransactionTimestamp,
+			t.Value,
+			t.TransactionType,
+			t.Status,
+			t.TextData,
+			t.ExtraInfo,
 		)
-
-		// Queue MMN service calls for wallet data refresh
-		p.walletUpdateBatcher.QueueMMNServiceCall(tx.FromAddress)
-		p.walletUpdateBatcher.QueueMMNServiceCall(tx.ToAddress)
 	}
 
-	tx, err := p.db.Begin()
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
+	insertTransactionsQuery := fmt.Sprintf(`WITH inserted AS (
+                INSERT INTO transactions (chain_id, hash, nonce, block_hash, block_number, from_address, to_address, transaction_timestamp, value, transaction_type, status, text_data, extra_info)
+                VALUES %s
+                ON CONFLICT (chain_id, block_number, hash) 
+                DO UPDATE SET 
+                    nonce = EXCLUDED.nonce,
+                    block_hash = EXCLUDED.block_hash,
+                    from_address = EXCLUDED.from_address,
+                    to_address = EXCLUDED.to_address,
+                    transaction_timestamp = EXCLUDED.transaction_timestamp,
+                    value = EXCLUDED.value,
+                    transaction_type = EXCLUDED.transaction_type,
+                    status = EXCLUDED.status,
+                    text_data = EXCLUDED.text_data,
+                    extra_info = EXCLUDED.extra_info,
+                    updated_at = NOW()
+                RETURNING (xmax = 0) AS is_new
+            )
+            SELECT COUNT(*) FROM inserted WHERE is_new`, strings.Join(valueStrings, ","))
+
+	// Count only newly inserted rows to compute accurate stats increment
+	var insertedCount int
+	if err := tx.QueryRowContext(ctx, insertTransactionsQuery, valueArgs...).Scan(&insertedCount); err != nil {
+		return nil, fmt.Errorf("failed to execute insert transactions count query: %w", err)
 	}
 
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-		}
-	}()
-
-	insertTransactionsQuery := fmt.Sprintf(`INSERT INTO transactions (chain_id, hash, nonce, block_hash, block_number, from_address, to_address, transaction_timestamp, value, transaction_type, status, text_data, extra_info)
-			VALUES %s
-			ON CONFLICT (chain_id, block_number, hash) 
-			DO UPDATE SET 
-				nonce = EXCLUDED.nonce,
-				block_hash = EXCLUDED.block_hash,
-				from_address = EXCLUDED.from_address,
-				to_address = EXCLUDED.to_address,
-				transaction_timestamp = EXCLUDED.transaction_timestamp,
-				value = EXCLUDED.value,
-				transaction_type = EXCLUDED.transaction_type,
-				status = EXCLUDED.status,
-				text_data = EXCLUDED.text_data,
-				extra_info = EXCLUDED.extra_info,
-				updated_at = NOW()`, strings.Join(valueStrings, ","))
-	_, err = tx.Exec(insertTransactionsQuery, valueArgs...)
-	if err != nil {
-		return fmt.Errorf("failed to execute insert transactions query: %w", err)
-	}
-
-	txCount := len(transactions)
-	if txCount > 0 {
-		updateStatsQuery := "INSERT INTO stats(key, value) VALUES ('total_transactions', 0) ON CONFLICT (key) DO UPDATE SET value = stats.value + $1"
-		_, err = tx.Exec(updateStatsQuery, txCount)
-		if err != nil {
-			return fmt.Errorf("failed to execute update stats query: %w", err)
+	if insertedCount > 0 {
+		if _, err := tx.ExecContext(ctx, "INSERT INTO stats(key, value) VALUES ('total_transactions', $1) ON CONFLICT (key) DO UPDATE SET value = stats.value + $1", insertedCount); err != nil {
+			return nil, fmt.Errorf("failed to execute update stats query: %w", err)
 		}
 	}
 
 	addressStats := make(map[string]WalletStats)
-
-	for _, tx := range transactions {
-		if tx.FromAddress != "" {
-			stat := addressStats[tx.FromAddress]
+	for _, t := range transactions {
+		if t.FromAddress != "" {
+			stat := addressStats[t.FromAddress]
+			stat.Address = t.FromAddress
 			stat.TransactionCount++
-			if stat.MaxBlock == nil || tx.BlockNumber.Cmp(stat.MaxBlock) > 0 {
-				stat.MaxBlock = new(big.Int).Set(tx.BlockNumber)
+			if stat.MaxBlock == nil || t.BlockNumber.Cmp(stat.MaxBlock) > 0 {
+				stat.MaxBlock = new(big.Int).Set(t.BlockNumber)
 			}
-			addressStats[tx.FromAddress] = stat
+			addressStats[t.FromAddress] = stat
 		}
-
-		if tx.ToAddress != "" {
-			stat := addressStats[tx.ToAddress]
+		if t.ToAddress != "" {
+			stat := addressStats[t.ToAddress]
+			stat.Address = t.ToAddress
 			stat.TransactionCount++
-			if stat.MaxBlock == nil || tx.BlockNumber.Cmp(stat.MaxBlock) > 0 {
-				stat.MaxBlock = new(big.Int).Set(tx.BlockNumber)
+			if stat.MaxBlock == nil || t.BlockNumber.Cmp(stat.MaxBlock) > 0 {
+				stat.MaxBlock = new(big.Int).Set(t.BlockNumber)
 			}
-			addressStats[tx.ToAddress] = stat
+			addressStats[t.ToAddress] = stat
 		}
 	}
 
-	if len(addressStats) > 0 {
-		if err := p.batchUpdateWalletTransactionCounts(tx, addressStats); err != nil {
-			return fmt.Errorf("failed to batch update wallet transaction counts: %w", err)
-		}
-	}
-	err = tx.Commit()
-	if err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
-	}
-
-	return nil
-}
-
-func (p *PostgresConnector) batchUpdateWalletTransactionCounts(
-	tx *sql.Tx,
-	addressStats map[string]WalletStats) error {
-	if len(addressStats) == 0 {
-		return nil
-	}
-
-	addressList := make([]string, 0, len(addressStats))
-	counts := make([]int64, 0, len(addressStats))
-	maxBlocks := make([]string, 0, len(addressStats))
-
-	for addr, stat := range addressStats {
-		addressList = append(addressList, addr)
-		counts = append(counts, stat.TransactionCount)
-		maxBlocks = append(maxBlocks, stat.MaxBlock.String())
-	}
-
-	query := `
-        WITH inserted AS (
-            INSERT INTO wallet (address, transaction_count, last_block)
-            SELECT 
-                unnest($1::text[]) as address,
-                unnest($2::bigint[]) as transaction_count,
-                unnest($3::numeric[]) as last_block
-            ON CONFLICT (address) 
-            DO UPDATE SET 
-                transaction_count = wallet.transaction_count + EXCLUDED.transaction_count,
-                last_block = GREATEST(COALESCE(wallet.last_block, 0)::numeric, EXCLUDED.last_block)::bigint
-            RETURNING (xmax = 0) as is_new
-        )
-        SELECT COUNT(*) FROM inserted WHERE is_new = true
-    `
-
-	maxBlocksInterface := make([]interface{}, len(maxBlocks))
-	for i, v := range maxBlocks {
-		maxBlocksInterface[i] = v
-	}
-
-	var newWalletCount int64
-	err := tx.QueryRow(query,
-		pq.Array(addressList),
-		pq.Array(counts),
-		pq.Array(maxBlocksInterface),
-	).Scan(&newWalletCount)
-
-	if err != nil {
-		return fmt.Errorf("failed to batch update wallet transaction counts: %w", err)
-	}
-
-	if newWalletCount > 0 {
-		if _, err := tx.Exec(`
-			INSERT INTO stats(key, value) VALUES ('total_wallets', $1)
-			ON CONFLICT (key) 
-			DO UPDATE SET value = stats.value + $1
-		`, newWalletCount); err != nil {
-			return fmt.Errorf("failed to update total_wallets stat: %w", err)
-		}
-
-		log.Debug().
-			Int64("new_wallets", newWalletCount).
-			Msg("Added new wallets to stats")
-	}
-
-	log.Debug().
-		Int("count", len(addressList)).
-		Msg("Batch updated wallet transaction counts and stats")
-	return nil
+	return addressStats, nil
 }
 
 func (p *PostgresConnector) scanBlock(rows *sql.Rows, block *common.Block) error {
@@ -1977,8 +1741,8 @@ func bigIntToString(bi *big.Int) string {
 }
 
 // Wallet Management
-func (p *PostgresConnector) insertWallet(ctx context.Context, address string, nonce uint64, balance string) error {
-	if address == "" {
+func (p *PostgresConnector) insertWallet(ctx context.Context, walletStats WalletStats, nonce uint64, balance string) error {
+	if walletStats.Address == "" {
 		return nil
 	}
 
@@ -1988,69 +1752,77 @@ func (p *PostgresConnector) insertWallet(ctx context.Context, address string, no
 		balanceBig = big.NewInt(0)
 	}
 
-	query := `INSERT INTO wallet (address, account_nonce, balance, transaction_count, updated_at, created_at) 
-			VALUES ($1, $2, $3, 0, NOW(), NOW())
+	tx, err := p.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				log.Error().Err(rollbackErr).Msg("Failed to rollback transaction")
+			}
+		}
+	}()
+
+	query := `
+		WITH inserted AS (
+			INSERT INTO wallet (address, account_nonce, balance, transaction_count, last_block, updated_at, created_at) 
+			VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
 			ON CONFLICT (address) 
 			DO UPDATE SET 
 				account_nonce = EXCLUDED.account_nonce,
 				balance = EXCLUDED.balance,
-				updated_at = NOW()`
+				transaction_count = wallet.transaction_count + EXCLUDED.transaction_count,
+                last_block = GREATEST(COALESCE(wallet.last_block, 0)::numeric, EXCLUDED.last_block)::bigint,
+				updated_at = NOW()
+			RETURNING (xmax = 0) as is_new
+		)
+		SELECT COUNT(*) FROM inserted WHERE is_new = true
+	`
 
-	_, err := p.db.ExecContext(ctx, query, address, nonce, bigIntToString(balanceBig))
-	return err
+	var newWalletCount int64
+	err = tx.QueryRowContext(ctx, query, walletStats.Address, nonce, bigIntToString(balanceBig), walletStats.TransactionCount, bigIntToString(walletStats.MaxBlock)).Scan(&newWalletCount)
+	if err != nil {
+		return fmt.Errorf("failed to insert wallet: %w", err)
+	}
+
+	if newWalletCount > 0 {
+		_, err = tx.ExecContext(ctx, `
+			INSERT INTO stats(key, value) VALUES ('total_wallets', $1)
+			ON CONFLICT (key) 
+			DO UPDATE SET value = stats.value + $1
+		`, newWalletCount)
+		if err != nil {
+			return fmt.Errorf("failed to update total_wallets stat: %w", err)
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
 }
 
 // refreshWalletFromService fetches wallet data from MMN gRPC service and writes to DB
-func (p *PostgresConnector) refreshWalletFromService(ctx context.Context, address string) error {
-	if p.mmnGrpcService == nil || address == "" {
+func (p *PostgresConnector) refreshWalletFromService(ctx context.Context, walletStats WalletStats) error {
+	if p.mmnGrpcService == nil || walletStats.Address == "" {
 		return nil
 	}
 
-	resp, err := p.mmnGrpcService.GetAccount(ctx, address)
+	resp, err := p.mmnGrpcService.GetAccount(ctx, walletStats.Address)
 	if err != nil {
-		return err
+		log.Error().Err(err).Str("address", walletStats.Address).Msg("Failed to get account from MMN service")
+		return p.insertWallet(ctx, walletStats, 0, "0")
 	}
 
 	if resp == nil {
 		return nil
 	}
 
-	return p.insertWallet(ctx, address, resp.Nonce, resp.Balance)
-}
-
-// GetWallet retrieves wallet information by address
-func (p *PostgresConnector) GetWallet(address string) (*common.Wallet, error) {
-	query := `SELECT address, account_nonce, balance, updated_at, created_at 
-	          FROM wallet WHERE address = $1`
-
-	var wallet common.Wallet
-	var balanceStr string
-	var nonce *uint64
-
-	err := p.db.QueryRow(query, address).Scan(
-		&wallet.Address,
-		&nonce,
-		&balanceStr,
-		&wallet.UpdatedAt,
-		&wallet.CreatedAt,
-	)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil // Wallet not found
-		}
-		return nil, err
-	}
-
-	wallet.AccountNonce = nonce
-
-	// Convert balance string to big.Int
-	balance, ok := new(big.Int).SetString(balanceStr, 10)
-	if !ok {
-		balance = big.NewInt(0)
-	}
-	wallet.Balance = balance
-
-	return &wallet, nil
+	return p.insertWallet(ctx, walletStats, resp.Nonce, resp.Balance)
 }
 
 // GetWallets retrieves wallets with pagination and filtering
@@ -2078,7 +1850,12 @@ func (p *PostgresConnector) GetWallets(limit, offset int, sortBy, sortOrder stri
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close rows in GetWallets")
+		}
+	}()
 
 	var wallets []common.Wallet
 	for rows.Next() {
@@ -2120,7 +1897,7 @@ func (p *PostgresConnector) GetTotalTransactions(ctx context.Context) (uint64, e
 }
 
 // GetTransactionsByWalletPaginated retrieves paginated transactions for a wallet with sorting
-func (p *PostgresConnector) GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit, offset int, sortBy, sortOrder string) ([]common.Transaction, error) {
+func (p *PostgresConnector) GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit, offset int, sortBy, sortOrder string, startTime, endTime int64) ([]common.Transaction, error) {
 	columns := p.buildSelectFields([]string{}, defaultTransactionFields)
 
 	// Validate sort parameters
@@ -2135,6 +1912,8 @@ func (p *PostgresConnector) GetTransactionsByWalletPaginated(ctx context.Context
 		(
 			SELECT %s FROM transactions
 			WHERE from_address = $1
+            AND transaction_timestamp >= to_timestamp($5)
+            AND transaction_timestamp <= to_timestamp($6)
 			ORDER BY %s %s
 			LIMIT $2
 		)
@@ -2142,6 +1921,8 @@ func (p *PostgresConnector) GetTransactionsByWalletPaginated(ctx context.Context
 		(
 			SELECT %s FROM transactions
 			WHERE to_address = $1
+            AND transaction_timestamp >= to_timestamp($5)
+            AND transaction_timestamp <= to_timestamp($6)
 			ORDER BY %s %s
 			LIMIT $2
 		)
@@ -2149,14 +1930,19 @@ func (p *PostgresConnector) GetTransactionsByWalletPaginated(ctx context.Context
 		LIMIT $3 OFFSET $4;
 	`, columns, sortBy, sortOrder, columns, sortBy, sortOrder, sortBy, sortOrder)
 
-	args := []any{walletAddress, limit + offset, limit, offset}
+	args := []any{walletAddress, limit + offset, limit, offset, startTime, endTime}
 
 	// Execute optimized query
 	rows, err := p.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close rows in GetTransactionsByWalletPaginated")
+		}
+	}()
 
 	// Initialize as empty slice to avoid null in JSON when no rows
 	transactions, err := p.scanRowsToTransactions(rows)
@@ -2168,22 +1954,138 @@ func (p *PostgresConnector) GetTransactionsByWalletPaginated(ctx context.Context
 }
 
 // GetTransactionsByWalletCount gets the total count of transactions for a wallet
-func (p *PostgresConnector) GetTransactionsByWalletCount(ctx context.Context, walletAddress string) (uint64, error) {
+func (p *PostgresConnector) GetTransactionsByWalletCount(ctx context.Context, walletAddress string, startTime, endTime int64) (uint64, error) {
 	query := `
 		SELECT COUNT(*) FROM (
 			SELECT 1 FROM transactions WHERE from_address = $1
+            AND transaction_timestamp >= to_timestamp($2)
+            AND transaction_timestamp <= to_timestamp($3)
 			UNION ALL
 			SELECT 1 FROM transactions WHERE to_address = $1
+            AND transaction_timestamp >= to_timestamp($2)
+            AND transaction_timestamp <= to_timestamp($3)
 		) AS wallet_txs
 	`
 
 	var count uint64
-	err := p.db.QueryRowContext(ctx, query, walletAddress).Scan(&count)
+	err := p.db.QueryRowContext(ctx, query, walletAddress, startTime, endTime).Scan(&count)
 	if err != nil {
 		return 0, err
 	}
 
 	return count, nil
+}
+
+func (p *PostgresConnector) calculateAverageBlockTime(ctx context.Context, numberOfBlocks int64) (float64, error) {
+	latestQf := QueryFilter{
+		SortBy:              "block_number",
+		SortOrder:           "desc",
+		Limit:               1,
+		ForceConsistentData: true,
+	}
+	latestBlocks, err := p.GetBlocks(latestQf)
+	if err != nil {
+		return 0, err
+	}
+	if len(latestBlocks.Data) == 0 {
+		return 0, nil
+	}
+
+	latest := latestBlocks.Data[0]
+	latestTimestamp := latest.Timestamp.Unix()
+	latestBlockNumber := latest.Number.Uint64()
+	k := uint64(numberOfBlocks)
+	if latestBlockNumber == 0 {
+		k = 0
+	} else if latestBlockNumber < uint64(numberOfBlocks) {
+		k = latestBlockNumber
+	}
+	if k <= 0 {
+		return 0, nil
+	}
+	targetNum := int64(latestBlockNumber) - int64(k)
+	targetQf := QueryFilter{
+		BlockNumbers:        []*big.Int{big.NewInt(targetNum)},
+		ForceConsistentData: true,
+	}
+
+	targetBlocks, err := p.GetBlocks(targetQf)
+	if err != nil {
+		return 0, err
+	}
+	if len(targetBlocks.Data) == 0 {
+		return 0, nil
+	}
+	timestampMinusK := targetBlocks.Data[0].Timestamp.Unix()
+	avg := float64(latestTimestamp-timestampMinusK) / float64(k)
+
+	if avg <= 0 {
+		return 0, nil
+	}
+
+	return avg, nil
+}
+
+func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
+	var totalBlocks int64
+	var err error
+	err = p.db.QueryRowContext(ctx, `
+        SELECT COUNT(DISTINCT block_number) 
+        FROM blocks 
+        WHERE transaction_count > 0
+    `).Scan(&totalBlocks)
+	if err != nil {
+		return fmt.Errorf("failed to count blocks: %w", err)
+	}
+
+	var totalTransactions int64
+	err = p.db.QueryRowContext(ctx, `
+        SELECT COUNT(*) 
+        FROM transactions
+    `).Scan(&totalTransactions)
+	if err != nil {
+		return fmt.Errorf("failed to count transactions: %w", err)
+	}
+
+	var totalWallets int64
+	err = p.db.QueryRowContext(ctx, `
+        SELECT COUNT(*) 
+        FROM wallet
+    `).Scan(&totalWallets)
+	if err != nil {
+		return fmt.Errorf("failed to count wallets: %w", err)
+	}
+
+	avgBlockTime, err := p.calculateAverageBlockTime(ctx, 100)
+	if err != nil {
+		return fmt.Errorf("failed to calculate average block time: %w", err)
+	}
+
+	averageBlockMs := int64(avgBlockTime * 1000)
+
+	statsUpdates := []struct {
+		key   string
+		value int64
+	}{
+		{"total_blocks", totalBlocks},
+		{"total_transactions", totalTransactions},
+		{"total_wallets", totalWallets},
+		{"average_block", averageBlockMs},
+	}
+
+	for _, stat := range statsUpdates {
+		_, err = p.db.ExecContext(ctx, `
+            INSERT INTO stats(key, value) 
+            VALUES ($1, $2)
+            ON CONFLICT (key) 
+            DO UPDATE SET value = $2
+        `, stat.key, stat.value)
+		if err != nil {
+			return fmt.Errorf("failed to update %s stat: %w", stat.key, err)
+		}
+	}
+
+	return nil
 }
 
 func (p *PostgresConnector) scanRowsToTransactions(rows *sql.Rows) ([]common.Transaction, error) {
@@ -2205,7 +2107,10 @@ func (p *PostgresConnector) scanRowsToTransactions(rows *sql.Rows) ([]common.Tra
 // Close closes the database connection
 func (p *PostgresConnector) Close() error {
 	if p.mmnGrpcService != nil {
-		p.mmnGrpcService.Close()
+		err := p.mmnGrpcService.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close MMN gRPC service")
+		}
 	}
 
 	// Stop wallet update batcher

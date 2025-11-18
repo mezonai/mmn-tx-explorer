@@ -6,11 +6,11 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/gin-gonic/gin"
+	"github.com/mezonai/mmn-tx-explorer/indexer/api"
+	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
 	"github.com/rs/zerolog/log"
-	"github.com/thirdweb-dev/indexer/api"
-	config "github.com/thirdweb-dev/indexer/configs"
-	"github.com/thirdweb-dev/indexer/internal/common"
-	"github.com/thirdweb-dev/indexer/internal/storage"
 )
 
 // package-level variables
@@ -44,56 +44,6 @@ func GetLogs(c *gin.Context) {
 	handleLogsRequest(c)
 }
 
-// @Summary Get logs by contract
-// @Description Retrieve logs for a specific contract
-// @Tags events
-// @Accept json
-// @Produce json
-// @Security BasicAuth
-// @Param chainId path string true "Chain ID"
-// @Param contract path string true "Contract address"
-// @Param filter query string false "Filter parameters"
-// @Param group_by query string false "Field to group results by"
-// @Param sort_by query string false "Field to sort results by"
-// @Param sort_order query string false "Sort order (asc or desc)"
-// @Param page query int false "Page number for pagination"
-// @Param limit query int false "Number of items per page" default(5)
-// @Param aggregate query []string false "List of aggregate functions to apply"
-// @Param force_consistent_data query bool false "Force consistent data at the expense of query speed"
-// @Success 200 {object} api.QueryResponse{data=[]common.LogModel}
-// @Failure 400 {object} api.Error
-// @Failure 401 {object} api.Error
-// @Failure 500 {object} api.Error
-// @Router /{chainId}/events/{contract} [get]
-func GetLogsByContract(c *gin.Context) {
-	handleLogsRequest(c)
-}
-
-// @Summary Get logs by contract and event signature
-// @Description Retrieve logs for a specific contract and event signature. When a valid event signature is provided, the response includes decoded log data with both indexed and non-indexed parameters.
-// @Tags events
-// @Accept json
-// @Produce json
-// @Security BasicAuth
-// @Param chainId path string true "Chain ID"
-// @Param contract path string true "Contract address"
-// @Param signature path string true "Event signature (e.g., 'Transfer(address,address,uint256)')"
-// @Param filter query string false "Filter parameters"
-// @Param group_by query string false "Field to group results by"
-// @Param sort_by query string false "Field to sort results by"
-// @Param sort_order query string false "Sort order (asc or desc)"
-// @Param page query int false "Page number for pagination"
-// @Param limit query int false "Number of items per page" default(5)
-// @Param aggregate query []string false "List of aggregate functions to apply"
-// @Param force_consistent_data query bool false "Force consistent data at the expense of query speed"
-// @Success 200 {object} api.QueryResponse{data=[]common.DecodedLogModel}
-// @Failure 400 {object} api.Error
-// @Failure 401 {object} api.Error
-// @Failure 500 {object} api.Error
-// @Router /{chainId}/events/{contract}/{signature} [get]
-func GetLogsByContractAndSignature(c *gin.Context) {
-	handleLogsRequest(c)
-}
 
 func handleLogsRequest(c *gin.Context) {
 	chainId, err := api.GetChainId(c)
@@ -127,7 +77,7 @@ func handleLogsRequest(c *gin.Context) {
 		signatureHash = eventABI.ID.Hex()
 	}
 
-	mainStorage, err := getMainStorage()
+	mainStorage, err := storage.GetMainStorage()
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting main storage")
 		api.InternalErrorHandler(c)
@@ -219,18 +169,6 @@ func decodeLogsIfNeeded(chainId string, logs []common.Log, eventABI *abi.Event, 
 		return common.DecodeLogs(chainId, logs)
 	}
 	return nil
-}
-
-func getMainStorage() (storage.IMainStorage, error) {
-	storageOnce.Do(func() {
-		var err error
-		mainStorage, err = storage.NewConnector[storage.IMainStorage](&config.Cfg.Storage.Main)
-		if err != nil {
-			storageErr = err
-			log.Error().Err(err).Msg("Error creating storage connector")
-		}
-	})
-	return mainStorage, storageErr
 }
 
 func sendJSONResponse(c *gin.Context, response interface{}) {

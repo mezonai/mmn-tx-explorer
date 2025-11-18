@@ -1,23 +1,22 @@
 package handlers
 
 import (
-	"math/big"
 	"net/http"
 	"strconv"
 	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mezonai/mmn-tx-explorer/indexer/api"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
+	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
 	"github.com/rs/zerolog/log"
-	"github.com/thirdweb-dev/indexer/api"
-	"github.com/thirdweb-dev/indexer/internal/storage"
-	pb "github.com/thirdweb-dev/indexer/proto"
 )
 
 // handleTransactionStats builds and returns only transactions page stats fields
 func handleTransactionStats(c *gin.Context) {
 	ctx := c.Request.Context()
-	mainStorage, err := getMainStorage()
+	mainStorage, err := storage.GetMainStorage()
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting main storage")
 		api.InternalErrorHandler(c)
@@ -106,7 +105,7 @@ func GetTransactionStats(c *gin.Context) {
 // handleDashboardStats builds and returns only dashboard stats fields
 func handleDashboardStats(c *gin.Context) {
 	ctx := c.Request.Context()
-	mainStorage, err := getMainStorage()
+	mainStorage, err := storage.GetMainStorage()
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting main storage")
 		api.InternalErrorHandler(c)
@@ -121,17 +120,9 @@ func handleDashboardStats(c *gin.Context) {
 		err1                                         error
 	)
 
-	totalBlocks, totalTransactions, totalWallets, err1 = mainStorage.GetDashboardStats(ctx, countQf)
+	totalBlocks, totalTransactions, totalWallets, averageBlockTime, err1 = mainStorage.GetDashboardStats(ctx, countQf)
 	if err1 != nil {
 		log.Error().Err(err1).Msg("Error getting dashboard stats")
-		api.InternalErrorHandler(c)
-		return
-	}
-
-	var err2 error
-	averageBlockTime, err2 = getAverageBlockTime(mainStorage, 100)
-	if err2 != nil {
-		log.Error().Err(err2).Msg("Error calculating average block time")
 		api.InternalErrorHandler(c)
 		return
 	}
@@ -143,56 +134,6 @@ func handleDashboardStats(c *gin.Context) {
 	resp.Data.TotalWallets = totalWallets
 
 	c.JSON(http.StatusOK, resp)
-}
-
-func getAverageBlockTime(mainStorage storage.IMainStorage, numberOfBlocks uint64) (float64, error) {
-	latestQf := storage.QueryFilter{
-		SortBy:              "block_number",
-		SortOrder:           "desc",
-		Limit:               1,
-		ForceConsistentData: true,
-	}
-	latestBlocks, err := mainStorage.GetBlocks(latestQf)
-	if err != nil {
-		return 0, err
-	}
-	if len(latestBlocks.Data) == 0 {
-		return 0, nil
-	}
-
-	latest := latestBlocks.Data[0]
-	latestTimestamp := latest.Timestamp.Unix()
-	latestBlockNumber := latest.Number.Uint64()
-	k := numberOfBlocks
-	if latestBlockNumber == 0 {
-		k = 0
-	} else if latestBlockNumber < numberOfBlocks {
-		k = latestBlockNumber
-	}
-	if k <= 0 {
-		return 0, nil
-	}
-	targetNum := int64(latestBlockNumber) - int64(k)
-	targetQf := storage.QueryFilter{
-		BlockNumbers:        []*big.Int{big.NewInt(targetNum)},
-		ForceConsistentData: true,
-	}
-
-	targetBlocks, err := mainStorage.GetBlocks(targetQf)
-	if err != nil {
-		return 0, err
-	}
-	if len(targetBlocks.Data) == 0 {
-		return 0, nil
-	}
-	timestampMinusK := targetBlocks.Data[0].Timestamp.Unix()
-	avg := float64(latestTimestamp-timestampMinusK) / float64(k)
-
-	if avg <= 0 {
-		return 0, nil
-	}
-
-	return avg, nil
 }
 
 func CountPendingTxLast30m(pendingTxs []*pb.TransactionData) uint64 {

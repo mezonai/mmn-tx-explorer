@@ -1,0 +1,56 @@
+# Server Configuration
+server:
+  host: 0.0.0.0
+  port: 8888
+  gin_mode: debug
+
+database:
+  host: localhost
+  port: 5432
+  username: admin
+  password: password
+  name: indexer
+  schema: dong_schema
+  sslmode: disable
+  max_open_conns: 50        # Increased for better concurrency
+  max_idle_conns: 10        # Increased for better connection reuse
+  conn_max_lifetime: 300    # 5 minutes - connections will be refreshed
+  conn_max_idle_time: 60    # 1 minute - idle connections will be closed
+
+indexer:
+  schema: public
+
+cors:
+  allow_origins: "*"
+  allow_methods: "POST, OPTIONS, GET, PUT, DELETE, PATCH"
+  allow_headers: "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With"
+  allow_credentials: true
+
+
+jwt:
+  secret: "a75081d475a4cd4e130916f26e3e8d3ebc376fa132e873c057c5a0c5ab26cc06"
+  refresh_exp: 432000
+  access_exp: 3600
+
+oauth:
+  client_id: "1976233808680194048"
+  client_secret: ">cxIm=C8v[Be0XE0@bius4UhLqu{P&8="
+  token_url: "https://oauth2.mezon.ai/oauth2/token"
+  user_info_url: "https://oauth2.mezon.ai/userinfo"
+
+redis:
+  address: "redis:6379"
+  password: ""
+  db: 0
+
+# Logging Configuration
+logging:
+  level: "info"           # debug, info, warn, error, fatal, panic
+  output: "stdout"        # stdout or file
+  file_path: "logs/dong-service.log"  # required when output=file
+  max_size: 100           # max size in MB before rotation (default: 100)
+  max_age: 30             # max age in days to retain old logs (default: 30)
+
+# Scheduler Configuration
+scheduler:
+  sync_contributors_interval: 600  # sync every 10 minutes (600 seconds)

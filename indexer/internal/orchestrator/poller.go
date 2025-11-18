@@ -7,13 +7,13 @@ import (
 	"sync"
 	"time"
 
+	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/metrics"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/worker"
 	"github.com/rs/zerolog/log"
-	config "github.com/thirdweb-dev/indexer/configs"
-	"github.com/thirdweb-dev/indexer/internal/common"
-	"github.com/thirdweb-dev/indexer/internal/metrics"
-	"github.com/thirdweb-dev/indexer/internal/rpc"
-	"github.com/thirdweb-dev/indexer/internal/storage"
-	"github.com/thirdweb-dev/indexer/internal/worker"
 )
 
 const DEFAULT_BLOCKS_PER_POLL = 10
@@ -158,7 +158,7 @@ func (p *Poller) Start(ctx context.Context) {
 
 					lastPolledBlock := p.Poll(pollCtx, blockNumbers)
 					if p.reachedPollLimit(lastPolledBlock) {
-						log.Debug().Msg("Reached poll limit, exiting poller")
+						log.Warn().Msg("Reached poll limit, exiting poller")
 						cancel()
 						return
 					}

@@ -9,12 +9,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mezonai/mmn-tx-explorer/indexer/api"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
 	"github.com/rs/zerolog/log"
-	"github.com/thirdweb-dev/indexer/api"
-	config "github.com/thirdweb-dev/indexer/configs"
-	"github.com/thirdweb-dev/indexer/internal/common"
-	"github.com/thirdweb-dev/indexer/internal/rpc"
-	"github.com/thirdweb-dev/indexer/internal/storage"
 )
 
 type SearchResultType string
@@ -57,7 +55,7 @@ type SearchInput struct {
 // @Failure 400 {object} api.Error
 // @Failure 401 {object} api.Error
 // @Failure 500 {object} api.Error
-// @Router /search/:input [GET]
+// @Router /{chainId}/search/{input} [GET]
 func Search(c *gin.Context) {
 	chainId, err := api.GetChainId(c)
 	if err != nil {
@@ -70,7 +68,7 @@ func Search(c *gin.Context) {
 		return
 	}
 
-	mainStorage, err := getMainStorage()
+	mainStorage, err := storage.GetMainStorage()
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting main storage")
 		api.InternalErrorHandler(c)
@@ -363,25 +361,6 @@ const (
 	ContractCodeExists
 	ContractCodeDoesNotExist
 )
-
-func checkIfContractHasCode(ctx context.Context, chainId *big.Int, address string) (ContractCodeState, error) {
-	if config.Cfg.API.Thirdweb.ClientId != "" {
-		rpcUrl := fmt.Sprintf("https://%s.rpc.thirdweb.com/%s", chainId.String(), config.Cfg.API.Thirdweb.ClientId)
-		r, err := rpc.InitializeSimpleRPCWithUrl(rpcUrl)
-		if err != nil {
-			return ContractCodeUnknown, err
-		}
-		hasCode, err := r.HasCode(ctx, address)
-		if err != nil {
-			return ContractCodeUnknown, err
-		}
-		if hasCode {
-			return ContractCodeExists, nil
-		}
-		return ContractCodeDoesNotExist, nil
-	}
-	return ContractCodeUnknown, nil
-}
 
 func searchTransactionsByTimeRange(ctx context.Context, mainStorage storage.IMainStorage, chainId *big.Int, hash string, startOffsetDays, endOffsetDays int) ([]common.TransactionModel, error) {
 	now := time.Now()

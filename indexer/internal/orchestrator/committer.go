@@ -9,13 +9,13 @@ import (
 	"sync/atomic"
 	"time"
 
+	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/metrics"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/publisher"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
 	"github.com/rs/zerolog/log"
-	config "github.com/thirdweb-dev/indexer/configs"
-	"github.com/thirdweb-dev/indexer/internal/common"
-	"github.com/thirdweb-dev/indexer/internal/metrics"
-	"github.com/thirdweb-dev/indexer/internal/publisher"
-	"github.com/thirdweb-dev/indexer/internal/rpc"
-	"github.com/thirdweb-dev/indexer/internal/storage"
 )
 
 const DEFAULT_COMMITTER_TRIGGER_INTERVAL = 2000
@@ -131,13 +131,19 @@ func (c *Committer) Start(ctx context.Context) {
 		<-ctx.Done()
 		wg.Wait()
 		log.Info().Msg("Committer shutting down")
-		c.publisher.Close()
+		err = c.publisher.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close publisher")
+		}
 		return
 	}
 
 	c.runCommitLoop(ctx, interval)
 	log.Info().Msg("Committer shutting down")
-	c.publisher.Close()
+	err = c.publisher.Close()
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to close publisher")
+	}
 }
 
 func (c *Committer) runCommitLoop(ctx context.Context, interval time.Duration) {

@@ -1,12 +1,13 @@
 package handlers
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
-	"github.com/thirdweb-dev/indexer/api"
-	"github.com/thirdweb-dev/indexer/internal/common"
-	"github.com/thirdweb-dev/indexer/internal/storage"
 	"math"
+
+	"github.com/gin-gonic/gin"
+	"github.com/mezonai/mmn-tx-explorer/indexer/api"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
+	"github.com/rs/zerolog/log"
 )
 
 // @Summary Get all blocks
@@ -52,7 +53,7 @@ func handleBlocksRequest(c *gin.Context) {
 		return
 	}
 
-	mainStorage, err := getMainStorage()
+	mainStorage, err := storage.GetMainStorage()
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting main storage")
 		api.InternalErrorHandler(c)
@@ -60,9 +61,9 @@ func handleBlocksRequest(c *gin.Context) {
 	}
 
 	if queryParams.FilterParams == nil {
-	   queryParams.FilterParams = make(map[string]string)
+		queryParams.FilterParams = make(map[string]string)
 	}
-		
+
 	// Add filter for transaction_count > 0
 	queryParams.FilterParams["transaction_count_gt"] = "0"
 
@@ -86,7 +87,13 @@ func handleBlocksRequest(c *gin.Context) {
 
 	// Get the total number of items
 	ctx := c.Request.Context()
-	totalItems, err := mainStorage.GetCount(ctx, "blocks", countQf)
+	var totalItems uint64
+
+	if len(countQf.FilterParams) > 1 {
+		totalItems, err = mainStorage.GetCount(ctx, "blocks", countQf)
+	} else {
+		totalItems, _, _, _, err = mainStorage.GetDashboardStats(ctx, countQf)
+	}
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting count")
 		api.InternalErrorHandler(c)
@@ -105,36 +112,19 @@ func handleBlocksRequest(c *gin.Context) {
 		Data:         nil,
 		Aggregations: nil,
 	}
-
-	// If aggregates or groupings are specified, retrieve them
-	if len(queryParams.Aggregates) > 0 || len(queryParams.GroupBy) > 0 {
-		qf.Aggregates = queryParams.Aggregates
-		qf.GroupBy = queryParams.GroupBy
-
-		aggregatesResult, err := mainStorage.GetAggregations(c.Request.Context(), "blocks", qf)
-		if err != nil {
-			log.Error().Err(err).Msg("Error querying aggregates")
-			// TODO: might want to choose BadRequestError if it's due to not-allowed functions
-			api.InternalErrorHandler(c)
-			return
-		}
-		queryResult.Aggregations = &aggregatesResult.Aggregates
-		queryResult.Meta.TotalItems = len(aggregatesResult.Aggregates)
-	} else {
-		// Retrieve blocks data
-		blocksResult, err := mainStorage.GetBlocks(qf)
-		if err != nil {
-			log.Error().Err(err).Msg("Error querying blocks")
-			// TODO: might want to choose BadRequestError if it's due to not-allowed functions
-			api.InternalErrorHandler(c)
-			return
-		}
-
-		var data interface{} = serializeBlocks(blocksResult.Data)
-		queryResult.Data = &data
-		queryResult.Meta.TotalItems = int(totalItems)
-		queryResult.Meta.TotalPages = int(math.Ceil(float64(totalItems) / float64(queryParams.Limit)))
+	// Retrieve blocks data
+	blocksResult, err := mainStorage.GetBlocks(qf)
+	if err != nil {
+		log.Error().Err(err).Msg("Error querying blocks")
+		// TODO: might want to choose BadRequestError if it's due to not-allowed functions
+		api.InternalErrorHandler(c)
+		return
 	}
+
+	var data interface{} = serializeBlocks(blocksResult.Data)
+	queryResult.Data = &data
+	queryResult.Meta.TotalItems = int(totalItems)
+	queryResult.Meta.TotalPages = int(math.Ceil(float64(totalItems) / float64(queryParams.Limit)))
 
 	sendJSONResponse(c, queryResult)
 }

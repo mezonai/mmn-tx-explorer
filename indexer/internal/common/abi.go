@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
+	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	"github.com/rs/zerolog/log"
-	config "github.com/thirdweb-dev/indexer/configs"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 )
@@ -58,7 +58,12 @@ func GetABIForContract(chainId string, contract string) (*abi.ABI, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get contract abi: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to close response body in GetABIForContract")
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("failed to get contract abi: unexpected status code %d", resp.StatusCode)

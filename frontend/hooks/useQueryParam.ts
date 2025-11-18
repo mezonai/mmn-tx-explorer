@@ -32,7 +32,7 @@ export const useQueryParam = <T extends string | number>({
     }
 
     params.set(queryParam, String(value));
-    router.push(`${pathname}?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
   return { value, handleChangeValue };

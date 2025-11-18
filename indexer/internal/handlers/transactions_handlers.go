@@ -2,17 +2,20 @@ package handlers
 
 import (
 	"fmt"
-	"net/http"
-
 	"math"
+	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mezonai/mmn-tx-explorer/indexer/api"
+	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
+	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
 	"github.com/rs/zerolog/log"
-	"github.com/thirdweb-dev/indexer/api"
-	"github.com/thirdweb-dev/indexer/internal/common"
-	"github.com/thirdweb-dev/indexer/internal/storage"
-	pb "github.com/thirdweb-dev/indexer/proto"
 )
+
+const DateFormat = "2006-01-02"
 
 // @Summary Get all transactions
 // @Description Retrieve all transactions across all contracts
@@ -27,6 +30,9 @@ import (
 // @Param sort_order query string false "Sort order (asc or desc)"
 // @Param page query int false "Page number for pagination"
 // @Param limit query int false "Number of items per page" default(5)
+// @Param wallet_address query string false "Wallet address to filter transactions (optional)"
+// @Param start_time query string false "Start date in YYYY-MM-DD format (defaults to 7 days ago)"
+// @Param end_time query string false "End date in YYYY-MM-DD format (defaults to current date)"
 // @Param aggregate query []string false "List of aggregate functions to apply"
 // @Param force_consistent_data query bool false "Force consistent data at the expense of query speed"
 // @Success 200 {object} api.QueryResponse{data=[]common.TransactionModel}
@@ -35,82 +41,6 @@ import (
 // @Failure 500 {object} api.Error
 // @Router /{chainId}/transactions [get]
 func GetTransactions(c *gin.Context) {
-	handleTransactionsRequest(c)
-}
-
-// @Summary Get wallet transactions
-// @Description Retrieve all incoming and outgoing transactions for a specific wallet address
-// @Tags wallet
-// @Accept json
-// @Produce json
-// @Security BasicAuth
-// @Param chainId path string true "Chain ID"
-// @Param wallet_address path string true "Wallet address"
-// @Param filter query string false "Filter parameters"
-// @Param group_by query string false "Field to group results by"
-// @Param sort_by query string false "Field to sort results by"
-// @Param sort_order query string false "Sort order (asc or desc)"
-// @Param page query int false "Page number for pagination"
-// @Param limit query int false "Number of items per page" default(5)
-// @Param force_consistent_data query bool false "Force consistent data at the expense of query speed"
-// @Param decode query bool false "Decode transaction data"
-// @Success 200 {object} api.QueryResponse{data=[]common.DecodedTransactionModel}
-// @Failure 400 {object} api.Error
-// @Failure 401 {object} api.Error
-// @Failure 500 {object} api.Error
-// @Router /{chainId}/wallet-transactions [get]
-func GetWalletTransactions(c *gin.Context) {
-	handleTransactionsRequest(c)
-}
-
-// @Summary Get transactions by contract
-// @Description Retrieve transactions for a specific contract
-// @Tags transactions
-// @Accept json
-// @Produce json
-// @Security BasicAuth
-// @Param chainId path string true "Chain ID"
-// @Param to path string true "Contract address"
-// @Param filter query string false "Filter parameters"
-// @Param group_by query string false "Field to group results by"
-// @Param sort_by query string false "Field to sort results by"
-// @Param sort_order query string false "Sort order (asc or desc)"
-// @Param page query int false "Page number for pagination"
-// @Param limit query int false "Number of items per page" default(5)
-// @Param aggregate query []string false "List of aggregate functions to apply"
-// @Param force_consistent_data query bool false "Force consistent data at the expense of query speed"
-// @Success 200 {object} api.QueryResponse{data=[]common.TransactionModel}
-// @Failure 400 {object} api.Error
-// @Failure 401 {object} api.Error
-// @Failure 500 {object} api.Error
-// @Router /{chainId}/transactions/{to} [get]
-func GetTransactionsByContract(c *gin.Context) {
-	handleTransactionsRequest(c)
-}
-
-// @Summary Get transactions by contract and signature
-// @Description Retrieve transactions for a specific contract and signature. When a valid function signature is provided, the response includes decoded transaction data with function inputs.
-// @Tags transactions
-// @Accept json
-// @Produce json
-// @Security BasicAuth
-// @Param chainId path string true "Chain ID"
-// @Param to path string true "Contract address"
-// @Param signature path string true "Function signature (e.g., 'transfer(address,uint256)')"
-// @Param filter query string false "Filter parameters"
-// @Param group_by query string false "Field to group results by"
-// @Param sort_by query string false "Field to sort results by"
-// @Param sort_order query string false "Sort order (asc or desc)"
-// @Param page query int false "Page number for pagination"
-// @Param limit query int false "Number of items per page" default(5)
-// @Param aggregate query []string false "List of aggregate functions to apply"
-// @Param force_consistent_data query bool false "Force consistent data at the expense of query speed"
-// @Success 200 {object} api.QueryResponse{data=[]common.DecodedTransactionModel}
-// @Failure 400 {object} api.Error
-// @Failure 401 {object} api.Error
-// @Failure 500 {object} api.Error
-// @Router /{chainId}/transactions/{to}/{signature} [get]
-func GetTransactionsByContractAndSignature(c *gin.Context) {
 	handleTransactionsRequest(c)
 }
 
@@ -132,7 +62,7 @@ func handleTransactionsRequest(c *gin.Context) {
 		return
 	}
 
-	mainStorage, err := getMainStorage()
+	mainStorage, err := storage.GetMainStorage()
 	if err != nil {
 		log.Error().Err(err).Msg("Error creating storage connector")
 		api.InternalErrorHandler(c)
@@ -153,7 +83,10 @@ func handleTransactionsRequest(c *gin.Context) {
 		Aggregations: nil,
 	}
 	if walletAddress != "" {
-		totalItems, err := mainStorage.GetTransactionsByWalletCount(ctx, walletAddress)
+		// Get start and end time for filtering
+		startTime, endTime := getTimeRangeFromParams(queryParams.FilterParams, queryParams)
+
+		totalItems, err := mainStorage.GetTransactionsByWalletCount(ctx, walletAddress, startTime, endTime)
 		if err != nil {
 			log.Error().Err(err).Msg("Error getting transactions count")
 			api.InternalErrorHandler(c)
@@ -168,6 +101,8 @@ func handleTransactionsRequest(c *gin.Context) {
 			offset,
 			queryParams.SortBy,
 			queryParams.SortOrder,
+			startTime,
+			endTime,
 		)
 		if err != nil {
 			log.Error().Err(err).Msg("Error querying transactions")
@@ -240,6 +175,42 @@ func serializeTransactions(transactions []common.Transaction) []common.Transacti
 	return transactionModels
 }
 
+// getTimeRangeFromParams parses start and end times in YYYY-MM-DD format.
+// Defaults to last 7 days if not provided, with configurable max lookback.
+func getTimeRangeFromParams(filterParams map[string]string, queryParams api.QueryParams) (int64, int64) {
+    now := time.Now()
+    defaultStartTime := now.AddDate(0, 0, -7).Unix() // 7 days ago
+    
+    // Get max lookback years from config, default to 1 year if not set
+    maxLookbackYears := config.Cfg.API.TimeRange.MaxLookbackYears
+    if maxLookbackYears <= 0 {
+        maxLookbackYears = 1
+    }
+    maxLookbackTime := now.AddDate(-maxLookbackYears, 0, 0).Unix()
+
+    endTime := now.Unix()
+
+    if queryParams.EndTime != "" {
+        if parsedTime, err := time.Parse(DateFormat, queryParams.EndTime); err == nil {
+            parsedTime = parsedTime.Add(24*time.Hour - time.Second)
+            endTime = parsedTime.Unix()
+        }
+    }
+
+    startTime := defaultStartTime
+    if queryParams.StartTime != "" {
+        if parsedTime, err := time.Parse(DateFormat, queryParams.StartTime); err == nil {
+            startTime = parsedTime.Unix()
+
+            if startTime < maxLookbackTime {
+                startTime = maxLookbackTime
+            }
+        }
+    }
+    
+    return startTime, endTime
+}
+
 // PendingTransactionModel return type for Swagger documentation
 type PendingTransactionModel struct {
 	TxHash          string `json:"hash"`
@@ -278,7 +249,7 @@ func GetPendingTransactions(c *gin.Context) {
 		return
 	}
 
-	mainStorage, err := getMainStorage()
+	mainStorage, err := storage.GetMainStorage()
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting main storage")
 		api.InternalErrorHandler(c)
@@ -373,7 +344,7 @@ func GetPendingTransactionDetail(c *gin.Context) {
 		return
 	}
 
-	mainStorage, err := getMainStorage()
+	mainStorage, err := storage.GetMainStorage()
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting main storage")
 		api.InternalErrorHandler(c)

@@ -5,10 +5,14 @@ import { format } from 'date-fns';
 import { Table } from '@/components/ui/table';
 import { DATE_TIME_FORMAT, PAGINATION } from '@/constant';
 import { cn } from '@/lib/utils';
-import { ETransactionStatus, ITransaction } from '@/modules/transaction';
+import { ITransaction } from '@/modules/transaction';
 import { TTableColumn } from '@/types';
 import { DateTimeUtil, NumberUtil } from '@/utils';
-import { MoreInfoButton, MoreInfoButtonSkeleton, TxnHashLink, TxnHashLinkSkeleton } from '../../shared';
+import { TransactionValueSkeleton, TxnHashLink, TxnHashLinkSkeleton, TypeBadges } from '../../shared';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Transaction } from '@/modules/donation-campaign';
+import { TxStatusBadge } from '@/modules/transaction/components/shared';
+import { APP_CONFIG } from '@/configs/app.config';
 
 interface WalletTransactionsTableProps {
   walletAddress: string;
@@ -23,46 +27,58 @@ export const WalletTransactionsTable = ({
   skeletonLength = PAGINATION.DEFAULT_LIMIT,
   isLoading,
 }: WalletTransactionsTableProps) => {
-  const columns: TTableColumn<ITransaction>[] = [
+  const columns: TTableColumn<Transaction>[] = [
     {
-      renderCell: (row) => <MoreInfoButton transaction={row} />,
-      skeletonContent: <MoreInfoButtonSkeleton />,
-    },
-    {
-      headerContent: 'Txn Hash',
-      renderCell: (row) => (
-        <TxnHashLink hash={row.hash} isPending={row.status === ETransactionStatus.Pending} className="w-40" />
-      ),
+      headerContent: 'Hash',
+      dataKey: 'hash',
+      renderCell: (tx) => <TxnHashLink hash={tx.hash} isPending={false} className="w-40" />,
       skeletonContent: <TxnHashLinkSkeleton className="w-40" />,
+      align: 'center',
     },
     {
-      headerContent: 'Created At',
-      renderCell: (row) => format(DateTimeUtil.toMilliseconds(row.transaction_timestamp), DATE_TIME_FORMAT.DATE_TIME),
+      headerContent: 'Type',
+      dataKey: 'transaction_type',
+      renderCell: (tx) => <TypeBadges type={tx.transaction_type} />,
+      skeletonContent: <Skeleton className="h-5.5 w-24" />,
+      align: 'center',
+    },
+
+    {
+      headerContent: 'Status',
+      dataKey: 'status',
+      renderCell: (tx) => <TxStatusBadge status={tx.status} />,
+      skeletonContent: <Skeleton className="h-5.5 w-24" />,
+      align: 'center',
     },
     {
-      headerContent: <p className="text-end">Amount</p>,
-      renderCell: (row) => {
-        const isSent = walletAddress === row.from_address;
+      headerContent: 'Time',
+      dataKey: 'transaction_timestamp',
+      renderCell: (tx) => format(DateTimeUtil.toMilliseconds(tx.transaction_timestamp), DATE_TIME_FORMAT.DATE_TIME),
+      align: 'center',
+    },
+    {
+      headerContent: 'Amount',
+      dataKey: 'value',
+      renderCell: (tx) => {
+        const isSent = walletAddress === tx.from_address;
         return (
-          <div className="flex flex-col justify-end gap-1 text-end text-sm">
-            <p className={cn('font-bold', isSent ? 'text-error-primary-600' : 'text-utility-success-600')}>
-              {isSent ? '-' : '+'} {NumberUtil.formatWithCommasAndScale(row.value)}
-            </p>
-            <p className={cn('text-quaternary-500 font-normal')}>{isSent ? 'Sent' : 'Received'}</p>
-          </div>
+          <p className={cn('text-sm font-bold', isSent ? 'text-error-primary-600' : 'text-utility-success-600')}>
+            {isSent ? '-' : '+'} {NumberUtil.formatWithCommasAndScale(tx.value)} {APP_CONFIG.CHAIN_SYMBOL}
+          </p>
         );
       },
+      skeletonContent: <TransactionValueSkeleton />,
+      align: 'right',
     },
   ];
 
   return (
-    <div className="min-h-[500px]">
+    <div className="bg-card min-h-[300px]">
       <Table
         getRowKey={(row) => row.hash}
         columns={columns}
         rows={transactions}
         skeletonLength={skeletonLength}
-        className="[&_thead]:sticky [&_thead]:z-10"
         classNameLayout="overflow-x-visible"
         isLoading={isLoading}
       />

@@ -49,6 +49,10 @@ type QueryParams struct {
 
 	// @Description Wallet address to fetch transactions for (matches from OR to)
 	WalletAddress string `schema:"wallet_address"`
+	// @Description Start time for filtering transactions (YYYY-MM-DD or Unix timestamp)
+    StartTime string `schema:"start_time"`
+    // @Description End time for filtering transactions (YYYY-MM-DD or Unix timestamp)
+    EndTime string `schema:"end_time"`
 }
 
 // Meta represents metadata for a query response
@@ -91,7 +95,10 @@ func writeError(w http.ResponseWriter, message string, code int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 
-	json.NewEncoder(w).Encode(resp)
+	err := json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to write error response")
+	}
 }
 
 var (

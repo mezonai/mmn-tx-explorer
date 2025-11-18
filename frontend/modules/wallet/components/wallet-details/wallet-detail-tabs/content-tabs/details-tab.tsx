@@ -1,68 +1,79 @@
-import Link from 'next/link';
-
-import { Cube01 } from '@/assets/icons';
-import { AddressDisplay, ItemAttribute } from '@/components/shared';
-import { Button } from '@/components/ui/button';
+import { AddressDisplay, RefreshButton } from '@/components/shared';
 import { APP_CONFIG } from '@/configs/app.config';
-import { ROUTES } from '@/configs/routes.config';
-import { IWalletDetails } from '@/modules/wallet/type';
 import { NumberUtil } from '@/utils';
-import { TxnLink } from '../../../wallet-list/list/shared';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useUser } from '@/providers';
+import Link from 'next/link';
+import { ROUTES } from '@/configs/routes.config';
+import { Button } from '@/components/ui/button';
+import { useWallet } from '@/modules/wallet/hooks/useWallet';
 
 interface TabDetailsProps {
-  walletDetails: IWalletDetails;
+  walletAddress: string;
 }
 
-export const DetailsTab = ({ walletDetails }: TabDetailsProps) => {
+export const DetailsTab = ({ walletAddress }: TabDetailsProps) => {
+  const { user } = useUser();
+  const { data: walletDetailsResponse, refetch, isLoading } = useWallet(walletAddress);
+  const walletDetails = walletDetailsResponse?.data;
   return (
-    <div className="space-y-4 md:min-h-[600px]">
-      <ItemAttribute
-        label="Address"
-        description="The address of the account"
-        data={walletDetails.address}
-        render={(address) => <AddressDisplay address={address} className="w-[300px]" />}
-        skeleton={<Skeleton className="h-5 w-30" />}
-      />
-
-      <ItemAttribute
-        label="Balance"
-        description={'Balance of the wallet'}
-        data={walletDetails}
-        render={(walletDetails) => (
-          <span>
-            {NumberUtil.formatWithCommasAndScale(walletDetails?.balance ?? 0)} {APP_CONFIG.CHAIN_SYMBOL}
-          </span>
-        )}
-        skeleton={<Skeleton className="h-5 w-20" />}
-      />
-
-      <ItemAttribute
-        label="Transactions"
-        description="Number of transactions related to this address"
-        data={walletDetails}
-        render={(walletDetails) => (
-          <TxnLink address={walletDetails.address} accountNonce={walletDetails?.transaction_count ?? 0} />
-        )}
-        skeleton={<Skeleton className="h-5 w-50" />}
-      />
-
-      <ItemAttribute
-        label="Last balance update"
-        description="Block number in which the address was updated"
-        data={walletDetails}
-        render={(walletDetails) => (
-          <div className="flex items-center gap-1">
-            <Cube01 className="text-foreground-quaternary-400 size-4" />
-            <Button variant="link" className="text-brand-secondary-700 size-fit p-0 text-sm font-normal" asChild>
-              <Link href={ROUTES.BLOCK(Number(walletDetails?.last_balance_update ?? 0))}>
-                {walletDetails?.last_balance_update ?? 0}
-              </Link>
-            </Button>
+    <Card className="dark:border-primary/20">
+      <CardContent>
+        <CardHeader className="mb-4 flex items-center justify-between gap-2 p-0">
+          <CardTitle className="text-brand-primary font-semibold tracking-wider uppercase">Account Summary</CardTitle>
+          <div className="flex items-end justify-end">
+            <p className="text-card-foreground rounded-lg p-1 text-xs break-words">
+              Last updated block •
+              <Button variant="link" className="text-brand-primary size-fit p-0 text-sm font-normal" asChild>
+                <Link href={ROUTES.BLOCK(Number(walletDetails?.last_balance_update ?? 0))}>
+                  {walletDetails?.last_balance_update ?? 0}
+                </Link>
+              </Button>
+            </p>
+            <RefreshButton onClick={refetch} isLoading={isLoading} />
           </div>
-        )}
-        skeleton={<Skeleton className="h-5 w-50" />}
-      />
-    </div>
+        </CardHeader>
+        <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
+          <Card className="dark:border-primary/20">
+            <CardContent>
+              <CardHeader className="flex items-center justify-between gap-2 p-0">
+                <CardTitle className="mb-1 text-xs uppercase">Balance</CardTitle>
+              </CardHeader>
+              <p className="dark:text-primary text-lg font-semibold">
+                {user?.walletAddress === walletDetails?.address
+                  ? `${NumberUtil.formatWithCommasAndScale(walletDetails?.balance ?? 0)} ${APP_CONFIG.CHAIN_SYMBOL}`
+                  : '••••••••••'}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="dark:border-primary/20">
+            <CardContent>
+              <CardHeader className="flex items-center justify-between gap-2 p-0">
+                <CardTitle className="mb-1 text-xs uppercase">Transaction</CardTitle>
+              </CardHeader>
+              <p className="dark:text-primary text-lg font-semibold">{walletDetails?.transaction_count ?? 0}</p>
+            </CardContent>
+          </Card>
+          <Card className="dark:border-primary/20">
+            <CardContent>
+              <CardHeader className="flex items-center justify-between gap-2 p-0">
+                <CardTitle className="mb-1 text-xs uppercase">Wallet Address</CardTitle>
+              </CardHeader>
+              <div className="flex items-center space-x-2">
+                {walletDetails ? (
+                  <AddressDisplay
+                    address={walletDetails.address}
+                    className="dark:text-primary text-lg font-semibold md:w-[300px]"
+                  />
+                ) : (
+                  <div className="dark:text-primary text-lg font-semibold md:w-[300px]">N/A</div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </CardContent>
+    </Card>
   );
 };

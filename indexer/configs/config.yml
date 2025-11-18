@@ -108,6 +108,11 @@ reorgHandler:
   # Whether to force starting from fromBlock for reorg detection
   forceFromBlock: false
 
+statsWorker:
+  enabled: true
+  intervalMinutes: 120
+  timeoutMinutes: 10
+
 # Storage configuration for different components
 storage:
   # Main storage configuration - Primary data storage
@@ -178,6 +183,10 @@ api:
   thirdweb:
     # ThirdWeb client ID for API access
     clientId: 123abc
+  # Time range configuration for API queries
+  timeRange:
+    # Maximum lookback period in years for time-based queries
+    maxLookbackYears: 1
 
 # Publisher configuration - Settings for publishing data to message queues
 publisher:

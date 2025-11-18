@@ -1,12 +1,34 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { STORAGE_KEYS } from '@/constant';
+import {
+  AUTHENTICATION_CONSTANTS,
+  AUTHENTICATION_ENDPOINT,
+  AuthenticationService,
+  fetchAndStoreZkProof,
+  generateAndStoreKeyPair,
+  generateCsrfToken,
+  handleTokenStorage,
+  LoginResponse,
+  mmnClient,
+  processAndStoreUser,
+} from '@/modules/auth';
+import axios from 'axios';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
+import { IZkProof, IEphemeralKeyPair } from 'mmn-client-js';
+import { safeJsonParse, clearAuthStorage } from '@/utils';
 
 interface AppContextType {
   isAuthenticated: boolean;
   setIsAuthenticated: (value: boolean) => void;
   user: User | null;
   setUser: (user: User | null) => void;
+  zkProof: IZkProof | null;
+  setZkProof: (zk: IZkProof | null) => void;
+  keypair: IEphemeralKeyPair | null;
+  setKeypair: (keypair: IEphemeralKeyPair | null) => void;
 }
 
 interface User {
@@ -14,6 +36,7 @@ interface User {
   username: string;
   email?: string;
   avatar?: string;
+  walletAddress: string;
 }
 
 interface AppProviderProps {
@@ -22,23 +45,92 @@ interface AppProviderProps {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-// Mock user data
-const MOCK_USER: User = {
-  id: '1',
-  username: 'john.doe',
-  email: 'john@example.com',
-  avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face',
-};
-
 export function AppProvider({ children }: AppProviderProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
+  const [zkProof, setZkProof] = useState<IZkProof | null>(null);
+  const [keypair, setKeypair] = useState<IEphemeralKeyPair | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  useEffect(() => {
+    const localTokenStr = localStorage.getItem(STORAGE_KEYS.TOKEN);
+    const localToken = localTokenStr ? safeJsonParse(localTokenStr) : null;
+    if (localToken) {
+      (async () => {
+        try {
+          await AuthenticationService.refreshLogin(localToken.refresh_token);
+        } catch {
+          clearAuthStorage();
+          setUser(null);
+          setZkProof(null);
+          setKeypair(null);
+          setIsAuthenticated(false);
+          toast.error('Session expired, please log in again.');
+        }
+      })();
+    }
+    const userStored = localStorage.getItem(STORAGE_KEYS.USER_INFO);
+    if (userStored) {
+      const u = safeJsonParse(userStored);
+      setUser(u);
+      setIsAuthenticated(true);
+      const zkStr = localStorage.getItem(STORAGE_KEYS.ZK_PROOF);
+      if (zkStr) setZkProof(safeJsonParse(zkStr));
+
+      const kpStr = localStorage.getItem(STORAGE_KEYS.KEY_PAIR);
+      if (kpStr) setKeypair(safeJsonParse(kpStr));
+      return;
+    }
+    const code = searchParams.get('authCode');
+
+    if (!code) {
+      return;
+    }
+
+    const handleAuthentication = async (authCode: string) => {
+      try {
+        const userInfo: LoginResponse = await AuthenticationService.getUserInfo(authCode);
+        setIsAuthenticated(true);
+        handleTokenStorage(userInfo);
+        const keypair = generateAndStoreKeyPair();
+        setKeypair(keypair);
+        const senderAddress = mmnClient.getAddressFromUserId(userInfo.user.user_id);
+        const userObject = processAndStoreUser(userInfo.user, senderAddress);
+        setUser(userObject);
+        const fetchedZk = await fetchAndStoreZkProof(
+          userInfo.user.user_id || userInfo.user.sub,
+          keypair.publicKey,
+          userInfo.auth_token,
+          senderAddress
+        );
+        if (fetchedZk) {
+          setZkProof(fetchedZk);
+        }
+        router.replace(pathname);
+        toast.success('Login successful!');
+      } catch {
+        clearAuthStorage();
+        setUser(null);
+        setZkProof(null);
+        setKeypair(null);
+        setIsAuthenticated(false);
+        toast.error('Login failed!');
+      }
+    };
+
+    handleAuthentication(code);
+  }, []);
 
   const value: AppContextType = {
     isAuthenticated,
     setIsAuthenticated,
     user,
     setUser,
+    zkProof,
+    setZkProof,
+    keypair,
+    setKeypair,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
@@ -64,17 +156,41 @@ export function useUser() {
   return { user, setUser };
 }
 
-export function useAuthActions() {
-  const { setIsAuthenticated, setUser } = useApp();
+export function useZkProof() {
+  const { zkProof, setZkProof } = useApp();
+  return { zkProof, setZkProof };
+}
 
+export function useKeypair() {
+  const { keypair, setKeypair } = useApp();
+  return { keypair, setKeypair };
+}
+
+export function useAuthActions() {
+  const { setIsAuthenticated, setUser, setZkProof, setKeypair } = useApp();
+  const router = useRouter();
   const login = () => {
-    setIsAuthenticated(true);
-    setUser(MOCK_USER);
+    const csrfToken = generateCsrfToken();
+    const currentPath = location.pathname + location.search;
+    const stateObject = {
+      csrf: csrfToken,
+      redirect_url: currentPath,
+    };
+    const encodedState = Buffer.from(JSON.stringify(stateObject)).toString('base64');
+    window.location.href = `${AUTHENTICATION_ENDPOINT.LOGIN}?state=${encodedState}`;
   };
 
   const logout = () => {
-    setIsAuthenticated(false);
+    const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+    const refreshToken = token ? safeJsonParse(token).refresh_token : null;
+    if (refreshToken) {
+      axios.post(AUTHENTICATION_ENDPOINT.LOGOUT, { refresh_token: refreshToken });
+    }
+    clearAuthStorage();
     setUser(null);
+    setZkProof(null);
+    setKeypair(null);
+    setIsAuthenticated(false);
   };
 
   return { login, logout };

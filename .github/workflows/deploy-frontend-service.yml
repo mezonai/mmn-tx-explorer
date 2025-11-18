@@ -1,0 +1,196 @@
+name: Deploy Frontend Service
+
+on: 
+  workflow_dispatch:
+    inputs:
+      env:
+        description: "Environment (dev|prod)"
+        required: true
+        default: "dev"
+      ref:
+        description: "Git ref (branch, tag, or commit)"
+        required: true
+        default: "main"
+  workflow_call:
+    inputs:
+      env:
+        description: "Environment (dev|prod)"
+        type: string
+        required: true
+      ref:
+        description: "Git ref (branch, tag, or commit)"
+        type: string
+        required: true
+      git_sha:
+        type: string
+        required: false
+      source_artifact:
+        type: string
+        required: false
+    secrets:
+      OAUTH_CLIENT_SECRET:
+        required: true
+
+jobs:
+  build:
+    runs-on: [self-hosted, Linux, mezon-runner]
+    environment: ${{ inputs.env }}
+    outputs:
+      git_sha: ${{ steps.get_sha.outputs.git_sha }}
+    steps:
+      - name: Checkout
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          clean: false
+
+      - name: Download source (from Artifact)
+        if: github.event_name == 'workflow_call'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.source_artifact }}
+          path: .
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+          cache: ''
+
+      - name: Build Frontend
+        env:
+          NEXT_PUBLIC_APP_API_URL: ${{ vars.NEXT_PUBLIC_APP_API_URL }}
+          APP_API_URL_INTERNAL: ${{ vars.APP_API_URL_INTERNAL }}
+          NEXT_PUBLIC_CHAT_APP_MMN_API_URL: ${{ vars.NEXT_PUBLIC_CHAT_APP_MMN_API_URL }}
+          NEXT_PUBLIC_CHAT_APP_ZK_API_URL: ${{ vars.NEXT_PUBLIC_CHAT_APP_ZK_API_URL }}
+          NEXT_PUBLIC_BACKEND_API_URL: ${{ vars.NEXT_PUBLIC_BACKEND_API_URL }}
+          NEXT_PUBLIC_OAUTH2_API_URL: ${{ vars.NEXT_PUBLIC_OAUTH2_API_URL }}
+          NEXT_PUBLIC_OAUTH2_CLIENT_ID: ${{ vars.OAUTH_CLIENT_ID }}
+          OAUTH2_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }} 
+          NEXT_PUBLIC_OAUTH2_REDIRECT_URI: ${{ vars.NEXT_PUBLIC_OAUTH2_REDIRECT_URI }}
+          NEXT_PUBLIC_OAUTH2_SCOPE: ${{ vars.NEXT_PUBLIC_OAUTH2_SCOPE }}
+          NEXT_BASE_FE: ${{ vars.NEXT_BASE_FE }}          
+        run: |
+          cd frontend
+          npm install
+          rm -rf .next
+          npm run build
+          cd ..
+
+      - name: Get short SHA
+        id: get_sha
+        run: |
+          if [ -n "${{ inputs.git_sha }}" ]; then
+            echo "git_sha=${{ inputs.git_sha }}" >> $GITHUB_OUTPUT
+          else
+            echo "git_sha=$(git rev-parse --short=8 HEAD)" >> $GITHUB_OUTPUT
+          fi
+
+  deploy:
+    needs: build
+    runs-on: [self-hosted, Linux, mezon-runner]
+    environment: ${{ inputs.env }}
+    env:
+      TARGET_HOST: ${{ inputs.env == 'prod' && 'prod-indexer' || 'dev-indexer' }}
+      GIT_SHA: ${{ needs.build.outputs.git_sha }}
+    
+    steps:
+      - name: Generate FE remote setup script
+        env: 
+          NEXT_PUBLIC_APP_API_URL: ${{ vars.NEXT_PUBLIC_APP_API_URL }}
+          APP_API_URL_INTERNAL: ${{ vars.APP_API_URL_INTERNAL }}
+          NEXT_PUBLIC_CHAT_APP_MMN_API_URL: ${{ vars.NEXT_PUBLIC_CHAT_APP_MMN_API_URL }}
+          NEXT_PUBLIC_CHAT_APP_ZK_API_URL: ${{ vars.NEXT_PUBLIC_CHAT_APP_ZK_API_URL }}
+          NEXT_PUBLIC_BACKEND_API_URL: ${{ vars.NEXT_PUBLIC_BACKEND_API_URL }}
+          NEXT_PUBLIC_OAUTH2_API_URL: ${{ vars.NEXT_PUBLIC_OAUTH2_API_URL }}
+          NEXT_PUBLIC_OAUTH2_CLIENT_ID: ${{ vars.OAUTH_CLIENT_ID }}
+          OAUTH2_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
+          NEXT_PUBLIC_OAUTH2_REDIRECT_URI: ${{ vars.NEXT_PUBLIC_OAUTH2_REDIRECT_URI }}
+          NEXT_PUBLIC_OAUTH2_SCOPE: ${{ vars.NEXT_PUBLIC_OAUTH2_SCOPE }}
+          NEXT_BASE_FE: ${{ vars.NEXT_BASE_FE }}
+        run: |
+          cat > remote_setup.sh <<'EOF'
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          SHA="$1"
+          echo "==> Writing FE environment config..."
+          sudo tee /opt/frontend/frontend.env > /dev/null <<EON
+          NEXT_PUBLIC_APP_API_URL=${NEXT_PUBLIC_APP_API_URL}
+          APP_API_URL_INTERNAL=${APP_API_URL_INTERNAL}
+          NEXT_PUBLIC_CHAT_APP_MMN_API_URL=${NEXT_PUBLIC_CHAT_APP_MMN_API_URL}
+          NEXT_PUBLIC_CHAT_APP_ZK_API_URL=${NEXT_PUBLIC_CHAT_APP_ZK_API_URL}
+          NEXT_PUBLIC_BACKEND_API_URL=${NEXT_PUBLIC_BACKEND_API_URL}
+          NEXT_PUBLIC_OAUTH2_API_URL=${NEXT_PUBLIC_OAUTH2_API_URL}
+          NEXT_PUBLIC_OAUTH2_CLIENT_ID=${NEXT_PUBLIC_OAUTH2_CLIENT_ID}
+          OAUTH2_CLIENT_SECRET=${OAUTH2_CLIENT_SECRET}
+          NEXT_PUBLIC_OAUTH2_REDIRECT_URI=${NEXT_PUBLIC_OAUTH2_REDIRECT_URI}
+          NEXT_PUBLIC_OAUTH2_SCOPE=${NEXT_PUBLIC_OAUTH2_SCOPE}
+          NEXT_BASE_FE=${NEXT_BASE_FE}
+          EON
+
+          sudo chown -R mmn:mmn /opt/frontend
+          sudo chmod 644 /opt/frontend/frontend.env
+
+          echo "==> FE preparation complete!"
+          EOF
+          chmod +x remote_setup.sh
+
+          echo "# Remote env generated at $(date)" > remote_env.sh
+          printf "export NEXT_PUBLIC_APP_API_URL=%q\n" "$NEXT_PUBLIC_APP_API_URL" >> remote_env.sh
+          printf "export APP_API_URL_INTERNAL=%q\n" "$APP_API_URL_INTERNAL" >> remote_env.sh
+          printf "export NEXT_PUBLIC_CHAT_APP_MMN_API_URL=%q\n" "$NEXT_PUBLIC_CHAT_APP_MMN_API_URL" >> remote_env.sh
+          printf "export NEXT_PUBLIC_CHAT_APP_ZK_API_URL=%q\n" "$NEXT_PUBLIC_CHAT_APP_ZK_API_URL" >>  remote_env.sh
+          printf "export NEXT_PUBLIC_BACKEND_API_URL=%q\n" "$NEXT_PUBLIC_BACKEND_API_URL" >> remote_env.sh
+          printf "export NEXT_PUBLIC_OAUTH2_API_URL=%q\n" "$NEXT_PUBLIC_OAUTH2_API_URL" >> remote_env.sh
+          printf "export NEXT_PUBLIC_OAUTH2_CLIENT_ID=%q\n" "$NEXT_PUBLIC_OAUTH2_CLIENT_ID" >> remote_env.sh
+          printf "export OAUTH2_CLIENT_SECRET=%q\n" "$OAUTH2_CLIENT_SECRET" >> remote_env.sh
+          printf "export NEXT_PUBLIC_OAUTH2_REDIRECT_URI=%q\n" "$NEXT_PUBLIC_OAUTH2_REDIRECT_URI" >> remote_env.sh
+          printf "export NEXT_PUBLIC_OAUTH2_SCOPE=%q\n" "$NEXT_PUBLIC_OAUTH2_SCOPE" >> remote_env.sh
+          printf "export NEXT_BASE_FE=%q\n" "$NEXT_BASE_FE" >> remote_env.sh
+      
+      - name:  Prepare and deploy to target server
+        run: |
+          set -e
+          echo "==> Copying FE setup script to target server..."
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} remote_setup.sh remote_env.sh ${{ vars.HOST_ALIAS }}:/tmp/
+
+          echo "==> Syncing Frontend build to target..."
+          rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" frontend/.next/standalone/ ${{ vars.HOST_ALIAS }}:/opt/frontend/.next/standalone/
+          rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" frontend/public/ ${{ vars.HOST_ALIAS }}:/opt/frontend/.next/standalone/public/
+          rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" frontend/.next/static/ ${{ vars.HOST_ALIAS }}:/opt/frontend/.next/standalone/.next/static/
+
+          echo "==> Running remote FE setup script..."
+          ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "
+            set -e
+            source /tmp/remote_env.sh
+            bash /tmp/remote_setup.sh \"$GIT_SHA\"
+            
+            echo '==> Cleaning up FE temp files...'
+            rm -f /tmp/remote_setup.sh /tmp/remote_env.sh
+          "
+
+      - name: Atomic swap + restart services
+        run: |
+          ssh -i ${{vars.SSH_PRIVATE_KEY_PATH}} ${{vars.HOST_ALIAS}} <<EOF
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          echo '==> Stopping frontend service...'
+          sudo systemctl stop frontend-explorer || true
+
+          echo "==> Reloading and starting services..."
+          sudo systemctl daemon-reload
+          sudo systemctl start frontend-explorer
+
+          echo "==> Reloading Nginx..."
+          sudo nginx -t && sudo systemctl reload nginx
+
+          echo "==> Activation complete!"
+          EOF
+
+      - name: Health check after deployment
+        run: |
+          echo "==> Checking Frontend status..."
+          ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "systemctl is-active frontend-explorer"
