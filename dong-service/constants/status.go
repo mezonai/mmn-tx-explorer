@@ -29,6 +29,7 @@ const (
 // Red Envelope Configuration
 const (
 	RedEnvelopeInitialWalletPool  = 50 // Number of wallets to create on deployment
+	RedEnvelopeWalletMaxAgeInDays = 30 // Maximum age for unused wallets before replacement
 )
 
 // GetStatusName returns the human-readable name for a status code
