@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mezon Đồng – Campaign Detail</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#6941c6",
+              "primary-light": "#8b5cf6",
+              dark: "#020617",
+              "dark-soft": "#02091f",
+              "dark-card": "#0b1533"
+            },
+            fontFamily: {
+              inter: ["Inter", "sans-serif"]
+            }
+          }
+        }
+      };
+    </script>
+
+    <!-- Theme init (optional) -->
+    <script>
+      (function () {
+        const stored = localStorage.getItem("theme");
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        if (stored === "dark" || (!stored && prefersDark)) {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+      })();
+    </script>
+  </head>
+
+  <body class="bg-dark text-white font-inter">
+    <div class="min-h-screen flex flex-col">
+
+      <!-- HEADER (simplified mock of Mezon Đồng) -->
+      <header class="border-b border-white/5 bg-dark-soft">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2">
+              <span class="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">◎</span>
+              <span class="font-semibold tracking-wide">Mezon Đồng</span>
+            </div>
+            <div class="hidden md:flex ml-6 items-center">
+              <div class="relative">
+                <span class="absolute inset-y-0 left-3 flex items-center text-gray-500 text-xs">🔍</span>
+                <input
+                  class="pl-7 pr-3 py-1.5 rounded-full bg-dark-card border border-white/10 text-xs text-gray-300 placeholder:text-gray-500 w-56"
+                  placeholder="Search on chain…"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-6 text-sm text-gray-300">
+            <nav class="hidden md:flex gap-4">
+              <a href="#" class="hover:text-primary-light">Explorer</a>
+              <a href="#" class="hover:text-primary-light">Finance</a>
+              <a href="#" class="hover:text-primary-light">Community</a>
+              <a href="#" class="hover:text-primary-light">Ecosystem</a>
+            </nav>
+            <div class="flex items-center gap-2">
+              <div class="h-8 w-8 rounded-full bg-primary/30 flex items-center justify-center text-xs">TN</div>
+              <span class="hidden sm:inline text-xs">tung.nguyen</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- MAIN -->
+      <main class="flex-1 bg-[#020617]">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+          <!-- Breadcrumb -->
+          <nav class="text-xs text-gray-400 mb-4 flex items-center gap-1">
+            <a href="#" class="hover:text-primary-light/90">Donation campaigns</a>
+            <span>/</span>
+            <span class="text-gray-300">Campaign details</span>
+          </nav>
+
+          <!-- Top: title + metrics / donate panel -->
+          <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-10">
+            <div class="xl:col-span-2">
+              <div class="flex flex-wrap items-center gap-2 mb-3">
+                <span class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 text-xs font-semibold">
+                  Active
+                </span>
+                <span class="px-3 py-1 rounded-full bg-primary/15 text-primary-light text-xs font-semibold flex items-center gap-1">
+                  Verified
+                  <span class="text-[10px]">✔</span>
+                </span>
+              </div>
+
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <h1 class="text-2xl sm:text-3xl font-semibold">NCC Build School Fund 2025</h1>
+                  <p class="mt-3 text-sm text-gray-300 max-w-2xl leading-6">
+                    NCC is launching a Build School Fund to support the construction of schools for children in
+                    underprivileged areas. Every contribution — big or small — helps create better learning
+                    environments and brighter futures.
+                  </p>
+                </div>
+
+                <!-- small edit icon mock -->
+                <button class="hidden sm:inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-gray-400 hover:border-primary-light hover:text-primary-light text-xs">
+                  ✎
+                </button>
+              </div>
+
+              <!-- financial cards -->
+              <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- total raised -->
+                <div class="rounded-2xl bg-dark-card border border-white/5 p-4">
+                  <p class="text-xs text-gray-400 mb-1">Raised to date</p>
+                  <p class="text-2xl font-semibold tracking-tight">406,290,979 đ</p>
+                  <p class="mt-1 text-xs text-gray-400">Goal 500,000,000 đ · 81.26% funded</p>
+                  <div class="mt-3 h-2 w-full bg-white/10 rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-primary to-primary-light rounded-full w-[81%]"></div>
+                  </div>
+                </div>
+
+                <!-- current balance -->
+                <div class="rounded-2xl bg-dark-card border border-white/5 p-4">
+                  <p class="text-xs text-gray-400 mb-1">Current balance</p>
+                  <p class="text-2xl font-semibold tracking-tight text-emerald-300">214,290,979 đ</p>
+                  <p class="mt-1 text-xs text-gray-400">Available to withdraw on chain</p>
+                  <p class="mt-3 text-[11px] text-gray-500">
+                    Calculated as total raised minus all confirmed withdrawals.
+                  </p>
+                </div>
+
+                <!-- total withdrawn -->
+                <div class="rounded-2xl bg-dark-card border border-white/5 p-4">
+                  <p class="text-xs text-gray-400 mb-1">Total withdrawn</p>
+                  <p class="text-2xl font-semibold tracking-tight text-rose-300">192,000,000 đ</p>
+                  <p class="mt-1 text-xs text-gray-400">4 successful payouts</p>
+                  <button class="mt-3 inline-flex justify-center items-center rounded-xl border border-white/10 px-3 py-1.5 text-xs text-gray-200 hover:border-primary-light hover:text-primary-light">
+                    View withdraw history
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Donate card -->
+            <aside class="xl:col-span-1">
+              <div class="rounded-2xl bg-dark-card border border-white/5 p-5 flex flex-col h-full">
+                <div class="flex items-center justify-between gap-3 mb-4">
+                  <div>
+                    <p class="text-xs font-semibold tracking-wide text-gray-400">Donate</p>
+                    <p class="text-sm text-gray-200">Send đồng from your Mezon app</p>
+                  </div>
+                </div>
+
+                <div class="text-xs text-gray-400 mb-2">Wallet address</div>
+                <div class="flex items-center justify-between gap-2 rounded-xl bg-black/20 border border-white/10 px-3 py-2 mb-4">
+                  <span class="font-mono text-xs text-gray-200 truncate">2pC6cf...Sh5dFP</span>
+                  <button class="text-[11px] text-primary-light hover:text-primary">Copy</button>
+                </div>
+
+                <div class="text-xs text-gray-400 mb-2">Scan on Mezon</div>
+                <div class="flex items-center gap-3 mb-4">
+                  <div class="h-28 w-28 rounded-xl bg-white flex items-center justify-center text-xs text-black">
+                    QR
+                  </div>
+                  <p class="text-xs text-gray-400 leading-5">
+                    Open your Mezon app, scan this code, and specify the amount of tokens to donate.
+                  </p>
+                </div>
+
+                <button class="mt-auto w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white hover:bg-primary-light">
+                  Donate now
+                </button>
+                <p class="mt-2 text-[11px] text-gray-500">
+                  Keep your transaction hash for reconciliation in case of any issues.
+                </p>
+              </div>
+            </aside>
+          </div>
+
+          <!-- TABS -->
+          <div class="mt-4 border-b border-white/10">
+            <div class="flex gap-6 text-sm">
+              <button
+                class="tab-trigger py-2 border-b-2 border-transparent text-gray-400 hover:text-gray-200"
+                data-tab="overview"
+              >
+                Overview
+              </button>
+              <button
+                class="tab-trigger py-2 border-b-2 border-primary text-white"
+                data-tab="updates"
+              >
+                Updates feed
+              </button>
+              <button
+                class="tab-trigger py-2 border-b-2 border-transparent text-gray-400 hover:text-gray-200"
+                data-tab="activity"
+              >
+                Fundraising activity
+              </button>
+            </div>
+          </div>
+
+          <!-- TAB: OVERVIEW (placeholder) -->
+          <section id="tab-overview" class="mt-8 hidden">
+            <div class="rounded-2xl bg-dark-card border border-white/5 p-6 text-sm text-gray-300">
+              <p>This is a placeholder for the existing overview content (description, withdraw history, etc.).</p>
+            </div>
+          </section>
+
+          <!-- TAB: UPDATES FEED (DONATION FEED) -->
+          <section id="tab-updates" class="mt-8">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <div>
+                <h2 class="text-lg font-semibold">Project updates</h2>
+                <p class="text-sm text-gray-400">
+                  Follow the full journey of this campaign — from survey to construction and final handover.
+                </p>
+              </div>
+              <!-- owner-only button -->
+              <button
+                class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-light"
+              >
+                <span>＋ Add update</span>
+              </button>
+            </div>
+
+            <!-- Update composer (read-only mock) -->
+            <div class="rounded-2xl bg-dark-card border border-dashed border-primary/40 p-4 mb-6 text-sm text-gray-300">
+              <p class="mb-2 text-gray-200 font-medium">How updates are stored</p>
+              <ul class="list-disc list-inside text-xs text-gray-400 space-y-1">
+                <li>Photos are uploaded to distributed storage (IPFS).</li>
+                <li>Each update is anchored on the MMN chain with a content hash.</li>
+                <li>
+                  If you edit an update, a new version is created and the old one is marked as
+                  <span class="text-gray-200">superseded</span>.
+                </li>
+                <li>Updates can be hidden from the feed, but the on-chain record remains for audit.</li>
+              </ul>
+            </div>
+
+            <!-- FEED LIST -->
+            <div class="space-y-4">
+
+              <!-- Update card 1 -->
+              <article class="rounded-2xl bg-dark-card border border-white/5 p-5 text-sm">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                  <div class="flex items-center gap-2">
+                    <span class="px-2.5 py-1 rounded-full bg-primary/15 text-primary-light text-[11px] font-semibold">
+                      Update #3 · Site inspection
+                    </span>
+                    <span class="text-[11px] text-gray-400">Nov 12, 2025 · posted by NCC CSR team</span>
+                  </div>
+                  <div class="flex items-center gap-3 text-[11px] text-gray-400">
+                    <span class="inline-flex items-center gap-1">
+                      <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+                      On-chain
+                    </span>
+                    <button class="hover:text-primary-light">•••</button>
+                  </div>
+                </div>
+
+                <p class="text-gray-200 leading-6 mb-3">
+                  Our CSR team visited the planned school site in Điện Biên. The local committee confirmed
+                  that the land has been allocated and basic access roads are available. We captured the
+                  current condition of the classrooms and dormitory area.
+                </p>
+
+                <!-- images -->
+                <div class="flex flex-wrap gap-3 mb-3">
+                  <div class="h-28 w-40 rounded-xl bg-black/30 border border-white/10 flex items-center justify-center text-xs text-gray-400">
+                    Image 1 (IPFS)
+                  </div>
+                  <div class="h-28 w-40 rounded-xl bg-black/30 border border-white/10 flex items-center justify-center text-xs text-gray-400">
+                    Image 2 (IPFS)
+                  </div>
+                  <div class="h-28 w-40 rounded-xl bg-black/30 border border-white/10 flex items-center justify-center text-xs text-gray-400">
+                    Image 3 (IPFS)
+                  </div>
+                </div>
+
+                <!-- meta -->
+                <div class="flex flex-wrap items-center justify-between gap-3 text-[11px] text-gray-400">
+                  <div class="flex flex-wrap gap-3 items-center">
+                    <span class="px-2 py-1 rounded-full bg-white/5 text-gray-200">Construction</span>
+                    <span class="px-2 py-1 rounded-full bg-white/5 text-gray-200">Site visit</span>
+                  </div>
+                  <div class="flex flex-wrap gap-3 items-center">
+                    <div class="flex items-center gap-1">
+                      <span class="text-gray-500">IPFS CID:</span>
+                      <span class="font-mono text-[10px] text-primary-light truncate max-w-[160px]">
+                        bafybeihdwd2h3k7sg…9q
+                      </span>
+                      <button class="text-[10px] hover:text-primary">Copy</button>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <span class="text-gray-500">Tx:</span>
+                      <a href="#" class="font-mono text-[10px] text-primary-light hover:underline">
+                        0x23af…e91c
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </article>
+
+              <!-- Update card 2 (edited example) -->
+              <article class="rounded-2xl bg-dark-card border border-white/5 p-5 text-sm">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                  <div class="flex items-center gap-2">
+                    <span class="px-2.5 py-1 rounded-full bg-primary/15 text-primary-light text-[11px] font-semibold">
+                      Update #2 · Construction progress
+                    </span>
+                    <span class="text-[11px] text-gray-400">Oct 28, 2025 · updated Nov 02, 2025</span>
+                    <span class="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 text-[10px]">
+                      Edited · new version on chain
+                    </span>
+                  </div>
+                  <button class="text-[11px] text-gray-400 hover:text-primary-light">View previous version</button>
+                </div>
+
+                <p class="text-gray-200 leading-6 mb-3">
+                  Foundation work has been completed and the first classroom block is now 40% built.
+                  The local contractor expects the roof structure to be finished within the next 3 weeks,
+                  weather permitting.
+                </p>
+
+                <div class="flex flex-wrap gap-3 mb-3">
+                  <div class="h-28 w-40 rounded-xl bg-black/30 border border-white/10 flex items-center justify-center text-xs text-gray-400">
+                    Progress photo
+                  </div>
+                  <div class="h-28 w-40 rounded-xl bg-black/30 border border-white/10 flex items-center justify-center text-xs text-gray-400">
+                    Foundation
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-between gap-3 text-[11px] text-gray-400">
+                  <div class="flex flex-wrap gap-3 items-center">
+                    <span class="px-2 py-1 rounded-full bg-white/5 text-gray-200">Construction</span>
+                    <span class="px-2 py-1 rounded-full bg-white/5 text-gray-200">Milestone</span>
+                  </div>
+                  <div class="flex flex-wrap gap-3 items-center">
+                    <div class="flex items-center gap-1">
+                      <span class="text-gray-500">IPFS CID:</span>
+                      <span class="font-mono text-[10px] text-primary-light truncate max-w-[160px]">
+                        bafybeie8y6k3…2ab
+                      </span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <span class="text-gray-500">Tx:</span>
+                      <a href="#" class="font-mono text-[10px] text-primary-light hover:underline">
+                        0xa8dd…4410
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </article>
+
+              <!-- Update card 3 (hidden example) -->
+              <article class="rounded-2xl bg-dark-card border border-amber-500/40 p-5 text-sm opacity-80">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                  <div class="flex items-center gap-2">
+                    <span class="px-2.5 py-1 rounded-full bg-white/5 text-gray-200 text-[11px] font-semibold">
+                      Update #1 · Initial announcement
+                    </span>
+                    <span class="text-[11px] text-gray-500 line-through">Sep 15, 2025</span>
+                    <span class="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 text-[10px]">
+                      Hidden from public feed
+                    </span>
+                  </div>
+                  <button class="text-[11px] text-gray-400 hover:text-primary-light">Unhide</button>
+                </div>
+
+                <p class="text-gray-400 leading-6 mb-2">
+                  This update has been hidden from the public feed, but the record remains on chain for audit.
+                </p>
+
+                <p class="text-[11px] text-gray-500">
+                  Reason: contained a wrong date in the original message.
+                </p>
+              </article>
+
+            </div>
+          </section>
+
+          <!-- TAB: ACTIVITY (placeholder) -->
+          <section id="tab-activity" class="mt-8 hidden">
+            <div class="rounded-2xl bg-dark-card border border-white/5 p-6 text-sm text-gray-300">
+              <p>Existing fundraising activity table (recent donations, top contributors, etc.) will live here.</p>
+            </div>
+          </section>
+
+        </div>
+      </main>
+
+      <!-- FOOTER -->
+      <footer class="border-t border-white/10 bg-dark-soft">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
+          <div class="flex items-center gap-2">
+            <span class="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs">◎</span>
+            <span>Mezon Đồng · Public overview</span>
+          </div>
+          <div class="flex gap-4">
+            <a href="#" class="hover:text-primary-light">Privacy policy</a>
+            <a href="#" class="hover:text-primary-light">Terms of service</a>
+            <a href="#" class="hover:text-primary-light">Contact</a>
+          </div>
+        </div>
+      </footer>
+
+    </div>
+
+    <!-- Simple tab switcher -->
+    <script>
+      (function () {
+        const triggers = document.querySelectorAll(".tab-trigger");
+        const sections = {
+          overview: document.getElementById("tab-overview"),
+          updates: document.getElementById("tab-updates"),
+          activity: document.getElementById("tab-activity")
+        };
+
+        function activate(name) {
+          Object.keys(sections).forEach((key) => {
+            if (!sections[key]) return;
+            sections[key].classList.toggle("hidden", key !== name);
+          });
+
+          triggers.forEach((btn) => {
+            const isActive = btn.dataset.tab === name;
+            btn.classList.toggle("text-white", isActive);
+            btn.classList.toggle("text-gray-400", !isActive);
+            btn.classList.toggle("border-primary", isActive);
+            btn.classList.toggle("border-transparent", !isActive);
+          });
+        }
+
+        triggers.forEach((btn) => {
+          btn.addEventListener("click", () => activate(btn.dataset.tab));
+        });
+
+        // default: updates
+        activate("updates");
+      })();
+    </script>
+  </body>
+</html>
