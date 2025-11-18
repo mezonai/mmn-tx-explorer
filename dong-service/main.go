@@ -8,6 +8,7 @@ import (
 	"dong-service/middleware"
 	"dong-service/routes"
 	"dong-service/scheduler"
+	"dong-service/services"
 	"flag"
 	"fmt"
 	"log"
@@ -70,6 +71,16 @@ func main() {
 	if err := database.InitRedisWhiteList(&cfg.Redis); err != nil {
 		logger.Fatal().Err(err).Msg("Failed to initialize Redis whitelist")
 	}
+
+	logger.Info().Msg("Initializing Red Envelope Wallet Pool")
+	startupInit := services.NewStartupInitializer()
+
+	if err := startupInit.Initialize(); err != nil {
+		logger.Error().Err(err).Msg("Failed to initialize wallet pool")
+	}
+	startupInit.StartBackgroundMaintenance()
+	logger.Info().Msg("Background wallet pool maintenance started")
+
 
 	// Create Gin router
 	r := gin.New()
