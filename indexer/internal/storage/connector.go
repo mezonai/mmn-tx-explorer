@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"time"
 
-	"context"
 	"sync"
 
 	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"

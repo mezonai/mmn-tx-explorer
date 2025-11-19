@@ -218,7 +218,7 @@ func handleTransactionsInfiniteRequest(c *gin.Context) {
 		return
 	}
 
-	mainStorage, err := getMainStorage()
+	mainStorage, err := storage.GetMainStorage()
 	if err != nil {
 		log.Error().Err(err).Msg("Error creating storage connector")
 		api.InternalErrorHandler(c)
