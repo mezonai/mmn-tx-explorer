@@ -33,3 +33,26 @@ export interface ClaimedEnvelopes {
   claimed_at: string;
   transaction_hash: string | null | undefined;
 }
+
+export interface RedEnvelopeDetailStats {
+  name: string;
+  total_amount: number;
+  total_claim: number;
+  claimed_count: number;
+  total_claimed_amount: number;
+  end_date: string;
+  red_envelope_wallet: string;
+  status: string;
+}
+
+export interface RedEnvelopeDetailRequest {
+  id: UUID;
+  wallet_address: string;
+}
+
+export interface RedEnvelopeDetailRecipient {
+  claimer_wallet: string;
+  amount: number;
+  claimed_at: string;
+  transaction_hash: string;
+}
