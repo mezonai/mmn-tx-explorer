@@ -31,7 +31,7 @@ export const TransactionCardsMobile = ({
       minItemsForVirtualization={50}
       getItemKey={(tx) => tx.hash}
       className="space-y-4"
-      itemClassName=""
+      itemClassName="py-2"
       renderItem={(tx) => <TransactionCard transaction={tx} />}
       renderSkeletonItem={(i) => <TransactionCard key={i} />}
       renderEmpty={() => <div className="space-y-4" />}
