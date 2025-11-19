@@ -2,8 +2,6 @@ package bridge
 
 import (
 	"context"
-	"crypto/ecdsa"
-	"database/sql"
 
 	"dong-service/contracts"
 	"dong-service/models"
@@ -20,7 +18,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/rs/zerolog/log"
 )
@@ -37,8 +34,6 @@ type BSCBridge struct {
 	rpcClient       *ethclient.Client
 	contract        *contracts.WMEZON
 	contractAddress common.Address
-	ownerKey        string
-	ownerAddress    common.Address
 	repo            repository.BridgeSwapRepository
 	mu              sync.RWMutex
 	isRunning       bool
@@ -48,22 +43,9 @@ type BSCBridge struct {
 }
 
 func NewBSCBridge(cfg *models.BridgeConfig, repo repository.BridgeSwapRepository) (*BSCBridge, error) {
-	if cfg.BSCRPCURL == "" || cfg.WMezonAddress == "" || cfg.OwnerPrivateKey == "" {
+	if cfg.BSCRPCURL == "" || cfg.WMezonAddress == "" {
 		return nil, fmt.Errorf("missing required BSC bridge configuration")
 	}
-
-	privateKey, err := crypto.HexToECDSA(strings.TrimPrefix(cfg.OwnerPrivateKey, "0x"))
-	if err != nil {
-		return nil, fmt.Errorf("invalid owner private key: %w", err)
-	}
-
-	publicKey := privateKey.Public()
-	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
-	if !ok {
-		return nil, fmt.Errorf("error casting public key to ECDSA")
-	}
-
-	ownerAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
 
 	rpcClient, err := ethclient.Dial(cfg.BSCRPCURL)
 	if err != nil {
@@ -81,8 +63,6 @@ func NewBSCBridge(cfg *models.BridgeConfig, repo repository.BridgeSwapRepository
 		rpcClient:       rpcClient,
 		contract:        contract,
 		contractAddress: contractAddress,
-		ownerKey:        cfg.OwnerPrivateKey,
-		ownerAddress:    ownerAddress,
 		repo:            repo,
 		stopChan:        make(chan struct{}),
 	}
@@ -93,7 +73,6 @@ func NewBSCBridge(cfg *models.BridgeConfig, repo repository.BridgeSwapRepository
 	bridge.contractABI = parsedABI
 
 	log.Info().
-		Str("owner", ownerAddress.Hex()).
 		Str("contract", contractAddress.Hex()).
 		Msg("BSC Bridge initialized")
 
@@ -143,12 +122,8 @@ func (b *BSCBridge) runPolling(ctx context.Context) {
 
 	lastBlock := b.config.StartBlock
 	savedBlock, err := b.repo.GetLastProcessedBlock(ctx)
-	if err == nil {
-		if savedBlock > lastBlock {
-			lastBlock = savedBlock
-		}
-	} else if err != sql.ErrNoRows {
-		log.Error().Err(err).Msg("Failed to get last processed block, using config start_block")
+	if err != nil && savedBlock > lastBlock {
+		lastBlock = savedBlock
 	}
 
 	ticker := time.NewTicker(b.config.PollingInterval)
@@ -162,6 +137,7 @@ func (b *BSCBridge) runPolling(ctx context.Context) {
 			return
 		case <-ticker.C:
 			currentBlock, err := b.rpcClient.BlockNumber(ctx)
+			log.Info().Err(err).Msg("Failed to get current block number from BSC RPC")
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to get current block number from BSC RPC")
 				continue
@@ -190,9 +166,7 @@ func (b *BSCBridge) runPolling(ctx context.Context) {
 				log.Error().Err(err).Msg("Error processing Bridge events")
 				continue
 			}
-
 			lastBlock = toBlock
-
 			if err := b.repo.SaveLastProcessedBlock(ctx, lastBlock); err != nil {
 				log.Error().Err(err).Msg("Failed to save last processed block")
 			}
@@ -253,7 +227,8 @@ func (b *BSCBridge) subscribeToBridgeEvents(ctx context.Context) error {
 		case err := <-sub.Err():
 			return fmt.Errorf("BSC subscription error: %w", err)
 		case <-pingTicker.C:
-			_, err := wsClient.BlockNumber(ctx)
+			blockNumber, err := wsClient.BlockNumber(ctx)
+			log.Info().Uint64("blockNumber", blockNumber).Msg("BSC WebSocket ping")
 			if err != nil {
 				return fmt.Errorf("connecting lost: %w", err)
 			}
@@ -311,14 +286,6 @@ func (b *BSCBridge) handleTransferMemoEvent(ctx context.Context, vLog types.Log)
 	event.To = common.HexToAddress(vLog.Topics[2].Hex())
 	event.Raw = vLog
 
-	if event.To != b.ownerAddress {
-		log.Info().
-			Str("to", event.To.Hex()).
-			Str("owner", b.ownerAddress.Hex()).
-			Msg("Ignoring TransferMemo event: not sent to owner address")
-		return nil
-	}
-
 	log.Info().
 		Str("from", event.From.Hex()).
 		Str("to", event.To.Hex()).
@@ -353,7 +320,13 @@ func (b *BSCBridge) processBridgeTransfer(ctx context.Context, event *contracts.
 	if err != nil {
 		return fmt.Errorf("failed to create pending transaction: %w", err)
 	}
-	// TODO: Transfer the tokens to recipientAddress on the destination chain
+	// TODO:
+	// 1. Validate amount
+	// 2. Check daily limit: CheckTransactionLimit(ctx, userID, amount)
+	// 3. If OK -> thực hiện swap transaction
+	// 4. Sau khi swap thành công -> CreateSwapHistory()
+	// 5. Return response với remaining limit
+	// Transfer the tokens to recipientAddress on the destination chain
 	// outTxHash, transferErr = j.blockchainService.Transfer(
 	// 	envelope.RedEnvelopeWallet,
 	// 	envelope.OwnerWallet,
@@ -361,6 +334,7 @@ func (b *BSCBridge) processBridgeTransfer(ctx context.Context, event *contracts.
 	// 	privateKey,
 	// 	extraInfo
 	// )
+
 	outTxHash := ""
 	transferErr := error(nil)
 	if transferErr != nil {

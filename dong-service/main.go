@@ -119,13 +119,12 @@ func main() {
 		BSCWSURL:           cfg.Bridge.BSCWSUrl,
 		BSCRPCURL:          cfg.Bridge.BSCRPCURL,
 		WMezonAddress:      cfg.Bridge.WMezonAddress,
-		OwnerPrivateKey:    cfg.Bridge.OwnerPrivateKey,
 		StartBlock:         cfg.Bridge.StartBlock,
 		PollingInterval:    cfg.Bridge.PollingInterval,
 		UsePolling:         cfg.Bridge.UsePolling,
 		ConfirmationBlocks: cfg.Bridge.ConfirmationBlocks,
 	}
-	bridgeRepo := repository.NewBridgeSwapRepository(database.DB, cfg.Indexer.Schema, cfg.Database.Schema)
+	bridgeRepo := repository.NewBridgeSwapRepository(database.DB, cfg.Database.Schema)
 	bscBridge, err := bridge.NewBSCBridge(bridgeConfig, *bridgeRepo)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("Failed to initialize BSC bridge")

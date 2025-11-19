@@ -115,6 +115,8 @@ jobs:
           SERVER_GIN_MODE: release
           LOGGING_OUTPUT: "file"
           LOG_LEVEL: ${{ inputs.env == 'prod' && 'info' || 'debug' }}
+          BRIDGE_BSC_WS_URL: ${{ vars.BRIDGE_BSC_WS_URL }}
+          BRIDGE_BSC_RPC_URL: ${{ vars.BRIDGE_BSC_RPC_URL }}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
@@ -141,6 +143,8 @@ jobs:
           REDIS_DB='${REDIS_DB}'
           SERVER_GIN_MODE='${SERVER_GIN_MODE}'
           BRIDGE_OWNER_PRIVATE_KEY='${BRIDGE_OWNER_PRIVATE_KEY}'
+          BRIDGE_BSC_WS_URL='${BRIDGE_BSC_WS_URL}'
+          BRIDGE_BSC_RPC_URL='${BRIDGE_BSC_RPC_URL}'
           EON
 
           sudo chown -R mmn:mmn /opt/dong-service
@@ -178,6 +182,8 @@ jobs:
           printf "export REDIS_DB=%q\n" "$REDIS_DB" >> remote_env.sh
           printf "export SERVER_GIN_MODE=%q\n" "$SERVER_GIN_MODE" >> remote_env.sh
           printf "export BRIDGE_OWNER_PRIVATE_KEY=%q\n" "$BRIDGE_OWNER_PRIVATE_KEY" >> remote_env.sh
+          printf "export BRIDGE_BSC_WS_URL=%q\n" "$BRIDGE_BSC_WS_URL" >> remote_env.sh
+          printf "export BRIDGE_BSC_RPC_URL=%q\n" "$BRIDGE_BSC_RPC_URL" >> remote_env.sh
 
       - name: Prepare and deploy to target server
         run: |

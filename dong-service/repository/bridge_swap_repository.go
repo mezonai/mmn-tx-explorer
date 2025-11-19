@@ -8,14 +8,12 @@ import (
 
 type BridgeSwapRepository struct {
 	db            *sql.DB
-	indexerSchema string
 	dongSchema    string
 }
 
-func NewBridgeSwapRepository(db *sql.DB, indexerSchema, dongSchema string) *BridgeSwapRepository {
+func NewBridgeSwapRepository(db *sql.DB, dongSchema string) *BridgeSwapRepository {
 	return &BridgeSwapRepository{
 		db:            db,
-		indexerSchema: indexerSchema,
 		dongSchema:    dongSchema,
 	}
 }

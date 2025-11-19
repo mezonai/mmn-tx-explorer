@@ -79,7 +79,6 @@ type BridgeConfig struct {
 	BSCWSUrl           string        `mapstructure:"bsc_ws_url"`
 	BSCRPCURL          string        `mapstructure:"bsc_rpc_url"`
 	WMezonAddress      string        `mapstructure:"wmezon_address"`
-	OwnerPrivateKey    string        `mapstructure:"owner_private_key"`
 	StartBlock         uint64        `mapstructure:"start_block"`
 	PollingInterval    time.Duration `mapstructure:"polling_interval"`
 	UsePolling         bool          `mapstructure:"use_polling"`
