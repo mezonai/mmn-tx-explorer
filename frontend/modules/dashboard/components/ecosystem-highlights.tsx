@@ -41,7 +41,7 @@ export const EcosystemHighlights = () => {
         <Link
           ref={donationRef}
           href={ROUTES.DONATION_CAMPAIGN}
-          className="bg-card hover:border-primary/50 block cursor-pointer rounded-xl border border-gray-300 p-6 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-link)] dark:border-gray-700 dark:bg-slate-800"
+          className="bg-card hover:border-primary/50 block cursor-pointer rounded-xl border border-gray-300 p-6 shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-link)] dark:border-gray-700 dark:bg-slate-800"
         >
           <div className="mb-3 flex items-center justify-between">
             <span className="flex items-center gap-2 font-semibold">Donation Campaigns</span>
@@ -90,7 +90,7 @@ export const EcosystemHighlights = () => {
         </Link>
 
         <div
-          className="bg-card hover:border-primary/50 flex flex-col rounded-xl border border-gray-300 p-6 transition-colors dark:border-gray-700 dark:bg-slate-800"
+          className="bg-card hover:border-primary/50 flex flex-col rounded-xl border border-gray-300 p-6 shadow-sm transition-colors dark:border-gray-700 dark:bg-slate-800"
           style={refHeight ? { minHeight: refHeight } : undefined}
         >
           <div className="mb-3 flex items-center justify-between">
@@ -99,7 +99,7 @@ export const EcosystemHighlights = () => {
               <span className="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-700 uppercase dark:bg-amber-900/30 dark:text-amber-300">
                 Coming Soon
               </span>
-              <i className="fa-solid fa-gift text-red-400"></i>
+              <i className="fa-solid fa-gift text-[var(--color-brand-link)] dark:text-red-400"></i>
             </div>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -108,7 +108,7 @@ export const EcosystemHighlights = () => {
         </div>
 
         <div
-          className="bg-card hover:border-primary/50 flex flex-col rounded-xl border border-gray-300 p-6 transition-colors dark:border-gray-700 dark:bg-slate-800"
+          className="bg-card hover:border-primary/50 flex flex-col rounded-xl border border-gray-300 p-6 shadow-sm transition-colors dark:border-gray-700 dark:bg-slate-800"
           style={refHeight ? { minHeight: refHeight } : undefined}
         >
           <div className="mb-3 flex items-center justify-between">
@@ -117,14 +117,14 @@ export const EcosystemHighlights = () => {
               <span className="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-700 uppercase dark:bg-amber-900/30 dark:text-amber-300">
                 Coming Soon
               </span>
-              <i className="fa-solid fa-seedling text-green-400"></i>
+              <i className="fa-solid fa-seedling text-[var(--color-brand-link)] dark:text-green-400"></i>
             </div>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400">0 {APP_CONFIG.CHAIN_SYMBOL} staked</p>
         </div>
 
         <div
-          className="bg-card hover:border-primary/50 flex flex-col rounded-xl border border-gray-300 p-6 transition-colors dark:border-gray-700 dark:bg-slate-800"
+          className="bg-card hover:border-primary/50 flex flex-col rounded-xl border border-gray-300 p-6 shadow-sm transition-colors dark:border-gray-700 dark:bg-slate-800"
           style={refHeight ? { minHeight: refHeight } : undefined}
         >
           <div className="mb-3 flex items-center justify-between">
@@ -133,14 +133,14 @@ export const EcosystemHighlights = () => {
               <span className="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-700 uppercase dark:bg-amber-900/30 dark:text-amber-300">
                 Coming Soon
               </span>
-              <i className="fa-solid fa-right-left text-blue-400"></i>
+              <i className="fa-solid fa-right-left text-[var(--color-brand-link)] dark:text-blue-400"></i>
             </div>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400">24h volume: 0 {APP_CONFIG.CHAIN_SYMBOL}</p>
         </div>
 
         <div
-          className="bg-card hover:border-primary/50 flex flex-col rounded-xl border border-gray-300 p-6 transition-colors dark:border-gray-700 dark:bg-slate-800"
+          className="bg-card hover:border-primary/50 flex flex-col rounded-xl border border-gray-300 p-6 shadow-sm transition-colors dark:border-gray-700 dark:bg-slate-800"
           style={refHeight ? { minHeight: refHeight } : undefined}
         >
           <div className="mb-3 flex items-center justify-between">
@@ -149,14 +149,14 @@ export const EcosystemHighlights = () => {
               <span className="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-700 uppercase dark:bg-amber-900/30 dark:text-amber-300">
                 Coming Soon
               </span>
-              <i className="fa-solid fa-store text-orange-400"></i>
+              <i className="fa-solid fa-store text-[var(--color-brand-link)] dark:text-orange-400"></i>
             </div>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400">Integrated Mezon payment marketplace</p>
         </div>
 
         <div
-          className="bg-card hover:border-primary/50 flex flex-col rounded-xl border border-gray-300 p-6 transition-colors dark:border-gray-700 dark:bg-slate-800"
+          className="bg-card hover:border-primary/50 flex flex-col rounded-xl border border-gray-300 p-6 shadow-sm transition-colors dark:border-gray-700 dark:bg-slate-800"
           style={refHeight ? { minHeight: refHeight } : undefined}
         >
           <div className="mb-3 flex items-center justify-between">
@@ -165,7 +165,7 @@ export const EcosystemHighlights = () => {
               <span className="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-700 uppercase dark:bg-amber-900/30 dark:text-amber-300">
                 Coming Soon
               </span>
-              <i className="fa-solid fa-gamepad text-pink-400"></i>
+              <i className="fa-solid fa-gamepad text-[var(--color-brand-link)] dark:text-pink-400"></i>
             </div>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400">0 active titles • 0 players online</p>
@@ -173,7 +173,7 @@ export const EcosystemHighlights = () => {
 
         <Link
           href={ROUTES.TRANSFER}
-          className="bg-card hover:border-primary/50 block flex cursor-pointer flex-col rounded-xl border border-gray-300 p-6 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-link)] dark:border-gray-700 dark:bg-slate-800"
+          className="bg-card hover:border-primary/50 block flex cursor-pointer flex-col rounded-xl border border-gray-300 p-6 shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-link)] dark:border-gray-700 dark:bg-slate-800"
           style={refHeight ? { minHeight: refHeight } : undefined}
           onClick={(e) => {
             e.preventDefault();
@@ -188,7 +188,7 @@ export const EcosystemHighlights = () => {
         >
           <div className="mb-3 flex items-center justify-between">
             <span className="font-semibold">Give Coffee</span>
-            <i className="fa-solid fa-mug-saucer text-yellow-400"></i>
+            <i className="fa-solid fa-mug-saucer text-[var(--color-brand-link)] dark:text-yellow-400"></i>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400">0 cups sent (on-chain + payment)</p>
         </Link>
