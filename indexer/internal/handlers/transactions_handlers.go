@@ -178,37 +178,37 @@ func serializeTransactions(transactions []common.Transaction) []common.Transacti
 // getTimeRangeFromParams parses start and end times in YYYY-MM-DD format.
 // Defaults to last 7 days if not provided, with configurable max lookback.
 func getTimeRangeFromParams(filterParams map[string]string, queryParams api.QueryParams) (int64, int64) {
-    now := time.Now()
-    defaultStartTime := now.AddDate(0, 0, -7).Unix() // 7 days ago
-    
-    // Get max lookback years from config, default to 1 year if not set
-    maxLookbackYears := config.Cfg.API.TimeRange.MaxLookbackYears
-    if maxLookbackYears <= 0 {
-        maxLookbackYears = 1
-    }
-    maxLookbackTime := now.AddDate(-maxLookbackYears, 0, 0).Unix()
+	now := time.Now()
+	defaultStartTime := now.AddDate(0, 0, -7).Unix() // 7 days ago
 
-    endTime := now.Unix()
+	// Get max lookback years from config, default to 1 year if not set
+	maxLookbackYears := config.Cfg.API.TimeRange.MaxLookbackYears
+	if maxLookbackYears <= 0 {
+		maxLookbackYears = 1
+	}
+	maxLookbackTime := now.AddDate(-maxLookbackYears, 0, 0).Unix()
 
-    if queryParams.EndTime != "" {
-        if parsedTime, err := time.Parse(DateFormat, queryParams.EndTime); err == nil {
-            parsedTime = parsedTime.Add(24*time.Hour - time.Second)
-            endTime = parsedTime.Unix()
-        }
-    }
+	endTime := now.Unix()
 
-    startTime := defaultStartTime
-    if queryParams.StartTime != "" {
-        if parsedTime, err := time.Parse(DateFormat, queryParams.StartTime); err == nil {
-            startTime = parsedTime.Unix()
+	if queryParams.EndTime != "" {
+		if parsedTime, err := time.Parse(DateFormat, queryParams.EndTime); err == nil {
+			parsedTime = parsedTime.Add(24*time.Hour - time.Second)
+			endTime = parsedTime.Unix()
+		}
+	}
 
-            if startTime < maxLookbackTime {
-                startTime = maxLookbackTime
-            }
-        }
-    }
-    
-    return startTime, endTime
+	startTime := defaultStartTime
+	if queryParams.StartTime != "" {
+		if parsedTime, err := time.Parse(DateFormat, queryParams.StartTime); err == nil {
+			startTime = parsedTime.Unix()
+
+			if startTime < maxLookbackTime {
+				startTime = maxLookbackTime
+			}
+		}
+	}
+
+	return startTime, endTime
 }
 
 // PendingTransactionModel return type for Swagger documentation
