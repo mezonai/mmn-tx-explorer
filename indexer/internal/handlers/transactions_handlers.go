@@ -35,43 +35,16 @@ const DateFormat = "2006-01-02"
 // @Param end_time query string false "End date in YYYY-MM-DD format (defaults to current date)"
 // @Param aggregate query []string false "List of aggregate functions to apply"
 // @Param force_consistent_data query bool false "Force consistent data at the expense of query speed"
-// @Success 200 {object} api.QueryResponse{data=[]common.TransactionModel}
+// @Success 200 {object} api.QueryResponse{data=[]common.BaseTransactionModel}
 // @Failure 400 {object} api.Error
 // @Failure 401 {object} api.Error
 // @Failure 500 {object} api.Error
 // @Router /{chainId}/transactions [get]
 func GetTransactions(c *gin.Context) {
-	handleTransactionsRequest(c, false)
+	handleTransactionsRequest(c)
 }
 
-// @Summary Get all internal transactions
-// @Description Retrieve all transactions without extra_info field
-// @Tags transactions
-// @Accept json
-// @Produce json
-// @Security BasicAuth
-// @Param chainId path string true "Chain ID"
-// @Param filter query string false "Filter parameters"
-// @Param group_by query string false "Field to group results by"
-// @Param sort_by query string false "Field to sort results by"
-// @Param sort_order query string false "Sort order (asc or desc)"
-// @Param page query int false "Page number for pagination"
-// @Param limit query int false "Number of items per page" default(5)
-// @Param wallet_address query string false "Wallet address to filter transactions (optional)"
-// @Param start_time query string false "Start date in YYYY-MM-DD format (defaults to 7 days ago)"
-// @Param end_time query string false "End date in YYYY-MM-DD format (defaults to current date)"
-// @Param aggregate query []string false "List of aggregate functions to apply"
-// @Param force_consistent_data query bool false "Force consistent data at the expense of query speed"
-// @Success 200 {object} api.QueryResponse{data=[]common.InternalTransactionModel}
-// @Failure 400 {object} api.Error
-// @Failure 401 {object} api.Error
-// @Failure 500 {object} api.Error
-// @Router /{chainId}/internal/transactions [get]
-func GetInternalTransactions(c *gin.Context) {
-	handleTransactionsRequest(c, true)
-}
-
-func handleTransactionsRequest(c *gin.Context, isInternalUse bool) {
+func handleTransactionsRequest(c *gin.Context) {
 	walletAddress := c.Param("wallet_address")
 	queryParams, err := api.ParseQueryParams(c.Request)
 	if err != nil {
@@ -137,12 +110,7 @@ func handleTransactionsRequest(c *gin.Context, isInternalUse bool) {
 			return
 		}
 
-		var data interface{}
-		if isInternalUse {
-			data = serializeInternalTransactions(transactions)
-		} else {
-			data = serializeTransactions(transactions)
-		}
+		var data interface{} = serializeTransactions(transactions)
 		queryResult.Data = &data
 		queryResult.Meta.TotalItems = int(totalItems)
 		queryResult.Meta.TotalPages = int(math.Ceil(float64(totalItems) / float64(queryParams.Limit)))
@@ -187,12 +155,7 @@ func handleTransactionsRequest(c *gin.Context, isInternalUse bool) {
 		return
 	}
 
-	var data interface{}
-	if isInternalUse {
-		data = serializeInternalTransactions(transactionsResult.Data)
-	} else {
-		data = serializeTransactions(transactionsResult.Data)
-	}
+	var data interface{} = serializeTransactions(transactionsResult.Data)
 	queryResult.Data = &data
 	queryResult.Meta.TotalItems = int(totalItems)
 	maxItemsDisplayed := min(totalItems, storage.DATA_ROWS_DISPLAY_LIMIT)
@@ -201,18 +164,7 @@ func handleTransactionsRequest(c *gin.Context, isInternalUse bool) {
 	c.JSON(http.StatusOK, queryResult)
 }
 
-func serializeTransactions(transactions []common.Transaction) []common.TransactionModel {
-	if len(transactions) == 0 {
-		return []common.TransactionModel{}
-	}
-	transactionModels := make([]common.TransactionModel, 0, len(transactions))
-	for _, transaction := range transactions {
-		transactionModels = append(transactionModels, transaction.Serialize())
-	}
-	return transactionModels
-}
-
-func serializeInternalTransactions(transactions []common.Transaction) []common.BaseTransactionModel {
+func serializeTransactions(transactions []common.Transaction) []common.BaseTransactionModel {
 	if len(transactions) == 0 {
 		return []common.BaseTransactionModel{}
 	}

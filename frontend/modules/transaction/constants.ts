@@ -1,5 +1,5 @@
 export const TRANSACTION_ENDPOINTS = {
-  LIST: '/:chainId/internal/transactions',
+  LIST: '/:chainId/transactions',
   PENDING: '/:chainId/pending-transactions',
   STATS: '/:chainId/stats/transactions',
   DETAIL: (transactionHash: string) => `/:chainId/internal/tx/${transactionHash}/detail`,

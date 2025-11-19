@@ -96,8 +96,7 @@ func RunApi(cmd *cobra.Command, args []string) {
 
 		root.GET("/tx/:txHash/detail", handlers.GetTransactionDetail)
 
-		// internal endpoints (without extra_info field)
-		root.GET("/internal/transactions", handlers.GetInternalTransactions)
+		// internal endpoint (without extra_info field)
 		root.GET("/internal/tx/:txHash/detail", handlers.GetInternalTransactionDetail)
 
 		// stats queries
