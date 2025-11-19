@@ -22,6 +22,7 @@ indexer:
 
 blockchain:
   rpc_url: "localhost:9001"
+  use_tls: false
 
 cors:
   allow_origins: "*"

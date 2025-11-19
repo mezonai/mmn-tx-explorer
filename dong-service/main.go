@@ -73,7 +73,7 @@ func main() {
 	}
 
 	logger.Info().Str("rpc_url", cfg.Blockchain.RPCURL).Msg("Initializing blockchain service")
-	if err := blockchain.InitBlockchainService(cfg.Blockchain.RPCURL); err != nil {
+	if err := blockchain.InitBlockchainService(cfg); err != nil {
 		logger.Fatal().Err(err).Msg("Failed to initialize blockchain service")
 	}
 	defer func() {

@@ -1,6 +1,7 @@
 package blockchain
 
 import (
+	"dong-service/config"
 	"dong-service/logger"
 	"sync"
 )
@@ -10,15 +11,15 @@ var (
 	once     sync.Once
 )
 
-func InitBlockchainService(rpcURL string) error {
+func InitBlockchainService(config *config.Config) error {
 	var err error
 	once.Do(func() {
-		instance, err = NewBlockchainService(rpcURL)
+		instance, err = NewBlockchainService(config)
 		if err != nil {
-			logger.Error().Err(err).Str("rpc_url", rpcURL).Msg("Failed to initialize blockchain service")
+			logger.Error().Err(err).Str("rpc_url", config.Blockchain.RPCURL).Msg("Failed to initialize blockchain service")
 			return
 		}
-		logger.Info().Str("rpc_url", rpcURL).Msg("Blockchain service initialized successfully")
+		logger.Info().Str("rpc_url", config.Blockchain.RPCURL).Msg("Blockchain service initialized successfully")
 	})
 	return err
 }

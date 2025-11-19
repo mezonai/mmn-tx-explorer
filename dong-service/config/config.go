@@ -72,6 +72,7 @@ type IndexerConfig struct {
 
 type BlockchainConfig struct {
 	RPCURL string `mapstructure:"rpc_url"`
+	UseTls bool   `mapstructure:"use_tls"`
 }
 
 type SchedulerConfig struct {

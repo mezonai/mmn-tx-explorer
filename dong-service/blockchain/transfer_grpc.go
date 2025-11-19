@@ -3,16 +3,16 @@ package blockchain
 import (
 	"context"
 	"crypto/ed25519"
+	"dong-service/config"
 	"dong-service/logger"
-	pb "dong-service/proto"
 	"encoding/hex"
 	"fmt"
 	"math/big"
 	"time"
 
+	mmnClient "github.com/mezonai/mmn-sdk/go-sdk/client"
+
 	"github.com/btcsuite/btcutil/base58"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 const (
@@ -21,23 +21,24 @@ const (
 )
 
 type BlockchainService struct {
-	conn      *grpc.ClientConn
-	txClient  pb.TxServiceClient
-	accClient pb.AccountServiceClient
+	mmnClient *mmnClient.MmnClient
 	rpcURL    string
 }
 
-func NewBlockchainService(rpcURL string) (*BlockchainService, error) {
-	conn, err := grpc.NewClient(rpcURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to blockchain RPC: %w", err)
+func NewBlockchainService(config *config.Config) (*BlockchainService, error) {
+	var client *mmnClient.MmnClient
+
+	if config.Blockchain.RPCURL != "" {
+		if mmnClientInstance, err := mmnClient.NewClient(mmnClient.Config{Endpoint: config.Blockchain.RPCURL, UseTLS: config.Blockchain.UseTls}); err != nil {
+			logger.Error().Err(err).Msg("failed to init mmn client")
+		} else {
+			client = mmnClientInstance
+		}
 	}
 
 	return &BlockchainService{
-		conn:      conn,
-		txClient:  pb.NewTxServiceClient(conn),
-		accClient: pb.NewAccountServiceClient(conn),
-		rpcURL:    rpcURL,
+		mmnClient:  client,
+		rpcURL:    config.Blockchain.RPCURL,
 	}, nil
 }
 
@@ -45,33 +46,26 @@ func (s *BlockchainService) Transfer(fromAddress, toAddress string, amount int64
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	nonceResp, err := s.accClient.GetCurrentNonce(ctx, &pb.GetCurrentNonceRequest{
-		Address: fromAddress,
-		Tag:     "pending",
-	})
+	nonceResp, err := s.mmnClient.GetCurrentNonce(ctx, fromAddress, "pending")
 	if err != nil {
 		logger.Error().Err(err).Str("from", fromAddress).Msg("Failed to get current nonce")
 		return "", fmt.Errorf("failed to get nonce: %w", err)
 	}
 
-	if nonceResp.Error != "" {
-		logger.Error().Str("error", nonceResp.Error).Str("from", fromAddress).Msg("Error from GetCurrentNonce")
-		return "", fmt.Errorf("nonce error: %s", nonceResp.Error)
-	}
 	scaleAmount, err := scaleAmountToDecimals(amount)
 	if err != nil {
 		logger.Error().Err(err).Str("from", fromAddress).Msg("Failed to scale amount")
 		return "", fmt.Errorf("failed to scale amount: %w", err)
 	}
 
-	txMsg := &pb.TxMsg{
-		Type:      int32(TYPE_TX),
+	txMsg := &mmnClient.Tx{
+		Type:      int(TYPE_TX),
 		Sender:    fromAddress,
 		Recipient: toAddress,
-		Amount:    scaleAmount,
+		Amount:    mmnClient.Uint256FromString(scaleAmount),
 		Timestamp: uint64(time.Now().Unix()),
 		TextData:  textData,
-		Nonce:     nonceResp.Nonce,
+		Nonce:     nonceResp,
 		ExtraInfo: extraInfo,
 		ZkProof:   "",
 		ZkPub:     "",
@@ -82,12 +76,12 @@ func (s *BlockchainService) Transfer(fromAddress, toAddress string, amount int64
 		return "", fmt.Errorf("failed to sign transaction: %w", err)
 	}
 
-	signedTx := &pb.SignedTxMsg{
-		TxMsg:     txMsg,
-		Signature: signature,
+	signedTx := &mmnClient.SignedTx{
+		Tx:     txMsg,
+		Sig: signature,
 	}
 
-	resp, err := s.txClient.AddTx(ctx, signedTx)
+	resp, err := s.mmnClient.AddTx(ctx, *signedTx)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to submit transaction")
 		return "", fmt.Errorf("failed to submit transaction: %w", err)
@@ -108,7 +102,7 @@ func (s *BlockchainService) Transfer(fromAddress, toAddress string, amount int64
 	return resp.TxHash, nil
 }
 
-func (s *BlockchainService) signTransaction(txMsg *pb.TxMsg, privateKeyHex string) (string, error) {
+func (s *BlockchainService) signTransaction(txMsg *mmnClient.Tx, privateKeyHex string) (string, error) {
 	privateKeyBytes, err := hex.DecodeString(privateKeyHex)
 	if err != nil {
 		return "", fmt.Errorf("invalid private key hex: %w", err)
@@ -129,7 +123,7 @@ func (s *BlockchainService) signTransaction(txMsg *pb.TxMsg, privateKeyHex strin
 	return base58.Encode(signature), nil
 }
 
-func (s *BlockchainService) serializeTransactionForSigning(txMsg *pb.TxMsg) []byte {
+func (s *BlockchainService) serializeTransactionForSigning(txMsg *mmnClient.Tx) []byte {
 	message := fmt.Sprintf(
 		"%d|%s|%s|%s|%s|%d|%s",
 		txMsg.Type,
@@ -144,8 +138,8 @@ func (s *BlockchainService) serializeTransactionForSigning(txMsg *pb.TxMsg) []by
 }
 
 func (s *BlockchainService) Close() error {
-	if s.conn != nil {
-		return s.conn.Close()
+	if s.mmnClient != nil {
+		return s.mmnClient.Close()
 	}
 	return nil
 }
