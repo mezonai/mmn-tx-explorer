@@ -8,7 +8,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { path: pathArray } = await params;
     const path = pathArray.join('/');
     const url = `${cobarURL}/${path}`;
-    
+
     const response = await fetch(url, {
       headers: {
         'x-dashboard-api-key': cobarAPIKey,
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const data = await response.json();
     return NextResponse.json(data);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
   }
 }
