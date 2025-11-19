@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"crypto/sha256"
 	"dong-service/config"
 	"dong-service/constants"
 	"dong-service/database"
 	"dong-service/logger"
 	"dong-service/models"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -24,6 +26,32 @@ type AuthHandler struct {
 // NewAuthHandler creates a new auth handler
 func NewAuthHandler(cfg *config.Config) *AuthHandler {
 	return &AuthHandler{cfg: cfg}
+}
+
+// acquireLock tries to acquire a  lock with retries
+func acquireLock(lockKey string, maxRetry int, lockExp, retryDelay time.Duration) (bool, error) {
+	for i := 0; i < maxRetry; i++ {
+		ok, err := database.SetLockKey(lockKey, "1", lockExp)
+		if err != nil {
+			logger.Error().Err(err).Str("lockKey", lockKey).Msg("Lock Key is being held!")
+		}
+		if ok {
+			logger.Info().Str("lockKey", lockKey).Msg("Lock acquired")
+			return true, nil
+		}
+		time.Sleep(retryDelay)
+	}
+	logger.Error().Str("lockKey", lockKey).Msg("Could not acquire lock after retries")
+	return false, fmt.Errorf("could not acquire lock after %d retries", maxRetry)
+}
+
+// releaseLock tries to release a distributed lock and logs the result
+func releaseLock(lockKey string) {
+	if err := database.DeleteLockKey(lockKey); err != nil {
+		logger.Error().Err(err).Str("lockKey", lockKey).Msg("Failed to release lock")
+	} else {
+		logger.Info().Str("lockKey", lockKey).Msg("Lock released")
+	}
 }
 
 // LogoutHandler godoc
@@ -158,7 +186,14 @@ func (h *AuthHandler) OauthHandler(c *gin.Context) {
 		c.JSON(http.StatusBadGateway, models.ErrorResponse(http.StatusBadGateway, "Failed to exchange code: "+err.Error()))
 		return
 	}
-	defer tokenResp.Body.Close()
+	defer func() {
+		if err != nil {
+			errClose := tokenResp.Body.Close()
+			if errClose != nil {
+				logger.Error().Err(errClose).Msg("Failed to close token response body")
+			}
+		}
+	}()
 	body, _ := io.ReadAll(tokenResp.Body)
 
 	var tokenData struct {
@@ -179,7 +214,14 @@ func (h *AuthHandler) OauthHandler(c *gin.Context) {
 		c.JSON(http.StatusBadGateway, models.ErrorResponse(http.StatusBadGateway, "Failed to get user info: "+err.Error()))
 		return
 	}
-	defer userInfoResp.Body.Close()
+	defer func() {
+		if err != nil {
+			errClose := userInfoResp.Body.Close()
+			if errClose != nil {
+				logger.Error().Err(errClose).Msg("Failed to close user info response body")
+			}
+		}
+	}()
 	userBody, _ := io.ReadAll(userInfoResp.Body)
 	var userInfo models.OauthUserInfo
 	if err := json.Unmarshal(userBody, &userInfo); err != nil {
@@ -268,8 +310,31 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "missing refresh_token"))
 		return
 	}
-
 	config := h.cfg
+
+	reqData, _ := json.Marshal(req)
+	hashRequest := fmt.Sprintf("refresh_req:%x", sha256.Sum256(reqData))
+	hashLockKey := fmt.Sprintf("refresh_lock:%x", sha256.Sum256(reqData))
+
+	lockKey := hashLockKey
+	maxRetry := config.Lock.Cnt_Retry
+	lockExp := time.Duration(config.Lock.Lock_Exp) * time.Second
+	retryDelay := time.Duration(config.Lock.Retry_Delay) * time.Millisecond
+	lockAcquired, _ := acquireLock(lockKey, maxRetry, lockExp, retryDelay)
+
+	if !lockAcquired {
+		c.JSON(http.StatusTooManyRequests, models.ErrorResponse(http.StatusTooManyRequests, "Server busy, please retry"))
+		return
+	}
+
+	defer releaseLock(hashLockKey)
+
+	if ok, cachedResp, err := database.GetCacheRequest(hashRequest); err == nil && ok {
+		logger.Info().Str("hash_request", hashRequest).Msg("Cache request exists, returning cached response")
+		c.Data(http.StatusOK, "application/json", []byte(cachedResp))
+		return
+	}
+
 	secret := config.JWT.Secret
 	if secret == "" {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "jwt secret not configured"))
@@ -307,13 +372,13 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	oldTokenID, _ := claims["token_id"].(string)
 
 	exists, _, err := database.Get(oldTokenID)
-	if err != nil || !exists {
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "refresh token not found on whitelist"))
+	if err != nil {
+		logger.Error().Err(err).Str("token_id", oldTokenID).Msg("Redis error when checking refresh token")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "internal error when checking refresh token"))
 		return
 	}
-
-	if err := database.Delete(oldTokenID); err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to delete old refresh token"))
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "refresh token not found on whitelist"))
 		return
 	}
 
@@ -352,15 +417,30 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 		return
 	}
 
+	if err := database.Delete(oldTokenID); err != nil {
+		logger.Error().Err(err).Str("token_id", oldTokenID).Msg("Failed to delete old refresh token after issuing new one")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to delete old refresh token"))
+		return
+	}
+
+	resp := models.RefreshResponse{
+		AccessToken:  signedAccess,
+		RefreshToken: signedRefresh,
+		UserID:       userID,
+	}
+
+	respData, _ := json.Marshal(resp)
+	if err := database.SetCacheRequest(hashRequest, string(respData), time.Duration(config.CacheRequest.Cache_Exp)*time.Second); err != nil {
+		logger.Error().Err(err).Str("hash_request", hashRequest).Msg("Failed to cache refresh response")
+	} else {
+		logger.Info().Str("hash_request", hashRequest).Msg("Refresh response cache saved successfully")
+	}
+
 	logger.Info().
 		Str("user_id", userID).
 		Str("old_token_id", oldTokenID).
 		Str("new_token_id", newTokenID).
 		Msg("Token refreshed successfully")
 
-	c.JSON(http.StatusOK, models.RefreshResponse{
-		AccessToken:  signedAccess,
-		RefreshToken: signedRefresh,
-		UserID:       userID,
-	})
+	c.JSON(http.StatusOK, resp)
 }

@@ -237,129 +237,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/{chainId}/events": {
-            "get": {
-                "security": [
-                    {
-                        "BasicAuth": []
-                    }
-                ],
-                "description": "Retrieve all logs across all contracts",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "events"
-                ],
-                "summary": "Get all logs",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Chain ID",
-                        "name": "chainId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter parameters",
-                        "name": "filter",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Field to group results by",
-                        "name": "group_by",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Field to sort results by",
-                        "name": "sort_by",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Sort order (asc or desc)",
-                        "name": "sort_order",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Page number for pagination",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 5,
-                        "description": "Number of items per page",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "List of aggregate functions to apply",
-                        "name": "aggregate",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Force consistent data at the expense of query speed",
-                        "name": "force_consistent_data",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/api.QueryResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/common.LogModel"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/api.Error"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/api.Error"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/api.Error"
-                        }
-                    }
-                }
-            }
-        },
         "/{chainId}/pending-transactions": {
             "get": {
                 "security": [
@@ -571,6 +448,18 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Wallet address to filter transactions (optional)",
                         "name": "wallet_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start date in YYYY-MM-DD format (defaults to 7 days ago)",
+                        "name": "start_time",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date in YYYY-MM-DD format (defaults to current date)",
+                        "name": "end_time",
                         "in": "query"
                     },
                     {

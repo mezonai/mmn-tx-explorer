@@ -9,6 +9,7 @@ import { usePaginationQueryParam } from '@/hooks';
 import { IWalletListParams } from '../../type';
 import { WalletCollection } from './list';
 import { useWallets } from '../../hooks/useWallets';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const DEFAULT_VALUE_DATA_SEARCH: IWalletListParams = {
   page: PAGINATION.DEFAULT_PAGE,
@@ -35,25 +36,28 @@ export const WalletList = () => {
     });
   }, [page, limit]);
   return (
-    <div className="space-y-6 md:space-y-8">
-      <h1 className="mb-0 text-2xl font-semibold">Top accounts</h1>
+    <Card className="dark:border-primary/20">
+      <CardContent className="overflow-x-hidden">
+        <CardHeader className="mb-4 flex items-center justify-between gap-2 p-0">
+          <CardTitle className="text-brand-primary font-semibold tracking-wider uppercase">Top accounts</CardTitle>
+        </CardHeader>
+        <div className="space-y-6">
+          <div className="sticky top-0 z-10 mb-0 flex justify-end gap-5 py-6 md:pt-8">
+            <Pagination
+              page={page}
+              limit={limit}
+              totalPages={pagination?.total_pages ?? 0}
+              totalItems={pagination?.total_items ?? 0}
+              isLoading={isLoadingWallets}
+              className="w-full lg:w-auto"
+              onChangePage={handleChangePage}
+              onChangeLimit={handleChangeLimit}
+            />
+          </div>
 
-      <div className="space-y-6">
-        <div className="bg-background sticky top-0 z-10 mb-0 flex justify-end gap-5 py-6 md:pt-8">
-          <Pagination
-            page={page}
-            limit={limit}
-            totalPages={pagination?.total_pages ?? 0}
-            totalItems={pagination?.total_items ?? 0}
-            isLoading={isLoadingWallets}
-            className="w-full lg:w-auto"
-            onChangePage={handleChangePage}
-            onChangeLimit={handleChangeLimit}
-          />
+          <WalletCollection wallets={wallets} isLoading={isLoadingWallets} />
         </div>
-
-        <WalletCollection wallets={wallets} isLoading={isLoadingWallets} />
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };

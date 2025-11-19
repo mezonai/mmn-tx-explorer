@@ -30,13 +30,8 @@ export const WalletsTable = ({ wallets, skeletonLength = PAGINATION.DEFAULT_LIMI
     },
     {
       headerContent: 'Address',
-      renderCell: (row) => <WalletAddressDisplay address={row.address} className="w-60" />,
+      renderCell: (row) => <WalletAddressDisplay address={row.address} className="text-brand-primary w-60" />,
       skeletonContent: <WalletAddressDisplaySkeleton className="w-60" />,
-    },
-    {
-      headerContent: 'Balance',
-      renderCell: (row) => <BalanceAmount balance={row.balance} showSymbol={false} />,
-      skeletonContent: <BalanceAmountSkeleton />,
     },
     {
       headerContent: 'Txn Count',

@@ -1,16 +1,9 @@
 import Link from 'next/link';
 
-import { MiddleTruncate } from '@re-dev/react-truncate';
-
-import { Cube01 } from '@/assets/icons';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ROUTES } from '@/configs/routes.config';
-import { ADDRESS_END_VISIBLE_CHARS } from '@/constant';
 import { IBlock } from '@/modules/block';
 import { DateTimeUtil } from '@/utils';
-import { HashField, TxnLink } from '@/modules/block/components/block-list/list/shared';
 
 interface BlockCardProps {
   block?: IBlock;
@@ -18,46 +11,34 @@ interface BlockCardProps {
 
 export const BlockCard = ({ block }: BlockCardProps) => {
   return (
-    <Card className="bg-card p-0">
-      <CardContent className="space-y-2 p-5">
-        <div className="flex w-full items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Cube01 className="text-foreground-brand-secondary-500 size-6" />
-            {block ? (
-              <Button variant="link" asChild className="text-brand-secondary-700 size-fit p-0 text-xl font-medium">
-                <Link href={ROUTES.BLOCK(block.block_number)}>{block.block_number}</Link>
-              </Button>
-            ) : (
-              <Skeleton className="h-7 w-16" />
-            )}
-          </div>
-          {block ? (
-            <p className="text-quaternary-500 text-sm font-normal">
-              {DateTimeUtil.formatRelativeTimeSec(block.block_timestamp)}
+    <div className="flex min-h-[81px] flex-col justify-between rounded-lg p-3 dark:bg-gray-800/40">
+      {block ? (
+        <>
+          <div>
+            <p className="mb-0.5 font-mono text-sm text-[var(--color-brand-link)]">
+              <Link href={ROUTES.BLOCK(block.block_number)} className="hover:opacity-80">
+                #{block.block_number}
+              </Link>
             </p>
-          ) : (
-            <Skeleton className="h-5 w-20" />
-          )}
-        </div>
-        <div className="space-y-1 text-sm font-medium">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-secondary-700 font-medium">Txn</span>
-            {block ? (
-              <TxnLink count={block.transaction_count} blockNumber={block.block_number} />
-            ) : (
-              <Skeleton className="h-5 w-8" />
-            )}
+            <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-1">
+                <span>{block.transaction_count} txns</span>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                {DateTimeUtil.formatRelativeTimeSec(block.block_timestamp)}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-secondary-700 font-medium">Validator</span>
-            {block ? (
-              <HashField hash={block.miner} className="w-30" addressClassName="text-foreground" />
-            ) : (
-              <Skeleton className="h-5 w-30" />
-            )}
+        </>
+      ) : (
+        <>
+          <div>
+            <Skeleton className="mb-1 h-5 w-24" />
+            <Skeleton className="h-4 w-40" />
           </div>
-        </div>
-      </CardContent>
-    </Card>
+          <Skeleton className="h-4 w-16" />
+        </>
+      )}
+    </div>
   );
 };

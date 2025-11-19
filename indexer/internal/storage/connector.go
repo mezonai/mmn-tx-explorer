@@ -1,15 +1,24 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"math/big"
 	"time"
 
 	"context"
+	"sync"
 
 	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
 	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
+	"github.com/rs/zerolog/log"
+)
+
+var (
+	storageOnce sync.Once
+	mainStorage IMainStorage
+	storageErr  error
 )
 
 type QueryFilter struct {
@@ -100,8 +109,6 @@ type IMainStorage interface {
 
 	GetBlocks(qf QueryFilter, fields ...string) (blocks QueryResult[common.Block], err error)
 	GetTransactions(ctx context.Context, qf QueryFilter, fields ...string) (transactions QueryResult[common.Transaction], err error)
-	GetLogs(qf QueryFilter, fields ...string) (logs QueryResult[common.Log], err error)
-	GetTraces(qf QueryFilter, fields ...string) (traces QueryResult[common.Trace], err error)
 	GetAggregations(ctx context.Context, table string, qf QueryFilter) (QueryResult[interface{}], error)
 	GetMaxBlockNumber(chainId *big.Int) (maxBlockNumber *big.Int, err error)
 	GetMaxBlockNumberInRange(chainId *big.Int, startBlock *big.Int, endBlock *big.Int) (maxBlockNumber *big.Int, err error)
@@ -109,10 +116,6 @@ type IMainStorage interface {
 	 * Get block headers ordered from latest to oldest.
 	 */
 	GetBlockHeadersDescending(chainId *big.Int, from *big.Int, to *big.Int) (blockHeaders []common.BlockHeader, err error)
-
-	GetTokenBalances(qf BalancesQueryFilter, fields ...string) (QueryResult[common.TokenBalance], error)
-	GetTokenTransfers(qf TransfersQueryFilter, fields ...string) (QueryResult[common.TokenTransfer], error)
-
 	/**
 	 * Gets only the data required for validation.
 	 */
@@ -131,9 +134,9 @@ type IMainStorage interface {
 	GetCount(ctx context.Context, table string, qf QueryFilter) (uint64, error)
 
 	/**
-	 * Gets dashboard stats (totalBlocks, totalTransactions, totalWallets) in a single call.
+	 * Gets dashboard stats (totalBlocks, totalTransactions, totalWallets, averageBlockTime) in a single call.
 	 */
-	GetDashboardStats(ctx context.Context, qf QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, err error)
+	GetDashboardStats(ctx context.Context, qf QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, averageBlockTime float64, err error)
 
 	/**
 	 * Gets pending transactions from MMN service.
@@ -143,16 +146,21 @@ type IMainStorage interface {
 	/**
 	 * Optimized methods for pagination
 	 */
-	GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit, offset int, sortBy, sortOrder string) ([]common.Transaction, error)
-	GetTransactionsByWalletCount(ctx context.Context, walletAddress string) (uint64, error)
+	GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit, offset int, sortBy, sortOrder string, startTime, endTime int64) ([]common.Transaction, error)
+	GetTransactionsByWalletCount(ctx context.Context, walletAddress string, startTime, endTime int64) (uint64, error)
 	GetTotalTransactions(ctx context.Context) (uint64, error)
 
-	/**
+  /**
 	 * Timestamp-based cursor pagination methods for transactions
 	 */
 	GetTransactionsByWalletWithTimestamp(ctx context.Context, walletAddress string, limit int, timestampLt time.Time, lastHash string) ([]common.Transaction, error)
 	GetTransactionsByFromAddressWithTimestamp(ctx context.Context, fromAddress string, limit int, timestampLt time.Time, lastHash string) ([]common.Transaction, error)
 	GetTransactionsByToAddressWithTimestamp(ctx context.Context, toAddress string, limit int, timestampLt time.Time, lastHash string) ([]common.Transaction, error)
+  
+	/**
+	 * Recalculates and updates all statistics in the stats table
+	 */
+	RecalculateStats(ctx context.Context) error
 }
 
 func NewStorageConnector(cfg *config.StorageConfig) (IStorage, error) {
@@ -197,4 +205,19 @@ func NewConnector[T any](cfg *config.StorageConnectionConfig) (T, error) {
 	}
 
 	return typedConn, nil
+}
+
+func GetMainStorage() (IMainStorage, error) {
+	storageOnce.Do(func() {
+		if config.Cfg.Storage.Main.Postgres != nil {
+			mainStorage, storageErr = NewConnector[IMainStorage](&config.Cfg.Storage.Main)
+			if storageErr != nil {
+				log.Error().Err(storageErr).Msg("Error creating storage connector")
+			}
+		} else {
+			storageErr = fmt.Errorf("no main storage driver configured")
+		}
+	})
+
+	return mainStorage, storageErr
 }

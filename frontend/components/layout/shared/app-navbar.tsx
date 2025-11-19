@@ -26,10 +26,9 @@ export function AppNavbar() {
 
           <div className="flex items-center gap-4">
             <NavBarAuthPanel />
-          </div>
-
-          <div className="sm:hidden">
-            <SidebarTrigger />
+            <div className="sm:hidden">
+              <SidebarTrigger />
+            </div>
           </div>
         </div>
       </div>

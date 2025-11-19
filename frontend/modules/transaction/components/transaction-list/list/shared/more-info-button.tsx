@@ -22,21 +22,21 @@ export const MoreInfoButton = ({ transaction }: MoreInfoButtonProps) => {
       <PopoverContent side="right" align="start" className="max-w-80 space-y-4">
         <h4 className="text-foreground text-lg font-semibold">Additional info</h4>
         <div className="space-y-1">
-          <h5 className="text-secondary-700 text-sm font-semibold">Others</h5>
+          <h5 className="text-foreground/50 text-sm font-semibold">Others</h5>
           <div className="space-y-1 text-xs">
             <div className="flex justify-between gap-2">
-              <p className="text-quaternary-500 font-semibold">Txn type</p>
-              <p className="text-secondary-700 text-end font-normal">
+              <p className="text-foreground font-semibold">Txn type</p>
+              <p className="text-foreground/50 text-end font-normal">
                 {getTransactionTypeLabel(transaction.transaction_type)}
               </p>
             </div>
             <div className="flex justify-between gap-2">
-              <p className="text-quaternary-500 font-semibold">Nonce</p>
-              <p className="text-secondary-700 text-end font-normal">{transaction.nonce}</p>
+              <p className="text-foreground font-semibold">Nonce</p>
+              <p className="text-foreground/50 text-end font-normal">{transaction.nonce}</p>
             </div>
           </div>
         </div>
-        <Button variant="link" className="text-brand-secondary-700 size-fit p-0 text-sm font-semibold">
+        <Button variant="link" className="text-brand-primary size-fit p-0 text-sm font-semibold">
           <Link href={ROUTES.TRANSACTION(transaction.hash)}>More details</Link>
         </Button>
       </PopoverContent>

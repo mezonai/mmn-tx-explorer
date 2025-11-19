@@ -10,9 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mezonai/mmn-tx-explorer/indexer/api"
-	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
-	"github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
 	"github.com/rs/zerolog/log"
 )
@@ -70,7 +68,7 @@ func Search(c *gin.Context) {
 		return
 	}
 
-	mainStorage, err := getMainStorage()
+	mainStorage, err := storage.GetMainStorage()
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting main storage")
 		api.InternalErrorHandler(c)
@@ -283,33 +281,6 @@ func searchByHash(ctx context.Context, mainStorage storage.IMainStorage, chainId
 		}
 	}()
 
-	// Try as topic_0 for logs
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		logsResult, err := mainStorage.GetLogs(storage.QueryFilter{
-			ChainId:   chainId,
-			Signature: hash,
-			Limit:     20,
-			SortBy:    "block_number",
-			SortOrder: "desc",
-		})
-		if err != nil {
-			errChan <- err
-			return
-		}
-		if len(logsResult.Data) > 0 {
-			logs := make([]common.LogModel, len(logsResult.Data))
-			for i, log := range logsResult.Data {
-				logs[i] = log.Serialize()
-			}
-			select {
-			case resultChan <- SearchResultModel{Events: logs, Type: SearchResultTypeEventSignature}:
-			case <-doneChan:
-			}
-		}
-	}()
-
 	// Wait for first result or all goroutines to finish
 	go func() {
 		wg.Wait()
@@ -363,25 +334,6 @@ const (
 	ContractCodeExists
 	ContractCodeDoesNotExist
 )
-
-func checkIfContractHasCode(ctx context.Context, chainId *big.Int, address string) (ContractCodeState, error) {
-	if config.Cfg.API.Thirdweb.ClientId != "" {
-		rpcUrl := fmt.Sprintf("https://%s.rpc.thirdweb.com/%s", chainId.String(), config.Cfg.API.Thirdweb.ClientId)
-		r, err := rpc.InitializeSimpleRPCWithUrl(rpcUrl)
-		if err != nil {
-			return ContractCodeUnknown, err
-		}
-		hasCode, err := r.HasCode(ctx, address)
-		if err != nil {
-			return ContractCodeUnknown, err
-		}
-		if hasCode {
-			return ContractCodeExists, nil
-		}
-		return ContractCodeDoesNotExist, nil
-	}
-	return ContractCodeUnknown, nil
-}
 
 func searchTransactionsByTimeRange(ctx context.Context, mainStorage storage.IMainStorage, chainId *big.Int, hash string, startOffsetDays, endOffsetDays int) ([]common.TransactionModel, error) {
 	now := time.Now()

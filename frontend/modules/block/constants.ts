@@ -3,5 +3,5 @@ export const BLOCK_ENDPOINTS = {
   DETAILS: (blockNumber: number) => `/:chainId/blocks/${blockNumber}/detail`,
 } as const;
 
-export const DASHBOARD_BLOCKS_LIMIT = 5;
+export const DASHBOARD_BLOCKS_LIMIT = 6;
 export const BLOCKS_QUERY_KEY = 'blocks';

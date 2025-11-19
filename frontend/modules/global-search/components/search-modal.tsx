@@ -16,6 +16,7 @@ interface SearchModalProps {
   onClearQuery: () => void;
   isLoading: boolean;
   searchResults: ISearchResult | null;
+  onItemSelect: () => void;
 }
 
 export const SearchModal = ({
@@ -26,6 +27,7 @@ export const SearchModal = ({
   onClearQuery,
   isLoading,
   searchResults,
+  onItemSelect,
 }: SearchModalProps) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const isShowSearchResults = query && searchResults;
@@ -54,7 +56,7 @@ export const SearchModal = ({
           {/* Search Input */}
           <div className="relative">
             <SearchMd
-              className="text-foreground-quaternary-400 absolute top-1/2 left-3 size-5 -translate-y-1/2 transform"
+              className="text-foreground-quaternary-400 absolute top-1/2 left-3 z-10 size-5 -translate-y-1/2 transform"
               strokeWidth={1.5}
             />
             <Input
@@ -77,7 +79,7 @@ export const SearchModal = ({
           {isShowSearchResults && (
             <div className="max-h-96 overflow-y-auto border-t">
               <div className="text-muted-foreground px-4 py-4 text-sm">
-                <SearchResults isLoading={isLoading} searchResults={searchResults} />
+                <SearchResults isLoading={isLoading} searchResults={searchResults} onItemSelect={onItemSelect} />
               </div>
             </div>
           )}

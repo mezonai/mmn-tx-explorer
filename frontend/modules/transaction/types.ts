@@ -18,6 +18,7 @@ export interface ITransaction {
   transaction_type: ETransactionType;
   value: string;
   transaction_timestamp: number;
+  text_data?: string;
 }
 
 export interface ITransactionListParams {
@@ -31,6 +32,9 @@ export interface ITransactionListParams {
   wallet_address?: string;
   filter_to_address?: string;
   filter_from_address?: string;
+  // date range filters (YYYY-MM-DD)
+  start_time?: string;
+  end_time?: string;
 }
 
 export interface ILogInputData {

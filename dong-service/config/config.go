@@ -19,6 +19,8 @@ type Config struct {
 	Redis     RedisConfig      `mapstructure:"redis"`
 	Logging   logger.LogConfig `mapstructure:"logging"`
 	Scheduler SchedulerConfig  `mapstructure:"scheduler"`
+	Lock      LockConfig       `mapstructure:"lock"`
+	CacheRequest CacheRequestConfig `mapstructure:"cache_request"`
 }
 
 type ServerConfig struct {
@@ -73,6 +75,16 @@ type SchedulerConfig struct {
 	SyncContributorsInterval int `mapstructure:"sync_contributors_interval"` // in seconds
 }
 
+
+type LockConfig struct {
+	Lock_Exp int `mapstructure:"lock_exp"` // in seconds
+	Cnt_Retry int `mapstructure:"cnt_retry"`
+	Retry_Delay int `mapstructure:"retry_delay"` // in milliseconds
+}
+type CacheRequestConfig struct {
+	Cache_Exp int `mapstructure:"cache_exp"` // in seconds
+}
+
 func LoadConfig(cfgFile string) (*Config, error) {
 	// Use specific config file if provided
 	viper.SetConfigFile(cfgFile)
@@ -97,6 +109,11 @@ func LoadConfig(cfgFile string) (*Config, error) {
 }
 
 func (c *DatabaseConfig) GetDSN() string {
+	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s search_path=%s",
+		c.Host, c.Port, c.UserName, c.Password, c.Name, c.SSLMode, c.Schema)
+}
+
+func (c *DatabaseConfig) GetDSNWithoutSchema() string {
 	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		c.Host, c.Port, c.UserName, c.Password, c.Name, c.SSLMode)
 }

@@ -250,7 +250,7 @@ function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<t
       }}
       {...props}
     >
-      <Menu02 className="text-foreground-secondary-700 size-6" />
+      <Menu02 className="text-foreground size-6" />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );

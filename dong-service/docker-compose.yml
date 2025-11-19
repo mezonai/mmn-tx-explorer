@@ -9,7 +9,7 @@ services:
     environment:
       SERVER_HOST: 0.0.0.0
       SERVER_PORT: 8888
-      GIN_MODE: debug
+      SERVER_GIN_MODE: debug
       DATABASE_HOST: host.docker.internal
       DATABASE_PORT: 5432
       DATABASE_USERNAME: admin

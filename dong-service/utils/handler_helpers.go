@@ -15,7 +15,6 @@ func GetUserIDFromContext(c *gin.Context) (int64, error) {
 	if !ok {
 		return 0, jwt.ErrTokenInvalidClaims
 	}
-	
 
 	userIDStr, ok := user.(jwt.MapClaims)["user_id"].(string)
 	if !ok {
@@ -38,33 +37,36 @@ func ParseInt64Param(c *gin.Context, paramName string) (int64, error) {
 
 // PaginationParams represents pagination query parameters
 type PaginationParams struct {
-	Page   int
-	Limit  int
-	Offset int
-	Order  string
+	Page    int
+	Limit   int
+	Offset  int
+	Order   string
+	OrderBy string
 }
 
 // GetPaginationParams extracts and validates pagination parameters from query string
 func GetPaginationParams(c *gin.Context) PaginationParams {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	order := c.DefaultQuery("order", "desc")
+	orderBy := c.DefaultQuery("order_by", "created_at")
 
 	// Validate and normalize
-	if page < 1 {
-		page = 1
+	if page < 0 {
+		page = 0
 	}
-	if limit < 1 || limit > 100 {
+	if limit < 0 || limit > 100 {
 		limit = 10
 	}
 
-	offset := (page - 1) * limit
+	offset := page * limit
 
 	return PaginationParams{
-		Page:   page,
-		Limit:  limit,
-		Offset: offset,
-		Order:  order,
+		Page:    page,
+		Limit:   limit,
+		Offset:  offset,
+		Order:   order,
+		OrderBy: orderBy,
 	}
 }
 
@@ -85,4 +87,3 @@ func ValidateStatus(status int16) bool {
 		status == constants.CampaignStatusActive ||
 		status == constants.CampaignStatusClosed
 }
-
