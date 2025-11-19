@@ -78,7 +78,7 @@ func (s *BlockchainService) Transfer(fromAddress, toAddress string, amount int64
 
 	signedTx := &mmnClient.SignedTx{
 		Tx:     txMsg,
-		Sig: signature,
+		Sig:    signature,
 	}
 
 	resp, err := s.mmnClient.AddTx(ctx, *signedTx)
