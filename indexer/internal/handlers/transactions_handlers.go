@@ -35,7 +35,7 @@ const DateFormat = "2006-01-02"
 // @Param end_time query string false "End date in YYYY-MM-DD format (defaults to current date)"
 // @Param aggregate query []string false "List of aggregate functions to apply"
 // @Param force_consistent_data query bool false "Force consistent data at the expense of query speed"
-// @Success 200 {object} api.QueryResponse{data=[]common.TransactionModel}
+// @Success 200 {object} api.QueryResponse{data=[]common.BaseTransactionModel}
 // @Failure 400 {object} api.Error
 // @Failure 401 {object} api.Error
 // @Failure 500 {object} api.Error
@@ -164,13 +164,13 @@ func handleTransactionsRequest(c *gin.Context) {
 	c.JSON(http.StatusOK, queryResult)
 }
 
-func serializeTransactions(transactions []common.Transaction) []common.TransactionModel {
+func serializeTransactions(transactions []common.Transaction) []common.BaseTransactionModel {
 	if len(transactions) == 0 {
-		return []common.TransactionModel{}
+		return []common.BaseTransactionModel{}
 	}
-	transactionModels := make([]common.TransactionModel, 0, len(transactions))
+	transactionModels := make([]common.BaseTransactionModel, 0, len(transactions))
 	for _, transaction := range transactions {
-		transactionModels = append(transactionModels, transaction.Serialize())
+		transactionModels = append(transactionModels, transaction.SerializeInternal())
 	}
 	return transactionModels
 }
@@ -178,37 +178,37 @@ func serializeTransactions(transactions []common.Transaction) []common.Transacti
 // getTimeRangeFromParams parses start and end times in YYYY-MM-DD format.
 // Defaults to last 7 days if not provided, with configurable max lookback.
 func getTimeRangeFromParams(filterParams map[string]string, queryParams api.QueryParams) (int64, int64) {
-    now := time.Now()
-    defaultStartTime := now.AddDate(0, 0, -7).Unix() // 7 days ago
-    
-    // Get max lookback years from config, default to 1 year if not set
-    maxLookbackYears := config.Cfg.API.TimeRange.MaxLookbackYears
-    if maxLookbackYears <= 0 {
-        maxLookbackYears = 1
-    }
-    maxLookbackTime := now.AddDate(-maxLookbackYears, 0, 0).Unix()
+	now := time.Now()
+	defaultStartTime := now.AddDate(0, 0, -7).Unix() // 7 days ago
 
-    endTime := now.Unix()
+	// Get max lookback years from config, default to 1 year if not set
+	maxLookbackYears := config.Cfg.API.TimeRange.MaxLookbackYears
+	if maxLookbackYears <= 0 {
+		maxLookbackYears = 1
+	}
+	maxLookbackTime := now.AddDate(-maxLookbackYears, 0, 0).Unix()
 
-    if queryParams.EndTime != "" {
-        if parsedTime, err := time.Parse(DateFormat, queryParams.EndTime); err == nil {
-            parsedTime = parsedTime.Add(24*time.Hour - time.Second)
-            endTime = parsedTime.Unix()
-        }
-    }
+	endTime := now.Unix()
 
-    startTime := defaultStartTime
-    if queryParams.StartTime != "" {
-        if parsedTime, err := time.Parse(DateFormat, queryParams.StartTime); err == nil {
-            startTime = parsedTime.Unix()
+	if queryParams.EndTime != "" {
+		if parsedTime, err := time.Parse(DateFormat, queryParams.EndTime); err == nil {
+			parsedTime = parsedTime.Add(24*time.Hour - time.Second)
+			endTime = parsedTime.Unix()
+		}
+	}
 
-            if startTime < maxLookbackTime {
-                startTime = maxLookbackTime
-            }
-        }
-    }
-    
-    return startTime, endTime
+	startTime := defaultStartTime
+	if queryParams.StartTime != "" {
+		if parsedTime, err := time.Parse(DateFormat, queryParams.StartTime); err == nil {
+			startTime = parsedTime.Unix()
+
+			if startTime < maxLookbackTime {
+				startTime = maxLookbackTime
+			}
+		}
+	}
+
+	return startTime, endTime
 }
 
 // PendingTransactionModel return type for Swagger documentation

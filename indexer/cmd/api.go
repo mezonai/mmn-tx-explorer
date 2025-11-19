@@ -20,7 +20,6 @@ import (
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/worker"
 
 	// Import the generated Swagger docs
-	_ "github.com/mezonai/mmn-tx-explorer/indexer/docs"
 	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	_ "github.com/mezonai/mmn-tx-explorer/indexer/docs"
 )
@@ -49,7 +48,7 @@ func RunApi(cmd *cobra.Command, args []string) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-    mainStorage, err := storage.GetMainStorage()
+	mainStorage, err := storage.GetMainStorage()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to create storage connector")
 	}
@@ -86,7 +85,6 @@ func RunApi(cmd *cobra.Command, args []string) {
 		root.GET("/transactions", handlers.GetTransactions)
 		root.GET("/pending-transactions", handlers.GetPendingTransactions)
 		root.GET("/pending-tx/:transaction_hash/detail", handlers.GetPendingTransactionDetail)
-		root.GET("/events", handlers.GetLogs)
 
 		// wallet queries
 		root.GET("/wallets", handlers.GetWallets)
@@ -97,6 +95,9 @@ func RunApi(cmd *cobra.Command, args []string) {
 		root.GET("/blocks/:blockNumber/detail", handlers.GetBlockDetail)
 
 		root.GET("/tx/:txHash/detail", handlers.GetTransactionDetail)
+
+		// internal endpoint (without extra_info field)
+		root.GET("/internal/tx/:txHash/detail", handlers.GetInternalTransactionDetail)
 
 		// stats queries
 		root.GET("/stats/dashboard", handlers.GetDashboardStats)

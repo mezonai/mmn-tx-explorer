@@ -28,11 +28,11 @@ const (
 )
 
 type SearchResultModel struct {
-	Blocks       []common.BlockModel       `json:"blocks,omitempty"`
-	Transactions []common.TransactionModel `json:"transactions,omitempty"`
-	Events       []common.LogModel         `json:"events,omitempty"`
-	Wallets      []map[string]interface{}  `json:"wallets,omitempty"`
-	Type         SearchResultType          `json:"type,omitempty"`
+	Blocks       []common.BlockModel           `json:"blocks,omitempty"`
+	Transactions []common.BaseTransactionModel `json:"transactions,omitempty"`
+	Events       []common.LogModel             `json:"events,omitempty"`
+	Wallets      []map[string]interface{}      `json:"wallets,omitempty"`
+	Type         SearchResultType              `json:"type,omitempty"`
 }
 
 type SearchInput struct {
@@ -161,7 +161,7 @@ func searchByBlockNumber(mainStorage storage.IMainStorage, chainId *big.Int, blo
 	return &block, nil
 }
 
-func searchByFunctionSelectorOptimistically(ctx context.Context, mainStorage storage.IMainStorage, chainId *big.Int, functionSelector string) ([]common.TransactionModel, error) {
+func searchByFunctionSelectorOptimistically(ctx context.Context, mainStorage storage.IMainStorage, chainId *big.Int, functionSelector string) ([]common.BaseTransactionModel, error) {
 	now := time.Now()
 	thirtyDaysAgo := now.AddDate(0, 0, -30)
 
@@ -194,9 +194,9 @@ func searchByFunctionSelectorOptimistically(ctx context.Context, mainStorage sto
 		}
 	}
 
-	transactions := make([]common.TransactionModel, len(result.Data))
+	transactions := make([]common.BaseTransactionModel, len(result.Data))
 	for i, transaction := range result.Data {
-		transactions[i] = transaction.Serialize()
+		transactions[i] = transaction.SerializeInternal()
 	}
 	return transactions, nil
 }
@@ -219,7 +219,7 @@ func searchByHash(ctx context.Context, mainStorage storage.IMainStorage, chainId
 		}
 		if len(txs) > 0 {
 			select {
-			case resultChan <- SearchResultModel{Transactions: []common.TransactionModel{txs[0]}, Type: SearchResultTypeTransaction}:
+			case resultChan <- SearchResultModel{Transactions: []common.BaseTransactionModel{txs[0]}, Type: SearchResultTypeTransaction}:
 			case <-doneChan:
 			}
 		}
@@ -235,7 +235,7 @@ func searchByHash(ctx context.Context, mainStorage storage.IMainStorage, chainId
 		}
 		if len(txs) > 0 {
 			select {
-			case resultChan <- SearchResultModel{Transactions: []common.TransactionModel{txs[0]}, Type: SearchResultTypeTransaction}:
+			case resultChan <- SearchResultModel{Transactions: []common.BaseTransactionModel{txs[0]}, Type: SearchResultTypeTransaction}:
 			case <-doneChan:
 			}
 		}
@@ -251,7 +251,7 @@ func searchByHash(ctx context.Context, mainStorage storage.IMainStorage, chainId
 		}
 		if len(txs) > 0 {
 			select {
-			case resultChan <- SearchResultModel{Transactions: []common.TransactionModel{txs[0]}, Type: SearchResultTypeTransaction}:
+			case resultChan <- SearchResultModel{Transactions: []common.BaseTransactionModel{txs[0]}, Type: SearchResultTypeTransaction}:
 			case <-doneChan:
 			}
 		}
@@ -276,33 +276,6 @@ func searchByHash(ctx context.Context, mainStorage storage.IMainStorage, chainId
 			blockModel := blockResult.Data[0].Serialize()
 			select {
 			case resultChan <- SearchResultModel{Blocks: []common.BlockModel{blockModel}, Type: SearchResultTypeBlock}:
-			case <-doneChan:
-			}
-		}
-	}()
-
-	// Try as topic_0 for logs
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		logsResult, err := mainStorage.GetLogs(storage.QueryFilter{
-			ChainId:   chainId,
-			Signature: hash,
-			Limit:     20,
-			SortBy:    "block_number",
-			SortOrder: "desc",
-		})
-		if err != nil {
-			errChan <- err
-			return
-		}
-		if len(logsResult.Data) > 0 {
-			logs := make([]common.LogModel, len(logsResult.Data))
-			for i, log := range logsResult.Data {
-				logs[i] = log.Serialize()
-			}
-			select {
-			case resultChan <- SearchResultModel{Events: logs, Type: SearchResultTypeEventSignature}:
 			case <-doneChan:
 			}
 		}
@@ -362,7 +335,7 @@ const (
 	ContractCodeDoesNotExist
 )
 
-func searchTransactionsByTimeRange(ctx context.Context, mainStorage storage.IMainStorage, chainId *big.Int, hash string, startOffsetDays, endOffsetDays int) ([]common.TransactionModel, error) {
+func searchTransactionsByTimeRange(ctx context.Context, mainStorage storage.IMainStorage, chainId *big.Int, hash string, startOffsetDays, endOffsetDays int) ([]common.BaseTransactionModel, error) {
 	now := time.Now()
 	filters := map[string]string{
 		"hash": hash,
@@ -384,9 +357,9 @@ func searchTransactionsByTimeRange(ctx context.Context, mainStorage storage.IMai
 	if err != nil {
 		return nil, err
 	}
-	serialized := make([]common.TransactionModel, len(txResult.Data))
+	serialized := make([]common.BaseTransactionModel, len(txResult.Data))
 	for i, tx := range txResult.Data {
-		serialized[i] = tx.Serialize()
+		serialized[i] = tx.SerializeInternal()
 	}
 	return serialized, nil
 }

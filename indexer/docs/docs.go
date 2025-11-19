@@ -237,14 +237,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/{chainId}/events": {
+        "/{chainId}/internal/tx/{txHash}/detail": {
             "get": {
                 "security": [
                     {
                         "BasicAuth": []
                     }
                 ],
-                "description": "Retrieve all logs across all contracts",
+                "description": "Retrieve detailed information about a specific transaction without extra_info field (for internal use)",
                 "consumes": [
                     "application/json"
                 ],
@@ -252,9 +252,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "events"
+                    "detail"
                 ],
-                "summary": "Get all logs",
+                "summary": "Get internal transaction detail",
                 "parameters": [
                     {
                         "type": "string",
@@ -265,78 +265,17 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Filter parameters",
-                        "name": "filter",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Field to group results by",
-                        "name": "group_by",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Field to sort results by",
-                        "name": "sort_by",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Sort order (asc or desc)",
-                        "name": "sort_order",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Page number for pagination",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 5,
-                        "description": "Number of items per page",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "List of aggregate functions to apply",
-                        "name": "aggregate",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Force consistent data at the expense of query speed",
-                        "name": "force_consistent_data",
-                        "in": "query"
+                        "description": "Transaction hash",
+                        "name": "txHash",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/api.QueryResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/common.LogModel"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
+                            "$ref": "#/definitions/handlers.InternalTransactionDetailResponse"
                         }
                     },
                     "400": {
@@ -347,6 +286,12 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/api.Error"
                         }
@@ -616,7 +561,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/common.TransactionModel"
+                                                "$ref": "#/definitions/common.BaseTransactionModel"
                                             }
                                         }
                                     }
@@ -997,6 +942,47 @@ const docTemplate = `{
                 }
             }
         },
+        "common.BaseTransactionModel": {
+            "type": "object",
+            "properties": {
+                "block_hash": {
+                    "type": "string"
+                },
+                "block_number": {
+                    "type": "integer"
+                },
+                "chain_id": {
+                    "type": "string"
+                },
+                "from_address": {
+                    "type": "string"
+                },
+                "hash": {
+                    "type": "string"
+                },
+                "nonce": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "text_data": {
+                    "type": "string"
+                },
+                "to_address": {
+                    "type": "string"
+                },
+                "transaction_timestamp": {
+                    "type": "integer"
+                },
+                "transaction_type": {
+                    "type": "integer"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
         "common.LogModel": {
             "type": "object",
             "properties": {
@@ -1106,6 +1092,19 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.BaseTransactionDetailResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "transaction": {
+                            "$ref": "#/definitions/common.BaseTransactionModel"
+                        }
+                    }
+                }
+            }
+        },
         "handlers.PendingTransactionModel": {
             "type": "object",
             "properties": {
@@ -1153,7 +1152,7 @@ const docTemplate = `{
                 "transactions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.TransactionModel"
+                        "$ref": "#/definitions/common.BaseTransactionModel"
                     }
                 },
                 "type": {

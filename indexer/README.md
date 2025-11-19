@@ -239,11 +239,6 @@ All endpoints are under `/{chainId}` and require HTTP Basic Auth.
   - `GET /{chainId}/pending-tx/{transaction_hash}/detail`
   - `GET /{chainId}/wallet-transactions/{wallet_address}`
 
-- Events:
-  - `GET /{chainId}/events`
-  - `GET /{chainId}/events/{contract}`
-  - `GET /{chainId}/events/{contract}/{signature}`
-
 - Wallets:
   - `GET /{chainId}/wallets`
   - `GET /{chainId}/wallets/{address}/detail`

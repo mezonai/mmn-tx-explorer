@@ -169,16 +169,14 @@ var defaultTransactionFields = []string{
 	"transaction_timestamp", "value", "transaction_type", "status", "text_data", "extra_info",
 }
 
-var defaultLogFields = []string{
-	"chain_id", "block_number", "block_hash", "block_timestamp", "transaction_hash",
-	"transaction_index", "log_index", "address", "data", "topic_0", "topic_1", "topic_2", "topic_3",
+var defaultWalletFields = []string{
+	"address", "account_nonce", "balance", "transaction_count", "last_block",
 }
 
-var defaultTraceFields = []string{
-	"chain_id", "block_number", "block_hash", "block_timestamp", "transaction_hash",
-	"transaction_index", "subtraces", "trace_address", "type", "call_type", "error",
-	"from_address", "to_address", "gas", "gas_used", "input", "output", "value", "author",
-	"reward_type", "refund_address",
+var validSortByColumns = map[string][]string{
+	"blocks":       defaultBlockFields,
+	"transactions": defaultTransactionFields,
+	"wallet":       defaultWalletFields,
 }
 
 func NewPostgresConnector(cfg *config.PostgresConfig) (*PostgresConnector, error) {
@@ -842,9 +840,12 @@ func (p *PostgresConnector) ReplaceBlockData(data []common.BlockData) ([]common.
 
 func (p *PostgresConnector) GetBlocks(qf QueryFilter, fields ...string) (QueryResult[common.Block], error) {
 	columns := p.buildSelectFields(fields, defaultBlockFields)
-	query := p.buildQuery("blocks", columns, qf)
+	query, args := p.buildQueryWithNamedArgs("blocks", columns, qf)
+	log.Debug().Msgf("GetBlocks query: %s, args: %v", query, args)
+	finalQuery, finalArgs := p.convertQueryNamedArgsToPositional(query, args)
+	log.Debug().Msgf("GetBlocks final query: %s, args: %v", finalQuery, finalArgs)
 
-	rows, err := p.db.Query(query)
+	rows, err := p.db.Query(finalQuery, finalArgs...)
 	if err != nil {
 		return QueryResult[common.Block]{}, err
 	}
@@ -870,9 +871,12 @@ func (p *PostgresConnector) GetBlocks(qf QueryFilter, fields ...string) (QueryRe
 
 func (p *PostgresConnector) GetTransactions(ctx context.Context, qf QueryFilter, fields ...string) (QueryResult[common.Transaction], error) {
 	columns := p.buildSelectFields(fields, defaultTransactionFields)
-	query := p.buildQuery("transactions", columns, qf)
+	query, args := p.buildQueryWithNamedArgs("transactions", columns, qf)
+	log.Debug().Msgf("GetTransactions query: %s, args: %v", query, args)
+	finalQuery, finalArgs := p.convertQueryNamedArgsToPositional(query, args)
+	log.Debug().Msgf("GetTransactions final query: %s, args: %v", finalQuery, finalArgs)
 
-	rows, err := p.db.QueryContext(ctx, query)
+	rows, err := p.db.QueryContext(ctx, finalQuery, finalArgs...)
 	if err != nil {
 		return QueryResult[common.Transaction]{}, err
 	}
@@ -896,95 +900,53 @@ func (p *PostgresConnector) GetTransactions(ctx context.Context, qf QueryFilter,
 	return QueryResult[common.Transaction]{Data: transactions}, rows.Err()
 }
 
-func (p *PostgresConnector) GetLogs(qf QueryFilter, fields ...string) (QueryResult[common.Log], error) {
-	columns := p.buildSelectFields(fields, defaultLogFields)
-	query := p.buildQuery("logs", columns, qf)
-
-	rows, err := p.db.Query(query)
-	if err != nil {
-		return QueryResult[common.Log]{}, err
-	}
-	defer func() {
-		err := rows.Close()
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to close rows in GetLogs")
-		}
-	}()
-
-	var logs []common.Log
-	for rows.Next() {
-		var log common.Log
-		err := p.scanLog(rows, &log)
-		if err != nil {
-			return QueryResult[common.Log]{}, err
-		}
-		logs = append(logs, log)
-	}
-
-	return QueryResult[common.Log]{Data: logs}, rows.Err()
-}
-
-func (p *PostgresConnector) GetTraces(qf QueryFilter, fields ...string) (QueryResult[common.Trace], error) {
-	columns := p.buildSelectFields(fields, defaultTraceFields)
-	query := p.buildQuery("traces", columns, qf)
-
-	rows, err := p.db.Query(query)
-	if err != nil {
-		return QueryResult[common.Trace]{}, err
-	}
-	defer func() {
-		err := rows.Close()
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to close rows in GetTraces")
-		}
-	}()
-
-	var traces []common.Trace
-	for rows.Next() {
-		var trace common.Trace
-		err := p.scanTrace(rows, &trace)
-		if err != nil {
-			return QueryResult[common.Trace]{}, err
-		}
-		traces = append(traces, trace)
-	}
-
-	return QueryResult[common.Trace]{Data: traces}, rows.Err()
-}
-
 func (p *PostgresConnector) GetAggregations(ctx context.Context, table string, qf QueryFilter) (QueryResult[interface{}], error) {
 	if len(qf.Aggregates) == 0 {
 		return QueryResult[interface{}]{}, fmt.Errorf("no aggregates specified")
 	}
 
 	query := fmt.Sprintf("SELECT %s FROM %s", strings.Join(qf.Aggregates, ", "), table)
-	whereClause := p.buildWhereClause(qf)
+	args := make(map[string]interface{})
+	whereClause, whereArgs := p.buildWhereClauseWithNamedArgs(qf)
 	if whereClause != "" {
 		query += " WHERE " + whereClause
+		for key, value := range whereArgs {
+			args[key] = value
+		}
 	}
 
 	if len(qf.GroupBy) > 0 {
-		query += " GROUP BY " + strings.Join(qf.GroupBy, ", ")
+		query += " GROUP BY @group_by"
+		args["group_by"] = strings.Join(qf.GroupBy, ", ")
 	}
 
-	if qf.SortBy != "" {
-		query += fmt.Sprintf(" ORDER BY %s", qf.SortBy)
-		if qf.SortOrder != "" {
-			query += " " + qf.SortOrder
+	if qf.SortBy != "" && p.validateSortByColumn(table, qf.SortBy) {
+		query += " ORDER BY " + qf.SortBy
+		switch strings.ToUpper(qf.SortOrder) {
+		case "ASC":
+			query += " ASC"
+		default:
+			query += " DESC"
 		}
 	}
 
 	// Apply pagination: prefer page/limit; fallback to offset
 	if qf.Page >= 0 && qf.Limit > 0 {
-		query += fmt.Sprintf(" LIMIT %d OFFSET %d", qf.Limit, qf.Page*qf.Limit)
+		query += " LIMIT @limit OFFSET @offset"
+		args["limit"] = qf.Limit
+		args["offset"] = qf.Page * qf.Limit
 	} else if qf.Limit > 0 {
-		query += fmt.Sprintf(" LIMIT %d", qf.Limit)
+		query += " LIMIT @limit"
+		args["limit"] = qf.Limit
 		if qf.Offset > 0 {
-			query += fmt.Sprintf(" OFFSET %d", qf.Offset)
+			query += " OFFSET @offset"
+			args["offset"] = qf.Offset
 		}
 	}
 
-	rows, err := p.db.QueryContext(ctx, query)
+	finalQuery, finalArgs := p.convertQueryNamedArgsToPositional(query, args)
+	log.Debug().Msgf("GetAggregations final query: %s, args: %v", finalQuery, finalArgs)
+	rows, err := p.db.QueryContext(ctx, finalQuery, finalArgs...)
 	if err != nil {
 		return QueryResult[interface{}]{}, err
 	}
@@ -1204,6 +1166,7 @@ func (p *PostgresConnector) FindMissingBlockNumbers(chainId *big.Int, startBlock
 	return missingBlocks, rows.Err()
 }
 
+// TODO: Not expose this function to the public API to avoid SQL injection - Will resolve this later
 func (p *PostgresConnector) GetFullBlockData(chainId *big.Int, blockNumbers []*big.Int) ([]common.BlockData, error) {
 	if len(blockNumbers) == 0 {
 		return []common.BlockData{}, nil
@@ -1318,13 +1281,19 @@ func (p *PostgresConnector) GetFullBlockData(chainId *big.Int, blockNumbers []*b
 
 func (p *PostgresConnector) GetCount(ctx context.Context, table string, qf QueryFilter) (uint64, error) {
 	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", table)
-	whereClause := p.buildWhereClause(qf)
+	args := make(map[string]interface{})
+	whereClause, whereArgs := p.buildWhereClauseWithNamedArgs(qf)
 	if whereClause != "" {
 		query += " WHERE " + whereClause
+		for key, value := range whereArgs {
+			args[key] = value
+		}
 	}
-
+	log.Debug().Msgf("GetCount query: %s, args: %v", query, whereArgs)
+	finalQuery, finalArgs := p.convertQueryNamedArgsToPositional(query, args)
+	log.Debug().Msgf("GetCount final query: %s, args: %v", finalQuery, finalArgs)
 	var count uint64
-	err := p.db.QueryRowContext(ctx, query).Scan(&count)
+	err := p.db.QueryRowContext(ctx, finalQuery, finalArgs...).Scan(&count)
 	return count, err
 }
 
@@ -1360,21 +1329,28 @@ func (p *PostgresConnector) buildSelectFields(fields []string, defaults []string
 	return strings.Join(fields, ", ")
 }
 
-func (p *PostgresConnector) buildQuery(table, columns string, qf QueryFilter) string {
-	query := fmt.Sprintf("SELECT %s FROM %s", columns, table)
-	whereClause := p.buildWhereClause(qf)
+func (p *PostgresConnector) buildQueryWithNamedArgs(table string, columns string, qf QueryFilter) (query string, args map[string]interface{}) {
+	query = fmt.Sprintf("SELECT %s FROM %s", columns, table)
+	args = make(map[string]interface{})
+
+	whereClause, whereArgs := p.buildWhereClauseWithNamedArgs(qf)
 	if whereClause != "" {
 		query += " WHERE " + whereClause
-	}
-
-	if qf.SortBy != "" {
-		query += fmt.Sprintf(" ORDER BY %s", qf.SortBy)
-		if qf.SortOrder != "" {
-			query += " " + qf.SortOrder
+		for key, value := range whereArgs {
+			args[key] = value
 		}
 	}
 
-	// Apply pagination with safety limits
+	if qf.SortBy != "" && p.validateSortByColumn(table, qf.SortBy) {
+		query += " ORDER BY " + qf.SortBy
+		switch strings.ToUpper(qf.SortOrder) {
+		case "ASC":
+			query += " ASC"
+		default:
+			query += " DESC"
+		}
+	}
+
 	if qf.Limit > 0 {
 		// Calculate offset based on page or direct offset
 		var offset int
@@ -1390,42 +1366,52 @@ func (p *PostgresConnector) buildQuery(table, columns string, qf QueryFilter) st
 			offset = maxOffset
 		}
 
-		// Apply limit and offset
-		query += fmt.Sprintf(" LIMIT %d OFFSET %d", qf.Limit, offset)
+		query += " LIMIT @limit OFFSET @offset"
+		args["limit"] = qf.Limit
+		args["offset"] = offset
 	}
 
-	return query
+	return query, args
 }
 
-func (p *PostgresConnector) buildWhereClause(qf QueryFilter) string {
-	var conditions []string
+func (p *PostgresConnector) buildWhereClauseWithNamedArgs(qf QueryFilter) (query string, args map[string]interface{}) {
+	conditions := []string{}
+	args = make(map[string]interface{})
 
 	if qf.ChainId != nil && qf.ChainId.Sign() > 0 {
-		conditions = append(conditions, fmt.Sprintf("chain_id = %s", bigIntToString(qf.ChainId)))
+		conditions = append(conditions, "chain_id = @chain_id")
+		args["chain_id"] = bigIntToString(qf.ChainId)
 	}
 
 	if len(qf.BlockNumbers) > 0 {
+		conditions = append(conditions, "block_number IN (@block_numbers)")
 		blockNumbers := make([]string, len(qf.BlockNumbers))
 		for i, bn := range qf.BlockNumbers {
 			blockNumbers[i] = bigIntToString(bn)
 		}
-		conditions = append(conditions, fmt.Sprintf("block_number IN (%s)", strings.Join(blockNumbers, ",")))
+		blockNumbersArg := strings.Join(blockNumbers, ",")
+		args["block_numbers"] = blockNumbersArg
 	}
 
 	if qf.StartBlock != nil && qf.EndBlock != nil {
-		conditions = append(conditions, fmt.Sprintf("block_number BETWEEN %s AND %s", bigIntToString(qf.StartBlock), bigIntToString(qf.EndBlock)))
+		conditions = append(conditions, "block_number BETWEEN @start_block AND @end_block")
+		args["start_block"] = bigIntToString(qf.StartBlock)
+		args["end_block"] = bigIntToString(qf.EndBlock)
 	}
 
 	if qf.FromAddress != "" {
-		conditions = append(conditions, fmt.Sprintf("from_address = '%s'", qf.FromAddress))
+		conditions = append(conditions, "from_address = @from_address")
+		args["from_address"] = qf.FromAddress
 	}
 
 	if qf.ContractAddress != "" {
-		conditions = append(conditions, fmt.Sprintf("to_address = '%s'", qf.ContractAddress))
+		conditions = append(conditions, "to_address = @to_address")
+		args["to_address"] = qf.ContractAddress
 	}
 
 	if qf.WalletAddress != "" {
-		conditions = append(conditions, fmt.Sprintf("(from_address = '%s' OR to_address = '%s')", qf.WalletAddress, qf.WalletAddress))
+		conditions = append(conditions, "(from_address = @wallet_address OR to_address = @wallet_address)")
+		args["wallet_address"] = qf.WalletAddress
 	}
 
 	// Add generic filter params with operator suffix support (e.g., block_timestamp_gte)
@@ -1433,18 +1419,20 @@ func (p *PostgresConnector) buildWhereClause(qf QueryFilter) string {
 		if strings.TrimSpace(key) == "" || strings.TrimSpace(value) == "" {
 			continue
 		}
-		conditions = append(conditions, createPgFilterClause(key, value))
+		condition, baseKey := createPgFilterClause(key, value)
+		conditions = append(conditions, condition)
+		args[baseKey] = value
 	}
 
-	return strings.Join(conditions, " AND ")
+	return strings.Join(conditions, " AND "), args
 }
 
 // createPgFilterClause builds a SQL clause from a key that may include operator suffixes
 // Supported suffixes: _gte, _lte, _lt, _gt, _ne, _in
-func createPgFilterClause(key, value string) string {
+func createPgFilterClause(key, value string) (condition string, baseKey string) {
 	// Determine operator and base column name
 	op := "="
-	baseKey := key
+	baseKey = key
 	if len(key) >= 3 {
 		suffix := key[len(key)-3:]
 		switch suffix {
@@ -1470,7 +1458,8 @@ func createPgFilterClause(key, value string) string {
 		case "_in":
 			baseKey = key[:len(key)-3]
 			// Expect value to be a comma-separated list without surrounding parentheses
-			return fmt.Sprintf("%s IN (%s)", baseKey, value)
+			condition = fmt.Sprintf("%s IN (@%s)", baseKey, baseKey)
+			return condition, baseKey
 		default:
 			// keep defaults
 		}
@@ -1480,12 +1469,15 @@ func createPgFilterClause(key, value string) string {
 	if looksLikeTimestampColumn(baseKey) && isAllDigits(value) {
 		// 13+ digits likely milliseconds
 		if len(value) >= 13 {
-			return fmt.Sprintf("%s %s to_timestamp((%s)::bigint/1000.0)", baseKey, op, value)
+			condition = fmt.Sprintf("%s %s to_timestamp((@%s)::bigint/1000.0)", baseKey, op, baseKey)
+			return condition, baseKey
 		}
-		return fmt.Sprintf("%s %s to_timestamp(%s)", baseKey, op, value)
+		condition = fmt.Sprintf("%s %s to_timestamp(@%s)", baseKey, op, baseKey)
+		return condition, baseKey
 	}
 
-	return fmt.Sprintf("%s %s '%s'", baseKey, op, value)
+	condition = fmt.Sprintf("%s %s @%s", baseKey, op, baseKey)
+	return condition, baseKey
 }
 
 func isAllDigits(s string) bool {
@@ -1660,90 +1652,6 @@ func (p *PostgresConnector) scanTransaction(rows *sql.Rows, tx *common.Transacti
 	return nil
 }
 
-func (p *PostgresConnector) scanLog(rows *sql.Rows, log *common.Log) error {
-	var chainIdStr, blockNumberStr string
-	var timestamp time.Time
-
-	err := rows.Scan(
-		&chainIdStr, &blockNumberStr, &log.BlockHash, &timestamp, &log.TransactionIndex,
-		&log.LogIndex, &log.Address, &log.Data, &log.Topic0, &log.Topic1, &log.Topic2, &log.Topic3,
-	)
-	if err != nil {
-		return err
-	}
-
-	// Convert string values to big.Int
-	var ok bool
-	log.ChainId, ok = new(big.Int).SetString(chainIdStr, 10)
-	if !ok {
-		return fmt.Errorf("failed to parse chain_id: %s", chainIdStr)
-	}
-
-	log.BlockNumber, ok = new(big.Int).SetString(blockNumberStr, 10)
-	if !ok {
-		return fmt.Errorf("failed to parse block_number: %s", blockNumberStr)
-	}
-
-	log.BlockTimestamp = timestamp
-
-	return nil
-}
-
-func (p *PostgresConnector) scanTrace(rows *sql.Rows, trace *common.Trace) error {
-	var chainIdStr, blockNumberStr string
-	var timestamp time.Time
-	var valueStr string
-	var traceAddressStr string
-
-	err := rows.Scan(
-		&chainIdStr, &blockNumberStr, &trace.BlockHash, &timestamp, &trace.TransactionHash,
-		&trace.TransactionIndex, &trace.Subtraces, &traceAddressStr, &trace.TraceType, &trace.CallType,
-		&trace.Error, &trace.FromAddress, &trace.ToAddress, &trace.Gas, &trace.GasUsed,
-		&trace.Input, &trace.Output, &valueStr, &trace.Author, &trace.RewardType, &trace.RefundAddress,
-	)
-	if err != nil {
-		return err
-	}
-
-	// Convert string values to big.Int
-	var ok bool
-	trace.ChainID, ok = new(big.Int).SetString(chainIdStr, 10)
-	if !ok {
-		return fmt.Errorf("failed to parse chain_id: %s", chainIdStr)
-	}
-
-	trace.BlockNumber, ok = new(big.Int).SetString(blockNumberStr, 10)
-	if !ok {
-		return fmt.Errorf("failed to parse block_number: %s", blockNumberStr)
-	}
-
-	trace.BlockTimestamp = timestamp
-
-	trace.Value, ok = new(big.Int).SetString(valueStr, 10)
-	if !ok {
-		return fmt.Errorf("failed to parse value: %s", valueStr)
-	}
-
-	// Parse trace address array
-	if traceAddressStr != "" {
-		// Remove curly braces and split by comma
-		addressStr := strings.Trim(traceAddressStr, "{}")
-		if addressStr != "" {
-			addressParts := strings.Split(addressStr, ",")
-			trace.TraceAddress = make([]int64, len(addressParts))
-			for i, part := range addressParts {
-				val, err := strconv.ParseInt(strings.TrimSpace(part), 10, 64)
-				if err != nil {
-					return fmt.Errorf("failed to parse trace_address[%d]: %s", i, part)
-				}
-				trace.TraceAddress[i] = val
-			}
-		}
-	}
-
-	return nil
-}
-
 // Helper function to safely convert *big.Int to string, handling nil values
 func bigIntToString(bi *big.Int) string {
 	if bi == nil {
@@ -1837,70 +1745,6 @@ func (p *PostgresConnector) refreshWalletFromService(ctx context.Context, wallet
 	return p.insertWallet(ctx, walletStats, resp.Nonce, resp.Balance)
 }
 
-// GetWallets retrieves wallets with pagination and filtering
-func (p *PostgresConnector) GetWallets(limit, offset int, sortBy, sortOrder string) ([]common.Wallet, error) {
-	query := `SELECT address, account_nonce, balance, updated_at, created_at FROM wallet`
-
-	if sortBy != "" {
-		query += fmt.Sprintf(" ORDER BY %s", sortBy)
-		if sortOrder != "" {
-			query += " " + sortOrder
-		}
-	} else {
-		query += " ORDER BY balance DESC"
-	}
-
-	if limit > 0 {
-		query += fmt.Sprintf(" LIMIT %d", limit)
-	}
-
-	if offset > 0 {
-		query += fmt.Sprintf(" OFFSET %d", offset)
-	}
-
-	rows, err := p.db.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		err := rows.Close()
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to close rows in GetWallets")
-		}
-	}()
-
-	var wallets []common.Wallet
-	for rows.Next() {
-		var wallet common.Wallet
-		var balanceStr string
-		var nonce *uint64
-
-		err := rows.Scan(
-			&wallet.Address,
-			&nonce,
-			&balanceStr,
-			&wallet.UpdatedAt,
-			&wallet.CreatedAt,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		wallet.AccountNonce = nonce
-
-		// Convert balance string to big.Int
-		balance, ok := new(big.Int).SetString(balanceStr, 10)
-		if !ok {
-			balance = big.NewInt(0)
-		}
-		wallet.Balance = balance
-
-		wallets = append(wallets, wallet)
-	}
-
-	return wallets, rows.Err()
-}
-
 func (p *PostgresConnector) GetTotalTransactions(ctx context.Context) (uint64, error) {
 	query := "SELECT value FROM stats WHERE key = 'total_transactions' LIMIT 1"
 	var count uint64
@@ -1912,11 +1756,12 @@ func (p *PostgresConnector) GetTotalTransactions(ctx context.Context) (uint64, e
 func (p *PostgresConnector) GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit, offset int, sortBy, sortOrder string, startTime, endTime int64) ([]common.Transaction, error) {
 	columns := p.buildSelectFields([]string{}, defaultTransactionFields)
 
-	// Validate sort parameters
-	if sortBy == "" {
-		sortBy = "transaction_timestamp"
-	}
-	if sortOrder == "" {
+	// Override sort parameters to prevent SQL injection
+	sortBy = "transaction_timestamp"
+	switch strings.ToUpper(sortOrder) {
+	case "ASC":
+		sortOrder = "ASC"
+	default:
 		sortOrder = "DESC"
 	}
 
@@ -2131,4 +1976,25 @@ func (p *PostgresConnector) Close() error {
 	}
 
 	return p.db.Close()
+}
+
+func (p *PostgresConnector) convertQueryNamedArgsToPositional(query string, args map[string]interface{}) (finalQuery string, finalArgs []interface{}) {
+	for key, value := range args {
+		finalArgs = append(finalArgs, value)
+		query = strings.Replace(query, "@"+key, "$"+strconv.Itoa(len(finalArgs)), -1)
+	}
+	return query, finalArgs
+}
+
+func (p *PostgresConnector) validateSortByColumn(table string, column string) bool {
+	validColumns, exists := validSortByColumns[table]
+	if !exists {
+		return false
+	}
+	for _, validColumn := range validColumns {
+		if column == validColumn {
+			return true
+		}
+	}
+	return false
 }
