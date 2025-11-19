@@ -13,6 +13,7 @@ import { DatePicker } from '@/components/ui/datepicker';
 import { ExportTransactionsModal } from '@/components/ExportTransactionsModal';
 import { exportTransactionsToCSV } from '@/utils/export-csv';
 import { TransactionService } from '@/modules/transaction/api';
+import { toast } from 'sonner';
 
 interface TransactionHistoryCardProps {
   walletAddress: string;
@@ -102,13 +103,14 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
     try {
       const allTxs = await fetchAllTransactions(baseParams);
       if (allTxs.length === 0) {
+        toast.error('No transactions found for the specified range.');
         return;
       } else {
         exportTransactionsToCSV(allTxs, filename || `${walletAddress}-transactions-range.csv`);
         setShowExportModal(false);
       }
     } catch (error) {
-      alert('Failed to fetch all transactions for export.' + error);
+      toast.error('Failed to fetch all transactions for export.' + error);
     } finally {
       setIsExporting(false);
     }

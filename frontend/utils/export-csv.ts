@@ -1,9 +1,11 @@
+import { toast } from 'sonner';
+
 export function exportTransactionsToCSV(
   transactions: Record<string, unknown>[],
   filename: string = 'transactions.csv'
 ) {
   if (!Array.isArray(transactions) || transactions.length === 0) {
-    console.warn('No transactions to export');
+    toast.error('No transactions to export');
     return;
   }
 
