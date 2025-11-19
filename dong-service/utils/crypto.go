@@ -11,11 +11,17 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 
 	"github.com/btcsuite/btcutil/base58"
 )
 
 const ed25519SeedSize = 32
+
+var (
+	encryptionKey    []byte
+	encryptionKeyMux sync.RWMutex
+)
 
 func zeroBytes(b []byte) {
 	for i := range b {
@@ -23,22 +29,46 @@ func zeroBytes(b []byte) {
 	}
 }
 
-func GetEncryptionKey() ([]byte, error) {
+func InitEncryptionKey() error {
+	encryptionKeyMux.Lock()
+	defer encryptionKeyMux.Unlock()
+
+	if encryptionKey != nil {
+		return nil
+	}
+
 	keyStr := os.Getenv("AES_SECRET_KEY")
 	if keyStr == "" {
-		return nil, errors.New("AES_SECRET_KEY environment variable not set")
+		return errors.New("AES_SECRET_KEY environment variable not set")
 	}
 
 	key, err := base64.StdEncoding.DecodeString(keyStr)
 	if err != nil {
-		return nil, errors.New("invalid encryption key format")
+		return errors.New("invalid encryption key format")
 	}
 
 	if len(key) != 32 {
-		return nil, errors.New("encryption key must be 32 bytes for AES-256")
+		return errors.New("encryption key must be 32 bytes for AES-256")
 	}
 
-	return key, nil
+	encryptionKey = make([]byte, len(key))
+	copy(encryptionKey, key)
+
+	return nil
+}
+
+func GetEncryptionKey() ([]byte, error) {
+	encryptionKeyMux.RLock()
+	defer encryptionKeyMux.RUnlock()
+
+	if encryptionKey == nil {
+		return nil, errors.New("encryption key not initialized")
+	}
+
+	encryptionKeyCopy := make([]byte, len(encryptionKey))
+	copy(encryptionKeyCopy, encryptionKey)
+
+	return encryptionKeyCopy, nil
 }
 
 func EncryptPrivateKey(privateKey string) (string, error) {

@@ -9,6 +9,7 @@ import (
 	"dong-service/routes"
 	"dong-service/scheduler"
 	"dong-service/services"
+	"dong-service/utils"
 	"flag"
 	"fmt"
 	"log"
@@ -55,6 +56,11 @@ func main() {
 		log.Fatalf("Failed to initialize logger: %v", err)
 	}
 
+	// Initialize encrypt key
+	if err := utils.InitEncryptionKey(); err != nil {
+		logger.Fatal().Err(err).Msg("Failed to initialize encryption key (AES_SECRET_KEY)")
+	}
+	
 	logger.Info().
 		Str("config_file", *configFile).
 		Str("gin_mode", cfg.Server.GinMode).

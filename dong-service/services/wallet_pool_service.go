@@ -9,6 +9,8 @@ import (
 	"dong-service/utils"
 	"fmt"
 	"sync"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type WalletPoolService struct {
@@ -65,55 +67,42 @@ func (s *WalletPoolService) InitializePoolIfNeeded(ctx context.Context) error {
 }
 
 func (s *WalletPoolService) CreateWallets(ctx context.Context, count int) error {
-	successCount := 0
-	failCount := 0
+  wallets := make([]*models.RedEnvelopeWallet, count)
+	g, groupCtx := errgroup.WithContext(ctx)
+	sem := make(chan struct{}, count) 
 
 	for i := 0; i < count; i++ {
-		address, privateKey, err := s.generateWallet()
-		if err != nil {
-			logger.Error().
-				Err(err).
-				Int("iteration", i).
-				Msg("Failed to generate wallet")
-			failCount++
-			continue
-		}
+			if err := groupCtx.Err(); err != nil {
+					return err
+			}
+			i := i 
+			sem <- struct{}{} 
+			g.Go(func() error {
+					defer func() { <-sem }() 
 
-		encryptedKey, err := utils.EncryptPrivateKey(privateKey)
-		if err != nil {
-			logger.Error().
-				Err(err).
-				Int("iteration", i).
-				Msg("Failed to encrypt private key")
-			failCount++
-			continue
-		}
+					address, privateKey, err := s.generateWallet()
+					if err != nil {
+							return err
+					}
+					encryptedKey, err := utils.EncryptPrivateKey(privateKey)
+					if err != nil {
+							return err
+					}
 
-		wallet := &models.RedEnvelopeWallet{
-			WalletAddress:       address,
-			EncryptedPrivateKey: encryptedKey,
-			Status:              constants.RedEnvelopeWalletStatusReady,
-		}
-
-		err = s.redEnvelopeWalletRepo.CreateWallet(ctx, wallet)
-		if err != nil {
-			logger.Error().
-				Err(err).
-				Int("iteration", i).
-				Str("address", address).
-				Msg("Failed to save wallet to database")
-			failCount++
-			continue
-		}
-
-		successCount++
+					wallets[i] = &models.RedEnvelopeWallet{
+							WalletAddress:       address,
+							EncryptedPrivateKey: encryptedKey,
+							Status:              constants.RedEnvelopeWalletStatusReady,
+					}
+					return nil
+			})
 	}
 
-	if failCount > 0 {
-		return fmt.Errorf("failed to create %d out of %d wallets", failCount, count)
+	if err := g.Wait(); err != nil {
+			return err
 	}
 
-	return nil
+	return s.redEnvelopeWalletRepo.CreateWallets(ctx, wallets)
 }
 
 func (s *WalletPoolService) EnsureMinimumWallets(ctx context.Context, minReady int) error {
