@@ -1,5 +1,5 @@
 import { apiDongClient } from "@/service";
-import { ClaimedEnvelopes, CreatedEnvelopes, EnvelopeListParams, RedEnvelopeStats } from "./type";
+import { ClaimedEnvelopes, CreatedEnvelopes, CreateRedEnvelopeRequest, EnvelopeListParams, RedEnvelope, RedEnvelopeStats, UpdateStatusRedEnvelopeRequest } from "./type";
 import { RED_ENVELOPE_ENPOINTS } from "./constants";
 import { IPaginatedResponse } from "@/types";
 
@@ -28,5 +28,19 @@ export class RedEnvelopeService {
       RED_ENVELOPE_ENPOINTS.CREATED_ENVELOPES_BY_WALLET, {params}
     );
     return data;
+  }
+
+  static async createRedEnvelope(request: CreateRedEnvelopeRequest): Promise<RedEnvelope> {
+    const { data } = await apiDongClient.post<{ data: RedEnvelope }>(
+      RED_ENVELOPE_ENPOINTS.CREATE_RED_ENVELOPE, request
+    )
+    return data.data
+  }
+
+  static async updateRedEnvelopeStatus(request: UpdateStatusRedEnvelopeRequest): Promise<RedEnvelope> {
+    const { data } = await apiDongClient.post<{ data: RedEnvelope }>(
+      RED_ENVELOPE_ENPOINTS.UPDATE_STATUS_RED_ENVELOPE, request
+    )
+    return data.data
   }
 }
