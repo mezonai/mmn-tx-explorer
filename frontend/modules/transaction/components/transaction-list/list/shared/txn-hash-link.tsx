@@ -1,3 +1,9 @@
+// Truncate hash: first 8 chars, then '...', then last 6 chars
+export function truncateTxHash(hash: string): string {
+  if (!hash) return '';
+  if (hash.length <= 14) return hash;
+  return `${hash.slice(0, 8)}...${hash.slice(-6)}`;
+}
 import { MiddleTruncate } from '@re-dev/react-truncate';
 import Link from 'next/link';
 
@@ -44,6 +50,23 @@ export const TxnHashLinkSkeleton = ({ className }: TxnHashLinkSkeletonProps) => 
     <div className={cn('flex flex-1 items-center gap-1', className)}>
       <Skeleton className="h-5 flex-1" />
       <Skeleton className="size-5" />
+    </div>
+  );
+};
+
+export const TxnHashLinkDashboard = ({ hash, className }: { hash: string; className?: string }) => {
+  const truncated = hash ? `${hash.slice(0, 8)}...${hash.slice(-6)}` : '';
+  return (
+    <div className={cn('flex flex-1 items-center gap-1', className)}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="link" className="dark:text-brand-primary size-fit flex-1 p-0" asChild>
+            <span className="text-brand-primary font-semibold">{truncated}</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent className="bg-foreground max-w-xs text-center text-sm break-all">{hash}</TooltipContent>
+      </Tooltip>
+      <CopyButton textToCopy={hash} className="ml-2" />
     </div>
   );
 };

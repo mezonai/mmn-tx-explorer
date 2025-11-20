@@ -41,7 +41,7 @@ export const EcosystemHighlights = () => {
         <Link
           ref={donationRef}
           href={ROUTES.DONATION_CAMPAIGN}
-          className="bg-card hover:border-primary/50 block cursor-pointer rounded-xl border border-gray-300 p-6 shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-link)] dark:border-gray-700 dark:bg-slate-800"
+          className="bg-card hover:border-primary/50 block cursor-pointer rounded-xl border border-gray-300 p-6 shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-link)] dark:border-gray-700 dark:bg-slate-800 dark:shadow-sm"
         >
           <div className="mb-3 flex items-center justify-between">
             <span className="flex items-center gap-2 font-semibold">Donation Campaigns</span>
@@ -90,7 +90,7 @@ export const EcosystemHighlights = () => {
         </Link>
 
         <div
-          className="bg-card hover:border-primary/50 flex flex-col rounded-xl border border-gray-300 p-6 shadow-sm transition-colors dark:border-gray-700 dark:bg-slate-800"
+          className="bg-card hover:border-primary/50 flex flex-col rounded-xl border border-gray-300 p-6 shadow-sm transition-colors dark:border-gray-700 dark:bg-slate-800 dark:shadow-sm"
           style={refHeight ? { minHeight: refHeight } : undefined}
         >
           <div className="mb-3 flex items-center justify-between">
@@ -108,7 +108,7 @@ export const EcosystemHighlights = () => {
         </div>
 
         <div
-          className="bg-card hover:border-primary/50 flex flex-col rounded-xl border border-gray-300 p-6 shadow-sm transition-colors dark:border-gray-700 dark:bg-slate-800"
+          className="bg-card hover:border-primary/50 flex flex-col rounded-xl border border-gray-300 p-6 shadow-sm transition-colors dark:border-gray-700 dark:bg-slate-800 dark:shadow-sm"
           style={refHeight ? { minHeight: refHeight } : undefined}
         >
           <div className="mb-3 flex items-center justify-between">
@@ -124,7 +124,7 @@ export const EcosystemHighlights = () => {
         </div>
 
         <div
-          className="bg-card hover:border-primary/50 flex flex-col rounded-xl border border-gray-300 p-6 shadow-sm transition-colors dark:border-gray-700 dark:bg-slate-800"
+          className="bg-card hover:border-primary/50 flex flex-col rounded-xl border border-gray-300 p-6 shadow-sm transition-colors dark:border-gray-700 dark:bg-slate-800 dark:shadow-sm"
           style={refHeight ? { minHeight: refHeight } : undefined}
         >
           <div className="mb-3 flex items-center justify-between">
@@ -140,7 +140,7 @@ export const EcosystemHighlights = () => {
         </div>
 
         <div
-          className="bg-card hover:border-primary/50 flex flex-col rounded-xl border border-gray-300 p-6 shadow-sm transition-colors dark:border-gray-700 dark:bg-slate-800"
+          className="bg-card hover:border-primary/50 flex flex-col rounded-xl border border-gray-300 p-6 shadow-sm transition-colors dark:border-gray-700 dark:bg-slate-800 dark:shadow-sm"
           style={refHeight ? { minHeight: refHeight } : undefined}
         >
           <div className="mb-3 flex items-center justify-between">
@@ -156,7 +156,7 @@ export const EcosystemHighlights = () => {
         </div>
 
         <div
-          className="bg-card hover:border-primary/50 flex flex-col rounded-xl border border-gray-300 p-6 shadow-sm transition-colors dark:border-gray-700 dark:bg-slate-800"
+          className="bg-card hover:border-primary/50 flex flex-col rounded-xl border border-gray-300 p-6 shadow-sm transition-colors dark:border-gray-700 dark:bg-slate-800 dark:shadow-sm"
           style={refHeight ? { minHeight: refHeight } : undefined}
         >
           <div className="mb-3 flex items-center justify-between">
