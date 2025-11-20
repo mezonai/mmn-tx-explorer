@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post Ad - Mezon P2P</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        mezon: { bg: '#0B0E14', card: '#151A25', primary: '#8b5cf6' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-[#0B0E14] text-slate-200 min-h-screen flex items-center justify-center p-4">
+
+    <div class="w-full max-w-3xl bg-mezon-card rounded-2xl border border-gray-800 shadow-2xl overflow-hidden">
+
+        <div class="bg-gray-900/50 p-6 border-b border-gray-800">
+            <h1 class="text-xl font-bold text-white">Đăng quảng cáo mới</h1>
+            <p class="text-sm text-gray-400 mt-1">Tạo lệnh mua/bán MZD trên thị trường P2P</p>
+        </div>
+
+        <div class="flex items-center px-10 py-6 bg-mezon-card">
+            <div class="flex items-center text-mezon-primary relative z-10">
+                <div
+                    class="w-8 h-8 rounded-full border-2 border-mezon-primary flex items-center justify-center font-bold bg-mezon-card">
+                    1</div>
+                <span class="ml-2 font-bold text-sm hidden md:block">Loại & Giá</span>
+            </div>
+            <div class="flex-1 h-1 bg-gray-700 mx-4 relative">
+                <div class="absolute top-0 left-0 h-full w-0 bg-mezon-primary"></div>
+            </div>
+            <div class="flex items-center text-gray-500 relative z-10">
+                <div
+                    class="w-8 h-8 rounded-full border-2 border-gray-600 flex items-center justify-center font-bold bg-mezon-card">
+                    2</div>
+                <span class="ml-2 text-sm hidden md:block">Số lượng</span>
+            </div>
+            <div class="flex-1 h-1 bg-gray-700 mx-4"></div>
+            <div class="flex items-center text-gray-500 relative z-10">
+                <div
+                    class="w-8 h-8 rounded-full border-2 border-gray-600 flex items-center justify-center font-bold bg-mezon-card">
+                    3</div>
+                <span class="ml-2 text-sm hidden md:block">Thanh toán</span>
+            </div>
+        </div>
+
+        <div class="p-8 space-y-8">
+
+            <div>
+                <label class="block text-sm text-gray-400 mb-3 font-medium">Bạn muốn làm gì?</label>
+                <div class="flex bg-gray-900 p-1 rounded-lg border border-gray-700 w-fit">
+                    <button class="px-8 py-2 rounded-md text-white bg-gray-700 font-bold shadow">MUA</button>
+                    <button class="px-8 py-2 rounded-md text-gray-400 hover:text-white transition">BÁN</button>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm text-gray-400 mb-3 font-medium">Tài sản</label>
+                <div
+                    class="w-full md:w-1/2 bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 flex items-center justify-between">
+                    <span class="font-bold">MZD (Mezon Đồng)</span>
+                    <i class="fas fa-lock text-gray-600 text-xs"></i>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-3 font-medium">Loại giá</label>
+                    <div class="flex gap-4">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="price_type" class="accent-mezon-primary w-4 h-4" checked>
+                            <span class="text-white">Cố định</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="price_type" class="accent-mezon-primary w-4 h-4">
+                            <span class="text-gray-400">Thả nổi (Theo thị trường)</span>
+                        </label>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-3 font-medium">Đơn giá (VND)</label>
+                    <div class="relative">
+                        <button class="absolute left-3 top-3 text-gray-400 hover:text-white"><i
+                                class="fas fa-minus"></i></button>
+                        <input type="text" value="25,450"
+                            class="w-full bg-gray-900 border border-gray-700 rounded-lg py-2.5 text-center font-bold text-white focus:border-mezon-primary focus:outline-none">
+                        <button class="absolute right-3 top-3 text-gray-400 hover:text-white"><i
+                                class="fas fa-plus"></i></button>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1">Giá thị trường: ~25,400 VND</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-6 border-t border-gray-800 bg-gray-900/30 flex justify-end gap-4">
+            <button class="px-6 py-2 rounded-lg text-gray-400 hover:text-white font-medium transition">Hủy</button>
+            <button
+                class="bg-mezon-primary hover:bg-violet-600 text-white font-bold px-8 py-2 rounded-lg shadow-lg shadow-violet-900/20 transition flex items-center gap-2">
+                Tiếp theo <i class="fas fa-arrow-right text-sm"></i>
+            </button>
+        </div>
+
+    </div>
+
+</body>
+
+</html>

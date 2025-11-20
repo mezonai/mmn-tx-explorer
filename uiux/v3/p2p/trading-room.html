@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order #123456 - Mezon P2P</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        mezon: { bg: '#0B0E14', card: '#151A25', primary: '#8b5cf6' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-[#0B0E14] text-slate-200 h-screen flex flex-col overflow-hidden">
+
+    <header class="h-14 border-b border-gray-800 flex items-center px-6 bg-mezon-card justify-between shrink-0">
+        <div class="flex items-center gap-4">
+            <button class="text-gray-400"><i class="fas fa-arrow-left"></i></button>
+            <div>
+                <h1 class="font-bold text-white text-sm">Đơn mua MZD <span class="text-gray-500">#19283746</span></h1>
+                <div class="text-xs text-gray-400">Đang giao dịch với <span
+                        class="text-mezon-primary font-bold">Mezon_Trader_Pro</span></div>
+            </div>
+        </div>
+        <div class="flex items-center gap-2 text-yellow-500 bg-yellow-500/10 px-3 py-1 rounded-full text-sm font-bold">
+            <i class="fas fa-clock"></i> 14:32
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+
+        <div class="w-full md:w-7/12 lg:w-8/12 p-6 overflow-y-auto border-r border-gray-800">
+
+            <div class="flex justify-between items-center mb-8 px-4">
+                <div class="flex flex-col items-center gap-2">
+                    <div
+                        class="w-8 h-8 rounded-full bg-mezon-primary text-white flex items-center justify-center font-bold text-sm">
+                        1</div>
+                    <div class="text-xs font-bold text-mezon-primary">Thanh toán</div>
+                </div>
+                <div class="h-1 flex-1 bg-gray-700 mx-2 rounded relative">
+                    <div class="absolute top-0 left-0 h-full w-1/2 bg-mezon-primary"></div>
+                </div>
+                <div class="flex flex-col items-center gap-2">
+                    <div
+                        class="w-8 h-8 rounded-full bg-gray-700 text-gray-400 flex items-center justify-center font-bold text-sm">
+                        2</div>
+                    <div class="text-xs text-gray-400">Chờ xác nhận</div>
+                </div>
+                <div class="h-1 flex-1 bg-gray-700 mx-2 rounded"></div>
+                <div class="flex flex-col items-center gap-2">
+                    <div
+                        class="w-8 h-8 rounded-full bg-gray-700 text-gray-400 flex items-center justify-center font-bold text-sm">
+                        3</div>
+                    <div class="text-xs text-gray-400">Hoàn tất</div>
+                </div>
+            </div>
+
+            <div class="bg-mezon-card rounded-xl p-6 mb-6 border border-gray-800">
+                <div class="text-gray-400 text-sm mb-1">Số tiền cần thanh toán</div>
+                <div class="text-3xl font-bold text-white mb-4">2,545,000 VND</div>
+                <div class="flex justify-between text-sm py-2 border-t border-gray-800">
+                    <span class="text-gray-400">Giá</span>
+                    <span>25,450 VND/MZD</span>
+                </div>
+                <div class="flex justify-between text-sm py-2">
+                    <span class="text-gray-400">Số lượng nhận</span>
+                    <span class="text-mezon-primary font-bold">100.00 MZD</span>
+                </div>
+            </div>
+
+            <div class="bg-mezon-card rounded-xl p-6 mb-8 border border-gray-800">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-white">Thông tin chuyển khoản</h3>
+                    <span class="text-xs bg-yellow-500/20 text-yellow-500 px-2 py-1 rounded">Chuyển tiền nhanh
+                        24/7</span>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center group">
+                        <div>
+                            <div class="text-xs text-gray-500 uppercase">Số tài khoản</div>
+                            <div class="text-lg font-mono text-white font-bold">1903 4482 9910 22</div>
+                        </div>
+                        <button class="text-gray-400 hover:text-white p-2"><i class="far fa-copy"></i></button>
+                    </div>
+
+                    <div class="flex justify-between items-center group">
+                        <div>
+                            <div class="text-xs text-gray-500 uppercase">Ngân hàng</div>
+                            <div class="text-base text-white">Techcombank</div>
+                        </div>
+                        <button class="text-gray-400 hover:text-white p-2"><i class="far fa-copy"></i></button>
+                    </div>
+
+                    <div
+                        class="flex justify-between items-center group bg-yellow-500/5 p-3 rounded border border-yellow-500/20">
+                        <div>
+                            <div class="text-xs text-yellow-600 uppercase font-bold">Nội dung chuyển khoản (Bắt buộc)
+                            </div>
+                            <div class="text-xl font-mono text-yellow-500 font-bold">MZD 83729</div>
+                        </div>
+                        <button class="text-yellow-500 hover:text-yellow-300 p-2"><i class="far fa-copy"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <button
+                class="w-full bg-mezon-primary hover:bg-violet-600 text-white font-bold text-lg py-4 rounded-xl shadow-lg shadow-violet-900/20 transition mb-4">
+                Đã chuyển tiền, thông báo cho người bán
+            </button>
+            <div class="text-center text-sm text-gray-500">
+                Chỉ ấn nút trên khi bạn đã thực sự chuyển khoản.
+                <a href="#" class="text-mezon-primary hover:underline">Cần trợ giúp?</a>
+            </div>
+        </div>
+
+        <div class="hidden md:flex w-5/12 lg:w-4/12 flex-col bg-[#0f131a]">
+            <div class="p-4 border-b border-gray-800 text-center text-sm font-bold text-gray-400 bg-mezon-card/50">
+                Mezon Secure Chat <i class="fas fa-lock text-green-500 ml-1"></i>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                <div class="flex justify-center">
+                    <div class="bg-gray-800 text-gray-400 text-xs px-3 py-1 rounded-full">
+                        Đơn hàng đã được tạo. MZD đã được khóa trong Escrow.
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <div
+                        class="w-8 h-8 rounded-full bg-blue-600 flex-shrink-0 flex items-center justify-center text-xs font-bold">
+                        M</div>
+                    <div class="bg-gray-800 rounded-r-xl rounded-bl-xl p-3 text-sm max-w-[80%] text-gray-200">
+                        Chào bạn, mình đang online. Bạn chuyển khoản ghi đúng nội dung nhé.
+                    </div>
+                </div>
+
+                <div class="flex gap-2 flex-row-reverse">
+                    <img src="https://ui-avatars.com/api/?name=Tung+Nguyen&background=8b5cf6&color=fff"
+                        class="w-8 h-8 rounded-full flex-shrink-0">
+                    <div class="bg-mezon-primary rounded-l-xl rounded-br-xl p-3 text-sm max-w-[80%] text-white">
+                        Ok bạn, mình đang chuyển đây. Đợi chút nhé.
+                    </div>
+                </div>
+
+                <div class="flex justify-center">
+                    <div
+                        class="bg-red-900/30 text-red-400 text-xs px-3 py-1 rounded border border-red-900/50 text-center max-w-[90%]">
+                        Cảnh báo: Không cung cấp mật khẩu ví hoặc private key cho bất kỳ ai, kể cả CSKH.
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-3 bg-mezon-card border-t border-gray-800">
+                <div
+                    class="flex items-center gap-2 bg-gray-900 rounded-lg px-3 py-2 border border-gray-700 focus-within:border-mezon-primary transition">
+                    <button class="text-gray-400 hover:text-white"><i class="fas fa-plus-circle"></i></button>
+                    <button class="text-gray-400 hover:text-white"><i class="fas fa-image"></i></button>
+                    <input type="text" placeholder="Nhập tin nhắn..."
+                        class="bg-transparent border-none focus:ring-0 text-white flex-1 text-sm">
+                    <button class="text-mezon-primary hover:text-white"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

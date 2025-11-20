@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mezon P2P Market</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        mezon: {
+                            bg: '#0B0E14',
+                            card: '#151A25',
+                            primary: '#8b5cf6',
+                            primaryHover: '#7c3aed',
+                            buy: '#10b981',
+                            sell: '#f43f5e'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #0B0E14; color: #e2e8f0; font-family: 'Inter', sans-serif; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <nav class="border-b border-gray-800 bg-mezon-card px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+            <div class="text-2xl font-bold text-white flex items-center gap-2">
+                <div class="w-8 h-8 bg-mezon-primary rounded-full flex items-center justify-center"><i class="fas fa-bolt"></i></div>
+                Mezon P2P
+            </div>
+            <div class="h-6 w-px bg-gray-700 mx-2"></div>
+            <a href="#" class="text-white font-medium">P2P Trading</a>
+            <a href="#" class="text-gray-400 hover:text-white">Express</a>
+        </div>
+        <div class="flex items-center gap-4">
+            <button class="text-gray-400 hover:text-white"><i class="fas fa-bell"></i></button>
+            <div class="flex items-center gap-2 text-sm">
+                <img src="https://ui-avatars.com/api/?name=Tung+Nguyen&background=8b5cf6&color=fff" class="w-8 h-8 rounded-full">
+                <span>tung.nguyen</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="px-6 py-6 max-w-7xl mx-auto">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+            <div class="flex gap-4 text-lg font-bold">
+                <button class="text-mezon-buy border-b-2 border-mezon-buy pb-1">MUA</button>
+                <button class="text-gray-400 hover:text-mezon-sell pb-1 transition">BÁN</button>
+            </div>
+            
+            <div class="flex items-center gap-2 bg-mezon-card px-3 py-1 rounded border border-gray-700">
+                <span class="font-bold text-mezon-primary">MZD</span>
+                <i class="fas fa-chevron-down text-xs text-gray-400"></i>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="relative">
+                <span class="absolute left-3 top-3 text-gray-400">VND</span>
+                <input type="number" placeholder="Nhập số tiền (VD: 500,000)" class="w-full bg-mezon-card border border-gray-700 rounded-lg py-2.5 pl-12 pr-4 focus:outline-none focus:border-mezon-primary transition">
+            </div>
+            <select class="bg-mezon-card border border-gray-700 rounded-lg py-2.5 px-4 focus:outline-none">
+                <option>Tất cả thanh toán</option>
+                <option>Chuyển khoản NH</option>
+                <option>Momo</option>
+            </select>
+            <div class="flex items-center gap-2 bg-mezon-card border border-gray-700 rounded-lg px-4 cursor-pointer hover:border-mezon-primary transition">
+                <input type="checkbox" id="clanFilter" class="accent-mezon-primary w-4 h-4">
+                <label for="clanFilter" class="cursor-pointer text-sm select-none">Chỉ hiện Bạn bè / Clan</label> <i class="fas fa-shield-alt text-yellow-500 ml-1"></i>
+            </div>
+        </div>
+
+        <div class="bg-mezon-card rounded-xl border border-gray-800 overflow-hidden">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-gray-900 text-gray-400 text-xs uppercase">
+                    <tr>
+                        <th class="p-4 font-medium">Advertiser (Người bán)</th>
+                        <th class="p-4 font-medium">Giá (VND)</th>
+                        <th class="p-4 font-medium">Giới hạn / Khả dụng</th>
+                        <th class="p-4 font-medium">Thanh toán</th>
+                        <th class="p-4 font-medium text-right">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm divide-y divide-gray-800">
+                    <tr class="hover:bg-gray-800/50 transition">
+                        <td class="p-4">
+                            <div class="flex items-center gap-3">
+                                <div class="relative">
+                                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center font-bold">M</div>
+                                    <div class="absolute -bottom-1 -right-1 bg-green-500 w-3 h-3 rounded-full border-2 border-mezon-card"></div>
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-1 font-bold text-blue-400">
+                                        Mezon_Trader_Pro 
+                                        <i class="fas fa-check-circle text-blue-500 text-xs"></i>
+                                    </div>
+                                    <div class="text-xs text-gray-400">1,203 lệnh | 99.5% hoàn thành</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-4">
+                            <div class="text-xl font-bold text-white">25,450 <span class="text-xs text-gray-500 font-normal">VND</span></div>
+                        </td>
+                        <td class="p-4 text-gray-300">
+                            <div class="flex flex-col gap-1">
+                                <span><span class="text-gray-500">Khả dụng:</span> 5,000 MZD</span>
+                                <span><span class="text-gray-500">Giới hạn:</span> 150,000 - 50,000,000 VND</span>
+                            </div>
+                        </td>
+                        <td class="p-4">
+                            <div class="flex gap-2">
+                                <span class="px-2 py-1 rounded bg-yellow-500/10 text-yellow-500 text-xs border border-yellow-500/20">TPBank</span>
+                                <span class="px-2 py-1 rounded bg-pink-500/10 text-pink-500 text-xs border border-pink-500/20">Momo</span>
+                            </div>
+                        </td>
+                        <td class="p-4 text-right">
+                            <button class="bg-mezon-buy hover:bg-emerald-600 text-white font-bold py-2 px-6 rounded-lg transition">
+                                Mua MZD
+                            </button>
+                        </td>
+                    </tr>
+
+                    <tr class="bg-mezon-primary/5 hover:bg-mezon-primary/10 transition border-l-4 border-l-mezon-primary">
+                        <td class="p-4">
+                            <div class="flex items-center gap-3">
+                                <div class="relative">
+                                    <img src="https://ui-avatars.com/api/?name=Hai+Nam&background=random" class="w-10 h-10 rounded-full">
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-1 font-bold text-white">
+                                        HaiNam_Dev
+                                        <span class="bg-mezon-primary text-white text-[10px] px-1.5 rounded ml-1">CLAN MEMBER</span>
+                                    </div>
+                                    <div class="text-xs text-gray-400">50 lệnh | 100% hoàn thành</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-4">
+                            <div class="text-xl font-bold text-mezon-buy">25,400 <span class="text-xs text-gray-500 font-normal">VND</span></div>
+                            <div class="text-xs text-mezon-primary">Giá ưu đãi cho Clan</div>
+                        </td>
+                        <td class="p-4 text-gray-300">
+                            <div class="flex flex-col gap-1">
+                                <span><span class="text-gray-500">Khả dụng:</span> 1,000 MZD</span>
+                                <span><span class="text-gray-500">Giới hạn:</span> 100,000 - 2,000,000 VND</span>
+                            </div>
+                        </td>
+                        <td class="p-4">
+                            <span class="px-2 py-1 rounded bg-green-500/10 text-green-500 text-xs border border-green-500/20">Vietcombank</span>
+                        </td>
+                        <td class="p-4 text-right">
+                            <button class="bg-mezon-buy hover:bg-emerald-600 text-white font-bold py-2 px-6 rounded-lg transition">
+                                Mua MZD
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
