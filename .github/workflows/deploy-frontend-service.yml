@@ -70,7 +70,9 @@ jobs:
           OAUTH2_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }} 
           NEXT_PUBLIC_OAUTH2_REDIRECT_URI: ${{ vars.NEXT_PUBLIC_OAUTH2_REDIRECT_URI }}
           NEXT_PUBLIC_OAUTH2_SCOPE: ${{ vars.NEXT_PUBLIC_OAUTH2_SCOPE }}
-          NEXT_BASE_FE: ${{ vars.NEXT_BASE_FE }}          
+          NEXT_BASE_FE: ${{ vars.NEXT_BASE_FE }}
+          NEXT_PUBLIC_COBAR_API_URL: ${{ vars.NEXT_PUBLIC_COBAR_API_URL }}
+          NEXT_PUBLIC_COBAR_API_KEY: ${{ secrets.NEXT_PUBLIC_COBAR_API_KEY }}
         run: |
           cd frontend
           npm install
@@ -109,6 +111,8 @@ jobs:
           NEXT_PUBLIC_OAUTH2_REDIRECT_URI: ${{ vars.NEXT_PUBLIC_OAUTH2_REDIRECT_URI }}
           NEXT_PUBLIC_OAUTH2_SCOPE: ${{ vars.NEXT_PUBLIC_OAUTH2_SCOPE }}
           NEXT_BASE_FE: ${{ vars.NEXT_BASE_FE }}
+          NEXT_PUBLIC_COBAR_API_URL: ${{ vars.NEXT_PUBLIC_COBAR_API_URL }}
+          NEXT_PUBLIC_COBAR_API_KEY: ${{ secrets.NEXT_PUBLIC_COBAR_API_KEY }}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
@@ -128,6 +132,8 @@ jobs:
           NEXT_PUBLIC_OAUTH2_REDIRECT_URI=${NEXT_PUBLIC_OAUTH2_REDIRECT_URI}
           NEXT_PUBLIC_OAUTH2_SCOPE=${NEXT_PUBLIC_OAUTH2_SCOPE}
           NEXT_BASE_FE=${NEXT_BASE_FE}
+          NEXT_PUBLIC_COBAR_API_URL=${NEXT_PUBLIC_COBAR_API_URL}
+          NEXT_PUBLIC_COBAR_API_KEY=${NEXT_PUBLIC_COBAR_API_KEY}
           EON
 
           sudo chown -R mmn:mmn /opt/frontend
@@ -149,6 +155,8 @@ jobs:
           printf "export NEXT_PUBLIC_OAUTH2_REDIRECT_URI=%q\n" "$NEXT_PUBLIC_OAUTH2_REDIRECT_URI" >> remote_env.sh
           printf "export NEXT_PUBLIC_OAUTH2_SCOPE=%q\n" "$NEXT_PUBLIC_OAUTH2_SCOPE" >> remote_env.sh
           printf "export NEXT_BASE_FE=%q\n" "$NEXT_BASE_FE" >> remote_env.sh
+          printf "export NEXT_PUBLIC_COBAR_API_URL=%q\n" "$NEXT_PUBLIC_COBAR_API_URL" >> remote_env.sh
+          printf "export NEXT_PUBLIC_COBAR_API_KEY=%q\n" "$NEXT_PUBLIC_COBAR_API_KEY" >> remote_env.sh
       
       - name:  Prepare and deploy to target server
         run: |
