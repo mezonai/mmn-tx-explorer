@@ -72,12 +72,13 @@ func main() {
 		logger.Fatal().Err(err).Msg("Failed to initialize Redis whitelist")
 	}
 
-	logger.Info().Str("rpc_url", cfg.Blockchain.RPCURL).Msg("Initializing blockchain service")
-	if err := blockchain.InitBlockchainService(cfg); err != nil {
+	blockchainService, err:= blockchain.NewBlockchainService(cfg)
+	if err != nil {
 		logger.Fatal().Err(err).Msg("Failed to initialize blockchain service")
 	}
+
 	defer func() {
-		if err := blockchain.CloseBlockchainService(); err != nil {
+		if err := blockchainService.Close(); err != nil {
 			logger.Error().Err(err).Msg("Failed to close blockchain service")
 		}
 	}()
