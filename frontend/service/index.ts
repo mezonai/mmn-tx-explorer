@@ -7,6 +7,13 @@ const isServer = typeof window === 'undefined';
 const baseURL = isServer ? process.env.APP_API_URL_INTERNAL : process.env.NEXT_PUBLIC_APP_API_URL;
 const dongServiceURL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 // const baseURL = 'http://localhost:8080';
+
+const cobarClient = axios.create({
+  baseURL: '/api/cobar',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 const apiClient = axios.create({
   baseURL: baseURL,
   headers: {
@@ -52,4 +59,4 @@ apiDongClient.interceptors.response.use(
   }
 );
 
-export { apiClient, apiDongClient };
+export { apiClient, apiDongClient, cobarClient };
