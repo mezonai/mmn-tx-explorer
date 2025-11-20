@@ -1,9 +1,3 @@
-// Truncate hash: first 8 chars, then '...', then last 6 chars
-export function truncateTxHash(hash: string): string {
-  if (!hash) return '';
-  if (hash.length <= 14) return hash;
-  return `${hash.slice(0, 8)}...${hash.slice(-6)}`;
-}
 import { MiddleTruncate } from '@re-dev/react-truncate';
 import Link from 'next/link';
 
