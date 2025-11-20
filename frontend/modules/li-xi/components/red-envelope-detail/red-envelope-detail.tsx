@@ -1,7 +1,6 @@
 'use client';
 
 import { ExternalLink } from 'lucide-react';
-import { UUID } from 'crypto';
 import { truncateWalletAddress, formatClaimDate } from '../../utils';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,7 +12,7 @@ import { BreadcrumbNavigation } from '@/components/shared';
 import { useRedEnvelopeDetail } from '../../hooks/useRedEnvelopeDetail';
 
 const breadcrumbs: IBreadcrumb[] = [
-  { label: 'Lucky Money', href: ROUTES.LI_XI},
+  { label: 'Lucky Money', href: ROUTES.LI_XI },
   { label: 'Lucky Money Detail', href: '#' },
 ] as const;
 
@@ -50,10 +49,10 @@ export const RedEnvelopeDetail = () => {
               </h3>
             </div>
           </div>
-          <div className="flex items-stretch sm:items-center gap-2 sm:gap-4 flex-wrap w-full lg:w-auto">
+          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
             <span
               className={cn(
-                'font-bold py-1 px-2 md:px-3 rounded-full text-xs md:text-sm border',
+                'font-bold py-1 px-2 md:px-3 rounded-full text-xs md:text-sm border whitespace-nowrap',
                 statusClassName
               )}
             >
@@ -63,7 +62,7 @@ export const RedEnvelopeDetail = () => {
               onClick={handleCloseSession}
               disabled={!isClosable || isClosing}
               className="flex items-center justify-center gap-2 border border-red-300 dark:border-[rgb(239_68_68_/_0.6)] text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-[rgb(239_68_68_/_0.1)] font-semibold py-2 px-3 md:px-4 rounded-lg transition-colors text-sm md:text-base cursor-pointer
-                         disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent whitespace-nowrap w-full sm:w-auto"
+                        disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent whitespace-nowrap w-auto"
             >
               {isClosing ? 'Closing...' : 'Close Session'}
             </button>
@@ -101,11 +100,11 @@ export const RedEnvelopeDetail = () => {
             );
           })}
         </section>
-        
+
         <section className="bg-card dark:bg-slate-800 border border-border dark:border-slate-700 p-4 md:p-6 rounded-lg shadow-lg mb-8">
           <h2 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white mb-4 md:mb-6">Share Lucky Money</h2>
           <div className="flex flex-col md:flex-row items-center md:items-stretch gap-4 md:gap-6">
-            <div className="bg-white dark:bg-white p-2 md:p-3 rounded-lg flex-shrink-0 w-full md:w-auto max-w-[220px] self-stretch md:self-auto">
+            <div className="bg-white dark:bg-white p-2 md:p-3 rounded-lg flex-shrink-0 w-auto max-w-[220px]">
               <QRCode value={qrCodeValue} size={qrSize} style={{ width: '100%', height: 'auto' }} />
             </div>
             <div className="flex-grow w-full flex flex-col gap-4">
@@ -124,7 +123,7 @@ export const RedEnvelopeDetail = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className={cn(
-                  "flex items-center justify-center gap-2 w-full md:w-1/3 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 md:py-3 px-4 md:px-6 rounded-lg transition-colors text-sm md:text-base",
+                  "flex items-center justify-center gap-2 w-full md:w-1/3 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 md:py-3 px-4 md:px-6 rounded-lg transition-colors text-sm md:text-base whitespace-nowrap",
                   !isClosable && "opacity-50 cursor-not-allowed"
                 )}
                 onClick={(e) => {
@@ -164,7 +163,7 @@ export const RedEnvelopeDetail = () => {
             </table>
           </div>
         </section>
-
+        
       </div>
     </div>
   );

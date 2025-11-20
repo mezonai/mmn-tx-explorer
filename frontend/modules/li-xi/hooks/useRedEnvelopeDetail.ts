@@ -30,9 +30,8 @@ export const useRedEnvelopeDetail = () => {
     mutationFn: () => RedEnvelopeService.closeSession(request),
     onSuccess: () => {
       toast.success('Session closed successfully!');
-      queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.RED_ENVELOPE_DETAIL, request]
-      });
+      queryClient.invalidateQueries({queryKey: [QUERY_KEYS.RED_ENVELOPE_DETAIL, request]});
+      queryClient.invalidateQueries({queryKey: [QUERY_KEYS.CREATED_ENVELOPES]})
     },
     onError: (error) => {
       console.error('Failed to close session:', error);
