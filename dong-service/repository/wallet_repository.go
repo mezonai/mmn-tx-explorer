@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"dong-service/models"
 	"fmt"
-	"time"
 )
 
 // WalletRepository handles database operations for wallets
@@ -37,7 +36,6 @@ func (r *WalletRepository) GetByAddress(address string) (*models.Wallet, error) 
 	`, r.indexerSchema)
 
 	var wallet models.Wallet
-	var updatedAt, createdAt time.Time
 
 	err := r.db.QueryRow(query, address).Scan(
 		&wallet.Address,
@@ -45,8 +43,8 @@ func (r *WalletRepository) GetByAddress(address string) (*models.Wallet, error) 
 		&wallet.Balance,
 		&wallet.TransactionCount,
 		&wallet.LastBlock,
-		&updatedAt,
-		&createdAt,
+		&wallet.UpdatedAt,
+		&wallet.CreatedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -55,9 +53,6 @@ func (r *WalletRepository) GetByAddress(address string) (*models.Wallet, error) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get wallet: %w", err)
 	}
-
-	wallet.UpdatedAt = updatedAt
-	wallet.CreatedAt = createdAt
 
 	return &wallet, nil
 }

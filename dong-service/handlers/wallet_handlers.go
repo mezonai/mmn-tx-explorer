@@ -58,21 +58,16 @@ func (h *WalletHandler) GetWalletDetail(c *gin.Context) {
 	}
 
 	response := wallet.Serialize()
-
 	// Show balance if it's the user's own wallet
-	if userAddress == address {
-		response.Balance = wallet.Balance
-	} else {
-		// Check if this is a campaign wallet
+	if userAddress != address {
+		// Show balance if it's is a campaign wallet
 		isCampaignWallet, err := h.campaignRepo.IsCampaignWallet(address)
 		if err != nil {
 			logger.Error().Err(err).Str("address", address).Msg("Failed to check if wallet is campaign wallet")
 			isCampaignWallet = false
 		}
 
-		if isCampaignWallet {
-			response.Balance = wallet.Balance
-		} else {
+		if !isCampaignWallet {
 			response.Balance = ""
 		}
 	}

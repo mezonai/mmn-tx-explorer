@@ -92,6 +92,8 @@ func ParseTokenAndAddToContext(jwtSecret string) gin.HandlerFunc {
 		}
 
 		address := utils.GenerateAddress(claims["user_id"].(string))
+
+		c.Set("user_id", claims["user_id"].(string))
 		c.Set("address", address)
 		c.Next()
 	}
