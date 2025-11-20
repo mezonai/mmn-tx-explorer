@@ -56,14 +56,12 @@ func (s *HotWalletSwapService) generateWallet() (address string, privateKey stri
 }
 
 func (s *HotWalletSwapService) InitializeHotWalletSwap(ctx context.Context) error {
-	// Check if hot wallet already exists
 	existingWallet, err := s.hotWalletSwapRepository.GetHotWalletSwap(ctx)
 	if err == nil && existingWallet != nil {
 		logger.Info().Str("wallet_address", existingWallet.WalletAddress).Msg("Hot wallet already exists, skipping creation")
 		return nil
 	}
 
-	// Only create wallet if it doesn't exist
 	logger.Info().Msg("Creating new hot wallet")
 	err = s.CreateHotWalletSwap(ctx)
 	if err != nil {

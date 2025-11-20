@@ -320,7 +320,7 @@ func (b *BSCBridge) processBridgeTransfer(ctx context.Context, event *contracts.
 	if err != nil {
 		return fmt.Errorf("failed to create pending transaction: %w", err)
 	}
-	// TODO:
+	// TODO: Wait function transfer of feature lixi
 	// 1. Validate amount
 	// 2. Check daily limit: CheckTransactionLimit(ctx, userID, amount)
 	// 3. If OK -> thực hiện swap transaction
