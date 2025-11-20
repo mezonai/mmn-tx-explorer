@@ -139,7 +139,7 @@ export const EcosystemHighlights = () => {
           <p className="text-sm text-gray-600 dark:text-gray-400">24h volume: 0 {APP_CONFIG.CHAIN_SYMBOL}</p>
         </div>
 
-        <div
+        <Link
           href={ROUTES.COBAR}
           className="bg-card hover:border-primary/50 dark:hover:border-primary/50 flex flex-col rounded-xl border border-gray-300 p-6 shadow-sm transition-colors dark:border-gray-700 dark:bg-slate-800 dark:shadow-sm"
           style={refHeight ? { minHeight: refHeight } : undefined}
