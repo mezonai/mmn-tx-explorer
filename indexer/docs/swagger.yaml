@@ -78,6 +78,33 @@ definitions:
       transaction_count:
         type: integer
     type: object
+  common.BaseTransactionModel:
+    properties:
+      block_hash:
+        type: string
+      block_number:
+        type: integer
+      chain_id:
+        type: string
+      from_address:
+        type: string
+      hash:
+        type: string
+      nonce:
+        type: integer
+      status:
+        type: integer
+      text_data:
+        type: string
+      to_address:
+        type: string
+      transaction_timestamp:
+        type: integer
+      transaction_type:
+        type: integer
+      value:
+        type: string
+    type: object
   common.LogModel:
     properties:
       address:
@@ -149,6 +176,14 @@ definitions:
       time:
         type: string
     type: object
+  handlers.InternalTransactionDetailResponse:
+    properties:
+      data:
+        properties:
+          transaction:
+            $ref: '#/definitions/common.BaseTransactionModel'
+        type: object
+    type: object
   handlers.PendingTransactionModel:
     properties:
       from_address:
@@ -180,7 +215,7 @@ definitions:
         type: array
       transactions:
         items:
-          $ref: '#/definitions/common.TransactionModel'
+          $ref: '#/definitions/common.BaseTransactionModel'
         type: array
       type:
         $ref: '#/definitions/handlers.SearchResultType'
@@ -222,6 +257,7 @@ definitions:
         additionalProperties: true
         type: object
     type: object
+info:
 host: localhost:8080
 info:
   contact:
@@ -356,6 +392,51 @@ paths:
       security:
       - BasicAuth: []
       summary: Get block detail
+      tags:
+      - detail
+  /{chainId}/internal/tx/{txHash}/detail:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve detailed information about a specific transaction without
+        extra_info field (for internal use)
+      parameters:
+      - description: Chain ID
+        in: path
+        name: chainId
+        required: true
+        type: string
+      - description: Transaction hash
+        in: path
+        name: txHash
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.InternalTransactionDetailResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - BasicAuth: []
+      summary: Get internal transaction detail
       tags:
       - detail
   /{chainId}/pending-transactions:
@@ -515,7 +596,7 @@ paths:
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/common.TransactionModel'
+                    $ref: '#/definitions/common.BaseTransactionModel'
                   type: array
               type: object
         "400":
