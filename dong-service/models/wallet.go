@@ -10,7 +10,7 @@ type Wallet struct {
 	AccountNonce     uint64    `json:"account_nonce" db:"account_nonce"`
 	Balance          string    `json:"balance" db:"balance"`
 	TransactionCount *int64    `json:"transaction_count,omitempty" db:"transaction_count"`
-	LastBlock        *int64    `json:"last_block,omitempty" db:"last_block"`
+	LastBlock        *int64    `json:"last_balance_update,omitempty" db:"last_block"`
 	UpdatedAt        time.Time `json:"updated_at" db:"updated_at"`
 	CreatedAt        time.Time `json:"created_at" db:"created_at"`
 }
@@ -21,7 +21,7 @@ type WalletDetailResponse struct {
 	AccountNonce     uint64 `json:"account_nonce"`
 	Balance          string `json:"balance,omitempty"`
 	TransactionCount *int64 `json:"transaction_count,omitempty"`
-	LastBlock        *int64 `json:"last_block,omitempty"`
+	LastBlock        *int64 `json:"last_balance_update,omitempty"`
 	UpdatedAt        string `json:"updated_at"`
 	CreatedAt        string `json:"created_at"`
 }

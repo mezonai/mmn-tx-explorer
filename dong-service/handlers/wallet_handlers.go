@@ -12,13 +12,15 @@ import (
 
 // WalletHandler handles HTTP requests for wallet operations
 type WalletHandler struct {
-	walletRepo *repository.WalletRepository
+	walletRepo   *repository.WalletRepository
+	campaignRepo *repository.DonationCampaignRepository
 }
 
 // NewWalletHandler creates a new wallet handler
-func NewWalletHandler(walletRepo *repository.WalletRepository) *WalletHandler {
+func NewWalletHandler(walletRepo *repository.WalletRepository, campaignRepo *repository.DonationCampaignRepository) *WalletHandler {
 	return &WalletHandler{
-		walletRepo: walletRepo,
+		walletRepo:   walletRepo,
+		campaignRepo: campaignRepo,
 	}
 }
 
@@ -57,9 +59,22 @@ func (h *WalletHandler) GetWalletDetail(c *gin.Context) {
 
 	response := wallet.Serialize()
 
-	// Hide balance if the user is not viewing their own wallet
-	if userAddress != address {
-		response.Balance = ""
+	// Show balance if it's the user's own wallet
+	if userAddress == address {
+		response.Balance = wallet.Balance
+	} else {
+		// Check if this is a campaign wallet
+		isCampaignWallet, err := h.campaignRepo.IsCampaignWallet(address)
+		if err != nil {
+			logger.Error().Err(err).Str("address", address).Msg("Failed to check if wallet is campaign wallet")
+			isCampaignWallet = false
+		}
+
+		if isCampaignWallet {
+			response.Balance = wallet.Balance
+		} else {
+			response.Balance = ""
+		}
 	}
 
 	logger.Debug().Str("address", address).Msg("Wallet details retrieved successfully")

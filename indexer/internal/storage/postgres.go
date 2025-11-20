@@ -270,18 +270,6 @@ func (p *PostgresConnector) DB() *sql.DB {
 	return p.db
 }
 
-// GetCampaignWallet checks if a specific wallet address exists in dong_schema.donation_campaign table
-func (p *PostgresConnector) GetCampaignWallet(ctx context.Context, address string) (bool, error) {
-	query := "SELECT EXISTS(SELECT 1 FROM dong_schema.donation_campaign WHERE donation_wallet = $1)"
-	var exists bool
-	err := p.db.QueryRowContext(ctx, query, address).Scan(&exists)
-	if err != nil {
-		return false, fmt.Errorf("failed to check campaign wallet: %w", err)
-	}
-
-	return exists, nil
-}
-
 // Orchestrator Storage Implementation
 
 func (p *PostgresConnector) GetBlockFailures(qf QueryFilter) ([]common.BlockFailure, error) {

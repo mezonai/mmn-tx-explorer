@@ -751,3 +751,21 @@ func (r *DonationCampaignRepository) GetBySlug(slug string) (*models.DonationCam
 
 	return &campaign, nil
 }
+
+// IsCampaignWallet checks if a wallet address is associated with any campaign
+func (r *DonationCampaignRepository) IsCampaignWallet(address string) (bool, error) {
+	query := fmt.Sprintf(`
+		SELECT EXISTS(
+			SELECT 1 FROM %s.donation_campaign 
+			WHERE donation_wallet = $1
+		)
+	`, r.dongSchema)
+
+	var exists bool
+	err := r.db.QueryRow(query, address).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("failed to check if wallet is campaign wallet: %w", err)
+	}
+
+	return exists, nil
+}
