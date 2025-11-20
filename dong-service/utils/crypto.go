@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"sync"
 
 	"github.com/btcsuite/btcutil/base58"
 )
@@ -20,7 +19,6 @@ const ed25519SeedSize = 32
 
 var (
 	encryptionKey    []byte
-	encryptionKeyMux sync.RWMutex
 )
 
 func zeroBytes(b []byte) {
@@ -30,12 +28,6 @@ func zeroBytes(b []byte) {
 }
 
 func InitEncryptionKey() error {
-	encryptionKeyMux.Lock()
-	defer encryptionKeyMux.Unlock()
-
-	if encryptionKey != nil {
-		return nil
-	}
 
 	keyStr := os.Getenv("AES_SECRET_KEY")
 	if keyStr == "" {
@@ -57,27 +49,8 @@ func InitEncryptionKey() error {
 	return nil
 }
 
-func GetEncryptionKey() ([]byte, error) {
-	encryptionKeyMux.RLock()
-	defer encryptionKeyMux.RUnlock()
-
-	if encryptionKey == nil {
-		return nil, errors.New("encryption key not initialized")
-	}
-
-	encryptionKeyCopy := make([]byte, len(encryptionKey))
-	copy(encryptionKeyCopy, encryptionKey)
-
-	return encryptionKeyCopy, nil
-}
-
 func EncryptPrivateKey(privateKey string) (string, error) {
-	key, err := GetEncryptionKey()
-	if err != nil {
-		return "", err
-	}
-
-	block, err := aes.NewCipher(key)
+	block, err := aes.NewCipher(encryptionKey)
 	if err != nil {
 		return "", err
 	}
@@ -97,17 +70,12 @@ func EncryptPrivateKey(privateKey string) (string, error) {
 }
 
 func DecryptPrivateKey(encryptedPrivateKey string) (string, error) {
-	key, err := GetEncryptionKey()
-	if err != nil {
-		return "", err
-	}
-
 	ciphertext, err := base64.StdEncoding.DecodeString(encryptedPrivateKey)
 	if err != nil {
 		return "", err
 	}
 
-	block, err := aes.NewCipher(key)
+	block, err := aes.NewCipher(encryptionKey)
 	if err != nil {
 		return "", err
 	}

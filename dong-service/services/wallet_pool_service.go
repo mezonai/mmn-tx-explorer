@@ -9,8 +9,6 @@ import (
 	"dong-service/utils"
 	"fmt"
 	"sync"
-
-	"golang.org/x/sync/errgroup"
 )
 
 type WalletPoolService struct {
@@ -67,42 +65,35 @@ func (s *WalletPoolService) InitializePoolIfNeeded(ctx context.Context) error {
 }
 
 func (s *WalletPoolService) CreateWallets(ctx context.Context, count int) error {
-  wallets := make([]*models.RedEnvelopeWallet, count)
-	g, groupCtx := errgroup.WithContext(ctx)
-	sem := make(chan struct{}, count) 
+	wallets := make([]*models.RedEnvelopeWallet, 0, count)
 
 	for i := 0; i < count; i++ {
-			if err := groupCtx.Err(); err != nil {
-					return err
-			}
-			i := i 
-			sem <- struct{}{} 
-			g.Go(func() error {
-					defer func() { <-sem }() 
+		address, privateKey, err := s.generateWallet()
+		if err != nil {
+				return err
+		}
 
-					address, privateKey, err := s.generateWallet()
-					if err != nil {
-							return err
-					}
-					encryptedKey, err := utils.EncryptPrivateKey(privateKey)
-					if err != nil {
-							return err
-					}
+		encryptedKey, err := utils.EncryptPrivateKey(privateKey)
+		if err != nil {
+				return err
+		}
 
-					wallets[i] = &models.RedEnvelopeWallet{
-							WalletAddress:       address,
-							EncryptedPrivateKey: encryptedKey,
-							Status:              constants.RedEnvelopeWalletStatusReady,
-					}
-					return nil
-			})
+		wallets = append(wallets, &models.RedEnvelopeWallet{
+			WalletAddress:       address,
+			EncryptedPrivateKey: encryptedKey,
+			Status:              constants.RedEnvelopeWalletStatusReady,
+		})
 	}
 
-	if err := g.Wait(); err != nil {
-			return err
+	if err := s.redEnvelopeWalletRepo.CreateWallets(ctx, wallets); err != nil {
+		logger.Error().
+			Err(err).
+			Int("requested_wallets", count).
+			Msg("Failed to create wallets")
+		return fmt.Errorf("failed to create wallets: %w", err)
 	}
 
-	return s.redEnvelopeWalletRepo.CreateWallets(ctx, wallets)
+	return nil
 }
 
 func (s *WalletPoolService) EnsureMinimumWallets(ctx context.Context, minReady int) error {
