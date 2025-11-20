@@ -72,7 +72,7 @@ jobs:
           NEXT_PUBLIC_OAUTH2_SCOPE: ${{ vars.NEXT_PUBLIC_OAUTH2_SCOPE }}
           NEXT_BASE_FE: ${{ vars.NEXT_BASE_FE }}
           NEXT_PUBLIC_COBAR_API_URL: ${{ vars.NEXT_PUBLIC_COBAR_API_URL }}
-          NEXT_PUBLIC_COBAR_API_KEY: ${{ vars.NEXT_PUBLIC_COBAR_API_KEY }}
+          NEXT_PUBLIC_COBAR_API_KEY: ${{ secrets.NEXT_PUBLIC_COBAR_API_KEY }}
         run: |
           cd frontend
           npm install
@@ -112,7 +112,7 @@ jobs:
           NEXT_PUBLIC_OAUTH2_SCOPE: ${{ vars.NEXT_PUBLIC_OAUTH2_SCOPE }}
           NEXT_BASE_FE: ${{ vars.NEXT_BASE_FE }}
           NEXT_PUBLIC_COBAR_API_URL: ${{ vars.NEXT_PUBLIC_COBAR_API_URL }}
-          NEXT_PUBLIC_COBAR_API_KEY: ${{ vars.NEXT_PUBLIC_COBAR_API_KEY }}
+          NEXT_PUBLIC_COBAR_API_KEY: ${{ secrets.NEXT_PUBLIC_COBAR_API_KEY }}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
