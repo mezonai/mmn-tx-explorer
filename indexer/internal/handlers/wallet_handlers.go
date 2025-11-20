@@ -172,28 +172,6 @@ func GetWalletDetail(c *gin.Context) {
 	// Prepare base response data from wallet table
 	resp := WalletDetailResponse{Data: result.Aggregates[0]}
 
-	// Check if wallet is a donation campaign wallet
-	isCampaign, err := mainStorage.GetCampaignWallet(c.Request.Context(), address)
-	if err != nil {
-		log.Error().Err(err).Msg("Error checking campaign wallet")
-	}
-
-	// Check if wallet belongs to the current user
-	isOwnWallet := false
-	userID := GetUserIDFromJWT(c)
-	if userID != "" {
-		userWalletAddress := GenerateAddress(userID)
-		isOwnWallet = strings.EqualFold(userWalletAddress, address)
-		if isOwnWallet {
-			log.Debug().Str("user_id", userID).Str("wallet", address).Msg("User accessing own wallet")
-		}
-	}
-
-	// Filter balance field - only show for campaign wallets OR user's own wallet
-	if !isCampaign && !isOwnWallet {
-		delete(resp.Data, "balance")
-	}
-
 	resp.Data["last_balance_update"] = resp.Data["last_block"]
 	sendJSONResponse(c, resp)
 }

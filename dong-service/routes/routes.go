@@ -35,10 +35,12 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		// Initialize repositories
 		campaignRepo := repository.NewDonationCampaignRepository(database.GetDB(), cfg.Database.Schema, cfg.Indexer.Schema)
 		statsRepo := repository.NewCampaignStatisticsRepository(database.GetDB(), cfg.Indexer.Schema, cfg.Database.Schema)
+		walletRepo := repository.NewWalletRepository(database.GetDB(), cfg.Indexer.Schema)
 
 		// Initialize handlers
 		campaignHandler := handlers.NewDonationCampaignHandler(campaignRepo)
 		statsHandler := handlers.NewCampaignStatisticsHandler(statsRepo)
+		walletHandler := handlers.NewWalletHandler(walletRepo)
 
 		// Campaign routes (protected)
 		campaigns_private := v1.Group("/admin/campaigns")
@@ -65,6 +67,12 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		stats_public := v1.Group("/stats")
 		{
 			stats_public.GET("/campaign", statsHandler.GetCampaignStats)
+		}
+
+		wallet_public := v1.Group("/wallets")
+		{
+			wallet_public.Use(middleware.ParseTokenAndAddToContext(cfg.JWT.Secret))
+			wallet_public.GET("/:address/detail", walletHandler.GetWalletDetail)
 		}
 	}
 }

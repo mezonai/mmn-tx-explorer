@@ -212,6 +212,23 @@ definitions:
       url:
         type: string
     type: object
+  models.WalletDetailResponse:
+    properties:
+      account_nonce:
+        type: integer
+      address:
+        type: string
+      balance:
+        type: string
+      created_at:
+        type: string
+      last_block:
+        type: integer
+      transaction_count:
+        type: integer
+      updated_at:
+        type: string
+    type: object
 host: localhost:8888
 info:
   contact:
@@ -292,7 +309,7 @@ paths:
             $ref: '#/definitions/models.Response'
       security:
       - BearerAuth: []
-      summary: Delete a drafted donation campaign
+      summary: Delete a drafted campaign
       tags:
       - campaigns
     put:
@@ -683,6 +700,42 @@ paths:
       summary: Get donation campaign statistics
       tags:
       - campaigns
+  /api/v1/wallets/{address}/detail:
+    get:
+      description: Get detailed information about a wallet by its address
+      parameters:
+      - description: Wallet address
+        in: path
+        name: address
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.WalletDetailResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Get wallet details
+      tags:
+      - wallets
   /health:
     get:
       consumes:

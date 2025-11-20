@@ -20,6 +20,8 @@ export interface IWalletDetails {
   account_nonce: number;
   address: string;
   balance: string;
-  last_balance_update: string;
-  transaction_count: number;
+  transaction_count?: number;
+  last_block?: number;
+  updated_at: string;
+  created_at: string;
 }
