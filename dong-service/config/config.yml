@@ -54,3 +54,13 @@ logging:
 # Scheduler Configuration
 scheduler:
   sync_contributors_interval: 600  # sync every 10 minutes (600 seconds)
+
+# Lock Configuration
+lock:
+  Lock_Exp: 3          # Lock expiration time in seconds
+  Cnt_Retry: 10          # Number of retries to acquire the lock
+  Retry_Delay: 300      # Delay between retries in milliseconds
+
+# Cache Request Configuration
+cache_request:
+  Cache_Exp: 20        # Cache expiration time in seconds
