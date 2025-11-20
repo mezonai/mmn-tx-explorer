@@ -67,8 +67,6 @@ func (s *BlockchainService) Transfer(fromAddress, toAddress string, amount int64
 		TextData:  textData,
 		Nonce:     nonceResp,
 		ExtraInfo: extraInfo,
-		ZkProof:   "",
-		ZkPub:     "",
 	}
 	signature, err := s.signTransaction(txMsg, privateKeyHex)
 	if err != nil {
