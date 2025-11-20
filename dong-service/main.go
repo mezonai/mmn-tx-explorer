@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"dong-service/blockchain"
 	"dong-service/config"
 	"dong-service/database"
 	"dong-service/logger"
@@ -87,6 +88,16 @@ func main() {
 	startupInit.StartBackgroundMaintenance()
 	logger.Info().Msg("Background wallet pool maintenance started")
 
+	blockchainService, err:= blockchain.NewBlockchainService(cfg)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("Failed to initialize blockchain service")
+	}
+
+	defer func() {
+		if err := blockchainService.Close(); err != nil {
+			logger.Error().Err(err).Msg("Failed to close blockchain service")
+		}
+	}()
 
 	// Create Gin router
 	r := gin.New()
@@ -109,6 +120,10 @@ func main() {
 	syncInterval := time.Duration(cfg.Scheduler.SyncContributorsInterval) * time.Second
 	syncTask := scheduler.CreateSyncContributorsTask(syncInterval, cfg.Indexer.Schema, cfg.Database.Schema)
 	schedulerInstance.AddTask(syncTask)
+
+	expiryCheckInterval := time.Duration(cfg.Scheduler.ExpiredRedEnvelopesInterval) * time.Second
+	expiryRedEnvelopeTask := scheduler.CreateRedEnvelopeExpiryTask(expiryCheckInterval, cfg.Database.Schema, blockchainService)
+	schedulerInstance.AddTask(expiryRedEnvelopeTask)
 
 	// Start scheduler
 	schedulerInstance.Start(ctx)

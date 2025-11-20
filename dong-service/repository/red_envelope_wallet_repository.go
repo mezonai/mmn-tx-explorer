@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"dong-service/constants"
+	"dong-service/logger"
 	"dong-service/models"
+	"dong-service/utils"
 	"fmt"
 )
 
@@ -160,4 +162,153 @@ func (r *RedEnvelopeWalletRepository) CreateWallets(ctx context.Context, wallets
     }
 
     return tx.Commit()
+}
+
+func (r *RedEnvelopeWalletRepository) GetOrCreateAvailableWallet(ctx context.Context) (*models.RedEnvelopeWallet, error) {
+	wallet, err := r.GetAvailableWallet(ctx)
+	if err != nil && err.Error() != "no available wallets in the pool" {
+		return nil, fmt.Errorf("failed to get available wallet: %w", err)
+	}
+
+	if wallet == nil {
+		address, privateKey, err := r.generateWallet()
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate wallet: %w", err)
+		}
+
+		encryptedKey, err := utils.EncryptPrivateKey(privateKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to encrypt private key: %w", err)
+		}
+
+		wallet = &models.RedEnvelopeWallet{
+			WalletAddress:       address,
+			EncryptedPrivateKey: encryptedKey,
+			Status:              constants.RedEnvelopeWalletStatusInUse,
+		}
+
+		err = r.CreateWallet(ctx, wallet)
+		if err != nil {
+			return nil, fmt.Errorf("failed to save wallet: %w", err)
+		}
+
+		logger.Info().
+			Str("address", address).
+			Msg("Created new wallet on-demand")
+	}
+
+	return wallet, nil
+}
+
+func (r *RedEnvelopeWalletRepository) generateWallet() (address string, privateKey string, error error) {
+	publicKey, privateKey, err := utils.GenerateEphemeralKeyPair()
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to generate Ed25519 key pair")
+		return "", "", fmt.Errorf("failed to generate key pair: %w", err)
+	}
+
+	logger.Info().
+		Str("address", publicKey).
+		Msg("Generated new wallet successfully")
+
+	return publicKey, privateKey, nil
+}
+
+func (r *RedEnvelopeWalletRepository) GetAvailableWallet(ctx context.Context) (*models.RedEnvelopeWallet, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	query := `
+		SELECT id, wallet_address, encrypted_private_key, status, created_at, updated_at
+		FROM red_envelope_wallet
+		WHERE status = $1
+		ORDER BY created_at ASC
+		LIMIT 1
+		FOR UPDATE SKIP LOCKED
+	`
+
+	var wallet models.RedEnvelopeWallet
+	err = tx.QueryRowContext(ctx, query, constants.RedEnvelopeWalletStatusReady).Scan(
+		&wallet.ID,
+		&wallet.WalletAddress,
+		&wallet.EncryptedPrivateKey,
+		&wallet.Status,
+		&wallet.CreatedAt,
+		&wallet.UpdatedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("no available wallets in the pool")
+		}
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	wallet.Status = constants.RedEnvelopeWalletStatusInUse
+
+	return &wallet, nil
+}
+
+func (r *RedEnvelopeWalletRepository) GetWalletByAddress(ctx context.Context, address string) (*models.RedEnvelopeWallet, error) {
+	query := `
+		SELECT id, wallet_address, encrypted_private_key, status, created_at, updated_at
+		FROM red_envelope_wallet
+		WHERE wallet_address = $1
+	`
+
+	var wallet models.RedEnvelopeWallet
+	err := r.db.QueryRowContext(ctx, query, address).Scan(
+		&wallet.ID,
+		&wallet.WalletAddress,
+		&wallet.EncryptedPrivateKey,
+		&wallet.Status,
+		&wallet.CreatedAt,
+		&wallet.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &wallet, nil
+}
+
+func (r *RedEnvelopeWalletRepository) UpdateRedEnvelopeInUse(tx *sql.Tx, ctx context.Context, walletID int64) error {
+	updateQuery := `
+		UPDATE red_envelope_wallet
+		SET status = $1, updated_at = NOW()
+		WHERE id = $2
+	`
+
+	_, err := tx.ExecContext(ctx, updateQuery, constants.RedEnvelopeWalletStatusInUse, walletID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *RedEnvelopeWalletRepository) UpdateWalletStatus(ctx context.Context, walletID int64, status string) error {
+	query := `
+		UPDATE red_envelope_wallet
+		SET status = $1, updated_at = NOW()
+		WHERE id = $2
+	`
+	_, err := r.db.ExecContext(ctx, query, status, walletID)
+	return err
+}
+
+func (r *RedEnvelopeWalletRepository) ReleaseWallet(ctx context.Context, walletAddress string) error {
+	query := `
+		UPDATE red_envelope_wallet
+		SET status = $1, updated_at = NOW()
+		WHERE wallet_address = $2
+	`
+	_, err := r.db.ExecContext(ctx, query, constants.RedEnvelopeWalletStatusReady, walletAddress)
+	return err
 }

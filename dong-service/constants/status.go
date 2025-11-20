@@ -18,6 +18,13 @@ const (
 	TransactionStatus_FINALIZED int16 = 2
 )
 
+const (
+	RedEnvelopeStatusPending   = "PENDING"   // Awaiting transaction confirmation
+	RedEnvelopeStatusPublished = "PUBLISHED" // Active and claimable
+	RedEnvelopeStatusExpired   = "EXPIRED"   // Session ended
+	RedEnvelopeStatusFailed    = "FAILED"    // Transaction failed after retries
+)
+
 // Red Envelope Wallet Status Constants
 const (
 	RedEnvelopeWalletStatusReady          = "READY"           // Available for use
@@ -26,10 +33,22 @@ const (
 	RedEnvelopeWalletStatusDisabled       = "DISABLED"        // No longer usable
 )
 
+const (
+	RedEnvelopeSplitMoneyStatusAvailable  = "AVAILABLE"
+	RedEnvelopeSplitMoneyStatusReserved   = "RESERVED"
+	RedEnvelopeSplitMoneyStatusClaimed    = "CLAIMED"
+)
+
 // Red Envelope Configuration
 const (
 	RedEnvelopeInitialWalletPool  = 50 // Number of wallets to create on deployment
 	RedEnvelopeWalletMaxAgeInDays = 30 // Maximum age for unused wallets before replacement
+)
+
+const (
+	StatusPublished = 2
+	StatusFailed    = 3
+	StatusExpired   = 4
 )
 
 // GetStatusName returns the human-readable name for a status code

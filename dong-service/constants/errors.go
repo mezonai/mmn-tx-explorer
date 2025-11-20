@@ -24,6 +24,7 @@ const (
 	ErrEndDateInPast      = "End date must be in the future"
 	ErrInvalidGoalAmount  = "Goal amount must be greater than 0"
 	ErrInvalidURL         = "Invalid URL format"
+	ErrInternalServer     = "Internal server error"
 )
 
 // Database Errors
@@ -60,6 +61,7 @@ const (
 	MsgDraftCampaignDeleted        = "Campaign deleted successfully"
 	MsgCampaignRetrieved           = "Campaign retrieved successfully"
 	MsgCampaignsRetrieved          = "Campaigns retrieved successfully"
+	MsgRedEnvelopeStatsRetrieved   = "Red envelope statistics retrieved successfully"
 )
 
 // Logout Messages

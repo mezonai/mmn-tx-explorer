@@ -13,6 +13,7 @@ type Config struct {
 	Server    ServerConfig     `mapstructure:"server"`
 	Database  DatabaseConfig   `mapstructure:"database"`
 	Indexer   IndexerConfig    `mapstructure:"indexer"`
+	Blockchain BlockchainConfig `mapstructure:"blockchain"`
 	CORS      CORSConfig       `mapstructure:"cors"`
 	JWT       JWTConfig        `mapstructure:"jwt"`
 	Oauth     OauthConfig      `mapstructure:"oauth"`
@@ -69,8 +70,14 @@ type IndexerConfig struct {
 	Schema string `mapstructure:"schema"`
 }
 
+type BlockchainConfig struct {
+	RPCURL string `mapstructure:"rpc_url"`
+	UseTls bool   `mapstructure:"use_tls"`
+}
+
 type SchedulerConfig struct {
 	SyncContributorsInterval int `mapstructure:"sync_contributors_interval"` // in seconds
+	ExpiredRedEnvelopesInterval int `mapstructure:"expired_red_envelopes_interval"` // in seconds
 }
 
 func LoadConfig(cfgFile string) (*Config, error) {
