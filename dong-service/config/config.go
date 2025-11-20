@@ -19,6 +19,8 @@ type Config struct {
 	Redis     RedisConfig      `mapstructure:"redis"`
 	Logging   logger.LogConfig `mapstructure:"logging"`
 	Scheduler SchedulerConfig  `mapstructure:"scheduler"`
+	Lock      LockConfig       `mapstructure:"lock"`
+	CacheRequest CacheRequestConfig `mapstructure:"cache_request"`
 }
 
 type ServerConfig struct {
@@ -71,6 +73,16 @@ type IndexerConfig struct {
 
 type SchedulerConfig struct {
 	SyncContributorsInterval int `mapstructure:"sync_contributors_interval"` // in seconds
+}
+
+
+type LockConfig struct {
+	Lock_Exp int `mapstructure:"lock_exp"` // in seconds
+	Cnt_Retry int `mapstructure:"cnt_retry"`
+	Retry_Delay int `mapstructure:"retry_delay"` // in milliseconds
+}
+type CacheRequestConfig struct {
+	Cache_Exp int `mapstructure:"cache_exp"` // in seconds
 }
 
 func LoadConfig(cfgFile string) (*Config, error) {

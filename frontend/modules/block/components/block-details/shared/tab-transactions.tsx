@@ -31,7 +31,7 @@ export const TabTransactions = ({ blockNumber }: TabTransactionsProps) => {
 
   return (
     <div>
-      <div>
+      <div className="bg-background sticky top-[40px] z-10 mb-0 py-6 md:pt-8">
         <Pagination
           page={page}
           limit={limit}
