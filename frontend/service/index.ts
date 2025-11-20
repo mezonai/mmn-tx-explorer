@@ -21,6 +21,17 @@ const apiDongClient = axios.create({
   },
 });
 
+// Add interceptor for indexer API authentication
+apiClient.interceptors.request.use((config) => {
+  if (!isServer) {
+    const token = safeJsonParse(localStorage.getItem(STORAGE_KEYS.TOKEN));
+    if (token?.access_token) {
+      config.headers.Authorization = `Bearer ${token.access_token}`;
+    }
+  }
+  return config;
+});
+
 // Add interceptor for authentication
 apiDongClient.interceptors.request.use((config) => {
   return config;

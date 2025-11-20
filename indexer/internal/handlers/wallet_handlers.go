@@ -178,8 +178,19 @@ func GetWalletDetail(c *gin.Context) {
 		log.Error().Err(err).Msg("Error checking campaign wallet")
 	}
 
-	// Filter balance field - only show for campaign wallets
-	if !isCampaign {
+	// Check if wallet belongs to the current user
+	isOwnWallet := false
+	userID := GetUserIDFromJWT(c)
+	if userID != "" {
+		userWalletAddress := GenerateAddress(userID)
+		isOwnWallet = strings.EqualFold(userWalletAddress, address)
+		if isOwnWallet {
+			log.Debug().Str("user_id", userID).Str("wallet", address).Msg("User accessing own wallet")
+		}
+	}
+
+	// Filter balance field - only show for campaign wallets OR user's own wallet
+	if !isCampaign && !isOwnWallet {
 		delete(resp.Data, "balance")
 	}
 
