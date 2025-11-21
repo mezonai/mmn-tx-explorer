@@ -81,7 +81,6 @@ type BridgeConfig struct {
 	WMezonAddress      string        `mapstructure:"wmezon_address"`
 	StartBlock         uint64        `mapstructure:"start_block"`
 	PollingInterval    time.Duration `mapstructure:"polling_interval"`
-	UsePolling         bool          `mapstructure:"use_polling"`
 	ConfirmationBlocks uint64        `mapstructure:"confirmation_blocks"`
 }
 

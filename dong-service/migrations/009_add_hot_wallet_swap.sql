@@ -13,7 +13,7 @@ COMMENT ON COLUMN hot_wallet_swap.created_at IS 'Wallet creation timestamp';
 
 CREATE TABLE IF NOT EXISTS hot_wallet_history (
     id BIGSERIAL PRIMARY KEY,
-    user_id VARCHAR(255) NOT NULL,
+    user_id BIGINT NOT NULL,
     receive_wallet_address VARCHAR(255) NOT NULL,
     tx_hash VARCHAR(66) NOT NULL UNIQUE,
     amount VARCHAR(100) NOT NULL,

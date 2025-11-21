@@ -121,7 +121,6 @@ func main() {
 		WMezonAddress:      cfg.Bridge.WMezonAddress,
 		StartBlock:         cfg.Bridge.StartBlock,
 		PollingInterval:    cfg.Bridge.PollingInterval,
-		UsePolling:         cfg.Bridge.UsePolling,
 		ConfirmationBlocks: cfg.Bridge.ConfirmationBlocks,
 	}
 	bridgeRepo := repository.NewBridgeSwapRepository(database.DB, cfg.Database.Schema)

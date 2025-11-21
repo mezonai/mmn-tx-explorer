@@ -59,7 +59,6 @@ bridge:
   bsc_ws_url: "wss://bsc-testnet.publicnode.com"
   bsc_rpc_url: "https://bsc-testnet.publicnode.com"
   wmezon_address: "0x2656eAF95dd8e0c31dAC3fd83A6663c1C6acB4eE"
-  start_block: 73609892
+  start_block: 73969829
   polling_interval: 1m 
-  use_polling: false # true = polling, false = subscription
   confirmation_blocks: 2
