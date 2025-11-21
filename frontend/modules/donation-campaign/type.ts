@@ -22,6 +22,7 @@ export interface DonationCampaign {
   owner: string;
   verified: boolean;
   current_balance: string;
+  total_withdrawn: string;
 }
 
 export interface CreateCampaignRequest {
@@ -103,6 +104,7 @@ export interface Transaction {
   transaction_type: number;
   status: number;
   transaction_timestamp: number;
+  text_data?: string;
 }
 export interface TopContributor {
   sender_wallet: string;
