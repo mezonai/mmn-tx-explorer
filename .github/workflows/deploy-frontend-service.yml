@@ -70,7 +70,10 @@ jobs:
           OAUTH2_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }} 
           NEXT_PUBLIC_OAUTH2_REDIRECT_URI: ${{ vars.NEXT_PUBLIC_OAUTH2_REDIRECT_URI }}
           NEXT_PUBLIC_OAUTH2_SCOPE: ${{ vars.NEXT_PUBLIC_OAUTH2_SCOPE }}
-          NEXT_BASE_FE: ${{ vars.NEXT_BASE_FE }}          
+          NEXT_BASE_FE: ${{ vars.NEXT_BASE_FE }}
+          NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID: ${{ vars.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID }}
+          NEXT_PUBLIC_WMEZON_CONTRACT_ADDRESS: ${{ vars.NEXT_PUBLIC_WMEZON_CONTRACT_ADDRESS }}
+          NEXT_PUBLIC_HOT_WALLET_ADDRESS: ${{ vars.NEXT_PUBLIC_HOT_WALLET_ADDRESS }}
         run: |
           cd frontend
           npm install
@@ -109,6 +112,9 @@ jobs:
           NEXT_PUBLIC_OAUTH2_REDIRECT_URI: ${{ vars.NEXT_PUBLIC_OAUTH2_REDIRECT_URI }}
           NEXT_PUBLIC_OAUTH2_SCOPE: ${{ vars.NEXT_PUBLIC_OAUTH2_SCOPE }}
           NEXT_BASE_FE: ${{ vars.NEXT_BASE_FE }}
+          NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID: ${{ vars.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID }}     
+          NEXT_PUBLIC_WMEZON_CONTRACT_ADDRESS: ${{ vars.NEXT_PUBLIC_WMEZON_CONTRACT_ADDRESS }}
+          NEXT_PUBLIC_HOT_WALLET_ADDRESS: ${{ vars.NEXT_PUBLIC_HOT_WALLET_ADDRESS }}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
@@ -128,6 +134,9 @@ jobs:
           NEXT_PUBLIC_OAUTH2_REDIRECT_URI=${NEXT_PUBLIC_OAUTH2_REDIRECT_URI}
           NEXT_PUBLIC_OAUTH2_SCOPE=${NEXT_PUBLIC_OAUTH2_SCOPE}
           NEXT_BASE_FE=${NEXT_BASE_FE}
+          NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=${NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID}
+          NEXT_PUBLIC_WMEZON_CONTRACT_ADDRESS=${NEXT_PUBLIC_WMEZON_CONTRACT_ADDRESS}
+          NEXT_PUBLIC_HOT_WALLET_ADDRESS=${NEXT_PUBLIC_HOT_WALLET_ADDRESS}
           EON
 
           sudo chown -R mmn:mmn /opt/frontend
@@ -149,6 +158,9 @@ jobs:
           printf "export NEXT_PUBLIC_OAUTH2_REDIRECT_URI=%q\n" "$NEXT_PUBLIC_OAUTH2_REDIRECT_URI" >> remote_env.sh
           printf "export NEXT_PUBLIC_OAUTH2_SCOPE=%q\n" "$NEXT_PUBLIC_OAUTH2_SCOPE" >> remote_env.sh
           printf "export NEXT_BASE_FE=%q\n" "$NEXT_BASE_FE" >> remote_env.sh
+          printf "export NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=%q\n" "$NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID" >> remote_env.sh
+          printf "export NEXT_PUBLIC_WMEZON_CONTRACT_ADDRESS=%q\n" "$NEXT_PUBLIC_WMEZON_CONTRACT_ADDRESS" >> remote_env.sh
+          printf "export NEXT_PUBLIC_HOT_WALLET_ADDRESS=%q\n" "$NEXT_PUBLIC_HOT_WALLET_ADDRESS" >> remote_env.sh
       
       - name:  Prepare and deploy to target server
         run: |
