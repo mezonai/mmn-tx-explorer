@@ -35,11 +35,12 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to initialize blockchain service")
 	}
-
+	
 	walletRepo := repository.NewRedEnvelopeWalletRepository(database.GetDB())
-	redEnvelopeRepo := repository.NewRedEnvelopeRepository(database.GetDB(), cfg.Database.Schema, blockchainService, walletRepo)
+	queueService := repository.NewRedEnvelopeQueueService(database.RedisClient)
+	redEnvelopeRepo := repository.NewRedEnvelopeRepository(database.GetDB(), cfg.Database.Schema, blockchainService, queueService, walletRepo)
 	redEnvelopeWalletRepo := repository.NewRedEnvelopeWalletRepository(database.GetDB())
-	redEnvelopeHandler := handlers.NewRedEnvelopeHandler(redEnvelopeRepo, redEnvelopeWalletRepo)
+	redEnvelopeHandler := handlers.NewRedEnvelopeHandler(redEnvelopeRepo, queueService, redEnvelopeWalletRepo)
 
 	// API v1 routes
 	v1 := router.Group("/api/v1")
@@ -90,6 +91,8 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 			redEnvelope_private.GET("/created-by-wallet", redEnvelopeHandler.GetRedEnvelopeCreatedByWallet)
 			redEnvelope_private.POST("/detail", redEnvelopeHandler.GetDetailRedEnvelopeById)
 			redEnvelope_private.POST("/close-session", redEnvelopeHandler.CloseSessionRedEnvelope)
+			redEnvelope_private.GET("/claim-amount", redEnvelopeHandler.ClaimAmountRedEnvelope)
+			redEnvelope_private.POST("/:id/claim", redEnvelopeHandler.ClaimRedEnvelope)
 		}
 	}
 }

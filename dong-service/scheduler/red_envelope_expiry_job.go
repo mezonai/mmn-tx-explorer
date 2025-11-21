@@ -155,7 +155,8 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 func CreateRedEnvelopeExpiryTask(interval time.Duration, dongSchema string, blockchainService *blockchain.BlockchainService) Task {
 	db := database.GetDB()
 	redEnvelopeWalletRepo := repository.NewRedEnvelopeWalletRepository(db)
-	redEnvelopeRepo := repository.NewRedEnvelopeRepository(db, dongSchema, blockchainService, redEnvelopeWalletRepo)
+	queueService := repository.NewRedEnvelopeQueueService(database.RedisClient)
+	redEnvelopeRepo := repository.NewRedEnvelopeRepository(db, dongSchema, blockchainService, queueService, redEnvelopeWalletRepo)
 
 	job := NewRedEnvelopeExpiryJob(redEnvelopeRepo, redEnvelopeWalletRepo, blockchainService)
 

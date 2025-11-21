@@ -92,3 +92,21 @@ type RedEnvelopeCloseSesssion struct {
 	RedEnvelopeWallet string
 	OwnerWallet       string
 }
+
+type ClaimAmount struct {
+	Id                   int64
+	Amount               int64
+	Description          string
+}
+
+type RedEnvelopeSplitMoney struct {
+	ID             int64   `json:"id" db:"id"`
+	RedEnvelopeID  string  `json:"red_envelope_id" db:"red_envelope_id"`
+	Amount         int64   `json:"amount" db:"amount"`
+	Status         string  `json:"status" db:"status"`
+	ClaimOrder     int     `json:"claim_order" db:"claim_order"`
+	ClaimedID      int64   `json:"claimed_id,omitempty" db:"claim_id"`
+	ClaimedAddress *string `json:"claimed_address,omitempty" db:"claimed_address"`
+	ClaimedAt      *string `json:"claimed_at,omitempty" db:"claimed_at"`
+	CreatedAt      string  `json:"created_at" db:"created_at"`
+}
