@@ -9,9 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { NumberUtil } from '@/utils';
 import { APP_CONFIG } from '@/configs/app.config';
 import { Eye, EyeOff } from 'lucide-react';
-import { WalletService } from '@/modules/wallet';
 import { useTransferByPrivateKey } from '@/modules/transfer/hooks/useTransferByPrivateKey';
 import { ETransferType } from '@/modules/transaction';
+import { DonationCampaign } from '@/modules/donation-campaign/type';
 import { TransactionComplete, TransactionType } from '@/modules/donation-campaign/components/transaction-complete';
 
 const safeValidateAddress = (address: string): boolean => {
@@ -22,7 +22,16 @@ const safeValidateAddress = (address: string): boolean => {
   }
 };
 
-export function TransferDialog({ walletAddress, raisedAmount, myWalletAddress }: { walletAddress: string; raisedAmount?: number; myWalletAddress?: string }) {
+export function TransferDialog({
+  currentCampaign,
+  walletAddress,
+  myWalletAddress,
+}: {
+  currentCampaign: DonationCampaign;
+  walletAddress: string;
+  raisedAmount?: number;
+  myWalletAddress?: string;
+}) {
   const { transfer, loading } = useTransferByPrivateKey();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [showPrivateKey, setShowPrivateKey] = useState(false);
@@ -32,13 +41,13 @@ export function TransferDialog({ walletAddress, raisedAmount, myWalletAddress }:
     amount: '',
     note: '',
   });
+
   const [currentBalanceValue, setCurrentBalanceValue] = useState<number>(0);
   const [withdrawSuccess, setWithdrawSuccess] = useState(false);
 
   const fetchBalance = useCallback(async () => {
     try {
-      const result = await WalletService.getWalletDetails(walletAddress);
-      const newBalance = Number(result.data?.balance ?? 0);
+      const newBalance = Number(currentCampaign.current_balance ?? 0);
       setCurrentBalanceValue(newBalance);
     } catch (error) {
       setCurrentBalanceValue(0);
@@ -96,7 +105,7 @@ export function TransferDialog({ walletAddress, raisedAmount, myWalletAddress }:
         {
           privateKey: form.privateKey.trim(),
           recipientAddress: form.recipientAddress.trim(),
-          amount: amountToSend, 
+          amount: amountToSend,
           note: form.note.trim(),
         },
         ETransferType.WithdrawCampaign,
@@ -116,7 +125,8 @@ export function TransferDialog({ walletAddress, raisedAmount, myWalletAddress }:
     }
   }, [form, transfer, walletAddress, fetchBalance, currentBalanceValue]);
 
-  const isButtonDisabled = loading || !form.privateKey.trim() || !form.recipientAddress.trim() || !safeValidateAddress(form.recipientAddress);
+  const isButtonDisabled =
+    loading || !form.privateKey.trim() || !form.recipientAddress.trim() || !safeValidateAddress(form.recipientAddress);
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
@@ -130,9 +140,7 @@ export function TransferDialog({ walletAddress, raisedAmount, myWalletAddress }:
         }}
       >
         <DialogHeader>
-          <DialogTitle className="text-brand-primary text-left text-lg font-semibold pb-4">
-            Withdraw Funds
-          </DialogTitle>
+          <DialogTitle className="text-brand-primary pb-4 text-left text-lg font-semibold">Withdraw Funds</DialogTitle>
         </DialogHeader>
         {withdrawSuccess ? (
           <TransactionComplete
