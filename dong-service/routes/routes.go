@@ -66,5 +66,15 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		{
 			stats_public.GET("/campaign", statsHandler.GetCampaignStats)
 		}
+
+		hotWalletRepo := repository.NewHotWalletSwapRepository(database.GetDB(), cfg.Database.Schema)
+		bridgeSwapRepo := repository.NewBridgeSwapRepository(database.GetDB(), cfg.Database.Schema)
+		bridgeSwapHandler := handlers.NewBridgeSwapHandler(bridgeSwapRepo, hotWalletRepo, cfg)
+
+		bridgeSwap_private := v1.Group("/bridge-swap")
+		{
+			bridgeSwap_private.Use(middleware.Authentication(cfg.JWT.Secret))
+			bridgeSwap_private.POST("/create-swap-history", bridgeSwapHandler.CreateSwapHistory)
+		}
 	}
 }

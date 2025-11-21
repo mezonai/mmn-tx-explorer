@@ -11,16 +11,16 @@ import (
 
 // Config represents the application configuration
 type Config struct {
-	Server       ServerConfig     `mapstructure:"server"`
-	Database     DatabaseConfig   `mapstructure:"database"`
-	Indexer      IndexerConfig    `mapstructure:"indexer"`
-	CORS         CORSConfig       `mapstructure:"cors"`
-	JWT          JWTConfig        `mapstructure:"jwt"`
-	Oauth        OauthConfig      `mapstructure:"oauth"`
-	Redis        RedisConfig      `mapstructure:"redis"`
-	Logging      logger.LogConfig `mapstructure:"logging"`
-	Scheduler    SchedulerConfig  `mapstructure:"scheduler"`
-	Bridge       BridgeConfig     `mapstructure:"bridge"`
+	Server    ServerConfig     `mapstructure:"server"`
+	Database  DatabaseConfig   `mapstructure:"database"`
+	Indexer   IndexerConfig    `mapstructure:"indexer"`
+	CORS      CORSConfig       `mapstructure:"cors"`
+	JWT       JWTConfig        `mapstructure:"jwt"`
+	Oauth     OauthConfig      `mapstructure:"oauth"`
+	Redis     RedisConfig      `mapstructure:"redis"`
+	Logging   logger.LogConfig `mapstructure:"logging"`
+	Scheduler SchedulerConfig  `mapstructure:"scheduler"`
+	Bridge    BridgeConfig     `mapstructure:"bridge"`
 }
 
 type ServerConfig struct {
@@ -76,12 +76,13 @@ type SchedulerConfig struct {
 }
 
 type BridgeConfig struct {
-	BSCWSUrl           string        `mapstructure:"bsc_ws_url"`
-	BSCRPCURL          string        `mapstructure:"bsc_rpc_url"`
-	WMezonAddress      string        `mapstructure:"wmezon_address"`
-	StartBlock         uint64        `mapstructure:"start_block"`
-	PollingInterval    time.Duration `mapstructure:"polling_interval"`
-	ConfirmationBlocks uint64        `mapstructure:"confirmation_blocks"`
+	BSCWSURL              string        `mapstructure:"bsc_ws_url"`
+	BSCRPCURL             string        `mapstructure:"bsc_rpc_url"`
+	WMezonAddressContract string        `mapstructure:"wmezon_address_contract"`
+	WMezonAddress         string        `mapstructure:"wmezon_address"`
+	StartBlock            uint64        `mapstructure:"start_block"`
+	PollingInterval       time.Duration `mapstructure:"polling_interval"`
+	ConfirmationBlocks    uint64        `mapstructure:"confirmation_blocks"`
 }
 
 func LoadConfig(cfgFile string) (*Config, error) {

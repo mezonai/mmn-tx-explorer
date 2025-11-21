@@ -28,6 +28,23 @@ definitions:
     - donation_wallet
     - name
     type: object
+  models.CreateSwapHistoryRequest:
+    properties:
+      amount:
+        type: number
+      id:
+        type: integer
+      receive_wallet_address:
+        type: string
+      send_wallet_address:
+        type: string
+      tx_hash:
+        type: string
+      type:
+        type: string
+      user_id:
+        type: integer
+    type: object
   models.DonationCampaignResponse:
     properties:
       created_at:
@@ -290,7 +307,7 @@ paths:
             $ref: '#/definitions/models.Response'
       security:
       - BearerAuth: []
-      summary: Delete a drafted donation campaign
+      summary: Delete a drafted campaign
       tags:
       - campaigns
     put:
@@ -451,6 +468,36 @@ paths:
       summary: Create and immediately activate a new donation campaign
       tags:
       - campaigns
+  /api/v1/bridge-swap/create-swap-history:
+    post:
+      consumes:
+      - application/json
+      description: Log a swap transaction in the hot wallet history
+      parameters:
+      - description: Swap History Data
+        in: body
+        name: history
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateSwapHistoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Create a swap history record
+      tags:
+      - bridge_swap
   /api/v1/campaigns:
     get:
       description: Get a list of all donation campaigns with pagination

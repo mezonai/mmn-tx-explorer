@@ -237,7 +237,7 @@ const docTemplate = `{
                 "tags": [
                     "campaigns"
                 ],
-                "summary": "Delete a drafted donation campaign",
+                "summary": "Delete a drafted campaign",
                 "parameters": [
                     {
                         "type": "integer",
@@ -390,6 +390,52 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/bridge-swap/create-swap-history": {
+            "post": {
+                "description": "Log a swap transaction in the hot wallet history",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bridge_swap"
+                ],
+                "summary": "Create a swap history record",
+                "parameters": [
+                    {
+                        "description": "Swap History Data",
+                        "name": "history",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateSwapHistoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/models.Response"
                         }
@@ -977,6 +1023,32 @@ const docTemplate = `{
                 },
                 "url": {
                     "type": "string"
+                }
+            }
+        },
+        "models.CreateSwapHistoryRequest": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "receive_wallet_address": {
+                    "type": "string"
+                },
+                "send_wallet_address": {
+                    "type": "string"
+                },
+                "tx_hash": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         },

@@ -116,12 +116,13 @@ func main() {
 	}()
 
 	bridgeConfig := &models.BridgeConfig{
-		BSCWSURL:           cfg.Bridge.BSCWSUrl,
-		BSCRPCURL:          cfg.Bridge.BSCRPCURL,
-		WMezonAddress:      cfg.Bridge.WMezonAddress,
-		StartBlock:         cfg.Bridge.StartBlock,
-		PollingInterval:    cfg.Bridge.PollingInterval,
-		ConfirmationBlocks: cfg.Bridge.ConfirmationBlocks,
+		BSCWSURL:              cfg.Bridge.BSCWSURL,
+		BSCRPCURL:             cfg.Bridge.BSCRPCURL,
+		WMezonAddressContract: cfg.Bridge.WMezonAddressContract,
+		WMezonAddress:         cfg.Bridge.WMezonAddress,
+		StartBlock:            cfg.Bridge.StartBlock,
+		PollingInterval:       cfg.Bridge.PollingInterval,
+		ConfirmationBlocks:    cfg.Bridge.ConfirmationBlocks,
 	}
 	bridgeRepo := repository.NewBridgeSwapRepository(database.DB, cfg.Database.Schema)
 	bscBridge, err := bridge.NewBSCBridge(bridgeConfig, *bridgeRepo)

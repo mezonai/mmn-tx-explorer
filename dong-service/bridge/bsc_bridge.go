@@ -43,7 +43,7 @@ type BSCBridge struct {
 }
 
 func NewBSCBridge(cfg *models.BridgeConfig, repo repository.BridgeSwapRepository) (*BSCBridge, error) {
-	if cfg.BSCRPCURL == "" || cfg.WMezonAddress == "" {
+	if cfg.BSCRPCURL == "" || cfg.WMezonAddressContract == "" {
 		return nil, fmt.Errorf("missing required BSC bridge configuration")
 	}
 
@@ -52,7 +52,7 @@ func NewBSCBridge(cfg *models.BridgeConfig, repo repository.BridgeSwapRepository
 		return nil, fmt.Errorf("failed to connect to BSC RPC: %w", err)
 	}
 
-	contractAddress := common.HexToAddress(cfg.WMezonAddress)
+	contractAddress := common.HexToAddress(cfg.WMezonAddressContract)
 	contract, err := contracts.NewWMEZON(contractAddress, rpcClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to instantiate WMEZON contract: %w", err)
