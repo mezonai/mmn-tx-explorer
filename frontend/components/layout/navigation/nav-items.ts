@@ -71,7 +71,7 @@ export const navGroupItems: NavGroup[] = [
       },
       {
         title: 'Lucky Money',
-        href: ROUTES.LI_XI,
+        href: ROUTES.LUCK_MONEY,
       },
     ],
   },

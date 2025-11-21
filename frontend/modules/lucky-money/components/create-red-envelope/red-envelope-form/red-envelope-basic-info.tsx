@@ -2,7 +2,7 @@
 
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useCreateRedEnvelopeContext } from '@/modules/li-xi/context/CreateRedEnvelopeContext';
+import { useCreateRedEnvelopeContext } from '@/modules/lucky-money/context/CreateRedEnvelopeContext';
 
 export function BasicInfo() {
   const { form, updateField } = useCreateRedEnvelopeContext();
@@ -24,7 +24,7 @@ export function BasicInfo() {
           className="mt-2"
           label="Name"
           type="string"
-          placeholder="Li xi may mắn"
+          placeholder="Lucky Money"
           value={form.name}
           onChange={(e) => handleInputChange('name', e.target.value)}
         />
@@ -67,7 +67,7 @@ export function BasicInfo() {
           className="mt-2"
           label="Message"
           rows={3}
-          placeholder="Chúc bạn may mắn và đầy năng lượng sáng tạo trong năm mới!"
+          placeholder="Good luck!"
           value={form.message}
           onChange={(e) => handleInputChange('message', e.target.value)}
         />

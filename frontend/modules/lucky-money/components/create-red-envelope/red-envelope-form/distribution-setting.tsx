@@ -1,7 +1,7 @@
 'use client';
 
 import { Checkbox } from "@/components/ui/checkbox";
-import { useCreateRedEnvelopeContext } from "@/modules/li-xi/context/CreateRedEnvelopeContext";
+import { useCreateRedEnvelopeContext } from "@/modules/lucky-money/context/CreateRedEnvelopeContext";
 
 
 export function DistributionSettings() {

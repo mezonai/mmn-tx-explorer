@@ -2,7 +2,7 @@ import React from 'react';
 import { CircleEllipsis, OctagonXIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { cva } from 'class-variance-authority';
-import { getVisualStatus } from '@/modules/li-xi/utils';
+import { getVisualStatus } from '@/modules/lucky-money/utils';
 
 const statusBadgeVariants = cva(
   'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium',

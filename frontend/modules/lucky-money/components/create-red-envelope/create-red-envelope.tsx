@@ -8,7 +8,7 @@ import { RedEnvelopeSidebar } from './red-envelope-sidebar';
 import { CreateRedEnvelopeProvider } from '../../context/CreateRedEnvelopeContext';
 
 const breadcrumbs: IBreadcrumb[] = [
-  { label: 'Lucky Money', href: ROUTES.LI_XI},
+  { label: 'Lucky Money', href: ROUTES.LUCK_MONEY},
   { label: 'Create Lucky Money', href: '#' },
 ] as const;
 
@@ -35,7 +35,7 @@ function CreateRedEnvelopeContent() {
   );
 }
 
-export function CreateLiXi() {
+export function CreateLuckyMoney() {
   return (
     <CreateRedEnvelopeProvider>
       <CreateRedEnvelopeContent />

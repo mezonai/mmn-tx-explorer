@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { EXPIRY_OPTIONS } from '../../../constants';
-import { useCreateRedEnvelopeContext } from '@/modules/li-xi/context/CreateRedEnvelopeContext';
+import { useCreateRedEnvelopeContext } from '@/modules/lucky-money/context/CreateRedEnvelopeContext';
 
 export function ExpirySettings() {
   const { form, updateField } = useCreateRedEnvelopeContext();

@@ -2,7 +2,7 @@ import React from 'react';
 import { SendIcon} from 'lucide-react';
 
 import { StatusBadge } from './statusBadge';
-import { useCreatedRedEnvelops } from '@/modules/li-xi/hooks/useRedEnvelopes';
+import { useCreatedRedEnvelops } from '@/modules/lucky-money/hooks/useRedEnvelopes';
 import { useUser } from '@/providers';
 import { usePaginationQueryParam } from '@/hooks';
 import { Pagination } from '@/components/ui/pagination';
@@ -47,7 +47,7 @@ export const CreatedEnvelopes = () => {
         {envelopes.map((env) => (
           <Link 
             key={env.id} 
-            href={ROUTES.LI_XI_DETAIL(env.id)}
+            href={ROUTES.LUCK_MONEY_DETAIL(env.id)}
             className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-transparent p-3 md:p-4 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors cursor-pointer w-full"
           >
             <div className="flex flex-wrap items-start sm:items-center gap-1.5 sm:gap-4 flex-1 min-w-0">

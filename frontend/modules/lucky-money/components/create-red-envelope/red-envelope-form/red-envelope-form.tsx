@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DistributionSettings } from './distribution-setting';
-import { useCreateRedEnvelopeContext } from '@/modules/li-xi/context/CreateRedEnvelopeContext';
+import { useCreateRedEnvelopeContext } from '@/modules/lucky-money/context/CreateRedEnvelopeContext';
 import { BasicInfo } from './red-envelope-basic-info';
 import { ExpirySettings } from './expiry-setting';
 

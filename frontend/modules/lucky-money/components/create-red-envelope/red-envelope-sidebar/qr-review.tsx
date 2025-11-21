@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useCreateRedEnvelopeContext } from '@/modules/li-xi/context/CreateRedEnvelopeContext';
+import { useCreateRedEnvelopeContext } from '@/modules/lucky-money/context/CreateRedEnvelopeContext';
 import { toast } from 'sonner';
 import QRCode from 'react-qr-code';
 import { useState, useEffect } from 'react';
@@ -29,7 +29,7 @@ export function QrPreview() {
 
   const qrCodeValue = JSON.stringify({ type: 'lucky-money', wallet_address: generatedEnvelope?.red_envelope_wallet || '' });
   const claimLink = generatedEnvelope
-    ? `${pathName}/li-xi/${generatedEnvelope.id}/claim`
+    ? `${pathName}/lucky-money/${generatedEnvelope.id}/claim`
     : '';
 
   const handleCopyLink = () => {
