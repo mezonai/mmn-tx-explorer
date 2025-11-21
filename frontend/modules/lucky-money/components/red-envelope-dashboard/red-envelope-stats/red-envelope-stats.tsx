@@ -109,7 +109,7 @@ export const RedEnvelopeStats = () => {
             "
           >
             <Link
-              href={ROUTES.CREATE_LUCK_MONEY}
+              href={ROUTES.CREATE_LUCKY_MONEY}
               className="flex w-full items-center justify-center gap-2 sm:gap-3"
             >
               <GiftIcon className="h-6 w-6 sm:h-8 sm:w-8" />
