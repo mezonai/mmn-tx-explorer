@@ -8,6 +8,8 @@ import (
 	"dong-service/models"
 	"dong-service/utils"
 	"fmt"
+
+	"github.com/lib/pq"
 )
 
 type RedEnvelopeWalletRepository struct {
@@ -81,7 +83,7 @@ func (r *RedEnvelopeWalletRepository) DisableWallets(ctx context.Context, wallet
 		WHERE id = ANY($2)
 	`
 
-	_, err := r.db.ExecContext(ctx, query, constants.RedEnvelopeWalletStatusDisabled, walletIDs)
+	_, err := r.db.ExecContext(ctx, query, constants.RedEnvelopeWalletStatusDisabled, pq.Array(walletIDs))
 	return err
 }
 

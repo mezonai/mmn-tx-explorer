@@ -125,6 +125,10 @@ func main() {
 	expiryRedEnvelopeTask := scheduler.CreateRedEnvelopeExpiryTask(expiryCheckInterval, cfg.Database.Schema, blockchainService)
 	schedulerInstance.AddTask(expiryRedEnvelopeTask)
 
+	walletPoolMaintenanceInterval := time.Duration(cfg.Scheduler.WalletPoolMaintenanceInterval) * time.Second
+	WalletPoolMaintenanceJob := scheduler.InitializeWalletPoolMaintenanceJob(walletPoolMaintenanceInterval)
+	schedulerInstance.AddTask(WalletPoolMaintenanceJob)
+
 	// Start scheduler
 	schedulerInstance.Start(ctx)
 

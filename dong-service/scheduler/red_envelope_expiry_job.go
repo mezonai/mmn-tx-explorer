@@ -73,21 +73,19 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 				if err != nil {
 					logger.Error().Err(err).Msg("Failed to decrypt private key")
 				} else {
-						extraInfo := `{"type":"lucky-money"}`
-						textData := "Red envelope fund"
-
 					txHash, err := j.blockchainService.Transfer(
 						envelope.RedEnvelopeWallet,
 						envelope.OwnerWallet,
 						remainingBalance,
 						privateKey,
-						textData,
-						extraInfo,
+						constants.TEXT_DATA_LUCKY_MONEY,
+						constants.EXTRA_INFO_LUCKY_MONEY,
 					)
 					if err != nil {
 						logger.Error().Err(err).Msg("Failed to transfer funds")
 						continue
 					} else {
+						// TODO: use function GetTxByHash to get status
 						logger.Info().
 							Str("tx_hash", txHash).
 							Int64("amount", remainingBalance).

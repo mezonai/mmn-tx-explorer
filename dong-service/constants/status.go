@@ -51,6 +51,15 @@ const (
 	StatusExpired   = 4
 )
 
+const (
+	EXTRA_INFO_LUCKY_MONEY = `{"type":"lucky-money"}`
+)
+
+const (
+	TEXT_DATA_LUCKY_MONEY  = "Lucky Money fund"
+)
+
+
 // GetStatusName returns the human-readable name for a status code
 func GetStatusName(status int16) string {
 	switch status {

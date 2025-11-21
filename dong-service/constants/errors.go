@@ -40,15 +40,17 @@ const (
 	ErrCampaignNotFound                = "Donation campaign not found"
 	ErrDatabaseConnection              = "Database connection error"
 	ErrDatabaseQuery                   = "Database query error"
+	ErrFailToCheckRedEnvelope					 = "Fail to check red envelope"
 )
 
 // Business Logic Errors
 const (
-	ErrCampaignAlreadyActive = "Campaign is already active"
-	ErrCampaignAlreadyClosed = "Campaign is already closed"
-	ErrCannotActivateClosed  = "Cannot activate a closed campaign"
-	ErrCannotUpdateClosed    = "Cannot update a closed campaign"
-	ErrCampaignExpired       = "Campaign has expired"
+	ErrCampaignAlreadyActive 				= "Campaign is already active"
+	ErrCampaignAlreadyClosed 				= "Campaign is already closed"
+	ErrCannotActivateClosed  				= "Cannot activate a closed campaign"
+	ErrCannotUpdateClosed   			  = "Cannot update a closed campaign"
+	ErrCampaignExpired       				= "Campaign has expired"
+	ErrUserIdNotMathRedEnvelopeId   = "User id does not match owner of red envelope"
 )
 
 // Success Messages

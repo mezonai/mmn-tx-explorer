@@ -6,7 +6,6 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -116,10 +115,10 @@ func GenerateEphemeralKeyPair() (string, string, error) {
 	if !ok {
 		return "", "", fmt.Errorf("failed to cast public key from private key")
 	}
-
-	privateKeyHex := hex.EncodeToString(privateKey)
+	
+	privateKeybs58 := base58.Encode(seed)
 
 	publicKeyBs58 := base58.Encode(publicKey)
 
-	return publicKeyBs58, privateKeyHex, nil
+	return publicKeyBs58, privateKeybs58, nil
 }

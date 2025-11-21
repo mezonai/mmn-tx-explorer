@@ -14,14 +14,12 @@ import (
 
 type RedEnvelopeHandler struct {
 	repo         *repository.RedEnvelopeRepository
-	queueService *repository.RedEnvelopeQueueService
 	redEnvelopeWalletRepo *repository.RedEnvelopeWalletRepository
 }
 
-func NewRedEnvelopeHandler(repo *repository.RedEnvelopeRepository, queueService *repository.RedEnvelopeQueueService, redEnvelopeWalletRepo *repository.RedEnvelopeWalletRepository) *RedEnvelopeHandler {
+func NewRedEnvelopeHandler(repo *repository.RedEnvelopeRepository, redEnvelopeWalletRepo *repository.RedEnvelopeWalletRepository) *RedEnvelopeHandler {
 	return &RedEnvelopeHandler{
 		repo:         repo,
-		queueService: queueService,
 		redEnvelopeWalletRepo: redEnvelopeWalletRepo,
 	}
 }
@@ -103,13 +101,14 @@ func (h *RedEnvelopeHandler) GetRedEnvelopeClaim(c *gin.Context) {
 // @Failure 500 {object} models.Response
 // @Router /api/v1/red-envelopes/stats [get]
 func (h *RedEnvelopeHandler) GetRedEnvelopeStats(c *gin.Context) {
-	wallet_address := ""
-	if p := c.Query("wallet_address"); p != "" {
-		if val := p; val != "" {
-			wallet_address = val
-		}
+	userID, err := utils.GetUserIDFromContext(c)
+	if err != nil {
+		logger.Error().Err(err).Msg("Unauthorized red envelope creation attempt")
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
+		return
 	}
-	stats, err := h.repo.GetStats(wallet_address)
+	
+	stats, err := h.repo.GetStats(userID)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to get red envelope stats")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrInternalServer))
@@ -131,32 +130,30 @@ func (h *RedEnvelopeHandler) GetRedEnvelopeStats(c *gin.Context) {
 // @Failure 500 {object} models.Response
 // @Router /api/v1/red-envelopes/claimed-by-wallet [get]
 func (h *RedEnvelopeHandler) GetRedEnvelopeClaimByWallet(c *gin.Context) {
-	page := 1
-	limit := 10
-	wallet_address := ""
-	if p := c.Query("wallet_address"); p != "" {
-		if val := p; val != "" {
-			wallet_address = val
-		}
-	}
-	if p := c.Query("page"); p != "" {
-		if val, err := strconv.Atoi(p); err == nil && val > 0 {
-			page = val
-		}
-	}
-	if l := c.Query("limit"); l != "" {
-		if val, err := strconv.Atoi(l); err == nil && val > 0 {
-			limit = val
-		}
+	userID, err := utils.GetUserIDFromContext(c)
+	if err != nil {
+		logger.Error().Err(err).Msg("Unauthorized red envelope creation attempt")
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
+		return
 	}
 
-	claims, err := h.repo.GetRedEnvelopeClaimByWallet(wallet_address, page, limit)
+	page := 1
+	limit := 10
+	if val, err := strconv.Atoi(c.Query("page")); err == nil && val > 0 {
+			page = val
+	}
+
+	if val, err := strconv.Atoi(c.Query("limit")); err == nil && val > 0 {
+			limit = val
+	}
+
+	claims, err := h.repo.GetRedEnvelopeClaimByWallet(userID, page, limit)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to get red envelope claims")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrInternalServer))
 		return
 	}
-	count, err := h.repo.GetCountClaimedAmount(wallet_address)
+	count, err := h.repo.GetCountClaimedAmount(userID)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to get count of red envelope claims")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrInternalServer))
@@ -177,34 +174,31 @@ func (h *RedEnvelopeHandler) GetRedEnvelopeClaimByWallet(c *gin.Context) {
 // @Failure 400 {object} models.Response
 // @Failure 500 {object} models.Response
 // @Router /api/v1/red-envelopes/created-by-wallet [get]
-func (h *RedEnvelopeHandler) GetRedEnvelopeCreateByWallet(c *gin.Context) {
+func (h *RedEnvelopeHandler) GetRedEnvelopeCreatedByWallet(c *gin.Context) {
+	userID, err := utils.GetUserIDFromContext(c)
+	if err != nil {
+		logger.Error().Err(err).Msg("Unauthorized red envelope creation attempt")
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
+		return
+	}
 	page := 1
 	limit := 10
-	wallet_address := ""
-	if p := c.Query("wallet_address"); p != "" {
-		if val := p; val != "" {
-			wallet_address = val
-		}
-	}
-	if p := c.Query("page"); p != "" {
-		if val, err := strconv.Atoi(p); err == nil && val > 0 {
+	if val, err := strconv.Atoi(c.Query("page")); err == nil && val > 0 {
 			page = val
-		}
-	}
-	if l := c.Query("limit"); l != "" {
-		if val, err := strconv.Atoi(l); err == nil && val > 0 {
-			limit = val
-		}
 	}
 
-	creates, err := h.repo.GetRedEnvelopeCreateByWallet(wallet_address, page, limit)
+	if val, err := strconv.Atoi(c.Query("limit")); err == nil && val > 0 {
+			limit = val
+	}
+
+	creates, err := h.repo.GetRedEnvelopeCreateByWallet(userID, page, limit)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to get red envelope creates")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrInternalServer))
 		return
 	}
 
-	count, err := h.repo.GetCountCreatedEnvelope(wallet_address)
+	count, err := h.repo.GetCountCreatedEnvelope(userID)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to get count of red envelope claims")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrInternalServer))
@@ -228,6 +222,13 @@ func (h *RedEnvelopeHandler) GetRedEnvelopeCreateByWallet(c *gin.Context) {
 // @Security BearerAuth
 // @Router /api/v1/red-envelopes/update-status-red-envelope [post]
 func (r *RedEnvelopeHandler) UpdateStatusRedEnvelope(c *gin.Context) {
+	userID, err := utils.GetUserIDFromContext(c)
+	if err != nil {
+		logger.Error().Err(err).Msg("Unauthorized red envelope creation attempt")
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
+		return
+	}
+
 	var req struct {
 		ID     string `json:"id" binding:"required"`
 		Status int    `json:"status" binding:"required"`
@@ -237,6 +238,26 @@ func (r *RedEnvelopeHandler) UpdateStatusRedEnvelope(c *gin.Context) {
 		logger.Error().Err(err).Msg("Invalid update status request")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+err.Error()))
 		return
+	}
+
+	is_update, err := r.repo.CheckUserIDAndEnvelopeId(req.ID, userID)
+	logger.Info().Bool("is_updte: ", is_update)
+	if err != nil {
+		logger.Error().
+			Err(err).
+			Str("red_envelope_id", req.ID).
+			Int64("user_id", userID).
+			Msg("Failed to check user id and envelope id")
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailToCheckRedEnvelope + ": " + err.Error()))
+		return 
+	}
+	if !is_update {
+		logger.Error().
+			Str("red_envelope_id", req.ID).
+			Int64("user_id", userID).
+			Msg("User id does not match owner of red envelope")
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrUserIdNotMathRedEnvelopeId))
+		return 
 	}
 
 	var status_red_envelope string
@@ -249,7 +270,7 @@ func (r *RedEnvelopeHandler) UpdateStatusRedEnvelope(c *gin.Context) {
 		status_red_envelope = constants.RedEnvelopeStatusPublished
 	}
 
-	err := r.repo.UpdateStatus(c, req.ID, status_red_envelope)
+	err = r.repo.UpdateStatus(c, req.ID, status_red_envelope)
 	if err != nil {
 		logger.Error().Err(err).Str("envelope_id", req.ID).Msg("Failed to update red envelope status")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to update red envelope status"))
@@ -312,16 +333,24 @@ func (r *RedEnvelopeHandler) GetDetailRedEnvelopeById(c *gin.Context) {
 // @Failure 500 {object} models.Response
 // @Router /api/v1/red-envelopes/close-session [post]
 func (r *RedEnvelopeHandler) CloseSessionRedEnvelope(c *gin.Context) {
-	var req struct {
-		ID            string `json:"id" binding:"required"`
-		WalletAddress string `json:"wallet_address" binding:"required"`
+	userID, err := utils.GetUserIDFromContext(c)
+	if err != nil {
+		logger.Error().Err(err).Msg("Unauthorized red envelope creation attempt")
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
+		return
 	}
+
+	var req struct {
+		ID  string `json:"id" binding:"required"`
+	}
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error().Err(err).Msg("Invalid close session request")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+err.Error()))
 		return
 	}
-	err := r.repo.CloseSession(req.ID, req.WalletAddress)
+
+	err = r.repo.CloseSession(req.ID, userID)
 	if err != nil {
 		logger.Error().Err(err).Str("envelope_id", req.ID)
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to close red envelope session"))

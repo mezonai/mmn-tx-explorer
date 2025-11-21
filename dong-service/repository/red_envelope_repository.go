@@ -18,7 +18,6 @@ type RedEnvelopeRepository struct {
 	dongSchema        string
 	blockchainService *blockchain.BlockchainService
 	walletRepo        *RedEnvelopeWalletRepository
-	queueService      *RedEnvelopeQueueService
 }
 
 func NewRedEnvelopeRepository(db *sql.DB, dongSchema string, blockchainService *blockchain.BlockchainService, walletRepo *RedEnvelopeWalletRepository) *RedEnvelopeRepository {
@@ -27,12 +26,7 @@ func NewRedEnvelopeRepository(db *sql.DB, dongSchema string, blockchainService *
 		dongSchema:        dongSchema,
 		blockchainService: blockchainService,
 		walletRepo:        walletRepo,
-		queueService:      nil,
 	}
-}
-
-func (r *RedEnvelopeRepository) SetQueueService(queueService *RedEnvelopeQueueService) {
-	r.queueService = queueService
 }
 
 func (r *RedEnvelopeRepository) Create(req *models.CreateRedEnvelopeRequest, creator int64) (*models.RedEnvelope, error) {
@@ -209,7 +203,7 @@ func (r *RedEnvelopeRepository) GetTotalClaimedAmount(id string) (int64, error) 
 	return totalClaimed, nil
 }
 
-func (r *RedEnvelopeRepository) GetStats(walletAddress string) (map[string]interface{}, error) {
+func (r *RedEnvelopeRepository) GetStats(userId int64) (map[string]interface{}, error) {
 	total_claimed_sent_query := fmt.Sprintf(`
 		SELECT 
 			COALESCE(SUM(re.total_amount), 0) AS total_sent,
@@ -218,7 +212,7 @@ func (r *RedEnvelopeRepository) GetStats(walletAddress string) (map[string]inter
 			COUNT(rec.id) AS count_claimed_envelopes
 		FROM %s.red_envelope re
 		LEFT JOIN %s.red_envelope_claim rec ON re.id = rec.red_envelope_id
-		WHERE re.owner_wallet = $1 AND re.status IN ('PUBLISHED', 'EXPIRED');
+		WHERE re.creator = $1 AND re.status IN ('PUBLISHED', 'EXPIRED');
 	`, r.dongSchema, r.dongSchema)
 
 	var stats struct {
@@ -229,7 +223,7 @@ func (r *RedEnvelopeRepository) GetStats(walletAddress string) (map[string]inter
 		TotalActiveEnvelopes  int64
 	}
 
-	err := r.db.QueryRow(total_claimed_sent_query, walletAddress).Scan(
+	err := r.db.QueryRow(total_claimed_sent_query, userId).Scan(
 		&stats.TotalSend,
 		&stats.CountSentEnvelopes,
 		&stats.TotalClaimed,
@@ -242,10 +236,10 @@ func (r *RedEnvelopeRepository) GetStats(walletAddress string) (map[string]inter
 
 	total_active_envelopes_by_user := fmt.Sprintf(`
 		SELECT count(id) AS count_envelopes FROM %s.red_envelope
-		WHERE owner_wallet = $1 AND status = 'PUBLISHED';
+		WHERE creator = $1 AND status = 'PUBLISHED';
 	`, r.dongSchema)
 
-	err = r.db.QueryRow(total_active_envelopes_by_user, walletAddress).Scan(
+	err = r.db.QueryRow(total_active_envelopes_by_user, userId).Scan(
 		&stats.TotalActiveEnvelopes,
 	)
 
@@ -264,7 +258,7 @@ func (r *RedEnvelopeRepository) GetStats(walletAddress string) (map[string]inter
 	return result, nil
 }
 
-func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id string, status string) error {
+func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status string) error {
 	var envelope struct {
 		TotalClaims int64
 		EndDate     *time.Time
@@ -273,7 +267,7 @@ func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id string, sta
 	getQuery := fmt.Sprintf(`
 		SELECT total_claims, end_date
 		FROM %s.red_envelope
-		WHERE id = $1
+		WHERE id = $1 
 	`, r.dongSchema)
 
 	err := r.db.QueryRow(getQuery, id).Scan(&envelope.TotalClaims, &envelope.EndDate)
@@ -345,16 +339,13 @@ func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id string, sta
 			if err != nil {
 				logger.Error().Err(err).Msg("Failed to decrypt private key")
 			} else {
-					extraInfo := `{"type":"lucky-money"}`
-					textData := "Red envelope fund"
-
 				txHash, err := r.blockchainService.Transfer(
 					envelope.RedEnvelopeWallet,
 					envelope.OwnerWallet,
 					envelope.TotalAmount,
 					privateKey,
-					textData,
-					extraInfo,
+					constants.TEXT_DATA_LUCKY_MONEY,
+					constants.EXTRA_INFO_LUCKY_MONEY,
 				)
 				if err != nil {
 						logger.Error().Err(err).Msg("Failed to transfer funds")
@@ -367,30 +358,6 @@ func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id string, sta
 			}
 		}
 		
-	}
-
-	if status == constants.RedEnvelopeStatusPublished && r.queueService != nil {
-		ttl := 7 * 24 * time.Hour
-		if envelope.EndDate != nil {
-			ttl = time.Until(*envelope.EndDate)
-			if ttl < 0 {
-				ttl = 24 * time.Hour
-			}
-		}
-
-		err = r.queueService.InitializeRedEnvelope(id, envelope.TotalClaims, ttl)
-		if err != nil {
-			logger.Error().
-				Err(err).
-				Str("red_envelope_id", id).
-				Msg("Failed to initialize queue for red envelope")
-		} else {
-			logger.Info().
-				Str("red_envelope_id", id).
-				Int64("total_claims", envelope.TotalClaims).
-				Dur("ttl", ttl).
-				Msg("Initialized queue for red envelope")
-		}
 	}
 
 	return nil
@@ -451,7 +418,7 @@ func (r *RedEnvelopeRepository) GetExpiredEnvelopes() ([]*models.RedEnvelope, er
 	return envelopes, nil
 }
 
-func (r *RedEnvelopeRepository) GetRedEnvelopeCreateByWallet(wallet string, page int, limit int) (models.CreateRedEnvelopeCreateByWallet, error) {
+func (r *RedEnvelopeRepository) GetRedEnvelopeCreateByWallet(userID int64, page int, limit int) (models.CreateRedEnvelopeCreateByWallet, error) {
 	offset := (page - 1) * limit
 
 	query := fmt.Sprintf(`
@@ -459,7 +426,7 @@ func (r *RedEnvelopeRepository) GetRedEnvelopeCreateByWallet(wallet string, page
 		       re.created_at, COALESCE(COUNT(rec.id), 0) AS claimed_count
 		FROM %s.red_envelope re
 		LEFT JOIN %s.red_envelope_claim rec ON re.id = rec.red_envelope_id
-		WHERE re.owner_wallet = $1
+		WHERE re.creator = $1
 		GROUP BY re.id, re.name, re.total_amount, re.total_claims, re.status, re.created_at
 		ORDER BY re.created_at DESC
 		LIMIT $2 OFFSET $3
@@ -475,7 +442,7 @@ func (r *RedEnvelopeRepository) GetRedEnvelopeCreateByWallet(wallet string, page
 		ClaimedCount int64     `json:"claimed_count"`
 	}
 
-	rows, err := r.db.Query(query, wallet, limit, offset)
+	rows, err := r.db.Query(query, userID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get red envelope creates by wallet: %w", err)
 	}
@@ -505,7 +472,7 @@ func (r *RedEnvelopeRepository) GetRedEnvelopeCreateByWallet(wallet string, page
 	return creates, nil
 }
 
-func (r *RedEnvelopeRepository) GetRedEnvelopeClaimByWallet(wallet string, page int, limit int) (models.ClaimedRedEnvelopeByWallet, error) {
+func (r *RedEnvelopeRepository) GetRedEnvelopeClaimByWallet(userID int64, page int, limit int) (models.ClaimedRedEnvelopeByWallet, error) {
 	offset := (page - 1) * limit
 
 	query := fmt.Sprintf(`
@@ -513,7 +480,7 @@ func (r *RedEnvelopeRepository) GetRedEnvelopeClaimByWallet(wallet string, page 
 		       rec.amount, rec.claimed_at, rec.transaction_hash
 		FROM %s.red_envelope_claim rec
 		JOIN %s.red_envelope re ON rec.red_envelope_id = re.id
-		WHERE rec.claimer_wallet = $1
+		WHERE re.creator = $1
 		ORDER BY rec.claimed_at DESC
 		LIMIT $2 OFFSET $3
 	`, r.dongSchema, r.dongSchema)
@@ -528,7 +495,7 @@ func (r *RedEnvelopeRepository) GetRedEnvelopeClaimByWallet(wallet string, page 
 		TransactionHash *string   `json:"transaction_hash,omitempty"`
 	}
 
-	rows, err := r.db.Query(query, wallet, limit, offset)
+	rows, err := r.db.Query(query, userID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get red envelope claims by wallet: %w", err)
 	}
@@ -558,15 +525,16 @@ func (r *RedEnvelopeRepository) GetRedEnvelopeClaimByWallet(wallet string, page 
 	return claims, nil
 }
 
-func (r *RedEnvelopeRepository) GetCountClaimedAmount(wallet string) (int64, error) {
+func (r *RedEnvelopeRepository) GetCountClaimedAmount(userID int64) (int64, error) {
 	countClaimByWalletQuery := fmt.Sprintf(`
 		SELECT COUNT(*)
-		FROM %s.red_envelope_claim
-		WHERE claimer_wallet = $1
-	`, r.dongSchema)
+		FROM %s.red_envelope_claim rec
+		JOIN %s.red_envelope re ON rec.red_envelope_id = re.id
+		WHERE re.creator = $1
+	`, r.dongSchema, r.dongSchema)
 
 	var countClaimByWallet int
-	err := r.db.QueryRow(countClaimByWalletQuery, wallet).Scan(&countClaimByWallet)
+	err := r.db.QueryRow(countClaimByWalletQuery, userID).Scan(&countClaimByWallet)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count claims by wallet: %w", err)
 	}
@@ -574,14 +542,14 @@ func (r *RedEnvelopeRepository) GetCountClaimedAmount(wallet string) (int64, err
 	return int64(countClaimByWallet), nil
 }
 
-func (r *RedEnvelopeRepository) GetCountCreatedEnvelope(wallet string) (int64, error) {
+func (r *RedEnvelopeRepository) GetCountCreatedEnvelope(userID int64) (int64, error) {
 	countCreateByWalletQuery := fmt.Sprintf(`
 		SELECT COUNT(*)
 		FROM %s.red_envelope
-		WHERE owner_wallet = $1
+		WHERE creator = $1
 	`, r.dongSchema)
 	var countCreateByWallet int
-	err := r.db.QueryRow(countCreateByWalletQuery, wallet).Scan(&countCreateByWallet)
+	err := r.db.QueryRow(countCreateByWalletQuery, userID).Scan(&countCreateByWallet)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count created envelopes by wallet: %w", err)
 	}
@@ -681,37 +649,37 @@ func (r *RedEnvelopeRepository) GetRedEnvelopeCloseSesssion(redEnvelopeID string
 	return envelope, nil
 }
 
-func (r *RedEnvelopeRepository) CheckWalletAndEnvelopeId(redEnvelopeID string, walletAddress string) (bool, error) {
+func (r *RedEnvelopeRepository) CheckUserIDAndEnvelopeId(redEnvelopeID string, userID int64) (bool, error) {
 	query := fmt.Sprintf(`
 		SELECT COUNT(*)
 		FROM %s.red_envelope
-		WHERE id = $1 AND owner_wallet = $2
+		WHERE id = $1 AND creator = $2
 	`, r.dongSchema)
 	var count int
-	err := r.db.QueryRow(query, redEnvelopeID, walletAddress).Scan(&count)
+	err := r.db.QueryRow(query, redEnvelopeID, userID).Scan(&count)
 	if err != nil {
-		return false, fmt.Errorf("failed to check wallet and envelope id: %w", err)
+		return false, fmt.Errorf("failed to check user id and envelope id: %w", err)
 	}
 
 	return count > 0, nil
 }
 
-func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, walletAddress string) error {
-	is_close, err := r.CheckWalletAndEnvelopeId(redEnvelopeID, walletAddress)
+func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64) error {
+	is_close, err := r.CheckUserIDAndEnvelopeId(redEnvelopeID, userID)
 	if err != nil {
 		logger.Error().
 			Err(err).
 			Str("red_envelope_id", redEnvelopeID).
-			Str("wallet_address", walletAddress).
-			Msg("Failed to check wallet and envelope id")
+			Int64("user_id", userID).
+			Msg("Failed to check user id and envelope id")
 		return err
 	}
 	if !is_close {
 		logger.Error().
 			Str("red_envelope_id", redEnvelopeID).
-			Str("wallet_address", walletAddress).
-			Msg("Wallet address does not match owner of red envelope")
-		return fmt.Errorf("wallet address does not match owner of red envelope")
+			Int64("user_id", userID).
+			Msg("User ID does not match owner of red envelope")
+		return err
 	}
 
 	ctx := context.Background()
@@ -750,16 +718,13 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, walletAddress
 			if err != nil {
 				logger.Error().Err(err).Msg("Failed to decrypt private key")
 			} else {
-				extraInfo := `{"type":"lucky-money"}`
-				textData := "Red envelope fund"
-
 				txHash, err := r.blockchainService.Transfer(
 					envelope.RedEnvelopeWallet,
 					envelope.OwnerWallet,
 					remainingBalance,
 					privateKey,
-					textData,
-					extraInfo,
+					constants.TEXT_DATA_LUCKY_MONEY,
+					constants.EXTRA_INFO_LUCKY_MONEY,
 				)
 				if err != nil {
 					logger.Error().Err(err).Msg("Failed to transfer funds")

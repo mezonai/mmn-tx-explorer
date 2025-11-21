@@ -3,8 +3,10 @@ package scheduler
 import (
 	"context"
 	"dong-service/constants"
+	"dong-service/database"
 	"dong-service/logger"
 	"dong-service/repository"
+	"time"
 )
 
 type WalletPoolMaintenanceJob struct {
@@ -56,4 +58,15 @@ func (j *WalletPoolMaintenanceJob) Run(ctx context.Context) error {
 
 	logger.Info().Interface("stats", stats).Msg("Wallet pool statistics")
 	return nil
+}
+
+func InitializeWalletPoolMaintenanceJob(interval time.Duration) Task {
+	db := database.GetDB()
+	redEnvelopeWalletRepo := repository.NewRedEnvelopeWalletRepository(db)
+	job := NewWalletPoolMaintenanceJob(redEnvelopeWalletRepo)
+	return Task {
+		Name:      "WalletPoolMaintenanceJob",
+		Interval:  interval,
+		Job:       job.Run,
+	}
 }

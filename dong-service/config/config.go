@@ -76,8 +76,9 @@ type BlockchainConfig struct {
 }
 
 type SchedulerConfig struct {
-	SyncContributorsInterval int `mapstructure:"sync_contributors_interval"` // in seconds
-	ExpiredRedEnvelopesInterval int `mapstructure:"expired_red_envelopes_interval"` // in seconds
+	SyncContributorsInterval         int `mapstructure:"sync_contributors_interval"` // in seconds
+	ExpiredRedEnvelopesInterval      int `mapstructure:"expired_red_envelopes_interval"` // in seconds
+	WalletPoolMaintenanceInterval    int `mapstructure:"wallet_pool_maintenance_interval"` // in seconds
 }
 
 func LoadConfig(cfgFile string) (*Config, error) {

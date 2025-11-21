@@ -37,16 +37,9 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 	}
 
 	walletRepo := repository.NewRedEnvelopeWalletRepository(database.GetDB())
-	// Initialize Redis queue service
-	queueService := repository.NewRedEnvelopeQueueService(database.RedisClient)
-
 	redEnvelopeRepo := repository.NewRedEnvelopeRepository(database.GetDB(), cfg.Database.Schema, blockchainService, walletRepo)
-
-	// Set queue service to repository (to avoid circular dependency)
-	redEnvelopeRepo.SetQueueService(queueService)
 	redEnvelopeWalletRepo := repository.NewRedEnvelopeWalletRepository(database.GetDB())
-	
-	redEnvelopeHandler := handlers.NewRedEnvelopeHandler(redEnvelopeRepo, queueService, redEnvelopeWalletRepo)
+	redEnvelopeHandler := handlers.NewRedEnvelopeHandler(redEnvelopeRepo, redEnvelopeWalletRepo)
 
 	// API v1 routes
 	v1 := router.Group("/api/v1")
@@ -90,17 +83,13 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		{
 			redEnvelope_private.Use(middleware.Authentication(cfg.JWT.Secret))
 			redEnvelope_private.POST("/create", redEnvelopeHandler.CreateRedEnvelope)
-		}
-
-		redEnvelope_public := v1.Group("/red-envelopes")
-		{
-			redEnvelope_public.GET("/stats", redEnvelopeHandler.GetRedEnvelopeStats)
-			redEnvelope_public.GET("/:id", redEnvelopeHandler.GetRedEnvelopeClaim)
-			redEnvelope_public.POST("/update-status-red-envelope", redEnvelopeHandler.UpdateStatusRedEnvelope)
-			redEnvelope_public.GET("/claimed-by-wallet", redEnvelopeHandler.GetRedEnvelopeClaimByWallet)
-			redEnvelope_public.GET("/created-by-wallet", redEnvelopeHandler.GetRedEnvelopeCreateByWallet)
-			redEnvelope_public.POST("/detail", redEnvelopeHandler.GetDetailRedEnvelopeById)
-			redEnvelope_public.POST("/close-session", redEnvelopeHandler.CloseSessionRedEnvelope)
+			redEnvelope_private.GET("/stats", redEnvelopeHandler.GetRedEnvelopeStats)
+			redEnvelope_private.GET("/:id", redEnvelopeHandler.GetRedEnvelopeClaim)
+			redEnvelope_private.POST("/update-status-red-envelope", redEnvelopeHandler.UpdateStatusRedEnvelope)
+			redEnvelope_private.GET("/claimed-by-wallet", redEnvelopeHandler.GetRedEnvelopeClaimByWallet)
+			redEnvelope_private.GET("/created-by-wallet", redEnvelopeHandler.GetRedEnvelopeCreatedByWallet)
+			redEnvelope_private.POST("/detail", redEnvelopeHandler.GetDetailRedEnvelopeById)
+			redEnvelope_private.POST("/close-session", redEnvelopeHandler.CloseSessionRedEnvelope)
 		}
 	}
 }
