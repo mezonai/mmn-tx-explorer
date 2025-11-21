@@ -12,12 +12,12 @@ import (
 type Cursor struct {
 	LastScannedBlockNumber *big.Int
 	MaxBlockNumber         *big.Int
-	ChainId                *big.Int
+	ChainID                *big.Int
 }
 
-func InitCursor(chainId *big.Int, storage storage.IStorage) (*Cursor, error) {
-	lastScannedBlock := getLastScannedBlock(chainId)
-	maxBlockNumber, err := storage.MainStorage.GetMaxBlockNumber(chainId)
+func InitCursor(chainID *big.Int, store storage.IStorage) (*Cursor, error) {
+	lastScannedBlock := getLastScannedBlock(chainID)
+	maxBlockNumber, err := store.MainStorage.GetMaxBlockNumber(chainID)
 	if err != nil {
 		return nil, err
 	}
@@ -30,18 +30,18 @@ func InitCursor(chainId *big.Int, storage storage.IStorage) (*Cursor, error) {
 	return &Cursor{
 		LastScannedBlockNumber: lastScannedBlock,
 		MaxBlockNumber:         maxBlockNumber,
-		ChainId:                chainId,
+		ChainID:                chainID,
 	}, nil
 }
 
 func (c *Cursor) Update(blockNumber *big.Int) error {
-	cursorFile := fmt.Sprintf("validation_cursor_%s.json", c.ChainId.String())
+	cursorFile := fmt.Sprintf("validation_cursor_%s.json", c.ChainID.String())
 	jsonData, err := json.Marshal(blockNumber.String())
 	if err != nil {
 		return err
 	}
 
-	err = os.WriteFile(cursorFile, jsonData, 0644)
+	err = os.WriteFile(cursorFile, jsonData, 0o644)
 	if err != nil {
 		return err
 	}
@@ -49,8 +49,8 @@ func (c *Cursor) Update(blockNumber *big.Int) error {
 	return nil
 }
 
-func getLastScannedBlock(chainId *big.Int) *big.Int {
-	cursorFile := fmt.Sprintf("validation_cursor_%s.json", chainId.String())
+func getLastScannedBlock(chainID *big.Int) *big.Int {
+	cursorFile := fmt.Sprintf("validation_cursor_%s.json", chainID.String())
 	if _, err := os.Stat(cursorFile); err != nil {
 		return big.NewInt(0)
 	}

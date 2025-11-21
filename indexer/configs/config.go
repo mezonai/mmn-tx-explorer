@@ -109,10 +109,10 @@ type BasicAuthConfig struct {
 }
 
 type ThirdwebConfig struct {
-	ClientId string `mapstructure:"clientId"`
+	ClientID string `mapstructure:"clientId"`
 }
 
-type ContractApiRequestConfig struct {
+type ContractAPIRequestConfig struct {
 	MaxIdleConns        int  `mapstructure:"maxIdleConns"`
 	MaxIdleConnsPerHost int  `mapstructure:"maxIdleConnsPerHost"`
 	MaxConnsPerHost     int  `mapstructure:"maxConnsPerHost"`
@@ -128,8 +128,8 @@ type TimeRangeConfig struct {
 type APIConfig struct {
 	Host                string                   `mapstructure:"host"`
 	BasicAuth           BasicAuthConfig          `mapstructure:"basicAuth"`
-	ThirdwebContractApi string                   `mapstructure:"thirdwebContractApi"`
-	ContractApiRequest  ContractApiRequestConfig `mapstructure:"contractApiRequest"`
+	ThirdwebContractAPI string                   `mapstructure:"thirdwebContractApi"`
+	ContractAPIRequest  ContractAPIRequestConfig `mapstructure:"contractApiRequest"`
 	AbiDecodingEnabled  bool                     `mapstructure:"abiDecodingEnabled"`
 	Thirdweb            ThirdwebConfig           `mapstructure:"thirdweb"`
 	TimeRange           TimeRangeConfig          `mapstructure:"timeRange"`
