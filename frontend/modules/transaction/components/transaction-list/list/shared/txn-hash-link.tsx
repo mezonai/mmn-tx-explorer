@@ -48,16 +48,14 @@ export const TxnHashLinkSkeleton = ({ className }: TxnHashLinkSkeletonProps) => 
   );
 };
 
-export const TxnHashLinkDashboard = ({ hash, isPending, className }: TxnHashLinkProps) => {
+export const TxnHashLinkDashboard = ({ hash, className }: { hash: string; className?: string }) => {
   const truncated = hash ? `${hash.slice(0, 8)}...${hash.slice(-6)}` : '';
   return (
     <div className={cn('flex flex-1 items-center gap-1', className)}>
       <Tooltip>
         <TooltipTrigger asChild>
           <Button variant="link" className="dark:text-brand-primary size-fit flex-1 p-0" asChild>
-            <Link href={isPending ? ROUTES.PENDING_TRANSACTION(hash) : ROUTES.TRANSACTION(hash)}>
-              <span className="text-brand-primary font-semibold">{truncated}</span>
-            </Link>
+            <span className="text-brand-primary font-semibold">{truncated}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent className="bg-foreground max-w-xs text-center text-sm break-all">{hash}</TooltipContent>
