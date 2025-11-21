@@ -48,7 +48,12 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
           <div className="flex w-full items-center gap-2">
             <span className="text-sm whitespace-nowrap text-gray-600 dark:text-gray-400">Hash:</span>
             <div className="flex min-w-0 items-center gap-1">
-              {transaction?.hash && <TxnHashLinkDashboard hash={transaction.hash} />}
+              {transaction?.hash && (
+                <TxnHashLinkDashboard
+                  hash={transaction.hash}
+                  isPending={transaction.status === ETransactionStatus.Pending}
+                />
+              )}
             </div>
           </div>
 
