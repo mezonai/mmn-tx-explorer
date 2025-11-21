@@ -63,9 +63,15 @@ func (mmn *MMNGrpcService) connect() error {
 	} else {
 		creds = insecure.NewCredentials()
 	}
+
+	// Add MaxCallRecvMsgSize and MaxCallSendMsgSize
 	conn, err := grpc.NewClient(
 		mmn.url,
 		grpc.WithTransportCredentials(creds),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(50*1024*1024), // 50 MB
+			grpc.MaxCallSendMsgSize(50*1024*1024), // 50 MB
+		),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to connect to %s: %w", mmn.url, err)
