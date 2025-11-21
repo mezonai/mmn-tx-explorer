@@ -199,7 +199,8 @@ func (r *DonationCampaignRepository) GetByID(id int64) (*models.DonationCampaign
 		SELECT 
             dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
 			cs.total_amount, cs.total_contributor,
-			COALESCE(w.balance::TEXT, '0') as current_balance
+			COALESCE(w.balance::TEXT, '0') as current_balance,
+			(cs.total_amount - COALESCE(w.balance, 0))::TEXT as total_withdrawn
 		FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
 		LEFT JOIN %s.wallet w ON w.address = dc.donation_wallet
@@ -225,6 +226,7 @@ func (r *DonationCampaignRepository) GetByID(id int64) (*models.DonationCampaign
 		&campaign.TotalAmount,
 		&campaign.TotalContributors,
 		&campaign.CurrentBalance,
+		&campaign.TotalWithdrawn,
 	)
 
 	if err == sql.ErrNoRows {
@@ -243,7 +245,8 @@ func (r *DonationCampaignRepository) GetByIDAndCreator(id int64, creator int64) 
 		SELECT 
             dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
 			cs.total_amount, cs.total_contributor,
-			COALESCE(w.balance::TEXT, '0') as current_balance
+			COALESCE(w.balance::TEXT, '0') as current_balance,
+			(cs.total_amount - COALESCE(w.balance, 0))::TEXT as total_withdrawn
 		FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
 		LEFT JOIN %s.wallet w ON w.address = dc.donation_wallet
@@ -269,6 +272,7 @@ func (r *DonationCampaignRepository) GetByIDAndCreator(id int64, creator int64) 
 		&campaign.TotalAmount,
 		&campaign.TotalContributors,
 		&campaign.CurrentBalance,
+		&campaign.TotalWithdrawn,
 	)
 
 	if err == sql.ErrNoRows {
@@ -714,7 +718,8 @@ func (r *DonationCampaignRepository) GetBySlug(slug string) (*models.DonationCam
 		SELECT 
             dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
 			cs.total_amount, cs.total_contributor,
-			COALESCE(w.balance::TEXT, '0') as current_balance
+			COALESCE(w.balance::TEXT, '0') as current_balance,
+			(cs.total_amount - COALESCE(w.balance, 0))::TEXT as total_withdrawn
 		FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
 		LEFT JOIN %s.wallet w ON w.address = dc.donation_wallet
@@ -740,6 +745,7 @@ func (r *DonationCampaignRepository) GetBySlug(slug string) (*models.DonationCam
 		&campaign.TotalAmount,
 		&campaign.TotalContributors,
 		&campaign.CurrentBalance,
+		&campaign.TotalWithdrawn,
 	)
 
 	if err == sql.ErrNoRows {
