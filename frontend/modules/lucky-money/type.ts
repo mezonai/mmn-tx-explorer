@@ -41,7 +41,6 @@ export interface RedEnvelopeStats {
 export type EnvelopeListParams = {
   page: number;
   limit: number;
-  wallet_address: string;
 }
 
 export interface CreatedEnvelopes {
@@ -91,4 +90,38 @@ export interface CreateRedEnvelopeRequest {
 export interface UpdateStatusRedEnvelopeRequest {
   id: UUID;
   status: number;
+}
+
+export interface RedEnvelopeDetailStats {
+  name: string;
+  total_amount: number;
+  total_claim: number;
+  claimed_count: number;
+  total_claimed_amount: number;
+  end_date: string;
+  red_envelope_wallet: string;
+  status: string;
+}
+
+export interface RedEnvelopeDetailRequest {
+  id: UUID;
+}
+
+export interface RedEnvelopeDetailRecipient {
+  claimer_wallet: string;
+  amount: number;
+  claimed_at: string;
+  transaction_hash: string;
+}
+
+export interface ClaimEnvelopeRequest {
+  id: UUID;
+  split_money_id: number;         
+  claimer_wallet: string;
+}
+
+export interface RedEnvelopeClaim {
+  split_money_id: number;
+  amount: number;
+  description: string;
 }

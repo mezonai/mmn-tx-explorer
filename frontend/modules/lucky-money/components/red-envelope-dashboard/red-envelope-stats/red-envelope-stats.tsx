@@ -5,7 +5,6 @@ import { APP_CONFIG } from "@/configs/app.config";
 import { ROUTES } from "@/configs/routes.config";
 import { cn } from "@/lib/utils"; 
 import { useRedEnvelopeStats } from "@/modules/lucky-money/hooks/useRedEnvelopeStats";
-import { useUser } from "@/providers";
 import {
   SendIcon,
   ExternalLinkIcon,
@@ -18,8 +17,7 @@ import {
 import Link from "next/link";
 
 export const RedEnvelopeStats = () => {
-  const { user } = useUser();  
-  const {stats} = useRedEnvelopeStats(user?.walletAddress ?? '');
+  const {stats} = useRedEnvelopeStats();
 
   const statsCards = [
     {

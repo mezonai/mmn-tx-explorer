@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { User, HandHeart} from 'lucide-react';
-import { useUser } from '@/providers';
 import { Pagination } from '@/components/ui/pagination';
 import { truncateWalletAddress, formatClaimDate } from '@/modules/lucky-money/utils';
 import { CopyButton } from '@/components/ui/copy-button';
@@ -14,7 +13,6 @@ const ClaimedBadge = () => (
 );
 
 export const ClaimedEnvelopes = () => {
-  const { user } = useUser();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10); 
 
@@ -30,7 +28,6 @@ export const ClaimedEnvelopes = () => {
   const { envelopes, meta, isLoading } = useClaimedEnvelopes({
     page,
     limit,
-    wallet_address: user?.walletAddress || '',
   });
 
   const renderContent = () => {
