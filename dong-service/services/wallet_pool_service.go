@@ -70,12 +70,12 @@ func (s *WalletPoolService) CreateWallets(ctx context.Context, count int) error 
 	for i := 0; i < count; i++ {
 		address, privateKey, err := s.generateWallet()
 		if err != nil {
-				return err
+			return err
 		}
 
 		encryptedKey, err := utils.EncryptPrivateKey(privateKey)
 		if err != nil {
-				return err
+			return err
 		}
 
 		wallets = append(wallets, &models.RedEnvelopeWallet{

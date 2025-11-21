@@ -64,9 +64,9 @@ func InitializeWalletPoolMaintenanceJob(interval time.Duration) Task {
 	db := database.GetDB()
 	redEnvelopeWalletRepo := repository.NewRedEnvelopeWalletRepository(db)
 	job := NewWalletPoolMaintenanceJob(redEnvelopeWalletRepo)
-	return Task {
-		Name:      "WalletPoolMaintenanceJob",
-		Interval:  interval,
-		Job:       job.Run,
+	return Task{
+		Name:     "WalletPoolMaintenanceJob",
+		Interval: interval,
+		Job:      job.Run,
 	}
 }

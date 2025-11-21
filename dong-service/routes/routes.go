@@ -30,8 +30,8 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 	router.POST("/oauth", authHandler.OauthHandler)
 	router.POST("/refresh", authHandler.RefreshHandler)
 	router.POST("/logout", authHandler.LogoutHandler)
-	
-	blockchainService, err:= blockchain.NewBlockchainService(cfg)
+
+	blockchainService, err := blockchain.NewBlockchainService(cfg)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to initialize blockchain service")
 	}

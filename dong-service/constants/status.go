@@ -34,9 +34,9 @@ const (
 )
 
 const (
-	RedEnvelopeSplitMoneyStatusAvailable  = "AVAILABLE"
-	RedEnvelopeSplitMoneyStatusReserved   = "RESERVED"
-	RedEnvelopeSplitMoneyStatusClaimed    = "CLAIMED"
+	RedEnvelopeSplitMoneyStatusAvailable = "AVAILABLE"
+	RedEnvelopeSplitMoneyStatusReserved  = "RESERVED"
+	RedEnvelopeSplitMoneyStatusClaimed   = "CLAIMED"
 )
 
 // Red Envelope Configuration
@@ -56,9 +56,8 @@ const (
 )
 
 const (
-	TEXT_DATA_LUCKY_MONEY  = "Lucky Money fund"
+	TEXT_DATA_LUCKY_MONEY = "Lucky Money fund"
 )
-
 
 // GetStatusName returns the human-readable name for a status code
 func GetStatusName(status int16) string {

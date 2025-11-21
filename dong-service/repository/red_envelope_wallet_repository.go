@@ -70,7 +70,7 @@ func (r *RedEnvelopeWalletRepository) FindOldReadyWallets(ctx context.Context, d
 	}
 
 	return wallets, rows.Err()
-} 
+}
 
 func (r *RedEnvelopeWalletRepository) DisableWallets(ctx context.Context, walletIDs []int64) error {
 	if len(walletIDs) == 0 {
@@ -126,44 +126,44 @@ func (r *RedEnvelopeWalletRepository) CountAvailableWallets(ctx context.Context)
 }
 
 func (r *RedEnvelopeWalletRepository) CreateWallets(ctx context.Context, wallets []*models.RedEnvelopeWallet) error {
-    if len(wallets) == 0 {
-        return nil
-    }
+	if len(wallets) == 0 {
+		return nil
+	}
 
-    tx, err := r.db.BeginTx(ctx, nil)
-    if err != nil {
-        return err
-    }
-    
-    query := "INSERT INTO red_envelope_wallet (wallet_address, encrypted_private_key, status, created_at, updated_at) VALUES "
-    vals := []interface{}{}
-    
-    for i, w := range wallets {
-        n := i * 3 
-        query += fmt.Sprintf("($%d, $%d, $%d, NOW(), NOW()),", n+1, n+2, n+3)
-        vals = append(vals, w.WalletAddress, w.EncryptedPrivateKey, w.Status)
-    }
-  
-    query = query[0 : len(query)-1] 
-    query += " RETURNING id, created_at, updated_at" 
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
 
-    rows, err := tx.QueryContext(ctx, query, vals...)
-    if err != nil {
-        tx.Rollback()
-        return err
-    }
-    defer rows.Close()
+	query := "INSERT INTO red_envelope_wallet (wallet_address, encrypted_private_key, status, created_at, updated_at) VALUES "
+	vals := []interface{}{}
 
-    i := 0
-    for rows.Next() {
-        if err := rows.Scan(&wallets[i].ID, &wallets[i].CreatedAt, &wallets[i].UpdatedAt); err != nil {
-             tx.Rollback()
-             return err
-        }
-        i++
-    }
+	for i, w := range wallets {
+		n := i * 3
+		query += fmt.Sprintf("($%d, $%d, $%d, NOW(), NOW()),", n+1, n+2, n+3)
+		vals = append(vals, w.WalletAddress, w.EncryptedPrivateKey, w.Status)
+	}
 
-    return tx.Commit()
+	query = query[0 : len(query)-1]
+	query += " RETURNING id, created_at, updated_at"
+
+	rows, err := tx.QueryContext(ctx, query, vals...)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	defer rows.Close()
+
+	i := 0
+	for rows.Next() {
+		if err := rows.Scan(&wallets[i].ID, &wallets[i].CreatedAt, &wallets[i].UpdatedAt); err != nil {
+			tx.Rollback()
+			return err
+		}
+		i++
+	}
+
+	return tx.Commit()
 }
 
 func (r *RedEnvelopeWalletRepository) GetOrCreateAvailableWallet(ctx context.Context) (*models.RedEnvelopeWallet, error) {

@@ -10,16 +10,16 @@ import (
 
 // Config represents the application configuration
 type Config struct {
-	Server    ServerConfig     `mapstructure:"server"`
-	Database  DatabaseConfig   `mapstructure:"database"`
-	Indexer   IndexerConfig    `mapstructure:"indexer"`
+	Server     ServerConfig     `mapstructure:"server"`
+	Database   DatabaseConfig   `mapstructure:"database"`
+	Indexer    IndexerConfig    `mapstructure:"indexer"`
 	Blockchain BlockchainConfig `mapstructure:"blockchain"`
-	CORS      CORSConfig       `mapstructure:"cors"`
-	JWT       JWTConfig        `mapstructure:"jwt"`
-	Oauth     OauthConfig      `mapstructure:"oauth"`
-	Redis     RedisConfig      `mapstructure:"redis"`
-	Logging   logger.LogConfig `mapstructure:"logging"`
-	Scheduler SchedulerConfig  `mapstructure:"scheduler"`
+	CORS       CORSConfig       `mapstructure:"cors"`
+	JWT        JWTConfig        `mapstructure:"jwt"`
+	Oauth      OauthConfig      `mapstructure:"oauth"`
+	Redis      RedisConfig      `mapstructure:"redis"`
+	Logging    logger.LogConfig `mapstructure:"logging"`
+	Scheduler  SchedulerConfig  `mapstructure:"scheduler"`
 }
 
 type ServerConfig struct {
@@ -76,9 +76,9 @@ type BlockchainConfig struct {
 }
 
 type SchedulerConfig struct {
-	SyncContributorsInterval         int `mapstructure:"sync_contributors_interval"` // in seconds
-	ExpiredRedEnvelopesInterval      int `mapstructure:"expired_red_envelopes_interval"` // in seconds
-	WalletPoolMaintenanceInterval    int `mapstructure:"wallet_pool_maintenance_interval"` // in seconds
+	SyncContributorsInterval      int `mapstructure:"sync_contributors_interval"`       // in seconds
+	ExpiredRedEnvelopesInterval   int `mapstructure:"expired_red_envelopes_interval"`   // in seconds
+	WalletPoolMaintenanceInterval int `mapstructure:"wallet_pool_maintenance_interval"` // in seconds
 }
 
 func LoadConfig(cfgFile string) (*Config, error) {

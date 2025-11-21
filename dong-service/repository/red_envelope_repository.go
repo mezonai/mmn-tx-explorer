@@ -109,7 +109,7 @@ func (r *RedEnvelopeRepository) Create(req *models.CreateRedEnvelopeRequest, cre
 		return nil, fmt.Errorf("failed to update red envelope wallet: %w", err)
 	}
 
-	var amounts []int64;
+	var amounts []int64
 	if req.IsRandomDistribution && req.MinAmount != nil && req.MaxAmount != nil {
 		amounts, err = utils.GenerateRandomAmounts(req.TotalAmount, int(req.TotalClaims), *req.MinAmount, *req.MaxAmount)
 		if err != nil {
@@ -137,7 +137,7 @@ func (r *RedEnvelopeRepository) Create(req *models.CreateRedEnvelopeRequest, cre
 	if err := r.CreateSplitMoneyBatch(tx, result.ID, amounts); err != nil {
 		return nil, fmt.Errorf("failed to save splits: %w", err)
 	}
-	
+
 	if err = tx.Commit(); err != nil {
 		return nil, fmt.Errorf("failed to commit red envelope: %w", err)
 	}
@@ -178,13 +178,6 @@ func (r *RedEnvelopeRepository) GetRedEnvelopeClaimById(id string) ([]models.Red
 	}
 
 	return claims, nil
-}
-
-type ClaimAmount struct {
-	Id                   int64
-	Amount               int64
-	Description          string
-	IsRandomDistribution bool
 }
 
 func (r *RedEnvelopeRepository) GetTotalClaimedAmount(id string) (int64, error) {
@@ -325,7 +318,7 @@ func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status str
 			&envelope.EndDate,
 			&envelope.CreatedAt,
 			&envelope.UpdatedAt,
-	 	)
+		)
 
 		if err != nil {
 			return fmt.Errorf("failed to scan red envelope: %w", err)
@@ -348,16 +341,15 @@ func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status str
 					constants.EXTRA_INFO_LUCKY_MONEY,
 				)
 				if err != nil {
-						logger.Error().Err(err).Msg("Failed to transfer funds")
-					} else {
-						logger.Info().
-							Str("tx_hash", txHash).
-							Int64("amount", envelope.TotalAmount).
-							Msg("Successfully transferred remaining balance to owner")
-					}
+					logger.Error().Err(err).Msg("Failed to transfer funds")
+				} else {
+					logger.Info().
+						Str("tx_hash", txHash).
+						Int64("amount", envelope.TotalAmount).
+						Msg("Successfully transferred remaining balance to owner")
+				}
 			}
 		}
-		
 	}
 
 	return nil
@@ -611,7 +603,7 @@ func (r *RedEnvelopeRepository) CreateSplitMoneyBatch(tx *sql.Tx, redEnvelopeID 
 
 	for i, amount := range amounts {
 		n := i * 3
-		placeholders = append(placeholders, fmt.Sprintf("($%d, $%d, $%d)", n + 1, n + 2, n + 3))
+		placeholders = append(placeholders, fmt.Sprintf("($%d, $%d, $%d)", n+1, n+2, n+3))
 		args = append(args, redEnvelopeID, amount, i+1)
 	}
 

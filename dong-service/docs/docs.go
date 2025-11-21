@@ -748,22 +748,6 @@ const docTemplate = `{
                     "red_envelopes"
                 ],
                 "summary": "Get red envelope claims by wallet address",
-                "parameters": [
-                    {
-                        "description": "Wallet Address Request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "wallet_address": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -826,9 +810,6 @@ const docTemplate = `{
                                 "id": {
                                     "type": "integer",
                                     "format": "int64"
-                                },
-                                "wallet_address": {
-                                    "type": "string"
                                 }
                             }
                         }
@@ -893,22 +874,6 @@ const docTemplate = `{
                     "red_envelopes"
                 ],
                 "summary": "Get red envelopes created by wallet address",
-                "parameters": [
-                    {
-                        "description": "Wallet Address Request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "wallet_address": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",

@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	TYPE_TX = 1
+	TYPE_TX  = 1
 	DECIMALS = 6
 )
 
@@ -34,7 +34,7 @@ func NewBlockchainService(config *config.Config) (*BlockchainService, error) {
 	}
 
 	return &BlockchainService{
-		mmnClient:  client,
+		mmnClient: client,
 		rpcURL:    config.Blockchain.RPCURL,
 	}, nil
 }
@@ -65,7 +65,7 @@ func (s *BlockchainService) Transfer(fromAddress, toAddress string, amount int64
 		Nonce:     nonceResp,
 		ExtraInfo: extraInfo,
 	}
-	privateKey := base58.Decode(privateKeyBs58) 
+	privateKey := base58.Decode(privateKeyBs58)
 	signature, err := mmnClient.SignTx(txMsg, []byte(fromAddress), privateKey)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to sign transaction")
@@ -73,8 +73,8 @@ func (s *BlockchainService) Transfer(fromAddress, toAddress string, amount int64
 	}
 
 	signedTx := &mmnClient.SignedTx{
-		Tx:     txMsg,
-		Sig:    signature.Sig,
+		Tx:  txMsg,
+		Sig: signature.Sig,
 	}
 
 	resp, err := s.mmnClient.AddTx(ctx, *signedTx)

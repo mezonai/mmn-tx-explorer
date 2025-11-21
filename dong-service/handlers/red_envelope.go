@@ -13,13 +13,13 @@ import (
 )
 
 type RedEnvelopeHandler struct {
-	repo         *repository.RedEnvelopeRepository
+	repo                  *repository.RedEnvelopeRepository
 	redEnvelopeWalletRepo *repository.RedEnvelopeWalletRepository
 }
 
 func NewRedEnvelopeHandler(repo *repository.RedEnvelopeRepository, redEnvelopeWalletRepo *repository.RedEnvelopeWalletRepository) *RedEnvelopeHandler {
 	return &RedEnvelopeHandler{
-		repo:         repo,
+		repo:                  repo,
 		redEnvelopeWalletRepo: redEnvelopeWalletRepo,
 	}
 }
@@ -107,7 +107,7 @@ func (h *RedEnvelopeHandler) GetRedEnvelopeStats(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
 		return
 	}
-	
+
 	stats, err := h.repo.GetStats(userID)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to get red envelope stats")
@@ -124,7 +124,6 @@ func (h *RedEnvelopeHandler) GetRedEnvelopeStats(c *gin.Context) {
 // @Tags red_envelopes
 // @Accept json
 // @Produce json
-// @Param request body object{wallet_address=string} true "Wallet Address Request"
 // @Success 200 {object} models.Response{data=[]models.RedEnvelopeClaim}
 // @Failure 400 {object} models.Response
 // @Failure 500 {object} models.Response
@@ -140,11 +139,11 @@ func (h *RedEnvelopeHandler) GetRedEnvelopeClaimByWallet(c *gin.Context) {
 	page := 1
 	limit := 10
 	if val, err := strconv.Atoi(c.Query("page")); err == nil && val > 0 {
-			page = val
+		page = val
 	}
 
 	if val, err := strconv.Atoi(c.Query("limit")); err == nil && val > 0 {
-			limit = val
+		limit = val
 	}
 
 	claims, err := h.repo.GetRedEnvelopeClaimByWallet(userID, page, limit)
@@ -169,7 +168,6 @@ func (h *RedEnvelopeHandler) GetRedEnvelopeClaimByWallet(c *gin.Context) {
 // @Tags red_envelopes
 // @Accept json
 // @Produce json
-// @Param request body object{wallet_address=string} true "Wallet Address Request"
 // @Success 200 {object} models.Response{data=[]models.RedEnvelope}
 // @Failure 400 {object} models.Response
 // @Failure 500 {object} models.Response
@@ -184,11 +182,11 @@ func (h *RedEnvelopeHandler) GetRedEnvelopeCreatedByWallet(c *gin.Context) {
 	page := 1
 	limit := 10
 	if val, err := strconv.Atoi(c.Query("page")); err == nil && val > 0 {
-			page = val
+		page = val
 	}
 
 	if val, err := strconv.Atoi(c.Query("limit")); err == nil && val > 0 {
-			limit = val
+		limit = val
 	}
 
 	creates, err := h.repo.GetRedEnvelopeCreateByWallet(userID, page, limit)
@@ -248,16 +246,16 @@ func (r *RedEnvelopeHandler) UpdateStatusRedEnvelope(c *gin.Context) {
 			Str("red_envelope_id", req.ID).
 			Int64("user_id", userID).
 			Msg("Failed to check user id and envelope id")
-			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailToCheckRedEnvelope + ": " + err.Error()))
-		return 
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailToCheckRedEnvelope+": "+err.Error()))
+		return
 	}
 	if !is_update {
 		logger.Error().
 			Str("red_envelope_id", req.ID).
 			Int64("user_id", userID).
 			Msg("User id does not match owner of red envelope")
-			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrUserIdNotMathRedEnvelopeId))
-		return 
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrUserIdNotMathRedEnvelopeId))
+		return
 	}
 
 	var status_red_envelope string
@@ -325,7 +323,7 @@ func (r *RedEnvelopeHandler) GetDetailRedEnvelopeById(c *gin.Context) {
 // @Tags red_envelopes
 // @Accept json
 // @Produce json
-// @Param request body object{id=int64,wallet_address=string} true "Get Detail Request"
+// @Param request body object{id=int64} true "Get Detail Request"
 // @Success 200 {object} models.Response{data=object}
 // @Failure 400 {object} models.Response
 // @Failure 401 {object} models.Response
@@ -341,7 +339,7 @@ func (r *RedEnvelopeHandler) CloseSessionRedEnvelope(c *gin.Context) {
 	}
 
 	var req struct {
-		ID  string `json:"id" binding:"required"`
+		ID string `json:"id" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {

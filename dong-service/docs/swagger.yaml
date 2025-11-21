@@ -752,16 +752,6 @@ paths:
       - application/json
       description: Retrieve red envelope claims associated with a specific wallet
         address
-      parameters:
-      - description: Wallet Address Request
-        in: body
-        name: request
-        required: true
-        schema:
-          properties:
-            wallet_address:
-              type: string
-          type: object
       produces:
       - application/json
       responses:
@@ -802,8 +792,6 @@ paths:
             id:
               format: int64
               type: integer
-            wallet_address:
-              type: string
           type: object
       produces:
       - application/json
@@ -841,16 +829,6 @@ paths:
       consumes:
       - application/json
       description: Retrieve red envelopes created by a specific wallet address
-      parameters:
-      - description: Wallet Address Request
-        in: body
-        name: request
-        required: true
-        schema:
-          properties:
-            wallet_address:
-              type: string
-          type: object
       produces:
       - application/json
       responses:

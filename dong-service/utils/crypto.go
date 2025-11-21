@@ -17,7 +17,7 @@ import (
 const ed25519SeedSize = 32
 
 var (
-	encryptionKey    []byte
+	encryptionKey []byte
 )
 
 func zeroBytes(b []byte) {
@@ -115,7 +115,7 @@ func GenerateEphemeralKeyPair() (string, string, error) {
 	if !ok {
 		return "", "", fmt.Errorf("failed to cast public key from private key")
 	}
-	
+
 	privateKeybs58 := base58.Encode(seed)
 
 	publicKeyBs58 := base58.Encode(publicKey)

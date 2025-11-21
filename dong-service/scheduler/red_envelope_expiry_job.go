@@ -94,7 +94,7 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 				}
 			}
 		}
-		
+
 		err = j.redEnvelopeRepo.UpdateStatus(ctx, envelope.ID, constants.RedEnvelopeStatusExpired)
 		if err != nil {
 			logger.Error().
