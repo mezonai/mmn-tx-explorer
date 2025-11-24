@@ -30,6 +30,8 @@ on:
     secrets:
       OAUTH_CLIENT_SECRET:
         required: true
+      NEXT_PUBLIC_COBAR_API_KEY:
+        required: true
 
 jobs:
   build:
