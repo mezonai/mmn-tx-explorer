@@ -21,7 +21,7 @@ export interface DonationCampaign {
   total_contributors: number;
   owner: string;
   verified: boolean;
-  current_balance: string;
+  current_balance: number;
   total_withdrawn: number;
 }
 
