@@ -776,9 +776,9 @@ func (r *RedEnvelopeRepository) GetClaimAmount(id, walletAddress string, allowed
 	`, r.dongSchema)
 
 	var envelope struct {
-		TotalAmount          int64
-		Description          string
-		TotalClaims          int64
+		TotalAmount int64
+		Description string
+		TotalClaims int64
 	}
 	err := r.db.QueryRow(query, id, constants.RedEnvelopeStatusPublished).Scan(
 		&envelope.TotalAmount,
@@ -801,7 +801,7 @@ func (r *RedEnvelopeRepository) GetClaimAmount(id, walletAddress string, allowed
 
 	if allowed == 2 {
 		query := fmt.Sprintf(`
-			SELECT id, red_envelope_id, amount, status, claim_order, claimed_address, claimed_at, created_at
+			SELECT id, red_envelope_id, amount, status, claimed_id, claim_order, claimed_address, claimed_at, created_at
 			FROM %s.red_envelope_split_money
 			WHERE red_envelope_id = $1 AND claimed_address = $2 AND status = $3
 			LIMIT 1
@@ -828,9 +828,9 @@ func (r *RedEnvelopeRepository) GetClaimAmount(id, walletAddress string, allowed
 		}
 
 		return models.ClaimAmount{
-			Id:                   existingSplit.ID,
-			Amount:               existingSplit.Amount,
-			Description:          envelope.Description,
+			Id:          existingSplit.ID,
+			Amount:      existingSplit.Amount,
+			Description: envelope.Description,
 		}, nil
 	}
 
@@ -844,9 +844,9 @@ func (r *RedEnvelopeRepository) GetClaimAmount(id, walletAddress string, allowed
 	}
 
 	return models.ClaimAmount{
-		Id:                   split.ID,
-		Amount:               split.Amount,
-		Description:          envelope.Description,
+		Id:          split.ID,
+		Amount:      split.Amount,
+		Description: envelope.Description,
 	}, nil
 }
 
