@@ -9,10 +9,19 @@ type OauthRequest struct {
 	RedirectURI string `json:"redirect_uri" binding:"required"`
 }
 
+type TokenData struct {
+	AccessToken  string `json:"access_token"`
+	ExpiresIn    int    `json:"expires_in"`
+	IDToken      string `json:"id_token"`
+	RefreshToken string `json:"refresh_token"`
+	Scope        string `json:"scope"`
+	TokenType    string `json:"token_type"`
+}
+
 type OauthResponse struct {
 	AccessToken  string        `json:"access_token"`
 	RefreshToken string        `json:"refresh_token"`
-	AuthToken    string        `json:"auth_token"`
+	IDToken      string        `json:"id_token"`
 	User         OauthUserInfo `json:"user"`
 }
 

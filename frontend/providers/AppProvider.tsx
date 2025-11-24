@@ -101,7 +101,7 @@ export function AppProvider({ children }: AppProviderProps) {
         const fetchedZk = await fetchAndStoreZkProof(
           userInfo.user.user_id || userInfo.user.sub,
           keypair.publicKey,
-          userInfo.auth_token,
+          userInfo.id_token,
           senderAddress
         );
         if (fetchedZk) {

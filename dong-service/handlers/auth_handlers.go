@@ -196,40 +196,26 @@ func (h *AuthHandler) OauthHandler(c *gin.Context) {
 	}()
 	body, _ := io.ReadAll(tokenResp.Body)
 
-	var tokenData struct {
-		AccessToken string `json:"access_token"`
-		ExpiresIn   int    `json:"expires_in"`
-		TokenType   string `json:"token_type"`
-	}
-
-	if err := json.Unmarshal(body, &tokenData); err != nil || tokenData.AccessToken == "" {
-		c.JSON(http.StatusBadGateway, models.ErrorResponse(http.StatusBadGateway, "Invalid token response when exchanging code"))
+	var tokenData models.TokenData
+	if err := json.Unmarshal(body, &tokenData); err != nil || tokenData.IDToken == "" {
+		c.JSON(http.StatusBadGateway, models.ErrorResponse(http.StatusBadGateway, "Invalid token response when exchanging code: "+err.Error()))
 		return
 	}
 
-	userForm := url.Values{}
-	userForm.Set("access_token", tokenData.AccessToken)
-	userInfoResp, err := http.PostForm(config.Oauth.UserInfoURL, userForm)
+	var claims jwt.MapClaims
+	_, _, err = new(jwt.Parser).ParseUnverified(tokenData.IDToken, &claims)
 	if err != nil {
-		c.JSON(http.StatusBadGateway, models.ErrorResponse(http.StatusBadGateway, "Failed to get user info: "+err.Error()))
+		c.JSON(http.StatusBadGateway,models.ErrorResponse(http.StatusBadGateway, "Failed to parse ID token claims: "+err.Error()))
 		return
 	}
-	defer func() {
-		if err != nil {
-			errClose := userInfoResp.Body.Close()
-			if errClose != nil {
-				logger.Error().Err(errClose).Msg("Failed to close user info response body")
-			}
-		}
-	}()
-	userBody, _ := io.ReadAll(userInfoResp.Body)
+	claimsJSON, err := json.Marshal(claims)
+	if err != nil {
+		c.JSON(http.StatusBadGateway, models.ErrorResponse(http.StatusBadGateway, "Failed to marshal claims: "+err.Error()))
+		return
+	}
 	var userInfo models.OauthUserInfo
-	if err := json.Unmarshal(userBody, &userInfo); err != nil {
-		c.JSON(http.StatusBadGateway, gin.H{
-			"error":           "User info not matching with expected format",
-			"raw":             string(userBody),
-			"unmarshal_error": err.Error(),
-		})
+	if err := json.Unmarshal(claimsJSON, &userInfo); err != nil {
+		c.JSON(http.StatusBadGateway, models.ErrorResponse(http.StatusBadGateway, "User info not matching with expected format: "+err.Error()))
 		return
 	}
 
@@ -284,7 +270,7 @@ func (h *AuthHandler) OauthHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, models.OauthResponse{
 		AccessToken:  signedAccess,
 		RefreshToken: signedRefresh,
-		AuthToken:    tokenData.AccessToken,
+		IDToken:      tokenData.IDToken,
 		User:         userInfo,
 	})
 }
