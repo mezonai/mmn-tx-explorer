@@ -92,6 +92,18 @@ export interface UpdateStatusRedEnvelopeRequest {
   status: number;
 }
 
+export interface ClaimEnvelopeRequest {
+  id: UUID;
+  split_money_id: number;         
+  claimer_wallet: string;
+}
+
+export interface RedEnvelopeClaim {
+  split_money_id: number;
+  amount: number;
+  description: string;
+}
+
 export interface RedEnvelopeDetailStats {
   name: string;
   total_amount: number;
@@ -105,6 +117,7 @@ export interface RedEnvelopeDetailStats {
 
 export interface RedEnvelopeDetailRequest {
   id: UUID;
+  wallet_address: string;
 }
 
 export interface RedEnvelopeDetailRecipient {
@@ -112,16 +125,4 @@ export interface RedEnvelopeDetailRecipient {
   amount: number;
   claimed_at: string;
   transaction_hash: string;
-}
-
-export interface ClaimEnvelopeRequest {
-  id: UUID;
-  split_money_id: number;         
-  claimer_wallet: string;
-}
-
-export interface RedEnvelopeClaim {
-  split_money_id: number;
-  amount: number;
-  description: string;
 }
