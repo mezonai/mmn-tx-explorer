@@ -17,11 +17,17 @@ export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
   const [currentCampaign, setCurrentCampaign] = useState(campaign);
   const { user } = useUser();
 
-  const handleRefreshData = (newRaisedAmount?: number) => {
+  const handleRefreshData = (newRaisedAmount?: number, newTotalWithdrawn?: number) => {
     if (newRaisedAmount !== undefined) {
       setCurrentCampaign((prev) => ({
         ...prev,
         total_amount: newRaisedAmount,
+      }));
+    }
+    if (newTotalWithdrawn !== undefined) {
+      setCurrentCampaign((prev) => ({
+        ...prev,
+        total_withdrawn: newTotalWithdrawn,
       }));
     }
   };

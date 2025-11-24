@@ -22,7 +22,7 @@ export interface DonationCampaign {
   owner: string;
   verified: boolean;
   current_balance: string;
-  total_withdrawn: string;
+  total_withdrawn: number;
 }
 
 export interface CreateCampaignRequest {

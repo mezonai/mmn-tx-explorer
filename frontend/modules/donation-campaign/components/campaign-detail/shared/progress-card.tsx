@@ -13,8 +13,8 @@ interface ProgressCardProps {
   goal: number;
   campaignId: string;
   currentBalance: string;
-  totalWithdrawn?: string;
-  onRefresh?: (newRaisedAmount: number, newTotalAmount: number) => void;
+  totalWithdrawn?: number;
+  onRefresh?: (newRaisedAmount: number, newTotalWithdrawn: number) => void;
 }
 export function ProgressCard({
   raised,
@@ -25,8 +25,8 @@ export function ProgressCard({
   onRefresh,
 }: ProgressCardProps) {
   const { mutate, isPending } = useRefreshCampaignRaised({
-    onSuccess: ({ total_amount, total_contributors }) => {
-      onRefresh?.(total_amount, total_contributors);
+    onSuccess: ({ total_amount, total_withdrawn }) => {
+      onRefresh?.(total_amount, total_withdrawn);
     },
   });
 
