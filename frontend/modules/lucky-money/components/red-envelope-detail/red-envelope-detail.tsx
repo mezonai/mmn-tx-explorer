@@ -12,7 +12,7 @@ import { BreadcrumbNavigation } from '@/components/shared';
 import { useRedEnvelopeDetail } from '../../hooks/useRedEnvelopeDetail';
 
 const breadcrumbs: IBreadcrumb[] = [
-  { label: 'Lucky Money', href: ROUTES.LI_XI },
+  { label: 'Lucky Money', href: ROUTES.LUCKY_MONEY },
   { label: 'Lucky Money Detail', href: '#' },
 ] as const;
 

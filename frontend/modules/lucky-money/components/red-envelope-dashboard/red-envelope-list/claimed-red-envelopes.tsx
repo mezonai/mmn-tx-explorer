@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { User, HandHeart} from 'lucide-react';
 import { useUser } from '@/providers';
 import { Pagination } from '@/components/ui/pagination';
-import { truncateWalletAddress, formatClaimDate } from '@/modules/li-xi/utils';
+import { truncateWalletAddress, formatClaimDate } from '@/modules/lucky-money/utils';
 import { CopyButton } from '@/components/ui/copy-button';
-import { useClaimedEnvelopes } from '@/modules/li-xi/hooks/useRedEnvelopes';
+import { useClaimedEnvelopes } from '@/modules/lucky-money/hooks/useRedEnvelopes';
 
 
 const ClaimedBadge = () => (

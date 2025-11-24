@@ -1,5 +1,5 @@
 import { apiDongClient } from "@/service";
-import { ClaimedEnvelopes, CreatedEnvelopes, EnvelopeListParams, RedEnvelopeDetailRecipient, RedEnvelopeDetailRequest, RedEnvelopeDetailStats, RedEnvelopeStats } from "./type";
+import { ClaimedEnvelopes, CreatedEnvelopes, CreateRedEnvelopeRequest, EnvelopeListParams, RedEnvelope, RedEnvelopeDetailRecipient, RedEnvelopeDetailRequest, RedEnvelopeDetailStats, RedEnvelopeStats, UpdateStatusRedEnvelopeRequest } from "./type";
 import { RED_ENVELOPE_ENPOINTS } from "./constants";
 import { IPaginatedResponse } from "@/types";
 import { UUID } from "crypto";
@@ -31,7 +31,21 @@ export class RedEnvelopeService {
     return data;
   }
 
-    static async getRedEnvelopeStatsById(request: RedEnvelopeDetailRequest): Promise<RedEnvelopeDetailStats> {
+  static async createRedEnvelope(request: CreateRedEnvelopeRequest): Promise<RedEnvelope> {
+    const { data } = await apiDongClient.post<{ data: RedEnvelope }>(
+      RED_ENVELOPE_ENPOINTS.CREATE_RED_ENVELOPE, request
+    )
+    return data.data
+  }
+
+  static async updateRedEnvelopeStatus(request: UpdateStatusRedEnvelopeRequest): Promise<RedEnvelope> {
+    const { data } = await apiDongClient.post<{ data: RedEnvelope }>(
+      RED_ENVELOPE_ENPOINTS.UPDATE_STATUS_RED_ENVELOPE, request
+    )
+    return data.data
+  }
+
+  static async getRedEnvelopeStatsById(request: RedEnvelopeDetailRequest): Promise<RedEnvelopeDetailStats> {
     const { data } = await apiDongClient.post<{ data: RedEnvelopeDetailStats }>(
       RED_ENVELOPE_ENPOINTS.RED_ENVELOPE_DETAIL_STATS, request
     )

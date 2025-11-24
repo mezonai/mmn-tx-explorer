@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { APP_CONFIG } from "@/configs/app.config";
 import { ROUTES } from "@/configs/routes.config";
 import { cn } from "@/lib/utils"; 
-import { useRedEnvelopeStats } from "@/modules/li-xi/hooks/useRedEnvelopeStats";
+import { useRedEnvelopeStats } from "@/modules/lucky-money/hooks/useRedEnvelopeStats";
 import { useUser } from "@/providers";
 import {
   SendIcon,
@@ -109,7 +109,7 @@ export const RedEnvelopeStats = () => {
             "
           >
             <Link
-              href={ROUTES.CREATE_LI_XI}
+              href={ROUTES.CREATE_LUCKY_MONEY}
               className="flex w-full items-center justify-center gap-2 sm:gap-3"
             >
               <GiftIcon className="h-6 w-6 sm:h-8 sm:w-8" />
