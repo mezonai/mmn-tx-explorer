@@ -1,6 +1,6 @@
 export interface LoginResponse {
   access_token: string;
-  id_token: string;
+  auth_token: string;
   refresh_token: string;
   user: UserInfoResponse;
 }

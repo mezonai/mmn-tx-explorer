@@ -17,7 +17,7 @@ export const handleTokenStorage = (userInfo: LoginResponse) => {
     refresh_token: userInfo.refresh_token,
   };
   localStorage.setItem(STORAGE_KEYS.TOKEN, JSON.stringify(token));
-  localStorage.setItem(STORAGE_KEYS.ID_TOKEN, userInfo.id_token);
+  localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, userInfo.auth_token);
 };
 
 export const generateAndStoreKeyPair = () => {

@@ -270,7 +270,7 @@ func (h *AuthHandler) OauthHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, models.OauthResponse{
 		AccessToken:  signedAccess,
 		RefreshToken: signedRefresh,
-		IDToken:      tokenData.IDToken,
+		AuthToken:      tokenData.IDToken,
 		User:         userInfo,
 	})
 }

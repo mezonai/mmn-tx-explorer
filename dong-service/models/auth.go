@@ -21,7 +21,7 @@ type TokenData struct {
 type OauthResponse struct {
 	AccessToken  string        `json:"access_token"`
 	RefreshToken string        `json:"refresh_token"`
-	IDToken      string        `json:"id_token"`
+	AuthToken    string        `json:"auth_token"`
 	User         OauthUserInfo `json:"user"`
 }
 
