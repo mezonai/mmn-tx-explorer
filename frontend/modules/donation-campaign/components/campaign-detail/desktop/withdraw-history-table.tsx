@@ -77,7 +77,7 @@ export function WithdrawHistoryTable({
   return (
     <Card className="dark:border-primary/20 overflow-x-auto p-6">
       <CardHeader className="m-0 flex items-center justify-between gap-2 px-3 py-0">
-        <CardTitle className="text-foreground">Recent Activity</CardTitle>
+        <CardTitle className="text-foreground">Withdrawals</CardTitle>
         <RefreshButton onClick={refetch} isLoading={isLoading} startDelay={DEFAULT_DEBOUNCE_TIME} />
       </CardHeader>
       <CardContent className="p-0">
