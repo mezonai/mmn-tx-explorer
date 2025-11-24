@@ -73,7 +73,7 @@ export const useRedEnvelopeDetail = () => {
 
   const pathName = process.env.NEXT_BASE_FE || window.location.origin;
   const claimLink = redEnvelopeId
-    ? `${pathName}/li-xi/${redEnvelopeId}/claim`
+    ? `${pathName}/lucky-money/${redEnvelopeId}/claim`
     : '';
 
   const qrCodeValue = JSON.stringify({

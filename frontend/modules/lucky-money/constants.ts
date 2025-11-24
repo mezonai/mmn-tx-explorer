@@ -1,4 +1,5 @@
 import { CreateRedEnvelopeForm } from "./type";
+import { UUID } from "crypto";
 
 export const EXPIRY_OPTIONS = [
   { label: '1h', value: 1 },
@@ -6,7 +7,6 @@ export const EXPIRY_OPTIONS = [
   { label: '24h', value: 24 },
   { label: '48h', value: 48 },
 ] as const;
-import { UUID } from "crypto";
 
 export const QUERY_KEYS = {
   CLAIMED_ENVELOPES: 'claimed-envelopes', 
