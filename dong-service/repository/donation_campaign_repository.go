@@ -23,13 +23,14 @@ var (
 
 // DonationCampaignRepository handles database operations for donation campaigns
 type DonationCampaignRepository struct {
-	db         *sql.DB
-	dongSchema string
+	db            *sql.DB
+	dongSchema    string
+	indexerSchema string
 }
 
 // NewDonationCampaignRepository creates a new donation campaign repository
-func NewDonationCampaignRepository(db *sql.DB, dongSchema string) *DonationCampaignRepository {
-	return &DonationCampaignRepository{db: db, dongSchema: dongSchema}
+func NewDonationCampaignRepository(db *sql.DB, dongSchema string, indexerSchema string) *DonationCampaignRepository {
+	return &DonationCampaignRepository{db: db, dongSchema: dongSchema, indexerSchema: indexerSchema}
 }
 
 // Create creates a new donation campaign
@@ -197,11 +198,13 @@ func (r *DonationCampaignRepository) GetByID(id int64) (*models.DonationCampaign
 	query := fmt.Sprintf(`
 		SELECT 
             dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
-			cs.total_amount, cs.total_contributor
+			cs.total_amount, cs.total_contributor,
+			COALESCE(w.balance::TEXT, '0') as current_balance
 		FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
+		LEFT JOIN %s.wallet w ON w.address = dc.donation_wallet
 		WHERE dc.id = $1
-	`, r.dongSchema, r.dongSchema)
+	`, r.dongSchema, r.dongSchema, r.indexerSchema)
 
 	var campaign models.DonationCampaign
 	err := r.db.QueryRow(query, id).Scan(
@@ -221,6 +224,7 @@ func (r *DonationCampaignRepository) GetByID(id int64) (*models.DonationCampaign
 		&campaign.UpdatedAt,
 		&campaign.TotalAmount,
 		&campaign.TotalContributors,
+		&campaign.CurrentBalance,
 	)
 
 	if err == sql.ErrNoRows {
@@ -238,11 +242,13 @@ func (r *DonationCampaignRepository) GetByIDAndCreator(id int64, creator int64) 
 	query := fmt.Sprintf(`
 		SELECT 
             dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
-			cs.total_amount, cs.total_contributor
+			cs.total_amount, cs.total_contributor,
+			COALESCE(w.balance::TEXT, '0') as current_balance
 		FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
+		LEFT JOIN %s.wallet w ON w.address = dc.donation_wallet
 		WHERE dc.id = $1 AND dc.creator = $2
-	`, r.dongSchema, r.dongSchema)
+	`, r.dongSchema, r.dongSchema, r.indexerSchema)
 
 	var campaign models.DonationCampaign
 	err := r.db.QueryRow(query, id, creator).Scan(
@@ -262,6 +268,7 @@ func (r *DonationCampaignRepository) GetByIDAndCreator(id int64, creator int64) 
 		&campaign.UpdatedAt,
 		&campaign.TotalAmount,
 		&campaign.TotalContributors,
+		&campaign.CurrentBalance,
 	)
 
 	if err == sql.ErrNoRows {
@@ -706,11 +713,13 @@ func (r *DonationCampaignRepository) GetBySlug(slug string) (*models.DonationCam
 	query := fmt.Sprintf(`
 		SELECT 
             dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
-			cs.total_amount, cs.total_contributor
+			cs.total_amount, cs.total_contributor,
+			COALESCE(w.balance::TEXT, '0') as current_balance
 		FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
+		LEFT JOIN %s.wallet w ON w.address = dc.donation_wallet
 		WHERE dc.slug = $1
-	`, r.dongSchema, r.dongSchema)
+	`, r.dongSchema, r.dongSchema, r.indexerSchema)
 
 	var campaign models.DonationCampaign
 	err := r.db.QueryRow(query, slug).Scan(
@@ -730,6 +739,7 @@ func (r *DonationCampaignRepository) GetBySlug(slug string) (*models.DonationCam
 		&campaign.UpdatedAt,
 		&campaign.TotalAmount,
 		&campaign.TotalContributors,
+		&campaign.CurrentBalance,
 	)
 
 	if err == sql.ErrNoRows {
@@ -740,4 +750,22 @@ func (r *DonationCampaignRepository) GetBySlug(slug string) (*models.DonationCam
 	}
 
 	return &campaign, nil
+}
+
+// IsCampaignWallet checks if a wallet address is associated with any campaign
+func (r *DonationCampaignRepository) IsCampaignWallet(address string) (bool, error) {
+	query := fmt.Sprintf(`
+		SELECT EXISTS(
+			SELECT 1 FROM %s.donation_campaign 
+			WHERE donation_wallet = $1
+		)
+	`, r.dongSchema)
+
+	var exists bool
+	err := r.db.QueryRow(query, address).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("failed to check if wallet is campaign wallet: %w", err)
+	}
+
+	return exists, nil
 }
