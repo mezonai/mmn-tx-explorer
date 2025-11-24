@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"dong-service/blockchain"
 	"dong-service/config"
 	"dong-service/database"
 	"dong-service/logger"
@@ -70,6 +71,17 @@ func main() {
 	if err := database.InitRedisWhiteList(&cfg.Redis); err != nil {
 		logger.Fatal().Err(err).Msg("Failed to initialize Redis whitelist")
 	}
+
+	blockchainService, err:= blockchain.NewBlockchainService(cfg)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("Failed to initialize blockchain service")
+	}
+
+	defer func() {
+		if err := blockchainService.Close(); err != nil {
+			logger.Error().Err(err).Msg("Failed to close blockchain service")
+		}
+	}()
 
 	// Create Gin router
 	r := gin.New()

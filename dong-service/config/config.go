@@ -13,6 +13,7 @@ type Config struct {
 	Server    ServerConfig     `mapstructure:"server"`
 	Database  DatabaseConfig   `mapstructure:"database"`
 	Indexer   IndexerConfig    `mapstructure:"indexer"`
+	Blockchain BlockchainConfig `mapstructure:"blockchain"`
 	CORS      CORSConfig       `mapstructure:"cors"`
 	JWT       JWTConfig        `mapstructure:"jwt"`
 	Oauth     OauthConfig      `mapstructure:"oauth"`
@@ -67,6 +68,11 @@ type CORSConfig struct {
 
 type IndexerConfig struct {
 	Schema string `mapstructure:"schema"`
+}
+
+type BlockchainConfig struct {
+	RPCURL string `mapstructure:"rpc_url"`
+	UseTls bool   `mapstructure:"use_tls"`
 }
 
 type SchedulerConfig struct {
