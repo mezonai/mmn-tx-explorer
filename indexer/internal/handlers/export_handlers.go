@@ -13,7 +13,6 @@ import (
 )
 
 func ExportTransactionsCSV(c *gin.Context) {
-	log.Info().Msg("ExportTransactionsCSV called")
 	walletAddress := c.Query("wallet_address")
 	if walletAddress == "" {
 		c.String(http.StatusBadRequest, "wallet_address is required")

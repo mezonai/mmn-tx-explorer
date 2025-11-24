@@ -1,47 +1,34 @@
-import { toast } from 'sonner';
+import { ROUTES } from '@/configs/routes.config';
 
-export function exportTransactionsToCSV(
-  transactions: Record<string, unknown>[],
+export async function exportTransactionsToCSV(
+  wallet_address: string,
+  fromDate: Date | null,
+  toDate: Date | null,
   filename: string = 'transactions.csv'
 ) {
-  if (!Array.isArray(transactions) || transactions.length === 0) {
-    toast.error('No transactions to export');
-    return;
-  }
-
-  const allKeys = Array.from(
-    transactions.reduce((keys, tx) => {
-      Object.keys(tx).forEach((key) => keys.add(key));
-      return keys;
-    }, new Set<string>())
-  );
-
-  const csvRows = [allKeys.join(',')];
-  for (const tx of transactions) {
-    const values = allKeys.map((key) => {
-      const value = tx[key];
-      if (value === undefined || value === null) {
-        return '';
-      }
-      let stringValue = '';
-      if (typeof value === 'object') {
-        stringValue = JSON.stringify(value);
-      } else {
-        stringValue = String(value);
-      }
-      return '"' + stringValue.replace(/"/g, '""') + '"';
-    });
-    csvRows.push(values.join(','));
-  }
-
-  const csvContent = csvRows.join('\n');
-  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.setAttribute('href', url);
-  a.setAttribute('download', filename);
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  window.URL.revokeObjectURL(url);
+  const formatLocalDate = (date: Date) => {
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - offset * 60 * 1000);
+    return localDate.toISOString().split('T')[0];
+  };
+  const params = new URLSearchParams({
+    wallet_address,
+    sort_by: 'transaction_timestamp',
+    sort_order: 'desc',
+  });
+  if (fromDate) params.append('fromdate', formatLocalDate(fromDate));
+  if (toDate) params.append('todate', formatLocalDate(toDate));
+  const baseUrl = process.env.NEXT_PUBLIC_APP_API_URL || '';
+  const chainId = process.env.NEXT_PUBLIC_CHAIN_ID || '';
+  const url = `${baseUrl}/${chainId}${ROUTES.EXPORT_CSV}?${params.toString()}`;
+  const response = await fetch(url, { method: 'GET' });
+  if (!response.ok) throw new Error('Failed to download CSV');
+  const blob = await response.blob();
+  const link = document.createElement('a');
+  link.href = window.URL.createObjectURL(blob);
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(link.href);
 }

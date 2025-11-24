@@ -81,45 +81,25 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
   const pagination = transactionsResponse?.meta;
   const isEmptyTransactions = transactions && transactions.length === 0;
 
-  const fetchAllTransactions = async (params: ITransactionListParams) => {
-    let allTxs: Record<string, unknown>[] = [];
-    let currentPage = 0;
-    while (true) {
-      const response = await TransactionService.getTransactions({ ...params, page: currentPage });
-      const txs = (response.data ?? []) as unknown as Record<string, unknown>[];
-      if (!txs.length) break;
-      allTxs = allTxs.concat(txs);
-      currentPage++;
-    }
-    return allTxs;
-  };
-
   const handleExportWithRange = async (fromDate: Date | null, toDate: Date | null, filename?: string) => {
     if (isExporting) return;
     setIsExporting(true);
-    const baseParams: ITransactionListParams = { ...getSearchParams(), page: 1, limit: 1000 };
-    if (fromDate) baseParams.start_time = formatLocalDate(fromDate);
-    if (toDate) baseParams.end_time = formatLocalDate(toDate);
     try {
-      const allTxs = await fetchAllTransactions(baseParams);
-      if (allTxs.length === 0) {
-        toast.error('No transactions found for the specified range.');
-        return;
-      } else {
-        exportTransactionsToCSV(allTxs, filename || `${walletAddress}-transactions-range.csv`);
-        setShowExportModal(false);
-      }
+      await exportTransactionsToCSV(
+        walletAddress,
+        fromDate,
+        toDate,
+        filename || `${walletAddress}-transactions-range.csv`
+      );
+      setShowExportModal(false);
     } catch (error) {
-      toast.error('Failed to fetch all transactions for export.' + error);
+      toast.error('Failed to export transactions as CSV. ' + error);
     } finally {
       setIsExporting(false);
     }
   };
 
   const handleExportAll = async () => {
-    const baseParams: ITransactionListParams = { ...getSearchParams(), page: 1, limit: 1000 };
-    delete baseParams.start_time;
-    delete baseParams.end_time;
     await handleExportWithRange(null, null, `${walletAddress}-transactions-all.csv`);
   };
 
