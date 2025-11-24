@@ -2,21 +2,18 @@ package blockchain
 
 import (
 	"context"
-	"crypto/ed25519"
 	"dong-service/config"
 	"dong-service/logger"
-	"encoding/hex"
 	"fmt"
 	"math/big"
 	"time"
 
-	mmnClient "github.com/mezonai/mmn-sdk/go-sdk/client"
-
 	"github.com/btcsuite/btcutil/base58"
+	mmnClient "github.com/mezonai/mmn-sdk/go-sdk/client"
 )
 
 const (
-	TYPE_TX = 1
+	TYPE_TX  = 1
 	DECIMALS = 6
 )
 
@@ -37,12 +34,12 @@ func NewBlockchainService(config *config.Config) (*BlockchainService, error) {
 	}
 
 	return &BlockchainService{
-		mmnClient:  client,
+		mmnClient: client,
 		rpcURL:    config.Blockchain.RPCURL,
 	}, nil
 }
 
-func (s *BlockchainService) Transfer(fromAddress, toAddress string, amount int64, privateKeyHex, textData, extraInfo string) (string, error) {
+func (s *BlockchainService) Transfer(fromAddress, toAddress string, amount int64, privateKeyBs58, textData, extraInfo string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -68,15 +65,16 @@ func (s *BlockchainService) Transfer(fromAddress, toAddress string, amount int64
 		Nonce:     nonceResp,
 		ExtraInfo: extraInfo,
 	}
-	signature, err := s.signTransaction(txMsg, privateKeyHex)
+	privateKey := base58.Decode(privateKeyBs58)
+	signature, err := mmnClient.SignTx(txMsg, []byte(fromAddress), privateKey)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to sign transaction")
 		return "", fmt.Errorf("failed to sign transaction: %w", err)
 	}
 
 	signedTx := &mmnClient.SignedTx{
-		Tx:     txMsg,
-		Sig:    signature,
+		Tx:  txMsg,
+		Sig: signature.Sig,
 	}
 
 	resp, err := s.mmnClient.AddTx(ctx, *signedTx)
@@ -98,41 +96,6 @@ func (s *BlockchainService) Transfer(fromAddress, toAddress string, amount int64
 		Msg("Transaction submitted successfully")
 
 	return resp.TxHash, nil
-}
-
-func (s *BlockchainService) signTransaction(txMsg *mmnClient.Tx, privateKeyHex string) (string, error) {
-	privateKeyBytes, err := hex.DecodeString(privateKeyHex)
-	if err != nil {
-		return "", fmt.Errorf("invalid private key hex: %w", err)
-	}
-	var privateKey ed25519.PrivateKey
-
-	switch len(privateKeyBytes) {
-	case ed25519.SeedSize: // 32 bytes - seed
-		privateKey = ed25519.NewKeyFromSeed(privateKeyBytes)
-	case ed25519.PrivateKeySize: // 64 bytes - full private key
-		privateKey = ed25519.PrivateKey(privateKeyBytes)
-	default:
-		return "", fmt.Errorf("unsupported private key length: expected 32, 48 (DER), or 64, got %d", len(privateKeyBytes))
-	}
-
-	message := s.serializeTransactionForSigning(txMsg)
-	signature := ed25519.Sign(privateKey, message)
-	return base58.Encode(signature), nil
-}
-
-func (s *BlockchainService) serializeTransactionForSigning(txMsg *mmnClient.Tx) []byte {
-	message := fmt.Sprintf(
-		"%d|%s|%s|%s|%s|%d|%s",
-		txMsg.Type,
-		txMsg.Sender,
-		txMsg.Recipient,
-		txMsg.Amount,
-		txMsg.TextData,
-		txMsg.Nonce,
-		txMsg.ExtraInfo,
-	)
-	return []byte(message)
 }
 
 func (s *BlockchainService) Close() error {
