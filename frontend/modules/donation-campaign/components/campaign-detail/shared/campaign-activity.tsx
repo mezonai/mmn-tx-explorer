@@ -85,7 +85,7 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
     refetch: refetchReceivedTransactions,
   };
 
-  const withDrawHistoryProps = {
+  const withdrawHistoryProps = {
     transactions: sentTransactions,
     totalTransaction: totalSentTransaction,
     walletAddress,
@@ -176,16 +176,16 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
             {isDesktop === undefined ? (
               <>
                 <div className="hidden lg:block">
-                  <WithdrawHistoryTable {...withDrawHistoryProps} />
+                  <WithdrawHistoryTable {...withdrawHistoryProps} />
                 </div>
                 <div className="block lg:hidden">
-                  <WithdrawHistoryCard {...withDrawHistoryProps} />
+                  <WithdrawHistoryCard {...withdrawHistoryProps} />
                 </div>
               </>
             ) : isDesktop ? (
-              <WithdrawHistoryTable {...withDrawHistoryProps} />
+              <WithdrawHistoryTable {...withdrawHistoryProps} />
             ) : (
-              <WithdrawHistoryCard {...withDrawHistoryProps} />
+              <WithdrawHistoryCard {...withdrawHistoryProps} />
             )}
           </TabsContent>
         </div>
