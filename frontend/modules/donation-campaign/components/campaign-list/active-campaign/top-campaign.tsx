@@ -12,7 +12,7 @@ export const TopCampaign = () => {
     limit: 3,
     status: String(ECampaignStatus.Active),
     order: 'desc',
-    order_by: 'recent_amount',
+    order_by: 'total_amount',
     verified: true,
   });
 
