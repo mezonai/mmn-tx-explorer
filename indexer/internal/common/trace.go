@@ -34,7 +34,7 @@ type Trace struct {
 type RawTraces = []map[string]interface{}
 
 type TraceModel struct {
-	ChainId          string  `json:"chain_id"`
+	ChainID          string  `json:"chain_id"`
 	BlockNumber      uint64  `json:"block_number"`
 	BlockHash        string  `json:"block_hash"`
 	BlockTimestamp   uint64  `json:"block_timestamp"`
@@ -59,7 +59,7 @@ type TraceModel struct {
 
 func (t *Trace) Serialize() TraceModel {
 	return TraceModel{
-		ChainId:          t.ChainID.String(),
+		ChainID:          t.ChainID.String(),
 		BlockNumber:      t.BlockNumber.Uint64(),
 		BlockHash:        t.BlockHash,
 		TransactionHash:  t.TransactionHash,

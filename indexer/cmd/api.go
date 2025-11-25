@@ -30,11 +30,12 @@ var (
 		Short: "TBD",
 		Long:  "TBD",
 		Run: func(cmd *cobra.Command, args []string) {
-			RunApi(cmd, args)
+			RunAPI(cmd, args)
 		},
 	}
 )
 
+// RunAPI godoc
 // @title Mezon Dong
 // @version v0.0.1-beta
 // @description API for querying blockchain transactions and events
@@ -43,14 +44,14 @@ var (
 // @BasePath /
 // @Security BasicAuth
 // @securityDefinitions.basic BasicAuth
-func RunApi(cmd *cobra.Command, args []string) {
-
+func RunAPI(cmd *cobra.Command, args []string) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	mainStorage, err := storage.GetMainStorage()
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to create storage connector")
+		log.Err(err).Msg("Failed to create storage connector")
+		return
 	}
 
 	if config.Cfg.StatsWorker.Enabled {
@@ -78,34 +79,32 @@ func RunApi(cmd *cobra.Command, args []string) {
 	})
 
 	root := r.Group("/:chainId")
-	{
-		root.Use(middleware.Authorization)
-		root.Use(middleware.Cors)
-		// wildcard queries
-		root.GET("/transactions", handlers.GetTransactions)
-		root.GET("/pending-transactions", handlers.GetPendingTransactions)
-		root.GET("/pending-tx/:transaction_hash/detail", handlers.GetPendingTransactionDetail)
 
-		// wallet queries
-		root.GET("/wallets", handlers.GetWallets)
-		root.GET("/wallets/:address/detail", handlers.GetWalletDetail)
+	root.Use(middleware.Authorization)
+	root.Use(middleware.Cors)
+	// wildcard queries
+	root.GET("/transactions", handlers.GetTransactions)
+	root.GET("/pending-transactions", handlers.GetPendingTransactions)
+	root.GET("/pending-tx/:transaction_hash/detail", handlers.GetPendingTransactionDetail)
 
-		// blocks table queries
-		root.GET("/blocks", handlers.GetBlocks)
-		root.GET("/blocks/:blockNumber/detail", handlers.GetBlockDetail)
+	// wallet queries
+	root.GET("/wallets", handlers.GetWallets)
+	root.GET("/wallets/:address/detail", handlers.GetWalletDetail)
 
-		root.GET("/tx/:txHash/detail", handlers.GetTransactionDetail)
+	// blocks table queries
+	root.GET("/blocks", handlers.GetBlocks)
+	root.GET("/blocks/:blockNumber/detail", handlers.GetBlockDetail)
 
-		// internal endpoint (without extra_info field)
-		root.GET("/internal/tx/:txHash/detail", handlers.GetInternalTransactionDetail)
+	root.GET("/tx/:txHash/detail", handlers.GetTransactionDetail)
+	// internal endpoint (without extra_info field)
+	root.GET("/internal/tx/:txHash/detail", handlers.GetInternalTransactionDetail)
 
-		// stats queries
-		root.GET("/stats/dashboard", handlers.GetDashboardStats)
-		root.GET("/stats/transactions", handlers.GetTransactionStats)
+	// stats queries
+	root.GET("/stats/dashboard", handlers.GetDashboardStats)
+	root.GET("/stats/transactions", handlers.GetTransactionStats)
 
-		// search
-		root.GET("/search/:input", handlers.Search)
-	}
+	// search
+	root.GET("/search/:input", handlers.Search)
 
 	r.GET("/health", handlers.Health)
 
@@ -134,7 +133,8 @@ func RunApi(cmd *cobra.Command, args []string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatal().Err(err).Msg("API server forced to shutdown")
+		log.Err(err).Msg("API server forced to shutdown")
+		return
 	}
 
 	log.Info().Msg("API server exiting")

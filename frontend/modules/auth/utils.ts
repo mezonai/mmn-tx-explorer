@@ -1,5 +1,5 @@
 import { STORAGE_KEYS } from '@/constant';
-import { EZkClientType, MmnClient, ZkClient } from 'mmn-client-js';
+import { MmnClient, ZkClient } from 'mmn-client-js';
 import { LoginResponse, StateObject } from './type';
 
 const mmnURL = process.env.NEXT_PUBLIC_CHAT_APP_MMN_API_URL ?? '';
@@ -50,7 +50,6 @@ export const fetchAndStoreZkProof = async (
       ephemeralPublicKey,
       jwt,
       address,
-      clientType: EZkClientType.OAUTH,
     });
     localStorage.setItem(STORAGE_KEYS.ZK_PROOF, JSON.stringify(zkProof));
     return zkProof;

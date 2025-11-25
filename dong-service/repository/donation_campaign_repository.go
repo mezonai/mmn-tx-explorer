@@ -29,7 +29,7 @@ type DonationCampaignRepository struct {
 }
 
 // NewDonationCampaignRepository creates a new donation campaign repository
-func NewDonationCampaignRepository(db *sql.DB, dongSchema string, indexerSchema string) *DonationCampaignRepository {
+func NewDonationCampaignRepository(db *sql.DB, dongSchema, indexerSchema string) *DonationCampaignRepository {
 	return &DonationCampaignRepository{db: db, dongSchema: dongSchema, indexerSchema: indexerSchema}
 }
 
@@ -240,7 +240,7 @@ func (r *DonationCampaignRepository) GetByID(id int64) (*models.DonationCampaign
 }
 
 // GetByIDAndCreator retrieves a donation campaign by ID and creator
-func (r *DonationCampaignRepository) GetByIDAndCreator(id int64, creator int64) (*models.DonationCampaign, error) {
+func (r *DonationCampaignRepository) GetByIDAndCreator(id, creator int64) (*models.DonationCampaign, error) {
 	query := fmt.Sprintf(`
 		SELECT 
             dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
@@ -320,7 +320,7 @@ func (r *DonationCampaignRepository) GetAll(status *int16, pagination utils.Pagi
 	var orderByExpr string
 	switch strings.ToLower(pagination.OrderBy) {
 	case "created_at":
-		orderByExpr = "dc.created_at"
+		orderByExpr = "dc.created_at" //nolint:goconst // literal used intentionally for SQL whitelist
 	case "total_amount":
 		orderByExpr = "cs.total_amount"
 	default:
@@ -374,7 +374,7 @@ func (r *DonationCampaignRepository) GetAll(status *int16, pagination utils.Pagi
 }
 
 // Update updates a donation campaign
-func (r *DonationCampaignRepository) Update(id int64, creator int64, req *models.UpdateDonationCampaignRequest) (*models.DonationCampaign, error) {
+func (r *DonationCampaignRepository) Update(id, creator int64, req *models.UpdateDonationCampaignRequest) (*models.DonationCampaign, error) {
 	// Build dynamic update query
 	var setClauses []string
 	var args []any
@@ -453,7 +453,7 @@ func (r *DonationCampaignRepository) Update(id int64, creator int64, req *models
 }
 
 // Activate sets a campaign status to Active
-func (r *DonationCampaignRepository) Activate(id int64, creator int64) (*models.DonationCampaign, error) {
+func (r *DonationCampaignRepository) Activate(id, creator int64) (*models.DonationCampaign, error) {
 	query := fmt.Sprintf(`
         UPDATE %s.donation_campaign
         SET status = $1, updated_at = $2
@@ -496,7 +496,7 @@ func (r *DonationCampaignRepository) Activate(id int64, creator int64) (*models.
 }
 
 // Close sets a campaign status to Closed
-func (r *DonationCampaignRepository) Close(id int64, creator int64) (*models.DonationCampaign, error) {
+func (r *DonationCampaignRepository) Close(id, creator int64) (*models.DonationCampaign, error) {
 	query := fmt.Sprintf(`
 		UPDATE %s.donation_campaign
 		SET status = $1, updated_at = $2
@@ -597,9 +597,9 @@ func (r *DonationCampaignRepository) GetTopContributors(campaignID int64, limit 
 	for rows.Next() {
 		var contributor models.TopContributor
 
-		err := rows.Scan(&contributor.SenderWallet, &contributor.TotalDonate, &campaignTotalAmount)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan contributor: %w", err)
+		scanErr := rows.Scan(&contributor.SenderWallet, &contributor.TotalDonate, &campaignTotalAmount)
+		if scanErr != nil {
+			return nil, fmt.Errorf("failed to scan contributor: %w", scanErr)
 		}
 
 		// Calculate percentage of total campaign amount
@@ -631,8 +631,8 @@ func (r *DonationCampaignRepository) GetTopContributors(campaignID int64, limit 
 	}, nil
 }
 
-// Delete removes a drafted donation campaign by ID if the requester is the creator
-func (r *DonationCampaignRepository) DeleteDraft(id int64, creator int64) error {
+// DeleteDraft : Delete removes a drafted donation campaign by ID if the requester is the creator
+func (r *DonationCampaignRepository) DeleteDraft(id, creator int64) error {
 	query := fmt.Sprintf(`
 		DELETE FROM %s.donation_campaign
 		WHERE id = $1 AND creator = $2
@@ -686,7 +686,10 @@ func (r *DonationCampaignRepository) GenerateUniqueSlug(baseSlug string) (string
 	if err != nil {
 		return "", fmt.Errorf("failed to query existing slugs: %w", err)
 	}
-	defer rows.Close()
+
+	defer func() {
+		_ = rows.Close()
+	}()
 
 	maxIndex := 0
 
