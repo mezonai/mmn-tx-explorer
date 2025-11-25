@@ -1,12 +1,14 @@
 package utils
 
 import (
+	"crypto/sha256"
 	"dong-service/constants"
 	"fmt"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/mr-tron/base58/base58"
 )
 
 // GetUserIDFromContext extracts and parses the user ID from the gin context
@@ -89,4 +91,26 @@ func ValidateStatus(status int16) bool {
 	return status == constants.CampaignStatusDraft ||
 		status == constants.CampaignStatusActive ||
 		status == constants.CampaignStatusClosed
+}
+
+// generates a wallet address from user ID
+// TODO: consider using mmn go-sdk later
+func GenerateAddress(input string) string {
+	sum := sha256.Sum256([]byte(input))
+	return base58.Encode(sum[:])
+}
+
+// GetAddressFromContext extracts the address from the gin context (set by middleware)
+func GetAddressFromContext(c *gin.Context) (string, bool) {
+	address, ok := c.Get("address")
+	if !ok {
+		return "", false
+	}
+
+	addressStr, ok := address.(string)
+	if !ok {
+		return "", false
+	}
+
+	return addressStr, true
 }
