@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle2, Clock, Loader2, ExternalLink } from 'lucide-react';
 import { BSC_SCAN_URL } from '@/constant/contracts';
+import { CopyButton } from '@/components/ui/copy-button';
 
 type BridgeStep = 'idle' | 'approving' | 'confirmed' | 'processing' | 'completed';
 
@@ -73,16 +74,16 @@ export const BridgeStatus = ({
         {txHash && (
           <div className="flex items-center gap-2 mt-2">
             <p className="text-xs text-muted-foreground font-mono break-all">
-              TX: {txHash}
+              <a
+                href={`${BSC_SCAN_URL}/tx/${txHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-brand-primary hover:text-brand-primary/80"
+              >
+                {txHash}
+              </a>
             </p>
-            <a
-              href={`${BSC_SCAN_URL}/tx/${txHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-brand-primary hover:text-brand-primary/80 flex-shrink-0"
-            >
-              <ExternalLink className="h-3 w-3" />
-            </a>
+            <CopyButton textToCopy={txHash} />
           </div>
         )}
       </CardHeader>
