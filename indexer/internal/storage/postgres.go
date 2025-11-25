@@ -2001,65 +2001,68 @@ func getNewArgumentKeyByBaseArgumentKey(baseKey string, args map[string]interfac
 	}
 }
 
-func (p *PostgresConnector) GetAllTransactionsByWallet(ctx context.Context, walletAddress string, startTime, endTime int64, sortBy, sortOrder string) ([]common.Transaction, error) {
-	query := `
-		SELECT hash, from_address, to_address, value, transaction_timestamp, block_number, status, transaction_type, text_data, extra_info
-		FROM transactions
-		WHERE (from_address = $1 OR to_address = $1)
-		  AND transaction_timestamp >= to_timestamp($2)
-		  AND transaction_timestamp <= to_timestamp($3)
-		ORDER BY ` + sortBy + ` ` + sortOrder + `
-	`
+func (p *PostgresConnector) GetAllTransactionsByWallet(
+	ctx context.Context,
+	walletAddress string,
+	startTime, endTime int64,
+	sortBy, sortOrder string,
+) ([]common.Transaction, error) {
+
+	columns := p.buildSelectFields([]string{}, defaultTransactionFields)
+
+	allowedColumns := []string{"hash", "from_address", "to_address", "value", "transaction_timestamp", "block_number", "status", "transaction_type"}
+	isValidColumn := false
+	for _, c := range allowedColumns {
+		if c == sortBy {
+			isValidColumn = true
+			break
+		}
+	}
+	if !isValidColumn {
+		sortBy = "transaction_timestamp"
+	}
+
+	switch strings.ToUpper(sortOrder) {
+	case "ASC":
+		sortOrder = "ASC"
+	default:
+		sortOrder = "DESC"
+	}
+
+	query := fmt.Sprintf(`
+		(
+			SELECT %s
+			FROM transactions
+			WHERE from_address = $1
+				AND transaction_timestamp >= to_timestamp($2)
+				AND transaction_timestamp <= to_timestamp($3)
+		)
+		UNION ALL
+		(
+			SELECT %s
+			FROM transactions
+			WHERE to_address = $1
+				AND transaction_timestamp >= to_timestamp($2)
+				AND transaction_timestamp <= to_timestamp($3)
+		)
+		ORDER BY %s %s;
+	`, columns, columns, sortBy, sortOrder)
+
 	rows, err := p.db.QueryContext(ctx, query, walletAddress, startTime, endTime)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
-	var transactions []common.Transaction
-	for rows.Next() {
-		var tx common.Transaction
-		var timestamp time.Time
-		var blockNumber sql.NullString
-		var status sql.NullInt64
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Error().Err(err).Msg("Failed to close rows in GetAllTransactionsByWallet")
+		}
+	}()
 
-		err := rows.Scan(
-			&tx.Hash,
-			&tx.FromAddress,
-			&tx.ToAddress,
-			&tx.Value,
-			&timestamp,
-			&blockNumber,
-			&status,
-			&tx.TransactionType,
-			&tx.TextData,
-			&tx.ExtraInfo,
-		)
-		if err != nil {
-			return nil, err
-		}
-		tx.TransactionTimestamp = timestamp
-		if blockNumber.Valid {
-			bn := blockNumber.String
-			bigIntVal, ok := new(big.Int).SetString(bn, 10)
-			if ok {
-				tx.BlockNumber = bigIntVal
-			} else {
-				tx.BlockNumber = nil
-			}
-		} else {
-			tx.BlockNumber = nil
-		}
-		if status.Valid {
-			s := uint64(status.Int64)
-			tx.Status = &s
-		} else {
-			tx.Status = nil
-		}
-		transactions = append(transactions, tx)
-	}
-	if err := rows.Err(); err != nil {
+	transactions, err := p.scanRowsToTransactions(rows)
+	if err != nil {
 		return nil, err
 	}
-	return transactions, nil
+
+	return transactions, rows.Err()
 }
