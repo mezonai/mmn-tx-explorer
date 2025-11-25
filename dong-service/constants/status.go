@@ -18,6 +18,25 @@ const (
 	TransactionStatus_FINALIZED int16 = 2
 )
 
+// Red Envelope Wallet Status Constants
+const (
+	RedEnvelopeWalletStatusReady          = "READY"           // Available for use
+	RedEnvelopeWalletStatusInUse          = "IN_USE"          // Currently assigned to a red envelope
+	RedEnvelopeWalletStatusPrepareReplace = "PREPARE_REPLACE" // Scheduled for replacement (>30 days old)
+	RedEnvelopeWalletStatusDisabled       = "DISABLED"        // No longer usable
+)
+
+const (
+	WalletTypeDefault     = "DEFAULT"
+	WalletTypeRedEnvelope = "LUCKY_MONEY"
+)
+
+// Red Envelope Configuration
+const (
+	RedEnvelopeInitialWalletPool  = 50 // Number of wallets to create on deployment
+	RedEnvelopeWalletMaxAgeInDays = 30 // Maximum age for unused wallets before replacement
+)
+
 // GetStatusName returns the human-readable name for a status code
 func GetStatusName(status int16) string {
 	switch status {
