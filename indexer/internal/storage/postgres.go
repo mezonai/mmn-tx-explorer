@@ -169,6 +169,16 @@ var defaultTransactionFields = []string{
 	"transaction_timestamp", "value", "transaction_type", "status", "text_data", "extra_info",
 }
 
+var defaultWalletFields = []string{
+	"address", "account_nonce", "balance", "transaction_count", "last_block",
+}
+
+var validSortByColumns = map[string][]string{
+	"blocks":       defaultBlockFields,
+	"transactions": defaultTransactionFields,
+	"wallet":       defaultWalletFields,
+}
+
 func NewPostgresConnector(cfg *config.PostgresConfig) (*PostgresConnector, error) {
 	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s",
 		cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.Database)
@@ -898,9 +908,8 @@ func (p *PostgresConnector) GetAggregations(ctx context.Context, table string, q
 		args["group_by"] = strings.Join(qf.GroupBy, ", ")
 	}
 
-	if qf.SortBy != "" {
-		query += " ORDER BY @sort_by"
-		args["sort_by"] = qf.SortBy
+	if qf.SortBy != "" && p.validateSortByColumn(table, qf.SortBy) {
+		query += " ORDER BY " + qf.SortBy
 		switch strings.ToUpper(qf.SortOrder) {
 		case "ASC":
 			query += " ASC"
@@ -1320,9 +1329,8 @@ func (p *PostgresConnector) buildQueryWithNamedArgs(table string, columns string
 		}
 	}
 
-	if qf.SortBy != "" {
-		query += " ORDER BY @sort_by"
-		args["sort_by"] = qf.SortBy
+	if qf.SortBy != "" && p.validateSortByColumn(table, qf.SortBy) {
+		query += " ORDER BY " + qf.SortBy
 		switch strings.ToUpper(qf.SortOrder) {
 		case "ASC":
 			query += " ASC"
@@ -1399,9 +1407,9 @@ func (p *PostgresConnector) buildWhereClauseWithNamedArgs(qf QueryFilter) (query
 		if strings.TrimSpace(key) == "" || strings.TrimSpace(value) == "" {
 			continue
 		}
-		condition, baseKey := createPgFilterClause(key, value)
+		condition, conditionKey := createPgFilterClause(key, value, args)
 		conditions = append(conditions, condition)
-		args[baseKey] = value
+		args[conditionKey] = value
 	}
 
 	return strings.Join(conditions, " AND "), args
@@ -1409,10 +1417,10 @@ func (p *PostgresConnector) buildWhereClauseWithNamedArgs(qf QueryFilter) (query
 
 // createPgFilterClause builds a SQL clause from a key that may include operator suffixes
 // Supported suffixes: _gte, _lte, _lt, _gt, _ne, _in
-func createPgFilterClause(key, value string) (condition string, baseKey string) {
+func createPgFilterClause(key, value string, args map[string]interface{}) (condition string, conditionKey string) {
 	// Determine operator and base column name
 	op := "="
-	baseKey = key
+	baseKey := key
 	if len(key) >= 3 {
 		suffix := key[len(key)-3:]
 		switch suffix {
@@ -1438,26 +1446,28 @@ func createPgFilterClause(key, value string) (condition string, baseKey string) 
 		case "_in":
 			baseKey = key[:len(key)-3]
 			// Expect value to be a comma-separated list without surrounding parentheses
-			condition = fmt.Sprintf("%s IN (@%s)", baseKey, baseKey)
-			return condition, baseKey
+			conditionKey = getNewArgumentKeyByBaseArgumentKey(baseKey, args)
+			condition = fmt.Sprintf("%s IN (@%s)", baseKey, conditionKey)
+			return condition, conditionKey
 		default:
 			// keep defaults
 		}
 	}
 
+	conditionKey = getNewArgumentKeyByBaseArgumentKey(baseKey, args)
 	// If the column looks like a timestamp and the value is numeric unix seconds/millis, use to_timestamp()
-	if looksLikeTimestampColumn(baseKey) && isAllDigits(value) {
+	if looksLikeTimestampColumn(conditionKey) && isAllDigits(value) {
 		// 13+ digits likely milliseconds
 		if len(value) >= 13 {
-			condition = fmt.Sprintf("%s %s to_timestamp((@%s)::bigint/1000.0)", baseKey, op, baseKey)
-			return condition, baseKey
+			condition = fmt.Sprintf("%s %s to_timestamp((@%s)::bigint/1000.0)", baseKey, op, conditionKey)
+			return condition, conditionKey
 		}
-		condition = fmt.Sprintf("%s %s to_timestamp(@%s)", baseKey, op, baseKey)
-		return condition, baseKey
+		condition = fmt.Sprintf("%s %s to_timestamp(@%s)", baseKey, op, conditionKey)
+		return condition, conditionKey
 	}
 
-	condition = fmt.Sprintf("%s %s @%s", baseKey, op, baseKey)
-	return condition, baseKey
+	condition = fmt.Sprintf("%s %s @%s", baseKey, op, conditionKey)
+	return condition, conditionKey
 }
 
 func isAllDigits(s string) bool {
@@ -1961,7 +1971,32 @@ func (p *PostgresConnector) Close() error {
 func (p *PostgresConnector) convertQueryNamedArgsToPositional(query string, args map[string]interface{}) (finalQuery string, finalArgs []interface{}) {
 	for key, value := range args {
 		finalArgs = append(finalArgs, value)
-		query = strings.Replace(query, "@"+key, "$"+strconv.Itoa(len(finalArgs)), -1)
+		query = strings.Replace(query, "@"+key, "$"+strconv.Itoa(len(finalArgs)), 1)
 	}
 	return query, finalArgs
+}
+
+func (p *PostgresConnector) validateSortByColumn(table string, column string) bool {
+	validColumns, exists := validSortByColumns[table]
+	if !exists {
+		return false
+	}
+	for _, validColumn := range validColumns {
+		if column == validColumn {
+			return true
+		}
+	}
+	return false
+}
+
+func getNewArgumentKeyByBaseArgumentKey(baseKey string, args map[string]interface{}) string {
+	index := 1
+	newKey := baseKey
+	for {
+		if _, exists := args[newKey]; !exists {
+			return newKey
+		}
+		newKey = fmt.Sprintf("%s_%d", baseKey, index)
+		index++
+	}
 }
