@@ -1976,7 +1976,7 @@ func (p *PostgresConnector) Close() error {
 func (p *PostgresConnector) convertQueryNamedArgsToPositional(query string, args map[string]interface{}) (finalQuery string, finalArgs []interface{}) {
 	for key, value := range args {
 		finalArgs = append(finalArgs, value)
-		query = strings.ReplaceAll(query, "@"+key, "$"+strconv.Itoa(len(finalArgs)))
+		query = strings.Replace(query, "@"+key, "$"+strconv.Itoa(len(finalArgs)), 1)
 	}
 	return query, finalArgs
 }
