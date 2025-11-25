@@ -12,20 +12,20 @@ import (
 )
 
 type RedEnvelopeExpiryJob struct {
-	redEnvelopeRepo       *repository.RedEnvelopeRepository
-	redEnvelopeWalletRepo *repository.RedEnvelopeWalletRepository
-	blockchainService     *blockchain.BlockchainService
+	redEnvelopeRepo   *repository.RedEnvelopeRepository
+	walletRepo        *repository.IntermediaryWalletRepository
+	blockchainService *blockchain.BlockchainService
 }
 
 func NewRedEnvelopeExpiryJob(
 	redEnvelopeRepo *repository.RedEnvelopeRepository,
-	redEnvelopeWalletRepo *repository.RedEnvelopeWalletRepository,
+	IntermediaryWalletRepo *repository.IntermediaryWalletRepository,
 	blockchainService *blockchain.BlockchainService,
 ) *RedEnvelopeExpiryJob {
 	return &RedEnvelopeExpiryJob{
-		redEnvelopeRepo:       redEnvelopeRepo,
-		redEnvelopeWalletRepo: redEnvelopeWalletRepo,
-		blockchainService:     blockchainService,
+		redEnvelopeRepo:   redEnvelopeRepo,
+		walletRepo:        IntermediaryWalletRepo,
+		blockchainService: blockchainService,
 	}
 }
 
@@ -65,7 +65,7 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 				Str("owner_wallet", envelope.OwnerWallet).
 				Msg("Transferring remaining balance back to owner")
 
-			wallet, err := j.redEnvelopeWalletRepo.GetWalletByAddress(ctx, envelope.RedEnvelopeWallet)
+			wallet, err := j.walletRepo.GetWalletByAddress(ctx, envelope.RedEnvelopeWallet)
 			if err != nil {
 				logger.Error().Err(err).Msg("Failed to get wallet")
 			} else {
@@ -104,7 +104,7 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 			continue
 		}
 
-		wallet, err := j.redEnvelopeWalletRepo.GetWalletByAddress(ctx, envelope.RedEnvelopeWallet)
+		wallet, err := j.walletRepo.GetWalletByAddress(ctx, envelope.RedEnvelopeWallet)
 		if err != nil {
 			logger.Error().
 				Err(err).
@@ -115,7 +115,7 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 
 		walletAge := envelope.UpdatedAt.Sub(wallet.CreatedAt).Hours() / 24
 		if walletAge > float64(constants.RedEnvelopeWalletMaxAgeInDays) {
-			err = j.redEnvelopeWalletRepo.UpdateWalletStatus(ctx, wallet.ID, constants.RedEnvelopeWalletStatusPrepareReplace)
+			err = j.walletRepo.UpdateWalletStatus(ctx, wallet.ID, constants.RedEnvelopeWalletStatusPrepareReplace)
 			if err != nil {
 				logger.Error().
 					Err(err).
@@ -128,7 +128,7 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 					Msg("Marked wallet for replacement (older than 30 days)")
 			}
 		} else {
-			err = j.redEnvelopeWalletRepo.ReleaseWallet(ctx, envelope.RedEnvelopeWallet)
+			err = j.walletRepo.ReleaseWallet(ctx, envelope.RedEnvelopeWallet)
 			if err != nil {
 				logger.Error().
 					Err(err).
@@ -154,7 +154,7 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 
 func CreateRedEnvelopeExpiryTask(interval time.Duration, dongSchema string, blockchainService *blockchain.BlockchainService) Task {
 	db := database.GetDB()
-	redEnvelopeWalletRepo := repository.NewRedEnvelopeWalletRepository(db)
+	redEnvelopeWalletRepo := repository.NewIntermediaryWalletRepository(db)
 	redEnvelopeRepo := repository.NewRedEnvelopeRepository(db, dongSchema, blockchainService, redEnvelopeWalletRepo)
 
 	job := NewRedEnvelopeExpiryJob(redEnvelopeRepo, redEnvelopeWalletRepo, blockchainService)

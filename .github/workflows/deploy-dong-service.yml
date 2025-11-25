@@ -35,6 +35,8 @@ on:
         required: true
       REDIS_PASSWORD:
         required: true
+      AES_SECRET_KEY:
+        required: true
 
 jobs:
   build:
@@ -116,7 +118,7 @@ jobs:
           LOG_LEVEL: ${{ inputs.env == 'prod' && 'info' || 'debug' }}
           AES_SECRET_KEY: ${{ secrets.AES_SECRET_KEY }}
           BLOCKCHAIN_RPC_URL: ${{vars.MMN_GRPC_URL}}
-          BLOCKCHAIN_USE_TLS: ${vvars.MMN_GRPC_USE_TLS}
+          BLOCKCHAIN_USE_TLS: ${{vars.MMN_GRPC_USE_TLS}}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash

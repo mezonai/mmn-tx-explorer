@@ -17,10 +17,10 @@ type RedEnvelopeRepository struct {
 	db                *sql.DB
 	dongSchema        string
 	blockchainService *blockchain.BlockchainService
-	walletRepo        *RedEnvelopeWalletRepository
+	walletRepo        *IntermediaryWalletRepository
 }
 
-func NewRedEnvelopeRepository(db *sql.DB, dongSchema string, blockchainService *blockchain.BlockchainService, walletRepo *RedEnvelopeWalletRepository) *RedEnvelopeRepository {
+func NewRedEnvelopeRepository(db *sql.DB, dongSchema string, blockchainService *blockchain.BlockchainService, walletRepo *IntermediaryWalletRepository) *RedEnvelopeRepository {
 	return &RedEnvelopeRepository{
 		db:                db,
 		dongSchema:        dongSchema,
@@ -103,7 +103,7 @@ func (r *RedEnvelopeRepository) Create(req *models.CreateRedEnvelopeRequest, cre
 		return nil, fmt.Errorf("failed to get or create wallet: %w", err)
 	}
 
-	r.walletRepo.UpdateRedEnvelopeInUse(tx, ctx, red_envelope_wallet.ID)
+	r.walletRepo.UpdateRedEnvelopeInUse(tx, ctx, red_envelope_wallet.ID, constants.WalletTypeRedEnvelope)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to update red envelope wallet: %w", err)
@@ -116,7 +116,6 @@ func (r *RedEnvelopeRepository) Create(req *models.CreateRedEnvelopeRequest, cre
 			logger.Error().Err(err).Str("red_envelope_id", result.ID).Msg("Failed to generate random amounts")
 			return nil, fmt.Errorf("failed to generate random amounts: %w", err)
 		}
-
 	} else {
 		count := int(req.TotalClaims)
 		if count > 0 {
@@ -590,7 +589,6 @@ func (r *RedEnvelopeRepository) GetDetailRedEnvelopeById(id string, wallet_addre
 		TotalClaimedAmount: result.TotalClaimedAmount,
 		EndDate:            result.EndDate,
 	}, nil
-
 }
 
 func (r *RedEnvelopeRepository) CreateSplitMoneyBatch(tx *sql.Tx, redEnvelopeID string, amounts []int64) error {
@@ -657,7 +655,7 @@ func (r *RedEnvelopeRepository) CheckUserIDAndEnvelopeId(redEnvelopeID string, u
 }
 
 func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64) error {
-	is_close, err := r.CheckUserIDAndEnvelopeId(redEnvelopeID, userID)
+	isClose, err := r.CheckUserIDAndEnvelopeId(redEnvelopeID, userID)
 	if err != nil {
 		logger.Error().
 			Err(err).
@@ -666,7 +664,7 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 			Msg("Failed to check user id and envelope id")
 		return err
 	}
-	if !is_close {
+	if !isClose {
 		logger.Error().
 			Str("red_envelope_id", redEnvelopeID).
 			Int64("user_id", userID).

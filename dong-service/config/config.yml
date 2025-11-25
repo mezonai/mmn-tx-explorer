@@ -58,5 +58,14 @@ logging:
 # Scheduler Configuration
 scheduler:
   sync_contributors_interval: 600  # sync every 10 minutes (600 seconds)
-  expired_red_envelopes_interval: 3660  # sync every 60 minutes (3600 seconds)
-  wallet_pool_maintenance_interval: 86400  # sync every 24 hours (86400 seconds)
+  expired_red_envelopes_interval: 3600  # sync every 60 minutes (3600 seconds)
+
+# Lock Configuration
+lock:
+  Lock_Exp: 3          # Lock expiration time in seconds
+  Cnt_Retry: 10          # Number of retries to acquire the lock
+  Retry_Delay: 300      # Delay between retries in milliseconds
+
+# Cache Request Configuration
+cache_request:
+  Cache_Exp: 20        # Cache expiration time in seconds

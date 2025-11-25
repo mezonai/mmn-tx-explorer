@@ -60,6 +60,7 @@ jobs:
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
       OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
       REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+      AES_SECRET_KEY: ${{ secrets.AES_SECRET_KEY }}
 
   deploy-frontend:
     needs: prepare-source
@@ -71,3 +72,4 @@ jobs:
       source_artifact: source-code
     secrets:
       OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
+      NEXT_PUBLIC_COBAR_API_KEY: ${{ secrets.NEXT_PUBLIC_COBAR_API_KEY }}

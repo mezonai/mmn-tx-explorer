@@ -105,7 +105,6 @@ ALTER TABLE red_envelope_split_money ADD CONSTRAINT chk_red_envelope_split_money
     
 -- Comments
 COMMENT ON INDEX idx_red_envelope_status_creator IS 'Index for filtering by status and creator';
-COMMENT ON INDEX idx_red_envelope_wallet_status IS 'Index for checking wallet status';
 COMMENT ON INDEX idx_red_envelope_owner_status IS 'Index for owner wallet queries';
 COMMENT ON INDEX idx_red_envelope_wallet_and_status IS 'Index for wallet and status queries';
 COMMENT ON INDEX idx_red_envelope_claim_envelope_wallet IS 'Index for claim validation';

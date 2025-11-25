@@ -36,21 +36,22 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		logger.Error().Err(err).Msg("Failed to initialize blockchain service")
 	}
 
-	walletRepo := repository.NewRedEnvelopeWalletRepository(database.GetDB())
+	walletRepo := repository.NewIntermediaryWalletRepository(database.GetDB())
 	redEnvelopeRepo := repository.NewRedEnvelopeRepository(database.GetDB(), cfg.Database.Schema, blockchainService, walletRepo)
-	redEnvelopeWalletRepo := repository.NewRedEnvelopeWalletRepository(database.GetDB())
-	redEnvelopeHandler := handlers.NewRedEnvelopeHandler(redEnvelopeRepo, redEnvelopeWalletRepo)
+	redEnvelopeHandler := handlers.NewRedEnvelopeHandler(redEnvelopeRepo, walletRepo)
 
 	// API v1 routes
 	v1 := router.Group("/api/v1")
 	{
 		// Initialize repositories
-		campaignRepo := repository.NewDonationCampaignRepository(database.GetDB(), cfg.Database.Schema)
+		campaignRepo := repository.NewDonationCampaignRepository(database.GetDB(), cfg.Database.Schema, cfg.Indexer.Schema)
 		statsRepo := repository.NewCampaignStatisticsRepository(database.GetDB(), cfg.Indexer.Schema, cfg.Database.Schema)
+		walletRepo := repository.NewWalletRepository(database.GetDB(), cfg.Indexer.Schema)
 
 		// Initialize handlers
 		campaignHandler := handlers.NewDonationCampaignHandler(campaignRepo)
 		statsHandler := handlers.NewCampaignStatisticsHandler(statsRepo)
+		walletHandler := handlers.NewWalletHandler(walletRepo, campaignRepo)
 
 		// Campaign routes (protected)
 		campaigns_private := v1.Group("/admin/campaigns")
@@ -90,6 +91,11 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 			redEnvelope_private.GET("/created-by-wallet", redEnvelopeHandler.GetRedEnvelopeCreatedByWallet)
 			redEnvelope_private.POST("/detail", redEnvelopeHandler.GetDetailRedEnvelopeById)
 			redEnvelope_private.POST("/close-session", redEnvelopeHandler.CloseSessionRedEnvelope)
+			wallet_public := v1.Group("/wallets")
+			{
+				wallet_public.Use(middleware.ParseTokenAndAddToContext(cfg.JWT.Secret))
+				wallet_public.GET("/:address/detail", walletHandler.GetWalletDetail)
+			}
 		}
 	}
 }

@@ -15,7 +15,7 @@ type StartupInitializer struct {
 
 func NewStartupInitializer() *StartupInitializer {
 	db := database.GetDB()
-	redEnvelopeWalletRepo := repository.NewRedEnvelopeWalletRepository(db)
+	redEnvelopeWalletRepo := repository.NewIntermediaryWalletRepository(db)
 	walletPoolService := NewWalletPoolService(redEnvelopeWalletRepo)
 
 	return &StartupInitializer{

@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	TYPE_TX  = 1
+	TypeTx   = 1
 	DECIMALS = 6
 )
 
@@ -22,11 +22,11 @@ type BlockchainService struct {
 	rpcURL    string
 }
 
-func NewBlockchainService(config *config.Config) (*BlockchainService, error) {
+func NewBlockchainService(cfg *config.Config) (*BlockchainService, error) {
 	var client *mmnClient.MmnClient
 
-	if config.Blockchain.RPCURL != "" {
-		if mmnClientInstance, err := mmnClient.NewClient(mmnClient.Config{Endpoint: config.Blockchain.RPCURL, UseTLS: config.Blockchain.UseTls}); err != nil {
+	if cfg.Blockchain.RPCURL != "" {
+		if mmnClientInstance, err := mmnClient.NewClient(mmnClient.Config{Endpoint: cfg.Blockchain.RPCURL, UseTLS: cfg.Blockchain.UseTLS}); err != nil {
 			logger.Error().Err(err).Msg("failed to init mmn client")
 		} else {
 			client = mmnClientInstance
@@ -35,7 +35,7 @@ func NewBlockchainService(config *config.Config) (*BlockchainService, error) {
 
 	return &BlockchainService{
 		mmnClient: client,
-		rpcURL:    config.Blockchain.RPCURL,
+		rpcURL:    cfg.Blockchain.RPCURL,
 	}, nil
 }
 
@@ -56,7 +56,7 @@ func (s *BlockchainService) Transfer(fromAddress, toAddress string, amount int64
 	}
 
 	txMsg := &mmnClient.Tx{
-		Type:      int(TYPE_TX),
+		Type:      int(TypeTx),
 		Sender:    fromAddress,
 		Recipient: toAddress,
 		Amount:    mmnClient.Uint256FromString(scaleAmount),

@@ -14,13 +14,13 @@ import (
 
 type RedEnvelopeHandler struct {
 	repo                  *repository.RedEnvelopeRepository
-	redEnvelopeWalletRepo *repository.RedEnvelopeWalletRepository
+	walletRepo *repository.IntermediaryWalletRepository
 }
 
-func NewRedEnvelopeHandler(repo *repository.RedEnvelopeRepository, redEnvelopeWalletRepo *repository.RedEnvelopeWalletRepository) *RedEnvelopeHandler {
+func NewRedEnvelopeHandler(repo *repository.RedEnvelopeRepository, walletRepo *repository.IntermediaryWalletRepository) *RedEnvelopeHandler {
 	return &RedEnvelopeHandler{
 		repo:                  repo,
-		redEnvelopeWalletRepo: redEnvelopeWalletRepo,
+		walletRepo: walletRepo,
 	}
 }
 

@@ -6,15 +6,16 @@ import (
 	"dong-service/database"
 	"dong-service/logger"
 	"dong-service/repository"
-	"time"
+
+	"github.com/robfig/cron/v3"
 )
 
 type WalletPoolMaintenanceJob struct {
-	redEnvelopeWalletRepo *repository.RedEnvelopeWalletRepository
+	redEnvelopeWalletRepo *repository.IntermediaryWalletRepository
 }
 
 func NewWalletPoolMaintenanceJob(
-	redEnvelopeWalletRepo *repository.RedEnvelopeWalletRepository,
+	redEnvelopeWalletRepo *repository.IntermediaryWalletRepository,
 ) *WalletPoolMaintenanceJob {
 	return &WalletPoolMaintenanceJob{
 		redEnvelopeWalletRepo: redEnvelopeWalletRepo,
@@ -24,7 +25,7 @@ func NewWalletPoolMaintenanceJob(
 func (j *WalletPoolMaintenanceJob) Run(ctx context.Context) error {
 	logger.Info().Msg("Starting wallet pool maintenance job")
 
-	oldWallets, err := j.redEnvelopeWalletRepo.FindOldReadyWallets(ctx, constants.RedEnvelopeWalletMaxAgeInDays)
+	oldWallets, err := j.redEnvelopeWalletRepo.FindOldWallets(ctx, constants.RedEnvelopeWalletMaxAgeInDays, constants.WalletTypeRedEnvelope)
 	if err != nil {
 		logger.Error().Err(err).Msg("Error finding old wallets")
 		return err
@@ -60,13 +61,27 @@ func (j *WalletPoolMaintenanceJob) Run(ctx context.Context) error {
 	return nil
 }
 
-func InitializeWalletPoolMaintenanceJob(interval time.Duration) Task {
+func InitializeWalletPoolMaintenanceJob(c *cron.Cron, ctx context.Context) {
+	taskName := "WalletPoolMaintenanceJob"
+
 	db := database.GetDB()
-	redEnvelopeWalletRepo := repository.NewRedEnvelopeWalletRepository(db)
-	job := NewWalletPoolMaintenanceJob(redEnvelopeWalletRepo)
-	return Task{
-		Name:     "WalletPoolMaintenanceJob",
-		Interval: interval,
-		Job:      job.Run,
+	repo := repository.NewIntermediaryWalletRepository(db)
+	job := NewWalletPoolMaintenanceJob(repo)
+
+	entryID, err := c.AddFunc("0 2 * * *", func() {
+		if err := job.Run(ctx); err != nil {
+			logger.Error().Str("task", taskName).Err(err).Msg("Job execution failed")
+		} else {
+			logger.Info().Str("task", taskName).Msg("Job execution completed successfully")
+		}
+	})
+
+	if err != nil {
+		logger.Fatal().Str("task", taskName).Err(err).Msg("Failed to register cron job")
 	}
+
+	logger.Info().
+		Str("task", taskName).
+		Int("entry_id", int(entryID)).
+		Msg("Registered cron job (Schedule: 02:00 Daily)")
 }
