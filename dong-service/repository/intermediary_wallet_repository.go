@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"dong-service/constants"
+	"dong-service/logger"
 	"dong-service/models"
 	"fmt"
 
@@ -36,7 +37,6 @@ func (r *IntermediaryWalletRepository) CreateWallet(ctx context.Context, wallet 
 }
 
 func (r *IntermediaryWalletRepository) FindOldReadyWallets(ctx context.Context, daysOld int) ([]models.IntermediaryWallet, error) {
-
 	query := `
 		SELECT id, wallet_address, encrypted_private_key, status, created_at, updated_at
 		FROM intermediary_wallet
@@ -48,7 +48,11 @@ func (r *IntermediaryWalletRepository) FindOldReadyWallets(ctx context.Context, 
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			logger.Error().Err(err).Msg("Rows close error")
+		}
+	}()
 
 	var wallets []models.IntermediaryWallet
 	for rows.Next() {
@@ -96,7 +100,11 @@ func (r *IntermediaryWalletRepository) GetPoolStatistics(ctx context.Context) (m
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			logger.Error().Err(err).Msg("Rows close error")
+		}
+	}()
 
 	stats := make(map[string]int)
 	for rows.Next() {
@@ -147,15 +155,23 @@ func (r *IntermediaryWalletRepository) CreateWallets(ctx context.Context, wallet
 
 	rows, err := tx.QueryContext(ctx, query, vals...)
 	if err != nil {
-		tx.Rollback()
+		if err = tx.Rollback(); err != nil {
+			logger.Error().Err(err).Msg("Tx Rollback error error")
+		}
 		return err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			logger.Error().Err(err).Msg("Rows close error")
+		}
+	}()
 
 	i := 0
 	for rows.Next() {
 		if err := rows.Scan(&wallets[i].ID, &wallets[i].CreatedAt, &wallets[i].UpdatedAt); err != nil {
-			tx.Rollback()
+			if err = tx.Rollback(); err != nil {
+				logger.Error().Err(err).Msg("Tx Rollback error error")
+			}
 			return err
 		}
 		i++

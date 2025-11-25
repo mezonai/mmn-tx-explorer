@@ -54,12 +54,12 @@ func main() {
 	}
 
 	// Initialize logger
-	if err := logger.InitLogger(&cfg.Logging); err != nil {
+	if err = logger.InitLogger(&cfg.Logging); err != nil {
 		log.Fatalf("Failed to initialize logger: %v", err)
 	}
 
 	// Initialize encrypt key
-	if err := utils.InitEncryptionKey(); err != nil {
+	if err = utils.InitEncryptionKey(); err != nil {
 		logger.Fatal().Err(err).Msg("Failed to initialize encryption key (AES_SECRET_KEY)")
 	}
 	
@@ -72,18 +72,18 @@ func main() {
 	gin.SetMode(cfg.Server.GinMode)
 
 	// Initialize database
-	if err := database.InitDatabase(&cfg.Database); err != nil {
+	if err = database.InitDatabase(&cfg.Database); err != nil {
 		logger.Fatal().Err(err).Msg("Failed to initialize database")
 	}
 
-	if err := database.InitRedisWhiteList(&cfg.Redis); err != nil {
+	if err = database.InitRedisWhiteList(&cfg.Redis); err != nil {
 		logger.Fatal().Err(err).Msg("Failed to initialize Redis whitelist")
 	}
 
 	logger.Info().Msg("Initializing Red Envelope Wallet Pool")
 	startupInit := services.NewStartupInitializer()
 
-	if err := startupInit.Initialize(); err != nil {
+	if err = startupInit.Initialize(); err != nil {
 		logger.Error().Err(err).Msg("Failed to initialize wallet pool")
 	}
 	startupInit.StartBackgroundMaintenance()
