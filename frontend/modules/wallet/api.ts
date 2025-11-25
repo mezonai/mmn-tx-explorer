@@ -3,6 +3,7 @@ import { buildPathWithChain } from '@/service/utils';
 import { IPaginatedResponse, IResultResponse } from '@/types';
 import { WALLET_ENDPOINTS } from './constants';
 import { IWallet, IWalletDetails, IWalletListParams } from './type';
+import type { InternalAxiosRequestConfig } from 'axios';
 
 export class WalletService {
   static async getWallets(params: IWalletListParams): Promise<IPaginatedResponse<IWallet[]>> {
@@ -14,7 +15,7 @@ export class WalletService {
 
   static async getWalletDetails(address: string): Promise<IResultResponse<IWalletDetails>> {
     const { data } = await apiDongClient.get<IResultResponse<IWalletDetails>>(
-      buildPathWithChain(WALLET_ENDPOINTS.DETAILS(address))
+      WALLET_ENDPOINTS.DETAILS(address), { meta: { noAuth: false } } as InternalAxiosRequestConfig
     );
     return data;
   }

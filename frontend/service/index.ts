@@ -30,7 +30,7 @@ const apiDongClient = axios.create({
 
 // Add interceptor for authentication
 apiDongClient.interceptors.request.use((config) => {
-  // Add Authorization header if token exists
+  if (config?.meta?.noAuth === true) return config;
   if (typeof window !== 'undefined') {
     const tokenData = safeJsonParse(localStorage.getItem(STORAGE_KEYS.TOKEN));
     if (tokenData?.access_token) {
