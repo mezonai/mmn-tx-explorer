@@ -35,7 +35,7 @@ const DateFormat = "2006-01-02"
 // @Param end_time query string false "End date in YYYY-MM-DD format (defaults to current date)"
 // @Param aggregate query []string false "List of aggregate functions to apply"
 // @Param force_consistent_data query bool false "Force consistent data at the expense of query speed"
-// @Success 200 {object} api.QueryResponse{data=[]common.TransactionModel}
+// @Success 200 {object} api.QueryResponse{data=[]common.BaseTransactionModel}
 // @Failure 400 {object} api.Error
 // @Failure 401 {object} api.Error
 // @Failure 500 {object} api.Error
@@ -164,13 +164,13 @@ func handleTransactionsRequest(c *gin.Context) {
 	c.JSON(http.StatusOK, queryResult)
 }
 
-func serializeTransactions(transactions []common.Transaction) []common.TransactionModel {
+func serializeTransactions(transactions []common.Transaction) []common.BaseTransactionModel {
 	if len(transactions) == 0 {
-		return []common.TransactionModel{}
+		return []common.BaseTransactionModel{}
 	}
-	transactionModels := make([]common.TransactionModel, 0, len(transactions))
+	transactionModels := make([]common.BaseTransactionModel, 0, len(transactions))
 	for _, transaction := range transactions {
-		transactionModels = append(transactionModels, transaction.Serialize())
+		transactionModels = append(transactionModels, transaction.SerializeInternal())
 	}
 	return transactionModels
 }
