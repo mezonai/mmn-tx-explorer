@@ -5,7 +5,6 @@ import { UUID } from 'crypto';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-
 import { APP_CONFIG } from '@/configs/app.config';
 import { RedEnvelopeDetailRequest, RedEnvelopeDetailStats } from '../type';
 import { formatClaimDate, getStatusDisplay } from '../utils';
@@ -23,15 +22,15 @@ export const useRedEnvelopeDetail = () => {
     wallet_address: user?.walletAddress || '',
   }), [redEnvelopeId, user?.walletAddress]);
 
-  const { stats } = useGetLuckMoneyDetail(request);
+  const { stats, isLoading, isError, refetch } = useGetLuckMoneyDetail(request);
   const recipients = useGetLuckMoneyRecipients(redEnvelopeId || '');
 
   const { mutate: closeSession, isPending: isClosing } = useMutation({
     mutationFn: () => RedEnvelopeService.closeSession(request),
     onSuccess: () => {
       toast.success('Session closed successfully!');
-      queryClient.invalidateQueries({queryKey: [QUERY_KEYS.RED_ENVELOPE_DETAIL, request]});
-      queryClient.invalidateQueries({queryKey: [QUERY_KEYS.CREATED_ENVELOPES]})
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RED_ENVELOPE_DETAIL, request] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CREATED_ENVELOPES] })
     },
     onError: (error) => {
       console.error('Failed to close session:', error);
@@ -69,7 +68,7 @@ export const useRedEnvelopeDetail = () => {
       unit: '',
       subValue: '',
     },
-  ], [stats, APP_CONFIG.CHAIN_SYMBOL]); 
+  ], [stats, APP_CONFIG.CHAIN_SYMBOL]);
 
   const pathName = process.env.NEXT_BASE_FE || window.location.origin;
   const claimLink = redEnvelopeId
@@ -106,11 +105,14 @@ export const useRedEnvelopeDetail = () => {
     qrSize,
     truncateChars,
     handleCloseSession,
+    isLoading,
+    isError,
+    refetch,
   };
 };
 
 export function useGetLuckMoneyDetail(request: RedEnvelopeDetailRequest) {
-  const { data } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: [QUERY_KEYS.RED_ENVELOPE_DETAIL, request],
     queryFn: () => RedEnvelopeService.getRedEnvelopeStatsById(request),
   });
@@ -128,7 +130,11 @@ export function useGetLuckMoneyDetail(request: RedEnvelopeDetailRequest) {
 
   return {
     stats: data ?? fallback,
-  }
+    isLoading, 
+    isError,  
+    error,     
+    refetch,  
+  };
 }
 
 export function useGetLuckMoneyRecipients(id: UUID) {

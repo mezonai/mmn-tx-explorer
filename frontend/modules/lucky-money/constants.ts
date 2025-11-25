@@ -17,7 +17,7 @@ export const QUERY_KEYS = {
   RED_ENVELOPE_DETAIL_RECIPIENTS: 'lucky-money-detail-recipients',
 }
 
-export const RED_ENVELOPE_ENPOINTS = {
+export const RED_ENVELOPE_ENDPOINTS = {
   STATS: 'api/v1/red-envelopes/stats',
   CREATE_RED_ENVELOPE: 'api/v1/red-envelopes/create',
   CREATED_ENVELOPES_BY_WALLET: 'api/v1/red-envelopes/created-by-wallet',
