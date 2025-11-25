@@ -44,35 +44,29 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 
 		// Campaign routes (protected)
 		campaignsPrivate := v1.Group("/admin/campaigns")
-		{ // nolint:gocritic // keep block for readability
-			campaignsPrivate.Use(middleware.Authentication(cfg.JWT.Secret))
-			campaignsPrivate.POST("", campaignHandler.CreateCampaign)
-			campaignsPrivate.POST("/create-active", campaignHandler.CreateAndActiveCampaign)
-			campaignsPrivate.PUT("/:id", campaignHandler.UpdateCampaign)
-			campaignsPrivate.PATCH("/:id/activate", campaignHandler.ActivateCampaign)
-			campaignsPrivate.PATCH("/:id/close", campaignHandler.CloseCampaign)
-			campaignsPrivate.DELETE("/:id", campaignHandler.DeleteDraftCampaign)
-		}
+		campaignsPrivate.Use(middleware.Authentication(cfg.JWT.Secret))
+		campaignsPrivate.POST("", campaignHandler.CreateCampaign)
+		campaignsPrivate.POST("/create-active", campaignHandler.CreateAndActiveCampaign)
+		campaignsPrivate.PUT("/:id", campaignHandler.UpdateCampaign)
+		campaignsPrivate.PATCH("/:id/activate", campaignHandler.ActivateCampaign)
+		campaignsPrivate.PATCH("/:id/close", campaignHandler.CloseCampaign)
+		campaignsPrivate.DELETE("/:id", campaignHandler.DeleteDraftCampaign)
 
 		// Campaign routes (public)
 		campaignsPublic := v1.Group("/campaigns")
-		{ // nolint:gocritic // keep block for readability
-			campaignsPublic.GET("", campaignHandler.ListCampaigns)
-			campaignsPublic.GET("/slug/:slug", campaignHandler.GetCampaignBySlug)
-			campaignsPublic.GET("/:id", campaignHandler.GetCampaign)
-			campaignsPublic.GET("/:id/top-contributors", campaignHandler.GetTopContributors)
-			campaignsPublic.POST("/:id/sync", statsHandler.SyncCampaign)
-		}
+		campaignsPublic.GET("", campaignHandler.ListCampaigns)
+		campaignsPublic.GET("/slug/:slug", campaignHandler.GetCampaignBySlug)
+		campaignsPublic.GET("/:id", campaignHandler.GetCampaign)
+		campaignsPublic.GET("/:id/top-contributors", campaignHandler.GetTopContributors)
+		campaignsPublic.POST("/:id/sync", statsHandler.SyncCampaign)
 
+		// Statistics routes (public)
 		statsPublic := v1.Group("/stats")
-		{ // nolint:gocritic // keep block for readability
-			statsPublic.GET("/campaign", statsHandler.GetCampaignStats)
-		}
+		statsPublic.GET("/campaign", statsHandler.GetCampaignStats)
 
+		// Wallet routes (public)
 		walletPublic := v1.Group("/wallets")
-		{ // nolint:gocritic // keep block for readability
-			walletPublic.Use(middleware.ParseTokenAndAddToContext(cfg.JWT.Secret))
-			walletPublic.GET("/:address/detail", walletHandler.GetWalletDetail)
-		}
+		walletPublic.Use(middleware.ParseTokenAndAddToContext(cfg.JWT.Secret))
+		walletPublic.GET("/:address/detail", walletHandler.GetWalletDetail)
 	}
 }
