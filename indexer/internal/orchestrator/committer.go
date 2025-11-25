@@ -490,13 +490,13 @@ func (c *Committer) commit(blockData []common.BlockData) error {
 			highestBlock = block.Block
 		}
 	}
-	log.Debug().Msgf("Committing %d blocks", len(blockNumbers))
+	log.Info().Msgf("Committing %d blocks", len(blockNumbers))
 	mainStorageStart := time.Now()
 	if err := c.storage.MainStorage.InsertBlockData(blockData); err != nil {
 		log.Error().Err(err).Msgf("Failed to commit blocks: %v", blockNumbers)
 		return fmt.Errorf("error saving data to main storage: %v", err)
 	}
-	log.Debug().Str("metric", "main_storage_insert_duration").Msgf("MainStorage.InsertBlockData duration: %f", time.Since(mainStorageStart).Seconds())
+	log.Info().Str("metric", "main_storage_insert_duration").Msgf("MainStorage.InsertBlockData duration: %f", time.Since(mainStorageStart).Seconds())
 	metrics.MainStorageInsertDuration.Observe(time.Since(mainStorageStart).Seconds())
 
 	if config.Cfg.Publisher.Mode == "default" {

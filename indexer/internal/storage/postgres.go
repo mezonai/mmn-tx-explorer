@@ -757,10 +757,14 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 		}
 	}()
 
+	log.Info().Str("metric", "main_storage_insert_duration").Msgf("Start inserting block %s", blockData.Block.Number.String())
+
 	// Insert single block inside transaction
 	if err = p.insertBlockTx(ctx, tx, blockData.Block); err != nil {
 		return err
 	}
+
+	log.Info().Str("metric", "main_storage_insert_duration").Msgf("Inserting %d transactions for block %s", len(blockData.Transactions), blockData.Block.Number.String())
 
 	// Insert all transactions for this block inside the same transaction
 	var addressStats map[string]WalletStats
@@ -774,6 +778,8 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 	if err = tx.Commit(); err != nil {
 		return fmt.Errorf("failed to commit block+txs transaction: %w", err)
 	}
+
+	log.Info().Str("metric", "main_storage_insert_duration").Msgf("Queueing %d wallets for block %s", len(addressStats), blockData.Block.Number.String())
 
 	for _, w := range addressStats {
 		p.walletUpdateBatcher.QueueMMNServiceCall(w)
