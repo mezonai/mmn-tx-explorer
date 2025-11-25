@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campaign Detail</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#6941c6",
+            "primary-light": "#8b5cf6",
+            dark: "#0B1533",
+            "dark-light": "#1e293b"
+          }
+        }
+      }
+    }
+  </script>
+
+</head>
+
+<body class="bg-dark text-white">
+
+<div class="min-h-screen">
+
+  <!-- HEADER MOCK -->
+  <header class="h-16 border-b border-gray-800 flex px-6 items-center justify-between bg-dark-light">
+    <div class="flex items-center gap-3">
+      <span class="text-xl font-bold text-primary">Mezon Đồng</span>
+      <input class="rounded-lg bg-dark px-4 py-2 text-sm border border-gray-700" placeholder="Search…">
+    </div>
+    <div class="flex items-center gap-4">
+      <span class="text-sm">tung.nguyen</span>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="max-w-7xl mx-auto px-6 py-10">
+
+    <!-- Breadcrumb -->
+    <nav class="text-sm text-gray-400 mb-6">
+      Donation campaign → <span class="text-gray-200">Campaign Details</span>
+    </nav>
+
+    <!-- Title & Tags -->
+    <div class="flex items-center gap-3 mb-4">
+      <span class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 text-xs font-semibold">Active</span>
+      <span class="px-3 py-1 rounded-full bg-primary/10 text-primary-light text-xs font-semibold">Verified</span>
+    </div>
+
+    <h1 class="text-3xl font-semibold mb-3">NCC Build School Fund 2025</h1>
+
+    <p class="text-gray-400 max-w-3xl leading-6 mb-10">
+      NCC is launching a Build School Fund to support the construction of schools for children
+      in underprivileged areas. Every contribution — big or small — helps create better learning
+      environments and brighter futures.
+    </p>
+
+    <!-- METRIC CARDS -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+      <!-- Raised / Balance -->
+      <div class="rounded-2xl bg-dark-light border border-white/5 p-6">
+        <h3 class="text-sm text-gray-400 mb-2">Financial Overview</h3>
+
+        <p class="text-3xl font-bold">406,290,979 đ</p>
+        <p class="text-gray-400 text-sm">Total Raised</p>
+
+        <div class="mt-4">
+          <p class="text-lg font-semibold text-emerald-300">214,290,979 đ</p>
+          <p class="text-gray-400 text-sm">Current Balance</p>
+        </div>
+
+        <div class="mt-4">
+          <p class="text-lg font-semibold text-rose-300">192,000,000 đ</p>
+          <p class="text-gray-400 text-sm">Total Withdrawn</p>
+        </div>
+
+        <div class="mt-6 h-2 bg-white/10 rounded-full">
+          <div class="h-full bg-primary-light rounded-full" style="width: 61%"></div>
+        </div>
+      </div>
+
+      <!-- Insights -->
+      <div class="rounded-2xl bg-dark-light border border-white/5 p-6 flex flex-col justify-between">
+        <div>
+          <h3 class="text-sm text-gray-400 mb-4">Campaign Insights</h3>
+          <ul class="text-sm text-gray-300 space-y-2">
+            <li>👥 Contributors: <b>267</b></li>
+            <li>⏳ Time remaining: <b>1 month</b></li>
+            <li>🏷 Campaign owner: <b>NCC</b></li>
+          </ul>
+        </div>
+
+        <button class="mt-6 w-full bg-primary hover:bg-primary-light text-white py-2 rounded-xl font-semibold">
+          Withdraw Funds
+        </button>
+      </div>
+
+      <!-- Donate Box -->
+      <div class="rounded-2xl bg-dark-light border border-white/5 p-6">
+        <h3 class="text-lg font-semibold mb-4">Send đồng</h3>
+
+        <div class="text-sm mb-4">
+          <p class="text-gray-400">Wallet Address</p>
+          <p class="font-mono text-sm">2pCGcF...Sh5dFP</p>
+        </div>
+
+        <div class="w-44 h-44 bg-white rounded-xl flex items-center justify-center mx-auto mb-4">
+          <span class="text-black text-sm">QR CODE</span>
+        </div>
+
+        <button class="w-full bg-primary hover:bg-primary-light text-white py-3 rounded-xl font-semibold">
+          Donate Now
+        </button>
+
+        <p class="text-xs text-gray-500 mt-3 text-center">
+          Keep your transaction hash for reconciliation.
+        </p>
+      </div>
+    </div>
+
+    <!-- Withdraw History -->
+    <section class="mt-16">
+      <h2 class="text-xl font-semibold mb-2">Withdraw History</h2>
+      <p class="text-gray-400 text-sm mb-6">
+        Transparent record of all withdrawals made from this campaign.
+      </p>
+
+      <div class="rounded-2xl bg-dark-light border border-white/5">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-gray-400 border-b border-white/10">
+              <th class="text-left py-3 px-6">Date</th>
+              <th class="text-left py-3 px-6">Amount</th>
+              <th class="text-left py-3 px-6">Tx Hash</th>
+              <th class="text-left py-3 px-6">Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+
+            <tr class="border-b border-white/5">
+              <td class="py-3 px-6 text-gray-300">Nov 10, 2025</td>
+              <td class="py-3 px-6 text-rose-300 font-semibold">200,000,000 đ</td>
+              <td class="py-3 px-6 text-primary-light">0xabc123…def9</td>
+              <td class="py-3 px-6 text-gray-400">Classroom construction (phase 1)</td>
+            </tr>
+
+            <tr class="border-b border-white/5">
+              <td class="py-3 px-6 text-gray-300">Nov 05, 2025</td>
+              <td class="py-3 px-6 text-rose-300 font-semibold">30,000,000 đ</td>
+              <td class="py-3 px-6 text-primary-light">0x44ff92…1923</td>
+              <td class="py-3 px-6 text-gray-400">Equipment purchase</td>
+            </tr>
+
+            <tr class="">
+              <td class="py-3 px-6 text-gray-300">Nov 02, 2025</td>
+              <td class="py-3 px-6 text-rose-300 font-semibold">5,000,000 đ</td>
+              <td class="py-3 px-6 text-primary-light">0x9912aa…87ce</td>
+              <td class="py-3 px-6 text-gray-400">Emergency support</td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Recent Donations -->
+    <section class="mt-20">
+      <h2 class="text-xl font-semibold mb-2">Fundraising Activity</h2>
+
+      <div class="rounded-2xl bg-dark-light border border-white/5 mt-6">
+        <div class="border-b border-white/10 px-6 py-3">
+          <span class="text-gray-300 font-semibold">Recent Activity</span>
+        </div>
+
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-gray-400 border-b border-white/10">
+              <th class="text-left py-3 px-6">Sender</th>
+              <th class="text-left py-3 px-6">Amount</th>
+              <th class="text-left py-3 px-6">Time</th>
+              <th class="text-left py-3 px-6">Tx Hash</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr class="border-b border-white/5">
+              <td class="py-3 px-6">EcRSz…pwq4</td>
+              <td class="py-3 px-6 text-emerald-300">20,000</td>
+              <td class="py-3 px-6 text-gray-400">Nov 18, 2025 11:16 PM</td>
+              <td class="py-3 px-6 text-primary-light">0x001e13…0075</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+</div>
+
+</body>
+</html>
