@@ -267,7 +267,11 @@ export const ActiveCampaign = () => {
               <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
                 {pagedVerified.length > 0 ? (
                   pagedVerified.map((campaign) => (
-                    <CampaignCard key={campaign.id} campaign={campaign} highlight={debouncedSearch.trim() || undefined} />
+                    <CampaignCard
+                      key={campaign.id}
+                      campaign={campaign}
+                      highlight={debouncedSearch.trim() || undefined}
+                    />
                   ))
                 ) : (
                   <div className="col-span-full text-center text-gray-500">{noVerifiedMessage}</div>
@@ -298,7 +302,11 @@ export const ActiveCampaign = () => {
               <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
                 {pagedUnverified.length > 0 ? (
                   pagedUnverified.map((campaign) => (
-                    <CampaignCard key={campaign.id} campaign={campaign} highlight={debouncedSearch.trim() || undefined} />
+                    <CampaignCard
+                      key={campaign.id}
+                      campaign={campaign}
+                      highlight={debouncedSearch.trim() || undefined}
+                    />
                   ))
                 ) : (
                   <div className="col-span-full text-center text-gray-500">{noUnverifiedMessage}</div>
