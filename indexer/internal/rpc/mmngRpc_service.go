@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
 	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
 )
 
@@ -63,9 +64,12 @@ func (mmn *MMNGrpcService) connect() error {
 	} else {
 		creds = insecure.NewCredentials()
 	}
+
+	// Add MaxCallRecvMsgSize and MaxCallSendMsgSize
 	conn, err := grpc.NewClient(
 		mmn.url,
 		grpc.WithTransportCredentials(creds),
+		grpc.WithDefaultCallOptions(common.GetGRPCCallOptions()...),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to connect to %s: %w", mmn.url, err)
