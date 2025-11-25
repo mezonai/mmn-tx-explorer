@@ -18,8 +18,9 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const DEFAULT_COMMITTER_TRIGGER_INTERVAL = 2000
-const DEFAULT_BLOCKS_PER_COMMIT = 1000
+const DefaultCommitterTriggerInterval = 2000
+const DefaultBlocksPerCommit = 1000
+const ParallelPublisherMode = "parallel"
 
 type Committer struct {
 	triggerIntervalMs  int
@@ -52,23 +53,23 @@ func WithValidator(validator *Validator) CommitterOption {
 	}
 }
 
-func NewCommitter(rpc rpc.IRPCClient, storage storage.IStorage, opts ...CommitterOption) *Committer {
+func NewCommitter(rpcClient rpc.IRPCClient, store storage.IStorage, opts ...CommitterOption) *Committer {
 	triggerInterval := config.Cfg.Committer.Interval
 	if triggerInterval == 0 {
-		triggerInterval = DEFAULT_COMMITTER_TRIGGER_INTERVAL
+		triggerInterval = DefaultCommitterTriggerInterval
 	}
 	blocksPerCommit := config.Cfg.Committer.BlocksPerCommit
 	if blocksPerCommit == 0 {
-		blocksPerCommit = DEFAULT_BLOCKS_PER_COMMIT
+		blocksPerCommit = DefaultBlocksPerCommit
 	}
 
 	commitFromBlock := big.NewInt(int64(config.Cfg.Committer.FromBlock))
 	committer := &Committer{
 		triggerIntervalMs: triggerInterval,
 		blocksPerCommit:   blocksPerCommit,
-		storage:           storage,
+		storage:           store,
 		commitFromBlock:   commitFromBlock,
-		rpc:               rpc,
+		rpc:               rpcClient,
 		publisher:         publisher.GetInstance(),
 		workMode:          "",
 	}
@@ -99,19 +100,20 @@ func (c *Committer) Start(ctx context.Context) {
 	}
 
 	lastPublished, err := c.storage.StagingStorage.GetLastPublishedBlockNumber(chainID)
-	if err != nil {
+	switch {
+	case err != nil:
 		// It's okay to fail silently here; it's only used for staging cleanup and will be
 		// corrected by the worker loop.
 		log.Error().Err(err).Msg("failed to get last published block number")
-	} else if lastPublished != nil && lastPublished.Sign() > 0 {
+	case lastPublished != nil && lastPublished.Sign() > 0:
 		c.lastPublishedBlock.Store(lastPublished.Uint64())
-	} else {
+	default:
 		c.lastPublishedBlock.Store(c.lastCommittedBlock.Load())
 	}
 
 	c.cleanupProcessedStagingBlocks()
 
-	if config.Cfg.Publisher.Mode == "parallel" {
+	if config.Cfg.Publisher.Mode == ParallelPublisherMode {
 		var wg sync.WaitGroup
 		publishInterval := interval / 2
 		if publishInterval <= 0 {
@@ -354,7 +356,7 @@ func (c *Committer) getBlockToCommitUntil(ctx context.Context, latestCommittedBl
 func (c *Committer) fetchBlockData(ctx context.Context, blockNumbers []*big.Int) ([]common.BlockData, error) {
 	if c.workMode == WorkModeBackfill {
 		startTime := time.Now()
-		blocksData, err := c.storage.StagingStorage.GetStagingData(storage.QueryFilter{BlockNumbers: blockNumbers, ChainId: c.rpc.GetChainID()})
+		blocksData, err := c.storage.StagingStorage.GetStagingData(&storage.QueryFilter{BlockNumbers: blockNumbers, ChainID: c.rpc.GetChainID()})
 		log.Debug().Str("metric", "get_staging_data_duration").Msgf("StagingStorage.GetStagingData duration: %f", time.Since(startTime).Seconds())
 		metrics.GetStagingDataDuration.Observe(time.Since(startTime).Seconds())
 
@@ -408,7 +410,7 @@ func (c *Committer) getSequentialBlockData(ctx context.Context, blockNumbers []*
 	})
 
 	if blocksData[0].Block.Number.Cmp(blockNumbers[0]) != 0 {
-		return nil, c.handleGap(ctx, blockNumbers[0], blocksData[0].Block)
+		return nil, c.handleGap(ctx, blockNumbers[0], &blocksData[0].Block)
 	}
 
 	var sequentialBlockData []common.BlockData
@@ -484,7 +486,8 @@ func (c *Committer) publish(ctx context.Context) error {
 func (c *Committer) commit(blockData []common.BlockData) error {
 	blockNumbers := make([]*big.Int, len(blockData))
 	highestBlock := blockData[0].Block
-	for i, block := range blockData {
+	for i := range blockData {
+		block := &blockData[i]
 		blockNumbers[i] = block.Block.Number
 		if block.Block.Number.Cmp(highestBlock.Number) > 0 {
 			highestBlock = block.Block
@@ -514,7 +517,7 @@ func (c *Committer) commit(blockData []common.BlockData) error {
 	return nil
 }
 
-func (c *Committer) handleGap(ctx context.Context, expectedStartBlockNumber *big.Int, actualFirstBlock common.Block) error {
+func (c *Committer) handleGap(ctx context.Context, expectedStartBlockNumber *big.Int, actualFirstBlock *common.Block) error {
 	// increment the gap counter in prometheus
 	metrics.GapCounter.Inc()
 	// record the first missed block number in prometheus

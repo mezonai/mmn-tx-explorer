@@ -190,7 +190,8 @@ func (rpc *Client) GetFullBlocks(ctx context.Context, blockNumbers []*big.Int) [
 	finalFailedCount := 0
 	var failedBlockNumbers []string
 
-	for idx, r := range results {
+	for idx := range results {
+		r := &results[idx]
 		if r.Error != nil {
 			finalFailedCount++
 			if idx < len(rawBlocks) {
@@ -295,7 +296,8 @@ func (rpc *Client) GetBlocks(ctx context.Context, blockNumbers []*big.Int) []Get
 	fullBlocks := rpc.GetFullBlocks(ctx, blockNumbers)
 
 	results := make([]GetBlocksResult, len(fullBlocks))
-	for i, fullBlock := range fullBlocks {
+	for i := range fullBlocks {
+		fullBlock := &fullBlocks[i]
 		results[i] = GetBlocksResult{
 			BlockNumber: fullBlock.BlockNumber,
 			Error:       fullBlock.Error,
@@ -360,7 +362,7 @@ func convertPBBlockToRawBlock(pbBlock *pb.Block) common.RawBlock {
 	rawBlock["difficulty"] = "0x0"
 	rawBlock["totalDifficulty"] = "0x0"
 	rawBlock["size"] = "0x0"
-	rawBlock["extraData"] = "0x"
+	rawBlock["extraData"] = "0x" //nolint:goconst // protocol literal
 	rawBlock["gasLimit"] = "0x0"
 	rawBlock["gasUsed"] = "0x0"
 	rawBlock["baseFeePerGas"] = "0x0"
@@ -370,7 +372,7 @@ func convertPBBlockToRawBlock(pbBlock *pb.Block) common.RawBlock {
 }
 
 // convertPBTransactionDataToRawTransaction converts a protobuf TransactionData to common.RawTransaction format
-func convertPBTransactionDataToRawTransaction(pbTransactionData *pb.TransactionData, blockHash string, blockNumber uint64, txIndex uint64) map[string]interface{} {
+func convertPBTransactionDataToRawTransaction(pbTransactionData *pb.TransactionData, blockHash string, blockNumber, txIndex uint64) map[string]interface{} {
 	rawTransaction := make(map[string]interface{})
 	// Convert transaction hash
 	rawTransaction["hash"] = pbTransactionData.TxHash

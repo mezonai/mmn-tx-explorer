@@ -24,12 +24,12 @@ var (
 func RunOrchestrator(cmd *cobra.Command, args []string) {
 	log.Info().Msg("Starting indexer")
 
-	rpc, err := rpc.Initialize()
+	rpcClient, err := rpc.Initialize()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to initialize RPC")
 	}
 
-	orchestrator, err := orchestrator.NewOrchestrator(rpc)
+	orchestratorService, err := orchestrator.NewOrchestrator(rpcClient)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to create orchestrator")
 	}
@@ -44,5 +44,5 @@ func RunOrchestrator(cmd *cobra.Command, args []string) {
 		}
 	}()
 
-	orchestrator.Start()
+	orchestratorService.Start()
 }

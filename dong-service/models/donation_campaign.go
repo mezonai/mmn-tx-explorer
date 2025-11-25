@@ -24,6 +24,7 @@ type DonationCampaign struct {
 	UpdatedAt         time.Time `json:"updated_at" db:"updated_at"`
 	TotalAmount       *int64    `json:"total_amount,omitempty" db:"total_amount"`
 	TotalContributors *int32    `json:"total_contributors,omitempty" db:"total_contributor"`
+	CurrentBalance    *string   `json:"current_balance,omitempty"`
 }
 
 // CreateDonationCampaignRequest represents the request body for creating a campaign
@@ -63,6 +64,7 @@ type DonationCampaignResponse struct {
 	UpdatedAt         string  `json:"updated_at"`
 	TotalAmount       *int64  `json:"total_amount,omitempty"`
 	TotalContributors *int32  `json:"total_contributors,omitempty"`
+	CurrentBalance    *string `json:"current_balance,omitempty"`
 }
 
 // ToResponse converts DonationCampaign to DonationCampaignResponse
@@ -84,6 +86,7 @@ func (dc *DonationCampaign) ToResponse() DonationCampaignResponse {
 		UpdatedAt:         dc.UpdatedAt.Format(time.RFC3339),
 		TotalAmount:       dc.TotalAmount,
 		TotalContributors: dc.TotalContributors,
+		CurrentBalance:    dc.CurrentBalance,
 	}
 }
 

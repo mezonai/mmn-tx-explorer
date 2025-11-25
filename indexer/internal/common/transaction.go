@@ -8,7 +8,7 @@ import (
 type RawTransaction = map[string]interface{}
 
 type Transaction struct {
-	ChainId              *big.Int  `json:"chain_id" ch:"chain_id" swaggertype:"string"`
+	ChainID              *big.Int  `json:"chain_id" ch:"chain_id" swaggertype:"string"`
 	Hash                 string    `json:"hash" ch:"hash"`
 	Nonce                uint64    `json:"nonce" ch:"nonce"`
 	BlockHash            string    `json:"block_hash" ch:"block_hash"`
@@ -34,9 +34,8 @@ type DecodedTransaction struct {
 	Decoded DecodedTransactionData `json:"decoded"`
 }
 
-// TransactionModel represents a simplified Transaction structure for Swagger documentation
-type TransactionModel struct {
-	ChainId              string  `json:"chain_id"`
+type BaseTransactionModel struct {
+	ChainID              string  `json:"chain_id"`
 	Hash                 string  `json:"hash"`
 	Nonce                uint64  `json:"nonce"`
 	BlockHash            string  `json:"block_hash"`
@@ -48,7 +47,12 @@ type TransactionModel struct {
 	Status               *uint64 `json:"status"`
 	TransactionTimestamp uint64  `json:"transaction_timestamp"`
 	TextData             string  `json:"text_data"`
-	ExtraInfo            string  `json:"extra_info"`
+}
+
+// TransactionModel represents a simplified Transaction structure for Swagger documentation
+type TransactionModel struct {
+	BaseTransactionModel
+	ExtraInfo string `json:"extra_info"`
 }
 
 type DecodedTransactionDataModel struct {
@@ -64,7 +68,27 @@ type DecodedTransactionModel struct {
 
 func (t *Transaction) Serialize() TransactionModel {
 	return TransactionModel{
-		ChainId:              t.ChainId.String(),
+		BaseTransactionModel: BaseTransactionModel{
+			ChainID:              t.ChainID.String(),
+			Hash:                 t.Hash,
+			Nonce:                t.Nonce,
+			BlockHash:            t.BlockHash,
+			BlockNumber:          t.BlockNumber.Uint64(),
+			FromAddress:          t.FromAddress,
+			ToAddress:            t.ToAddress,
+			Value:                t.Value,
+			TransactionType:      t.TransactionType,
+			Status:               t.Status,
+			TransactionTimestamp: uint64(t.TransactionTimestamp.Unix()),
+			TextData:             t.TextData,
+		},
+		ExtraInfo: t.ExtraInfo,
+	}
+}
+
+func (t *Transaction) SerializeInternal() BaseTransactionModel {
+	return BaseTransactionModel{
+		ChainID:              t.ChainID.String(),
 		Hash:                 t.Hash,
 		Nonce:                t.Nonce,
 		BlockHash:            t.BlockHash,
@@ -76,7 +100,6 @@ func (t *Transaction) Serialize() TransactionModel {
 		Status:               t.Status,
 		TransactionTimestamp: uint64(t.TransactionTimestamp.Unix()),
 		TextData:             t.TextData,
-		ExtraInfo:            t.ExtraInfo,
 	}
 }
 

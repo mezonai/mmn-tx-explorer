@@ -169,7 +169,7 @@ func TestIsValidAddressWithLength(t *testing.T) {
 func TestTransactionSerialize(t *testing.T) {
 	// Test that Transaction.Serialize() works correctly
 	tx := common.Transaction{
-		ChainId:         big.NewInt(1),
+		ChainID:         big.NewInt(1),
 		Hash:            "0x1234567890123456789012345678901234567890123456789012345678901234",
 		BlockNumber:     big.NewInt(12345),
 		Value:           "1000000000000000000",
@@ -180,7 +180,7 @@ func TestTransactionSerialize(t *testing.T) {
 
 	model := tx.Serialize()
 
-	assert.Equal(t, "1", model.ChainId)
+	assert.Equal(t, "1", model.ChainID)
 	assert.Equal(t, tx.Hash, model.Hash)
 	assert.Equal(t, uint64(12345), model.BlockNumber)
 	assert.Equal(t, tx.Value, model.Value)
@@ -192,7 +192,7 @@ func TestTransactionSerialize(t *testing.T) {
 func TestBlockSerialize(t *testing.T) {
 	// Test that Block.Serialize() works correctly
 	block := common.Block{
-		ChainId:          big.NewInt(1),
+		ChainID:          big.NewInt(1),
 		Number:           big.NewInt(12345),
 		Hash:             "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
 		ParentHash:       "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
@@ -201,7 +201,7 @@ func TestBlockSerialize(t *testing.T) {
 
 	model := block.Serialize()
 
-	assert.Equal(t, "1", model.ChainId)
+	assert.Equal(t, "1", model.ChainID)
 	assert.Equal(t, uint64(12345), model.BlockNumber)
 	assert.Equal(t, block.Hash, model.BlockHash)
 	assert.Equal(t, block.ParentHash, model.ParentHash)

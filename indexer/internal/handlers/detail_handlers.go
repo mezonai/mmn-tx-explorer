@@ -26,6 +26,14 @@ type TransactionDetailResponse struct {
 	} `json:"data"`
 }
 
+// InternalTransactionDetailResponse represents the response structure for internal transaction detail
+type InternalTransactionDetailResponse struct {
+	Data struct {
+		Transaction common.BaseTransactionModel `json:"transaction"`
+	} `json:"data"`
+}
+
+// GetBlockDetail godoc
 // @Summary Get block detail
 // @Description Retrieve detailed information about a specific block including all transactions
 // @Tags detail
@@ -44,6 +52,7 @@ func GetBlockDetail(c *gin.Context) {
 	handleBlockDetailRequest(c)
 }
 
+// GetTransactionDetail godoc
 // @Summary Get transaction detail
 // @Description Retrieve detailed information about a specific transaction including logs and traces
 // @Tags detail
@@ -59,11 +68,30 @@ func GetBlockDetail(c *gin.Context) {
 // @Failure 500 {object} api.Error
 // @Router /{chainId}/tx/{txHash}/detail [get]
 func GetTransactionDetail(c *gin.Context) {
-	handleTransactionDetailRequest(c)
+	handleTransactionDetailRequest(c, false)
+}
+
+// GetInternalTransactionDetail godoc
+// @Summary Get internal transaction detail
+// @Description Retrieve detailed information about a specific transaction without extra_info field (for internal use)
+// @Tags detail
+// @Accept json
+// @Produce json
+// @Security BasicAuth
+// @Param chainId path string true "Chain ID"
+// @Param txHash path string true "Transaction hash"
+// @Success 200 {object} InternalTransactionDetailResponse
+// @Failure 400 {object} api.Error
+// @Failure 401 {object} api.Error
+// @Failure 404 {object} api.Error
+// @Failure 500 {object} api.Error
+// @Router /{chainId}/internal/tx/{txHash}/detail [get]
+func GetInternalTransactionDetail(c *gin.Context) {
+	handleTransactionDetailRequest(c, true)
 }
 
 func handleBlockDetailRequest(c *gin.Context) {
-	chainId, err := api.GetChainId(c)
+	chainID, err := api.GetChainID(c)
 	if err != nil {
 		api.BadRequestErrorHandler(c, err)
 		return
@@ -89,8 +117,8 @@ func handleBlockDetailRequest(c *gin.Context) {
 	}
 
 	// Get block details
-	blockResult, err := mainStorage.GetBlocks(storage.QueryFilter{
-		ChainId:      chainId,
+	blockResult, err := mainStorage.GetBlocks(&storage.QueryFilter{
+		ChainID:      chainID,
 		BlockNumbers: []*big.Int{blockNumber},
 		Limit:        1,
 	})
@@ -119,8 +147,8 @@ func handleBlockDetailRequest(c *gin.Context) {
 	c.JSON(http.StatusOK, blockDetailResponse)
 }
 
-func handleTransactionDetailRequest(c *gin.Context) {
-	chainId, err := api.GetChainId(c)
+func handleTransactionDetailRequest(c *gin.Context, isInternalUse bool) {
+	chainID, err := api.GetChainID(c)
 	if err != nil {
 		api.BadRequestErrorHandler(c, err)
 		return
@@ -141,8 +169,8 @@ func handleTransactionDetailRequest(c *gin.Context) {
 
 	ctx := c.Request.Context()
 	// Get transaction details
-	transactionResult, err := mainStorage.GetTransactions(ctx, storage.QueryFilter{
-		ChainId: chainId,
+	transactionResult, err := mainStorage.GetTransactions(ctx, &storage.QueryFilter{
+		ChainID: chainID,
 		FilterParams: map[string]string{
 			"hash": txHash,
 		},
@@ -159,16 +187,25 @@ func handleTransactionDetailRequest(c *gin.Context) {
 		return
 	}
 
-	transaction := transactionResult.Data[0].Serialize()
-
-	// Initialize the TransactionDetailResponse
-	transactionDetailResponse := TransactionDetailResponse{
-		Data: struct {
-			Transaction common.TransactionModel `json:"transaction"`
-		}{
-			Transaction: transaction,
-		},
+	if isInternalUse {
+		transaction := transactionResult.Data[0].SerializeInternal()
+		transactionDetailResponse := InternalTransactionDetailResponse{
+			Data: struct {
+				Transaction common.BaseTransactionModel `json:"transaction"`
+			}{
+				Transaction: transaction,
+			},
+		}
+		c.JSON(http.StatusOK, transactionDetailResponse)
+	} else {
+		transaction := transactionResult.Data[0].Serialize()
+		transactionDetailResponse := TransactionDetailResponse{
+			Data: struct {
+				Transaction common.TransactionModel `json:"transaction"`
+			}{
+				Transaction: transaction,
+			},
+		}
+		c.JSON(http.StatusOK, transactionDetailResponse)
 	}
-
-	c.JSON(http.StatusOK, transactionDetailResponse)
 }

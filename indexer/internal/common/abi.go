@@ -23,26 +23,26 @@ func getHTTPClient() *http.Client {
 	httpClientOnce.Do(func() {
 		httpClient = &http.Client{
 			Transport: &http.Transport{
-				MaxIdleConns:        config.Cfg.API.ContractApiRequest.MaxIdleConns,
-				MaxIdleConnsPerHost: config.Cfg.API.ContractApiRequest.MaxIdleConnsPerHost,
-				MaxConnsPerHost:     config.Cfg.API.ContractApiRequest.MaxConnsPerHost,
-				IdleConnTimeout:     time.Duration(config.Cfg.API.ContractApiRequest.IdleConnTimeout) * time.Second,
-				DisableCompression:  config.Cfg.API.ContractApiRequest.DisableCompression,
+				MaxIdleConns:        config.Cfg.API.ContractAPIRequest.MaxIdleConns,
+				MaxIdleConnsPerHost: config.Cfg.API.ContractAPIRequest.MaxIdleConnsPerHost,
+				MaxConnsPerHost:     config.Cfg.API.ContractAPIRequest.MaxConnsPerHost,
+				IdleConnTimeout:     time.Duration(config.Cfg.API.ContractAPIRequest.IdleConnTimeout) * time.Second,
+				DisableCompression:  config.Cfg.API.ContractAPIRequest.DisableCompression,
 			},
-			Timeout: time.Duration(config.Cfg.API.ContractApiRequest.Timeout) * time.Second,
+			Timeout: time.Duration(config.Cfg.API.ContractAPIRequest.Timeout) * time.Second,
 		}
 	})
 	return httpClient
 }
 
-func GetABIForContractWithCache(chainId string, contract string, abiCache *sync.Map) *abi.ABI {
+func GetABIForContractWithCache(chainID, contract string, abiCache *sync.Map) *abi.ABI {
 	if abiValue, ok := abiCache.Load(contract); ok {
-		if abi, ok := abiValue.(*abi.ABI); ok {
-			return abi
+		if parsedABI, ok := abiValue.(*abi.ABI); ok {
+			return parsedABI
 		}
 	}
 
-	abiResult, err := GetABIForContract(chainId, contract)
+	abiResult, err := GetABIForContract(chainID, contract)
 	if err != nil {
 		abiCache.Store(contract, nil)
 		return nil
@@ -51,17 +51,17 @@ func GetABIForContractWithCache(chainId string, contract string, abiCache *sync.
 	return abiResult
 }
 
-func GetABIForContract(chainId string, contract string) (*abi.ABI, error) {
-	url := fmt.Sprintf("%s/abi/%s/%s", config.Cfg.API.ThirdwebContractApi, chainId, contract)
+func GetABIForContract(chainID, contract string) (*abi.ABI, error) {
+	url := fmt.Sprintf("%s/abi/%s/%s", config.Cfg.API.ThirdwebContractAPI, chainID, contract)
 
 	resp, err := getHTTPClient().Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get contract abi: %v", err)
 	}
 	defer func() {
-		err := resp.Body.Close()
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to close response body in GetABIForContract")
+		closeErr := resp.Body.Close()
+		if closeErr != nil {
+			log.Error().Err(closeErr).Msg("Failed to close response body in GetABIForContract")
 		}
 	}()
 
@@ -69,12 +69,12 @@ func GetABIForContract(chainId string, contract string) (*abi.ABI, error) {
 		return nil, fmt.Errorf("failed to get contract abi: unexpected status code %d", resp.StatusCode)
 	}
 
-	abi, err := abi.JSON(resp.Body)
+	parsedABI, err := abi.JSON(resp.Body)
 	if err != nil {
-		log.Warn().Err(err).Str("contract", contract).Str("chainId", chainId).Msg("Failed to parse contract ABI")
+		log.Warn().Err(err).Str("contract", contract).Str("chainId", chainID).Msg("Failed to parse contract ABI")
 		return nil, fmt.Errorf("failed to load contract abi: %v", err)
 	}
-	return &abi, nil
+	return &parsedABI, nil
 }
 
 func ConstructEventABI(signature string) (*abi.Event, error) {
@@ -159,7 +159,7 @@ func splitParams(params string) []string {
 	return result
 }
 
-func parseParamToAbiArgument(param string, fallbackName string) (*abi.Argument, error) {
+func parseParamToAbiArgument(param, fallbackName string) (*abi.Argument, error) {
 	argName, paramType, indexed, err := getArgNameAndType(param, fallbackName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get arg name and type '%s': %v", param, err)
@@ -187,7 +187,7 @@ func parseParamToAbiArgument(param string, fallbackName string) (*abi.Argument, 
 	}
 }
 
-func getArgNameAndType(param string, fallbackName string) (name string, paramType string, indexed bool, err error) {
+func getArgNameAndType(param, fallbackName string) (name, paramType string, indexed bool, err error) {
 	param, indexed = checkIfParamIsIndexed(param)
 	if isTuple(param) {
 		lastParenIndex := strings.LastIndex(param, ")")
