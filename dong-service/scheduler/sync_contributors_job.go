@@ -10,8 +10,6 @@ import (
 	"time"
 )
 
-const TransactionStatus_FINALIZED = 2
-
 // SyncContributorsJob syncs transactions from indexer schema to campaign_contributor table
 type SyncContributorsJob struct {
 	statsRepo *repository.CampaignStatisticsRepository
@@ -51,10 +49,10 @@ func (j *SyncContributorsJob) Run(ctx context.Context) error {
 	var statsRowsAffected int64
 
 	for _, campaign := range campaigns {
-		processed, inserted, updated, err := j.statsRepo.SyncCampaignTransactions(ctx, campaign)
-		if err != nil {
+		processed, inserted, updated, syncErr := j.statsRepo.SyncCampaignTransactions(ctx, campaign)
+		if syncErr != nil {
 			logger.Error().
-				Err(err).
+				Err(syncErr).
 				Int64("campaign_id", campaign.ID).
 				Str("donation_wallet", campaign.DonationWallet).
 				Msg("Failed to sync campaign transactions")

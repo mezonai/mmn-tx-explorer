@@ -93,7 +93,7 @@ func (r *CampaignStatisticsRepository) SyncCampaignTransactions(ctx context.Cont
 			updated_at = NOW()
 	`, r.dongSchema, r.indexerSchema)
 
-	result, err := r.db.ExecContext(ctx, query, campaign.DonationWallet, constants.TransactionStatus_FINALIZED)
+	result, err := r.db.ExecContext(ctx, query, campaign.DonationWallet, constants.TransactionStatusFINALIZED)
 	if err != nil {
 		return 0, 0, 0, fmt.Errorf("failed to upsert contributors: %w", err)
 	}
@@ -175,14 +175,14 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 			AND value > 0
 	`, r.indexerSchema)
 
-	var lastTs time.Time
-	err = r.db.QueryRowContext(ctx, earlyCheckQuery, campaign.DonationWallet, constants.TransactionStatus_FINALIZED).Scan(&lastTs)
+	var lastTS time.Time
+	err = r.db.QueryRowContext(ctx, earlyCheckQuery, campaign.DonationWallet, constants.TransactionStatusFINALIZED).Scan(&lastTS)
 	if err != nil {
 		return models.SyncCampaignResponse{TotalAmount: 0, TotalContributors: 0}, fmt.Errorf("failed to check latest transaction vs stats: %w", err)
 	}
 
-	if lastTs.IsZero() || campaign.UpdatedAt.After(lastTs) {
-		logger.Info().Int64("campaign_id", campaignID).Time("updated_at", campaign.UpdatedAt).Time("last_ts", lastTs).Msg("Campaign statistics are already up to date")
+	if lastTS.IsZero() || campaign.UpdatedAt.After(lastTS) {
+		logger.Info().Int64("campaign_id", campaignID).Time("updated_at", campaign.UpdatedAt).Time("last_ts", lastTS).Msg("Campaign statistics are already up to date")
 		return models.SyncCampaignResponse{TotalAmount: campaign.TotalAmount, TotalContributors: campaign.TotalContributor}, nil
 	}
 
@@ -205,7 +205,7 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 			updated_at = NOW()
 	`, r.dongSchema, r.indexerSchema)
 
-	_, err = r.db.ExecContext(ctx, query, campaign.DonationWallet, constants.TransactionStatus_FINALIZED)
+	_, err = r.db.ExecContext(ctx, query, campaign.DonationWallet, constants.TransactionStatusFINALIZED)
 	if err != nil {
 		return models.SyncCampaignResponse{TotalAmount: 0, TotalContributors: 0}, fmt.Errorf("failed to sync contributors: %w", err)
 	}

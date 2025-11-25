@@ -97,7 +97,6 @@ func ParseTokenAndAddToContext(jwtSecret string) gin.HandlerFunc {
 		c.Set("address", address)
 		c.Next()
 	}
-
 }
 
 // validateClaims validates the token claims
