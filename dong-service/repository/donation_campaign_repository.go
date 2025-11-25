@@ -275,7 +275,7 @@ func (r *DonationCampaignRepository) GetByIDAndCreator(id int64, creator int64) 
 }
 
 // GetAll retrieves all donation campaigns with pagination
-func (r *DonationCampaignRepository) GetAll(status *int16, pagination utils.PaginationParams) ([]models.DonationCampaign, error) {
+func (r *DonationCampaignRepository) GetAll(status *int16, verified *bool, q *string, pagination utils.PaginationParams) ([]models.DonationCampaign, error) {
 	base := fmt.Sprintf(`
         SELECT 
             dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
@@ -294,6 +294,21 @@ func (r *DonationCampaignRepository) GetAll(status *int16, pagination utils.Pagi
 		whereClauses = append(whereClauses, fmt.Sprintf("dc.status = $%d", argCount))
 		args = append(args, *status)
 		argCount++
+	}
+
+	if verified != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("dc.verified = $%d", argCount))
+		args = append(args, *verified)
+		argCount++
+	}
+
+	// Optional search across name and description (case-insensitive)
+	if q != nil && strings.TrimSpace(*q) != "" {
+		// Use ILIKE with surrounding wildcards
+		whereClauses = append(whereClauses, fmt.Sprintf("(dc.name ILIKE $%d OR dc.description ILIKE $%d)", argCount, argCount+1))
+		searchValue := fmt.Sprintf("%%%s%%", strings.TrimSpace(*q))
+		args = append(args, searchValue, searchValue)
+		argCount += 2
 	}
 
 	if len(whereClauses) > 0 {
@@ -528,16 +543,34 @@ func (r *DonationCampaignRepository) Close(id int64, creator int64) (*models.Don
 }
 
 // Count returns the total number of campaigns
-func (r *DonationCampaignRepository) Count(status *int16) (int64, error) {
-	query := fmt.Sprintf(`SELECT COUNT(*) FROM %s.donation_campaign`, r.dongSchema)
+func (r *DonationCampaignRepository) Count(status *int16, verified *bool, q *string) (int64, error) {
+	query := fmt.Sprintf(`SELECT COUNT(*) FROM %s.donation_campaign dc`, r.dongSchema)
 	var (
 		whereClauses []string
 		args         []any
+		argCount     = 1
 	)
 
 	if status != nil {
-		whereClauses = append(whereClauses, "status = $1")
+		whereClauses = append(whereClauses, fmt.Sprintf("dc.status = $%d", argCount))
 		args = append(args, *status)
+		argCount++
+	}
+
+	if verified != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("dc.verified = $%d", argCount))
+		args = append(args, *verified)
+		argCount++
+	}
+
+	if q != nil && strings.TrimSpace(*q) != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("(dc.name ILIKE $%d OR dc.description ILIKE $%d)", argCount, argCount+1))
+		searchValue := fmt.Sprintf("%%%s%%", strings.TrimSpace(*q))
+		args = append(args, searchValue, searchValue)
+		argCount += 2
+	}
+
+	if len(whereClauses) > 0 {
 		query += " WHERE " + strings.Join(whereClauses, " AND ")
 	}
 
