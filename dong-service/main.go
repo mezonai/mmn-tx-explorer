@@ -125,7 +125,7 @@ func main() {
 	// Start scheduler
 	schedulerInstance.Start(ctx)
 
-	cronjob := cron.New(cron.WithLocation(time.UTC))
+	cronjob := cron.New(cron.WithLocation(time.Local))
 	scheduler.InitializeWalletPoolMaintenanceJob(cronjob, ctx)
 	cronjob.Start()
 

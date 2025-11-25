@@ -68,7 +68,7 @@ func InitializeWalletPoolMaintenanceJob(c *cron.Cron, ctx context.Context) {
 	repo := repository.NewIntermediaryWalletRepository(db)
 	job := NewWalletPoolMaintenanceJob(repo)
 
-	entryID, err := c.AddFunc("0 19 * * *", func() {
+	entryID, err := c.AddFunc("0 2 * * *", func() {
 		if err := job.Run(ctx); err != nil {
 			logger.Error().Str("task", taskName).Err(err).Msg("Job execution failed")
 		} else {
