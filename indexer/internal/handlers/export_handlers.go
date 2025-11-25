@@ -12,6 +12,9 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const dateLayout = "2006-01-02"
+const timestampLayout = "15:04:05"
+
 func ExportTransactionsCSV(c *gin.Context) {
 	walletAddress := c.Query("wallet_address")
 	if walletAddress == "" {
@@ -23,13 +26,13 @@ func ExportTransactionsCSV(c *gin.Context) {
 	toDateStr := c.Query("todate")
 	var fromDate, toDate *time.Time
 	if fromDateStr != "" {
-		t, err := time.Parse("2006-01-02", fromDateStr)
+		t, err := time.Parse(dateLayout, fromDateStr)
 		if err == nil {
 			fromDate = &t
 		}
 	}
 	if toDateStr != "" {
-		t, err := time.Parse("2006-01-02", toDateStr)
+		t, err := time.Parse(dateLayout, toDateStr)
 		if err == nil {
 			toDate = &t
 		}
@@ -73,7 +76,7 @@ func ExportTransactionsCSV(c *gin.Context) {
 	w.Write([]string{"hash", "from_address", "to_address", "value", "transaction_timestamp", "block_number", "status", "transaction_type", "text_data", "extra_info"})
 
 	for _, tx := range transactions {
-		timestamp := tx.TransactionTimestamp.Format("2006-01-02 15:04:05")
+		timestamp := tx.TransactionTimestamp.Format(dateLayout + " " + timestampLayout)
 		blockNumber := ""
 		if tx.BlockNumber != nil {
 			blockNumber = tx.BlockNumber.String()
