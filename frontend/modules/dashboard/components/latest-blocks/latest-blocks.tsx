@@ -18,7 +18,7 @@ export const LatestBlocks = ({ className }: LatestBlocksProps) => {
   return (
     <div
       className={cn(
-        'bg-card flex h-full flex-col rounded-xl border border-gray-300 shadow-sm dark:border-gray-700',
+        'bg-card flex h-full flex-col rounded-xl border border-gray-300 shadow-sm dark:border-gray-700 dark:shadow-sm',
         className
       )}
     >
