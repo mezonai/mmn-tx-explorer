@@ -7,51 +7,39 @@ interface SwapMemoData {
   type: string;
 }
 
-/**
- * Parse error message to user-friendly format
- */
 function parseErrorMessage(error: Error | null): string | null {
   if (!error) return null;
 
   const errorMessage = error.message.toLowerCase();
 
-  // User rejected transaction
   if (errorMessage.includes('user rejected') || 
       errorMessage.includes('user denied') ||
       errorMessage.includes('user cancelled')) {
     return 'Transaction cancelled by user';
   }
 
-  // Insufficient balance
   if (errorMessage.includes('insufficient funds') ||
       errorMessage.includes('insufficient balance')) {
     return 'Insufficient balance to complete transaction';
   }
 
-  // Gas estimation failed
   if (errorMessage.includes('gas') && errorMessage.includes('estimate')) {
     return 'Unable to estimate gas. Please check your balance and try again';
   }
 
-  // Network error
   if (errorMessage.includes('network') || errorMessage.includes('connection')) {
     return 'Network connection error. Please check your internet and try again';
   }
 
-  // Generic contract error
   if (errorMessage.includes('execution reverted')) {
     return 'Transaction failed. Please check your balance and allowance';
   }
 
-  // Default: return first 100 characters
   return error.message.length > 100 
     ? error.message.substring(0, 100) + '...' 
     : error.message;
 }
 
-/**
- * Generate hex-encoded memo for swap transaction
- */
 function generateSwapMemo(fromAddress: string): `0x${string}` {
   const memoData: SwapMemoData = {
     from_address: fromAddress,
@@ -81,10 +69,7 @@ export function useSwapContract() {
     }
 
     try {
-      // Convert amount to Wei (18 decimals)
       const amountInWei = parseUnits(amount, 18);
-
-      // Generate memo with user address
       const memo = generateSwapMemo(userAddress);
 
       console.log('Executing swap:', {
@@ -93,7 +78,6 @@ export function useSwapContract() {
         memo,
       });
 
-      // Call transferWithMemo function
       writeContract({
         address: WMEZON_CONTRACT_ADDRESS as `0x${string}`,
         abi: WMEZON_ABI,
@@ -117,9 +101,6 @@ export function useSwapContract() {
   };
 }
 
-/**
- * Hook to read user's WMEZON token balance
- */
 export function useWMEZONBalance(address?: string) {
   const { data: balance, isLoading } = useReadContract({
     address: WMEZON_CONTRACT_ADDRESS as `0x${string}`,

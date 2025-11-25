@@ -2,11 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
+import { formatUnits } from 'viem';
 
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { ConnectWalletButton } from './ConnectWalletButton';
 import { WalletModal } from './WalletModal';
-import { SwapForm } from './SwapForm';
-import { TransactionStatus } from './TransactionStatus';
+import { SwapDirectionTabs } from './SwapDirectionTabs';
+import { SwapAmountInput } from './SwapAmountInput';
+import { EstimatedOutput } from './EstimatedOutput';
+import { BridgeStatus } from './BridgeStatus';
+import { SwapHistory } from './SwapHistory';
 import { useDeviceDetect } from '../hooks/useDeviceDetect';
 import { useWalletConnect } from '../hooks/useWalletConnect';
 import { useSwapContract, useWMEZONBalance } from '../hooks/useSwapContract';
@@ -14,6 +20,7 @@ import { useCreateSwapHistory } from '../hooks/useCreateSwapHistory';
 import { useAuth, useAuthActions } from '@/providers/AppProvider';
 import { SWAP_TYPE } from '../constants';
 import { HOT_WALLET_ADDRESS } from '@/constant/contracts';
+import { AlertTriangle } from 'lucide-react';
 
 export const Swap = () => {
   const { address, isConnected } = useAccount();
@@ -22,23 +29,27 @@ export const Swap = () => {
   const [amount, setAmount] = useState('');
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [savedTxHashes, setSavedTxHashes] = useState<Set<string>>(new Set());
+  const [swapDirection, setSwapDirection] = useState<'wmzd-to-mzd' | 'mzd-to-wmzd'>('wmzd-to-mzd');
 
   const { isDesktop } = useDeviceDetect();
   const { connectMetaMask } = useWalletConnect(isDesktop);
   
-  // Contract interaction hooks
   const { executeSwap, hash, isPending, isConfirming, isConfirmed, errorMessage } = useSwapContract();
-  const { balance, isLoading: isLoadingBalance } = useWMEZONBalance(address);
+  const { balance } = useWMEZONBalance(address);
   
-  // API mutation hook
-  const { mutate: createSwapHistory, isPending: isSavingHistory } = useCreateSwapHistory();
+  const { mutate: createSwapHistory } = useCreateSwapHistory();
+
+  const formattedBalance = balance ? formatUnits(BigInt(balance), 18) : '0';
 
   const handleSwap = () => {
     if (!address || !amount) return;
     executeSwap(amount, address);
   };
 
-  // Call API when transaction is confirmed (only once per transaction)
+  const handleMaxClick = () => {
+    setAmount(formattedBalance);
+  };
+
   useEffect(() => {
     if (isConfirmed && hash && address && amount && !savedTxHashes.has(hash)) {
       createSwapHistory({
@@ -49,7 +60,6 @@ export const Swap = () => {
         type: SWAP_TYPE.TRANSFER_BSC,
       });
       
-      // Mark this transaction as saved
       setSavedTxHashes(prev => new Set(prev).add(hash));
     }
   }, [isConfirmed, hash, address, amount, savedTxHashes, createSwapHistory]);
@@ -62,54 +72,86 @@ export const Swap = () => {
   };
 
   return (
-    <div className="container mx-auto max-w-2xl px-4 py-8">
-      <div className="rounded-lg border bg-card p-6 shadow-lg">
-        <h1 className="mb-6 text-2xl font-bold">Swap</h1>
-
-        {!isAuthenticated ? (
-          <div className="flex min-h-[200px] flex-col items-center justify-center space-y-4">
-            <div className="text-center">
-              <p className="mb-6 text-muted-foreground">
-                Please login to access the swap feature
-              </p>
-            </div>
-            <button
-              onClick={login}
-              className="rounded-md bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700"
-            >
-              Login with Mezon
-            </button>
-          </div>
-        ) : (
-          <>
-            <div className="mb-6 flex justify-end">
+    <div className="container mx-auto max-w-2xl md:max-w-3xl px-4 md:px-6 lg:px-8 py-6 md:py-8">
+      <Card className="border-border bg-card">
+        <CardHeader className="px-4 md:px-6 py-4 md:py-6">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
+            <CardTitle className="text-xl md:text-2xl">Swap</CardTitle>
+            {isAuthenticated && (
               <ConnectWalletButton onConnectClick={() => setShowWalletModal(true)} />
-            </div>
+            )}
+          </div>
+        </CardHeader>
 
-            {isConnected ? (
-              <>
-                <SwapForm
-                  amount={amount}
-                  address={address}
-                  balance={balance}
-                  isPending={isPending}
-                  isConfirming={isConfirming}
-                  onAmountChange={setAmount}
-                  onSwap={handleSwap}
-                  error={errorMessage || undefined}
-                />
-                <TransactionStatus hash={hash} isConfirmed={isConfirmed} />
-              </>
-            ) : (
-              <div className="rounded-md border border-yellow-500/20 bg-yellow-500/10 p-4 text-center">
-                <p className="text-sm text-yellow-600 dark:text-yellow-400">
-                  Please connect your wallet to start swapping
+        <CardContent className="px-4 md:px-6 pb-6">
+          {!isAuthenticated ? (
+            <div className="flex min-h-[300px] flex-col items-center justify-center space-y-4">
+              <div className="text-center">
+                <p className="mb-6 text-muted-foreground">
+                  Please login to access the swap feature
                 </p>
               </div>
-            )}
-          </>
-        )}
-      </div>
+              <Button onClick={login} size="lg" className="bg-brand-primary hover:bg-brand-primary/90 text-white px-8">
+                Login with Mezon
+              </Button>
+            </div>
+          ) : !isConnected ? (
+            <div className="flex items-center gap-3 rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-4">
+              <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+              <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                Please connect your wallet to start swapping
+              </p>
+            </div>
+          ) : (
+            <>
+              <SwapDirectionTabs 
+                direction={swapDirection}
+                onDirectionChange={setSwapDirection}
+              />
+
+              <SwapAmountInput
+                amount={amount}
+                balance={formattedBalance}
+                tokenSymbol="WMezon"
+                onAmountChange={setAmount}
+                onMaxClick={handleMaxClick}
+                disabled={isPending || isConfirming}
+              />
+
+              <EstimatedOutput 
+                amount={amount}
+                tokenSymbol="WMezon"
+              />
+
+              {errorMessage && (
+                <div className="flex items-center gap-3 rounded-lg border border-red-500/20 bg-red-500/10 p-4 mb-6">
+                  <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                  <p className="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>
+                </div>
+              )}
+
+              <Button
+                onClick={handleSwap}
+                disabled={!amount || isPending || isConfirming}
+                className="w-full bg-brand-primary hover:bg-brand-primary/90 text-white h-14 md:h-16 text-base md:text-lg font-semibold"
+                size="lg"
+              >
+                {isPending ? 'Waiting for approval...' : isConfirming ? 'Confirming...' : 'Swap Now'}
+              </Button>
+
+              <BridgeStatus
+                show={isPending || isConfirming || !!hash}
+                txHash={hash}
+                isPending={isPending}
+                isConfirming={isConfirming}
+                isConfirmed={isConfirmed}
+              />
+
+              <SwapHistory />
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       <WalletModal
         isOpen={showWalletModal}

@@ -74,6 +74,7 @@ jobs:
           NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID: ${{ vars.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID }}
           NEXT_PUBLIC_WMEZON_CONTRACT_ADDRESS: ${{ vars.NEXT_PUBLIC_WMEZON_CONTRACT_ADDRESS }}
           NEXT_PUBLIC_HOT_WALLET_ADDRESS: ${{ vars.NEXT_PUBLIC_HOT_WALLET_ADDRESS }}
+          NEXT_PUBLIC_BSC_SCAN_URL: ${{ vars.NEXT_PUBLIC_BSC_SCAN_URL }}
         run: |
           cd frontend
           npm install
@@ -115,6 +116,7 @@ jobs:
           NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID: ${{ vars.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID }}     
           NEXT_PUBLIC_WMEZON_CONTRACT_ADDRESS: ${{ vars.NEXT_PUBLIC_WMEZON_CONTRACT_ADDRESS }}
           NEXT_PUBLIC_HOT_WALLET_ADDRESS: ${{ vars.NEXT_PUBLIC_HOT_WALLET_ADDRESS }}
+          NEXT_PUBLIC_BSC_SCAN_URL: ${{ vars.NEXT_PUBLIC_BSC_SCAN_URL }}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
@@ -137,6 +139,7 @@ jobs:
           NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=${NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID}
           NEXT_PUBLIC_WMEZON_CONTRACT_ADDRESS=${NEXT_PUBLIC_WMEZON_CONTRACT_ADDRESS}
           NEXT_PUBLIC_HOT_WALLET_ADDRESS=${NEXT_PUBLIC_HOT_WALLET_ADDRESS}
+          NEXT_PUBLIC_BSC_SCAN_URL=${NEXT_PUBLIC_BSC_SCAN_URL}
           EON
 
           sudo chown -R mmn:mmn /opt/frontend
@@ -161,6 +164,7 @@ jobs:
           printf "export NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=%q\n" "$NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID" >> remote_env.sh
           printf "export NEXT_PUBLIC_WMEZON_CONTRACT_ADDRESS=%q\n" "$NEXT_PUBLIC_WMEZON_CONTRACT_ADDRESS" >> remote_env.sh
           printf "export NEXT_PUBLIC_HOT_WALLET_ADDRESS=%q\n" "$NEXT_PUBLIC_HOT_WALLET_ADDRESS" >> remote_env.sh
+          printf "export NEXT_PUBLIC_BSC_SCAN_URL=%q\n" "$NEXT_PUBLIC_BSC_SCAN_URL" >> remote_env.sh
       
       - name:  Prepare and deploy to target server
         run: |

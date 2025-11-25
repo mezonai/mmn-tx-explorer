@@ -9,7 +9,7 @@ export const useWalletConnect = (isDesktop: boolean) => {
       connect({
         connector: metaMask({
           dappMetadata: {
-            name: 'Mezon Dong',
+            name: 'Mezon Đồng',
           },
           preferDesktop: isDesktop,
         }),

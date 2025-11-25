@@ -1,10 +1,7 @@
-// WMEZON Token Contract Address on BSC
 export const WMEZON_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_WMEZON_CONTRACT_ADDRESS || '0x2656eAF95dd8e0c31dAC3fd83A6663c1C6acB4eE';
-
-// Hot Wallet Address (receives tokens from users)
 export const HOT_WALLET_ADDRESS = process.env.NEXT_PUBLIC_HOT_WALLET_ADDRESS || '0x60ddf9a2c0c234a34dd3a53991e8db293ab15e83';
+export const BSC_SCAN_URL = process.env.NEXT_PUBLIC_BSC_SCAN_URL || 'https://testnet.bscscan.com';
 
-// WMEZON Contract ABI - only the functions we need
 export const WMEZON_ABI = [
   {
     inputs: [

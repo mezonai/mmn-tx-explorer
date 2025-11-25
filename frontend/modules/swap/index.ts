@@ -1,18 +1,17 @@
 // Components
 export { Swap } from './components/swap';
-export { SwapForm } from './components/SwapForm';
 export { ConnectWalletButton } from './components/ConnectWalletButton';
 export { WalletModal } from './components/WalletModal';
-export { TransactionStatus } from './components/TransactionStatus';
 
 // Hooks
 export { useSwapContract, useWMEZONBalance } from './hooks/useSwapContract';
 export { useCreateSwapHistory } from './hooks/useCreateSwapHistory';
+export { useRecentTransactions } from './hooks/useRecentTransactions';
 export { useDeviceDetect } from './hooks/useDeviceDetect';
 export { useWalletConnect } from './hooks/useWalletConnect';
 
 // Types
-export type { CreateSwapHistoryRequest, CreateSwapHistoryResponse } from './types';
+export type { CreateSwapHistoryRequest, CreateSwapHistoryResponse, RecentTransaction, RecentTransactionsResponse } from './types';
 
 // Constants
 export { SWAP_ENDPOINTS, QUERY_KEYS, SWAP_TYPE } from './constants';

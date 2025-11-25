@@ -17,6 +17,7 @@ interface PaginationProps {
   onChangePage: (page: number) => void;
   onChangeLimit: (limit: number) => void;
   skeletonClassName?: string;
+  limits?: readonly number[];
 }
 
 interface PaginationState {
@@ -114,6 +115,7 @@ export const Pagination = ({
   onChangePage,
   onChangeLimit,
   skeletonClassName = '',
+  limits = LIMITS,
 }: PaginationProps) => {
   const {
     currentPage,
@@ -139,7 +141,7 @@ export const Pagination = ({
     if (isLoading) return;
 
     const newLimit = Number(limitString);
-    if (LIMITS.includes(newLimit as (typeof LIMITS)[number])) {
+    if (limits.includes(newLimit)) {
       onChangeLimit(newLimit);
     }
   };
@@ -158,7 +160,7 @@ export const Pagination = ({
             <SelectValue placeholder={PAGINATION.DEFAULT_LIMIT.toString()} />
           </SelectTrigger>
           <SelectContent>
-            {LIMITS.map((limitOption) => (
+            {limits.map((limitOption) => (
               <SelectItem key={limitOption} value={limitOption.toString()}>
                 {limitOption}
               </SelectItem>
