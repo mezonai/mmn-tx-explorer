@@ -21,7 +21,7 @@ type Error struct {
 	// @Description Error message
 	Message string `json:"message"`
 	// @Description Support ID for tracking the error
-	SupportId string `json:"support_id"`
+	SupportID string `json:"support_id"`
 }
 
 // QueryParams represents the parameters for querying data
@@ -50,16 +50,16 @@ type QueryParams struct {
 	// @Description Wallet address to fetch transactions for (matches from OR to)
 	WalletAddress string `schema:"wallet_address"`
 	// @Description Start time for filtering transactions (YYYY-MM-DD or Unix timestamp)
-    StartTime string `schema:"start_time"`
-    // @Description End time for filtering transactions (YYYY-MM-DD or Unix timestamp)
-    EndTime string `schema:"end_time"`
+	StartTime string `schema:"start_time"`
+	// @Description End time for filtering transactions (YYYY-MM-DD or Unix timestamp)
+	EndTime string `schema:"end_time"`
 }
 
 // Meta represents metadata for a query response
 // @Description Meta represents metadata for a query response
 type Meta struct {
 	// @Description Chain ID of the blockchain
-	ChainId uint64 `json:"chain_id"`
+	ChainID uint64 `json:"chain_id"`
 	// @Description Contract address
 	ContractAddress string `json:"address,omitempty"`
 	// @Description Function or event signature
@@ -89,7 +89,7 @@ func writeError(w http.ResponseWriter, message string, code int) {
 	resp := Error{
 		Code:      code,
 		Message:   message,
-		SupportId: "TODO",
+		SupportID: "TODO",
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -147,15 +147,15 @@ func ParseQueryParams(r *http.Request) (QueryParams, error) {
 	return params, nil
 }
 
-func GetChainId(c *gin.Context) (*big.Int, error) {
+func GetChainID(c *gin.Context) (*big.Int, error) {
 	// TODO: check chainId against the chain-service to ensure it's valid
-	chainId := c.Param("chainId")
-	chainIdInt, err := strconv.ParseUint(chainId, 10, 64)
+	chainID := c.Param("chainId")
+	chainIDInt, err := strconv.ParseUint(chainID, 10, 64)
 	if err != nil {
-		log.Error().Err(err).Msg("Error parsing chainId")
+		log.Error().Err(err).Msg("Error parsing chainID")
 		return nil, err
 	}
-	return big.NewInt(int64(chainIdInt)), nil
+	return big.NewInt(int64(chainIDInt)), nil
 }
 
 func ParseIntQueryParam(value string, defaultValue int) int {
