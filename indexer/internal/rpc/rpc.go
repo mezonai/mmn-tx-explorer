@@ -186,6 +186,7 @@ func (rpc *Client) GetFullBlocks(ctx context.Context, blockNumbers []*big.Int) [
 	results := SerializeFullBlocks(rpc.chainID, rawBlocks, nil, nil, nil)
 
 	// Final summary: count successful vs failed results
+	unknown := "unknown"
 	finalSuccessfulCount := 0
 	finalFailedCount := 0
 	var failedBlockNumbers []string
@@ -203,7 +204,7 @@ func (rpc *Client) GetFullBlocks(ctx context.Context, blockNumbers []*big.Int) [
 					if idx < len(rawBlocks) {
 						return rawBlocks[idx].Key.String()
 					}
-					return "unknown"
+					return unknown
 				}()).
 				Err(r.Error).
 				Msg("GetFullBlocks: result has error")
@@ -218,7 +219,7 @@ func (rpc *Client) GetFullBlocks(ctx context.Context, blockNumbers []*big.Int) [
 					if idx < len(rawBlocks) {
 						return rawBlocks[idx].Key.String()
 					}
-					return "unknown"
+					return unknown
 				}()).
 				Msg("GetFullBlocks: result has nil BlockNumber")
 		}
