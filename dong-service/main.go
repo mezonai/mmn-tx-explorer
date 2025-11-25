@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"dong-service/blockchain"
 	"dong-service/config"
 	"dong-service/database"
 	"dong-service/logger"
@@ -20,6 +21,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/robfig/cron/v3"
 )
 
 // @title           Dong Service API
@@ -87,6 +89,16 @@ func main() {
 	startupInit.StartBackgroundMaintenance()
 	logger.Info().Msg("Background wallet pool maintenance started")
 
+	blockchainService, err := blockchain.NewBlockchainService(cfg)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("Failed to initialize blockchain service")
+	}
+
+	defer func() {
+		if err := blockchainService.Close(); err != nil {
+			logger.Error().Err(err).Msg("Failed to close blockchain service")
+		}
+	}()
 
 	// Create Gin router
 	r := gin.New()
@@ -113,6 +125,10 @@ func main() {
 	// Start scheduler
 	schedulerInstance.Start(ctx)
 
+	cronjob := cron.New(cron.WithLocation(time.UTC))
+	scheduler.InitializeWalletPoolMaintenanceJob(cronjob, ctx)
+	cronjob.Start()
+
 	// Start server in a goroutine
 	addr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)
 	logger.Info().Str("address", addr).Msg("Starting HTTP server")
@@ -137,6 +153,7 @@ func main() {
 
 	// Stop scheduler
 	schedulerInstance.Stop()
+	cronjob.Stop()
 
 	// Shutdown server with timeout
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)

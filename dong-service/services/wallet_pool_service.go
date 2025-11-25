@@ -12,11 +12,11 @@ import (
 )
 
 type WalletPoolService struct {
-	redEnvelopeWalletRepo *repository.RedEnvelopeWalletRepository
+	redEnvelopeWalletRepo *repository.IntermediaryWalletRepository
 	mu                    sync.Mutex
 }
 
-func NewWalletPoolService(redEnvelopeWalletRepo *repository.RedEnvelopeWalletRepository) *WalletPoolService {
+func NewWalletPoolService(redEnvelopeWalletRepo *repository.IntermediaryWalletRepository) *WalletPoolService {
 	return &WalletPoolService{
 		redEnvelopeWalletRepo: redEnvelopeWalletRepo,
 	}
@@ -65,20 +65,20 @@ func (s *WalletPoolService) InitializePoolIfNeeded(ctx context.Context) error {
 }
 
 func (s *WalletPoolService) CreateWallets(ctx context.Context, count int) error {
-	wallets := make([]*models.RedEnvelopeWallet, 0, count)
+	wallets := make([]*models.IntermediaryWallet, 0, count)
 
 	for i := 0; i < count; i++ {
 		address, privateKey, err := s.generateWallet()
 		if err != nil {
-				return err
+			return err
 		}
 
 		encryptedKey, err := utils.EncryptPrivateKey(privateKey)
 		if err != nil {
-				return err
+			return err
 		}
 
-		wallets = append(wallets, &models.RedEnvelopeWallet{
+		wallets = append(wallets, &models.IntermediaryWallet{
 			WalletAddress:       address,
 			EncryptedPrivateKey: encryptedKey,
 			Status:              constants.RedEnvelopeWalletStatusReady,

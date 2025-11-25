@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-type RedEnvelopeWallet struct {
+type IntermediaryWallet struct {
 	ID                  int64     `json:"id" db:"id"`
 	WalletAddress       string    `json:"wallet_address" db:"wallet_address"`
 	EncryptedPrivateKey string    `json:"-" db:"encrypted_private_key"`

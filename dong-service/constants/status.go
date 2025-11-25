@@ -26,6 +26,11 @@ const (
 	RedEnvelopeWalletStatusDisabled       = "DISABLED"        // No longer usable
 )
 
+const (
+	WalletTypeDefault     = "DEFAULT"
+	WalletTypeRedEnvelope = "LUCKY_MONEY"
+)
+
 // Red Envelope Configuration
 const (
 	RedEnvelopeInitialWalletPool  = 50 // Number of wallets to create on deployment
