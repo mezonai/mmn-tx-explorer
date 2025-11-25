@@ -12,7 +12,7 @@ interface ProgressCardProps {
   raised: number;
   goal: number;
   campaignId: string;
-  currentBalance: string;
+  currentBalance: number;
   totalWithdrawn?: number;
   onRefresh?: (newRaisedAmount: number, newTotalWithdrawn: number) => void;
 }

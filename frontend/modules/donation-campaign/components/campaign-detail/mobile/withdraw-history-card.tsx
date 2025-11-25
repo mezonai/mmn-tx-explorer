@@ -47,7 +47,7 @@ export function WithdrawHistoryCard({
                 </span>
               </div>
 
-              <div className="flex justify-between">
+              <div className="mt-1 flex justify-between">
                 <span className="text-muted-foreground">Amount</span>
                 <span className="text-error-primary-600 font-semibold">
                   {NumberUtil.formatWithCommasAndScale(tx.value)}
@@ -59,11 +59,9 @@ export function WithdrawHistoryCard({
                 <TxnHashLink hash={tx.hash} isPending={false} />
               </div>
 
-              <div className="5mt-1 flex justify-between border-b pb-2">
+              <div className="mt-1 flex justify-between border-b pb-2">
                 <span className="text-muted-foreground">Purpose</span>
-                <span className="overflow-hidden text-ellipsis max-w-[60%]">
-                  {tx.text_data}
-                </span>
+                <span className="ml-2 overflow-hidden text-ellipsis whitespace-nowrap">{tx.text_data}</span>
               </div>
             </div>
           ))
