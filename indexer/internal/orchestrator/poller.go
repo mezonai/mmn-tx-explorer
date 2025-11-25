@@ -16,8 +16,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const DEFAULT_BLOCKS_PER_POLL = 10
-const DEFAULT_TRIGGER_INTERVAL = 1000
+const DefaultBlocksPerPoll = 10
+const DefaultTriggerInterval = 1000
 
 type Poller struct {
 	rpc                  rpc.IRPCClient
@@ -47,20 +47,20 @@ func WithPollerWorkModeChan(ch chan WorkMode) PollerOption {
 	}
 }
 
-func NewBoundlessPoller(rpc rpc.IRPCClient, storage storage.IStorage, opts ...PollerOption) *Poller {
+func NewBoundlessPoller(rpcClient rpc.IRPCClient, store storage.IStorage, opts ...PollerOption) *Poller {
 	blocksPerPoll := config.Cfg.Poller.BlocksPerPoll
 	if blocksPerPoll == 0 {
-		blocksPerPoll = DEFAULT_BLOCKS_PER_POLL
+		blocksPerPoll = DefaultBlocksPerPoll
 	}
 	triggerInterval := config.Cfg.Poller.Interval
 	if triggerInterval == 0 {
-		triggerInterval = DEFAULT_TRIGGER_INTERVAL
+		triggerInterval = DefaultTriggerInterval
 	}
 	poller := &Poller{
-		rpc:               rpc,
+		rpc:               rpcClient,
 		triggerIntervalMs: int64(triggerInterval),
 		blocksPerPoll:     int64(blocksPerPoll),
-		storage:           storage,
+		storage:           store,
 		parallelPollers:   config.Cfg.Poller.ParallelPollers,
 	}
 
@@ -73,15 +73,15 @@ func NewBoundlessPoller(rpc rpc.IRPCClient, storage storage.IStorage, opts ...Po
 
 var ErrNoNewBlocks = fmt.Errorf("no new blocks to poll")
 
-func NewPoller(rpc rpc.IRPCClient, storage storage.IStorage, opts ...PollerOption) *Poller {
-	poller := NewBoundlessPoller(rpc, storage, opts...)
+func NewPoller(rpcClient rpc.IRPCClient, store storage.IStorage, opts ...PollerOption) *Poller {
+	poller := NewBoundlessPoller(rpcClient, store, opts...)
 	untilBlock := big.NewInt(int64(config.Cfg.Poller.UntilBlock))
 	pollFromBlock := big.NewInt(int64(config.Cfg.Poller.FromBlock))
 	lastPolledBlock := new(big.Int).Sub(pollFromBlock, big.NewInt(1)) // needs to include the first block
 	if config.Cfg.Poller.ForceFromBlock {
 		log.Debug().Msgf("ForceFromBlock is enabled, setting last polled block to %s", lastPolledBlock.String())
 	} else {
-		highestBlockFromStaging, err := storage.StagingStorage.GetLastStagedBlockNumber(rpc.GetChainID(), pollFromBlock, untilBlock)
+		highestBlockFromStaging, err := store.StagingStorage.GetLastStagedBlockNumber(rpcClient.GetChainID(), pollFromBlock, untilBlock)
 		if err != nil || highestBlockFromStaging == nil || highestBlockFromStaging.Sign() <= 0 {
 			log.Warn().Err(err).Msgf("No last polled block found, setting to %s", lastPolledBlock.String())
 		} else {
@@ -91,14 +91,12 @@ func NewPoller(rpc rpc.IRPCClient, storage storage.IStorage, opts ...PollerOptio
 				lastPolledBlock = highestBlockFromStaging
 			}
 		}
-		highestBlockFromMainStorage, err := storage.MainStorage.GetMaxBlockNumber(rpc.GetChainID())
+		highestBlockFromMainStorage, err := store.MainStorage.GetMaxBlockNumber(rpcClient.GetChainID())
 		if err != nil {
 			log.Error().Err(err).Msg("Error getting last block in main storage")
-		} else {
-			if highestBlockFromMainStorage.Cmp(pollFromBlock) > 0 {
-				log.Debug().Msgf("Main storage block %s is higher than configured start block %s", highestBlockFromMainStorage.String(), pollFromBlock.String())
-				lastPolledBlock = highestBlockFromMainStorage
-			}
+		} else if highestBlockFromMainStorage.Cmp(pollFromBlock) > 0 {
+			log.Debug().Msgf("Main storage block %s is higher than configured start block %s", highestBlockFromMainStorage.String(), pollFromBlock.String())
+			lastPolledBlock = highestBlockFromMainStorage
 		}
 	}
 	poller.lastPolledBlock = lastPolledBlock
@@ -213,7 +211,8 @@ func (p *Poller) Poll(ctx context.Context, blockNumbers []*big.Int) (lastPolledB
 	var highestBlockNumber *big.Int
 	if len(blockData) > 0 {
 		highestBlockNumber = blockData[0].Block.Number
-		for _, block := range blockData {
+		for i := range blockData {
+			block := &blockData[i]
 			if block.Block.Number.Cmp(highestBlockNumber) > 0 {
 				highestBlockNumber = new(big.Int).Set(block.Block.Number)
 			}
@@ -238,8 +237,8 @@ func (p *Poller) PollWithoutSaving(ctx context.Context, blockNumbers []*big.Int)
 	endBlockNumberFloat, _ := endBlock.Float64()
 	metrics.PollerLastTriggeredBlock.Set(endBlockNumberFloat)
 
-	worker := worker.NewWorker(p.rpc)
-	results := worker.Run(ctx, blockNumbers)
+	recoveryWorker := worker.NewWorker(p.rpc)
+	results := recoveryWorker.Run(ctx, blockNumbers)
 	blockData, failedResults := p.convertPollResultsToBlockData(results)
 	return blockData, failedResults
 }
@@ -248,21 +247,23 @@ func (p *Poller) convertPollResultsToBlockData(results []rpc.GetFullBlockResult)
 	var successfulResults []rpc.GetFullBlockResult
 	var failedResults []rpc.GetFullBlockResult
 
-	for _, result := range results {
+	for i := range results {
+		result := &results[i]
 		if result.Error != nil {
 			bn := "<unknown>"
 			if result.BlockNumber != nil {
 				bn = result.BlockNumber.String()
 			}
 			log.Warn().Err(result.Error).Msgf("Error fetching block data for block %s", bn)
-			failedResults = append(failedResults, result)
+			failedResults = append(failedResults, *result)
 		} else {
-			successfulResults = append(successfulResults, result)
+			successfulResults = append(successfulResults, *result)
 		}
 	}
 
 	blockData := make([]common.BlockData, 0, len(successfulResults))
-	for _, result := range successfulResults {
+	for i := range successfulResults {
+		result := &successfulResults[i]
 		blockData = append(blockData, common.BlockData{
 			Block:        result.Data.Block,
 			Logs:         result.Data.Logs,
@@ -280,9 +281,9 @@ func (p *Poller) StageResults(blockData []common.BlockData, failedResults []rpc.
 		if err := p.storage.StagingStorage.InsertStagingData(blockData); err != nil {
 			e := fmt.Errorf("error inserting block data: %v", err)
 			log.Error().Err(e)
-			for _, result := range blockData {
+			for i := range blockData {
 				failedResults = append(failedResults, rpc.GetFullBlockResult{
-					BlockNumber: result.Block.Number,
+					BlockNumber: blockData[i].Block.Number,
 					Error:       e,
 				})
 			}
@@ -330,7 +331,7 @@ func (p *Poller) getNextBlockRange(ctx context.Context) ([]*big.Int, error) {
 	return p.createBlockNumbersForRange(startBlock, endBlock), nil
 }
 
-func (p *Poller) getEndBlockForRange(startBlock *big.Int, latestBlock *big.Int) *big.Int {
+func (p *Poller) getEndBlockForRange(startBlock, latestBlock *big.Int) *big.Int {
 	endBlock := new(big.Int).Add(startBlock, big.NewInt(p.blocksPerPoll-1))
 	if endBlock.Cmp(latestBlock) > 0 {
 		endBlock = latestBlock
@@ -342,7 +343,7 @@ func (p *Poller) getEndBlockForRange(startBlock *big.Int, latestBlock *big.Int) 
 	return endBlock
 }
 
-func (p *Poller) createBlockNumbersForRange(startBlock *big.Int, endBlock *big.Int) []*big.Int {
+func (p *Poller) createBlockNumbersForRange(startBlock, endBlock *big.Int) []*big.Int {
 	blockCount := new(big.Int).Sub(endBlock, startBlock).Int64() + 1
 	blockNumbers := make([]*big.Int, blockCount)
 	for i := int64(0); i < blockCount; i++ {
@@ -353,13 +354,14 @@ func (p *Poller) createBlockNumbersForRange(startBlock *big.Int, endBlock *big.I
 
 func (p *Poller) handleBlockFailures(results []rpc.GetFullBlockResult) {
 	var blockFailures []common.BlockFailure
-	for _, result := range results {
+	for i := range results {
+		result := &results[i]
 		if result.Error != nil {
 			blockFailures = append(blockFailures, common.BlockFailure{
 				BlockNumber:   result.BlockNumber,
 				FailureReason: result.Error.Error(),
 				FailureTime:   time.Now(),
-				ChainId:       p.rpc.GetChainID(),
+				ChainID:       p.rpc.GetChainID(),
 				FailureCount:  1,
 			})
 		}

@@ -6,7 +6,7 @@ import (
 )
 
 type Block struct {
-	ChainId          *big.Int  `json:"chain_id" ch:"chain_id"`
+	ChainID          *big.Int  `json:"chain_id" ch:"chain_id"`
 	Number           *big.Int  `json:"block_number" ch:"block_number"`
 	Hash             string    `json:"hash" ch:"hash"`
 	ParentHash       string    `json:"parent_hash" ch:"parent_hash"`
@@ -16,7 +16,7 @@ type Block struct {
 
 // BlockModel represents a simplified Block structure for Swagger documentation
 type BlockModel struct {
-	ChainId          string `json:"chain_id"`
+	ChainID          string `json:"chain_id"`
 	BlockNumber      uint64 `json:"block_number"`
 	BlockHash        string `json:"block_hash"`
 	ParentHash       string `json:"parent_hash"`
@@ -41,7 +41,7 @@ type RawBlock = map[string]interface{}
 
 func (b *Block) Serialize() BlockModel {
 	return BlockModel{
-		ChainId:          b.ChainId.String(),
+		ChainID:          b.ChainID.String(),
 		BlockNumber:      b.Number.Uint64(),
 		BlockHash:        b.Hash,
 		ParentHash:       b.ParentHash,

@@ -153,8 +153,8 @@ func RunCommonMigrations(
 
 	if dirty {
 		log.Warn().Uint("version", version).Msg("Database is in dirty state, attempting to force version")
-		if err := m.Force(int(version)); err != nil {
-			return fmt.Errorf("failed to force version %d: %w", version, err)
+		if migrateErr := m.Force(int(version)); migrateErr != nil {
+			return fmt.Errorf("failed to force version %d: %w", version, migrateErr)
 		}
 	}
 
