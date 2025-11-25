@@ -33,6 +33,7 @@ type Campaign struct {
 	UpdatedAt        time.Time
 	TotalAmount      int64
 	TotalContributor int64
+	TotalWithdrawn   int64
 }
 
 // GetActiveCampaigns retrieves all active donation campaigns
@@ -123,19 +124,22 @@ func (r *CampaignStatisticsRepository) UpdateCampaignStatistics(ctx context.Cont
 		SET 
 			total_amount = cc_stats.total_amount,
 			total_contributor = cc_stats.contributor_count,
+			total_withdrawn = cc_stats.total_withdrawn,
 			updated_at = NOW()
 		FROM %s.donation_campaign dc
 		INNER JOIN (
 			SELECT 
 				campaign_wallet,
 				SUM(total_donate) as total_amount,
-				COUNT(DISTINCT sender_wallet) as contributor_count
-			FROM %s.campaign_contributor
-			GROUP BY campaign_wallet
+				COUNT(DISTINCT sender_wallet) as contributor_count,
+				SUM(total_donate) - COALESCE(w.balance, 0) AS total_withdrawn
+			FROM %s.campaign_contributor cc
+			LEFT JOIN %s.wallet w ON w.address = cc.campaign_wallet
+			GROUP BY campaign_wallet, w.balance
 		) cc_stats ON dc.donation_wallet = cc_stats.campaign_wallet
 		WHERE cs.campaign_wallet = dc.donation_wallet
 		AND dc.status = $1
-	`, r.dongSchema, r.dongSchema, r.dongSchema)
+	`, r.dongSchema, r.dongSchema, r.dongSchema, r.indexerSchema)
 
 	result, err := r.db.ExecContext(ctx, query, constants.CampaignStatusActive)
 	if err != nil {
@@ -154,16 +158,16 @@ func (r *CampaignStatisticsRepository) UpdateCampaignStatistics(ctx context.Cont
 func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, campaignID int64) (models.SyncCampaignResponse, error) {
 	// Get the campaign details
 	campaignQuery := fmt.Sprintf(`
-		SELECT dc.id, dc.donation_wallet, cs.updated_at, cs.total_amount, cs.total_contributor
+		SELECT dc.id, dc.donation_wallet, cs.updated_at, cs.total_amount, cs.total_contributor, cs.total_withdrawn
 		FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
 		WHERE dc.id = $1
 	`, r.dongSchema, r.dongSchema)
 
 	var campaign Campaign
-	err := r.db.QueryRowContext(ctx, campaignQuery, campaignID).Scan(&campaign.ID, &campaign.DonationWallet, &campaign.UpdatedAt, &campaign.TotalAmount, &campaign.TotalContributor)
+	err := r.db.QueryRowContext(ctx, campaignQuery, campaignID).Scan(&campaign.ID, &campaign.DonationWallet, &campaign.UpdatedAt, &campaign.TotalAmount, &campaign.TotalContributor, &campaign.TotalWithdrawn)
 	if err != nil {
-		return models.SyncCampaignResponse{TotalAmount: 0, TotalContributors: 0}, fmt.Errorf("failed to get campaign: %w", err)
+		return models.SyncCampaignResponse{TotalAmount: 0, TotalContributors: 0, TotalWithdrawn: 0}, fmt.Errorf("failed to get campaign: %w", err)
 	}
 
 	// If statistics are already newer than the latest finalized transaction for this wallet, skip sync
@@ -178,12 +182,12 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 	var lastTS time.Time
 	err = r.db.QueryRowContext(ctx, earlyCheckQuery, campaign.DonationWallet, constants.TransactionStatusFINALIZED).Scan(&lastTS)
 	if err != nil {
-		return models.SyncCampaignResponse{TotalAmount: 0, TotalContributors: 0}, fmt.Errorf("failed to check latest transaction vs stats: %w", err)
+		return models.SyncCampaignResponse{TotalAmount: 0, TotalContributors: 0, TotalWithdrawn: 0}, fmt.Errorf("failed to check latest transaction vs stats: %w", err)
 	}
 
 	if lastTS.IsZero() || campaign.UpdatedAt.After(lastTS) {
 		logger.Info().Int64("campaign_id", campaignID).Time("updated_at", campaign.UpdatedAt).Time("last_ts", lastTS).Msg("Campaign statistics are already up to date")
-		return models.SyncCampaignResponse{TotalAmount: campaign.TotalAmount, TotalContributors: campaign.TotalContributor}, nil
+		return models.SyncCampaignResponse{TotalAmount: campaign.TotalAmount, TotalContributors: campaign.TotalContributor, TotalWithdrawn: campaign.TotalWithdrawn}, nil
 	}
 
 	// Sync contributors for this campaign
@@ -207,7 +211,7 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 
 	_, err = r.db.ExecContext(ctx, query, campaign.DonationWallet, constants.TransactionStatusFINALIZED)
 	if err != nil {
-		return models.SyncCampaignResponse{TotalAmount: 0, TotalContributors: 0}, fmt.Errorf("failed to sync contributors: %w", err)
+		return models.SyncCampaignResponse{TotalAmount: 0, TotalContributors: 0, TotalWithdrawn: 0}, fmt.Errorf("failed to sync contributors: %w", err)
 	}
 
 	// Update statistics for this specific campaign
@@ -216,29 +220,33 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 		SET 
 			total_amount = cc_stats.total_amount,
 			total_contributor = cc_stats.contributor_count,
+			total_withdrawn = cc_stats.total_withdrawn,
 			updated_at = NOW()
 		FROM %s.donation_campaign dc
 		INNER JOIN (
 			SELECT 
 				campaign_wallet,
 				SUM(total_donate) as total_amount,
-				COUNT(DISTINCT sender_wallet) as contributor_count
-			FROM %s.campaign_contributor
-			WHERE campaign_wallet = $1
-			GROUP BY campaign_wallet
+				COUNT(DISTINCT sender_wallet) as contributor_count,
+				SUM(total_donate) - COALESCE(w.balance, 0) AS total_withdrawn
+			FROM %s.campaign_contributor cc
+			LEFT JOIN %s.wallet w ON w.address = cc.campaign_wallet
+			WHERE cc.campaign_wallet = $1
+			GROUP BY cc.campaign_wallet, w.balance
 		) cc_stats ON dc.donation_wallet = cc_stats.campaign_wallet
 		WHERE cs.campaign_wallet = dc.donation_wallet
 		AND dc.id = $2
-		RETURNING cs.total_amount, cs.total_contributor
-	`, r.dongSchema, r.dongSchema, r.dongSchema)
+		RETURNING cs.total_amount, cs.total_contributor, cs.total_withdrawn
+	`, r.dongSchema, r.dongSchema, r.dongSchema, r.indexerSchema)
 
 	var updatedTotalAmount int64
 	var updatedTotalContributor int64
-	if err := r.db.QueryRowContext(ctx, updateStatsQuery, campaign.DonationWallet, campaignID).Scan(&updatedTotalAmount, &updatedTotalContributor); err != nil {
-		return models.SyncCampaignResponse{TotalAmount: 0, TotalContributors: 0}, fmt.Errorf("failed to update campaign statistics: %w", err)
+	var updatedTotalWithdrawn int64
+	if err := r.db.QueryRowContext(ctx, updateStatsQuery, campaign.DonationWallet, campaignID).Scan(&updatedTotalAmount, &updatedTotalContributor, &updatedTotalWithdrawn); err != nil {
+		return models.SyncCampaignResponse{TotalAmount: 0, TotalContributors: 0, TotalWithdrawn: 0}, fmt.Errorf("failed to update campaign statistics: %w", err)
 	}
 
-	return models.SyncCampaignResponse{TotalAmount: updatedTotalAmount, TotalContributors: updatedTotalContributor}, nil
+	return models.SyncCampaignResponse{TotalAmount: updatedTotalAmount, TotalContributors: updatedTotalContributor, TotalWithdrawn: updatedTotalWithdrawn}, nil
 }
 
 // GetStats returns campaign statistics

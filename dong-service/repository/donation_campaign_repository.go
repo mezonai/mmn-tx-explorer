@@ -96,11 +96,11 @@ func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampa
 
 	// Insert campaign statistics
 	statsQuery := fmt.Sprintf(`
-		INSERT INTO %s.campaign_statistics (campaign_id, campaign_wallet, total_amount, total_contributor)
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO %s.campaign_statistics (campaign_id, campaign_wallet, total_amount, total_contributor, total_withdrawn)
+		VALUES ($1, $2, $3, $4, $5)
 	`, r.dongSchema)
 
-	_, err = tx.Exec(statsQuery, result.ID, result.DonationWallet, 0, 0)
+	_, err = tx.Exec(statsQuery, result.ID, result.DonationWallet, 0, 0, 0)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create campaign statistics: %w", err)
 	}
@@ -177,11 +177,11 @@ func (r *DonationCampaignRepository) CreateAndActive(campaign *models.CreateDona
 
 	// Insert campaign statistics
 	statsQuery := fmt.Sprintf(`
-		INSERT INTO %s.campaign_statistics (campaign_id, campaign_wallet, total_amount, total_contributor)
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO %s.campaign_statistics (campaign_id, campaign_wallet, total_amount, total_contributor, total_withdrawn)
+		VALUES ($1, $2, $3, $4, $5)
 	`, r.dongSchema)
 
-	_, err = tx.Exec(statsQuery, result.ID, result.DonationWallet, 0, 0)
+	_, err = tx.Exec(statsQuery, result.ID, result.DonationWallet, 0, 0, 0)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create campaign statistics: %w", err)
 	}
@@ -199,7 +199,8 @@ func (r *DonationCampaignRepository) GetByID(id int64) (*models.DonationCampaign
 		SELECT 
             dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
 			cs.total_amount, cs.total_contributor,
-			COALESCE(w.balance::TEXT, '0') as current_balance
+			COALESCE(w.balance, '0') as current_balance,
+			cs.total_withdrawn
 		FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
 		LEFT JOIN %s.wallet w ON w.address = dc.donation_wallet
@@ -225,6 +226,7 @@ func (r *DonationCampaignRepository) GetByID(id int64) (*models.DonationCampaign
 		&campaign.TotalAmount,
 		&campaign.TotalContributors,
 		&campaign.CurrentBalance,
+		&campaign.TotalWithdrawn,
 	)
 
 	if err == sql.ErrNoRows {
@@ -243,7 +245,8 @@ func (r *DonationCampaignRepository) GetByIDAndCreator(id, creator int64) (*mode
 		SELECT 
             dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
 			cs.total_amount, cs.total_contributor,
-			COALESCE(w.balance::TEXT, '0') as current_balance
+			COALESCE(w.balance, '0') as current_balance,
+			cs.total_withdrawn
 		FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
 		LEFT JOIN %s.wallet w ON w.address = dc.donation_wallet
@@ -269,6 +272,7 @@ func (r *DonationCampaignRepository) GetByIDAndCreator(id, creator int64) (*mode
 		&campaign.TotalAmount,
 		&campaign.TotalContributors,
 		&campaign.CurrentBalance,
+		&campaign.TotalWithdrawn,
 	)
 
 	if err == sql.ErrNoRows {
@@ -717,7 +721,8 @@ func (r *DonationCampaignRepository) GetBySlug(slug string) (*models.DonationCam
 		SELECT 
             dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
 			cs.total_amount, cs.total_contributor,
-			COALESCE(w.balance::TEXT, '0') as current_balance
+			COALESCE(w.balance, '0') as current_balance,
+			cs.total_withdrawn
 		FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
 		LEFT JOIN %s.wallet w ON w.address = dc.donation_wallet
@@ -743,6 +748,7 @@ func (r *DonationCampaignRepository) GetBySlug(slug string) (*models.DonationCam
 		&campaign.TotalAmount,
 		&campaign.TotalContributors,
 		&campaign.CurrentBalance,
+		&campaign.TotalWithdrawn,
 	)
 
 	if err == sql.ErrNoRows {
