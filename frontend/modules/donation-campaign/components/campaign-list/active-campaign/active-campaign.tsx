@@ -1,8 +1,7 @@
 'use client';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useDebounce } from '@/hooks';
-// next/navigation router not needed for toggle-only changes (we avoid router.replace)
 import { CampaignCard } from './campaign-card';
 import { ContactCard } from './contact-card';
 import { Button } from '@/components/ui/button';
@@ -28,7 +27,6 @@ export const ActiveCampaign = () => {
   const { user } = useUser();
   const [sortBy, setSortBy] = useState<SortBy>(SortBy.Newest);
   const [showMine, setShowMine] = useState(false);
-  // Removed unused verifiedSearch and unverifiedSearch states
   const [statusFilter, setStatusFilter] = useState<ECampaignStatus | 'all'>('all');
   const [verifiedFilter, setVerifiedFilter] = useState<'all' | 'verified' | 'unverified'>('all'); // shared for both lists
 
@@ -40,8 +38,13 @@ export const ActiveCampaign = () => {
     }
   }, []);
 
-  // Dual pagination using query params
   const debouncedSearch = useDebounce(search, 400);
+  const searchScrollRef = useRef<number | null>(null);
+  const isSearchingRef = useRef(false);
+  const prevDebouncedRef = useRef('');
+  const isFilteringRef = useRef(false);
+  const prevFiltersRef = useRef({ statusFilter, verifiedFilter, sortBy, showMine });
+  const hasMountedRef = useRef(false);
 
   const {
     verifiedPage,
@@ -54,12 +57,7 @@ export const ActiveCampaign = () => {
     handleChangeUnverifiedLimit,
   } = useDualPaginationQueryParam();
 
-  // Keep user id as string to avoid precision loss for very large numeric ids
   const userIdStr = user ? String(user.id) : undefined;
-  // no router.replace on toggle — keep navigation-free updates
-
-  // Local page/limit state used when 'My campaigns' is active so we can
-  // reset pagination and navigate pages without touching the URL (no router.replace).
   const [verifiedLocalPage, setVerifiedLocalPage] = useState<number | undefined>(undefined);
   const [verifiedLocalLimit, setVerifiedLocalLimit] = useState<number | undefined>(undefined);
   const [unverifiedLocalPage, setUnverifiedLocalPage] = useState<number | undefined>(undefined);
@@ -71,7 +69,6 @@ export const ActiveCampaign = () => {
     error: errorVerified,
     meta: verifiedMeta,
   } = useCampaigns({
-    // when showMine is enabled, use the local page/limit state instead of URL-driven values
     page: showMine && typeof verifiedLocalPage === 'number' ? verifiedLocalPage : verifiedPage,
     limit: showMine && typeof verifiedLocalLimit === 'number' ? verifiedLocalLimit : verifiedLimit,
     ...(statusFilter !== 'all' ? { status: String(statusFilter) } : {}),
@@ -87,7 +84,6 @@ export const ActiveCampaign = () => {
     error: errorUnverified,
     meta: unverifiedMeta,
   } = useCampaigns({
-    // when showMine is enabled, use the local page/limit state instead of URL-driven values
     page: showMine && typeof unverifiedLocalPage === 'number' ? unverifiedLocalPage : unverifiedPage,
     limit: showMine && typeof unverifiedLocalLimit === 'number' ? unverifiedLocalLimit : unverifiedLimit,
     ...(statusFilter !== 'all' ? { status: String(statusFilter) } : {}),
@@ -123,8 +119,12 @@ export const ActiveCampaign = () => {
     }
   }, [errorVerified, errorUnverified]);
 
-  const noVerifiedMessage = 'No verified campaigns found.';
-  const noUnverifiedMessage = 'No unverified campaigns found.';
+  const noVerifiedMessage = debouncedSearch.trim()
+    ? `No verified campaigns found for "${debouncedSearch.trim()}".`
+    : 'No verified campaigns found.';
+  const noUnverifiedMessage = debouncedSearch.trim()
+    ? `No unverified campaigns found for "${debouncedSearch.trim()}".`
+    : 'No unverified campaigns found.';
 
   useEffect(() => {
     if (!showMine) {
@@ -135,9 +135,52 @@ export const ActiveCampaign = () => {
     }
   }, [showMine, verifiedPage, verifiedLimit, unverifiedPage, unverifiedLimit]);
 
+  useEffect(() => {
+    if (prevDebouncedRef.current !== debouncedSearch) {
+      if (typeof window !== 'undefined') {
+        searchScrollRef.current = window.scrollY;
+      }
+      isSearchingRef.current = true;
+      prevDebouncedRef.current = debouncedSearch;
+    }
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    if (!hasMountedRef.current) return;
+
+    const prev = prevFiltersRef.current;
+    if (
+      prev.statusFilter !== statusFilter ||
+      prev.verifiedFilter !== verifiedFilter ||
+      prev.sortBy !== sortBy ||
+      prev.showMine !== showMine
+    ) {
+      isFilteringRef.current = true;
+    }
+
+    prevFiltersRef.current = { statusFilter, verifiedFilter, sortBy, showMine };
+  }, [statusFilter, verifiedFilter, sortBy, showMine]);
+
+  useEffect(() => {
+    hasMountedRef.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (!isSearchingRef.current && !isFilteringRef.current) return;
+    if (!isLoadingVerified && !isLoadingUnverified) {
+      if (isSearchingRef.current && typeof window !== 'undefined' && searchScrollRef.current !== null) {
+        window.scrollTo({ top: searchScrollRef.current, behavior: 'auto' });
+      }
+
+      isSearchingRef.current = false;
+      isFilteringRef.current = false;
+      searchScrollRef.current = null;
+    }
+  }, [isLoadingVerified, isLoadingUnverified]);
+
   return (
     <>
-      {isLoadingVerified || isLoadingUnverified ? (
+      {(isLoadingVerified || isLoadingUnverified) && debouncedSearch.trim() === '' && !isFilteringRef.current ? (
         <section>
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
@@ -169,7 +212,10 @@ export const ActiveCampaign = () => {
                 <label className="text-xs font-medium text-gray-600 dark:text-gray-200">Status</label>
                 <Select
                   value={String(statusFilter)}
-                  onValueChange={(val) => setStatusFilter(val === 'all' ? 'all' : (Number(val) as ECampaignStatus))}
+                  onValueChange={(val) => {
+                    isFilteringRef.current = true;
+                    setStatusFilter(val === 'all' ? 'all' : (Number(val) as ECampaignStatus));
+                  }}
                 >
                   <SelectTrigger className="focus:border-primary focus:ring-primary dark:bg-brand-primary/10 mt-1 h-10 w-full rounded-xl border border-gray-300 bg-white py-2 pr-3 pl-9 text-sm text-gray-700 dark:border-white/20 dark:text-white">
                     <SelectValue placeholder="All statuses" />
@@ -193,7 +239,13 @@ export const ActiveCampaign = () => {
 
               <div>
                 <label className="text-xs font-medium text-gray-600 dark:text-gray-200">Sort</label>
-                <Select value={sortBy} onValueChange={(val) => setSortBy(val as SortBy)}>
+                <Select
+                  value={sortBy}
+                  onValueChange={(val) => {
+                    isFilteringRef.current = true;
+                    setSortBy(val as SortBy);
+                  }}
+                >
                   <SelectTrigger className="focus:border-primary focus:ring-primary dark:bg-brand-primary/10 mt-1 h-10 w-full rounded-xl border border-gray-300 bg-white py-2 pr-3 pl-9 text-sm text-gray-700 dark:border-white/20 dark:text-white">
                     <SelectValue placeholder="Sort" />
                   </SelectTrigger>
@@ -215,7 +267,10 @@ export const ActiveCampaign = () => {
                 <label className="text-xs font-medium text-gray-600 dark:text-gray-200">Verified</label>
                 <Select
                   value={verifiedFilter}
-                  onValueChange={(val) => setVerifiedFilter(val as 'all' | 'verified' | 'unverified')}
+                  onValueChange={(val) => {
+                    isFilteringRef.current = true;
+                    setVerifiedFilter(val as 'all' | 'verified' | 'unverified');
+                  }}
                 >
                   <SelectTrigger className="focus:border-primary focus:ring-primary dark:bg-brand-primary/10 mt-1 h-10 w-full rounded-xl border border-gray-300 bg-white py-2 pr-3 pl-9 text-sm text-gray-700 dark:border-white/20 dark:text-white">
                     <SelectValue placeholder="All" />
@@ -243,7 +298,7 @@ export const ActiveCampaign = () => {
                   className={`hover:border-primary hover:text-primary dark:bg-brand-primary/10 mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-600 dark:border-white/20 dark:text-white dark:hover:text-white ${showMine ? 'bg-primary dark:bg-brand-primary text-white' : ''}`}
                   onClick={() => {
                     const enabling = !showMine;
-
+                    isFilteringRef.current = true;
                     if (typeof window !== 'undefined') {
                       sessionStorage.setItem(STORAGE_KEYS.SHOW_MINE_CAMPAIGNS, enabling ? 'true' : 'false');
                     }
@@ -260,74 +315,93 @@ export const ActiveCampaign = () => {
             </div>
           </div>
 
-          {/* Verified Campaigns List */}
           {verifiedFilter !== 'unverified' && (
             <div className="mt-10 pb-10">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Verified Campaigns</h2>
+              <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                Verified Campaigns
+                {isLoadingVerified &&
+                  (debouncedSearch.trim() !== '' || isSearchingRef.current ? (
+                    <span className="ml-3 inline-flex items-center text-sm text-gray-500 dark:text-gray-300">
+                      <span className="border-t-brand-primary/60 mr-2 h-3 w-3 animate-spin rounded-full border-2 border-gray-200"></span>
+                      Searching...
+                    </span>
+                  ) : isFilteringRef.current ? (
+                    <span className="ml-3 inline-flex items-center text-sm text-gray-500 dark:text-gray-300">
+                      <span className="border-t-brand-primary/60 mr-2 h-3 w-3 animate-spin rounded-full border-2 border-gray-200"></span>
+                      Filtering...
+                    </span>
+                  ) : null)}
+              </h2>
               <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
                 {pagedVerified.length > 0 ? (
-                  pagedVerified.map((campaign) => (
-                    <CampaignCard
-                      key={campaign.id}
-                      campaign={campaign}
-                      highlight={debouncedSearch.trim() || undefined}
-                    />
-                  ))
+                  pagedVerified.map((campaign) => <CampaignCard key={campaign.id} campaign={campaign} />)
                 ) : (
                   <div className="col-span-full text-center text-gray-500">{noVerifiedMessage}</div>
                 )}
               </div>
-              <Pagination
-                page={showMine ? (verifiedLocalPage ?? 1) : verifiedPage}
-                limit={showMine ? (verifiedLocalLimit ?? verifiedLimit) : verifiedLimit}
-                totalPages={verifiedMeta?.total_pages || 1}
-                totalItems={verifiedMeta?.total_items || filteredVerifiedCampaigns.length}
-                isLoading={isLoadingVerified}
-                onChangePage={(p) => {
-                  if (showMine) setVerifiedLocalPage(p);
-                  else handleChangeVerifiedPage(p);
-                }}
-                onChangeLimit={(l) => {
-                  if (showMine) setVerifiedLocalLimit(l);
-                  else handleChangeVerifiedLimit(l);
-                }}
-                className="mt-6"
-              />
+              {(verifiedMeta?.total_items ?? filteredVerifiedCampaigns.length) > 0 && (
+                <Pagination
+                  page={showMine ? (verifiedLocalPage ?? 1) : verifiedPage}
+                  limit={showMine ? (verifiedLocalLimit ?? verifiedLimit) : verifiedLimit}
+                  totalPages={verifiedMeta?.total_pages || 1}
+                  totalItems={verifiedMeta?.total_items || filteredVerifiedCampaigns.length}
+                  isLoading={isLoadingVerified}
+                  onChangePage={(p) => {
+                    if (showMine) setVerifiedLocalPage(p);
+                    else handleChangeVerifiedPage(p);
+                  }}
+                  onChangeLimit={(l) => {
+                    if (showMine) setVerifiedLocalLimit(l);
+                    else handleChangeVerifiedLimit(l);
+                  }}
+                  className="mt-6"
+                />
+              )}
             </div>
           )}
 
           {verifiedFilter !== 'verified' && (
             <div className="mt-10 pb-10">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Unverified Campaigns</h2>
+              <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                Unverified Campaigns
+                {isLoadingUnverified &&
+                  (debouncedSearch.trim() !== '' || isSearchingRef.current ? (
+                    <span className="ml-3 inline-flex items-center text-sm text-gray-500 dark:text-gray-300">
+                      <span className="border-t-brand-primary/60 mr-2 h-3 w-3 animate-spin rounded-full border-2 border-gray-200"></span>
+                      Searching...
+                    </span>
+                  ) : isFilteringRef.current ? (
+                    <span className="ml-3 inline-flex items-center text-sm text-gray-500 dark:text-gray-300">
+                      <span className="border-t-brand-primary/60 mr-2 h-3 w-3 animate-spin rounded-full border-2 border-gray-200"></span>
+                      Filtering...
+                    </span>
+                  ) : null)}
+              </h2>
               <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
                 {pagedUnverified.length > 0 ? (
-                  pagedUnverified.map((campaign) => (
-                    <CampaignCard
-                      key={campaign.id}
-                      campaign={campaign}
-                      highlight={debouncedSearch.trim() || undefined}
-                    />
-                  ))
+                  pagedUnverified.map((campaign) => <CampaignCard key={campaign.id} campaign={campaign} />)
                 ) : (
                   <div className="col-span-full text-center text-gray-500">{noUnverifiedMessage}</div>
                 )}
               </div>
-              <Pagination
-                page={showMine ? (unverifiedLocalPage ?? 1) : unverifiedPage}
-                limit={showMine ? (unverifiedLocalLimit ?? unverifiedLimit) : unverifiedLimit}
-                totalPages={unverifiedMeta?.total_pages || 1}
-                totalItems={unverifiedMeta?.total_items || filteredUnverifiedCampaigns.length}
-                isLoading={isLoadingUnverified}
-                onChangePage={(p) => {
-                  if (showMine) setUnverifiedLocalPage(p);
-                  else handleChangeUnverifiedPage(p);
-                }}
-                onChangeLimit={(l) => {
-                  if (showMine) setUnverifiedLocalLimit(l);
-                  else handleChangeUnverifiedLimit(l);
-                }}
-                className="mt-6"
-              />
+              {(unverifiedMeta?.total_items ?? filteredUnverifiedCampaigns.length) > 0 && (
+                <Pagination
+                  page={showMine ? (unverifiedLocalPage ?? 1) : unverifiedPage}
+                  limit={showMine ? (unverifiedLocalLimit ?? unverifiedLimit) : unverifiedLimit}
+                  totalPages={unverifiedMeta?.total_pages || 1}
+                  totalItems={unverifiedMeta?.total_items || filteredUnverifiedCampaigns.length}
+                  isLoading={isLoadingUnverified}
+                  onChangePage={(p) => {
+                    if (showMine) setUnverifiedLocalPage(p);
+                    else handleChangeUnverifiedPage(p);
+                  }}
+                  onChangeLimit={(l) => {
+                    if (showMine) setUnverifiedLocalLimit(l);
+                    else handleChangeUnverifiedLimit(l);
+                  }}
+                  className="mt-6"
+                />
+              )}
             </div>
           )}
 
