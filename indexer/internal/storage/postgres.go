@@ -2019,7 +2019,7 @@ func (p *PostgresConnector) GetAllTransactionsByWallet(
 	sortBy, sortOrder string,
 ) ([]common.Transaction, error) {
 
-	columns := []string{"hash", "from_address", "to_address", "value", "transaction_timestamp", "block_number", "status", "transaction_type"}
+	columns := p.buildSelectFields([]string{}, defaultTransactionFields)
 
 	if !p.validateSortByColumn("transactions", sortBy) {
 		sortBy = "transaction_timestamp"
