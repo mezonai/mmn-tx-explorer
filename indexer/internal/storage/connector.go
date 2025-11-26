@@ -21,7 +21,7 @@ var (
 )
 
 type QueryFilter struct {
-	ChainId             *big.Int
+	ChainID             *big.Int
 	BlockNumbers        []*big.Int
 	StartBlock          *big.Int
 	EndBlock            *big.Int
@@ -41,7 +41,7 @@ type QueryFilter struct {
 }
 
 type TransfersQueryFilter struct {
-	ChainId          *big.Int
+	ChainID          *big.Int
 	TokenTypes       []string
 	TokenAddress     string
 	WalletAddress    string
@@ -58,7 +58,7 @@ type TransfersQueryFilter struct {
 }
 
 type BalancesQueryFilter struct {
-	ChainId      *big.Int
+	ChainID      *big.Int
 	TokenTypes   []string
 	TokenAddress string
 	Owner        string
@@ -85,57 +85,57 @@ type IStorage struct {
 }
 
 type IOrchestratorStorage interface {
-	GetBlockFailures(qf QueryFilter) ([]common.BlockFailure, error)
+	GetBlockFailures(qf *QueryFilter) ([]common.BlockFailure, error)
 	StoreBlockFailures(failures []common.BlockFailure) error
 	DeleteBlockFailures(failures []common.BlockFailure) error
-	GetLastReorgCheckedBlockNumber(chainId *big.Int) (*big.Int, error)
-	SetLastReorgCheckedBlockNumber(chainId *big.Int, blockNumber *big.Int) error
+	GetLastReorgCheckedBlockNumber(chainID *big.Int) (*big.Int, error)
+	SetLastReorgCheckedBlockNumber(chainID *big.Int, blockNumber *big.Int) error
 }
 
 type IStagingStorage interface {
 	InsertStagingData(data []common.BlockData) error
-	GetStagingData(qf QueryFilter) (data []common.BlockData, err error)
+	GetStagingData(qf *QueryFilter) (data []common.BlockData, err error)
 	DeleteStagingData(data []common.BlockData) error
-	GetLastStagedBlockNumber(chainId *big.Int, rangeStart *big.Int, rangeEnd *big.Int) (maxBlockNumber *big.Int, err error)
-	GetLastPublishedBlockNumber(chainId *big.Int) (maxBlockNumber *big.Int, err error)
-	SetLastPublishedBlockNumber(chainId *big.Int, blockNumber *big.Int) error
-	DeleteOlderThan(chainId *big.Int, blockNumber *big.Int) error
+	GetLastStagedBlockNumber(chainID *big.Int, rangeStart *big.Int, rangeEnd *big.Int) (maxBlockNumber *big.Int, err error)
+	GetLastPublishedBlockNumber(chainID *big.Int) (maxBlockNumber *big.Int, err error)
+	SetLastPublishedBlockNumber(chainID *big.Int, blockNumber *big.Int) error
+	DeleteOlderThan(chainID *big.Int, blockNumber *big.Int) error
 }
 
 type IMainStorage interface {
 	InsertBlockData(data []common.BlockData) error
 	ReplaceBlockData(data []common.BlockData) ([]common.BlockData, error)
 
-	GetBlocks(qf QueryFilter, fields ...string) (blocks QueryResult[common.Block], err error)
-	GetTransactions(ctx context.Context, qf QueryFilter, fields ...string) (transactions QueryResult[common.Transaction], err error)
-	GetAggregations(ctx context.Context, table string, qf QueryFilter) (QueryResult[interface{}], error)
-	GetMaxBlockNumber(chainId *big.Int) (maxBlockNumber *big.Int, err error)
-	GetMaxBlockNumberInRange(chainId *big.Int, startBlock *big.Int, endBlock *big.Int) (maxBlockNumber *big.Int, err error)
+	GetBlocks(qf *QueryFilter, fields ...string) (blocks QueryResult[common.Block], err error)
+	GetTransactions(ctx context.Context, qf *QueryFilter, fields ...string) (transactions QueryResult[common.Transaction], err error)
+	GetAggregations(ctx context.Context, table string, qf *QueryFilter) (QueryResult[interface{}], error)
+	GetMaxBlockNumber(chainID *big.Int) (maxBlockNumber *big.Int, err error)
+	GetMaxBlockNumberInRange(chainID *big.Int, startBlock *big.Int, endBlock *big.Int) (maxBlockNumber *big.Int, err error)
 	/**
 	 * Get block headers ordered from latest to oldest.
 	 */
-	GetBlockHeadersDescending(chainId *big.Int, from *big.Int, to *big.Int) (blockHeaders []common.BlockHeader, err error)
+	GetBlockHeadersDescending(chainID *big.Int, from *big.Int, to *big.Int) (blockHeaders []common.BlockHeader, err error)
 	/**
 	 * Gets only the data required for validation.
 	 */
-	GetValidationBlockData(chainId *big.Int, startBlock *big.Int, endBlock *big.Int) (blocks []common.BlockData, err error)
+	GetValidationBlockData(chainID *big.Int, startBlock *big.Int, endBlock *big.Int) (blocks []common.BlockData, err error)
 	/**
 	 * Finds missing block numbers in a range. Block numbers should be sequential.
 	 */
-	FindMissingBlockNumbers(chainId *big.Int, startBlock *big.Int, endBlock *big.Int) (blockNumbers []*big.Int, err error)
+	FindMissingBlockNumbers(chainID *big.Int, startBlock *big.Int, endBlock *big.Int) (blockNumbers []*big.Int, err error)
 	/**
 	 * Gets full block data with transactions, logs and traces.
 	 */
-	GetFullBlockData(chainId *big.Int, blockNumbers []*big.Int) (blocks []common.BlockData, err error)
+	GetFullBlockData(chainID *big.Int, blockNumbers []*big.Int) (blocks []common.BlockData, err error)
 	/**
 	 * Gets the count of items in a table.
 	 */
-	GetCount(ctx context.Context, table string, qf QueryFilter) (uint64, error)
+	GetCount(ctx context.Context, table string, qf *QueryFilter) (uint64, error)
 
 	/**
 	 * Gets dashboard stats (totalBlocks, totalTransactions, totalWallets, averageBlockTime) in a single call.
 	 */
-	GetDashboardStats(ctx context.Context, qf QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, averageBlockTime float64, err error)
+	GetDashboardStats(ctx context.Context, qf *QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, averageBlockTime float64, err error)
 
 	/**
 	 * Gets pending transactions from MMN service.
@@ -145,7 +145,7 @@ type IMainStorage interface {
 	/**
 	 * Optimized methods for pagination
 	 */
-	GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit, offset int, sortBy, sortOrder string, startTime, endTime int64) ([]common.Transaction, error)
+	GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit, offset int, sortOrder string, startTime, endTime int64) ([]common.Transaction, error)
 	GetTransactionsByWalletCount(ctx context.Context, walletAddress string, startTime, endTime int64) (uint64, error)
 	GetTotalTransactions(ctx context.Context) (uint64, error)
 

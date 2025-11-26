@@ -237,7 +237,7 @@ const docTemplate = `{
                 "tags": [
                     "campaigns"
                 ],
-                "summary": "Delete a drafted donation campaign",
+                "summary": "Delete a drafted campaign",
                 "parameters": [
                     {
                         "type": "integer",
@@ -773,6 +773,65 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/wallets/{address}/detail": {
+            "get": {
+                "description": "Get detailed information about a wallet by its address",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wallets"
+                ],
+                "summary": "Get wallet details",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wallet address",
+                        "name": "address",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.WalletDetailResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "Check if the service is running",
@@ -989,6 +1048,9 @@ const docTemplate = `{
                 "creator": {
                     "type": "string"
                 },
+                "current_balance": {
+                    "type": "integer"
+                },
                 "description": {
                     "type": "string"
                 },
@@ -1020,6 +1082,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "total_contributors": {
+                    "type": "integer"
+                },
+                "total_withdrawn": {
                     "type": "integer"
                 },
                 "updated_at": {
@@ -1211,6 +1276,9 @@ const docTemplate = `{
                 },
                 "total_contributors": {
                     "type": "integer"
+                },
+                "total_withdrawn": {
+                    "type": "integer"
                 }
             }
         },
@@ -1255,6 +1323,32 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.WalletDetailResponse": {
+            "type": "object",
+            "properties": {
+                "account_nonce": {
+                    "type": "integer"
+                },
+                "address": {
+                    "type": "string"
+                },
+                "balance": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "last_balance_update": {
+                    "type": "integer"
+                },
+                "transaction_count": {
+                    "type": "integer"
+                },
+                "updated_at": {
                     "type": "string"
                 }
             }

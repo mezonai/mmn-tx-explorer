@@ -40,7 +40,7 @@ func NewLogger(name string) zerolog.Logger {
 	if config.Cfg.Log.FileEnabled && config.Cfg.Log.FilePath != "" {
 		// Ensure log directory exists
 		logDir := filepath.Dir(config.Cfg.Log.FilePath)
-		if err := os.MkdirAll(logDir, 0755); err != nil {
+		if err := os.MkdirAll(logDir, 0o755); err != nil {
 			log.Warn().Err(err).Msg("Failed to create log directory, falling back to console only")
 		} else {
 			// Create log file with rotation support
@@ -71,7 +71,7 @@ func NewLogger(name string) zerolog.Logger {
 func createFileWriter(logConfig config.LogConfig) (io.Writer, error) {
 	// For now, we'll use a simple file writer
 	// In production, you might want to use lumberjack for rotation
-	file, err := os.OpenFile(logConfig.FilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	file, err := os.OpenFile(logConfig.FilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666)
 	if err != nil {
 		return nil, err
 	}

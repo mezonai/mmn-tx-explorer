@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rs/zerolog/log"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
+	"github.com/rs/zerolog/log"
 )
 
 // StatsRecalculationWorker handles periodic stats recalculation
@@ -22,15 +22,15 @@ type StatsRecalculationWorker struct {
 }
 
 // NewStatsRecalculationWorker creates a new stats recalculation worker
-func NewStatsRecalculationWorker(mainStorage storage.IMainStorage, intervalMinutes int, timeoutMinutes int) *StatsRecalculationWorker {
+func NewStatsRecalculationWorker(mainStorage storage.IMainStorage, intervalMinutes, timeoutMinutes int) *StatsRecalculationWorker {
 	if intervalMinutes <= 0 {
 		intervalMinutes = 120 // Default to 2 hours if invalid interval
 	}
-	
+
 	if timeoutMinutes <= 0 {
 		timeoutMinutes = 10 // Default to 10 minutes if invalid timeout
 	}
-	
+
 	return &StatsRecalculationWorker{
 		mainStorage:     mainStorage,
 		intervalMinutes: intervalMinutes,
@@ -54,10 +54,10 @@ func (w *StatsRecalculationWorker) Start() {
 
 	go func() {
 		defer w.wg.Done()
-		
+
 		// Run once immediately at startup
 		w.recalculateStats()
-		
+
 		w.ticker = time.NewTicker(time.Duration(w.intervalMinutes) * time.Minute)
 		defer w.ticker.Stop()
 

@@ -93,7 +93,7 @@ func (_c *MockIMainStorage_FindMissingBlockNumbers_Call) RunAndReturn(run func(*
 }
 
 // GetAggregations provides a mock function with given fields: ctx, table, qf
-func (_m *MockIMainStorage) GetAggregations(ctx context.Context, table string, qf storage.QueryFilter) (storage.QueryResult[interface{}], error) {
+func (_m *MockIMainStorage) GetAggregations(ctx context.Context, table string, qf *storage.QueryFilter) (storage.QueryResult[interface{}], error) {
 	ret := _m.Called(ctx, table, qf)
 
 	if len(ret) == 0 {
@@ -102,16 +102,16 @@ func (_m *MockIMainStorage) GetAggregations(ctx context.Context, table string, q
 
 	var r0 storage.QueryResult[interface{}]
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, storage.QueryFilter) (storage.QueryResult[interface{}], error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *storage.QueryFilter) (storage.QueryResult[interface{}], error)); ok {
 		return rf(ctx, table, qf)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, storage.QueryFilter) storage.QueryResult[interface{}]); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *storage.QueryFilter) storage.QueryResult[interface{}]); ok {
 		r0 = rf(ctx, table, qf)
 	} else {
 		r0 = ret.Get(0).(storage.QueryResult[interface{}])
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, storage.QueryFilter) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, *storage.QueryFilter) error); ok {
 		r1 = rf(ctx, table, qf)
 	} else {
 		r1 = ret.Error(1)
@@ -211,7 +211,7 @@ func (_c *MockIMainStorage_GetBlockHeadersDescending_Call) RunAndReturn(run func
 }
 
 // GetBlocks provides a mock function with given fields: qf, fields
-func (_m *MockIMainStorage) GetBlocks(qf storage.QueryFilter, fields ...string) (storage.QueryResult[common.Block], error) {
+func (_m *MockIMainStorage) GetBlocks(qf *storage.QueryFilter, fields ...string) (storage.QueryResult[common.Block], error) {
 	_va := make([]interface{}, len(fields))
 	for _i := range fields {
 		_va[_i] = fields[_i]
@@ -227,16 +227,16 @@ func (_m *MockIMainStorage) GetBlocks(qf storage.QueryFilter, fields ...string) 
 
 	var r0 storage.QueryResult[common.Block]
 	var r1 error
-	if rf, ok := ret.Get(0).(func(storage.QueryFilter, ...string) (storage.QueryResult[common.Block], error)); ok {
+	if rf, ok := ret.Get(0).(func(*storage.QueryFilter, ...string) (storage.QueryResult[common.Block], error)); ok {
 		return rf(qf, fields...)
 	}
-	if rf, ok := ret.Get(0).(func(storage.QueryFilter, ...string) storage.QueryResult[common.Block]); ok {
+	if rf, ok := ret.Get(0).(func(*storage.QueryFilter, ...string) storage.QueryResult[common.Block]); ok {
 		r0 = rf(qf, fields...)
 	} else {
 		r0 = ret.Get(0).(storage.QueryResult[common.Block])
 	}
 
-	if rf, ok := ret.Get(1).(func(storage.QueryFilter, ...string) error); ok {
+	if rf, ok := ret.Get(1).(func(*storage.QueryFilter, ...string) error); ok {
 		r1 = rf(qf, fields...)
 	} else {
 		r1 = ret.Error(1)
@@ -282,7 +282,7 @@ func (_c *MockIMainStorage_GetBlocks_Call) RunAndReturn(run func(storage.QueryFi
 }
 
 // GetCount provides a mock function with given fields: ctx, table, qf
-func (_m *MockIMainStorage) GetCount(ctx context.Context, table string, qf storage.QueryFilter) (uint64, error) {
+func (_m *MockIMainStorage) GetCount(ctx context.Context, table string, qf *storage.QueryFilter) (uint64, error) {
 	ret := _m.Called(ctx, table, qf)
 
 	if len(ret) == 0 {
@@ -291,16 +291,16 @@ func (_m *MockIMainStorage) GetCount(ctx context.Context, table string, qf stora
 
 	var r0 uint64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, storage.QueryFilter) (uint64, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *storage.QueryFilter) (uint64, error)); ok {
 		return rf(ctx, table, qf)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, storage.QueryFilter) uint64); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *storage.QueryFilter) uint64); ok {
 		r0 = rf(ctx, table, qf)
 	} else {
 		r0 = ret.Get(0).(uint64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, storage.QueryFilter) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, *storage.QueryFilter) error); ok {
 		r1 = rf(ctx, table, qf)
 	} else {
 		r1 = ret.Error(1)
@@ -340,7 +340,7 @@ func (_c *MockIMainStorage_GetCount_Call) RunAndReturn(run func(context.Context,
 }
 
 // GetDashboardStats provides a mock function with given fields: ctx, qf
-func (_m *MockIMainStorage) GetDashboardStats(ctx context.Context, qf storage.QueryFilter) (uint64, uint64, uint64, float64, error) {
+func (_m *MockIMainStorage) GetDashboardStats(ctx context.Context, qf *storage.QueryFilter) (uint64, uint64, uint64, float64, error) {
 	ret := _m.Called(ctx, qf)
 
 	if len(ret) == 0 {
@@ -352,34 +352,34 @@ func (_m *MockIMainStorage) GetDashboardStats(ctx context.Context, qf storage.Qu
 	var r2 uint64
 	var r3 float64
 	var r4 error
-	if rf, ok := ret.Get(0).(func(context.Context, storage.QueryFilter) (uint64, uint64, uint64, float64, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *storage.QueryFilter) (uint64, uint64, uint64, float64, error)); ok {
 		return rf(ctx, qf)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, storage.QueryFilter) uint64); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *storage.QueryFilter) uint64); ok {
 		r0 = rf(ctx, qf)
 	} else {
 		r0 = ret.Get(0).(uint64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, storage.QueryFilter) uint64); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *storage.QueryFilter) uint64); ok {
 		r1 = rf(ctx, qf)
 	} else {
 		r1 = ret.Get(1).(uint64)
 	}
 
-	if rf, ok := ret.Get(2).(func(context.Context, storage.QueryFilter) uint64); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, *storage.QueryFilter) uint64); ok {
 		r2 = rf(ctx, qf)
 	} else {
 		r2 = ret.Get(2).(uint64)
 	}
 
-	if rf, ok := ret.Get(3).(func(context.Context, storage.QueryFilter) float64); ok {
+	if rf, ok := ret.Get(3).(func(context.Context, *storage.QueryFilter) float64); ok {
 		r3 = rf(ctx, qf)
 	} else {
 		r3 = ret.Get(3).(float64)
 	}
 
-	if rf, ok := ret.Get(4).(func(context.Context, storage.QueryFilter) error); ok {
+	if rf, ok := ret.Get(4).(func(context.Context, *storage.QueryFilter) error); ok {
 		r4 = rf(ctx, qf)
 	} else {
 		r4 = ret.Error(4)
@@ -851,7 +851,7 @@ func (_c *MockIMainStorage_GetTraces_Call) RunAndReturn(run func(storage.QueryFi
 }
 
 // GetTransactions provides a mock function with given fields: ctx, qf, fields
-func (_m *MockIMainStorage) GetTransactions(ctx context.Context, qf storage.QueryFilter, fields ...string) (storage.QueryResult[common.Transaction], error) {
+func (_m *MockIMainStorage) GetTransactions(ctx context.Context, qf *storage.QueryFilter, fields ...string) (storage.QueryResult[common.Transaction], error) {
 	_va := make([]interface{}, len(fields))
 	for _i := range fields {
 		_va[_i] = fields[_i]
@@ -867,16 +867,16 @@ func (_m *MockIMainStorage) GetTransactions(ctx context.Context, qf storage.Quer
 
 	var r0 storage.QueryResult[common.Transaction]
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, storage.QueryFilter, ...string) (storage.QueryResult[common.Transaction], error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *storage.QueryFilter, ...string) (storage.QueryResult[common.Transaction], error)); ok {
 		return rf(ctx, qf, fields...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, storage.QueryFilter, ...string) storage.QueryResult[common.Transaction]); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *storage.QueryFilter, ...string) storage.QueryResult[common.Transaction]); ok {
 		r0 = rf(ctx, qf, fields...)
 	} else {
 		r0 = ret.Get(0).(storage.QueryResult[common.Transaction])
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, storage.QueryFilter, ...string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *storage.QueryFilter, ...string) error); ok {
 		r1 = rf(ctx, qf, fields...)
 	} else {
 		r1 = ret.Error(1)
@@ -1106,8 +1106,8 @@ func (_c *MockIMainStorage_GetTransactionsByWalletCount_Call) RunAndReturn(run f
 }
 
 // GetTransactionsByWalletPaginated provides a mock function with given fields: ctx, walletAddress, limit, offset, sortBy, sortOrder, startTime, endTime
-func (_m *MockIMainStorage) GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit int, offset int, sortBy string, sortOrder string, startTime int64, endTime int64) ([]common.Transaction, error) {
-	ret := _m.Called(ctx, walletAddress, limit, offset, sortBy, sortOrder, startTime, endTime)
+func (_m *MockIMainStorage) GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit int, offset int, sortOrder string, startTime int64, endTime int64) ([]common.Transaction, error) {
+	ret := _m.Called(ctx, walletAddress, limit, offset, sortOrder, startTime, endTime)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetTransactionsByWalletPaginated")
@@ -1115,19 +1115,19 @@ func (_m *MockIMainStorage) GetTransactionsByWalletPaginated(ctx context.Context
 
 	var r0 []common.Transaction
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, int, int, string, string, int64, int64) ([]common.Transaction, error)); ok {
-		return rf(ctx, walletAddress, limit, offset, sortBy, sortOrder, startTime, endTime)
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, int, string, int64, int64) ([]common.Transaction, error)); ok {
+		return rf(ctx, walletAddress, limit, offset, sortOrder, startTime, endTime)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, int, int, string, string, int64, int64) []common.Transaction); ok {
-		r0 = rf(ctx, walletAddress, limit, offset, sortBy, sortOrder, startTime, endTime)
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, int, string, int64, int64) []common.Transaction); ok {
+		r0 = rf(ctx, walletAddress, limit, offset, sortOrder, startTime, endTime)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]common.Transaction)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, int, int, string, string, int64, int64) error); ok {
-		r1 = rf(ctx, walletAddress, limit, offset, sortBy, sortOrder, startTime, endTime)
+	if rf, ok := ret.Get(1).(func(context.Context, string, int, int, string, int64, int64) error); ok {
+		r1 = rf(ctx, walletAddress, limit, offset, sortOrder, startTime, endTime)
 	} else {
 		r1 = ret.Error(1)
 	}

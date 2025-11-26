@@ -13,7 +13,7 @@ import (
 )
 
 type Log struct {
-	ChainId          *big.Int  `json:"chain_id" ch:"chain_id" swaggertype:"string"`
+	ChainID          *big.Int  `json:"chain_id" ch:"chain_id" swaggertype:"string"`
 	BlockNumber      *big.Int  `json:"block_number" ch:"block_number" swaggertype:"string"`
 	BlockHash        string    `json:"block_hash" ch:"block_hash"`
 	BlockTimestamp   time.Time `json:"block_timestamp" ch:"block_timestamp"`
@@ -47,7 +47,7 @@ func (l *Log) GetTopic(index int) (string, error) {
 
 // LogModel represents a simplified Log structure for Swagger documentation
 type LogModel struct {
-	ChainId          string   `json:"chain_id"`
+	ChainID          string   `json:"chain_id"`
 	BlockNumber      uint64   `json:"block_number"`
 	BlockHash        string   `json:"block_hash"`
 	BlockTimestamp   uint64   `json:"block_timestamp"`
@@ -87,13 +87,13 @@ type DecodedLog struct {
 	Decoded DecodedLogData `json:"decoded"`
 }
 
-func DecodeLogs(chainId string, logs []Log) []*DecodedLog {
+func DecodeLogs(chainID string, logs []Log) []*DecodedLog {
 	decodedLogs := make([]*DecodedLog, len(logs))
 	abiCache := &sync.Map{}
 
 	decodeLogFunc := func(eventLog *Log) *DecodedLog {
 		decodedLog := DecodedLog{Log: *eventLog}
-		abi := GetABIForContractWithCache(chainId, eventLog.Address, abiCache)
+		abi := GetABIForContractWithCache(chainID, eventLog.Address, abiCache)
 		if abi == nil {
 			return &decodedLog
 		}
@@ -110,24 +110,25 @@ func DecodeLogs(chainId string, logs []Log) []*DecodedLog {
 	}
 
 	var wg sync.WaitGroup
-	for idx, eventLog := range logs {
+	for idx := range logs {
+		eventLog := &logs[idx]
 		wg.Add(1)
-		go func(idx int, eventLog Log) {
+		go func(idx int, eventLog *Log) {
 			defer func() {
 				if err := recover(); err != nil {
 					log.Error().
-						Any("chainId", chainId).
+						Any("chainId", chainID).
 						Str("txHash", eventLog.TransactionHash).
 						Uint64("logIndex", eventLog.LogIndex).
 						Str("logAddress", eventLog.Address).
 						Str("logTopic0", eventLog.Topic0).
 						Err(fmt.Errorf("%v", err)).
 						Msg("Caught panic in DecodeLogs, possibly in decodeLogFunc")
-					decodedLogs[idx] = &DecodedLog{Log: eventLog}
+					decodedLogs[idx] = &DecodedLog{Log: *eventLog}
 				}
 			}()
 			defer wg.Done()
-			decodedLog := decodeLogFunc(&eventLog)
+			decodedLog := decodeLogFunc(eventLog)
 			decodedLogs[idx] = decodedLog
 		}(idx, eventLog)
 	}
@@ -138,19 +139,21 @@ func DecodeLogs(chainId string, logs []Log) []*DecodedLog {
 func (l *Log) Decode(eventABI *abi.Event) *DecodedLog {
 	decodedIndexed := make(map[string]interface{})
 	indexedArgs := abi.Arguments{}
-	for _, arg := range eventABI.Inputs {
+	for i := range eventABI.Inputs {
+		arg := &eventABI.Inputs[i]
 		if arg.Indexed {
-			indexedArgs = append(indexedArgs, arg)
+			indexedArgs = append(indexedArgs, *arg)
 		}
 	}
 	// Decode indexed parameters
-	for i, arg := range indexedArgs {
+	for i := range indexedArgs {
+		arg := &indexedArgs[i]
 		topic, err := l.GetTopic(i + 1)
 		if err != nil {
 			log.Warn().Msgf("missing topic for indexed parameter: %s, signature: %s", arg.Name, eventABI.Sig)
 			return &DecodedLog{Log: *l}
 		}
-		decodedValue, err := decodeIndexedArgument(arg.Type, topic)
+		decodedValue, err := decodeIndexedArgument(&arg.Type, topic)
 		if err != nil {
 			log.Warn().Msgf("failed to decode indexed parameter %s: %v, signature: %s", arg.Name, err, eventABI.Sig)
 			return &DecodedLog{Log: *l}
@@ -178,7 +181,7 @@ func (l *Log) Decode(eventABI *abi.Event) *DecodedLog {
 	}
 }
 
-func decodeIndexedArgument(argType abi.Type, topic string) (interface{}, error) {
+func decodeIndexedArgument(argType *abi.Type, topic string) (interface{}, error) {
 	if len(topic) < 3 {
 		return nil, fmt.Errorf("invalid topic %s", topic)
 	}
@@ -248,7 +251,7 @@ func (l *Log) Serialize() LogModel {
 		}
 	}
 	return LogModel{
-		ChainId:          l.ChainId.String(),
+		ChainID:          l.ChainID.String(),
 		BlockNumber:      l.BlockNumber.Uint64(),
 		BlockHash:        l.BlockHash,
 		BlockTimestamp:   uint64(l.BlockTimestamp.Unix()),

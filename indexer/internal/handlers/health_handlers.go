@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"time"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,6 +13,7 @@ type HealthResponse struct {
 	Time    string `json:"time"`
 }
 
+// Health godoc
 // @Summary Health check
 // @Description Check if the service is running
 // @Tags health

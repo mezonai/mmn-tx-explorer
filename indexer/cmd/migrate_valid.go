@@ -27,9 +27,9 @@ var (
 )
 
 const (
-	TARGET_STORAGE_DATABASE = "temp"
-	DEFAULT_RPC_BATCH_SIZE  = 200
-	DEFAULT_BATCH_SIZE      = 1000
+	targetStorageDatabase = "temp"
+	defaultRPCBatchSize   = 200
+	defaultBatchSize      = 1000
 )
 
 func RunValidationMigration(cmd *cobra.Command, args []string) {
@@ -52,8 +52,9 @@ func RunValidationMigration(cmd *cobra.Command, args []string) {
 
 		validBlocksForRange := migrator.GetValidBlocksForRange(blockNumbers)
 
-		blocksToInsertMap := make(map[string]common.BlockData)
-		for _, blockData := range validBlocksForRange {
+		blocksToInsertMap := make(map[string]*common.BlockData)
+		for i := range validBlocksForRange {
+			blockData := &validBlocksForRange[i]
 			blocksToInsertMap[blockData.Block.Number.String()] = blockData
 		}
 
@@ -66,18 +67,20 @@ func RunValidationMigration(cmd *cobra.Command, args []string) {
 		}
 
 		validMissingBlocks := migrator.GetValidBlocksFromRPC(missingBlocks)
-		for _, blockData := range validMissingBlocks {
+		for i := range validMissingBlocks {
+			blockData := &validMissingBlocks[i]
 			blocksToInsertMap[blockData.Block.Number.String()] = blockData
 		}
 
 		blocksToInsert := make([]common.BlockData, 0)
 		for _, blockData := range blocksToInsertMap {
-			blocksToInsert = append(blocksToInsert, blockData)
+			blocksToInsert = append(blocksToInsert, *blockData)
 		}
 
 		err := migrator.targetConn.InsertBlockData(blocksToInsert)
 		if err != nil {
-			log.Fatal().Err(err).Msg("Failed to insert blocks to target storage")
+			log.Err(err).Msg("Failed to insert blocks to target storage")
+			return
 		}
 
 		currentBlock = new(big.Int).Add(endBlock, big.NewInt(1))
@@ -99,14 +102,14 @@ type Migrator struct {
 func NewMigrator() *Migrator {
 	targetDBName := os.Getenv("TARGET_STORAGE_DATABASE")
 	if targetDBName == "" {
-		targetDBName = TARGET_STORAGE_DATABASE
+		targetDBName = targetStorageDatabase
 	}
-	batchSize := DEFAULT_BATCH_SIZE
+	batchSize := defaultBatchSize
 	batchSizeEnvInt, err := strconv.Atoi(os.Getenv("MIGRATION_BATCH_SIZE"))
 	if err == nil && batchSizeEnvInt > 0 {
 		batchSize = batchSizeEnvInt
 	}
-	rpcBatchSize := DEFAULT_RPC_BATCH_SIZE
+	rpcBatchSize := defaultRPCBatchSize
 	rpcBatchSizeEnvInt, err := strconv.Atoi(os.Getenv("MIGRATION_RPC_BATCH_SIZE"))
 	if err == nil && rpcBatchSizeEnvInt > 0 {
 		rpcBatchSize = rpcBatchSizeEnvInt
@@ -121,11 +124,8 @@ func NewMigrator() *Migrator {
 	}
 
 	// check if chain was indexed with block receipts. If it was, then the current RPC must support block receipts
-	validRpc, err := validateRPC(rpcClient, s)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to validate RPC")
-	}
-	if !validRpc {
+	validRPC := validateRPC(rpcClient, s)
+	if !validRPC {
 		log.Fatal().Msg("RPC does not support block receipts, but transactions were indexed with receipts")
 	}
 
@@ -152,7 +152,7 @@ func (m *Migrator) Close() {
 	m.rpcClient.Close()
 }
 
-func (m *Migrator) DetermineMigrationBoundaries() (*big.Int, *big.Int) {
+func (m *Migrator) DetermineMigrationBoundaries() (start, end *big.Int) {
 	// get latest block from main storage
 	latestBlockStored, err := m.storage.MainStorage.GetMaxBlockNumber(m.rpcClient.GetChainID())
 	if err != nil {
@@ -215,7 +215,8 @@ func (m *Migrator) FetchBlocksFromRPC(blockNumbers []*big.Int) ([]common.BlockDa
 		batch := blockNumbers[i:end]
 		blockData := m.rpcClient.GetFullBlocks(context.Background(), batch)
 
-		for _, block := range blockData {
+		for i := range blockData {
+			block := &blockData[i]
 			if block.Error != nil {
 				log.Warn().Err(block.Error).Msgf("Failed to fetch block %s from RPC", block.BlockNumber.String())
 				continue
@@ -255,15 +256,15 @@ func (m *Migrator) GetValidBlocksFromRPC(blockNumbers []*big.Int) []common.Block
 	return validBlocks
 }
 
-func validateRPC(rpcClient rpc.IRPCClient, s storage.IStorage) (bool, error) {
+func validateRPC(rpcClient rpc.IRPCClient, s storage.IStorage) bool {
 	if rpcClient.SupportsBlockReceipts() {
-		return true, nil
+		return true
 	}
 
 	// If rpc does not support block receipts, we need to check if the transactions are indexed with block receipts
 	ctx := context.Background()
-	transactionsQueryResult, err := s.MainStorage.GetTransactions(ctx, storage.QueryFilter{
-		ChainId: rpcClient.GetChainID(),
+	transactionsQueryResult, err := s.MainStorage.GetTransactions(ctx, &storage.QueryFilter{
+		ChainID: rpcClient.GetChainID(),
 		Limit:   1,
 	})
 	if err != nil {
@@ -271,15 +272,15 @@ func validateRPC(rpcClient rpc.IRPCClient, s storage.IStorage) (bool, error) {
 	}
 	if len(transactionsQueryResult.Data) == 0 {
 		log.Warn().Msg("No transactions found in main storage, assuming RPC is valid")
-		return true, nil
+		return true
 	}
 	tx := transactionsQueryResult.Data[0]
 	if tx.Status == nil {
 		// was indexed with logs not receipts and current rpc does not support block receipts
-		return true, nil
+		return true
 	}
 	// was indexed with receipts and current rpc does not support block receipts
-	return false, nil
+	return false
 }
 
 func generateBlockNumbersForRange(startBlock, endBlock *big.Int) []*big.Int {
