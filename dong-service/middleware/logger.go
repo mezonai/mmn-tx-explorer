@@ -49,11 +49,14 @@ func Logger() gin.HandlerFunc {
 		}
 
 		// Log based on status code
-		if statusCode >= 500 {
+		switch {
+		case statusCode >= 500:
 			logEvent.Msg("Server error")
-		} else if statusCode >= 400 {
+
+		case statusCode >= 400:
 			logEvent.Msg("Client error")
-		} else {
+
+		default:
 			logEvent.Msg("Request completed")
 		}
 	}

@@ -22,7 +22,7 @@ var (
 			go func() {
 				RunOrchestrator(cmd, args)
 			}()
-			RunApi(cmd, args)
+			RunAPI(cmd, args)
 		},
 	}
 )
@@ -117,7 +117,7 @@ func init() {
 	rootCmd.PersistentFlags().Int("workMode-checkIntervalMinutes", 10, "How often to check work mode in minutes")
 	rootCmd.PersistentFlags().Int64("workMode-liveModeThreshold", 500, "How many blocks the indexer can be behind before switching to live mode")
 	rootCmd.PersistentFlags().String("validation-mode", "strict", "Validation mode. Strict will validate logsBloom and transactionsRoot. Minimal will validate transaction count and logs existence.")
-    rootCmd.PersistentFlags().Bool("stats-worker-enabled", true, "Enable stats recalculation worker")
+	rootCmd.PersistentFlags().Bool("stats-worker-enabled", true, "Enable stats recalculation worker")
 	rootCmd.PersistentFlags().Int("stats-worker-interval", 120, "Stats recalculation interval in minutes")
 	viperBindFlag("rpc.url", "rpc-url")
 	viperBindFlag("rpc.blocks.blocksPerRequest", "rpc-blocks-blocksPerRequest")
@@ -198,7 +198,7 @@ func init() {
 	viperBindFlag("publisher.events.topic0Filter", "publisher-events-topic0Filter")
 	viperBindFlag("workMode.checkIntervalMinutes", "workMode-checkIntervalMinutes")
 	viperBindFlag("workMode.liveModeThreshold", "workMode-liveModeThreshold")
-    viperBindFlag("statsWorker.intervalMinutes", "stats-worker-interval")
+	viperBindFlag("statsWorker.intervalMinutes", "stats-worker-interval")
 	viperBindFlag("validation.mode", "validation-mode")
 	rootCmd.AddCommand(orchestratorCmd)
 	rootCmd.AddCommand(apiCmd)
@@ -216,7 +216,7 @@ func initConfig() {
 	customLogger.InitLogger()
 }
 
-func viperBindFlag(flagName string, lookupFlagName string) {
+func viperBindFlag(flagName, lookupFlagName string) {
 	err := viper.BindPFlag(flagName, rootCmd.PersistentFlags().Lookup(lookupFlagName))
 	if err != nil {
 		log.Fatal().Err(err).Msgf("Failed to bind flag %s: %s", flagName, err.Error())

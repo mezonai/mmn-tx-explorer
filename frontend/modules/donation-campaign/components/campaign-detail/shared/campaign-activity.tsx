@@ -17,6 +17,8 @@ import { DonationCampaignService } from '@/modules/donation-campaign/api';
 import { DEFAULT_DEBOUNCE_TIME, useBreakpoint } from '@/hooks';
 import { RecentActivityTable } from '../desktop/recent-activity-table';
 import { RecentActivityCardsMobile } from '../mobile/recent-activity-card';
+import { WithdrawHistoryTable } from '../desktop/withdraw-history-table';
+import { WithdrawHistoryCard } from '../mobile/withdraw-history-card';
 
 const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
   page: PAGINATION.DEFAULT_PAGE,
@@ -27,10 +29,16 @@ const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
 export function CampaignActivity({ campaignId, walletAddress }: { campaignId: string; walletAddress: string }) {
   const isDesktop = useBreakpoint(EBreakpoint.LG);
   const searchTBParams = { limit: 5 };
-  const searchTransactionParams: ITransactionListParams = {
+  const searchReceivedParams: ITransactionListParams = {
     ...DEFAULT_VALUE_DATA_SEARCH,
     filter_to_address: walletAddress,
   };
+
+  const searchSentParams: ITransactionListParams = {
+    ...DEFAULT_VALUE_DATA_SEARCH,
+    filter_from_address: walletAddress,
+  };
+
   const { data: topContributorsData, refetch, isPending } = useTopContributor({ params: searchTBParams, campaignId });
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -47,37 +55,60 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
   };
 
   const {
-    data: transactionsResponse,
-    refetch: refetchTransactions,
-    isPending: isPendingTransactions,
-  } = useTransactions(searchTransactionParams);
+    data: receivedTransactionsResponse,
+    refetch: refetchReceivedTransactions,
+    isPending: isPendingReceivedTransactions,
+  } = useTransactions(searchReceivedParams);
 
-  const transactions = useMemo(() => transactionsResponse?.data ?? [], [transactionsResponse]);
+  const {
+    data: sentTransactionsResponse,
+    refetch: refetchSentTransactions,
+    isPending: isPendingSentTransactions,
+  } = useTransactions(searchSentParams);
+
+  const receivedTransactions = useMemo(() => receivedTransactionsResponse?.data ?? [], [receivedTransactionsResponse]);
+  const sentTransactions = useMemo(() => sentTransactionsResponse?.data ?? [], [sentTransactionsResponse]);
   const contributors = topContributorsData?.contributors ?? [];
-  const totalTransaction = transactionsResponse?.meta.total_items ?? 0;
+  const totalReceivedTransaction = receivedTransactionsResponse?.meta.total_items ?? 0;
+  const totalSentTransaction = sentTransactionsResponse?.meta.total_items ?? 0;
   const { hidden, setHidden } = useHidden();
   useEffect(() => {
-    setHidden(transactions.length > 0);
-  }, [setHidden, transactions]);
+    setHidden(receivedTransactions.length > 0);
+  }, [setHidden, receivedTransactions]);
 
   const recentActivityProps = {
-    transactions,
-    totalTransaction,
+    transactions: receivedTransactions,
+    totalTransaction: totalReceivedTransaction,
     walletAddress,
     hidden,
-    isLoading: isPendingTransactions,
-    refetch: refetchTransactions,
+    isLoading: isPendingReceivedTransactions,
+    refetch: refetchReceivedTransactions,
+  };
+
+  const withdrawHistoryProps = {
+    transactions: sentTransactions,
+    totalTransaction: totalSentTransaction,
+    walletAddress,
+    hidden,
+    isLoading: isPendingSentTransactions,
+    refetch: refetchSentTransactions,
   };
 
   return (
     <Card className="dark:border-primary/20 p-2">
       <Tabs defaultValue="recent">
-        <TabsList className="mb-3 w-full rounded-2xl">
-          <TabsTrigger value="recent" className="rounded-xl text-xs">
-            Recent Activity
+        <TabsList className="mb-3 w-full overflow-hidden rounded-2xl">
+          <TabsTrigger value="recent" className="flex-1 rounded-xl text-xs sm:text-sm">
+            <span className="hidden sm:inline">Recent Activity</span>
+            <span className="sm:hidden">Recent</span>
           </TabsTrigger>
-          <TabsTrigger value="top" className="rounded-xl text-xs">
-            Top Contributors
+          <TabsTrigger value="top" className="flex-1 rounded-xl text-xs sm:text-sm">
+            <span className="hidden sm:inline">Top Contributors</span>
+            <span className="sm:hidden">Top</span>
+          </TabsTrigger>
+          <TabsTrigger value="withdraw" className="flex-1 rounded-xl text-xs sm:text-sm">
+            <span className="hidden sm:inline">Withdraw History</span>
+            <span className="sm:hidden">Withdraw</span>
           </TabsTrigger>
         </TabsList>
         <div className="overflow-x-hidden">
@@ -140,6 +171,22 @@ export function CampaignActivity({ campaignId, walletAddress }: { campaignId: st
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+          <TabsContent value="withdraw">
+            {isDesktop === undefined ? (
+              <>
+                <div className="hidden lg:block">
+                  <WithdrawHistoryTable {...withdrawHistoryProps} />
+                </div>
+                <div className="block lg:hidden">
+                  <WithdrawHistoryCard {...withdrawHistoryProps} />
+                </div>
+              </>
+            ) : isDesktop ? (
+              <WithdrawHistoryTable {...withdrawHistoryProps} />
+            ) : (
+              <WithdrawHistoryCard {...withdrawHistoryProps} />
+            )}
           </TabsContent>
         </div>
       </Tabs>

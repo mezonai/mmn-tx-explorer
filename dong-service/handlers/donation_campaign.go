@@ -45,9 +45,9 @@ func (h *DonationCampaignHandler) CreateCampaign(c *gin.Context) {
 	}
 
 	var req models.CreateDonationCampaignRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		logger.Error().Err(err).Int64("user_id", userID).Msg("Invalid request body for campaign creation")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+err.Error()))
+	if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
+		logger.Error().Err(bindErr).Int64("user_id", userID).Msg("Invalid request body for campaign creation")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+bindErr.Error()))
 		return
 	}
 
@@ -92,9 +92,9 @@ func (h *DonationCampaignHandler) CreateAndActiveCampaign(c *gin.Context) {
 	}
 
 	var req models.CreateDonationCampaignRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		logger.Error().Err(err).Int64("user_id", userID).Msg("Invalid request body for campaign creation and activation")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+err.Error()))
+	if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
+		logger.Error().Err(bindErr).Int64("user_id", userID).Msg("Invalid request body for campaign creation and activation")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+bindErr.Error()))
 		return
 	}
 
@@ -214,8 +214,8 @@ func (h *DonationCampaignHandler) ListCampaigns(c *gin.Context) {
 
 	// Convert to response format
 	responses := make([]models.DonationCampaignResponse, len(campaigns))
-	for i, campaign := range campaigns {
-		responses[i] = campaign.ToResponse()
+	for i := range campaigns {
+		responses[i] = campaigns[i].ToResponse()
 	}
 
 	logger.Debug().Int("count", len(campaigns)).Int64("total", total).Msg("Campaigns retrieved successfully")
@@ -252,9 +252,9 @@ func (h *DonationCampaignHandler) UpdateCampaign(c *gin.Context) {
 	}
 
 	var req models.UpdateDonationCampaignRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		logger.Error().Err(err).Int64("user_id", userID).Int64("campaign_id", id).Msg("Invalid request body for campaign update")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+err.Error()))
+	if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
+		logger.Error().Err(bindErr).Int64("user_id", userID).Int64("campaign_id", id).Msg("Invalid request body for campaign update")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+bindErr.Error()))
 		return
 	}
 
@@ -376,7 +376,7 @@ func (h *DonationCampaignHandler) CloseCampaign(c *gin.Context) {
 		return
 	}
 
-	//Only close Activated campaigns
+	// Only close Activated campaigns
 	if campaign.Status != constants.CampaignStatusActive {
 		logger.Error().Int64("user_id", userID).Int64("campaign_id", id).Int16("status", campaign.Status).Msg("Cannot close campaign with current status")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Only activated campaigns can be closed"))
@@ -452,7 +452,7 @@ func (h *DonationCampaignHandler) GetTopContributors(c *gin.Context) {
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Top contributors retrieved successfully", topContributors))
 }
 
-// DeleteCampaign godoc
+// DeleteDraftCampaign godoc
 // @Summary Delete a drafted campaign
 // @Description Delete a drafted donation campaign (only the creator can delete)
 // @Tags campaigns
