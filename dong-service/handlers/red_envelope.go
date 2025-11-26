@@ -202,7 +202,7 @@ func (r *RedEnvelopeHandler) GetRedEnvelopeCreatedByUser(c *gin.Context) {
 		limit = val
 	}
 
-	creates, err := r.repo.GetRedEnvelopeCreateByUser(userID, page, limit)
+	creates, err := r.repo.GetRedEnvelopeCreatedByUser(userID, page, limit)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to get red envelope creates")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrInternalServer))

@@ -365,7 +365,7 @@ func (r *RedEnvelopeRepository) GetExpiredEnvelopes() ([]*models.RedEnvelope, er
 	return envelopes, nil
 }
 
-func (r *RedEnvelopeRepository) GetRedEnvelopeCreateByUser(userID int64, page, limit int) (models.CreateRedEnvelopeCreateByUser, error) {
+func (r *RedEnvelopeRepository) GetRedEnvelopeCreatedByUser(userID int64, page, limit int) (models.CreateRedEnvelopeCreateByUser, error) {
 	offset := (page - 1) * limit
 
 	query := fmt.Sprintf(`
@@ -654,7 +654,7 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 	}
 
 	remainingBalance := envelope.TotalAmount - totalClaimed
-	
+
 	if remainingBalance > 0 {
 		logger.Info().
 			Str("red_envelope_id", redEnvelopeID).
