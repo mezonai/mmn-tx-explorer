@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -83,10 +84,11 @@ func handleTransactionsRequest(c *gin.Context) {
 		Data:         nil,
 		Aggregations: nil,
 	}
-	if walletAddress != "" {
-		// Get start and end time for filtering
-		startTime, endTime := getTimeRangeFromParams(&queryParams)
 
+	// Get start and end time for filtering
+	startTime, endTime := getTimeRangeFromParams(&queryParams)
+
+	if walletAddress != "" {
 		totalItems, storeErr := mainStorage.GetTransactionsByWalletCount(ctx, walletAddress, startTime, endTime)
 		if storeErr != nil {
 			log.Error().Err(storeErr).Msg("Error getting transactions count")
@@ -117,6 +119,10 @@ func handleTransactionsRequest(c *gin.Context) {
 		c.JSON(http.StatusOK, queryResult)
 		return
 	}
+
+	// Add time range filter
+	queryParams.FilterParams["transaction_timestamp_gte"] = strconv.FormatInt(startTime, 10)
+	queryParams.FilterParams["transaction_timestamp_lte"] = strconv.FormatInt(endTime, 10)
 
 	// Prepare the QueryFilter
 	qf := &storage.QueryFilter{
