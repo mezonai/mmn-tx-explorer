@@ -75,6 +75,11 @@ export const ActiveCampaign = () => {
     ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
     ...(showMine && userIdStr ? { creator: userIdStr } : {}),
     order: sortBy === SortBy.Newest ? ESortOrder.DESC : ESortOrder.ASC,
+    ...(sortBy === SortBy.EndingSoon
+      ? { order_by: 'end_date' }
+      : sortBy === SortBy.MostFunded
+        ? { order_by: 'total_amount' }
+        : { order_by: 'created_at' }),
     verified: true,
   });
 
@@ -90,6 +95,11 @@ export const ActiveCampaign = () => {
     ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
     ...(showMine && userIdStr ? { creator: userIdStr } : {}),
     order: sortBy === SortBy.Newest ? ESortOrder.DESC : ESortOrder.ASC,
+    ...(sortBy === SortBy.EndingSoon
+      ? { order_by: 'end_date' }
+      : sortBy === SortBy.MostFunded
+        ? { order_by: 'total_amount' }
+        : { order_by: 'created_at' }),
     verified: false,
   });
 
@@ -191,7 +201,7 @@ export const ActiveCampaign = () => {
         </section>
       ) : (
         <section>
-          <div className="dark:bg-brand-primary/10 w-full rounded-2xl border border-gray-200 bg-white/90 p-6 shadow-sm dark:border-white/10">
+          <div className="dark:bg-card w-full rounded-2xl border border-gray-200 bg-white/90 p-6 shadow-sm dark:border-white/10">
             <div className="grid grid-cols-1 gap-5 md:grid-cols-3 lg:grid-cols-5">
               <div className="col-span-2">
                 <label className="text-xs font-medium text-gray-600 dark:text-gray-200">Search</label>
@@ -201,7 +211,7 @@ export const ActiveCampaign = () => {
                     id="search-input"
                     type="text"
                     placeholder="Search name or description..."
-                    className="focus:border-primary focus:ring-primary dark:bg-brand-primary/10 w-full rounded-xl border border-gray-300 bg-white py-2 pr-3 pl-9 text-sm text-gray-700 placeholder-gray-400 dark:border-white/20 dark:text-white dark:placeholder-gray-500"
+                    className="focus:border-primary focus:ring-primary dark:bg-card w-full rounded-xl border border-gray-300 bg-white py-2 pr-3 pl-9 text-sm text-gray-700 placeholder-gray-400 dark:border-white/20 dark:text-white dark:placeholder-gray-500"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                   />
@@ -217,10 +227,10 @@ export const ActiveCampaign = () => {
                     setStatusFilter(val === 'all' ? 'all' : (Number(val) as ECampaignStatus));
                   }}
                 >
-                  <SelectTrigger className="focus:border-primary focus:ring-primary dark:bg-brand-primary/10 mt-1 h-10 w-full rounded-xl border border-gray-300 bg-white py-2 pr-3 pl-9 text-sm text-gray-700 dark:border-white/20 dark:text-white">
+                  <SelectTrigger className="focus:border-primary focus:ring-primary dark:bg-card mt-1 h-10 w-full rounded-xl border border-gray-300 bg-white py-2 pr-3 pl-9 text-sm text-gray-700 dark:border-white/20 dark:text-white">
                     <SelectValue placeholder="All statuses" />
                   </SelectTrigger>
-                  <SelectContent className="dark:bg-brand-primary/10 mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white/90 text-gray-700 dark:text-white">
+                  <SelectContent className="dark:bg-card mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white/90 text-gray-700 dark:text-white">
                     <SelectItem value="all" className="text-gray-700 dark:text-white">
                       All statuses
                     </SelectItem>
@@ -246,10 +256,10 @@ export const ActiveCampaign = () => {
                     setSortBy(val as SortBy);
                   }}
                 >
-                  <SelectTrigger className="focus:border-primary focus:ring-primary dark:bg-brand-primary/10 mt-1 h-10 w-full rounded-xl border border-gray-300 bg-white py-2 pr-3 pl-9 text-sm text-gray-700 dark:border-white/20 dark:text-white">
+                  <SelectTrigger className="focus:border-primary focus:ring-primary dark:bg-card mt-1 h-10 w-full rounded-xl border border-gray-300 bg-white py-2 pr-3 pl-9 text-sm text-gray-700 dark:border-white/20 dark:text-white">
                     <SelectValue placeholder="Sort" />
                   </SelectTrigger>
-                  <SelectContent className="dark:bg-brand-primary/10 mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white/90 text-gray-700 dark:text-white">
+                  <SelectContent className="dark:bg-card mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white/90 text-gray-700 dark:text-white">
                     <SelectItem value={SortBy.Newest} className="text-gray-700 dark:text-white">
                       Newest
                     </SelectItem>
@@ -272,10 +282,10 @@ export const ActiveCampaign = () => {
                     setVerifiedFilter(val as 'all' | 'verified' | 'unverified');
                   }}
                 >
-                  <SelectTrigger className="focus:border-primary focus:ring-primary dark:bg-brand-primary/10 mt-1 h-10 w-full rounded-xl border border-gray-300 bg-white py-2 pr-3 pl-9 text-sm text-gray-700 dark:border-white/20 dark:text-white">
+                  <SelectTrigger className="focus:border-primary focus:ring-primary dark:bg-card mt-1 h-10 w-full rounded-xl border border-gray-300 bg-white py-2 pr-3 pl-9 text-sm text-gray-700 dark:border-white/20 dark:text-white">
                     <SelectValue placeholder="All" />
                   </SelectTrigger>
-                  <SelectContent className="dark:bg-brand-primary/10 mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white/90 text-gray-700 dark:text-white">
+                  <SelectContent className="dark:bg-card mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white/90 text-gray-700 dark:text-white">
                     <SelectItem value="all" className="text-gray-700 dark:text-white">
                       All
                     </SelectItem>
@@ -295,7 +305,7 @@ export const ActiveCampaign = () => {
                   id="my-campaigns-toggle"
                   data-active={showMine}
                   variant={showMine ? 'default' : 'outline'}
-                  className={`hover:border-primary hover:text-primary dark:bg-brand-primary/10 mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-600 dark:border-white/20 dark:text-white dark:hover:text-white ${showMine ? 'bg-primary dark:bg-brand-primary text-white' : ''}`}
+                  className={`hover:border-primary hover:text-primary dark:bg-card mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-600 dark:border-white/20 dark:text-gray-200 dark:hover:text-white ${showMine ? 'bg-primary dark:bg-brand-primary text-white' : ''}`}
                   onClick={() => {
                     const enabling = !showMine;
                     isFilteringRef.current = true;
@@ -405,8 +415,8 @@ export const ActiveCampaign = () => {
             </div>
           )}
 
-          <article className="group border-primary/40 bg-primary/5 hover:border-primary/60 hover:bg-primary/10 dark:border-brand-primary/40 dark:bg-brand-primary/10 dark:text-primary-light flex h-full flex-col rounded-3xl border border-dashed p-6 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-            <div className="bg-brand-primary/20 mx-auto flex h-14 w-14 items-center justify-center rounded-2xl">
+          <article className="group border-border bg-background/5 hover:border-primary/60 hover:bg-primary/10 dark:border-border dark:bg-card dark:text-primary-light flex h-full flex-col rounded-3xl border border-dashed p-6 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+            <div className="bg-brand-primary/20 dark:bg-brand-primary/40 mx-auto flex h-14 w-14 items-center justify-center rounded-2xl">
               <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M12 5v14m7-7H5"
@@ -425,8 +435,7 @@ export const ActiveCampaign = () => {
             <Link href={ROUTES.CREATE_CAMPAIGN} className="mt-auto">
               <Button
                 variant="link"
-                className="bg-brand-primary dark:bg-brand-primary/50 dark:hover:bg-brand-primary mt-6 inline-flex w-1/4 items-center justify-center rounded-2xl px-6 py-3 text-base font-semibold text-white transition hover:scale-[1.02] hover:shadow-lg"
-                aria-label="Launch a new campaign - Get started"
+                className="bg-brand-primary dark:bg-brand-primary mt-6 inline-flex w-1/4 items-center justify-center rounded-2xl px-6 py-3 text-base font-semibold text-white transition hover:scale-[1.02] hover:shadow-lg"
               >
                 Get started
               </Button>

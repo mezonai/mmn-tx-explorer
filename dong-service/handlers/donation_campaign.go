@@ -189,6 +189,20 @@ func (h *DonationCampaignHandler) ListCampaigns(c *gin.Context) {
 		qPtr = &s
 	}
 
+	var creatorPtr *int64
+	if creatorStr := c.Query("creator"); creatorStr != "" {
+		if v, err := strconv.ParseInt(creatorStr, 10, 64); err == nil {
+			creatorPtr = &v
+		}
+	}
+	if creatorPtr == nil {
+		if p := c.Param("creator"); p != "" {
+			if v, err := utils.ParseInt64Param(c, "creator"); err == nil {
+				creatorPtr = &v
+			}
+		}
+	}
+
 	logger.Debug().
 		Int("page", pagination.Page).
 		Int("limit", pagination.Limit).
@@ -197,7 +211,7 @@ func (h *DonationCampaignHandler) ListCampaigns(c *gin.Context) {
 		Str("order_by", pagination.OrderBy).
 		Msg("Listing campaigns")
 
-	campaigns, err := h.repo.GetAll(statusPtr, verifiedPtr, qPtr, pagination)
+	campaigns, err := h.repo.GetAll(statusPtr, verifiedPtr, qPtr, pagination, creatorPtr)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to get campaigns list")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToGetCampaigns+": "+err.Error()))
@@ -205,7 +219,7 @@ func (h *DonationCampaignHandler) ListCampaigns(c *gin.Context) {
 	}
 
 	// Get total count
-	total, err := h.repo.Count(statusPtr, verifiedPtr, qPtr)
+	total, err := h.repo.Count(statusPtr, verifiedPtr, qPtr, creatorPtr)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to count campaigns")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToGetCampaigns+": "+err.Error()))

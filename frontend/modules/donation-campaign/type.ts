@@ -61,7 +61,7 @@ export interface CampaignListParams {
   status?: string;
   verified?: boolean;
   order?: 'asc' | 'desc';
-  order_by?: 'total_amount' | 'created_at' | 'recent_amount';
+  order_by?: 'total_amount' | 'created_at' | 'recent_amount' | 'end_date';
   search?: string;
 }
 

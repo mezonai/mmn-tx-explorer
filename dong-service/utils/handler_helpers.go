@@ -44,7 +44,6 @@ type PaginationParams struct {
 	Offset  int
 	Order   string
 	OrderBy string
-	Creator string
 }
 
 // GetPaginationParams extracts and validates pagination parameters from query string
@@ -63,15 +62,12 @@ func GetPaginationParams(c *gin.Context) PaginationParams {
 	}
 
 	offset := page * limit
-
-	creator := c.DefaultQuery("creator", "")
 	return PaginationParams{
 		Page:    page,
 		Limit:   limit,
 		Offset:  offset,
 		Order:   order,
 		OrderBy: orderBy,
-		Creator: creator,
 	}
 }
 
