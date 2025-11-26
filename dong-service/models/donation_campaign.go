@@ -141,4 +141,5 @@ type SyncCampaignResponse struct {
 	TotalAmount       int64 `json:"total_amount"`
 	TotalContributors int64 `json:"total_contributors"`
 	TotalWithdrawn    int64 `json:"total_withdrawn"`
+	RecentAmount      int64 `json:"recent_amount"`
 }
