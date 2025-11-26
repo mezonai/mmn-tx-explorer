@@ -88,7 +88,7 @@ func (r *RedEnvelopeHandler) GetRecipientsByRedEnvelopeID(c *gin.Context) {
 		return
 	}
 
-	if _, ok := r.verifyRedEnvelopeOwner(c, id); !ok {
+	if ok := r.verifyRedEnvelopeOwner(c, id); !ok {
 		return
 	}
 
@@ -244,7 +244,7 @@ func (r *RedEnvelopeHandler) UpdateStatusRedEnvelope(c *gin.Context) {
 		return
 	}
 
-	if _, ok := r.verifyRedEnvelopeOwner(c, req.ID); !ok {
+	if ok := r.verifyRedEnvelopeOwner(c, req.ID); !ok {
 		return
 	}
 
@@ -292,7 +292,7 @@ func (r *RedEnvelopeHandler) GetDetailRedEnvelopeByID(c *gin.Context) {
 		return
 	}
 
-	if _, ok := r.verifyRedEnvelopeOwner(c, id); !ok {
+	if ok := r.verifyRedEnvelopeOwner(c, id); !ok {
 		return
 	}
 
@@ -363,26 +363,26 @@ func ValidateRequest(req *models.CreateRedEnvelopeRequest) error {
 	return nil
 }
 
-func (r *RedEnvelopeHandler) verifyRedEnvelopeOwner(c *gin.Context, redEnvelopeID string) (int64, bool) {
+func (r *RedEnvelopeHandler) verifyRedEnvelopeOwner(c *gin.Context, redEnvelopeID string) bool {
 	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		logger.Error().Err(err).Msg("Unauthorized attempt")
 		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
-		return 0, false
+		return false
 	}
 
 	isOwner, err := r.repo.CheckUserIDAndEnvelopeID(redEnvelopeID, userID)
 	if err != nil {
 		logger.Error().Err(err).Str("envelope_id", redEnvelopeID).Int64("user_id", userID).Msg("Failed to check ownership")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrUserIDNotMatchRedEnvelopeID))
-		return 0, false
+		return false
 	}
 
 	if !isOwner {
 		logger.Warn().Str("envelope_id", redEnvelopeID).Int64("user_id", userID).Msg("User is not the owner")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrUserIDNotMatchRedEnvelopeID))
-		return 0, false
+		return false
 	}
 
-	return userID, true
+	return true
 }
