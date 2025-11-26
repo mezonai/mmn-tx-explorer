@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Pagination } from '@/components/ui/pagination';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useBreakpoint, usePaginationQueryParam } from '@/hooks';
 import { EBreakpoint, ESortOrder } from '@/enums';
 import { WalletTransactionsTable, WalletTransactionsCards } from '@/modules/transaction/components';
@@ -27,12 +28,22 @@ const getDefaultTimeRangeByMonth = (monthRange: number) => {
 };
 
 export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCardProps) {
+  const urlSearchParams = useSearchParams();
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
   const [startDate, setStartDate] = useState<Date>(getDefaultTimeRangeByMonth(1));
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [transactionType, setTransactionType] = useState('All Transaction');
   const oneYearAgo = new Date(new Date().setFullYear(new Date().getFullYear() - 1));
   const today = new Date();
+  
+  useEffect(() => {
+    const typeParam = urlSearchParams.get('type');
+    if (typeParam === 'received') {
+      setTransactionType('Received');
+    } else if (typeParam === 'sent') {
+      setTransactionType('Sent');
+    }
+  }, [urlSearchParams]);
   const getSearchParams = (): ITransactionListParams => {
     const base = {
       ...DEFAULT_VALUE_DATA_SEARCH,
