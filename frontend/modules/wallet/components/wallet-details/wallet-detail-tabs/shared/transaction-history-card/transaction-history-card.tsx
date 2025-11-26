@@ -110,7 +110,7 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
           <CardTitle className="text-primary font-semibold tracking-wider uppercase">Transaction history</CardTitle>
         </CardHeader>
         <div className="top-0 mb-0 flex flex-col gap-4 py-6 md:pt-8 lg:flex-row lg:items-center lg:justify-between lg:gap-5">
-          <div className="flex items-center">
+          <div className="flex w-full items-center justify-center sm:w-auto sm:justify-start">
             <Button
               type="button"
               disabled={isExporting}
