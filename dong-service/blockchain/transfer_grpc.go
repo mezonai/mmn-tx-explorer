@@ -3,7 +3,9 @@ package blockchain
 import (
 	"context"
 	"dong-service/config"
+	"dong-service/constants"
 	"dong-service/logger"
+	"dong-service/utils"
 	"fmt"
 	"math/big"
 	"time"
@@ -123,4 +125,32 @@ func scaleAmountToDecimals(originalAmount interface{}) (string, error) {
 	multiplier := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(decimals)), nil)
 	scaledAmount.Mul(scaledAmount, multiplier)
 	return scaledAmount.String(), nil
+}
+
+func (s *BlockchainService) TransferMoney(encryptedPrivateKey, fromAddress, toAddress string, amount int64) error {
+	privateKey, err := utils.DecryptPrivateKey(encryptedPrivateKey)
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to decrypt private key")
+		return err
+	} else {
+		txHash, err := s.Transfer(
+			fromAddress,
+			toAddress,
+			amount,
+			privateKey,
+			constants.TextDataLuckyMoney,
+			constants.ExtraInfoLuckyMoney,
+		)
+		if err != nil {
+			logger.Error().Err(err).Msg("Failed to transfer funds")
+			return err
+		} else {
+			// TODO: use function GetTxByHash to get status
+			logger.Info().
+				Str("tx_hash", txHash).
+				Int64("amount", amount).
+				Msg("Successfully transferred remaining balance to owner")
+			return nil
+		}
+	}
 }

@@ -25,7 +25,7 @@ func NewWalletPoolMaintenanceJob(
 func (j *WalletPoolMaintenanceJob) Run(ctx context.Context) error {
 	logger.Info().Msg("Starting wallet pool maintenance job")
 
-	oldWallets, err := j.redEnvelopeWalletRepo.FindOldReadyWallets(ctx, constants.RedEnvelopeWalletMaxAgeInDays)
+	oldWallets, err := j.redEnvelopeWalletRepo.FindOldWallets(ctx, constants.RedEnvelopeWalletMaxAgeInDays)
 	if err != nil {
 		logger.Error().Err(err).Msg("Error finding old wallets")
 		return err
@@ -61,11 +61,11 @@ func (j *WalletPoolMaintenanceJob) Run(ctx context.Context) error {
 	return nil
 }
 
-func InitializeWalletPoolMaintenanceJob(c *cron.Cron, ctx context.Context) {
+func InitializeWalletPoolMaintenanceJob(c *cron.Cron, ctx context.Context, dongSchema string) {
 	taskName := "WalletPoolMaintenanceJob"
 
 	db := database.GetDB()
-	repo := repository.NewIntermediaryWalletRepository(db)
+	repo := repository.NewIntermediaryWalletRepository(db, dongSchema)
 	job := NewWalletPoolMaintenanceJob(repo)
 
 	entryID, err := c.AddFunc("0 2 * * *", func() {

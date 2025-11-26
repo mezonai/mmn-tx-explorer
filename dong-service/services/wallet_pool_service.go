@@ -121,7 +121,7 @@ func (s *WalletPoolService) EnsureMinimumWallets(ctx context.Context, minReady i
 	return nil
 }
 
-func (s *WalletPoolService) generateWallet() (address string, privateKey string, err error) {
+func (s *WalletPoolService) generateWallet() (address, privateKey string, err error) {
 	publicKey, privateKey, err := utils.GenerateEphemeralKeyPair()
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to generate Ed25519 key pair")

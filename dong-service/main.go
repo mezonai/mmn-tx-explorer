@@ -81,7 +81,7 @@ func main() {
 	}
 
 	logger.Info().Msg("Initializing Red Envelope Wallet Pool")
-	startupInit := services.NewStartupInitializer()
+	startupInit := services.NewStartupInitializer(cfg.Database.Schema)
 
 	if err = startupInit.Initialize(); err != nil {
 		logger.Error().Err(err).Msg("Failed to initialize wallet pool")
@@ -122,11 +122,15 @@ func main() {
 	syncTask := scheduler.CreateSyncContributorsTask(syncInterval, cfg.Indexer.Schema, cfg.Database.Schema)
 	schedulerInstance.AddTask(syncTask)
 
+	expiryCheckInterval := time.Duration(cfg.Scheduler.ExpiredRedEnvelopesInterval) * time.Second
+	expiryRedEnvelopeTask := scheduler.CreateRedEnvelopeExpiryTask(expiryCheckInterval, cfg.Database.Schema, blockchainService)
+	schedulerInstance.AddTask(expiryRedEnvelopeTask)
+
 	// Start scheduler
 	schedulerInstance.Start(ctx)
 
 	cronjob := cron.New(cron.WithLocation(time.Local))
-	scheduler.InitializeWalletPoolMaintenanceJob(cronjob, ctx)
+	scheduler.InitializeWalletPoolMaintenanceJob(cronjob, ctx, cfg.Database.Schema)
 	cronjob.Start()
 
 	// Start server in a goroutine

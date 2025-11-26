@@ -28,6 +28,35 @@ definitions:
     - donation_wallet
     - name
     type: object
+  models.CreateRedEnvelopeRequest:
+    properties:
+      description:
+        type: string
+      end_date:
+        type: string
+      is_random_distribution:
+        type: boolean
+      max_amount:
+        type: integer
+      min_amount:
+        type: integer
+      name:
+        type: string
+      owner_wallet:
+        type: string
+      start_date:
+        type: string
+      total_amount:
+        type: integer
+      total_claims:
+        type: integer
+    required:
+    - name
+    - owner_wallet
+    - start_date
+    - total_amount
+    - total_claims
+    type: object
   models.DonationCampaignResponse:
     properties:
       created_at:
@@ -152,6 +181,64 @@ definitions:
       total_pages:
         type: integer
     type: object
+  models.RedEnvelope:
+    properties:
+      claimed_count:
+        type: integer
+      created_at:
+        type: string
+      creator:
+        type: integer
+      description:
+        type: string
+      end_date:
+        type: string
+      id:
+        type: string
+      is_random_distribution:
+        type: boolean
+      max_amount:
+        type: integer
+      min_amount:
+        type: integer
+      name:
+        type: string
+      owner_wallet:
+        type: string
+      red_envelope_wallet:
+        type: string
+      start_date:
+        type: string
+      status:
+        type: string
+      total_amount:
+        type: integer
+      total_claims:
+        type: integer
+      transaction_hash:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.RedEnvelopeClaim:
+    properties:
+      amount:
+        type: integer
+      claimed_at:
+        type: string
+      claimer_user_id:
+        type: integer
+      claimer_wallet:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      red_envelope_id:
+        type: string
+      transaction_hash:
+        type: string
+    type: object
   models.RefreshRequest:
     properties:
       refresh_token:
@@ -222,7 +309,7 @@ definitions:
         type: string
       created_at:
         type: string
-      last_block:
+      last_balance_update:
         type: integer
       transaction_count:
         type: integer
@@ -678,6 +765,303 @@ paths:
       summary: Get a donation campaign by slug
       tags:
       - campaigns
+  /api/v1/red-envelopes/claimed-by-user:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve red envelope claimed associated with a specific user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.RedEnvelopeClaim'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Get red envelope claimed by user
+      tags:
+      - red_envelopes
+  /api/v1/red-envelopes/close-session:
+    post:
+      consumes:
+      - application/json
+      description: close red envelope session
+      parameters:
+      - description: Close Session Request
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            id:
+              format: int64
+              type: integer
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: close red envelope session
+      tags:
+      - red_envelopes
+  /api/v1/red-envelopes/created-by-user:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve red envelopes created by a specific user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.RedEnvelope'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Get red envelopes created by user
+      tags:
+      - red_envelopes
+  /api/v1/red-envelopes/detail/:id:
+    get:
+      consumes:
+      - application/json
+      description: get detail red envelope by id
+      parameters:
+      - description: Red Envelope ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: get detail red envelope by id
+      tags:
+      - red_envelopes
+  /api/v1/red-envelopes/stats:
+    get:
+      consumes:
+      - application/json
+      description: Get overall statistics for red envelope sessions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Get red envelope statistics
+      tags:
+      - red_envelopes
+  /api/v1/red-envelopes/update-status-red-envelope:
+    post:
+      consumes:
+      - application/json
+      description: update status red envelope to published or failed
+      parameters:
+      - description: Update Status Request
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            id:
+              format: int64
+              type: integer
+            status:
+              type: integer
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - BearerAuth: []
+      summary: update status red envelope
+      tags:
+      - red_envelopes
+  /api/v1/red_envelopes/:id/recipients:
+    get:
+      description: Returns a list of users who have received red envelope
+      parameters:
+      - description: Red Envelope ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.RedEnvelope'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Get Recipients by red envelope id
+      tags:
+      - red_envelopes
+  /api/v1/red_envelopes/create:
+    post:
+      consumes:
+      - application/json
+      description: Create a new red envelope session with specified parameters
+      parameters:
+      - description: Red Envelope Creation Request
+        in: body
+        name: red_envelope
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateRedEnvelopeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.RedEnvelope'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - BearerAuth: []
+      summary: Create a new red envelope session
+      tags:
+      - red_envelopes
   /api/v1/stats/campaign:
     get:
       description: Get overall statistics for all donation campaigns
