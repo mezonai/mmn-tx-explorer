@@ -7,7 +7,7 @@ import (
 
 type BlockFailure struct {
 	BlockNumber   *big.Int
-	ChainId       *big.Int
+	ChainID       *big.Int
 	FailureTime   time.Time
 	FailureReason string
 	FailureCount  int

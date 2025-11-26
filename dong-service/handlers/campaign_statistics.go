@@ -25,7 +25,7 @@ func NewCampaignStatisticsHandler(statsRepo *repository.CampaignStatisticsReposi
 	}
 }
 
-// GetStats godoc
+// GetCampaignStats godoc
 // @Summary Get donation campaign statistics
 // @Description Get overall statistics for all donation campaigns
 // @Tags campaigns

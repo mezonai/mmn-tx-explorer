@@ -73,7 +73,7 @@ func (_c *MockIOrchestratorStorage_DeleteBlockFailures_Call) RunAndReturn(run fu
 }
 
 // GetBlockFailures provides a mock function with given fields: qf
-func (_m *MockIOrchestratorStorage) GetBlockFailures(qf storage.QueryFilter) ([]common.BlockFailure, error) {
+func (_m *MockIOrchestratorStorage) GetBlockFailures(qf *storage.QueryFilter) ([]common.BlockFailure, error) {
 	ret := _m.Called(qf)
 
 	if len(ret) == 0 {
@@ -82,10 +82,10 @@ func (_m *MockIOrchestratorStorage) GetBlockFailures(qf storage.QueryFilter) ([]
 
 	var r0 []common.BlockFailure
 	var r1 error
-	if rf, ok := ret.Get(0).(func(storage.QueryFilter) ([]common.BlockFailure, error)); ok {
+	if rf, ok := ret.Get(0).(func(*storage.QueryFilter) ([]common.BlockFailure, error)); ok {
 		return rf(qf)
 	}
-	if rf, ok := ret.Get(0).(func(storage.QueryFilter) []common.BlockFailure); ok {
+	if rf, ok := ret.Get(0).(func(*storage.QueryFilter) []common.BlockFailure); ok {
 		r0 = rf(qf)
 	} else {
 		if ret.Get(0) != nil {
@@ -93,7 +93,7 @@ func (_m *MockIOrchestratorStorage) GetBlockFailures(qf storage.QueryFilter) ([]
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(storage.QueryFilter) error); ok {
+	if rf, ok := ret.Get(1).(func(*storage.QueryFilter) error); ok {
 		r1 = rf(qf)
 	} else {
 		r1 = ret.Error(1)

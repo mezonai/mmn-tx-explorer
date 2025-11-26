@@ -90,7 +90,7 @@ func ValidateStatus(status int16) bool {
 		status == constants.CampaignStatusClosed
 }
 
-// generates a wallet address from user ID
+// GenerateAddress : generates a wallet address from user ID
 // TODO: consider using mmn go-sdk later
 func GenerateAddress(input string) string {
 	sum := sha256.Sum256([]byte(input))
