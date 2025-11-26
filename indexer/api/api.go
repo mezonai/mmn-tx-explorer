@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/schema"
@@ -49,6 +50,12 @@ type QueryParams struct {
 
 	// @Description Wallet address to fetch transactions for (matches from OR to)
 	WalletAddress string `schema:"wallet_address"`
+
+	// @Description Timestamp less than (for infinite scroll)
+    TimestampLt time.Time `schema:"timestamp_lt"`
+
+	// @Description Transaction hash for pagination when timestamps are identical
+    LastHash string `schema:"last_hash"`
 	// @Description Start time for filtering transactions (YYYY-MM-DD or Unix timestamp)
 	StartTime string `schema:"start_time"`
 	// @Description End time for filtering transactions (YYYY-MM-DD or Unix timestamp)
@@ -72,6 +79,12 @@ type Meta struct {
 	TotalItems int `json:"total_items,omitempty"`
 	// @Description Total number of pages
 	TotalPages int `json:"total_pages,omitempty"`
+    // @Description Flag indicating if there are more items to load
+    HasMore bool `json:"has_more,omitempty"`
+    // @Description Timestamp to use for the next request
+    NextTimestamp *time.Time `json:"next_timestamp,omitempty"`
+    // @Description Hash to use for the next request when timestamps are identical
+    NextHash string `json:"next_hash,omitempty"`
 }
 
 // QueryResponse represents the response structure for a query
