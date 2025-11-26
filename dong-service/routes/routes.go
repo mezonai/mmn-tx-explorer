@@ -33,38 +33,40 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 	v1 := router.Group("/api/v1")
 	{
 		// Initialize repositories
-		campaignRepo := repository.NewDonationCampaignRepository(database.GetDB(), cfg.Database.Schema)
+		campaignRepo := repository.NewDonationCampaignRepository(database.GetDB(), cfg.Database.Schema, cfg.Indexer.Schema)
 		statsRepo := repository.NewCampaignStatisticsRepository(database.GetDB(), cfg.Indexer.Schema, cfg.Database.Schema)
+		walletRepo := repository.NewWalletRepository(database.GetDB(), cfg.Indexer.Schema)
 
 		// Initialize handlers
 		campaignHandler := handlers.NewDonationCampaignHandler(campaignRepo)
 		statsHandler := handlers.NewCampaignStatisticsHandler(statsRepo)
+		walletHandler := handlers.NewWalletHandler(walletRepo, campaignRepo)
 
 		// Campaign routes (protected)
-		campaigns_private := v1.Group("/admin/campaigns")
-		{
-			campaigns_private.Use(middleware.Authentication(cfg.JWT.Secret))
-			campaigns_private.POST("", campaignHandler.CreateCampaign)
-			campaigns_private.POST("/create-active", campaignHandler.CreateAndActiveCampaign)
-			campaigns_private.PUT("/:id", campaignHandler.UpdateCampaign)
-			campaigns_private.PATCH("/:id/activate", campaignHandler.ActivateCampaign)
-			campaigns_private.PATCH("/:id/close", campaignHandler.CloseCampaign)
-			campaigns_private.DELETE("/:id", campaignHandler.DeleteDraftCampaign)
-		}
+		campaignsPrivate := v1.Group("/admin/campaigns")
+		campaignsPrivate.Use(middleware.Authentication(cfg.JWT.Secret))
+		campaignsPrivate.POST("", campaignHandler.CreateCampaign)
+		campaignsPrivate.POST("/create-active", campaignHandler.CreateAndActiveCampaign)
+		campaignsPrivate.PUT("/:id", campaignHandler.UpdateCampaign)
+		campaignsPrivate.PATCH("/:id/activate", campaignHandler.ActivateCampaign)
+		campaignsPrivate.PATCH("/:id/close", campaignHandler.CloseCampaign)
+		campaignsPrivate.DELETE("/:id", campaignHandler.DeleteDraftCampaign)
 
 		// Campaign routes (public)
-		campaigns_public := v1.Group("/campaigns")
-		{
-			campaigns_public.GET("", campaignHandler.ListCampaigns)
-			campaigns_public.GET("/slug/:slug", campaignHandler.GetCampaignBySlug)
-			campaigns_public.GET("/:id", campaignHandler.GetCampaign)
-			campaigns_public.GET("/:id/top-contributors", campaignHandler.GetTopContributors)
-			campaigns_public.POST("/:id/sync", statsHandler.SyncCampaign)
-		}
+		campaignsPublic := v1.Group("/campaigns")
+		campaignsPublic.GET("", campaignHandler.ListCampaigns)
+		campaignsPublic.GET("/slug/:slug", campaignHandler.GetCampaignBySlug)
+		campaignsPublic.GET("/:id", campaignHandler.GetCampaign)
+		campaignsPublic.GET("/:id/top-contributors", campaignHandler.GetTopContributors)
+		campaignsPublic.POST("/:id/sync", statsHandler.SyncCampaign)
 
-		stats_public := v1.Group("/stats")
-		{
-			stats_public.GET("/campaign", statsHandler.GetCampaignStats)
-		}
+		// Statistics routes (public)
+		statsPublic := v1.Group("/stats")
+		statsPublic.GET("/campaign", statsHandler.GetCampaignStats)
+
+		// Wallet routes (public)
+		walletPublic := v1.Group("/wallets")
+		walletPublic.Use(middleware.ParseTokenAndAddToContext(cfg.JWT.Secret))
+		walletPublic.GET("/:address/detail", walletHandler.GetWalletDetail)
 	}
 }

@@ -10,9 +10,10 @@ import { Wallet } from 'lucide-react';
 interface SearchResultsProps {
   isLoading: boolean;
   searchResults: ISearchResult | null;
+  onItemSelect: () => void;
 }
 
-export const SearchResults = ({ isLoading, searchResults }: SearchResultsProps) => {
+export const SearchResults = ({ isLoading, searchResults, onItemSelect }: SearchResultsProps) => {
   if (isLoading) {
     return <p>We are searching, please wait...</p>;
   }
@@ -34,6 +35,7 @@ export const SearchResults = ({ isLoading, searchResults }: SearchResultsProps) 
                 icon={Transaction}
                 title={<MiddleTruncate end={ADDRESS_END_VISIBLE_CHARS}>{transaction.hash}</MiddleTruncate>}
                 timestamp={transaction.transaction_timestamp}
+                onItemSelect={onItemSelect}
               />
             ))}
           </div>
@@ -51,6 +53,7 @@ export const SearchResults = ({ isLoading, searchResults }: SearchResultsProps) 
                 icon={Cube01}
                 title={<span>{block.block_number}</span>}
                 timestamp={block.block_timestamp}
+                onItemSelect={onItemSelect}
               />
             ))}
           </div>
@@ -67,6 +70,7 @@ export const SearchResults = ({ isLoading, searchResults }: SearchResultsProps) 
                 href={ROUTES.WALLET(wallet.address)}
                 icon={Wallet}
                 title={<span>{wallet.address}</span>}
+                onItemSelect={onItemSelect}
               />
             ))}
           </div>

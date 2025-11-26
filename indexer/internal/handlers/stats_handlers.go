@@ -24,7 +24,7 @@ func handleTransactionStats(c *gin.Context) {
 	}
 
 	time24hAgo := time.Now().Add(-24 * time.Hour)
-	timeBasedQf24h := storage.QueryFilter{
+	timeBasedQf24h := &storage.QueryFilter{
 		ForceConsistentData: true,
 		FilterParams: map[string]string{
 			"transaction_timestamp_gte": strconv.FormatInt(time24hAgo.Unix(), 10),
@@ -114,7 +114,7 @@ func handleDashboardStats(c *gin.Context) {
 	}
 
 	// Build only the fields needed for dashboard
-	countQf := storage.QueryFilter{ForceConsistentData: true}
+	countQf := &storage.QueryFilter{ForceConsistentData: true}
 	var (
 		totalBlocks, totalTransactions, totalWallets uint64
 		averageBlockTime                             float64

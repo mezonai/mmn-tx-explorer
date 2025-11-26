@@ -45,7 +45,7 @@ func Set(tokenID, userID string, ttl time.Duration) error {
 	return err
 }
 
-func Get(tokenID string) (bool, string, error) {
+func Get(tokenID string) (exists bool, uid string, err error) {
 	userID, err := RedisClient.Get(ctx, tokenID).Result()
 	if err == redis.Nil {
 		logger.Warn().Str("token_id", tokenID).Msg("Token not found in Redis")
@@ -65,5 +65,46 @@ func Delete(tokenID string) error {
 	} else {
 		logger.Info().Str("token_id", tokenID).Msg("Token deleted from Redis")
 	}
+	return err
+}
+
+func GetCacheRequest(hashRequest string) (ok bool, resp string, err error) {
+	response, err := RedisClient.Get(ctx, hashRequest).Result()
+	if err == redis.Nil {
+		logger.Debug().Str("hash_request", hashRequest).Msg("Cache request not found in Redis")
+		return false, "", nil
+	} else if err != nil {
+		logger.Error().Err(err).Str("hash_request", hashRequest).Msg("Failed to get cache request from Redis")
+		return false, "", err
+	}
+	logger.Debug().Str("hash_request", hashRequest).Str("response", response).Msg("Cache request retrieved from Redis")
+	return true, response, nil
+}
+
+func SetCacheRequest(hashRequest, response string, ttl time.Duration) error {
+	err := RedisClient.SetNX(ctx, hashRequest, response, ttl).Err()
+	if err != nil {
+		logger.Error().Err(err).Str("hash_request", hashRequest).Msg("Failed to set cache request in Redis")
+	} else {
+		logger.Debug().Str("hash_request", hashRequest).Dur("ttl", ttl).Msg("Cache request stored in Redis")
+	}
+	return err
+}
+
+func SetLockKey(key, value string, ttl time.Duration) (bool, error) {
+	ok, err := RedisClient.SetNX(ctx, key, value, ttl).Result()
+	if err != nil {
+		logger.Error().Err(err).Str("key", key).Msg("Failed to saved lockKey in Redis")
+	}
+	logger.Debug().Str("key", key).Msg("LockKey saved in Redis")
+	return ok, err
+}
+
+func DeleteLockKey(key string) error {
+	err := RedisClient.Del(ctx, key).Err()
+	if err != nil {
+		logger.Error().Err(err).Str("key", key).Msg("Failed to delete lockKey in Redis")
+	}
+	logger.Debug().Str("key", key).Msg("LockKey deleted from Redis")
 	return err
 }
