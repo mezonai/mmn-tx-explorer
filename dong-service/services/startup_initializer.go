@@ -13,9 +13,9 @@ type StartupInitializer struct {
 	walletPoolService *WalletPoolService
 }
 
-func NewStartupInitializer() *StartupInitializer {
+func NewStartupInitializer(dongSchema string) *StartupInitializer {
 	db := database.GetDB()
-	redEnvelopeWalletRepo := repository.NewRedEnvelopeWalletRepository(db)
+	redEnvelopeWalletRepo := repository.NewIntermediaryWalletRepository(db, dongSchema)
 	walletPoolService := NewWalletPoolService(redEnvelopeWalletRepo)
 
 	return &StartupInitializer{

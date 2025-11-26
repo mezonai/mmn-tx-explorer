@@ -39,6 +39,11 @@ const (
 	RedEnvelopeSplitMoneyStatusClaimed   = "CLAIMED"
 )
 
+const (
+	WalletTypeDefault     = "DEFAULT"
+	WalletTypeRedEnvelope = "LUCKY_MONEY"
+)
+
 // Red Envelope Configuration
 const (
 	RedEnvelopeInitialWalletPool  = 50 // Number of wallets to create on deployment
@@ -59,11 +64,11 @@ const (
 )
 
 const (
-	EXTRA_INFO_LUCKY_MONEY = `{"type":"lucky-money"}`
+	ExtraInfoLuckyMoney = `{"type":"lucky-money"}`
 )
 
 const (
-	TEXT_DATA_LUCKY_MONEY = "Lucky Money fund"
+	TextDataLuckyMoney = "Lucky Money fund"
 )
 
 // GetStatusName returns the human-readable name for a status code

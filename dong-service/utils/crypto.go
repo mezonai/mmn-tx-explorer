@@ -27,7 +27,6 @@ func zeroBytes(b []byte) {
 }
 
 func InitEncryptionKey() error {
-
 	keyStr := os.Getenv("AES_SECRET_KEY")
 	if keyStr == "" {
 		return errors.New("AES_SECRET_KEY environment variable not set")
@@ -99,11 +98,11 @@ func DecryptPrivateKey(encryptedPrivateKey string) (string, error) {
 	return string(plaintext), nil
 }
 
-func GenerateEphemeralKeyPair() (string, string, error) {
+func GenerateEphemeralKeyPair() (publicKeyBs58, privateKeyBs58 string, err error) {
 	seed := make([]byte, ed25519SeedSize)
 	defer zeroBytes(seed)
 
-	_, err := rand.Read(seed)
+	_, err = rand.Read(seed)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to generate random seed: %w", err)
 	}
@@ -116,9 +115,9 @@ func GenerateEphemeralKeyPair() (string, string, error) {
 		return "", "", fmt.Errorf("failed to cast public key from private key")
 	}
 
-	privateKeybs58 := base58.Encode(seed)
+	privateKeyBs58 = base58.Encode(seed)
 
-	publicKeyBs58 := base58.Encode(publicKey)
+	publicKeyBs58 = base58.Encode(publicKey)
 
-	return publicKeyBs58, privateKeybs58, nil
+	return publicKeyBs58, privateKeyBs58, nil
 }

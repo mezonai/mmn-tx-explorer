@@ -6,13 +6,9 @@ import { TransferDialog } from './transfer-dialog';
 import { useUser } from '@/providers';
 import { DonationCampaign } from '@/modules/donation-campaign/type';
 
-export function InsightsCard({
-  currentCampaign,
-}: {
-  currentCampaign: DonationCampaign;
-}) {
+export function InsightsCard({ currentCampaign }: { currentCampaign: DonationCampaign }) {
   const { user } = useUser();
-  
+
   const timeRemainingDisplay = useMemo(() => {
     if (!currentCampaign.end_date) {
       return 'No deadline';
@@ -30,6 +26,7 @@ export function InsightsCard({
           {currentCampaign.donation_wallet && user?.id === currentCampaign.creator && (
             <div className="-mr-2">
               <TransferDialog
+                currentCampaign={currentCampaign}
                 walletAddress={currentCampaign.donation_wallet}
                 raisedAmount={currentCampaign.total_amount}
                 myWalletAddress={user?.walletAddress}

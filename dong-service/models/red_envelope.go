@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type RedEnvelope struct {
 	ID                   string     `json:"id" db:"id"`
@@ -23,7 +25,7 @@ type RedEnvelope struct {
 	UpdatedAt            time.Time  `json:"updated_at" db:"updated_at"`
 }
 
-type RedEnvelopeWallet struct {
+type IntermediaryWallet struct {
 	ID                  int64     `json:"id" db:"id"`
 	WalletAddress       string    `json:"wallet_address" db:"wallet_address"`
 	EncryptedPrivateKey string    `json:"-" db:"encrypted_private_key"`
@@ -38,7 +40,7 @@ type CreateRedEnvelopeRequest struct {
 	TotalAmount          int64      `json:"total_amount" binding:"required"`
 	MinAmount            *int64     `json:"min_amount,omitempty"`
 	MaxAmount            *int64     `json:"max_amount,omitempty"`
-	TotalClaims          int32      `json:"total_claims" binding:"required"`
+	TotalClaims          int64      `json:"total_claims" binding:"required"`
 	OwnerWallet          string     `json:"owner_wallet" binding:"required"`
 	IsRandomDistribution bool       `json:"is_random_distribution"`
 	StartDate            time.Time  `json:"start_date" binding:"required"`
@@ -56,7 +58,7 @@ type RedEnvelopeClaim struct {
 	TransactionHash *string   `json:"transaction_hash,omitempty" db:"transaction_hash"`
 }
 
-type CreateRedEnvelopeCreateByWallet []struct {
+type CreateRedEnvelopeCreateByUser []struct {
 	ID           string    `json:"id"`
 	Name         string    `json:"name"`
 	TotalAmount  int64     `json:"total_amount"`
@@ -66,7 +68,7 @@ type CreateRedEnvelopeCreateByWallet []struct {
 	ClaimedCount int64     `json:"claimed_count"`
 }
 
-type ClaimedRedEnvelopeByWallet []struct {
+type ClaimedRedEnvelopeByUser []struct {
 	ID              string    `json:"id"`
 	RedEnvelopeID   string    `json:"red_envelope_id"`
 	Name            string    `json:"name"`
@@ -94,9 +96,9 @@ type RedEnvelopeCloseSesssion struct {
 }
 
 type ClaimAmount struct {
-	Id                   int64
-	Amount               int64
-	Description          string
+	Id          int64
+	Amount      int64
+	Description string
 }
 
 type RedEnvelopeSplitMoney struct {

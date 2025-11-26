@@ -16,15 +16,16 @@ const (
 
 // Validation Errors
 const (
-	ErrInvalidRequestBody = "Invalid request body"
-	ErrInvalidCampaignID  = "Invalid campaign ID"
-	ErrInvalidStatus      = "Invalid status"
-	ErrNoFieldsToUpdate   = "No fields to update"
-	ErrInvalidDateFormat  = "Invalid date format"
-	ErrEndDateInPast      = "End date must be in the future"
-	ErrInvalidGoalAmount  = "Goal amount must be greater than 0"
-	ErrInvalidURL         = "Invalid URL format"
-	ErrInternalServer     = "Internal server error"
+	ErrInvalidRequestBody   = "Invalid request body"
+	ErrInvalidCampaignID    = "Invalid campaign ID"
+	ErrInvalidStatus        = "Invalid status"
+	ErrNoFieldsToUpdate     = "No fields to update"
+	ErrInvalidDateFormat    = "Invalid date format"
+	ErrEndDateInPast        = "End date must be in the future"
+	ErrInvalidGoalAmount    = "Goal amount must be greater than 0"
+	ErrInvalidURL           = "Invalid URL format"
+	ErrInternalServer       = "Internal server error"
+	ErrMissingRedEnvelopeID = "Red Envelope ID must not null"
 )
 
 // Database Errors
@@ -45,12 +46,12 @@ const (
 
 // Business Logic Errors
 const (
-	ErrCampaignAlreadyActive      = "Campaign is already active"
-	ErrCampaignAlreadyClosed      = "Campaign is already closed"
-	ErrCannotActivateClosed       = "Cannot activate a closed campaign"
-	ErrCannotUpdateClosed         = "Cannot update a closed campaign"
-	ErrCampaignExpired            = "Campaign has expired"
-	ErrUserIdNotMathRedEnvelopeId = "User id does not match owner of red envelope"
+	ErrCampaignAlreadyActive       = "Campaign is already active"
+	ErrCampaignAlreadyClosed       = "Campaign is already closed"
+	ErrCannotActivateClosed        = "Cannot activate a closed campaign"
+	ErrCannotUpdateClosed          = "Cannot update a closed campaign"
+	ErrCampaignExpired             = "Campaign has expired"
+	ErrUserIDNotMatchRedEnvelopeID = "User id does not match owner of red envelope"
 )
 
 // Success Messages

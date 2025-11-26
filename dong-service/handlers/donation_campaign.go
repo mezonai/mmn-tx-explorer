@@ -50,6 +50,13 @@ func (h *DonationCampaignHandler) CreateCampaign(c *gin.Context) {
 		return
 	}
 
+	// Validate goal is not negative
+	if req.Goal != nil && *req.Goal < 0 {
+		logger.Error().Int64("user_id", userID).Int64("goal", *req.Goal).Msg("Invalid goal amount: goal cannot be negative")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidGoalAmount))
+		return
+	}
+
 	logger.Info().Int64("user_id", userID).Str("name", req.Name).Msg("Creating new donation campaign")
 
 	campaign, err := h.repo.Create(&req, userID)
@@ -87,6 +94,13 @@ func (h *DonationCampaignHandler) CreateAndActiveCampaign(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error().Err(err).Int64("user_id", userID).Msg("Invalid request body for campaign creation and activation")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+err.Error()))
+		return
+	}
+
+	// Validate goal is not negative
+	if req.Goal != nil && *req.Goal < 0 {
+		logger.Error().Int64("user_id", userID).Int64("goal", *req.Goal).Msg("Invalid goal amount: goal cannot be negative")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidGoalAmount))
 		return
 	}
 
@@ -223,6 +237,13 @@ func (h *DonationCampaignHandler) UpdateCampaign(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error().Err(err).Int64("user_id", userID).Int64("campaign_id", id).Msg("Invalid request body for campaign update")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+err.Error()))
+		return
+	}
+
+	// Validate goal is not negative
+	if req.Goal != nil && *req.Goal < 0 {
+		logger.Error().Int64("user_id", userID).Int64("goal", *req.Goal).Msg("Invalid goal amount: goal cannot be negative")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidGoalAmount))
 		return
 	}
 

@@ -63,6 +63,8 @@ definitions:
         type: string
       creator:
         type: string
+      current_balance:
+        type: string
       description:
         type: string
       donation_wallet:
@@ -295,6 +297,23 @@ definitions:
       goal:
         type: integer
       url:
+        type: string
+    type: object
+  models.WalletDetailResponse:
+    properties:
+      account_nonce:
+        type: integer
+      address:
+        type: string
+      balance:
+        type: string
+      created_at:
+        type: string
+      last_balance_update:
+        type: integer
+      transaction_count:
+        type: integer
+      updated_at:
         type: string
     type: object
 host: localhost:8888
@@ -746,12 +765,11 @@ paths:
       summary: Get a donation campaign by slug
       tags:
       - campaigns
-  /api/v1/red-envelopes/claimed-by-wallet:
+  /api/v1/red-envelopes/claimed-by-user:
     get:
       consumes:
       - application/json
-      description: Retrieve red envelope claims associated with a specific wallet
-        address
+      description: Retrieve red envelope claimed associated with a specific user
       produces:
       - application/json
       responses:
@@ -774,7 +792,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/models.Response'
-      summary: Get red envelope claims by wallet address
+      summary: Get red envelope claimed by user
       tags:
       - red_envelopes
   /api/v1/red-envelopes/close-session:
@@ -783,7 +801,7 @@ paths:
       - application/json
       description: close red envelope session
       parameters:
-      - description: Get Detail Request
+      - description: Close Session Request
         in: body
         name: request
         required: true
@@ -824,11 +842,11 @@ paths:
       summary: close red envelope session
       tags:
       - red_envelopes
-  /api/v1/red-envelopes/created-by-wallet:
+  /api/v1/red-envelopes/created-by-user:
     get:
       consumes:
       - application/json
-      description: Retrieve red envelopes created by a specific wallet address
+      description: Retrieve red envelopes created by a specific user
       produces:
       - application/json
       responses:
@@ -851,27 +869,20 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/models.Response'
-      summary: Get red envelopes created by wallet address
+      summary: Get red envelopes created by user
       tags:
       - red_envelopes
-  /api/v1/red-envelopes/detail:
-    post:
+  /api/v1/red-envelopes/detail/:id:
+    get:
       consumes:
       - application/json
-      description: get detail red envelope by id and wallet address
+      description: get detail red envelope by id
       parameters:
-      - description: Get Detail Request
-        in: body
-        name: request
+      - description: Red Envelope ID
+        in: path
+        name: id
         required: true
-        schema:
-          properties:
-            id:
-              format: int64
-              type: integer
-            wallet_address:
-              type: string
-          type: object
+        type: integer
       produces:
       - application/json
       responses:
@@ -900,7 +911,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/models.Response'
-      summary: get detail red envelope by id and wallet address
+      summary: get detail red envelope by id
       tags:
       - red_envelopes
   /api/v1/red-envelopes/stats:
@@ -931,7 +942,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: update status red envelope to published
+      description: update status red envelope to published or failed
       parameters:
       - description: Update Status Request
         in: body
@@ -975,12 +986,12 @@ paths:
             $ref: '#/definitions/models.Response'
       security:
       - BearerAuth: []
-      summary: update status red envelope to published
+      summary: update status red envelope
       tags:
       - red_envelopes
-  /api/v1/red_envelopes/:id:
+  /api/v1/red_envelopes/:id/recipients:
     get:
-      description: Retrieve details of a red envelope session by its ID
+      description: Returns a list of users who have received red envelope
       parameters:
       - description: Red Envelope ID
         in: path
@@ -1011,7 +1022,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/models.Response'
-      summary: Get red envelope by ID
+      summary: Get Recipients by red envelope id
       tags:
       - red_envelopes
   /api/v1/red_envelopes/create:
@@ -1073,6 +1084,42 @@ paths:
       summary: Get donation campaign statistics
       tags:
       - campaigns
+  /api/v1/wallets/{address}/detail:
+    get:
+      description: Get detailed information about a wallet by its address
+      parameters:
+      - description: Wallet address
+        in: path
+        name: address
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.WalletDetailResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Get wallet details
+      tags:
+      - wallets
   /health:
     get:
       consumes:
