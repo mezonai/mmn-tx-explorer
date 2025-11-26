@@ -15,8 +15,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const DEFAULT_FAILURES_PER_POLL = 10
-const DEFAULT_FAILURE_TRIGGER_INTERVAL = 1000
+const defaultFailuresPerPoll = 10
+const defaultFailureTriggerInterval = 1000
 
 type FailureRecoverer struct {
 	failuresPerPoll   int
@@ -25,20 +25,20 @@ type FailureRecoverer struct {
 	rpc               rpc.IRPCClient
 }
 
-func NewFailureRecoverer(rpc rpc.IRPCClient, storage storage.IStorage) *FailureRecoverer {
+func NewFailureRecoverer(rpcClient rpc.IRPCClient, store storage.IStorage) *FailureRecoverer {
 	failuresPerPoll := config.Cfg.FailureRecoverer.BlocksPerRun
 	if failuresPerPoll == 0 {
-		failuresPerPoll = DEFAULT_FAILURES_PER_POLL
+		failuresPerPoll = defaultFailuresPerPoll
 	}
 	triggerInterval := config.Cfg.FailureRecoverer.Interval
 	if triggerInterval == 0 {
-		triggerInterval = DEFAULT_FAILURE_TRIGGER_INTERVAL
+		triggerInterval = defaultFailureTriggerInterval
 	}
 	return &FailureRecoverer{
 		triggerIntervalMs: triggerInterval,
 		failuresPerPoll:   failuresPerPoll,
-		storage:           storage,
-		rpc:               rpc,
+		storage:           store,
+		rpc:               rpcClient,
 	}
 }
 
@@ -55,8 +55,8 @@ func (fr *FailureRecoverer) Start(ctx context.Context) {
 			log.Info().Msg("Failure recoverer shutting down")
 			return
 		case <-ticker.C:
-			blockFailures, err := fr.storage.OrchestratorStorage.GetBlockFailures(storage.QueryFilter{
-				ChainId: fr.rpc.GetChainID(),
+			blockFailures, err := fr.storage.OrchestratorStorage.GetBlockFailures(&storage.QueryFilter{
+				ChainID: fr.rpc.GetChainID(),
 				Limit:   fr.failuresPerPoll,
 			})
 			if err != nil {
@@ -74,8 +74,8 @@ func (fr *FailureRecoverer) Start(ctx context.Context) {
 
 			// Trigger worker for recovery
 			log.Debug().Msgf("Triggering Failure Recoverer for blocks: %v", blocksToTrigger)
-			worker := worker.NewWorker(fr.rpc)
-			results := worker.Run(ctx, blocksToTrigger)
+			recoveryWorker := worker.NewWorker(fr.rpc)
+			results := recoveryWorker.Run(ctx, blocksToTrigger)
 			fr.handleWorkerResults(blockFailures, results)
 
 			// Track recovery activity
@@ -94,7 +94,8 @@ func (fr *FailureRecoverer) handleWorkerResults(blockFailures []common.BlockFail
 	var newBlockFailures []common.BlockFailure
 	var failuresToDelete []common.BlockFailure
 	var successfulResults []common.BlockData
-	for _, result := range results {
+	for i := range results {
+		result := &results[i]
 		blockFailureForBlock, ok := blockFailureMap[result.BlockNumber]
 		if result.Error != nil {
 			failureCount := 1
@@ -105,7 +106,7 @@ func (fr *FailureRecoverer) handleWorkerResults(blockFailures []common.BlockFail
 				BlockNumber:   result.BlockNumber,
 				FailureReason: result.Error.Error(),
 				FailureTime:   time.Now(),
-				ChainId:       fr.rpc.GetChainID(),
+				ChainID:       fr.rpc.GetChainID(),
 				FailureCount:  failureCount,
 			})
 		} else {

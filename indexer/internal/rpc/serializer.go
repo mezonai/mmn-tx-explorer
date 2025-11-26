@@ -10,15 +10,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func SerializeFullBlocks(chainId *big.Int, blocks []RPCFetchBatchResult[*big.Int, common.RawBlock], logs []RPCFetchBatchResult[*big.Int, common.RawLogs], traces []RPCFetchBatchResult[*big.Int, common.RawTraces], receipts []RPCFetchBatchResult[*big.Int, common.RawReceipts]) []GetFullBlockResult {
+func SerializeFullBlocks(chainID *big.Int, blocks []RPCFetchBatchResult[*big.Int, common.RawBlock], logs []RPCFetchBatchResult[*big.Int, common.RawLogs], traces []RPCFetchBatchResult[*big.Int, common.RawTraces], receipts []RPCFetchBatchResult[*big.Int, common.RawReceipts]) []GetFullBlockResult {
 	if blocks == nil {
 		return []GetFullBlockResult{}
 	}
 	results := make([]GetFullBlockResult, 0, len(blocks))
-
-	// rawLogsMap := mapBatchResultsByBlockNumber[common.RawLogs](logs)
-	// rawReceiptsMap := mapBatchResultsByBlockNumber[common.RawReceipts](receipts)
-	// rawTracesMap := mapBatchResultsByBlockNumber[common.RawTraces](traces)
 
 	for _, rawBlockData := range blocks {
 		result := GetFullBlockResult{
@@ -37,36 +33,8 @@ func SerializeFullBlocks(chainId *big.Int, blocks []RPCFetchBatchResult[*big.Int
 			continue
 		}
 
-		result.Data.Block = serializeBlock(chainId, rawBlockData.Result)
-		result.Data.Transactions = serializeTransactions(chainId, rawBlockData.Result["transactions"].([]interface{}), nil)
-
-		// if rawReceipts, exists := rawReceiptsMap[rawBlockData.Key.String()]; exists {
-		// 	if rawReceipts.Error != nil {
-		// 		result.Error = rawReceipts.Error
-		// 	} else {
-		// 		result.Data.Logs = serializeLogsFromReceipts(chainId, rawReceipts.Result, result.Data.Block)
-		// 		result.Data.Transactions = serializeTransactions(chainId, rawBlockData.Result["transactions"].([]interface{}), blockTimestamp, &rawReceipts.Result)
-		// 	}
-		// } else {
-		// 	if rawLogs, exists := rawLogsMap[rawBlockData.Key.String()]; exists {
-		// 		if rawLogs.Error != nil {
-		// 			result.Error = rawLogs.Error
-		// 		} else {
-		// 			result.Data.Logs = serializeLogs(chainId, rawLogs.Result, result.Data.Block)
-		// 			result.Data.Transactions = serializeTransactions(chainId, rawBlockData.Result["transactions"].([]interface{}), blockTimestamp, nil)
-		// 		}
-		// 	}
-		// }
-
-		// if result.Error == nil {
-		// 	if rawTraces, exists := rawTracesMap[rawBlockData.Key.String()]; exists {
-		// 		if rawTraces.Error != nil {
-		// 			result.Error = rawTraces.Error
-		// 		} else {
-		// 			result.Data.Traces = serializeTraces(chainId, rawTraces.Result, result.Data.Block)
-		// 		}
-		// 	}
-		// }
+		result.Data.Block = serializeBlock(chainID, rawBlockData.Result)
+		result.Data.Transactions = serializeTransactions(chainID, rawBlockData.Result["transactions"].([]interface{}), nil)
 
 		results = append(results, result)
 	}
@@ -74,7 +42,7 @@ func SerializeFullBlocks(chainId *big.Int, blocks []RPCFetchBatchResult[*big.Int
 	return results
 }
 
-func SerializeBlocks(chainId *big.Int, blocks []RPCFetchBatchResult[*big.Int, common.RawBlock]) []GetBlocksResult {
+func SerializeBlocks(chainID *big.Int, blocks []RPCFetchBatchResult[*big.Int, common.RawBlock]) []GetBlocksResult {
 	results := make([]GetBlocksResult, 0, len(blocks))
 
 	for _, rawBlock := range blocks {
@@ -94,16 +62,16 @@ func SerializeBlocks(chainId *big.Int, blocks []RPCFetchBatchResult[*big.Int, co
 			continue
 		}
 
-		result.Data = serializeBlock(chainId, rawBlock.Result)
+		result.Data = serializeBlock(chainID, rawBlock.Result)
 		results = append(results, result)
 	}
 
 	return results
 }
 
-func serializeBlock(chainId *big.Int, block common.RawBlock) common.Block {
+func serializeBlock(chainID *big.Int, block common.RawBlock) common.Block {
 	return common.Block{
-		ChainId:          chainId,
+		ChainID:          chainID,
 		Number:           hexToBigInt(block["number"]),
 		Hash:             interfaceToString(block["hash"]),
 		ParentHash:       interfaceToString(block["parentHash"]),
@@ -112,7 +80,7 @@ func serializeBlock(chainId *big.Int, block common.RawBlock) common.Block {
 	}
 }
 
-func serializeTransactions(chainId *big.Int, transactions []interface{}, receipts *common.RawReceipts) []common.Transaction {
+func serializeTransactions(chainID *big.Int, transactions []interface{}, receipts *common.RawReceipts) []common.Transaction {
 	if len(transactions) == 0 {
 		return []common.Transaction{}
 	}
@@ -132,14 +100,14 @@ func serializeTransactions(chainId *big.Int, transactions []interface{}, receipt
 			log.Debug().Msgf("Failed to serialize transaction: %v", rawTx)
 			continue
 		}
-		serializedTransactions = append(serializedTransactions, serializeTransaction(chainId, tx))
+		serializedTransactions = append(serializedTransactions, serializeTransaction(chainID, tx))
 	}
 	return serializedTransactions
 }
 
-func serializeTransaction(chainId *big.Int, tx map[string]interface{}) common.Transaction {
+func serializeTransaction(chainID *big.Int, tx map[string]interface{}) common.Transaction {
 	return common.Transaction{
-		ChainId:              chainId,
+		ChainID:              chainID,
 		Hash:                 interfaceToString(tx["hash"]),
 		Nonce:                hexToUint64(tx["nonce"]),
 		BlockHash:            interfaceToString(tx["blockHash"]),
@@ -155,9 +123,7 @@ func serializeTransaction(chainId *big.Int, tx map[string]interface{}) common.Tr
 	}
 }
 
-/**
- * Extracts the function selector (first 4 bytes) from a transaction input.
- */
+// ExtractFunctionSelector extracts the function selector (first 4 bytes) from a transaction input.
 func ExtractFunctionSelector(s string) string {
 	if len(s) < 10 {
 		return ""
@@ -211,12 +177,12 @@ func interfaceToString(value interface{}) string {
 	return res
 }
 
-func SerializeTransactions(chainId *big.Int, transactions []RPCFetchBatchResult[string, common.RawTransaction]) []GetTransactionsResult {
+func SerializeTransactions(chainID *big.Int, transactions []RPCFetchBatchResult[string, common.RawTransaction]) []GetTransactionsResult {
 	results := make([]GetTransactionsResult, 0, len(transactions))
 	for _, transaction := range transactions {
 		result := GetTransactionsResult{
 			Error: transaction.Error,
-			Data:  serializeTransaction(chainId, transaction.Result),
+			Data:  serializeTransaction(chainID, transaction.Result),
 		}
 		results = append(results, result)
 	}

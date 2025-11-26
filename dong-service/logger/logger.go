@@ -12,6 +12,11 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
+const (
+	LogOutputStdout = "stdout"
+	LogOutputFile   = "file"
+)
+
 var Logger zerolog.Logger
 
 // LogConfig represents logging configuration
@@ -36,23 +41,23 @@ func InitLogger(cfg *LogConfig) error {
 
 	// Default to stdout if not specified
 	if cfg.Output == "" {
-		cfg.Output = "stdout"
+		cfg.Output = LogOutputStdout
 	}
 
 	switch cfg.Output {
-	case "stdout":
+	case LogOutputStdout:
 		// Use console format for stdout
 		writer = zerolog.ConsoleWriter{
 			Out:        os.Stdout,
 			TimeFormat: "2006-01-02 15:04:05",
 		}
-	case "file":
+	case LogOutputFile:
 		if cfg.FilePath == "" {
 			return fmt.Errorf("file_path is required when output is 'file'")
 		}
 		// Create log directory if it doesn't exist
 		logDir := filepath.Dir(cfg.FilePath)
-		if err := os.MkdirAll(logDir, 0755); err != nil {
+		if err := os.MkdirAll(logDir, 0o755); err != nil {
 			return fmt.Errorf("failed to create log directory: %w", err)
 		}
 
