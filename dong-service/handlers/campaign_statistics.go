@@ -7,8 +7,6 @@ import (
 	"dong-service/repository"
 	"dong-service/utils"
 	"net/http"
-	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -85,88 +83,4 @@ func (h *CampaignStatisticsHandler) SyncCampaign(c *gin.Context) {
 
 	logger.Info().Int64("campaign_id", id).Int64("total_amount", syncResponse.TotalAmount).Int64("total_contributors", syncResponse.TotalContributors).Int64("recent_amount", syncResponse.RecentAmount).Msg("Campaign synced successfully")
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Campaign synced successfully", syncResponse))
-}
-
-// RecordDonation godoc
-// @Summary Record a donation for a campaign (best-effort)
-// @Description Record a donation amount and update campaign statistics immediately
-// @Tags campaigns
-// @Accept json
-// @Produce json
-// @Param id path int true "Campaign ID"
-// @Param payload body object true "{ amount: number|string, sender_wallet?: string }"
-// @Success 200 {object} models.Response{data=models.SyncCampaignResponse}
-// @Failure 400 {object} models.Response
-// @Failure 500 {object} models.Response
-// @Router /api/v1/campaigns/{id}/donation [post]
-func (h *CampaignStatisticsHandler) RecordDonation(c *gin.Context) {
-	id, err := utils.ParseInt64Param(c, "id")
-	if err != nil {
-		logger.Error().Err(err).Msg("Invalid campaign ID for donation")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidCampaignID))
-		return
-	}
-
-	var payload map[string]interface{}
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		logger.Error().Err(err).Int64("campaign_id", id).Msg("Invalid donation payload")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+err.Error()))
-		return
-	}
-
-	// Parse amount (accept either number or string)
-	rawAmount, ok := payload["amount"]
-	if !ok {
-		logger.Error().Int64("campaign_id", id).Msg("Missing amount in donation payload")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Missing amount field"))
-		return
-	}
-
-	var amountInt int64
-	switch v := rawAmount.(type) {
-	case float64:
-		amountInt = int64(v)
-	case int:
-		amountInt = int64(v)
-	case int64:
-		amountInt = v
-	case string:
-		// allow numeric string
-		parsed, err := strconv.ParseInt(v, 10, 64)
-		if err != nil {
-			logger.Error().Err(err).Int64("campaign_id", id).Str("amount", v).Msg("Invalid amount string")
-			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid amount value"))
-			return
-		}
-		amountInt = parsed
-	default:
-		logger.Error().Int64("campaign_id", id).Msg("Unsupported amount type in payload")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid amount value"))
-		return
-	}
-
-	if amountInt <= 0 {
-		logger.Error().Int64("campaign_id", id).Int64("amount", amountInt).Msg("Invalid donation amount")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Amount must be greater than zero"))
-		return
-	}
-
-	var senderPtr *string
-	if s, ok := payload["sender_wallet"]; ok {
-		if str, ok := s.(string); ok && str != "" {
-			senderPtr = &str
-		}
-	}
-
-	// Record donation in repository (pass donation time for lookback guard)
-	now := time.Now()
-	resp, err := h.statsRepo.RecordDonation(c.Request.Context(), id, amountInt, senderPtr, &now)
-	if err != nil {
-		logger.Error().Err(err).Int64("campaign_id", id).Msg("Failed to record donation")
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to record donation: "+err.Error()))
-		return
-	}
-
-	logger.Info().Int64("campaign_id", id).Int64("total_amount", resp.TotalAmount).Int64("recent_amount", resp.RecentAmount).Msg("Donation recorded and stats updated")
-	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Donation recorded", resp))
 }

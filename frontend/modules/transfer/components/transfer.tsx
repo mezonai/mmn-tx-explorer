@@ -96,13 +96,6 @@ export const Transfer = () => {
             const resp = await DonationCampaignService.getCampaigns({ page: 1, limit: 5, search: recipient });
             const found = (resp.data || []).find((c) => c.donation_wallet?.toLowerCase() === recipient.toLowerCase());
             if (found) {
-              const scaled = mmnClient.scaleAmountToDecimals(form.amount);
-              const numeric = typeof scaled === 'string' ? Number(scaled) : scaled;
-              await DonationCampaignService.recordDonation({
-                campaignId: String(found.id),
-                amount: numeric,
-                senderWallet: user?.walletAddress,
-              });
               await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CAMPAIGNS] });
               await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CAMPAIGN, String(found.id)] });
             }

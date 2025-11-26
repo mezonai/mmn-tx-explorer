@@ -77,19 +77,8 @@ export function DonateDialog({ walletAddress, campaignId }: { walletAddress: str
         setTransactionHash(result.txHash || '');
         setTimeout(async () => await queryClient.invalidateQueries({ queryKey: [TRANSACTIONS_QUERY_KEY] }), 1000);
 
-        try {
-          const scaled = mmnClient.scaleAmountToDecimals(form.amount);
-          const amountToSend = typeof scaled === 'string' ? scaled : String(scaled);
-          await DonationCampaignService.recordDonation({
-            campaignId: campaignId,
-            amount: amountToSend,
-            senderWallet: user?.walletAddress,
-          });
-          await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CAMPAIGNS] });
-          await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CAMPAIGN, campaignId] });
-        } catch (err) {
-          console.warn('Record donation best-effort failed:', err);
-        }
+        await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CAMPAIGNS] });
+        await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CAMPAIGN, campaignId] });
       } else {
         toast.error(result.error || 'Donation fail. Please try again.');
       }

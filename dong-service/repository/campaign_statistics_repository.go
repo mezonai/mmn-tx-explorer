@@ -41,6 +41,9 @@ type Campaign struct {
 
 // GetActiveCampaigns retrieves all active donation campaigns
 func (r *CampaignStatisticsRepository) GetActiveCampaigns(ctx context.Context) ([]Campaign, error) {
+	// Build query with parameter placeholders for statuses (campaign and transaction)
+	// and cast aggregates to BIGINT to avoid type issues when assigning to
+	// BIGINT columns like recent_amount and total_withdrawn.
 	query := fmt.Sprintf(`
 		SELECT id, donation_wallet
 		FROM %s.donation_campaign
@@ -134,7 +137,7 @@ func (r *CampaignStatisticsRepository) UpdateCampaignStatistics(ctx context.Cont
 		INNER JOIN (
 			SELECT 
 				campaign_wallet,
-				SUM(total_donate) as total_amount,
+				SUM(total_donate)::BIGINT as total_amount,
 				COUNT(DISTINCT sender_wallet) as contributor_count,
 				SUM(total_donate) - COALESCE(w.balance, 0) AS total_withdrawn
 			FROM %s.campaign_contributor cc
@@ -144,18 +147,20 @@ func (r *CampaignStatisticsRepository) UpdateCampaignStatistics(ctx context.Cont
 		LEFT JOIN (
 			SELECT 
 				to_address as campaign_wallet,
-				SUM(value) as recent_amount
-			FROM %s.transactions
-			WHERE status = '%s'
+				SUM(value)::BIGINT as recent_amount
+				FROM %s.transactions
+			WHERE status = $2
 				AND value > 0
 				AND transaction_timestamp >= NOW() - INTERVAL '%d days'
 			GROUP BY to_address
 		) recent_stats ON dc.donation_wallet = recent_stats.campaign_wallet
 		WHERE cs.campaign_wallet = dc.donation_wallet
 		AND dc.status = $1
-	`, r.dongSchema, r.dongSchema, r.dongSchema, r.indexerSchema, r.indexerSchema, constants.TransactionStatusFINALIZED, days)
+	`, r.dongSchema, r.dongSchema, r.dongSchema, r.indexerSchema, r.indexerSchema, days)
 
-	result, err := r.db.ExecContext(ctx, query, constants.CampaignStatusActive)
+	// Pass campaign status and transaction status as parameters to avoid
+	// format-time substitution issues and protect against SQL errors.
+	result, err := r.db.ExecContext(ctx, query, constants.CampaignStatusActive, constants.TransactionStatusFINALIZED)
 	if err != nil {
 		return 0, fmt.Errorf("failed to update campaign statistics: %w", err)
 	}
@@ -229,14 +234,15 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 	}
 
 	// Update statistics for this specific campaign
-	// Get lookback window from config
-	windowDays := 7 // default
-	if cfg, err := config.LoadConfig("config/config.yml"); err == nil {
-		if cfg.Scheduler.RecentStatsWindowDays > 0 {
-			windowDays = cfg.Scheduler.RecentStatsWindowDays
+	var windowDays int
+	windowDays = r.recentWindowDays
+	if windowDays <= 0 {
+		if cfg, err := config.LoadConfig("config/config.yml"); err == nil {
+			if cfg.Scheduler.RecentStatsWindowDays > 0 {
+				windowDays = cfg.Scheduler.RecentStatsWindowDays
+			}
 		}
 	}
-
 	// Calculate recent_amount (sum of donations in lookback window)
 	recentAmountQuery := fmt.Sprintf(`
 		SELECT COALESCE(SUM(value), 0)
@@ -265,7 +271,7 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 		INNER JOIN (
 			SELECT 
 				campaign_wallet,
-				SUM(total_donate) as total_amount,
+				SUM(total_donate)::BIGINT as total_amount,
 				COUNT(DISTINCT sender_wallet) as contributor_count,
 				SUM(total_donate) - COALESCE(w.balance, 0) AS total_withdrawn
 			FROM %s.campaign_contributor cc
@@ -312,92 +318,4 @@ func (r *CampaignStatisticsRepository) GetStats() (*models.CampaignStatsResponse
 	}
 
 	return &stats, nil
-}
-
-func (r *CampaignStatisticsRepository) RecordDonation(ctx context.Context, campaignID int64, amount int64, senderPtr *string, donationTime *time.Time) (models.SyncCampaignResponse, error) {
-	// Get campaign wallet
-	var campaignWallet string
-	err := r.db.QueryRowContext(ctx, fmt.Sprintf(`SELECT donation_wallet FROM %s.donation_campaign WHERE id = $1`, r.dongSchema), campaignID).Scan(&campaignWallet)
-	if err != nil {
-		return models.SyncCampaignResponse{}, fmt.Errorf("failed to get campaign wallet: %w", err)
-	}
-
-	// Insert or update contributor
-	if senderPtr != nil && *senderPtr != "" {
-		upsertContributor := fmt.Sprintf(`
-			INSERT INTO %s.campaign_contributor (sender_wallet, campaign_wallet, total_donate, updated_at)
-			VALUES ($1, $2, $3, NOW())
-			ON CONFLICT (sender_wallet, campaign_wallet)
-			DO UPDATE SET total_donate = campaign_contributor.total_donate + EXCLUDED.total_donate, updated_at = NOW()
-		`, r.dongSchema)
-		_, err = r.db.ExecContext(ctx, upsertContributor, *senderPtr, campaignWallet, amount)
-		if err != nil {
-			return models.SyncCampaignResponse{}, fmt.Errorf("failed to upsert contributor: %w", err)
-		}
-	}
-
-	// Insert transaction record (optional, if not already handled elsewhere)
-	// -- Skipped here, assumed handled by indexer or other service --
-
-	// Get lookback window from config
-	windowDays := 7 // default
-	if cfg, errCfg := config.LoadConfig("config/config.yml"); errCfg == nil {
-		if cfg.Scheduler.RecentStatsWindowDays > 0 {
-			windowDays = cfg.Scheduler.RecentStatsWindowDays
-		}
-	}
-
-	// Calculate recent_amount (sum of donations in lookback window)
-	recentAmountQuery := fmt.Sprintf(`
-		SELECT COALESCE(SUM(value), 0)
-		FROM %s.transactions
-		WHERE to_address = $1
-		AND status = $2
-		AND value > 0
-		AND transaction_timestamp >= NOW() - INTERVAL '%d days'
-	`, r.indexerSchema, windowDays)
-	var recentAmount int64
-	err = r.db.QueryRowContext(ctx, recentAmountQuery, campaignWallet, constants.TransactionStatusFINALIZED).Scan(&recentAmount)
-	if err != nil {
-		recentAmount = 0 // fallback
-	}
-
-	// Update campaign_statistics for this campaign
-	updateStatsQuery := fmt.Sprintf(`
-		UPDATE %s.campaign_statistics cs
-		SET 
-			total_amount = cc_stats.total_amount,
-			total_contributor = cc_stats.contributor_count,
-			total_withdrawn = cc_stats.total_withdrawn,
-			recent_amount = $2,
-			updated_at = NOW()
-		FROM (
-			SELECT 
-				campaign_wallet,
-				SUM(total_donate) as total_amount,
-				COUNT(DISTINCT sender_wallet) as contributor_count,
-				SUM(total_donate) - COALESCE(w.balance, 0) AS total_withdrawn
-			FROM %s.campaign_contributor cc
-			LEFT JOIN %s.wallet w ON w.address = cc.campaign_wallet
-			WHERE cc.campaign_wallet = $1
-			GROUP BY cc.campaign_wallet, w.balance
-		) cc_stats
-		WHERE cs.campaign_wallet = cc_stats.campaign_wallet
-		RETURNING cs.total_amount, cs.total_contributor, cs.total_withdrawn, cs.recent_amount
-	`, r.dongSchema, r.dongSchema, r.indexerSchema)
-
-	var updatedTotalAmount int64
-	var updatedTotalContributor int64
-	var updatedTotalWithdrawn int64
-	var updatedRecentAmount int64
-	if err := r.db.QueryRowContext(ctx, updateStatsQuery, campaignWallet, recentAmount).Scan(&updatedTotalAmount, &updatedTotalContributor, &updatedTotalWithdrawn, &updatedRecentAmount); err != nil {
-		return models.SyncCampaignResponse{}, fmt.Errorf("failed to update campaign statistics: %w", err)
-	}
-
-	return models.SyncCampaignResponse{
-		TotalAmount:       updatedTotalAmount,
-		TotalContributors: updatedTotalContributor,
-		TotalWithdrawn:    updatedTotalWithdrawn,
-		RecentAmount:      updatedRecentAmount,
-	}, nil
 }
