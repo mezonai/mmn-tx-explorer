@@ -131,6 +131,7 @@ func (s *BlockchainService) TransferMoney(encryptedPrivateKey, fromAddress, toAd
 	privateKey, err := utils.DecryptPrivateKey(encryptedPrivateKey)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to decrypt private key")
+		return err
 	} else {
 		txHash, err := s.Transfer(
 			fromAddress,
@@ -152,5 +153,4 @@ func (s *BlockchainService) TransferMoney(encryptedPrivateKey, fromAddress, toAd
 			return nil
 		}
 	}
-	return nil
 }

@@ -37,10 +37,10 @@ func internalGenerate(totalAmount, minAmount, maxAmount int64, totalClaims int) 
 		}
 
 		randomAmount := int64(0)
-		if maxAllowed > minAmount {
+		if maxAllowed >= minAllowed {
 			randomAmount = rand.Int63n(maxAllowed-minAllowed+1) + minAllowed
 		} else {
-			randomAmount = minAmount
+			randomAmount = minAllowed
 		}
 
 		amounts[i] = randomAmount

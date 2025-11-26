@@ -36,7 +36,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		logger.Error().Err(err).Msg("Failed to initialize blockchain service")
 	}
 
-	walletRepo := repository.NewIntermediaryWalletRepository(database.GetDB())
+	walletRepo := repository.NewIntermediaryWalletRepository(database.GetDB(), cfg.Database.Schema)
 	redEnvelopeRepo := repository.NewRedEnvelopeRepository(database.GetDB(), cfg.Database.Schema, blockchainService, walletRepo)
 	redEnvelopeHandler := handlers.NewRedEnvelopeHandler(redEnvelopeRepo, walletRepo)
 
