@@ -115,9 +115,8 @@ export interface RedEnvelopeDetailStats {
   status: string;
 }
 
-export interface RedEnvelopeDetailRequest {
+export interface CloseSessionRequest {
   id: UUID;
-  wallet_address: string;
 }
 
 export interface RedEnvelopeDetailRecipient {

@@ -69,7 +69,7 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
       }
 
       const account = await mmnClient.getAccountByUserId(user.id);
-      if (Number(NumberUtil.formatWithCommasAndScale(account.balance)) < form.totalAmount) {
+      if (Number(account.balance)/ 1000000 < form.totalAmount) {
         throw new Error("Balance Insufficient"); 
       };
 

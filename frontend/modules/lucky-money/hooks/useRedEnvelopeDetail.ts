@@ -6,30 +6,28 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { APP_CONFIG } from '@/configs/app.config';
-import { RedEnvelopeDetailRequest, RedEnvelopeDetailStats } from '../type';
+import { CloseSessionRequest, RedEnvelopeDetailStats } from '../type';
 import { formatClaimDate, getStatusDisplay } from '../utils';
 import { QUERY_KEYS } from '../constants';
 import { RedEnvelopeService } from '../api';
 
 export const useRedEnvelopeDetail = () => {
   const [qrSize, setQrSize] = useState(176);
-  const { user } = useUser();
   const { redEnvelopeId } = useParams<{ redEnvelopeId: UUID }>();
   const queryClient = useQueryClient();
 
-  const request: RedEnvelopeDetailRequest = useMemo(() => ({
+  const request: CloseSessionRequest = useMemo(() => ({
     id: redEnvelopeId,
-    wallet_address: user?.walletAddress || '',
-  }), [redEnvelopeId, user?.walletAddress]);
+  }), [redEnvelopeId]);
 
-  const { stats, isLoading, isError, refetch } = useGetLuckMoneyDetail(request);
+  const { stats, isLoading, isError, refetch } = useGetLuckMoneyDetail(redEnvelopeId);
   const recipients = useGetLuckMoneyRecipients(redEnvelopeId || '');
 
   const { mutate: closeSession, isPending: isClosing } = useMutation({
     mutationFn: () => RedEnvelopeService.closeSession(request),
     onSuccess: () => {
       toast.success('Session closed successfully!');
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RED_ENVELOPE_DETAIL, request] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RED_ENVELOPE_DETAIL, redEnvelopeId] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CREATED_ENVELOPES] })
     },
     onError: (error) => {
@@ -111,10 +109,10 @@ export const useRedEnvelopeDetail = () => {
   };
 };
 
-export function useGetLuckMoneyDetail(request: RedEnvelopeDetailRequest) {
+export function useGetLuckMoneyDetail(id: UUID) {
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: [QUERY_KEYS.RED_ENVELOPE_DETAIL, request],
-    queryFn: () => RedEnvelopeService.getRedEnvelopeStatsById(request),
+    queryKey: [QUERY_KEYS.RED_ENVELOPE_DETAIL, id],
+    queryFn: () => RedEnvelopeService.getRedEnvelopeStatsById(id),
   });
 
   const fallback: RedEnvelopeDetailStats = {

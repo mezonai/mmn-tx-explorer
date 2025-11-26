@@ -1,5 +1,5 @@
 import { apiDongClient } from "@/service";
-import { ClaimedEnvelopes, ClaimEnvelopeRequest, CreatedEnvelopes, CreateRedEnvelopeRequest, EnvelopeListParams, RedEnvelope, RedEnvelopeClaim, RedEnvelopeDetailRecipient, RedEnvelopeDetailRequest, RedEnvelopeDetailStats, RedEnvelopeStats, UpdateStatusRedEnvelopeRequest } from "./type";
+import { ClaimedEnvelopes, ClaimEnvelopeRequest, CreatedEnvelopes, CreateRedEnvelopeRequest, EnvelopeListParams, RedEnvelope, RedEnvelopeClaim, RedEnvelopeDetailRecipient, CloseSessionRequest, RedEnvelopeDetailStats, RedEnvelopeStats, UpdateStatusRedEnvelopeRequest } from "./type";
 import { RED_ENVELOPE_ENDPOINTS } from "./constants";
 import { IPaginatedResponse } from "@/types";
 import { UUID } from "crypto";
@@ -13,7 +13,7 @@ export class RedEnvelopeService {
   static async getClaimedEnvelopes(
     params: EnvelopeListParams
   ): Promise<IPaginatedResponse<ClaimedEnvelopes[]>> {
-    const { data } = await apiDongClient.get<IPaginatedResponse<ClaimedEnvelopes[]>>(RED_ENVELOPE_ENDPOINTS.CLAIMED_ENVELOPES_BY_WALLET, {
+    const { data } = await apiDongClient.get<IPaginatedResponse<ClaimedEnvelopes[]>>(RED_ENVELOPE_ENDPOINTS.CLAIMED_ENVELOPES_BY_USER, {
       params,
     });
     return data;
@@ -24,7 +24,7 @@ export class RedEnvelopeService {
     params: EnvelopeListParams
   ): Promise<IPaginatedResponse<CreatedEnvelopes[]>> {
     const { data } = await apiDongClient.get<IPaginatedResponse<CreatedEnvelopes[]>>(
-      RED_ENVELOPE_ENDPOINTS.CREATED_ENVELOPES_BY_WALLET, {params}
+      RED_ENVELOPE_ENDPOINTS.CREATED_ENVELOPES_BY_USER, {params}
     );
     return data;
   }
@@ -57,9 +57,9 @@ export class RedEnvelopeService {
     return data.data
   }
 
-  static async getRedEnvelopeStatsById(request: RedEnvelopeDetailRequest): Promise<RedEnvelopeDetailStats> {
-    const { data } = await apiDongClient.post<{ data: RedEnvelopeDetailStats }>(
-      RED_ENVELOPE_ENDPOINTS.RED_ENVELOPE_DETAIL_STATS, request
+  static async getRedEnvelopeStatsById(id: UUID): Promise<RedEnvelopeDetailStats> {
+    const { data } = await apiDongClient.get<{ data: RedEnvelopeDetailStats }>(
+      RED_ENVELOPE_ENDPOINTS.RED_ENVELOPE_DETAIL_STATS(id)
     )
     return data.data;
   }
@@ -71,7 +71,7 @@ export class RedEnvelopeService {
     return data.data;
   }
 
-  static async closeSession(request: RedEnvelopeDetailRequest): Promise<void> {
+  static async closeSession(request: CloseSessionRequest): Promise<void> {
     await apiDongClient.post(RED_ENVELOPE_ENDPOINTS.CLOSE_SESSION, request);
   }
 }
