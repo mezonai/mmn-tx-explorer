@@ -735,9 +735,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/red-envelopes/claimed-by-wallet": {
+        "/api/v1/red-envelopes/claimed-by-user": {
             "get": {
-                "description": "Retrieve red envelope claims associated with a specific wallet address",
+                "description": "Retrieve red envelope claimed associated with a specific user",
                 "consumes": [
                     "application/json"
                 ],
@@ -747,7 +747,7 @@ const docTemplate = `{
                 "tags": [
                     "red_envelopes"
                 ],
-                "summary": "Get red envelope claims by wallet address",
+                "summary": "Get red envelope claimed by user",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -800,7 +800,7 @@ const docTemplate = `{
                 "summary": "close red envelope session",
                 "parameters": [
                     {
-                        "description": "Get Detail Request",
+                        "description": "Close Session Request",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -861,9 +861,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/red-envelopes/created-by-wallet": {
+        "/api/v1/red-envelopes/created-by-user": {
             "get": {
-                "description": "Retrieve red envelopes created by a specific wallet address",
+                "description": "Retrieve red envelopes created by a specific user",
                 "consumes": [
                     "application/json"
                 ],
@@ -873,7 +873,7 @@ const docTemplate = `{
                 "tags": [
                     "red_envelopes"
                 ],
-                "summary": "Get red envelopes created by wallet address",
+                "summary": "Get red envelopes created by user",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -911,9 +911,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/red-envelopes/detail": {
-            "post": {
-                "description": "get detail red envelope by id and wallet address",
+        "/api/v1/red-envelopes/detail/:id": {
+            "get": {
+                "description": "get detail red envelope by id",
                 "consumes": [
                     "application/json"
                 ],
@@ -923,25 +923,14 @@ const docTemplate = `{
                 "tags": [
                     "red_envelopes"
                 ],
-                "summary": "get detail red envelope by id and wallet address",
+                "summary": "get detail red envelope by id",
                 "parameters": [
                     {
-                        "description": "Get Detail Request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "id": {
-                                    "type": "integer",
-                                    "format": "int64"
-                                },
-                                "wallet_address": {
-                                    "type": "string"
-                                }
-                            }
-                        }
+                        "type": "integer",
+                        "description": "Red Envelope ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1038,7 +1027,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "update status red envelope to published",
+                "description": "update status red envelope to published or failed",
                 "consumes": [
                     "application/json"
                 ],
@@ -1048,7 +1037,7 @@ const docTemplate = `{
                 "tags": [
                     "red_envelopes"
                 ],
-                "summary": "update status red envelope to published",
+                "summary": "update status red envelope",
                 "parameters": [
                     {
                         "description": "Update Status Request",
@@ -1115,16 +1104,16 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/red_envelopes/:id": {
+        "/api/v1/red_envelopes/:id/recipients": {
             "get": {
-                "description": "Retrieve details of a red envelope session by its ID",
+                "description": "Returns a list of users who have received red envelope",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "red_envelopes"
                 ],
-                "summary": "Get red envelope by ID",
+                "summary": "Get Recipients by red envelope id",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1968,7 +1957,7 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "last_block": {
+                "last_balance_update": {
                     "type": "integer"
                 },
                 "transaction_count": {

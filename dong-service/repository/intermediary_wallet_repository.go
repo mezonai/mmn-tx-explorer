@@ -20,7 +20,7 @@ func NewIntermediaryWalletRepository(db *sql.DB) *IntermediaryWalletRepository {
 	return &IntermediaryWalletRepository{db: db}
 }
 
-func (r *IntermediaryWalletRepository) CreateWallet(ctx context.Context, wallet *models.IntermediaryWallet) error {
+func (r *IntermediaryWalletRepository) CreateWallet(ctx context.Context, wallet *models.IntermediaryWallet, tx *sql.Tx) error {
 	query := `
 		INSERT INTO intermediary_wallet 
 		(wallet_address, encrypted_private_key, status, created_at, updated_at)
@@ -28,7 +28,7 @@ func (r *IntermediaryWalletRepository) CreateWallet(ctx context.Context, wallet 
 		RETURNING id, created_at, updated_at
 	`
 
-	return r.db.QueryRowContext(
+	return tx.QueryRowContext(
 		ctx,
 		query,
 		wallet.WalletAddress,
@@ -208,7 +208,7 @@ func (r *IntermediaryWalletRepository) GetWalletByAddress(ctx context.Context, a
 	return &wallet, nil
 }
 
-func (r *IntermediaryWalletRepository) UpdateRedEnvelopeInUse(tx *sql.Tx, ctx context.Context, walletID int64, walletType string) error {
+func (r *IntermediaryWalletRepository) UpdateIntermediaryWalletStatus(tx *sql.Tx, ctx context.Context, walletID int64, walletType string) error {
 	updateQuery := `
 		UPDATE intermediary_wallet
 		SET status = $1, updated_at = NOW(), type = $2
@@ -223,8 +223,8 @@ func (r *IntermediaryWalletRepository) UpdateRedEnvelopeInUse(tx *sql.Tx, ctx co
 	return nil
 }
 
-func (r *IntermediaryWalletRepository) GetOrCreateAvailableWallet(ctx context.Context) (*models.IntermediaryWallet, error) {
-	wallet, err := r.GetAvailableWallet(ctx)
+func (r *IntermediaryWalletRepository) GetOrCreateAvailableWallet(ctx context.Context, tx *sql.Tx) (*models.IntermediaryWallet, error) {
+	wallet, err := r.GetAvailableWallet(ctx, tx)
 	if err != nil && err.Error() != "no available wallets in the pool" {
 		return nil, fmt.Errorf("failed to get available wallet: %w", err)
 	}
@@ -246,7 +246,7 @@ func (r *IntermediaryWalletRepository) GetOrCreateAvailableWallet(ctx context.Co
 			Status:              constants.RedEnvelopeWalletStatusInUse,
 		}
 
-		err = r.CreateWallet(ctx, wallet)
+		err = r.CreateWallet(ctx, wallet, tx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to save wallet: %w", err)
 		}
@@ -259,13 +259,7 @@ func (r *IntermediaryWalletRepository) GetOrCreateAvailableWallet(ctx context.Co
 	return wallet, nil
 }
 
-func (r *IntermediaryWalletRepository) GetAvailableWallet(ctx context.Context) (*models.IntermediaryWallet, error) {
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-
+func (r *IntermediaryWalletRepository) GetAvailableWallet(ctx context.Context, tx *sql.Tx) (*models.IntermediaryWallet, error) {
 	query := `
 		SELECT id, wallet_address, encrypted_private_key, status, created_at, updated_at
 		FROM intermediary_wallet
@@ -276,7 +270,7 @@ func (r *IntermediaryWalletRepository) GetAvailableWallet(ctx context.Context) (
 	`
 
 	var wallet models.IntermediaryWallet
-	err = tx.QueryRowContext(ctx, query, constants.RedEnvelopeWalletStatusReady).Scan(
+	err := tx.QueryRowContext(ctx, query, constants.RedEnvelopeWalletStatusReady).Scan(
 		&wallet.ID,
 		&wallet.WalletAddress,
 		&wallet.EncryptedPrivateKey,
@@ -291,16 +285,12 @@ func (r *IntermediaryWalletRepository) GetAvailableWallet(ctx context.Context) (
 		return nil, err
 	}
 
-	if err = tx.Commit(); err != nil {
-		return nil, err
-	}
-
 	wallet.Status = constants.RedEnvelopeWalletStatusInUse
 
 	return &wallet, nil
 }
 
-func (r *IntermediaryWalletRepository) generateWallet() (address string, privateKey string, error error) {
+func (r *IntermediaryWalletRepository) generateWallet() (address, privateKey string, err error) {
 	publicKey, privateKey, err := utils.GenerateEphemeralKeyPair()
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to generate Ed25519 key pair")

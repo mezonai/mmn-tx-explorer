@@ -80,22 +80,22 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 			stats_public.GET("/campaign", statsHandler.GetCampaignStats)
 		}
 
-		redEnvelope_private := v1.Group("/red-envelopes")
+		// Red Envelope routes (private)
+		redEnvelopePrivate := v1.Group("/red-envelopes")
+		redEnvelopePrivate.Use(middleware.Authentication(cfg.JWT.Secret))
+		redEnvelopePrivate.POST("/create", redEnvelopeHandler.CreateRedEnvelope)
+		redEnvelopePrivate.GET("/stats", redEnvelopeHandler.GetRedEnvelopeStats)
+		redEnvelopePrivate.GET("/:id/recipients", redEnvelopeHandler.GetRecipientsByRedEnvelopeID)
+		redEnvelopePrivate.POST("/update-status-red-envelope", redEnvelopeHandler.UpdateStatusRedEnvelope)
+		redEnvelopePrivate.GET("/claimed-by-user", redEnvelopeHandler.GetRedEnvelopeClaimedByUser)
+		redEnvelopePrivate.GET("/created-by-user", redEnvelopeHandler.GetRedEnvelopeCreatedByUser)
+		redEnvelopePrivate.GET("/detail/:id", redEnvelopeHandler.GetDetailRedEnvelopeByID)
+		redEnvelopePrivate.POST("/close-session", redEnvelopeHandler.CloseSessionRedEnvelope)
+
+		wallet_public := v1.Group("/wallets")
 		{
-			redEnvelope_private.Use(middleware.Authentication(cfg.JWT.Secret))
-			redEnvelope_private.POST("/create", redEnvelopeHandler.CreateRedEnvelope)
-			redEnvelope_private.GET("/stats", redEnvelopeHandler.GetRedEnvelopeStats)
-			redEnvelope_private.GET("/:id", redEnvelopeHandler.GetRedEnvelopeClaim)
-			redEnvelope_private.POST("/update-status-red-envelope", redEnvelopeHandler.UpdateStatusRedEnvelope)
-			redEnvelope_private.GET("/claimed-by-wallet", redEnvelopeHandler.GetRedEnvelopeClaimByWallet)
-			redEnvelope_private.GET("/created-by-wallet", redEnvelopeHandler.GetRedEnvelopeCreatedByWallet)
-			redEnvelope_private.POST("/detail", redEnvelopeHandler.GetDetailRedEnvelopeById)
-			redEnvelope_private.POST("/close-session", redEnvelopeHandler.CloseSessionRedEnvelope)
-			wallet_public := v1.Group("/wallets")
-			{
-				wallet_public.Use(middleware.ParseTokenAndAddToContext(cfg.JWT.Secret))
-				wallet_public.GET("/:address/detail", walletHandler.GetWalletDetail)
-			}
+			wallet_public.Use(middleware.ParseTokenAndAddToContext(cfg.JWT.Secret))
+			wallet_public.GET("/:address/detail", walletHandler.GetWalletDetail)
 		}
 	}
 }

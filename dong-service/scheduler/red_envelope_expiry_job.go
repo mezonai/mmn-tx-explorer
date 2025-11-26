@@ -6,8 +6,8 @@ import (
 	"dong-service/constants"
 	"dong-service/database"
 	"dong-service/logger"
+	"dong-service/models"
 	"dong-service/repository"
-	"dong-service/utils"
 	"time"
 )
 
@@ -19,12 +19,12 @@ type RedEnvelopeExpiryJob struct {
 
 func NewRedEnvelopeExpiryJob(
 	redEnvelopeRepo *repository.RedEnvelopeRepository,
-	IntermediaryWalletRepo *repository.IntermediaryWalletRepository,
+	intermediaryWalletRepo *repository.IntermediaryWalletRepository,
 	blockchainService *blockchain.BlockchainService,
 ) *RedEnvelopeExpiryJob {
 	return &RedEnvelopeExpiryJob{
 		redEnvelopeRepo:   redEnvelopeRepo,
-		walletRepo:        IntermediaryWalletRepo,
+		walletRepo:        intermediaryWalletRepo,
 		blockchainService: blockchainService,
 	}
 }
@@ -56,7 +56,7 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 		}
 
 		remainingBalance := envelope.TotalAmount - totalClaimed
-
+		isSuccess := true
 		if remainingBalance > 0 {
 			logger.Info().
 				Str("red_envelope_id", envelope.ID).
@@ -65,34 +65,21 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 				Str("owner_wallet", envelope.OwnerWallet).
 				Msg("Transferring remaining balance back to owner")
 
-			wallet, err := j.walletRepo.GetWalletByAddress(ctx, envelope.RedEnvelopeWallet)
+			var wallet *models.IntermediaryWallet
+			wallet, err = j.walletRepo.GetWalletByAddress(ctx, envelope.RedEnvelopeWallet)
 			if err != nil {
 				logger.Error().Err(err).Msg("Failed to get wallet")
 			} else {
-				privateKey, err := utils.DecryptPrivateKey(wallet.EncryptedPrivateKey)
+				err = j.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, remainingBalance)
 				if err != nil {
-					logger.Error().Err(err).Msg("Failed to decrypt private key")
-				} else {
-					txHash, err := j.blockchainService.Transfer(
-						envelope.RedEnvelopeWallet,
-						envelope.OwnerWallet,
-						remainingBalance,
-						privateKey,
-						constants.TEXT_DATA_LUCKY_MONEY,
-						constants.EXTRA_INFO_LUCKY_MONEY,
-					)
-					if err != nil {
-						logger.Error().Err(err).Msg("Failed to transfer funds")
-						continue
-					} else {
-						// TODO: use function GetTxByHash to get status
-						logger.Info().
-							Str("tx_hash", txHash).
-							Int64("amount", remainingBalance).
-							Msg("Successfully transferred remaining balance to owner")
-					}
+					logger.Error().Err(err).Msg("Failed to transfer funds")
+					isSuccess = false
 				}
 			}
+		}
+
+		if !isSuccess {
+			continue
 		}
 
 		err = j.redEnvelopeRepo.UpdateStatus(ctx, envelope.ID, constants.RedEnvelopeStatusExpired)

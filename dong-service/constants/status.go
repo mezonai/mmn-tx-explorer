@@ -57,11 +57,11 @@ const (
 )
 
 const (
-	EXTRA_INFO_LUCKY_MONEY = `{"type":"lucky-money"}`
+	ExtraInfoLuckyMoney = `{"type":"lucky-money"}`
 )
 
 const (
-	TEXT_DATA_LUCKY_MONEY = "Lucky Money fund"
+	TextDataLuckyMoney = "Lucky Money fund"
 )
 
 // GetStatusName returns the human-readable name for a status code
