@@ -1,4 +1,5 @@
 import { ROUTES } from '@/configs/routes.config';
+import { DateTimeUtil } from '@/utils';
 
 export async function exportTransactionsToCSV(
   wallet_address: string,
@@ -6,11 +7,7 @@ export async function exportTransactionsToCSV(
   toDate: Date | null,
   filename: string = 'transactions.csv'
 ) {
-  const formatLocalDate = (date: Date) => {
-    const offset = date.getTimezoneOffset();
-    const localDate = new Date(date.getTime() - offset * 60 * 1000);
-    return localDate.toISOString().split('T')[0];
-  };
+  const formatLocalDate = DateTimeUtil.formatLocalDate;
   const params = new URLSearchParams({
     wallet_address,
     sort_by: 'transaction_timestamp',
@@ -22,7 +19,11 @@ export async function exportTransactionsToCSV(
   const chainId = process.env.NEXT_PUBLIC_CHAIN_ID || '';
   const url = `${baseUrl}/${chainId}${ROUTES.EXPORT_CSV}?${params.toString()}`;
   const response = await fetch(url, { method: 'GET' });
-  if (!response.ok) throw new Error('Failed to download CSV');
+  if (!response.ok) {
+    const raw = await response.text();
+    const errorText = raw ? raw.trim() : 'Failed to download CSV';
+    throw new Error(`(${response.status}): ${errorText}`);
+  }
   const blob = await response.blob();
   const link = document.createElement('a');
   link.href = window.URL.createObjectURL(blob);
