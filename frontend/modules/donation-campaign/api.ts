@@ -101,4 +101,23 @@ export class DonationCampaignService {
     );
     return data.data;
   }
+
+  static async recordDonation({
+    campaignId,
+    amount,
+    senderWallet,
+  }: {
+    campaignId: string;
+    amount: number | string;
+    senderWallet?: string;
+  }): Promise<Partial<DonationCampaign>> {
+    const { data } = await apiDongClient.post<{ data: Partial<DonationCampaign> }>(
+      DONATION_ENDPOINTS.RECORD_DONATION(campaignId),
+      {
+        amount,
+        sender_wallet: senderWallet,
+      }
+    );
+    return data.data;
+  }
 }

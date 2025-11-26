@@ -286,7 +286,7 @@ func (r *DonationCampaignRepository) GetAll(status *int16, pagination utils.Pagi
 	base := fmt.Sprintf(`
         SELECT 
             dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
-			cs.total_amount, cs.total_contributor
+			cs.total_amount, cs.total_contributor, cs.recent_amount
         FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
 	`, r.dongSchema, r.dongSchema)
@@ -319,6 +319,8 @@ func (r *DonationCampaignRepository) GetAll(status *int16, pagination utils.Pagi
 		orderByExpr = "dc.created_at"
 	case "total_amount":
 		orderByExpr = "cs.total_amount"
+	case "recent_amount":
+		orderByExpr = "cs.recent_amount"
 	default:
 		orderByExpr = "dc.created_at"
 	}
@@ -359,6 +361,7 @@ func (r *DonationCampaignRepository) GetAll(status *int16, pagination utils.Pagi
 			&campaign.UpdatedAt,
 			&campaign.TotalAmount,
 			&campaign.TotalContributors,
+			&campaign.RecentAmount,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan donation campaign: %w", err)

@@ -12,9 +12,11 @@ import { APP_CONFIG } from '@/configs/app.config';
 import { CopyButton } from '@/components/ui/copy-button';
 import { ETransferType, TRANSACTIONS_QUERY_KEY } from '@/modules/transaction';
 import { useQueryClient } from '@tanstack/react-query';
+import { DonationCampaignService } from '@/modules/donation-campaign/api';
+import { QUERY_KEYS } from '@/modules/donation-campaign/constants';
 import { TransactionComplete, TransactionType } from '@/modules/donation-campaign/components/transaction-complete';
 
-export function DonateDialog({ walletAddress }: { walletAddress: string }) {
+export function DonateDialog({ walletAddress, campaignId }: { walletAddress: string; campaignId: string }) {
   const { transfer, loading, user } = useTransfer();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [form, setForm] = useState({
@@ -74,6 +76,20 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
         toast.success('Donation success!');
         setTransactionHash(result.txHash || '');
         setTimeout(async () => await queryClient.invalidateQueries({ queryKey: [TRANSACTIONS_QUERY_KEY] }), 1000);
+
+        try {
+          const scaled = mmnClient.scaleAmountToDecimals(form.amount);
+          const amountToSend = typeof scaled === 'string' ? scaled : String(scaled);
+          await DonationCampaignService.recordDonation({
+            campaignId: campaignId,
+            amount: amountToSend,
+            senderWallet: user?.walletAddress,
+          });
+          await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CAMPAIGNS] });
+          await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CAMPAIGN, campaignId] });
+        } catch (err) {
+          console.warn('Record donation best-effort failed:', err);
+        }
       } else {
         toast.error(result.error || 'Donation fail. Please try again.');
       }
@@ -81,7 +97,7 @@ export function DonateDialog({ walletAddress }: { walletAddress: string }) {
       console.error('Donation error:', error);
       toast.error('Something is broken');
     }
-  }, [form, walletAddress, transfer, queryClient]);
+  }, [form, walletAddress, transfer, queryClient, campaignId, user?.walletAddress]);
 
   const isButtonDisabled =
     loading || !form.amount || !mmnClient.validateAmount(senderBalance, mmnClient.scaleAmountToDecimals(form.amount));
