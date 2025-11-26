@@ -212,7 +212,7 @@ func handleTransactionsInfiniteRequest(c *gin.Context) {
 	timestampLt := queryParams.TimestampLt
 	lastHash := queryParams.LastHash
 
-	chainId, err := api.GetChainId(c)
+	chainId, err := api.GetChainID(c)
 	if err != nil {
 		api.BadRequestErrorHandler(c, err)
 		return
@@ -229,7 +229,7 @@ func handleTransactionsInfiniteRequest(c *gin.Context) {
 
 	queryResult := api.QueryResponse{
 		Meta: api.Meta{
-			ChainId: chainId.Uint64(),
+			ChainID: chainId.Uint64(),
 			Page:    0,
 			Limit:   queryParams.Limit,
 		},
