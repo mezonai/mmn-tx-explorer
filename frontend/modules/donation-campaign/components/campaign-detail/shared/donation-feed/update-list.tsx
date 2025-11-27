@@ -1,9 +1,12 @@
+'use client';
 import { CampaignUpdates } from '@/modules/donation-campaign/type';
 import { Card } from '@/components/ui/card';
 import { Chip } from '@/components/shared';
 import { CopyButton } from '@/components/ui/copy-button';
 import { ClientTimeDisplay } from '@/modules/transaction/components/transaction-details/shared/client-time-display';
 import Link from 'next/link';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { useState } from 'react';
 
 function getStatusChip(update: CampaignUpdates) {
   if (update.status === 'hidden') {
@@ -75,16 +78,17 @@ function getContent(update: CampaignUpdates) {
   return update.content;
 }
 
-function getImages(update: CampaignUpdates) {
+function getImages(update: CampaignUpdates, onImageClick: (url: string) => void) {
   if (update.images && update.images.length > 0 && update.status !== 'hidden') {
     return (
       <div className="grid w-full grid-cols-1 gap-2 p-2 pl-3 sm:grid-cols-3 md:grid-cols-6">
-        {update.images.map((imgUrl, idx) => (
+        {update.images.map((img, idx) => (
           <img
             key={idx}
-            src={imgUrl}
+            src={img}
             alt={`Update Image ${idx + 1}`}
-            className="h-40 w-full rounded-md object-cover sm:h-32 md:h-24"
+            className="h-40 w-full cursor-pointer rounded-md object-cover sm:h-32 md:h-24"
+            onClick={() => onImageClick(img)}
           />
         ))}
       </div>
@@ -94,40 +98,67 @@ function getImages(update: CampaignUpdates) {
 }
 
 export const UpdateList = ({ updates }: { updates: CampaignUpdates[] }) => {
+  const [open, setOpen] = useState(false);
+  const [selectedImg, setSelectedImg] = useState<string | null>(null);
+
+  const handleImageClick = (img: string) => {
+    setSelectedImg(img);
+    setOpen(true);
+  };
+
+  const handleDialogOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) setSelectedImg(null);
+  };
+
   return (
-    <div className="space-y-4">
-      {updates.map((update) => (
-        <Card
-          className={`dark:bg-dark dark:bg-card gap-4 rounded-3xl bg-white/90 shadow-sm ${update.status === 'hidden' ? 'border-amber-300/50 opacity-60' : 'border-gray-200 dark:border-white/10'}`}
-          key={update.id}
-        >
-          <div className="flex w-full flex-col justify-between gap-3 px-4 md:flex-row">
-            <div className="flex flex-row gap-2">
-              {getStatusChip(update)}
-              <div className="pt-2 text-xs text-gray-400">
-                <ClientTimeDisplay timestamp={update.timestamp} />
+    <>
+      <div className="space-y-4">
+        {updates.map((update) => (
+          <Card
+            className={`dark:bg-dark dark:bg-card gap-4 rounded-3xl bg-white/90 shadow-sm ${update.status === 'hidden' ? 'border-amber-300/50 opacity-60' : 'border-gray-200 dark:border-white/10'}`}
+            key={update.id}
+          >
+            <div className="flex w-full flex-col justify-between gap-3 px-4 md:flex-row">
+              <div className="flex flex-row gap-2">
+                {getStatusChip(update)}
+                <div className="pt-2 text-xs text-gray-400">
+                  <ClientTimeDisplay timestamp={update.timestamp} />
+                </div>
+                {getStatusMeta(update)}
+                {getStatusWarning(update)}
               </div>
-              {getStatusMeta(update)}
-              {getStatusWarning(update)}
+              <div className="text-muted-foreground flex flex-row gap-1 text-xs">{getStatusAction(update)}</div>
             </div>
-            <div className="text-muted-foreground flex flex-row gap-1 text-xs">{getStatusAction(update)}</div>
-          </div>
-          <div className="text-foreground text-md w-full px-3 break-words">{getContent(update)}</div>
-          {getImages(update)}
-          <div className="flex w-full flex-row justify-end gap-4 px-4 text-xs">
-            <div className="flex flex-row gap-2">
-              <p>CID: </p>
-              <p className="text-brand-primary middle-truncate">{update.cid.slice(0, 3)}...{update.cid.slice(-4)}</p>
-              <CopyButton textToCopy={update.cid} />
+            <div className="text-foreground text-md w-full px-3 break-words">{getContent(update)}</div>
+            {getImages(update, handleImageClick)}
+            <div className="flex w-full flex-row justify-end gap-4 px-4 text-xs">
+              <div className="flex flex-row gap-2">
+                <p>CID: </p>
+                <p className="text-brand-primary middle-truncate">
+                  {update.cid.slice(0, 3)}...{update.cid.slice(-4)}
+                </p>
+                <CopyButton textToCopy={update.cid} />
+              </div>
+              <div className="flex flex-row gap-2">
+                <p>TxHash: </p>
+                <p className="text-brand-primary">
+                  {update.txHash.slice(0, 3)}...{update.txHash.slice(-4)}
+                </p>
+                <CopyButton textToCopy={update.txHash} />
+              </div>
             </div>
-            <div className="flex flex-row gap-2">
-              <p>TxHash: </p>
-              <p className="text-brand-primary">{update.txHash.slice(0, 3)}...{update.txHash.slice(-4)}</p>
-              <CopyButton textToCopy={update.txHash} />
-            </div>
-          </div>
-        </Card>
-      ))}
-    </div>
+          </Card>
+        ))}
+      </div>
+      <Dialog open={open} onOpenChange={handleDialogOpenChange}>
+        <DialogContent className="flex max-h-[95vh] max-w-[95vw] flex-col items-center justify-center bg-transparent p-0 shadow-none">
+          {selectedImg && (
+            <img src={selectedImg} alt="Full Preview" className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain" />
+          )}
+          <DialogTitle></DialogTitle>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
