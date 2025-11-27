@@ -63,45 +63,44 @@ export const ActiveCampaign = () => {
   const [unverifiedLocalPage, setUnverifiedLocalPage] = useState<number | undefined>(undefined);
   const [unverifiedLocalLimit, setUnverifiedLocalLimit] = useState<number | undefined>(undefined);
 
+  const buildCampaignsParams = (
+    isVerified: boolean,
+    localPage: number | undefined,
+    localLimit: number | undefined,
+    page: number,
+    limit: number
+  ) => {
+    let order_by: 'end_date' | 'total_amount' | 'created_at' | 'recent_amount' | undefined;
+    if (sortBy === SortBy.EndingSoon) order_by = 'end_date';
+    else if (sortBy === SortBy.MostFunded) order_by = 'total_amount';
+    else order_by = 'created_at';
+    return {
+      page: showMine && typeof localPage === 'number' ? localPage : page,
+      limit: showMine && typeof localLimit === 'number' ? localLimit : limit,
+      ...(statusFilter !== 'all' ? { status: String(statusFilter) } : {}),
+      ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
+      ...(showMine && userIdStr ? { creator: userIdStr } : {}),
+      order: sortBy === SortBy.Newest ? ESortOrder.DESC : ESortOrder.ASC,
+      order_by,
+      verified: isVerified,
+    };
+  };
+
   const {
     campaigns: verifiedCampaigns,
     isLoading: isLoadingVerified,
     error: errorVerified,
     meta: verifiedMeta,
-  } = useCampaigns({
-    page: showMine && typeof verifiedLocalPage === 'number' ? verifiedLocalPage : verifiedPage,
-    limit: showMine && typeof verifiedLocalLimit === 'number' ? verifiedLocalLimit : verifiedLimit,
-    ...(statusFilter !== 'all' ? { status: String(statusFilter) } : {}),
-    ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
-    ...(showMine && userIdStr ? { creator: userIdStr } : {}),
-    order: sortBy === SortBy.Newest ? ESortOrder.DESC : ESortOrder.ASC,
-    ...(sortBy === SortBy.EndingSoon
-      ? { order_by: 'end_date' }
-      : sortBy === SortBy.MostFunded
-        ? { order_by: 'total_amount' }
-        : { order_by: 'created_at' }),
-    verified: true,
-  });
+  } = useCampaigns(buildCampaignsParams(true, verifiedLocalPage, verifiedLocalLimit, verifiedPage, verifiedLimit));
 
   const {
     campaigns: unverifiedCampaigns,
     isLoading: isLoadingUnverified,
     error: errorUnverified,
     meta: unverifiedMeta,
-  } = useCampaigns({
-    page: showMine && typeof unverifiedLocalPage === 'number' ? unverifiedLocalPage : unverifiedPage,
-    limit: showMine && typeof unverifiedLocalLimit === 'number' ? unverifiedLocalLimit : unverifiedLimit,
-    ...(statusFilter !== 'all' ? { status: String(statusFilter) } : {}),
-    ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
-    ...(showMine && userIdStr ? { creator: userIdStr } : {}),
-    order: sortBy === SortBy.Newest ? ESortOrder.DESC : ESortOrder.ASC,
-    ...(sortBy === SortBy.EndingSoon
-      ? { order_by: 'end_date' }
-      : sortBy === SortBy.MostFunded
-        ? { order_by: 'total_amount' }
-        : { order_by: 'created_at' }),
-    verified: false,
-  });
+  } = useCampaigns(
+    buildCampaignsParams(false, unverifiedLocalPage, unverifiedLocalLimit, unverifiedPage, unverifiedLimit)
+  );
 
   const filteredVerifiedCampaigns =
     showMine && userIdStr !== undefined ? verifiedCampaigns.filter((c) => c.creator === userIdStr) : verifiedCampaigns;

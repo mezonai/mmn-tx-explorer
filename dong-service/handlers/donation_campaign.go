@@ -189,18 +189,21 @@ func (h *DonationCampaignHandler) ListCampaigns(c *gin.Context) {
 		qPtr = &s
 	}
 
-	var creatorPtr *int64
-	if creatorStr := c.Query("creator"); creatorStr != "" {
-		if v, err := strconv.ParseInt(creatorStr, 10, 64); err == nil {
-			creatorPtr = &v
-		}
+	var creatorPtr *string
+	if creatorStr := strings.TrimSpace(c.Query("creator")); creatorStr != "" {
+		tmp := creatorStr
+		creatorPtr = &tmp
 	}
 	if creatorPtr == nil {
 		if p := c.Param("creator"); p != "" {
-			if v, err := utils.ParseInt64Param(c, "creator"); err == nil {
-				creatorPtr = &v
-			}
+			tmp := p
+			creatorPtr = &tmp
 		}
+	}
+
+	creatorLog := ""
+	if creatorPtr != nil {
+		creatorLog = *creatorPtr
 	}
 
 	logger.Debug().
@@ -209,6 +212,7 @@ func (h *DonationCampaignHandler) ListCampaigns(c *gin.Context) {
 		Interface("status", statusPtr).
 		Str("order", pagination.Order).
 		Str("order_by", pagination.OrderBy).
+		Str("creator", creatorLog).
 		Msg("Listing campaigns")
 
 	campaigns, err := h.repo.GetAll(statusPtr, verifiedPtr, qPtr, pagination, creatorPtr)

@@ -289,7 +289,7 @@ func (r *DonationCampaignRepository) GetByIDAndCreator(id, creator int64) (*mode
 }
 
 // GetAll retrieves all donation campaigns with pagination
-func (r *DonationCampaignRepository) GetAll(status *int16, verified *bool, q *string, pagination utils.PaginationParams, creator *int64) ([]models.DonationCampaign, error) {
+func (r *DonationCampaignRepository) GetAll(status *int16, verified *bool, q *string, pagination utils.PaginationParams, creator *string) ([]models.DonationCampaign, error) {
 	base := fmt.Sprintf(`
         SELECT 
             dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
@@ -317,14 +317,14 @@ func (r *DonationCampaignRepository) GetAll(status *int16, verified *bool, q *st
 	}
 
 	// filter by creator if provided
-	if creator != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("dc.creator = $%d", argCount))
-		args = append(args, *creator)
+	if creator != nil && strings.TrimSpace(*creator) != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("dc.creator::text = $%d", argCount))
+		args = append(args, strings.TrimSpace(*creator))
 		argCount++
 	}
 
 	if q != nil && strings.TrimSpace(*q) != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("(to_tsvector('english', coalesce(dc.name, '') || ' ' || coalesce(dc.description, '')) @@ plainto_tsquery('english', $%d))", argCount))
+		whereClauses = append(whereClauses, fmt.Sprintf("(dc.body_search @@ to_tsquery('english', $%d))", argCount))
 		args = append(args, strings.TrimSpace(*q))
 		argCount++
 	}
@@ -565,7 +565,7 @@ func (r *DonationCampaignRepository) Close(id, creator int64) (*models.DonationC
 }
 
 // Count returns the total number of campaigns
-func (r *DonationCampaignRepository) Count(status *int16, verified *bool, q *string, creator *int64) (int64, error) {
+func (r *DonationCampaignRepository) Count(status *int16, verified *bool, q *string, creator *string) (int64, error) {
 	query := fmt.Sprintf(`SELECT COUNT(*) FROM %s.donation_campaign dc`, r.dongSchema)
 	var (
 		whereClauses []string
@@ -586,15 +586,15 @@ func (r *DonationCampaignRepository) Count(status *int16, verified *bool, q *str
 	}
 
 	if q != nil && strings.TrimSpace(*q) != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("(to_tsvector('english', coalesce(dc.name, '') || ' ' || coalesce(dc.description, '')) @@ plainto_tsquery('english', $%d))", argCount))
+		whereClauses = append(whereClauses, fmt.Sprintf("(dc.body_search @@ to_tsquery('english', $%d))", argCount))
 		args = append(args, strings.TrimSpace(*q))
 		argCount++
 	}
 
 	// filter by creator if present
-	if creator != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("dc.creator = $%d", argCount))
-		args = append(args, *creator)
+	if creator != nil && strings.TrimSpace(*creator) != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("dc.creator::text = $%d", argCount))
+		args = append(args, strings.TrimSpace(*creator))
 		argCount++
 	}
 
