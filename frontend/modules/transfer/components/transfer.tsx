@@ -89,20 +89,6 @@ export const Transfer = () => {
         setTimeout(() => {
           refreshBalance();
         }, 1000);
-
-        (async () => {
-          try {
-            const recipient = result.txHash ? form.address.trim() : form.address.trim();
-            const resp = await DonationCampaignService.getCampaigns({ page: 1, limit: 5, search: recipient });
-            const found = (resp.data || []).find((c) => c.donation_wallet?.toLowerCase() === recipient.toLowerCase());
-            if (found) {
-              await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CAMPAIGNS] });
-              await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CAMPAIGN, String(found.id)] });
-            }
-          } catch (err) {
-            console.warn('Record donation best-effort failed:', err);
-          }
-        })();
       } else {
         toast.error(result.error || 'Transfer failed. Please try again.');
       }
