@@ -345,10 +345,10 @@ func (r *DonationCampaignRepository) GetAll(status *int16, verified *bool, q *st
 		orderByExpr = "dc.created_at" //nolint:goconst // literal used intentionally for SQL whitelist
 	case "total_amount":
 		orderByExpr = "cs.total_amount"
-	case "recent_amount":
-		orderByExpr = "cs.recent_amount"
 	case "end_date":
 		orderByExpr = "dc.end_date"
+	case "recent_amount":
+		orderByExpr = "cs.recent_amount"
 	default:
 		orderByExpr = "dc.created_at"
 	}
