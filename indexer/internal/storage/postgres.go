@@ -2149,3 +2149,61 @@ func getNewArgumentKeyByBaseArgumentKey(baseKey string, args map[string]interfac
 		index++
 	}
 }
+
+func (p *PostgresConnector) GetAllTransactionsByWallet(
+	ctx context.Context,
+	walletAddress string,
+	startTime, endTime int64,
+	sortBy, sortOrder string,
+) ([]common.Transaction, error) {
+
+	columns := p.buildSelectFields([]string{}, defaultTransactionFields)
+
+	if !p.validateSortByColumn("transactions", sortBy) {
+		sortBy = "transaction_timestamp"
+	}
+
+	switch strings.ToUpper(sortOrder) {
+	case "ASC":
+		sortOrder = "ASC"
+	default:
+		sortOrder = "DESC"
+	}
+
+	query := fmt.Sprintf(`
+		(
+			SELECT %s
+			FROM transactions
+			WHERE from_address = $1
+				AND transaction_timestamp >= to_timestamp($2)
+				AND transaction_timestamp <= to_timestamp($3)
+		)
+		UNION ALL
+		(
+			SELECT %s
+			FROM transactions
+			WHERE to_address = $1
+				AND transaction_timestamp >= to_timestamp($2)
+				AND transaction_timestamp <= to_timestamp($3)
+		)
+		ORDER BY %s %s;
+	`, columns, columns, sortBy, sortOrder)
+
+	rows, err := p.db.QueryContext(ctx, query, walletAddress, startTime, endTime)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Error().Err(err).Msg("Failed to close rows in GetAllTransactionsByWallet")
+		}
+	}()
+
+	transactions, err := p.scanRowsToTransactions(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return transactions, rows.Err()
+}
