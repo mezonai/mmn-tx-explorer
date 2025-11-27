@@ -40,7 +40,7 @@ export const CampaignDetail = async ({ campaign }: CampaignDetailProps) => {
           </p>
         </div>
 
-        <CampaignActivity campaignId={campaign.id} walletAddress={campaign.donation_wallet} />
+        <CampaignActivity campaign={campaign} walletAddress={campaign.donation_wallet} />
       </CampaignDetailProvider>
     </div>
   );

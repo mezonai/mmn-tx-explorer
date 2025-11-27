@@ -82,10 +82,12 @@ func RunAPI(cmd *cobra.Command, args []string) {
 
 	root.Use(middleware.Authorization)
 	root.Use(middleware.Cors)
+
 	// wildcard queries
 	root.GET("/transactions", handlers.GetTransactions)
 	root.GET("/pending-transactions", handlers.GetPendingTransactions)
 	root.GET("/pending-tx/:transaction_hash/detail", handlers.GetPendingTransactionDetail)
+	root.GET("/transactions/infinite", handlers.GetTransactionsInfinite)
 
 	// wallet queries
 	root.GET("/wallets", handlers.GetWallets)

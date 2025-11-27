@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"time"
+
 	"sync"
 
 	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
@@ -147,6 +149,13 @@ type IMainStorage interface {
 	GetTransactionsByWalletCount(ctx context.Context, walletAddress string, startTime, endTime int64) (uint64, error)
 	GetTotalTransactions(ctx context.Context) (uint64, error)
 
+  /**
+	 * Timestamp-based cursor pagination methods for transactions
+	 */
+	GetTransactionsByWalletWithTimestamp(ctx context.Context, walletAddress string, limit int, timestampLt time.Time, lastHash string) ([]common.Transaction, error)
+	GetTransactionsByFromAddressWithTimestamp(ctx context.Context, fromAddress string, limit int, timestampLt time.Time, lastHash string) ([]common.Transaction, error)
+	GetTransactionsByToAddressWithTimestamp(ctx context.Context, toAddress string, limit int, timestampLt time.Time, lastHash string) ([]common.Transaction, error)
+  
 	/**
 	 * Recalculates and updates all statistics in the stats table
 	 */
