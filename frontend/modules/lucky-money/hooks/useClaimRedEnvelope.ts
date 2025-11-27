@@ -27,8 +27,8 @@ export function useClaimAmount() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, wallet_address }: { id: string, wallet_address: string}) =>
-      RedEnvelopeService.getClaimAmount(id, wallet_address),
+    mutationFn: ({ id }: { id: UUID}) =>
+      RedEnvelopeService.getClaimAmount(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RED_ENVELOPES] });
     },

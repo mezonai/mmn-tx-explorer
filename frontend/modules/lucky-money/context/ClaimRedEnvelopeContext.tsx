@@ -36,7 +36,7 @@ export function ClaimRedEnvelopeProvider({ children }: { children: ReactNode }) 
       console.error("Wallet or ID missing.");
       return;
     }
-    getAmountMutation.mutate({ id: redEnvelopeId.toString(), wallet_address: user?.walletAddress });
+    getAmountMutation.mutate({ id: redEnvelopeId });
   };
 
   const handleClaim = async () => {
@@ -49,7 +49,6 @@ export function ClaimRedEnvelopeProvider({ children }: { children: ReactNode }) 
     const requestData: ClaimEnvelopeRequest = {
       id: redEnvelopeId,
       split_money_id: amountData.split_money_id,
-      claimer_wallet: user.walletAddress,
     };
 
     try {

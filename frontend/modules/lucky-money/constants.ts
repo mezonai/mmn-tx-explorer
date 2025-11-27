@@ -23,7 +23,7 @@ export const RED_ENVELOPE_ENDPOINTS = {
   CREATED_ENVELOPES_BY_USER: 'api/v1/red-envelopes/created-by-user',
   CLAIMED_ENVELOPES_BY_USER: 'api/v1/red-envelopes/claimed-by-user',
   UPDATE_STATUS_RED_ENVELOPE:`/api/v1/red-envelopes/update-status-red-envelope`,
-  CLAIM_AMOUNT: (id: string, wallet_address: string) => `/api/v1/red-envelopes/claim-amount?id=${id}&wallet_address=${wallet_address}`,
+  CLAIM_AMOUNT: (id: UUID) => `/api/v1/red-envelopes/claim-amount?id=${id}`,
   CLAIM: (id: UUID) => `/api/v1/red-envelopes/${id}/claim`,
   RED_ENVELOPE_DETAIL_STATS: (id: UUID) => `api/v1/red-envelopes/detail/${id}`,
   RED_ENVELOPE_DETAIL_RECIPIENTS: (id: UUID) => `api/v1/red-envelopes/${id}/recipients`,

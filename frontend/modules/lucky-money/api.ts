@@ -50,9 +50,9 @@ export class RedEnvelopeService {
     return data.data
   }
 
-  static async getClaimAmount(id: string, wallet_address: string): Promise<RedEnvelopeClaim> {
+  static async getClaimAmount(id: UUID): Promise<RedEnvelopeClaim> {
     const { data } = await apiDongClient.get<{ data: RedEnvelopeClaim }>(
-      RED_ENVELOPE_ENDPOINTS.CLAIM_AMOUNT(id, wallet_address)
+      RED_ENVELOPE_ENDPOINTS.CLAIM_AMOUNT(id)
     )
     return data.data
   }
