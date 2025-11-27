@@ -14,8 +14,8 @@ const (
 
 // Transaction Status Constants
 const (
-	// TransactionStatus_FINALIZED represents a finalized transaction
-	TransactionStatus_FINALIZED int16 = 2
+	// TransactionStatusFINALIZED represents a finalized transaction
+	TransactionStatusFINALIZED int16 = 2
 )
 
 // GetStatusName returns the human-readable name for a status code

@@ -100,7 +100,7 @@ func (p *Publisher) PublishBlockData(blockData []common.BlockData) error {
 	return p.publishBlockData(blockData, false)
 }
 
-func (p *Publisher) PublishReorg(oldData []common.BlockData, newData []common.BlockData) error {
+func (p *Publisher) PublishReorg(oldData, newData []common.BlockData) error {
 	if err := p.publishBlockData(oldData, true); err != nil {
 		return fmt.Errorf("failed to publish old block data: %v", err)
 	}
@@ -173,10 +173,11 @@ func (p *Publisher) publishBlockData(blockData []common.BlockData, isReorg bool)
 		status = "reverted"
 	}
 
-	for i, data := range blockData {
+	for i := range blockData {
+		data := &blockData[i]
 		// Block message
 		if config.Cfg.Publisher.Blocks.Enabled {
-			if blockMsg, err := p.createBlockMessage(data.Block, status); err == nil {
+			if blockMsg, err := p.createBlockMessage(&data.Block, status); err == nil {
 				blockMessages[i] = blockMsg
 			} else {
 				return fmt.Errorf("failed to create block message: %v", err)
@@ -185,7 +186,8 @@ func (p *Publisher) publishBlockData(blockData []common.BlockData, isReorg bool)
 
 		// Event messages
 		if config.Cfg.Publisher.Events.Enabled {
-			for _, event := range data.Logs {
+			for i := range data.Logs {
+				event := &data.Logs[i]
 				if p.shouldPublishEvent(event) {
 					if eventMsg, err := p.createEventMessage(event, status); err == nil {
 						eventMessages = append(eventMessages, eventMsg)
@@ -198,7 +200,8 @@ func (p *Publisher) publishBlockData(blockData []common.BlockData, isReorg bool)
 
 		// Transaction messages
 		if config.Cfg.Publisher.Transactions.Enabled {
-			for _, tx := range data.Transactions {
+			for i := range data.Transactions {
+				tx := &data.Transactions[i]
 				if p.shouldPublishTransaction(tx) {
 					if txMsg, err := p.createTransactionMessage(tx, status); err == nil {
 						txMessages = append(txMessages, txMsg)
@@ -211,7 +214,8 @@ func (p *Publisher) publishBlockData(blockData []common.BlockData, isReorg bool)
 
 		// Trace messages
 		if config.Cfg.Publisher.Traces.Enabled {
-			for _, trace := range data.Traces {
+			for i := range data.Traces {
+				trace := &data.Traces[i]
 				if traceMsg, err := p.createTraceMessage(trace, status); err == nil {
 					traceMessages = append(traceMessages, traceMsg)
 				} else {
@@ -255,44 +259,44 @@ func (p *Publisher) publishBlockData(blockData []common.BlockData, isReorg bool)
 	return nil
 }
 
-func (p *Publisher) createBlockMessage(block common.Block, status string) (*kgo.Record, error) {
+func (p *Publisher) createBlockMessage(block *common.Block, status string) (*kgo.Record, error) {
 	msg := PublishableMessage[common.BlockModel]{
 		Data:   block.Serialize(),
 		Status: status,
 	}
-	msgJson, err := json.Marshal(msg)
+	msgJSON, err := json.Marshal(msg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal block data: %v", err)
 	}
 	return &kgo.Record{
 		Topic: p.getTopicName("blocks"),
-		Key:   []byte(fmt.Sprintf("block-%s-%s-%s", status, block.ChainId.String(), block.Hash)),
-		Value: msgJson,
+		Key:   []byte(fmt.Sprintf("block-%s-%s-%s", status, block.ChainID.String(), block.Hash)),
+		Value: msgJSON,
 	}, nil
 }
 
-func (p *Publisher) createTransactionMessage(tx common.Transaction, status string) (*kgo.Record, error) {
+func (p *Publisher) createTransactionMessage(tx *common.Transaction, status string) (*kgo.Record, error) {
 	msg := PublishableMessage[common.TransactionModel]{
 		Data:   tx.Serialize(),
 		Status: status,
 	}
-	msgJson, err := json.Marshal(msg)
+	msgJSON, err := json.Marshal(msg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal transaction data: %v", err)
 	}
 	return &kgo.Record{
 		Topic: p.getTopicName("transactions"),
-		Key:   []byte(fmt.Sprintf("transaction-%s-%s-%s", status, tx.ChainId.String(), tx.Hash)),
-		Value: msgJson,
+		Key:   []byte(fmt.Sprintf("transaction-%s-%s-%s", status, tx.ChainID.String(), tx.Hash)),
+		Value: msgJSON,
 	}, nil
 }
 
-func (p *Publisher) createTraceMessage(trace common.Trace, status string) (*kgo.Record, error) {
+func (p *Publisher) createTraceMessage(trace *common.Trace, status string) (*kgo.Record, error) {
 	msg := PublishableMessage[common.TraceModel]{
 		Data:   trace.Serialize(),
 		Status: status,
 	}
-	msgJson, err := json.Marshal(msg)
+	msgJSON, err := json.Marshal(msg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal trace data: %v", err)
 	}
@@ -303,27 +307,27 @@ func (p *Publisher) createTraceMessage(trace common.Trace, status string) (*kgo.
 	return &kgo.Record{
 		Topic: p.getTopicName("traces"),
 		Key:   []byte(fmt.Sprintf("trace-%s-%s-%s-%v", status, trace.ChainID.String(), trace.TransactionHash, strings.Join(traceAddressStr, ","))),
-		Value: msgJson,
+		Value: msgJSON,
 	}, nil
 }
 
-func (p *Publisher) createEventMessage(event common.Log, status string) (*kgo.Record, error) {
+func (p *Publisher) createEventMessage(event *common.Log, status string) (*kgo.Record, error) {
 	msg := PublishableMessage[common.LogModel]{
 		Data:   event.Serialize(),
 		Status: status,
 	}
-	msgJson, err := json.Marshal(msg)
+	msgJSON, err := json.Marshal(msg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal event data: %v", err)
 	}
 	return &kgo.Record{
 		Topic: p.getTopicName("events"),
-		Key:   []byte(fmt.Sprintf("event-%s-%s-%s-%d", status, event.ChainId.String(), event.TransactionHash, event.LogIndex)),
-		Value: msgJson,
+		Key:   []byte(fmt.Sprintf("event-%s-%s-%s-%d", status, event.ChainID.String(), event.TransactionHash, event.LogIndex)),
+		Value: msgJSON,
 	}, nil
 }
 
-func (p *Publisher) shouldPublishEvent(event common.Log) bool {
+func (p *Publisher) shouldPublishEvent(event *common.Log) bool {
 	if len(config.Cfg.Publisher.Events.AddressFilter) > 0 {
 		for _, addr := range config.Cfg.Publisher.Events.AddressFilter {
 			if addr == event.Address {
@@ -344,7 +348,7 @@ func (p *Publisher) shouldPublishEvent(event common.Log) bool {
 	return true
 }
 
-func (p *Publisher) shouldPublishTransaction(tx common.Transaction) bool {
+func (p *Publisher) shouldPublishTransaction(tx *common.Transaction) bool {
 	if len(config.Cfg.Publisher.Transactions.ToFilter) > 0 {
 		for _, addr := range config.Cfg.Publisher.Transactions.ToFilter {
 			if addr == tx.ToAddress {
@@ -366,31 +370,31 @@ func (p *Publisher) shouldPublishTransaction(tx common.Transaction) bool {
 }
 
 func (p *Publisher) getTopicName(entity string) string {
-	chainIdSuffix := ""
+	chainIDSuffix := ""
 	if config.Cfg.RPC.ChainID != "" {
-		chainIdSuffix = fmt.Sprintf(".%s", config.Cfg.RPC.ChainID)
+		chainIDSuffix = fmt.Sprintf(".%s", config.Cfg.RPC.ChainID)
 	}
 	switch entity {
 	case "blocks":
 		if config.Cfg.Publisher.Blocks.TopicName != "" {
 			return config.Cfg.Publisher.Blocks.TopicName
 		}
-		return fmt.Sprintf("insight.blocks%s", chainIdSuffix)
+		return fmt.Sprintf("insight.blocks%s", chainIDSuffix)
 	case "transactions":
 		if config.Cfg.Publisher.Transactions.TopicName != "" {
 			return config.Cfg.Publisher.Transactions.TopicName
 		}
-		return fmt.Sprintf("insight.transactions%s", chainIdSuffix)
+		return fmt.Sprintf("insight.transactions%s", chainIDSuffix)
 	case "traces":
 		if config.Cfg.Publisher.Traces.TopicName != "" {
 			return config.Cfg.Publisher.Traces.TopicName
 		}
-		return fmt.Sprintf("insight.traces%s", chainIdSuffix)
+		return fmt.Sprintf("insight.traces%s", chainIDSuffix)
 	case "events":
 		if config.Cfg.Publisher.Events.TopicName != "" {
 			return config.Cfg.Publisher.Events.TopicName
 		}
-		return fmt.Sprintf("insight.events%s", chainIdSuffix)
+		return fmt.Sprintf("insight.events%s", chainIDSuffix)
 	default:
 		return ""
 	}

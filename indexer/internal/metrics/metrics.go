@@ -33,7 +33,7 @@ var (
 	})
 )
 
-// Worker Metrics
+// LastFetchedBlock - Worker Metrics
 var LastFetchedBlock = promauto.NewGauge(prometheus.GaugeOpts{
 	Name: "worker_last_fetched_block_from_rpc",
 	Help: "The last block number fetched by the worker from the RPC",

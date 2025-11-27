@@ -12,12 +12,21 @@ interface ProgressCardProps {
   raised: number;
   goal: number;
   campaignId: string;
-  onRefresh?: (newRaisedAmount: number, newTotalAmount: number) => void;
+  currentBalance: number;
+  totalWithdrawn?: number;
+  onRefresh?: (newRaisedAmount: number, newTotalWithdrawn: number) => void;
 }
-export function ProgressCard({ raised, goal, campaignId, onRefresh }: ProgressCardProps) {
+export function ProgressCard({
+  raised,
+  goal,
+  campaignId,
+  currentBalance,
+  totalWithdrawn,
+  onRefresh,
+}: ProgressCardProps) {
   const { mutate, isPending } = useRefreshCampaignRaised({
-    onSuccess: ({ total_amount, total_contributors }) => {
-      onRefresh?.(total_amount, total_contributors);
+    onSuccess: ({ total_amount, total_withdrawn }) => {
+      onRefresh?.(total_amount, total_withdrawn);
     },
   });
 
@@ -41,6 +50,34 @@ export function ProgressCard({ raised, goal, campaignId, onRefresh }: ProgressCa
           {NumberUtil.formatWithCommasAndScale(raised)}
           <span className="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400">{APP_CONFIG.CHAIN_SYMBOL}</span>
         </p>
+      </CardContent>
+      <CardFooter className="mt-2 flex justify-between text-xs text-gray-500 dark:text-gray-400">
+        <span>
+          Goal {NumberUtil.formatWithCommas(goal)} {APP_CONFIG.CHAIN_SYMBOL}
+        </span>
+        <span>{progress}% funded</span>
+      </CardFooter>
+
+      <CardContent className="pt-0">
+        <p className="text-lg font-semibold text-emerald-500 dark:text-emerald-300">
+          {NumberUtil.formatWithCommasAndScale(currentBalance)}
+          <span className="ml-1 text-sm font-medium">{APP_CONFIG.CHAIN_SYMBOL}</span>
+        </p>
+      </CardContent>
+      <CardFooter className="text-xs text-gray-500 dark:text-gray-400">
+        <span>Current Balance</span>
+      </CardFooter>
+
+      <CardContent className="pt-0">
+        <p className="text-error-primary-600 text-lg font-semibold">
+          {NumberUtil.formatWithCommasAndScale(totalWithdrawn || 0)}
+          <span className="ml-1 text-sm font-medium">{APP_CONFIG.CHAIN_SYMBOL}</span>
+        </p>
+      </CardContent>
+      <CardFooter className="text-xs text-gray-500 dark:text-gray-400">
+        <span>Total Withdrawn</span>
+      </CardFooter>
+      <CardContent className="pt-0">
         <div className="relative mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
           <div
             className="bg-brand-primary h-full rounded-full transition-all duration-500 ease-out"
@@ -48,13 +85,6 @@ export function ProgressCard({ raised, goal, campaignId, onRefresh }: ProgressCa
           />
         </div>
       </CardContent>
-
-      <CardFooter className="mt-2 flex justify-between text-xs text-gray-500 dark:text-gray-400">
-        <span>
-          Goal {NumberUtil.formatWithCommas(goal)} {APP_CONFIG.CHAIN_SYMBOL}
-        </span>
-        <span>{progress}% funded</span>
-      </CardFooter>
     </Card>
   );
 }
