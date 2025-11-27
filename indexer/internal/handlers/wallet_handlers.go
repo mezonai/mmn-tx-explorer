@@ -48,8 +48,8 @@ func GetWallets(c *gin.Context) {
 	}
 
 	// Validate fields against wallet table
-	if err := api.ValidateGroupByAndSortBy("wallet", queryParams.GroupBy, queryParams.SortBy, queryParams.Aggregates); err != nil {
-		api.BadRequestErrorHandler(c, err)
+	if validateErr := api.ValidateGroupByAndSortBy("wallet", queryParams.GroupBy, queryParams.SortBy, queryParams.Aggregates); validateErr != nil {
+		api.BadRequestErrorHandler(c, validateErr)
 		return
 	}
 
@@ -61,7 +61,7 @@ func GetWallets(c *gin.Context) {
 	}
 
 	// Count for meta
-	countQf := storage.QueryFilter{
+	countQf := &storage.QueryFilter{
 		FilterParams:        queryParams.FilterParams,
 		ForceConsistentData: queryParams.ForceConsistentData,
 	}
@@ -74,7 +74,7 @@ func GetWallets(c *gin.Context) {
 	}
 
 	// Build query filter
-	qf := storage.QueryFilter{
+	qf := &storage.QueryFilter{
 		FilterParams:        queryParams.FilterParams,
 		SortBy:              queryParams.SortBy,
 		SortOrder:           queryParams.SortOrder,
@@ -116,6 +116,7 @@ type WalletDetailResponse struct {
 	Data map[string]interface{} `json:"data"`
 }
 
+// GetWalletDetail godoc
 // @Summary Get wallet detail
 // @Description Retrieve detailed information about a specific wallet
 // @Tags wallet
@@ -151,7 +152,7 @@ func GetWalletDetail(c *gin.Context) {
 		return
 	}
 	// Build query filter to fetch a single wallet row
-	qf := storage.QueryFilter{
+	qf := &storage.QueryFilter{
 		FilterParams:        map[string]string{"address": address},
 		Limit:               1,
 		ForceConsistentData: queryParams.ForceConsistentData,

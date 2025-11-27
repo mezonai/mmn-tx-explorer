@@ -33,6 +33,7 @@ type InternalTransactionDetailResponse struct {
 	} `json:"data"`
 }
 
+// GetBlockDetail godoc
 // @Summary Get block detail
 // @Description Retrieve detailed information about a specific block including all transactions
 // @Tags detail
@@ -51,6 +52,7 @@ func GetBlockDetail(c *gin.Context) {
 	handleBlockDetailRequest(c)
 }
 
+// GetTransactionDetail godoc
 // @Summary Get transaction detail
 // @Description Retrieve detailed information about a specific transaction including logs and traces
 // @Tags detail
@@ -69,6 +71,7 @@ func GetTransactionDetail(c *gin.Context) {
 	handleTransactionDetailRequest(c, false)
 }
 
+// GetInternalTransactionDetail godoc
 // @Summary Get internal transaction detail
 // @Description Retrieve detailed information about a specific transaction without extra_info field (for internal use)
 // @Tags detail
@@ -88,7 +91,7 @@ func GetInternalTransactionDetail(c *gin.Context) {
 }
 
 func handleBlockDetailRequest(c *gin.Context) {
-	chainId, err := api.GetChainId(c)
+	chainID, err := api.GetChainID(c)
 	if err != nil {
 		api.BadRequestErrorHandler(c, err)
 		return
@@ -114,8 +117,8 @@ func handleBlockDetailRequest(c *gin.Context) {
 	}
 
 	// Get block details
-	blockResult, err := mainStorage.GetBlocks(storage.QueryFilter{
-		ChainId:      chainId,
+	blockResult, err := mainStorage.GetBlocks(&storage.QueryFilter{
+		ChainID:      chainID,
 		BlockNumbers: []*big.Int{blockNumber},
 		Limit:        1,
 	})
@@ -145,7 +148,7 @@ func handleBlockDetailRequest(c *gin.Context) {
 }
 
 func handleTransactionDetailRequest(c *gin.Context, isInternalUse bool) {
-	chainId, err := api.GetChainId(c)
+	chainID, err := api.GetChainID(c)
 	if err != nil {
 		api.BadRequestErrorHandler(c, err)
 		return
@@ -166,8 +169,8 @@ func handleTransactionDetailRequest(c *gin.Context, isInternalUse bool) {
 
 	ctx := c.Request.Context()
 	// Get transaction details
-	transactionResult, err := mainStorage.GetTransactions(ctx, storage.QueryFilter{
-		ChainId: chainId,
+	transactionResult, err := mainStorage.GetTransactions(ctx, &storage.QueryFilter{
+		ChainID: chainID,
 		FilterParams: map[string]string{
 			"hash": txHash,
 		},

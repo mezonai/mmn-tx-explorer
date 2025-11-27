@@ -74,7 +74,7 @@ definitions:
       creator:
         type: string
       current_balance:
-        type: string
+        type: integer
       description:
         type: string
       donation_wallet:
@@ -96,6 +96,8 @@ definitions:
       total_amount:
         type: integer
       total_contributors:
+        type: integer
+      total_withdrawn:
         type: integer
       updated_at:
         type: string
@@ -278,6 +280,8 @@ definitions:
       total_amount:
         type: integer
       total_contributors:
+        type: integer
+      total_withdrawn:
         type: integer
     type: object
   models.TopContributor:

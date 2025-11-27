@@ -1712,7 +1712,7 @@
                     "type": "string"
                 },
                 "current_balance": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "description": {
                     "type": "string"
@@ -1745,6 +1745,9 @@
                     "type": "integer"
                 },
                 "total_contributors": {
+                    "type": "integer"
+                },
+                "total_withdrawn": {
                     "type": "integer"
                 },
                 "updated_at": {
@@ -2023,6 +2026,9 @@
                     "type": "integer"
                 },
                 "total_contributors": {
+                    "type": "integer"
+                },
+                "total_withdrawn": {
                     "type": "integer"
                 }
             }

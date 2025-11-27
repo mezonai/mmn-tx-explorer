@@ -1715,7 +1715,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "current_balance": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "description": {
                     "type": "string"
@@ -1748,6 +1748,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "total_contributors": {
+                    "type": "integer"
+                },
+                "total_withdrawn": {
                     "type": "integer"
                 },
                 "updated_at": {
@@ -2026,6 +2029,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "total_contributors": {
+                    "type": "integer"
+                },
+                "total_withdrawn": {
                     "type": "integer"
                 }
             }

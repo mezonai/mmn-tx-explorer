@@ -30,9 +30,9 @@ type ServerConfig struct {
 	GinMode string `mapstructure:"gin_mode"` // debug, release, test
 }
 type JWTConfig struct {
-	Secret      string `mapstructure:"secret"`
-	Refresh_Exp int    `mapstructure:"refresh_exp"`
-	Access_Exp  int    `mapstructure:"access_exp"`
+	Secret     string `mapstructure:"secret"`
+	RefreshExp int    `mapstructure:"refresh_exp"`
+	AccessExp  int    `mapstructure:"access_exp"`
 }
 
 type RedisConfig struct {
@@ -83,12 +83,13 @@ type SchedulerConfig struct {
 }
 
 type LockConfig struct {
-	Lock_Exp    int `mapstructure:"lock_exp"` // in seconds
-	Cnt_Retry   int `mapstructure:"cnt_retry"`
-	Retry_Delay int `mapstructure:"retry_delay"` // in milliseconds
+	LockExp    int `mapstructure:"lock_exp"` // in seconds
+	CntRetry   int `mapstructure:"cnt_retry"`
+	RetryDelay int `mapstructure:"retry_delay"` // in milliseconds
 }
+
 type CacheRequestConfig struct {
-	Cache_Exp int `mapstructure:"cache_exp"` // in seconds
+	CacheExp int `mapstructure:"cache_exp"` // in seconds
 }
 
 func LoadConfig(cfgFile string) (*Config, error) {

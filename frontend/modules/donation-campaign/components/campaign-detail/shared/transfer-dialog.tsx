@@ -47,7 +47,7 @@ export function TransferDialog({
 
   const fetchBalance = useCallback(async () => {
     try {
-      const newBalance = Number(currentCampaign.current_balance ?? 0);
+      const newBalance = currentCampaign.current_balance ?? 0;
       setCurrentBalanceValue(newBalance);
     } catch (error) {
       setCurrentBalanceValue(0);

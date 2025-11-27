@@ -1,6 +1,6 @@
 'use client';
 
-import { AddressDisplay, RefreshButton } from '@/components/shared';
+import { RefreshButton } from '@/components/shared';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table } from '@/components/ui/table';
 import { ROUTES } from '@/configs/routes.config';
@@ -19,7 +19,7 @@ import { NumberUtil } from '@/utils';
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 
-export interface RecentActivityTableProps {
+export interface WithdrawHistoryTableProps {
   transactions?: Transaction[];
   totalTransaction: number;
   walletAddress: string;
@@ -28,48 +28,56 @@ export interface RecentActivityTableProps {
   refetch: () => void;
 }
 
-export function RecentActivityTable({
+export function WithdrawHistoryTable({
   transactions,
   totalTransaction,
   walletAddress,
   hidden,
   isLoading = false,
   refetch,
-}: RecentActivityTableProps) {
+}: WithdrawHistoryTableProps) {
   const columns: TTableColumn<Transaction>[] = [
     {
-      headerContent: 'Sender',
-      dataKey: 'from_address',
-      renderCell: (tx) => <AddressDisplay address={tx.from_address} href={ROUTES.WALLET(tx.from_address)} />,
-      skeletonContent: <div className="h-5 w-32 rounded bg-gray-200 dark:bg-gray-700" />,
+      headerContent: 'Time',
+      dataKey: 'transaction_timestamp',
+      renderCell: (tx) => <TransactionTime transactionTimestamp={tx.transaction_timestamp} showAbsolute={true} className='w-40'/>,
+      skeletonContent: <TransactionTimeSkeleton className='w-40' />,
     },
     {
       headerContent: 'Amount',
       dataKey: 'value',
       renderCell: (tx) => (
-        <span className="font-semibold text-emerald-500 dark:text-emerald-300">
+        <span className="font-semibold text-error-primary-600 w-20 text-start">
           {NumberUtil.formatWithCommasAndScale(tx.value)}
         </span>
       ),
-      skeletonContent: <TransactionValueSkeleton />,
-    },
-    {
-      headerContent: 'Time',
-      dataKey: 'transaction_timestamp',
-      renderCell: (tx) => <TransactionTime transactionTimestamp={tx.transaction_timestamp} showAbsolute={true} />,
-      skeletonContent: <TransactionTimeSkeleton />,
+      skeletonContent: <TransactionValueSkeleton className="w-20" />,
     },
     {
       headerContent: 'Tx Hash',
       dataKey: 'hash',
-      renderCell: (tx) => <TxnHashLink hash={tx.hash} isPending={false} />,
+      renderCell: (tx) => (
+        <div className="flex flex-col items-start">
+          <TxnHashLink hash={tx.hash} isPending={false} className="w-40" />{' '}
+        </div>
+      ),
       skeletonContent: <TxnHashLinkSkeleton className="w-40" />,
+    },
+    {
+      headerContent: 'Purpose',
+      dataKey: 'text_data',
+      renderCell: (tx) => (
+        <div className="truncate overflow-hidden max-w-80 text-start">
+          <span>{tx.text_data}</span>
+        </div>
+      ),
+      skeletonContent: <div className="h-5 w-80 rounded bg-gray-200 dark:bg-gray-700" />,
     },
   ];
   return (
     <Card className="dark:border-primary/20 overflow-x-auto p-6">
       <CardHeader className="m-0 flex items-center justify-between gap-2 px-3 py-0">
-        <CardTitle className="text-foreground">Recent Activity</CardTitle>
+        <CardTitle className="text-foreground">Withdrawals</CardTitle>
         <RefreshButton onClick={refetch} isLoading={isLoading} startDelay={DEFAULT_DEBOUNCE_TIME} />
       </CardHeader>
       <CardContent className="p-0">
@@ -78,16 +86,15 @@ export function RecentActivityTable({
           rows={transactions}
           isLoading={isLoading}
           getRowKey={(tx) => tx.hash}
-          nullDataContext="No recent activity found."
+          nullDataContext="No withdraw found."
           classNameLayout="border-none"
-          className="table-fixed"
         />
       </CardContent>
       <CardFooter>
         <div className="mt-4 flex w-full items-center justify-between text-xs text-gray-500 dark:text-gray-400">
           <span className="order-1">{`Showing ${transactions?.length ?? 0} of total ${totalTransaction}`}</span>
           <Link
-            href={ROUTES.WALLET(walletAddress, 'type=received')}
+            href={ROUTES.WALLET(walletAddress, 'type=sent')}
             className={cn(
               'text-brand-primary hover:text-brand-primary/70 order-2 inline-flex items-center font-medium transition',
               {
@@ -95,7 +102,7 @@ export function RecentActivityTable({
               }
             )}
           >
-            View full activity
+            View full withdrawals
             <ChevronRight className="ml-1 text-sm" />
           </Link>
         </div>
