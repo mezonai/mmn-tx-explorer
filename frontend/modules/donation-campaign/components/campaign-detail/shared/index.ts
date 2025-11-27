@@ -5,3 +5,4 @@ export * from './donation-sidebar';
 export * from './donate-dialog';
 export * from './insights-card';
 export * from './progress-card';
+export * from './donation-feed';

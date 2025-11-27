@@ -120,3 +120,17 @@ export interface TopContributorsResponse {
     contributors: TopContributor[];
   };
 }
+
+export interface CampaignUpdates {
+  id: string;
+  campaign_id: string;
+  title: string;
+  content: string;
+  timestamp: number;
+  owner?: string;
+  images?: string[];
+  cid: string;
+  txHash: string;
+  created_at: string;
+  status: 'recent' | 'older' | 'hidden';
+}
