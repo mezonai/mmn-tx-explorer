@@ -50,8 +50,6 @@ func (h *CampaignStatisticsHandler) GetCampaignStats(c *gin.Context) {
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgCampaignsRetrieved, stats))
 }
 
-// (no top campaigns handler here — endpoint reverted)
-
 // SyncCampaign godoc
 // @Summary Sync contributors and statistics for a campaign
 // @Description Manually trigger synchronization of contributors and statistics for a specific campaign
