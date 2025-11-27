@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"dong-service/config"
 	"dong-service/constants"
 	"dong-service/logger"
 	"dong-service/models"
@@ -233,17 +232,6 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 		return models.SyncCampaignResponse{TotalAmount: 0, TotalContributors: 0, TotalWithdrawn: 0}, fmt.Errorf("failed to sync contributors: %w", err)
 	}
 
-	// Update statistics for this specific campaign
-	var windowDays int
-	windowDays = r.recentWindowDays
-	if windowDays <= 0 {
-		if cfg, err := config.LoadConfig("config/config.yml"); err == nil {
-			if cfg.Scheduler.RecentStatsWindowDays > 0 {
-				windowDays = cfg.Scheduler.RecentStatsWindowDays
-			}
-		}
-	}
-	// Calculate recent_amount (sum of donations in lookback window)
 	recentAmountQuery := fmt.Sprintf(`
 		SELECT COALESCE(SUM(value), 0)
 		FROM %s.transactions
@@ -251,7 +239,7 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 		AND status = $2
 		AND value > 0
 		AND transaction_timestamp >= NOW() - INTERVAL '%d days'
-	`, r.indexerSchema, windowDays)
+	`, r.indexerSchema, r.recentWindowDays)
 
 	var recentAmount int64
 	err = r.db.QueryRowContext(ctx, recentAmountQuery, campaign.DonationWallet, constants.TransactionStatusFINALIZED).Scan(&recentAmount)

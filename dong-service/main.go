@@ -93,9 +93,6 @@ func main() {
 	syncTask := scheduler.CreateSyncContributorsTask(syncInterval, cfg.Indexer.Schema, cfg.Database.Schema, cfg.Scheduler.RecentStatsWindowDays)
 	schedulerInstance.AddTask(syncTask)
 
-	recentTask := scheduler.CreateRecentAmountTask(syncInterval, cfg.Indexer.Schema, cfg.Database.Schema, cfg.Scheduler.RecentStatsWindowDays)
-	schedulerInstance.AddTask(recentTask)
-
 	// Start scheduler
 	schedulerInstance.Start(ctx)
 
