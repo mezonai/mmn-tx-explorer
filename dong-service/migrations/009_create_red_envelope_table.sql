@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS red_envelope_split_money (
     amount BIGINT NOT NULL,
     status VARCHAR(255) NOT NULL DEFAULT 'AVAILABLE', 
     claim_order INT NOT NULL,
-    claimed_id BIGINT,
+    claimed_user_id BIGINT,
     claimed_address VARCHAR(255),
     claimed_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -103,6 +103,9 @@ ALTER TABLE red_envelope ADD CONSTRAINT chk_red_envelope_status
 
 ALTER TABLE red_envelope_split_money ADD CONSTRAINT chk_red_envelope_split_money
     CHECK (status IN ('AVAILABLE', 'RESERVED', 'CLAIMED'));
+
+ALTER TABLE red_envelope_split_money ADD CONSTRAINT uq_red_envelope_user 
+    UNIQUE (red_envelope_id, claimed_user_id);
     
 -- Comments
 COMMENT ON INDEX idx_red_envelope_status_creator IS 'Index for filtering by status and creator';
@@ -118,7 +121,7 @@ CREATE INDEX idx_red_envelope_split_money_order ON red_envelope_split_money(red_
 COMMENT ON TABLE red_envelope_split_money IS 'Pre-calculated split amounts for each claim';
 COMMENT ON COLUMN red_envelope_split_money.status IS 'Indicates if this split amount has been claimed';
 COMMENT ON COLUMN red_envelope_split_money.claim_order IS 'Sequential order for claiming splits';
-COMMENT ON COLUMN red_envelope_split_money.claimed_id IS 'User Id that claimed this split';
+COMMENT ON COLUMN red_envelope_split_money.claimed_user_id IS 'User Id that claimed this split';
 COMMENT ON COLUMN red_envelope_split_money.claimed_address IS 'Wallet address that claimed this split';
 COMMENT ON COLUMN red_envelope_split_money.claimed_at IS 'Timestamp when this split was claimed';
 COMMENT ON COLUMN red_envelope_split_money.created_at IS 'Record creation timestamp';

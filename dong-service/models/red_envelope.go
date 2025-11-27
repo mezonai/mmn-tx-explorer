@@ -96,7 +96,7 @@ type RedEnvelopeCloseSesssion struct {
 }
 
 type ClaimAmount struct {
-	Id          int64
+	ID          int64
 	Amount      int64
 	Description string
 }
@@ -107,8 +107,13 @@ type RedEnvelopeSplitMoney struct {
 	Amount         int64   `json:"amount" db:"amount"`
 	Status         string  `json:"status" db:"status"`
 	ClaimOrder     int     `json:"claim_order" db:"claim_order"`
-	ClaimedID      int64   `json:"claimed_id,omitempty" db:"claim_id"`
+	ClaimedUserID  int64   `json:"claimed_user_id,omitempty" db:"claimed_user_id"`
 	ClaimedAddress *string `json:"claimed_address,omitempty" db:"claimed_address"`
 	ClaimedAt      *string `json:"claimed_at,omitempty" db:"claimed_at"`
 	CreatedAt      string  `json:"created_at" db:"created_at"`
+}
+
+type ClaimRedEnvelopeRequest struct {
+	ID           string `json:"id" binding:"required"`
+	SplitMoneyID int64  `json:"split_money_id" binding:"required"`
 }

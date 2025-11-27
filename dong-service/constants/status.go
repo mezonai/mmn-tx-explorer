@@ -64,6 +64,12 @@ const (
 )
 
 const (
+	ClaimStatusError         = 0
+	ClaimStatusSuccess       = 1
+	ClaimStatusAlreadyQueued = 2
+)
+
+const (
 	ExtraInfoLuckyMoney = `{"type":"lucky-money"}`
 )
 
