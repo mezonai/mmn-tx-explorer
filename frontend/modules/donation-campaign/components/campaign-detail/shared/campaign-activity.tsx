@@ -33,14 +33,14 @@ export function CampaignActivity({ campaign, walletAddress }: { campaign: Donati
   const searchReceivedParams: ITransactionListParams = {
     ...DEFAULT_VALUE_DATA_SEARCH,
     filter_to_address: walletAddress,
-    start_time: campaign.created_at,
+    start_time: new Date(campaign.created_at).toISOString().slice(0, 10),
     end_time: new Date().toISOString().slice(0, 10)
   };
 
   const searchSentParams: ITransactionListParams = {
     ...DEFAULT_VALUE_DATA_SEARCH,
     filter_from_address: walletAddress,
-    start_time: campaign.created_at,
+    start_time: new Date(campaign.created_at).toISOString().slice(0, 10),
     end_time: new Date().toISOString().slice(0, 10)
   };
 
