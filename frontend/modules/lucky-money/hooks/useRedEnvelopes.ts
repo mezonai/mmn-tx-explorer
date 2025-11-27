@@ -25,14 +25,14 @@ export const useClaimedEnvelopes = (params: EnvelopeListParams) => {
 };
 
 export const useCreatedRedEnvelops = (params: EnvelopeListParams) => {
-  const { page, limit, wallet_address } = params;
+  const { page, limit } = params;
 
   const {
     data: response,
     isLoading,
     error,
   } = useQuery({
-    queryKey: [QUERY_KEYS.CREATED_ENVELOPES, { page, limit, wallet_address }],
+    queryKey: [QUERY_KEYS.CREATED_ENVELOPES, { page, limit }],
     queryFn: () =>
       RedEnvelopeService.getCreatedEnvelopes({
         ...params,page: params.page,

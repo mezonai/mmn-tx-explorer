@@ -1,6 +1,6 @@
 'use client';
 
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Loader2, AlertCircle } from 'lucide-react'; 
 import { truncateWalletAddress, formatClaimDate } from '../../utils';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
@@ -31,7 +31,39 @@ export const RedEnvelopeDetail = () => {
     qrSize,
     truncateChars,
     handleCloseSession,
+    isLoading,
+    isError,
+    refetch,
   } = useRedEnvelopeDetail();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center space-y-4">
+        <Loader2 className="w-10 h-10 animate-spin text-purple-600" />
+        <p className="text-muted-foreground">Loading details...</p>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <div className="bg-red-50 dark:bg-red-800/20 border border-red-200 dark:border-red-800 rounded-lg p-6 max-w-md w-full text-center space-y-4">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />
+          <h2 className="text-xl font-semibold text-red-700 dark:text-red-600">Failed to load data</h2>
+          <p className="text-sm text-red-600 dark:text-red-300">
+            Could not fetch lucky money details. Please check your connection and try again.
+          </p>
+          <button 
+            onClick={() => refetch()}
+            className="px-4 py-2 bg-red-700 hover:bg-red-800 text-white rounded-md transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen text-foreground dark:text-white p-4 md:p-8 font-sans">
@@ -71,10 +103,9 @@ export const RedEnvelopeDetail = () => {
 
         <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-8 mb-8">
           {statsCards.map((item) => {
-            const isLoading = item.value === undefined;
             const cardClassName = cn(
               'p-0',
-              isLoading ? 'bg-background' : 'bg-card',
+              'bg-card',
               'dark:border-primary/15'
             );
             return (
@@ -159,6 +190,11 @@ export const RedEnvelopeDetail = () => {
                     <td className="p-2 md:p-4 font-mono text-xs md:text-sm text-purple-600 dark:text-purple-400 break-all">{truncateWalletAddress(item.transaction_hash)}</td>
                   </tr>
                 ))}
+                {(!recipients || recipients.length === 0) && (
+                    <tr>
+                        <td colSpan={4} className="p-4 text-center text-muted-foreground">No recipients yet</td>
+                    </tr>
+                )}
               </tbody>
             </table>
           </div>

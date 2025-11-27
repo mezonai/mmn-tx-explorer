@@ -3,20 +3,17 @@ import { SendIcon} from 'lucide-react';
 
 import { StatusBadge } from './statusBadge';
 import { useCreatedRedEnvelops } from '@/modules/lucky-money/hooks/useRedEnvelopes';
-import { useUser } from '@/providers';
 import { usePaginationQueryParam } from '@/hooks';
 import { Pagination } from '@/components/ui/pagination';
 import Link from 'next/link';
 import { ROUTES } from '@/configs/routes.config';
 
 export const CreatedEnvelopes = () => {
-  const { user } = useUser();
   const { page, limit, handleChangePage, handleChangeLimit} = usePaginationQueryParam();
 
   const { envelopes, meta, isLoading } = useCreatedRedEnvelops({
     page,
     limit,
-    wallet_address: user?.walletAddress || '',
   }); 
   console.log("envelopes : ", envelopes);
 

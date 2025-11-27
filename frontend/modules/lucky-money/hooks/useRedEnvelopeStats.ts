@@ -3,10 +3,10 @@ import { QUERY_KEYS } from "../constants";
 import { RedEnvelopeService } from "../api";
 import { RedEnvelopeStats } from "../type";
 
-export function useRedEnvelopeStats(walletAddress: string) {
+export function useRedEnvelopeStats() {
   const {data} = useQuery({
-    queryKey: [QUERY_KEYS.RED_ENVELOPE_STATS, walletAddress],
-    queryFn: () => RedEnvelopeService.getEnvelopeStats(walletAddress),
+    queryKey: [QUERY_KEYS.RED_ENVELOPE_STATS],
+    queryFn: () => RedEnvelopeService.getEnvelopeStats(),
   });
 
   const fallback: RedEnvelopeStats = {
