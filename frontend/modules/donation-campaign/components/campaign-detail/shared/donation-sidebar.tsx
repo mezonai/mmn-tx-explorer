@@ -28,7 +28,11 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
 
   const getQrImage = (callback: (blob: Blob | null) => void) => {
     const svg = qrRef.current?.querySelector('svg');
-    if (!svg) return;
+    if (!svg) {
+      console.error('QR Code SVG not found');
+      callback(null);
+      return;
+    }
 
     const xml = new XMLSerializer().serializeToString(svg);
     const svg64 = btoa(xml);
@@ -36,6 +40,10 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
     const image64 = b64Start + svg64;
 
     const img = new Image();
+    img.onerror = () => {
+      console.error('Failed to load QR image');
+      callback(null);
+    };
     img.src = image64;
 
     img.onload = () => {
