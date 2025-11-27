@@ -1,5 +1,6 @@
 import { ROUTES } from '@/configs/routes.config';
 import { DateTimeUtil } from '@/utils';
+import { buildPathWithChain } from '@/service/utils';
 
 export async function exportTransactionsToCSV(
   wallet_address: string,
@@ -16,8 +17,8 @@ export async function exportTransactionsToCSV(
   if (fromDate) params.append('fromdate', formatLocalDate(fromDate));
   if (toDate) params.append('todate', formatLocalDate(toDate));
   const baseUrl = process.env.NEXT_PUBLIC_APP_API_URL || '';
-  const chainId = process.env.NEXT_PUBLIC_CHAIN_ID || '';
-  const url = `${baseUrl}/${chainId}${ROUTES.EXPORT_CSV}?${params.toString()}`;
+  const path = buildPathWithChain('/:chainId' + ROUTES.EXPORT_CSV);
+  const url = `${baseUrl}${path}?${params.toString()}`;
   const response = await fetch(url, { method: 'GET' });
   if (!response.ok) {
     const raw = await response.text();

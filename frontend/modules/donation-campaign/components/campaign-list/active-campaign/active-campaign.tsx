@@ -81,7 +81,7 @@ export const ActiveCampaign = () => {
       ...(statusFilter !== 'all' ? { status: String(statusFilter) } : {}),
       ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
       ...(showMine && userIdStr ? { creator: userIdStr } : {}),
-      order: sortBy === SortBy.Newest ? ESortOrder.DESC : ESortOrder.ASC,
+      order: sortBy === SortBy.Newest || sortBy === SortBy.MostFunded ? ESortOrder.DESC : ESortOrder.ASC,
       order_by,
       verified: isVerified,
     };
