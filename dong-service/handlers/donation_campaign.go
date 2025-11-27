@@ -9,6 +9,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -164,12 +165,46 @@ func (h *DonationCampaignHandler) GetCampaign(c *gin.Context) {
 // @Param status query int false "Filter by status (e.g., 0=draft,1=active,2=closed)"
 // @Param order query string false "Sort direction" Enums(asc,desc) default(desc)
 // @Param order_by query string false "Sort field" Enums(created_at,total_amount) default(created_at)
+// @Param q query string false "Search (name or description)"
+// @Param search query string false "Search (name or description) (alias)"
 // @Success 200 {object} models.PaginatedResponse{data=[]models.DonationCampaignResponse, meta=models.PaginationMeta}
 // @Failure 500 {object} models.Response
 // @Router /api/v1/campaigns [get]
 func (h *DonationCampaignHandler) ListCampaigns(c *gin.Context) {
 	pagination := utils.GetPaginationParams(c)
 	statusPtr := utils.ParseInt16Query(c, "status")
+	// parse verified flag if present
+	var verifiedPtr *bool
+	if v := c.Query("verified"); v != "" {
+		if b, err := strconv.ParseBool(v); err == nil {
+			verifiedPtr = &b
+		}
+	}
+
+	// parse search query if present (accept q or search for backward compatibility)
+	var qPtr *string
+	if qs := strings.TrimSpace(c.Query("q")); qs != "" {
+		qPtr = &qs
+	} else if s := strings.TrimSpace(c.Query("search")); s != "" {
+		qPtr = &s
+	}
+
+	var creatorPtr *string
+	if creatorStr := strings.TrimSpace(c.Query("creator")); creatorStr != "" {
+		tmp := creatorStr
+		creatorPtr = &tmp
+	}
+	if creatorPtr == nil {
+		if p := c.Param("creator"); p != "" {
+			tmp := p
+			creatorPtr = &tmp
+		}
+	}
+
+	creatorLog := ""
+	if creatorPtr != nil {
+		creatorLog = *creatorPtr
+	}
 
 	logger.Debug().
 		Int("page", pagination.Page).
@@ -177,9 +212,10 @@ func (h *DonationCampaignHandler) ListCampaigns(c *gin.Context) {
 		Interface("status", statusPtr).
 		Str("order", pagination.Order).
 		Str("order_by", pagination.OrderBy).
+		Str("creator", creatorLog).
 		Msg("Listing campaigns")
 
-	campaigns, err := h.repo.GetAll(statusPtr, pagination)
+	campaigns, err := h.repo.GetAll(statusPtr, verifiedPtr, qPtr, pagination, creatorPtr)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to get campaigns list")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToGetCampaigns+": "+err.Error()))
@@ -187,7 +223,7 @@ func (h *DonationCampaignHandler) ListCampaigns(c *gin.Context) {
 	}
 
 	// Get total count
-	total, err := h.repo.Count(statusPtr)
+	total, err := h.repo.Count(statusPtr, verifiedPtr, qPtr, creatorPtr)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to count campaigns")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToGetCampaigns+": "+err.Error()))

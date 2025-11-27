@@ -8,6 +8,7 @@ import { CopyButton } from '@/components/ui/copy-button';
 import { ROUTES } from '@/configs/routes.config';
 import { APP_CONFIG } from '@/configs/app.config';
 import { useTheme } from '@/providers/ThemeProvider';
+import { STORAGE_KEYS } from '@/constant';
 
 export const SidebarAuthPanel = () => {
   const { user } = useUser();
@@ -46,20 +47,20 @@ export const SidebarAuthPanel = () => {
       </div>
       {open && (
         <div className="bg-background absolute bottom-full left-4 z-50 mb-2 flex w-80 flex-col gap-2 rounded-2xl border p-4 shadow-xl">
-          <div className="flex items-center space-x-3 border-b border-gray-300 dark:border-gray-700 pb-3">
+          <div className="flex items-center space-x-3 border-b border-gray-300 pb-3 dark:border-gray-700">
             {user.avatar && (
               <img
                 src={user.avatar}
                 alt="User Avatar"
-                className="w-10 h-10 rounded-full border border-gray-300 dark:border-gray-600 object-cover"
+                className="h-10 w-10 rounded-full border border-gray-300 object-cover dark:border-gray-600"
               />
             )}
             <div>
               <div className="flex items-center space-x-2">
                 <h3 className="font-semibold text-gray-900 dark:text-white">{user.username}</h3>
-                <span className="text-green-400 text-xs">● Online</span>
+                <span className="text-xs text-green-400">● Online</span>
               </div>
-              <p className="text-gray-600 dark:text-gray-400 text-xs flex items-center gap-2">
+              <p className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                 <span>ID:</span>
                 <span className="font-mono text-gray-900 dark:text-gray-300">{user.id}</span>
                 <CopyButton textToCopy={String(user.id)} className="!size-4" />
@@ -68,28 +69,28 @@ export const SidebarAuthPanel = () => {
           </div>
 
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between">
               <span className="text-gray-600 dark:text-gray-400">Wallet</span>
               <div className="flex items-center space-x-2">
-                <span className="font-mono text-gray-900 dark:text-gray-200 text-sm">
+                <span className="font-mono text-sm text-gray-900 dark:text-gray-200">
                   {user.walletAddress ? `${user.walletAddress.slice(0, 3)}...${user.walletAddress.slice(-4)}` : 'N/A'}
                 </span>
                 {user.walletAddress && <CopyButton textToCopy={user.walletAddress} className="ml-1" />}
               </div>
             </div>
 
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between">
               <span className="text-gray-600 dark:text-gray-400">Network</span>
-              <span className="text-gray-900 dark:text-gray-200 flex items-center space-x-1">
+              <span className="flex items-center space-x-1 text-gray-900 dark:text-gray-200">
                 <i className="fa-solid fa-globe text-xs"></i>
                 <span>{APP_CONFIG.CHAIN_NAME}</span>
               </span>
             </div>
 
             {user.email && (
-              <div className="flex justify-between items-center">
+              <div className="flex items-center justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Email</span>
-                <span className="text-gray-900 dark:text-gray-200 text-xs truncate max-w-[180px]">{user.email}</span>
+                <span className="max-w-[180px] truncate text-xs text-gray-900 dark:text-gray-200">{user.email}</span>
               </div>
             )}
           </div>
@@ -99,30 +100,50 @@ export const SidebarAuthPanel = () => {
           <div className="space-y-1 text-sm">
             <a
               href={user.walletAddress ? ROUTES.WALLET(user.walletAddress) : ROUTES.PROFILE}
-              className="group cursor-pointer flex w-full items-center justify-between px-3 py-2 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="group flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-gray-900 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800"
             >
               <span className="flex items-center space-x-2">
-                <i className="fa-solid fa-wallet text-[var(--color-brand-primary)] w-4 text-center"></i>
+                <i className="fa-solid fa-wallet w-4 text-center text-[var(--color-brand-primary)]"></i>
                 <span className="transition-colors">Account Overview</span>
               </span>
-              <i className="fa-solid fa-chevron-right text-gray-500 text-xs transition-all group-hover:translate-x-0.5"></i>
+              <i className="fa-solid fa-chevron-right text-xs text-gray-500 transition-all group-hover:translate-x-0.5"></i>
             </a>
             <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="group cursor-pointer flex w-full items-center justify-between px-3 py-2 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  sessionStorage.setItem(STORAGE_KEYS.SHOW_MINE_CAMPAIGNS, 'true');
+                  window.location.href = ROUTES.DONATION_CAMPAIGN;
+                }
+              }}
+              className="text-brand-primary group flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800"
             >
               <span className="flex items-center space-x-2">
-                <i className={cn("text-[var(--color-brand-primary)] w-4 text-center", theme === 'dark' ? "fa-solid fa-moon" : "fa-solid fa-sun")}></i>
+                <i className="fa-solid fa-user w-4 text-center text-[var(--color-brand-primary)]"></i>
+                <span className="transition-colors">My Campaigns</span>
+              </span>
+              <i className="fa-solid fa-chevron-right text-xs text-gray-500 transition-all group-hover:translate-x-0.5"></i>
+            </button>
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="group flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-gray-900 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800"
+            >
+              <span className="flex items-center space-x-2">
+                <i
+                  className={cn(
+                    'w-4 text-center text-[var(--color-brand-primary)]',
+                    theme === 'dark' ? 'fa-solid fa-moon' : 'fa-solid fa-sun'
+                  )}
+                ></i>
                 <span className="transition-colors">Toggle {theme === 'dark' ? 'Light' : 'Dark'} Mode</span>
               </span>
-              <i className="fa-solid fa-chevron-right text-gray-500 text-xs transition-all group-hover:translate-x-0.5"></i>
+              <i className="fa-solid fa-chevron-right text-xs text-gray-500 transition-all group-hover:translate-x-0.5"></i>
             </button>
           </div>
 
           <div className="border-t border-gray-300 dark:border-gray-700"></div>
           <button
             onClick={logout}
-            className="w-full cursor-pointer bg-transparent border border-red-500/40 text-red-400 hover:bg-red-500/20 py-2 rounded-lg font-semibold text-sm transition"
+            className="w-full cursor-pointer rounded-lg border border-red-500/40 bg-transparent py-2 text-sm font-semibold text-red-400 transition hover:bg-red-500/20"
           >
             <i className="fa-solid fa-right-from-bracket mr-2"></i> Logout
           </button>

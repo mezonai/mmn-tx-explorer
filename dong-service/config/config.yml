@@ -59,6 +59,7 @@ logging:
 scheduler:
   sync_contributors_interval: 600  # sync every 10 minutes (600 seconds)
   expired_red_envelopes_interval: 3600  # sync every 60 minutes (3600 seconds)
+  recent_stats_window_days: 7      # lookback window in days used by recent_amount & sync jobs
 
 # Lock Configuration
 lock:

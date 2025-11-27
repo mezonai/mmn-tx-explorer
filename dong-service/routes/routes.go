@@ -46,7 +46,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 	{
 		// Initialize repositories
 		campaignRepo := repository.NewDonationCampaignRepository(database.GetDB(), cfg.Database.Schema, cfg.Indexer.Schema)
-		statsRepo := repository.NewCampaignStatisticsRepository(database.GetDB(), cfg.Indexer.Schema, cfg.Database.Schema)
+		statsRepo := repository.NewCampaignStatisticsRepository(database.GetDB(), cfg.Indexer.Schema, cfg.Database.Schema, cfg.Scheduler.RecentStatsWindowDays)
 		walletRepo := repository.NewWalletRepository(database.GetDB(), cfg.Indexer.Schema)
 
 		// Initialize handlers
