@@ -358,6 +358,10 @@ func (r *DonationCampaignRepository) GetAll(status *int16, verified *bool, q *st
 
 	rows, err := r.db.Query(base, args...)
 	if err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "syntax error in tsquery") || strings.Contains(strings.ToLower(err.Error()), "invalid tsquery") {
+			logger.Debug().Err(err).Msg("tsquery parse error in campaign search — treating as no results")
+			return []models.DonationCampaign{}, nil
+		}
 		return nil, fmt.Errorf("failed to get donation campaigns: %w", err)
 	}
 	defer func() {
@@ -605,6 +609,10 @@ func (r *DonationCampaignRepository) Count(status *int16, verified *bool, q *str
 	var count int64
 	err := r.db.QueryRow(query, args...).Scan(&count)
 	if err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "syntax error in tsquery") || strings.Contains(strings.ToLower(err.Error()), "invalid tsquery") {
+			logger.Debug().Err(err).Msg("tsquery parse error in campaign count — treating as zero results")
+			return 0, nil
+		}
 		return 0, fmt.Errorf("failed to count campaigns: %w", err)
 	}
 
