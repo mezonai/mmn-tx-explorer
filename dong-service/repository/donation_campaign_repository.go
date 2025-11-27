@@ -375,7 +375,7 @@ func (r *DonationCampaignRepository) GetAll(status *int16, verified *bool, q *st
 				}
 			}
 		}
-		return nil, fmt.Errorf("failed to search campaigns: %w", err)
+		return nil, fmt.Errorf("failed to get donation campaigns: %w", err)
 	}
 
 	defer func() {
