@@ -58,15 +58,15 @@ export const ExportTransactionsModal: React.FC<ExportTransactionsModalProps> = (
         <div className="flex justify-end gap-2">
           <Button
             type="button"
-            className="bg-brand-primary hover:bg-brand-primary/80 text-white"
+            className="bg-blue-500/20 text-blue-400 hover:bg-blue-500/40"
             onClick={() => onExportRange(exportFromDate, exportToDate)}
           >
             Export Range
           </Button>
-          <Button type="button" className="bg-green-600 text-white hover:bg-green-700" onClick={onExportAll}>
+          <Button type="button" className="bg-green-500/20 text-green-400 hover:bg-green-500/40" onClick={onExportAll}>
             Export All
           </Button>
-          <Button type="button" className="bg-red-100 text-red-700 hover:bg-red-200" onClick={onClose}>
+          <Button type="button" className="bg-orange-500/20 text-orange-400 hover:bg-orange-500/40" onClick={onClose}>
             Cancel
           </Button>
         </div>
