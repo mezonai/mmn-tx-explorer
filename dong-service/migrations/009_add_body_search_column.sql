@@ -2,11 +2,11 @@ ALTER TABLE dong_schema.donation_campaign
   ADD COLUMN IF NOT EXISTS body_search tsvector;
 
 UPDATE dong_schema.donation_campaign
-SET body_search = plainto_tsquery('simple', coalesce(name, '') || ' ' || coalesce(description, ''));
+SET body_search = to_tsvector('english', coalesce(name, '') || ' ' || coalesce(description, ''));
 
 CREATE OR REPLACE FUNCTION donation_campaign_body_search_trigger() RETURNS trigger AS $$
 BEGIN
-  NEW.body_search := plainto_tsquery('simple', coalesce(NEW.name, '') || ' ' || coalesce(NEW.description, ''));
+  NEW.body_search := to_tsvector('english', coalesce(NEW.name, '') || ' ' || coalesce(NEW.description, ''));
   RETURN NEW;
 END
 $$ LANGUAGE plpgsql;

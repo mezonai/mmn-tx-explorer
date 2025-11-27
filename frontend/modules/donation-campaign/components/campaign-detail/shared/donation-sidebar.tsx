@@ -55,7 +55,7 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
           </div>
         </div>
         {isAuthenticated && campaign.status == ECampaignStatus.Active && (
-          <DonateDialog walletAddress={campaign.donation_wallet} />
+          <DonateDialog walletAddress={campaign.donation_wallet} campaignId={String(campaign.id)} />
         )}
         <p className="text-muted-foreground text-center text-xs">💡 Keep your transaction hash for reconciliation.</p>
       </div>

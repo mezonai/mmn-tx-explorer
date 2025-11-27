@@ -27,7 +27,8 @@ export const ActiveCampaign = () => {
   const { user } = useUser();
   const [sortBy, setSortBy] = useState<SortBy>(SortBy.Newest);
   const [showMine, setShowMine] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<ECampaignStatus | 'all'>('all');
+  // Default to showing only active campaigns
+  const [statusFilter, setStatusFilter] = useState<ECampaignStatus | 'all'>(ECampaignStatus.Active);
   const [verifiedFilter, setVerifiedFilter] = useState<'all' | 'verified' | 'unverified'>('all'); // shared for both lists
 
   useEffect(() => {
