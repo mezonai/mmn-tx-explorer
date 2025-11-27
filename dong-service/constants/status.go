@@ -57,6 +57,19 @@ const (
 )
 
 const (
+	RedEnvelopeQueueStatusUserAlreadyInQueue = "ALREADY_QUEUED"
+	RedEnvelopeQueueStatusLimitReached       = "LIMIT_REACHED"
+	RedEnvelopeQueueStatusNotInitialize      = "QUEUE_NOT_INITIALIZE"
+	RedEnvelopeStatusOk                      = "OK"
+)
+
+const (
+	ClaimStatusError         = 0
+	ClaimStatusSuccess       = 1
+	ClaimStatusAlreadyQueued = 2
+)
+
+const (
 	ExtraInfoLuckyMoney = `{"type":"lucky-money"}`
 )
 

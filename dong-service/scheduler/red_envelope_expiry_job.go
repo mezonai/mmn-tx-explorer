@@ -71,7 +71,7 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 				logger.Error().Err(err).Msg("Failed to get wallet")
 				isSuccess = false
 			} else {
-				err = j.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, remainingBalance)
+				_, err = j.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, remainingBalance)
 				if err != nil {
 					logger.Error().Err(err).Msg("Failed to transfer funds")
 					isSuccess = false
@@ -142,8 +142,9 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 
 func CreateRedEnvelopeExpiryTask(interval time.Duration, dongSchema string, blockchainService *blockchain.BlockchainService) Task {
 	db := database.GetDB()
+	queueService := repository.NewRedEnvelopeQueueService(database.RedisClient)
 	redEnvelopeWalletRepo := repository.NewIntermediaryWalletRepository(db, dongSchema)
-	redEnvelopeRepo := repository.NewRedEnvelopeRepository(db, dongSchema, blockchainService, redEnvelopeWalletRepo)
+	redEnvelopeRepo := repository.NewRedEnvelopeRepository(db, dongSchema, blockchainService, redEnvelopeWalletRepo, queueService)
 
 	job := NewRedEnvelopeExpiryJob(redEnvelopeRepo, redEnvelopeWalletRepo, blockchainService)
 

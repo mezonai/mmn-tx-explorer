@@ -14,14 +14,16 @@ import (
 )
 
 type RedEnvelopeHandler struct {
-	repo       *repository.RedEnvelopeRepository
-	walletRepo *repository.IntermediaryWalletRepository
+	repo         *repository.RedEnvelopeRepository
+	walletRepo   *repository.IntermediaryWalletRepository
+	queueService *repository.RedEnvelopeQueueService
 }
 
-func NewRedEnvelopeHandler(repo *repository.RedEnvelopeRepository, walletRepo *repository.IntermediaryWalletRepository) *RedEnvelopeHandler {
+func NewRedEnvelopeHandler(repo *repository.RedEnvelopeRepository, queueService *repository.RedEnvelopeQueueService, walletRepo *repository.IntermediaryWalletRepository) *RedEnvelopeHandler {
 	return &RedEnvelopeHandler{
-		repo:       repo,
-		walletRepo: walletRepo,
+		repo:         repo,
+		queueService: queueService,
+		walletRepo:   walletRepo,
 	}
 }
 
@@ -70,7 +72,7 @@ func (r *RedEnvelopeHandler) CreateRedEnvelope(c *gin.Context) {
 	c.JSON(http.StatusCreated, models.SuccessResponseWithMessage("Red envelope created successfully", envelope))
 }
 
-// GetRedEnvelopeClaim godoc
+// GetRecipientsByRedEnvelopeID godoc
 // @Summary Get Recipients by red envelope id
 // @Description Returns a list of users who have received red envelope
 // @Tags red_envelopes
@@ -346,6 +348,130 @@ func (r *RedEnvelopeHandler) CloseSessionRedEnvelope(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Red envelope session closed successfully", nil))
+}
+
+// ClaimAmountRedEnvelope godoc
+// @Summary Claim red envelope
+// @Description User claims a red envelope and receives money
+// @Tags red_envelopes
+// @Produce json
+// @Query id path string true "Red Envelope ID"
+// @Success 200 {object} models.Response{data=object}
+// @Failure 400 {object} models.Response
+// @Failure 404 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Router /api/v1/red_envelopes/claim-amount [get]
+func (r *RedEnvelopeHandler) ClaimAmountRedEnvelope(c *gin.Context) {
+	userID, err := utils.GetUserIDFromContext(c)
+	if err != nil {
+		logger.Error().Err(err).Msg("Unauthorized claim amount attempt")
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
+		return
+	}
+
+	id := c.Query("id")
+	claimStatus, err := r.queueService.AttemptClaim(id, userID)
+	if err != nil {
+		logger.Error().Err(err).Str("envelope_id", id).Msg("Error during queue check")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	if claimStatus == constants.ClaimStatusError {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Red envelope claims error"))
+		return
+	}
+
+	userAddress := utils.GenerateAddress(strconv.FormatInt(userID, 10))
+
+	splitMoney, err := r.repo.GetClaimAmount(id, userAddress, claimStatus, userID)
+	if err != nil {
+		logger.Error().Err(err).Str("envelope_id", id).Msg("Failed to get claim amount")
+		r.queueService.RollbackClaim(id, userID)
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to get claim amount: "+err.Error()))
+		return
+	}
+
+	logger.Info().
+		Str("envelope_id", id).
+		Str("wallet", userAddress).
+		Int64("user_id", userID).
+		Msg("User entered queue and received claim token")
+
+	result := map[string]interface{}{
+		"split_money_id":     splitMoney.ID,
+		"amount":             splitMoney.Amount,
+		"description":        splitMoney.Description,
+		"expires_in_seconds": 300,
+	}
+
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Claim token generated successfully. Please use this token to complete the claim within 5 minutes.", result))
+}
+
+// ClaimRedEnvelope godoc
+// @Summary Claim red envelope
+// @Description User claims a red envelope and receives money
+// @Tags red_envelopes
+// @Produce json
+// @Param id path string true "Red Envelope ID"
+// @Param claim body models.ClaimRedEnvelopeRequest true "ClaimRedEnvelopeRequest"
+// @Success 200 {object} models.Response{data=object}
+// @Failure 400 {object} models.Response
+// @Failure 404 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Router /api/v1/red_envelopes/{id}/claim [post]
+func (r *RedEnvelopeHandler) ClaimRedEnvelope(c *gin.Context) {
+	var req models.ClaimRedEnvelopeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Error().Err(err).Msg("Invalid claim request")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+err.Error()))
+		return
+	}
+
+	userID, err := utils.GetUserIDFromContext(c)
+	if err != nil {
+		logger.Error().Err(err).Msg("Unauthorized claim amount attempt")
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
+		return
+	}
+
+	userAddress := utils.GenerateAddress(strconv.FormatInt(userID, 10))
+
+	canClaim, err := r.repo.CheckUserIDClaimNotMatch(req.ID, userID, req.SplitMoneyID)
+	if err != nil {
+		logger.Error().
+			Err(err).
+			Str("red_envelope_id", req.ID).
+			Int64("user_id", userID).
+			Msg("Failed to check user id and envelope id")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailToCheckRedEnvelope+": "+err.Error()))
+		return
+	}
+	if !canClaim {
+		logger.Error().
+			Str("red_envelope_id", req.ID).
+			Int64("user_id", userID).
+			Msg("User id does not match owner of red envelope")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrUserIDNotMatchRedEnvelopeID))
+		return
+	}
+
+	err = r.repo.ExecuteClaim(req.ID, userAddress, userID, req.SplitMoneyID)
+
+	if err != nil {
+		logger.Error().Err(err).Str("envelope_id", req.ID).Msg("Failed to execute claim")
+
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to claim red envelope: "+err.Error()))
+		return
+	}
+
+	logger.Info().
+		Str("envelope_id", req.ID).
+		Str("wallet", userAddress).
+		Int64("user_id", userID).
+		Msg("Red envelope claimed successfully")
+
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Red envelope claimed successfully", nil))
 }
 
 func ValidateRequest(req *models.CreateRedEnvelopeRequest) error {

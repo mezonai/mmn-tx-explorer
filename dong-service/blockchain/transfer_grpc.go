@@ -127,11 +127,11 @@ func scaleAmountToDecimals(originalAmount interface{}) (string, error) {
 	return scaledAmount.String(), nil
 }
 
-func (s *BlockchainService) TransferMoney(encryptedPrivateKey, fromAddress, toAddress string, amount int64) error {
+func (s *BlockchainService) TransferMoney(encryptedPrivateKey, fromAddress, toAddress string, amount int64) (string, error) {
 	privateKey, err := utils.DecryptPrivateKey(encryptedPrivateKey)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to decrypt private key")
-		return err
+		return "", err
 	} else {
 		txHash, err := s.Transfer(
 			fromAddress,
@@ -143,14 +143,14 @@ func (s *BlockchainService) TransferMoney(encryptedPrivateKey, fromAddress, toAd
 		)
 		if err != nil {
 			logger.Error().Err(err).Msg("Failed to transfer funds")
-			return err
+			return "", err
 		} else {
 			// TODO: use function GetTxByHash to get status
 			logger.Info().
 				Str("tx_hash", txHash).
 				Int64("amount", amount).
 				Msg("Successfully transferred remaining balance to owner")
-			return nil
+			return txHash, nil
 		}
 	}
 }

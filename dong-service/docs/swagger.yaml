@@ -8,6 +8,16 @@ definitions:
       total_contributors:
         type: integer
     type: object
+  models.ClaimRedEnvelopeRequest:
+    properties:
+      id:
+        type: string
+      split_money_id:
+        type: integer
+    required:
+    - id
+    - split_money_id
+    type: object
   models.CreateDonationCampaignRequest:
     properties:
       description:
@@ -1023,6 +1033,78 @@ paths:
           schema:
             $ref: '#/definitions/models.Response'
       summary: Get Recipients by red envelope id
+      tags:
+      - red_envelopes
+  /api/v1/red_envelopes/{id}/claim:
+    post:
+      description: User claims a red envelope and receives money
+      parameters:
+      - description: Red Envelope ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: ClaimRedEnvelopeRequest
+        in: body
+        name: claim
+        required: true
+        schema:
+          $ref: '#/definitions/models.ClaimRedEnvelopeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Claim red envelope
+      tags:
+      - red_envelopes
+  /api/v1/red_envelopes/claim-amount:
+    get:
+      description: User claims a red envelope and receives money
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Claim red envelope
       tags:
       - red_envelopes
   /api/v1/red_envelopes/create:

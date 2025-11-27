@@ -64,7 +64,6 @@ func GenerateRandomAmounts(totalAmount, minAmount, maxAmount int64, totalClaims 
 		})
 		return amounts, nil
 	}
-
 	scaledTotal := totalAmount / roundingUnit
 	scaledMin := (minAmount + roundingUnit - 1) / roundingUnit
 	scaledMax := maxAmount / roundingUnit
