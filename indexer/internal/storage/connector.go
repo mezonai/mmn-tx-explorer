@@ -160,6 +160,11 @@ type IMainStorage interface {
 	 * Recalculates and updates all statistics in the stats table
 	 */
 	RecalculateStats(ctx context.Context) error
+
+	/**
+	 * CSV Export: Get all transactions for a wallet (no pagination)
+	 */
+	GetAllTransactionsByWallet(ctx context.Context, walletAddress string, startTime, endTime int64, sortBy, sortOrder string) ([]common.Transaction, error)
 }
 
 func NewStorageConnector(cfg *config.StorageConfig) (IStorage, error) {
