@@ -202,8 +202,9 @@ export const ActiveCampaign = () => {
       ) : (
         <section>
           <div className="dark:bg-card w-full rounded-2xl border border-gray-200 bg-white/90 p-6 shadow-sm dark:border-white/10">
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-3 lg:grid-cols-5">
-              <div className="col-span-2">
+            <div className="flex w-full flex-col flex-wrap justify-between gap-3 md:flex-row md:items-end md:gap-4">
+              {/* Search */}
+              <div className="min-w-[320px] flex-1 md:max-w-[480px]">
                 <label className="text-xs font-medium text-gray-600 dark:text-gray-200">Search</label>
                 <div className="relative mt-1">
                   <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">🔍</span>
@@ -217,8 +218,8 @@ export const ActiveCampaign = () => {
                   />
                 </div>
               </div>
-
-              <div>
+              {/* Status */}
+              <div className="min-w-[120px] flex-none md:min-w-[200px]">
                 <label className="text-xs font-medium text-gray-600 dark:text-gray-200">Status</label>
                 <Select
                   value={String(statusFilter)}
@@ -246,8 +247,8 @@ export const ActiveCampaign = () => {
                   </SelectContent>
                 </Select>
               </div>
-
-              <div>
+              {/* Sort */}
+              <div className="min-w-[120px] flex-none md:min-w-[200px]">
                 <label className="text-xs font-medium text-gray-600 dark:text-gray-200">Sort</label>
                 <Select
                   value={sortBy}
@@ -272,8 +273,8 @@ export const ActiveCampaign = () => {
                   </SelectContent>
                 </Select>
               </div>
-
-              <div>
+              {/* Verified */}
+              <div className="min-w-[120px] flex-none md:min-w-[200px]">
                 <label className="text-xs font-medium text-gray-600 dark:text-gray-200">Verified</label>
                 <Select
                   value={verifiedFilter}
@@ -298,29 +299,33 @@ export const ActiveCampaign = () => {
                   </SelectContent>
                 </Select>
               </div>
-
-              <div>
-                <label className="text-xs font-medium text-gray-600 dark:text-gray-200">Mine</label>
-                <Button
-                  id="my-campaigns-toggle"
-                  data-active={showMine}
-                  variant={showMine ? 'default' : 'outline'}
-                  className={`hover:border-primary hover:text-primary dark:bg-card mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-600 dark:border-white/20 dark:text-gray-200 dark:hover:text-white ${showMine ? 'bg-primary dark:bg-brand-primary text-white' : ''}`}
-                  onClick={() => {
-                    const enabling = !showMine;
-                    isFilteringRef.current = true;
-                    if (typeof window !== 'undefined') {
-                      sessionStorage.setItem(STORAGE_KEYS.SHOW_MINE_CAMPAIGNS, enabling ? 'true' : 'false');
-                    }
-                    setVerifiedLocalPage(1);
-                    setUnverifiedLocalPage(1);
-                    setVerifiedLocalLimit(verifiedLimit);
-                    setUnverifiedLocalLimit(unverifiedLimit);
-                    setShowMine(enabling);
-                  }}
-                >
-                  👤 My campaigns
-                </Button>
+              {/* My campaigns*/}
+              <div className="min-w-[100px] items-end md:min-w-[200px] md:justify-end">
+                <div className="w-auto">
+                  <label className="text-xs font-medium text-gray-600 dark:text-gray-200">Mine</label>
+                  <div className="mt-1">
+                    <Button
+                      id="my-campaigns-toggle"
+                      data-active={showMine}
+                      variant={showMine ? 'default' : 'outline'}
+                      className={`hover:border-primary hover:text-primary dark:bg-card h-10 w-full rounded-xl border border-gray-300 px-4 text-sm font-normal text-gray-600 dark:border-white/20 dark:text-gray-200 dark:hover:text-white ${showMine ? 'bg-primary dark:bg-brand-primary text-white' : ''}`}
+                      onClick={() => {
+                        const enabling = !showMine;
+                        isFilteringRef.current = true;
+                        if (typeof window !== 'undefined') {
+                          sessionStorage.setItem(STORAGE_KEYS.SHOW_MINE_CAMPAIGNS, enabling ? 'true' : 'false');
+                        }
+                        setVerifiedLocalPage(1);
+                        setUnverifiedLocalPage(1);
+                        setVerifiedLocalLimit(verifiedLimit);
+                        setUnverifiedLocalLimit(unverifiedLimit);
+                        setShowMine(enabling);
+                      }}
+                    >
+                      👤 My campaigns
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
