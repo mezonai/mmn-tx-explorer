@@ -127,6 +127,7 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
     getQrImage((blob) => {
       if (blob) {
         const url = URL.createObjectURL(blob);
+
         const link = document.createElement('a');
         link.href = url;
         link.download = `campaign-qr-${campaign.name
@@ -134,10 +135,14 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
           .trim()
           .replace(/\s+/g, '-')
           .replace(/[^a-z0-9-]/g, '')}.png`;
+
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+        }, 100);
       }
     });
   };
