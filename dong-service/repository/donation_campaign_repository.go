@@ -12,6 +12,14 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/lib/pq"
+)
+
+const (
+	PgErrSyntaxError     pq.ErrorCode = "42601"
+	PgErrInvalidTSQuery  pq.ErrorCode = "2201E"
+	PgErrUniqueViolation pq.ErrorCode = "23505"
 )
 
 // Custom repository errors
@@ -357,13 +365,19 @@ func (r *DonationCampaignRepository) GetAll(status *int16, verified *bool, q *st
 	args = append(args, pagination.Limit, pagination.Offset)
 
 	rows, err := r.db.Query(base, args...)
+	var pqErr *pq.Error
 	if err != nil {
-		if strings.Contains(strings.ToLower(err.Error()), "syntax error in tsquery") || strings.Contains(strings.ToLower(err.Error()), "invalid tsquery") {
-			logger.Debug().Err(err).Msg("tsquery parse error in campaign search — treating as no results")
-			return []models.DonationCampaign{}, nil
+		if errors.As(err, &pqErr) {
+			if errors.As(err, &pqErr) {
+				if pqErr.Code == PgErrSyntaxError || pqErr.Code == PgErrInvalidTSQuery || pqErr.Code == PgErrUniqueViolation {
+					logger.Error().Err(err).Msg("invalid tsquery — return zero count")
+					return []models.DonationCampaign{}, nil
+				}
+			}
 		}
-		return nil, fmt.Errorf("failed to get donation campaigns: %w", err)
+		return nil, fmt.Errorf("failed to search campaigns: %w", err)
 	}
+
 	defer func() {
 		if err != nil {
 			errClose := rows.Close()
@@ -608,14 +622,16 @@ func (r *DonationCampaignRepository) Count(status *int16, verified *bool, q *str
 
 	var count int64
 	err := r.db.QueryRow(query, args...).Scan(&count)
+	var pqErr *pq.Error
 	if err != nil {
-		if strings.Contains(strings.ToLower(err.Error()), "syntax error in tsquery") || strings.Contains(strings.ToLower(err.Error()), "invalid tsquery") {
-			logger.Debug().Err(err).Msg("tsquery parse error in campaign count — treating as zero results")
-			return 0, nil
+		if errors.As(err, &pqErr) {
+			if pqErr.Code == PgErrSyntaxError || pqErr.Code == PgErrInvalidTSQuery || pqErr.Code == PgErrUniqueViolation {
+				logger.Error().Err(err).Msg("invalid tsquery — return zero count")
+				return 0, nil
+			}
 		}
 		return 0, fmt.Errorf("failed to count campaigns: %w", err)
 	}
-
 	return count, nil
 }
 
