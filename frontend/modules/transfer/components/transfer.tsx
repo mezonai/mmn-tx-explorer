@@ -2,9 +2,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { mmnClient } from '@/modules/auth/utils';
 import { NumberUtil } from '@/utils';
-import { useQueryClient } from '@tanstack/react-query';
-import { DonationCampaignService } from '@/modules/donation-campaign/api';
-import { QUERY_KEYS } from '@/modules/donation-campaign/constants';
 import { useTransfer } from '../hooks/useTransfer';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
@@ -41,8 +38,6 @@ export const Transfer = () => {
       console.error('Failed to load balance:', err);
     }
   }, [userId]);
-
-  const queryClient = useQueryClient();
 
   useEffect(() => {
     refreshBalance();
