@@ -12,7 +12,7 @@ export const ROUTES = {
   MEZON_GAME: '/mezon-game',
   PENDING_TRANSACTION: (hash: string) => `/transactions/pending/${hash}`,
   PROFILE: '/profile',
-  STAKE: '/stake',
+  P2P: '/p2p',
   SWAP: '/swap',
   TRANSACTION: (hash: string, queryParams?: string) => `/transactions/${hash}${queryParams ? `?${queryParams}` : ''}`,
   TRANSACTIONS: '/transactions',
