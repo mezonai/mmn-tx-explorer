@@ -55,9 +55,9 @@ func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampa
 	}
 
 	campaignQuery := fmt.Sprintf(`
-        INSERT INTO %s.donation_campaign (name, slug, description, goal, url, end_date, donation_wallet, creator, owner, status)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        RETURNING id, name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status, created_at, updated_at
+	INSERT INTO %s.donation_campaign (name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+    RETURNING id, name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status, created_at, updated_at
     `, r.dongSchema)
 
 	var result models.DonationCampaign
@@ -72,6 +72,7 @@ func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampa
 		campaign.DonationWallet,
 		creator,
 		campaign.Owner,
+		false,
 		constants.CampaignStatusDraft,
 	).Scan(
 		&result.ID,
@@ -135,8 +136,9 @@ func (r *DonationCampaignRepository) CreateAndActive(campaign *models.CreateDona
 	}
 
 	campaignQuery := fmt.Sprintf(`
-        INSERT INTO %s.donation_campaign (name, slug, description, goal, url, end_date, donation_wallet, creator, owner, status)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		-- explicitly set verified FALSE during creation+activation; verification is a separate step
+		INSERT INTO %s.donation_campaign (name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         RETURNING id, name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status, created_at, updated_at
     `, r.dongSchema)
 
@@ -153,6 +155,7 @@ func (r *DonationCampaignRepository) CreateAndActive(campaign *models.CreateDona
 		campaign.DonationWallet,
 		creator,
 		campaign.Owner,
+		false,
 		constants.CampaignStatusActive, // Set status to Active instead of Draft
 	).Scan(
 		&result.ID,
@@ -286,7 +289,7 @@ func (r *DonationCampaignRepository) GetByIDAndCreator(id, creator int64) (*mode
 }
 
 // GetAll retrieves all donation campaigns with pagination
-func (r *DonationCampaignRepository) GetAll(status *int16, pagination utils.PaginationParams) ([]models.DonationCampaign, error) {
+func (r *DonationCampaignRepository) GetAll(status *int16, verified *bool, q *string, pagination utils.PaginationParams, creator *string) ([]models.DonationCampaign, error) {
 	base := fmt.Sprintf(`
         SELECT 
             dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
@@ -307,6 +310,25 @@ func (r *DonationCampaignRepository) GetAll(status *int16, pagination utils.Pagi
 		argCount++
 	}
 
+	if verified != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("dc.verified = $%d", argCount))
+		args = append(args, *verified)
+		argCount++
+	}
+
+	// filter by creator if provided
+	if creator != nil && strings.TrimSpace(*creator) != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("dc.creator::text = $%d", argCount))
+		args = append(args, strings.TrimSpace(*creator))
+		argCount++
+	}
+
+	if q != nil && strings.TrimSpace(*q) != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("(dc.body_search @@ to_tsquery('english', $%d))", argCount))
+		args = append(args, strings.TrimSpace(*q))
+		argCount++
+	}
+
 	if len(whereClauses) > 0 {
 		base += "\nWHERE " + strings.Join(whereClauses, " AND ")
 	}
@@ -323,6 +345,10 @@ func (r *DonationCampaignRepository) GetAll(status *int16, pagination utils.Pagi
 		orderByExpr = "dc.created_at" //nolint:goconst // literal used intentionally for SQL whitelist
 	case "total_amount":
 		orderByExpr = "cs.total_amount"
+	case "recent_amount":
+		orderByExpr = "cs.recent_amount"
+	case "end_date":
+		orderByExpr = "dc.end_date"
 	default:
 		orderByExpr = "dc.created_at"
 	}
@@ -539,16 +565,40 @@ func (r *DonationCampaignRepository) Close(id, creator int64) (*models.DonationC
 }
 
 // Count returns the total number of campaigns
-func (r *DonationCampaignRepository) Count(status *int16) (int64, error) {
-	query := fmt.Sprintf(`SELECT COUNT(*) FROM %s.donation_campaign`, r.dongSchema)
+func (r *DonationCampaignRepository) Count(status *int16, verified *bool, q *string, creator *string) (int64, error) {
+	query := fmt.Sprintf(`SELECT COUNT(*) FROM %s.donation_campaign dc`, r.dongSchema)
 	var (
 		whereClauses []string
 		args         []any
+		argCount     = 1
 	)
 
 	if status != nil {
-		whereClauses = append(whereClauses, "status = $1")
+		whereClauses = append(whereClauses, fmt.Sprintf("dc.status = $%d", argCount))
 		args = append(args, *status)
+		argCount++
+	}
+
+	if verified != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("dc.verified = $%d", argCount))
+		args = append(args, *verified)
+		argCount++
+	}
+
+	if q != nil && strings.TrimSpace(*q) != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("(dc.body_search @@ to_tsquery('english', $%d))", argCount))
+		args = append(args, strings.TrimSpace(*q))
+		argCount++
+	}
+
+	// filter by creator if present
+	if creator != nil && strings.TrimSpace(*creator) != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("dc.creator::text = $%d", argCount))
+		args = append(args, strings.TrimSpace(*creator))
+		argCount++
+	}
+
+	if len(whereClauses) > 0 {
 		query += " WHERE " + strings.Join(whereClauses, " AND ")
 	}
 
