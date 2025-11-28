@@ -6,13 +6,14 @@ import { Separator } from '@/components/ui/separator';
 import { ECampaignStatus } from '@/modules/donation-campaign/type';
 
 export const TopCampaign = () => {
-  // Fetch top 3 active campaigns sorted by total amount raised
+  // Fetch top 3 active campaigns ordered by recent_amount (server-side)
   const { campaigns, isLoading, error } = useCampaigns({
     page: 1,
     limit: 3,
     status: String(ECampaignStatus.Active),
     order: 'desc',
-    order_by: 'total_amount',
+    order_by: 'recent_amount',
+    verified: true,
   });
 
   useEffect(() => {

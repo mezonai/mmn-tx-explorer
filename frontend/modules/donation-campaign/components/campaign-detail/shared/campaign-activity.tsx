@@ -19,6 +19,7 @@ import { RecentActivityTable } from '../desktop/recent-activity-table';
 import { RecentActivityCardsMobile } from '../mobile/recent-activity-card';
 import { WithdrawHistoryTable } from '../desktop/withdraw-history-table';
 import { WithdrawHistoryCard } from '../mobile/withdraw-history-card';
+import { DonationCampaign } from '@/modules/donation-campaign/type';
 
 const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
   page: PAGINATION.DEFAULT_PAGE,
@@ -26,27 +27,31 @@ const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
   sort_by: 'transaction_timestamp',
   sort_order: ESortOrder.DESC,
 } as const;
-export function CampaignActivity({ campaignId, walletAddress }: { campaignId: string; walletAddress: string }) {
+export function CampaignActivity({ campaign, walletAddress }: { campaign: DonationCampaign; walletAddress: string }) {
   const isDesktop = useBreakpoint(EBreakpoint.LG);
   const searchTBParams = { limit: 5 };
   const searchReceivedParams: ITransactionListParams = {
     ...DEFAULT_VALUE_DATA_SEARCH,
     filter_to_address: walletAddress,
+    start_time: new Date(campaign.created_at).toISOString().slice(0, 10),
+    end_time: new Date().toISOString().slice(0, 10)
   };
 
   const searchSentParams: ITransactionListParams = {
     ...DEFAULT_VALUE_DATA_SEARCH,
     filter_from_address: walletAddress,
+    start_time: new Date(campaign.created_at).toISOString().slice(0, 10),
+    end_time: new Date().toISOString().slice(0, 10)
   };
 
-  const { data: topContributorsData, refetch, isPending } = useTopContributor({ params: searchTBParams, campaignId });
+  const { data: topContributorsData, refetch, isPending } = useTopContributor({ params: searchTBParams, campaignId : campaign.id });
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
-    if (!campaignId) return;
+    if (!campaign) return;
     try {
       setIsRefreshing(true);
-      await DonationCampaignService.refreshCampaignRaised(campaignId);
+      await DonationCampaignService.refreshCampaignRaised(campaign.id);
       await refetch();
     } catch (err) {
     } finally {
