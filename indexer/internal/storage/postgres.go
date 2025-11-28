@@ -171,6 +171,11 @@ var defaultTransactionFields = []string{
 	"transaction_timestamp", "value", "transaction_type", "status", "text_data", "extra_info",
 }
 
+var defaultExportTransactionFields = []string{
+	"chain_id", "hash", "nonce", "block_hash", "block_number", "from_address", "to_address",
+	"transaction_timestamp", "value", "transaction_type", "status", "text_data",
+}
+
 var defaultWalletFields = []string{
 	"address", "account_nonce", "balance", "transaction_count", "last_block",
 }
@@ -1849,8 +1854,8 @@ func (p *PostgresConnector) GetTransactionsByWalletWithTimestamp(ctx context.Con
 
 	args := []interface{}{walletAddress}
 	argIndex := 2
-    var zeroTime time.Time
-    if !timestampLt.Equal(zeroTime) {
+	var zeroTime time.Time
+	if !timestampLt.Equal(zeroTime) {
 		if lastHash != "" {
 			fromQuery += " AND (transaction_timestamp < $2 OR (transaction_timestamp = $2 AND hash < $3))"
 			toQuery += " AND (transaction_timestamp < $2 OR (transaction_timestamp = $2 AND hash < $3))"
@@ -2157,7 +2162,7 @@ func (p *PostgresConnector) GetAllTransactionsByWallet(
 	sortBy, sortOrder string,
 ) ([]common.Transaction, error) {
 
-	columns := p.buildSelectFields([]string{}, defaultTransactionFields)
+	columns := p.buildSelectFields([]string{}, defaultExportTransactionFields)
 
 	if !p.validateSortByColumn("transactions", sortBy) {
 		sortBy = "transaction_timestamp"
