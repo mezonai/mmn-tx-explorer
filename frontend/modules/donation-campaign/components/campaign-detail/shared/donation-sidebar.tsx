@@ -23,7 +23,6 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
   const qrCodeValue = JSON.stringify({ type: 'transfer_wallet', wallet_address: campaign.donation_wallet });
 
   const CENTER_TEXT_LINES = ['Scan', 'Mezon'];
-
   const BRAND_COLOR = '#6941C6';
 
   const getQrImage = (callback: (blob: Blob | null) => void) => {
@@ -48,20 +47,41 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
 
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = 1000;
-      canvas.height = 1000;
+      const width = 800;
+      const height = 1200;
+      canvas.width = width;
+      canvas.height = height;
       const ctx = canvas.getContext('2d');
 
       if (ctx) {
         ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillRect(0, 0, width, height);
 
-        const qrPadding = 40;
-        const qrSize = canvas.width - qrPadding * 2;
-        ctx.drawImage(img, qrPadding, qrPadding, qrSize, qrSize);
+        // --- 2. Header Strip ---
+        ctx.fillStyle = BRAND_COLOR;
+        ctx.fillRect(0, 0, width, 20);
 
-        const fontSize = 60;
-        const lineHeight = 65;
+        // --- 3. Campaign Header ---
+        ctx.textAlign = 'center';
+
+        ctx.fillStyle = BRAND_COLOR;
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillText('SCAN TO DONATE', width / 2, 80);
+
+        ctx.fillStyle = '#111827';
+        ctx.font = 'bold 48px sans-serif';
+        const campaignName = campaign.name.length > 25 ? campaign.name.substring(0, 25) + '...' : campaign.name;
+        ctx.fillText(campaignName, width / 2, 140);
+
+        // --- 4. QR Code ---
+        const qrSize = 500;
+        const qrX = (width - qrSize) / 2;
+        const qrY = 180;
+
+        ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
+
+        const fontSize = 30;
+        const lineHeight = 35;
         ctx.font = `bold ${fontSize}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -72,45 +92,41 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
           if (w > maxTextWidth) maxTextWidth = w;
         });
 
-        const boxInnerPadding = 50;
+        const boxInnerPadding = 25;
         const totalTextHeight = CENTER_TEXT_LINES.length * lineHeight;
-
         const rawBoxWidth = maxTextWidth + boxInnerPadding;
         const rawBoxHeight = totalTextHeight + boxInnerPadding;
         const boxSize = Math.max(rawBoxWidth, rawBoxHeight);
 
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        const rectX = centerX - boxSize / 2;
-        const rectY = centerY - boxSize / 2;
+        const qrCenterX = qrX + qrSize / 2;
+        const qrCenterY = qrY + qrSize / 2;
+        const rectX = qrCenterX - boxSize / 2;
+        const rectY = qrCenterY - boxSize / 2;
+        const ringSize = 8;
 
-        const ringSize = 15;
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(rectX - ringSize, rectY - ringSize, boxSize + ringSize * 2, boxSize + ringSize * 2);
 
         ctx.strokeStyle = BRAND_COLOR;
-        ctx.lineWidth = 8;
+        ctx.lineWidth = 5;
         ctx.lineCap = 'round';
-        const cornerLen = 30;
+        const cornerLen = 15;
 
         ctx.beginPath();
         ctx.moveTo(rectX, rectY + cornerLen);
         ctx.lineTo(rectX, rectY);
         ctx.lineTo(rectX + cornerLen, rectY);
         ctx.stroke();
-
         ctx.beginPath();
         ctx.moveTo(rectX + boxSize - cornerLen, rectY);
         ctx.lineTo(rectX + boxSize, rectY);
         ctx.lineTo(rectX + boxSize, rectY + cornerLen);
         ctx.stroke();
-
         ctx.beginPath();
         ctx.moveTo(rectX + boxSize, rectY + boxSize - cornerLen);
         ctx.lineTo(rectX + boxSize, rectY + boxSize);
         ctx.lineTo(rectX + boxSize - cornerLen, rectY + boxSize);
         ctx.stroke();
-
         ctx.beginPath();
         ctx.moveTo(rectX + cornerLen, rectY + boxSize);
         ctx.lineTo(rectX, rectY + boxSize);
@@ -118,11 +134,54 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
         ctx.stroke();
 
         ctx.fillStyle = BRAND_COLOR;
-        const startY = centerY - ((CENTER_TEXT_LINES.length - 1) * lineHeight) / 2;
-
+        const startTextY = qrCenterY - ((CENTER_TEXT_LINES.length - 1) * lineHeight) / 2;
         CENTER_TEXT_LINES.forEach((line, index) => {
-          ctx.fillText(line, centerX, startY + index * lineHeight);
+          ctx.fillText(line, qrCenterX, startTextY + index * lineHeight);
         });
+
+        // --- 5. Wallet Address Section ---
+        const walletBoxY = qrY + qrSize + 40;
+
+        ctx.fillStyle = '#F3F4F6'; // Gray-100
+        ctx.beginPath();
+        ctx.roundRect(50, walletBoxY, width - 100, 120, 20);
+        ctx.fill();
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'alphabetic';
+
+        ctx.font = 'bold 20px sans-serif';
+        ctx.fillStyle = '#6B7280'; // Gray-500
+        ctx.fillText('Wallet Address', width / 2, walletBoxY + 40);
+
+        ctx.font = 'bold 24px monospace';
+        ctx.fillStyle = BRAND_COLOR; // Gray-800
+        ctx.fillText(campaign.donation_wallet, width / 2, walletBoxY + 80);
+
+        // --- 6. Instructions Section ---
+        const instructionsY = walletBoxY + 160;
+
+        ctx.fillStyle = '#374151'; // Gray-700
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillText('How to Donate', width / 2, instructionsY);
+
+        ctx.textAlign = 'left';
+        ctx.font = '24px sans-serif';
+        ctx.fillStyle = BRAND_COLOR; // Gray-600
+
+        const stepX = 140;
+        const stepGap = 50;
+        const stepStartY = instructionsY + 50;
+
+        ctx.fillText('1. Open your Mezon App', stepX, stepStartY);
+        ctx.fillText('2. Scan the QR code above', stepX, stepStartY + stepGap);
+        // Footer
+        ctx.textAlign = 'center';
+        ctx.font = '16px sans-serif';
+        ctx.fillStyle = BRAND_COLOR;
+        ctx.globalAlpha = 0.6;
+        ctx.fillText('Powered by Mezon', width / 2, height - 30);
+        ctx.globalAlpha = 1.0;
 
         canvas.toBlob((blob) => {
           callback(blob);
@@ -193,7 +252,7 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
                 size="icon"
                 className="text-brand-primary hover:bg-brand-primary/20 h-6 w-6"
                 onClick={handleDownloadQr}
-                title="Download QR Image"
+                title="Download QR Card"
               >
                 <Download className="h-3.5 w-3.5" />
               </Button>
