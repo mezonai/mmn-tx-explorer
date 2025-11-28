@@ -3,8 +3,8 @@ INSERT INTO stats(key, value)
 VALUES (
     'total_give_coffee',
     (
-        SELECT COUNT(*) FROM transactions
-        WHERE extra_info ILIKE '%"type":"dong-give-coffee"%'
+          SELECT COUNT(*) FROM transactions
+          WHERE transaction_type = 0
     )
 )
 ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
