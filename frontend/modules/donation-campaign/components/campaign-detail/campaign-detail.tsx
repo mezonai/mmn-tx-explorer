@@ -54,7 +54,7 @@ export const CampaignDetail = async ({ campaign }: CampaignDetailProps) => {
               <CampaignActivity campaign={campaign} walletAddress={campaign.donation_wallet} />
             </TabsContent>
             <TabsContent value="update">
-              <DonationFeed />
+              <DonationFeed campaign = {campaign} />
             </TabsContent>
           </Tabs>
         </div>

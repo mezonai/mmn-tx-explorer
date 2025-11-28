@@ -130,7 +130,7 @@ export function TransferDialog({
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <button className="px-5 py-2 text-sm font-semibold bg-brand-primary hover:bg-brand-primary/90 rounded-lg text-white shadow-lg shadow-brand-primary/20 cursor-pointer">
+        <button className="bg-brand-primary hover:bg-brand-primary/90 shadow-brand-primary/20 cursor-pointer rounded-lg px-5 py-2 text-sm font-semibold text-white shadow-lg">
           Withdraw Funds
         </button>
       </DialogTrigger>
@@ -146,7 +146,7 @@ export function TransferDialog({
           <TransactionComplete
             amount={form.amount ? Number(form.amount) : NumberUtil.scaleDown(currentBalanceValue)}
             symbol={APP_CONFIG.CHAIN_SYMBOL}
-            type= {TransactionType.Withdraw}
+            type={TransactionType.Withdraw}
             onClose={() => {
               setWithdrawSuccess(false);
               setIsDialogOpen(false);
@@ -155,8 +155,8 @@ export function TransferDialog({
           />
         ) : (
           <>
-            <div className="bg-yellow-500/10 border-yellow-500/40 rounded-xl border p-3">
-              <p className="text-yellow-600 dark:text-yellow-400 text-xs font-medium">
+            <div className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-3">
+              <p className="text-xs font-medium text-yellow-600 dark:text-yellow-400">
                 Your private key will never be stored — It’s used locally to sign the transaction.
               </p>
             </div>
@@ -171,7 +171,7 @@ export function TransferDialog({
                 <div className="relative">
                   <Input
                     placeholder="Enter your private key"
-                    className="bg-brand-primary/10 border-brand-primary/40 pr-12 font-mono focus:outline-none focus:ring-0"
+                    className="bg-brand-primary/10 border-brand-primary/40 pr-12 font-mono focus:ring-0 focus:outline-none"
                     type={showPrivateKey ? 'text' : 'password'}
                     value={form.privateKey}
                     onChange={handleInputChange('privateKey')}
@@ -180,7 +180,7 @@ export function TransferDialog({
                   <button
                     type="button"
                     onClick={() => setShowPrivateKey(!showPrivateKey)}
-                    className="text-brand-primary hover:text-brand-primary/70 absolute right-3 top-1/2 -translate-y-1/2 transition cursor-pointer"
+                    className="text-brand-primary hover:text-brand-primary/70 absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer transition"
                   >
                     {showPrivateKey ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
@@ -191,7 +191,7 @@ export function TransferDialog({
                   label="Destination Wallet Address"
                   id="recipient-address"
                   placeholder="Enter destination wallet address"
-                  className="bg-brand-primary/10 border-brand-primary/40 mt-1 focus:outline-none focus:ring-0"
+                  className="bg-brand-primary/10 border-brand-primary/40 mt-1 focus:ring-0 focus:outline-none"
                   type="text"
                   value={form.recipientAddress}
                   onChange={handleInputChange('recipientAddress')}
@@ -203,7 +203,7 @@ export function TransferDialog({
                   label="Amount (optional)"
                   id="amount"
                   placeholder="Leave blank to withdraw all funds"
-                  className="bg-brand-primary/10 border-brand-primary/40 mt-1 focus:outline-none focus:ring-0"
+                  className="bg-brand-primary/10 border-brand-primary/40 mt-1 focus:ring-0 focus:outline-none"
                   type="text"
                   value={form.amount ? NumberUtil.formatWithCommas(form.amount) : ''}
                   onChange={handleInputChange('amount')}

@@ -1,7 +1,9 @@
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { ROUTES } from '@/configs/routes.config';
 import { UpdateInstruction } from './update-instruction';
 import { UpdateList } from './update-list';
-import { CampaignUpdates } from '@/modules/donation-campaign/type';
+import { CampaignUpdates, DonationCampaign } from '@/modules/donation-campaign/type';
 
 const updatesMock: CampaignUpdates[] = [
   {
@@ -55,7 +57,7 @@ const updatesMock: CampaignUpdates[] = [
   },
 ];
 
-export const DonationFeed = () => {
+export const DonationFeed = ({ campaign }: { campaign: DonationCampaign }) => {
   return (
     <div className="w-full space-y-4">
       <div className="flex w-full flex-row justify-between">
@@ -64,9 +66,11 @@ export const DonationFeed = () => {
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Follow the full journey of this campaign.</p>
         </div>
         <div>
-          <Button variant="default" className="bg-brand-primary hover:bg-brand-primary/80 text-white">
-            + Add Update
-          </Button>
+          <Link href={ROUTES.CREATE_DONATION_UPDATE(campaign.slug)} passHref>
+            <Button variant="default" className="bg-brand-primary hover:bg-brand-primary/80 text-white">
+              + Add Update
+            </Button>
+          </Link>
         </div>
       </div>
       <UpdateInstruction />

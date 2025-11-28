@@ -11,14 +11,14 @@ import { useTopContributor } from '@/modules/donation-campaign/hooks/useTopContr
 import { ITransactionListParams } from '@/modules/transaction';
 import { useTransactions } from '@/modules/transaction/hooks/useTransactions';
 import { NumberUtil } from '@/utils';
-import { useHidden } from '../provider';
+import { useHidden } from '../../provider';
 import { useEffect, useMemo, useState } from 'react';
 import { DonationCampaignService } from '@/modules/donation-campaign/api';
 import { DEFAULT_DEBOUNCE_TIME, useBreakpoint } from '@/hooks';
-import { RecentActivityTable } from '../desktop/recent-activity-table';
-import { RecentActivityCardsMobile } from '../mobile/recent-activity-card';
-import { WithdrawHistoryTable } from '../desktop/withdraw-history-table';
-import { WithdrawHistoryCard } from '../mobile/withdraw-history-card';
+import { RecentActivityTable } from '../../desktop/recent-activity-table';
+import { RecentActivityCardsMobile } from '../../mobile/recent-activity-card';
+import { WithdrawHistoryTable } from '../../desktop/withdraw-history-table';
+import { WithdrawHistoryCard } from '../../mobile/withdraw-history-card';
 import { DonationCampaign } from '@/modules/donation-campaign/type';
 
 const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
