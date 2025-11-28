@@ -73,6 +73,7 @@ type IndexerConfig struct {
 
 type SchedulerConfig struct {
 	SyncContributorsInterval int `mapstructure:"sync_contributors_interval"` // in seconds
+	RecentStatsWindowDays    int `mapstructure:"recent_stats_window_days"`
 }
 
 type LockConfig struct {
