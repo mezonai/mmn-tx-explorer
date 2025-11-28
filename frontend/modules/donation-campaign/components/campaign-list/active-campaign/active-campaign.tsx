@@ -58,6 +58,9 @@ export const ActiveCampaign = () => {
     handleChangeUnverifiedLimit,
   } = useDualPaginationQueryParam();
 
+  const verifiedSectionRef = useRef<HTMLDivElement | null>(null);
+  const unverifiedSectionRef = useRef<HTMLDivElement | null>(null);
+
   const userIdStr = user ? String(user.id) : undefined;
   const [verifiedLocalPage, setVerifiedLocalPage] = useState<number | undefined>(undefined);
   const [verifiedLocalLimit, setVerifiedLocalLimit] = useState<number | undefined>(undefined);
@@ -331,7 +334,12 @@ export const ActiveCampaign = () => {
           </div>
 
           {verifiedFilter !== 'unverified' && (
-            <div className="mt-10 pb-10">
+            <div
+              ref={(el) => {
+                verifiedSectionRef.current = el;
+              }}
+              className="mt-10 pb-10"
+            >
               <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
                 Verified Campaigns
                 {isLoadingVerified &&
@@ -384,7 +392,12 @@ export const ActiveCampaign = () => {
           )}
 
           {verifiedFilter !== 'verified' && (
-            <div className="mt-10 pb-10">
+            <div
+              ref={(el) => {
+                unverifiedSectionRef.current = el;
+              }}
+              className="mt-10 pb-10"
+            >
               <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
                 Unverified Campaigns
                 {isLoadingUnverified &&

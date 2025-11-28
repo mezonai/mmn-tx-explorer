@@ -20,7 +20,7 @@ export function useDualPaginationQueryParam() {
       // remove default page 1 from query string to keep URL clean
       if (page === 1) params.delete('verifiedPage');
       else params.set('verifiedPage', String(page));
-      router.replace(`${window.location.pathname}?${params}`);
+      router.replace(`${window.location.pathname}?${params}`, { scroll: false });
     },
     [router]
   );
@@ -31,7 +31,7 @@ export function useDualPaginationQueryParam() {
       // remove default limit (10) to avoid unnecessary query params
       if (limit === 10) params.delete('verifiedLimit');
       else params.set('verifiedLimit', String(limit));
-      router.replace(`${window.location.pathname}?${params}`);
+      router.replace(`${window.location.pathname}?${params}`, { scroll: false });
     },
     [router]
   );
@@ -41,7 +41,7 @@ export function useDualPaginationQueryParam() {
       const params = new URLSearchParams(window.location.search);
       if (page === 1) params.delete('unverifiedPage');
       else params.set('unverifiedPage', String(page));
-      router.replace(`${window.location.pathname}?${params}`);
+      router.replace(`${window.location.pathname}?${params}`, { scroll: false });
     },
     [router]
   );
@@ -51,7 +51,7 @@ export function useDualPaginationQueryParam() {
       const params = new URLSearchParams(window.location.search);
       if (limit === 10) params.delete('unverifiedLimit');
       else params.set('unverifiedLimit', String(limit));
-      router.replace(`${window.location.pathname}?${params}`);
+      router.replace(`${window.location.pathname}?${params}`, { scroll: false });
     },
     [router]
   );
