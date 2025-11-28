@@ -19,4 +19,5 @@ export const ROUTES = {
   TRANSFER: '/transfer',
   WALLET: (address: string, queryParams?: string) => `/wallets/${address}${queryParams ? `?${queryParams}` : ''}`,
   WALLETS: '/wallets',
+  EXPORT_CSV: '/export-transactions-csv',
 } as const;
