@@ -25,7 +25,9 @@ export async function exportTransactionsToCSV(
     const errorText = raw ? raw.trim() : 'Failed to download CSV';
     throw new Error(`(${response.status}): ${errorText}`);
   }
-  const blob = await response.blob();
+  const csvText = await response.text();
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + csvText], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   link.href = window.URL.createObjectURL(blob);
   link.download = filename;
