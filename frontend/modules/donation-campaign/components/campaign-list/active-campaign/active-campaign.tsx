@@ -440,7 +440,7 @@ export const ActiveCampaign = () => {
             <Link href={ROUTES.CREATE_CAMPAIGN} className="mt-auto">
               <Button
                 variant="link"
-                className="bg-brand-primary dark:bg-brand-primary mt-6 inline-flex w-1/4 items-center justify-center rounded-2xl px-6 py-3 text-base font-semibold text-white transition hover:scale-[1.02] hover:shadow-lg"
+                className="bg-brand-primary dark:bg-brand-primary mt-6 inline-flex w-full items-center justify-center rounded-2xl px-6 py-3 text-base font-semibold text-white transition hover:scale-[1.02] hover:shadow-lg md:w-1/4"
               >
                 Get started
               </Button>
