@@ -1,7 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Pagination } from '@/components/ui/pagination';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { useSearchParams } from 'next/navigation';
 import { useBreakpoint, usePaginationQueryParam } from '@/hooks';
 import { EBreakpoint, ESortOrder } from '@/enums';
 import { WalletTransactionsTable, WalletTransactionsCards } from '@/modules/transaction/components';
@@ -9,6 +11,10 @@ import { PAGINATION } from '@/constant';
 import { ITransactionListParams } from '@/modules/transaction';
 import { useTransactions } from '@/modules/transaction/hooks/useTransactions';
 import { DatePicker } from '@/components/ui/datepicker';
+import { ExportTransactionsModal } from '@/components/ExportTransactionsModal';
+import { exportTransactionsToCSV } from '@/utils/export-csv';
+import { toast } from 'sonner';
+import { DateTimeUtil } from '@/utils';
 
 interface TransactionHistoryCardProps {
   walletAddress: string;
@@ -27,12 +33,25 @@ const getDefaultTimeRangeByMonth = (monthRange: number) => {
 };
 
 export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCardProps) {
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportFromDate, setExportFromDate] = useState<Date | null>(null);
+  const [exportToDate, setExportToDate] = useState<Date | null>(null);
+  const urlSearchParams = useSearchParams();
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
   const [startDate, setStartDate] = useState<Date>(getDefaultTimeRangeByMonth(1));
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [transactionType, setTransactionType] = useState('All Transaction');
   const oneYearAgo = new Date(new Date().setFullYear(new Date().getFullYear() - 1));
   const today = new Date();
+  useEffect(() => {
+    const typeParam = urlSearchParams.get('type');
+    if (typeParam === 'received') {
+      setTransactionType('Received');
+    } else if (typeParam === 'sent') {
+      setTransactionType('Sent');
+    }
+  }, [urlSearchParams]);
   const getSearchParams = (): ITransactionListParams => {
     const base = {
       ...DEFAULT_VALUE_DATA_SEARCH,
@@ -42,8 +61,8 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
 
     const baseWithDate = {
       ...base,
-      start_time: startDate.toISOString().split('T')[0],
-      end_time: endDate.toISOString().split('T')[0],
+      start_time: DateTimeUtil.formatLocalDate(startDate),
+      end_time: DateTimeUtil.formatLocalDate(endDate),
     };
 
     if (transactionType === 'Sent') {
@@ -63,13 +82,64 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
   const pagination = transactionsResponse?.meta;
   const isEmptyTransactions = transactions && transactions.length === 0;
 
+  const handleExportWithRange = async (fromDate: Date | null, toDate: Date | null, filename?: string) => {
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      await exportTransactionsToCSV(
+        walletAddress,
+        fromDate,
+        toDate,
+        filename || `${walletAddress}-transactions-range.csv`
+      );
+      setShowExportModal(false);
+    } catch (error) {
+      toast.error('Failed to export transactions as CSV. ' + String(error));
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportAll = async () => {
+    await handleExportWithRange(null, null, `${walletAddress}-transactions-all.csv`);
+  };
+
   return (
     <Card className="dark:border-primary/20">
       <CardContent className="overflow-x-hidden">
         <CardHeader className="mb-4 flex items-center justify-between gap-2 p-0">
           <CardTitle className="text-primary font-semibold tracking-wider uppercase">Transaction history</CardTitle>
         </CardHeader>
-        <div className="top-0 mb-0 flex flex-col gap-4 py-6 md:pt-8 lg:flex-row lg:items-center lg:justify-end lg:gap-5">
+        <div className="top-0 mb-0 flex flex-col gap-4 py-6 md:pt-8 lg:flex-row lg:items-center lg:justify-between lg:gap-5">
+          <div className="flex w-full items-center justify-center sm:w-auto sm:justify-start">
+            <Button
+              type="button"
+              disabled={isExporting}
+              className={`bg-brand-primary hover:bg-brand-primary/80 dark:hover:bg-brand-primary/90 mr-4 inline-flex items-center text-white ${
+                isExporting ? 'cursor-not-allowed opacity-70' : ''
+              }`}
+              onClick={() => setShowExportModal(true)}
+            >
+              {isExporting ? (
+                <span className="mr-2 animate-pulse">Exporting...</span>
+              ) : (
+                <>
+                  <i className="fa-solid fa-file-csv mr-2"></i>
+                  Export to CSV
+                </>
+              )}
+            </Button>
+            <ExportTransactionsModal
+              show={showExportModal}
+              onClose={() => !isExporting && setShowExportModal(false)}
+              onExportRange={handleExportWithRange}
+              onExportAll={handleExportAll}
+              exportFromDate={exportFromDate}
+              exportToDate={exportToDate}
+              setExportFromDate={setExportFromDate}
+              setExportToDate={setExportToDate}
+            />
+          </div>
           <div className="flex w-full flex-col gap-4 sm:flex-row lg:w-auto">
             <DatePicker
               selected={startDate}

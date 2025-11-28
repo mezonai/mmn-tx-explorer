@@ -1049,7 +1049,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "current_balance": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "description": {
                     "type": "string"
@@ -1082,6 +1082,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "total_contributors": {
+                    "type": "integer"
+                },
+                "total_withdrawn": {
                     "type": "integer"
                 },
                 "updated_at": {
@@ -1273,6 +1276,9 @@ const docTemplate = `{
                 },
                 "total_contributors": {
                     "type": "integer"
+                },
+                "total_withdrawn": {
+                    "type": "integer"
                 }
             }
         },
@@ -1336,7 +1342,7 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "last_block": {
+                "last_balance_update": {
                     "type": "integer"
                 },
                 "transaction_count": {

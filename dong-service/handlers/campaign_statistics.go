@@ -23,7 +23,7 @@ func NewCampaignStatisticsHandler(statsRepo *repository.CampaignStatisticsReposi
 	}
 }
 
-// GetStats godoc
+// GetCampaignStats godoc
 // @Summary Get donation campaign statistics
 // @Description Get overall statistics for all donation campaigns
 // @Tags campaigns
@@ -79,6 +79,6 @@ func (h *CampaignStatisticsHandler) SyncCampaign(c *gin.Context) {
 		return
 	}
 
-	logger.Info().Int64("campaign_id", id).Int64("total_amount", syncResponse.TotalAmount).Int64("total_contributors", syncResponse.TotalContributors).Msg("Campaign synced successfully")
+	logger.Info().Int64("campaign_id", id).Int64("total_amount", syncResponse.TotalAmount).Int64("total_contributors", syncResponse.TotalContributors).Int64("recent_amount", syncResponse.RecentAmount).Msg("Campaign synced successfully")
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Campaign synced successfully", syncResponse))
 }

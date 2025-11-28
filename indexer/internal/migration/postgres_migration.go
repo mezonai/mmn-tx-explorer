@@ -51,9 +51,9 @@ func RunPostgresMigrations(cfg *ConfigPostgres, migrationsPath string) error {
 		return fmt.Errorf("failed to open database connection: %w", err)
 	}
 	defer func() {
-		err := db.Close()
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to close database connection in RunPostgresMigrations")
+		dbErr := db.Close()
+		if dbErr != nil {
+			log.Error().Err(dbErr).Msg("Failed to close database connection in RunPostgresMigrations")
 		}
 	}()
 

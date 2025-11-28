@@ -90,7 +90,7 @@ func main() {
 
 	// Add sync contributors task
 	syncInterval := time.Duration(cfg.Scheduler.SyncContributorsInterval) * time.Second
-	syncTask := scheduler.CreateSyncContributorsTask(syncInterval, cfg.Indexer.Schema, cfg.Database.Schema)
+	syncTask := scheduler.CreateSyncContributorsTask(syncInterval, cfg.Indexer.Schema, cfg.Database.Schema, cfg.Scheduler.RecentStatsWindowDays)
 	schedulerInstance.AddTask(syncTask)
 
 	// Start scheduler
