@@ -1503,27 +1503,55 @@ func looksLikeTimestampColumn(col string) bool {
 	return strings.Contains(colLower, "timestamp") || strings.HasSuffix(colLower, "_time") || strings.HasSuffix(colLower, "time")
 }
 
-func (p *PostgresConnector) insertTransactionsTx(ctx context.Context, tx *sql.Tx, transactions []common.Transaction) (map[string]WalletStats, error) {
+func detectTransactionType(extraInfo string) int {
+	type Extra struct {
+		Type string `json:"type"`
+	}
+
+	var e Extra
+	if err := json.Unmarshal([]byte(extraInfo), &e); err != nil {
+		return 0
+	}
+
+	switch strings.ToLower(e.Type) {
+	case "dong-give-coffee":
+		return 0
+	case "donation-campaign":
+		return 1
+	case "withdraw-campaign":
+		return 2
+	default:
+		return 0
+	}
+}
+
+func (p *PostgresConnector) insertTransactionsTx(
+	ctx context.Context,
+	tx *sql.Tx,
+	transactions []common.Transaction,
+) (map[string]WalletStats, error) {
+
 	if len(transactions) == 0 {
 		return nil, nil
 	}
 
-	valueStrings := make([]string, 0, len(transactions))
-	valueArgs := make([]interface{}, 0, len(transactions)*13)
-
 	for i := range transactions {
 		t := &transactions[i]
-		if extra := strings.ToLower(t.ExtraInfo); extra != "" {
-			if strings.Contains(extra, "dong-give-coffee") || strings.Contains(extra, "\"type\":\"dong-give-coffee\"") {
-				t.TransactionType = 0
-			} else if strings.Contains(extra, "donation-campaign") || strings.Contains(extra, "\"type\":\"donation-campaign\"") {
-				t.TransactionType = 1
-			} else if strings.Contains(extra, "withdraw-campaign") || strings.Contains(extra, "\"type\":\"withdraw-campaign\"") {
-				t.TransactionType = 2
-			}
-		}
-		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
-			i*13+1, i*13+2, i*13+3, i*13+4, i*13+5, i*13+6, i*13+7, i*13+8, i*13+9, i*13+10, i*13+11, i*13+12, i*13+13))
+		t.TransactionType = uint8(detectTransactionType(t.ExtraInfo))
+	}
+
+	valueStrings := make([]string, len(transactions))
+	valueArgs := make([]interface{}, 0, len(transactions)*13)
+
+	for i, t := range transactions {
+		base := i * 13
+
+		valueStrings[i] = fmt.Sprintf(
+			"($%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d)",
+			base+1, base+2, base+3, base+4, base+5,
+			base+6, base+7, base+8, base+9, base+10,
+			base+11, base+12, base+13,
+		)
 
 		valueArgs = append(valueArgs,
 			bigIntToString(t.ChainID),
@@ -1542,73 +1570,88 @@ func (p *PostgresConnector) insertTransactionsTx(ctx context.Context, tx *sql.Tx
 		)
 	}
 
-	insertTransactionsQuery := fmt.Sprintf(`WITH inserted AS (
-				INSERT INTO transactions (chain_id, hash, nonce, block_hash, block_number, from_address, to_address, transaction_timestamp, value, transaction_type, status, text_data, extra_info)
-				VALUES %s
-				ON CONFLICT (chain_id, block_number, hash) 
-				DO UPDATE SET 
-					nonce = EXCLUDED.nonce,
-					block_hash = EXCLUDED.block_hash,
-					from_address = EXCLUDED.from_address,
-					to_address = EXCLUDED.to_address,
-					transaction_timestamp = EXCLUDED.transaction_timestamp,
-					value = EXCLUDED.value,
-					transaction_type = EXCLUDED.transaction_type,
-					status = EXCLUDED.status,
-					text_data = EXCLUDED.text_data,
-					extra_info = EXCLUDED.extra_info,
-					updated_at = NOW()
-				RETURNING (xmax = 0) AS is_new, extra_info
+	insertQuery := fmt.Sprintf(`
+		WITH inserted AS (
+			INSERT INTO transactions (
+				chain_id, hash, nonce, block_hash, block_number,
+				from_address, to_address, transaction_timestamp,
+				value, transaction_type, status, text_data, extra_info
 			)
-			SELECT
-				COALESCE(COUNT(*) FILTER (WHERE is_new), 0) AS inserted_count,
-				COALESCE(SUM(CASE WHEN is_new AND transaction_type = 0 THEN 1 ELSE 0 END), 0) AS new_give_coffee
-			FROM inserted`, strings.Join(valueStrings, ","))
+			VALUES %s
+			ON CONFLICT (chain_id, block_number, hash)
+			DO UPDATE SET
+				nonce = EXCLUDED.nonce,
+				block_hash = EXCLUDED.block_hash,
+				from_address = EXCLUDED.from_address,
+				to_address = EXCLUDED.to_address,
+				transaction_timestamp = EXCLUDED.transaction_timestamp,
+				value = EXCLUDED.value,
+				transaction_type = EXCLUDED.transaction_type,
+				status = EXCLUDED.status,
+				text_data = EXCLUDED.text_data,
+				extra_info = EXCLUDED.extra_info,
+				updated_at = NOW()
+			RETURNING 
+				(xmax = 0) AS is_new,
+				transaction_type
+		)
+		SELECT
+			COUNT(*) FILTER (WHERE is_new) AS inserted_count,
+			COUNT(*) FILTER (WHERE is_new AND transaction_type = 0) AS new_give_coffee
+		FROM inserted;
+	`, strings.Join(valueStrings, ","))
 
-	// Count only newly inserted rows and newly-inserted 'give coffee' transfers to compute accurate stats increment
-	var insertedCount int
-	var newGiveCoffeeCount int
-	if err := tx.QueryRowContext(ctx, insertTransactionsQuery, valueArgs...).Scan(&insertedCount, &newGiveCoffeeCount); err != nil {
-		return nil, fmt.Errorf("failed to execute insert transactions count query: %w", err)
+	var insertedCount, newGiveCoffeeCount int
+
+	if err := tx.QueryRowContext(ctx, insertQuery, valueArgs...).Scan(
+		&insertedCount,
+		&newGiveCoffeeCount,
+	); err != nil {
+		return nil, fmt.Errorf("failed insert tx: %w", err)
 	}
 
 	if insertedCount > 0 {
-		if _, err := tx.ExecContext(ctx, "INSERT INTO stats(key, value) VALUES ('total_transactions', $1) ON CONFLICT (key) DO UPDATE SET value = stats.value + $1", insertedCount); err != nil {
-			return nil, fmt.Errorf("failed to execute update stats query: %w", err)
+		_, err := tx.ExecContext(ctx, `
+			INSERT INTO stats(key, value)
+			VALUES ('total_transactions', $1)
+			ON CONFLICT (key) DO UPDATE SET value = stats.value + $1
+		`, insertedCount)
+		if err != nil {
+			return nil, fmt.Errorf("failed update total_transactions: %w", err)
 		}
 	}
 
 	if newGiveCoffeeCount > 0 {
-		log.Info().Int("new_give_coffee_count", newGiveCoffeeCount).Msg("New give-coffee transactions inserted; updating stats")
-		if _, err := tx.ExecContext(ctx, "INSERT INTO stats(key, value) VALUES ('total_give_coffee', $1) ON CONFLICT (key) DO UPDATE SET value = stats.value + $1", newGiveCoffeeCount); err != nil {
-			return nil, fmt.Errorf("failed to execute update total_give_coffee stats query: %w", err)
+		_, err := tx.ExecContext(ctx, `
+			INSERT INTO stats(key, value)
+			VALUES ('total_give_coffee', $1)
+			ON CONFLICT (key) DO UPDATE SET value = stats.value + $1
+		`, newGiveCoffeeCount)
+		if err != nil {
+			return nil, fmt.Errorf("failed update total_give_coffee: %w", err)
 		}
 	}
 
-	addressStats := make(map[string]WalletStats)
-	for i := range transactions {
-		t := &transactions[i]
-		if t.FromAddress != "" {
-			stat := addressStats[t.FromAddress]
-			stat.Address = t.FromAddress
-			stat.TransactionCount++
-			if stat.MaxBlock == nil || t.BlockNumber.Cmp(stat.MaxBlock) > 0 {
-				stat.MaxBlock = new(big.Int).Set(t.BlockNumber)
+	walletStats := make(map[string]WalletStats)
+
+	for _, txObj := range transactions {
+		apply := func(addr string) {
+			if addr == "" {
+				return
 			}
-			addressStats[t.FromAddress] = stat
-		}
-		if t.ToAddress != "" {
-			stat := addressStats[t.ToAddress]
-			stat.Address = t.ToAddress
+			stat := walletStats[addr]
+			stat.Address = addr
 			stat.TransactionCount++
-			if stat.MaxBlock == nil || t.BlockNumber.Cmp(stat.MaxBlock) > 0 {
-				stat.MaxBlock = new(big.Int).Set(t.BlockNumber)
+			if stat.MaxBlock == nil || txObj.BlockNumber.Cmp(stat.MaxBlock) > 0 {
+				stat.MaxBlock = new(big.Int).Set(txObj.BlockNumber)
 			}
-			addressStats[t.ToAddress] = stat
+			walletStats[addr] = stat
 		}
+		apply(txObj.FromAddress)
+		apply(txObj.ToAddress)
 	}
 
-	return addressStats, nil
+	return walletStats, nil
 }
 
 func (p *PostgresConnector) scanBlock(rows *sql.Rows, block *common.Block) error {
@@ -2094,7 +2137,10 @@ func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
 	averageBlockMs := int64(avgBlockTime * 1000)
 
 	var totalGiveCoffee int64
-	err = p.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM transactions WHERE transaction_type = 0`).Scan(&totalGiveCoffee)
+	err = p.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM transactions
+		WHERE transaction_type = 0 AND status = 2
+	`).Scan(&totalGiveCoffee)
 	if err != nil {
 		return fmt.Errorf("failed to count give_coffee transactions: %w", err)
 	}
@@ -2109,11 +2155,6 @@ func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
 		{"average_block", averageBlockMs},
 		{"total_give_coffee", totalGiveCoffee},
 	}
-
-	statsUpdates = append(statsUpdates, struct {
-		key   string
-		value int64
-	}{"total_give_coffee", totalGiveCoffee})
 
 	for _, stat := range statsUpdates {
 		_, err = p.db.ExecContext(ctx, `
