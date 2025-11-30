@@ -1,12 +1,12 @@
 'use client';
-import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
 import { useDebounce } from '@/hooks';
 import { CampaignCard } from './campaign-card';
+import { LaunchCampaignCTA } from './launch-cta';
 import { ContactCard } from './contact-card';
 import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
-import { ROUTES } from '@/configs/routes.config';
+
 import { useCampaigns } from '../../../hooks/useCampaigns';
 import { useDualPaginationQueryParam } from '@/hooks/useDualPaginationQueryParam';
 import { ECampaignStatus, DonationCampaign } from '../../../type';
@@ -57,6 +57,9 @@ export const ActiveCampaign = () => {
     handleChangeUnverifiedPage,
     handleChangeUnverifiedLimit,
   } = useDualPaginationQueryParam();
+
+  const verifiedSectionRef = useRef<HTMLDivElement | null>(null);
+  const unverifiedSectionRef = useRef<HTMLDivElement | null>(null);
 
   const userIdStr = user ? String(user.id) : undefined;
   const [verifiedLocalPage, setVerifiedLocalPage] = useState<number | undefined>(undefined);
@@ -331,7 +334,12 @@ export const ActiveCampaign = () => {
           </div>
 
           {verifiedFilter !== 'unverified' && (
-            <div className="mt-10 pb-10">
+            <div
+              ref={(el) => {
+                verifiedSectionRef.current = el;
+              }}
+              className="mt-10 pb-10"
+            >
               <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
                 Verified Campaigns
                 {isLoadingVerified &&
@@ -349,9 +357,17 @@ export const ActiveCampaign = () => {
               </h2>
               <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
                 {pagedVerified.length > 0 ? (
-                  pagedVerified.map((campaign) => <CampaignCard key={campaign.id} campaign={campaign} />)
+                  <>
+                    {pagedVerified.map((campaign) => (
+                      <CampaignCard key={campaign.id} campaign={campaign} />
+                    ))}
+                    <LaunchCampaignCTA />
+                  </>
                 ) : (
-                  <div className="col-span-full text-center text-gray-500">{noVerifiedMessage}</div>
+                  <>
+                    <div className="col-span-full text-center text-gray-500">{noVerifiedMessage}</div>
+                    <LaunchCampaignCTA />
+                  </>
                 )}
               </div>
               {(verifiedMeta?.total_items ?? filteredVerifiedCampaigns.length) > 0 && (
@@ -376,7 +392,12 @@ export const ActiveCampaign = () => {
           )}
 
           {verifiedFilter !== 'verified' && (
-            <div className="mt-10 pb-10">
+            <div
+              ref={(el) => {
+                unverifiedSectionRef.current = el;
+              }}
+              className="mt-10 pb-10"
+            >
               <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
                 Unverified Campaigns
                 {isLoadingUnverified &&
@@ -394,9 +415,17 @@ export const ActiveCampaign = () => {
               </h2>
               <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
                 {pagedUnverified.length > 0 ? (
-                  pagedUnverified.map((campaign) => <CampaignCard key={campaign.id} campaign={campaign} />)
+                  <>
+                    {pagedUnverified.map((campaign) => (
+                      <CampaignCard key={campaign.id} campaign={campaign} />
+                    ))}
+                    <LaunchCampaignCTA />
+                  </>
                 ) : (
-                  <div className="col-span-full text-center text-gray-500">{noUnverifiedMessage}</div>
+                  <>
+                    <div className="col-span-full text-center text-gray-500">{noUnverifiedMessage}</div>
+                    <LaunchCampaignCTA />
+                  </>
                 )}
               </div>
               {(unverifiedMeta?.total_items ?? filteredUnverifiedCampaigns.length) > 0 && (
@@ -419,33 +448,6 @@ export const ActiveCampaign = () => {
               )}
             </div>
           )}
-
-          <article className="group border-border bg-background/5 hover:border-primary/60 hover:bg-primary/10 dark:border-border dark:bg-card dark:text-primary-light flex h-full flex-col rounded-3xl border border-dashed p-6 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-            <div className="bg-brand-primary/20 dark:bg-brand-primary/40 mx-auto flex h-14 w-14 items-center justify-center rounded-2xl">
-              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M12 5v14m7-7H5"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                ></path>
-              </svg>
-            </div>
-            <h3 className="text-brand-primary mt-4 text-lg font-semibold">Launch a new campaign</h3>
-            <p className="text-brand-primary mt-2 text-sm leading-6">
-              Prepare your storyline, media assets, and fundraising targets so you can publish as soon as stakeholders
-              approve.
-            </p>
-            <Link href={ROUTES.CREATE_CAMPAIGN} className="mt-auto">
-              <Button
-                variant="link"
-                className="bg-brand-primary dark:bg-brand-primary mt-6 inline-flex w-1/4 items-center justify-center rounded-2xl px-6 py-3 text-base font-semibold text-white transition hover:scale-[1.02] hover:shadow-lg"
-              >
-                Get started
-              </Button>
-            </Link>
-          </article>
 
           <ContactCard />
         </section>

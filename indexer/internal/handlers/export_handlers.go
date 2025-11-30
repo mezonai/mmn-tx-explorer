@@ -73,7 +73,7 @@ func ExportTransactionsCSV(c *gin.Context) {
 	w := csv.NewWriter(c.Writer)
 	defer w.Flush()
 
-	w.Write([]string{"hash", "from_address", "to_address", "value", "transaction_timestamp", "block_number", "status", "transaction_type", "text_data", "extra_info"})
+	w.Write([]string{"hash", "from_address", "to_address", "value", "transaction_timestamp", "block_number", "status", "transaction_type", "text_data"})
 
 	for _, tx := range transactions {
 		timestamp := tx.TransactionTimestamp.Format(dateLayout + " " + timestampLayout)
@@ -95,7 +95,6 @@ func ExportTransactionsCSV(c *gin.Context) {
 			status,
 			fmt.Sprintf("%d", tx.TransactionType),
 			tx.TextData,
-			tx.ExtraInfo,
 		})
 	}
 }
