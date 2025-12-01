@@ -20,9 +20,9 @@ const (
 	ErrInvalidCampaignID  = "Invalid campaign ID"
 	ErrInvalidStatus      = "Invalid status"
 	ErrNoFieldsToUpdate   = "No fields to update"
-	ErrInvalidDateFormat  = "Invalid date format"
+	ErrInvalidDateFormat  = "Invalid date format : must be YYYY-MM-DD"
 	ErrEndDateInPast      = "End date must be in the future"
-	ErrInvalidGoalAmount  = "Goal amount must be greater than 0"
+	ErrInvalidGoalAmount  = "Goal must be greater than 0 and less than or equal to 100 billion"
 	ErrInvalidURL         = "Invalid URL format"
 )
 
