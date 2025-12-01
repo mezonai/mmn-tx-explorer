@@ -210,7 +210,7 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 		var currentBalance int64
 		balanceQuery := fmt.Sprintf(`SELECT COALESCE(balance, 0) FROM %s.wallet WHERE address = $1`, r.indexerSchema)
 		err = r.db.QueryRowContext(ctx, balanceQuery, campaign.DonationWallet).Scan(&currentBalance)
-		if err != nil && err != sql.ErrNoRows {
+		if err != nil {
 			currentBalance = 0
 		}
 
