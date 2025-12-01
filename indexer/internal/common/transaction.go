@@ -8,7 +8,7 @@ import (
 type RawTransaction = map[string]interface{}
 
 type Transaction struct {
-	ChainId              *big.Int  `json:"chain_id" ch:"chain_id" swaggertype:"string"`
+	ChainID              *big.Int  `json:"chain_id" ch:"chain_id" swaggertype:"string"`
 	Hash                 string    `json:"hash" ch:"hash"`
 	Nonce                uint64    `json:"nonce" ch:"nonce"`
 	BlockHash            string    `json:"block_hash" ch:"block_hash"`
@@ -35,7 +35,7 @@ type DecodedTransaction struct {
 }
 
 type BaseTransactionModel struct {
-	ChainId              string  `json:"chain_id"`
+	ChainID              string  `json:"chain_id"`
 	Hash                 string  `json:"hash"`
 	Nonce                uint64  `json:"nonce"`
 	BlockHash            string  `json:"block_hash"`
@@ -52,7 +52,7 @@ type BaseTransactionModel struct {
 // TransactionModel represents a simplified Transaction structure for Swagger documentation
 type TransactionModel struct {
 	BaseTransactionModel
-	ExtraInfo			 string  `json:"extra_info"`
+	ExtraInfo string `json:"extra_info"`
 }
 
 type DecodedTransactionDataModel struct {
@@ -66,12 +66,10 @@ type DecodedTransactionModel struct {
 	Decoded DecodedTransactionDataModel `json:"decoded"`
 }
 
-
-
 func (t *Transaction) Serialize() TransactionModel {
 	return TransactionModel{
 		BaseTransactionModel: BaseTransactionModel{
-			ChainId:              t.ChainId.String(),
+			ChainID:              t.ChainID.String(),
 			Hash:                 t.Hash,
 			Nonce:                t.Nonce,
 			BlockHash:            t.BlockHash,
@@ -84,13 +82,13 @@ func (t *Transaction) Serialize() TransactionModel {
 			TransactionTimestamp: uint64(t.TransactionTimestamp.Unix()),
 			TextData:             t.TextData,
 		},
-		ExtraInfo:             t.ExtraInfo,
+		ExtraInfo: t.ExtraInfo,
 	}
 }
 
 func (t *Transaction) SerializeInternal() BaseTransactionModel {
 	return BaseTransactionModel{
-		ChainId:              t.ChainId.String(),
+		ChainID:              t.ChainID.String(),
 		Hash:                 t.Hash,
 		Nonce:                t.Nonce,
 		BlockHash:            t.BlockHash,

@@ -66,7 +66,6 @@ export function RecentActivityTable({
       skeletonContent: <TxnHashLinkSkeleton className="w-40" />,
     },
   ];
-  const queryParams = 'tab=received-transactions';
   return (
     <Card className="dark:border-primary/20 overflow-x-auto p-6">
       <CardHeader className="m-0 flex items-center justify-between gap-2 px-3 py-0">
@@ -88,7 +87,7 @@ export function RecentActivityTable({
         <div className="mt-4 flex w-full items-center justify-between text-xs text-gray-500 dark:text-gray-400">
           <span className="order-1">{`Showing ${transactions?.length ?? 0} of total ${totalTransaction}`}</span>
           <Link
-            href={ROUTES.WALLET(walletAddress, queryParams)}
+            href={ROUTES.WALLET(walletAddress, 'type=received')}
             className={cn(
               'text-brand-primary hover:text-brand-primary/70 order-2 inline-flex items-center font-medium transition',
               {

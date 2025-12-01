@@ -9,6 +9,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -44,9 +45,9 @@ func (h *DonationCampaignHandler) CreateCampaign(c *gin.Context) {
 	}
 
 	var req models.CreateDonationCampaignRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		logger.Error().Err(err).Int64("user_id", userID).Msg("Invalid request body for campaign creation")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+err.Error()))
+	if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
+		logger.Error().Err(bindErr).Int64("user_id", userID).Msg("Invalid request body for campaign creation")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+bindErr.Error()))
 		return
 	}
 
@@ -91,9 +92,9 @@ func (h *DonationCampaignHandler) CreateAndActiveCampaign(c *gin.Context) {
 	}
 
 	var req models.CreateDonationCampaignRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		logger.Error().Err(err).Int64("user_id", userID).Msg("Invalid request body for campaign creation and activation")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+err.Error()))
+	if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
+		logger.Error().Err(bindErr).Int64("user_id", userID).Msg("Invalid request body for campaign creation and activation")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+bindErr.Error()))
 		return
 	}
 
@@ -164,12 +165,46 @@ func (h *DonationCampaignHandler) GetCampaign(c *gin.Context) {
 // @Param status query int false "Filter by status (e.g., 0=draft,1=active,2=closed)"
 // @Param order query string false "Sort direction" Enums(asc,desc) default(desc)
 // @Param order_by query string false "Sort field" Enums(created_at,total_amount) default(created_at)
+// @Param q query string false "Search (name or description)"
+// @Param search query string false "Search (name or description) (alias)"
 // @Success 200 {object} models.PaginatedResponse{data=[]models.DonationCampaignResponse, meta=models.PaginationMeta}
 // @Failure 500 {object} models.Response
 // @Router /api/v1/campaigns [get]
 func (h *DonationCampaignHandler) ListCampaigns(c *gin.Context) {
 	pagination := utils.GetPaginationParams(c)
 	statusPtr := utils.ParseInt16Query(c, "status")
+	// parse verified flag if present
+	var verifiedPtr *bool
+	if v := c.Query("verified"); v != "" {
+		if b, err := strconv.ParseBool(v); err == nil {
+			verifiedPtr = &b
+		}
+	}
+
+	// parse search query if present (accept q or search for backward compatibility)
+	var qPtr *string
+	if qs := strings.TrimSpace(c.Query("q")); qs != "" {
+		qPtr = &qs
+	} else if s := strings.TrimSpace(c.Query("search")); s != "" {
+		qPtr = &s
+	}
+
+	var creatorPtr *string
+	if creatorStr := strings.TrimSpace(c.Query("creator")); creatorStr != "" {
+		tmp := creatorStr
+		creatorPtr = &tmp
+	}
+	if creatorPtr == nil {
+		if p := c.Param("creator"); p != "" {
+			tmp := p
+			creatorPtr = &tmp
+		}
+	}
+
+	creatorLog := ""
+	if creatorPtr != nil {
+		creatorLog = *creatorPtr
+	}
 
 	logger.Debug().
 		Int("page", pagination.Page).
@@ -177,9 +212,10 @@ func (h *DonationCampaignHandler) ListCampaigns(c *gin.Context) {
 		Interface("status", statusPtr).
 		Str("order", pagination.Order).
 		Str("order_by", pagination.OrderBy).
+		Str("creator", creatorLog).
 		Msg("Listing campaigns")
 
-	campaigns, err := h.repo.GetAll(statusPtr, pagination)
+	campaigns, err := h.repo.GetAll(statusPtr, verifiedPtr, qPtr, pagination, creatorPtr)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to get campaigns list")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToGetCampaigns+": "+err.Error()))
@@ -187,7 +223,7 @@ func (h *DonationCampaignHandler) ListCampaigns(c *gin.Context) {
 	}
 
 	// Get total count
-	total, err := h.repo.Count(statusPtr)
+	total, err := h.repo.Count(statusPtr, verifiedPtr, qPtr, creatorPtr)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to count campaigns")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToGetCampaigns+": "+err.Error()))
@@ -196,8 +232,8 @@ func (h *DonationCampaignHandler) ListCampaigns(c *gin.Context) {
 
 	// Convert to response format
 	responses := make([]models.DonationCampaignResponse, len(campaigns))
-	for i, campaign := range campaigns {
-		responses[i] = campaign.ToResponse()
+	for i := range campaigns {
+		responses[i] = campaigns[i].ToResponse()
 	}
 
 	logger.Debug().Int("count", len(campaigns)).Int64("total", total).Msg("Campaigns retrieved successfully")
@@ -234,9 +270,9 @@ func (h *DonationCampaignHandler) UpdateCampaign(c *gin.Context) {
 	}
 
 	var req models.UpdateDonationCampaignRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		logger.Error().Err(err).Int64("user_id", userID).Int64("campaign_id", id).Msg("Invalid request body for campaign update")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+err.Error()))
+	if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
+		logger.Error().Err(bindErr).Int64("user_id", userID).Int64("campaign_id", id).Msg("Invalid request body for campaign update")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+bindErr.Error()))
 		return
 	}
 
@@ -358,7 +394,7 @@ func (h *DonationCampaignHandler) CloseCampaign(c *gin.Context) {
 		return
 	}
 
-	//Only close Activated campaigns
+	// Only close Activated campaigns
 	if campaign.Status != constants.CampaignStatusActive {
 		logger.Error().Int64("user_id", userID).Int64("campaign_id", id).Int16("status", campaign.Status).Msg("Cannot close campaign with current status")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Only activated campaigns can be closed"))
@@ -434,7 +470,7 @@ func (h *DonationCampaignHandler) GetTopContributors(c *gin.Context) {
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Top contributors retrieved successfully", topContributors))
 }
 
-// DeleteCampaign godoc
+// DeleteDraftCampaign godoc
 // @Summary Delete a drafted campaign
 // @Description Delete a drafted donation campaign (only the creator can delete)
 // @Tags campaigns

@@ -8,6 +8,7 @@ import { CopyButton } from '@/components/ui/copy-button';
 import { APP_CONFIG } from '@/configs/app.config';
 import { useTheme } from '@/providers/ThemeProvider';
 import { ROUTES } from '@/configs/routes.config';
+import { STORAGE_KEYS } from '@/constant';
 
 export const NavBarAuthPanel: React.FC = () => {
   const { user } = useUser();
@@ -16,8 +17,8 @@ export const NavBarAuthPanel: React.FC = () => {
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const classname = cn(
-    'flex cursor-pointer items-center space-x-2 rounded-xl border border-gray-300 dark:border-gray-700 px-4 py-2 transition',
-    open ? 'bg-gray-50 dark:bg-card' : 'bg-background hover:bg-gray-50 dark:hover:bg-card'
+    'flex cursor-pointer items-center space-x-2 rounded-xl border border-gray-300 px-4 py-2 transition dark:border-gray-700',
+    open ? 'dark:bg-card bg-gray-50' : 'bg-background dark:hover:bg-card hover:bg-gray-50'
   );
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -51,41 +52,38 @@ export const NavBarAuthPanel: React.FC = () => {
 
   return user ? (
     <div className="relative hidden items-center md:flex" ref={panelRef}>
-      <button
-        className={classname}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-      >
+      <button className={classname} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
         <img
           src={user.avatar}
           alt="User Avatar"
-          className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600 object-cover"
+          className="h-8 w-8 rounded-full border border-gray-300 object-cover dark:border-gray-600"
         />
         <span className="text-sm font-medium text-gray-900 dark:text-white">{user.username}</span>
-        <i className={cn("fa-solid fa-chevron-down text-gray-400 text-xs transition-transform", open && "rotate-180")}></i>
+        <i
+          className={cn('fa-solid fa-chevron-down text-xs text-gray-400 transition-transform', open && 'rotate-180')}
+        ></i>
       </button>
       {renderPanel && (
         <div
           role="menu"
           aria-label="Profile menu"
           className={cn(
-            'absolute right-0 mt-2 top-full w-80 bg-white dark:bg-[#1e293b] border border-gray-300 dark:border-gray-700 rounded-2xl shadow-xl p-4 space-y-4 z-50 origin-top-right transform transition-all duration-150 ease-out',
-            entering ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-1'
+            'absolute top-full right-0 z-50 mt-2 w-80 origin-top-right transform space-y-4 rounded-2xl border border-gray-300 bg-white p-4 shadow-xl transition-all duration-150 ease-out dark:border-gray-700 dark:bg-[#1e293b]',
+            entering ? 'translate-y-0 scale-100 opacity-100' : '-translate-y-1 scale-95 opacity-0'
           )}
         >
-          <div className="flex items-center space-x-3 border-b border-gray-300 dark:border-gray-700 pb-3">
+          <div className="flex items-center space-x-3 border-b border-gray-300 pb-3 dark:border-gray-700">
             <img
               src={user.avatar}
               alt="User Avatar"
-              className="w-10 h-10 rounded-full border border-gray-300 dark:border-gray-600 object-cover"
+              className="h-10 w-10 rounded-full border border-gray-300 object-cover dark:border-gray-600"
             />
             <div>
               <div className="flex items-center space-x-2">
                 <h3 className="font-semibold text-gray-900 dark:text-white">{user.username}</h3>
-                <span className="text-green-400 text-xs">● Online</span>
+                <span className="text-xs text-green-400">● Online</span>
               </div>
-              <p className="text-gray-600 dark:text-gray-400 text-xs flex items-center gap-2">
+              <p className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                 <span>ID:</span>
                 <span className="font-mono text-gray-900 dark:text-gray-300">{user.id}</span>
                 <CopyButton textToCopy={String(user.id)} className="!size-4" />
@@ -94,26 +92,26 @@ export const NavBarAuthPanel: React.FC = () => {
           </div>
 
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between">
               <span className="text-gray-600 dark:text-gray-400">Wallet</span>
               <div className="flex items-center space-x-2">
-                <span className="font-mono text-gray-900 dark:text-gray-200 text-sm">
+                <span className="font-mono text-sm text-gray-900 dark:text-gray-200">
                   {user.walletAddress ? `${user.walletAddress.slice(0, 3)}...${user.walletAddress.slice(-4)}` : 'N/A'}
                 </span>
                 {user.walletAddress && <CopyButton textToCopy={user.walletAddress} className="ml-1" />}
               </div>
             </div>
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between">
               <span className="text-gray-600 dark:text-gray-400">Network</span>
-              <span className="text-gray-900 dark:text-gray-200 flex items-center space-x-1">
+              <span className="flex items-center space-x-1 text-gray-900 dark:text-gray-200">
                 <i className="fa-solid fa-globe text-xs"></i>
                 <span>{APP_CONFIG.CHAIN_NAME}</span>
               </span>
             </div>
             {user.email && (
-              <div className="flex justify-between items-center">
+              <div className="flex items-center justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Email</span>
-                <span className="text-gray-900 dark:text-gray-200 text-xs truncate max-w-[180px]">{user.email}</span>
+                <span className="max-w-[180px] truncate text-xs text-gray-900 dark:text-gray-200">{user.email}</span>
               </div>
             )}
           </div>
@@ -123,30 +121,50 @@ export const NavBarAuthPanel: React.FC = () => {
           <div className="space-y-1 text-sm">
             <a
               href={user.walletAddress ? ROUTES.WALLET(user.walletAddress) : ROUTES.PROFILE}
-              className="group cursor-pointer flex w-full items-center justify-between px-3 py-2 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="group flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-gray-900 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800"
             >
               <span className="flex items-center space-x-2">
-                <i className="fa-solid fa-wallet text-[var(--color-brand-primary)] w-4 text-center"></i>
+                <i className="fa-solid fa-wallet w-4 text-center text-[var(--color-brand-primary)]"></i>
                 <span className="transition-colors">Account Overview</span>
               </span>
-              <i className="fa-solid fa-chevron-right text-gray-500 text-xs transition-all group-hover:translate-x-0.5"></i>
+              <i className="fa-solid fa-chevron-right text-xs text-gray-500 transition-all group-hover:translate-x-0.5"></i>
+            </a>
+            <a
+              href={ROUTES.DONATION_CAMPAIGN}
+              onClick={(e) => {
+                e.preventDefault();
+                sessionStorage.setItem(STORAGE_KEYS.SHOW_MINE_CAMPAIGNS, 'true');
+                window.location.href = ROUTES.DONATION_CAMPAIGN;
+              }}
+              className="group flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-gray-900 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800"
+            >
+              <span className="flex items-center space-x-2">
+                <i className="fa-solid fa-bullhorn w-4 text-center text-[var(--color-brand-primary)]"></i>
+                <span className="transition-colors">My Campaigns</span>
+              </span>
+              <i className="fa-solid fa-chevron-right text-xs text-gray-500 transition-all group-hover:translate-x-0.5"></i>
             </a>
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="group cursor-pointer flex w-full items-center justify-between px-3 py-2 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="group flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-gray-900 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800"
             >
               <span className="flex items-center space-x-2">
-                <i className={cn("text-[var(--color-brand-primary)] w-4 text-center", theme === 'dark' ? "fa-solid fa-moon" : "fa-solid fa-sun")}></i>
+                <i
+                  className={cn(
+                    'w-4 text-center text-[var(--color-brand-primary)]',
+                    theme === 'dark' ? 'fa-solid fa-moon' : 'fa-solid fa-sun'
+                  )}
+                ></i>
                 <span className="transition-colors">Toggle {theme === 'dark' ? 'Light' : 'Dark'} Mode</span>
               </span>
-              <i className="fa-solid fa-chevron-right text-gray-500 text-xs transition-all group-hover:translate-x-0.5"></i>
+              <i className="fa-solid fa-chevron-right text-xs text-gray-500 transition-all group-hover:translate-x-0.5"></i>
             </button>
           </div>
 
           <div className="border-t border-gray-300 dark:border-gray-700"></div>
           <button
             onClick={logout}
-            className="w-full cursor-pointer bg-transparent border border-red-500/40 text-red-400 hover:bg-red-500/20 py-2 rounded-lg font-semibold text-sm transition"
+            className="w-full cursor-pointer rounded-lg border border-red-500/40 bg-transparent py-2 text-sm font-semibold text-red-400 transition hover:bg-red-500/20"
           >
             <i className="fa-solid fa-right-from-bracket mr-2"></i> Logout
           </button>

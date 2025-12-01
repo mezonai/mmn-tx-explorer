@@ -43,8 +43,8 @@ func TestNewCommitter(t *testing.T) {
 	committer.workMode = WorkModeBackfill
 
 	assert.NotNil(t, committer)
-	assert.Equal(t, DEFAULT_COMMITTER_TRIGGER_INTERVAL, committer.triggerIntervalMs)
-	assert.Equal(t, DEFAULT_BLOCKS_PER_COMMIT, committer.blocksPerCommit)
+	assert.Equal(t, DefaultCommitterTriggerInterval, committer.triggerIntervalMs)
+	assert.Equal(t, DefaultBlocksPerCommit, committer.blocksPerCommit)
 }
 
 func TestGetBlockNumbersToCommit(t *testing.T) {
@@ -239,7 +239,7 @@ func TestGetSequentialBlockDataToCommit(t *testing.T) {
 		{Block: common.Block{Number: big.NewInt(103)}},
 	}
 	mockStagingStorage.EXPECT().GetStagingData(storage.QueryFilter{
-		ChainId:      chainID,
+		ChainID:      chainID,
 		BlockNumbers: []*big.Int{big.NewInt(101), big.NewInt(102), big.NewInt(103)},
 	}).Return(blockData, nil)
 
@@ -272,7 +272,7 @@ func TestGetSequentialBlockDataToCommitWithDuplicateBlocks(t *testing.T) {
 		{Block: common.Block{Number: big.NewInt(103)}},
 	}
 	mockStagingStorage.EXPECT().GetStagingData(storage.QueryFilter{
-		ChainId:      chainID,
+		ChainID:      chainID,
 		BlockNumbers: []*big.Int{big.NewInt(101), big.NewInt(102), big.NewInt(103)},
 	}).Return(blockData, nil)
 
@@ -295,8 +295,8 @@ func TestCommitDeletesAfterPublish(t *testing.T) {
 
 	chainID := big.NewInt(1)
 	blockData := []common.BlockData{
-		{Block: common.Block{ChainId: chainID, Number: big.NewInt(101)}},
-		{Block: common.Block{ChainId: chainID, Number: big.NewInt(102)}},
+		{Block: common.Block{ChainID: chainID, Number: big.NewInt(101)}},
+		{Block: common.Block{ChainID: chainID, Number: big.NewInt(102)}},
 	}
 
 	deleteDone := make(chan struct{})
@@ -322,7 +322,7 @@ func TestCommitDeletesAfterPublish(t *testing.T) {
 
 func TestCommitParallelPublisherMode(t *testing.T) {
 	defer func() { config.Cfg = config.Config{} }()
-	config.Cfg.Publisher.Mode = "parallel"
+	config.Cfg.Publisher.Mode = ParallelPublisherMode
 
 	mockRPC := mocks.NewMockIRPCClient(t)
 	mockStorage, mockMainStorage, mockStagingStorage := createMockStorage(t)
@@ -332,8 +332,8 @@ func TestCommitParallelPublisherMode(t *testing.T) {
 
 	chainID := big.NewInt(1)
 	blockData := []common.BlockData{
-		{Block: common.Block{ChainId: chainID, Number: big.NewInt(101)}},
-		{Block: common.Block{ChainId: chainID, Number: big.NewInt(102)}},
+		{Block: common.Block{ChainID: chainID, Number: big.NewInt(101)}},
+		{Block: common.Block{ChainID: chainID, Number: big.NewInt(102)}},
 	}
 
 	mockMainStorage.EXPECT().InsertBlockData(blockData).Return(nil)
@@ -386,7 +386,7 @@ func TestHandleGap(t *testing.T) {
 	})
 	mockStagingStorage.EXPECT().InsertStagingData(mock.Anything).Return(nil)
 
-	err := committer.handleGap(context.Background(), expectedStartBlockNumber, actualFirstBlock)
+	err := committer.handleGap(context.Background(), expectedStartBlockNumber, &actualFirstBlock)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "first block number (105) in commit batch does not match expected (100)")
@@ -407,8 +407,8 @@ func TestNewCommitterWithOptions(t *testing.T) {
 	assert.NotNil(t, committer)
 	assert.Equal(t, workModeChan, committer.workModeChan)
 	assert.Equal(t, validator, committer.validator)
-	assert.Equal(t, DEFAULT_COMMITTER_TRIGGER_INTERVAL, committer.triggerIntervalMs)
-	assert.Equal(t, DEFAULT_BLOCKS_PER_COMMIT, committer.blocksPerCommit)
+	assert.Equal(t, DefaultCommitterTriggerInterval, committer.triggerIntervalMs)
+	assert.Equal(t, DefaultBlocksPerCommit, committer.blocksPerCommit)
 }
 
 func TestGetBlockNumbersToPublish(t *testing.T) {
@@ -534,7 +534,7 @@ func TestFetchBlockDataBackfillMode(t *testing.T) {
 
 	mockRPC.EXPECT().GetChainID().Return(chainID)
 	mockStagingStorage.EXPECT().GetStagingData(storage.QueryFilter{
-		ChainId:      chainID,
+		ChainID:      chainID,
 		BlockNumbers: blockNumbers,
 	}).Return(expectedBlockData, nil)
 
@@ -556,7 +556,7 @@ func TestFetchBlockDataBackfillModeEmptyResult(t *testing.T) {
 
 	mockRPC.EXPECT().GetChainID().Return(chainID).Times(2) // Called once in fetchBlockData, once in handleMissingStagingData
 	mockStagingStorage.EXPECT().GetStagingData(storage.QueryFilter{
-		ChainId:      chainID,
+		ChainID:      chainID,
 		BlockNumbers: blockNumbers,
 	}).Return([]common.BlockData{}, nil)
 	mockStagingStorage.EXPECT().GetLastStagedBlockNumber(chainID, big.NewInt(102), big.NewInt(0)).Return(nil, nil)
@@ -583,7 +583,7 @@ func TestGetSequentialBlockDataWithGap(t *testing.T) {
 
 	mockRPC.EXPECT().GetChainID().Return(chainID)
 	mockStagingStorage.EXPECT().GetStagingData(storage.QueryFilter{
-		ChainId:      chainID,
+		ChainID:      chainID,
 		BlockNumbers: blockNumbers,
 	}).Return(blockData, nil)
 
@@ -614,7 +614,7 @@ func TestGetSequentialBlockDataToPublish(t *testing.T) {
 		{Block: common.Block{Number: big.NewInt(103)}},
 	}
 	mockStagingStorage.EXPECT().GetStagingData(storage.QueryFilter{
-		ChainId:      chainID,
+		ChainID:      chainID,
 		BlockNumbers: []*big.Int{big.NewInt(101), big.NewInt(102), big.NewInt(103)},
 	}).Return(blockData, nil)
 
@@ -642,7 +642,7 @@ func TestPublish(t *testing.T) {
 		{Block: common.Block{Number: big.NewInt(102)}},
 	}
 	mockStagingStorage.EXPECT().GetStagingData(storage.QueryFilter{
-		ChainId:      chainID,
+		ChainID:      chainID,
 		BlockNumbers: []*big.Int{big.NewInt(101), big.NewInt(102)},
 	}).Return(blockData, nil)
 
@@ -668,7 +668,7 @@ func TestPublishEmptyData(t *testing.T) {
 	mockStagingStorage.EXPECT().GetLastPublishedBlockNumber(chainID).Return(big.NewInt(100), nil)
 
 	mockStagingStorage.EXPECT().GetStagingData(storage.QueryFilter{
-		ChainId:      chainID,
+		ChainID:      chainID,
 		BlockNumbers: []*big.Int{big.NewInt(101), big.NewInt(102)},
 	}).Return([]common.BlockData{}, nil)
 	mockStagingStorage.EXPECT().GetLastStagedBlockNumber(chainID, big.NewInt(102), big.NewInt(0)).Return(nil, nil)
@@ -708,7 +708,7 @@ func TestHandleMissingStagingData(t *testing.T) {
 
 	blockData := []common.BlockData{}
 	mockStagingStorage.EXPECT().GetStagingData(storage.QueryFilter{
-		ChainId:      chainID,
+		ChainID:      chainID,
 		BlockNumbers: []*big.Int{big.NewInt(0), big.NewInt(1), big.NewInt(2), big.NewInt(3), big.NewInt(4)},
 	}).Return(blockData, nil)
 
@@ -747,7 +747,7 @@ func TestHandleMissingStagingDataIsPolledWithCorrectBatchSize(t *testing.T) {
 
 	blockData := []common.BlockData{}
 	mockStagingStorage.EXPECT().GetStagingData(storage.QueryFilter{
-		ChainId:      chainID,
+		ChainID:      chainID,
 		BlockNumbers: []*big.Int{big.NewInt(0), big.NewInt(1), big.NewInt(2), big.NewInt(3), big.NewInt(4)},
 	}).Return(blockData, nil)
 
@@ -824,7 +824,7 @@ func TestFetchBlockDataWithError(t *testing.T) {
 
 	mockRPC.EXPECT().GetChainID().Return(chainID)
 	mockStagingStorage.EXPECT().GetStagingData(storage.QueryFilter{
-		ChainId:      chainID,
+		ChainID:      chainID,
 		BlockNumbers: blockNumbers,
 	}).Return(nil, fmt.Errorf("staging error"))
 
@@ -844,8 +844,8 @@ func TestCommitWithError(t *testing.T) {
 
 	chainID := big.NewInt(1)
 	blockData := []common.BlockData{
-		{Block: common.Block{ChainId: chainID, Number: big.NewInt(101)}},
-		{Block: common.Block{ChainId: chainID, Number: big.NewInt(102)}},
+		{Block: common.Block{ChainID: chainID, Number: big.NewInt(101)}},
+		{Block: common.Block{ChainID: chainID, Number: big.NewInt(102)}},
 	}
 
 	mockMainStorage.EXPECT().InsertBlockData(blockData).Return(fmt.Errorf("insert error"))
@@ -873,7 +873,7 @@ func TestPublishWithDisabledPublisher(t *testing.T) {
 		{Block: common.Block{Number: big.NewInt(102)}},
 	}
 	mockStagingStorage.EXPECT().GetStagingData(storage.QueryFilter{
-		ChainId:      chainID,
+		ChainID:      chainID,
 		BlockNumbers: []*big.Int{big.NewInt(101), big.NewInt(102)},
 	}).Return(blockData, nil)
 

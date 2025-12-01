@@ -17,11 +17,17 @@ export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
   const [currentCampaign, setCurrentCampaign] = useState(campaign);
   const { user } = useUser();
 
-  const handleRefreshData = (newRaisedAmount?: number) => {
+  const handleRefreshData = (newRaisedAmount?: number, newTotalWithdrawn?: number) => {
     if (newRaisedAmount !== undefined) {
       setCurrentCampaign((prev) => ({
         ...prev,
         total_amount: newRaisedAmount,
+      }));
+    }
+    if (newTotalWithdrawn !== undefined) {
+      setCurrentCampaign((prev) => ({
+        ...prev,
+        total_withdrawn: newTotalWithdrawn,
       }));
     }
   };
@@ -66,11 +72,11 @@ export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
           raised={currentCampaign.total_amount}
           goal={currentCampaign.goal}
           campaignId={currentCampaign.id}
+          currentBalance={currentCampaign.current_balance}
+          totalWithdrawn={currentCampaign.total_withdrawn}
           onRefresh={handleRefreshData}
         />
-        <InsightsCard
-          currentCampaign={currentCampaign}
-        />
+        <InsightsCard currentCampaign={currentCampaign} />
       </div>
     </div>
   );

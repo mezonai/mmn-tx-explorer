@@ -18,9 +18,9 @@ type Worker struct {
 	rpc rpc.IRPCClient
 }
 
-func NewWorker(rpc rpc.IRPCClient) *Worker {
+func NewWorker(rpcClient rpc.IRPCClient) *Worker {
 	return &Worker{
-		rpc: rpc,
+		rpc: rpcClient,
 	}
 }
 
@@ -46,11 +46,12 @@ func (w *Worker) processChunkWithRetry(ctx context.Context, chunk []*big.Int, re
 	var failedBlocks []*big.Int
 	var successfulResults []rpc.GetFullBlockResult
 
-	for i, result := range results {
+	for i := range results {
+		result := &results[i]
 		if result.Error != nil {
 			failedBlocks = append(failedBlocks, chunk[i])
 		} else {
-			successfulResults = append(successfulResults, result)
+			successfulResults = append(successfulResults, *result)
 		}
 	}
 
@@ -116,7 +117,7 @@ func (w *Worker) Run(ctx context.Context, blockNumbers []*big.Int) []rpc.GetFull
 			log.Debug().Msg("Context canceled, stopping Worker")
 			return nil
 		default:
-			// continue processing
+			// keep processing
 		}
 
 		wg.Add(1)
@@ -137,7 +138,8 @@ func (w *Worker) Run(ctx context.Context, blockNumbers []*big.Int) []rpc.GetFull
 	}
 
 	// Diagnostics: log entries missing block number or with error
-	for i, r := range results {
+	for i := range results {
+		r := &results[i]
 		if r.BlockNumber == nil {
 			log.Error().Int("idx", i).Msg("Worker.Run: nil BlockNumber in results before sort")
 		}
@@ -148,9 +150,10 @@ func (w *Worker) Run(ctx context.Context, blockNumbers []*big.Int) []rpc.GetFull
 
 	// Filter out entries that have nil BlockNumber to avoid nil dereference in sort comparator
 	filtered := make([]rpc.GetFullBlockResult, 0, len(results))
-	for _, r := range results {
+	for i := range results {
+		r := &results[i]
 		if r.BlockNumber != nil {
-			filtered = append(filtered, r)
+			filtered = append(filtered, *r)
 		}
 	}
 	if len(filtered) != len(results) {

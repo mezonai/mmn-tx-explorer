@@ -26,13 +26,11 @@ func NewValidator(rpcClient rpc.IRPCClient, s storage.IStorage) *Validator {
 	}
 }
 
-/**
- * Validate blocks in the range of startBlock to endBlock
- * @param startBlock - The start block number (inclusive)
- * @param endBlock - The end block number (inclusive)
- * @return error - An error if the validation fails
- */
-func (v *Validator) ValidateBlockRange(startBlock *big.Int, endBlock *big.Int) (validBlocks []common.BlockData, invalidBlocks []common.BlockData, err error) {
+// ValidateBlockRange godoc
+// @param startBlock - The start block number (inclusive)
+// @param endBlock - The end block number (inclusive)
+// @return error - An error if the validation fails
+func (v *Validator) ValidateBlockRange(startBlock, endBlock *big.Int) (validBlocks, invalidBlocks []common.BlockData, err error) {
 	dbData, err := v.storage.MainStorage.GetValidationBlockData(v.rpc.GetChainID(), startBlock, endBlock)
 	if err != nil {
 		return nil, nil, err
@@ -44,25 +42,26 @@ func (v *Validator) ValidateBlockRange(startBlock *big.Int, endBlock *big.Int) (
 	return validBlocks, invalidBlocks, nil
 }
 
-func (v *Validator) ValidateBlocks(blocks []common.BlockData) (validBlocks []common.BlockData, invalidBlocks []common.BlockData, err error) {
+func (v *Validator) ValidateBlocks(blocks []common.BlockData) (validBlocks, invalidBlocks []common.BlockData, err error) {
 	invalidBlocks = make([]common.BlockData, 0)
 	validBlocks = make([]common.BlockData, 0)
-	for _, blockData := range blocks {
+	for i := range blocks {
+		blockData := &blocks[i]
 		valid, err := v.ValidateBlock(blockData)
 		if err != nil {
 			log.Error().Err(err).Msgf("Block verification failed for block %s", blockData.Block.Number)
 			return nil, nil, err
 		}
 		if valid {
-			validBlocks = append(validBlocks, blockData)
+			validBlocks = append(validBlocks, *blockData)
 		} else {
-			invalidBlocks = append(invalidBlocks, blockData)
+			invalidBlocks = append(invalidBlocks, *blockData)
 		}
 	}
 	return validBlocks, invalidBlocks, nil
 }
 
-func (v *Validator) ValidateBlock(blockData common.BlockData) (valid bool, err error) {
+func (v *Validator) ValidateBlock(blockData *common.BlockData) (valid bool, err error) {
 	if config.Cfg.Validation.Mode == "disabled" {
 		return true, nil
 	}
@@ -113,7 +112,7 @@ func (v *Validator) FixBlocks(invalidBlocks []*big.Int, fixBatchSize int) error 
 	return nil
 }
 
-func (v *Validator) FindAndFixGaps(startBlock *big.Int, endBlock *big.Int) error {
+func (v *Validator) FindAndFixGaps(startBlock, endBlock *big.Int) error {
 	missingBlockNumbers, err := v.storage.MainStorage.FindMissingBlockNumbers(v.rpc.GetChainID(), startBlock, endBlock)
 	if err != nil {
 		return err
