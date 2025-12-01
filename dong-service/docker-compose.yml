@@ -38,6 +38,7 @@ services:
       SCHEDULER_SYNC_CONTRIBUTORS_INTERVAL: 600
       # Indexer Configuration
       INDEXER_SCHEMA: public
+      AES_SECRET_KEY: bI+eULxtWWQooHeBB8JoJWigGxCtPzTBxGQDLcAlUuY=
     ports:
       - "8888:8888"
     volumes:

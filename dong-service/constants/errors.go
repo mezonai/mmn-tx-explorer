@@ -24,6 +24,8 @@ const (
 	ErrEndDateInPast      = "End date must be in the future"
 	ErrInvalidGoalAmount  = "Goal must be greater than 0 and less than or equal to 100 billion"
 	ErrInvalidURL         = "Invalid URL format"
+	ErrInternalServer       = "Internal server error"
+	ErrMissingRedEnvelopeID = "Red Envelope ID must not null"
 )
 
 // Database Errors
@@ -39,15 +41,17 @@ const (
 	ErrCampaignNotFound                = "Donation campaign not found"
 	ErrDatabaseConnection              = "Database connection error"
 	ErrDatabaseQuery                   = "Database query error"
+	ErrFailToCheckRedEnvelope          = "Fail to check red envelope"
 )
 
 // Business Logic Errors
 const (
-	ErrCampaignAlreadyActive = "Campaign is already active"
-	ErrCampaignAlreadyClosed = "Campaign is already closed"
-	ErrCannotActivateClosed  = "Cannot activate a closed campaign"
-	ErrCannotUpdateClosed    = "Cannot update a closed campaign"
-	ErrCampaignExpired       = "Campaign has expired"
+	ErrCampaignAlreadyActive       = "Campaign is already active"
+	ErrCampaignAlreadyClosed       = "Campaign is already closed"
+	ErrCannotActivateClosed        = "Cannot activate a closed campaign"
+	ErrCannotUpdateClosed          = "Cannot update a closed campaign"
+	ErrCampaignExpired             = "Campaign has expired"
+	ErrUserIDNotMatchRedEnvelopeID = "User id does not match owner of red envelope"
 )
 
 // Success Messages
@@ -60,6 +64,7 @@ const (
 	MsgDraftCampaignDeleted        = "Campaign deleted successfully"
 	MsgCampaignRetrieved           = "Campaign retrieved successfully"
 	MsgCampaignsRetrieved          = "Campaigns retrieved successfully"
+	MsgRedEnvelopeStatsRetrieved   = "Red envelope statistics retrieved successfully"
 )
 
 // Logout Messages
