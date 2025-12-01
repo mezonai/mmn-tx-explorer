@@ -1514,7 +1514,7 @@ func detectTransactionType(extraInfo string) int {
 	}
 
 	switch strings.ToLower(e.Type) {
-	case "dong-give-coffee":
+	case "dong-give-coffee", "give-coffee":
 		return 0
 	case "donation-campaign":
 		return 1
@@ -1537,20 +1537,20 @@ func (p *PostgresConnector) insertTransactionsTx(
 
 	for i := range transactions {
 		t := &transactions[i]
-		t.TransactionType = uint8(detectTransactionType(t.ExtraInfo))
+		t.TransactionExtraInfoType = uint8(detectTransactionType(t.ExtraInfo))
 	}
 
 	valueStrings := make([]string, len(transactions))
 	valueArgs := make([]interface{}, 0, len(transactions)*13)
 
 	for i, t := range transactions {
-		base := i * 13
+		base := i * 14
 
 		valueStrings[i] = fmt.Sprintf(
-			"($%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d)",
+			"($%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d)",
 			base+1, base+2, base+3, base+4, base+5,
 			base+6, base+7, base+8, base+9, base+10,
-			base+11, base+12, base+13,
+			base+11, base+12, base+13, base+14,
 		)
 
 		valueArgs = append(valueArgs,
@@ -1567,6 +1567,7 @@ func (p *PostgresConnector) insertTransactionsTx(
 			t.Status,
 			t.TextData,
 			t.ExtraInfo,
+			t.TransactionExtraInfoType,
 		)
 	}
 
@@ -1575,7 +1576,7 @@ func (p *PostgresConnector) insertTransactionsTx(
 			INSERT INTO transactions (
 				chain_id, hash, nonce, block_hash, block_number,
 				from_address, to_address, transaction_timestamp,
-				value, transaction_type, status, text_data, extra_info
+				value, transaction_type, status, text_data, extra_info, transaction_extra_info_type
 			)
 			VALUES %s
 			ON CONFLICT (chain_id, block_number, hash)
@@ -1590,17 +1591,19 @@ func (p *PostgresConnector) insertTransactionsTx(
 				status = EXCLUDED.status,
 				text_data = EXCLUDED.text_data,
 				extra_info = EXCLUDED.extra_info,
+				transaction_extra_info_type = EXCLUDED.transaction_extra_info_type,
 				updated_at = NOW()
 			RETURNING 
 				(xmax = 0) AS is_new,
-				transaction_type,
+				transaction_extra_info_type,
+				status,
 				extra_info
 		)
 		SELECT
 			COUNT(*) FILTER (WHERE is_new) AS inserted_count,
-			COUNT(*) FILTER (WHERE is_new AND transaction_type = 0 AND status = 2) AS new_give_coffee
+			COUNT(*) FILTER (WHERE is_new AND transaction_extra_info_type = 0 AND status = %d) AS new_give_coffee
 		FROM inserted;
-	`, strings.Join(valueStrings, ","))
+	`, strings.Join(valueStrings, ","), pb.TransactionStatus_FINALIZED)
 
 	var insertedCount, newGiveCoffeeCount int
 
@@ -2138,10 +2141,10 @@ func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
 	averageBlockMs := int64(avgBlockTime * 1000)
 
 	var totalGiveCoffee int64
-	err = p.db.QueryRowContext(ctx, `
+	err = p.db.QueryRowContext(ctx, fmt.Sprintf(`
 		SELECT COUNT(*) FROM transactions
-		WHERE transaction_type = 0 AND status = 2
-	`).Scan(&totalGiveCoffee)
+		WHERE transaction_extra_info_type = 0 AND status = %d
+	`, pb.TransactionStatus_FINALIZED)).Scan(&totalGiveCoffee)
 	if err != nil {
 		return fmt.Errorf("failed to count give_coffee transactions: %w", err)
 	}
