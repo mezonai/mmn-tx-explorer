@@ -90,16 +90,14 @@ export const MezonGame = () => {
             key={game.id}
             className="flex gap-4 rounded-[20px] border border-[var(--border)] bg-[var(--card)] p-5 shadow-lg transition-colors hover:border-[var(--ring)]"
           >
-            {/* Image uses absolute URLs from top.mezon.ai; keep native img until remote loader config exists */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={
                 game.featuredImage
                   ? `${baseUrl}/api${game.featuredImage}`
-                  : `${baseUrl}/assets/avatar-bot-default-Cbn8rW_G.png`
+                  : `https://top.mezon.ai/assets/avatar-bot-default-Cbn8rW_G.png`
               }
               alt={game.name}
-              className="h-24 w-24 shrink-0 rounded-[20px] bg-[var(--muted)] object-cover"
+              className="h-24 w-24 shrink-0 rounded-[20px] object-cover"
             />
 
             <div className="min-w-0 flex-1">
