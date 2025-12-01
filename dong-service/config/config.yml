@@ -20,6 +20,10 @@ database:
 indexer:
   schema: public
 
+blockchain:
+  rpc_url: "localhost:9001"
+  use_tls: false
+
 cors:
   allow_origins: "*"
   allow_methods: "POST, OPTIONS, GET, PUT, DELETE, PATCH"
@@ -54,6 +58,7 @@ logging:
 # Scheduler Configuration
 scheduler:
   sync_contributors_interval: 600  # sync every 10 minutes (600 seconds)
+  expired_red_envelopes_interval: 3600  # sync every 60 minutes (3600 seconds)
   recent_stats_window_days: 7      # lookback window in days used by recent_amount & sync jobs
 
 # Lock Configuration

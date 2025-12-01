@@ -2,12 +2,15 @@ package main
 
 import (
 	"context"
+	"dong-service/blockchain"
 	"dong-service/config"
 	"dong-service/database"
 	"dong-service/logger"
 	"dong-service/middleware"
 	"dong-service/routes"
 	"dong-service/scheduler"
+	"dong-service/services"
+	"dong-service/utils"
 	"flag"
 	"fmt"
 	"log"
@@ -18,6 +21,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/robfig/cron/v3"
 )
 
 // @title           Dong Service API
@@ -50,8 +54,13 @@ func main() {
 	}
 
 	// Initialize logger
-	if err := logger.InitLogger(&cfg.Logging); err != nil {
+	if err = logger.InitLogger(&cfg.Logging); err != nil {
 		log.Fatalf("Failed to initialize logger: %v", err)
+	}
+
+	// Initialize encrypt key
+	if err = utils.InitEncryptionKey(); err != nil {
+		logger.Fatal().Err(err).Msg("Failed to initialize encryption key (AES_SECRET_KEY)")
 	}
 
 	logger.Info().
@@ -63,13 +72,33 @@ func main() {
 	gin.SetMode(cfg.Server.GinMode)
 
 	// Initialize database
-	if err := database.InitDatabase(&cfg.Database); err != nil {
+	if err = database.InitDatabase(&cfg.Database); err != nil {
 		logger.Fatal().Err(err).Msg("Failed to initialize database")
 	}
 
-	if err := database.InitRedisWhiteList(&cfg.Redis); err != nil {
+	if err = database.InitRedisWhiteList(&cfg.Redis); err != nil {
 		logger.Fatal().Err(err).Msg("Failed to initialize Redis whitelist")
 	}
+
+	logger.Info().Msg("Initializing Red Envelope Wallet Pool")
+	startupInit := services.NewStartupInitializer(cfg.Database.Schema)
+
+	if err = startupInit.Initialize(); err != nil {
+		logger.Error().Err(err).Msg("Failed to initialize wallet pool")
+	}
+	startupInit.StartBackgroundMaintenance()
+	logger.Info().Msg("Background wallet pool maintenance started")
+
+	blockchainService, err := blockchain.NewBlockchainService(cfg)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("Failed to initialize blockchain service")
+	}
+
+	defer func() {
+		if err := blockchainService.Close(); err != nil {
+			logger.Error().Err(err).Msg("Failed to close blockchain service")
+		}
+	}()
 
 	// Create Gin router
 	r := gin.New()
@@ -93,8 +122,16 @@ func main() {
 	syncTask := scheduler.CreateSyncContributorsTask(syncInterval, cfg.Indexer.Schema, cfg.Database.Schema, cfg.Scheduler.RecentStatsWindowDays)
 	schedulerInstance.AddTask(syncTask)
 
+	expiryCheckInterval := time.Duration(cfg.Scheduler.ExpiredRedEnvelopesInterval) * time.Second
+	expiryRedEnvelopeTask := scheduler.CreateRedEnvelopeExpiryTask(expiryCheckInterval, cfg.Database.Schema, blockchainService)
+	schedulerInstance.AddTask(expiryRedEnvelopeTask)
+
 	// Start scheduler
 	schedulerInstance.Start(ctx)
+
+	cronjob := cron.New(cron.WithLocation(time.Local))
+	scheduler.InitializeWalletPoolMaintenanceJob(cronjob, ctx, cfg.Database.Schema)
+	cronjob.Start()
 
 	// Start server in a goroutine
 	addr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)
@@ -120,6 +157,7 @@ func main() {
 
 	// Stop scheduler
 	schedulerInstance.Stop()
+	cronjob.Stop()
 
 	// Shutdown server with timeout
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)

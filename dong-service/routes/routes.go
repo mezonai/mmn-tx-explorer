@@ -1,10 +1,12 @@
 package routes
 
 import (
+	"dong-service/blockchain"
 	"dong-service/config"
 	"dong-service/database"
 	_ "dong-service/docs" // Import docs to load swagger documentation
 	"dong-service/handlers"
+	"dong-service/logger"
 	"dong-service/middleware"
 	"dong-service/repository"
 
@@ -28,6 +30,16 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 	router.POST("/oauth", authHandler.OauthHandler)
 	router.POST("/refresh", authHandler.RefreshHandler)
 	router.POST("/logout", authHandler.LogoutHandler)
+
+	blockchainService, err := blockchain.NewBlockchainService(cfg)
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to initialize blockchain service")
+	}
+
+	queueService := repository.NewRedEnvelopeQueueService(database.RedisClient)
+	walletRepo := repository.NewIntermediaryWalletRepository(database.GetDB(), cfg.Database.Schema)
+	redEnvelopeRepo := repository.NewRedEnvelopeRepository(database.GetDB(), cfg.Database.Schema, blockchainService, walletRepo, queueService)
+	redEnvelopeHandler := handlers.NewRedEnvelopeHandler(redEnvelopeRepo, queueService, walletRepo)
 
 	// API v1 routes
 	v1 := router.Group("/api/v1")
@@ -63,6 +75,20 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		// Statistics routes (public)
 		statsPublic := v1.Group("/stats")
 		statsPublic.GET("/campaign", statsHandler.GetCampaignStats)
+
+		// Red Envelope routes (private)
+		redEnvelopePrivate := v1.Group("/red-envelopes")
+		redEnvelopePrivate.Use(middleware.Authentication(cfg.JWT.Secret))
+		redEnvelopePrivate.POST("/create", redEnvelopeHandler.CreateRedEnvelope)
+		redEnvelopePrivate.GET("/stats", redEnvelopeHandler.GetRedEnvelopeStats)
+		redEnvelopePrivate.GET("/:id/recipients", redEnvelopeHandler.GetRecipientsByRedEnvelopeID)
+		redEnvelopePrivate.POST("/update-status-red-envelope", redEnvelopeHandler.UpdateStatusRedEnvelope)
+		redEnvelopePrivate.GET("/claimed-by-user", redEnvelopeHandler.GetRedEnvelopeClaimedByUser)
+		redEnvelopePrivate.GET("/created-by-user", redEnvelopeHandler.GetRedEnvelopeCreatedByUser)
+		redEnvelopePrivate.GET("/detail/:id", redEnvelopeHandler.GetDetailRedEnvelopeByID)
+		redEnvelopePrivate.POST("/close-session", redEnvelopeHandler.CloseSessionRedEnvelope)
+		redEnvelopePrivate.GET("/claim-amount", redEnvelopeHandler.ClaimAmountRedEnvelope)
+		redEnvelopePrivate.POST("/:id/claim", redEnvelopeHandler.ClaimRedEnvelope)
 
 		// Wallet routes (public)
 		walletPublic := v1.Group("/wallets")
