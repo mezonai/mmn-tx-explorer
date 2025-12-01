@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { Table } from '@/components/ui/table';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import { TTableColumn } from '@/types';
 import { P2POffer } from '../types/p2p.types';
 import { AdvertiserInfo } from './advertiser-info';
 import { PaymentMethods } from './payment-methods';
+import { ROUTES } from '@/configs/routes.config';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -17,6 +19,16 @@ interface P2POffersTableProps {
 }
 
 export const P2POffersTable = ({ offers, isLoading = false, onOfferClick }: P2POffersTableProps) => {
+  const router = useRouter();
+
+  const handleBuyClick = (offer: P2POffer, e: React.MouseEvent) => {
+    e.stopPropagation();
+    // TODO: Create order from offer, then navigate
+    // For now, use offer.id as orderId (will be replaced with actual order creation)
+    const orderId = `order_${offer.id}_${Date.now()}`;
+    router.push(ROUTES.P2P_TRADING(orderId));
+  };
+
   const columns: TTableColumn<P2POffer>[] = [
     {
       headerContent: 'Advertiser (Người bán)',
@@ -33,7 +45,7 @@ export const P2POffersTable = ({ offers, isLoading = false, onOfferClick }: P2PO
       align: 'left',
     },
     {
-      headerContent: 'Giá (VND)',
+      headerContent: 'MZD',
       renderCell: (offer) => (
         <div>
           <div
@@ -42,27 +54,30 @@ export const P2POffersTable = ({ offers, isLoading = false, onOfferClick }: P2PO
               offer.isClanOffer ? 'text-emerald-500 dark:text-emerald-400' : 'text-white dark:text-white'
             )}
           >
-            {offer.price.toLocaleString('vi-VN')}{' '}
-            <span className="text-xs font-normal text-gray-500">VND</span>
+            {offer.totalMZD.toLocaleString('vi-VN')} <span className="text-xs font-normal text-gray-500">MZD</span>
           </div>
-          {offer.isClanOffer && offer.clanDiscount && (
-            <div className="text-xs text-brand-primary">Giá ưu đãi cho Clan</div>
-          )}
+          {offer.isClanOffer && <div className="text-brand-primary text-xs">Ưu đãi cho Clan</div>}
         </div>
       ),
       skeletonContent: <Skeleton className="h-6 w-24" />,
       align: 'left',
     },
     {
-      headerContent: 'Giới hạn / Khả dụng',
+      headerContent: 'Khả dụng / Giới hạn',
       renderCell: (offer) => (
         <div className="flex flex-col gap-1 text-gray-300 dark:text-gray-300">
           <span>
-            <span className="text-gray-500 dark:text-gray-500">Khả dụng:</span> {offer.available.toLocaleString('vi-VN')} MZD
+            <span className="text-gray-500 dark:text-gray-500">Khả dụng:</span>{' '}
+            <span className="font-medium text-white dark:text-white">
+              {offer.available.toLocaleString('vi-VN')} MZD
+            </span>
           </span>
           <span>
             <span className="text-gray-500 dark:text-gray-500">Giới hạn:</span>{' '}
-            {offer.limit.min.toLocaleString('vi-VN')} - {offer.limit.max.toLocaleString('vi-VN')} VND
+            <span className="font-medium text-white dark:text-white">
+              {offer.limit.min.toLocaleString('vi-VN')} - {offer.limit.max.toLocaleString('vi-VN')} MZD
+            </span>
+            <span className="ml-1 text-xs text-gray-500 dark:text-gray-500">/ giao dịch</span>
           </span>
         </div>
       ),
@@ -89,11 +104,8 @@ export const P2POffersTable = ({ offers, isLoading = false, onOfferClick }: P2PO
       headerContent: 'Thao tác',
       renderCell: (offer) => (
         <Button
-          onClick={(e) => {
-            e.stopPropagation();
-            onOfferClick?.(offer);
-          }}
-          className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-6 rounded-lg transition"
+          onClick={(e) => handleBuyClick(offer, e)}
+          className="rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600"
         >
           Mua MZD
         </Button>
@@ -104,7 +116,7 @@ export const P2POffersTable = ({ offers, isLoading = false, onOfferClick }: P2PO
   ];
 
   return (
-    <Card className="overflow-hidden border-gray-300 dark:border-gray-800 bg-card">
+    <Card className="bg-card overflow-hidden border-gray-300 dark:border-gray-800">
       <div className="overflow-x-auto">
         <Table<P2POffer>
           columns={columns}
@@ -113,7 +125,7 @@ export const P2POffersTable = ({ offers, isLoading = false, onOfferClick }: P2PO
           onRowClick={onOfferClick}
           getRowKey={(offer) => offer.id}
           className={cn(
-            'w-full text-left border-collapse',
+            'w-full border-collapse text-left',
             '[&_thead]:bg-gray-900 dark:[&_thead]:bg-gray-900',
             '[&_thead]:text-gray-400 dark:[&_thead]:text-gray-400',
             '[&_thead]:text-xs',
@@ -131,4 +143,3 @@ export const P2POffersTable = ({ offers, isLoading = false, onOfferClick }: P2PO
     </Card>
   );
 };
-

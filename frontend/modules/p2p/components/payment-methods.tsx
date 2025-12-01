@@ -60,3 +60,4 @@ export const PaymentMethods = ({ methods }: PaymentMethodsProps) => {
   );
 };
 
+

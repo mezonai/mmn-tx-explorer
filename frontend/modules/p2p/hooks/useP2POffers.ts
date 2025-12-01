@@ -14,11 +14,11 @@ const mockOffers: P2POffer[] = [
       totalOrders: 1203,
       completionRate: 99.5,
     },
-    price: 25450,
-    available: 5000,
+    totalMZD: 20000, // Tổng số MZD có sẵn
+    available: 5000, // Còn khả dụng để bán
     limit: {
-      min: 150000,
-      max: 50000000,
+      min: 100, // Tối thiểu 100 MZD mỗi giao dịch
+      max: 5000, // Tối đa 5000 MZD mỗi giao dịch
     },
     paymentMethods: ['TPBANK', 'MOMO'],
     isClanOffer: false,
@@ -34,15 +34,14 @@ const mockOffers: P2POffer[] = [
       totalOrders: 50,
       completionRate: 100,
     },
-    price: 25400,
-    available: 1000,
+    totalMZD: 15000,
+    available: 1000, // Còn khả dụng để bán
     limit: {
-      min: 100000,
-      max: 2000000,
+      min: 50, // Tối thiểu 50 MZD mỗi giao dịch
+      max: 2000, // Tối đa 2000 MZD mỗi giao dịch
     },
     paymentMethods: ['VIETCOMBANK'],
     isClanOffer: true,
-    clanDiscount: 0.2, // 0.2% discount
   },
   {
     id: '3',
@@ -55,11 +54,11 @@ const mockOffers: P2POffer[] = [
       totalOrders: 856,
       completionRate: 98.2,
     },
-    price: 25500,
-    available: 3000,
+    totalMZD: 30000,
+    available: 3000, // Còn khả dụng để bán
     limit: {
-      min: 500000,
-      max: 10000000,
+      min: 200, // Tối thiểu 200 MZD mỗi giao dịch
+      max: 10000, // Tối đa 10000 MZD mỗi giao dịch
     },
     paymentMethods: ['BANK_TRANSFER', 'MOMO', 'VIETCOMBANK'],
     isClanOffer: false,
@@ -93,9 +92,13 @@ export const useP2POffers = (filters: P2PFilters) => {
       }
 
       // Filter by amount range (if amount is specified)
+      // Lọc các offers có thể đáp ứng số lượng MZD muốn mua
       if (filters.amount) {
         filteredOffers = filteredOffers.filter(
-          (offer) => filters.amount! >= offer.limit.min && filters.amount! <= offer.limit.max
+          (offer) =>
+            filters.amount! >= offer.limit.min &&
+            filters.amount! <= offer.limit.max &&
+            filters.amount! <= offer.available // Phải có đủ số lượng khả dụng
         );
       }
 
@@ -106,4 +109,5 @@ export const useP2POffers = (filters: P2PFilters) => {
 
   return { offers, isLoading };
 };
+
 

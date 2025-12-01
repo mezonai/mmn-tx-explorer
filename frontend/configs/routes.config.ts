@@ -13,6 +13,7 @@ export const ROUTES = {
   PENDING_TRANSACTION: (hash: string) => `/transactions/pending/${hash}`,
   PROFILE: '/profile',
   P2P: '/p2p',
+  P2P_TRADING: (orderId: string) => `/p2p/trading/${orderId}`,
   SWAP: '/swap',
   TRANSACTION: (hash: string, queryParams?: string) => `/transactions/${hash}${queryParams ? `?${queryParams}` : ''}`,
   TRANSACTIONS: '/transactions',

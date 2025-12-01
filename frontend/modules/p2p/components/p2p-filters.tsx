@@ -84,10 +84,10 @@ export const P2PFiltersComponent = ({ filters, onFiltersChange, onNewOfferClick 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         {/* Amount Input */}
         <div className="relative">
-          <span className="absolute left-3 top-3 text-sm text-gray-400">VND</span>
+          <span className="absolute left-3 top-3 text-sm text-gray-400">MZD</span>
           <Input
             type="number"
-            placeholder="Nhập số tiền (VD: 500,000)"
+            placeholder="Nhập số MZD muốn mua (VD: 1000)"
             value={localAmount}
             onChange={(e) => handleAmountChange(e.target.value)}
             className="w-full bg-card border-gray-300 py-2.5 pl-12 pr-4 focus:border-brand-primary transition dark:border-gray-700"

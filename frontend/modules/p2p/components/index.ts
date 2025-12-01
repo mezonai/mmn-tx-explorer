@@ -4,3 +4,5 @@ export * from './p2p-filters';
 export * from './p2p-offers-table';
 export * from './advertiser-info';
 export * from './payment-methods';
+export * from './create-offer-modal';
+export * from './trading-room/trading-room';
