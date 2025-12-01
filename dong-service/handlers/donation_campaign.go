@@ -54,7 +54,7 @@ func (h *DonationCampaignHandler) CreateCampaign(c *gin.Context) {
 	}
 
 	// Validate goal is between 0 and 100 billion
-	if req.Goal != nil && (*req.Goal < 0 || *req.Goal > 100000000000) {
+	if req.Goal != nil && (*req.Goal < constants.MinGoalAmount || *req.Goal > constants.MaxGoalAmount) {
 		logger.Error().Int64("user_id", userID).Int64("goal", *req.Goal).Msg("Invalid goal amount: goal must be greater than 0 and less than or equal to 100 billion")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidGoalAmount))
 		return
@@ -116,7 +116,7 @@ func (h *DonationCampaignHandler) CreateAndActiveCampaign(c *gin.Context) {
 	}
 
 	// Validate goal is between 0 and 100 billion
-	if req.Goal != nil && (*req.Goal < 0 || *req.Goal > 100000000000) {
+	if req.Goal != nil && (*req.Goal < constants.MinGoalAmount || *req.Goal > constants.MaxGoalAmount) {
 		logger.Error().Int64("user_id", userID).Int64("goal", *req.Goal).Msg("Invalid goal amount: goal must be greater than 0 and less than or equal to 100 billion")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidGoalAmount))
 		return
@@ -309,7 +309,7 @@ func (h *DonationCampaignHandler) UpdateCampaign(c *gin.Context) {
 	}
 
 	// Validate goal is between 0 and 100 billion
-	if req.Goal != nil && (*req.Goal < 0 || *req.Goal > 100000000000) {
+	if req.Goal != nil && (*req.Goal < constants.MinGoalAmount || *req.Goal > constants.MaxGoalAmount) {
 		logger.Error().Int64("user_id", userID).Int64("goal", *req.Goal).Msg("Invalid goal amount: goal must be greater than 0 and less than or equal to 100 billion")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidGoalAmount))
 		return
