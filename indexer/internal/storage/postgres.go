@@ -1593,11 +1593,12 @@ func (p *PostgresConnector) insertTransactionsTx(
 				updated_at = NOW()
 			RETURNING 
 				(xmax = 0) AS is_new,
-				transaction_type
+				transaction_type,
+				extra_info
 		)
 		SELECT
 			COUNT(*) FILTER (WHERE is_new) AS inserted_count,
-			COUNT(*) FILTER (WHERE is_new AND transaction_type = 0) AS new_give_coffee
+			COUNT(*) FILTER (WHERE is_new AND transaction_type = 0 AND status = 2) AS new_give_coffee
 		FROM inserted;
 	`, strings.Join(valueStrings, ","))
 
