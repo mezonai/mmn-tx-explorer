@@ -1,4 +1,3 @@
-// Response types based on the API structure (simplified)
 export interface IMezonGameApp {
   id: string;
   name: string;
@@ -7,7 +6,6 @@ export interface IMezonGameApp {
   description: string;
   headline: string;
   featuredImage: string;
-  // Add other relevant fields as needed
 }
 
 export interface IMezonGameListParams {
