@@ -5,14 +5,18 @@ export enum ETransactionTab {
 
 export enum ETransactionType {
   TokenTransfer = 0,
-  DonationCampaign = 1,
-  WithdrawCampaign = 2,
 }
 
 export enum ETransferType {
   TokenTransfer = 'token-transfer',
   DonationCampaign = 'donation-campaign',
   WithdrawCampaign = 'withdraw-campaign',
+}
+
+export enum ETransactionExtraInfoType {
+  GiveCoffee = 0,
+  DonationCampaign = 1,
+  WithdrawCampaign = 2,
 }
 
 export enum ETransactionStatus {

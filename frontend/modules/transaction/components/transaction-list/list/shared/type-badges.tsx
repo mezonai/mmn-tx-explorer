@@ -1,10 +1,10 @@
 import { Chip } from '@/components/shared';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { ETransactionType, getTransactionTypeLabel } from '@/modules/transaction';
+import { ETransactionExtraInfoType, getTransactionTypeLabel } from '@/modules/transaction';
 
 interface TypeBadgesProps {
-  type: ETransactionType;
+  type: ETransactionExtraInfoType;
   className?: string;
 }
 
@@ -12,13 +12,13 @@ interface TypeBadgesSkeletonProps {
   className?: string;
 }
 
-const getTransactionTypeClass = (type: ETransactionType) => {
+const getTransactionTypeClass = (type: ETransactionExtraInfoType) => {
   switch (type) {
-    case ETransactionType.TokenTransfer:
+    case ETransactionExtraInfoType.GiveCoffee:
       return 'bg-yellow-100 text-yellow-600 dark:bg-yellow-500/10 dark:text-yellow-300';
-    case ETransactionType.DonationCampaign:
+    case ETransactionExtraInfoType.DonationCampaign:
       return 'bg-green-100 text-green-600 dark:bg-green-500/10 dark:text-green-300';
-    case ETransactionType.WithdrawCampaign:
+    case ETransactionExtraInfoType.WithdrawCampaign:
       return 'bg-blue-100 text-blue-600 dark:bg-blue-500/10 dark:text-blue-300';
     default:
       return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300';

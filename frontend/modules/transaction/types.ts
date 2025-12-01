@@ -1,5 +1,5 @@
 import { ESortOrder } from '@/enums';
-import { ETransactionStatus, ETransactionTab, ETransactionType } from './enums';
+import { ETransactionExtraInfoType, ETransactionStatus, ETransactionTab, ETransactionType } from './enums';
 
 export interface ITransactionStats {
   transactions_24h: number;
@@ -19,6 +19,7 @@ export interface ITransaction {
   value: string;
   transaction_timestamp: number;
   text_data?: string;
+  transaction_extra_info_type: ETransactionExtraInfoType;
 }
 
 export interface ITransactionListParams {
