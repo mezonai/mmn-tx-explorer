@@ -46,7 +46,7 @@ export const MezonGame = () => {
           <input
             type="text"
             placeholder="Search games..."
-            className="w-full rounded-[20px] border border-white/10 bg-[#1e293b] px-4 py-2 text-gray-200 placeholder-gray-500 transition-all outline-none focus:border-[#8566FF] focus:ring-2 focus:ring-[#8566FF]"
+            className="w-full rounded-[20px] border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-[var(--card-foreground)] transition-all outline-none placeholder:text-[var(--muted-foreground)] focus:border-[var(--ring)] focus:ring-2 focus:ring-[var(--ring)]"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -54,7 +54,7 @@ export const MezonGame = () => {
 
         <div className="flex w-full flex-col items-stretch gap-3 md:w-auto md:flex-row md:items-center md:justify-end">
           <Select value={sortValue} onValueChange={setSortValue}>
-            <SelectTrigger className="min-w-[220px] cursor-pointer rounded-[20px] border border-white/10 bg-[#1e293b] px-4 py-2 text-gray-200 outline-none focus:ring-2 focus:ring-[#8566FF]">
+            <SelectTrigger className="min-w-[220px] cursor-pointer rounded-[20px] border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-[var(--card-foreground)] outline-none focus:ring-2 focus:ring-[var(--ring)]">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
@@ -82,14 +82,16 @@ export const MezonGame = () => {
         </div>
       </div>
 
-      {isLoading && <div className="text-center text-gray-400">Loading games...</div>}
-      {error && <div className="text-center text-red-400">Failed to load games.</div>}
+      {isLoading && <div className="text-center text-[var(--muted-foreground)]">Loading games...</div>}
+      {error && <div className="text-center text-[var(--destructive)]">Failed to load games.</div>}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {data?.data?.map((game) => (
           <div
             key={game.id}
-            className="flex gap-4 rounded-[20px] border border-white/10 bg-[#1e293b] p-5 shadow-lg transition-colors hover:border-white/20"
+            className="flex gap-4 rounded-[20px] border border-[var(--border)] bg-[var(--card)] p-5 shadow-lg transition-colors hover:border-[var(--ring)]"
           >
+            {/* Image uses absolute URLs from top.mezon.ai; keep native img until remote loader config exists */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={
                 game.featuredImage
@@ -97,14 +99,14 @@ export const MezonGame = () => {
                   : `${baseUrl}/assets/avatar-bot-default-Cbn8rW_G.png`
               }
               alt={game.name}
-              className="h-24 w-24 shrink-0 rounded-[20px] bg-gray-800 object-cover"
+              className="h-24 w-24 shrink-0 rounded-[20px] bg-[var(--muted)] object-cover"
             />
 
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-2">
-                <h2 className="truncate text-xl font-semibold">{game.name}</h2>
+                <h2 className="truncate text-xl font-semibold text-[var(--card-foreground)]">{game.name}</h2>
                 <a
-                  className="rounded-xl bg-[#8566FF] px-4 py-2 text-sm whitespace-nowrap text-white transition-colors hover:bg-[#8566FF]/80"
+                  className="rounded-xl bg-[var(--primary)] px-4 py-2 text-sm whitespace-nowrap text-[var(--primary-foreground)] transition-colors hover:brightness-95"
                   href={`https://top.mezon.ai/bot/${game.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -112,7 +114,7 @@ export const MezonGame = () => {
                   Play Now
                 </a>
               </div>
-              <p className="mt-2 line-clamp-2 text-sm text-gray-400">{game.description}</p>
+              <p className="mt-2 line-clamp-2 text-sm text-[var(--muted-foreground)]">{game.description}</p>
             </div>
           </div>
         ))}
