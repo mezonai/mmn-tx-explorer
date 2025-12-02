@@ -6,6 +6,7 @@ export interface IMezonGameApp {
   description: string;
   headline: string;
   featuredImage: string;
+  pricingTag: string;
 }
 
 export interface IMezonGameListParams {

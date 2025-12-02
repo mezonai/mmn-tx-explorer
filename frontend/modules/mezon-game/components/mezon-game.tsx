@@ -1,13 +1,12 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { PageHeader } from '@/components/shared';
+import { Chip, PageHeader } from '@/components/shared';
 import { Pagination } from '@/components/ui/pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePaginationQueryParam } from '@/hooks/usePaginationQueryParam';
 import { useGames } from '../hooks/useGames';
 import { SORT_OPTIONS } from '../constants';
-
 export const MezonGame = () => {
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
   const [search, setSearch] = useState('');
@@ -130,7 +129,13 @@ export const MezonGame = () => {
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
-                    <h2 className="truncate text-xl font-semibold text-[var(--card-foreground)]">{game.name}</h2>
+                    <div className="flex min-w-0 flex-col gap-2">
+                      <h2 className="truncate text-xl font-semibold text-[var(--card-foreground)]">{game.name}</h2>
+                      <div className="flex flex-wrap gap-2">
+                        <Chip variant="info">{game.type.toUpperCase()}</Chip>
+                        <Chip variant="success">{game.pricingTag}</Chip>
+                      </div>
+                    </div>
                     <a
                       className="bg-brand-primary rounded-xl px-4 py-2 text-sm whitespace-nowrap text-white transition-colors hover:brightness-95"
                       href={`https://top.mezon.ai/bot/${game.id}`}
