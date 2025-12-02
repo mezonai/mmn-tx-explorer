@@ -12,6 +12,9 @@ const (
 	CampaignStatusClosed int16 = 2
 )
 
+// ChainSymbol defines the canonical on-chain asset symbol used across services
+const ChainSymbol = "đồng"
+
 // Order-related statuses and event types
 const (
 	OrderStatusPending   = "PENDING"

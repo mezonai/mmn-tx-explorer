@@ -22,6 +22,9 @@ func NewOrderService(repo *repository.OrderRepository, walletRepo *repository.In
 // IOrderService defines the subset of methods used by handlers (for easier testing).
 type IOrderService interface {
 	CreateOrder(ctx context.Context, req *models.CreateOrderRequest) (*models.Order, error)
+	ConfirmOrder(ctx context.Context, orderID int64, executionPrice *string, source *string, metadata *string) error
+	ListOrders(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, pagination map[string]any) ([]models.Order, error)
+	GetOrderByID(ctx context.Context, orderID int64) (*models.Order, error)
 }
 
 // CreateOrder performs validation, persists the order and creates an initial history row atomically.
@@ -119,4 +122,52 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *models.CreateOrderR
 	}
 
 	return order, nil
+}
+
+// ConfirmOrder marks an order as CONFIRMED and appends a CREATED_CONFIRMED history event.
+// This should be called after the sender has successfully sent the required transaction to the intermediary wallet.
+func (s *OrderService) ConfirmOrder(ctx context.Context, orderID int64, executionPrice *string, source *string, metadata *string) error {
+	db := database.GetDB()
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	// Update order status
+	if err := s.repo.UpdateOrderStatus(ctx, orderID, constants.OrderStatusConfirmed, tx); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
+	// create history event
+	hist := &models.OrderHistory{
+		OrderID:        orderID,
+		EventType:      constants.OrderEventCreatedConfirmed,
+		Quantity:       "0",
+		ExecutionPrice: executionPrice,
+		Source:         source,
+		Metadata:       metadata,
+	}
+
+	if err := s.repo.CreateOrderHistory(ctx, hist, tx); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
+	return nil
+}
+
+// ListOrders returns orders using repository filtering helpers
+func (s *OrderService) ListOrders(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, pagination map[string]any) ([]models.Order, error) {
+	return s.repo.ListOrders(ctx, minPrice, maxPrice, status, symbol, pagination)
+}
+
+// GetOrderByID returns a single order by id
+func (s *OrderService) GetOrderByID(ctx context.Context, orderID int64) (*models.Order, error) {
+	return s.repo.GetOrderByID(ctx, orderID)
 }

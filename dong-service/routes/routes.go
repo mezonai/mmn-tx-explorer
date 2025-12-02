@@ -104,6 +104,9 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		// Orders (private) - create order
 		ordersPrivate := v1.Group("/orders")
 		ordersPrivate.Use(middleware.Authentication(cfg.JWT.Secret))
+		ordersPrivate.GET("", orderHandler.ListOrders)
+		ordersPrivate.GET("/:id", orderHandler.GetOrderDetail)
 		ordersPrivate.POST("", orderHandler.CreateOrder)
+		ordersPrivate.POST("/:id/confirm", orderHandler.ConfirmOrder)
 	}
 }
