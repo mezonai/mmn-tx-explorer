@@ -132,7 +132,7 @@ export const MezonGame = () => {
                   <div className="flex items-start justify-between gap-2">
                     <h2 className="truncate text-xl font-semibold text-[var(--card-foreground)]">{game.name}</h2>
                     <a
-                      className="rounded-xl bg-[var(--primary)] px-4 py-2 text-sm whitespace-nowrap text-[var(--primary-foreground)] transition-colors hover:brightness-95"
+                      className="bg-brand-primary rounded-xl px-4 py-2 text-sm whitespace-nowrap text-white transition-colors hover:brightness-95"
                       href={`https://top.mezon.ai/bot/${game.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
