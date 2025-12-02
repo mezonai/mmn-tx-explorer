@@ -776,7 +776,27 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 	// Insert all transactions for this block inside the same transaction
 	var addressStats map[string]WalletStats
 	if len(blockData.Transactions) > 0 {
+		// Insert transactions and get affected address stats
 		addressStats, err = p.insertTransactionsTx(ctx, tx, blockData.Transactions)
+		if err != nil {
+			return err
+		}
+
+		// Insert donation campaign feeds if any
+		var donationCampaignFeeds []common.DonationCampaignFeed
+		for i := range blockData.Transactions {
+			tx := &blockData.Transactions[i]
+			if tx.TransactionType == common.TxTypeDonationCampaignFeed {
+				donationCampaignFeeds = append(donationCampaignFeeds, common.DonationCampaignFeed{
+					TxHash:          tx.Hash,
+					OwnerAddress:    tx.FromAddress,
+					CampaignAddress: tx.ToAddress,
+					ExtraInfo:       tx.ExtraInfo,
+					CreatedAt:       tx.TransactionTimestamp,
+				})
+			}
+		}
+		err = p.insertDonationCampaignFeedsTx(ctx, tx, donationCampaignFeeds)
 		if err != nil {
 			return err
 		}
@@ -1588,6 +1608,38 @@ func (p *PostgresConnector) insertTransactionsTx(ctx context.Context, tx *sql.Tx
 	}
 
 	return addressStats, nil
+}
+
+func (p *PostgresConnector) insertDonationCampaignFeedsTx(ctx context.Context, tx *sql.Tx, donationCampaignFeeds []common.DonationCampaignFeed) error {
+	if len(donationCampaignFeeds) == 0 {
+		return nil
+	}
+
+	valueStrings := make([]string, 0, len(donationCampaignFeeds))
+	valueArgs := make([]interface{}, 0, len(donationCampaignFeeds)*5)
+
+	for i, f := range donationCampaignFeeds {
+		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)",
+			i*5+1, i*5+2, i*5+3, i*5+4, i*5+5))
+
+		valueArgs = append(valueArgs,
+			f.TxHash,
+			f.OwnerAddress,
+			f.CampaignAddress,
+			f.ExtraInfo,
+			f.CreatedAt,
+		)
+	}
+
+	query := fmt.Sprintf(`
+        INSERT INTO dong_schema.donation_campaign_feed 
+        (tx_hash, owner_address, campaign_address, extra_info, created_at) 
+        VALUES %s 
+        ON CONFLICT (tx_hash) DO NOTHING`,
+		strings.Join(valueStrings, ","))
+
+	_, err := tx.ExecContext(ctx, query, valueArgs...)
+	return err
 }
 
 func (p *PostgresConnector) scanBlock(rows *sql.Rows, block *common.Block) error {
