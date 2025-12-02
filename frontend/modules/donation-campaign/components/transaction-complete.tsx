@@ -15,6 +15,7 @@ import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { APP_CONFIG } from '@/configs/app.config';
+import { NumberUtil } from '@/utils';
 
 export const TransactionComplete = (props: TransactionCompleteProps) => {
   const { amount, symbol, txHash, type, onClose } = props;
@@ -42,7 +43,7 @@ export const TransactionComplete = (props: TransactionCompleteProps) => {
               Amount {finalType === TransactionType.Withdraw ? 'Withdrawn' : 'Donated'}
             </p>
             <p className="text-brand-primary text-3xl font-bold">
-              {amount}
+              {finalType === TransactionType.Withdraw ? NumberUtil.formatWithCommas(amount) : amount}
               <span className="ml-1.5 text-xl font-medium">{finalSymbol}</span>
             </p>
           </div>
