@@ -21,8 +21,8 @@ func (t TransactionExtraInfoType) String() string {
 func ParseTransactionExtraInfoType(s string) TransactionExtraInfoType {
 	s = strings.TrimSpace(s)
 	if s == "" {
-		return TransactionExtraInfoGiveCoffee
+		return TransactionExtraInfoTokenTransfer
 	}
 
-	return TransactionExtraInfoGiveCoffee
+	return TransactionExtraInfoTokenTransfer
 }
