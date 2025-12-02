@@ -1503,26 +1503,17 @@ func looksLikeTimestampColumn(col string) bool {
 	return strings.Contains(colLower, "timestamp") || strings.HasSuffix(colLower, "_time") || strings.HasSuffix(colLower, "time")
 }
 
-func detectTransactionType(extraInfo string) int {
+func detectTransactionType(extraInfo string) common.TransactionExtraInfoType {
 	type Extra struct {
 		Type string `json:"type"`
 	}
 
 	var e Extra
 	if err := json.Unmarshal([]byte(extraInfo), &e); err != nil {
-		return 0
+		return common.TransactionExtraInfoGiveCoffee
 	}
 
-	switch strings.ToLower(e.Type) {
-	case "dong-give-coffee", "give-coffee":
-		return 0
-	case "donation-campaign":
-		return 1
-	case "withdraw-campaign":
-		return 2
-	default:
-		return 0
-	}
+	return common.ParseTransactionExtraInfoType(e.Type)
 }
 
 func (p *PostgresConnector) insertTransactionsTx(
@@ -1537,7 +1528,7 @@ func (p *PostgresConnector) insertTransactionsTx(
 
 	for i := range transactions {
 		t := &transactions[i]
-		t.TransactionExtraInfoType = uint8(detectTransactionType(t.ExtraInfo))
+		t.TransactionExtraInfoType = detectTransactionType(t.ExtraInfo)
 	}
 
 	valueStrings := make([]string, len(transactions))
@@ -1567,7 +1558,7 @@ func (p *PostgresConnector) insertTransactionsTx(
 			t.Status,
 			t.TextData,
 			t.ExtraInfo,
-			t.TransactionExtraInfoType,
+			t.TransactionExtraInfoType.String(),
 		)
 	}
 
@@ -1601,13 +1592,13 @@ func (p *PostgresConnector) insertTransactionsTx(
 		)
 		SELECT
 			COUNT(*) FILTER (WHERE is_new) AS inserted_count,
-			COUNT(*) FILTER (WHERE is_new AND transaction_extra_info_type = 0 AND status = %d) AS new_give_coffee
+			COUNT(*) FILTER (WHERE is_new AND transaction_extra_info_type = $%s AND status = $%s) AS new_give_coffee
 		FROM inserted;
-	`, strings.Join(valueStrings, ","), pb.TransactionStatus_FINALIZED)
+	`, strings.Join(valueStrings, ","), common.TransactionExtraInfoGiveCoffee.String(), pb.TransactionStatus_FINALIZED)
 
 	var insertedCount, newGiveCoffeeCount int
 
-	if err := tx.QueryRowContext(ctx, insertQuery, valueArgs...).Scan(
+	if err := tx.QueryRowContext(ctx, insertQuery, append(valueArgs, common.TransactionExtraInfoGiveCoffee.String(), pb.TransactionStatus_FINALIZED)...).Scan(
 		&insertedCount,
 		&newGiveCoffeeCount,
 	); err != nil {
@@ -2143,8 +2134,8 @@ func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
 	var totalGiveCoffee int64
 	err = p.db.QueryRowContext(ctx, fmt.Sprintf(`
 		SELECT COUNT(*) FROM transactions
-		WHERE transaction_extra_info_type = 0 AND status = %d
-	`, pb.TransactionStatus_FINALIZED)).Scan(&totalGiveCoffee)
+		WHERE transaction_extra_info_type = %s AND status = %d
+	`, common.TransactionExtraInfoGiveCoffee.String(), pb.TransactionStatus_FINALIZED)).Scan(&totalGiveCoffee)
 	if err != nil {
 		return fmt.Errorf("failed to count give_coffee transactions: %w", err)
 	}
