@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '@/components/shared';
 import { Pagination } from '@/components/ui/pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import { usePaginationQueryParam } from '@/hooks/usePaginationQueryParam';
 import { useGames } from '../hooks/useGames';
 import { SORT_OPTIONS } from '../constants';
@@ -65,57 +66,84 @@ export const MezonGame = () => {
               ))}
             </SelectContent>
           </Select>
+          <div className="flex justify-end md:justify-start">
+            {isLoading ? (
+              <div className="flex items-center gap-3">
+                <Skeleton className="hidden h-9 w-24 rounded-md sm:block" />
 
-          {data && data.totalPages > 0 && (
-            <div className="flex justify-end md:justify-start">
+                <div className="flex items-center">
+                  <Skeleton className="h-10 w-10 rounded-l-md border-r border-[var(--border)]" />
+                  <Skeleton className="h-10 w-10 border-r border-[var(--border)]" />
+                  <Skeleton className="h-10 w-10 border-r border-[var(--border)]" />
+                  <Skeleton className="h-10 w-10 border-r border-[var(--border)]" />
+                  <Skeleton className="h-10 w-10 rounded-r-md" />
+                </div>
+              </div>
+            ) : (
               <Pagination
-                page={data.pageNumber ?? page}
-                limit={data.pageSize ?? limit}
-                totalPages={data.totalPages ?? 1}
-                totalItems={data.totalCount ?? 0}
+                page={data?.pageNumber ?? page}
+                limit={data?.pageSize ?? limit}
+                totalPages={data?.totalPages ?? 0}
+                totalItems={data?.totalCount ?? 0}
                 isLoading={isLoading}
                 onChangePage={handleChangePage}
                 onChangeLimit={handleChangeLimit}
               />
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
-      {isLoading && <div className="text-center text-[var(--muted-foreground)]">Loading games...</div>}
       {error && <div className="text-center text-[var(--destructive)]">Failed to load games.</div>}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {data?.data?.map((game) => (
-          <div
-            key={game.id}
-            className="flex gap-4 rounded-[20px] border border-[var(--border)] bg-[var(--card)] p-5 shadow-lg transition-colors hover:border-[var(--ring)]"
-          >
-            <img
-              src={
-                game.featuredImage
-                  ? `${baseUrl}/api${game.featuredImage}`
-                  : `https://top.mezon.ai/assets/avatar-bot-default-Cbn8rW_G.png`
-              }
-              alt={game.name}
-              className="h-24 w-24 shrink-0 rounded-[20px] object-cover"
-            />
-
-            <div className="min-w-0 flex-1">
-              <div className="flex items-start justify-between gap-2">
-                <h2 className="truncate text-xl font-semibold text-[var(--card-foreground)]">{game.name}</h2>
-                <a
-                  className="rounded-xl bg-[var(--primary)] px-4 py-2 text-sm whitespace-nowrap text-[var(--primary-foreground)] transition-colors hover:brightness-95"
-                  href={`https://top.mezon.ai/bot/${game.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Play Now
-                </a>
+        {isLoading
+          ? Array.from({ length: 6 }).map((_, index) => (
+              <div
+                key={`skeleton-${index}`}
+                className="flex gap-4 rounded-[20px] border border-[var(--border)] bg-[var(--card)] p-5 shadow-lg"
+              >
+                <Skeleton className="h-24 w-24 shrink-0 rounded-[20px]" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <Skeleton className="h-7 w-32" />
+                    <Skeleton className="h-9 w-24 rounded-xl" />
+                  </div>
+                  <Skeleton className="mt-2 h-4 w-full" />
+                  <Skeleton className="mt-2 h-4 w-3/4" />
+                </div>
               </div>
-              <p className="mt-2 line-clamp-2 text-sm text-[var(--muted-foreground)]">{game.headline}</p>
-            </div>
-          </div>
-        ))}
+            ))
+          : data?.data?.map((game) => (
+              <div
+                key={game.id}
+                className="flex gap-4 rounded-[20px] border border-[var(--border)] bg-[var(--card)] p-5 shadow-lg transition-colors hover:border-[var(--ring)]"
+              >
+                <img
+                  src={
+                    game.featuredImage
+                      ? `${baseUrl}/api${game.featuredImage}`
+                      : `https://top.mezon.ai/assets/avatar-bot-default-Cbn8rW_G.png`
+                  }
+                  alt={game.name}
+                  className="h-24 w-24 shrink-0 rounded-[20px] object-cover"
+                />
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <h2 className="truncate text-xl font-semibold text-[var(--card-foreground)]">{game.name}</h2>
+                    <a
+                      className="rounded-xl bg-[var(--primary)] px-4 py-2 text-sm whitespace-nowrap text-[var(--primary-foreground)] transition-colors hover:brightness-95"
+                      href={`https://top.mezon.ai/bot/${game.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Play Now
+                    </a>
+                  </div>
+                  <p className="mt-2 line-clamp-2 text-sm text-[var(--muted-foreground)]">{game.headline}</p>
+                </div>
+              </div>
+            ))}
       </div>
     </section>
   );
