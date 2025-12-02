@@ -1510,7 +1510,7 @@ func detectTransactionType(extraInfo string) common.TransactionExtraInfoType {
 
 	var e Extra
 	if err := json.Unmarshal([]byte(extraInfo), &e); err != nil {
-		return common.TransactionExtraInfoGiveCoffee
+		return common.TransactionExtraInfoTokenTransfer
 	}
 
 	return common.ParseTransactionExtraInfoType(e.Type)
