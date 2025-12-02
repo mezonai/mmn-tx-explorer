@@ -8,27 +8,35 @@ import {
   TopContributorsResponse,
 } from './type';
 import { DONATION_ENDPOINTS } from './constants';
+import { InternalAxiosRequestConfig } from 'axios';
 
 export class DonationCampaignService {
   static async getStats(): Promise<CampaignStats> {
-    const { data } = await apiDongClient.get<{ data: CampaignStats }>(DONATION_ENDPOINTS.STATS);
+    const { data } = await apiDongClient.get<{ data: CampaignStats }>(DONATION_ENDPOINTS.STATS, {
+      meta: { authOptional: true },
+    } as InternalAxiosRequestConfig);
     return data.data;
   }
 
   static async getCampaigns(params: CampaignListParams): Promise<IPaginatedResponse<DonationCampaign[]>> {
     const { data } = await apiDongClient.get<IPaginatedResponse<DonationCampaign[]>>(DONATION_ENDPOINTS.CAMPAIGNS, {
+      meta: { authOptional: true },
       params,
-    });
+    } as InternalAxiosRequestConfig);
     return data;
   }
 
   static async getCampaignById(id: string): Promise<DonationCampaign> {
-    const { data } = await apiDongClient.get<{ data: DonationCampaign }>(DONATION_ENDPOINTS.CAMPAIGN_BY_ID(id));
+    const { data } = await apiDongClient.get<{ data: DonationCampaign }>(DONATION_ENDPOINTS.CAMPAIGN_BY_ID(id), {
+      meta: { authOptional: true },
+    } as InternalAxiosRequestConfig);
     return data.data;
   }
 
   static async getCampaignBySlug(slug: string): Promise<DonationCampaign> {
-    const { data } = await apiDongClient.get<{ data: DonationCampaign }>(DONATION_ENDPOINTS.CAMPAIGN_BY_SLUG(slug));
+    const { data } = await apiDongClient.get<{ data: DonationCampaign }>(DONATION_ENDPOINTS.CAMPAIGN_BY_SLUG(slug), {
+      meta: { authOptional: true },
+    } as InternalAxiosRequestConfig);
     return data.data;
   }
 
@@ -67,8 +75,9 @@ export class DonationCampaignService {
 
   static async getUserDonations(params: { page?: number; limit?: number } = {}) {
     const { data } = await apiDongClient.get(DONATION_ENDPOINTS.MY_DONATIONS, {
+      meta: { authOptional: false },
       params,
-    });
+    } as InternalAxiosRequestConfig);
     return data;
   }
 
@@ -90,8 +99,9 @@ export class DonationCampaignService {
     params: { limit: number };
   }): Promise<TopContributorsResponse['data']> {
     const { data } = await apiDongClient.get<TopContributorsResponse>(DONATION_ENDPOINTS.TOP_CONTRIBUTOR(campaignId), {
+      meta: { authOptional: true },
       params,
-    });
+    } as InternalAxiosRequestConfig);
     return data.data;
   }
 
