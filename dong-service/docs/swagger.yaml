@@ -343,6 +343,22 @@ definitions:
       url:
         type: string
     type: object
+  models.UploadImageResponse:
+    properties:
+      files:
+        items:
+          $ref: '#/definitions/models.UploadedImageInfo'
+        type: array
+      folder_cid:
+        type: string
+    type: object
+  models.UploadedImageInfo:
+    properties:
+      file_cid:
+        type: string
+      file_name:
+        type: string
+    type: object
   models.WalletDetailResponse:
     properties:
       account_nonce:
@@ -891,6 +907,44 @@ paths:
       summary: Get a donation campaign by slug
       tags:
       - campaigns
+  /api/v1/campaigns/upload-image:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload images, scan for virus (if enabled), and store to IPFS
+      parameters:
+      - description: Images to upload
+        in: formData
+        name: files
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.UploadImageResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Upload images for a campaign
+      tags:
+      - campaign_feed
   /api/v1/red-envelopes/claimed-by-user:
     get:
       consumes:

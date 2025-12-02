@@ -76,6 +76,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		campaignsPublic.POST("/:id/sync", statsHandler.SyncCampaign)
 		campaignsPublic.GET("/latest-feed/:campaign_address", campaignFeedHandler.GetLatestCampaignFeed)
 		campaignsPublic.GET("/list-feed/:campaign_address", campaignFeedHandler.ListCampaignFeedsByAddress)
+		campaignsPublic.POST("/upload-image", campaignFeedHandler.UploadImage)
 
 		// Statistics routes (public)
 		statsPublic := v1.Group("/stats")

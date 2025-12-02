@@ -680,6 +680,68 @@
                 }
             }
         },
+        "/api/v1/campaigns/upload-image": {
+            "post": {
+                "description": "Upload images, scan for virus (if enabled), and store to IPFS",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "campaign_feed"
+                ],
+                "summary": "Upload images for a campaign",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Images to upload",
+                        "name": "files",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.UploadImageResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/campaigns/{id}": {
             "get": {
                 "description": "Get details of a specific donation campaign",
@@ -2253,6 +2315,31 @@
                     "type": "integer"
                 },
                 "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UploadImageResponse": {
+            "type": "object",
+            "properties": {
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.UploadedImageInfo"
+                    }
+                },
+                "folder_cid": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UploadedImageInfo": {
+            "type": "object",
+            "properties": {
+                "file_cid": {
+                    "type": "string"
+                },
+                "file_name": {
                     "type": "string"
                 }
             }

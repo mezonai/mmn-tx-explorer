@@ -1,13 +1,17 @@
 package handlers
 
 import (
-    "dong-service/logger"
-    "dong-service/models"
     "dong-service/config"
+    "dong-service/logger"
+    "dong-service/middleware"
+    "dong-service/models"
     "dong-service/repository"
+    "dong-service/services"
     "encoding/json"
-    "net/http"
     "github.com/gin-gonic/gin"
+    "io"
+    "net/http"
+    "bytes"    
 )
 
 type DonationCampaignFeedHandler struct {
@@ -112,4 +116,72 @@ func (h *DonationCampaignFeedHandler) ListCampaignFeedsByAddress(c *gin.Context)
 	}
 
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Campaign feeds retrieved", resp))
+}
+
+// UploadImage godoc
+// @Summary Upload images for a campaign
+// @Description Upload images, scan for virus (if enabled), and store to IPFS
+// @Tags campaign_feed
+// @Accept multipart/form-data
+// @Produce json
+// @Param files formData file true "Images to upload"
+// @Success 200 {object} models.Response{data=models.UploadImageResponse}
+// @Failure 400 {object} models.Response
+// @Failure 429 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Router /api/v1/campaigns/upload-image [post]
+func (h *DonationCampaignFeedHandler) UploadImage(c *gin.Context) {
+	// Rate limit middleware
+	middleware.RateLimitMiddleware(h.cfg)(c)
+	if c.IsAborted() {
+		return
+	}
+	// Image filter middleware
+	middleware.FilterImageMiddleware(h.cfg)(c)
+	if c.IsAborted() {
+		return
+	}
+
+	uploadedFiles, ok := c.Get("uploaded_files")
+	if !ok {
+		logger.Error().Msg("No uploaded files found in context")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "No files uploaded"))
+		return
+	}
+	files := uploadedFiles.([]middleware.UploadedFile)
+
+	images := make(map[string]io.Reader)
+	for _, file := range files {
+		images[file.NewName] = bytes.NewReader(file.Content)
+	}
+
+	ipfsSvc, err := services.NewIPFSService(h.cfg.FilterImage.IPFSURL)
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to init IPFS service")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to init IPFS service: "+err.Error()))
+		return
+	}
+
+	folderCID, fileCIDs, err := ipfsSvc.UploadImagesAsFolder(c.Request.Context(), images)
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to upload images to IPFS")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to upload images as folder to IPFS: "+err.Error()))
+		return
+	}
+
+	var results []models.UploadedImageInfo
+	for filename := range images {
+		results = append(results, models.UploadedImageInfo{
+			FileName: filename,
+			FileCID:  fileCIDs[filename],
+		})
+	}
+
+	resp := models.UploadImageResponse{
+		FolderCID: folderCID,
+		Files:     results,
+	}
+
+	logger.Info().Str("folder_cid", folderCID).Interface("files", results).Msg("Images uploaded to IPFS successfully")
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Upload images successfully", resp))
 }
