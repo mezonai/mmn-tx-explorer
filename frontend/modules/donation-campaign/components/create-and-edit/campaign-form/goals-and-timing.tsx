@@ -8,7 +8,7 @@ import { useCreateCampaignContext } from '@/modules/donation-campaign/context/Cr
 import { APP_CONFIG } from '@/configs/app.config';
 import { NumberUtil } from '@/utils';
 import { format } from 'date-fns';
-import { DATE_FORMAT } from '@/constant';
+import { DATE_PICKER_FORMAT } from '@/constant';
 
 interface GoalsAndTimingProps {
   disableGoal?: boolean;
@@ -16,7 +16,11 @@ interface GoalsAndTimingProps {
   disableOwner?: boolean;
 }
 
-export function GoalsAndTiming({ disableOwner = false, disableGoal = false, disableEndDate = false }: GoalsAndTimingProps) {
+export function GoalsAndTiming({
+  disableOwner = false,
+  disableGoal = false,
+  disableEndDate = false,
+}: GoalsAndTimingProps) {
   const { form, updateField } = useCreateCampaignContext();
 
   const handleInputChange = (field: keyof typeof form, value: string) => {
@@ -33,7 +37,7 @@ export function GoalsAndTiming({ disableOwner = false, disableGoal = false, disa
   };
 
   const handleDateChange = (date: Date | null) => {
-    const dateString = date ? format(date, DATE_FORMAT) : '';
+    const dateString = date ? format(date, DATE_PICKER_FORMAT) : '';
     handleInputChange('endDate', dateString);
   };
 
@@ -78,7 +82,12 @@ export function GoalsAndTiming({ disableOwner = false, disableGoal = false, disa
           </div>
           <div className="sm:col-span-2">
             <label className="text-foreground mb-2 block text-sm font-medium">Partner / campaign owner</label>
-            <Input type="text" value={form.owner} onChange={(e) => handleInputChange('owner', e.target.value)} disabled={disableOwner} />
+            <Input
+              type="text"
+              value={form.owner}
+              onChange={(e) => handleInputChange('owner', e.target.value)}
+              disabled={disableOwner}
+            />
           </div>
         </div>
       </CardContent>
