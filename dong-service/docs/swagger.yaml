@@ -67,6 +67,21 @@ definitions:
     - total_amount
     - total_claims
     type: object
+  models.DonationCampaignFeedResponse:
+    properties:
+      campaign_address:
+        type: string
+      created_at:
+        type: string
+      extra_info:
+        $ref: '#/definitions/models.FeedExtraInfo'
+      id:
+        type: integer
+      owner_address:
+        type: string
+      tx_hash:
+        type: string
+    type: object
   models.DonationCampaignResponse:
     properties:
       created_at:
@@ -89,6 +104,8 @@ definitions:
         type: string
       owner:
         type: string
+      recent_amount:
+        type: integer
       slug:
         type: string
       status:
@@ -105,6 +122,17 @@ definitions:
         type: string
       verified:
         type: boolean
+    type: object
+  models.FeedExtraInfo:
+    properties:
+      description:
+        type: string
+      image_cids:
+        items:
+          type: string
+        type: array
+      title:
+        type: string
     type: object
   models.HealthResponse:
     properties:
@@ -277,6 +305,8 @@ definitions:
     type: object
   models.SyncCampaignResponse:
     properties:
+      recent_amount:
+        type: integer
       total_amount:
         type: integer
       total_contributors:
@@ -605,6 +635,14 @@ paths:
         in: query
         name: order_by
         type: string
+      - description: Search (name or description)
+        in: query
+        name: q
+        type: string
+      - description: Search (name or description) (alias)
+        in: query
+        name: search
+        type: string
       produces:
       - application/json
       responses:
@@ -743,6 +781,80 @@ paths:
       summary: Get top contributors for a campaign
       tags:
       - campaigns
+  /api/v1/campaigns/latest-feed/{campaign_address}:
+    get:
+      description: Get the latest donation campaign feed by campaign address
+      parameters:
+      - description: Campaign address
+        in: path
+        name: campaign_address
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.DonationCampaignFeedResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Get latest feed of a campaign
+      tags:
+      - campaign_feed
+  /api/v1/campaigns/list-feed/{campaign_address}:
+    get:
+      description: List all donation campaign feeds by campaign address
+      parameters:
+      - description: Campaign address
+        in: path
+        name: campaign_address
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.DonationCampaignFeedResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: List all feeds of a campaign
+      tags:
+      - campaign_feed
   /api/v1/campaigns/slug/{slug}:
     get:
       description: Get details of a specific donation campaign by its slug

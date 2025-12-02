@@ -455,6 +455,18 @@ const docTemplate = `{
                         "description": "Sort field",
                         "name": "order_by",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search (name or description)",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search (name or description) (alias)",
+                        "name": "search",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -480,6 +492,127 @@ const docTemplate = `{
                                     }
                                 }
                             ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/campaigns/latest-feed/{campaign_address}": {
+            "get": {
+                "description": "Get the latest donation campaign feed by campaign address",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "campaign_feed"
+                ],
+                "summary": "Get latest feed of a campaign",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Campaign address",
+                        "name": "campaign_address",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.DonationCampaignFeedResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/campaigns/list-feed/{campaign_address}": {
+            "get": {
+                "description": "List all donation campaign feeds by campaign address",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "campaign_feed"
+                ],
+                "summary": "List all feeds of a campaign",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Campaign address",
+                        "name": "campaign_address",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.DonationCampaignFeedResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
                         }
                     },
                     "500": {
@@ -1705,6 +1838,29 @@ const docTemplate = `{
                 }
             }
         },
+        "models.DonationCampaignFeedResponse": {
+            "type": "object",
+            "properties": {
+                "campaign_address": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "extra_info": {
+                    "$ref": "#/definitions/models.FeedExtraInfo"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "owner_address": {
+                    "type": "string"
+                },
+                "tx_hash": {
+                    "type": "string"
+                }
+            }
+        },
         "models.DonationCampaignResponse": {
             "type": "object",
             "properties": {
@@ -1738,6 +1894,9 @@ const docTemplate = `{
                 "owner": {
                     "type": "string"
                 },
+                "recent_amount": {
+                    "type": "integer"
+                },
                 "slug": {
                     "type": "string"
                 },
@@ -1761,6 +1920,23 @@ const docTemplate = `{
                 },
                 "verified": {
                     "type": "boolean"
+                }
+            }
+        },
+        "models.FeedExtraInfo": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "image_cids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "title": {
+                    "type": "string"
                 }
             }
         },
@@ -2025,6 +2201,9 @@ const docTemplate = `{
         "models.SyncCampaignResponse": {
             "type": "object",
             "properties": {
+                "recent_amount": {
+                    "type": "integer"
+                },
                 "total_amount": {
                     "type": "integer"
                 },
