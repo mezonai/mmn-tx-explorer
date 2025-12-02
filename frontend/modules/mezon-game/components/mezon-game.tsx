@@ -112,7 +112,7 @@ export const MezonGame = () => {
                   Play Now
                 </a>
               </div>
-              <p className="mt-2 line-clamp-2 text-sm text-[var(--muted-foreground)]">{game.description}</p>
+              <p className="mt-2 line-clamp-2 text-sm text-[var(--muted-foreground)]">{game.headline}</p>
             </div>
           </div>
         ))}
