@@ -1632,7 +1632,7 @@ func (p *PostgresConnector) insertDonationCampaignFeedsTx(ctx context.Context, t
 	}
 
 	query := fmt.Sprintf(`
-        INSERT INTO donation_campaign_feed 
+        INSERT INTO dong_schema.donation_campaign_feed 
         (tx_hash, owner_address, campaign_address, extra_info, created_at) 
         VALUES %s 
         ON CONFLICT (tx_hash) DO NOTHING`,
