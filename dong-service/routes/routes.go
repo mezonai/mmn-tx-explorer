@@ -48,11 +48,14 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		campaignRepo := repository.NewDonationCampaignRepository(database.GetDB(), cfg.Database.Schema, cfg.Indexer.Schema)
 		statsRepo := repository.NewCampaignStatisticsRepository(database.GetDB(), cfg.Indexer.Schema, cfg.Database.Schema, cfg.Scheduler.RecentStatsWindowDays)
 		walletRepo := repository.NewWalletRepository(database.GetDB(), cfg.Indexer.Schema)
+		campaignFeedRepo := repository.NewDonationCampaignFeedRepository(database.GetDB(), cfg.Database.Schema)
 
 		// Initialize handlers
 		campaignHandler := handlers.NewDonationCampaignHandler(campaignRepo)
 		statsHandler := handlers.NewCampaignStatisticsHandler(statsRepo)
 		walletHandler := handlers.NewWalletHandler(walletRepo, campaignRepo)
+		campaignFeedHandler := handlers.NewDonationCampaignFeedHandler(campaignFeedRepo, cfg)
+
 
 		// Campaign routes (protected)
 		campaignsPrivate := v1.Group("/admin/campaigns")
@@ -71,6 +74,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		campaignsPublic.GET("/:id", campaignHandler.GetCampaign)
 		campaignsPublic.GET("/:id/top-contributors", campaignHandler.GetTopContributors)
 		campaignsPublic.POST("/:id/sync", statsHandler.SyncCampaign)
+		campaignsPublic.GET("/latest-feed/:campaign_address", campaignFeedHandler.GetLatestCampaignFeed)
 
 		// Statistics routes (public)
 		statsPublic := v1.Group("/stats")
