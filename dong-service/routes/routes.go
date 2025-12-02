@@ -9,6 +9,7 @@ import (
 	"dong-service/logger"
 	"dong-service/middleware"
 	"dong-service/repository"
+	"dong-service/services"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -37,9 +38,9 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 	}
 
 	queueService := repository.NewRedEnvelopeQueueService(database.RedisClient)
-	walletRepo := repository.NewIntermediaryWalletRepository(database.GetDB(), cfg.Database.Schema)
-	redEnvelopeRepo := repository.NewRedEnvelopeRepository(database.GetDB(), cfg.Database.Schema, blockchainService, walletRepo, queueService)
-	redEnvelopeHandler := handlers.NewRedEnvelopeHandler(redEnvelopeRepo, queueService, walletRepo)
+	intermediaryWalletRepo := repository.NewIntermediaryWalletRepository(database.GetDB(), cfg.Database.Schema)
+	redEnvelopeRepo := repository.NewRedEnvelopeRepository(database.GetDB(), cfg.Database.Schema, blockchainService, intermediaryWalletRepo, queueService)
+	redEnvelopeHandler := handlers.NewRedEnvelopeHandler(redEnvelopeRepo, queueService, intermediaryWalletRepo)
 
 	// API v1 routes
 	v1 := router.Group("/api/v1")
@@ -53,6 +54,11 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		campaignHandler := handlers.NewDonationCampaignHandler(campaignRepo)
 		statsHandler := handlers.NewCampaignStatisticsHandler(statsRepo)
 		walletHandler := handlers.NewWalletHandler(walletRepo, campaignRepo)
+
+		// Orders - new trading endpoints
+		orderRepo := repository.NewOrderRepository(database.GetDB(), cfg.Database.Schema)
+		orderService := services.NewOrderService(orderRepo, intermediaryWalletRepo)
+		orderHandler := handlers.NewOrderHandler(orderService)
 
 		// Campaign routes (protected)
 		campaignsPrivate := v1.Group("/admin/campaigns")
@@ -94,5 +100,10 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		walletPublic := v1.Group("/wallets")
 		walletPublic.Use(middleware.ParseTokenAndAddToContext(cfg.JWT.Secret))
 		walletPublic.GET("/:address/detail", walletHandler.GetWalletDetail)
+
+		// Orders (private) - create order
+		ordersPrivate := v1.Group("/orders")
+		ordersPrivate.Use(middleware.Authentication(cfg.JWT.Secret))
+		ordersPrivate.POST("", orderHandler.CreateOrder)
 	}
 }

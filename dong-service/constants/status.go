@@ -12,6 +12,31 @@ const (
 	CampaignStatusClosed int16 = 2
 )
 
+// Order-related statuses and event types
+const (
+	OrderStatusPending   = "PENDING"
+	OrderStatusConfirmed = "CONFIRMED"
+	OrderStatusPartial   = "PARTIAL"
+	OrderStatusFilled    = "FILLED"
+	OrderStatusCanceled  = "CANCELED"
+	OrderStatusFailed    = "FAILED"
+)
+
+const (
+	PriceTypeFixed = "FIXED"
+	PriceTypeFloat = "FLOAT"
+)
+
+const (
+	OrderEventCreatedPending   = "CREATED_PENDING"
+	OrderEventCreatedConfirmed = "CREATED_CONFIRMED"
+	OrderEventPartialFill      = "PARTIAL_FILL"
+	OrderEventFill             = "FILL"
+	OrderEventCanceled         = "CANCELED"
+	OrderEventUpdated          = "UPDATED"
+	OrderEventFailed           = "FAILED"
+)
+
 // Transaction Status Constants
 const (
 	// TransactionStatusFINALIZED represents a finalized transaction
