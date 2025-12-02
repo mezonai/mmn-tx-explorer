@@ -9,14 +9,10 @@ export enum ETransactionType {
 
 export enum ETransferType {
   TokenTransfer = 'token-transfer',
+  GiveCoffee = 'give-coffee',
   DonationCampaign = 'donation-campaign',
   WithdrawCampaign = 'withdraw-campaign',
-}
-
-export enum ETransactionExtraInfoType {
-  GiveCoffee = 0,
-  DonationCampaign = 1,
-  WithdrawCampaign = 2,
+  LuckyMoney = 'lucky-money',
 }
 
 export enum ETransactionStatus {
