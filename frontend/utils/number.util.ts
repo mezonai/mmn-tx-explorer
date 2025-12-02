@@ -44,4 +44,12 @@ export class NumberUtil {
     const scaled = num / scale;
     return scaled;
   }
+
+  static sanitizeAmount(value: number | string): string {
+    if (value === null || value === undefined) return '0';
+    const str = value.toString().replace(/,/g, '');
+    const num = Number(str);
+    if (isNaN(num)) return '0';
+    return Math.floor(num).toString();
+  }
 }
