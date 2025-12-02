@@ -23,7 +23,7 @@ const getTransactionTypeClass = (type: ETransferType) => {
     case ETransferType.LuckyMoney:
       return 'bg-pink-100 text-pink-600 dark:bg-pink-500/10 dark:text-pink-300';
     default:
-      return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300';
+      return 'bg-yellow-100 text-yellow-600 dark:bg-yellow-500/10 dark:text-yellow-300';
   }
 };
 
