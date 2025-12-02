@@ -171,6 +171,11 @@ var defaultTransactionFields = []string{
 	"transaction_timestamp", "value", "transaction_type", "status", "text_data", "extra_info",
 }
 
+var defaultExportTransactionFields = []string{
+	"chain_id", "hash", "nonce", "block_hash", "block_number", "from_address", "to_address",
+	"transaction_timestamp", "value", "transaction_type", "status", "text_data",
+}
+
 var defaultWalletFields = []string{
 	"address", "account_nonce", "balance", "transaction_count", "last_block",
 }
@@ -886,7 +891,7 @@ func (p *PostgresConnector) GetTransactions(ctx context.Context, qf *QueryFilter
 	var transactions []common.Transaction
 	for rows.Next() {
 		var tx common.Transaction
-		err := p.scanTransaction(rows, &tx)
+		err := p.scanTransaction(rows, &tx, false)
 		if err != nil {
 			return QueryResult[common.Transaction]{}, err
 		}
@@ -1613,19 +1618,27 @@ func (p *PostgresConnector) scanBlock(rows *sql.Rows, block *common.Block) error
 	return nil
 }
 
-func (p *PostgresConnector) scanTransaction(rows *sql.Rows, tx *common.Transaction) error {
+func (p *PostgresConnector) scanTransaction(rows *sql.Rows, tx *common.Transaction, isExport bool) error {
 	var chainIDStr, blockNumberStr string
 	var transactionTimestamp time.Time
 	var valueStr string
 	var status *uint64
 	var extraInfo sql.NullString
 
-	err := rows.Scan(
-		&chainIDStr, &tx.Hash, &tx.Nonce, &tx.BlockHash, &blockNumberStr, &tx.FromAddress, &tx.ToAddress,
-		&transactionTimestamp, &valueStr, &tx.TransactionType, &status, &tx.TextData, &extraInfo,
-	)
-	if err != nil {
-		return err
+	if isExport {
+		if err := rows.Scan(
+			&chainIDStr, &tx.Hash, &tx.Nonce, &tx.BlockHash, &blockNumberStr, &tx.FromAddress, &tx.ToAddress,
+			&transactionTimestamp, &valueStr, &tx.TransactionType, &status, &tx.TextData,
+		); err != nil {
+			return err
+		}
+	} else {
+		if err := rows.Scan(
+			&chainIDStr, &tx.Hash, &tx.Nonce, &tx.BlockHash, &blockNumberStr, &tx.FromAddress, &tx.ToAddress,
+			&transactionTimestamp, &valueStr, &tx.TransactionType, &status, &tx.TextData, &extraInfo,
+		); err != nil {
+			return err
+		}
 	}
 
 	// Convert string values to big.Int
@@ -1803,7 +1816,7 @@ func (p *PostgresConnector) GetTransactionsByWalletPaginated(ctx context.Context
 	}()
 
 	// Initialize as empty slice to avoid null in JSON when no rows
-	transactions, err := p.scanRowsToTransactions(rows)
+	transactions, err := p.scanRowsToTransactions(rows, false)
 	if err != nil {
 		return nil, err
 	}
@@ -1849,8 +1862,8 @@ func (p *PostgresConnector) GetTransactionsByWalletWithTimestamp(ctx context.Con
 
 	args := []interface{}{walletAddress}
 	argIndex := 2
-    var zeroTime time.Time
-    if !timestampLt.Equal(zeroTime) {
+	var zeroTime time.Time
+	if !timestampLt.Equal(zeroTime) {
 		if lastHash != "" {
 			fromQuery += " AND (transaction_timestamp < $2 OR (transaction_timestamp = $2 AND hash < $3))"
 			toQuery += " AND (transaction_timestamp < $2 OR (transaction_timestamp = $2 AND hash < $3))"
@@ -1882,7 +1895,7 @@ func (p *PostgresConnector) GetTransactionsByWalletWithTimestamp(ctx context.Con
 	}
 	defer rows.Close()
 
-	transactions, err := p.scanRowsToTransactions(rows)
+	transactions, err := p.scanRowsToTransactions(rows, false)
 	if err != nil {
 		return nil, err
 	}
@@ -1923,7 +1936,7 @@ func (p *PostgresConnector) GetTransactionsByFromAddressWithTimestamp(ctx contex
 	}
 	defer rows.Close()
 
-	transactions, err := p.scanRowsToTransactions(rows)
+	transactions, err := p.scanRowsToTransactions(rows, false)
 	if err != nil {
 		return nil, err
 	}
@@ -1964,7 +1977,7 @@ func (p *PostgresConnector) GetTransactionsByToAddressWithTimestamp(ctx context.
 	}
 	defer rows.Close()
 
-	transactions, err := p.scanRowsToTransactions(rows)
+	transactions, err := p.scanRowsToTransactions(rows, false)
 	if err != nil {
 		return nil, err
 	}
@@ -2084,12 +2097,12 @@ func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
 	return nil
 }
 
-func (p *PostgresConnector) scanRowsToTransactions(rows *sql.Rows) ([]common.Transaction, error) {
+func (p *PostgresConnector) scanRowsToTransactions(rows *sql.Rows, isExport bool) ([]common.Transaction, error) {
 	transactions := make([]common.Transaction, 0)
 
 	for rows.Next() {
 		var tx common.Transaction
-		err := p.scanTransaction(rows, &tx)
+		err := p.scanTransaction(rows, &tx, isExport)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan transaction: %w", err)
 		}
@@ -2157,7 +2170,7 @@ func (p *PostgresConnector) GetAllTransactionsByWallet(
 	sortBy, sortOrder string,
 ) ([]common.Transaction, error) {
 
-	columns := p.buildSelectFields([]string{}, defaultTransactionFields)
+	columns := p.buildSelectFields([]string{}, defaultExportTransactionFields)
 
 	if !p.validateSortByColumn("transactions", sortBy) {
 		sortBy = "transaction_timestamp"
@@ -2200,7 +2213,7 @@ func (p *PostgresConnector) GetAllTransactionsByWallet(
 		}
 	}()
 
-	transactions, err := p.scanRowsToTransactions(rows)
+	transactions, err := p.scanRowsToTransactions(rows, true)
 	if err != nil {
 		return nil, err
 	}

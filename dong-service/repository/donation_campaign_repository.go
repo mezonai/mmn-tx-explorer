@@ -324,7 +324,7 @@ func (r *DonationCampaignRepository) GetAll(status *int16, verified *bool, q *st
 	}
 
 	if q != nil && strings.TrimSpace(*q) != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("(dc.body_search @@ to_tsquery('english', $%d))", argCount))
+		whereClauses = append(whereClauses, fmt.Sprintf("(dc.body_search @@ plainto_tsquery('simple', $%d))", argCount))
 		args = append(args, strings.TrimSpace(*q))
 		argCount++
 	}
@@ -360,6 +360,7 @@ func (r *DonationCampaignRepository) GetAll(status *int16, verified *bool, q *st
 	if err != nil {
 		return nil, fmt.Errorf("failed to get donation campaigns: %w", err)
 	}
+
 	defer func() {
 		if err != nil {
 			errClose := rows.Close()
@@ -586,7 +587,7 @@ func (r *DonationCampaignRepository) Count(status *int16, verified *bool, q *str
 	}
 
 	if q != nil && strings.TrimSpace(*q) != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("(dc.body_search @@ to_tsquery('english', $%d))", argCount))
+		whereClauses = append(whereClauses, fmt.Sprintf("(dc.body_search @@ plainto_tsquery('simple', $%d))", argCount))
 		args = append(args, strings.TrimSpace(*q))
 		argCount++
 	}
@@ -607,7 +608,6 @@ func (r *DonationCampaignRepository) Count(status *int16, verified *bool, q *str
 	if err != nil {
 		return 0, fmt.Errorf("failed to count campaigns: %w", err)
 	}
-
 	return count, nil
 }
 
