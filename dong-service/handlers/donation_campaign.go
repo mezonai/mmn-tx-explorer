@@ -173,6 +173,16 @@ func (h *DonationCampaignHandler) GetCampaign(c *gin.Context) {
 func (h *DonationCampaignHandler) ListCampaigns(c *gin.Context) {
 	pagination := utils.GetPaginationParams(c)
 	statusPtr := utils.ParseInt16Query(c, "status")
+
+	if limitStr := c.Query("limit"); limitStr != "" {
+		limit, err := strconv.Atoi(limitStr)
+		if err != nil {
+			logger.Error().Err(err).Msg("Invalid limit parameter for ListCampaigns")
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid limit parameter"))
+			return
+		}
+		pagination.Limit = limit
+	}
 	// parse verified flag if present
 	var verifiedPtr *bool
 	if v := c.Query("verified"); v != "" {
