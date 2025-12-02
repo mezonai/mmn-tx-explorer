@@ -89,6 +89,8 @@ definitions:
         type: string
       owner:
         type: string
+      recent_amount:
+        type: integer
       slug:
         type: string
       status:
@@ -277,6 +279,10 @@ definitions:
     type: object
   models.SyncCampaignResponse:
     properties:
+      current_balance:
+        type: integer
+      recent_amount:
+        type: integer
       total_amount:
         type: integer
       total_contributors:
@@ -604,6 +610,14 @@ paths:
         - total_amount
         in: query
         name: order_by
+        type: string
+      - description: Search (name or description)
+        in: query
+        name: q
+        type: string
+      - description: Search (name or description) (alias)
+        in: query
+        name: search
         type: string
       produces:
       - application/json
