@@ -3,22 +3,45 @@ package middleware
 import (
 	"dong-service/config"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func CORS(corsConfig *config.CORSConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", corsConfig.AllowOrigins)
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", strconv.FormatBool(corsConfig.AllowCreds))
-		c.Writer.Header().Set("Access-Control-Allow-Headers", corsConfig.AllowHeaders)
-		c.Writer.Header().Set("Access-Control-Allow-Methods", corsConfig.AllowMethods)
+		origin := c.Request.Header.Get("Origin")
+
+		allowedOrigin := ""
+		if origin != "" {
+			for _, allowedDomain := range corsConfig.AllowedDomains {
+				if strings.EqualFold(origin, allowedDomain) {
+					allowedOrigin = origin
+					break
+				}
+			}
+		}
+
+		if allowedOrigin != "" {
+			c.Writer.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+			c.Writer.Header().Set("Access-Control-Allow-Credentials", strconv.FormatBool(corsConfig.AllowCreds))
+			c.Writer.Header().Set("Access-Control-Allow-Headers", corsConfig.AllowHeaders)
+			c.Writer.Header().Set("Access-Control-Allow-Methods", corsConfig.AllowMethods)
+		}
 
 		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
+			if allowedOrigin != "" {
+				c.AbortWithStatus(204)
+			} else {
+				c.AbortWithStatus(403) 
+			}
 			return
 		}
 
-		c.Next()
+		if allowedOrigin != "" || origin == "" {
+			c.Next()
+		} else {
+			c.AbortWithStatus(403) 
+		}
 	}
 }
