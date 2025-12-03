@@ -9,13 +9,28 @@ interface ProgressStepsProps {
 
 const steps = [
   { id: 1, label: 'Thanh toán', status: 'PAYMENT_PENDING' as const },
-  { id: 2, label: 'Chờ xác nhận', status: 'PAYMENT_CONFIRMED' as const },
+  { id: 2, label: 'Chờ xác nhận', status: 'WAIT_CONFIRM' as const },
   { id: 3, label: 'Hoàn tất', status: 'COMPLETED' as const },
 ];
 
 export const ProgressSteps = ({ order }: ProgressStepsProps) => {
-  const currentStepIndex = steps.findIndex((step) => step.status === order.status);
-  const activeStepIndex = currentStepIndex >= 0 ? currentStepIndex : 0;
+  // Map order status to step index
+  const getStepIndex = (status: string): number => {
+    switch (status) {
+      case 'PAYMENT_PENDING':
+        return 0;
+      case 'WAIT_CONFIRM':
+        return 1;
+      case 'PAYMENT_CONFIRMED':
+        return 1; // Also map PAYMENT_CONFIRMED to step 2 for backward compatibility
+      case 'COMPLETED':
+        return 2;
+      default:
+        return 0;
+    }
+  };
+
+  const activeStepIndex = getStepIndex(order.status);
 
   return (
     <div className="flex justify-between items-center mb-8 px-4">

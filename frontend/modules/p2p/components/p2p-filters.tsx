@@ -94,7 +94,7 @@ export const P2PFiltersComponent = ({ filters, onFiltersChange, onNewOfferClick 
           />
         </div>
 
-        {/* Payment Method Select */}
+        {/* Payment Method Select 
         <Select value={filters.paymentMethod} onValueChange={handlePaymentMethodChange}>
           <SelectTrigger className="w-full bg-card border-gray-300 py-2.5 focus:border-brand-primary transition dark:border-gray-700">
             <SelectValue placeholder="Tất cả thanh toán" />
@@ -106,9 +106,9 @@ export const P2PFiltersComponent = ({ filters, onFiltersChange, onNewOfferClick 
               </SelectItem>
             ))}
           </SelectContent>
-        </Select>
+        </Select>*/}
 
-        {/* Friends/Clan Filter */}
+        {/* Friends/Clan Filter 
         <div className="flex items-center gap-2 rounded-lg border border-gray-300 bg-card px-4 py-2.5 transition hover:border-brand-primary dark:border-gray-700 dark:bg-card">
           <input
             type="checkbox"
@@ -121,7 +121,7 @@ export const P2PFiltersComponent = ({ filters, onFiltersChange, onNewOfferClick 
             Chỉ hiện Bạn bè / Clan
           </label>
           <Shield className="h-4 w-4 text-yellow-500 ml-1" />
-        </div>
+        </div>*/}
 
         {/* New Offer Button */}
         <Button

@@ -22,6 +22,7 @@ const mockOffers: P2POffer[] = [
     },
     paymentMethods: ['TPBANK', 'MOMO'],
     isClanOffer: false,
+    exchangeRate: 0.8, // 1 MZD = 0.8 VND
   },
   {
     id: '2',
@@ -42,6 +43,7 @@ const mockOffers: P2POffer[] = [
     },
     paymentMethods: ['VIETCOMBANK'],
     isClanOffer: true,
+    exchangeRate: 0.75, // 1 MZD = 0.75 VND (ưu đãi clan)
   },
   {
     id: '3',
@@ -62,6 +64,7 @@ const mockOffers: P2POffer[] = [
     },
     paymentMethods: ['BANK_TRANSFER', 'MOMO', 'VIETCOMBANK'],
     isClanOffer: false,
+    exchangeRate: 0.85, // 1 MZD = 0.85 VND
   },
 ];
 

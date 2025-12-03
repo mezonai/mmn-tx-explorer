@@ -36,6 +36,11 @@ export type BankOption = 'MB' | 'VCB' | 'TCB' | 'ACB' | 'TPBANK' | 'VIETCOMBANK'
 export interface CreateOfferFormData {
   tradeType: TradeType;
   amountMZD: number; // Số MZD muốn bán
+  exchangeRate: number; // Tỉ giá VND/MZD (ví dụ: 0.8 = 1 MZD = 0.8 VND)
+  limit: {
+    min: number; // Số MZD tối thiểu cho mỗi giao dịch
+    max: number; // Số MZD tối đa cho mỗi giao dịch
+  };
   bank: BankOption;
   accountNumber: string; // Số tài khoản ngân hàng
 }
@@ -48,8 +53,9 @@ export interface P2POrder {
   buyerId: string;
   sellerId: string;
   sellerUsername: string;
-  amountMZD: number;
-  amountVND: number;
+  amountMZD: number; // Số MZD người mua muốn mua
+  amountVND: number; // Số VND cần thanh toán (tính từ amountMZD * exchangeRate)
+  exchangeRate: number; // Tỉ giá VND/MZD từ offer
   status: OrderStatus;
   createdAt: string;
   expiresAt: string; // Timer countdown (ISO string)
@@ -91,6 +97,7 @@ export interface P2POffer {
   };
   paymentMethods: PaymentMethod[];
   isClanOffer?: boolean;
+  exchangeRate: number; // Tỉ giá VND/MZD (ví dụ: 0.8 = 1 MZD = 0.8 VND)
   bankInfo?: {
     bank: BankOption;
     accountNumber: string;

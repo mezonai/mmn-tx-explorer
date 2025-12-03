@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 interface AmountSectionProps {
   amountMZD: number;
   onAmountChange: (amount: number) => void;
+  exchangeRate: number;
   error?: string;
 }
 
@@ -19,7 +20,7 @@ const getRawValue = (val: string): number => {
   return parseFloat(val.replace(/,/g, '')) || 0;
 };
 
-export const AmountSection = ({ amountMZD, onAmountChange, error }: AmountSectionProps) => {
+export const AmountSection = ({ amountMZD, onAmountChange, exchangeRate, error }: AmountSectionProps) => {
   const [displayValue, setDisplayValue] = useState<string>('');
 
   useEffect(() => {
@@ -53,8 +54,8 @@ export const AmountSection = ({ amountMZD, onAmountChange, error }: AmountSectio
     }
   };
 
-  // Tính tổng VND nhận về (1:1)
-  const totalVND = amountMZD;
+  // Tính tổng VND nhận về dựa vào tỉ giá
+  const totalVND = exchangeRate > 0 ? amountMZD * exchangeRate : 0;
 
   return (
     <div className="space-y-5 border-b lg:border-b-0 lg:border-r border-gray-800 pb-4 lg:pb-0 lg:pr-8">

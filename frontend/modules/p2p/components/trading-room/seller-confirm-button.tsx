@@ -26,7 +26,7 @@ export const SellerConfirmButton = ({ order, onConfirm }: SellerConfirmButtonPro
         className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-lg py-4 rounded-xl shadow-lg shadow-emerald-900/20 transition mb-4 flex items-center justify-center gap-2"
       >
         <CheckCircle2 className="h-5 w-5" />
-        Xác nhận nhận tiền & đồng ý chuyển MZD
+        Xác nhận đã nhận được tiền, chuyển MZD
       </Button>
       <div className="text-center text-sm text-gray-500 px-4">
         Chỉ ấn nút trên khi bạn đã thực sự nhận được tiền chuyển khoản từ người mua.

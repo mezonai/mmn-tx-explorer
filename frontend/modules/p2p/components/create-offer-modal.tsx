@@ -26,11 +26,17 @@ export const CreateOfferModal = ({ open, onOpenChange, onSubmit }: CreateOfferMo
   const [formData, setFormData] = useState<CreateOfferFormData>({
     tradeType: 'SELL',
     amountMZD: 0,
+    exchangeRate: 1, // Default 1:1
+    limit: {
+      min: 0,
+      max: 0,
+    },
     bank: 'MB',
     accountNumber: '',
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof CreateOfferFormData, string>>>({});
+  const [limitErrors, setLimitErrors] = useState<{ min?: string; max?: string }>({});
 
   // Reset form when modal opens
   useEffect(() => {
@@ -38,18 +44,46 @@ export const CreateOfferModal = ({ open, onOpenChange, onSubmit }: CreateOfferMo
       setFormData({
         tradeType: 'SELL',
         amountMZD: 0,
+        exchangeRate: 1,
+        limit: {
+          min: 0,
+          max: 0,
+        },
         bank: 'MB',
         accountNumber: '',
       });
       setErrors({});
+      setLimitErrors({});
     }
   }, [open]);
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof CreateOfferFormData, string>> = {};
+    const newLimitErrors: { min?: string; max?: string } = {};
 
     if (formData.amountMZD <= 0) {
       newErrors.amountMZD = 'Vui lòng nhập số lượng MZD muốn bán';
+    }
+
+    if (formData.tradeType === 'SELL' && formData.exchangeRate <= 0) {
+      newErrors.exchangeRate = 'Vui lòng nhập tỉ giá bán';
+    }
+
+    // Validate limit
+    if (formData.tradeType === 'SELL') {
+      if (formData.limit.min <= 0) {
+        newLimitErrors.min = 'Vui lòng nhập giới hạn tối thiểu';
+      } else if (formData.limit.min > formData.amountMZD) {
+        newLimitErrors.min = 'Giới hạn tối thiểu không được lớn hơn số MZD muốn bán';
+      }
+
+      if (formData.limit.max <= 0) {
+        newLimitErrors.max = 'Vui lòng nhập giới hạn tối đa';
+      } else if (formData.limit.max > formData.amountMZD) {
+        newLimitErrors.max = 'Giới hạn tối đa không được lớn hơn số MZD muốn bán';
+      } else if (formData.limit.max < formData.limit.min) {
+        newLimitErrors.max = 'Giới hạn tối đa phải lớn hơn hoặc bằng giới hạn tối thiểu';
+      }
     }
 
     if (!formData.accountNumber.trim()) {
@@ -59,11 +93,31 @@ export const CreateOfferModal = ({ open, onOpenChange, onSubmit }: CreateOfferMo
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setLimitErrors(newLimitErrors);
+    return Object.keys(newErrors).length === 0 && Object.keys(newLimitErrors).length === 0;
   };
 
   const handleSubmit = () => {
     if (validateForm()) {
+      console.log('📝 Create Offer Data:', {
+        tradeType: formData.tradeType,
+        amountMZD: formData.amountMZD,
+        amountMZDFormatted: new Intl.NumberFormat('vi-VN').format(formData.amountMZD),
+        exchangeRate: formData.exchangeRate,
+        exchangeRateDisplay: `1 MZD = ${formData.exchangeRate.toLocaleString('vi-VN')} VND`,
+        totalVND: formData.amountMZD * formData.exchangeRate,
+        totalVNDFormatted: new Intl.NumberFormat('vi-VN').format(formData.amountMZD * formData.exchangeRate),
+        limit: {
+          min: formData.limit.min,
+          minFormatted: new Intl.NumberFormat('vi-VN').format(formData.limit.min),
+          max: formData.limit.max,
+          maxFormatted: new Intl.NumberFormat('vi-VN').format(formData.limit.max),
+          range: `${new Intl.NumberFormat('vi-VN').format(formData.limit.min)} - ${new Intl.NumberFormat('vi-VN').format(formData.limit.max)} MZD`,
+        },
+        bank: formData.bank,
+        accountNumber: formData.accountNumber,
+      });
+
       onSubmit?.(formData);
       onOpenChange(false);
     }
@@ -75,7 +129,7 @@ export const CreateOfferModal = ({ open, onOpenChange, onSubmit }: CreateOfferMo
         <DialogHeader className="bg-gray-900/50 dark:bg-gray-900/50 -mx-6 -mt-6 px-6 py-4 border-b border-gray-800">
           <DialogTitle className="text-lg font-bold text-white">Đăng quảng cáo mới</DialogTitle>
           <DialogDescription className="text-xs text-gray-400">
-            Tạo lệnh mua/bán MZD (Tỷ giá 1:1)
+            Tạo lệnh mua/bán MZD với tỉ giá tùy chỉnh
           </DialogDescription>
         </DialogHeader>
 
@@ -84,12 +138,19 @@ export const CreateOfferModal = ({ open, onOpenChange, onSubmit }: CreateOfferMo
           <TradeTypeSection
             tradeType={formData.tradeType}
             onTradeTypeChange={(type) => setFormData({ ...formData, tradeType: type })}
+            exchangeRate={formData.exchangeRate}
+            onExchangeRateChange={(rate) => setFormData({ ...formData, exchangeRate: rate })}
+            limit={formData.limit}
+            onLimitChange={(limit) => setFormData({ ...formData, limit })}
+            amountMZD={formData.amountMZD}
+            limitErrors={limitErrors}
           />
 
           {/* Phần 2: Khối lượng giao dịch */}
           <AmountSection
             amountMZD={formData.amountMZD}
             onAmountChange={(amount) => setFormData({ ...formData, amountMZD: amount })}
+            exchangeRate={formData.exchangeRate}
             error={errors.amountMZD}
           />
 

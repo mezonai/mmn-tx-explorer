@@ -23,10 +23,8 @@ export const P2POffersTable = ({ offers, isLoading = false, onOfferClick }: P2PO
 
   const handleBuyClick = (offer: P2POffer, e: React.MouseEvent) => {
     e.stopPropagation();
-    // TODO: Create order from offer, then navigate
-    // For now, use offer.id as orderId (will be replaced with actual order creation)
-    const orderId = `order_${offer.id}_${Date.now()}`;
-    router.push(ROUTES.P2P_TRADING(orderId));
+    // Navigate to trading room with offerId (will create order after confirming)
+    router.push(`/p2p/trading/${offer.id}?type=offer`);
   };
 
   const columns: TTableColumn<P2POffer>[] = [
@@ -45,7 +43,7 @@ export const P2POffersTable = ({ offers, isLoading = false, onOfferClick }: P2PO
       align: 'left',
     },
     {
-      headerContent: 'MZD',
+      headerContent: 'MZD / Tỉ giá',
       renderCell: (offer) => (
         <div>
           <div
@@ -56,7 +54,12 @@ export const P2POffersTable = ({ offers, isLoading = false, onOfferClick }: P2PO
           >
             {offer.totalMZD.toLocaleString('vi-VN')} <span className="text-xs font-normal text-gray-500">MZD</span>
           </div>
-          {offer.isClanOffer && <div className="text-brand-primary text-xs">Ưu đãi cho Clan</div>}
+          <div className="text-sm text-gray-400 mt-1">
+            Tỉ giá: <span className="text-brand-primary font-semibold">
+              {offer.exchangeRate.toLocaleString('vi-VN')} VND/MZD
+            </span>
+          </div>
+          {/*{offer.isClanOffer && <div className="text-brand-primary text-xs mt-1">Ưu đãi cho Clan</div>}*/}
         </div>
       ),
       skeletonContent: <Skeleton className="h-6 w-24" />,

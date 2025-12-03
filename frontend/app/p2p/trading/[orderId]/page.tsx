@@ -13,6 +13,7 @@ interface TradingRoomPageProps {
 }
 
 export default function TradingRoomPage({ params }: TradingRoomPageProps) {
+  // orderId can be either an order ID or an offer ID (when type=offer query param is present)
   return <TradingRoom orderId={params.orderId} />;
 }
 

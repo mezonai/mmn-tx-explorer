@@ -9,7 +9,8 @@ const mockOrder: P2POrder = {
   sellerId: 'user1',
   sellerUsername: 'Mezon_Trader_Pro',
   amountMZD: 2545000,
-  amountVND: 2545000, // 1:1 rate
+  amountVND: 2036000, // amountMZD * exchangeRate (2545000 * 0.8)
+  exchangeRate: 0.8, // 1 MZD = 0.8 VND
   status: 'PAYMENT_PENDING',
   createdAt: new Date().toISOString(),
   expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes
