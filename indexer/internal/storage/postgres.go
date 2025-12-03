@@ -1299,22 +1299,23 @@ func (p *PostgresConnector) GetCount(ctx context.Context, table string, qf *Quer
 	return count, err
 }
 
-func (p *PostgresConnector) GetDashboardStats(ctx context.Context, qf *QueryFilter) (totalBlocks, totalTransactions, totalWallets uint64, averageBlockTime float64, err error) {
+func (p *PostgresConnector) GetDashboardStats(ctx context.Context, qf *QueryFilter) (totalBlocks, totalTransactions, totalWallets uint64, averageBlockTime float64, totalGiveCoffee uint64, err error) {
 	query := `
         SELECT 
             COALESCE(MAX(CASE WHEN key = 'total_blocks' THEN value::bigint END), 0) as blocks,
             COALESCE(MAX(CASE WHEN key = 'total_transactions' THEN value::bigint END), 0) as transactions,
             COALESCE(MAX(CASE WHEN key = 'total_wallets' THEN value::bigint END), 0) as wallets,
-            COALESCE(MAX(CASE WHEN key = 'average_block' THEN value::float END) / 1000.0, 0.0) as avg_block_time
+			COALESCE(MAX(CASE WHEN key = 'average_block' THEN value::float END) / 1000.0, 0.0) as avg_block_time,
+			COALESCE(MAX(CASE WHEN key = 'total_give_coffee' THEN value::bigint END), 0) as total_give_coffee
         FROM stats
     `
 
-	err = p.db.QueryRowContext(ctx, query).Scan(&totalBlocks, &totalTransactions, &totalWallets, &averageBlockTime)
+	err = p.db.QueryRowContext(ctx, query).Scan(&totalBlocks, &totalTransactions, &totalWallets, &averageBlockTime, &totalGiveCoffee)
 	if err != nil {
-		return 0, 0, 0, 0, fmt.Errorf("failed to get dashboard stats: %w", err)
+		return 0, 0, 0, 0, 0, fmt.Errorf("failed to get dashboard stats: %w", err)
 	}
 
-	return totalBlocks, totalTransactions, totalWallets, averageBlockTime, nil
+	return totalBlocks, totalTransactions, totalWallets, averageBlockTime, totalGiveCoffee, nil
 }
 
 func (p *PostgresConnector) GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error) {
@@ -1502,18 +1503,46 @@ func looksLikeTimestampColumn(col string) bool {
 	return strings.Contains(colLower, "timestamp") || strings.HasSuffix(colLower, "_time") || strings.HasSuffix(colLower, "time")
 }
 
-func (p *PostgresConnector) insertTransactionsTx(ctx context.Context, tx *sql.Tx, transactions []common.Transaction) (map[string]WalletStats, error) {
+func detectTransactionType(extraInfo string) common.TransactionExtraInfoType {
+	type Extra struct {
+		Type string `json:"type"`
+	}
+
+	var e Extra
+	if err := json.Unmarshal([]byte(extraInfo), &e); err != nil {
+		return common.TransactionExtraInfoTokenTransfer
+	}
+
+	return common.ParseTransactionExtraInfoType(e.Type)
+}
+
+func (p *PostgresConnector) insertTransactionsTx(
+	ctx context.Context,
+	tx *sql.Tx,
+	transactions []common.Transaction,
+) (map[string]WalletStats, error) {
+
 	if len(transactions) == 0 {
 		return nil, nil
 	}
 
-	valueStrings := make([]string, 0, len(transactions))
-	valueArgs := make([]interface{}, 0, len(transactions)*13)
-
 	for i := range transactions {
 		t := &transactions[i]
-		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
-			i*13+1, i*13+2, i*13+3, i*13+4, i*13+5, i*13+6, i*13+7, i*13+8, i*13+9, i*13+10, i*13+11, i*13+12, i*13+13))
+		t.TransactionExtraInfoType = detectTransactionType(t.ExtraInfo)
+	}
+
+	valueStrings := make([]string, len(transactions))
+	valueArgs := make([]interface{}, 0, len(transactions)*13)
+
+	for i, t := range transactions {
+		base := i * 14
+
+		valueStrings[i] = fmt.Sprintf(
+			"($%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d)",
+			base+1, base+2, base+3, base+4, base+5,
+			base+6, base+7, base+8, base+9, base+10,
+			base+11, base+12, base+13, base+14,
+		)
 
 		valueArgs = append(valueArgs,
 			bigIntToString(t.ChainID),
@@ -1529,65 +1558,95 @@ func (p *PostgresConnector) insertTransactionsTx(ctx context.Context, tx *sql.Tx
 			t.Status,
 			t.TextData,
 			t.ExtraInfo,
+			t.TransactionExtraInfoType.String(),
 		)
 	}
 
-	insertTransactionsQuery := fmt.Sprintf(`WITH inserted AS (
-                INSERT INTO transactions (chain_id, hash, nonce, block_hash, block_number, from_address, to_address, transaction_timestamp, value, transaction_type, status, text_data, extra_info)
-                VALUES %s
-                ON CONFLICT (chain_id, block_number, hash) 
-                DO UPDATE SET 
-                    nonce = EXCLUDED.nonce,
-                    block_hash = EXCLUDED.block_hash,
-                    from_address = EXCLUDED.from_address,
-                    to_address = EXCLUDED.to_address,
-                    transaction_timestamp = EXCLUDED.transaction_timestamp,
-                    value = EXCLUDED.value,
-                    transaction_type = EXCLUDED.transaction_type,
-                    status = EXCLUDED.status,
-                    text_data = EXCLUDED.text_data,
-                    extra_info = EXCLUDED.extra_info,
-                    updated_at = NOW()
-                RETURNING (xmax = 0) AS is_new
-            )
-            SELECT COUNT(*) FROM inserted WHERE is_new`, strings.Join(valueStrings, ","))
+	insertQuery := fmt.Sprintf(`
+		WITH inserted AS (
+			INSERT INTO transactions (
+				chain_id, hash, nonce, block_hash, block_number,
+				from_address, to_address, transaction_timestamp,
+				value, transaction_type, status, text_data, extra_info, transaction_extra_info_type
+			)
+			VALUES %s
+			ON CONFLICT (chain_id, block_number, hash)
+			DO UPDATE SET
+				nonce = EXCLUDED.nonce,
+				block_hash = EXCLUDED.block_hash,
+				from_address = EXCLUDED.from_address,
+				to_address = EXCLUDED.to_address,
+				transaction_timestamp = EXCLUDED.transaction_timestamp,
+				value = EXCLUDED.value,
+				transaction_type = EXCLUDED.transaction_type,
+				status = EXCLUDED.status,
+				text_data = EXCLUDED.text_data,
+				extra_info = EXCLUDED.extra_info,
+				transaction_extra_info_type = EXCLUDED.transaction_extra_info_type,
+				updated_at = NOW()
+			RETURNING 
+				(xmax = 0) AS is_new,
+				transaction_extra_info_type,
+				status,
+				extra_info
+		)
+		SELECT
+			COUNT(*) FILTER (WHERE is_new) AS inserted_count,
+			COUNT(*) FILTER (WHERE is_new AND transaction_extra_info_type IN ($%s, $%s) AND status = $%s) AS new_give_coffee
+		FROM inserted;
+	`, strings.Join(valueStrings, ","), common.TransactionExtraInfoGiveCoffee.String(), common.TransactionExtraInfoDongGiveCoffee.String(), pb.TransactionStatus_FINALIZED)
 
-	// Count only newly inserted rows to compute accurate stats increment
-	var insertedCount int
-	if err := tx.QueryRowContext(ctx, insertTransactionsQuery, valueArgs...).Scan(&insertedCount); err != nil {
-		return nil, fmt.Errorf("failed to execute insert transactions count query: %w", err)
+	var insertedCount, newGiveCoffeeCount int
+
+	if err := tx.QueryRowContext(ctx, insertQuery, append(valueArgs, common.TransactionExtraInfoGiveCoffee.String(), common.TransactionExtraInfoDongGiveCoffee.String(), pb.TransactionStatus_FINALIZED)...).Scan(
+		&insertedCount,
+		&newGiveCoffeeCount,
+	); err != nil {
+		return nil, fmt.Errorf("failed insert tx: %w", err)
 	}
 
 	if insertedCount > 0 {
-		if _, err := tx.ExecContext(ctx, "INSERT INTO stats(key, value) VALUES ('total_transactions', $1) ON CONFLICT (key) DO UPDATE SET value = stats.value + $1", insertedCount); err != nil {
-			return nil, fmt.Errorf("failed to execute update stats query: %w", err)
+		_, err := tx.ExecContext(ctx, `
+			INSERT INTO stats(key, value)
+			VALUES ('total_transactions', $1)
+			ON CONFLICT (key) DO UPDATE SET value = stats.value + $1
+		`, insertedCount)
+		if err != nil {
+			return nil, fmt.Errorf("failed update total_transactions: %w", err)
 		}
 	}
 
-	addressStats := make(map[string]WalletStats)
-	for i := range transactions {
-		t := &transactions[i]
-		if t.FromAddress != "" {
-			stat := addressStats[t.FromAddress]
-			stat.Address = t.FromAddress
-			stat.TransactionCount++
-			if stat.MaxBlock == nil || t.BlockNumber.Cmp(stat.MaxBlock) > 0 {
-				stat.MaxBlock = new(big.Int).Set(t.BlockNumber)
-			}
-			addressStats[t.FromAddress] = stat
-		}
-		if t.ToAddress != "" {
-			stat := addressStats[t.ToAddress]
-			stat.Address = t.ToAddress
-			stat.TransactionCount++
-			if stat.MaxBlock == nil || t.BlockNumber.Cmp(stat.MaxBlock) > 0 {
-				stat.MaxBlock = new(big.Int).Set(t.BlockNumber)
-			}
-			addressStats[t.ToAddress] = stat
+	if newGiveCoffeeCount > 0 {
+		_, err := tx.ExecContext(ctx, `
+			INSERT INTO stats(key, value)
+			VALUES ('total_give_coffee', $1)
+			ON CONFLICT (key) DO UPDATE SET value = stats.value + $1
+		`, newGiveCoffeeCount)
+		if err != nil {
+			return nil, fmt.Errorf("failed update total_give_coffee: %w", err)
 		}
 	}
 
-	return addressStats, nil
+	walletStats := make(map[string]WalletStats)
+
+	for _, txObj := range transactions {
+		apply := func(addr string) {
+			if addr == "" {
+				return
+			}
+			stat := walletStats[addr]
+			stat.Address = addr
+			stat.TransactionCount++
+			if stat.MaxBlock == nil || txObj.BlockNumber.Cmp(stat.MaxBlock) > 0 {
+				stat.MaxBlock = new(big.Int).Set(txObj.BlockNumber)
+			}
+			walletStats[addr] = stat
+		}
+		apply(txObj.FromAddress)
+		apply(txObj.ToAddress)
+	}
+
+	return walletStats, nil
 }
 
 func (p *PostgresConnector) scanBlock(rows *sql.Rows, block *common.Block) error {
@@ -2072,6 +2131,15 @@ func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
 
 	averageBlockMs := int64(avgBlockTime * 1000)
 
+	var totalGiveCoffee int64
+	err = p.db.QueryRowContext(ctx, fmt.Sprintf(`
+		SELECT COUNT(*) FROM transactions
+		WHERE transaction_extra_info_type IN (%s, %s) AND status = %d
+	`, common.TransactionExtraInfoGiveCoffee.String(), common.TransactionExtraInfoDongGiveCoffee.String(), pb.TransactionStatus_FINALIZED)).Scan(&totalGiveCoffee)
+	if err != nil {
+		return fmt.Errorf("failed to count give_coffee transactions: %w", err)
+	}
+
 	statsUpdates := []struct {
 		key   string
 		value int64
@@ -2080,6 +2148,7 @@ func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
 		{"total_transactions", totalTransactions},
 		{"total_wallets", totalWallets},
 		{"average_block", averageBlockMs},
+		{"total_give_coffee", totalGiveCoffee},
 	}
 
 	for _, stat := range statsUpdates {

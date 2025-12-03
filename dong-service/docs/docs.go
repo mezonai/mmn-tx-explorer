@@ -2081,6 +2081,9 @@ const docTemplate = `{
         "models.SyncCampaignResponse": {
             "type": "object",
             "properties": {
+                "current_balance": {
+                    "type": "integer"
+                },
                 "recent_amount": {
                     "type": "integer"
                 },

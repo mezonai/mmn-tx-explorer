@@ -18,14 +18,14 @@ const (
 
 // Validation Errors
 const (
-	ErrInvalidRequestBody   = "Invalid request body"
-	ErrInvalidCampaignID    = "Invalid campaign ID"
-	ErrInvalidStatus        = "Invalid status"
-	ErrNoFieldsToUpdate     = "No fields to update"
-	ErrInvalidDateFormat    = "Invalid date format"
-	ErrEndDateInPast        = "End date must be in the future"
-	ErrInvalidGoalAmount    = "Goal amount must be greater than 0"
-	ErrInvalidURL           = "Invalid URL format"
+	ErrInvalidRequestBody = "Invalid request body"
+	ErrInvalidCampaignID  = "Invalid campaign ID"
+	ErrInvalidStatus      = "Invalid status"
+	ErrNoFieldsToUpdate   = "No fields to update"
+	ErrInvalidDateFormat  = "Invalid date format : must be YYYY-MM-DD"
+	ErrEndDateInPast      = "End date must be in the future"
+	ErrInvalidGoalAmount  = "Goal must be greater than 0 and less than or equal to 100 billion"
+	ErrInvalidURL         = "Invalid URL format"
 	ErrInternalServer       = "Internal server error"
 	ErrMissingRedEnvelopeID = "Red Envelope ID must not null"
 )
