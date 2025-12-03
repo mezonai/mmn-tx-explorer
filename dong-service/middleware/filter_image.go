@@ -9,7 +9,8 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
-	// "github.com/dutchcoders/go-clamd"
+	"github.com/dutchcoders/go-clamd"
+	"dong-service/services"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -39,6 +40,10 @@ func FilterImageMiddleware(cfg *config.Config) gin.HandlerFunc {
 		allowedExts := make(map[string]bool)
 		for _, ext := range cfg.FilterImage.AllowedTypes {
 			allowedExts[strings.ToLower(ext)] = true
+		}
+		allowedMimeTypes := make(map[string]bool)
+		for _, mt := range cfg.FilterImage.MimeTypes {
+			allowedMimeTypes[strings.ToLower(mt)] = true
 		}
 
 		for _, fh := range files {
@@ -72,7 +77,8 @@ func FilterImageMiddleware(cfg *config.Config) gin.HandlerFunc {
 				return
 			}
 			mimeType := http.DetectContentType(header)
-			if !strings.HasPrefix(mimeType, "image/") {
+			logger.Info().Str("filename", fh.Filename).Str("mime_type", mimeType).Msg("Detected MIME type")
+			if !allowedMimeTypes[strings.ToLower(mimeType)] {
 				logger.Warn().Str("filename", fh.Filename).Str("mime_type", mimeType).Msg("File is not an image")
 				c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, fmt.Sprintf("File '%s' is not an image (MIME Type: %s)", fh.Filename, mimeType)))
 				c.Abort()
@@ -84,21 +90,21 @@ func FilterImageMiddleware(cfg *config.Config) gin.HandlerFunc {
 				c.Abort()
 				return
 			}
-			// if cfg.FilterImage.EnableVirusScan {
-			// 	logger.Info().Str("filename", fh.Filename).Msg("Scanning file for viruses")
-			// 	if err := scanFile(f, cfg.FilterImage.VirusScanURL); err != nil {
-			// 		logger.Warn().Err(err).Str("filename", fh.Filename).Msg("Virus detected in file")
-			// 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "File contains a virus: "+err.Error()))
-			// 		c.Abort()
-			// 		return
-			// 	}
-			// 	if _, err := f.Seek(0, io.SeekStart); err != nil {
-			// 		logger.Error().Err(err).Str("filename", fh.Filename).Msg("Cannot reset file reader after virus scan")
-			// 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Cannot reset file reader: "+err.Error()))
-			// 		c.Abort()
-			// 		return
-			// 	}
-			// }
+			if cfg.FilterImage.EnableVirusScan {
+				logger.Info().Str("filename", fh.Filename).Msg("Scanning file for viruses")
+				if err := scanFile(f); err != nil {
+					logger.Warn().Err(err).Str("filename", fh.Filename).Msg("Virus detected in file")
+					c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "File contains a virus: "+err.Error()))
+					c.Abort()
+					return
+				}
+				if _, err := f.Seek(0, io.SeekStart); err != nil {
+					logger.Error().Err(err).Str("filename", fh.Filename).Msg("Cannot reset file reader after virus scan")
+					c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Cannot reset file reader: "+err.Error()))
+					c.Abort()
+					return
+				}
+			}
 
 			content, err := io.ReadAll(f)
 			if err != nil {
@@ -119,16 +125,16 @@ func FilterImageMiddleware(cfg *config.Config) gin.HandlerFunc {
 	}
 }
 
-// func scanFile(r io.Reader, virusScanURL string) error {
-// 	c := clamd.NewClamd(virusScanURL)
-// 	response, err := c.ScanStream(r, make(chan bool))
-// 	if err != nil {
-// 		return err
-// 	}
-// 	for s := range response {
-// 		if s.Status == clamd.RES_FOUND {
-// 			return fmt.Errorf("virus detected: %s", s.Description)
-// 		}
-// 	}
-// 	return nil
-// }
+func scanFile(r io.Reader) error {
+	c := services.ClamAV
+	response, err := c.ScanStream(r, make(chan bool))
+	if err != nil {
+		return err
+	}
+	for s := range response {
+		if s.Status == clamd.RES_FOUND {
+			return fmt.Errorf("virus detected: %s", s.Description)
+		}
+	}
+	return nil
+}

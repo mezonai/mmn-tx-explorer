@@ -12,22 +12,27 @@ import (
 	iface "github.com/ipfs/kubo/core/coreiface"
 	"github.com/ipfs/kubo/core/coreiface/options"
 	"github.com/multiformats/go-multiaddr"
+	"dong-service/logger"
 )
 
 type IPFSService struct {
 	client *rpc.HttpApi
 }
 
-func NewIPFSService(addr string) (*IPFSService, error) {
-	ma, err := multiaddr.NewMultiaddr(addr)
-	if err != nil {
-		return nil, err
-	}
-	client, err := rpc.NewApi(ma)
-	if err != nil {
-		return nil, err
-	}
-	return &IPFSService{client: client}, nil
+var IPFS *IPFSService
+
+func InitIPFSService(addr string) error {
+    ma, err := multiaddr.NewMultiaddr(addr)
+    if err != nil {
+        return err
+    }
+    client, err := rpc.NewApi(ma)
+    if err != nil {
+        return err
+    }
+    IPFS = &IPFSService{client: client}
+    logger.Info().Str("ipfs_address", addr).Msg("Connected to IPFS node successfully")
+    return nil
 }
 
 func (s *IPFSService) UploadImagesAsFolder(ctx context.Context, images map[string]io.Reader) (string, map[string]string, error) {

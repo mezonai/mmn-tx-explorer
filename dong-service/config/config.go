@@ -103,6 +103,7 @@ type RateLimitConfig struct {
 type FilterImageConfig struct {
 	MaxSizeUpload int `mapstructure:"max_size_upload"` 
 	EnableVirusScan bool `mapstructure:"enable_virus_scan"`
+	MimeTypes []string `mapstructure:"mime_types"`
 	AllowedTypes []string `mapstructure:"allowed_types"`
 	VirusScanURL string `mapstructure:"virus_scan_url"`
 	IPFSURL string `mapstructure:"ipfs_url"`

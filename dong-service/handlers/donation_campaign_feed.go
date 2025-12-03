@@ -155,10 +155,10 @@ func (h *DonationCampaignFeedHandler) UploadImage(c *gin.Context) {
 		images[file.NewName] = bytes.NewReader(file.Content)
 	}
 
-	ipfsSvc, err := services.NewIPFSService(h.cfg.FilterImage.IPFSURL)
-	if err != nil {
-		logger.Error().Err(err).Msg("Failed to init IPFS service")
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to init IPFS service: "+err.Error()))
+	ipfsSvc := services.IPFS
+	if ipfsSvc == nil {
+		logger.Error().Msg("IPFS service is not initialized")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "IPFS service is not initialized"))
 		return
 	}
 

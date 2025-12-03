@@ -78,7 +78,11 @@ rate_limit:
 
 # Image Filter Configuration
 filter_image:
-  max_size_upload: 5      
+  max_size_upload: 5 # MB
+  mime_types:
+    - "image/jpeg"
+    - "image/png"
+    - "image/jpg"      
   allowed_types:
     - ".jpeg"
     - ".png"
