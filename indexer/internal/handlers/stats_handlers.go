@@ -81,6 +81,7 @@ type DashboardStatsResponse struct {
 		TotalTransactions uint64  `json:"total_transactions"`
 		AverageBlockTime  float64 `json:"average_block_time"`
 		TotalWallets      uint64  `json:"total_wallets"`
+		TotalGiveCoffee   uint64  `json:"total_give_coffee"`
 	} `json:"data"`
 }
 
@@ -117,10 +118,11 @@ func handleDashboardStats(c *gin.Context) {
 	var (
 		totalBlocks, totalTransactions, totalWallets uint64
 		averageBlockTime                             float64
+		totalGiveCoffee                              uint64
 		err1                                         error
 	)
 
-	totalBlocks, totalTransactions, totalWallets, averageBlockTime, err1 = mainStorage.GetDashboardStats(ctx, countQf)
+	totalBlocks, totalTransactions, totalWallets, averageBlockTime, totalGiveCoffee, err1 = mainStorage.GetDashboardStats(ctx, countQf)
 	if err1 != nil {
 		log.Error().Err(err1).Msg("Error getting dashboard stats")
 		api.InternalErrorHandler(c)
@@ -132,6 +134,7 @@ func handleDashboardStats(c *gin.Context) {
 	resp.Data.TotalTransactions = totalTransactions
 	resp.Data.AverageBlockTime = averageBlockTime
 	resp.Data.TotalWallets = totalWallets
+	resp.Data.TotalGiveCoffee = totalGiveCoffee
 
 	c.JSON(http.StatusOK, resp)
 }
