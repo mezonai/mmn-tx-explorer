@@ -118,7 +118,7 @@ storage:
   # Main storage configuration - Primary data storage
   main:
     postgres:
-      host: localhost
+      host: postgres
       port: 5432
       username: admin
       password: password
@@ -132,7 +132,7 @@ storage:
   # Staging storage configuration - Temporary storage for data processing
   staging:
     postgres:
-      host: localhost
+      host: postgres
       port: 5432
       username: admin
       password: password
@@ -146,7 +146,7 @@ storage:
   # Orchestrator storage configuration - Storage for orchestration metadata
   orchestrator:
     postgres:
-      host: localhost
+      host: postgres
       port: 5432
       username: admin
       password: password
