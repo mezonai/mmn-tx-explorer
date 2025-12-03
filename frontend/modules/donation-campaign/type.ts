@@ -129,16 +129,17 @@ export interface TopContributorsResponse {
   };
 }
 
-export interface CampaignUpdates {
-  id: string;
-  campaign_id: string;
+export interface FeedExtraInfo {
   title: string;
-  content: string;
-  timestamp: number;
-  owner?: string;
-  images?: string[];
-  cid: string;
-  txHash: string;
+  description: string;
+  image_cids: string[];
+}
+
+export interface IDonationFeed {
+  id: number;
+  tx_hash: string;
+  owner_address: string;
+  campaign_address: string;
+  extra_info: FeedExtraInfo;
   created_at: string;
-  status: 'recent' | 'older' | 'hidden';
 }

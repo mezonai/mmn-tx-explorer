@@ -5,6 +5,7 @@ export * from './useCloseCampaign';
 export * from './useCreateCampaign';
 export * from './useRefreshCampaignRaised';
 export * from './useTopCampaigns';
-export * from './useUserDonations';
+export * from './useDonationFeed';
+export * from './useLatestDonationUpdate';
 export * from './useEditCampaign';
 export * from './useDeleteCampaign';

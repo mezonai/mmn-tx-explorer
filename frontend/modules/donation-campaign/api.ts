@@ -6,6 +6,7 @@ import {
   CreateCampaignRequest,
   DonationCampaign,
   TopContributorsResponse,
+  IDonationFeed,
 } from './type';
 import { DONATION_ENDPOINTS } from './constants';
 
@@ -65,13 +66,6 @@ export class DonationCampaignService {
     await apiDongClient.delete(DONATION_ENDPOINTS.DELETE_CAMPAIGN(id));
   }
 
-  static async getUserDonations(params: { page?: number; limit?: number } = {}) {
-    const { data } = await apiDongClient.get(DONATION_ENDPOINTS.MY_DONATIONS, {
-      params,
-    });
-    return data;
-  }
-
   static async closeCampaign(id: string): Promise<any> {
     const { data } = await apiDongClient.patch(DONATION_ENDPOINTS.CLOSE_CAMPAIGN(id));
     return data;
@@ -98,6 +92,20 @@ export class DonationCampaignService {
   static async refreshCampaignRaised(id: string): Promise<DonationCampaign> {
     const { data } = await apiDongClient.post<{ data: DonationCampaign }>(
       DONATION_ENDPOINTS.REFRESH_CAMPAIGN_RAISED(id)
+    );
+    return data.data;
+  }
+
+  static async getDonationFeed(address: string): Promise<IPaginatedResponse<IDonationFeed[]>> {
+    const { data } = await apiDongClient.get<IPaginatedResponse<IDonationFeed[]>>(
+      DONATION_ENDPOINTS.DONATION_FEED(address)
+    );
+    return data;
+  }
+
+  static async getLatestDonationUpdate(address: string): Promise<IDonationFeed> {
+    const { data } = await apiDongClient.get<{ data: IDonationFeed }>(
+      DONATION_ENDPOINTS.LATEST_DONATION_UPDATE(address)
     );
     return data.data;
   }

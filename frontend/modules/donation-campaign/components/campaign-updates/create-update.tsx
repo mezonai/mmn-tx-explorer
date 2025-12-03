@@ -106,7 +106,7 @@ export const CreateUpdate = () => {
         description="Share the latest news and progress of your donation campaign with your supporters."
       />
       <div className="my-3 flex w-full flex-col items-center justify-center py-5">
-        <Card className="border-primary/40 bg-tertiary shadow-brand-primary/10 w-full max-w-[700px] rounded-3xl border p-3 shadow-lg dark:border-white/10">
+        <Card className="border-primary/40 bg-card shadow-brand-primary/10 w-full max-w-[700px] rounded-3xl border p-3 shadow-lg dark:border-white/10">
           <CardHeader className="text-brand-primary border-none px-4 pt-3 text-left">
             <CardTitle className="text-primary text-lg font-semibold">Campaign Update</CardTitle>
             <Chip
@@ -119,11 +119,11 @@ export const CreateUpdate = () => {
           </CardHeader>
           <CardContent className="text-brand-primary space-y-5 p-5 text-left">
             <div className="">
-              <Input type="text" label="Title" className="bg-card dark:bg-background" />
+              <Input type="text" label="Title" className="bg-background mt-2" />
             </div>
 
             <div>
-              <Textarea rows={5} label="Description" className="bg-card dark:bg-background" />
+              <Textarea rows={5} label="Description" className="bg-background mt-2" />
             </div>
             <Separator className="my-4 w-full" />
             {isCompressing && (
@@ -176,7 +176,7 @@ export const CreateUpdate = () => {
                       variant="destructive"
                       size="sm"
                       onClick={handleRemoveAll}
-                      className="bg-destructive/80 hover:bg-destructive/70 dark:hover:bg-destructive/80 text-xs"
+                      className="bg-destructive/10 text-destructive hover:bg-destructive/20 dark:bg-destructive/60 dark:hover:bg-destructive/80 text-xs dark:text-white"
                     >
                       Remove all images
                     </Button>
@@ -186,8 +186,8 @@ export const CreateUpdate = () => {
               {previews.length === 0 && (
                 <div>
                   <p className="text-primary mb-1 text-xs tracking-[0.2em] uppercase dark:text-white">Upload Photos</p>
-                  <label className="bg-card dark:bg-background hover:border-brand-primary flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/10 p-6 text-center">
-                    <div className="bg-card dark:bg-background flex h-12 w-12 items-center justify-center rounded-xl text-3xl">
+                  <label className="bg-background hover:border-brand-primary border-muted-foreground mt-2 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed p-6 text-center">
+                    <div className="bg-background flex h-12 w-12 items-center justify-center rounded-xl text-3xl">
                       <Folder className="text-brand-primary" />
                     </div>
                     <p className="text-muted-foreground/70 text-sm">Click to upload images</p>
