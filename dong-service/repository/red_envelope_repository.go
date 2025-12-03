@@ -199,24 +199,13 @@ func (r *RedEnvelopeRepository) GetTotalClaimedAmount(id string) (int64, error) 
 }
 
 func (r *RedEnvelopeRepository) GetStatsByUser(userID int64) (map[string]interface{}, error) {
-	totalClaimedSentQuery := fmt.Sprintf(`
+	totalSentQuery := fmt.Sprintf(`
 		SELECT 
 			COALESCE(SUM(re.total_amount), 0) AS total_sent,
-			COUNT(DISTINCT re.id) AS count_sent_envelopes,
-			COALESCE(claim_stats.total_claimed_amount, 0) AS total_claimed,
-			COALESCE(claim_stats.count_claimed, 0) AS count_claimed_envelopes
+			COUNT(DISTINCT re.id) AS count_sent_envelopes
 		FROM %s.red_envelope re
-		LEFT JOIN (
-			SELECT 
-				rec.claimer_user_id, 
-				SUM(amount) AS total_claimed_amount, 
-				COUNT(id) AS count_claimed
-			FROM %s.red_envelope_claim rec
-			GROUP BY claimer_user_id
-		) claim_stats ON re.creator = claim_stats.claimer_user_id
-		WHERE re.creator = $1 AND re.status = ANY($2) 
-		GROUP BY total_claimed, count_claimed_envelopes;
-	`, r.dongSchema, r.dongSchema)
+		WHERE re.creator = $1 AND re.status = ANY($2);
+	`, r.dongSchema)
 
 	listStatus := []string{
 		constants.RedEnvelopeStatusPublished,
@@ -231,9 +220,24 @@ func (r *RedEnvelopeRepository) GetStatsByUser(userID int64) (map[string]interfa
 		TotalActiveEnvelopes  int64
 	}
 
-	err := r.db.QueryRow(totalClaimedSentQuery, userID, pq.Array(listStatus)).Scan(
+	err := r.db.QueryRow(totalSentQuery, userID, pq.Array(listStatus)).Scan(
 		&stats.TotalSend,
 		&stats.CountSentEnvelopes,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get stats: %w", err)
+	}
+
+	totalClaimedQuery := fmt.Sprintf(`
+		SELECT 
+			COALESCE(SUM(rec.amount), 0) AS total_claimed,
+			COUNT(rec.id) AS count_claimed_envelopes
+		FROM %s.red_envelope_claim rec
+		WHERE rec.claimer_user_id = $1;
+	`, r.dongSchema)
+
+	err = r.db.QueryRow(totalClaimedQuery, userID).Scan(
 		&stats.TotalClaimed,
 		&stats.CountClaimedEnvelopes,
 	)
@@ -267,30 +271,19 @@ func (r *RedEnvelopeRepository) GetStatsByUser(userID int64) (map[string]interfa
 }
 
 func (r *RedEnvelopeRepository) GetStats() (map[string]interface{}, error) {
-	totalClaimedSentQuery := fmt.Sprintf(`
-		SELECT COALESCE(SUM(rec.amount), 0) AS total_claimed
-		FROM %s.red_envelope_claim rec
-	`, r.dongSchema)
+	query := fmt.Sprintf(`
+		SELECT 
+			(SELECT COALESCE(SUM(rec.amount), 0) FROM %s.red_envelope_claim rec) AS total_claimed,
+			(SELECT COALESCE(COUNT(id), 0) FROM %s.red_envelope WHERE status = $1) AS count_active_envelopes
+	`, r.dongSchema, r.dongSchema)
 
 	var stats struct {
 		TotalClaimed         int64
 		TotalActiveEnvelopes int64
 	}
 
-	err := r.db.QueryRow(totalClaimedSentQuery).Scan(
+	err := r.db.QueryRow(query, constants.RedEnvelopeStatusPublished).Scan(
 		&stats.TotalClaimed,
-	)
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to get stats: %w", err)
-	}
-
-	totalActiveEnvelopesByUserQuery := fmt.Sprintf(`
-		SELECT COALESCE(count(id), 0) AS count_envelopes FROM %s.red_envelope
-		WHERE status = $1;
-	`, r.dongSchema)
-
-	err = r.db.QueryRow(totalActiveEnvelopesByUserQuery, constants.RedEnvelopeStatusPublished).Scan(
 		&stats.TotalActiveEnvelopes,
 	)
 
