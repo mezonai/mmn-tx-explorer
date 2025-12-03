@@ -23,15 +23,14 @@ export const SellerConfirmButton = ({ order, onConfirm }: SellerConfirmButtonPro
     <div>
       <Button
         onClick={handleConfirm}
-        className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-lg py-4 rounded-xl shadow-lg shadow-emerald-900/20 transition mb-4 flex items-center justify-center gap-2"
+        className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 py-4 text-lg font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-600"
       >
         <CheckCircle2 className="h-5 w-5" />
         Xác nhận đã nhận được tiền, chuyển MZD
       </Button>
-      <div className="text-center text-sm text-gray-500 px-4">
+      <div className="px-4 text-center text-sm text-gray-500">
         Chỉ ấn nút trên khi bạn đã thực sự nhận được tiền chuyển khoản từ người mua.
       </div>
     </div>
   );
 };
-

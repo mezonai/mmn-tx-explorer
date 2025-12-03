@@ -74,7 +74,6 @@ export const useP2POffers = (filters: P2PFilters) => {
 
   useEffect(() => {
     setIsLoading(true);
-    
     // Simulate API call
     setTimeout(() => {
       let filteredOffers = [...mockOffers];
@@ -84,9 +83,7 @@ export const useP2POffers = (filters: P2PFilters) => {
 
       // Filter by payment method
       if (filters.paymentMethod !== 'ALL') {
-        filteredOffers = filteredOffers.filter((offer) =>
-          offer.paymentMethods.includes(filters.paymentMethod)
-        );
+        filteredOffers = filteredOffers.filter((offer) => offer.paymentMethods.includes(filters.paymentMethod));
       }
 
       // Filter by friends/clan only
@@ -112,5 +109,3 @@ export const useP2POffers = (filters: P2PFilters) => {
 
   return { offers, isLoading };
 };
-
-
