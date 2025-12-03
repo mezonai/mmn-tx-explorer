@@ -19,6 +19,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { IZkProof, IEphemeralKeyPair } from 'mmn-client-js';
 import { safeJsonParse, clearAuthStorage } from '@/utils';
+import { WebSocketProvider } from './WebSocketProvider';
 
 interface AppContextType {
   isAuthenticated: boolean;
@@ -133,7 +134,11 @@ export function AppProvider({ children }: AppProviderProps) {
     setKeypair,
   };
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  return (
+    <AppContext.Provider value={value}>
+      <WebSocketProvider>{children}</WebSocketProvider>
+    </AppContext.Provider>
+  );
 }
 
 export function useApp(): AppContextType {
