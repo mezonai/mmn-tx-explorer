@@ -13,9 +13,7 @@ export class WalletService {
   }
 
   static async getWalletDetails(address: string): Promise<IResultResponse<IWalletDetails>> {
-    const { data } = await apiDongClient.get<IResultResponse<IWalletDetails>>(
-      buildPathWithChain(WALLET_ENDPOINTS.DETAILS(address))
-    );
+    const { data } = await apiDongClient.get<IResultResponse<IWalletDetails>>(WALLET_ENDPOINTS.DETAILS(address));
     return data;
   }
 }
