@@ -305,6 +305,8 @@ definitions:
     type: object
   models.SyncCampaignResponse:
     properties:
+      current_balance:
+        type: integer
       recent_amount:
         type: integer
       total_amount:

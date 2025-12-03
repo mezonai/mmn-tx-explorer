@@ -14,19 +14,20 @@ const (
 type RawTransaction = map[string]interface{}
 
 type Transaction struct {
-	ChainID              *big.Int  `json:"chain_id" ch:"chain_id" swaggertype:"string"`
-	Hash                 string    `json:"hash" ch:"hash"`
-	Nonce                uint64    `json:"nonce" ch:"nonce"`
-	BlockHash            string    `json:"block_hash" ch:"block_hash"`
-	BlockNumber          *big.Int  `json:"block_number" ch:"block_number" swaggertype:"string"`
-	FromAddress          string    `json:"from_address" ch:"from_address"`
-	ToAddress            string    `json:"to_address" ch:"to_address"`
-	TransactionTimestamp time.Time `json:"transaction_timestamp" ch:"transaction_timestamp"`
-	Value                string    `json:"value" ch:"value" swaggertype:"string"`
-	TransactionType      int32     `json:"transaction_type" ch:"transaction_type"`
-	Status               *uint64   `json:"status" ch:"status"`
-	TextData             string    `json:"text_data" ch:"text_data"`
-	ExtraInfo            string    `json:"extra_info" ch:"extra_info"`
+	ChainID                  *big.Int                 `json:"chain_id" ch:"chain_id" swaggertype:"string"`
+	Hash                     string                   `json:"hash" ch:"hash"`
+	Nonce                    uint64                   `json:"nonce" ch:"nonce"`
+	BlockHash                string                   `json:"block_hash" ch:"block_hash"`
+	BlockNumber              *big.Int                 `json:"block_number" ch:"block_number" swaggertype:"string"`
+	FromAddress              string                   `json:"from_address" ch:"from_address"`
+	ToAddress                string                   `json:"to_address" ch:"to_address"`
+	TransactionTimestamp     time.Time                `json:"transaction_timestamp" ch:"transaction_timestamp"`
+	Value                    string                   `json:"value" ch:"value" swaggertype:"string"`
+	TransactionType          int32                    `json:"transaction_type" ch:"transaction_type"`
+	Status                   *uint64                  `json:"status" ch:"status"`
+	TextData                 string                   `json:"text_data" ch:"text_data"`
+	ExtraInfo                string                   `json:"extra_info" ch:"extra_info"`
+	TransactionExtraInfoType TransactionExtraInfoType `json:"transaction_extra_info_type" ch:"transaction_extra_info_type"`
 }
 
 type DecodedTransactionData struct {
