@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WebSocket Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    #messages { border: 1px solid #ccc; padding: 10px; height: 200px; overflow-y: auto; }
+    #loginBtn { padding: 8px 16px; }
+  </style>
+</head>
+<body>
+  <h2>WebSocket Test</h2>
+  <label>User ID: <input type="text" id="userId" value="userB"></label>
+  <button id="loginBtn">Login (Connect WS)</button>
+  <h3>Messages from server:</h3>
+  <div id="messages"></div>
+
+  <script>
+    let ws;
+    document.getElementById('loginBtn').onclick = function() {
+      const userId = document.getElementById('userId').value;
+      ws = new WebSocket(`ws://localhost:8899/ws?user_id=${userId}`);
+      ws.onopen = function() {
+        document.getElementById('messages').innerHTML += '<div><b>Connected!</b></div>';
+      };
+      ws.onmessage = function(event) {
+        document.getElementById('messages').innerHTML += `<div>${event.data}</div>`;
+      };
+      ws.onclose = function() {
+        document.getElementById('messages').innerHTML += '<div><b>Disconnected!</b></div>';
+      };
+      ws.onerror = function(e) {
+        document.getElementById('messages').innerHTML += `<div style="color:red"><b>Error:</b> ${e.message}</div>`;
+      };
+    };
+  </script>
+</body>
+</html>
