@@ -1,3 +1,5 @@
+'use client';
+
 import { createContext, ReactNode, useCallback, useContext, useState } from "react";
 import { CreateRedEnvelopeForm, CreateRedEnvelopeRequest, RedEnvelope, UpdateStatusRedEnvelopeRequest } from "../type";
 import { DEFAULT_FORM_VALUES } from "../constants";
@@ -7,21 +9,27 @@ import { useTransfer } from "@/modules/transfer/hooks/useTransfer";
 import { toast } from "sonner";
 import { RedEnvelopeService } from "../api";
 import { ETransactionStatus, TransactionService } from "@/modules/transaction";
-import { NumberUtil } from "@/utils";
 import { useCreateRedEnvelope } from "../hooks/useCreateRedEnvelope";
+import { ROUTES } from "@/configs/routes.config";
+import { useRouter } from "next/navigation";
 
 interface CreateRedEnvelopeContextType {
   form: CreateRedEnvelopeForm;
   updateField: <K extends keyof CreateRedEnvelopeForm>(field: K, value: CreateRedEnvelopeForm[K]) => void;
   resetForm: () => void;
   toRequest: () => CreateRedEnvelopeRequest;
-  handleSubmit: () => void;
+  initiateCreation: () => void; 
+  confirmCreation: () => void;  
+  showConfirmModal: boolean;  
+  setShowConfirmModal: (show: boolean) => void;
   generatedEnvelope: RedEnvelope | null; 
   isPending: boolean; 
+  isSuccess: boolean;
 }
 const CreateRedEnvelopeContext = createContext<CreateRedEnvelopeContextType | undefined>(undefined);
 
 export function CreateRedEnvelopeProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const { transfer } = useTransfer();
   const createRedEnvelopeMutation = useCreateRedEnvelope();
   const { user } = useUser();
@@ -34,7 +42,8 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
     null
   );
   const [isProcessing, setIsProcessing] = useState(false);
-
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false)
 
   const resetForm = useCallback(() => {
     setForm(DEFAULT_FORM_VALUES);
@@ -57,13 +66,12 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
     };
   }, [form, user?.walletAddress]); 
 
-  const handleSubmit = useCallback(async () => {
-    setIsProcessing(true);
-    setGeneratedEnvelope(null); 
+  const initiateCreation = useCallback(async () => {
+    setIsSuccess(false)
+    setGeneratedEnvelope(null);
 
     try {
       if (!user || !user.id) {
-        setIsProcessing(false);
         toast.error("User not authenticated");
         return;
       }
@@ -94,9 +102,21 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
       if (form.totalAmount < form.amountMin * form.participantCount) {
         throw new Error("Total amount is insufficient for the minimum per participant.");
       } 
+      setShowConfirmModal(true);
 
+    } catch (error) {
+      const errMsg = error instanceof Error ? error.message : String(error);
+      toast.error(errMsg);
+    } 
+  }, [form, user, mmnClient]);
+
+  const confirmCreation = useCallback(async () => {
+    setShowConfirmModal(false); 
+    setIsProcessing(true);
+    let route = ROUTES.LUCKY_MONEY as string;
+    try {
       const envelope = await createRedEnvelopeMutation.mutateAsync(toRequest());
-  
+      
       const result = await transfer(
         {
           recipientAddress: envelope.red_envelope_wallet,
@@ -114,18 +134,16 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
 
         await new Promise((resolve) => setTimeout(resolve, 2000));
         const transactionDetail = await pollTransactionStatus(result.txHash);
-
-        let finalStatus: ETransactionStatus;
+        let finalStatus = ETransactionStatus.Failed;
         
         if (transactionDetail && transactionDetail.status === ETransactionStatus.Passed) {
           finalStatus = ETransactionStatus.Passed;
           toast.success('Create Lucky Money successfully');
+          route = ROUTES.LUCKY_MONEY_DETAIL(envelope.id)
           setGeneratedEnvelope(envelope);
-
         } else {
-          finalStatus = ETransactionStatus.Failed
-          toast.error('Could not confirm transaction. Setting envelope to failed.');
-           setGeneratedEnvelope(null);
+          toast.error('Could not confirm transaction. Create Lucky Money fail.');
+          setGeneratedEnvelope(null);
         }
 
         const req: UpdateStatusRedEnvelopeRequest = {
@@ -135,7 +153,7 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
         await RedEnvelopeService.updateRedEnvelopeStatus(req);
 
       } else {
-        toast.error('Transfer step failed.');
+        toast.error('Transfer step failed. Create Lucky Money fail.');
         const req: UpdateStatusRedEnvelopeRequest = {
           id: envelope.id,
           status: ETransactionStatus.Failed,
@@ -149,6 +167,9 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
     } finally {
       setIsProcessing(false);
     }
+    
+    router.push(route)
+    setIsSuccess(true)
   }, [form, user?.id, transfer, createRedEnvelopeMutation, mmnClient, toRequest]);
 
   return (
@@ -157,9 +178,13 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
         updateField, 
         resetForm, 
         toRequest, 
-        handleSubmit, 
+        initiateCreation, 
+        confirmCreation,  
+        showConfirmModal, 
+        setShowConfirmModal,
         generatedEnvelope, 
         isPending: isProcessing, 
+        isSuccess
       }}>
       {children}
     </CreateRedEnvelopeContext.Provider>

@@ -89,6 +89,8 @@ definitions:
         type: string
       owner:
         type: string
+      recent_amount:
+        type: integer
       slug:
         type: string
       status:
@@ -277,6 +279,8 @@ definitions:
     type: object
   models.SyncCampaignResponse:
     properties:
+      recent_amount:
+        type: integer
       total_amount:
         type: integer
       total_contributors:
@@ -604,6 +608,14 @@ paths:
         - total_amount
         in: query
         name: order_by
+        type: string
+      - description: Search (name or description)
+        in: query
+        name: q
+        type: string
+      - description: Search (name or description) (alias)
+        in: query
+        name: search
         type: string
       produces:
       - application/json
@@ -945,11 +957,35 @@ paths:
                 data:
                   type: object
               type: object
-        "500":
-          description: Internal Server Error
+        "400":
+          description: Bad Request
           schema:
             $ref: '#/definitions/models.Response'
       summary: Get red envelope statistics
+      tags:
+      - red_envelopes
+  /api/v1/red-envelopes/stats-by-user:
+    get:
+      consumes:
+      - application/json
+      description: Get overall statistics for red envelope sessions by user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Get red envelope statistics by user
       tags:
       - red_envelopes
   /api/v1/red-envelopes/update-status-red-envelope:
