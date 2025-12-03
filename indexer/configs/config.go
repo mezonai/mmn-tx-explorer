@@ -125,6 +125,10 @@ type TimeRangeConfig struct {
 	MaxLookbackYears int `mapstructure:"maxLookbackYears"`
 }
 
+type CORSConfig struct {
+	AllowedOrigins []string `mapstructure:"allowedOrigins"`
+}
+
 type APIConfig struct {
 	Host                string                   `mapstructure:"host"`
 	BasicAuth           BasicAuthConfig          `mapstructure:"basicAuth"`
@@ -133,6 +137,7 @@ type APIConfig struct {
 	AbiDecodingEnabled  bool                     `mapstructure:"abiDecodingEnabled"`
 	Thirdweb            ThirdwebConfig           `mapstructure:"thirdweb"`
 	TimeRange           TimeRangeConfig          `mapstructure:"timeRange"`
+	CORS                CORSConfig               `mapstructure:"cors"`
 }
 
 type BlockPublisherConfig struct {

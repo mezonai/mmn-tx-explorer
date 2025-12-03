@@ -118,7 +118,7 @@ storage:
   # Main storage configuration - Primary data storage
   main:
     postgres:
-      host: postgres
+      host: localhost
       port: 5432
       username: admin
       password: password
@@ -132,7 +132,7 @@ storage:
   # Staging storage configuration - Temporary storage for data processing
   staging:
     postgres:
-      host: postgres
+      host: localhost
       port: 5432
       username: admin
       password: password
@@ -146,7 +146,7 @@ storage:
   # Orchestrator storage configuration - Storage for orchestration metadata
   orchestrator:
     postgres:
-      host: postgres
+      host: localhost
       port: 5432
       username: admin
       password: password
@@ -187,6 +187,10 @@ api:
   timeRange:
     # Maximum lookback period in years for time-based queries
     maxLookbackYears: 1
+  # CORS configuration for API
+  cors:
+    allowedOrigins:
+      - "http://localhost:8080"
 
 # Publisher configuration - Settings for publishing data to message queues
 publisher:
