@@ -58,9 +58,6 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
   const handleConfirm = () => {
     if (amountMZD >= offer.limit.min && amountMZD <= Math.min(offer.limit.max, offer.available)) {
       // Console log đầy đủ thông tin khi xác nhận mua
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('🛒 CONFIRM BUY - Full Information');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('📦 Offer Information:', {
         offerId: offer.id,
         seller: {
@@ -95,21 +92,6 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
         exchangeRate: offer.exchangeRate,
         calculation: `${formatCurrency(amountMZD)} MZD × ${offer.exchangeRate.toLocaleString('vi-VN')} = ${formatCurrency(amountVND)} VND`,
       });
-      console.log('✅ Validation:', {
-        isValid: amountMZD >= offer.limit.min && amountMZD <= Math.min(offer.limit.max, offer.available),
-        minCheck: `${amountMZD} >= ${offer.limit.min} = ${amountMZD >= offer.limit.min}`,
-        maxCheck: `${amountMZD} <= ${Math.min(offer.limit.max, offer.available)} = ${amountMZD <= Math.min(offer.limit.max, offer.available)}`,
-        availableCheck: `${amountMZD} <= ${offer.available} = ${amountMZD <= offer.available}`,
-      });
-      console.log('📊 Summary:', {
-        'Người bán': offer.advertiser.username,
-        'Số MZD mua': `${formatCurrency(amountMZD)} MZD`,
-        'Số VND thanh toán': `${formatCurrency(amountVND)} VND`,
-        'Tỉ giá': `${offer.exchangeRate.toLocaleString('vi-VN')} VND/MZD`,
-        'Giới hạn giao dịch': `${formatCurrency(offer.limit.min)} - ${formatCurrency(offer.limit.max)} MZD`,
-        'MZD còn lại sau giao dịch': `${formatCurrency(offer.available - amountMZD)} MZD`,
-      });
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
       onConfirmBuy(amountMZD, amountVND);
     }
