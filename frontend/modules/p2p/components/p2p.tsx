@@ -9,8 +9,6 @@ import { CreateOfferModal } from './create-offer-modal';
 import { P2PFilters, P2POffer, CreateOfferFormData } from '../types/p2p.types';
 import { useP2POffers } from '../hooks/useP2POffers';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-// TODO: Remove after Phase 1 testing
-// import { WebSocketTest } from './websocket-test';
 
 export const P2P = () => {
   const [filters, setFilters] = useState<P2PFilters>({
@@ -45,8 +43,6 @@ export const P2P = () => {
 
   return (
     <div className="w-full space-y-6">
-      {/* TODO: Remove WebSocketTest after Phase 1 testing */}
-      {/* <WebSocketTest /> */}
       <P2PHeader />
 
       <Tabs defaultValue="offers" className="w-full">

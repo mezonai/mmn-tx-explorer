@@ -2,11 +2,13 @@
 
 import { useP2POrder } from '../../hooks/useP2POrder';
 import { useP2PChat } from '../../hooks/useP2PChat';
+import { useUser } from '@/providers/AppProvider';
 import { TradingRoomHeader } from './trading-room-header';
 import { ProgressSteps } from './progress-steps';
 import { OrderInfoCard } from './order-info-card';
 import { BankInfoCard } from './bank-info-card';
 import { PaymentActionButton } from './payment-action-button';
+import { SellerConfirmButton } from './seller-confirm-button';
 import { ChatSidebar } from './chat/chat-sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo } from 'react';
@@ -16,17 +18,33 @@ interface TradingRoomProps {
   currentUserId?: string; // TODO: Get from auth context
 }
 
-export const TradingRoom = ({ orderId, currentUserId = 'buyer1' }: TradingRoomProps) => {
+export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
+  const { user } = useUser();
   const { order, isLoading: orderLoading, updateOrderStatus } = useP2POrder(orderId);
   const { messages, isLoading: chatLoading, sendMessage } = useP2PChat(orderId);
 
+  // Detect user role (buyer or seller)
+  const userRole = useMemo(() => {
+    if (!user?.id || !order) return null;
+    if (order.buyerId === user.id) return 'buyer';
+    if (order.sellerId === user.id) return 'seller';
+    return null;
+  }, [user?.id, order]);
+
   const handlePaymentConfirmed = () => {
+    updateOrderStatus('WAIT_CONFIRM');
+    // TODO: Call API to update order status
+  };
+
+  const handleSellerConfirm = () => {
     updateOrderStatus('PAYMENT_CONFIRMED');
     // TODO: Call API to update order status
   };
 
   const handleSendMessage = (content: string) => {
-    sendMessage(content, currentUserId, 'buyer');
+    const userId = user?.id || currentUserId || 'user1';
+    const senderType = userRole === 'buyer' ? 'buyer' : 'seller';
+    sendMessage(content, userId, senderType);
   };
 
   if (orderLoading || !order) {
@@ -52,13 +70,20 @@ export const TradingRoom = ({ orderId, currentUserId = 'buyer1' }: TradingRoomPr
           <ProgressSteps order={order} />
           <OrderInfoCard order={order} />
           <BankInfoCard order={order} />
-          <PaymentActionButton order={order} onPaymentConfirmed={handlePaymentConfirmed} />
+          
+          {/* Conditional rendering based on user role */}
+          {userRole === 'buyer' && (
+            <PaymentActionButton order={order} onPaymentConfirmed={handlePaymentConfirmed} />
+          )}
+          {userRole === 'seller' && (
+            <SellerConfirmButton order={order} onConfirm={handleSellerConfirm} />
+          )}
         </div>
 
         {/* Chat Sidebar (Right Side) */}
         <ChatSidebar
           messages={messages}
-          currentUserId={currentUserId}
+          currentUserId={user?.id || currentUserId || ''}
           onSendMessage={handleSendMessage}
           isLoading={chatLoading}
         />

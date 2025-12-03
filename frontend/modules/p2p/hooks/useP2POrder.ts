@@ -42,7 +42,3 @@ export const useP2POrder = (orderId: string) => {
 
   return { order, isLoading, updateOrderStatus };
 };
-
-
-
-
