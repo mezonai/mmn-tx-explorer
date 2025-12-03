@@ -10,12 +10,10 @@ export const getTransactionTypeLabel = (type: ETransferType): string => {
       return 'Withdraw Campaign';
     case ETransferType.LuckyMoney:
       return 'Lucky Money';
+    case ETransferType.DongGiveCoffee:
+      return 'Dong Give Coffee';
     default:
       return 'Token Transfer';
-    case ETransactionType.DonationCampaign:
-      return 'Donation Campaign';
-    case ETransactionType.WithdrawCampaign:
-      return 'Withdraw Campaign';
   }
 };
 
