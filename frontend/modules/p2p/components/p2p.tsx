@@ -4,9 +4,13 @@ import { useState } from 'react';
 import { P2PHeader } from './p2p-header';
 import { P2PFiltersComponent } from './p2p-filters';
 import { P2POffersTable } from './p2p-offers-table';
+import { P2POrdersList } from './p2p-orders-list';
 import { CreateOfferModal } from './create-offer-modal';
 import { P2PFilters, P2POffer, CreateOfferFormData } from '../types/p2p.types';
 import { useP2POffers } from '../hooks/useP2POffers';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+// TODO: Remove after Phase 1 testing
+// import { WebSocketTest } from './websocket-test';
 
 export const P2P = () => {
   const [filters, setFilters] = useState<P2PFilters>({
@@ -41,13 +45,30 @@ export const P2P = () => {
 
   return (
     <div className="w-full space-y-6">
+      {/* TODO: Remove WebSocketTest after Phase 1 testing */}
+      {/* <WebSocketTest /> */}
       <P2PHeader />
-      <P2PFiltersComponent
-        filters={filters}
-        onFiltersChange={handleFiltersChange}
-        onNewOfferClick={handleNewOfferClick}
-      />
-      <P2POffersTable offers={offers} isLoading={isLoading} onOfferClick={handleOfferClick} />
+
+      <Tabs defaultValue="offers" className="w-full">
+        <TabsList>
+          <TabsTrigger value="offers">Offers</TabsTrigger>
+          <TabsTrigger value="orders">My Orders</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="offers" className="space-y-6">
+          <P2PFiltersComponent
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            onNewOfferClick={handleNewOfferClick}
+          />
+          <P2POffersTable offers={offers} isLoading={isLoading} onOfferClick={handleOfferClick} />
+        </TabsContent>
+
+        <TabsContent value="orders" className="space-y-6">
+          <P2POrdersList />
+        </TabsContent>
+      </Tabs>
+
       <CreateOfferModal
         open={isCreateOfferModalOpen}
         onOpenChange={setIsCreateOfferModalOpen}

@@ -40,7 +40,7 @@ export interface CreateOfferFormData {
   accountNumber: string; // Số tài khoản ngân hàng
 }
 
-export type OrderStatus = 'PAYMENT_PENDING' | 'PAYMENT_CONFIRMED' | 'COMPLETED' | 'CANCELLED';
+export type OrderStatus = 'PAYMENT_PENDING' | 'WAIT_CONFIRM' | 'PAYMENT_CONFIRMED' | 'COMPLETED' | 'CANCELLED';
 
 export interface P2POrder {
   id: string; // Order ID (ví dụ: "19283746")
