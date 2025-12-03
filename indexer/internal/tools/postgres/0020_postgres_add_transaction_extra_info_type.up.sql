@@ -12,7 +12,7 @@ ALTER TABLE transactions ADD COLUMN IF NOT EXISTS transaction_extra_info_type tr
 UPDATE transactions
 SET transaction_extra_info_type = (
     CASE 
-        WHEN value < 1000000 OR extra_info IS NULL OR extra_info = '' OR extra_info !~ '^\s*\{.*\}\s*$' THEN 'token-transfer'
+        WHEN extra_info IS NULL OR extra_info = '' OR extra_info !~ '^\s*\{.*\}\s*$' THEN 'token-transfer'
         WHEN extra_info::jsonb ->> 'type' = 'dong-give-coffee' THEN 'dong-give-coffee'
         WHEN extra_info::jsonb ->> 'type' = 'give-coffee' THEN 'give-coffee'
         WHEN extra_info::jsonb ->> 'type' = 'donation-campaign' THEN 'donation-campaign'
