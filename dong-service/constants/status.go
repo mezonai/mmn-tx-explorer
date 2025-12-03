@@ -17,12 +17,12 @@ const ChainSymbol = "đồng"
 
 // Offer-related statuses and event types (renamed from Order)
 const (
-	OfferStatusPending   = "PENDING"
-	OfferStatusConfirmed = "CONFIRMED"
-	OfferStatusPartial   = "PARTIAL"
-	OfferStatusFilled    = "FILLED"
-	OfferStatusCanceled  = "CANCELED"
-	OfferStatusFailed    = "FAILED"
+	TradingPending   = "PENDING"
+	TradingConfirmed = "CONFIRMED"
+	TradingPartial   = "PARTIAL"
+	TradingFilled    = "FILLED"
+	TradingCanceled  = "CANCELED"
+	TradingFailed    = "FAILED"
 )
 
 const (
@@ -31,18 +31,6 @@ const (
 )
 
 const (
-	OfferEventCreatedPending   = "CREATED_PENDING"
-	OfferEventCreatedConfirmed = "CREATED_CONFIRMED"
-	OfferEventPartialFill      = "PARTIAL_FILL"
-	OfferEventFill             = "FILL"
-	OfferEventCanceled         = "CANCELED"
-	OfferEventUpdated          = "UPDATED"
-	OfferEventFailed           = "FAILED"
-)
-
-// Transaction Status Constants
-const (
-	// TransactionStatusFINALIZED represents a finalized transaction
 	TransactionStatusFINALIZED int16 = 2
 )
 

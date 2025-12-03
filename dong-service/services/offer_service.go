@@ -81,7 +81,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		PriceType:            priceType,
 		PriceReference:       req.PriceReference,
 		Spread:               req.Spread,
-		Status:               constants.OfferStatusPending,
+		Status:               constants.TradingPending,
 		ExternalRef:          req.ExternalRef,
 		Metadata:             metadataStr,
 		ExpiresAt:            req.ExpiresAt,
@@ -98,7 +98,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 
 	history := &models.OfferHistory{
 		OfferID:   offer.OfferID,
-		EventType: constants.OfferEventCreatedPending,
+		EventType: constants.TradingPending,
 		Quantity:  offer.Quantity,
 		Metadata:  offer.Metadata,
 	}
@@ -124,14 +124,14 @@ func (s *OfferService) ConfirmOffer(ctx context.Context, offerID int64, executio
 		return err
 	}
 
-	if err := s.repo.UpdateOfferStatus(ctx, offerID, constants.OfferStatusConfirmed, tx); err != nil {
+	if err := s.repo.UpdateOfferStatus(ctx, offerID, constants.TradingConfirmed, tx); err != nil {
 		_ = tx.Rollback()
 		return err
 	}
 
 	hist := &models.OfferHistory{
 		OfferID:        offerID,
-		EventType:      constants.OfferEventCreatedConfirmed,
+		EventType:      constants.TradingConfirmed,
 		Quantity:       "0",
 		ExecutionPrice: executionPrice,
 		Source:         source,
