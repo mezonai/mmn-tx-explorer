@@ -12,6 +12,7 @@ const generateMockOrders = (sellerId: string, sellerUsername: string): P2POrder[
     sellerUsername,
     amountMZD: 2545000,
     amountVND: 2545000,
+    exchangeRate: 1.0,
     status: 'PAYMENT_PENDING',
     createdAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
     expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
@@ -30,6 +31,7 @@ const generateMockOrders = (sellerId: string, sellerUsername: string): P2POrder[
     sellerUsername,
     amountMZD: 1000000,
     amountVND: 1000000,
+    exchangeRate: 1.0,
     status: 'WAIT_CONFIRM',
     createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
     expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
@@ -77,4 +79,3 @@ export const useP2POrders = () => {
 
   return { orders, isLoading, refetch };
 };
-

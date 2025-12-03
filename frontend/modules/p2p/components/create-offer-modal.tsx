@@ -125,15 +125,15 @@ export const CreateOfferModal = ({ open, onOpenChange, onSubmit }: CreateOfferMo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto border-gray-300 dark:border-gray-800">
-        <DialogHeader className="bg-gray-900/50 dark:bg-gray-900/50 -mx-6 -mt-6 px-6 py-4 border-b border-gray-800">
+      <DialogContent className="h-[95vh] max-w-6xl overflow-y-auto border-gray-300 dark:border-gray-800">
+        <DialogHeader className="-mx-6 -mt-6 border-b border-gray-800 bg-gray-900/50 px-6 py-4 dark:bg-gray-900/50">
           <DialogTitle className="text-lg font-bold text-white">Đăng quảng cáo mới</DialogTitle>
           <DialogDescription className="text-xs text-gray-400">
             Tạo lệnh mua/bán MZD với tỉ giá tùy chỉnh
           </DialogDescription>
         </DialogHeader>
 
-        <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 gap-8 p-6 lg:grid-cols-3">
           {/* Phần 1: Loại lệnh & Tài sản */}
           <TradeTypeSection
             tradeType={formData.tradeType}
@@ -164,17 +164,17 @@ export const CreateOfferModal = ({ open, onOpenChange, onSubmit }: CreateOfferMo
           />
         </div>
 
-        <DialogFooter className="border-t border-gray-800 bg-gray-900/30 -mx-6 -mb-6 px-4 py-4 flex justify-end gap-3">
+        <DialogFooter className="-mx-6 -mb-6 flex justify-end gap-3 border-t border-gray-800 bg-gray-900/30 px-4 py-4">
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            className="px-5 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 font-medium"
+            className="px-5 py-2 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white"
           >
             Hủy bỏ
           </Button>
           <Button
             onClick={handleSubmit}
-            className="bg-brand-primary hover:bg-violet-600 text-white font-bold text-sm px-8 py-2 shadow-lg shadow-violet-900/20 transition flex items-center gap-2"
+            className="bg-brand-primary flex items-center gap-2 px-8 py-2 text-sm font-bold text-white shadow-lg shadow-violet-900/20 transition hover:bg-violet-600"
           >
             <Send className="h-3 w-3" />
             Đăng Quảng Cáo
@@ -184,4 +184,3 @@ export const CreateOfferModal = ({ open, onOpenChange, onSubmit }: CreateOfferMo
     </Dialog>
   );
 };
-

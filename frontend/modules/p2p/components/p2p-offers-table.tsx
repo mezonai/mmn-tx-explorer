@@ -8,7 +8,6 @@ import { TTableColumn } from '@/types';
 import { P2POffer } from '../types/p2p.types';
 import { AdvertiserInfo } from './advertiser-info';
 import { PaymentMethods } from './payment-methods';
-import { ROUTES } from '@/configs/routes.config';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -54,8 +53,9 @@ export const P2POffersTable = ({ offers, isLoading = false, onOfferClick }: P2PO
           >
             {offer.totalMZD.toLocaleString('vi-VN')} <span className="text-xs font-normal text-gray-500">MZD</span>
           </div>
-          <div className="text-sm text-gray-400 mt-1">
-            Tỉ giá: <span className="text-brand-primary font-semibold">
+          <div className="mt-1 text-sm text-gray-400">
+            Tỉ giá:{' '}
+            <span className="text-brand-primary font-semibold">
               {offer.exchangeRate.toLocaleString('vi-VN')} VND/MZD
             </span>
           </div>

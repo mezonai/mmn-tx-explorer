@@ -2,24 +2,15 @@
 
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { TradeType, PaymentMethod, P2PFilters } from '../types/p2p.types';
-import { Plus, ChevronDown, Shield } from 'lucide-react';
+import { TradeType, P2PFilters } from '../types/p2p.types';
+import { Plus, ChevronDown } from 'lucide-react';
 
 interface P2PFiltersProps {
   filters: P2PFilters;
   onFiltersChange: (filters: P2PFilters) => void;
   onNewOfferClick?: () => void;
 }
-
-const paymentMethodOptions: { value: PaymentMethod; label: string }[] = [
-  { value: 'ALL', label: 'Tất cả thanh toán' },
-  { value: 'BANK_TRANSFER', label: 'Chuyển khoản NH' },
-  { value: 'MOMO', label: 'Momo' },
-  { value: 'TPBANK', label: 'TPBank' },
-  { value: 'VIETCOMBANK', label: 'Vietcombank' },
-];
 
 export const P2PFiltersComponent = ({ filters, onFiltersChange, onNewOfferClick }: P2PFiltersProps) => {
   const [localAmount, setLocalAmount] = useState<string>(filters.amount?.toString() || '');
@@ -36,14 +27,6 @@ export const P2PFiltersComponent = ({ filters, onFiltersChange, onNewOfferClick 
     } else if (value === '') {
       onFiltersChange({ ...filters, amount: undefined });
     }
-  };
-
-  const handlePaymentMethodChange = (value: PaymentMethod) => {
-    onFiltersChange({ ...filters, paymentMethod: value });
-  };
-
-  const handleFriendsOnlyChange = (checked: boolean) => {
-    onFiltersChange({ ...filters, friendsOnly: checked });
   };
 
   return (
@@ -74,8 +57,8 @@ export const P2PFiltersComponent = ({ filters, onFiltersChange, onNewOfferClick 
         </div>
 
         {/* Currency Selector */}
-        <div className="flex items-center gap-2 rounded-lg border border-gray-300 bg-card px-3 py-1 dark:border-gray-700 dark:bg-card">
-          <span className="font-bold text-brand-primary">MZD</span>
+        <div className="bg-card dark:bg-card flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-1 dark:border-gray-700">
+          <span className="text-brand-primary font-bold">MZD</span>
           <ChevronDown className="h-3 w-3 text-gray-400" />
         </div>
       </div>
@@ -84,13 +67,13 @@ export const P2PFiltersComponent = ({ filters, onFiltersChange, onNewOfferClick 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         {/* Amount Input */}
         <div className="relative">
-          <span className="absolute left-3 top-3 text-sm text-gray-400">MZD</span>
+          <span className="absolute top-3 left-3 text-sm text-gray-400">MZD</span>
           <Input
             type="number"
             placeholder="Nhập số MZD muốn mua (VD: 1000)"
             value={localAmount}
             onChange={(e) => handleAmountChange(e.target.value)}
-            className="w-full bg-card border-gray-300 py-2.5 pl-12 pr-4 focus:border-brand-primary transition dark:border-gray-700"
+            className="bg-card focus:border-brand-primary w-full border-gray-300 py-2.5 pr-4 pl-12 dark:border-gray-700"
           />
         </div>
 
@@ -126,13 +109,12 @@ export const P2PFiltersComponent = ({ filters, onFiltersChange, onNewOfferClick 
         {/* New Offer Button */}
         <Button
           onClick={onNewOfferClick}
-          className="h-full w-full bg-[#3c8d35] hover:bg-[#327a2c] text-white font-bold text-xl py-2.5 shadow-lg transition"
+          className="h-full w-full bg-[#3c8d35] py-2.5 text-xl font-bold text-white shadow-lg transition hover:bg-[#327a2c]"
         >
-          <Plus className="h-5 w-5 mr-2" />
+          <Plus className="mr-2 h-5 w-5" />
           New offer
         </Button>
       </div>
     </div>
   );
 };
-

@@ -36,10 +36,7 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
       setAmountMZD(0);
     } else {
       // Validate min/max
-      const validatedValue = Math.max(
-        offer.limit.min,
-        Math.min(rawValue, Math.min(offer.limit.max, offer.available))
-      );
+      const validatedValue = Math.max(offer.limit.min, Math.min(rawValue, Math.min(offer.limit.max, offer.available)));
       const formatted = formatCurrency(validatedValue);
       setDisplayValue(formatted);
       setAmountMZD(validatedValue);
@@ -47,10 +44,7 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
   };
 
   const setQuickAmount = (value: number) => {
-    const validatedValue = Math.max(
-      offer.limit.min,
-      Math.min(value, Math.min(offer.limit.max, offer.available))
-    );
+    const validatedValue = Math.max(offer.limit.min, Math.min(value, Math.min(offer.limit.max, offer.available)));
     setDisplayValue(formatCurrency(validatedValue));
     setAmountMZD(validatedValue);
   };
@@ -97,15 +91,12 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
     }
   };
 
-  const isValidAmount =
-    amountMZD >= offer.limit.min && amountMZD <= Math.min(offer.limit.max, offer.available);
+  const isValidAmount = amountMZD >= offer.limit.min && amountMZD <= Math.min(offer.limit.max, offer.available);
 
   return (
-    <div className="space-y-4 mb-6">
+    <div className="mb-6 space-y-4">
       <div>
-        <label className="block text-sm text-gray-400 mb-2 font-medium">
-          Số lượng MZD muốn mua
-        </label>
+        <label className="mb-2 block text-sm font-medium text-gray-400">Số lượng MZD muốn mua</label>
         <div className="relative">
           <Input
             type="text"
@@ -114,51 +105,49 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
             )}`}
             value={displayValue}
             onChange={handleInputChange}
-            className="w-full bg-input/30 dark:bg-input/30 border-gray-700 rounded-md px-3 py-2.5 text-white focus:border-brand-primary focus:outline-none font-bold text-lg placeholder-gray-600"
+            className="bg-input/30 dark:bg-input/30 focus:border-brand-primary w-full rounded-md border-gray-700 px-3 py-2.5 text-lg font-bold text-white placeholder-gray-600 focus:outline-none"
           />
-          <span className="absolute right-3 top-3.5 text-gray-500 text-xs font-bold">MZD</span>
+          <span className="absolute top-3.5 right-3 text-xs font-bold text-gray-500">MZD</span>
         </div>
-        <div className="text-xs text-gray-500 mt-1">
-          Khả dụng: {formatCurrency(offer.available)} MZD
-        </div>
+        <div className="mt-1 text-xs text-gray-500">Khả dụng: {formatCurrency(offer.available)} MZD</div>
       </div>
 
       <div className="grid grid-cols-4 gap-2">
         <button
           onClick={() => setQuickAmount(offer.limit.min)}
-          className="py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded text-xs text-gray-300 transition"
+          className="rounded border border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 transition hover:bg-gray-700"
         >
           Min
         </button>
         <button
           onClick={() => setQuickAmount(Math.floor(offer.available / 4))}
-          className="py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded text-xs text-gray-300 transition"
+          className="rounded border border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 transition hover:bg-gray-700"
         >
           25%
         </button>
         <button
           onClick={() => setQuickAmount(Math.floor(offer.available / 2))}
-          className="py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded text-xs text-gray-300 transition"
+          className="rounded border border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 transition hover:bg-gray-700"
         >
           50%
         </button>
         <button
           onClick={() => setQuickAmount(Math.min(offer.available, offer.limit.max))}
-          className="py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded text-xs text-gray-300 transition"
+          className="rounded border border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 transition hover:bg-gray-700"
         >
           Max
         </button>
       </div>
 
       {amountMZD > 0 && (
-        <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg px-4 py-4">
-          <div className="flex justify-between items-center mb-2">
+        <div className="rounded-lg border border-gray-700/50 bg-gray-800/50 px-4 py-4">
+          <div className="mb-2 flex items-center justify-between">
             <span className="text-sm text-gray-400">Số tiền cần thanh toán</span>
             <span className="text-2xl font-bold text-green-400">
               {formatCurrency(amountVND)} <span className="text-sm">VND</span>
             </span>
           </div>
-          <div className="flex justify-between items-center text-xs text-gray-500">
+          <div className="flex items-center justify-between text-xs text-gray-500">
             <span>Tỉ giá: {offer.exchangeRate.toLocaleString('vi-VN')} VND/MZD</span>
             <span>≈ {formatCurrency(amountMZD)} MZD</span>
           </div>
@@ -168,14 +157,14 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
       <Button
         onClick={handleConfirm}
         disabled={!isValidAmount || isLoading}
-        className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-lg py-4 rounded-xl shadow-lg shadow-emerald-900/20 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 py-4 text-lg font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <CheckCircle2 className="h-5 w-5" />
         {isLoading ? 'Đang xử lý...' : 'Xác nhận mua'}
       </Button>
 
       {!isValidAmount && amountMZD > 0 && (
-        <p className="text-xs text-red-500 text-center">
+        <p className="text-center text-xs text-red-500">
           Số lượng phải từ {formatCurrency(offer.limit.min)} đến{' '}
           {formatCurrency(Math.min(offer.limit.max, offer.available))} MZD
         </p>
@@ -183,4 +172,3 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
     </div>
   );
 };
-

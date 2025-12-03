@@ -34,7 +34,7 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
   const { offer, isLoading: offerLoading } = useP2POffer(isOfferMode ? orderId : null);
   const { createOrder, isLoading: isCreatingOrder } = useCreateOrder();
   const { messages, isLoading: chatLoading, sendMessage } = useP2PChat(isOfferMode ? '' : orderId);
-  
+
   const [error, setError] = useState<string | null>(null);
   const [createdOrder, setCreatedOrder] = useState<P2POrder | null>(null); // Store created order locally
 
@@ -96,11 +96,11 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
   // Loading state
   if ((isOfferMode && offerLoading && !createdOrder) || (!isOfferMode && (orderLoading || !order) && !createdOrder)) {
     return (
-      <div className="flex flex-col h-screen">
-        <div className="h-14 border-b border-gray-800 bg-card" />
+      <div className="flex h-screen flex-col">
+        <div className="bg-card h-14 border-b border-gray-800" />
         <div className="flex-1 p-6">
-          <Skeleton className="h-20 w-full mb-6" />
-          <Skeleton className="h-64 w-full mb-6" />
+          <Skeleton className="mb-6 h-20 w-full" />
+          <Skeleton className="mb-6 h-64 w-full" />
           <Skeleton className="h-48 w-full" />
         </div>
       </div>
@@ -130,18 +130,18 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
     };
 
     return (
-      <div className="flex flex-col h-screen bg-background">
-        <div className="h-14 border-b border-gray-800 bg-card flex items-center px-6 justify-between shrink-0">
+      <div className="bg-background flex h-screen flex-col">
+        <div className="bg-card flex h-14 shrink-0 items-center justify-between border-b border-gray-800 px-6">
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.back()}
-              className="text-gray-400 hover:text-white transition"
+              className="text-gray-400 transition hover:text-white"
               aria-label="Go back"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div>
-              <h1 className="font-bold text-white text-sm">
+              <h1 className="text-sm font-bold text-white">
                 {createdOrder ? `Đơn mua MZD #${createdOrder.id}` : `Mua MZD từ ${offer?.advertiser.username}`}
               </h1>
               {!createdOrder && (
@@ -155,22 +155,18 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
 
         <div className="flex flex-1 overflow-hidden">
           {/* Main Content (Left Side) */}
-          <div className="w-full md:w-7/12 lg:w-8/12 p-6 overflow-y-auto border-r border-gray-800">
+          <div className="overflow-y-auto border-r border-gray-800 p-6 md:w-7/12 lg:w-8/12">
             <ProgressSteps order={displayOrder} />
 
             {error && (
-              <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+              <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
                 {error}
               </div>
             )}
 
             {/* Show BuyAmountSection if order not created yet */}
             {!createdOrder && offer && (
-              <BuyAmountSection
-                offer={offer}
-                onConfirmBuy={handleConfirmBuy}
-                isLoading={isCreatingOrder}
-              />
+              <BuyAmountSection offer={offer} onConfirmBuy={handleConfirmBuy} isLoading={isCreatingOrder} />
             )}
 
             {/* Show OrderInfoCard, BankInfoCard, and PaymentActionButton if order is created */}
@@ -200,11 +196,11 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
   // Order mode - Show normal trading room
   if (!order) {
     return (
-      <div className="flex flex-col h-screen">
-        <div className="h-14 border-b border-gray-800 bg-card" />
-        <div className="flex-1 p-6 flex items-center justify-center">
+      <div className="flex h-screen flex-col">
+        <div className="bg-card h-14 border-b border-gray-800" />
+        <div className="flex flex-1 items-center justify-center p-6">
           <div className="text-center">
-            <h2 className="text-xl font-bold text-white mb-2">Không tìm thấy đơn hàng</h2>
+            <h2 className="mb-2 text-xl font-bold text-white">Không tìm thấy đơn hàng</h2>
             <p className="text-gray-400">Đơn hàng này không tồn tại hoặc đã bị xóa.</p>
           </div>
         </div>
@@ -213,23 +209,19 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="bg-background flex h-screen flex-col">
       <TradingRoomHeader order={order} />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Main Content (Left Side) */}
-        <div className="w-full md:w-7/12 lg:w-8/12 p-6 overflow-y-auto border-r border-gray-800">
+        <div className="overflow-y-auto border-r border-gray-800 p-6 md:w-7/12 lg:w-8/12">
           <ProgressSteps order={order} />
           <OrderInfoCard order={order} />
           <BankInfoCard order={order} />
-          
+
           {/* Conditional rendering based on user role */}
-          {userRole === 'buyer' && (
-            <PaymentActionButton order={order} onPaymentConfirmed={handlePaymentConfirmed} />
-          )}
-          {userRole === 'seller' && (
-            <SellerConfirmButton order={order} onConfirm={handleSellerConfirm} />
-          )}
+          {userRole === 'buyer' && <PaymentActionButton order={order} onPaymentConfirmed={handlePaymentConfirmed} />}
+          {userRole === 'seller' && <SellerConfirmButton order={order} onConfirm={handleSellerConfirm} />}
         </div>
 
         {/* Chat Sidebar (Right Side) */}
@@ -243,7 +235,3 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
     </div>
   );
 };
-
-
-
-
