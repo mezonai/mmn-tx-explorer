@@ -1592,7 +1592,7 @@ func (p *PostgresConnector) insertTransactionsTx(
 		)
 		SELECT
 			COUNT(*) FILTER (WHERE is_new) AS inserted_count,
-			COUNT(*) FILTER (WHERE is_new AND transaction_extra_info_type IN ($%s, $%s) AND status = $%s) AS new_give_coffee
+			COUNT(*) FILTER (WHERE is_new AND transaction_extra_info_type IN (%s, %s) AND status = %s) AS new_give_coffee
 		FROM inserted;
 	`, strings.Join(valueStrings, ","), common.TransactionExtraInfoGiveCoffee.String(), common.TransactionExtraInfoDongGiveCoffee.String(), pb.TransactionStatus_FINALIZED)
 
