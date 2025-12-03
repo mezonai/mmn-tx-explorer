@@ -7,6 +7,7 @@ export interface IMezonGameApp {
   headline: string;
   featuredImage: string;
   pricingTag: string;
+  tags: { id: string; name: string }[];
 }
 
 export interface IMezonGameListParams {
@@ -15,6 +16,8 @@ export interface IMezonGameListParams {
   pageNumber?: number;
   sortField?: string;
   sortOrder?: 'ASC' | 'DESC';
+  type?: string;
+  tags?: string[];
 }
 
 export interface IMezonGamePaginatedResponse {
@@ -27,4 +30,15 @@ export interface IMezonGamePaginatedResponse {
   totalCount: number;
   hasPreviousPage: boolean;
   hasNextPage: boolean;
+}
+export interface IMezonGameTag {
+  id: string;
+  name: string;
+  slug: string;
+  botCount: number;
+}
+export interface IMezonGameTagResponse {
+  statusCode: number;
+  message: string;
+  data: IMezonGameTag[];
 }

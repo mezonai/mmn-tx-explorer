@@ -6,7 +6,7 @@ import axios from 'axios';
 const isServer = typeof window === 'undefined';
 const baseURL = isServer ? process.env.APP_API_URL_INTERNAL : process.env.NEXT_PUBLIC_APP_API_URL;
 const dongServiceURL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
-const gameServiceURL = process.env.NEXT_PUBLIC_TOP_MEZON_AI + '/api/mezon-app';
+const gameServiceURL = process.env.NEXT_PUBLIC_TOP_MEZON_AI + '/api';
 // const baseURL = 'http://localhost:8080';
 
 const cobarClient = axios.create({

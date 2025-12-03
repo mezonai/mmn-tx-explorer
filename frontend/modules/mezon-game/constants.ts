@@ -1,5 +1,6 @@
 export const GAME_ENDPOINTS = {
-  SEARCH: '/search',
+  SEARCH: '/mezon-app/search',
+  TAG: '/tag',
 } as const;
 export const SORT_OPTIONS = [
   {
@@ -38,4 +39,9 @@ export const SORT_OPTIONS = [
     sortField: 'updatedAt',
     sortOrder: 'DESC' as const,
   },
+] as const;
+export const GAME_TYPES = [
+  { value: 'All', label: 'All Types' },
+  { value: 'bot', label: 'Bot' },
+  { value: 'app', label: 'App' },
 ] as const;
