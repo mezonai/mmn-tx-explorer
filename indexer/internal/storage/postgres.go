@@ -1598,7 +1598,7 @@ func (p *PostgresConnector) insertTransactionsTx(
 
 	var insertedCount, newGiveCoffeeCount int
 
-	if err := tx.QueryRowContext(ctx, insertQuery, append(valueArgs, common.TransactionExtraInfoGiveCoffee.String(), common.TransactionExtraInfoDongGiveCoffee.String(), pb.TransactionStatus_FINALIZED)...).Scan(
+	if err := tx.QueryRowContext(ctx, insertQuery, valueArgs...).Scan(
 		&insertedCount,
 		&newGiveCoffeeCount,
 	); err != nil {
