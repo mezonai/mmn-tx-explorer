@@ -1592,13 +1592,13 @@ func (p *PostgresConnector) insertTransactionsTx(
 		)
 		SELECT
 			COUNT(*) FILTER (WHERE is_new) AS inserted_count,
-			COUNT(*) FILTER (WHERE is_new AND transaction_extra_info_type = $%s AND status = $%s) AS new_give_coffee
+			COUNT(*) FILTER (WHERE is_new AND transaction_extra_info_type IN ($%s, $%s) AND status = $%s) AS new_give_coffee
 		FROM inserted;
-	`, strings.Join(valueStrings, ","), common.TransactionExtraInfoGiveCoffee.String(), pb.TransactionStatus_FINALIZED)
+	`, strings.Join(valueStrings, ","), common.TransactionExtraInfoGiveCoffee.String(), common.TransactionExtraInfoDongGiveCoffee.String(), pb.TransactionStatus_FINALIZED)
 
 	var insertedCount, newGiveCoffeeCount int
 
-	if err := tx.QueryRowContext(ctx, insertQuery, append(valueArgs, common.TransactionExtraInfoGiveCoffee.String(), pb.TransactionStatus_FINALIZED)...).Scan(
+	if err := tx.QueryRowContext(ctx, insertQuery, append(valueArgs, common.TransactionExtraInfoGiveCoffee.String(), common.TransactionExtraInfoDongGiveCoffee.String(), pb.TransactionStatus_FINALIZED)...).Scan(
 		&insertedCount,
 		&newGiveCoffeeCount,
 	); err != nil {
@@ -2134,8 +2134,8 @@ func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
 	var totalGiveCoffee int64
 	err = p.db.QueryRowContext(ctx, fmt.Sprintf(`
 		SELECT COUNT(*) FROM transactions
-		WHERE transaction_extra_info_type = %s AND status = %d
-	`, common.TransactionExtraInfoGiveCoffee.String(), pb.TransactionStatus_FINALIZED)).Scan(&totalGiveCoffee)
+		WHERE transaction_extra_info_type IN (%s, %s) AND status = %d
+	`, common.TransactionExtraInfoGiveCoffee.String(), common.TransactionExtraInfoDongGiveCoffee.String(), pb.TransactionStatus_FINALIZED)).Scan(&totalGiveCoffee)
 	if err != nil {
 		return fmt.Errorf("failed to count give_coffee transactions: %w", err)
 	}

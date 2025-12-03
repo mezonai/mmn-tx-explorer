@@ -4,7 +4,7 @@ VALUES (
     'total_give_coffee',
     (
           SELECT COUNT(*) FROM transactions
-          WHERE transaction_extra_info_type = 'give-coffee' AND status = 2
+          WHERE transaction_extra_info_type  IN ('give-coffee', 'dong-give-coffee') AND status = 2
     )
 )
 ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
