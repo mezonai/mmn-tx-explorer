@@ -4,19 +4,19 @@ import (
 	"time"
 )
 
-// Order represents a trading order placed in the system
-type OrderSide string
+// Offer represents a trading offer placed in the system
+type OfferSide string
 
 const (
-	OrderSideBuy  OrderSide = "BUY"
-	OrderSideSell OrderSide = "SELL"
+	OfferSideBuy  OfferSide = "BUY"
+	OfferSideSell OfferSide = "SELL"
 )
 
-type Order struct {
-	OrderID              int64      `json:"order_id" db:"order_id"`
+type Offer struct {
+	OfferID              int64      `json:"offer_id" db:"offer_id"`
 	IntermediaryWalletID int64      `json:"intermediary_wallet_id" db:"intermediary_wallet_id"`
-	UserID               *int64     `json:"user_id,omitempty" db:"user_id"`
-	Side                 OrderSide  `json:"side" db:"side"` // BUY or SELL
+	WalletAddress        string     `json:"wallet_address" db:"wallet_address"`
+	Side                 OfferSide  `json:"side" db:"side"` // BUY or SELL
 	Symbol               string     `json:"symbol" db:"symbol"`
 	Quantity             string     `json:"quantity" db:"quantity"` // numeric as string to support big ints
 	Price                string     `json:"price" db:"price"`       // numeric as string
@@ -32,10 +32,10 @@ type Order struct {
 	UpdatedAt            time.Time  `json:"updated_at" db:"updated_at"`
 }
 
-// OrderHistory represents an audit/event emitted for an order
-type OrderHistory struct {
+// OfferHistory represents an audit/event emitted for an offer
+type OfferHistory struct {
 	HistoryID      int64     `json:"history_id" db:"history_id"`
-	OrderID        int64     `json:"order_id" db:"order_id"`
+	OfferID        int64     `json:"offer_id" db:"offer_id"`
 	EventType      string    `json:"event_type" db:"event_type"`
 	Quantity       string    `json:"quantity" db:"quantity"`
 	ExecutionPrice *string   `json:"execution_price,omitempty" db:"execution_price"`
@@ -44,11 +44,10 @@ type OrderHistory struct {
 	CreatedAt      time.Time `json:"created_at" db:"created_at"`
 }
 
-// CreateOrderRequest is the expected payload for the API request to create an order
-type CreateOrderRequest struct {
+// CreateOfferRequest is the expected payload for the API request to create an offer
+type CreateOfferRequest struct {
 	IntermediaryWalletID *int64                 `json:"intermediary_wallet_id,omitempty"`
-	UserID               *int64                 `json:"user_id,omitempty"`
-	Side                 OrderSide              `json:"side" binding:"required"` // BUY or SELL
+	Side                 OfferSide              `json:"side" binding:"required"` // BUY or SELL
 	Symbol               string                 `json:"symbol" binding:"required"`
 	Quantity             string                 `json:"quantity" binding:"required"`
 	Price                *string                `json:"price,omitempty"`

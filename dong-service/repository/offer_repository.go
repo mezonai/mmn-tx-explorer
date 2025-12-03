@@ -1,0 +1,202 @@
+package repository
+
+import (
+	"context"
+	"database/sql"
+	"dong-service/models"
+	"fmt"
+	"strings"
+)
+
+type OfferRepository struct {
+	db         *sql.DB
+	dongSchema string
+}
+
+func NewOfferRepository(db *sql.DB, dongSchema string) *OfferRepository {
+	return &OfferRepository{db: db, dongSchema: dongSchema}
+}
+
+// CreateOffer inserts a new offer into offers table using the provided tx.
+func (r *OfferRepository) CreateOffer(ctx context.Context, offer *models.Offer, tx *sql.Tx) error {
+	query := fmt.Sprintf(`
+		INSERT INTO %s.offers (
+			intermediary_wallet_id, wallet_address, side, symbol, quantity, price, filled_quantity, price_type, price_reference, spread, status, external_ref, metadata, expires_at, created_at, updated_at
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,NOW(),NOW())
+        RETURNING offer_id, created_at, updated_at
+    `, r.dongSchema)
+
+	return tx.QueryRowContext(
+		ctx,
+		query,
+		offer.IntermediaryWalletID,
+		offer.WalletAddress,
+		offer.Side,
+		offer.Symbol,
+		offer.Quantity,
+		offer.Price,
+		offer.FilledQuantity,
+		offer.PriceType,
+		offer.PriceReference,
+		offer.Spread,
+		offer.Status,
+		offer.ExternalRef,
+		offer.Metadata,
+		offer.ExpiresAt,
+	).Scan(&offer.OfferID, &offer.CreatedAt, &offer.UpdatedAt)
+}
+
+// CreateOfferHistory inserts a new audit/event row for an offer using the provided tx.
+func (r *OfferRepository) CreateOfferHistory(ctx context.Context, h *models.OfferHistory, tx *sql.Tx) error {
+	query := fmt.Sprintf(`
+        INSERT INTO %s.offer_history (
+            offer_id, event_type, quantity, execution_price, source, metadata, created_at
+        ) VALUES ($1,$2,$3,$4,$5,$6,NOW())
+        RETURNING history_id, created_at
+    `, r.dongSchema)
+
+	return tx.QueryRowContext(ctx, query, h.OfferID, h.EventType, h.Quantity, h.ExecutionPrice, h.Source, h.Metadata).Scan(&h.HistoryID, &h.CreatedAt)
+}
+
+// UpdateOfferStatus updates the status field for a given offer using the provided tx.
+func (r *OfferRepository) UpdateOfferStatus(ctx context.Context, offerID int64, status string, tx *sql.Tx) error {
+	query := fmt.Sprintf(`
+        UPDATE %s.offers
+        SET status = $1, updated_at = NOW()
+        WHERE offer_id = $2
+    `, r.dongSchema)
+
+	_, err := tx.ExecContext(ctx, query, status, offerID)
+	return err
+}
+
+// ListOffers returns offers matching optional filters with pagination
+func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, pagination any) ([]models.Offer, error) {
+	base := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_id, wallet_address, side, symbol, quantity, price, filled_quantity, price_type, price_reference, spread, status, external_ref, metadata, expires_at, created_at, updated_at FROM %s.offers`, r.dongSchema)
+
+	whereClauses := []string{}
+	args := []any{}
+	argCount := 1
+
+	if minPrice != nil && *minPrice != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("price >= $%d", argCount))
+		args = append(args, *minPrice)
+		argCount++
+	}
+	if maxPrice != nil && *maxPrice != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("price <= $%d", argCount))
+		args = append(args, *maxPrice)
+		argCount++
+	}
+	if status != nil && strings.TrimSpace(*status) != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("status = $%d", argCount))
+		args = append(args, strings.TrimSpace(*status))
+		argCount++
+	}
+	if symbol != nil && strings.TrimSpace(*symbol) != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("symbol = $%d", argCount))
+		args = append(args, strings.TrimSpace(*symbol))
+		argCount++
+	}
+
+	if len(whereClauses) > 0 {
+		base += " WHERE " + strings.Join(whereClauses, " AND ")
+	}
+
+	// Default ordering
+	orderBy := "created_at"
+	orderDir := "DESC"
+	limit := 20
+	offset := 0
+
+	if p, ok := pagination.(map[string]any); ok {
+		if v, ok := p["order_by"].(string); ok && v != "" {
+			switch strings.ToLower(v) {
+			case "created_at", "price", "quantity", "symbol":
+				orderBy = v
+			}
+		}
+		if od, ok := p["order"].(string); ok && (strings.EqualFold(od, "asc") || strings.EqualFold(od, "desc")) {
+			orderDir = strings.ToUpper(od)
+		}
+		if l, ok := p["limit"].(int); ok && l > 0 {
+			limit = l
+		}
+		if off, ok := p["offset"].(int); ok && off >= 0 {
+			offset = off
+		}
+	}
+
+	base += fmt.Sprintf(" ORDER BY %s %s LIMIT $%d OFFSET $%d", orderBy, orderDir, argCount, argCount+1)
+	args = append(args, limit, offset)
+
+	rows, err := r.db.QueryContext(ctx, base, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list offers: %w", err)
+	}
+	defer rows.Close()
+
+	var out []models.Offer
+	for rows.Next() {
+		var o models.Offer
+		err := rows.Scan(
+			&o.OfferID,
+			&o.IntermediaryWalletID,
+			&o.WalletAddress,
+			&o.Side,
+			&o.Symbol,
+			&o.Quantity,
+			&o.Price,
+			&o.FilledQuantity,
+			&o.PriceType,
+			&o.PriceReference,
+			&o.Spread,
+			&o.Status,
+			&o.ExternalRef,
+			&o.Metadata,
+			&o.ExpiresAt,
+			&o.CreatedAt,
+			&o.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan offer: %w", err)
+		}
+		out = append(out, o)
+	}
+
+	return out, rows.Err()
+}
+
+// GetOfferByID fetches a single offer by id
+func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*models.Offer, error) {
+	query := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_id, wallet_address, side, symbol, quantity, price, filled_quantity, price_type, price_reference, spread, status, external_ref, metadata, expires_at, created_at, updated_at FROM %s.offers WHERE offer_id = $1`, r.dongSchema)
+
+	var o models.Offer
+	row := r.db.QueryRowContext(ctx, query, offerID)
+	if err := row.Scan(
+		&o.OfferID,
+		&o.IntermediaryWalletID,
+		&o.WalletAddress,
+		&o.Side,
+		&o.Symbol,
+		&o.Quantity,
+		&o.Price,
+		&o.FilledQuantity,
+		&o.PriceType,
+		&o.PriceReference,
+		&o.Spread,
+		&o.Status,
+		&o.ExternalRef,
+		&o.Metadata,
+		&o.ExpiresAt,
+		&o.CreatedAt,
+		&o.UpdatedAt,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, err
+		}
+		return nil, fmt.Errorf("failed to scan offer: %w", err)
+	}
+
+	return &o, nil
+}

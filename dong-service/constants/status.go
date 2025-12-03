@@ -15,14 +15,14 @@ const (
 // ChainSymbol defines the canonical on-chain asset symbol used across services
 const ChainSymbol = "đồng"
 
-// Order-related statuses and event types
+// Offer-related statuses and event types (renamed from Order)
 const (
-	OrderStatusPending   = "PENDING"
-	OrderStatusConfirmed = "CONFIRMED"
-	OrderStatusPartial   = "PARTIAL"
-	OrderStatusFilled    = "FILLED"
-	OrderStatusCanceled  = "CANCELED"
-	OrderStatusFailed    = "FAILED"
+	OfferStatusPending   = "PENDING"
+	OfferStatusConfirmed = "CONFIRMED"
+	OfferStatusPartial   = "PARTIAL"
+	OfferStatusFilled    = "FILLED"
+	OfferStatusCanceled  = "CANCELED"
+	OfferStatusFailed    = "FAILED"
 )
 
 const (
@@ -31,13 +31,13 @@ const (
 )
 
 const (
-	OrderEventCreatedPending   = "CREATED_PENDING"
-	OrderEventCreatedConfirmed = "CREATED_CONFIRMED"
-	OrderEventPartialFill      = "PARTIAL_FILL"
-	OrderEventFill             = "FILL"
-	OrderEventCanceled         = "CANCELED"
-	OrderEventUpdated          = "UPDATED"
-	OrderEventFailed           = "FAILED"
+	OfferEventCreatedPending   = "CREATED_PENDING"
+	OfferEventCreatedConfirmed = "CREATED_CONFIRMED"
+	OfferEventPartialFill      = "PARTIAL_FILL"
+	OfferEventFill             = "FILL"
+	OfferEventCanceled         = "CANCELED"
+	OfferEventUpdated          = "UPDATED"
+	OfferEventFailed           = "FAILED"
 )
 
 // Transaction Status Constants
