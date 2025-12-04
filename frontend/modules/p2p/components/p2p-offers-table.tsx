@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { TTableColumn } from '@/types';
 import { P2POffer } from '../types/p2p.types';
 import { AdvertiserInfo } from './advertiser-info';
-import { PaymentMethods } from './payment-methods';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -29,7 +28,7 @@ export const P2POffersTable = ({ offers, isLoading = false, onOfferClick }: P2PO
   const columns: TTableColumn<P2POffer>[] = [
     {
       headerContent: 'Advertiser (Người bán)',
-      renderCell: (offer) => <AdvertiserInfo advertiser={offer.advertiser} isClanOffer={offer.isClanOffer} />,
+      renderCell: (offer) => <AdvertiserInfo advertiser={offer.advertiser} />,
       skeletonContent: (
         <div className="flex items-center gap-3">
           <Skeleton className="h-10 w-10 rounded-full" />
@@ -45,12 +44,7 @@ export const P2POffersTable = ({ offers, isLoading = false, onOfferClick }: P2PO
       headerContent: 'MZD / Tỉ giá',
       renderCell: (offer) => (
         <div>
-          <div
-            className={cn(
-              'text-xl font-bold',
-              offer.isClanOffer ? 'text-emerald-500 dark:text-emerald-400' : 'text-white dark:text-white'
-            )}
-          >
+          <div className="text-xl font-bold text-white dark:text-white">
             {offer.totalMZD.toLocaleString('vi-VN')} <span className="text-xs font-normal text-gray-500">MZD</span>
           </div>
           <div className="mt-1 text-sm text-gray-400">
@@ -59,7 +53,6 @@ export const P2POffersTable = ({ offers, isLoading = false, onOfferClick }: P2PO
               {offer.exchangeRate.toLocaleString('vi-VN')} VND/MZD
             </span>
           </div>
-          {/*{offer.isClanOffer && <div className="text-brand-primary text-xs mt-1">Ưu đãi cho Clan</div>}*/}
         </div>
       ),
       skeletonContent: <Skeleton className="h-6 w-24" />,
@@ -88,17 +81,6 @@ export const P2POffersTable = ({ offers, isLoading = false, onOfferClick }: P2PO
         <div className="space-y-2">
           <Skeleton className="h-4 w-40" />
           <Skeleton className="h-4 w-48" />
-        </div>
-      ),
-      align: 'left',
-    },
-    {
-      headerContent: 'Thanh toán',
-      renderCell: (offer) => <PaymentMethods methods={offer.paymentMethods} />,
-      skeletonContent: (
-        <div className="flex gap-2">
-          <Skeleton className="h-6 w-16 rounded" />
-          <Skeleton className="h-6 w-16 rounded" />
         </div>
       ),
       align: 'left',

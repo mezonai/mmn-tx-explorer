@@ -35,11 +35,10 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
       setDisplayValue('');
       setAmountMZD(0);
     } else {
-      // Validate min/max
-      const validatedValue = Math.max(offer.limit.min, Math.min(rawValue, Math.min(offer.limit.max, offer.available)));
-      const formatted = formatCurrency(validatedValue);
+      // Cho phép nhập tự do, không validate ngay
+      const formatted = formatCurrency(rawValue);
       setDisplayValue(formatted);
-      setAmountMZD(validatedValue);
+      setAmountMZD(rawValue);
     }
   };
 
@@ -58,7 +57,6 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
           id: offer.advertiser.id,
           username: offer.advertiser.username,
           isVerified: offer.advertiser.isVerified,
-          isClanMember: offer.advertiser.isClanMember,
           totalOrders: offer.advertiser.totalOrders,
           completionRate: offer.advertiser.completionRate,
         },
@@ -75,8 +73,7 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
         },
         exchangeRate: offer.exchangeRate,
         exchangeRateDisplay: `1 MZD = ${offer.exchangeRate.toLocaleString('vi-VN')} VND`,
-        paymentMethods: offer.paymentMethods,
-        isClanOffer: offer.isClanOffer || false,
+        bankInfo: offer.bankInfo,
       });
       console.log('💰 Purchase Details:', {
         amountMZD: amountMZD,
@@ -154,14 +151,16 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
         </div>
       )}
 
-      <Button
-        onClick={handleConfirm}
-        disabled={!isValidAmount || isLoading}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 py-4 text-lg font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        <CheckCircle2 className="h-5 w-5" />
-        {isLoading ? 'Đang xử lý...' : 'Xác nhận mua'}
-      </Button>
+      <div className="mt-4 flex justify-center">
+        <Button
+          onClick={handleConfirm}
+          disabled={!isValidAmount || isLoading}
+          className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-8 py-3 text-base font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <CheckCircle2 className="h-5 w-5" />
+          {isLoading ? 'Đang xử lý...' : 'Xác nhận mua'}
+        </Button>
+      </div>
 
       {!isValidAmount && amountMZD > 0 && (
         <p className="text-center text-xs text-red-500">

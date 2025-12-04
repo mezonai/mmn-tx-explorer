@@ -1,7 +1,5 @@
 export type TradeType = 'BUY' | 'SELL';
 
-export type PaymentMethod = 'BANK_TRANSFER' | 'MOMO' | 'TPBANK' | 'VIETCOMBANK' | 'ALL';
-
 export interface P2POffer {
   id: string;
   advertiser: {
@@ -9,7 +7,6 @@ export interface P2POffer {
     username: string;
     avatar?: string;
     isVerified: boolean;
-    isClanMember: boolean;
     totalOrders: number;
     completionRate: number;
   };
@@ -19,15 +16,18 @@ export interface P2POffer {
     min: number; // Số MZD tối thiểu cho mỗi giao dịch
     max: number; // Số MZD tối đa cho mỗi giao dịch
   };
-  paymentMethods: PaymentMethod[];
-  isClanOffer?: boolean;
+  exchangeRate: number; // Tỉ giá VND/MZD (ví dụ: 0.8 = 1 MZD = 0.8 VND)
+  bankInfo?: {
+    bank: BankOption;
+    accountNumber: string;
+    accountName: string;
+  };
+  transferCode?: string; // Mã chuyển khoản khi tạo offer
 }
 
 export interface P2PFilters {
   tradeType: TradeType;
   amount?: number; // Số MZD muốn mua (nếu có)
-  paymentMethod: PaymentMethod;
-  friendsOnly: boolean;
   currency: string; // MZD, etc.
 }
 
@@ -75,33 +75,4 @@ export interface ChatMessage {
   content: string;
   timestamp: string;
   isRead: boolean;
-}
-
-// Update P2POffer để include bank info (optional, sẽ có khi tạo offer)
-export interface P2POffer {
-  id: string;
-  advertiser: {
-    id: string;
-    username: string;
-    avatar?: string;
-    isVerified: boolean;
-    isClanMember: boolean;
-    totalOrders: number;
-    completionRate: number;
-  };
-  totalMZD: number; // Tổng số MZD mà người bán có sẵn để bán (ví dụ: 20000 MZD)
-  available: number; // Số MZD còn khả dụng để bán (có thể bằng hoặc nhỏ hơn totalMZD)
-  limit: {
-    min: number; // Số MZD tối thiểu cho mỗi giao dịch
-    max: number; // Số MZD tối đa cho mỗi giao dịch
-  };
-  paymentMethods: PaymentMethod[];
-  isClanOffer?: boolean;
-  exchangeRate: number; // Tỉ giá VND/MZD (ví dụ: 0.8 = 1 MZD = 0.8 VND)
-  bankInfo?: {
-    bank: BankOption;
-    accountNumber: string;
-    accountName: string;
-  };
-  transferCode?: string; // Mã chuyển khoản khi tạo offer
 }

@@ -20,7 +20,7 @@ export const P2POrdersList = () => {
   if (isLoading) {
     return (
       <Card className="bg-card overflow-hidden border-gray-300 dark:border-gray-800">
-        <div className="p-6 space-y-4">
+        <div className="space-y-4 p-6">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-20 w-full" />
           <Skeleton className="h-20 w-full" />
@@ -33,8 +33,8 @@ export const P2POrdersList = () => {
     return (
       <Card className="bg-card overflow-hidden border-gray-300 dark:border-gray-800">
         <div className="p-12 text-center">
-          <p className="text-gray-400 text-lg">Bạn chưa có đơn hàng nào</p>
-          <p className="text-gray-500 text-sm mt-2">Các đơn hàng của bạn sẽ hiển thị ở đây</p>
+          <p className="lg text-gray-400">Bạn chưa có đơn hàng nào</p>
+          <p className="mt-2 text-sm text-gray-500">Các đơn hàng của bạn sẽ hiển thị ở đây</p>
         </div>
       </Card>
     );
@@ -44,7 +44,7 @@ export const P2POrdersList = () => {
     <Card className="bg-card overflow-hidden border-gray-300 dark:border-gray-800">
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-left">
-          <thead className="bg-gray-900 text-gray-400 text-xs uppercase font-medium">
+          <thead className="xs bg-gray-900 text-xs font-medium text-gray-400 uppercase">
             <tr>
               <th className="px-6 py-4">Order ID</th>
               <th className="px-6 py-4">Amount</th>
@@ -64,5 +64,3 @@ export const P2POrdersList = () => {
     </Card>
   );
 };
-
-

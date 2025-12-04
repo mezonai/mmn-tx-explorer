@@ -12,7 +12,6 @@ const getOfferById = async (offerId: string): Promise<P2POffer | null> => {
         username: 'Mezon_Trader_Pro',
         avatar: 'https://ui-avatars.com/api/?name=Mezon+Trader&background=2563eb&color=fff',
         isVerified: true,
-        isClanMember: false,
         totalOrders: 1203,
         completionRate: 99.5,
       },
@@ -22,9 +21,12 @@ const getOfferById = async (offerId: string): Promise<P2POffer | null> => {
         min: 100,
         max: 5000,
       },
-      paymentMethods: ['TPBANK', 'MOMO'],
-      isClanOffer: false,
       exchangeRate: 0.8,
+      bankInfo: {
+        bank: 'TCB',
+        accountNumber: '19034482991022',
+        accountName: 'NGUYEN VAN A',
+      },
     },
     {
       id: '2',
@@ -33,7 +35,6 @@ const getOfferById = async (offerId: string): Promise<P2POffer | null> => {
         username: 'HaiNam_Dev',
         avatar: 'https://ui-avatars.com/api/?name=Hai+Nam&background=8b5cf6&color=fff',
         isVerified: false,
-        isClanMember: true,
         totalOrders: 50,
         completionRate: 100,
       },
@@ -43,9 +44,12 @@ const getOfferById = async (offerId: string): Promise<P2POffer | null> => {
         min: 50,
         max: 2000,
       },
-      paymentMethods: ['VIETCOMBANK'],
-      isClanOffer: true,
       exchangeRate: 0.75,
+      bankInfo: {
+        bank: 'VCB',
+        accountNumber: '1234567890',
+        accountName: 'TRAN VAN B',
+      },
     },
   ];
 
@@ -71,3 +75,4 @@ export const useP2POffer = (offerId: string | null) => {
 
   return { offer, isLoading };
 };
+

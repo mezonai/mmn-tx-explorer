@@ -13,8 +13,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 export const P2P = () => {
   const [filters, setFilters] = useState<P2PFilters>({
     tradeType: 'BUY',
-    paymentMethod: 'ALL',
-    friendsOnly: false,
     currency: 'MZD',
   });
 

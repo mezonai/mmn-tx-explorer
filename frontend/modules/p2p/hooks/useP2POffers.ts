@@ -10,19 +10,21 @@ const mockOffers: P2POffer[] = [
       username: 'Mezon_Trader_Pro',
       avatar: 'https://ui-avatars.com/api/?name=Mezon+Trader&background=2563eb&color=fff',
       isVerified: true,
-      isClanMember: false,
       totalOrders: 1203,
       completionRate: 99.5,
     },
-    totalMZD: 20000, // Tổng số MZD có sẵn
-    available: 5000, // Còn khả dụng để bán
+    totalMZD: 20000,
+    available: 5000,
     limit: {
-      min: 100, // Tối thiểu 100 MZD mỗi giao dịch
-      max: 5000, // Tối đa 5000 MZD mỗi giao dịch
+      min: 100,
+      max: 5000,
     },
-    paymentMethods: ['TPBANK', 'MOMO'],
-    isClanOffer: false,
-    exchangeRate: 0.8, // 1 MZD = 0.8 VND
+    exchangeRate: 0.8,
+    bankInfo: {
+      bank: 'TCB',
+      accountNumber: '19034482991022',
+      accountName: 'NGUYEN VAN A',
+    },
   },
   {
     id: '2',
@@ -31,19 +33,21 @@ const mockOffers: P2POffer[] = [
       username: 'HaiNam_Dev',
       avatar: 'https://ui-avatars.com/api/?name=Hai+Nam&background=8b5cf6&color=fff',
       isVerified: false,
-      isClanMember: true,
       totalOrders: 50,
       completionRate: 100,
     },
     totalMZD: 15000,
-    available: 1000, // Còn khả dụng để bán
+    available: 1000,
     limit: {
-      min: 50, // Tối thiểu 50 MZD mỗi giao dịch
-      max: 2000, // Tối đa 2000 MZD mỗi giao dịch
+      min: 50,
+      max: 2000,
     },
-    paymentMethods: ['VIETCOMBANK'],
-    isClanOffer: true,
-    exchangeRate: 0.75, // 1 MZD = 0.75 VND (ưu đãi clan)
+    exchangeRate: 0.75,
+    bankInfo: {
+      bank: 'VCB',
+      accountNumber: '1234567890',
+      accountName: 'TRAN VAN B',
+    },
   },
   {
     id: '3',
@@ -52,19 +56,21 @@ const mockOffers: P2POffer[] = [
       username: 'CryptoMaster_VN',
       avatar: 'https://ui-avatars.com/api/?name=Crypto+Master&background=10b981&color=fff',
       isVerified: true,
-      isClanMember: false,
       totalOrders: 856,
       completionRate: 98.2,
     },
     totalMZD: 30000,
-    available: 3000, // Còn khả dụng để bán
+    available: 3000,
     limit: {
-      min: 200, // Tối thiểu 200 MZD mỗi giao dịch
-      max: 10000, // Tối đa 10000 MZD mỗi giao dịch
+      min: 200,
+      max: 10000,
     },
-    paymentMethods: ['BANK_TRANSFER', 'MOMO', 'VIETCOMBANK'],
-    isClanOffer: false,
-    exchangeRate: 0.85, // 1 MZD = 0.85 VND
+    exchangeRate: 0.85,
+    bankInfo: {
+      bank: 'MB',
+      accountNumber: '9876543210',
+      accountName: 'LE VAN C',
+    },
   },
 ];
 
@@ -80,16 +86,6 @@ export const useP2POffers = (filters: P2PFilters) => {
 
       // Filter by trade type (for now, we only show BUY offers)
       // In real implementation, this would filter based on offer type
-
-      // Filter by payment method
-      if (filters.paymentMethod !== 'ALL') {
-        filteredOffers = filteredOffers.filter((offer) => offer.paymentMethods.includes(filters.paymentMethod));
-      }
-
-      // Filter by friends/clan only
-      if (filters.friendsOnly) {
-        filteredOffers = filteredOffers.filter((offer) => offer.advertiser.isClanMember);
-      }
 
       // Filter by amount range (if amount is specified)
       // Lọc các offers có thể đáp ứng số lượng MZD muốn mua

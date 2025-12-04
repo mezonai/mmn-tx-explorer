@@ -77,34 +77,6 @@ export const P2PFiltersComponent = ({ filters, onFiltersChange, onNewOfferClick 
           />
         </div>
 
-        {/* Payment Method Select 
-        <Select value={filters.paymentMethod} onValueChange={handlePaymentMethodChange}>
-          <SelectTrigger className="w-full bg-card border-gray-300 py-2.5 focus:border-brand-primary transition dark:border-gray-700">
-            <SelectValue placeholder="Tất cả thanh toán" />
-          </SelectTrigger>
-          <SelectContent>
-            {paymentMethodOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>*/}
-
-        {/* Friends/Clan Filter 
-        <div className="flex items-center gap-2 rounded-lg border border-gray-300 bg-card px-4 py-2.5 transition hover:border-brand-primary dark:border-gray-700 dark:bg-card">
-          <input
-            type="checkbox"
-            id="clanFilter"
-            checked={filters.friendsOnly}
-            onChange={(e) => handleFriendsOnlyChange(e.target.checked)}
-            className="h-4 w-4 accent-brand-primary"
-          />
-          <label htmlFor="clanFilter" className="cursor-pointer text-sm select-none truncate text-gray-700 dark:text-gray-300">
-            Chỉ hiện Bạn bè / Clan
-          </label>
-          <Shield className="h-4 w-4 text-yellow-500 ml-1" />
-        </div>*/}
 
         {/* New Offer Button */}
         <Button
