@@ -101,8 +101,8 @@ export const EcosystemHighlights = () => {
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {redEnvelopeStats.stats.total_active_envelopes} envelopes active • {redEnvelopeStats.stats.total_claimed}{' '}
-              {APP_CONFIG.CHAIN_SYMBOL} total
+              {redEnvelopeStats.stats.total_active_envelopes} envelopes active •{' '}
+              {redEnvelopeStats.stats.total_claimed.toLocaleString('en-US')} {APP_CONFIG.CHAIN_SYMBOL} total
             </p>
           </div>
         </Link>
