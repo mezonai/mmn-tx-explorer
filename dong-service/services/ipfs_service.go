@@ -1,5 +1,6 @@
 // Reference: https://pkg.go.dev/github.com/ipfs/kubo/client/rpc
 // Reference: https://github.com/ipfs/kubo/tree/master/client/rpc
+// Reference Upload folder contains multiple images https://discuss.ipfs.tech/t/how-to-upload-multiple-file-same-in-a-folder/17699
 package services
 
 import (

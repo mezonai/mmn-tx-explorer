@@ -129,7 +129,8 @@ func (h *DonationCampaignFeedHandler) ListCampaignFeedsByAddress(c *gin.Context)
 // @Failure 400 {object} models.Response
 // @Failure 429 {object} models.Response
 // @Failure 500 {object} models.Response
-// @Router /api/v1/campaigns/upload-image [post]
+// @Security BearerAuth
+// @Router /api/v1/admin/campaigns/upload-image [post]
 func (h *DonationCampaignFeedHandler) UploadImage(c *gin.Context) {
 	// Rate limit middleware
 	middleware.RateLimitMiddleware(h.cfg)(c)

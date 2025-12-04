@@ -617,6 +617,46 @@ paths:
       summary: Create and immediately activate a new donation campaign
       tags:
       - campaigns
+  /api/v1/admin/campaigns/upload-image:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload images, scan for virus (if enabled), and store to IPFS
+      parameters:
+      - description: Images to upload
+        in: formData
+        name: files
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.UploadImageResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - BearerAuth: []
+      summary: Upload images for a campaign
+      tags:
+      - campaign_feed
   /api/v1/campaigns:
     get:
       description: Get a list of all donation campaigns with pagination
@@ -907,44 +947,6 @@ paths:
       summary: Get a donation campaign by slug
       tags:
       - campaigns
-  /api/v1/campaigns/upload-image:
-    post:
-      consumes:
-      - multipart/form-data
-      description: Upload images, scan for virus (if enabled), and store to IPFS
-      parameters:
-      - description: Images to upload
-        in: formData
-        name: files
-        required: true
-        type: file
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/models.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.UploadImageResponse'
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/models.Response'
-        "429":
-          description: Too Many Requests
-          schema:
-            $ref: '#/definitions/models.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/models.Response'
-      summary: Upload images for a campaign
-      tags:
-      - campaign_feed
   /api/v1/red-envelopes/claimed-by-user:
     get:
       consumes:
