@@ -7,6 +7,7 @@ import { ROUTES } from '@/configs/routes.config';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTopRaisedRatioCampaign } from '@/modules/donation-campaign/hooks/useTopRaisedRatioCampaign';
 import { APP_CONFIG } from '@/configs/app.config';
+import { useRedEnvelopeStats } from '@/modules/lucky-money/hooks';
 import { useGames } from '@/modules/mezon-game/hooks/useGames';
 export const EcosystemHighlights = () => {
   const { campaign, percentageDisplay, barPercentage, isLoading, error } = useTopRaisedRatioCampaign();
@@ -14,7 +15,8 @@ export const EcosystemHighlights = () => {
   const { data: gameResponse } = useGames({
     sortField: 'createdAt',
     sortOrder: 'DESC',
-  });
+  });  const redEnvelopeStats = useRedEnvelopeStats();
+
   const donationRef = useRef<HTMLAnchorElement | null>(null);
   const [refHeight, setRefHeight] = useState<number | null>(null);
 
@@ -90,24 +92,23 @@ export const EcosystemHighlights = () => {
             </p>
           )}
         </Link>
-
-        <div
-          className="bg-card hover:border-primary/50 dark:hover:border-primary/50 flex flex-col rounded-xl border border-gray-300 p-6 shadow-sm transition-colors dark:border-gray-700 dark:bg-slate-800 dark:shadow-sm"
-          style={refHeight ? { minHeight: refHeight } : undefined}
-        >
-          <div className="mb-3 flex items-center justify-between">
-            <span className="font-semibold">Lucky Money</span>
-            <div className="flex items-center gap-2">
-              <span className="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-700 uppercase dark:bg-amber-900/30 dark:text-amber-300">
-                Coming Soon
-              </span>
-              <i className="fa-solid fa-gift text-[var(--color-brand-link)] dark:text-red-400"></i>
+        <Link href={ROUTES.LUCKY_MONEY}>
+          <div
+            className="bg-card hover:border-primary/50 dark:hover:border-primary/50 flex flex-col rounded-xl border border-gray-300 p-6 shadow-sm transition-colors dark:border-gray-700 dark:bg-slate-800 dark:shadow-sm"
+            style={refHeight ? { minHeight: refHeight } : undefined}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <span className="font-semibold">Lucky Money</span>
+              <div className="flex items-center gap-2">
+                <i className="fa-solid fa-gift text-[var(--color-brand-link)] dark:text-red-400"></i>
+              </div>
             </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {redEnvelopeStats.stats.total_active_envelopes} envelopes active • {redEnvelopeStats.stats.total_claimed}{' '}
+              {APP_CONFIG.CHAIN_SYMBOL} total
+            </p>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            0 envelopes active • 0 {APP_CONFIG.CHAIN_SYMBOL} total
-          </p>
-        </div>
+        </Link>
 
         <div
           className="bg-card hover:border-primary/50 dark:hover:border-primary/50 flex flex-col rounded-xl border border-gray-300 p-6 shadow-sm transition-colors dark:border-gray-700 dark:bg-slate-800 dark:shadow-sm"
