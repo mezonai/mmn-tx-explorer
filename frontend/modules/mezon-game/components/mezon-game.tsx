@@ -28,11 +28,6 @@ export const MezonGame = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
-  useEffect(() => {
-    handleChangePage(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterType, selectedTagIds]);
-
   const handleToggleTag = (tagId: string) => {
     if (tagId === 'ALL') {
       setSelectedTagIds([]);
@@ -85,7 +80,12 @@ export const MezonGame = () => {
           </div>
 
           <div className="flex w-full flex-col items-stretch gap-3 md:w-auto md:flex-row md:items-center md:justify-end">
-            <Select value={filterType} onValueChange={setFilterType}>
+            <Select
+              value={filterType}
+              onValueChange={(val) => {
+                setFilterType(val);
+              }}
+            >
               <SelectTrigger className="min-w-[160px] cursor-pointer rounded-[20px] border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-[var(--card-foreground)] outline-none focus:ring-2 focus:ring-[var(--ring)]">
                 <SelectValue placeholder="Filter by Type" />
               </SelectTrigger>
