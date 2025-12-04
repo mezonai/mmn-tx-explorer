@@ -1,12 +1,12 @@
 import { apiDongClient } from "@/service";
-import { ClaimedEnvelopes, ClaimEnvelopeRequest, CreatedEnvelopes, CreateRedEnvelopeRequest, EnvelopeListParams, RedEnvelope, RedEnvelopeClaim, RedEnvelopeDetailRecipient, CloseSessionRequest, RedEnvelopeDetailStats, RedEnvelopeStats, UpdateStatusRedEnvelopeRequest } from "./type";
+import { ClaimedEnvelopes, ClaimEnvelopeRequest, CreatedEnvelopes, CreateRedEnvelopeRequest, EnvelopeListParams, RedEnvelope, RedEnvelopeClaim, RedEnvelopeDetailRecipient, CloseSessionRequest, RedEnvelopeDetailStats, UpdateStatusRedEnvelopeRequest, RedEnvelopeStatsByUser, RedEnvelopeStats } from "./type";
 import { RED_ENVELOPE_ENDPOINTS } from "./constants";
 import { IPaginatedResponse } from "@/types";
 import { UUID } from "crypto";
 
 export class RedEnvelopeService {
-  static async getEnvelopeStats(): Promise<RedEnvelopeStats> {
-    const {data} = await apiDongClient.get<{ data: RedEnvelopeStats}>(RED_ENVELOPE_ENDPOINTS.STATS);
+  static async getEnvelopeStatsByUser(): Promise<RedEnvelopeStatsByUser> {
+    const {data} = await apiDongClient.get<{ data: RedEnvelopeStatsByUser}>(RED_ENVELOPE_ENDPOINTS.STATS_BY_USER);
     return data.data
   }
 
@@ -73,5 +73,10 @@ export class RedEnvelopeService {
 
   static async closeSession(request: CloseSessionRequest): Promise<void> {
     await apiDongClient.post(RED_ENVELOPE_ENDPOINTS.CLOSE_SESSION, request);
+  }
+
+  static async getEnvelopeStats(): Promise<RedEnvelopeStats> {
+    const {data} = await apiDongClient.get<{ data: RedEnvelopeStats}>(RED_ENVELOPE_ENDPOINTS.STATS);
+    return data.data
   }
 }
