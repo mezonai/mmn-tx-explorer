@@ -1,78 +1,50 @@
-import { useState, useEffect } from 'react';
-import { P2POffer, P2POrder } from '../types/p2p.types';
-
-// Mock function to get offer by ID
-const getOfferById = async (offerId: string): Promise<P2POffer | null> => {
-  // TODO: Replace with actual API call
-  const mockOffers: P2POffer[] = [
-    {
-      id: '1',
-      advertiser: {
-        id: 'user1',
-        username: 'Mezon_Trader_Pro',
-        avatar: 'https://ui-avatars.com/api/?name=Mezon+Trader&background=2563eb&color=fff',
-        isVerified: true,
-        totalOrders: 1203,
-        completionRate: 99.5,
-      },
-      totalMZD: 20000,
-      available: 5000,
-      limit: {
-        min: 100,
-        max: 5000,
-      },
-      exchangeRate: 0.8,
-      bankInfo: {
-        bank: 'TCB',
-        accountNumber: '19034482991022',
-        accountName: 'NGUYEN VAN A',
-      },
-    },
-    {
-      id: '2',
-      advertiser: {
-        id: 'user2',
-        username: 'HaiNam_Dev',
-        avatar: 'https://ui-avatars.com/api/?name=Hai+Nam&background=8b5cf6&color=fff',
-        isVerified: false,
-        totalOrders: 50,
-        completionRate: 100,
-      },
-      totalMZD: 15000,
-      available: 1000,
-      limit: {
-        min: 50,
-        max: 2000,
-      },
-      exchangeRate: 0.75,
-      bankInfo: {
-        bank: 'VCB',
-        accountNumber: '1234567890',
-        accountName: 'TRAN VAN B',
-      },
-    },
-  ];
-
-  return mockOffers.find((o) => o.id === offerId) || null;
-};
+import { useEffect, useState } from 'react';
+import { P2PService } from '../api';
+import { P2POffer } from '../types/p2p.types';
 
 export const useP2POffer = (offerId: string | null) => {
   const [offer, setOffer] = useState<P2POffer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!offerId) {
-      setIsLoading(false);
-      return;
-    }
+    let isMounted = true;
 
-    setIsLoading(true);
-    getOfferById(offerId).then((data) => {
-      setOffer(data);
-      setIsLoading(false);
-    });
+    const fetchOffer = async () => {
+      if (!offerId) {
+        setIsLoading(false);
+        setOffer(null);
+        return;
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const data = await P2PService.getOfferById(offerId);
+        if (isMounted) {
+          setOffer(data);
+        }
+      } catch (err) {
+        if (isMounted) {
+          console.error('Error fetching P2P offer:', err);
+          setError('Không thể tải thông tin offer. Vui lòng thử lại sau.');
+          setOffer(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchOffer();
+
+    return () => {
+      isMounted = false;
+    };
   }, [offerId]);
 
-  return { offer, isLoading };
+  return { offer, isLoading, error };
 };
 

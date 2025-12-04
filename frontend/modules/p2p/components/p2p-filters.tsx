@@ -77,7 +77,6 @@ export const P2PFiltersComponent = ({ filters, onFiltersChange, onNewOfferClick 
           />
         </div>
 
-
         {/* New Offer Button */}
         <Button
           onClick={onNewOfferClick}

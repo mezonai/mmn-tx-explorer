@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { P2POrder, P2POffer } from '../types/p2p.types';
 import { useUser } from '@/providers/AppProvider';
+import { P2PService } from '../api';
 
 export const useCreateOrder = () => {
   const { user } = useUser();
@@ -18,40 +19,22 @@ export const useCreateOrder = () => {
     setIsLoading(true);
 
     try {
-      // TODO: Call API to create order
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Generate order ID
-      const orderId = `order_${offer.id}_${Date.now()}`;
-
-      // Generate transfer code
-      const transferCode = `MZD ${Math.floor(Math.random() * 100000)}`;
-
-      const newOrder: P2POrder = {
-        id: orderId,
+      // Call Mock API layer (sau này sẽ được thay bằng BE thật)
+      const order = await P2PService.createOrder({
         offerId: offer.id,
-        buyerId: user.id,
-        sellerId: offer.advertiser.id,
-        sellerUsername: offer.advertiser.username,
         amountMZD,
         amountVND,
-        exchangeRate: offer.exchangeRate,
-        status: 'PAYMENT_PENDING',
-        createdAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes
-        transferCode,
-        bankInfo: offer.bankInfo || {
-          bank: 'MB',
-          accountNumber: '0000000000',
-          accountName: offer.advertiser.username,
-        },
+      });
+
+      // Ở mock hiện tại buyerId đang là mock_buyer_id.
+      // Nếu muốn phản ánh đúng user hiện tại trên FE trong khi chưa có BE,
+      // ta có thể override tạm buyerId tại đây.
+      const normalizedOrder: P2POrder = {
+        ...order,
+        buyerId: user.id,
       };
 
-      // TODO: Save to backend
-      // For now, we'll return the order and let the caller handle navigation
-
-      return newOrder;
+      return normalizedOrder;
     } catch (error) {
       console.error('Error creating order:', error);
       throw error;
@@ -62,6 +45,3 @@ export const useCreateOrder = () => {
 
   return { createOrder, isLoading };
 };
-
-
-
