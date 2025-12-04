@@ -204,7 +204,7 @@ func (r *RedEnvelopeRepository) GetStatsByUser(userID int64) (map[string]interfa
 			COALESCE(SUM(resm.amount), 0) AS total_sent,
 			COALESCE(COUNT(resm.claimed_user_id), 0) AS total_recipients 
 		FROM %s.red_envelope re
-		LEFT JOIN %s.red_envelope_split_money resm ON resm.red_envelope_id = re.id
+		JOIN %s.red_envelope_split_money resm ON resm.red_envelope_id = re.id
 		WHERE re.creator = $1 AND re.status = ANY($2) AND resm.status = $3;
 	`, r.dongSchema, r.dongSchema)
 
