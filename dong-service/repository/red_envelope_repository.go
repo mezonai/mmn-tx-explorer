@@ -201,11 +201,12 @@ func (r *RedEnvelopeRepository) GetTotalClaimedAmount(id string) (int64, error) 
 func (r *RedEnvelopeRepository) GetStatsByUser(userID int64) (map[string]interface{}, error) {
 	totalSentQuery := fmt.Sprintf(`
 		SELECT 
-			COALESCE(SUM(re.total_amount), 0) AS total_sent,
-			COUNT(DISTINCT re.id) AS count_sent_envelopes
+			COALESCE(SUM(resm.amount), 0) AS total_sent,
+			COALESCE(COUNT(resm.claimed_user_id), 0) AS total_recipients 
 		FROM %s.red_envelope re
-		WHERE re.creator = $1 AND re.status = ANY($2);
-	`, r.dongSchema)
+		LEFT JOIN %s.red_envelope_split_money resm ON resm.red_envelope_id = re.id
+		WHERE re.creator = $1 AND re.status = ANY($2) AND resm.status = $3;
+	`, r.dongSchema, r.dongSchema)
 
 	listStatus := []string{
 		constants.RedEnvelopeStatusPublished,
@@ -214,15 +215,15 @@ func (r *RedEnvelopeRepository) GetStatsByUser(userID int64) (map[string]interfa
 
 	var stats struct {
 		TotalSend             int64
-		CountSentEnvelopes    int64
+		TotalRecipients       int64
 		TotalClaimed          int64
 		CountClaimedEnvelopes int64
 		TotalActiveEnvelopes  int64
 	}
 
-	err := r.db.QueryRow(totalSentQuery, userID, pq.Array(listStatus)).Scan(
+	err := r.db.QueryRow(totalSentQuery, userID, pq.Array(listStatus), constants.RedEnvelopeSplitMoneyStatusClaimed).Scan(
 		&stats.TotalSend,
-		&stats.CountSentEnvelopes,
+		&stats.TotalRecipients,
 	)
 
 	if err != nil {
@@ -261,7 +262,7 @@ func (r *RedEnvelopeRepository) GetStatsByUser(userID int64) (map[string]interfa
 
 	result := map[string]interface{}{
 		"total_sent":              stats.TotalSend,
-		"count_sent_envelopes":    stats.CountSentEnvelopes,
+		"total_recipients":        stats.TotalRecipients,
 		"total_claimed":           stats.TotalClaimed,
 		"count_claimed_envelopes": stats.CountClaimedEnvelopes,
 		"total_active_envelopes":  stats.TotalActiveEnvelopes,

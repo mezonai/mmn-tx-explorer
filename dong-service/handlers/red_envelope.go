@@ -55,10 +55,12 @@ func (r *RedEnvelopeHandler) CreateRedEnvelope(c *gin.Context) {
 		return
 	}
 
-	if err = ValidateRequest(&req); err != nil {
-		logger.Error().Err(err).Int64("user_id", userID).Msg("Validation failed")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, err.Error()))
-		return
+	if req.IsRandomDistribution {
+		if err = ValidateRequest(&req); err != nil {
+			logger.Error().Err(err).Int64("user_id", userID).Msg("Validation failed")
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, err.Error()))
+			return
+		}
 	}
 
 	envelope, err := r.repo.Create(&req, userID)
