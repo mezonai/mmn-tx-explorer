@@ -655,12 +655,10 @@ func (r *RedEnvelopeRepository) GetRedEnvelopeCloseSesssion(redEnvelopeID string
 		WHERE rem.red_envelope_id = $1 AND rem.status != $2
 		GROUP BY re.red_envelope_wallet, re.owner_wallet
 	`, r.dongSchema, r.dongSchema)
-	var envelope struct {
-		TotalAmount       int64
-		RedEnvelopeWallet string
-		OwnerWallet       string
-	}
-	err := r.db.QueryRow(query, redEnvelopeID, constants.RedEnvelopeSplitMoneyStatusClaimed).Scan(&envelope.TotalAmount, &envelope.RedEnvelopeWallet, &envelope.OwnerWallet)
+
+	var envelope models.RedEnvelopeCloseSesssion
+
+	err := r.db.QueryRow(query, redEnvelopeID, constants.RedEnvelopeSplitMoneyStatusClaimed).Scan(&envelope.RemainingAmount, &envelope.RedEnvelopeWallet, &envelope.OwnerWallet)
 	if err != nil {
 		return models.RedEnvelopeCloseSesssion{}, fmt.Errorf("failed to get remaining amount: %w", err)
 	}
@@ -710,10 +708,10 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 			Msg("Failed to get total claimed amount")
 	}
 
-	if envelope.TotalAmount > 0 {
+	if envelope.RemainingAmount > 0 {
 		logger.Info().
 			Str("red_envelope_id", redEnvelopeID).
-			Int64("remaining_balance", envelope.TotalAmount).
+			Int64("remaining_balance", envelope.RemainingAmount).
 			Str("red_envelope_wallet", envelope.RedEnvelopeWallet).
 			Str("owner_wallet", envelope.OwnerWallet).
 			Msg("Transferring remaining balance back to owner")
@@ -723,7 +721,7 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 		if err != nil {
 			logger.Error().Err(err).Msg("Failed to get wallet")
 		} else {
-			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, envelope.TotalAmount)
+			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, envelope.RemainingAmount)
 			if err != nil {
 				return err
 			}
