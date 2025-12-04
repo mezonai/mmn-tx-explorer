@@ -455,6 +455,18 @@ const docTemplate = `{
                         "description": "Sort field",
                         "name": "order_by",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search (name or description)",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search (name or description) (alias)",
+                        "name": "search",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1738,6 +1750,9 @@ const docTemplate = `{
                 "owner": {
                     "type": "string"
                 },
+                "recent_amount": {
+                    "type": "integer"
+                },
                 "slug": {
                     "type": "string"
                 },
@@ -2025,6 +2040,12 @@ const docTemplate = `{
         "models.SyncCampaignResponse": {
             "type": "object",
             "properties": {
+                "current_balance": {
+                    "type": "integer"
+                },
+                "recent_amount": {
+                    "type": "integer"
+                },
                 "total_amount": {
                     "type": "integer"
                 },
