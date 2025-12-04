@@ -17,10 +17,9 @@ const ChainSymbol = "đồng"
 
 // Offer-related statuses and event types (renamed from Order)
 const (
+	TrandingOpen     = "OPEN"
 	TradingPending   = "PENDING"
 	TradingConfirmed = "CONFIRMED"
-	TradingPartial   = "PARTIAL"
-	TradingFilled    = "FILLED"
 	TradingCanceled  = "CANCELED"
 	TradingFailed    = "FAILED"
 )

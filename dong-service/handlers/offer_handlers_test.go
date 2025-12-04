@@ -11,6 +11,7 @@ import (
 	"dong-service/constants"
 	"dong-service/models"
 	"fmt"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,10 +23,18 @@ func (f *fakeOfferService) CreateOffer(ctx context.Context, req *models.CreateOf
 		OfferID:              12345,
 		IntermediaryWalletID: 1,
 		Side:                 req.Side,
-		Symbol:               req.Symbol,
-		Quantity:             req.Quantity,
-		Price:                "0",
-		Status:               "PENDING",
+		Quantity: func() int64 {
+			q, _ := strconv.ParseInt(req.Quantity, 10, 64)
+			return q
+		}(),
+		Price: func() int64 {
+			if req.Price == nil {
+				return 0
+			}
+			p, _ := strconv.ParseInt(*req.Price, 10, 64)
+			return p
+		}(),
+		Status: "PENDING",
 	}, nil
 }
 
@@ -34,11 +43,11 @@ func (f *fakeOfferService) ConfirmOffer(ctx context.Context, offerID int64, exec
 }
 
 func (f *fakeOfferService) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, pagination map[string]any) ([]models.Offer, error) {
-	return []models.Offer{{OfferID: 1, Side: models.OfferSideBuy, Symbol: constants.ChainSymbol, Price: "1000"}, {OfferID: 2, Side: models.OfferSideSell, Symbol: constants.ChainSymbol, Price: "2000"}}, nil
+	return []models.Offer{{OfferID: 1, Side: models.OfferSideBuy, Symbol: constants.ChainSymbol, Price: 1000}, {OfferID: 2, Side: models.OfferSideSell, Symbol: constants.ChainSymbol, Price: 2000}}, nil
 }
 
 func (f *fakeOfferService) GetOfferByID(ctx context.Context, offerID int64) (*models.Offer, error) {
-	return &models.Offer{OfferID: offerID, Side: models.OfferSideBuy, Symbol: constants.ChainSymbol, Price: "1000"}, nil
+	return &models.Offer{OfferID: offerID, Side: models.OfferSideBuy, Symbol: constants.ChainSymbol, Price: 1000}, nil
 }
 
 func TestCreateOfferHandler_Success(t *testing.T) {

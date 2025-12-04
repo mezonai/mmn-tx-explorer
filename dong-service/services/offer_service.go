@@ -8,6 +8,7 @@ import (
 	"dong-service/models"
 	"dong-service/repository"
 	"fmt"
+	"strconv"
 )
 
 type OfferService struct {
@@ -70,25 +71,33 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		metadataStr = &ms
 	}
 
+	var priceInt int64
+	if req.Price != nil {
+		var err error
+		priceInt, err = strconv.ParseInt(*req.Price, 10, 64)
+		if err != nil {
+			_ = tx.Rollback()
+			return nil, fmt.Errorf("invalid price: %v", err)
+		}
+	}
+
+	quantityInt, err := strconv.ParseInt(req.Quantity, 10, 64)
+	if err != nil {
+		_ = tx.Rollback()
+		return nil, fmt.Errorf("invalid quantity: %v", err)
+	}
+
 	offer := &models.Offer{
 		IntermediaryWalletID: walletID,
 		WalletAddress:        walletAddress,
 		Side:                 req.Side,
 		Symbol:               req.Symbol,
-		Quantity:             req.Quantity,
-		Price:                "0",
-		FilledQuantity:       "0",
+		Quantity:             quantityInt,
+		TotalQuantity:        quantityInt,
+		Price:                priceInt,
 		PriceType:            priceType,
-		PriceReference:       req.PriceReference,
-		Spread:               req.Spread,
 		Status:               constants.TradingPending,
-		ExternalRef:          req.ExternalRef,
 		Metadata:             metadataStr,
-		ExpiresAt:            req.ExpiresAt,
-	}
-
-	if req.Price != nil {
-		offer.Price = *req.Price
 	}
 
 	if err := s.repo.CreateOffer(ctx, offer, tx); err != nil {
@@ -99,7 +108,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 	history := &models.OfferHistory{
 		OfferID:   offer.OfferID,
 		EventType: constants.TradingPending,
-		Quantity:  offer.Quantity,
+		Quantity:  strconv.FormatInt(offer.Quantity, 10),
 		Metadata:  offer.Metadata,
 	}
 

@@ -103,6 +103,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 
 		// Offers (private) - create offer
 		offersPrivate := v1.Group("/offers")
+		offersPrivate.Use(middleware.ParseTokenAndAddToContext(cfg.JWT.Secret))
 		offersPrivate.Use(middleware.Authentication(cfg.JWT.Secret))
 		offersPrivate.GET("", offerHandler.ListOffers)
 		offersPrivate.GET("/:id", offerHandler.GetOfferDetail)

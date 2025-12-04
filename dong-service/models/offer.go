@@ -13,23 +13,19 @@ const (
 )
 
 type Offer struct {
-	OfferID              int64      `json:"offer_id" db:"offer_id"`
-	IntermediaryWalletID int64      `json:"intermediary_wallet_id" db:"intermediary_wallet_id"`
-	WalletAddress        string     `json:"wallet_address" db:"wallet_address"`
-	Side                 OfferSide  `json:"side" db:"side"` // BUY or SELL
-	Symbol               string     `json:"symbol" db:"symbol"`
-	Quantity             string     `json:"quantity" db:"quantity"` // numeric as string to support big ints
-	Price                string     `json:"price" db:"price"`       // numeric as string
-	FilledQuantity       string     `json:"filled_quantity" db:"filled_quantity"`
-	PriceType            string     `json:"price_type" db:"price_type"`
-	PriceReference       *string    `json:"price_reference,omitempty" db:"price_reference"`
-	Spread               *string    `json:"spread,omitempty" db:"spread"`
-	Status               string     `json:"status" db:"status"`
-	ExternalRef          *string    `json:"external_ref,omitempty" db:"external_ref"`
-	Metadata             *string    `json:"metadata,omitempty" db:"metadata"`
-	ExpiresAt            *time.Time `json:"expires_at,omitempty" db:"expires_at"`
-	CreatedAt            time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt            time.Time  `json:"updated_at" db:"updated_at"`
+	OfferID              int64     `json:"offer_id" db:"offer_id"`
+	IntermediaryWalletID int64     `json:"intermediary_wallet_id" db:"intermediary_wallet_id"`
+	WalletAddress        string    `json:"wallet_address" db:"wallet_address"`
+	Side                 OfferSide `json:"side" db:"side"` // BUY or SELL
+	Symbol               string    `json:"symbol" db:"symbol"`
+	Quantity             int64     `json:"quantity" db:"quantity"` // numeric as string to support big ints
+	TotalQuantity        int64     `json:"total_quantity" db:"total_quantity"`
+	Price                int64     `json:"price" db:"price"`
+	PriceType            string    `json:"price_type" db:"price_type"`
+	Status               string    `json:"status" db:"status"`
+	Metadata             *string   `json:"metadata,omitempty" db:"metadata"`
+	CreatedAt            time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt            time.Time `json:"updated_at" db:"updated_at"`
 }
 
 // OfferHistory represents an audit/event emitted for an offer
