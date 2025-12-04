@@ -11,8 +11,9 @@ export function useCreateRedEnvelope(){
     mutationFn: (data: CreateRedEnvelopeRequest) => RedEnvelopeService.createRedEnvelope(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RED_ENVELOPES] });
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RED_ENVELOPE_STATS] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RED_ENVELOPE_STATS_BY_USER] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CREATED_ENVELOPES]})
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RED_ENVELOPE_STATS] });
     },
     onError: (error: Error) => {
       toast.error(`Failed to create session: ${error.message}`);

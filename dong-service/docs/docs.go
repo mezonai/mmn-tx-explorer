@@ -455,6 +455,18 @@ const docTemplate = `{
                         "description": "Sort field",
                         "name": "order_by",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search (name or description)",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search (name or description) (alias)",
+                        "name": "search",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1011,8 +1023,49 @@ const docTemplate = `{
                             ]
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/red-envelopes/stats-by-user": {
+            "get": {
+                "description": "Get overall statistics for red envelope sessions by user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "red_envelopes"
+                ],
+                "summary": "Get red envelope statistics by user",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/models.Response"
                         }
@@ -1738,6 +1791,9 @@ const docTemplate = `{
                 "owner": {
                     "type": "string"
                 },
+                "recent_amount": {
+                    "type": "integer"
+                },
                 "slug": {
                     "type": "string"
                 },
@@ -2025,6 +2081,12 @@ const docTemplate = `{
         "models.SyncCampaignResponse": {
             "type": "object",
             "properties": {
+                "current_balance": {
+                    "type": "integer"
+                },
+                "recent_amount": {
+                    "type": "integer"
+                },
                 "total_amount": {
                     "type": "integer"
                 },

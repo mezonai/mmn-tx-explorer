@@ -1,0 +1,7 @@
+package constants
+
+const (
+	CREATE_ORDER = "CREATE_OFFER"
+	CONFIRM_ORDER = "CONFIRM_OFFER"
+    CANCEL_ORDER = "CANCEL_OFFER"
+)
