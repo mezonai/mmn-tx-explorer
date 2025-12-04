@@ -90,7 +90,7 @@ type DetailRedEnvelope struct {
 }
 
 type RedEnvelopeCloseSesssion struct {
-	TotalAmount       int64
+	RemainingAmount   int64
 	RedEnvelopeWallet string
 	OwnerWallet       string
 }
