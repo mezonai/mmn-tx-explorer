@@ -14,19 +14,19 @@ export const DonationFeed = ({ campaign }: { campaign: DonationCampaign }) => {
   const { user } = useUser();
   const { donationFeed, isLoading, error } = useDonationFeed(campaign.donation_wallet);
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full space-y-6">
       <div className="flex w-full flex-row justify-between">
         <div>
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Updates</h2>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Follow the full journey of this campaign.</p>
         </div>
         <div>
-          {user?.id === campaign.creator  && (
-          <Link href={ROUTES.CREATE_DONATION_UPDATE(campaign.slug)} passHref>
-            <Button variant="default" className="bg-brand-primary hover:bg-brand-primary/80 text-white">
-              + Add Update
-            </Button>
-          </Link>
+          {user?.id === campaign.creator && (
+            <Link href={ROUTES.CREATE_DONATION_UPDATE(campaign.slug)} passHref>
+              <Button variant="default" className="bg-brand-primary hover:bg-brand-primary/80 text-white">
+                + Add Update
+              </Button>
+            </Link>
           )}
         </div>
       </div>

@@ -111,11 +111,4 @@ export class DonationCampaignService {
     );
     return data;
   }
-
-  static async getLatestDonationUpdate(address: string): Promise<IDonationFeed> {
-    const { data } = await apiDongClient.get<{ data: IDonationFeed }>(
-      DONATION_ENDPOINTS.LATEST_DONATION_UPDATE(address)
-    );
-    return data.data;
-  }
 }
