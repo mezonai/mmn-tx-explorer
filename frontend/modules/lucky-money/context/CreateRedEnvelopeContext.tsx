@@ -2,7 +2,7 @@
 
 import { createContext, ReactNode, useCallback, useContext, useState } from 'react';
 import { CreateRedEnvelopeForm, CreateRedEnvelopeRequest, RedEnvelope, UpdateStatusRedEnvelopeRequest } from '../type';
-import { DEFAULT_FORM_VALUES } from '../constants';
+import { DEFAULT_FORM_VALUES, MAX_PARTICIPANT_COUNT } from '../constants';
 import { useUser } from '@/providers';
 import { mmnClient } from '@/modules/auth';
 import { useTransfer } from '@/modules/transfer/hooks/useTransfer';
@@ -87,8 +87,13 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
         throw new Error('Total amount must be greater than zero or integer');
       }
 
-      if (!form.participantCount || form.participantCount <= 0 || !Number.isInteger(form.participantCount)) {
-        throw new Error('Participant count must be greater than zero or integer');
+      if (
+        !form.participantCount ||
+        form.participantCount <= 0 ||
+        !Number.isInteger(form.participantCount) ||
+        form.participantCount > MAX_PARTICIPANT_COUNT
+      ) {
+        throw new Error(`Participant count must be a positive integer and must not exceed ${MAX_PARTICIPANT_COUNT}.`);
       }
 
       if (form.randomDistribution) {
