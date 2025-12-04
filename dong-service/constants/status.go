@@ -12,24 +12,15 @@ const (
 	CampaignStatusClosed int16 = 2
 )
 
-// ChainSymbol defines the canonical on-chain asset symbol used across services
-const ChainSymbol = "đồng"
-
-// Offer-related statuses and event types (renamed from Order)
+//Donation Campaign Goal Constants
 const (
-	TrandingOpen     = "OPEN"
-	TradingPending   = "PENDING"
-	TradingConfirmed = "CONFIRMED"
-	TradingCanceled  = "CANCELED"
-	TradingFailed    = "FAILED"
+	MinGoalAmount int64 = 0              // Minimum goal amount for a campaign
+	MaxGoalAmount int64 = 100000000000    // Maximum goal amount for a campaign (100 billion)
 )
 
+// Transaction Status Constants
 const (
-	PriceTypeFixed = "FIXED"
-	PriceTypeFloat = "FLOAT"
-)
-
-const (
+	// TransactionStatusFINALIZED represents a finalized transaction
 	TransactionStatusFINALIZED int16 = 2
 )
 
