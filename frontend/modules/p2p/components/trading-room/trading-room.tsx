@@ -31,7 +31,8 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
   const isOfferMode = searchParams.get('type') === 'offer';
 
   const { order, isLoading: orderLoading, updateOrderStatus } = useP2POrder(isOfferMode ? '' : orderId);
-  const { offer, isLoading: offerLoading } = useP2POffer(isOfferMode ? orderId : null);
+  const offerIdParam = isOfferMode ? orderId : (order?.offerId ?? null);
+  const { offer, isLoading: offerLoading } = useP2POffer(offerIdParam);
   const { createOrder, isLoading: isCreatingOrder } = useCreateOrder();
   const { messages, isLoading: chatLoading, sendMessage } = useP2PChat(isOfferMode ? '' : orderId);
 
@@ -44,14 +45,14 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
   // Detect user role (buyer or seller)
   const userRole = useMemo(() => {
     if (isOfferMode && !createdOrder) return 'buyer'; // In offer mode before order creation, user is always buyer
-    if (!user?.id || !currentOrder) return null;
-    if (currentOrder.buyerId === user.id) return 'buyer';
-    if (currentOrder.sellerId === user.id) return 'seller';
+    if (!user?.walletAddress || !currentOrder) return null;
+    if (currentOrder.buyerWalletAddress === user.walletAddress) return 'buyer';
+    if (currentOrder.sellerWalletAddress === user.walletAddress) return 'seller';
     return null;
-  }, [user?.id, currentOrder, isOfferMode, createdOrder]);
+  }, [user?.walletAddress, currentOrder, isOfferMode, createdOrder]);
 
   const handleConfirmBuy = async (amountMZD: number, amountVND: number) => {
-    if (!offer || !user?.id) {
+    if (!offer || !user?.walletAddress) {
       setError('Vui lòng đăng nhập để tiếp tục');
       return;
     }
@@ -110,24 +111,20 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
   // Offer mode or order created from offer - Show unified trading room
   if ((isOfferMode && offer) || createdOrder) {
     const displayOrder = createdOrder || {
-      id: '',
-      offerId: offer?.id || '',
-      buyerId: user?.id || '',
-      sellerId: offer?.advertiser.id || '',
-      sellerUsername: offer?.advertiser.username || '',
+      orderId: '',
+      offerId: offer?.offerId || '',
+      buyerWalletAddress: user?.walletAddress || '',
+      sellerWalletAddress: offer?.sellerWalletAddress || '',
       amountMZD: 0,
       amountVND: 0,
       exchangeRate: offer?.exchangeRate || 1,
       status: 'PAYMENT_PENDING' as const,
       createdAt: '',
       expiresAt: '',
-      transferCode: '',
-      bankInfo: {
-        bank: 'MB' as const,
-        accountNumber: '',
-        accountName: '',
-      },
     };
+
+    const formatWallet = (address?: string) =>
+      address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'N/A';
 
     return (
       <div className="bg-background flex h-screen flex-col">
@@ -142,11 +139,14 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
             </button>
             <div>
               <h1 className="text-sm font-bold text-white">
-                {createdOrder ? `Đơn mua MZD #${createdOrder.id}` : `Mua MZD từ ${offer?.advertiser.username}`}
+                {createdOrder
+                  ? `Đơn mua MZD #${createdOrder.orderId}`
+                  : `Mua MZD từ ${formatWallet(offer?.sellerWalletAddress)}`}
               </h1>
               {!createdOrder && (
                 <div className="text-xs text-gray-400">
-                  Đang giao dịch với <span className="text-brand-primary font-bold">{offer?.advertiser.username}</span>
+                  Đang giao dịch với{' '}
+                  <span className="text-brand-primary font-bold">{formatWallet(offer?.sellerWalletAddress)}</span>
                 </div>
               )}
             </div>
@@ -173,7 +173,7 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
             {createdOrder && (
               <>
                 <OrderInfoCard order={createdOrder} />
-                <BankInfoCard order={createdOrder} />
+                <BankInfoCard bankInfo={offer?.bankInfo} transferCode={offer?.transferCode} />
                 {userRole === 'buyer' && (
                   <PaymentActionButton order={createdOrder} onPaymentConfirmed={handlePaymentConfirmed} />
                 )}
@@ -217,7 +217,7 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
         <div className="overflow-y-auto border-r border-gray-800 p-6 md:w-7/12 lg:w-8/12">
           <ProgressSteps order={order} />
           <OrderInfoCard order={order} />
-          <BankInfoCard order={order} />
+          {offer && <BankInfoCard bankInfo={offer.bankInfo} transferCode={offer.transferCode} />}
 
           {/* Conditional rendering based on user role */}
           {userRole === 'buyer' && <PaymentActionButton order={order} onPaymentConfirmed={handlePaymentConfirmed} />}

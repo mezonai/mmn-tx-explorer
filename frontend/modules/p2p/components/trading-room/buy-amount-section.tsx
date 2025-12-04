@@ -52,14 +52,8 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
     if (amountMZD >= offer.limit.min && amountMZD <= Math.min(offer.limit.max, offer.available)) {
       // Console log đầy đủ thông tin khi xác nhận mua
       console.log('📦 Offer Information:', {
-        offerId: offer.id,
-        seller: {
-          id: offer.advertiser.id,
-          username: offer.advertiser.username,
-          isVerified: offer.advertiser.isVerified,
-          totalOrders: offer.advertiser.totalOrders,
-          completionRate: offer.advertiser.completionRate,
-        },
+        offerId: offer.offerId,
+        sellerWalletAddress: offer.sellerWalletAddress,
         totalMZD: offer.totalMZD,
         totalMZDFormatted: formatCurrency(offer.totalMZD),
         available: offer.available,

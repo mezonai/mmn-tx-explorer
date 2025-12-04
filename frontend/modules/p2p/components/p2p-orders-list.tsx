@@ -13,8 +13,7 @@ export const P2POrdersList = () => {
   const router = useRouter();
 
   const handleOpenToConfirm = (order: P2POrder) => {
-    // Navigate to trading room
-    router.push(ROUTES.P2P_TRADING(order.id));
+    router.push(ROUTES.P2P_TRADING(order.orderId));
   };
 
   if (isLoading) {
@@ -48,7 +47,7 @@ export const P2POrdersList = () => {
             <tr>
               <th className="px-6 py-4">Order ID</th>
               <th className="px-6 py-4">Amount</th>
-              <th className="px-6 py-4">Buyer</th>
+              <th className="px-6 py-4">Wallets</th>
               <th className="px-6 py-4">Status</th>
               <th className="px-6 py-4">Time Remaining</th>
               <th className="px-6 py-4">Action</th>
@@ -56,7 +55,7 @@ export const P2POrdersList = () => {
           </thead>
           <tbody className="divide-y divide-gray-800 text-sm">
             {orders.map((order) => (
-              <OrderRow key={order.id} order={order} onOpenToConfirm={handleOpenToConfirm} />
+              <OrderRow key={order.orderId} order={order} onOpenToConfirm={handleOpenToConfirm} />
             ))}
           </tbody>
         </table>

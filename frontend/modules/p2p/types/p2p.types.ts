@@ -1,15 +1,8 @@
 export type TradeType = 'BUY' | 'SELL';
 
 export interface P2POffer {
-  id: string;
-  advertiser: {
-    id: string;
-    username: string;
-    avatar?: string;
-    isVerified: boolean;
-    totalOrders: number;
-    completionRate: number;
-  };
+  offerId: string;
+  sellerWalletAddress: string;
   totalMZD: number; // Tổng số MZD mà người bán có sẵn để bán (ví dụ: 20000 MZD)
   available: number; // Số MZD còn khả dụng để bán (có thể bằng hoặc nhỏ hơn totalMZD)
   limit: {
@@ -48,23 +41,16 @@ export interface CreateOfferFormData {
 export type OrderStatus = 'PAYMENT_PENDING' | 'WAIT_CONFIRM' | 'PAYMENT_CONFIRMED' | 'COMPLETED' | 'CANCELLED';
 
 export interface P2POrder {
-  id: string; // Order ID (ví dụ: "19283746")
+  orderId: string; // Order ID (ví dụ: "19283746")
   offerId: string; // Reference đến P2POffer
-  buyerId: string;
-  sellerId: string;
-  sellerUsername: string;
+  buyerWalletAddress: string;
+  sellerWalletAddress: string;
   amountMZD: number; // Số MZD người mua muốn mua
   amountVND: number; // Số VND cần thanh toán (tính từ amountMZD * exchangeRate)
   exchangeRate: number; // Tỉ giá VND/MZD từ offer
   status: OrderStatus;
   createdAt: string;
   expiresAt: string; // Timer countdown (ISO string)
-  transferCode: string; // Mã chuyển khoản (ví dụ: "MZD 83729")
-  bankInfo: {
-    bank: BankOption;
-    accountNumber: string;
-    accountName: string;
-  };
 }
 
 export interface ChatMessage {

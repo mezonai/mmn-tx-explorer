@@ -4,6 +4,8 @@ import { ArrowLeft, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 import { P2POrder } from '../../types/p2p.types';
+import { AddressDisplay } from '@/components/shared/address-display';
+import { ROUTES } from '@/configs/routes.config';
 
 interface TradingRoomHeaderProps {
   order: P2POrder;
@@ -34,10 +36,15 @@ export const TradingRoomHeader = ({ order }: TradingRoomHeaderProps) => {
         </button>
         <div>
           <h1 className="font-bold text-white text-sm">
-            Đơn mua MZD <span className="text-gray-500">#{order.id}</span>
+            Đơn mua MZD <span className="text-gray-500">#{order.orderId}</span>
           </h1>
-          <div className="text-xs text-gray-400">
-            Đang giao dịch với <span className="text-brand-primary font-bold">{order.sellerUsername}</span>
+          <div className="text-xs text-gray-400 flex items-center gap-1">
+            Đang giao dịch với
+            <AddressDisplay
+              address={order.sellerWalletAddress}
+              href={ROUTES.WALLET(order.sellerWalletAddress)}
+              className="text-brand-primary font-bold"
+            />
           </div>
         </div>
       </div>

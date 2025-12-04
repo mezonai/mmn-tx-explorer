@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/configs/routes.config';
 import { cn } from '@/lib/utils';
 import { Clock, CheckCircle2 } from 'lucide-react';
+import { AddressDisplay } from '@/components/shared/address-display';
 
 interface OrderRowProps {
   order: P2POrder;
@@ -17,7 +18,7 @@ export const OrderRow = ({ order, onOpenToConfirm }: OrderRowProps) => {
   const router = useRouter();
 
   const handleRowClick = () => {
-    router.push(ROUTES.P2P_TRADING(order.id));
+    router.push(ROUTES.P2P_TRADING(order.orderId));
   };
 
   const handleOpenToConfirm = (e: React.MouseEvent) => {
@@ -65,7 +66,7 @@ export const OrderRow = ({ order, onOpenToConfirm }: OrderRowProps) => {
     >
       <td className="px-6 py-4">
         <div className="flex flex-col gap-1">
-          <div className="font-medium text-white">#{order.id}</div>
+          <div className="font-medium text-white">#{order.orderId}</div>
           <div className="text-xs text-gray-500">
             {new Date(order.createdAt).toLocaleString('vi-VN')}
           </div>
@@ -82,9 +83,17 @@ export const OrderRow = ({ order, onOpenToConfirm }: OrderRowProps) => {
         </div>
       </td>
       <td className="px-6 py-4">
-        <div className="flex flex-col gap-1">
-          <div className="text-sm text-gray-300">{order.sellerUsername}</div>
-          <div className="text-xs text-gray-500">Buyer ID: {order.buyerId}</div>
+        <div className="flex flex-col gap-2">
+          <div className="text-xs uppercase text-gray-500">Seller wallet</div>
+          <AddressDisplay
+            address={order.sellerWalletAddress}
+            href={ROUTES.WALLET(order.sellerWalletAddress)}
+          />
+          <div className="text-xs uppercase text-gray-500 mt-2">Buyer wallet</div>
+          <AddressDisplay
+            address={order.buyerWalletAddress}
+            href={ROUTES.WALLET(order.buyerWalletAddress)}
+          />
         </div>
       </td>
       <td className="px-6 py-4">

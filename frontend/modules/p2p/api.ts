@@ -1,11 +1,9 @@
 // Mock API layer for P2P trading (offers & orders).
-// - Follows the BE contract where "seller" is the owner of the offer.
-// - Currently maps seller -> advertiser to match existing P2POffer type.
+// - Mirrors BE contract that uses wallet addresses for buyer/seller identifiers.
 // - Later, when BE is wired, we can switch USE_P2P_MOCK to false and
 //   use apiDongClient similarly to donation-campaign module.
 
-import { BankOption, P2POffer, P2POrder, TradeType } from './types/p2p.types';
-import { P2P_ENDPOINTS } from './constants';
+import { P2POffer, P2POrder, TradeType } from './types/p2p.types';
 // import { apiDongClient } from '@/service';
 
 const USE_P2P_MOCK = true;
@@ -15,44 +13,15 @@ const delay = (ms: number) =>
     setTimeout(resolve, ms);
   });
 
-type Seller = {
-  id: string;
-  username: string;
-  avatar?: string;
-  isVerified: boolean;
-  totalOrders: number;
-  completionRate: number;
-};
-
-type RawOffer = {
-  id: string;
-  seller: Seller;
-  totalMZD: number;
-  available: number;
-  limit: {
-    min: number;
-    max: number;
+type RawOffer = P2POffer &
+  Required<Pick<P2POffer, 'bankInfo'>> & {
+    transferCode: string;
   };
-  exchangeRate: number;
-  bankInfo: {
-    bank: BankOption;
-    accountNumber: string;
-    accountName: string;
-  };
-  transferCode: string;
-};
 
 const mockRawOffers: RawOffer[] = [
   {
-    id: 'offer_1',
-    seller: {
-      id: 'user1',
-      username: 'Mezon_Trader_Pro',
-      avatar: 'https://ui-avatars.com/api/?name=Mezon+Trader&background=2563eb&color=fff',
-      isVerified: true,
-      totalOrders: 1203,
-      completionRate: 99.5,
-    },
+    offerId: 'offer_1',
+    sellerWalletAddress: '0xA1B2c3D4e5F67890abcdef1234567890ABCDEF01',
     totalMZD: 20000,
     available: 5000,
     limit: {
@@ -68,15 +37,8 @@ const mockRawOffers: RawOffer[] = [
     transferCode: 'MZD 83729',
   },
   {
-    id: 'offer_2',
-    seller: {
-      id: 'user2',
-      username: 'HaiNam_Dev',
-      avatar: 'https://ui-avatars.com/api/?name=Hai+Nam&background=8b5cf6&color=fff',
-      isVerified: false,
-      totalOrders: 50,
-      completionRate: 100,
-    },
+    offerId: 'offer_2',
+    sellerWalletAddress: '0xFfEEDDCCbbaa99887766554433221100FFEEDDcc',
     totalMZD: 15000,
     available: 1000,
     limit: {
@@ -94,15 +56,8 @@ const mockRawOffers: RawOffer[] = [
 ];
 
 const mapRawOfferToP2POffer = (raw: RawOffer): P2POffer => ({
-  id: raw.id,
-  advertiser: {
-    id: raw.seller.id,
-    username: raw.seller.username,
-    avatar: raw.seller.avatar,
-    isVerified: raw.seller.isVerified,
-    totalOrders: raw.seller.totalOrders,
-    completionRate: raw.seller.completionRate,
-  },
+  offerId: raw.offerId,
+  sellerWalletAddress: raw.sellerWalletAddress,
   totalMZD: raw.totalMZD,
   available: raw.available,
   limit: {
@@ -118,8 +73,6 @@ const mapRawOfferToP2POffer = (raw: RawOffer): P2POffer => ({
 const mockOrders: P2POrder[] = [];
 
 const generateOrderId = () => `order_${Date.now()}`;
-
-const generateTransferCode = () => `MZD ${Math.floor(Math.random() * 100000)}`;
 
 export class P2PService {
   static async getOffers(params: { tradeType?: TradeType; amount?: number; currency?: string }): Promise<P2POffer[]> {
@@ -149,7 +102,7 @@ export class P2PService {
   static async getOfferById(offerId: string): Promise<P2POffer> {
     if (USE_P2P_MOCK) {
       await delay(300);
-      const raw = mockRawOffers.find((offer) => offer.id === offerId);
+      const raw = mockRawOffers.find((offer) => offer.offerId === offerId);
       if (!raw) {
         throw new Error(`Offer not found: ${offerId}`);
       }
@@ -166,7 +119,7 @@ export class P2PService {
     if (USE_P2P_MOCK) {
       await delay(500);
 
-      const raw = mockRawOffers.find((offer) => offer.id === payload.offerId);
+      const raw = mockRawOffers.find((offer) => offer.offerId === payload.offerId);
       if (!raw) {
         throw new Error(`Offer not found: ${payload.offerId}`);
       }
@@ -181,26 +134,19 @@ export class P2PService {
       const amountVND = payload.amountVND ?? amountMZD * exchangeRate;
 
       const orderId = generateOrderId();
-      const transferCode = raw.transferCode || generateTransferCode();
-
-      const mockBuyerId = 'mock_buyer_id';
+      const mockBuyerWallet = '0xBuyerWallet000000000000000000000000000001';
 
       const newOrder: P2POrder = {
-        id: orderId,
-        offerId: raw.id,
-        buyerId: mockBuyerId,
-        sellerId: raw.seller.id,
-        sellerUsername: raw.seller.username,
+        orderId,
+        offerId: raw.offerId,
+        buyerWalletAddress: mockBuyerWallet,
+        sellerWalletAddress: raw.sellerWalletAddress,
         amountMZD,
         amountVND,
         exchangeRate,
         status: 'PAYMENT_PENDING',
         createdAt: new Date().toISOString(),
         expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-        transferCode,
-        bankInfo: {
-          ...raw.bankInfo,
-        },
       };
 
       mockOrders.push(newOrder);
@@ -219,7 +165,7 @@ export class P2PService {
   static async getOrderById(orderId: string): Promise<P2POrder> {
     if (USE_P2P_MOCK) {
       await delay(300);
-      const order = mockOrders.find((item) => item.id === orderId);
+      const order = mockOrders.find((item) => item.orderId === orderId);
       if (!order) {
         if (mockOrders.length === 0) {
           throw new Error(`Order not found: ${orderId}`);

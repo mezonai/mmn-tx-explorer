@@ -22,13 +22,13 @@ export const P2POffersTable = ({ offers, isLoading = false, onOfferClick }: P2PO
   const handleBuyClick = (offer: P2POffer, e: React.MouseEvent) => {
     e.stopPropagation();
     // Navigate to trading room with offerId (will create order after confirming)
-    router.push(`/p2p/trading/${offer.id}?type=offer`);
+    router.push(`/p2p/trading/${offer.offerId}?type=offer`);
   };
 
   const columns: TTableColumn<P2POffer>[] = [
     {
-      headerContent: 'Advertiser (Người bán)',
-      renderCell: (offer) => <AdvertiserInfo advertiser={offer.advertiser} />,
+      headerContent: 'Seller (Người bán)',
+      renderCell: (offer) => <AdvertiserInfo walletAddress={offer.sellerWalletAddress} />,
       skeletonContent: (
         <div className="flex items-center gap-3">
           <Skeleton className="h-10 w-10 rounded-full" />
@@ -108,7 +108,7 @@ export const P2POffersTable = ({ offers, isLoading = false, onOfferClick }: P2PO
           rows={offers}
           isLoading={isLoading}
           onRowClick={onOfferClick}
-          getRowKey={(offer) => offer.id}
+          getRowKey={(offer) => offer.offerId}
           className={cn(
             'w-full border-collapse text-left',
             '[&_thead]:bg-gray-900 dark:[&_thead]:bg-gray-900',
