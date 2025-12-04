@@ -28,6 +28,11 @@ export const MezonGame = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
+  useEffect(() => {
+    handleChangePage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterType, selectedTagIds]);
+
   const handleToggleTag = (tagId: string) => {
     if (tagId === 'ALL') {
       setSelectedTagIds([]);
