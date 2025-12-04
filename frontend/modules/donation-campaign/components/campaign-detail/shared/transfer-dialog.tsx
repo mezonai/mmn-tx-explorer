@@ -95,7 +95,7 @@ export function TransferDialog({
         return;
       }
 
-      const amountToSend = form.amount ? form.amount : NumberUtil.formatWithCommasAndScale(currentBalanceValue);
+      const amountToSend = form.amount ? form.amount : NumberUtil.scaleDown(currentBalanceValue);
       if (Number(amountToSend) > currentBalanceValue) {
         toast.error('Insufficient balance. Please enter a lower amount.');
         return;
@@ -105,7 +105,7 @@ export function TransferDialog({
         {
           privateKey: form.privateKey.trim(),
           recipientAddress: form.recipientAddress.trim(),
-          amount: NumberUtil.sanitizeAmount(amountToSend),
+          amount: amountToSend.toString(),
           note: form.note.trim(),
         },
         ETransferType.WithdrawCampaign,
@@ -119,7 +119,7 @@ export function TransferDialog({
       } else {
         toast.error(result.error || 'Transfer failed. Please try again.');
       }
-    } catch (error: any) {
+    } catch (error:any) {
       console.error('Transfer error:', error);
       toast.error(error?.message || 'Something went wrong');
     }
