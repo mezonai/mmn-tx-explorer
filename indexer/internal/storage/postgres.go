@@ -1532,7 +1532,7 @@ func (p *PostgresConnector) insertTransactionsTx(
 	}
 
 	valueStrings := make([]string, len(transactions))
-	valueArgs := make([]interface{}, 0, len(transactions)*13)
+	valueArgs := make([]interface{}, 0, len(transactions)*14)
 
 	for i, t := range transactions {
 		base := i * 14
