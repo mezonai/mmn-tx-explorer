@@ -21,8 +21,8 @@ func NewOfferRepository(db *sql.DB, dongSchema string) *OfferRepository {
 func (r *OfferRepository) CreateOffer(ctx context.Context, offer *models.Offer, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
 		INSERT INTO %s.offers (
-			intermediary_wallet_id, wallet_address, side, symbol, quantity, price, filled_quantity, price_type, price_reference, spread, status, external_ref, metadata, expires_at, created_at, updated_at
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,NOW(),NOW())
+			intermediary_wallet_id, wallet_address, side, symbol, quantity, total_quantity, price, price_type, status, metadata, created_at, updated_at
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,NOW(),NOW())
         RETURNING offer_id, created_at, updated_at
     `, r.dongSchema)
 
@@ -34,15 +34,11 @@ func (r *OfferRepository) CreateOffer(ctx context.Context, offer *models.Offer, 
 		offer.Side,
 		offer.Symbol,
 		offer.Quantity,
+		offer.TotalQuantity,
 		offer.Price,
-		offer.FilledQuantity,
 		offer.PriceType,
-		offer.PriceReference,
-		offer.Spread,
 		offer.Status,
-		offer.ExternalRef,
 		offer.Metadata,
-		offer.ExpiresAt,
 	).Scan(&offer.OfferID, &offer.CreatedAt, &offer.UpdatedAt)
 }
 
@@ -72,7 +68,7 @@ func (r *OfferRepository) UpdateOfferStatus(ctx context.Context, offerID int64, 
 
 // ListOffers returns offers matching optional filters with pagination
 func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, pagination any) ([]models.Offer, error) {
-	base := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_id, wallet_address, side, symbol, quantity, price, filled_quantity, price_type, price_reference, spread, status, external_ref, metadata, expires_at, created_at, updated_at FROM %s.offers`, r.dongSchema)
+	base := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_id, wallet_address, side, symbol, quantity, total_quantity, price, price_type, status, metadata, created_at, updated_at FROM %s.offers`, r.dongSchema)
 
 	whereClauses := []string{}
 	args := []any{}
@@ -146,15 +142,11 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 			&o.Side,
 			&o.Symbol,
 			&o.Quantity,
+			&o.TotalQuantity,
 			&o.Price,
-			&o.FilledQuantity,
 			&o.PriceType,
-			&o.PriceReference,
-			&o.Spread,
 			&o.Status,
-			&o.ExternalRef,
 			&o.Metadata,
-			&o.ExpiresAt,
 			&o.CreatedAt,
 			&o.UpdatedAt,
 		)
@@ -169,7 +161,7 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 
 // GetOfferByID fetches a single offer by id
 func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*models.Offer, error) {
-	query := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_id, wallet_address, side, symbol, quantity, price, filled_quantity, price_type, price_reference, spread, status, external_ref, metadata, expires_at, created_at, updated_at FROM %s.offers WHERE offer_id = $1`, r.dongSchema)
+	query := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_id, wallet_address, side, symbol, quantity, total_quantity, price, price_type, status, metadata, created_at, updated_at FROM %s.offers WHERE offer_id = $1`, r.dongSchema)
 
 	var o models.Offer
 	row := r.db.QueryRowContext(ctx, query, offerID)
@@ -180,15 +172,11 @@ func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*mod
 		&o.Side,
 		&o.Symbol,
 		&o.Quantity,
+		&o.TotalQuantity,
 		&o.Price,
-		&o.FilledQuantity,
 		&o.PriceType,
-		&o.PriceReference,
-		&o.Spread,
 		&o.Status,
-		&o.ExternalRef,
 		&o.Metadata,
-		&o.ExpiresAt,
 		&o.CreatedAt,
 		&o.UpdatedAt,
 	); err != nil {
