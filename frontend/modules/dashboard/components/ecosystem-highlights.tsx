@@ -15,7 +15,8 @@ export const EcosystemHighlights = () => {
   const { data: gameResponse } = useGames({
     sortField: 'createdAt',
     sortOrder: 'DESC',
-  });  const redEnvelopeStats = useRedEnvelopeStats();
+  });
+  const redEnvelopeStats = useRedEnvelopeStats();
 
   const donationRef = useRef<HTMLAnchorElement | null>(null);
   const [refHeight, setRefHeight] = useState<number | null>(null);
