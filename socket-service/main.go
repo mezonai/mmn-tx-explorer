@@ -44,6 +44,10 @@ func main() {
 		logger.Fatal().Err(err).Msg("Failed to initialize database")
 	}
 
+	if err := database.InitRedisWhiteList(&cfg.Redis); err != nil {
+		logger.Fatal().Err(err).Msg("Failed to initialize Redis")
+	}
+
 	r := gin.New()
 
 	r.Use(gin.Recovery())

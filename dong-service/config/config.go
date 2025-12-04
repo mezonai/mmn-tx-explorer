@@ -22,6 +22,7 @@ type Config struct {
 	Scheduler    SchedulerConfig    `mapstructure:"scheduler"`
 	Lock         LockConfig         `mapstructure:"lock"`
 	CacheRequest CacheRequestConfig `mapstructure:"cache_request"`
+	Event 	   EventConfig        `mapstructure:"event"`
 }
 
 type ServerConfig struct {
@@ -91,6 +92,11 @@ type LockConfig struct {
 
 type CacheRequestConfig struct {
 	CacheExp int `mapstructure:"cache_exp"` // in seconds
+}
+
+type EventConfig struct {
+	APIURL string `mapstructure:"api_url"`
+	APIKey string `mapstructure:"api_key"`
 }
 
 func LoadConfig(cfgFile string) (*Config, error) {

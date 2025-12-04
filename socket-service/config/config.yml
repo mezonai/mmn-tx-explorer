@@ -17,6 +17,16 @@ database:
   conn_max_lifetime: 300
   conn_max_idle_time: 60
 
+jwt:
+  secret: "a75081d475a4cd4e130916f26e3e8d3ebc376fa132e873c057c5a0c5ab26cc06"
+  api_key: "MezonDongServiceEventAPIKey2024!"
+
+redis:
+  address: "redis-14256.crce178.ap-east-1-1.ec2.redns.redis-cloud.com:14256"
+  username: "default"
+  password: "hh2D1kuwJ4sqpsOsDlAOaLPZPhsY6FfQ"
+  db: 0
+
 # Logging Configuration
 logging:
   level: "info"           # debug, info, warn, error, fatal, panic

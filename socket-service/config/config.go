@@ -11,6 +11,8 @@ import (
 type Config struct {
 	Server       ServerConfig       `mapstructure:"server"`
 	Database     DatabaseConfig     `mapstructure:"database"`
+	JWT          JWTConfig          `mapstructure:"jwt"`
+	Redis        RedisConfig        `mapstructure:"redis"`
 	Logging      logger.LogConfig   `mapstructure:"logging"`
 }
 
@@ -34,7 +36,17 @@ type DatabaseConfig struct {
 	Schema          string `mapstructure:"schema"`
 }
 
+type JWTConfig struct {
+	Secret      string `mapstructure:"secret"`
+	APIKey    string `mapstructure:"api_key"`
+}
 
+type RedisConfig struct {
+	Address  string `mapstructure:"address"`
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
+	DB       int    `mapstructure:"db"`
+}
 
 func LoadConfig(cfgFile string) (*Config, error) {
 	// Use specific config file if provided

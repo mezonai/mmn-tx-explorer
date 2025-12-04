@@ -1,16 +1,13 @@
 CREATE TABLE IF NOT EXISTS events (
-    id SERIAL PRIMARY KEY,
-    room_id VARCHAR(64) NOT NULL,
-    sender_id VARCHAR(64) NOT NULL,
-    receiver_id VARCHAR(64) NOT NULL,
-    type VARCHAR(32) NOT NULL,
-    content TEXT NOT NULL,
-    status VARCHAR(16) DEFAULT 'delivered',
-    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    type VARCHAR(50) NOT NULL,
+    payload JSONB NOT NULL,
+    sender_id VARCHAR(50) NOT NULL,
+    receive_id VARCHAR(50) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    create_at TIMESTAMP DEFAULT now()
 );
 
-CREATE INDEX idx_events_room_id ON events(room_id);
-CREATE INDEX idx_events_sender_id ON events(sender_id);
-CREATE INDEX idx_events_receiver_id ON events(receiver_id);
-CREATE INDEX idx_events_type ON events(type);
-CREATE INDEX idx_events_created_at ON events(created_at);
+CREATE INDEX idx_events_receive_id ON events(receive_id);
+CREATE INDEX idx_events_status ON events(status);
+CREATE INDEX idx_events_create_at ON events(create_at);

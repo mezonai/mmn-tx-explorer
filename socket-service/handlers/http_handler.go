@@ -29,17 +29,20 @@ func (h *HTTPHandler) SaveEvent(c *gin.Context) {
 		return
 	}
 
-
-	if conns, ok := h.wsSvc.GetConnections(event.ReceiverID); ok {
+	sentToOnline := false
+	if conns, ok := h.wsSvc.GetConnections(event.ReceiveID); ok {
 		for _, conn := range conns {
 			if err := conn.WriteJSON(event); err != nil {
 				logger.Error().Err(err).Msg("Failed to send event to online user")
 			} else {
-				logger.Info().Msgf("Event sent to online user %s", event.ReceiverID)
+				logger.Info().Msgf("Event sent to online user %s", event.ReceiveID)
+				sentToOnline = true
 			}
 		}
 	}
-
+	if sentToOnline {
+		event.Status = "sent"
+	}
 
 	if err := h.repo.SaveEvent(&event); err != nil {
 		logger.Error().Err(err).Msg("Failed to save event")
