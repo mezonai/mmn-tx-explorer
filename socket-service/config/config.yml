@@ -5,12 +5,12 @@ server:
   gin_mode: debug
 
 database:
-  host: dpg-d4j89g6r433s7396vj60-a.oregon-postgres.render.com
+  host: localhost
   port: 5432
   username: trongngovan
-  password: EeDUa5dpnnt4gAK1PFEumUgcjQmRejc2
-  name: mmn_explorer
-  schema: mezon
+  password: password123
+  name: name_db
+  schema: event
   sslmode: require
   max_open_conns: 50
   max_idle_conns: 10
@@ -22,9 +22,9 @@ jwt:
   api_key: "MezonDongServiceEventAPIKey2024!"
 
 redis:
-  address: "redis-14256.crce178.ap-east-1-1.ec2.redns.redis-cloud.com:14256"
+  address: 
   username: "default"
-  password: "hh2D1kuwJ4sqpsOsDlAOaLPZPhsY6FfQ"
+  password: ""
   db: 0
 
 # Logging Configuration
