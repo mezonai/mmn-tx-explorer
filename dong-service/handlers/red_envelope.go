@@ -55,12 +55,10 @@ func (r *RedEnvelopeHandler) CreateRedEnvelope(c *gin.Context) {
 		return
 	}
 
-	if req.IsRandomDistribution {
-		if err = ValidateRequest(&req); err != nil {
-			logger.Error().Err(err).Int64("user_id", userID).Msg("Validation failed")
-			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, err.Error()))
-			return
-		}
+	if err = ValidateRequest(&req); err != nil {
+		logger.Error().Err(err).Int64("user_id", userID).Msg("Validation failed")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, err.Error()))
+		return
 	}
 
 	envelope, err := r.repo.Create(&req, userID)
@@ -499,17 +497,24 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelope(c *gin.Context) {
 }
 
 func ValidateRequest(req *models.CreateRedEnvelopeRequest) error {
-	if *req.MinAmount > *req.MaxAmount {
-		return fmt.Errorf("minAmount (%d) don't exceed maxAmount (%d)", *req.MinAmount, *req.MaxAmount)
+	if req.TotalClaims > constants.MaxPaticipantCount {
+		return fmt.Errorf("totalClaims (%d) must not exceed (%d)", req.TotalClaims, constants.MaxPaticipantCount)
+	}
+	
+	if req.IsRandomDistribution {
+		if *req.MinAmount > *req.MaxAmount {
+			return fmt.Errorf("minAmount (%d) don't exceed maxAmount (%d)", *req.MinAmount, *req.MaxAmount)
+		}
+
+		if req.TotalAmount < req.TotalClaims**req.MinAmount {
+			return fmt.Errorf("totalAmount (%d) not enough to divide at least %d by %d people", req.TotalAmount, *req.MinAmount, req.TotalClaims)
+		}
+
+		if req.TotalAmount > req.TotalClaims**req.MaxAmount {
+			return fmt.Errorf("totalAmount (%d) exceeds maximum distributable amount (%d * %d = %d)", req.TotalAmount, req.TotalClaims, *req.MaxAmount, req.TotalClaims**req.MaxAmount)
+		}
 	}
 
-	if req.TotalAmount < req.TotalClaims**req.MinAmount {
-		return fmt.Errorf("totalAmount (%d) not enough to divide at least %d by %d people", req.TotalAmount, *req.MinAmount, req.TotalClaims)
-	}
-
-	if req.TotalAmount > req.TotalClaims**req.MaxAmount {
-		return fmt.Errorf("totalAmount (%d) exceeds maximum distributable amount (%d * %d = %d)", req.TotalAmount, req.TotalClaims, *req.MaxAmount, req.TotalClaims**req.MaxAmount)
-	}
 	return nil
 }
 
