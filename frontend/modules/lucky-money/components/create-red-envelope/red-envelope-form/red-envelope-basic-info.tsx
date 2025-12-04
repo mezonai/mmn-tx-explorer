@@ -3,6 +3,7 @@
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useCreateRedEnvelopeContext } from '@/modules/lucky-money/context/CreateRedEnvelopeContext';
+import { NumberUtil } from '@/utils';
 
 export function BasicInfo() {
   const { form, updateField } = useCreateRedEnvelopeContext();
@@ -32,34 +33,34 @@ export function BasicInfo() {
       <Input
         className="mt-2"
         label="Total amount"
-        type="number"
-        placeholder="1000"
+        type="text"
+        placeholder="100"
         suffix="đồng" 
-        value={form.totalAmount || ''} 
+        value={NumberUtil.formatWithCommas(form.totalAmount)}
         onChange={(e) => handleInputChange('totalAmount', e.target.value)}
       />
       <Input
         className="mt-2"
         label="Participant count"
-        type="number"
+        type="text"
         placeholder="25"
-        value={form.participantCount || ''}
+        value={NumberUtil.formatWithCommas(form.participantCount)}
         onChange={(e) => handleInputChange('participantCount', e.target.value)}
       />
       <Input
         className="mt-2"
         label="Amount min"
-        type="number"
+        type="text"
         placeholder="10"
-        value={form.amountMin || ''}
+        value={NumberUtil.formatWithCommas(form.amountMin)}
         onChange={(e) => handleInputChange('amountMin', e.target.value)}
       />
       <Input
         className="mt-2"
         label="Amount max"
-        type="number"
+        type="text"
         placeholder="80"
-        value={form.amountMax || ''}
+        value={NumberUtil.formatWithCommas(form.amountMax)}
         onChange={(e) => handleInputChange('amountMax', e.target.value)}
       />
       <div className="sm:col-span-2">
