@@ -15,7 +15,6 @@ interface TypeBadgesSkeletonProps {
 const getTransactionTypeInfo = (type: ETransferType) => {
   switch (type) {
     case ETransferType.TokenTransfer:
-    case ETransferType.DongGiveCoffee:
       return 'bg-yellow-100 text-yellow-600 dark:bg-yellow-500/10 dark:text-yellow-300';
     case ETransferType.DonationCampaign:
       return 'bg-green-100 text-green-600 dark:bg-green-500/10 dark:text-green-300';
@@ -24,6 +23,7 @@ const getTransactionTypeInfo = (type: ETransferType) => {
     case ETransferType.LuckyMoney:
       return 'bg-pink-100 text-pink-600 dark:bg-pink-500/10 dark:text-pink-300';
     case ETransferType.GiveCoffee:
+    case ETransferType.DongGiveCoffee:
       return 'bg-orange-100 text-orange-600 dark:bg-orange-500/10 dark:text-orange-300';
     default:
       return 'bg-red-100 text-red-600 dark:bg-red-500/10 dark:text-red-300';
@@ -31,6 +31,7 @@ const getTransactionTypeInfo = (type: ETransferType) => {
 };
 
 export const TypeBadges = ({ className, type }: TypeBadgesProps) => {
+  // Debug: log the incoming type and its label so we can trace unexpected values
   return (
     <div className={cn('flex items-center gap-2', className)}>
       <Chip variant="default" className={cn(getTransactionTypeInfo(type), 'gap-1.5 rounded-md')}>

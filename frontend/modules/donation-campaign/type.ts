@@ -1,3 +1,5 @@
+import { ETransferType } from '@/modules/transaction';
+
 export enum ECampaignStatus {
   Active = 1,
   Draft = 0,
@@ -113,6 +115,7 @@ export interface Transaction {
   status: number;
   transaction_timestamp: number;
   text_data?: string;
+  transaction_extra_info_type: ETransferType;
 }
 export interface TopContributor {
   sender_wallet: string;

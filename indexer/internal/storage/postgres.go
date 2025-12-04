@@ -168,12 +168,12 @@ var defaultBlockFields = []string{
 
 var defaultTransactionFields = []string{
 	"chain_id", "hash", "nonce", "block_hash", "block_number", "from_address", "to_address",
-	"transaction_timestamp", "value", "transaction_type", "status", "text_data", "extra_info",
+	"transaction_timestamp", "value", "transaction_type", "status", "text_data", "extra_info", "transaction_extra_info_type",
 }
 
 var defaultExportTransactionFields = []string{
 	"chain_id", "hash", "nonce", "block_hash", "block_number", "from_address", "to_address",
-	"transaction_timestamp", "value", "transaction_type", "status", "text_data",
+	"transaction_timestamp", "value", "transaction_type", "status", "text_data", "transaction_extra_info_type",
 }
 
 var defaultWalletFields = []string{
@@ -1688,14 +1688,14 @@ func (p *PostgresConnector) scanTransaction(rows *sql.Rows, tx *common.Transacti
 	if isExport {
 		if err := rows.Scan(
 			&chainIDStr, &tx.Hash, &tx.Nonce, &tx.BlockHash, &blockNumberStr, &tx.FromAddress, &tx.ToAddress,
-			&transactionTimestamp, &valueStr, &tx.TransactionType, &status, &tx.TextData,
+			&transactionTimestamp, &valueStr, &tx.TransactionType, &status, &tx.TextData, &tx.TransactionExtraInfoType,
 		); err != nil {
 			return err
 		}
 	} else {
 		if err := rows.Scan(
 			&chainIDStr, &tx.Hash, &tx.Nonce, &tx.BlockHash, &blockNumberStr, &tx.FromAddress, &tx.ToAddress,
-			&transactionTimestamp, &valueStr, &tx.TransactionType, &status, &tx.TextData, &extraInfo,
+			&transactionTimestamp, &valueStr, &tx.TransactionType, &status, &tx.TextData, &extraInfo, &tx.TransactionExtraInfoType,
 		); err != nil {
 			return err
 		}

@@ -36,18 +36,19 @@ type DecodedTransaction struct {
 }
 
 type BaseTransactionModel struct {
-	ChainID              string  `json:"chain_id"`
-	Hash                 string  `json:"hash"`
-	Nonce                uint64  `json:"nonce"`
-	BlockHash            string  `json:"block_hash"`
-	BlockNumber          uint64  `json:"block_number"`
-	FromAddress          string  `json:"from_address"`
-	ToAddress            string  `json:"to_address"`
-	Value                string  `json:"value"`
-	TransactionType      uint8   `json:"transaction_type"`
-	Status               *uint64 `json:"status"`
-	TransactionTimestamp uint64  `json:"transaction_timestamp"`
-	TextData             string  `json:"text_data"`
+	ChainID                  string                   `json:"chain_id"`
+	Hash                     string                   `json:"hash"`
+	Nonce                    uint64                   `json:"nonce"`
+	BlockHash                string                   `json:"block_hash"`
+	BlockNumber              uint64                   `json:"block_number"`
+	FromAddress              string                   `json:"from_address"`
+	ToAddress                string                   `json:"to_address"`
+	Value                    string                   `json:"value"`
+	TransactionType          uint8                    `json:"transaction_type"`
+	Status                   *uint64                  `json:"status"`
+	TransactionTimestamp     uint64                   `json:"transaction_timestamp"`
+	TextData                 string                   `json:"text_data"`
+	TransactionExtraInfoType TransactionExtraInfoType `json:"transaction_extra_info_type"`
 }
 
 // TransactionModel represents a simplified Transaction structure for Swagger documentation
@@ -89,18 +90,19 @@ func (t *Transaction) Serialize() TransactionModel {
 
 func (t *Transaction) SerializeInternal() BaseTransactionModel {
 	return BaseTransactionModel{
-		ChainID:              t.ChainID.String(),
-		Hash:                 t.Hash,
-		Nonce:                t.Nonce,
-		BlockHash:            t.BlockHash,
-		BlockNumber:          t.BlockNumber.Uint64(),
-		FromAddress:          t.FromAddress,
-		ToAddress:            t.ToAddress,
-		Value:                t.Value,
-		TransactionType:      t.TransactionType,
-		Status:               t.Status,
-		TransactionTimestamp: uint64(t.TransactionTimestamp.Unix()),
-		TextData:             t.TextData,
+		ChainID:                  t.ChainID.String(),
+		Hash:                     t.Hash,
+		Nonce:                    t.Nonce,
+		BlockHash:                t.BlockHash,
+		BlockNumber:              t.BlockNumber.Uint64(),
+		FromAddress:              t.FromAddress,
+		ToAddress:                t.ToAddress,
+		Value:                    t.Value,
+		TransactionType:          t.TransactionType,
+		Status:                   t.Status,
+		TransactionTimestamp:     uint64(t.TransactionTimestamp.Unix()),
+		TextData:                 t.TextData,
+		TransactionExtraInfoType: t.TransactionExtraInfoType,
 	}
 }
 
