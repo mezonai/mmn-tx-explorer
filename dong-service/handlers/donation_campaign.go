@@ -10,9 +10,11 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
+const DateFormat = "2006-01-02"
 
 // DonationCampaignHandler handles HTTP requests for donation campaigns
 type DonationCampaignHandler struct {
@@ -51,11 +53,26 @@ func (h *DonationCampaignHandler) CreateCampaign(c *gin.Context) {
 		return
 	}
 
-	// Validate goal is not negative
-	if req.Goal != nil && *req.Goal < 0 {
-		logger.Error().Int64("user_id", userID).Int64("goal", *req.Goal).Msg("Invalid goal amount: goal cannot be negative")
+	// Validate goal is between 0 and 100 billion
+	if req.Goal != nil && (*req.Goal < constants.MinGoalAmount || *req.Goal > constants.MaxGoalAmount) {
+		logger.Error().Int64("user_id", userID).Int64("goal", *req.Goal).Msg("Invalid goal amount: goal must be greater than 0 and less than or equal to 100 billion")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidGoalAmount))
 		return
+	}
+
+	// Validate end_date format and that it's not in the past
+	if req.EndDate != nil && *req.EndDate != "" {
+		endDate, err := time.Parse(DateFormat, *req.EndDate)
+		if err != nil {
+			logger.Error().Err(err).Int64("user_id", userID).Str("end_date", *req.EndDate).Msg("Invalid end_date format: must be YYYY-MM-DD")
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidDateFormat))
+			return
+		}
+		if endDate.Before(time.Now().Truncate(24 * time.Hour)) {
+			logger.Error().Int64("user_id", userID).Str("end_date", *req.EndDate).Msg("Invalid end_date: cannot be in the past")
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrEndDateInPast))
+			return
+		}
 	}
 
 	logger.Info().Int64("user_id", userID).Str("name", req.Name).Msg("Creating new donation campaign")
@@ -98,11 +115,26 @@ func (h *DonationCampaignHandler) CreateAndActiveCampaign(c *gin.Context) {
 		return
 	}
 
-	// Validate goal is not negative
-	if req.Goal != nil && *req.Goal < 0 {
-		logger.Error().Int64("user_id", userID).Int64("goal", *req.Goal).Msg("Invalid goal amount: goal cannot be negative")
+	// Validate goal is between 0 and 100 billion
+	if req.Goal != nil && (*req.Goal < constants.MinGoalAmount || *req.Goal > constants.MaxGoalAmount) {
+		logger.Error().Int64("user_id", userID).Int64("goal", *req.Goal).Msg("Invalid goal amount: goal must be greater than 0 and less than or equal to 100 billion")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidGoalAmount))
 		return
+	}
+
+	// Validate end_date format and that it's not in the past
+	if req.EndDate != nil && *req.EndDate != "" {
+		endDate, err := time.Parse(DateFormat, *req.EndDate)
+		if err != nil {
+			logger.Error().Err(err).Int64("user_id", userID).Str("end_date", *req.EndDate).Msg("Invalid end_date format: must be YYYY-MM-DD")
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidDateFormat))
+			return
+		}
+		if endDate.Before(time.Now().Truncate(24 * time.Hour)) {
+			logger.Error().Int64("user_id", userID).Str("end_date", *req.EndDate).Msg("Invalid end_date: cannot be in the past")
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrEndDateInPast))
+			return
+		}
 	}
 
 	logger.Info().Int64("user_id", userID).Str("name", req.Name).Msg("Creating and activating new donation campaign")
@@ -276,11 +308,26 @@ func (h *DonationCampaignHandler) UpdateCampaign(c *gin.Context) {
 		return
 	}
 
-	// Validate goal is not negative
-	if req.Goal != nil && *req.Goal < 0 {
-		logger.Error().Int64("user_id", userID).Int64("goal", *req.Goal).Msg("Invalid goal amount: goal cannot be negative")
+	// Validate goal is between 0 and 100 billion
+	if req.Goal != nil && (*req.Goal < constants.MinGoalAmount || *req.Goal > constants.MaxGoalAmount) {
+		logger.Error().Int64("user_id", userID).Int64("goal", *req.Goal).Msg("Invalid goal amount: goal must be greater than 0 and less than or equal to 100 billion")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidGoalAmount))
 		return
+	}
+
+	// Validate end_date format and that it's not in the past
+	if req.EndDate != nil && *req.EndDate != "" {
+		endDate, err := time.Parse(DateFormat, *req.EndDate)
+		if err != nil {
+			logger.Error().Err(err).Int64("user_id", userID).Str("end_date", *req.EndDate).Msg("Invalid end_date format: must be YYYY-MM-DD")
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidDateFormat))
+			return
+		}
+		if endDate.Before(time.Now().Truncate(24 * time.Hour)) {
+			logger.Error().Int64("user_id", userID).Str("end_date", *req.EndDate).Msg("Invalid end_date: cannot be in the past")
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrEndDateInPast))
+			return
+		}
 	}
 
 	// Check if campaign exists and belongs to creator
