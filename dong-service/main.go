@@ -24,7 +24,7 @@ import (
 	"github.com/robfig/cron/v3"
 
 	// Import pprof
-	"net/http/pprof"
+	_ "net/http/pprof"
 )
 
 // @title           Dong Service API
@@ -140,8 +140,6 @@ func main() {
 	addr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)
 	logger.Info().Str("address", addr).Msg("Starting HTTP server")
 
-	registerPprof(r)
-
 	srv := &http.Server{
 		Addr:    addr,
 		Handler: r,
@@ -152,6 +150,8 @@ func main() {
 			logger.Fatal().Err(err).Str("address", addr).Msg("Failed to start server")
 		}
 	}()
+
+	registerPprof()
 
 	// Wait for interrupt signal to gracefully shutdown the server
 	quit := make(chan os.Signal, 1)
@@ -175,11 +175,10 @@ func main() {
 	logger.Info().Msg("Server exited")
 }
 
-func registerPprof(r *gin.Engine) {
-	r.GET("/debug/pprof/", gin.WrapH(pprof.Handler("index")))
-	r.GET("/debug/pprof/heap", gin.WrapH(pprof.Handler("heap")))
-	r.GET("/debug/pprof/goroutine", gin.WrapH(pprof.Handler("goroutine")))
-	r.GET("/debug/pprof/profile", gin.WrapH(pprof.Handler("profile")))
-	r.GET("/debug/pprof/block", gin.WrapH(pprof.Handler("block")))
-	r.GET("/debug/pprof/allocs", gin.WrapH(pprof.Handler("allocs")))
+func registerPprof() {
+	go func() {
+		if err := http.ListenAndServe(":6061", nil); err != nil && err != http.ErrServerClosed {
+			logger.Fatal().Err(err).Msg("pprof server failed")
+		}
+	}()
 }
