@@ -22,6 +22,9 @@ import (
 	// Import the generated Swagger docs
 	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	_ "github.com/mezonai/mmn-tx-explorer/indexer/docs"
+
+	// Import pprof
+	"net/http/pprof"
 )
 
 var (
@@ -110,6 +113,7 @@ func RunAPI(cmd *cobra.Command, args []string) {
 	root.GET("/search/:input", handlers.Search)
 
 	r.GET("/health", handlers.Health)
+	registerPprof(r)
 
 	srv := &http.Server{
 		Addr:    ":8080",
@@ -141,4 +145,13 @@ func RunAPI(cmd *cobra.Command, args []string) {
 	}
 
 	log.Info().Msg("API server exiting")
+}
+
+func registerPprof(r *gin.Engine) {
+	r.GET("/debug/pprof/", gin.WrapH(pprof.Handler("index")))
+	r.GET("/debug/pprof/heap", gin.WrapH(pprof.Handler("heap")))
+	r.GET("/debug/pprof/goroutine", gin.WrapH(pprof.Handler("goroutine")))
+	r.GET("/debug/pprof/profile", gin.WrapH(pprof.Handler("profile")))
+	r.GET("/debug/pprof/block", gin.WrapH(pprof.Handler("block")))
+	r.GET("/debug/pprof/allocs", gin.WrapH(pprof.Handler("allocs")))
 }

@@ -1,6 +1,8 @@
 module github.com/mezonai/mmn-tx-explorer/indexer
 
-go 1.23.0
+go 1.24.0
+
+toolchain go1.24.11
 
 require (
 	github.com/ethereum/go-ethereum v1.15.11
@@ -20,6 +22,12 @@ require (
 	golang.org/x/time v0.9.0
 	google.golang.org/grpc v1.75.0
 	google.golang.org/protobuf v1.36.6
+)
+
+require (
+	github.com/chzyer/readline v1.5.1 // indirect
+	github.com/google/pprof v0.0.0-20251114195745-4902fdda35c8 // indirect
+	github.com/ianlancetaylor/demangle v0.0.0-20250417193237-f615e6bd150b // indirect
 )
 
 require (

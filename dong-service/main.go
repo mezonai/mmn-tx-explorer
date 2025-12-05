@@ -22,6 +22,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/robfig/cron/v3"
+
+	// Import pprof
+	"net/http/pprof"
 )
 
 // @title           Dong Service API
@@ -137,6 +140,8 @@ func main() {
 	addr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)
 	logger.Info().Str("address", addr).Msg("Starting HTTP server")
 
+	registerPprof(r)
+
 	srv := &http.Server{
 		Addr:    addr,
 		Handler: r,
@@ -168,4 +173,13 @@ func main() {
 	}
 
 	logger.Info().Msg("Server exited")
+}
+
+func registerPprof(r *gin.Engine) {
+	r.GET("/debug/pprof/", gin.WrapH(pprof.Handler("index")))
+	r.GET("/debug/pprof/heap", gin.WrapH(pprof.Handler("heap")))
+	r.GET("/debug/pprof/goroutine", gin.WrapH(pprof.Handler("goroutine")))
+	r.GET("/debug/pprof/profile", gin.WrapH(pprof.Handler("profile")))
+	r.GET("/debug/pprof/block", gin.WrapH(pprof.Handler("block")))
+	r.GET("/debug/pprof/allocs", gin.WrapH(pprof.Handler("allocs")))
 }
