@@ -17,7 +17,7 @@ ALTER TABLE intermediary_wallet ADD CONSTRAINT chk_intermediary_wallet_status
     CHECK (status IN ('READY', 'IN_USE', 'PREPARE_REPLACE', 'DISABLED'));
 
 ALTER TABLE intermediary_wallet ADD CONSTRAINT chk_intermediary_wallet_type
-    CHECK (type IN ('DEFAULT', 'LUCKY_MONEY'));
+    CHECK (type IN ('DEFAULT', 'LUCKY_MONEY', 'OFFER'));
     
 -- Comments for intermediary_wallet table
 COMMENT ON TABLE intermediary_wallet IS 'Pool of reusable wallet addresses for red envelope sessions';

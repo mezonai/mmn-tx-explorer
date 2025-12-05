@@ -82,6 +82,7 @@ func (s *WalletPoolService) CreateWallets(ctx context.Context, count int) error 
 			WalletAddress:       address,
 			EncryptedPrivateKey: encryptedKey,
 			Status:              constants.RedEnvelopeWalletStatusReady,
+			Type:                constants.WalletTypeDefault,
 		})
 	}
 

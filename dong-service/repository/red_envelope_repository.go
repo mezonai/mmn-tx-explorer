@@ -63,7 +63,7 @@ func (r *RedEnvelopeRepository) Create(req *models.CreateRedEnvelopeRequest, cre
 
 	var result models.RedEnvelope
 	ctx := context.Background()
-	redEnvelopeWallet, err := r.walletRepo.GetOrCreateAvailableWallet(ctx, tx)
+	redEnvelopeWallet, err := r.walletRepo.GetOrCreateAvailableWallet(ctx, tx, constants.WalletTypeRedEnvelope)
 	fmt.Println("Red Envelope Wallet:", redEnvelopeWallet)
 	err = tx.QueryRow(
 		query,
