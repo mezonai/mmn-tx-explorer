@@ -7,6 +7,7 @@ import { useP2POrder } from '../../hooks/useP2POrder';
 import { useP2POffer } from '../../hooks/useP2POffer';
 import { useCreateOrder } from '../../hooks/useCreateOrder';
 import { useP2PChat } from '../../hooks/useP2PChat';
+import { P2PService } from '../../api';
 import { useUser } from '@/providers/AppProvider';
 import { TradingRoomHeader } from './trading-room-header';
 import { ProgressSteps } from './progress-steps';
@@ -73,14 +74,25 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
     }
   };
 
-  const handlePaymentConfirmed = () => {
-    if (createdOrder) {
-      // Update local order state
-      setCreatedOrder({ ...createdOrder, status: 'WAIT_CONFIRM' });
-    } else {
-      updateOrderStatus('WAIT_CONFIRM');
+  const handlePaymentConfirmed = async () => {
+    const targetOrder = createdOrder || currentOrder;
+    if (!targetOrder) return;
+
+    try {
+      setError(null);
+      // Created order lives locally; update via service then sync local state
+      if (createdOrder) {
+        const updated = await P2PService.updateOrderStatus(targetOrder.orderId, 'WAIT_CONFIRM');
+        setCreatedOrder(updated);
+        return;
+      }
+
+      // Existing order fetched from API; delegate to hook (includes API call)
+      await updateOrderStatus('WAIT_CONFIRM');
+    } catch (err) {
+      setError('Có lỗi xảy ra khi cập nhật trạng thái. Vui lòng thử lại.');
+      console.error('Error updating order status:', err);
     }
-    // TODO: Call API to update order status
   };
 
   const handleSellerConfirm = () => {
@@ -124,7 +136,7 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
     };
 
     const formatWallet = (address?: string) =>
-      address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'N/A';
+      (address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'N/A') as string;
 
     return (
       <div className="bg-background flex h-screen flex-col">

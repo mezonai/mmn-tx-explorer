@@ -3,10 +3,11 @@
 // - Later, when BE is wired, we can switch USE_P2P_MOCK to false and
 //   use apiDongClient similarly to donation-campaign module.
 
-import { P2POffer, P2POrder, TradeType } from './types/p2p.types';
-// import { apiDongClient } from '@/service';
+import { OrderStatus, P2POffer, P2POrder, TradeType } from './types/p2p.types';
+import { apiDongClient } from '@/service';
+import { P2P_ENDPOINTS } from './constants';
 
-const USE_P2P_MOCK = true;
+const USE_P2P_MOCK = process.env.NEXT_PUBLIC_USE_P2P_MOCK === 'false';
 
 const delay = (ms: number) =>
   new Promise((resolve) => {
@@ -91,12 +92,11 @@ export class P2PService {
       return offers.map(mapRawOfferToP2POffer);
     }
 
-    // const { data } = await apiDongClient.get<{ offers: RawOffer[] }>(P2P_ENDPOINTS.OFFERS, {
-    //   params,
-    // });
-    // return data.offers.map(mapRawOfferToP2POffer);
-
-    throw new Error('P2P real API not implemented yet');
+    const { data } = await apiDongClient.get<{ data?: RawOffer[]; offers?: RawOffer[] }>(P2P_ENDPOINTS.OFFERS, {
+      params,
+    });
+    const offers = data?.data || data?.offers || [];
+    return offers.map(mapRawOfferToP2POffer);
   }
 
   static async getOfferById(offerId: string): Promise<P2POffer> {
@@ -109,10 +109,8 @@ export class P2PService {
       return mapRawOfferToP2POffer(raw);
     }
 
-    // const { data } = await apiDongClient.get<{ data: RawOffer }>(P2P_ENDPOINTS.OFFER_BY_ID(offerId));
-    // return mapRawOfferToP2POffer(data.data);
-
-    throw new Error('P2P real API not implemented yet');
+    const { data } = await apiDongClient.get<{ data: RawOffer }>(P2P_ENDPOINTS.OFFER_BY_ID(offerId));
+    return mapRawOfferToP2POffer(data.data);
   }
 
   static async createOrder(payload: { offerId: string; amountMZD: number; amountVND?: number }): Promise<P2POrder> {
@@ -156,10 +154,8 @@ export class P2PService {
       return newOrder;
     }
 
-    // const { data } = await apiDongClient.post<{ data: P2POrder }>(P2P_ENDPOINTS.ORDERS, payload);
-    // return data.data;
-
-    throw new Error('P2P real API not implemented yet');
+    const { data } = await apiDongClient.post<{ data: P2POrder }>(P2P_ENDPOINTS.OFFER_ORDERS(payload.offerId), payload);
+    return data.data;
   }
 
   static async getOrderById(orderId: string): Promise<P2POrder> {
@@ -175,10 +171,8 @@ export class P2PService {
       return order;
     }
 
-    // const { data } = await apiDongClient.get<{ data: P2POrder }>(P2P_ENDPOINTS.ORDER_BY_ID(orderId));
-    // return data.data;
-
-    throw new Error('P2P real API not implemented yet');
+    const { data } = await apiDongClient.get<{ data: P2POrder }>(P2P_ENDPOINTS.ORDER_BY_ID(orderId));
+    return data.data;
   }
 
   static async getMyOrders(): Promise<P2POrder[]> {
@@ -187,9 +181,25 @@ export class P2PService {
       return mockOrders.slice();
     }
 
-    // const { data } = await apiDongClient.get<{ data: P2POrder[] }>(P2P_ENDPOINTS.MY_ORDERS);
-    // return data.data;
+    const { data } = await apiDongClient.get<{ data: P2POrder[] }>(P2P_ENDPOINTS.MY_ORDERS);
+    return data.data;
+  }
 
-    throw new Error('P2P real API not implemented yet');
+  static async updateOrderStatus(orderId: string, status: OrderStatus): Promise<P2POrder> {
+    if (USE_P2P_MOCK) {
+      await delay(300);
+      const orderIndex = mockOrders.findIndex((item) => item.orderId === orderId);
+      if (orderIndex === -1) {
+        throw new Error(`Order not found: ${orderId}`);
+      }
+      const updatedOrder: P2POrder = { ...mockOrders[orderIndex], status };
+      mockOrders[orderIndex] = updatedOrder;
+      return updatedOrder;
+    }
+
+    const { data } = await apiDongClient.post<{ data: P2POrder }>(P2P_ENDPOINTS.ORDER_CONFIRM(orderId), {
+      status,
+    });
+    return data.data;
   }
 }
