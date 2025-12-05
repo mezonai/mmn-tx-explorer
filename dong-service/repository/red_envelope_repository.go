@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/lib/pq"
 )
 
 type RedEnvelopeRepository struct {
@@ -196,29 +198,47 @@ func (r *RedEnvelopeRepository) GetTotalClaimedAmount(id string) (int64, error) 
 	return totalClaimed, nil
 }
 
-func (r *RedEnvelopeRepository) GetStats(userID int64) (map[string]interface{}, error) {
-	totalClaimedSentQuery := fmt.Sprintf(`
+func (r *RedEnvelopeRepository) GetStatsByUser(userID int64) (map[string]interface{}, error) {
+	totalSentQuery := fmt.Sprintf(`
 		SELECT 
-			COALESCE(SUM(re.total_amount), 0) AS total_sent,
-			COUNT(DISTINCT re.id) AS count_sent_envelopes,
-			COALESCE(SUM(rec.amount), 0) AS total_claimed,
-			COUNT(rec.id) AS count_claimed_envelopes
+			COALESCE(SUM(resm.amount), 0) AS total_sent,
+			COALESCE(COUNT(resm.claimed_user_id), 0) AS total_recipients 
 		FROM %s.red_envelope re
-		LEFT JOIN %s.red_envelope_claim rec ON re.id = rec.red_envelope_id
-		WHERE re.creator = $1 AND re.status IN ('PUBLISHED', 'EXPIRED');
+		JOIN %s.red_envelope_split_money resm ON resm.red_envelope_id = re.id
+		WHERE re.creator = $1 AND re.status = ANY($2) AND resm.status = $3;
 	`, r.dongSchema, r.dongSchema)
+
+	listStatus := []string{
+		constants.RedEnvelopeStatusPublished,
+		constants.RedEnvelopeStatusExpired,
+	}
 
 	var stats struct {
 		TotalSend             int64
-		CountSentEnvelopes    int64
+		TotalRecipients       int64
 		TotalClaimed          int64
 		CountClaimedEnvelopes int64
 		TotalActiveEnvelopes  int64
 	}
 
-	err := r.db.QueryRow(totalClaimedSentQuery, userID).Scan(
+	err := r.db.QueryRow(totalSentQuery, userID, pq.Array(listStatus), constants.RedEnvelopeSplitMoneyStatusClaimed).Scan(
 		&stats.TotalSend,
-		&stats.CountSentEnvelopes,
+		&stats.TotalRecipients,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get stats: %w", err)
+	}
+
+	totalClaimedQuery := fmt.Sprintf(`
+		SELECT 
+			COALESCE(SUM(rec.amount), 0) AS total_claimed,
+			COUNT(rec.id) AS count_claimed_envelopes
+		FROM %s.red_envelope_claim rec
+		WHERE rec.claimer_user_id = $1;
+	`, r.dongSchema)
+
+	err = r.db.QueryRow(totalClaimedQuery, userID).Scan(
 		&stats.TotalClaimed,
 		&stats.CountClaimedEnvelopes,
 	)
@@ -228,7 +248,7 @@ func (r *RedEnvelopeRepository) GetStats(userID int64) (map[string]interface{}, 
 	}
 
 	totalActiveEnvelopesByUserQuery := fmt.Sprintf(`
-		SELECT count(id) AS count_envelopes FROM %s.red_envelope
+		SELECT COALESCE(count(id), 0) AS count_envelopes FROM %s.red_envelope
 		WHERE creator = $1 AND status = 'PUBLISHED';
 	`, r.dongSchema)
 
@@ -242,10 +262,39 @@ func (r *RedEnvelopeRepository) GetStats(userID int64) (map[string]interface{}, 
 
 	result := map[string]interface{}{
 		"total_sent":              stats.TotalSend,
-		"count_sent_envelopes":    stats.CountSentEnvelopes,
+		"total_recipients":        stats.TotalRecipients,
 		"total_claimed":           stats.TotalClaimed,
 		"count_claimed_envelopes": stats.CountClaimedEnvelopes,
 		"total_active_envelopes":  stats.TotalActiveEnvelopes,
+	}
+
+	return result, nil
+}
+
+func (r *RedEnvelopeRepository) GetStats() (map[string]interface{}, error) {
+	query := fmt.Sprintf(`
+		SELECT 
+			(SELECT COALESCE(SUM(rec.amount), 0) FROM %s.red_envelope_claim rec) AS total_claimed,
+			(SELECT COALESCE(COUNT(id), 0) FROM %s.red_envelope WHERE status = $1) AS count_active_envelopes
+	`, r.dongSchema, r.dongSchema)
+
+	var stats struct {
+		TotalClaimed         int64
+		TotalActiveEnvelopes int64
+	}
+
+	err := r.db.QueryRow(query, constants.RedEnvelopeStatusPublished).Scan(
+		&stats.TotalClaimed,
+		&stats.TotalActiveEnvelopes,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get stats: %w", err)
+	}
+
+	result := map[string]interface{}{
+		"total_claimed":          stats.TotalClaimed,
+		"total_active_envelopes": stats.TotalActiveEnvelopes,
 	}
 
 	return result, nil
@@ -607,12 +656,10 @@ func (r *RedEnvelopeRepository) GetRedEnvelopeCloseSesssion(redEnvelopeID string
 		WHERE rem.red_envelope_id = $1 AND rem.status != $2
 		GROUP BY re.red_envelope_wallet, re.owner_wallet
 	`, r.dongSchema, r.dongSchema)
-	var envelope struct {
-		TotalAmount       int64
-		RedEnvelopeWallet string
-		OwnerWallet       string
-	}
-	err := r.db.QueryRow(query, redEnvelopeID, constants.RedEnvelopeSplitMoneyStatusClaimed).Scan(&envelope.TotalAmount, &envelope.RedEnvelopeWallet, &envelope.OwnerWallet)
+
+	var envelope models.RedEnvelopeCloseSesssion
+
+	err := r.db.QueryRow(query, redEnvelopeID, constants.RedEnvelopeSplitMoneyStatusClaimed).Scan(&envelope.RemainingAmount, &envelope.RedEnvelopeWallet, &envelope.OwnerWallet)
 	if err != nil {
 		return models.RedEnvelopeCloseSesssion{}, fmt.Errorf("failed to get remaining amount: %w", err)
 	}
@@ -653,14 +700,6 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 	}
 
 	ctx := context.Background()
-	totalClaimed, err := r.GetTotalClaimedAmount(redEnvelopeID)
-	if err != nil {
-		logger.Error().
-			Err(err).
-			Str("red_envelope_id", redEnvelopeID).
-			Msg("Failed to get total claimed amount")
-		return err
-	}
 
 	envelope, err := r.GetRedEnvelopeCloseSesssion(redEnvelopeID)
 	if err != nil {
@@ -670,12 +709,10 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 			Msg("Failed to get total claimed amount")
 	}
 
-	remainingBalance := envelope.TotalAmount - totalClaimed
-
-	if remainingBalance > 0 {
+	if envelope.RemainingAmount > 0 {
 		logger.Info().
 			Str("red_envelope_id", redEnvelopeID).
-			Int64("remaining_balance", remainingBalance).
+			Int64("remaining_balance", envelope.RemainingAmount).
 			Str("red_envelope_wallet", envelope.RedEnvelopeWallet).
 			Str("owner_wallet", envelope.OwnerWallet).
 			Msg("Transferring remaining balance back to owner")
@@ -685,7 +722,7 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 		if err != nil {
 			logger.Error().Err(err).Msg("Failed to get wallet")
 		} else {
-			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, remainingBalance)
+			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, envelope.RemainingAmount)
 			if err != nil {
 				return err
 			}
@@ -722,10 +759,11 @@ func (r *RedEnvelopeRepository) GetClaimAmount(id, walletAddress string, claimSt
 	)
 
 	if err == sql.ErrNoRows {
-		return models.ClaimAmount{}, fmt.Errorf("red envelope not found")
+		return models.ClaimAmount{}, fmt.Errorf("red envelope not found or expiry")
 	}
 	if err != nil {
-		return models.ClaimAmount{}, fmt.Errorf("failed to get envelope: %w", err)
+		logger.Error().Err(err).Str("id", id).Msg("failed to get red envelope")
+		return models.ClaimAmount{}, fmt.Errorf("failed to get red envelope")
 	}
 
 	tx, err := r.db.Begin()
@@ -765,8 +803,9 @@ func (r *RedEnvelopeRepository) GetClaimAmount(id, walletAddress string, claimSt
 		)
 
 		if err == sql.ErrNoRows {
-			return models.ClaimAmount{}, fmt.Errorf("no available splits remaining")
+			return models.ClaimAmount{}, constants.ErrAlreadyClaimed
 		} else if err != nil {
+			logger.Error().Err(err).Msg("Failed to query existing split")
 			return models.ClaimAmount{}, fmt.Errorf("query failed: %w", err)
 		}
 
@@ -779,7 +818,8 @@ func (r *RedEnvelopeRepository) GetClaimAmount(id, walletAddress string, claimSt
 
 	split, err := r.GetNextAvailableSplit(tx, id, walletAddress, userID)
 	if err != nil {
-		return models.ClaimAmount{}, fmt.Errorf("failed to get next available split: %w", err)
+		logger.Error().Err(err).Msg("Failed to get next available split")
+		return models.ClaimAmount{}, fmt.Errorf("all claim attempts for this red envelope have been used")
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -838,7 +878,8 @@ func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUs
 	)
 
 	if err != nil {
-		return fmt.Errorf("failed to get envelope: %w", err)
+		logger.Error().Err(err).Str("id", id).Msg("Failed to get envelope")
+		return fmt.Errorf("unable to access red envelope information")
 	}
 
 	if envelope.Status != constants.RedEnvelopeStatusPublished {
@@ -851,19 +892,25 @@ func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUs
 
 	claimAmount, err := r.GetAmountBySplitID(splitMoneyID)
 	if err != nil {
-		return fmt.Errorf("failed to get claim amount: %w", err)
+		logger.Error().Err(err).Msg("failed to get claim amount")
+		return fmt.Errorf("failed to get claim amount")
 	}
 
 	ctx := context.Background()
 	walletInfo, err := r.walletRepo.GetWalletByAddress(ctx, envelope.RedEnvelopeWallet)
 	if err != nil {
-		return fmt.Errorf("failed to get wallet info: %w", err)
+		logger.Error().Err(err).Msg("Failed to get wallet info")
+		return fmt.Errorf("failed to get wallet info")
 	}
 
 	var txHash string
 	txHash, err = r.blockchainService.TransferMoney(walletInfo.EncryptedPrivateKey, envelope.RedEnvelopeWallet, claimerWallet, claimAmount)
 	if err != nil {
-		return fmt.Errorf("failed to transfer money: %w", err)
+		logger.Error().Err(err).
+			Str("from", envelope.RedEnvelopeWallet).
+			Str("to", claimerWallet).
+			Msg("Blockchain transfer failed")
+		return fmt.Errorf("failed to transfer money")
 	}
 
 	claimQuery := fmt.Sprintf(`
@@ -893,7 +940,8 @@ func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUs
 	)
 
 	if err != nil {
-		return fmt.Errorf("failed to create claim: %w", err)
+		logger.Error().Err(err).Str("txHash", txHash).Msg("failed to create claim")
+		return fmt.Errorf("failed to create claim")
 	}
 
 	updateQuery := fmt.Sprintf(`
@@ -905,12 +953,14 @@ func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUs
 
 	_, err = tx.Exec(updateQuery, time.Now(), id)
 	if err != nil {
-		return fmt.Errorf("failed to update claimed count: %w", err)
+		logger.Error().Err(err).Msg("Failed to update claimed count")
+		return fmt.Errorf("failed to update claimed count")
 	}
 
 	err = r.MarkSplitAsClaimed(tx, splitMoneyID)
 	if err != nil {
-		return fmt.Errorf("failed to mark split as claimed: %w", err)
+		logger.Error().Err(err).Msg("Failed to mark split as claimed")
+		return fmt.Errorf("failed to mark split as claimed")
 	}
 
 	if err = tx.Commit(); err != nil {

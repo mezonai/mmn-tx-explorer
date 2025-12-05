@@ -1,10 +1,10 @@
-import { PageHeader } from "@/components/shared";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { APP_CONFIG } from "@/configs/app.config";
-import { ROUTES } from "@/configs/routes.config";
-import { cn } from "@/lib/utils"; 
-import { useRedEnvelopeStats } from "@/modules/lucky-money/hooks/useRedEnvelopeStats";
+import { PageHeader } from '@/components/shared';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { APP_CONFIG } from '@/configs/app.config';
+import { ROUTES } from '@/configs/routes.config';
+import { cn } from '@/lib/utils';
+import { useRedEnvelopeStatsByUser } from '@/modules/lucky-money/hooks/useRedEnvelopeStats';
 import {
   SendIcon,
   ExternalLinkIcon,
@@ -13,34 +13,34 @@ import {
   LucideMailOpen,
   BarChartIcon,
   GiftIcon,
-} from "lucide-react";
-import Link from "next/link";
+} from 'lucide-react';
+import Link from 'next/link';
 
 export const RedEnvelopeStats = () => {
-  const {stats} = useRedEnvelopeStats();
+  const { stats } = useRedEnvelopeStatsByUser();
 
   const statsCards = [
     {
-      title: "TOTAL SENT",
-      value: stats.total_sent.toLocaleString('en-US'),  
+      title: 'TOTAL SENT',
+      value: stats.total_sent.toLocaleString('en-US'),
       unit: ` ${APP_CONFIG.CHAIN_SYMBOL}`,
-      subValue: "Send to " + stats.count_sent_envelopes + " wallets",
+      subValue: 'From ' + stats.total_recipients + ' claims',
       titleIcon: SendIcon,
       topRightIcon: ExternalLinkIcon,
     },
     {
-      title: "TOTAL RECEIVED",
+      title: 'TOTAL RECEIVED',
       value: stats.total_claimed.toLocaleString('en-US'),
       unit: ` ${APP_CONFIG.CHAIN_SYMBOL}`,
-      subValue: "From to " + stats.count_claimed_envelopes + " wallets",
+      subValue: 'From ' + stats.count_claimed_envelopes + ' claims',
       titleIcon: WalletMinimalIcon,
       topRightIcon: CoinsIcon,
     },
     {
-      title: "LIVE ENVELOPES",
+      title: 'LIVE ENVELOPES',
       value: stats.total_active_envelopes,
-      unit: "",
-      subValue: "Currently active",
+      unit: '',
+      subValue: 'Currently active',
       titleIcon: LucideMailOpen,
       topRightIcon: BarChartIcon,
     },
@@ -50,16 +50,12 @@ export const RedEnvelopeStats = () => {
     <section className="">
       <div className="">
         <PageHeader title="Mezon Lucky Money" header="Dashboard" />
-        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 sm:gap-6">
+        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 xl:grid-cols-3">
           {statsCards.map((item) => {
             const TitleIcon = item.titleIcon;
             const TopRightIcon = item.topRightIcon;
             const isLoading = item.value === undefined;
-            const cardClassName = cn(
-              'p-0', 
-              isLoading ? 'bg-background' : 'bg-card', 
-              'dark:border-primary/15'
-            );
+            const cardClassName = cn('p-0', isLoading ? 'bg-background' : 'bg-card', 'dark:border-primary/15');
             return (
               <Card key={item.title} className={cardClassName}>
                 <CardContent className="flex h-full flex-col justify-between p-5">
@@ -72,44 +68,31 @@ export const RedEnvelopeStats = () => {
                   </div>
 
                   <div className="my-4">
-                    <span className="text-2xl md:text-3xl font-semibold text-foreground dark:text-white break-words">
+                    <span className="text-foreground text-2xl font-semibold break-words md:text-3xl dark:text-white">
                       {item.value}
                     </span>
                     {item.unit && (
-                      <span className="text-2xl md:text-3xl font-semibold text-foreground dark:text-white break-words">
+                      <span className="text-foreground text-2xl font-semibold break-words md:text-3xl dark:text-white">
                         &nbsp;{item.unit}
                       </span>
                     )}
                   </div>
 
                   <div>
-                    <p className="text-base font-medium text-muted-foreground dark:text-gray-400">{item.subValue}</p>
+                    <p className="text-muted-foreground text-base font-medium dark:text-gray-400">{item.subValue}</p>
                   </div>
                 </CardContent>
               </Card>
             );
           })}
-
         </div>
-        <div className="mt-8 md:mt-14 flex justify-center">
+        <div className="mt-8 flex justify-center md:mt-14">
           <Button
             asChild
             size="lg"
-            className="
-              bg-violet-600 text-white
-              dark:bg-violet-800 text-white
-              hover:bg-violet-900
-              text-sm md:text-lg font-semibold
-              py-4 md:py-7 px-6 md:px-16
-              rounded-2xl
-              transform transition-transform duration-300 hover:scale-105
-              w-full sm:w-auto
-            "
+            className="w-full transform rounded-2xl bg-violet-600 px-6 py-4 text-sm font-semibold text-white transition-transform duration-300 hover:scale-105 hover:bg-violet-900 sm:w-auto md:px-16 md:py-7 md:text-lg dark:bg-violet-800"
           >
-            <Link
-              href={ROUTES.CREATE_LUCKY_MONEY}
-              className="flex w-full items-center justify-center gap-2 sm:gap-3"
-            >
+            <Link href={ROUTES.CREATE_LUCKY_MONEY} className="flex w-full items-center justify-center gap-2 sm:gap-3">
               <GiftIcon className="h-6 w-6 sm:h-8 sm:w-8" />
               <span className="whitespace-nowrap">Create New Lucky Money</span>
             </Link>

@@ -8,7 +8,7 @@ import QRCode from 'react-qr-code';
 import { useState, useEffect } from 'react';
 
 export function QrPreview() {
-  const { generatedEnvelope } = useCreateRedEnvelopeContext();
+  const { generatedEnvelope, isSuccess } = useCreateRedEnvelopeContext();
   const [qrSize, setQrSize] = useState(176);
   const pathName = process.env.NEXT_BASE_FE || window.location.origin;
 
@@ -27,11 +27,11 @@ export function QrPreview() {
     return () => window.removeEventListener('resize', updateQrSize);
   }, []);
 
-  const qrCodeValue = JSON.stringify({ type: 'lucky-money', wallet_address: generatedEnvelope?.red_envelope_wallet || '' });
+  const qrCodeValue = JSON.stringify({ type: 'lucky-money', lucky_money_id: generatedEnvelope?.id });
   const claimLink = generatedEnvelope
     ? `${pathName}/lucky-money/${generatedEnvelope.id}/claim`
     : '';
-
+  const shouldShowQr = generatedEnvelope && claimLink && isSuccess;
   const handleCopyLink = () => {
     if (generatedEnvelope && claimLink) {
       navigator.clipboard
@@ -56,12 +56,12 @@ export function QrPreview() {
         <div className="flex items-center justify-center px-2 sm:px-4">
           <div
             className={`flex h-36 w-36 sm:h-44 sm:w-44 md:h-52 md:w-52 items-center justify-center rounded-lg border p-2 sm:p-3 md:p-4 text-xs ${
-              generatedEnvelope && claimLink
+              shouldShowQr
                 ? 'border-none bg-white dark:bg-white' 
                 : 'border-yellow-500/30 dark:border-yellow-500/30 bg-gray-100 dark:bg-black/30 text-yellow-600 dark:text-yellow-500/60' 
             }`}
           >
-            {generatedEnvelope && claimLink ? (
+            {shouldShowQr ? (
               <QRCode value={qrCodeValue} size={qrSize} />
             ) : (
               <span className="text-yellow-600 dark:text-yellow-500/60 text-xs">QR Placeholder</span>

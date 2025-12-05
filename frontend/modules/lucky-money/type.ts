@@ -30,9 +30,9 @@ export interface RedEnvelope {
 }
 
 
-export interface RedEnvelopeStats {
+export interface RedEnvelopeStatsByUser {
   total_sent: number;
-  count_sent_envelopes: number;
+  total_recipients: number;
   total_claimed: number;
   count_claimed_envelopes: number;
   total_active_envelopes: number;
@@ -123,4 +123,9 @@ export interface RedEnvelopeDetailRecipient {
   amount: number;
   claimed_at: string;
   transaction_hash: string;
+}
+
+export interface RedEnvelopeStats {
+  total_active_envelopes: number;
+  total_claimed: number;
 }
