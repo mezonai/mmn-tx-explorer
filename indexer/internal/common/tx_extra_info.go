@@ -29,10 +29,12 @@ var strToType = map[string]TransactionExtraInfoType{
 }
 
 func ParseTransactionExtraInfoType(s string) TransactionExtraInfoType {
-	s = strings.TrimSpace(s)
+	s = strings.TrimSpace(strings.ToLower(s))
 	if s == "" {
 		return TransactionExtraInfoTokenTransfer
 	}
+
+	s = strings.ReplaceAll(s, "_", "-")
 
 	if t, ok := strToType[s]; ok {
 		return t
