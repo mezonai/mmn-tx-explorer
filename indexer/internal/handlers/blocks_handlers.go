@@ -93,7 +93,7 @@ func handleBlocksRequest(c *gin.Context) {
 	if len(countQf.FilterParams) > 1 {
 		totalItems, err = mainStorage.GetCount(ctx, "blocks", countQf)
 	} else {
-		totalItems, _, _, _, err = mainStorage.GetDashboardStats(ctx, countQf)
+		totalItems, _, _, _, _, err = mainStorage.GetDashboardStats(ctx, countQf)
 	}
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting count")

@@ -4,6 +4,10 @@ export const getTransactionTypeLabel = (type: ETransactionType): string => {
   switch (type) {
     case ETransactionType.TokenTransfer:
       return 'Token Transfer';
+    case ETransactionType.DonationCampaign:
+      return 'Donation Campaign';
+    case ETransactionType.WithdrawCampaign:
+      return 'Withdraw Campaign';
   }
 };
 

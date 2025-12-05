@@ -62,7 +62,6 @@ func GetPaginationParams(c *gin.Context) PaginationParams {
 	}
 
 	offset := page * limit
-
 	return PaginationParams{
 		Page:    page,
 		Limit:   limit,

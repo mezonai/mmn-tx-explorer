@@ -12,10 +12,75 @@ const (
 	CampaignStatusClosed int16 = 2
 )
 
+//Donation Campaign Goal Constants
+const (
+	MinGoalAmount int64 = 0              // Minimum goal amount for a campaign
+	MaxGoalAmount int64 = 100000000000    // Maximum goal amount for a campaign (100 billion)
+)
+
 // Transaction Status Constants
 const (
 	// TransactionStatusFINALIZED represents a finalized transaction
 	TransactionStatusFINALIZED int16 = 2
+)
+
+const (
+	RedEnvelopeStatusPending   = "PENDING"   // Awaiting transaction confirmation
+	RedEnvelopeStatusPublished = "PUBLISHED" // Active and claimable
+	RedEnvelopeStatusExpired   = "EXPIRED"   // Session ended
+	RedEnvelopeStatusFailed    = "FAILED"    // Transaction failed after retries
+)
+
+// Red Envelope Wallet Status Constants
+const (
+	RedEnvelopeWalletStatusReady          = "READY"           // Available for use
+	RedEnvelopeWalletStatusInUse          = "IN_USE"          // Currently assigned to a red envelope
+	RedEnvelopeWalletStatusPrepareReplace = "PREPARE_REPLACE" // Scheduled for replacement (>30 days old)
+	RedEnvelopeWalletStatusDisabled       = "DISABLED"        // No longer usable
+)
+
+const (
+	RedEnvelopeSplitMoneyStatusAvailable = "AVAILABLE"
+	RedEnvelopeSplitMoneyStatusReserved  = "RESERVED"
+	RedEnvelopeSplitMoneyStatusClaimed   = "CLAIMED"
+)
+
+const (
+	WalletTypeDefault     = "DEFAULT"
+	WalletTypeRedEnvelope = "LUCKY_MONEY"
+)
+
+// Red Envelope Configuration
+const (
+	RedEnvelopeInitialWalletPool  = 50 // Number of wallets to create on deployment
+	RedEnvelopeWalletMaxAgeInDays = 30 // Maximum age for unused wallets before replacement
+)
+
+const (
+	StatusPublished = 2
+	StatusFailed    = 3
+	StatusExpired   = 4
+)
+
+const (
+	RedEnvelopeQueueStatusUserAlreadyInQueue = "ALREADY_QUEUED"
+	RedEnvelopeQueueStatusLimitReached       = "LIMIT_REACHED"
+	RedEnvelopeQueueStatusNotInitialize      = "QUEUE_NOT_INITIALIZE"
+	RedEnvelopeStatusOk                      = "OK"
+)
+
+const (
+	ClaimStatusError         = 0
+	ClaimStatusSuccess       = 1
+	ClaimStatusAlreadyQueued = 2
+)
+
+const (
+	ExtraInfoLuckyMoney = `{"type":"lucky-money"}`
+)
+
+const (
+	TextDataLuckyMoney = "Lucky Money fund"
 )
 
 // GetStatusName returns the human-readable name for a status code

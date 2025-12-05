@@ -19,6 +19,7 @@ export interface DonationCampaign {
   updated_at: string;
   total_amount: number;
   total_contributors: number;
+  recent_amount?: number;
   owner: string;
   verified: boolean;
   current_balance: number;
@@ -58,8 +59,10 @@ export interface CampaignListParams {
   page: number;
   limit: number;
   status?: string;
+  verified?: boolean;
   order?: 'asc' | 'desc';
-  order_by?: 'total_amount' | 'created_at';
+  order_by?: 'total_amount' | 'created_at' | 'end_date' | 'recent_amount';
+  search?: string;
 }
 
 export interface CampaignStats {
@@ -67,6 +70,11 @@ export interface CampaignStats {
   total_amount: number;
   total_contributors: number;
 }
+
+// Response returned when syncing/refreshing campaign raised totals
+// NOTE: refresh/sync endpoints return a small payload with updated totals.
+// Those fields already exist on `DonationCampaign` (total_amount/total_contributors/recent_amount)
+// so we reuse that type (Partial<DonationCampaign>) where needed instead of creating a new type.
 
 export interface CreateCampaignForm {
   name: string;

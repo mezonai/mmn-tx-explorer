@@ -1,10 +1,12 @@
 package routes
 
 import (
+	"dong-service/blockchain"
 	"dong-service/config"
 	"dong-service/database"
 	_ "dong-service/docs" // Import docs to load swagger documentation
 	"dong-service/handlers"
+	"dong-service/logger"
 	"dong-service/middleware"
 	"dong-service/repository"
 
@@ -29,12 +31,22 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 	router.POST("/refresh", authHandler.RefreshHandler)
 	router.POST("/logout", authHandler.LogoutHandler)
 
+	blockchainService, err := blockchain.NewBlockchainService(cfg)
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to initialize blockchain service")
+	}
+
+	queueService := repository.NewRedEnvelopeQueueService(database.RedisClient)
+	walletRepo := repository.NewIntermediaryWalletRepository(database.GetDB(), cfg.Database.Schema)
+	redEnvelopeRepo := repository.NewRedEnvelopeRepository(database.GetDB(), cfg.Database.Schema, blockchainService, walletRepo, queueService)
+	redEnvelopeHandler := handlers.NewRedEnvelopeHandler(redEnvelopeRepo, queueService, walletRepo)
+
 	// API v1 routes
 	v1 := router.Group("/api/v1")
 	{
 		// Initialize repositories
 		campaignRepo := repository.NewDonationCampaignRepository(database.GetDB(), cfg.Database.Schema, cfg.Indexer.Schema)
-		statsRepo := repository.NewCampaignStatisticsRepository(database.GetDB(), cfg.Indexer.Schema, cfg.Database.Schema)
+		statsRepo := repository.NewCampaignStatisticsRepository(database.GetDB(), cfg.Indexer.Schema, cfg.Database.Schema, cfg.Scheduler.RecentStatsWindowDays)
 		walletRepo := repository.NewWalletRepository(database.GetDB(), cfg.Indexer.Schema)
 
 		// Initialize handlers
@@ -64,9 +76,33 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		statsPublic := v1.Group("/stats")
 		statsPublic.GET("/campaign", statsHandler.GetCampaignStats)
 
+		// Red Envelope routes (private)
+		redEnvelopePrivate := v1.Group("/red-envelopes")
+		redEnvelopePrivate.Use(middleware.Authentication(cfg.JWT.Secret))
+		redEnvelopePrivate.POST("/create", redEnvelopeHandler.CreateRedEnvelope)
+		redEnvelopePrivate.GET("/stats-by-user", redEnvelopeHandler.GetRedEnvelopeStatsByUser)
+		redEnvelopePrivate.GET("/:id/recipients", redEnvelopeHandler.GetRecipientsByRedEnvelopeID)
+		redEnvelopePrivate.POST("/update-status-red-envelope", redEnvelopeHandler.UpdateStatusRedEnvelope)
+		redEnvelopePrivate.GET("/claimed-by-user", redEnvelopeHandler.GetRedEnvelopeClaimedByUser)
+		redEnvelopePrivate.GET("/created-by-user", redEnvelopeHandler.GetRedEnvelopeCreatedByUser)
+		redEnvelopePrivate.GET("/detail/:id", redEnvelopeHandler.GetDetailRedEnvelopeByID)
+		redEnvelopePrivate.POST("/close-session", redEnvelopeHandler.CloseSessionRedEnvelope)
+		redEnvelopePrivate.GET("/claim-amount", redEnvelopeHandler.ClaimAmountRedEnvelope)
+		redEnvelopePrivate.POST("/:id/claim", redEnvelopeHandler.ClaimRedEnvelope)
+
+		// Red Envelope routes (public)
+		redEnvelopePublic := v1.Group("/red-envelopes")
+		redEnvelopePublic.GET("/stats", redEnvelopeHandler.GetRedEnvelopeStats)
+
 		// Wallet routes (public)
 		walletPublic := v1.Group("/wallets")
 		walletPublic.Use(middleware.ParseTokenAndAddToContext(cfg.JWT.Secret))
 		walletPublic.GET("/:address/detail", walletHandler.GetWalletDetail)
+
+		// Example routes (protected)
+		examplePrivate := v1.Group("/examples")
+		examplePrivate.Use(middleware.Authentication(cfg.JWT.Secret))
+		exampleHandler := handlers.NewExampleHandler()
+		examplePrivate.POST("/create-events", exampleHandler.CreateEvents)
 	}
 }

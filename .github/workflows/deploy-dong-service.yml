@@ -35,6 +35,8 @@ on:
         required: true
       REDIS_PASSWORD:
         required: true
+      AES_SECRET_KEY:
+        required: true
 
 jobs:
   build:
@@ -114,6 +116,9 @@ jobs:
           SERVER_GIN_MODE: release
           LOGGING_OUTPUT: "file"
           LOG_LEVEL: ${{ inputs.env == 'prod' && 'info' || 'debug' }}
+          AES_SECRET_KEY: ${{ secrets.AES_SECRET_KEY }}
+          BLOCKCHAIN_RPC_URL: ${{vars.MMN_GRPC_URL}}
+          BLOCKCHAIN_USE_TLS: ${{vars.MMN_GRPC_USE_TLS}}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
@@ -139,6 +144,9 @@ jobs:
           REDIS_PASSWORD='${REDIS_PASSWORD}'
           REDIS_DB='${REDIS_DB}'
           SERVER_GIN_MODE='${SERVER_GIN_MODE}'
+          AES_SECRET_KEY='${AES_SECRET_KEY}'
+          BLOCKCHAIN_RPC_URL='${BLOCKCHAIN_RPC_URL}'
+          BLOCKCHAIN_USE_TLS='${BLOCKCHAIN_USE_TLS}'
           EON
 
           sudo chown -R mmn:mmn /opt/dong-service
@@ -175,6 +183,9 @@ jobs:
           printf "export REDIS_PASSWORD=%q\n" "$REDIS_PASSWORD" >> remote_env.sh
           printf "export REDIS_DB=%q\n" "$REDIS_DB" >> remote_env.sh
           printf "export SERVER_GIN_MODE=%q\n" "$SERVER_GIN_MODE" >> remote_env.sh
+          printf "export AES_SECRET_KEY=%q\n" "$AES_SECRET_KEY" >> remote_env.sh
+          printf "export BLOCKCHAIN_RPC_URL=%q\n" "$BLOCKCHAIN_RPC_URL" >> remote_env.sh
+          printf "export BLOCKCHAIN_USE_TLS=%q\n" "$BLOCKCHAIN_USE_TLS" >> remote_env.sh
 
       - name: Prepare and deploy to target server
         run: |

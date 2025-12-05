@@ -133,9 +133,9 @@ type IMainStorage interface {
 	GetCount(ctx context.Context, table string, qf *QueryFilter) (uint64, error)
 
 	/**
-	 * Gets dashboard stats (totalBlocks, totalTransactions, totalWallets, averageBlockTime) in a single call.
+	*Gets dashboard stats (totalBlocks, totalTransactions, totalWallets, averageBlockTime, totalGiveCoffee) in a single call.
 	 */
-	GetDashboardStats(ctx context.Context, qf *QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, averageBlockTime float64, err error)
+	GetDashboardStats(ctx context.Context, qf *QueryFilter) (totalBlocks uint64, totalTransactions uint64, totalWallets uint64, averageBlockTime float64, totalGiveCoffee uint64, err error)
 
 	/**
 	 * Gets pending transactions from MMN service.
@@ -149,17 +149,22 @@ type IMainStorage interface {
 	GetTransactionsByWalletCount(ctx context.Context, walletAddress string, startTime, endTime int64) (uint64, error)
 	GetTotalTransactions(ctx context.Context) (uint64, error)
 
-  /**
+	/**
 	 * Timestamp-based cursor pagination methods for transactions
 	 */
 	GetTransactionsByWalletWithTimestamp(ctx context.Context, walletAddress string, limit int, timestampLt time.Time, lastHash string) ([]common.Transaction, error)
 	GetTransactionsByFromAddressWithTimestamp(ctx context.Context, fromAddress string, limit int, timestampLt time.Time, lastHash string) ([]common.Transaction, error)
 	GetTransactionsByToAddressWithTimestamp(ctx context.Context, toAddress string, limit int, timestampLt time.Time, lastHash string) ([]common.Transaction, error)
-  
+
 	/**
 	 * Recalculates and updates all statistics in the stats table
 	 */
 	RecalculateStats(ctx context.Context) error
+
+	/**
+	 * CSV Export: Get all transactions for a wallet (no pagination)
+	 */
+	GetAllTransactionsByWallet(ctx context.Context, walletAddress string, startTime, endTime int64, sortBy, sortOrder string) ([]common.Transaction, error)
 }
 
 func NewStorageConnector(cfg *config.StorageConfig) (IStorage, error) {
