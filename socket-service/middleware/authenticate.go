@@ -9,7 +9,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// ValidateToken: Middleware xác thực JWT từ query param (dùng cho WebSocket)
 func ValidateToken(jwtSecret string) gin.HandlerFunc {
        return func(c *gin.Context) {
 	       tokenString := c.Query("token")
@@ -69,7 +68,6 @@ func ValidateToken(jwtSecret string) gin.HandlerFunc {
        }
 }
 
-// ValidateAPIKey: Middleware xác thực API Key từ header (dùng cho HTTP API)
 func ValidateAPIKey(expectedKey string) gin.HandlerFunc {
        return func(c *gin.Context) {
 	       apiKey := c.GetHeader("X-API-Key")

@@ -30,12 +30,12 @@ func (h *HTTPHandler) SaveEvent(c *gin.Context) {
 	}
 
 	sentToOnline := false
-	if conns, ok := h.wsSvc.GetConnections(event.ReceiveID); ok {
+	if conns, ok := h.wsSvc.GetConnections(event.ReceiveAddress); ok {
 		for _, conn := range conns {
 			if err := conn.WriteJSON(event); err != nil {
 				logger.Error().Err(err).Msg("Failed to send event to online user")
 			} else {
-				logger.Info().Msgf("Event sent to online user %s", event.ReceiveID)
+				logger.Info().Msgf("Event sent to online user %s", event.ReceiveAddress)
 				sentToOnline = true
 			}
 		}
