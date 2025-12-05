@@ -5,9 +5,7 @@ import (
 	"dong-service/logger"
 	"dong-service/models"
 	"dong-service/services"
-	"dong-service/utils"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -25,12 +23,6 @@ func NewExampleHandler() *ExampleHandler {
 }
 
 func (h *ExampleHandler) CreateEvents(c *gin.Context) {
-	userID, err := utils.GetUserIDFromContext(c)
-	if err != nil {
-		logger.Error().Err(err).Msg("Unauthorized example request attempt")
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
-		return
-	}
 
 	var input map[string]interface{}
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -39,12 +31,12 @@ func (h *ExampleHandler) CreateEvents(c *gin.Context) {
 		return
 	}
 
-	receiveID, _ := input["receive_id"].(string)
+	receiveAddress, _ := input["receive_address"].(string)
 	eventType := constants.CONFIRM_ORDER
 	if t, ok := input["type"].(string); ok {
 		eventType = t
 	}
-	delete(input, "receive_id")
+	delete(input, "receive_address")
 	delete(input, "type")
 
 	payloadBytes, err := json.Marshal(input)
@@ -54,18 +46,16 @@ func (h *ExampleHandler) CreateEvents(c *gin.Context) {
 		return
 	}
 
-	// trường bắt buộc có receiveID,
+	// trường bắt buộc có receiveAddress,
 	//  Type có thể lấy ở FE hoặc Constant của BE ;
 	//  status, createat mặc định ở BE,
-	// SenderID thì lấy trong userID từ token
 	//  còn lại nhúng hết vào payload json
 
 	event := &models.Event{
 		ID:        uuid.New(),
 		Type:      eventType,
 		Payload:   json.RawMessage(payloadBytes),
-		SenderID:  fmt.Sprintf("%v", userID),
-		ReceiveID: receiveID,
+		ReceiveAddress: receiveAddress,
 		Status:    "pending",
 		CreateAt:  time.Now(),
 	}

@@ -41,7 +41,7 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 		return
 	}
 
-	userID, err := utils.GetUserIDFromContext(c)
+	userAddress, err := utils.GetUserAddressFromContext(c)
 	if err != nil {
 		logger.Error().Err(err).Msg("Unauthorized WebSocket connection attempt")
 		conn.WriteMessage(websocket.TextMessage, []byte("Unauthorized: "+err.Error()))
@@ -55,7 +55,7 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 		return nil
 	})
 
-	events, err := h.repo.GetListEventByReceiveID(userID)
+	events, err := h.repo.GetListEventByReceiveID(userAddress)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to get events for user")
 		conn.WriteMessage(websocket.TextMessage, []byte("Failed to get events: "+err.Error()))
@@ -75,7 +75,7 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 		}
 	}
 
-	h.wsSvc.AddConnection(userID, conn)
+	h.wsSvc.AddConnection(userAddress, conn)
 
 	done := make(chan struct{})
 	go func() {
@@ -99,8 +99,8 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 
 	for {
 		if _, _, err := conn.ReadMessage(); err != nil {
-			logger.Info().Msgf("User %s disconnected", userID)
-			h.wsSvc.RemoveConnection(userID, conn)
+			logger.Info().Msgf("User %s disconnected", userAddress)
+			h.wsSvc.RemoveConnection(userAddress, conn)
 			conn.Close()
 			close(done)
 			break
