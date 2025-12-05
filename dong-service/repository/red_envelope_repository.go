@@ -64,7 +64,10 @@ func (r *RedEnvelopeRepository) Create(req *models.CreateRedEnvelopeRequest, cre
 	var result models.RedEnvelope
 	ctx := context.Background()
 	redEnvelopeWallet, err := r.walletRepo.GetOrCreateAvailableWallet(ctx, tx)
-	fmt.Println("Red Envelope Wallet:", redEnvelopeWallet)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get or create available wallet: %w", err)
+	}
+
 	err = tx.QueryRow(
 		query,
 		req.Name,
@@ -809,6 +812,11 @@ func (r *RedEnvelopeRepository) GetClaimAmount(id, walletAddress string, claimSt
 			return models.ClaimAmount{}, fmt.Errorf("query failed: %w", err)
 		}
 
+		// Commit transaction before returning success
+		if err = tx.Commit(); err != nil {
+			return models.ClaimAmount{}, fmt.Errorf("failed to commit transaction: %w", err)
+		}
+
 		return models.ClaimAmount{
 			ID:          existingSplit.ID,
 			Amount:      existingSplit.Amount,
@@ -822,7 +830,7 @@ func (r *RedEnvelopeRepository) GetClaimAmount(id, walletAddress string, claimSt
 		return models.ClaimAmount{}, fmt.Errorf("all claim attempts for this red envelope have been used")
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err = tx.Commit(); err != nil {
 		return models.ClaimAmount{}, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
@@ -883,11 +891,13 @@ func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUs
 	}
 
 	if envelope.Status != constants.RedEnvelopeStatusPublished {
-		return fmt.Errorf("red envelope is not published")
+		err = fmt.Errorf("red envelope is not published")
+		return err
 	}
 
 	if envelope.ClaimedCount >= envelope.TotalClaims {
-		return fmt.Errorf("red envelope is fully claimed")
+		err = fmt.Errorf("red envelope is fully claimed")
+		return err
 	}
 
 	claimAmount, err := r.GetAmountBySplitID(splitMoneyID)
