@@ -21,7 +21,7 @@ func (t TransactionExtraInfoType) String() string {
 
 var strToType = map[string]TransactionExtraInfoType{
 	"dong-give-coffee":  TransactionExtraInfoDongGiveCoffee,
-	"give-coffee":       TransactionExtraInfoGiveCoffee,
+	"give_coffee":       TransactionExtraInfoGiveCoffee,
 	"donation-campaign": TransactionExtraInfoDonationCampaign,
 	"withdraw-campaign": TransactionExtraInfoWithdrawCampaign,
 	"lucky-money":       TransactionExtraInfoLuckyMoney,
@@ -29,12 +29,10 @@ var strToType = map[string]TransactionExtraInfoType{
 }
 
 func ParseTransactionExtraInfoType(s string) TransactionExtraInfoType {
-	s = strings.TrimSpace(strings.ToLower(s))
+	s = strings.TrimSpace(s)
 	if s == "" {
 		return TransactionExtraInfoTokenTransfer
 	}
-
-	s = strings.ReplaceAll(s, "_", "-")
 
 	if t, ok := strToType[s]; ok {
 		return t
