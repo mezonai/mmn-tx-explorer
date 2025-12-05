@@ -7,6 +7,7 @@ import (
 	"dong-service/services"
 	"dong-service/utils"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -117,6 +118,7 @@ func (h *OfferHandler) ConfirmOffer(c *gin.Context) {
 func (h *OfferHandler) ListOffers(c *gin.Context) {
 	minPrice := c.Query("min_price")
 	maxPrice := c.Query("max_price")
+	rate := c.Query("rate")
 	status := c.Query("status")
 	symbol := c.Query("symbol")
 
@@ -130,6 +132,7 @@ func (h *OfferHandler) ListOffers(c *gin.Context) {
 
 	var minP *string
 	var maxP *string
+	var rateP *string
 	var st *string
 	var sym *string
 	if minPrice != "" {
@@ -138,6 +141,9 @@ func (h *OfferHandler) ListOffers(c *gin.Context) {
 	if maxPrice != "" {
 		maxP = &maxPrice
 	}
+	if rate != "" {
+		rateP = &rate
+	}
 	if status != "" {
 		st = &status
 	}
@@ -145,13 +151,53 @@ func (h *OfferHandler) ListOffers(c *gin.Context) {
 		sym = &symbol
 	}
 
-	offers, err := h.offerService.ListOffers(c.Request.Context(), minP, maxP, st, sym, pagination)
+	offers, err := h.offerService.ListOffers(c.Request.Context(), minP, maxP, st, sym, rateP, pagination)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to list offers: "+err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, models.SuccessResponse(offers))
+	total, err := h.offerService.CountOffers(c.Request.Context(), minP, maxP, st, sym, rateP)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to list offers: "+err.Error()))
+		return
+	}
+
+	// normalize price_rate strings so we don't return long fixed-point
+	// representations like "1.000000000000000000" — trim trailing zeros
+	// and trailing dot, e.g. "1.500000" => "1.5", "1.000000" => "1"
+	formattedOffers := make([]models.Offer, len(offers))
+	for i, of := range offers {
+		formattedOffers[i] = of
+		if of.PriceRate != nil {
+			s := *of.PriceRate
+			s = strings.TrimRight(s, "0")
+			s = strings.TrimRight(s, ".")
+			if s == "" {
+				s = "0"
+			}
+			formattedOffers[i].PriceRate = &s
+		}
+	}
+
+	var totalPage int64
+	if pg.Limit > 0 {
+		totalPage = (total + int64(pg.Limit)) / int64(pg.Limit)
+	} else {
+		totalPage = 0
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Offers retrieved",
+		"data":    formattedOffers,
+		"meta": gin.H{
+			"page":        pg.Page + 1,
+			"limit":       pg.Limit,
+			"total_items": total,
+			"total_pages": totalPage,
+		},
+	})
 }
 
 // GetOfferDetail godoc
@@ -181,6 +227,17 @@ func (h *OfferHandler) GetOfferDetail(c *gin.Context) {
 		}
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to fetch offer: "+err.Error()))
 		return
+	}
+
+	// normalize price_rate for output
+	if offer.PriceRate != nil {
+		s := *offer.PriceRate
+		s = strings.TrimRight(s, "0")
+		s = strings.TrimRight(s, ".")
+		if s == "" {
+			s = "0"
+		}
+		offer.PriceRate = &s
 	}
 
 	c.JSON(http.StatusOK, models.SuccessResponse(offer))
