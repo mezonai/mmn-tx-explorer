@@ -1,0 +1,67 @@
+- Init Base Socket to Client Connection and Receive Data (Best Practice)
+- Init Struct DataBase for event. ( Best Practice)
+- Init Base RestFul API to Receive Event From BE Dong (Best Practice)
+
+ + lúc mở kết nối : gửi mỗi user id, connect đó sẽ đại diện cho toàn bộ các event liên quan đến các room có user đó
+  => lúc sync event cần có thông tin: liên quan đến room, event,...., đến user phải nhận, user gửi.
+  => lúc bắn event:
+    + bắn ngay lúc nhận được cho các client đang online ( cũng có db mapping connection với user nhận)
+    + bắn lúc client mở connect: đề phòng event có lúc client đang off. => làm sao để biết event này đã được gửi hay chưa? nếu chỉ có 1 người nhận thì k sao , nếu có nhiều người nhận làm sao biết được event này đã và chưa gửi cho ai?
+- chốt
+   + event và tần suất đọc ghi cũng k nhiều => tận dụng luôn postgre ( schema mới )
+   + có nên tách service riêng không?
+      - nếu có: 
+         + dùng lại middlware (chứa cả redis => lặp lại) authen , dùng lại secret.
+         + thêm api key cho endpoint mà thằng dong call sang.
+
+{
+    "tradeType": "SELL",
+    "amountMZD": 200000,
+    "amountMZDFormatted": "200.000",
+    "exchangeRate": 0.8,
+    "exchangeRateDisplay": "1 MZD = 0,8 VND",
+    "totalVND": 160000,
+    "totalVNDFormatted": "160.000",
+    "limit": {
+        "min": 100,
+        "minFormatted": "100",
+        "max": 10000,
+        "maxFormatted": "10.000",
+        "range": "100 - 10.000 MZD"
+    },
+    "bank": "MB",
+    "accountNumber": "121397466"
+}
+
+event {
+    type:
+    payload : cả một json chứa những thông tin khác biệt của các event
+    sender_id:
+    receive_id:
+    status:
+    create_at:
+}
+
+CREATE TABLE event (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    type VARCHAR(50) NOT NULL,
+    payload JSONB NOT NULL,
+    sender_id VARCHAR(50) NOT NULL,
+    receive_id VARCHAR(50) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    create_at TIMESTAMP DEFAULT now()
+);
+
+
+curl -X POST "http://localhost:8888/api/v1/examples/create-events" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjQ4Mzc1NDYsInRva2VuX2lkIjoiMmNhNjRhYWEtZDkzZC00NDFkLTlkMzUtZWViZDRkNmZlYWI5IiwidHlwZSI6ImFjY2VzcyIsInVzZXJfaWQiOiIxOTQwMDQ4Mzg4NDY4NzcyODY0In0.bhaIjIDIAZqbj506-YbHddRvckuXIDGB9uK688spxPI" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "receive_id": "1950875350829371392",
+    "order_id": "31dádsd",
+    "amount": 100000,
+    "note": "Chuyển khoản nhanh",
+    "extra_field_1": "giá trị 1",
+    "extra_field_2": 9999,
+    "extra_field_3": true
+  }'

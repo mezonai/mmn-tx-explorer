@@ -4,15 +4,19 @@ import (
 	"net/http"
 	"socket-service/config"
 	"socket-service/logger"
-	"socket-service/utils"
-
 	"socket-service/repository"
 	"socket-service/service"
+	"socket-service/utils"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
-
+const (
+		pongWait   = 60 * time.Second
+		pingPeriod = 50 * time.Second
+		writeWait  = 10 * time.Second
+)
 type WSHandler struct {
 	repo  *repository.EventRepository
 	cfg   *config.Config
@@ -30,6 +34,7 @@ var upgrader = websocket.Upgrader{
 }
 
 func (h *WSHandler) HandleWS(c *gin.Context) {
+
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		logger.Error().Err(err).Msg("WebSocket upgrade failed")
@@ -43,6 +48,13 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 		conn.Close()
 		return
 	}
+
+	conn.SetReadDeadline(time.Now().Add(pongWait))
+	conn.SetPongHandler(func(string) error {
+		conn.SetReadDeadline(time.Now().Add(pongWait))
+		return nil
+	})
+
 	events, err := h.repo.GetListEventByReceiveID(userID)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to get events for user")
@@ -65,11 +77,32 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 
 	h.wsSvc.AddConnection(userID, conn)
 
+	done := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(pingPeriod)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				conn.SetWriteDeadline(time.Now().Add(writeWait))
+				if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+					logger.Error().Err(err).Msg("Ping failed, closing connection")
+					conn.Close()
+					close(done)
+					return
+				}
+			case <-done:
+				return
+			}
+		}
+	}()
+
 	for {
 		if _, _, err := conn.ReadMessage(); err != nil {
 			logger.Info().Msgf("User %s disconnected", userID)
 			h.wsSvc.RemoveConnection(userID, conn)
 			conn.Close()
+			close(done)
 			break
 		}
 	}

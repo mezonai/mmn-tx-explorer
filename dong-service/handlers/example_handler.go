@@ -54,6 +54,12 @@ func (h *ExampleHandler) CreateEvents(c *gin.Context) {
 		return
 	}
 
+	// trường bắt buộc có receiveID,
+	//  Type có thể lấy ở FE hoặc Constant của BE ;
+	//  status, createat mặc định ở BE,
+	// SenderID thì lấy trong userID từ token
+	//  còn lại nhúng hết vào payload json
+
 	event := &models.Event{
 		ID:        uuid.New(),
 		Type:      eventType,
