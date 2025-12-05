@@ -55,7 +55,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		statsHandler := handlers.NewCampaignStatisticsHandler(statsRepo)
 		walletHandler := handlers.NewWalletHandler(walletRepo, campaignRepo)
 
-
 		// Offers - new trading endpoints (previously named Orders)
 		offerRepo := repository.NewOfferRepository(database.GetDB(), cfg.Database.Schema)
 		offerService := services.NewOfferService(offerRepo, intermediaryWalletRepo)
@@ -109,7 +108,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		walletPublic := v1.Group("/wallets")
 		walletPublic.Use(middleware.ParseTokenAndAddToContext(cfg.JWT.Secret))
 		walletPublic.GET("/:address/detail", walletHandler.GetWalletDetail)
-
 
 		// Offers (private) - create offer
 		offersPrivate := v1.Group("/offers")

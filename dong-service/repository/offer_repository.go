@@ -67,7 +67,6 @@ func (r *OfferRepository) UpdateOfferStatus(ctx context.Context, offerID int64, 
 }
 
 // ListOffers returns offers matching optional filters with pagination
-
 func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, pagination any) ([]models.Offer, error) {
 	base := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_id, wallet_address, side, symbol, quantity, total_quantity, price, price_rate, price_type, status, metadata, created_at, updated_at FROM %s.offers`, r.dongSchema)
 

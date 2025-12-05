@@ -163,9 +163,6 @@ func (h *OfferHandler) ListOffers(c *gin.Context) {
 		return
 	}
 
-	// normalize price_rate strings so we don't return long fixed-point
-	// representations like "1.000000000000000000" — trim trailing zeros
-	// and trailing dot, e.g. "1.500000" => "1.5", "1.000000" => "1"
 	formattedOffers := make([]models.Offer, len(offers))
 	for i, of := range offers {
 		formattedOffers[i] = of
