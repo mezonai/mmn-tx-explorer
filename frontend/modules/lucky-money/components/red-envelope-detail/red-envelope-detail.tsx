@@ -1,6 +1,6 @@
 'use client';
 
-import { ExternalLink, Loader2, AlertCircle } from 'lucide-react'; 
+import { Loader2, AlertCircle } from 'lucide-react';
 import { truncateWalletAddress, formatClaimDate } from '../../utils';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
@@ -38,8 +38,8 @@ export const RedEnvelopeDetail = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center space-y-4">
-        <Loader2 className="w-10 h-10 animate-spin text-purple-600" />
+      <div className="flex min-h-screen flex-col items-center justify-center space-y-4">
+        <Loader2 className="h-10 w-10 animate-spin text-purple-600" />
         <p className="text-muted-foreground">Loading details...</p>
       </div>
     );
@@ -47,16 +47,16 @@ export const RedEnvelopeDetail = () => {
 
   if (isError) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <div className="bg-red-50 dark:bg-red-800/20 border border-red-200 dark:border-red-800 rounded-lg p-6 max-w-md w-full text-center space-y-4">
-          <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />
+      <div className="flex min-h-screen flex-col items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-4 rounded-lg border border-red-200 bg-red-50 p-6 text-center dark:border-red-800 dark:bg-red-800/20">
+          <AlertCircle className="mx-auto h-12 w-12 text-red-500" />
           <h2 className="text-xl font-semibold text-red-700 dark:text-red-600">Failed to load data</h2>
           <p className="text-sm text-red-600 dark:text-red-300">
             Could not fetch lucky money details. Please check your connection and try again.
           </p>
-          <button 
+          <button
             onClick={() => refetch()}
-            className="px-4 py-2 bg-red-700 hover:bg-red-800 text-white rounded-md transition-colors"
+            className="rounded-md bg-red-700 px-4 py-2 text-white transition-colors hover:bg-red-800"
           >
             Try Again
           </button>
@@ -66,25 +66,25 @@ export const RedEnvelopeDetail = () => {
   }
 
   return (
-    <div className="min-h-screen text-foreground dark:text-white p-4 md:p-8 font-sans">
-      <div className="max-w-7xl mx-auto">
+    <div className="text-foreground min-h-screen p-4 font-sans md:p-8 dark:text-white">
+      <div className="mx-auto max-w-7xl">
         <div className="mb-6 space-y-2 sm:space-y-4">
           <BreadcrumbNavigation breadcrumbs={breadcrumbs} />
         </div>
-        <header className="flex flex-col lg:flex-row justify-between lg:items-center mb-8 gap-4">
-          <div className="flex-1 min-w-0">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white truncate">🎁 {stats.name}</h1>
-            <div className="flex items-baseline gap-2 flex-wrap">
-              <h3 className="text-sm md:text-lg text-muted-foreground dark:text-gray-400 font-mono">Session ID:</h3>
-              <h3 className="text-sm md:text-lg font-medium text-purple-600 dark:text-purple-400 font-mono break-all">
+        <header className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-2xl font-bold text-gray-900 md:text-3xl dark:text-white">🎁 {stats.name}</h1>
+            <div className="flex flex-wrap items-baseline gap-2">
+              <h3 className="text-muted-foreground font-mono text-sm md:text-lg dark:text-gray-400">Session ID:</h3>
+              <h3 className="font-mono text-sm font-medium break-all text-purple-600 md:text-lg dark:text-purple-400">
                 {truncateWalletAddress(redEnvelopeId || '')}
               </h3>
             </div>
           </div>
-          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+          <div className="flex flex-shrink-0 items-center gap-2 sm:gap-4">
             <span
               className={cn(
-                'font-bold py-1 px-2 md:px-3 rounded-full text-xs md:text-sm border whitespace-nowrap',
+                'rounded-full border px-2 py-1 text-xs font-bold whitespace-nowrap md:px-3 md:text-sm',
                 statusClassName
               )}
             >
@@ -93,21 +93,16 @@ export const RedEnvelopeDetail = () => {
             <button
               onClick={handleCloseSession}
               disabled={!isClosable || isClosing}
-              className="flex items-center justify-center gap-2 border border-red-300 dark:border-[rgb(239_68_68_/_0.6)] text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-[rgb(239_68_68_/_0.1)] font-semibold py-2 px-3 md:px-4 rounded-lg transition-colors text-sm md:text-base cursor-pointer
-                        disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent whitespace-nowrap w-auto"
+              className="flex w-auto cursor-pointer items-center justify-center gap-2 rounded-lg border border-red-300 px-3 py-2 text-sm font-semibold whitespace-nowrap text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent md:px-4 md:text-base dark:border-[rgb(239_68_68_/_0.6)] dark:text-red-400 dark:hover:bg-[rgb(239_68_68_/_0.1)]"
             >
               {isClosing ? 'Closing...' : 'Close Session'}
             </button>
           </div>
         </header>
 
-        <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-8 mb-8">
+        <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8 xl:grid-cols-3">
           {statsCards.map((item) => {
-            const cardClassName = cn(
-              'p-0',
-              'bg-card',
-              'dark:border-primary/15'
-            );
+            const cardClassName = cn('p-0', 'bg-card', 'dark:border-primary/15');
             return (
               <Card key={item.title} className={cardClassName}>
                 <CardContent className="flex h-full flex-col justify-between p-5">
@@ -117,11 +112,11 @@ export const RedEnvelopeDetail = () => {
                     </div>
                   </div>
                   <div className="my-4">
-                    <span className="text-2xl md:text-3xl font-semibold text-foreground dark:text-white break-words">
+                    <span className="text-foreground text-2xl font-semibold break-words md:text-3xl dark:text-white">
                       {item.value}
                     </span>
                     {item.unit && (
-                      <span className="text-2xl md:text-3xl font-semibold text-foreground dark:text-white break-words">
+                      <span className="text-foreground text-2xl font-semibold break-words md:text-3xl dark:text-white">
                         &nbsp;{item.unit} {item.subValue}
                       </span>
                     )}
@@ -132,74 +127,79 @@ export const RedEnvelopeDetail = () => {
           })}
         </section>
 
-        <section className="bg-card dark:bg-slate-800 border border-border dark:border-slate-700 p-4 md:p-6 rounded-lg shadow-lg mb-8">
-          <h2 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white mb-4 md:mb-6">Share Lucky Money</h2>
-          <div className="flex flex-col md:flex-row items-center md:items-stretch gap-4 md:gap-6">
-            <div className="bg-white dark:bg-white p-2 md:p-3 rounded-lg flex-shrink-0 w-auto max-w-[220px]">
+        <section className="bg-card border-border mb-8 rounded-lg border p-4 shadow-lg md:p-6 dark:border-slate-700 dark:bg-slate-800">
+          <h2 className="mb-4 text-lg font-semibold text-gray-900 md:mb-6 md:text-xl dark:text-white">
+            Share Lucky Money
+          </h2>
+          <div className="flex flex-col items-center gap-4 md:flex-row md:items-stretch md:gap-6">
+            <div className="w-auto max-w-[220px] flex-shrink-0 rounded-lg bg-white p-2 md:p-3 dark:bg-white">
               <QRCode value={qrCodeValue} size={qrSize} style={{ width: '100%', height: 'auto' }} />
             </div>
-            <div className="flex-grow w-full flex flex-col gap-4">
+            <div className="flex w-full flex-grow flex-col gap-4">
               <div>
                 <div className="relative w-full">
-                  <div className="bg-background dark:bg-slate-700 border border-border dark:border-slate-600 text-foreground dark:text-gray-200 p-2 md:p-3 pr-10 md:pr-12 rounded-lg font-mono text-xs md:text-sm truncate w-full">
+                  <div className="bg-background border-border text-foreground w-full truncate rounded-lg border p-2 pr-10 font-mono text-xs md:p-3 md:pr-12 md:text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200">
                     {truncateWalletAddress(claimLink, truncateChars)}
                   </div>
-                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                  <div className="absolute top-1/2 right-2 -translate-y-1/2 transform">
                     <CopyButton textToCopy={claimLink} />
                   </div>
                 </div>
               </div>
-              <a
-                href={isClosable ? claimLink : undefined}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={cn(
-                  "flex items-center justify-center gap-2 w-full md:w-1/3 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 md:py-3 px-4 md:px-6 rounded-lg transition-colors text-sm md:text-base whitespace-nowrap",
-                  !isClosable && "opacity-50 cursor-not-allowed"
-                )}
-                onClick={(e) => {
-                  if (!isClosable) {
-                    e.preventDefault();
-                  }
-                }}
-              >
-                <span>Open Claim Page</span>
-                <ExternalLink size={16} className="md:w-[18px] md:h-[18px]" />
-              </a>
             </div>
           </div>
         </section>
 
-        <section className="bg-card dark:bg-slate-800 border border-border dark:border-slate-700 rounded-lg shadow-lg overflow-hidden">
-          <div className="overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0">
-            <table className="w-full min-w-[520px] md:min-w-[700px] text-left">
-              <thead className="border-b border-border dark:border-slate-700">
+        <section className="bg-card border-border overflow-hidden rounded-lg border shadow-lg dark:border-slate-700 dark:bg-slate-800">
+          <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0">
+            <table className="w-full min-w-[520px] text-left md:min-w-[700px]">
+              <thead className="border-border border-b dark:border-slate-700">
                 <tr>
-                  <th className="p-2 md:p-4 uppercase text-xs md:text-sm font-semibold text-muted-foreground dark:text-gray-400">Wallet</th>
-                  <th className="p-2 md:p-4 uppercase text-xs md:text-sm font-semibold text-muted-foreground dark:text-gray-400">Amount (Đồng)</th>
-                  <th className="p-2 md:p-4 uppercase text-xs md:text-sm font-semibold text-muted-foreground dark:text-gray-400">Claimed At</th>
-                  <th className="p-2 md:p-4 uppercase text-xs md:text-sm font-semibold text-muted-foreground dark:text-gray-400">TX Hash</th>
+                  <th className="text-muted-foreground p-2 text-xs font-semibold uppercase md:p-4 md:text-sm dark:text-gray-400">
+                    Wallet
+                  </th>
+                  <th className="text-muted-foreground p-2 text-xs font-semibold uppercase md:p-4 md:text-sm dark:text-gray-400">
+                    Amount (Đồng)
+                  </th>
+                  <th className="text-muted-foreground p-2 text-xs font-semibold uppercase md:p-4 md:text-sm dark:text-gray-400">
+                    Claimed At
+                  </th>
+                  <th className="text-muted-foreground p-2 text-xs font-semibold uppercase md:p-4 md:text-sm dark:text-gray-400">
+                    TX Hash
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {recipients?.map((item, index) => (
-                  <tr key={index} className="border-b border-border dark:border-slate-700 hover:bg-muted/50 dark:hover:bg-slate-700/50">
-                    <td className="p-2 md:p-4 font-mono text-xs md:text-sm text-purple-600 dark:text-purple-400 break-all">{truncateWalletAddress(item.claimer_wallet)}</td>
-                    <td className="p-2 md:p-4 font-mono text-xs md:text-sm text-foreground dark:text-gray-400">{item.amount.toLocaleString('en-US')}</td>
-                    <td className="p-2 md:p-4 text-xs md:text-sm text-foreground dark:text-gray-400">{formatClaimDate(item.claimed_at, true)}</td>
-                    <td className="p-2 md:p-4 font-mono text-xs md:text-sm text-purple-600 dark:text-purple-400 break-all">{truncateWalletAddress(item.transaction_hash)}</td>
+                  <tr
+                    key={index}
+                    className="border-border hover:bg-muted/50 border-b dark:border-slate-700 dark:hover:bg-slate-700/50"
+                  >
+                    <td className="p-2 font-mono text-xs break-all text-purple-600 md:p-4 md:text-sm dark:text-purple-400">
+                      {truncateWalletAddress(item.claimer_wallet)}
+                    </td>
+                    <td className="text-foreground p-2 font-mono text-xs md:p-4 md:text-sm dark:text-gray-400">
+                      {item.amount.toLocaleString('en-US')}
+                    </td>
+                    <td className="text-foreground p-2 text-xs md:p-4 md:text-sm dark:text-gray-400">
+                      {formatClaimDate(item.claimed_at, true)}
+                    </td>
+                    <td className="p-2 font-mono text-xs break-all text-purple-600 md:p-4 md:text-sm dark:text-purple-400">
+                      {truncateWalletAddress(item.transaction_hash)}
+                    </td>
                   </tr>
                 ))}
                 {(!recipients || recipients.length === 0) && (
-                    <tr>
-                        <td colSpan={4} className="p-4 text-center text-muted-foreground">No recipients yet</td>
-                    </tr>
+                  <tr>
+                    <td colSpan={4} className="text-muted-foreground p-4 text-center">
+                      No recipients yet
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>
           </div>
         </section>
-        
       </div>
     </div>
   );

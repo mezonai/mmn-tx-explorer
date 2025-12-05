@@ -75,10 +75,10 @@ const RevealedScreen = ({
         {isSuccess ? 'Claimed Successfully' : isError ? 'Claim Failed' : 'Claim to Wallet'}
       </button>
 
-      <button className="flex w-full transform cursor-pointer items-center justify-center space-x-1.5 rounded-full border-2 border-yellow-500 bg-transparent px-3 py-2 text-xs font-semibold text-yellow-500 transition-transform hover:scale-105 sm:space-x-2 sm:px-4 sm:py-2.5 sm:text-sm md:px-6 md:py-3 md:text-base">
+      {/* <button className="flex w-full transform cursor-pointer items-center justify-center space-x-1.5 rounded-full border-2 border-yellow-500 bg-transparent px-3 py-2 text-xs font-semibold text-yellow-500 transition-transform hover:scale-105 sm:space-x-2 sm:px-4 sm:py-2.5 sm:text-sm md:px-6 md:py-3 md:text-base">
         <span>Share your luck</span>
         <SparkleIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-      </button>
+      </button> */}
     </div>
   </div>
 );
