@@ -49,9 +49,9 @@ func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampa
 	}()
 
 	baseSlug := utils.GenerateSlug(campaign.Name)
-	uniqueSlug, slugErr := r.GenerateUniqueSlug(baseSlug)
-	if slugErr != nil {
-		return nil, slugErr
+	uniqueSlug, err := r.GenerateUniqueSlug(baseSlug)
+	if err != nil {
+		return nil, err
 	}
 
 	campaignQuery := fmt.Sprintf(`
@@ -129,10 +129,9 @@ func (r *DonationCampaignRepository) CreateAndActive(campaign *models.CreateDona
 	}()
 
 	baseSlug := utils.GenerateSlug(campaign.Name)
-	uniqueSlug, slugErr := r.GenerateUniqueSlug(baseSlug)
-
-	if slugErr != nil {
-		return nil, slugErr
+	uniqueSlug, err := r.GenerateUniqueSlug(baseSlug)
+	if err != nil {
+		return nil, err
 	}
 
 	campaignQuery := fmt.Sprintf(`
