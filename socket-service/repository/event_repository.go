@@ -19,9 +19,9 @@ func NewEventRepository(db *sql.DB, eventSchema string) *EventRepository {
 	}
 }
 
-func (r *EventRepository) GetListEventByReceiveID(userID string) ([]models.Event, error) {
-	query := `SELECT id, type, payload, sender_id, receive_id, status, create_at FROM events WHERE receive_id = $1 AND status = 'pending'`
-	rows, err := r.db.Query(query, userID)
+func (r *EventRepository) GetListEventByReceiveID(receiveAddress string) ([]models.Event, error) {
+	query := `SELECT id, type, payload, receive_address, status, create_at FROM events WHERE receive_address = $1 AND status = 'pending'`
+	rows, err := r.db.Query(query, receiveAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +29,7 @@ func (r *EventRepository) GetListEventByReceiveID(userID string) ([]models.Event
 	var events []models.Event
 	for rows.Next() {
 		var event models.Event
-		if err := rows.Scan(&event.ID, &event.Type, &event.Payload, &event.SenderID, &event.ReceiveID, &event.Status, &event.CreateAt); err != nil {
+		if err := rows.Scan(&event.ID, &event.Type, &event.Payload, &event.ReceiveAddress, &event.Status, &event.CreateAt); err != nil {
 			return nil, err
 		}
 		events = append(events, event)
@@ -38,8 +38,8 @@ func (r *EventRepository) GetListEventByReceiveID(userID string) ([]models.Event
 }
 
 func (r *EventRepository) SaveEvent(event *models.Event) error {
-	query := fmt.Sprintf("INSERT INTO %s.events (id, type, payload, sender_id, receive_id, status, create_at) VALUES ($1, $2, $3, $4, $5, $6, $7)", r.eventSchema)
-	_, err := r.db.ExecContext(context.Background(), query, event.ID, event.Type, event.Payload, event.SenderID, event.ReceiveID, event.Status, event.CreateAt)
+	query := fmt.Sprintf("INSERT INTO %s.events (id, type, payload, receive_address, status, create_at) VALUES ($1, $2, $3, $4, $5, $6)", r.eventSchema)
+	_, err := r.db.ExecContext(context.Background(), query, event.ID, event.Type, event.Payload, event.ReceiveAddress, event.Status, event.CreateAt)
 	return err
 }
 
