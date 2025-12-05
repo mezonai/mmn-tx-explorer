@@ -13,13 +13,14 @@ export function useClaimRedEnvelope() {
       RedEnvelopeService.claimRedEnvelope(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RED_ENVELOPES] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RED_ENVELOPE_STATS_BY_USER] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RED_ENVELOPE_STATS] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RED_ENVELOPE_DETAIL] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RED_ENVELOPE_DETAIL_RECIPIENTS]})
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CREATED_ENVELOPES]})
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CLAIMED_ENVELOPES]})
       toast.success('Claim Red envelope successfully!');
     },
-    onError: (error: Error) => {
-      const errorMessage = error.message 
-                           || 'Failed to claim red envelope';
-      toast.error(errorMessage);
-    }
   })
 }
 
@@ -32,9 +33,5 @@ export function useClaimAmount() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RED_ENVELOPES] });
     },
-    onError: (error: Error) => {
-      const errorMessage = error.message || 'Failed to claim red envelope';
-      toast.error(errorMessage);
-    }
   })
 }

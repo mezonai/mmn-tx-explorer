@@ -12,6 +12,16 @@ const (
 	CampaignStatusClosed int16 = 2
 )
 
+//Donation Campaign Goal Constants
+const (
+	MinGoalAmount int64 = 0            // Minimum goal amount for a campaign
+	MaxGoalAmount int64 = 100000000000 // Maximum goal amount for a campaign (100 billion)
+)
+
+const (
+	MaxPaticipantCount int64 = 500 // Maximum participant count
+)
+
 // Transaction Status Constants
 const (
 	// TransactionStatusFINALIZED represents a finalized transaction
