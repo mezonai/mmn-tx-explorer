@@ -12,6 +12,7 @@ export const DONATION_ENDPOINTS = {
   DELETE_CAMPAIGN: (id: string) => `/api/v1/admin/campaigns/${id}`,
 
   DONATION_FEED: (address: string) => `/api/v1/campaigns/list-feed/${address}`,
+  DONATION_FEED_UPLOAD_IMAGES: 'api/v1/admin/campaigns/upload-image',
 
   PUBLISH_CAMPAIGN: (id: string) => `/api/v1/campaigns/${id}/activate`,
   TOP_CONTRIBUTOR: (id: string) => `/api/v1/campaigns/${id}/top-contributors`,
@@ -26,5 +27,4 @@ export const QUERY_KEYS = {
   USER_DONATIONS: 'user-donations',
   TOP_CONTRIBUTOR: 'top-contributors',
   DONATION_FEED: 'donation-feed',
-  LATEST_DONATION_UPDATE: 'latest-donation-update',
 } as const;

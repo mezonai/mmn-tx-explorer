@@ -8,6 +8,8 @@ export const getTransactionTypeLabel = (type: ETransactionType): string => {
       return 'Donation Campaign';
     case ETransactionType.WithdrawCampaign:
       return 'Withdraw Campaign';
+    case ETransactionType.DonationFeed:
+      return 'Donation Feed';
   }
 };
 

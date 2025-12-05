@@ -8,3 +8,4 @@ export * from './useTopCampaigns';
 export * from './useDonationFeed';
 export * from './useEditCampaign';
 export * from './useDeleteCampaign';
+export * from './useUploadDonationImages';

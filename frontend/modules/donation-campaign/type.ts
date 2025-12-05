@@ -143,3 +143,29 @@ export interface IDonationFeed {
   extra_info: FeedExtraInfo;
   created_at: string;
 }
+
+export interface UploadImageRequest {
+  files: File[];
+}
+
+export interface FileItem {
+  file_name: string;
+  file_cid: string;
+}
+
+export interface UploadImageResponse {
+  folder_cid: string;
+  files: FileItem[];
+}
+
+export interface DonationUpdateForm {
+  title: string;
+  description: string;
+  images: string[];
+}
+
+export interface UpdateResult {
+  success: boolean;
+  txHash?: string;
+  error?: string;
+}

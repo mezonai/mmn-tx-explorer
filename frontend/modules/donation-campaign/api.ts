@@ -7,6 +7,8 @@ import {
   DonationCampaign,
   TopContributorsResponse,
   IDonationFeed,
+  UploadImageRequest,
+  UploadImageResponse,
 } from './type';
 import { DONATION_ENDPOINTS } from './constants';
 import { InternalAxiosRequestConfig } from 'axios';
@@ -110,5 +112,23 @@ export class DonationCampaignService {
       DONATION_ENDPOINTS.DONATION_FEED(address)
     );
     return data;
+  }
+
+  static async uploadDonationImages(imageData: UploadImageRequest): Promise<UploadImageResponse> {
+    const formData = new FormData();
+    imageData.files.forEach((file) => {
+      formData.append('files', file);
+    });
+
+    const { data } = await apiDongClient.post<{ data: UploadImageResponse }>(
+      DONATION_ENDPOINTS.DONATION_FEED_UPLOAD_IMAGES,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return data.data;
   }
 }
