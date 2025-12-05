@@ -7,6 +7,7 @@ import (
 	"dong-service/logger"
 	"dong-service/models"
 	"dong-service/repository"
+	"encoding/json"
 	"fmt"
 	"strconv"
 )
@@ -24,7 +25,7 @@ func NewOfferService(repo *repository.OfferRepository, walletRepo *repository.In
 type IOfferService interface {
 	CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddress string) (*models.Offer, error)
 	ConfirmOffer(ctx context.Context, offerID int64, executionPrice *string, source *string, metadata *string) error
-	ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, pagination map[string]any) ([]models.Offer, error)
+	ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, pagination map[string]any) ([]models.Offer, error)
 	GetOfferByID(ctx context.Context, offerID int64) (*models.Offer, error)
 }
 
@@ -51,7 +52,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 	if req.IntermediaryWalletID != nil {
 		walletID = *req.IntermediaryWalletID
 	} else {
-		wallet, err := s.walletRepo.GetOrCreateAvailableWallet(ctx, tx)
+		wallet, err := s.walletRepo.GetOrCreateAvailableWallet(ctx, tx, constants.WalletTypeOffer)
 		if err != nil {
 			_ = tx.Rollback()
 			logger.Error().Err(err).Msg("failed to get or create intermediary wallet for offer")
@@ -68,6 +69,13 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 	var metadataStr *string
 	if req.Metadata != nil {
 		ms := fmt.Sprintf("%v", req.Metadata)
+		// Marshal metadata to valid JSON to store in JSONB column
+		b, err := json.Marshal(req.Metadata)
+		if err != nil {
+			_ = tx.Rollback()
+			return nil, fmt.Errorf("invalid metadata: %w", err)
+		}
+		ms = string(b)
 		metadataStr = &ms
 	}
 
@@ -117,6 +125,16 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		return nil, err
 	}
 
+	if walletID != 0 {
+		logger.Debug().Int64("wallet_id", walletID).Msg("attempting to update intermediary wallet status to IN_USE")
+		if err := s.walletRepo.UpdateIntermediaryWalletStatus(tx, ctx, walletID, constants.WalletTypeOffer); err != nil {
+			logger.Error().Err(err).Int64("wallet_id", walletID).Msg("failed to update intermediary wallet status (transaction may be aborted)")
+			_ = tx.Rollback()
+			return nil, fmt.Errorf("failed to update intermediary wallet status: %w", err)
+		}
+		logger.Info().Int64("wallet_id", walletID).Msg("intermediary wallet status set to IN_USE")
+	}
+
 	if err := tx.Commit(); err != nil {
 		_ = tx.Rollback()
 		return nil, err
@@ -161,8 +179,8 @@ func (s *OfferService) ConfirmOffer(ctx context.Context, offerID int64, executio
 }
 
 // ListOffers returns offers using repository filtering helpers
-func (s *OfferService) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, pagination map[string]any) ([]models.Offer, error) {
-	return s.repo.ListOffers(ctx, minPrice, maxPrice, status, symbol, pagination)
+func (s *OfferService) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, pagination map[string]any) ([]models.Offer, error) {
+	return s.repo.ListOffers(ctx, minPrice, maxPrice, status, symbol, rate, pagination)
 }
 
 // GetOfferByID returns a single offer by id

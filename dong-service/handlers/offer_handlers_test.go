@@ -42,7 +42,7 @@ func (f *fakeOfferService) ConfirmOffer(ctx context.Context, offerID int64, exec
 	return nil
 }
 
-func (f *fakeOfferService) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, pagination map[string]any) ([]models.Offer, error) {
+func (f *fakeOfferService) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, pagination map[string]any) ([]models.Offer, error) {
 	return []models.Offer{{OfferID: 1, Side: models.OfferSideBuy, Symbol: constants.ChainSymbol, Price: 1000}, {OfferID: 2, Side: models.OfferSideSell, Symbol: constants.ChainSymbol, Price: 2000}}, nil
 }
 

@@ -21,6 +21,7 @@ type Offer struct {
 	Quantity             int64     `json:"quantity" db:"quantity"` // numeric as string to support big ints
 	TotalQuantity        int64     `json:"total_quantity" db:"total_quantity"`
 	Price                int64     `json:"price" db:"price"`
+	PriceRate            *string   `json:"price_rate,omitempty" db:"price_rate"`
 	PriceType            string    `json:"price_type" db:"price_type"`
 	Status               string    `json:"status" db:"status"`
 	Metadata             *string   `json:"metadata,omitempty" db:"metadata"`

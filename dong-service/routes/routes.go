@@ -55,10 +55,15 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		statsHandler := handlers.NewCampaignStatisticsHandler(statsRepo)
 		walletHandler := handlers.NewWalletHandler(walletRepo, campaignRepo)
 
+
 		// Offers - new trading endpoints (previously named Orders)
 		offerRepo := repository.NewOfferRepository(database.GetDB(), cfg.Database.Schema)
 		offerService := services.NewOfferService(offerRepo, intermediaryWalletRepo)
 		offerHandler := handlers.NewOfferHandler(offerService)
+
+		orderRepo := repository.NewOrderRepository(database.GetDB(), cfg.Database.Schema)
+		orderService := services.NewOrderService(orderRepo, offerRepo, intermediaryWalletRepo)
+		orderHandler := handlers.NewOrderHandler(orderService)
 
 		// Campaign routes (protected)
 		campaignsPrivate := v1.Group("/admin/campaigns")
@@ -105,13 +110,24 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		walletPublic.Use(middleware.ParseTokenAndAddToContext(cfg.JWT.Secret))
 		walletPublic.GET("/:address/detail", walletHandler.GetWalletDetail)
 
+
 		// Offers (private) - create offer
 		offersPrivate := v1.Group("/offers")
 		offersPrivate.Use(middleware.ParseTokenAndAddToContext(cfg.JWT.Secret))
 		offersPrivate.Use(middleware.Authentication(cfg.JWT.Secret))
 		offersPrivate.GET("", offerHandler.ListOffers)
 		offersPrivate.GET("/:id", offerHandler.GetOfferDetail)
-		offersPrivate.POST("", offerHandler.CreateOffer)
+		offersPrivate.GET("/:id/orders", orderHandler.ListOrdersForOffer)
+		offersPrivate.POST("/create", offerHandler.CreateOffer)
+		offersPrivate.POST("/:id/orders", orderHandler.CreateOrder)
 		offersPrivate.POST("/:id/confirm", offerHandler.ConfirmOffer)
+
+		// Orders (private) - confirm
+		ordersPrivate := v1.Group("/orders")
+		ordersPrivate.Use(middleware.ParseTokenAndAddToContext(cfg.JWT.Secret))
+		ordersPrivate.POST("/:id/confirm", orderHandler.ConfirmOrder)
+
+		// Orders - public detail
+		v1.GET("/orders/:id", orderHandler.GetOrderDetail)
 	}
 }

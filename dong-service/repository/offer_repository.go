@@ -45,11 +45,11 @@ func (r *OfferRepository) CreateOffer(ctx context.Context, offer *models.Offer, 
 // CreateOfferHistory inserts a new audit/event row for an offer using the provided tx.
 func (r *OfferRepository) CreateOfferHistory(ctx context.Context, h *models.OfferHistory, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
-        INSERT INTO %s.offer_history (
-            offer_id, event_type, quantity, execution_price, source, metadata, created_at
-        ) VALUES ($1,$2,$3,$4,$5,$6,NOW())
-        RETURNING history_id, created_at
-    `, r.dongSchema)
+		INSERT INTO %s.offer_history (
+			offer_id, event_type, quantity, execution_price, source, metadata, created_at
+		) VALUES ($1,$2,$3,$4,$5,$6,NOW())
+		RETURNING history_id, created_at
+	`, r.dongSchema)
 
 	return tx.QueryRowContext(ctx, query, h.OfferID, h.EventType, h.Quantity, h.ExecutionPrice, h.Source, h.Metadata).Scan(&h.HistoryID, &h.CreatedAt)
 }
@@ -67,8 +67,9 @@ func (r *OfferRepository) UpdateOfferStatus(ctx context.Context, offerID int64, 
 }
 
 // ListOffers returns offers matching optional filters with pagination
-func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, pagination any) ([]models.Offer, error) {
-	base := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_id, wallet_address, side, symbol, quantity, total_quantity, price, price_type, status, metadata, created_at, updated_at FROM %s.offers`, r.dongSchema)
+
+func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, pagination any) ([]models.Offer, error) {
+	base := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_id, wallet_address, side, symbol, quantity, total_quantity, price, price_rate, price_type, status, metadata, created_at, updated_at FROM %s.offers`, r.dongSchema)
 
 	whereClauses := []string{}
 	args := []any{}
@@ -92,6 +93,12 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 	if symbol != nil && strings.TrimSpace(*symbol) != "" {
 		whereClauses = append(whereClauses, fmt.Sprintf("symbol = $%d", argCount))
 		args = append(args, strings.TrimSpace(*symbol))
+		argCount++
+	}
+	if rate != nil && strings.TrimSpace(*rate) != "" {
+		// filter by minimum price_rate
+		whereClauses = append(whereClauses, fmt.Sprintf("price_rate >= $%d", argCount))
+		args = append(args, strings.TrimSpace(*rate))
 		argCount++
 	}
 
@@ -144,6 +151,7 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 			&o.Quantity,
 			&o.TotalQuantity,
 			&o.Price,
+			&o.PriceRate,
 			&o.PriceType,
 			&o.Status,
 			&o.Metadata,
@@ -159,9 +167,8 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 	return out, rows.Err()
 }
 
-// GetOfferByID fetches a single offer by id
 func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*models.Offer, error) {
-	query := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_id, wallet_address, side, symbol, quantity, total_quantity, price, price_type, status, metadata, created_at, updated_at FROM %s.offers WHERE offer_id = $1`, r.dongSchema)
+	query := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_id, wallet_address, side, symbol, quantity, total_quantity, price, price_rate, price_type, status, metadata, created_at, updated_at FROM %s.offers WHERE offer_id = $1`, r.dongSchema)
 
 	var o models.Offer
 	row := r.db.QueryRowContext(ctx, query, offerID)
@@ -174,6 +181,7 @@ func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*mod
 		&o.Quantity,
 		&o.TotalQuantity,
 		&o.Price,
+		&o.PriceRate,
 		&o.PriceType,
 		&o.Status,
 		&o.Metadata,
@@ -187,4 +195,52 @@ func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*mod
 	}
 
 	return &o, nil
+}
+
+// ReserveQuantity reduces the available quantity for an offer (used to block amount when creating an order)
+func (r *OfferRepository) ReserveQuantity(ctx context.Context, offerID int64, qty int64, tx *sql.Tx) error {
+	// ensure enough available quantity and atomically decrement
+	query := fmt.Sprintf(`
+		UPDATE %s.offers
+		SET quantity = quantity - $1, updated_at = NOW()
+		WHERE offer_id = $2 AND quantity >= $1
+	`, r.dongSchema)
+
+	res, err := tx.ExecContext(ctx, query, qty, offerID)
+	if err != nil {
+		return err
+	}
+	cnt, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if cnt == 0 {
+		return fmt.Errorf("insufficient offer quantity or offer not found")
+	}
+	return nil
+}
+
+// ReleaseQuantity returns previously reserved quantity back to an offer (e.g., when order cancelled)
+func (r *OfferRepository) ReleaseQuantity(ctx context.Context, offerID int64, qty int64, tx *sql.Tx) error {
+	query := fmt.Sprintf(`
+		UPDATE %s.offers
+		SET quantity = quantity + $1, updated_at = NOW()
+		WHERE offer_id = $2
+	`, r.dongSchema)
+
+	_, err := tx.ExecContext(ctx, query, qty, offerID)
+	return err
+}
+
+// ApplyConfirmedQuantity marks consumed amount at confirmation (reduce total_quantity and potentially complete the offer)
+func (r *OfferRepository) ApplyConfirmedQuantity(ctx context.Context, offerID int64, qty int64, tx *sql.Tx) error {
+	// reduce total_quantity and mark completed if remaining <= 0
+	query := fmt.Sprintf(`
+		UPDATE %s.offers
+		SET total_quantity = total_quantity - $1, updated_at = NOW(), status = CASE WHEN total_quantity - $1 <= 0 THEN 'COMPLETED' ELSE status END
+		WHERE offer_id = $2
+	`, r.dongSchema)
+
+	_, err := tx.ExecContext(ctx, query, qty, offerID)
+	return err
 }
