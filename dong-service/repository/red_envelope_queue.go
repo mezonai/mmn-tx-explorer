@@ -111,9 +111,9 @@ func (s *RedEnvelopeQueueService) AttemptClaim(redEnvelopeID string, userID int6
 	case constants.RedEnvelopeQueueStatusUserAlreadyInQueue:
 		return constants.ClaimStatusAlreadyQueued, nil
 	case constants.RedEnvelopeQueueStatusLimitReached:
-		return constants.ClaimStatusError, fmt.Errorf("red envelope claims limit reached")
+		return constants.ClaimStatusError, constants.ErrLimitReached
 	case constants.RedEnvelopeQueueStatusNotInitialize:
-		return constants.ClaimStatusError, fmt.Errorf("queue not initialized or expired")
+		return constants.ClaimStatusError, constants.ErrQueueNotInit
 	default:
 		return constants.ClaimStatusError, fmt.Errorf("unknown script result: %s", resultStr)
 	}

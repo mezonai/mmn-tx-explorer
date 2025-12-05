@@ -29,6 +29,7 @@ export const useRedEnvelopeDetail = () => {
       toast.success('Session closed successfully!');
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RED_ENVELOPE_DETAIL, redEnvelopeId] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CREATED_ENVELOPES] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RED_ENVELOPE_STATS_BY_USER]})
     },
     onError: (error) => {
       console.error('Failed to close session:', error);
@@ -75,7 +76,7 @@ export const useRedEnvelopeDetail = () => {
 
   const qrCodeValue = JSON.stringify({
     type: 'lucky-money',
-    wallet_address: stats.red_envelope_wallet || '',
+    lucky_money_id: redEnvelopeId
   });
 
   useEffect(() => {

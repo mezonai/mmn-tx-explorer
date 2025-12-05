@@ -6,6 +6,7 @@ import (
 	"dong-service/models"
 	"dong-service/repository"
 	"dong-service/utils"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -50,10 +51,9 @@ func (r *RedEnvelopeHandler) CreateRedEnvelope(c *gin.Context) {
 	var req models.CreateRedEnvelopeRequest
 	if err = c.ShouldBindJSON(&req); err != nil {
 		logger.Error().Err(err).Int64("user_id", userID).Msg("Invalid red envelope creation request")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+err.Error()))
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody))
 		return
 	}
-	logger.Info().Int64("user_id", userID).Str("name", req.Name).Msg("Creating new red envelope")
 
 	if err = ValidateRequest(&req); err != nil {
 		logger.Error().Err(err).Int64("user_id", userID).Msg("Validation failed")
@@ -64,12 +64,12 @@ func (r *RedEnvelopeHandler) CreateRedEnvelope(c *gin.Context) {
 	envelope, err := r.repo.Create(&req, userID)
 	if err != nil {
 		logger.Error().Err(err).Int64("user_id", userID).Msg("Failed to create red envelope")
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to create red envelope: "+err.Error()))
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToCreatedRedEnvelope))
 		return
 	}
 
 	logger.Info().Int64("user_id", userID).Str("envelope_id", envelope.ID).Str("name", envelope.Name).Msg("Red envelope created successfully")
-	c.JSON(http.StatusCreated, models.SuccessResponseWithMessage("Red envelope created successfully", envelope))
+	c.JSON(http.StatusCreated, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeCreated, envelope))
 }
 
 // GetRecipientsByRedEnvelopeID godoc
@@ -86,7 +86,7 @@ func (r *RedEnvelopeHandler) CreateRedEnvelope(c *gin.Context) {
 func (r *RedEnvelopeHandler) GetRecipientsByRedEnvelopeID(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Missing red envelope ID"))
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrMissingRedEnvelopeID))
 		return
 	}
 
@@ -97,7 +97,7 @@ func (r *RedEnvelopeHandler) GetRecipientsByRedEnvelopeID(c *gin.Context) {
 	envelop, err := r.repo.GetRecipientsByRedEnvelopeID(id)
 	if err != nil {
 		logger.Error().Err(err).Str("envelope_id", id).Msg("Failed to get red envelope")
-		c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, "Red envelope not found"))
+		c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, constants.ErrFailedToGetRedEnvelope))
 		return
 	}
 
@@ -111,9 +111,29 @@ func (r *RedEnvelopeHandler) GetRecipientsByRedEnvelopeID(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Success 200 {object} models.Response{data=object}
-// @Failure 500 {object} models.Response
+// @Failure 400 {object} models.Response
 // @Router /api/v1/red-envelopes/stats [get]
 func (r *RedEnvelopeHandler) GetRedEnvelopeStats(c *gin.Context) {
+	stats, err := r.repo.GetStats()
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to get red envelope stats")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToGetRedEnvelopeStats))
+		return
+	}
+
+	c.JSON(http.StatusOK, models.SuccessResponse(stats))
+}
+
+// GetRedEnvelopeStatsByUser godoc
+// @Summary Get red envelope statistics by user
+// @Description Get overall statistics for red envelope sessions by user
+// @Tags red_envelopes
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.Response{data=object}
+// @Failure 400 {object} models.Response
+// @Router /api/v1/red-envelopes/stats-by-user [get]
+func (r *RedEnvelopeHandler) GetRedEnvelopeStatsByUser(c *gin.Context) {
 	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		logger.Error().Err(err).Msg("Unauthorized red envelope creation attempt")
@@ -121,10 +141,10 @@ func (r *RedEnvelopeHandler) GetRedEnvelopeStats(c *gin.Context) {
 		return
 	}
 
-	stats, err := r.repo.GetStats(userID)
+	stats, err := r.repo.GetStatsByUser(userID)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to get red envelope stats")
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrInternalServer))
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToGetRedEnvelopeStats))
 		return
 	}
 
@@ -163,13 +183,13 @@ func (r *RedEnvelopeHandler) GetRedEnvelopeClaimedByUser(c *gin.Context) {
 	claims, err := r.repo.GetRedEnvelopeClaimedByUser(userID, page, limit)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to get red envelope claims")
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrInternalServer))
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToGetRedEnvelopes))
 		return
 	}
 	count, err := r.repo.GetCountClaimedAmount(userID)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to get count of red envelope claims")
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrInternalServer))
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToCountRedEnvelopes))
 		return
 	}
 
@@ -206,15 +226,15 @@ func (r *RedEnvelopeHandler) GetRedEnvelopeCreatedByUser(c *gin.Context) {
 
 	creates, err := r.repo.GetRedEnvelopeCreatedByUser(userID, page, limit)
 	if err != nil {
-		logger.Error().Err(err).Msg("Failed to get red envelope creates")
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrInternalServer))
+		logger.Error().Err(err).Msg("Failed to retrieve created red envelopes")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToGetRedEnvelopes))
 		return
 	}
 
 	count, err := r.repo.GetCountCreatedEnvelope(userID)
 	if err != nil {
-		logger.Error().Err(err).Msg("Failed to get count of red envelope claims")
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrInternalServer))
+		logger.Error().Err(err).Msg("Failed to get count of red envelope creations")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToCountRedEnvelopes))
 		return
 	}
 	c.JSON(http.StatusOK, models.PaginatedSuccessResponse(constants.MsgRedEnvelopeStatsRetrieved, creates, page, limit, count))
@@ -242,7 +262,7 @@ func (r *RedEnvelopeHandler) UpdateStatusRedEnvelope(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error().Err(err).Msg("Invalid update status request")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+err.Error()))
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody))
 		return
 	}
 
@@ -263,12 +283,12 @@ func (r *RedEnvelopeHandler) UpdateStatusRedEnvelope(c *gin.Context) {
 	err := r.repo.UpdateStatus(c, req.ID, statusRedEnvelope)
 	if err != nil {
 		logger.Error().Err(err).Str("envelope_id", req.ID).Msg("Failed to update red envelope status")
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to update red envelope status"))
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToUpdateRedEnvelopeStatus))
 		return
 	}
 
 	logger.Info().Str("envelope_id", req.ID).Str("new_status", statusRedEnvelope).Msg("Red envelope status updated successfully")
-	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Red envelope status updated successfully", map[string]interface{}{
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeUpdated, map[string]interface{}{
 		"id":     req.ID,
 		"status": statusRedEnvelope,
 	}))
@@ -290,7 +310,7 @@ func (r *RedEnvelopeHandler) UpdateStatusRedEnvelope(c *gin.Context) {
 func (r *RedEnvelopeHandler) GetDetailRedEnvelopeByID(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Missing red envelope ID"))
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrMissingRedEnvelopeID))
 		return
 	}
 
@@ -303,11 +323,11 @@ func (r *RedEnvelopeHandler) GetDetailRedEnvelopeByID(c *gin.Context) {
 
 	if err != nil {
 		logger.Error().Err(err).Str("envelope_id", id)
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to get detail red envelope"))
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToGetRedEnvelopeInfo))
 		return
 	}
 
-	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Red envelope detail retrieved successfully", result))
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeRetrieved, result))
 }
 
 // CloseSessionRedEnvelope godoc
@@ -337,17 +357,17 @@ func (r *RedEnvelopeHandler) CloseSessionRedEnvelope(c *gin.Context) {
 
 	if err = c.ShouldBindJSON(&req); err != nil {
 		logger.Error().Err(err).Msg("Invalid close session request")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+err.Error()))
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody))
 		return
 	}
 
 	err = r.repo.CloseSession(req.ID, userID)
 	if err != nil {
 		logger.Error().Err(err).Str("envelope_id", req.ID)
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to close red envelope session"))
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToCloseRedEnvelope))
 		return
 	}
-	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Red envelope session closed successfully", nil))
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeClosed, nil))
 }
 
 // ClaimAmountRedEnvelope godoc
@@ -373,12 +393,12 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelope(c *gin.Context) {
 	claimStatus, err := r.queueService.AttemptClaim(id, userID)
 	if err != nil {
 		logger.Error().Err(err).Str("envelope_id", id).Msg("Error during queue check")
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, err.Error()))
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
 
 	if claimStatus == constants.ClaimStatusError {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Red envelope claims error"))
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToClaimAmount))
 		return
 	}
 
@@ -386,9 +406,13 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelope(c *gin.Context) {
 
 	splitMoney, err := r.repo.GetClaimAmount(id, userAddress, claimStatus, userID)
 	if err != nil {
+		if errors.Is(err, constants.ErrAlreadyClaimed) {
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, err.Error()))
+			return
+		}
 		logger.Error().Err(err).Str("envelope_id", id).Msg("Failed to get claim amount")
 		r.queueService.RollbackClaim(id, userID)
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to get claim amount: "+err.Error()))
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
 
@@ -399,13 +423,12 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelope(c *gin.Context) {
 		Msg("User entered queue and received claim token")
 
 	result := map[string]interface{}{
-		"split_money_id":     splitMoney.ID,
-		"amount":             splitMoney.Amount,
-		"description":        splitMoney.Description,
-		"expires_in_seconds": 300,
+		"split_money_id": splitMoney.ID,
+		"amount":         splitMoney.Amount,
+		"description":    splitMoney.Description,
 	}
 
-	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Claim token generated successfully. Please use this token to complete the claim within 5 minutes.", result))
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeAmountClaimed, result))
 }
 
 // ClaimRedEnvelope godoc
@@ -444,7 +467,7 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelope(c *gin.Context) {
 			Str("red_envelope_id", req.ID).
 			Int64("user_id", userID).
 			Msg("Failed to check user id and envelope id")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailToCheckRedEnvelope+": "+err.Error()))
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToCheckRedEnvelope))
 		return
 	}
 	if !canClaim {
@@ -460,8 +483,7 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelope(c *gin.Context) {
 
 	if err != nil {
 		logger.Error().Err(err).Str("envelope_id", req.ID).Msg("Failed to execute claim")
-
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to claim red envelope: "+err.Error()))
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToClaim))
 		return
 	}
 
@@ -471,21 +493,28 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelope(c *gin.Context) {
 		Int64("user_id", userID).
 		Msg("Red envelope claimed successfully")
 
-	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Red envelope claimed successfully", nil))
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeClaimed, nil))
 }
 
 func ValidateRequest(req *models.CreateRedEnvelopeRequest) error {
-	if *req.MinAmount > *req.MaxAmount {
-		return fmt.Errorf("minAmount (%d) don't exceed maxAmount (%d)", *req.MinAmount, *req.MaxAmount)
+	if req.TotalClaims > constants.MaxPaticipantCount {
+		return fmt.Errorf("totalClaims (%d) must not exceed (%d)", req.TotalClaims, constants.MaxPaticipantCount)
+	}
+	
+	if req.IsRandomDistribution {
+		if *req.MinAmount > *req.MaxAmount {
+			return fmt.Errorf("minAmount (%d) don't exceed maxAmount (%d)", *req.MinAmount, *req.MaxAmount)
+		}
+
+		if req.TotalAmount < req.TotalClaims**req.MinAmount {
+			return fmt.Errorf("totalAmount (%d) not enough to divide at least %d by %d people", req.TotalAmount, *req.MinAmount, req.TotalClaims)
+		}
+
+		if req.TotalAmount > req.TotalClaims**req.MaxAmount {
+			return fmt.Errorf("totalAmount (%d) exceeds maximum distributable amount (%d * %d = %d)", req.TotalAmount, req.TotalClaims, *req.MaxAmount, req.TotalClaims**req.MaxAmount)
+		}
 	}
 
-	if req.TotalAmount < req.TotalClaims**req.MinAmount {
-		return fmt.Errorf("totalAmount (%d) not enough to divide at least %d by %d people", req.TotalAmount, *req.MinAmount, req.TotalClaims)
-	}
-
-	if req.TotalAmount > req.TotalClaims**req.MaxAmount {
-		return fmt.Errorf("totalAmount (%d) exceeds maximum distributable amount (%d * %d = %d)", req.TotalAmount, req.TotalClaims, *req.MaxAmount, req.TotalClaims**req.MaxAmount)
-	}
 	return nil
 }
 

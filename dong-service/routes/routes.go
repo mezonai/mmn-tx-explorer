@@ -80,7 +80,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		redEnvelopePrivate := v1.Group("/red-envelopes")
 		redEnvelopePrivate.Use(middleware.Authentication(cfg.JWT.Secret))
 		redEnvelopePrivate.POST("/create", redEnvelopeHandler.CreateRedEnvelope)
-		redEnvelopePrivate.GET("/stats", redEnvelopeHandler.GetRedEnvelopeStats)
+		redEnvelopePrivate.GET("/stats-by-user", redEnvelopeHandler.GetRedEnvelopeStatsByUser)
 		redEnvelopePrivate.GET("/:id/recipients", redEnvelopeHandler.GetRecipientsByRedEnvelopeID)
 		redEnvelopePrivate.POST("/update-status-red-envelope", redEnvelopeHandler.UpdateStatusRedEnvelope)
 		redEnvelopePrivate.GET("/claimed-by-user", redEnvelopeHandler.GetRedEnvelopeClaimedByUser)
@@ -89,6 +89,10 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		redEnvelopePrivate.POST("/close-session", redEnvelopeHandler.CloseSessionRedEnvelope)
 		redEnvelopePrivate.GET("/claim-amount", redEnvelopeHandler.ClaimAmountRedEnvelope)
 		redEnvelopePrivate.POST("/:id/claim", redEnvelopeHandler.ClaimRedEnvelope)
+
+		// Red Envelope routes (public)
+		redEnvelopePublic := v1.Group("/red-envelopes")
+		redEnvelopePublic.GET("/stats", redEnvelopeHandler.GetRedEnvelopeStats)
 
 		// Wallet routes (public)
 		walletPublic := v1.Group("/wallets")
