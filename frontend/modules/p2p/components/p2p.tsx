@@ -6,23 +6,14 @@ import { P2PFiltersComponent } from './p2p-filters';
 import { P2POffersTable } from './p2p-offers-table';
 import { P2POrdersList } from './p2p-orders-list';
 import { CreateOfferModal } from './create-offer-modal';
-import { P2PFilters, P2POffer, CreateOfferFormData } from '../types/p2p.types';
+import { P2POffer, CreateOfferFormData } from '../types/p2p.types';
 import { useP2POffers } from '../hooks/useP2POffers';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export const P2P = () => {
-  const [filters, setFilters] = useState<P2PFilters>({
-    tradeType: 'BUY',
-    currency: 'MZD',
-  });
-
   const [isCreateOfferModalOpen, setIsCreateOfferModalOpen] = useState(false);
 
-  const { offers, isLoading } = useP2POffers(filters);
-
-  const handleFiltersChange = (newFilters: P2PFilters) => {
-    setFilters(newFilters);
-  };
+  const { data: offers, isLoading } = useP2POffers({ page: 0, limit: 10 });
 
   const handleNewOfferClick = () => {
     setIsCreateOfferModalOpen(true);
@@ -36,7 +27,6 @@ export const P2P = () => {
   const handleCreateOfferSubmit = (data: CreateOfferFormData) => {
     // TODO: Call API to create offer
     console.log('Create offer:', data);
-    // After successful creation, refresh offers list
   };
 
   return (
@@ -47,15 +37,12 @@ export const P2P = () => {
         <TabsList>
           <TabsTrigger value="offers">Offers</TabsTrigger>
           <TabsTrigger value="orders">My Orders</TabsTrigger>
+          <TabsTrigger value="my-offers">My Offers</TabsTrigger>
         </TabsList>
 
         <TabsContent value="offers" className="space-y-6">
-          <P2PFiltersComponent
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onNewOfferClick={handleNewOfferClick}
-          />
-          <P2POffersTable offers={offers} isLoading={isLoading} onOfferClick={handleOfferClick} />
+          <P2PFiltersComponent onNewOfferClick={handleNewOfferClick} />
+          <P2POffersTable offers={offers?.data} isLoading={isLoading} onOfferClick={handleOfferClick} />
         </TabsContent>
 
         <TabsContent value="orders" className="space-y-6">

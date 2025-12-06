@@ -3,88 +3,71 @@
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { TradeType, P2PFilters } from '../types/p2p.types';
-import { Plus, ChevronDown } from 'lucide-react';
+import { P2PFilters } from '../types/p2p.types';
+import { Plus } from 'lucide-react';
+import { Pagination } from '@/components/ui/pagination';
+import { APP_CONFIG } from '@/configs/app.config';
 
 interface P2PFiltersProps {
-  filters: P2PFilters;
-  onFiltersChange: (filters: P2PFilters) => void;
+  filters?: P2PFilters;
+  onFiltersChange?: (filters: P2PFilters) => void;
   onNewOfferClick?: () => void;
 }
 
 export const P2PFiltersComponent = ({ filters, onFiltersChange, onNewOfferClick }: P2PFiltersProps) => {
-  const [localAmount, setLocalAmount] = useState<string>(filters.amount?.toString() || '');
-
-  const handleTradeTypeChange = (type: TradeType) => {
-    onFiltersChange({ ...filters, tradeType: type });
-  };
-
-  const handleAmountChange = (value: string) => {
-    setLocalAmount(value);
-    const numValue = parseFloat(value);
-    if (!isNaN(numValue) && numValue > 0) {
-      onFiltersChange({ ...filters, amount: numValue });
-    } else if (value === '') {
-      onFiltersChange({ ...filters, amount: undefined });
-    }
-  };
+  const [minAmount, setMinAmount] = useState<string>('');
+  const [maxAmount, setMaxAmount] = useState<string>('');
 
   return (
-    <div className="space-y-6">
-      {/* Trade Type Toggle and Currency Selector */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => handleTradeTypeChange('BUY')}
-            className={`border-b-2 pb-1 text-lg font-bold transition ${
-              filters.tradeType === 'BUY'
-                ? 'border-emerald-500 text-emerald-500 dark:text-emerald-400'
-                : 'border-transparent text-gray-500 hover:text-emerald-500 dark:text-gray-400 dark:hover:text-emerald-400'
-            }`}
-          >
-            MUA
-          </button>
-          <button
-            onClick={() => handleTradeTypeChange('SELL')}
-            className={`border-b-2 pb-1 text-lg font-bold transition ${
-              filters.tradeType === 'SELL'
-                ? 'border-rose-500 text-rose-500 dark:text-rose-400'
-                : 'border-transparent text-gray-500 hover:text-rose-500 dark:text-gray-400 dark:hover:text-rose-400'
-            }`}
-          >
-            BÁN
-          </button>
-        </div>
+    <div className="flex w-full flex-col gap-4 py-2 md:flex-row md:items-center md:justify-between">
+      <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center">
+        <Button
+          onClick={onNewOfferClick}
+          className="bg-brand-primary hover:bg-brand-primary/90 h-10 w-full shrink-0 rounded-lg font-bold text-white shadow-sm transition-all md:w-auto md:px-5"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          New Offer
+        </Button>
 
-        {/* Currency Selector */}
-        <div className="bg-card dark:bg-card flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-1 dark:border-gray-700">
-          <span className="text-brand-primary font-bold">MZD</span>
-          <ChevronDown className="h-3 w-3 text-gray-400" />
+        <div className="bg-background border-input ring-offset-background focus-within:ring-brand-primary flex h-10 w-full items-center rounded-lg border shadow-sm focus-within:ring-1 md:w-auto">
+          <div className="bg-muted/50 text-brand-primary flex h-full items-center border-r px-3 text-[10px] font-bold tracking-wider uppercase select-none">
+            total amount
+          </div>
+
+          <div className="relative flex flex-1 items-center md:w-32">
+            <Input
+              type="text"
+              placeholder="Min"
+              value={minAmount}
+              onChange={(e) => setMinAmount(e.target.value)}
+              className="border-0 bg-transparent pr-9 pl-3 text-sm shadow-none focus-visible:ring-0"
+            />
+            <span className="text-muted-foreground pointer-events-none absolute right-3 text-[12px] font-bold">
+              {APP_CONFIG.CHAIN_SYMBOL}
+            </span>
+          </div>
+
+          <span className="text-muted-foreground px-1">-</span>
+
+          <div className="relative flex flex-1 items-center md:w-32">
+            <Input
+              type="text"
+              placeholder="Max"
+              value={maxAmount}
+              onChange={(e) => setMaxAmount(e.target.value)}
+              className="border-0 bg-transparent pr-9 pl-3 text-sm shadow-none focus-visible:ring-0"
+            />
+            <span className="text-muted-foreground pointer-events-none absolute right-3 text-[12px] font-bold">
+              {APP_CONFIG.CHAIN_SYMBOL}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Filters Grid */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        {/* Amount Input */}
-        <div className="relative">
-          <span className="absolute top-3 left-3 text-sm text-gray-400">MZD</span>
-          <Input
-            type="number"
-            placeholder="Nhập số MZD muốn mua (VD: 1000)"
-            value={localAmount}
-            onChange={(e) => handleAmountChange(e.target.value)}
-            className="bg-card focus:border-brand-primary w-full border-gray-300 py-2.5 pr-4 pl-12 dark:border-gray-700"
-          />
+      <div className="flex shrink-0 justify-center md:justify-end">
+        <div className="scale-90 md:scale-100">
+          <Pagination limit={1} />
         </div>
-
-        {/* New Offer Button */}
-        <Button
-          onClick={onNewOfferClick}
-          className="h-full w-full bg-[#3c8d35] py-2.5 text-xl font-bold text-white shadow-lg transition hover:bg-[#327a2c]"
-        >
-          <Plus className="mr-2 h-5 w-5" />
-          New offer
-        </Button>
       </div>
     </div>
   );

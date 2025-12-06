@@ -125,16 +125,14 @@ export const CreateOfferModal = ({ open, onOpenChange, onSubmit }: CreateOfferMo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="h-[95vh] max-w-6xl overflow-y-auto border-gray-300 dark:border-gray-800">
+      <DialogContent className="max-w-6xl overflow-y-auto border-gray-300 dark:border-gray-800">
         <DialogHeader className="-mx-6 -mt-6 border-b border-gray-800 bg-gray-900/50 px-6 py-4 dark:bg-gray-900/50">
-          <DialogTitle className="text-lg font-bold text-white">Đăng quảng cáo mới</DialogTitle>
-          <DialogDescription className="text-xs text-gray-400">
-            Tạo lệnh mua/bán MZD với tỉ giá tùy chỉnh
-          </DialogDescription>
+          <DialogTitle className="text-lg font-bold text-white">Create New Offer</DialogTitle>
+          {/* <DialogDescription className="text-xs text-gray-400">
+          </DialogDescription> */}
         </DialogHeader>
 
         <div className="grid grid-cols-1 gap-8 p-6 lg:grid-cols-3">
-          {/* Phần 1: Loại lệnh & Tài sản */}
           <TradeTypeSection
             tradeType={formData.tradeType}
             onTradeTypeChange={(type) => setFormData({ ...formData, tradeType: type })}
@@ -170,14 +168,14 @@ export const CreateOfferModal = ({ open, onOpenChange, onSubmit }: CreateOfferMo
             onClick={() => onOpenChange(false)}
             className="px-5 py-2 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white"
           >
-            Hủy bỏ
+            Cancel
           </Button>
           <Button
             onClick={handleSubmit}
             className="bg-brand-primary flex items-center gap-2 px-8 py-2 text-sm font-bold text-white shadow-lg shadow-violet-900/20 transition hover:bg-violet-600"
           >
             <Send className="h-3 w-3" />
-            Đăng Quảng Cáo
+            Create Offer
           </Button>
         </DialogFooter>
       </DialogContent>

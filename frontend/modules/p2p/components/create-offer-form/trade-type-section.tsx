@@ -123,7 +123,7 @@ export const TradeTypeSection = ({
       {/* Trade Type & Asset - Grid Layout */}
       <div className="grid grid-cols-2 gap-3">
         {/* Trade Type */}
-        <div>
+        {/* <div>
           <label className="mb-1.5 block text-xs font-medium text-gray-500">Hành động</label>
           <div className="bg-input/30 dark:bg-input/30 flex rounded border border-gray-700 p-0.5">
             <button
@@ -143,22 +143,22 @@ export const TradeTypeSection = ({
               BÁN
             </button>
           </div>
-        </div>
+        </div> */}
 
         {/* Asset */}
-        <div>
+        {/* <div>
           <label className="mb-1.5 block text-xs font-medium text-gray-500">Tài sản</label>
           <div className="bg-input/30 dark:bg-input/30 flex h-[34px] items-center justify-between rounded border border-gray-700 px-3 py-1.5">
             <span className="text-sm font-semibold text-white">MZD</span>
             <Lock className="h-3 w-3 text-gray-600" />
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Exchange Rate - Only for SELL */}
       {tradeType === 'SELL' && (
         <div className="rounded-lg border border-blue-600/20 bg-blue-600/10 p-3">
-          <label className="mb-2 block text-xs font-medium text-blue-400">Tỉ giá bán (VND/MZD)</label>
+          <label className="mb-2 block text-xs font-medium text-blue-400">Sell Rate (VND/MZD)</label>
           <div className="flex items-center gap-2">
             <input
               type="text"
@@ -172,7 +172,7 @@ export const TradeTypeSection = ({
           {exchangeRate > 0 && (
             <div className="mt-2 border-t border-blue-800/20 pt-2">
               <div className="text-center">
-                <p className="mb-0.5 text-xs text-blue-400/80">Tỷ giá của bạn</p>
+                <p className="mb-0.5 text-xs text-blue-400/80">Exchange rate</p>
                 <p className="text-lg font-bold text-white">1 MZD = {exchangeRate.toLocaleString('vi-VN')} VND</p>
               </div>
             </div>
