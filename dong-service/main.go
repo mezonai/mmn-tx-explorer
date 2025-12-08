@@ -80,6 +80,10 @@ func main() {
 		logger.Fatal().Err(err).Msg("Failed to initialize Redis whitelist")
 	}
 
+	if err = services.InitEventService(cfg.Event.APIURL, cfg.Event.APIKey); err != nil {
+		logger.Fatal().Err(err).Msg("Failed to initialize Event Service")
+	}
+
 	logger.Info().Msg("Initializing Red Envelope Wallet Pool")
 	startupInit := services.NewStartupInitializer(cfg.Database.Schema)
 

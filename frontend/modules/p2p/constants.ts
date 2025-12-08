@@ -1,6 +1,10 @@
 export const P2P_ENDPOINTS = {
   OFFERS: '/offers',
   OFFER_BY_ID: (id: string) => `/offers/${id}`,
+  ORDERS: '/orders',
+  ORDER_BY_ID: (id: string) => `/orders/${id}`,
+  ORDER_STATUS: (id: string) => `/orders/${id}/status`,
+  MY_ORDERS: '/orders/my',
 } as const;
 
 export const P2P_QUERY_KEYS = {

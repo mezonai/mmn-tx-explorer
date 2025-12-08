@@ -9,10 +9,12 @@ import { CreateOfferModal } from './create-offer-modal';
 import { P2POffer, CreateOfferFormData } from '../types/p2p.types';
 import { useP2POffers } from '../hooks/useP2POffers';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useRouter } from 'next/navigation';
+import { ROUTES } from '@/configs/routes.config';
 
 export const P2P = () => {
   const [isCreateOfferModalOpen, setIsCreateOfferModalOpen] = useState(false);
-
+  const router = useRouter();
   const { data: offers, isLoading } = useP2POffers({ page: 0, limit: 10 });
 
   const handleNewOfferClick = () => {
@@ -20,6 +22,7 @@ export const P2P = () => {
   };
 
   const handleOfferClick = (offer: P2POffer) => {
+    router.push(ROUTES.P2P_TRADING_ROOM(offer.offerId));
     // TODO: Navigate to offer detail or open buy modal
     console.log('Offer clicked:', offer);
   };
@@ -42,7 +45,7 @@ export const P2P = () => {
 
         <TabsContent value="offers" className="space-y-6">
           <P2PFiltersComponent onNewOfferClick={handleNewOfferClick} />
-          <P2POffersTable offers={offers?.data} isLoading={false} onOfferClick={handleOfferClick} />
+          <P2POffersTable offers={offers?.data} isLoading={isLoading} onOfferClick={handleOfferClick} />
         </TabsContent>
 
         <TabsContent value="orders" className="space-y-6">

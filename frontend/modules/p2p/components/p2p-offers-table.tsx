@@ -1,99 +1,96 @@
 'use client';
 
-import { Table } from '@/components/ui/table';
+import { P2POffer } from '../types/p2p.types';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { TTableColumn } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ROUTES } from '@/configs/routes.config';
-import { AddressDisplay } from '@/components/shared';
-import { P2POffer } from '../types';
+import { Button } from '@/components/ui/button';
+import { AdvertiserInfo } from './advertiser-info';
+import { APP_CONFIG } from '@/configs/app.config';
 
 interface P2POffersTableProps {
-  offers: P2POffer[] | undefined;
-  isLoading?: boolean;
-  onOfferClick?: (offer: P2POffer) => void;
+  offers?: P2POffer[];
+  isLoading: boolean;
+  onOfferClick: (offer: P2POffer) => void;
 }
 
-export const P2POffersTable = ({ offers, isLoading = false, onOfferClick }: P2POffersTableProps) => {
-  const columns: TTableColumn<P2POffer>[] = [
-    {
-      headerContent: 'Seller',
-      renderCell: (offer) => (
-        <AddressDisplay address={offer.sellerWalletAddress} href={ROUTES.WALLET(offer.sellerWalletAddress)} />
-      ),
-      skeletonContent: <Skeleton className="h-3 w-24" />,
-      align: 'left',
-    },
-    {
-      headerContent: 'MZD / Rate',
-      renderCell: (offer) => (
-        <div>
-          <div className="text-xl font-bold text-white dark:text-white">
-            {offer.totalMZD.toLocaleString('en-US')} <span className="text-xs font-normal text-gray-500">MZD</span>
-          </div>
-          <div className="mt-1 text-sm text-gray-400">
-            Exchange Rate:{' '}
-            <span className="text-brand-primary font-semibold">
-              {offer.exchangeRate.toLocaleString('vi-VN')} VND/MZD
-            </span>
-          </div>
+export const P2POffersTable = ({ offers, isLoading, onOfferClick }: P2POffersTableProps) => {
+  if (isLoading) {
+    return (
+      <Card className="bg-card overflow-hidden border-gray-300 dark:border-gray-800">
+        <div className="space-y-4 p-6">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
         </div>
-      ),
-      skeletonContent: <Skeleton className="h-6 w-24" />,
-      align: 'center',
-    },
-    {
-      headerContent: 'Available / Limit',
-      renderCell: (offer) => (
-        <div className="flex flex-col gap-1 text-gray-300 dark:text-gray-300">
-          <span>
-            <span className="text-gray-500 dark:text-gray-500">Available:</span>{' '}
-            <span className="font-medium text-white dark:text-white">
-              {offer.available.toLocaleString('en-US')} MZD
-            </span>
-          </span>
-          <span>
-            <span className="text-gray-500 dark:text-gray-500">Limit:</span>{' '}
-            <span className="font-medium text-white dark:text-white">
-              {offer.limit.min.toLocaleString('en-US')} - {offer.limit.max.toLocaleString('en-US')} MZD
-            </span>
-            <span className="ml-1 text-xs text-gray-500 dark:text-gray-500">/ transaction</span>
-          </span>
+      </Card>
+    );
+  }
+
+  if (!offers || offers.length === 0) {
+    return (
+      <Card className="bg-card overflow-hidden border-gray-300 dark:border-gray-800">
+        <div className="p-12 text-center">
+          <p className="lg text-gray-400">Không có offer nào</p>
+          <p className="mt-2 text-sm text-gray-500">Các offer sẽ hiển thị ở đây</p>
         </div>
-      ),
-      skeletonContent: (
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-40" />
-          <Skeleton className="h-4 w-48" />
-        </div>
-      ),
-      align: 'center',
-    },
-    {
-      headerContent: 'Action',
-      renderCell: (offer) => (
-        <Button className="rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600">
-          Buy đồng
-        </Button>
-      ),
-      skeletonContent: <Skeleton className="h-9 w-24 rounded-lg" />,
-      align: 'center',
-    },
-  ];
+      </Card>
+    );
+  }
 
   return (
     <Card className="bg-card overflow-hidden border-gray-300 dark:border-gray-800">
       <div className="overflow-x-auto">
-        <Table<P2POffer>
-          columns={columns}
-          rows={offers}
-          isLoading={isLoading}
-          onRowClick={onOfferClick}
-          getRowKey={(offer) => offer.offerId}
-          classNameLayout="rounded-xl"
-          nullDataContext="No offers match your filters"
-        />
+        <table className="w-full border-collapse text-left">
+          <thead className="xs bg-gray-900 text-xs font-medium text-gray-400 uppercase">
+            <tr>
+              <th className="px-6 py-4">Advertiser</th>
+              <th className="px-6 py-4">Available</th>
+              <th className="px-6 py-4">Price</th>
+              <th className="px-6 py-4">Limits</th>
+              <th className="px-6 py-4">Action</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-800 text-sm">
+            {offers.map((offer) => (
+              <tr key={offer.offerId} className="transition-colors hover:bg-gray-800/50">
+                <td className="px-6 py-4">
+                  <AdvertiserInfo walletAddress={offer.sellerWalletAddress} />
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex flex-col">
+                    <span className="font-medium">
+                      {offer.available.toLocaleString()} {APP_CONFIG.CHAIN_SYMBOL}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      Total: {offer.totalMZD.toLocaleString()} {APP_CONFIG.CHAIN_SYMBOL}
+                    </span>
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <span className="font-medium">{offer.exchangeRate.toFixed(4)} VND</span>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex flex-col text-xs">
+                    <span>
+                      Min: {offer.limit.min.toLocaleString()} {APP_CONFIG.CHAIN_SYMBOL}
+                    </span>
+                    <span>
+                      Max: {offer.limit.max.toLocaleString()} {APP_CONFIG.CHAIN_SYMBOL}
+                    </span>
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <Button
+                    onClick={() => onOfferClick(offer)}
+                    className="bg-brand-primary hover:bg-brand-primary/90 h-8 rounded-lg px-4 text-xs font-bold text-white"
+                  >
+                    Buy
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </Card>
   );

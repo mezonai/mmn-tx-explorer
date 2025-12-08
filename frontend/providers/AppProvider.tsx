@@ -2,7 +2,6 @@
 
 import { STORAGE_KEYS } from '@/constant';
 import {
-  AUTHENTICATION_CONSTANTS,
   AUTHENTICATION_ENDPOINT,
   AuthenticationService,
   fetchAndStoreZkProof,
@@ -19,6 +18,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { IZkProof, IEphemeralKeyPair } from 'mmn-client-js';
 import { safeJsonParse, clearAuthStorage } from '@/utils';
+import { getWebSocketManager } from '@/lib/websocket/websocket-manager';
 
 interface AppContextType {
   isAuthenticated: boolean;
@@ -60,6 +60,12 @@ export function AppProvider({ children }: AppProviderProps) {
       (async () => {
         try {
           await AuthenticationService.refreshLogin(localToken.refresh_token);
+          // ✅ Init WebSocket after successful token refresh
+          const refreshedToken = safeJsonParse<{ access_token?: string }>(localStorage.getItem(STORAGE_KEYS.TOKEN));
+          if (refreshedToken?.access_token) {
+            const wsManager = getWebSocketManager();
+            wsManager.connect(refreshedToken.access_token);
+          }
         } catch {
           clearAuthStorage();
           setUser(null);
@@ -80,6 +86,13 @@ export function AppProvider({ children }: AppProviderProps) {
 
       const kpStr = localStorage.getItem(STORAGE_KEYS.KEY_PAIR);
       if (kpStr) setKeypair(safeJsonParse(kpStr));
+
+      // ✅ Init WebSocket if user is already logged in
+      const tokenData = safeJsonParse<{ access_token?: string }>(localStorage.getItem(STORAGE_KEYS.TOKEN));
+      if (tokenData?.access_token) {
+        const wsManager = getWebSocketManager();
+        wsManager.connect(tokenData.access_token);
+      }
       return;
     }
     const code = searchParams.get('authCode');
@@ -107,6 +120,11 @@ export function AppProvider({ children }: AppProviderProps) {
         if (fetchedZk) {
           setZkProof(fetchedZk);
         }
+        // ✅ Init WebSocket after successful login
+        if (userInfo.access_token) {
+          const wsManager = getWebSocketManager();
+          wsManager.connect(userInfo.access_token);
+        }
         router.replace(pathname);
         toast.success('Login successful!');
       } catch {
@@ -120,6 +138,7 @@ export function AppProvider({ children }: AppProviderProps) {
     };
 
     handleAuthentication(code);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const value: AppContextType = {
@@ -168,7 +187,6 @@ export function useKeypair() {
 
 export function useAuthActions() {
   const { setIsAuthenticated, setUser, setZkProof, setKeypair } = useApp();
-  const router = useRouter();
   const login = () => {
     const csrfToken = generateCsrfToken();
     const currentPath = location.pathname + location.search;
@@ -186,6 +204,9 @@ export function useAuthActions() {
     if (refreshToken) {
       axios.post(AUTHENTICATION_ENDPOINT.LOGOUT, { refresh_token: refreshToken });
     }
+    // ✅ Disconnect WebSocket when logging out
+    const wsManager = getWebSocketManager();
+    wsManager.disconnect();
     clearAuthStorage();
     setUser(null);
     setZkProof(null);

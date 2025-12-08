@@ -1,10 +1,9 @@
 package config
 
 import (
-	"dong-service/logger"
+	"socket-service/logger"
 	"fmt"
 	"strings"
-
 	"github.com/spf13/viper"
 )
 
@@ -12,17 +11,9 @@ import (
 type Config struct {
 	Server       ServerConfig       `mapstructure:"server"`
 	Database     DatabaseConfig     `mapstructure:"database"`
-	Indexer      IndexerConfig      `mapstructure:"indexer"`
-	Blockchain   BlockchainConfig   `mapstructure:"blockchain"`
-	CORS         CORSConfig         `mapstructure:"cors"`
 	JWT          JWTConfig          `mapstructure:"jwt"`
-	Oauth        OauthConfig        `mapstructure:"oauth"`
 	Redis        RedisConfig        `mapstructure:"redis"`
 	Logging      logger.LogConfig   `mapstructure:"logging"`
-	Scheduler    SchedulerConfig    `mapstructure:"scheduler"`
-	Lock         LockConfig         `mapstructure:"lock"`
-	CacheRequest CacheRequestConfig `mapstructure:"cache_request"`
-	Event 	   EventConfig        `mapstructure:"event"`
 }
 
 type ServerConfig struct {
@@ -30,24 +21,7 @@ type ServerConfig struct {
 	Port    string `mapstructure:"port"`
 	GinMode string `mapstructure:"gin_mode"` // debug, release, test
 }
-type JWTConfig struct {
-	Secret     string `mapstructure:"secret"`
-	RefreshExp int    `mapstructure:"refresh_exp"`
-	AccessExp  int    `mapstructure:"access_exp"`
-}
 
-type RedisConfig struct {
-	Address  string `mapstructure:"address"`
-	Password string `mapstructure:"password"`
-	DB       int    `mapstructure:"db"`
-}
-
-type OauthConfig struct {
-	ClientID     string `mapstructure:"client_id"`
-	ClientSecret string `mapstructure:"client_secret"`
-	TokenURL     string `mapstructure:"token_url"`
-	UserInfoURL  string `mapstructure:"user_info_url"`
-}
 type DatabaseConfig struct {
 	Host            string `mapstructure:"host"`
 	Port            string `mapstructure:"port"`
@@ -62,41 +36,16 @@ type DatabaseConfig struct {
 	Schema          string `mapstructure:"schema"`
 }
 
-type CORSConfig struct {
-	AllowOrigins string `mapstructure:"allow_origins"`
-	AllowMethods string `mapstructure:"allow_methods"`
-	AllowHeaders string `mapstructure:"allow_headers"`
-	AllowCreds   bool   `mapstructure:"allow_credentials"`
+type JWTConfig struct {
+	Secret      string `mapstructure:"secret"`
+	APIKey    string `mapstructure:"api_key"`
 }
 
-type IndexerConfig struct {
-	Schema string `mapstructure:"schema"`
-}
-
-type BlockchainConfig struct {
-	RPCURL string `mapstructure:"rpc_url"`
-	UseTLS bool   `mapstructure:"use_tls"`
-}
-
-type SchedulerConfig struct {
-	SyncContributorsInterval    int `mapstructure:"sync_contributors_interval"`     // in seconds
-	ExpiredRedEnvelopesInterval int `mapstructure:"expired_red_envelopes_interval"` // in seconds
-	RecentStatsWindowDays       int `mapstructure:"recent_stats_window_days"`
-}
-
-type LockConfig struct {
-	LockExp    int `mapstructure:"lock_exp"` // in seconds
-	CntRetry   int `mapstructure:"cnt_retry"`
-	RetryDelay int `mapstructure:"retry_delay"` // in milliseconds
-}
-
-type CacheRequestConfig struct {
-	CacheExp int `mapstructure:"cache_exp"` // in seconds
-}
-
-type EventConfig struct {
-	APIURL string `mapstructure:"api_url"`
-	APIKey string `mapstructure:"api_key"`
+type RedisConfig struct {
+	Address  string `mapstructure:"address"`
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
+	DB       int    `mapstructure:"db"`
 }
 
 func LoadConfig(cfgFile string) (*Config, error) {
