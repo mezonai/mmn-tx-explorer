@@ -35,14 +35,14 @@ export const P2P = () => {
     try {
       setError(null);
       const newOffer = await createOffer(data);
-      
+
       if (newOffer) {
         // Invalidate and refetch offers list
         await queryClient.invalidateQueries({ queryKey: [P2P_QUERY_KEYS.OFFERS] });
-        
+
         // Close modal
         setIsCreateOfferModalOpen(false);
-        
+
         // Optional: Show success message or navigate
         console.log('✅ Offer created successfully:', newOffer);
       }

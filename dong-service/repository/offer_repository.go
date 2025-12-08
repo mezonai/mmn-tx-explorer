@@ -21,10 +21,22 @@ func NewOfferRepository(db *sql.DB, dongSchema string) *OfferRepository {
 func (r *OfferRepository) CreateOffer(ctx context.Context, offer *models.Offer, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
 		INSERT INTO %s.offers (
-			intermediary_wallet_id, wallet_address, side, symbol, quantity, total_quantity, price, price_type, status, metadata, created_at, updated_at
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,NOW(),NOW())
+			intermediary_wallet_id, wallet_address, side, symbol, quantity, total_quantity, min_amount, max_amount, price, price_type, status, metadata, created_at, updated_at
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW(),NOW())
         RETURNING offer_id, created_at, updated_at
     `, r.dongSchema)
+
+	// determine min/max to persist
+	minToSave := int64(1)
+	maxToSave := offer.Quantity
+	if offer.Limit != nil {
+		if offer.Limit.Min > 0 {
+			minToSave = offer.Limit.Min
+		}
+		if offer.Limit.Max > 0 {
+			maxToSave = offer.Limit.Max
+		}
+	}
 
 	return tx.QueryRowContext(
 		ctx,
@@ -35,6 +47,8 @@ func (r *OfferRepository) CreateOffer(ctx context.Context, offer *models.Offer, 
 		offer.Symbol,
 		offer.Quantity,
 		offer.TotalQuantity,
+		minToSave,
+		maxToSave,
 		offer.Price,
 		offer.PriceType,
 		offer.Status,
@@ -69,7 +83,7 @@ func (r *OfferRepository) UpdateOfferStatus(ctx context.Context, offerID int64, 
 
 // ListOffers returns offers matching optional filters with pagination
 func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, pagination any) ([]models.Offer, error) {
-	base := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_id, wallet_address, side, symbol, quantity, total_quantity, price, price_rate, price_type, status, metadata, created_at, updated_at FROM %s.offers`, r.dongSchema)
+	base := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_id, wallet_address, side, symbol, quantity, total_quantity, min_amount, max_amount, price, price_rate, price_type, status, metadata, created_at, updated_at FROM %s.offers`, r.dongSchema)
 
 	whereClauses := []string{}
 	args := []any{}
@@ -142,6 +156,8 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 	var out []models.Offer
 	for rows.Next() {
 		var o models.Offer
+		var minAmt sql.NullInt64
+		var maxAmt sql.NullInt64
 		err := rows.Scan(
 			&o.OfferID,
 			&o.IntermediaryWalletID,
@@ -150,6 +166,8 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 			&o.Symbol,
 			&o.Quantity,
 			&o.TotalQuantity,
+			&minAmt,
+			&maxAmt,
 			&o.Price,
 			&o.PriceRate,
 			&o.PriceType,
@@ -161,6 +179,17 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan offer: %w", err)
 		}
+		// populate JSON-friendly Limit object from scanned values
+		minVal := int64(1)
+		maxVal := o.Quantity
+		if minAmt.Valid {
+			minVal = minAmt.Int64
+		}
+		if maxAmt.Valid {
+			maxVal = maxAmt.Int64
+		}
+		o.Limit = &models.OfferLimit{Min: minVal, Max: maxVal}
+
 		out = append(out, o)
 	}
 
@@ -215,10 +244,12 @@ func (r *OfferRepository) CountOffers(ctx context.Context, minPrice *string, max
 }
 
 func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*models.Offer, error) {
-	query := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_id, wallet_address, side, symbol, quantity, total_quantity, price, price_rate, price_type, status, metadata, created_at, updated_at FROM %s.offers WHERE offer_id = $1`, r.dongSchema)
+	query := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_id, wallet_address, side, symbol, quantity, total_quantity, min_amount, max_amount, price, price_rate, price_type, status, metadata, created_at, updated_at FROM %s.offers WHERE offer_id = $1`, r.dongSchema)
 
 	var o models.Offer
 	row := r.db.QueryRowContext(ctx, query, offerID)
+	var minAmt sql.NullInt64
+	var maxAmt sql.NullInt64
 	if err := row.Scan(
 		&o.OfferID,
 		&o.IntermediaryWalletID,
@@ -227,6 +258,8 @@ func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*mod
 		&o.Symbol,
 		&o.Quantity,
 		&o.TotalQuantity,
+		&minAmt,
+		&maxAmt,
 		&o.Price,
 		&o.PriceRate,
 		&o.PriceType,
@@ -240,6 +273,16 @@ func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*mod
 		}
 		return nil, fmt.Errorf("failed to scan offer: %w", err)
 	}
+
+	minVal := int64(1)
+	maxVal := o.Quantity
+	if minAmt.Valid {
+		minVal = minAmt.Int64
+	}
+	if maxAmt.Valid {
+		maxVal = maxAmt.Int64
+	}
+	o.Limit = &models.OfferLimit{Min: minVal, Max: maxVal}
 
 	return &o, nil
 }

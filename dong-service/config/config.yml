@@ -70,8 +70,3 @@ lock:
 # Cache Request Configuration
 cache_request:
   Cache_Exp: 20        # Cache expiration time in seconds
-
-# Event Configuration
-event:
-  api_url: "http://localhost:8899/api/event"
-  api_key: "MezonDongServiceEventAPIKey2024!"

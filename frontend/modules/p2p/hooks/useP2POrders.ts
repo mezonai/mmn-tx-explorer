@@ -64,29 +64,23 @@ export const useP2POrders = () => {
       }
 
       // Check if this order is for the current user (seller)
-      if (event.receive_id === user.walletAddress) {
-        // Seller received a new order
-        const newOrder: P2POrder = {
-          orderId: (orderData.orderId || orderData.order_id) as string,
-          offerId: (orderData.offerId || orderData.offer_id) as string,
-          buyerWalletAddress: event.sender_id || '',
-          sellerWalletAddress: event.receive_id || '',
-          amountMZD: (orderData.amountMZD || orderData.amount_mzd) as number,
-          amountVND: (orderData.amountVND || orderData.amount_vnd) as number,
-          exchangeRate: (orderData.exchangeRate || orderData.exchange_rate) as number,
-          status: (orderData.status || 'PAYMENT_PENDING') as P2POrder['status'],
-          createdAt:
-            (orderData.createdAt || orderData.created_at || new Date().toISOString()) as string,
-          expiresAt:
-            (orderData.expiresAt ||
-              orderData.expires_at ||
-              new Date(Date.now() + 15 * 60 * 1000).toISOString()) as string,
-        };
+      // Seller received a new order
+      const newOrder: P2POrder = {
+        orderId: (orderData.orderId || orderData.order_id) as string,
+        offerId: (orderData.offerId || orderData.offer_id) as string,
+        amountMZD: (orderData.amountMZD || orderData.amount_mzd) as number,
+        amountVND: (orderData.amountVND || orderData.amount_vnd) as number,
+        exchangeRate: (orderData.exchangeRate || orderData.exchange_rate) as number,
+        status: (orderData.status || 'PAYMENT_PENDING') as P2POrder['status'],
+        createdAt: (orderData.createdAt || orderData.created_at || new Date().toISOString()) as string,
+        expiresAt: (orderData.expiresAt ||
+          orderData.expires_at ||
+          new Date(Date.now() + 15 * 60 * 1000).toISOString()) as string,
+      };
 
-        // Add new order to the beginning of the list
-        setOrders((prev) => [newOrder, ...prev]);
-        console.log('✅ New order added to list:', newOrder);
-      }
+      // Add new order to the beginning of the list
+      setOrders((prev) => [newOrder, ...prev]);
+      console.log('✅ New order added to list:', newOrder);
     };
 
     // Register event listener

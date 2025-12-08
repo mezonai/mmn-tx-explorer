@@ -29,15 +29,35 @@ export const OrderRow = ({ order, onOpenToConfirm }: OrderRowProps) => {
   const getStatusBadge = (status: P2POrder['status']) => {
     switch (status) {
       case 'PAYMENT_PENDING':
-        return <Badge variant="outline" className="text-yellow-500 border-yellow-500">Chờ thanh toán</Badge>;
+        return (
+          <Badge variant="outline" className="border-yellow-500 text-yellow-500">
+            Chờ thanh toán
+          </Badge>
+        );
       case 'WAIT_CONFIRM':
-        return <Badge variant="outline" className="text-orange-500 border-orange-500">Chờ xác nhận</Badge>;
+        return (
+          <Badge variant="outline" className="border-orange-500 text-orange-500">
+            Chờ xác nhận
+          </Badge>
+        );
       case 'PAYMENT_CONFIRMED':
-        return <Badge variant="outline" className="text-blue-500 border-blue-500">Đã xác nhận</Badge>;
+        return (
+          <Badge variant="outline" className="border-blue-500 text-blue-500">
+            Đã xác nhận
+          </Badge>
+        );
       case 'COMPLETED':
-        return <Badge variant="outline" className="text-emerald-500 border-emerald-500">Hoàn thành</Badge>;
+        return (
+          <Badge variant="outline" className="border-emerald-500 text-emerald-500">
+            Hoàn thành
+          </Badge>
+        );
       case 'CANCELLED':
-        return <Badge variant="outline" className="text-red-500 border-red-500">Đã hủy</Badge>;
+        return (
+          <Badge variant="outline" className="border-red-500 text-red-500">
+            Đã hủy
+          </Badge>
+        );
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -61,15 +81,13 @@ export const OrderRow = ({ order, onOpenToConfirm }: OrderRowProps) => {
       onClick={handleRowClick}
       className={cn(
         'cursor-pointer transition-colors hover:bg-gray-800/50',
-        order.status === 'WAIT_CONFIRM' && 'bg-orange-500/10 border-l-4 border-l-orange-500'
+        order.status === 'WAIT_CONFIRM' && 'border-l-4 border-l-orange-500 bg-orange-500/10'
       )}
     >
       <td className="px-6 py-4">
         <div className="flex flex-col gap-1">
           <div className="font-medium text-white">#{order.orderId}</div>
-          <div className="text-xs text-gray-500">
-            {new Date(order.createdAt).toLocaleString('vi-VN')}
-          </div>
+          <div className="text-xs text-gray-500">{new Date(order.createdAt).toLocaleString('vi-VN')}</div>
         </div>
       </td>
       <td className="px-6 py-4">
@@ -84,23 +102,17 @@ export const OrderRow = ({ order, onOpenToConfirm }: OrderRowProps) => {
       </td>
       <td className="px-6 py-4">
         <div className="flex flex-col gap-2">
-          <div className="text-xs uppercase text-gray-500">Seller wallet</div>
-          <AddressDisplay
-            address={order.sellerWalletAddress}
-            href={ROUTES.WALLET(order.sellerWalletAddress)}
-          />
-          <div className="text-xs uppercase text-gray-500 mt-2">Buyer wallet</div>
-          <AddressDisplay
-            address={order.buyerWalletAddress}
-            href={ROUTES.WALLET(order.buyerWalletAddress)}
-          />
+          <div className="text-xs text-gray-500 uppercase">Seller wallet</div>
+          <AddressDisplay address={order.sellerWalletAddress} href={ROUTES.WALLET(order.sellerWalletAddress)} />
+          <div className="mt-2 text-xs text-gray-500 uppercase">Buyer wallet</div>
+          <AddressDisplay address={order.buyerWalletAddress} href={ROUTES.WALLET(order.buyerWalletAddress)} />
         </div>
       </td>
       <td className="px-6 py-4">
         <div className="flex items-center gap-2">
           {getStatusBadge(order.status)}
           {order.status === 'WAIT_CONFIRM' && (
-            <span className="text-xs text-orange-500 font-medium animate-pulse">New</span>
+            <span className="animate-pulse text-xs font-medium text-orange-500">New</span>
           )}
         </div>
       </td>
@@ -115,10 +127,10 @@ export const OrderRow = ({ order, onOpenToConfirm }: OrderRowProps) => {
           {order.status === 'WAIT_CONFIRM' ? (
             <Button
               onClick={handleOpenToConfirm}
-              className="bg-orange-500 hover:bg-orange-600 text-white font-medium"
+              className="bg-orange-500 font-medium text-white hover:bg-orange-600"
               size="sm"
             >
-              <CheckCircle2 className="h-4 w-4 mr-2" />
+              <CheckCircle2 className="mr-2 h-4 w-4" />
               Open to confirm
             </Button>
           ) : (
@@ -138,6 +150,3 @@ export const OrderRow = ({ order, onOpenToConfirm }: OrderRowProps) => {
     </tr>
   );
 };
-
-
-

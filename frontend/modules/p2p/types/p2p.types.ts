@@ -3,13 +3,14 @@ export type TradeType = 'BUY' | 'SELL';
 export interface P2POffer {
   offerId: string;
   sellerWalletAddress: string;
-  totalMZD: number; // Tổng số MZD mà người bán có sẵn để bán (ví dụ: 20000 MZD)
-  available: number; // Số MZD còn khả dụng để bán (có thể bằng hoặc nhỏ hơn totalMZD)
+  // Allow number|string because backend can return big integers as strings
+  totalMZD: number | string; // Tổng số MZD mà người bán có sẵn để bán (ví dụ: 20000 MZD)
+  available: number | string; // Số MZD còn khả dụng để bán (có thể bằng hoặc nhỏ hơn totalMZD)
   limit: {
-    min: number; // Số MZD tối thiểu cho mỗi giao dịch
-    max: number; // Số MZD tối đa cho mỗi giao dịch
+    min: number | string; // Số MZD tối thiểu cho mỗi giao dịch
+    max: number | string; // Số MZD tối đa cho mỗi giao dịch
   };
-  exchangeRate: number; // Tỉ giá VND/MZD (ví dụ: 0.8 = 1 MZD = 0.8 VND)
+  exchangeRate: number | string; // Tỉ giá VND/MZD (ví dụ: 0.8 = 1 MZD = 0.8 VND)
   bankInfo?: {
     bank: BankOption;
     accountNumber: string;
@@ -28,8 +29,8 @@ export type BankOption = 'MB' | 'VCB' | 'TCB' | 'ACB' | 'TPBANK' | 'VIETCOMBANK'
 
 export interface CreateOfferFormData {
   tradeType: TradeType;
-  amountMZD: number; // Số MZD muốn bán
-  exchangeRate: number; // Tỉ giá VND/MZD (ví dụ: 0.8 = 1 MZD = 0.8 VND)
+  amountMZD: number | string; // Số MZD muốn bán
+  exchangeRate: number | string; // Tỉ giá VND/MZD (ví dụ: 0.8 = 1 MZD = 0.8 VND)
   limit: {
     min: number; // Số MZD tối thiểu cho mỗi giao dịch
     max: number; // Số MZD tối đa cho mỗi giao dịch
@@ -45,9 +46,9 @@ export interface P2POrder {
   offerId: string; // Reference đến P2POffer
   buyerWalletAddress: string;
   sellerWalletAddress: string;
-  amountMZD: number; // Số MZD người mua muốn mua
-  amountVND: number; // Số VND cần thanh toán (tính từ amountMZD * exchangeRate)
-  exchangeRate: number; // Tỉ giá VND/MZD từ offer
+  amountMZD: number | string; // Số MZD người mua muốn mua
+  amountVND: number | string; // Số VND cần thanh toán (tính từ amountMZD * exchangeRate)
+  exchangeRate: number | string; // Tỉ giá VND/MZD từ offer
   status: OrderStatus;
   createdAt: string;
   expiresAt: string; // Timer countdown (ISO string)

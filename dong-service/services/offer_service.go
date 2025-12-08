@@ -88,6 +88,36 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		metadataStr = &ms
 	}
 
+	// parse optional per-transaction limits
+	var limitMinInt int64 = 1
+	var limitMaxInt int64 = quantityInt
+	if req.Limit != nil {
+		if req.Limit.Min != nil && *req.Limit.Min != "" {
+			v, err := strconv.ParseInt(*req.Limit.Min, 10, 64)
+			if err != nil {
+				_ = tx.Rollback()
+				return nil, fmt.Errorf("invalid limit_min: %w", err)
+			}
+			limitMinInt = v
+		}
+		if req.Limit.Max != nil && *req.Limit.Max != "" {
+			v, err := strconv.ParseInt(*req.Limit.Max, 10, 64)
+			if err != nil {
+				_ = tx.Rollback()
+				return nil, fmt.Errorf("invalid limit_max: %w", err)
+			}
+			limitMaxInt = v
+		}
+	}
+
+	// Ensure sensible bounds
+	if limitMinInt < 1 {
+		limitMinInt = 1
+	}
+	if limitMaxInt < limitMinInt {
+		limitMaxInt = limitMinInt
+	}
+
 	offer := &models.Offer{
 		IntermediaryWalletID: walletID,
 		WalletAddress:        intermediaryAddr,
@@ -99,6 +129,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		PriceType:            constants.PriceTypeFixed,
 		Status:               string(constants.TradingPending),
 		Metadata:             metadataStr,
+		Limit:                &models.OfferLimit{Min: limitMinInt, Max: limitMaxInt},
 	}
 
 	if req.PriceType != nil && *req.PriceType != "" {

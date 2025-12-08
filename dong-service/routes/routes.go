@@ -116,7 +116,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		offersPrivate.GET("", offerHandler.ListOffers)
 		offersPrivate.GET("/:id", offerHandler.GetOfferDetail)
 		offersPrivate.GET("/:id/orders", orderHandler.ListOrdersForOffer)
-		offersPrivate.POST("/create", offerHandler.CreateOffer)
+		offersPrivate.POST("", offerHandler.CreateOffer)
 		offersPrivate.POST("/:id/orders", orderHandler.CreateOrder)
 		offersPrivate.POST("/:id/confirm", offerHandler.ConfirmOffer)
 

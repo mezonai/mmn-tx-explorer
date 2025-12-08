@@ -6,13 +6,15 @@ export interface P2POffer {
   wallet_address?: string;
   side: 'BUY' | 'SELL';
   symbol: string;
-  quantity: number; // available quantity
-  total_quantity: number; // original total quantity
-  price: number; // price (int64 on backend)
+  quantity: number | string; // available quantity (backend may return large integers as string)
+  total_quantity: number | string; // original total quantity
+  price: number | string; // price (int64 on backend) - allow string for large ints
   price_rate?: string | null;
   price_type?: string;
   status?: string;
-  metadata?: {
+  // backend sometimes returns metadata as a JSON string. Accept either parsed object
+  // or the raw JSON string to match the BE contract.
+  metadata?: string | {
     bank: BankOption;
     account_name: string;
     account_number: string;

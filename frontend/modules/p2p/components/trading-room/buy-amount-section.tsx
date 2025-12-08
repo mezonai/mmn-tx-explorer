@@ -158,8 +158,8 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
 
       {!isValidAmount && amountMZD > 0 && (
         <p className="text-center text-xs text-red-500">
-          Số lượng phải từ {formatCurrency(offer.limit.min)} đến{' '}
-          {formatCurrency(Math.min(offer.limit.max, offer.available))} MZD
+          Số lượng phải từ {formatCurrency(Number(offer.limit.min))} đến{' '}
+          {formatCurrency(Number(Math.min(Number(offer.limit.max), Number(offer.available))))} MZD
         </p>
       )}
     </div>
