@@ -64,13 +64,14 @@ export const useP2POrders = () => {
       }
 
       // Check if this order is for the current user (seller)
-      if (event.receive_id === user.walletAddress) {
+      if (event.receive_address === user.walletAddress) {
         // Seller received a new order
         const newOrder: P2POrder = {
           orderId: (orderData.orderId || orderData.order_id) as string,
           offerId: (orderData.offerId || orderData.offer_id) as string,
-          buyerWalletAddress: event.sender_id || '',
-          sellerWalletAddress: event.receive_id || '',
+          buyerWalletAddress:
+            (orderData.buyerWalletAddress || orderData.buyer_wallet_address) as string | undefined || '',
+          sellerWalletAddress: event.receive_address || '',
           amountMZD: (orderData.amountMZD || orderData.amount_mzd) as number,
           amountVND: (orderData.amountVND || orderData.amount_vnd) as number,
           exchangeRate: (orderData.exchangeRate || orderData.exchange_rate) as number,

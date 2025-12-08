@@ -4,8 +4,7 @@ export interface WebSocketEvent {
   id?: string;
   type: string;
   payload?: string | Record<string, unknown>;
-  sender_id?: string;
-  receive_id?: string;
+  receive_address?: string;
   status?: string;
   create_at?: string;
 }

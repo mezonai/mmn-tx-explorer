@@ -43,7 +43,8 @@ oauth:
   user_info_url: "https://oauth2.mezon.ai/userinfo"
 
 redis:
-  address: "redis:6379"
+  address: ""
+  username: "default"
   password: ""
   db: 0
 

@@ -18,9 +18,9 @@ database:
   conn_max_idle_time: 60
 
 redis:
-  address: "redis-14256.crce178.ap-east-1-1.ec2.redns.redis-cloud.com:14256"
+  address: ""
   username: "default"
-  password: "hh2D1kuwJ4sqpsOsDlAOaLPZPhsY6FfQ"
+  password: ""
   db: 0
 
 jwt:
