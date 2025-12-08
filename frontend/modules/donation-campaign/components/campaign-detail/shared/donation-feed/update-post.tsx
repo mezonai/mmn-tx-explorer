@@ -6,6 +6,8 @@ import { Chip } from '@/components/shared';
 import { CopyButton } from '@/components/ui/copy-button';
 import { ClientTimeDisplay } from '@/modules/transaction/components/transaction-details/shared/client-time-display';
 import { TxnHashLink } from '@/modules/transaction/components/transaction-list/list/shared';
+import { Button } from '@/components/ui/button';
+import { baseURL } from '@/service';
 
 interface UpdatePostProps {
   update: IDonationFeed;
@@ -19,7 +21,7 @@ function getImages(update: IDonationFeed, onImageClick: (url: string) => void) {
       {update.extra_info.image_cids.map((img, idx) => (
         <img
           key={idx}
-          src={img}
+          src={`http://${baseURL}/ipfs/${img}`}
           alt={`Update Image ${idx + 1}`}
           className="h-40 w-full cursor-pointer rounded-md object-cover sm:h-32 md:h-24"
           onClick={() => onImageClick(img)}
@@ -49,11 +51,17 @@ export const UpdatePost = ({ update, isLatest = false, onImageClick }: UpdatePos
           </div>
         </div>
 
-        {isLatest && (
+        {isLatest ? (
           <div className="text-muted-foreground flex flex-row gap-1 text-xs">
             <span className="inline-flex items-center gap-1">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
               <p>On chain</p>
+            </span>
+          </div>
+        ) : (
+          <div className="text-muted-foreground flex flex-row gap-1 text-xs">
+            <span className="inline-flex items-center gap-1">
+              <Button variant="link" className='text-xs text-muted-foreground p-0'>See previous version </Button>
             </span>
           </div>
         )}

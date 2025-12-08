@@ -73,4 +73,4 @@ apiDongClient.interceptors.response.use(
   }
 );
 
-export { apiClient, apiDongClient, cobarClient, apiGameClient };
+export { apiClient, apiDongClient, cobarClient, apiGameClient, baseURL };
