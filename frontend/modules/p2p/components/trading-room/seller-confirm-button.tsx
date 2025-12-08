@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { CheckCircle2 } from 'lucide-react';
 import { P2POrder } from '../../types/p2p.types';
+import React from 'react';
 
 interface SellerConfirmButtonProps {
   order: P2POrder;

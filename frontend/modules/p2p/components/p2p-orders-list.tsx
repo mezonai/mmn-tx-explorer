@@ -1,19 +1,17 @@
 'use client';
 
-import { useP2POrders } from '../hooks/useP2POrders';
-import { OrderRow } from './order-row';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { P2POrder } from '../types/p2p.types';
-import { useRouter } from 'next/navigation';
-import { ROUTES } from '@/configs/routes.config';
+import { OrderRow } from './order-row';
 
 export const P2POrdersList = () => {
-  const { orders, isLoading } = useP2POrders();
-  const router = useRouter();
+  // TODO: Wire to P2P orders API/hook when available
+  const orders: P2POrder[] = [];
+  const isLoading = false;
 
-  const handleOpenToConfirm = (order: P2POrder) => {
-    router.push(ROUTES.P2P_TRADING(order.orderId));
+  const handleOpenToConfirm = (_order: P2POrder) => {
+    // Navigation will be enabled once P2P orders flow is finalized
   };
 
   if (isLoading) {
@@ -54,7 +52,7 @@ export const P2POrdersList = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-800 text-sm">
-            {orders.map((order) => (
+            {orders.map((order: P2POrder) => (
               <OrderRow key={order.orderId} order={order} onOpenToConfirm={handleOpenToConfirm} />
             ))}
           </tbody>
