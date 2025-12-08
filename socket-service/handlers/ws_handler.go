@@ -4,15 +4,14 @@ import (
 	"net/http"
 	"socket-service/config"
 	"socket-service/logger"
-	"socket-service/utils"
-
 	"socket-service/repository"
 	"socket-service/service"
-
+	"socket-service/utils"
+	"time"
+    "sync"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
-
 type WSHandler struct {
 	repo  *repository.EventRepository
 	cfg   *config.Config
@@ -30,20 +29,21 @@ var upgrader = websocket.Upgrader{
 }
 
 func (h *WSHandler) HandleWS(c *gin.Context) {
+
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		logger.Error().Err(err).Msg("WebSocket upgrade failed")
 		return
 	}
-
-	userID, err := utils.GetUserIDFromContext(c)
+    defer conn.Close()
+	userAddress, err := utils.GetUserAddressFromContext(c)
 	if err != nil {
 		logger.Error().Err(err).Msg("Unauthorized WebSocket connection attempt")
 		conn.WriteMessage(websocket.TextMessage, []byte("Unauthorized: "+err.Error()))
-		conn.Close()
 		return
 	}
-	events, err := h.repo.GetListEventByReceiveID(userID)
+
+	events, err := h.repo.GetListEventByReceiveID(userAddress)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to get events for user")
 		conn.WriteMessage(websocket.TextMessage, []byte("Failed to get events: "+err.Error()))
@@ -53,7 +53,7 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 		for _, event := range events {
 			if err := conn.WriteJSON(event); err != nil {
 				logger.Error().Err(err).Msg("Failed to send event to user")
-				break
+				return
 			} else {
 				event.Status = "sent"
 				if err := h.repo.UpdateEventStatus(event.ID.String(), "sent"); err != nil {
@@ -63,14 +63,45 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 		}
 	}
 
-	h.wsSvc.AddConnection(userID, conn)
+	conn.SetReadDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.PongWait) * time.Second))
+	conn.SetPongHandler(func(string) error {
+		logger.Info().Msgf("Pong received from user %s", userAddress)
+		conn.SetReadDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.PongWait) * time.Second))
+		return nil
+	})
+
+	h.wsSvc.AddConnection(userAddress, conn)
+	defer func() {
+		h.wsSvc.RemoveConnection(userAddress, conn)
+	}()
+	
+	done := make(chan struct{})
+	var onceClose sync.Once
+	go func() {
+		ticker := time.NewTicker(time.Duration(h.cfg.WebSocket.PingPeriod) * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
+				if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+					logger.Error().Err(err).Msg("Ping failed, closing connection")
+					onceClose.Do(func() {close(done)})
+					return
+				} else {
+					logger.Info().Msgf("Ping sent to user %s", userAddress)
+				}
+			case <-done:
+				return
+			}
+		}
+	}()
 
 	for {
 		if _, _, err := conn.ReadMessage(); err != nil {
-			logger.Info().Msgf("User %s disconnected", userID)
-			h.wsSvc.RemoveConnection(userID, conn)
-			conn.Close()
-			break
+			logger.Info().Msgf("User %s disconnected", userAddress)
+			onceClose.Do(func() {close(done)})
+			return
 		}
 	}
 }
