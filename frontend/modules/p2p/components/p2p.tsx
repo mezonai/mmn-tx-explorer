@@ -14,6 +14,7 @@ import { useCreateOffer } from '../hooks/useCreateOffer';
 import { P2P_QUERY_KEYS } from '../constants';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRouter } from 'next/navigation';
+import { ROUTES } from '@/configs/routes.config';
 
 export const P2P = () => {
   const [isCreateOfferModalOpen, setIsCreateOfferModalOpen] = useState(false);
@@ -29,7 +30,7 @@ export const P2P = () => {
   };
 
   const handleOfferClick = (offer: P2POffer) => {
-    router.push(`/p2p/trading/${offer.offerId}?type=offer`);
+    router.push(ROUTES.P2P_TRADING(String(offer.offerId), 'offer'));
   };
 
   const handleCreateOfferSubmit = async (data: CreateOfferFormData) => {

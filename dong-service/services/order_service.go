@@ -113,15 +113,18 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 	}
 
 	order := &models.Order{
-		OfferID:       &offerID,
-		WalletAddress: walletAddrPtr,
-		Quantity:      quantityInt,
-		Amount:        amountInt,
-		Price:         priceInt,
-		Status:        string(constants.TradingPending),
-		ExternalRef:   req.ExternalRef,
-		Metadata:      metadataStr,
-		ExpiresAt:     req.ExpiresAt,
+		IntermediaryWalletID: offer.IntermediaryWalletID,
+		Side:                 string(offer.Side),
+		Symbol:               offer.Symbol,
+		OfferID:              &offerID,
+		WalletAddress:        walletAddrPtr,
+		Quantity:             quantityInt,
+		Amount:               amountInt,
+		Price:                priceInt,
+		Status:               string(constants.TradingPending),
+		ExternalRef:          req.ExternalRef,
+		Metadata:             metadataStr,
+		ExpiresAt:            req.ExpiresAt,
 	}
 
 	// Reserve the quantity on the offer (block it while order is pending)

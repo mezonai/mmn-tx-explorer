@@ -21,14 +21,17 @@ func NewOrderRepository(db *sql.DB, dongSchema string) *OrderRepository {
 func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
 			INSERT INTO %s.orders (
-				offer_id, wallet_address, quantity, amount, price, status, external_ref, metadata, expires_at, created_at, updated_at
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW(),NOW())
+						intermediary_wallet_id, offer_id, wallet_address, side, symbol, quantity, amount, price, status, external_ref, metadata, expires_at, created_at, updated_at
+				) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW(),NOW())
         RETURNING order_id, created_at, updated_at
     `, r.dongSchema)
 
 	return tx.QueryRowContext(ctx, query,
+		order.IntermediaryWalletID,
 		order.OfferID,
 		order.WalletAddress,
+		order.Side,
+		order.Symbol,
 		order.Quantity,
 		order.Amount,
 		order.Price,
@@ -99,7 +102,7 @@ func (r *OrderRepository) CancelExpiredOrders(ctx context.Context, cutoff time.T
 }
 
 func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, error) {
-	base := fmt.Sprintf("SELECT order_id, offer_id, wallet_address, quantity, amount, price, status, external_ref, metadata, expires_at, created_at, updated_at FROM %s.orders WHERE offer_id = $1", r.dongSchema)
+	base := fmt.Sprintf("SELECT order_id, intermediary_wallet_id, offer_id, wallet_address, side, symbol, quantity, amount, price, status, external_ref, metadata, expires_at, created_at, updated_at FROM %s.orders WHERE offer_id = $1", r.dongSchema)
 
 	// Default ordering and pagination
 	orderBy := "created_at"
@@ -138,8 +141,11 @@ func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, 
 		var o models.Order
 		if err := rows.Scan(
 			&o.OrderID,
+			&o.IntermediaryWalletID,
 			&o.OfferID,
 			&o.WalletAddress,
+			&o.Side,
+			&o.Symbol,
 			&o.Quantity,
 			&o.Amount,
 			&o.Price,
@@ -159,13 +165,16 @@ func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, 
 }
 
 func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.Order, error) {
-	query := fmt.Sprintf("SELECT order_id, offer_id, wallet_address, quantity, amount, price, status, external_ref, metadata, expires_at, created_at, updated_at FROM %s.orders WHERE order_id = $1", r.dongSchema)
+	query := fmt.Sprintf("SELECT order_id, intermediary_wallet_id, offer_id, wallet_address, side, symbol, quantity, amount, price, status, external_ref, metadata, expires_at, created_at, updated_at FROM %s.orders WHERE order_id = $1", r.dongSchema)
 	var o models.Order
 	row := r.db.QueryRowContext(ctx, query, id)
 	if err := row.Scan(
 		&o.OrderID,
+		&o.IntermediaryWalletID,
 		&o.OfferID,
 		&o.WalletAddress,
+		&o.Side,
+		&o.Symbol,
 		&o.Quantity,
 		&o.Amount,
 		&o.Price,

@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { ROUTES } from '@/configs/routes.config';
 import { Table } from '@/components/ui/table';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,8 +22,8 @@ export const P2POffersTable = ({ offers, isLoading = false, onOfferClick }: P2PO
 
   const handleBuyClick = (offer: P2POffer, e: React.MouseEvent) => {
     e.stopPropagation();
-    // Navigate to trading room with offerId (will create order after confirming)
-    router.push(`/p2p/trading/${offer.offerId}?type=offer`);
+    // Navigate to trading page for offerId
+    router.push(ROUTES.P2P_TRADING(String(offer.offerId), 'offer'));
   };
 
   const columns: TTableColumn<P2POffer>[] = [

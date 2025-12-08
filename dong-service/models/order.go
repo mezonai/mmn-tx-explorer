@@ -15,7 +15,13 @@ const (
 )
 
 type Order struct {
-	OrderID int64  `json:"order_id" db:"order_id"`
+	OrderID int64 `json:"order_id" db:"order_id"`
+	// IntermediaryWalletID references the intermediary wallet the order uses (non-null in DB schema)
+	IntermediaryWalletID int64 `json:"intermediary_wallet_id" db:"intermediary_wallet_id"`
+	// Side of the order (BUY/SELL)
+	Side string `json:"side" db:"side"`
+	// Symbol for the order (e.g. MZD)
+	Symbol  string `json:"symbol" db:"symbol"`
 	OfferID *int64 `json:"offer_id,omitempty" db:"offer_id"`
 	// WalletAddress stores the requester's public address (previously user_id)
 	WalletAddress *string `json:"wallet_address,omitempty" db:"wallet_address"`

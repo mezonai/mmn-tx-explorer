@@ -210,8 +210,8 @@ func TestGetOrderByID_IncludesOfferMetadata(t *testing.T) {
 
 	// Setup GetOrderByID expectation
 	now := time.Now()
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT order_id, offer_id, wallet_address, quantity, amount, price, status, external_ref, metadata, expires_at, created_at, updated_at FROM public.orders WHERE order_id = $1")).
-		WithArgs(int64(42)).WillReturnRows(sqlmock.NewRows([]string{"order_id", "offer_id", "wallet_address", "quantity", "amount", "price", "status", "external_ref", "metadata", "expires_at", "created_at", "updated_at"}).AddRow(int64(42), int64(7), nil, int64(3), int64(600), int64(200), "PENDING", nil, nil, nil, now, now))
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT order_id, intermediary_wallet_id, offer_id, wallet_address, quantity, amount, price, status, external_ref, metadata, expires_at, created_at, updated_at FROM public.orders WHERE order_id = $1")).
+		WithArgs(int64(42)).WillReturnRows(sqlmock.NewRows([]string{"order_id", "intermediary_wallet_id", "offer_id", "wallet_address", "side", "symbol", "quantity", "amount", "price", "status", "external_ref", "metadata", "expires_at", "created_at", "updated_at"}).AddRow(int64(42), int64(0), int64(7), nil, "SELL", "MMN", int64(3), int64(600), int64(200), "PENDING", nil, nil, nil, now, now))
 
 	// Expect the service to fetch the offer and attach metadata
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT offer_id, intermediary_wallet_id, wallet_address, side, symbol, quantity, total_quantity, min_amount, max_amount, price, price_rate, price_type, status, metadata, created_at, updated_at FROM public.offers WHERE offer_id = $1")).
@@ -249,8 +249,8 @@ func TestConfirmOrder_Success(t *testing.T) {
 
 	// GetOrderByID expectation - pending order created recently
 	now := time.Now()
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT order_id, offer_id, wallet_address, quantity, amount, price, status, external_ref, metadata, expires_at, created_at, updated_at FROM public.orders WHERE order_id = $1")).
-		WithArgs(int64(5)).WillReturnRows(sqlmock.NewRows([]string{"order_id", "offer_id", "wallet_address", "quantity", "amount", "price", "status", "external_ref", "metadata", "expires_at", "created_at", "updated_at"}).AddRow(int64(5), int64(1), nil, int64(10), int64(1000), int64(100), "PENDING", nil, nil, nil, now, now))
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT order_id, intermediary_wallet_id, offer_id, wallet_address, quantity, amount, price, status, external_ref, metadata, expires_at, created_at, updated_at FROM public.orders WHERE order_id = $1")).
+		WithArgs(int64(5)).WillReturnRows(sqlmock.NewRows([]string{"order_id", "intermediary_wallet_id", "offer_id", "wallet_address", "side", "symbol", "quantity", "amount", "price", "status", "external_ref", "metadata", "expires_at", "created_at", "updated_at"}).AddRow(int64(5), int64(0), int64(1), nil, "SELL", "MMN", int64(10), int64(1000), int64(100), "PENDING", nil, nil, nil, now, now))
 
 	mock.ExpectBegin()
 
@@ -286,8 +286,8 @@ func TestConfirmOrder_ExpiredCancels(t *testing.T) {
 
 	// GetOrderByID expectation - pending order created long ago (expired)
 	old := time.Now().Add(-16 * time.Minute)
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT order_id, offer_id, wallet_address, quantity, amount, price, status, external_ref, metadata, expires_at, created_at, updated_at FROM public.orders WHERE order_id = $1")).
-		WithArgs(int64(6)).WillReturnRows(sqlmock.NewRows([]string{"order_id", "offer_id", "wallet_address", "quantity", "amount", "price", "status", "external_ref", "metadata", "expires_at", "created_at", "updated_at"}).AddRow(int64(6), int64(1), nil, int64(10), int64(1000), int64(100), "PENDING", nil, nil, nil, old, old))
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT order_id, intermediary_wallet_id, offer_id, wallet_address, quantity, amount, price, status, external_ref, metadata, expires_at, created_at, updated_at FROM public.orders WHERE order_id = $1")).
+		WithArgs(int64(6)).WillReturnRows(sqlmock.NewRows([]string{"order_id", "intermediary_wallet_id", "offer_id", "wallet_address", "side", "symbol", "quantity", "amount", "price", "status", "external_ref", "metadata", "expires_at", "created_at", "updated_at"}).AddRow(int64(6), int64(0), int64(1), nil, "SELL", "MMN", int64(10), int64(1000), int64(100), "PENDING", nil, nil, nil, old, old))
 
 	mock.ExpectBegin()
 
@@ -356,8 +356,8 @@ func TestCreateThenConfirm_Integration(t *testing.T) {
 	}
 
 	// Confirm the order - expects pending order read and confirm flow
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT order_id, offer_id, wallet_address, quantity, amount, price, status, external_ref, metadata, expires_at, created_at, updated_at FROM public.orders WHERE order_id = $1")).
-		WithArgs(int64(300)).WillReturnRows(sqlmock.NewRows([]string{"order_id", "offer_id", "wallet_address", "quantity", "amount", "price", "status", "external_ref", "metadata", "expires_at", "created_at", "updated_at"}).AddRow(int64(300), int64(10), nil, int64(5), int64(1000), int64(200), "PENDING", nil, nil, nil, now, now))
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT order_id, intermediary_wallet_id, offer_id, wallet_address, quantity, amount, price, status, external_ref, metadata, expires_at, created_at, updated_at FROM public.orders WHERE order_id = $1")).
+		WithArgs(int64(300)).WillReturnRows(sqlmock.NewRows([]string{"order_id", "intermediary_wallet_id", "offer_id", "wallet_address", "side", "symbol", "quantity", "amount", "price", "status", "external_ref", "metadata", "expires_at", "created_at", "updated_at"}).AddRow(int64(300), int64(0), int64(10), nil, "SELL", "MMN", int64(5), int64(1000), int64(200), "PENDING", nil, nil, nil, now, now))
 
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta("UPDATE public.orders")).WillReturnResult(sqlmock.NewResult(0, 1))

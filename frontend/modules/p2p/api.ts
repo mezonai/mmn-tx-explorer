@@ -8,7 +8,8 @@ import { APP_CONFIG } from '@/configs/app.config';
 import { IP2POfferListParams } from './types';
 import { safeJsonParse } from '@/utils';
 import { OfferService } from '@/modules/offer/api';
-import { ICreateOfferRequest, OfferSide } from '@/modules/offer/types';
+import { apiDongClient } from '@/service';
+import { ICreateOfferRequest, OfferSide, IOffer } from '@/modules/offer/types';
 // import { apiDongClient } from '@/service';
 
 // Use real backend by default. Set to `true` only for local mock testing.
@@ -237,10 +238,73 @@ export class P2PService {
       return newOrder;
     }
 
-    // const { data } = await apiDongClient.post<{ data: P2POrder }>(P2P_ENDPOINTS.ORDERS, payload);
-    // return data.data;
+    // Use backend orders endpoint: POST /api/v1/offers/{id}/orders
+    // The backend expects CreateOrderRequest where quantity/price/amount are strings.
+    const body: { quantity: string; amount?: string } = {
+      quantity: String(payload.amountMZD),
+    };
 
-    throw new Error('P2P real API not implemented yet');
+    if (payload.amountVND !== undefined) body.amount = String(payload.amountVND);
+
+    // post the order
+    const resp = await apiDongClient.post<{ code: number; message: string; data: unknown }>(
+      `/api/v1/offers/${payload.offerId}/orders`,
+      body
+    );
+
+    type BEOrder = {
+      order_id?: number | string;
+      offer_id?: number | string;
+      wallet_address?: string;
+      quantity?: number | string;
+      amount?: number | string;
+      price?: number | string;
+      status?: string;
+      created_at?: string;
+      expires_at?: string;
+    };
+
+    const order = resp.data?.data as BEOrder;
+
+    // Try to enrich response with offer info so UI consumers (mock + real) get a consistent shape
+    let offer: IOffer | undefined = undefined;
+    try {
+      offer = await OfferService.getOfferById(payload.offerId);
+    } catch {
+      // ignore; UI can handle missing offer info
+    }
+
+    // Map BE order -> P2POrder
+    const orderQuantity = Number(order?.quantity ?? 0);
+    const orderAmount = Number(order?.amount ?? 0);
+    const orderPrice = Number(order?.price ?? 0);
+
+    // Compute exchangeRate: prefer explicit price, otherwise amount/quantity when possible
+    let exchangeRate: number | string = 0;
+    if (orderPrice !== 0) exchangeRate = orderPrice;
+    else if (orderQuantity !== 0) exchangeRate = orderAmount / orderQuantity;
+
+    // Map status roughly to P2P statuses used in the UI
+    const beStatus = String(order?.status ?? '');
+    let status: P2POrder['status'] = 'WAIT_CONFIRM';
+    if (beStatus === 'PENDING') status = 'PAYMENT_PENDING';
+    else if (beStatus === 'CONFIRMED') status = 'COMPLETED';
+    else if (beStatus === 'CANCELED') status = 'CANCELLED';
+
+    const mapped: P2POrder = {
+      orderId: String(order?.order_id ?? ''),
+      offerId: String(order?.offer_id ?? payload.offerId),
+      buyerWalletAddress: String(order?.wallet_address ?? ''),
+      sellerWalletAddress: String(offer?.wallet_address ?? ''),
+      amountMZD: orderQuantity,
+      amountVND: orderAmount,
+      exchangeRate,
+      status: status,
+      createdAt: String(order?.created_at ?? new Date().toISOString()),
+      expiresAt: String(order?.expires_at ?? ''),
+    };
+
+    return mapped;
   }
 
   // Create offer (from trading UI). When USE_P2P_MOCK is false this will call the
