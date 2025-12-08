@@ -21,7 +21,7 @@ func (t TransactionExtraInfoType) String() string {
 
 var strToType = map[string]TransactionExtraInfoType{
 	"dong-give-coffee":  TransactionExtraInfoDongGiveCoffee,
-	"give-coffee":       TransactionExtraInfoGiveCoffee,
+	"give_coffee":       TransactionExtraInfoGiveCoffee,
 	"donation-campaign": TransactionExtraInfoDonationCampaign,
 	"withdraw-campaign": TransactionExtraInfoWithdrawCampaign,
 	"lucky-money":       TransactionExtraInfoLuckyMoney,
