@@ -26,12 +26,6 @@ interface CreateDonationUpdateContextType {
   handleSubmit: () => void;
 }
 
-interface TransferResult {
-  success: boolean;
-  txHash?: string;
-  error?: string;
-}
-
 function validateForm(form: DonationUpdateForm): DonationUpdateValidation {
   const trimmedTitle = String(form.title ?? '').trim();
   const isTitleValid = trimmedTitle.length > 0 && !/^\d+$/.test(trimmedTitle);
@@ -85,7 +79,7 @@ export function UpdateDonationProvider({ campaign, children }: CreateDonationUpd
       const updateResponse = await mmnClient.sendTransactionByAddress({
         sender: user?.walletAddress || '',
         recipient: recipientAddress,
-        amount: '1000000', //hard coded
+        amount: '1000000', //hard coded value
         nonce: Number(nonceResponse.nonce) + 1,
         publicKey: publicKey || '',
         privateKey: privateKey || '',
