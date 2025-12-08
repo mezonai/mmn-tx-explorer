@@ -34,3 +34,8 @@ logging:
   file_path: "logs/socket-service.log"  # required when output=file
   max_size: 100           # max size in MB before rotation (default: 100)
   max_age: 30             # max age in days to retain old logs (default: 30)
+
+websocket:
+  write_wait: 10          # seconds
+  pong_wait: 60           # seconds
+  ping_period: 50         # seconds
