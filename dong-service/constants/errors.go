@@ -1,5 +1,7 @@
 package constants
 
+import "errors"
+
 // Error messages for the application
 // Centralized error messages for consistency and easy maintenance
 
@@ -20,10 +22,12 @@ const (
 	ErrInvalidCampaignID  = "Invalid campaign ID"
 	ErrInvalidStatus      = "Invalid status"
 	ErrNoFieldsToUpdate   = "No fields to update"
-	ErrInvalidDateFormat  = "Invalid date format"
+	ErrInvalidDateFormat  = "Invalid date format : must be YYYY-MM-DD"
 	ErrEndDateInPast      = "End date must be in the future"
-	ErrInvalidGoalAmount  = "Goal amount must be greater than 0"
+	ErrInvalidGoalAmount  = "Goal must be greater than 0 and less than or equal to 100 billion"
 	ErrInvalidURL         = "Invalid URL format"
+	ErrInternalServer       = "Internal server error"
+	ErrMissingRedEnvelopeID = "Red Envelope ID must not null"
 )
 
 // Database Errors
@@ -39,15 +43,27 @@ const (
 	ErrCampaignNotFound                = "Donation campaign not found"
 	ErrDatabaseConnection              = "Database connection error"
 	ErrDatabaseQuery                   = "Database query error"
+	ErrFailedToCheckRedEnvelope        = "Failed to check red envelope"
+	ErrFailedToCreatedRedEnvelope      = "Failed to create red envelope"
+	ErrFailedToGetRedEnvelope          = "Failed to get red envelope"
+	ErrFailedToGetRedEnvelopeStats     = "Failed to get red envelope stats"
+	ErrFailedToGetRedEnvelopes         = "Failed to get red envelopes"
+	ErrFailedToCountRedEnvelopes       = "Failed to get count of red envelopes"
+	ErrFailedToUpdateRedEnvelopeStatus = "Failed to update red envelope status"
+	ErrFailedToGetRedEnvelopeInfo      = "Failed to retrieve red envelope info"
+	ErrFailedToCloseRedEnvelope        = "Failed to close red envelope"
+	ErrFailedToClaimAmount             = "Failed to claim amount"
+	ErrFailedToClaim                   = "Failed to claim red envelope"
 )
 
 // Business Logic Errors
 const (
-	ErrCampaignAlreadyActive = "Campaign is already active"
-	ErrCampaignAlreadyClosed = "Campaign is already closed"
-	ErrCannotActivateClosed  = "Cannot activate a closed campaign"
-	ErrCannotUpdateClosed    = "Cannot update a closed campaign"
-	ErrCampaignExpired       = "Campaign has expired"
+	ErrCampaignAlreadyActive       = "Campaign is already active"
+	ErrCampaignAlreadyClosed       = "Campaign is already closed"
+	ErrCannotActivateClosed        = "Cannot activate a closed campaign"
+	ErrCannotUpdateClosed          = "Cannot update a closed campaign"
+	ErrCampaignExpired             = "Campaign has expired"
+	ErrUserIDNotMatchRedEnvelopeID = "User id does not match owner of red envelope"
 )
 
 // Success Messages
@@ -60,6 +76,13 @@ const (
 	MsgDraftCampaignDeleted        = "Campaign deleted successfully"
 	MsgCampaignRetrieved           = "Campaign retrieved successfully"
 	MsgCampaignsRetrieved          = "Campaigns retrieved successfully"
+	MsgRedEnvelopeStatsRetrieved   = "Red envelope statistics retrieved successfully"
+	MsgRedEnvelopeCreated          = "Red envelope created successfully"
+	MsgRedEnvelopeUpdated          = "Red envelope status updated successfully"
+	MsgRedEnvelopeRetrieved        = "Red envelope retrieved successfully"
+	MsgRedEnvelopeClosed           = "Red envelope closed successfully"
+	MsgRedEnvelopeAmountClaimed    = "Red envelope amount claimed successfully"
+	MsgRedEnvelopeClaimed          = "Red envelope claimed successfully"
 )
 
 // Logout Messages
@@ -72,4 +95,10 @@ const (
 	MsgLogoutSuccessButTokenInvalidTokenIDNotFound        = "Logout successful but token invalid: token ID not found in whitelist"
 	MsgLogoutSuccessButTokenInvalidFailedToDelete         = "Logout successful but token invalid: failed to delete refresh token"
 	MsgLogoutSuccessTokenDeleted                          = "Logout successful, token deleted from whitelist"
+)
+
+var (
+	ErrAlreadyClaimed = errors.New("you have already claimed this lucky money")
+	ErrLimitReached   = errors.New("red envelope claims limit reached")
+	ErrQueueNotInit   = errors.New("queue not initialized or expired")
 )

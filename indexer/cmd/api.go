@@ -22,6 +22,9 @@ import (
 	// Import the generated Swagger docs
 	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	_ "github.com/mezonai/mmn-tx-explorer/indexer/docs"
+
+	// Import pprof
+	_ "net/http/pprof"
 )
 
 var (
@@ -124,6 +127,8 @@ func RunAPI(cmd *cobra.Command, args []string) {
 		}
 	}()
 
+	registerPprof()
+
 	// Listen for the interrupt signal.
 	<-ctx.Done()
 
@@ -141,4 +146,12 @@ func RunAPI(cmd *cobra.Command, args []string) {
 	}
 
 	log.Info().Msg("API server exiting")
+}
+
+func registerPprof() {
+	go func() {
+		if err := http.ListenAndServe(":6060", nil); err != nil && err != http.ErrServerClosed {
+			log.Fatal().Err(err).Msg("pprof server failed")
+		}
+	}()
 }

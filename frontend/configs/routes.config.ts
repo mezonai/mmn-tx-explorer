@@ -1,3 +1,5 @@
+import { UUID } from "crypto";
+
 export const ROUTES = {
   BLOCK: (number: number, queryParams?: string) => `/blocks/${number}${queryParams ? `?${queryParams}` : ''}`,
   BLOCKS: '/blocks',
@@ -8,7 +10,9 @@ export const ROUTES = {
   DEVELOPER: '/developer',
   DONATION_CAMPAIGN: '/donation-campaign',
   HOME: '/',
-  LI_XI: '/li-xi',
+  LUCKY_MONEY: '/lucky-money',
+  CREATE_LUCKY_MONEY: '/lucky-money/create',
+  LUCKY_MONEY_DETAIL: (id: UUID) => `/lucky-money/${id}`,
   MEZON_GAME: '/mezon-game',
   PENDING_TRANSACTION: (hash: string) => `/transactions/pending/${hash}`,
   PROFILE: '/profile',
