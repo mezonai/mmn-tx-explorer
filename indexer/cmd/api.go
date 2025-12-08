@@ -81,7 +81,7 @@ func RunAPI(cmd *cobra.Command, args []string) {
 	root := r.Group("/:chainId")
 
 	root.Use(middleware.Authorization)
-	root.Use(middleware.Cors)
+	root.Use(middleware.NewCORS())
 
 	// wildcard queries
 	root.GET("/transactions", handlers.GetTransactions)
