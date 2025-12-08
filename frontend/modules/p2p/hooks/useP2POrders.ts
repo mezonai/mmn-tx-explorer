@@ -64,23 +64,30 @@ export const useP2POrders = () => {
       }
 
       // Check if this order is for the current user (seller)
-      // Seller received a new order
-      const newOrder: P2POrder = {
-        orderId: (orderData.orderId || orderData.order_id) as string,
-        offerId: (orderData.offerId || orderData.offer_id) as string,
-        amountMZD: (orderData.amountMZD || orderData.amount_mzd) as number,
-        amountVND: (orderData.amountVND || orderData.amount_vnd) as number,
-        exchangeRate: (orderData.exchangeRate || orderData.exchange_rate) as number,
-        status: (orderData.status || 'PAYMENT_PENDING') as P2POrder['status'],
-        createdAt: (orderData.createdAt || orderData.created_at || new Date().toISOString()) as string,
-        expiresAt: (orderData.expiresAt ||
-          orderData.expires_at ||
-          new Date(Date.now() + 15 * 60 * 1000).toISOString()) as string,
-      };
+      if (event.receive_address === user.walletAddress) {
+        // Seller received a new order
+        const newOrder: P2POrder = {
+          orderId: (orderData.orderId || orderData.order_id) as string,
+          offerId: (orderData.offerId || orderData.offer_id) as string,
+          buyerWalletAddress:
+            (orderData.buyerWalletAddress || orderData.buyer_wallet_address) as string | undefined || '',
+          sellerWalletAddress: event.receive_address || '',
+          amountMZD: (orderData.amountMZD || orderData.amount_mzd) as number,
+          amountVND: (orderData.amountVND || orderData.amount_vnd) as number,
+          exchangeRate: (orderData.exchangeRate || orderData.exchange_rate) as number,
+          status: (orderData.status || 'PAYMENT_PENDING') as P2POrder['status'],
+          createdAt:
+            (orderData.createdAt || orderData.created_at || new Date().toISOString()) as string,
+          expiresAt:
+            (orderData.expiresAt ||
+              orderData.expires_at ||
+              new Date(Date.now() + 15 * 60 * 1000).toISOString()) as string,
+        };
 
-      // Add new order to the beginning of the list
-      setOrders((prev) => [newOrder, ...prev]);
-      console.log('✅ New order added to list:', newOrder);
+        // Add new order to the beginning of the list
+        setOrders((prev) => [newOrder, ...prev]);
+        console.log('✅ New order added to list:', newOrder);
+      }
     };
 
     // Register event listener
@@ -89,6 +96,35 @@ export const useP2POrders = () => {
     // Cleanup listener on unmount or when user changes
     return () => {
       wsManager.off('CREATE_ORDER', handleCreateOrder);
+    };
+  }, [user?.walletAddress, wsManager]);
+
+  // Listen for ORDER_STATUS_UPDATED to keep My Orders in sync
+  useEffect(() => {
+    if (!user?.walletAddress || !wsManager) {
+      return;
+    }
+
+    const handleStatusUpdate = (event: WebSocketEvent) => {
+      if (event.type !== 'ORDER_STATUS_UPDATED') return;
+
+      const payload = event.payload as Record<string, unknown> | undefined;
+      const payloadOrderId = (payload?.['orderId'] || payload?.['order_id']) as string | undefined;
+      const statusRaw = payload?.['status'];
+      const status = typeof statusRaw === 'string' ? (statusRaw as P2POrder['status']) : undefined;
+
+      if (!payloadOrderId || !status) return;
+
+      // Update matching order in list
+      setOrders((prev) =>
+        prev.map((order) => (order.orderId === payloadOrderId ? { ...order, status } : order))
+      );
+    };
+
+    wsManager.on('ORDER_STATUS_UPDATED', handleStatusUpdate);
+
+    return () => {
+      wsManager.off('ORDER_STATUS_UPDATED', handleStatusUpdate);
     };
   }, [user?.walletAddress, wsManager]);
 
