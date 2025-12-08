@@ -14,6 +14,7 @@ type Config struct {
 	JWT          JWTConfig          `mapstructure:"jwt"`
 	Redis        RedisConfig        `mapstructure:"redis"`
 	Logging      logger.LogConfig   `mapstructure:"logging"`
+	WebSocket    WebSocketConfig    `mapstructure:"websocket"`
 }
 
 type ServerConfig struct {
@@ -46,6 +47,12 @@ type RedisConfig struct {
 	Username string `mapstructure:"username"`
 	Password string `mapstructure:"password"`
 	DB       int    `mapstructure:"db"`
+}
+
+type WebSocketConfig struct {
+	WriteWait  int `mapstructure:"write_wait"`  // in seconds
+	PongWait   int `mapstructure:"pong_wait"`   // in seconds
+	PingPeriod int `mapstructure:"ping_period"` // in seconds
 }
 
 func LoadConfig(cfgFile string) (*Config, error) {
