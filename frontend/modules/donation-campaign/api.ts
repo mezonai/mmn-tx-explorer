@@ -75,6 +75,14 @@ export class DonationCampaignService {
   static async deleteCampaign(id: string): Promise<void> {
     await apiDongClient.delete(DONATION_ENDPOINTS.DELETE_CAMPAIGN(id));
   }
+  
+    static async getUserDonations(params: { page?: number; limit?: number } = {}) {
+    const { data } = await apiDongClient.get(DONATION_ENDPOINTS.MY_DONATIONS, {
+      meta: { authOptional: false },
+      params,
+    } as InternalAxiosRequestConfig);
+    return data;
+  }
 
   static async closeCampaign(id: string): Promise<any> {
     const { data } = await apiDongClient.patch(DONATION_ENDPOINTS.CLOSE_CAMPAIGN(id));
