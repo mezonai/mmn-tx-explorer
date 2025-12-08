@@ -190,7 +190,7 @@ api:
   # CORS configuration for API
   cors:
     allowedOrigins:
-      - "http://localhost:8080"
+      - "http://localhost:3000"
 
 # Publisher configuration - Settings for publishing data to message queues
 publisher:

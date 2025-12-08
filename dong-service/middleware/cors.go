@@ -14,8 +14,8 @@ func CORS(corsConfig *config.CORSConfig) gin.HandlerFunc {
 
 		allowedOrigin := ""
 		if origin != "" {
-			for _, allowedDomain := range corsConfig.AllowedDomains {
-				if strings.EqualFold(origin, allowedDomain) {
+			for _, allowedOriginCfg := range corsConfig.AllowOrigins {
+				if strings.EqualFold(origin, allowedOriginCfg) {
 					allowedOrigin = origin
 					break
 				}
@@ -33,7 +33,7 @@ func CORS(corsConfig *config.CORSConfig) gin.HandlerFunc {
 			if allowedOrigin != "" {
 				c.AbortWithStatus(204)
 			} else {
-				c.AbortWithStatus(403) 
+				c.AbortWithStatus(403)
 			}
 			return
 		}
@@ -41,7 +41,7 @@ func CORS(corsConfig *config.CORSConfig) gin.HandlerFunc {
 		if allowedOrigin != "" || origin == "" {
 			c.Next()
 		} else {
-			c.AbortWithStatus(403) 
+			c.AbortWithStatus(403)
 		}
 	}
 }
