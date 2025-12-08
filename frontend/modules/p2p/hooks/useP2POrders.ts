@@ -98,6 +98,35 @@ export const useP2POrders = () => {
     };
   }, [user?.walletAddress, wsManager]);
 
+  // Listen for ORDER_STATUS_UPDATED to keep My Orders in sync
+  useEffect(() => {
+    if (!user?.walletAddress || !wsManager) {
+      return;
+    }
+
+    const handleStatusUpdate = (event: WebSocketEvent) => {
+      if (event.type !== 'ORDER_STATUS_UPDATED') return;
+
+      const payload = event.payload as Record<string, unknown> | undefined;
+      const payloadOrderId = (payload?.['orderId'] || payload?.['order_id']) as string | undefined;
+      const statusRaw = payload?.['status'];
+      const status = typeof statusRaw === 'string' ? (statusRaw as P2POrder['status']) : undefined;
+
+      if (!payloadOrderId || !status) return;
+
+      // Update matching order in list
+      setOrders((prev) =>
+        prev.map((order) => (order.orderId === payloadOrderId ? { ...order, status } : order))
+      );
+    };
+
+    wsManager.on('ORDER_STATUS_UPDATED', handleStatusUpdate);
+
+    return () => {
+      wsManager.off('ORDER_STATUS_UPDATED', handleStatusUpdate);
+    };
+  }, [user?.walletAddress, wsManager]);
+
   const refetch = useCallback(() => {
     fetchOrders();
   }, [fetchOrders]);
