@@ -23,7 +23,7 @@ function getImages(update: IDonationFeed, onImageClick: (url: string) => void) {
       {update.extra_info.image_cids.map((img, idx) => (
         <img
           key={idx}
-          src={`http://${baseURL}/ipfs/${img}`}
+          src={`${baseURL}/ipfs/${img}`}
           alt={`Update Image ${idx + 1}`}
           className="h-40 w-full cursor-pointer rounded-md object-cover sm:h-32 md:h-24"
           onClick={() => onImageClick(img)}
@@ -83,7 +83,7 @@ export const UpdatePost = ({ update, isLatest = false, onImageClick }: UpdatePos
                             <span className="text-muted-foreground text-xs">
                               <ClientTimeDisplay timestamp={new Date(update.created_at).getTime()} />
                             </span>
-                            <span className="font-semibold">Current Version</span>
+                            <Chip variant='info' className="font-semibold text-xs">Current Version</Chip>
                           </div>
 
                           <p className="text-sm">{update.extra_info.description}</p>
@@ -92,7 +92,7 @@ export const UpdatePost = ({ update, isLatest = false, onImageClick }: UpdatePos
                               {update.extra_info.image_cids.map((cid, idx) => (
                                 <img
                                   key={idx}
-                                  src={`http://${baseURL}/ipfs/${cid}`}
+                                  src={`${baseURL}/ipfs/${cid}`}
                                   alt={`Version image ${idx + 1}`}
                                   className="h-20 w-20 cursor-pointer rounded object-cover"
                                   onClick={() => onImageClick(cid)}
@@ -118,7 +118,7 @@ export const UpdatePost = ({ update, isLatest = false, onImageClick }: UpdatePos
                               {update.extra_info.image_cids.map((cid, idx) => (
                                 <img
                                   key={idx}
-                                  src={`http://${baseURL}/ipfs/${cid}`}
+                                  src={`${baseURL}/ipfs/${cid}`}
                                   alt={`Version image ${idx + 1}`}
                                   className="h-20 w-20 cursor-pointer rounded object-cover"
                                   onClick={() => onImageClick(cid)}

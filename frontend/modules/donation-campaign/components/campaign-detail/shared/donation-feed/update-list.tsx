@@ -30,7 +30,7 @@ export const UpdateList = ({ updates }: { updates: IDonationFeed[] }) => {
         <DialogContent className="flex h-fit max-h-[95vh] w-fit max-w-[95vw] flex-col items-center justify-center border-none bg-transparent p-4 shadow-none">
           {selectedImg && (
             <img
-              src={`http://${baseURL}/ipfs/${selectedImg}`}
+              src={`${baseURL}/ipfs/${selectedImg}`}
               alt="Full Preview"
               className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
             />
