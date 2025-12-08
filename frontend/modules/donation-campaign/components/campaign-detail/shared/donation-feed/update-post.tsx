@@ -8,6 +8,8 @@ import { ClientTimeDisplay } from '@/modules/transaction/components/transaction-
 import { TxnHashLink } from '@/modules/transaction/components/transaction-list/list/shared';
 import { Button } from '@/components/ui/button';
 import { baseURL } from '@/service';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useState } from 'react';
 
 interface UpdatePostProps {
   update: IDonationFeed;
@@ -32,10 +34,9 @@ function getImages(update: IDonationFeed, onImageClick: (url: string) => void) {
 }
 
 export const UpdatePost = ({ update, isLatest = false, onImageClick }: UpdatePostProps) => {
+  const [isVersionDialogOpen, setIsVersionDialogOpen] = useState(false);
   return (
-    <Card
-      className={`dark:bg-dark dark:bg-card border-muted-foreground/30 gap-4 rounded-3xl bg-white/90 shadow-sm`}
-    >
+    <Card className={`dark:bg-card border-muted-foreground/30 gap-4 rounded-3xl bg-white/90 shadow-sm`}>
       <div className="flex w-full flex-col justify-between gap-3 px-4 md:flex-row">
         <div className="flex flex-row flex-wrap gap-2">
           <Chip variant="brand" className="">
@@ -59,9 +60,88 @@ export const UpdatePost = ({ update, isLatest = false, onImageClick }: UpdatePos
             </span>
           </div>
         ) : (
+          //TODO: consider checking if the post has a parent hash to link to previous version
           <div className="text-muted-foreground flex flex-row gap-1 text-xs">
             <span className="inline-flex items-center gap-1">
-              <Button variant="link" className='text-xs text-muted-foreground p-0'>See previous version </Button>
+              <Dialog open={isVersionDialogOpen} onOpenChange={setIsVersionDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="link" className="text-muted-foreground p-0 text-xs">
+                    See previous version
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-h-[80vh] max-w-3xl overflow-y-auto [&::-webkit-scrollbar]:hidden">
+                  <DialogHeader>
+                    <DialogTitle className="text-primary">Update Version History</DialogTitle>
+                  </DialogHeader>
+                  <div className="bg-background space-y-4 py-4">
+                    <div className="text-muted-foreground text-sm">
+                      <p className="mb-4">This feature will show the version history of this update.</p>
+
+                      <div className="space-y-3">
+                        <div className="bg-card rounded-lg border p-4">
+                          <div className="mb-2 flex items-start justify-between">
+                            <span className="text-muted-foreground text-xs">
+                              <ClientTimeDisplay timestamp={new Date(update.created_at).getTime()} />
+                            </span>
+                            <span className="font-semibold">Current Version</span>
+                          </div>
+
+                          <p className="text-sm">{update.extra_info.description}</p>
+                          {update.extra_info.image_cids.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {update.extra_info.image_cids.map((cid, idx) => (
+                                <img
+                                  key={idx}
+                                  src={`http://${baseURL}/ipfs/${cid}`}
+                                  alt={`Version image ${idx + 1}`}
+                                  className="h-20 w-20 cursor-pointer rounded object-cover"
+                                  onClick={() => onImageClick(cid)}
+                                />
+                              ))}
+                            </div>
+                          )}
+                          <div className="mt-2 text-xs text-gray-500">
+                            TxHash:{' '}
+                            <TxnHashLink hash={update.tx_hash} isPending={false} className="text-brand-primary" />
+                          </div>
+                        </div>
+                        <div className="bg-card rounded-lg border p-4">
+                          <div className="mb-2 flex items-start justify-between">
+                            <span className="text-muted-foreground text-xs">
+                              <ClientTimeDisplay timestamp={new Date(update.created_at).getTime()} />
+                            </span>
+                          </div>
+
+                          <p className="text-sm">{update.extra_info.description}</p>
+                          {update.extra_info.image_cids.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {update.extra_info.image_cids.map((cid, idx) => (
+                                <img
+                                  key={idx}
+                                  src={`http://${baseURL}/ipfs/${cid}`}
+                                  alt={`Version image ${idx + 1}`}
+                                  className="h-20 w-20 cursor-pointer rounded object-cover"
+                                  onClick={() => onImageClick(cid)}
+                                />
+                              ))}
+                            </div>
+                          )}
+                          <div className="mt-2 text-xs text-gray-500">
+                            TxHash:{' '}
+                            <TxnHashLink hash={update.tx_hash} isPending={false} className="text-brand-primary" />
+                          </div>
+                        </div>
+
+                        <div className="rounded-lg border p-4 opacity-50">
+                          <p className="text-center text-xs text-gray-500">
+                            Previous versions will appear here when available
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </span>
           </div>
         )}

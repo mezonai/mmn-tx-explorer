@@ -27,11 +27,15 @@ export const UpdateList = ({ updates }: { updates: IDonationFeed[] }) => {
         ))}
       </div>
       <Dialog open={open} onOpenChange={handleDialogOpenChange}>
-        <DialogContent className="flex max-h-[95vh] max-w-[95vw] flex-col items-center justify-center bg-transparent p-0 shadow-none">
+        <DialogContent className="flex h-fit max-h-[95vh] w-fit max-w-[95vw] flex-col items-center justify-center border-none bg-transparent p-4 shadow-none">
           {selectedImg && (
-            <img src={`http://${baseURL}/ipfs/${selectedImg}`} alt="Full Preview" className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain" />
+            <img
+              src={`http://${baseURL}/ipfs/${selectedImg}`}
+              alt="Full Preview"
+              className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
+            />
           )}
-          <DialogTitle></DialogTitle>
+          <DialogTitle className="sr-only">Image Preview</DialogTitle>
         </DialogContent>
       </Dialog>
     </>

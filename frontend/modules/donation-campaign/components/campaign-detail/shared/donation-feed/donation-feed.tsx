@@ -12,13 +12,11 @@ import { useUser } from '@/providers';
 
 export const DonationFeed = ({ campaign }: { campaign: DonationCampaign }) => {
   const { user } = useUser();
-  // const { donationFeed, isLoading, error } = useDonationFeed(campaign.donation_wallet);
-  
   // Using mock data for now
   // const donationFeed = mockDonationFeed;
   const isLoading = false;
   const error = true;
-  
+
   return (
     <div className="w-full space-y-6">
       <div className="flex w-full flex-row justify-between">
@@ -51,7 +49,7 @@ export const DonationFeed = ({ campaign }: { campaign: DonationCampaign }) => {
           </p>
         </div>
       )}
-      
+
       {/* <UpdateList updates={donationFeed} /> */}
     </div>
   );
