@@ -20,9 +20,11 @@ interface CreateOfferModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit?: (data: CreateOfferFormData) => void;
+  isLoading?: boolean;
+  error?: string | null;
 }
 
-export const CreateOfferModal = ({ open, onOpenChange, onSubmit }: CreateOfferModalProps) => {
+export const CreateOfferModal = ({ open, onOpenChange, onSubmit, isLoading = false, error }: CreateOfferModalProps) => {
   const [formData, setFormData] = useState<CreateOfferFormData>({
     tradeType: 'SELL',
     amountMZD: 0,
@@ -132,6 +134,12 @@ export const CreateOfferModal = ({ open, onOpenChange, onSubmit }: CreateOfferMo
           </DialogDescription> */}
         </DialogHeader>
 
+        {error && (
+          <div className="mx-6 mt-4 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
+            {error}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 gap-8 p-6 lg:grid-cols-3">
           <TradeTypeSection
             tradeType={formData.tradeType}
@@ -172,10 +180,11 @@ export const CreateOfferModal = ({ open, onOpenChange, onSubmit }: CreateOfferMo
           </Button>
           <Button
             onClick={handleSubmit}
-            className="bg-brand-primary flex items-center gap-2 px-8 py-2 text-sm font-bold text-white shadow-lg shadow-violet-900/20 transition hover:bg-violet-600"
+            disabled={isLoading}
+            className="bg-brand-primary flex items-center gap-2 px-8 py-2 text-sm font-bold text-white shadow-lg shadow-violet-900/20 transition hover:bg-violet-600 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Send className="h-3 w-3" />
-            Create Offer
+            {isLoading ? 'Đang tạo...' : 'Create Offer'}
           </Button>
         </DialogFooter>
       </DialogContent>
