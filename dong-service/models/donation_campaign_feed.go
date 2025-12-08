@@ -26,3 +26,13 @@ type DonationCampaignFeedResponse struct {
 	ExtraInfo      FeedExtraInfo `json:"extra_info"`
 	CreatedAt      time.Time `json:"created_at"`
 }
+
+type UploadedImageInfo struct {
+	FileName string `json:"file_name"`
+	FileCID  string `json:"file_cid"`
+}
+
+type UploadImageResponse struct {
+	FolderCID string              `json:"folder_cid"`
+	Files     []UploadedImageInfo `json:"files"`
+}

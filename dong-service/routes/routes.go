@@ -66,6 +66,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		campaignsPrivate.PATCH("/:id/activate", campaignHandler.ActivateCampaign)
 		campaignsPrivate.PATCH("/:id/close", campaignHandler.CloseCampaign)
 		campaignsPrivate.DELETE("/:id", campaignHandler.DeleteDraftCampaign)
+		campaignsPrivate.POST("/upload-image", campaignFeedHandler.UploadImage)
 
 		// Campaign routes (public)
 		campaignsPublic := v1.Group("/campaigns")

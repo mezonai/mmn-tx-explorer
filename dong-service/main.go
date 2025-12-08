@@ -80,6 +80,16 @@ func main() {
 		logger.Fatal().Err(err).Msg("Failed to initialize Redis whitelist")
 	}
 
+	if err := services.InitIPFSService(cfg.FilterImage.IPFSURL); err != nil {
+		logger.Fatal().Err(err).Msg("Failed to initialize IPFS service")
+	}
+    
+	if cfg.FilterImage.EnableVirusScan {
+		if err := services.InitClamAVService(cfg.FilterImage.VirusScanURL); err != nil {
+			logger.Fatal().Err(err).Msg("Failed to initialize ClamAV service")
+		}
+	}
+
 	logger.Info().Msg("Initializing Red Envelope Wallet Pool")
 	startupInit := services.NewStartupInitializer(cfg.Database.Schema)
 
