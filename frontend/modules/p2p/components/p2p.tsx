@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { APP_CONFIG } from '@/configs/app.config';
 import { P2PHeader } from './p2p-header';
 import { P2PFiltersComponent } from './p2p-filters';
 import { P2POffersTable } from './p2p-offers-table';
@@ -19,7 +20,7 @@ export const P2P = () => {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { data: offers, isLoading } = useP2POffers({ page: 0, limit: 10 });
+  const { data: offers, isLoading } = useP2POffers({ page: 0, limit: 10, symbol: APP_CONFIG.CHAIN_SYMBOL });
   const { createOffer, isLoading: isCreatingOffer } = useCreateOffer();
 
   const handleNewOfferClick = () => {
@@ -66,7 +67,7 @@ export const P2P = () => {
 
         <TabsContent value="offers" className="space-y-6">
           <P2PFiltersComponent onNewOfferClick={handleNewOfferClick} />
-          <P2POffersTable offers={offers?.data} isLoading={isLoading} onOfferClick={handleOfferClick} />
+          <P2POffersTable offers={offers ?? []} isLoading={isLoading} onOfferClick={handleOfferClick} />
         </TabsContent>
 
         <TabsContent value="orders" className="space-y-6">

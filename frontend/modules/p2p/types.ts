@@ -25,6 +25,9 @@ export interface P2POffer {
 export interface IP2POfferListParams {
   page: number;
   limit: number;
+  symbol?: string;
+  amount?: number;
+  currency?: string;
   rate?: number;
   totalAmountFrom?: number;
   totalAmountTo?: number;

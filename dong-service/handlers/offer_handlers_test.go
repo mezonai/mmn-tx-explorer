@@ -49,6 +49,17 @@ func (f *fakeOfferService) ListOffers(ctx context.Context, minPrice *string, max
 		{OfferID: 2, Side: models.OfferSideSell, Symbol: constants.ChainSymbol, Price: 2000},
 	}
 
+	// if a symbol filter provided, accept either the canonical ChainSymbol or the alias "MZD"
+	if symbol != nil && strings.TrimSpace(*symbol) != "" {
+		s := strings.TrimSpace(*symbol)
+		if strings.EqualFold(s, "MZD") {
+			s = constants.ChainSymbol
+		}
+		if s != constants.ChainSymbol {
+			return []models.Offer{}, nil
+		}
+	}
+
 	// default return all
 	if pagination == nil {
 		return all, nil
@@ -267,5 +278,59 @@ func TestGetOfferDetailHandler_Success(t *testing.T) {
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected status 200 OK, got %d, body=%s", w.Code, w.Body.String())
+	}
+}
+
+func TestListOffersHandler_SymbolAlias(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	handler := NewOfferHandler(&fakeOfferService{})
+
+	// Request using alias MZD
+	req1 := httptest.NewRequest(http.MethodGet, "/api/v1/offers?page=0&limit=10&symbol=MZD", nil)
+	w1 := httptest.NewRecorder()
+	c1, _ := gin.CreateTestContext(w1)
+	c1.Request = req1
+	handler.ListOffers(c1)
+
+	if w1.Code != http.StatusOK {
+		t.Fatalf("expected status 200 OK for symbol=MZD, got %d, body=%s", w1.Code, w1.Body.String())
+	}
+
+	var r1 map[string]any
+	if err := json.Unmarshal(w1.Body.Bytes(), &r1); err != nil {
+		t.Fatalf("failed to unmarshal response1: %v", err)
+	}
+
+	// Request using canonical symbol
+	req2 := httptest.NewRequest(http.MethodGet, "/api/v1/offers?page=0&limit=10&symbol="+constants.ChainSymbol, nil)
+	w2 := httptest.NewRecorder()
+	c2, _ := gin.CreateTestContext(w2)
+	c2.Request = req2
+	handler.ListOffers(c2)
+
+	if w2.Code != http.StatusOK {
+		t.Fatalf("expected status 200 OK for symbol=canonical, got %d, body=%s", w2.Code, w2.Body.String())
+	}
+
+	var r2 map[string]any
+	if err := json.Unmarshal(w2.Body.Bytes(), &r2); err != nil {
+		t.Fatalf("failed to unmarshal response2: %v", err)
+	}
+
+	d1, ok1 := r1["data"].([]any)
+	d2, ok2 := r2["data"].([]any)
+	if !ok1 || !ok2 {
+		t.Fatalf("expected data array in both responses")
+	}
+
+	if len(d1) != len(d2) {
+		t.Fatalf("expected equal data length for MZD and canonical; got %d vs %d", len(d1), len(d2))
+	}
+
+	// Compare serialized data for deep equality
+	b1, _ := json.Marshal(d1)
+	b2, _ := json.Marshal(d2)
+	if string(b1) != string(b2) {
+		t.Fatalf("expected identical response data for MZD and canonical, got different bodies:\n%s\nvs\n%s", string(b1), string(b2))
 	}
 }

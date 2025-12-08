@@ -136,6 +136,21 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		offer.PriceType = *req.PriceType
 	}
 
+	// Determine price_rate: if price_type is FIXED => rate = 1. Otherwise use provided rate or default to 1.
+	var priceRateStr *string
+	if req.PriceRate != nil && *req.PriceRate != "" {
+		priceRateStr = req.PriceRate
+	}
+	if offer.PriceType == constants.PriceTypeFixed {
+		v := "1"
+		priceRateStr = &v
+	}
+	if priceRateStr == nil {
+		v := "1"
+		priceRateStr = &v
+	}
+	offer.PriceRate = priceRateStr
+
 	if err := s.repo.CreateOffer(ctx, offer, tx); err != nil {
 		_ = tx.Rollback()
 		return nil, err

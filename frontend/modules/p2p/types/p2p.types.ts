@@ -32,8 +32,8 @@ export interface CreateOfferFormData {
   amountMZD: number | string; // Số MZD muốn bán
   exchangeRate: number | string; // Tỉ giá VND/MZD (ví dụ: 0.8 = 1 MZD = 0.8 VND)
   limit: {
-    min: number; // Số MZD tối thiểu cho mỗi giao dịch
-    max: number; // Số MZD tối đa cho mỗi giao dịch
+    min: number | string; // Số MZD tối thiểu cho mỗi giao dịch
+    max: number | string; // Số MZD tối đa cho mỗi giao dịch
   };
   bank: BankOption;
   accountNumber: string; // Số tài khoản ngân hàng

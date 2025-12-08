@@ -3,10 +3,16 @@
 // - Later, when BE is wired, we can switch USE_P2P_MOCK to false and
 //   use apiDongClient similarly to donation-campaign module.
 
-import { P2POffer, P2POrder, TradeType } from './types/p2p.types';
+import { P2POffer, P2POrder, CreateOfferFormData, BankOption } from './types/p2p.types';
+import { APP_CONFIG } from '@/configs/app.config';
+import { IP2POfferListParams } from './types';
+import { safeJsonParse } from '@/utils';
+import { OfferService } from '@/modules/offer/api';
+import { ICreateOfferRequest, OfferSide } from '@/modules/offer/types';
 // import { apiDongClient } from '@/service';
 
-const USE_P2P_MOCK = true;
+// Use real backend by default. Set to `true` only for local mock testing.
+const USE_P2P_MOCK = false;
 
 const delay = (ms: number) =>
   new Promise((resolve) => {
@@ -70,33 +76,87 @@ const mapRawOfferToP2POffer = (raw: RawOffer): P2POffer => ({
   transferCode: raw.transferCode,
 });
 
+// Helpers
+function toNumberSafe(v: unknown): number {
+  if (typeof v === 'number') return v;
+  if (typeof v === 'string') {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  }
+  return 0;
+}
+
+function normalizeBank(v: unknown): string {
+  const allowed = ['MB', 'VCB', 'TCB', 'ACB', 'TPBANK', 'VIETCOMBANK'];
+  if (typeof v === 'string' && allowed.includes(v)) return v;
+  return 'MB';
+}
+
 const mockOrders: P2POrder[] = [];
 
 const generateOrderId = () => `order_${Date.now()}`;
 
 export class P2PService {
-  static async getOffers(params: { tradeType?: TradeType; amount?: number; currency?: string }): Promise<P2POffer[]> {
+  static async getOffers(params?: IP2POfferListParams): Promise<P2POffer[]> {
     if (USE_P2P_MOCK) {
       await delay(400);
 
       let offers = mockRawOffers.slice();
 
-      if (params.amount) {
-        offers = offers.filter(
-          (offer) =>
-            params.amount! >= offer.limit.min && params.amount! <= offer.limit.max && params.amount! <= offer.available
-        );
+      if (params?.amount) {
+        offers = offers.filter((offer) => {
+          const min = Number(offer.limit.min);
+          const max = Number(offer.limit.max);
+          const available = Number(offer.available);
+          return (params!.amount ?? 0) >= min && (params!.amount ?? 0) <= max && (params!.amount ?? 0) <= available;
+        });
       }
 
       return offers.map(mapRawOfferToP2POffer);
     }
 
-    // const { data } = await apiDongClient.get<{ offers: RawOffer[] }>(P2P_ENDPOINTS.OFFERS, {
-    //   params,
-    // });
-    // return data.offers.map(mapRawOfferToP2POffer);
+    // Map UI params -> backend offer list params
+    const beParams: Record<string, unknown> = {};
+    // pagination params
+    if (params?.page !== undefined) beParams.page = params.page;
+    if (params?.limit !== undefined) beParams.limit = params.limit;
+    // symbol / currency
+    // prefer explicit symbol param; fallback to currency or the configured chain symbol
+    beParams.symbol = params?.symbol ?? params?.currency ?? APP_CONFIG.CHAIN_SYMBOL;
+    // numeric filters
+    if (params?.rate !== undefined) beParams.rate = params.rate;
+    if (params?.totalAmountFrom !== undefined) beParams.min_price = String(params.totalAmountFrom);
+    if (params?.totalAmountTo !== undefined) beParams.max_price = String(params.totalAmountTo);
 
-    throw new Error('P2P real API not implemented yet');
+    // call shared offer API
+    const offers = await OfferService.listOffers(beParams);
+
+    // map IOffer -> P2POffer expected by UI
+    return offers.map((o) => {
+      const parsedMeta =
+        typeof o.metadata === 'string'
+          ? safeJsonParse<Record<string, unknown>>(o.metadata)
+          : (o.metadata as Record<string, unknown> | undefined);
+      return {
+        offerId: String(o.offer_id),
+        sellerWalletAddress: o.wallet_address ?? '0xUnknown',
+        totalMZD: toNumberSafe(o.quantity ?? o.total_quantity ?? 0),
+        available: toNumberSafe(o.quantity ?? o.total_quantity ?? 0),
+        limit: {
+          min: toNumberSafe(o.limit?.min),
+          max: toNumberSafe(o.limit?.max),
+        },
+        exchangeRate: Number(o.price_rate ?? o.rate ?? 1),
+        bankInfo:
+          parsedMeta && typeof parsedMeta === 'object'
+            ? {
+                bank: normalizeBank(parsedMeta?.bank) as unknown as BankOption,
+                accountNumber: String(parsedMeta?.account_number ?? ''),
+                accountName: String(parsedMeta?.account_name ?? ''),
+              }
+            : undefined,
+      } as P2POffer;
+    });
   }
 
   static async getOfferById(offerId: string): Promise<P2POffer> {
@@ -109,10 +169,31 @@ export class P2PService {
       return mapRawOfferToP2POffer(raw);
     }
 
-    // const { data } = await apiDongClient.get<{ data: RawOffer }>(P2P_ENDPOINTS.OFFER_BY_ID(offerId));
-    // return mapRawOfferToP2POffer(data.data);
-
-    throw new Error('P2P real API not implemented yet');
+    // Real API - fetch via OfferService
+    const o = await OfferService.getOfferById(offerId);
+    const parsedMeta =
+      typeof o.metadata === 'string'
+        ? safeJsonParse<Record<string, unknown>>(o.metadata)
+        : (o.metadata as Record<string, unknown> | undefined);
+    return {
+      offerId: String(o.offer_id),
+      sellerWalletAddress: o.wallet_address ?? '0xUnknown',
+      totalMZD: Number(o.quantity ?? o.total_quantity ?? 0),
+      available: Number(o.quantity ?? o.total_quantity ?? 0),
+      limit: {
+        min: toNumberSafe(o.limit?.min),
+        max: toNumberSafe(o.limit?.max),
+      },
+      exchangeRate: Number(o.price_rate ?? o.rate ?? 1),
+      bankInfo:
+        parsedMeta && typeof parsedMeta === 'object'
+          ? {
+              bank: normalizeBank(parsedMeta?.bank) as unknown as BankOption,
+              accountNumber: String(parsedMeta?.account_number ?? ''),
+              accountName: String(parsedMeta?.account_name ?? ''),
+            }
+          : undefined,
+    } as P2POffer;
   }
 
   static async createOrder(payload: { offerId: string; amountMZD: number; amountVND?: number }): Promise<P2POrder> {
@@ -126,12 +207,12 @@ export class P2PService {
 
       const { amountMZD } = payload;
 
-      if (amountMZD < raw.limit.min || amountMZD > raw.limit.max || amountMZD > raw.available) {
+      if (amountMZD < Number(raw.limit.min) || amountMZD > Number(raw.limit.max) || amountMZD > Number(raw.available)) {
         throw new Error('Invalid amountMZD for this offer');
       }
 
       const exchangeRate = raw.exchangeRate;
-      const amountVND = payload.amountVND ?? amountMZD * exchangeRate;
+      const amountVND = payload.amountVND ?? amountMZD * Number(exchangeRate);
 
       const orderId = generateOrderId();
       const mockBuyerWallet = '0xBuyerWallet000000000000000000000000000001';
@@ -151,7 +232,7 @@ export class P2PService {
 
       mockOrders.push(newOrder);
 
-      raw.available = Math.max(0, raw.available - amountMZD);
+      raw.available = Math.max(0, Number(raw.available) - amountMZD);
 
       return newOrder;
     }
@@ -160,6 +241,86 @@ export class P2PService {
     // return data.data;
 
     throw new Error('P2P real API not implemented yet');
+  }
+
+  // Create offer (from trading UI). When USE_P2P_MOCK is false this will call the
+  // real OfferService.createOffer (mapped to the BE CreateOfferRequest shape).
+  static async createOffer(payload: CreateOfferFormData): Promise<P2POffer> {
+    if (USE_P2P_MOCK) {
+      await delay(500);
+
+      // Minimal validation
+      if (!payload.tradeType) throw new Error('tradeType required');
+
+      const newId = `offer_${Date.now()}`;
+      const seller = '0xMockSeller0000000000000000000000000000000000';
+
+      const raw: RawOffer = {
+        offerId: newId,
+        sellerWalletAddress: seller,
+        totalMZD: Number(payload.amountMZD),
+        available: Number(payload.amountMZD),
+        limit: {
+          min: Number(payload.limit.min),
+          max: Number(payload.limit.max),
+        },
+        exchangeRate: Number(payload.exchangeRate),
+        bankInfo: {
+          bank: payload.bank,
+          accountNumber: payload.accountNumber,
+          accountName: '',
+        },
+        transferCode: `MZD ${Math.floor(Math.random() * 100000)}`,
+      };
+
+      mockRawOffers.unshift(raw);
+      return mapRawOfferToP2POffer(raw);
+    }
+
+    // Real API mapping: convert CreateOfferFormData -> ICreateOfferRequest expected by BE
+    const body: ICreateOfferRequest = {
+      side: payload.tradeType as OfferSide,
+      symbol: 'MZD',
+      quantity: String(payload.amountMZD),
+      // Use price_rate for the exchange rate (stringified) and mark price_type as FIXED
+      price_rate: String(payload.exchangeRate),
+      price_type: 'FIXED',
+      metadata: {
+        bank: payload.bank,
+        account_number: payload.accountNumber,
+      },
+      limit: {
+        min: String(payload.limit.min),
+        max: String(payload.limit.max),
+      },
+    } as unknown as ICreateOfferRequest;
+
+    // Call the shared OfferService that talks to the backend
+    const created = await OfferService.createOffer(body);
+
+    // Map backend offer -> P2POffer minimal mapping so callers still receive expected shape
+    const mapped: P2POffer = {
+      offerId: String(created.offer_id),
+      sellerWalletAddress: created.wallet_address ?? '0xUnknown',
+      totalMZD: Number(created.quantity ?? created.total_quantity ?? 0),
+      available: Number(created.quantity ?? created.total_quantity ?? 0),
+      limit: {
+        min: toNumberSafe(created.limit?.min),
+        max: toNumberSafe(created.limit?.max),
+      },
+      exchangeRate: Number(created.price_rate ?? created.rate ?? 1),
+      bankInfo: (() => {
+        if (!created.metadata || typeof created.metadata !== 'object') return undefined;
+        const md = created.metadata as Record<string, unknown>;
+        return {
+          bank: normalizeBank(md.bank) as unknown as BankOption,
+          accountNumber: typeof md.account_number === 'string' ? md.account_number : '',
+          accountName: typeof md.account_name === 'string' ? md.account_name : '',
+        };
+      })(),
+    };
+
+    return mapped;
   }
 
   static async getOrderById(orderId: string): Promise<P2POrder> {

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"dong-service/constants"
 	"dong-service/models"
 	"fmt"
 	"strings"
@@ -17,11 +18,21 @@ func NewOfferRepository(db *sql.DB, dongSchema string) *OfferRepository {
 	return &OfferRepository{db: db, dongSchema: dongSchema}
 }
 
+// containsIgnoreCase checks whether a slice contains a string, case-insensitive.
+func containsIgnoreCase(slice []string, s string) bool {
+	for _, v := range slice {
+		if strings.EqualFold(v, s) {
+			return true
+		}
+	}
+	return false
+}
+
 // CreateOffer inserts a new offer into offers table using the provided tx.
 func (r *OfferRepository) CreateOffer(ctx context.Context, offer *models.Offer, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
 		INSERT INTO %s.offers (
-			intermediary_wallet_id, wallet_address, side, symbol, quantity, total_quantity, min_amount, max_amount, price, price_type, status, metadata, created_at, updated_at
+			intermediary_wallet_id, wallet_address, side, symbol, quantity, total_quantity, min_amount, max_amount, price, price_rate, price_type, status, metadata, created_at, updated_at
 		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW(),NOW())
         RETURNING offer_id, created_at, updated_at
     `, r.dongSchema)
@@ -50,6 +61,7 @@ func (r *OfferRepository) CreateOffer(ctx context.Context, offer *models.Offer, 
 		minToSave,
 		maxToSave,
 		offer.Price,
+		offer.PriceRate,
 		offer.PriceType,
 		offer.Status,
 		offer.Metadata,
@@ -105,9 +117,34 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 		argCount++
 	}
 	if symbol != nil && strings.TrimSpace(*symbol) != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("symbol = $%d", argCount))
-		args = append(args, strings.TrimSpace(*symbol))
-		argCount++
+		// Accept common aliases and perform case-insensitive match.
+		// If client passed an alias (e.g. 'MZD') we want to match rows that have
+		// either the alias or the canonical ChainSymbol stored in DB.
+		sym := strings.TrimSpace(*symbol)
+		vals := []string{sym}
+		if strings.EqualFold(sym, "MZD") && !strings.EqualFold(constants.ChainSymbol, sym) {
+			vals = append(vals, constants.ChainSymbol)
+		} else if strings.EqualFold(sym, constants.ChainSymbol) {
+			// include alias as well when client asks canonical
+			if !containsIgnoreCase(vals, "MZD") {
+				vals = append(vals, "MZD")
+			}
+		}
+
+		if len(vals) == 1 {
+			whereClauses = append(whereClauses, fmt.Sprintf("LOWER(symbol) = LOWER($%d)", argCount))
+			args = append(args, vals[0])
+			argCount++
+		} else {
+			// Build a compound OR clause for multiple possible matches
+			parts := []string{}
+			for i := range vals {
+				parts = append(parts, fmt.Sprintf("LOWER(symbol) = LOWER($%d)", argCount))
+				args = append(args, vals[i])
+				argCount++
+			}
+			whereClauses = append(whereClauses, "("+strings.Join(parts, " OR ")+")")
+		}
 	}
 	if rate != nil && strings.TrimSpace(*rate) != "" {
 		// filter by minimum price_rate
@@ -220,9 +257,29 @@ func (r *OfferRepository) CountOffers(ctx context.Context, minPrice *string, max
 		argCount++
 	}
 	if symbol != nil && strings.TrimSpace(*symbol) != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("symbol = $%d", argCount))
-		args = append(args, strings.TrimSpace(*symbol))
-		argCount++
+		sym := strings.TrimSpace(*symbol)
+		vals := []string{sym}
+		if strings.EqualFold(sym, "MZD") && !strings.EqualFold(constants.ChainSymbol, sym) {
+			vals = append(vals, constants.ChainSymbol)
+		} else if strings.EqualFold(sym, constants.ChainSymbol) {
+			if !containsIgnoreCase(vals, "MZD") {
+				vals = append(vals, "MZD")
+			}
+		}
+
+		if len(vals) == 1 {
+			whereClauses = append(whereClauses, fmt.Sprintf("LOWER(symbol) = LOWER($%d)", argCount))
+			args = append(args, vals[0])
+			argCount++
+		} else {
+			parts := []string{}
+			for i := range vals {
+				parts = append(parts, fmt.Sprintf("LOWER(symbol) = LOWER($%d)", argCount))
+				args = append(args, vals[i])
+				argCount++
+			}
+			whereClauses = append(whereClauses, "("+strings.Join(parts, " OR ")+")")
+		}
 	}
 	if rate != nil && strings.TrimSpace(*rate) != "" {
 		whereClauses = append(whereClauses, fmt.Sprintf("price_rate >= $%d", argCount))
