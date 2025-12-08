@@ -42,25 +42,26 @@ func (r *OfferRepository) CreateOffer(ctx context.Context, offer *models.Offer, 
 	).Scan(&offer.OfferID, &offer.CreatedAt, &offer.UpdatedAt)
 }
 
-// CreateOfferHistory inserts a new audit/event row for an offer using the provided tx.
-func (r *OfferRepository) CreateOfferHistory(ctx context.Context, h *models.OfferHistory, tx *sql.Tx) error {
-	query := fmt.Sprintf(`
-		INSERT INTO %s.offer_history (
-			offer_id, event_type, quantity, execution_price, source, metadata, created_at
-		) VALUES ($1,$2,$3,$4,$5,$6,NOW())
-		RETURNING history_id, created_at
-	`, r.dongSchema)
-
-	return tx.QueryRowContext(ctx, query, h.OfferID, h.EventType, h.Quantity, h.ExecutionPrice, h.Source, h.Metadata).Scan(&h.HistoryID, &h.CreatedAt)
-}
+// NOTE: Offer history functionality has been removed; history rows are no longer written here.
 
 // UpdateOfferStatus updates the status field for a given offer using the provided tx.
-func (r *OfferRepository) UpdateOfferStatus(ctx context.Context, offerID int64, status string, tx *sql.Tx) error {
-	query := fmt.Sprintf(`
-        UPDATE %s.offers
-        SET status = $1, updated_at = NOW()
-        WHERE offer_id = $2
-    `, r.dongSchema)
+func (r *OfferRepository) UpdateOfferStatus(ctx context.Context, offerID int64, status string, tx *sql.Tx, txHash *string) error {
+	var query string
+	if txHash != nil {
+		query = fmt.Sprintf(`
+		UPDATE %s.offers
+		SET status = $1, transaction_hash = $2, updated_at = NOW()
+		WHERE offer_id = $3
+	`, r.dongSchema)
+		_, err := tx.ExecContext(ctx, query, status, *txHash, offerID)
+		return err
+	}
+
+	query = fmt.Sprintf(`
+		UPDATE %s.offers
+		SET status = $1, updated_at = NOW()
+		WHERE offer_id = $2
+	`, r.dongSchema)
 
 	_, err := tx.ExecContext(ctx, query, status, offerID)
 	return err
@@ -164,6 +165,53 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 	}
 
 	return out, rows.Err()
+}
+
+// CountOffers returns the total number of offers matching optional filters
+func (r *OfferRepository) CountOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string) (int64, error) {
+	base := fmt.Sprintf(`SELECT COUNT(*) FROM %s.offers`, r.dongSchema)
+
+	whereClauses := []string{}
+	args := []any{}
+	argCount := 1
+
+	if minPrice != nil && *minPrice != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("price >= $%d", argCount))
+		args = append(args, *minPrice)
+		argCount++
+	}
+	if maxPrice != nil && *maxPrice != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("price <= $%d", argCount))
+		args = append(args, *maxPrice)
+		argCount++
+	}
+	if status != nil && strings.TrimSpace(*status) != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("status = $%d", argCount))
+		args = append(args, strings.TrimSpace(*status))
+		argCount++
+	}
+	if symbol != nil && strings.TrimSpace(*symbol) != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("symbol = $%d", argCount))
+		args = append(args, strings.TrimSpace(*symbol))
+		argCount++
+	}
+	if rate != nil && strings.TrimSpace(*rate) != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("price_rate >= $%d", argCount))
+		args = append(args, strings.TrimSpace(*rate))
+		argCount++
+	}
+
+	if len(whereClauses) > 0 {
+		base += " WHERE " + strings.Join(whereClauses, " AND ")
+	}
+
+	var total int64
+	err := r.db.QueryRowContext(ctx, base, args...).Scan(&total)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count offers: %w", err)
+	}
+
+	return total, nil
 }
 
 func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*models.Offer, error) {

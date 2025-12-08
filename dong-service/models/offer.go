@@ -29,18 +29,6 @@ type Offer struct {
 	UpdatedAt            time.Time `json:"updated_at" db:"updated_at"`
 }
 
-// OfferHistory represents an audit/event emitted for an offer
-type OfferHistory struct {
-	HistoryID      int64     `json:"history_id" db:"history_id"`
-	OfferID        int64     `json:"offer_id" db:"offer_id"`
-	EventType      string    `json:"event_type" db:"event_type"`
-	Quantity       string    `json:"quantity" db:"quantity"`
-	ExecutionPrice *string   `json:"execution_price,omitempty" db:"execution_price"`
-	Source         *string   `json:"source,omitempty" db:"source"`
-	Metadata       *string   `json:"metadata,omitempty" db:"metadata"`
-	CreatedAt      time.Time `json:"created_at" db:"created_at"`
-}
-
 // CreateOfferRequest is the expected payload for the API request to create an offer
 type CreateOfferRequest struct {
 	IntermediaryWalletID *int64                 `json:"intermediary_wallet_id,omitempty"`
@@ -48,6 +36,7 @@ type CreateOfferRequest struct {
 	Symbol               string                 `json:"symbol" binding:"required"`
 	Quantity             string                 `json:"quantity" binding:"required"`
 	Price                *string                `json:"price,omitempty"`
+	PriceRate            *string                `json:"price_rate,omitempty"`
 	PriceType            *string                `json:"price_type,omitempty"` // FIXED or FLOAT
 	PriceReference       *string                `json:"price_reference,omitempty"`
 	Spread               *string                `json:"spread,omitempty"`

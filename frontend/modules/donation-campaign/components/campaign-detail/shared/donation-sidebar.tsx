@@ -24,8 +24,8 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
 
   const CENTER_TEXT_LINES = ['Scan', 'Mezon'];
   const BRAND_COLOR = '#6941C6';
-  const fontVar = getComputedStyle(document.body).getPropertyValue('--font-inter')?.trim();
-  const interStack = fontVar ? `${fontVar}, Inter, sans-serif` : 'Inter, sans-serif';
+  // const fontVar = getComputedStyle(document.body).getPropertyValue('--font-inter')?.trim();
+  // const interStack = fontVar ? `${fontVar}, Inter, sans-serif` : 'Inter, sans-serif';
 
   const getQrImage = (callback: (blob: Blob | null) => void) => {
     const svg = qrRef.current?.querySelector('svg');
@@ -67,7 +67,7 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
         ctx.textAlign = 'center';
 
         ctx.fillStyle = BRAND_COLOR;
-        ctx.font = `bold 24px ${interStack}`;
+        // ctx.font = `bold 24px ${interStack}`;
         ctx.fillText('SCAN TO DONATE', width / 2, 80);
 
         ctx.fillStyle = '#111827';
@@ -84,7 +84,7 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
 
         const fontSize = 30;
         const lineHeight = 35;
-        ctx.font = `bold ${fontSize}px ${interStack}`;
+        // ctx.font = `bold ${fontSize}px ${interStack}`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
@@ -152,7 +152,7 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'alphabetic';
 
-        ctx.font = `bold 20px ${interStack}`;
+        // ctx.font = `bold 20px ${interStack}`;
         ctx.fillStyle = '#6B7280'; // Gray-500
         ctx.fillText('Wallet Address', width / 2, walletBoxY + 40);
 
@@ -164,7 +164,7 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
         const instructionsY = walletBoxY + 160;
 
         ctx.fillStyle = '#374151'; // Gray-700
-        ctx.font = `bold 28px ${interStack}`;
+        // ctx.font = `bold 28px ${interStack}`;
         ctx.fillText('How to Donate', width / 2, instructionsY);
 
         ctx.textAlign = 'left';
@@ -179,7 +179,7 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
         ctx.fillText('2. Scan the QR code above', stepX, stepStartY + stepGap);
         // Footer
         ctx.textAlign = 'center';
-        ctx.font = `16px ${interStack}`;
+        // ctx.font = `16px ${interStack}`;
         ctx.fillStyle = BRAND_COLOR;
         ctx.globalAlpha = 0.6;
         ctx.fillText('Powered by Mezon', width / 2, height - 30);

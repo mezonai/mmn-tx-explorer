@@ -130,6 +130,11 @@ func main() {
 	expiryRedEnvelopeTask := scheduler.CreateRedEnvelopeExpiryTask(expiryCheckInterval, cfg.Database.Schema, blockchainService)
 	schedulerInstance.AddTask(expiryRedEnvelopeTask)
 
+	// Cancel expired orders (run every 60 seconds)
+	ordersExpiryInterval := 60 * time.Second
+	cancelExpiredOrdersTask := scheduler.CreateCancelExpiredOrdersTask(ordersExpiryInterval, cfg.Database.Schema)
+	schedulerInstance.AddTask(cancelExpiredOrdersTask)
+
 	// Start scheduler
 	schedulerInstance.Start(ctx)
 

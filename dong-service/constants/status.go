@@ -28,6 +28,22 @@ const (
 	TransactionStatusFINALIZED int16 = 2
 )
 
+const ChainSymbol = "đồng"
+
+// Offer-related statuses and event types (renamed from Order)
+const (
+	TrandingOpen     = "OPEN"
+	TradingPending   = "PENDING"
+	TradingConfirmed = "CONFIRMED"
+	TradingCanceled  = "CANCELED"
+	TradingFailed    = "FAILED"
+)
+
+const (
+	PriceTypeFixed = "FIXED"
+	PriceTypeFloat = "FLOAT"
+)
+
 const (
 	RedEnvelopeStatusPending   = "PENDING"   // Awaiting transaction confirmation
 	RedEnvelopeStatusPublished = "PUBLISHED" // Active and claimable
@@ -52,6 +68,7 @@ const (
 const (
 	WalletTypeDefault     = "DEFAULT"
 	WalletTypeRedEnvelope = "LUCKY_MONEY"
+	WalletTypeOffer       = "OFFER"
 )
 
 // Red Envelope Configuration

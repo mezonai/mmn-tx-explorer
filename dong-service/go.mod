@@ -12,6 +12,7 @@ require (
 	github.com/mezonai/mmn-sdk/go-sdk v1.0.0
 	github.com/redis/go-redis/v9 v9.14.1
 	github.com/rs/zerolog v1.34.0
+ 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/spf13/viper v1.21.0
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0

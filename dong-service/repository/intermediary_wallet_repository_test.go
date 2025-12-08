@@ -186,3 +186,54 @@ func TestCreateWallet_TypeConstraintFallback(t *testing.T) {
 		t.Fatalf("unmet expectations: %v", err)
 	}
 }
+
+func TestGetWalletByID_Success(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to create sqlmock: %v", err)
+	}
+	defer db.Close()
+
+	repo := NewIntermediaryWalletRepository(db, "public")
+	now := time.Now()
+
+	rows := sqlmock.NewRows([]string{"id", "wallet_address", "encrypted_private_key", "status", "type", "created_at", "updated_at"}).
+		AddRow(int64(7), "addr7", "enc", constants.RedEnvelopeWalletStatusReady, constants.WalletTypeOffer, now, now)
+
+	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id, wallet_address, encrypted_private_key, status, type, created_at, updated_at FROM %s.intermediary_wallet", "public"))).
+		WithArgs(int64(7)).WillReturnRows(rows)
+
+	w, err := repo.GetWalletByID(context.Background(), 7)
+	if err != nil {
+		t.Fatalf("expected success, got err: %v", err)
+	}
+	if w.ID != 7 || w.WalletAddress != "addr7" {
+		t.Fatalf("unexpected wallet returned: %+v", w)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet expectations: %v", err)
+	}
+}
+
+func TestGetWalletByID_NotFound(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to create sqlmock: %v", err)
+	}
+	defer db.Close()
+
+	repo := NewIntermediaryWalletRepository(db, "public")
+
+	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id, wallet_address, encrypted_private_key, status, type, created_at, updated_at FROM %s.intermediary_wallet", "public"))).
+		WithArgs(int64(99)).WillReturnError(sql.ErrNoRows)
+
+	_, err = repo.GetWalletByID(context.Background(), 99)
+	if err == nil || err != sql.ErrNoRows {
+		t.Fatalf("expected sql.ErrNoRows, got: %v", err)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet expectations: %v", err)
+	}
+}

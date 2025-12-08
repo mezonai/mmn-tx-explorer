@@ -34,7 +34,7 @@ func NewOfferHandler(offerService services.IOfferService) *OfferHandler {
 // @Router /api/v1/offers [post]
 func (h *OfferHandler) CreateOffer(c *gin.Context) {
 	// Require authenticated wallet address for creating offers
-	walletAddr, ok := utils.GetAddressFromContext(c)
+	creatorAddr, ok := utils.GetAddressFromContext(c)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "authentication required"))
 		return
@@ -47,18 +47,36 @@ func (h *OfferHandler) CreateOffer(c *gin.Context) {
 		return
 	}
 
-	offer, err := h.offerService.CreateOffer(c.Request.Context(), &req, walletAddr)
+	offer, err := h.offerService.CreateOffer(c.Request.Context(), &req, creatorAddr)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to create offer")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to create offer: "+err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusCreated, models.SuccessResponseWithMessage("Offer created", offer))
+	// Also fetch intermediary wallet address (frontend needs it to fund the intermediary wallet)
+	var intermediaryAddr string
+	if offer != nil && offer.IntermediaryWalletID != 0 {
+		addr, err := h.offerService.GetIntermediaryWalletAddress(c.Request.Context(), offer.IntermediaryWalletID)
+		if err != nil {
+			// log and continue — frontend can still call GET /intermediary-wallets/:id as fallback
+			logger.Error().Err(err).Int64("wallet_id", offer.IntermediaryWalletID).Msg("failed to fetch intermediary wallet address")
+		} else {
+			intermediaryAddr = addr
+		}
+	}
+
+	// return composite response containing created offer and intermediary address if available
+	resp := map[string]any{"offer": offer}
+	if intermediaryAddr != "" {
+		resp["intermediary_wallet_address"] = intermediaryAddr
+	}
+
+	c.JSON(http.StatusCreated, models.SuccessResponseWithMessage("Offer created", resp))
 }
 
 // ConfirmOffer godoc
-// @Summary Confirm offer (sender transferred funds to intermediary wallet)
+// @Summary Confirm offer (mark an offer as confirmed)
 // @Description Mark an offer as CONFIRMED and write a CREATED_CONFIRMED history record
 // @Tags offers
 // @Accept json
@@ -179,7 +197,8 @@ func (h *OfferHandler) ListOffers(c *gin.Context) {
 
 	var totalPage int64
 	if pg.Limit > 0 {
-		totalPage = (total + int64(pg.Limit)) / int64(pg.Limit)
+		// compute ceil(total / limit)
+		totalPage = (total + int64(pg.Limit) - 1) / int64(pg.Limit)
 	} else {
 		totalPage = 0
 	}

@@ -1,21 +1,24 @@
 export type BankOption = 'MB' | 'VCB' | 'TCB' | 'ACB' | 'TPBANK' | 'VIETCOMBANK';
 
 export interface P2POffer {
-  offerId: string;
-  sellerWalletAddress: string;
-  totalMZD: number;
-  available: number;
-  limit: {
-    min: number;
-    max: number;
-  };
-  exchangeRate: number;
-  bankInfo?: {
+  offer_id: number;
+  intermediary_wallet_id?: number | null;
+  wallet_address?: string;
+  side: 'BUY' | 'SELL';
+  symbol: string;
+  quantity: number; // available quantity
+  total_quantity: number; // original total quantity
+  price: number; // price (int64 on backend)
+  price_rate?: string | null;
+  price_type?: string;
+  status?: string;
+  metadata?: {
     bank: BankOption;
-    accountNumber: string;
-    accountName: string;
-  };
-  transferCode?: string;
+    account_name: string;
+    account_number: string;
+  } | null;
+  created_at?: string;
+  updated_at?: string;
 }
 export interface IP2POfferListParams {
   page: number;

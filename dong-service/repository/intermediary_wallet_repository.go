@@ -451,3 +451,27 @@ func (r *IntermediaryWalletRepository) ReleaseWallet(ctx context.Context, wallet
 	_, err := r.db.ExecContext(ctx, query, constants.RedEnvelopeWalletStatusReady, constants.WalletTypeDefault, walletAddress)
 	return err
 }
+
+func (r *IntermediaryWalletRepository) GetWalletByID(ctx context.Context, id int64) (*models.IntermediaryWallet, error) {
+	query := fmt.Sprintf(`
+		SELECT id, wallet_address, encrypted_private_key, status, type, created_at, updated_at
+		FROM %s.intermediary_wallet
+		WHERE id = $1
+	`, r.dongSchema)
+
+	var wallet models.IntermediaryWallet
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&wallet.ID,
+		&wallet.WalletAddress,
+		&wallet.EncryptedPrivateKey,
+		&wallet.Status,
+		&wallet.Type,
+		&wallet.CreatedAt,
+		&wallet.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &wallet, nil
+}

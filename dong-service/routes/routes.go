@@ -61,7 +61,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		offerHandler := handlers.NewOfferHandler(offerService)
 
 		orderRepo := repository.NewOrderRepository(database.GetDB(), cfg.Database.Schema)
-		orderService := services.NewOrderService(orderRepo, offerRepo, intermediaryWalletRepo)
+		orderService := services.NewOrderService(orderRepo, offerRepo)
 		orderHandler := handlers.NewOrderHandler(orderService)
 
 		// Campaign routes (protected)
@@ -127,7 +127,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 
 		// Orders - public detail
 		v1.GET("/orders/:id", orderHandler.GetOrderDetail)
-		
+
 		// Example routes (protected)
 		examplePrivate := v1.Group("/examples")
 		examplePrivate.Use(middleware.Authentication(cfg.JWT.Secret))

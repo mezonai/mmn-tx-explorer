@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS orders (
     order_id BIGSERIAL PRIMARY KEY,
     intermediary_wallet_id BIGINT NOT NULL REFERENCES intermediary_wallet(id) ON DELETE RESTRICT,
-    user_id BIGINT NULL,
+    wallet_address VARCHAR(255) NULL,
     side VARCHAR(10) NOT NULL CHECK (side IN ('BUY','SELL')),
     symbol VARCHAR(64) NOT NULL,
     quantity NUMERIC(78,0) NOT NULL DEFAULT 0,
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS orders (
 );
 
 CREATE INDEX IF NOT EXISTS idx_orders_intermediary_wallet_id ON orders(intermediary_wallet_id);
-CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
+CREATE INDEX IF NOT EXISTS idx_orders_wallet_address ON orders(wallet_address);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 CREATE INDEX IF NOT EXISTS idx_orders_symbol_status ON orders(symbol, status);
 CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at);

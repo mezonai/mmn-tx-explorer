@@ -43,11 +43,55 @@ func (f *fakeOfferService) ConfirmOffer(ctx context.Context, offerID int64, exec
 }
 
 func (f *fakeOfferService) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, pagination map[string]any) ([]models.Offer, error) {
-	return []models.Offer{{OfferID: 1, Side: models.OfferSideBuy, Symbol: constants.ChainSymbol, Price: 1000}, {OfferID: 2, Side: models.OfferSideSell, Symbol: constants.ChainSymbol, Price: 2000}}, nil
+	// create a deterministic set of offers and honor pagination params in tests
+	all := []models.Offer{
+		{OfferID: 1, Side: models.OfferSideBuy, Symbol: constants.ChainSymbol, Price: 1000},
+		{OfferID: 2, Side: models.OfferSideSell, Symbol: constants.ChainSymbol, Price: 2000},
+	}
+
+	// default return all
+	if pagination == nil {
+		return all, nil
+	}
+
+	limit := 0
+	offset := 0
+	if v, ok := pagination["limit"].(int); ok {
+		limit = v
+	}
+	if v, ok := pagination["offset"].(int); ok {
+		offset = v
+	}
+
+	if limit <= 0 {
+		return all, nil
+	}
+
+	start := offset
+	if start < 0 {
+		start = 0
+	}
+	if start >= len(all) {
+		return []models.Offer{}, nil
+	}
+	end := start + limit
+	if end > len(all) {
+		end = len(all)
+	}
+
+	return all[start:end], nil
 }
 
 func (f *fakeOfferService) GetOfferByID(ctx context.Context, offerID int64) (*models.Offer, error) {
 	return &models.Offer{OfferID: offerID, Side: models.OfferSideBuy, Symbol: constants.ChainSymbol, Price: 1000}, nil
+}
+
+func (f *fakeOfferService) CountOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string) (int64, error) {
+	return 2, nil
+}
+
+func (f *fakeOfferService) GetIntermediaryWalletAddress(ctx context.Context, walletID int64) (string, error) {
+	return "addr-1", nil
 }
 
 func TestCreateOfferHandler_Success(t *testing.T) {
@@ -134,6 +178,77 @@ func TestListOffersHandler_Success(t *testing.T) {
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected status 200 OK, got %d, body=%s", w.Code, w.Body.String())
+	}
+
+	// verify pagination metadata (defaults)
+	var resp map[string]any
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+	meta, ok := resp["meta"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected meta in response")
+	}
+	if meta["page"].(float64) != 1 {
+		t.Fatalf("expected page 1, got %v", meta["page"])
+	}
+	if meta["limit"].(float64) != 10 {
+		t.Fatalf("expected limit 10, got %v", meta["limit"])
+	}
+	if meta["total_items"].(float64) != 2 {
+		t.Fatalf("expected total_items 2, got %v", meta["total_items"])
+	}
+	if meta["total_pages"].(float64) != 1 {
+		t.Fatalf("expected total_pages 1, got %v", meta["total_pages"])
+	}
+}
+
+func TestListOffersHandler_Pagination(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	handler := NewOfferHandler(&fakeOfferService{})
+
+	// request page 2 (page=1 zero-based) with limit=1
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/offers?page=1&limit=1", nil)
+	w := httptest.NewRecorder()
+
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+
+	handler.ListOffers(c)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status 200 OK, got %d, body=%s", w.Code, w.Body.String())
+	}
+
+	var resp map[string]any
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+	meta, ok := resp["meta"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected meta in response")
+	}
+	// page is 1-based in response
+	if meta["page"].(float64) != 2 {
+		t.Fatalf("expected page 2, got %v", meta["page"])
+	}
+	if meta["limit"].(float64) != 1 {
+		t.Fatalf("expected limit 1, got %v", meta["limit"])
+	}
+	if meta["total_items"].(float64) != 2 {
+		t.Fatalf("expected total_items 2, got %v", meta["total_items"])
+	}
+	if meta["total_pages"].(float64) != 2 {
+		t.Fatalf("expected total_pages 2, got %v", meta["total_pages"])
+	}
+
+	// data should honor limit/offset (1 item returned)
+	data, ok := resp["data"].([]any)
+	if !ok {
+		t.Fatalf("expected data array in response")
+	}
+	if len(data) != 1 {
+		t.Fatalf("expected 1 item on page 2, got %d", len(data))
 	}
 }
 

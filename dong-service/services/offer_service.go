@@ -4,7 +4,6 @@ import (
 	"context"
 	"dong-service/constants"
 	"dong-service/database"
-	"dong-service/logger"
 	"dong-service/models"
 	"dong-service/repository"
 	"encoding/json"
@@ -12,6 +11,7 @@ import (
 	"strconv"
 )
 
+// OfferService handles business logic for offers
 type OfferService struct {
 	repo       *repository.OfferRepository
 	walletRepo *repository.IntermediaryWalletRepository
@@ -21,91 +21,88 @@ func NewOfferService(repo *repository.OfferRepository, walletRepo *repository.In
 	return &OfferService{repo: repo, walletRepo: walletRepo}
 }
 
-// IOfferService defines the subset of methods used by handlers (for easier testing).
 type IOfferService interface {
-	CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddress string) (*models.Offer, error)
+	CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string) (*models.Offer, error)
 	ConfirmOffer(ctx context.Context, offerID int64, executionPrice *string, source *string, metadata *string) error
 	ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, pagination map[string]any) ([]models.Offer, error)
-	GetOfferByID(ctx context.Context, offerID int64) (*models.Offer, error)
+	CountOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string) (int64, error)
+	GetOfferByID(ctx context.Context, id int64) (*models.Offer, error)
+	GetIntermediaryWalletAddress(ctx context.Context, walletID int64) (string, error)
 }
 
-// CreateOffer performs validation, persists the offer and creates an initial history row atomically.
-func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddress string) (*models.Offer, error) {
-	// Basic validation
-	if req.Side != models.OfferSideBuy && req.Side != models.OfferSideSell {
-		return nil, fmt.Errorf("invalid side: %s", req.Side)
-	}
-	if req.Symbol == "" {
-		return nil, fmt.Errorf("symbol is required")
-	}
-	if req.Quantity == "" {
-		return nil, fmt.Errorf("quantity is required")
-	}
-
+// CreateOffer creates a new offer and (if needed) allocates an intermediary wallet.
+// By allocating an intermediary wallet server-side we remove the requirement for
+// the frontend to pre-fund the wallet (behaviour similar to red_envelope).
+func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string) (*models.Offer, error) {
 	db := database.GetDB()
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
 
+	// determine intermediary wallet id and address
 	var walletID int64
+	var intermediaryAddr string
 	if req.IntermediaryWalletID != nil {
 		walletID = *req.IntermediaryWalletID
 	} else {
 		wallet, err := s.walletRepo.GetOrCreateAvailableWallet(ctx, tx, constants.WalletTypeOffer)
 		if err != nil {
 			_ = tx.Rollback()
-			logger.Error().Err(err).Msg("failed to get or create intermediary wallet for offer")
-			return nil, err
+			return nil, fmt.Errorf("failed to get or create intermediary wallet: %w", err)
 		}
 		walletID = wallet.ID
-	}
+		intermediaryAddr = wallet.WalletAddress
 
-	priceType := constants.PriceTypeFixed
-	if req.PriceType != nil && *req.PriceType != "" {
-		priceType = *req.PriceType
-	}
-
-	var metadataStr *string
-	if req.Metadata != nil {
-		ms := fmt.Sprintf("%v", req.Metadata)
-		// Marshal metadata to valid JSON to store in JSONB column
-		b, err := json.Marshal(req.Metadata)
-		if err != nil {
+		if err := s.walletRepo.UpdateIntermediaryWalletStatus(tx, ctx, walletID, constants.WalletTypeOffer); err != nil {
 			_ = tx.Rollback()
-			return nil, fmt.Errorf("invalid metadata: %w", err)
+			return nil, fmt.Errorf("failed to update intermediary wallet: %w", err)
 		}
-		ms = string(b)
-		metadataStr = &ms
 	}
 
+	// build offer model
 	var priceInt int64
-	if req.Price != nil {
-		var err error
-		priceInt, err = strconv.ParseInt(*req.Price, 10, 64)
+	if req.Price != nil && *req.Price != "" {
+		p, err := strconv.ParseInt(*req.Price, 10, 64)
 		if err != nil {
 			_ = tx.Rollback()
-			return nil, fmt.Errorf("invalid price: %v", err)
+			return nil, fmt.Errorf("invalid price: %w", err)
 		}
+		priceInt = p
 	}
 
 	quantityInt, err := strconv.ParseInt(req.Quantity, 10, 64)
 	if err != nil {
 		_ = tx.Rollback()
-		return nil, fmt.Errorf("invalid quantity: %v", err)
+		return nil, fmt.Errorf("invalid quantity: %w", err)
+	}
+
+	var metadataStr *string
+	if req.Metadata != nil {
+		b, err := json.Marshal(req.Metadata)
+		if err != nil {
+			_ = tx.Rollback()
+			return nil, fmt.Errorf("invalid metadata: %w", err)
+		}
+		ms := string(b)
+		metadataStr = &ms
 	}
 
 	offer := &models.Offer{
 		IntermediaryWalletID: walletID,
-		WalletAddress:        walletAddress,
+		WalletAddress:        intermediaryAddr,
 		Side:                 req.Side,
 		Symbol:               req.Symbol,
 		Quantity:             quantityInt,
 		TotalQuantity:        quantityInt,
 		Price:                priceInt,
-		PriceType:            priceType,
-		Status:               constants.TradingPending,
+		PriceType:            constants.PriceTypeFixed,
+		Status:               string(constants.TradingPending),
 		Metadata:             metadataStr,
+	}
+
+	if req.PriceType != nil && *req.PriceType != "" {
+		offer.PriceType = *req.PriceType
 	}
 
 	if err := s.repo.CreateOffer(ctx, offer, tx); err != nil {
@@ -113,37 +110,20 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		return nil, err
 	}
 
-	history := &models.OfferHistory{
-		OfferID:   offer.OfferID,
-		EventType: constants.TradingPending,
-		Quantity:  strconv.FormatInt(offer.Quantity, 10),
-		Metadata:  offer.Metadata,
-	}
-
-	if err := s.repo.CreateOfferHistory(ctx, history, tx); err != nil {
-		_ = tx.Rollback()
-		return nil, err
-	}
-
-	if walletID != 0 {
-		logger.Debug().Int64("wallet_id", walletID).Msg("attempting to update intermediary wallet status to IN_USE")
-		if err := s.walletRepo.UpdateIntermediaryWalletStatus(tx, ctx, walletID, constants.WalletTypeOffer); err != nil {
-			logger.Error().Err(err).Int64("wallet_id", walletID).Msg("failed to update intermediary wallet status (transaction may be aborted)")
-			_ = tx.Rollback()
-			return nil, fmt.Errorf("failed to update intermediary wallet status: %w", err)
-		}
-		logger.Info().Int64("wallet_id", walletID).Msg("intermediary wallet status set to IN_USE")
-	}
-
 	if err := tx.Commit(); err != nil {
 		_ = tx.Rollback()
 		return nil, err
 	}
 
+	// return created offer and wallet address (if allocated) so frontend can show it.
+	if intermediaryAddr != "" {
+		offer.WalletAddress = intermediaryAddr
+	}
+
 	return offer, nil
 }
 
-// ConfirmOffer marks an offer as CONFIRMED and appends a CREATED_CONFIRMED history event.
+// ConfirmOffer simply marks the offer as CONFIRMED
 func (s *OfferService) ConfirmOffer(ctx context.Context, offerID int64, executionPrice *string, source *string, metadata *string) error {
 	db := database.GetDB()
 	tx, err := db.BeginTx(ctx, nil)
@@ -151,21 +131,7 @@ func (s *OfferService) ConfirmOffer(ctx context.Context, offerID int64, executio
 		return err
 	}
 
-	if err := s.repo.UpdateOfferStatus(ctx, offerID, constants.TradingConfirmed, tx); err != nil {
-		_ = tx.Rollback()
-		return err
-	}
-
-	hist := &models.OfferHistory{
-		OfferID:        offerID,
-		EventType:      constants.TradingConfirmed,
-		Quantity:       "0",
-		ExecutionPrice: executionPrice,
-		Source:         source,
-		Metadata:       metadata,
-	}
-
-	if err := s.repo.CreateOfferHistory(ctx, hist, tx); err != nil {
+	if err := s.repo.UpdateOfferStatus(ctx, offerID, string(constants.TradingConfirmed), tx, nil); err != nil {
 		_ = tx.Rollback()
 		return err
 	}
@@ -178,12 +144,23 @@ func (s *OfferService) ConfirmOffer(ctx context.Context, offerID int64, executio
 	return nil
 }
 
-// ListOffers returns offers using repository filtering helpers
+// Delegations
 func (s *OfferService) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, pagination map[string]any) ([]models.Offer, error) {
 	return s.repo.ListOffers(ctx, minPrice, maxPrice, status, symbol, rate, pagination)
 }
 
-// GetOfferByID returns a single offer by id
-func (s *OfferService) GetOfferByID(ctx context.Context, offerID int64) (*models.Offer, error) {
-	return s.repo.GetOfferByID(ctx, offerID)
+func (s *OfferService) CountOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string) (int64, error) {
+	return s.repo.CountOffers(ctx, minPrice, maxPrice, status, symbol, rate)
+}
+
+func (s *OfferService) GetOfferByID(ctx context.Context, id int64) (*models.Offer, error) {
+	return s.repo.GetOfferByID(ctx, id)
+}
+
+func (s *OfferService) GetIntermediaryWalletAddress(ctx context.Context, walletID int64) (string, error) {
+	w, err := s.walletRepo.GetWalletByID(ctx, walletID)
+	if err != nil {
+		return "", err
+	}
+	return w.WalletAddress, nil
 }
