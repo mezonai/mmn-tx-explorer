@@ -17,6 +17,8 @@ export class WebSocketManager {
   private reconnectDelay = 3000;
   private listeners: Map<string, Set<(data: WebSocketEvent) => void>> = new Map();
   private wsUrl: string;
+  private heartbeatIntervalId: number | null = null;
+  private heartbeatMs = 20000; // send ping every 20s
 
   constructor(wsUrl: string = 'ws://localhost:8899') {
     this.wsUrl = wsUrl;
@@ -36,12 +38,25 @@ export class WebSocketManager {
     this.ws.onopen = () => {
       console.log('✅ WebSocket connected');
       this.reconnectAttempts = 0;
+      this.startHeartbeat();
     };
 
     this.ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
         console.log('📨 WebSocket message received:', data);
+
+        // Handle heartbeat reply from server
+        if (data?.type === 'PONG') {
+          return;
+        }
+
+        // Respond to server ping if server initiates
+        if (data?.type === 'PING') {
+          this.send({ type: 'PONG' });
+          return;
+        }
+
         this.handleEvent(data);
       } catch (error) {
         console.error('Error parsing WebSocket message:', error);
@@ -50,6 +65,7 @@ export class WebSocketManager {
 
     this.ws.onclose = () => {
       console.log('❌ WebSocket disconnected');
+       this.stopHeartbeat();
       this.ws = null;
       this.attemptReconnect(token);
     };
@@ -105,10 +121,35 @@ export class WebSocketManager {
       this.ws = null;
     }
     this.listeners.clear();
+    this.stopHeartbeat();
   }
 
   isConnected(): boolean {
     return this.ws?.readyState === WebSocket.OPEN;
+  }
+
+  private startHeartbeat() {
+    this.stopHeartbeat();
+    this.heartbeatIntervalId = window.setInterval(() => {
+      if (this.ws?.readyState === WebSocket.OPEN) {
+        this.send({ type: 'PING' });
+      }
+    }, this.heartbeatMs);
+  }
+
+  private stopHeartbeat() {
+    if (this.heartbeatIntervalId !== null) {
+      clearInterval(this.heartbeatIntervalId);
+      this.heartbeatIntervalId = null;
+    }
+  }
+
+  private send(payload: Record<string, unknown>) {
+    try {
+      this.ws?.send(JSON.stringify(payload));
+    } catch (err) {
+      console.error('Error sending WebSocket message:', err);
+    }
   }
 }
 
