@@ -1,6 +1,6 @@
 import { IPaginatedResponse } from '@/types';
 import { IP2POfferListParams, P2POffer } from './types';
-import { P2POrder, OrderStatus } from './types/p2p.types';
+import { P2POrder, OrderStatus, CreateOfferFormData } from './types/p2p.types';
 import { apiDongClient } from '@/service';
 import { P2P_ENDPOINTS } from './constants';
 
@@ -10,8 +10,23 @@ export class P2PService {
     return data;
   }
 
+  static async getOfferById(offerId: string): Promise<P2POffer> {
+    const { data } = await apiDongClient.get<P2POffer>(P2P_ENDPOINTS.OFFER_BY_ID(offerId));
+    return data;
+  }
+
+  static async createOffer(payload: CreateOfferFormData): Promise<P2POffer> {
+    const { data } = await apiDongClient.post<P2POffer>(P2P_ENDPOINTS.OFFERS, payload);
+    return data;
+  }
+
   static async getOrderById(orderId: string): Promise<P2POrder> {
     const { data } = await apiDongClient.get<P2POrder>(P2P_ENDPOINTS.ORDER_BY_ID(orderId));
+    return data;
+  }
+
+  static async getMyOrders(): Promise<P2POrder[]> {
+    const { data } = await apiDongClient.get<P2POrder[]>(P2P_ENDPOINTS.MY_ORDERS);
     return data;
   }
 
