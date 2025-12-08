@@ -786,7 +786,7 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 		var donationCampaignFeeds []common.DonationCampaignFeed
 		for i := range blockData.Transactions {
 			tx := &blockData.Transactions[i]
-			if tx.TransactionType == common.TxTypeDonationCampaignFeed {
+			if tx.TransactionType == common.TxTypeUserContent {
 				donationCampaignFeeds = append(donationCampaignFeeds, common.DonationCampaignFeed{
 					TxHash:          tx.Hash,
 					OwnerAddress:    tx.FromAddress,
