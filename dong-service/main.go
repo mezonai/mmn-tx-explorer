@@ -22,6 +22,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/robfig/cron/v3"
+
+	// Import pprof
+	_ "net/http/pprof"
 )
 
 // @title           Dong Service API
@@ -152,6 +155,8 @@ func main() {
 		}
 	}()
 
+	registerPprof()
+
 	// Wait for interrupt signal to gracefully shutdown the server
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
@@ -172,4 +177,12 @@ func main() {
 	}
 
 	logger.Info().Msg("Server exited")
+}
+
+func registerPprof() {
+	go func() {
+		if err := http.ListenAndServe(":6061", nil); err != nil && err != http.ErrServerClosed {
+			logger.Fatal().Err(err).Msg("pprof server failed")
+		}
+	}()
 }

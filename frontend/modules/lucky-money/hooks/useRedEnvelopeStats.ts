@@ -11,7 +11,7 @@ export function useRedEnvelopeStatsByUser() {
 
   const fallback: RedEnvelopeStatsByUser = {
     total_sent: 0,
-    count_sent_envelopes: 0,
+    total_recipients: 0,
     total_claimed: 0,
     count_claimed_envelopes: 0,
     total_active_envelopes: 0,

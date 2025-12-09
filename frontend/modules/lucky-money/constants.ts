@@ -42,3 +42,5 @@ export const DEFAULT_FORM_VALUES: CreateRedEnvelopeForm = {
   randomDistribution: true,
   expiryHours: 1,
 };
+
+export const MAX_PARTICIPANT_COUNT = 500;

@@ -2,7 +2,7 @@
 
 import { createContext, ReactNode, useCallback, useContext, useState } from 'react';
 import { CreateRedEnvelopeForm, CreateRedEnvelopeRequest, RedEnvelope, UpdateStatusRedEnvelopeRequest } from '../type';
-import { DEFAULT_FORM_VALUES } from '../constants';
+import { DEFAULT_FORM_VALUES, MAX_PARTICIPANT_COUNT } from '../constants';
 import { useUser } from '@/providers';
 import { mmnClient } from '@/modules/auth';
 import { useTransfer } from '@/modules/transfer/hooks/useTransfer';
@@ -87,25 +87,32 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
         throw new Error('Total amount must be greater than zero or integer');
       }
 
-      if (!form.participantCount || form.participantCount <= 0 || !Number.isInteger(form.participantCount)) {
-        throw new Error('Participant count must be greater than zero or integer');
+      if (
+        !form.participantCount ||
+        form.participantCount <= 0 ||
+        !Number.isInteger(form.participantCount) ||
+        form.participantCount > MAX_PARTICIPANT_COUNT
+      ) {
+        throw new Error(`Participant count must be a positive integer and must not exceed ${MAX_PARTICIPANT_COUNT}.`);
       }
 
-      if (!form.amountMin || form.amountMin <= 0 || !Number.isInteger(form.amountMin)) {
-        throw new Error('Amount min must be greater than zero or integer');
-      }
+      if (form.randomDistribution) {
+        if (!form.amountMin || form.amountMin <= 0 || !Number.isInteger(form.amountMin)) {
+          throw new Error('Amount min must be greater than zero or integer');
+        }
 
-      if (!form.amountMax || form.amountMax <= 0 || !Number.isInteger(form.amountMax)) {
-        throw new Error('Amount max must be greater than zero or integer');
-      }
-      if (form.amountMin > form.amountMax) {
-        throw new Error('Amount min cannot be greater than amount max.');
-      }
-      if (form.totalAmount < form.amountMin * form.participantCount) {
-        throw new Error('Total amount is insufficient for the minimum per participant.');
-      }
-      if (form.totalAmount > form.amountMax * form.participantCount) {
-        throw new Error('Total amount is insufficient for the maximum per participant.');
+        if (!form.amountMax || form.amountMax <= 0 || !Number.isInteger(form.amountMax)) {
+          throw new Error('Amount max must be greater than zero or integer');
+        }
+        if (form.amountMin > form.amountMax) {
+          throw new Error('Amount min cannot be greater than amount max.');
+        }
+        if (form.totalAmount < form.amountMin * form.participantCount) {
+          throw new Error('Total amount is insufficient for the minimum per participant.');
+        }
+        if (form.totalAmount > form.amountMax * form.participantCount) {
+          throw new Error('Total amount is insufficient for the maximum per participant.');
+        }
       }
 
       setShowConfirmModal(true);
@@ -141,11 +148,10 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
         await new Promise((resolve) => setTimeout(resolve, 2000));
         const transactionDetail = await pollTransactionStatus(result.txHash);
         let finalStatus = ETransactionStatus.Failed;
-        
         if (transactionDetail && transactionDetail.status === ETransactionStatus.Passed) {
           finalStatus = ETransactionStatus.Passed;
           toast.success('Create Lucky Money successfully');
-          route = ROUTES.LUCKY_MONEY_DETAIL(envelope.id)
+          route = ROUTES.LUCKY_MONEY_DETAIL(envelope.id);
           setGeneratedEnvelope(envelope);
         } else {
           toast.error('Could not confirm transaction. Create Lucky Money fail.');
@@ -157,7 +163,6 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
           status: finalStatus,
         };
         await RedEnvelopeService.updateRedEnvelopeStatus(req);
-
       } else {
         toast.error('Transfer step failed. Create Lucky Money fail.');
         const req: UpdateStatusRedEnvelopeRequest = {
