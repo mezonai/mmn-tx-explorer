@@ -88,6 +88,21 @@ const (
 	TextDataLuckyMoney = "Lucky Money fund"
 )
 
+const ChainSymbol = "MZD"
+
+const (
+	TrandingOpen     = "OPEN"
+	TradingPending   = "PENDING"
+	TradingConfirmed = "CONFIRMED"
+	TradingCanceled  = "CANCELED"
+	TradingFailed    = "FAILED"
+)
+
+const (
+	PriceTypeFixed = "FIXED"
+	PriceTypeFloat = "FLOAT"
+)
+
 // GetStatusName returns the human-readable name for a status code
 func GetStatusName(status int16) string {
 	switch status {
