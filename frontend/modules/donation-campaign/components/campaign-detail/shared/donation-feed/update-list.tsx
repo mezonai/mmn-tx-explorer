@@ -1,11 +1,11 @@
 'use client';
-import { IDonationFeed } from '@/modules/donation-campaign';
+import { DonationCampaign, IDonationFeed } from '@/modules/donation-campaign';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useState } from 'react';
 import { UpdatePost } from './update-post';
 import { baseURL } from '@/service';
 
-export const UpdateList = ({ updates }: { updates: IDonationFeed[] }) => {
+export const UpdateList = ({ updates, campaign }: { updates: IDonationFeed[]; campaign: DonationCampaign }) => {
   const [open, setOpen] = useState(false);
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
 
@@ -23,7 +23,7 @@ export const UpdateList = ({ updates }: { updates: IDonationFeed[] }) => {
     <>
       <div className="space-y-4">
         {updates.map((update, index) => (
-          <UpdatePost key={update.id} update={update} isLatest={index === 0} onImageClick={handleImageClick} />
+          <UpdatePost key={update.id} update={update} campaign={campaign} isLatest={index === 0} onImageClick={handleImageClick} />
         ))}
       </div>
       <Dialog open={open} onOpenChange={handleDialogOpenChange}>

@@ -1,6 +1,6 @@
 'use client';
 
-import { IDonationFeed } from '@/modules/donation-campaign';
+import { DonationCampaign, IDonationFeed } from '@/modules/donation-campaign';
 import { Card } from '@/components/ui/card';
 import { Chip } from '@/components/shared';
 import { CopyButton } from '@/components/ui/copy-button';
@@ -9,9 +9,12 @@ import { TxnHashLink } from '@/modules/transaction/components/transaction-list/l
 import { baseURL } from '@/service';
 import { useState } from 'react';
 import { VersionHistoryDialog } from './version-history-dialog';
+import { useUser } from '@/providers';
+import { Button } from '@/components/ui/button';
 
 interface UpdatePostProps {
   update: IDonationFeed;
+  campaign: DonationCampaign
   isLatest?: boolean;
   onImageClick: (url: string) => void;
 }
@@ -32,8 +35,9 @@ function getImages(update: IDonationFeed, onImageClick: (url: string) => void) {
   );
 }
 
-export const UpdatePost = ({ update, isLatest = false, onImageClick }: UpdatePostProps) => {
+export const UpdatePost = ({ update, campaign, isLatest = false, onImageClick }: UpdatePostProps) => {
   const [isVersionDialogOpen, setIsVersionDialogOpen] = useState(false);
+  const { user } = useUser();
   return (
     <Card className={`dark:bg-card border-muted-foreground/30 gap-4 rounded-3xl bg-white/90 shadow-sm`}>
       <div className="flex w-full flex-col justify-between gap-3 px-4 md:flex-row">
@@ -51,26 +55,35 @@ export const UpdatePost = ({ update, isLatest = false, onImageClick }: UpdatePos
           </div>
         </div>
 
-        {isLatest ? (
-          <div className="text-muted-foreground flex flex-row gap-1 text-xs">
+        <div className="text-muted-foreground flex flex-row gap-1 text-xs">
+          {isLatest ? (
             <span className="inline-flex items-center gap-1">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
               <p>On chain</p>
             </span>
-          </div>
-        ) : (
-          //TODO: consider checking if the post has a parent hash to link to previous version
-          <div className="text-muted-foreground flex flex-row gap-1 text-xs">
-            <span className="inline-flex items-center gap-1">
-              <VersionHistoryDialog
-                update={update}
-                isOpen={isVersionDialogOpen}
-                onOpenChange={setIsVersionDialogOpen}
-                onImageClick={onImageClick}
-              />
-            </span>
-          </div>
-        )}
+          ) : (
+            //TODO: consider checking if the post has a parent hash to link to previous version
+            <div className="text-muted-foreground flex flex-row gap-1 text-xs">
+              <span className="inline-flex items-center gap-1">
+                <VersionHistoryDialog
+                  update={update}
+                  isOpen={isVersionDialogOpen}
+                  onOpenChange={setIsVersionDialogOpen}
+                  onImageClick={onImageClick}
+                />
+              </span>
+            </div>
+          )}
+          {user?.id === campaign.creator && (
+            <div className="flex items-center text-sm text-muted-foreground">
+              <span className='px-2'>|</span>
+              <Button variant="link" className="text-muted-foreground p-0 text-xs">
+                Edit
+              </Button>
+            </div>
+          )}
+        </div>
+
       </div>
       <div className="text-foreground text-md w-full px-4 break-words">{update.extra_info.description}</div>
 
