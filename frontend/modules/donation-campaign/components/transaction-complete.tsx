@@ -15,7 +15,6 @@ import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { APP_CONFIG } from '@/configs/app.config';
-import { NumberUtil } from '@/utils';
 
 export const TransactionComplete = (props: TransactionCompleteProps) => {
   const { amount, symbol, txHash, type, onClose } = props;
