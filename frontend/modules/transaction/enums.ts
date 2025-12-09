@@ -14,7 +14,7 @@ export enum ETransferType {
   TokenTransfer = 'dong-give-coffee',
   DonationCampaign = 'donation-campaign',
   WithdrawCampaign = 'withdraw-campaign',
-  DonationFeed = 'donation-feed',
+  DonationFeedCampaign = 'donation-campaign-feed',
 }
 
 export enum ETransactionStatus {

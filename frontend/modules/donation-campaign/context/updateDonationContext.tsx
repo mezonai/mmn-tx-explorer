@@ -5,6 +5,8 @@ import { mmnClient } from '@/modules/auth';
 import { ETransferType } from '@/modules/transaction';
 import { useUser, useKeypair, useZkProof } from '@/providers';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
+import { ROUTES } from '@/configs/routes.config';
 
 const INITIAL_FORM: DonationUpdateForm = {
   title: '',
@@ -50,6 +52,7 @@ export function UpdateDonationProvider({ campaign, children }: CreateDonationUpd
   const [form, setForm] = useState<DonationUpdateForm>(INITIAL_FORM);
   const uploadImagesMutation = useUploadDonationImages();
   const [isSaving, setIsSaving] = useState(false);
+  const router = useRouter();
 
   const validation = validateForm(form);
   const { user } = useUser();
@@ -75,19 +78,17 @@ export function UpdateDonationProvider({ campaign, children }: CreateDonationUpd
       const ipfs_images = await uploadImagesMutation.mutateAsync({ files });
       const nonceResponse = await mmnClient.getCurrentNonce(user?.id || '');
 
-      //TODO: change to suitable method once the new sdk version is out
-      const updateResponse = await mmnClient.sendTransactionByAddress({
+      const updateResponse = await mmnClient.postDonationCampaignFeed({
         sender: user?.walletAddress || '',
         recipient: recipientAddress,
-        amount: '1000000', //hard coded value
+        amount: '0',
         nonce: Number(nonceResponse.nonce) + 1,
         publicKey: publicKey || '',
         privateKey: privateKey || '',
         zkProof: zkProof?.proof || '',
         zkPub: zkProof?.public_input || '',
-        textData: 'Donation Feed test',
         extraInfo: {
-          type: ETransferType.DonationFeed,
+          type: ETransferType.DonationFeedCampaign,
           ExtraAttribute: JSON.stringify({
             title: form.title,
             description: form.description,
@@ -97,7 +98,7 @@ export function UpdateDonationProvider({ campaign, children }: CreateDonationUpd
       });
       if (updateResponse.ok) {
         toast.success('Donation update submitted successfully.');
-        setForm(INITIAL_FORM);
+        router.push(ROUTES.CAMPAIGN(campaign.slug));
       } else {
         toast.error('Failed to submit update.');
       }
