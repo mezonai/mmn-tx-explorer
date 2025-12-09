@@ -13,7 +13,7 @@ export const P2POrdersList = () => {
   const router = useRouter();
 
   const handleOpenToConfirm = (order: P2POrder) => {
-    router.push(ROUTES.P2P_TRADING(order.orderId));
+    router.push(ROUTES.P2P_TRADING_ROOM(order.orderId));
   };
 
   if (isLoading) {

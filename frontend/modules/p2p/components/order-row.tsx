@@ -18,7 +18,7 @@ export const OrderRow = ({ order, onOpenToConfirm }: OrderRowProps) => {
   const router = useRouter();
 
   const handleRowClick = () => {
-    router.push(ROUTES.P2P_TRADING(order.orderId));
+    router.push(ROUTES.P2P_TRADING_ROOM(order.orderId));
   };
 
   const handleOpenToConfirm = (e: React.MouseEvent) => {
