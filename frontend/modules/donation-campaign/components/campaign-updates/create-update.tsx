@@ -1,7 +1,7 @@
 'use client';
 
 import { UpdateDonationProvider } from '../../context';
-import { CreateUpdateContent } from './create-update-content';
+import { CreateUpdateContent } from './shared/';
 import { DonationCampaign } from '../../type';
 
 interface CreateUpdateProps {

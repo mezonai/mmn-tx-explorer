@@ -47,7 +47,7 @@ export const DonationFeed = ({ campaign }: { campaign: DonationCampaign }) => {
         </div>
       )}
 
-      <UpdateList updates={donationFeed} />
+      <UpdateList updates={donationFeed} campaign={campaign} />
     </div>
   );
 };

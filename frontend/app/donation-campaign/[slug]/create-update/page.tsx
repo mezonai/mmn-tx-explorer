@@ -26,6 +26,7 @@ export default async function CreateCampaignUpdatePage({ params }: CreateCampaig
       </ProtectedRoute>
     );
   } catch (error) {
+    console.error('Error fetching campaign:', error);
     notFound();
   }
 }
