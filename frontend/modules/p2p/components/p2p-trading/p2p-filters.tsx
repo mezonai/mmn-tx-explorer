@@ -51,7 +51,7 @@ export const P2PFiltersComponent = ({
 
         <div className="bg-background border-input ring-offset-background focus-within:ring-brand-primary flex h-10 w-full items-center rounded-lg border shadow-sm focus-within:ring-1 md:w-auto">
           <div className="bg-muted/50 text-brand-primary flex h-full items-center border-r px-3 text-[10px] font-bold tracking-wider uppercase select-none">
-            total amount
+            Available amount
           </div>
 
           {/* Min Input */}
