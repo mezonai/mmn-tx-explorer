@@ -37,14 +37,6 @@ func FilterImageMiddleware(cfg *config.Config) gin.HandlerFunc {
 		}
 		var totalSize int64
 		var result []UploadedFile
-		allowedExts := make(map[string]bool)
-		for _, ext := range cfg.FilterImage.AllowedTypes {
-			allowedExts[strings.ToLower(ext)] = true
-		}
-		allowedMimeTypes := make(map[string]bool)
-		for _, mt := range cfg.FilterImage.MimeTypes {
-			allowedMimeTypes[strings.ToLower(mt)] = true
-		}
 
 		for _, fh := range files {
 			totalSize += fh.Size
@@ -63,12 +55,6 @@ func FilterImageMiddleware(cfg *config.Config) gin.HandlerFunc {
 			}
 			defer f.Close()
 			ext := strings.ToLower(filepath.Ext(fh.Filename))
-			if !allowedExts[ext] {
-				logger.Warn().Str("filename", fh.Filename).Msg("File has an invalid extension")
-				c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, fmt.Sprintf("File '%s' has an invalid extension", fh.Filename)))
-				c.Abort()
-				return
-			}
 			header := make([]byte, 512)
 			if _, err := f.Read(header); err != nil && err != io.EOF {
 				logger.Error().Err(err).Str("filename", fh.Filename).Msg("Cannot read file header")
@@ -78,7 +64,7 @@ func FilterImageMiddleware(cfg *config.Config) gin.HandlerFunc {
 			}
 			mimeType := http.DetectContentType(header)
 			logger.Info().Str("filename", fh.Filename).Str("mime_type", mimeType).Msg("Detected MIME type")
-			if !allowedMimeTypes[strings.ToLower(mimeType)] {
+			if !strings.HasPrefix(strings.ToLower(mimeType), cfg.FilterImage.MimeTypes) {
 				logger.Warn().Str("filename", fh.Filename).Str("mime_type", mimeType).Msg("File is not an image")
 				c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, fmt.Sprintf("File '%s' is not an image (MIME Type: %s)", fh.Filename, mimeType)))
 				c.Abort()
