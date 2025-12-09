@@ -30,7 +30,7 @@ export const P2P = () => {
   );
 
   const { data: offers, isLoading } = useP2POffers({
-    page,
+    page: page - 1,
     limit,
     from_amount: filters.min,
     to_amount: filters.max,
@@ -52,7 +52,6 @@ export const P2P = () => {
             totalItems={offers?.meta.total_items}
             totalPages={offers?.meta.total_pages}
             isLoading={isLoading}
-            // Truyền Pagination
             page={page}
             limit={limit}
             onPageChange={handleChangePage}
