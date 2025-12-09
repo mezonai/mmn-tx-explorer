@@ -13,6 +13,7 @@ import (
 	"dong-service/services"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/gabriel-vasile/mimetype"
 )
 
 type UploadedFile struct {
@@ -37,14 +38,6 @@ func FilterImageMiddleware(cfg *config.Config) gin.HandlerFunc {
 		}
 		var totalSize int64
 		var result []UploadedFile
-		allowedExts := make(map[string]bool)
-		for _, ext := range cfg.FilterImage.AllowedTypes {
-			allowedExts[strings.ToLower(ext)] = true
-		}
-		allowedMimeTypes := make(map[string]bool)
-		for _, mt := range cfg.FilterImage.MimeTypes {
-			allowedMimeTypes[strings.ToLower(mt)] = true
-		}
 
 		for _, fh := range files {
 			totalSize += fh.Size
@@ -62,25 +55,33 @@ func FilterImageMiddleware(cfg *config.Config) gin.HandlerFunc {
 				return
 			}
 			defer f.Close()
-			ext := strings.ToLower(filepath.Ext(fh.Filename))
-			if !allowedExts[ext] {
-				logger.Warn().Str("filename", fh.Filename).Msg("File has an invalid extension")
-				c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, fmt.Sprintf("File '%s' has an invalid extension", fh.Filename)))
+			content, err := io.ReadAll(f)
+			if err != nil {
+				logger.Error().Err(err).Str("filename", fh.Filename).Msg("Cannot read file content")
+				c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Cannot read file content"))
 				c.Abort()
 				return
 			}
-			header := make([]byte, 512)
-			if _, err := f.Read(header); err != nil && err != io.EOF {
-				logger.Error().Err(err).Str("filename", fh.Filename).Msg("Cannot read file header")
-				c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Cannot read file header: "+err.Error()))
+
+			m := mimetype.Detect(content)
+			logger.Info().Str("filename", fh.Filename).Str("mime_detected", m.String()).Str("ext_detected", m.Extension()).Msg("MIME type detected via magic bytes")
+
+			if !strings.HasPrefix(m.String(), "image/") {
+				logger.Warn().Str("filename", fh.Filename).Str("mime_detected", m.String()).Msg("File is NOT an image")
+				c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, fmt.Sprintf("File '%s' is not an image (MIME: %s)", fh.Filename, m.String())))
 				c.Abort()
 				return
 			}
-			mimeType := http.DetectContentType(header)
-			logger.Info().Str("filename", fh.Filename).Str("mime_type", mimeType).Msg("Detected MIME type")
-			if !allowedMimeTypes[strings.ToLower(mimeType)] {
-				logger.Warn().Str("filename", fh.Filename).Str("mime_type", mimeType).Msg("File is not an image")
-				c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, fmt.Sprintf("File '%s' is not an image (MIME Type: %s)", fh.Filename, mimeType)))
+			blocked := false
+			for _, blockedType := range cfg.FilterImage.BlockMimeTypes {
+				if m.String() == blockedType {
+					blocked = true
+					break
+				}
+			}
+			if blocked {
+				logger.Warn().Str("filename", fh.Filename).Str("mime_detected", m.String()).Msg("File MIME type is blocked")
+				c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, fmt.Sprintf("File '%s' has a blocked MIME type: %s", fh.Filename, m.String())))
 				c.Abort()
 				return
 			}
@@ -106,13 +107,7 @@ func FilterImageMiddleware(cfg *config.Config) gin.HandlerFunc {
 				}
 			}
 
-			content, err := io.ReadAll(f)
-			if err != nil {
-				logger.Error().Err(err).Str("filename", fh.Filename).Msg("Cannot read file content")
-				c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Cannot read file: "+err.Error()))
-				c.Abort()
-				return
-			}
+			ext := strings.ToLower(filepath.Ext(fh.Filename))
 			newName := uuid.New().String() + ext
 			result = append(result, UploadedFile{
 				NewName: newName,
