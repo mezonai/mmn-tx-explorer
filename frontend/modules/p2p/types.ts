@@ -24,3 +24,30 @@ export interface IP2POfferListParams {
   from_amount?: number;
   to_amount?: number;
 }
+export enum TradeTypes {
+  SELL = 'SELL',
+  BUY = 'BUY',
+}
+export interface CreateOfferFormState {
+  side: TradeTypes;
+  quantity: number;
+  price_rate: number;
+  limit: {
+    min: number;
+    max: number;
+  };
+  metadata: { bank: BankOption; account_number: string; account_name: string };
+  symbol: string;
+}
+
+export interface CreateOfferRequest {
+  side: TradeTypes;
+  quantity: string;
+  price_rate: string;
+  limit: {
+    min: string;
+    max: string;
+  };
+  metadata: { bank: BankOption; account_number: string; account_name: string };
+  symbol: string;
+}
