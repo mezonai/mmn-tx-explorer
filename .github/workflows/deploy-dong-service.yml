@@ -1,4 +1,6 @@
 name: Deploy Dong Service
+permissions:
+  contents: write
 
 on:
   workflow_dispatch:
@@ -11,6 +13,9 @@ on:
         description: "Git ref (branch, tag, or commit)"
         required: true
         default: "main"
+      existing_tag_to_deploy:
+        description: "(Optional) Existing tag"
+        required: false
 
   workflow_call:
     inputs:
@@ -26,6 +31,12 @@ on:
       source_artifact:
         type: string
         required: false
+      target_tag:
+        type: string
+        required: true
+      skip_build:
+        type: string
+        required: true
     secrets:
       POSTGRES_PASSWORD:
         required: true
@@ -44,6 +55,7 @@ jobs:
     environment: ${{ inputs.env }}
     outputs:
       git_sha: ${{ steps.get_sha.outputs.git_sha }}
+      tag_name: ${{ steps.build_dong_binary.outputs.tag_name }}
     steps:
       - name: Checkout
         if: github.event_name == 'workflow_dispatch'
@@ -60,6 +72,7 @@ jobs:
           path: .
 
       - name: Setup Go
+        if: inputs.skip_build == 'false' || (github.event_name == 'workflow_dispatch' && inputs.existing_tag_to_deploy == '')
         uses: actions/setup-go@v5
         with:
           go-version: "1.25"
@@ -67,6 +80,7 @@ jobs:
           check-latest: false
       
       - name: Run golangci-lint
+        if: inputs.skip_build == 'false' || (github.event_name == 'workflow_dispatch' && inputs.existing_tag_to_deploy == '')
         uses: golangci/golangci-lint-action@v8
         with:
           version: v2.5.0
@@ -75,12 +89,18 @@ jobs:
         continue-on-error: true
 
       - name: Build Dong Service binary
+        if: inputs.skip_build == 'false' || (github.event_name == 'workflow_dispatch' && inputs.existing_tag_to_deploy == '')
+        id: build_dong_binary
         run: |
           mkdir -p build
           cd dong-service
-          GOOS=linux GOARCH=amd64 go build -o ../build/dong-service .
+          TAG_NAME="${{ inputs.target_tag }}"
+          if [ -z "$TAG_NAME" ]; then TAG_NAME="v0.0.0"; fi
+          echo "==> Building binary: dong-service-${TAG_NAME}"
+          GOOS=linux GOARCH=amd64 go build -o ../build/dong-service-${TAG_NAME} .
 
       - name: Get short SHA
+        if: github.event_name == 'workflow_call'
         id: get_sha
         run: |
           if [ -n "${{ inputs.git_sha }}" ]; then
@@ -89,15 +109,71 @@ jobs:
             echo "git_sha=$(git rev-parse --short=8 HEAD)" >> $GITHUB_OUTPUT
           fi
 
+      - name: Create Release and Upload binary
+        if: github.event_name == 'workflow_call' && inputs.skip_build == 'false'
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.build_dong_binary.outputs.tag_name }}
+          name: "Release ${{ steps.build_dong_binary.outputs.tag_name }}"
+          target_commitish: ${{ inputs.ref }}
+          fail_on_unmatched_files: true
+          files: |
+            build/dong-service-${{ steps.build_dong_binary.outputs.tag_name }}
+
   deploy:
+    if: always() && (needs.build.result == 'success' || inputs.existing_tag_to_deploy != '' || inputs.skip_build == 'true')
     needs: build
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
     env:
       TARGET_HOST: ${{ inputs.env == 'prod' && 'prod-indexer' || 'dev-indexer' }}
-      GIT_SHA: ${{ needs.build.outputs.git_sha }}
 
     steps:
+      - name: Determine Binary Path and Tag
+        id: determine_binary
+        run: |
+          TAG_INPUT=""
+          if [ -n "${{ inputs.target_tag }}" ]; then
+            TAG_INPUT="${{ inputs.target_tag }}"
+          elif [ -n "${{ inputs.existing_tag_to_deploy }}" ]; then 
+            TAG_INPUT="${{ inputs.existing_tag_to_deploy }}"
+          elif [ "${{ needs.build.result }}" == "success" ]; then
+            TAG_INPUT="${{ needs.build.outputs.tag_name }}"
+            echo "==> Will deploy newly built tag: $TAG_INPUT"
+          else
+            echo "::error::Cannot proceed. No existing tag was provided and the build job did not succeed."
+            exit 1
+          fi
+
+          if [[ ! "$TAG_INPUT" == v* ]]; then
+            TAG_TO_DEPLOY="v$TAG_INPUT"
+            echo "==> Prefix 'v' was missing. Standardizing to: $TAG_TO_DEPLOY"
+          else
+            TAG_TO_DEPLOY="$TAG_INPUT"
+          fi
+
+          echo "tag_name=$TAG_TO_DEPLOY" >> $GITHUB_OUTPUT
+          echo "binary_name=dong-service-$TAG_TO_DEPLOY" >> $GITHUB_OUTPUT
+          echo "binary_path=build/dong-service-$TAG_TO_DEPLOY" >> $GITHUB_OUTPUT
+      
+      - name: Download release binary using url 
+        if: inputs.existing_tag_to_deploy != '' || inputs.skip_build == 'true'
+        run: | 
+          set -e 
+          OWNER=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f1)
+          REPO=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f2)
+          TAG_NAME="${{ steps.determine_binary.outputs.tag_name }}"
+          BINARY_NAME="${{ steps.determine_binary.outputs.binary_name }}"
+          BINARY_PATH="${{ steps.determine_binary.outputs.binary_path }}"
+          DOWNLOAD_URL="https://github.com/$OWNER/$REPO/releases/download/$TAG_NAME/$BINARY_NAME"
+
+          echo "==> Downloading from URL: $DOWNLOAD_URL"
+          mkdir -p build
+          curl -sSL --fail -o "$BINARY_PATH" "$DOWNLOAD_URL"
+          echo "==> Download complete: $BINARY_PATH"
+          ls -lh "$BINARY_PATH"
+
       - name: Generate remote setup script
         env:
           POSTGRES_DB: ${{ vars.POSTGRES_DB }}
@@ -124,7 +200,7 @@ jobs:
           #!/usr/bin/env bash
           set -euo pipefail
 
-          SHA="$1"
+          VERSION_ID="$1"
           echo "==> Preparing deployment directories and configs..."
           sudo mkdir -p /opt/dong-service/bin /opt/dong-service/config /opt/dong-service/migrations /opt/dong-service/logs
           
@@ -153,7 +229,7 @@ jobs:
           sudo chmod 600 /opt/dong-service/config/dong-service.env
 
           echo "==> Deploying new dong-service binary to staging path..."
-          sudo install -m 0755 /tmp/dong-service /opt/dong-service/bin/dong-service-${SHA}
+          sudo install -m 0755 /tmp/dong-service /opt/dong-service/bin/dong-service-${VERSION_ID}
 
           echo "==> Deploying migrations for dong-service..."
           sudo rm -rf /opt/dong-service/migrations
@@ -188,10 +264,13 @@ jobs:
           printf "export BLOCKCHAIN_USE_TLS=%q\n" "$BLOCKCHAIN_USE_TLS" >> remote_env.sh
 
       - name: Prepare and deploy to target server
+        env:
+          DEPLOY_TAG: ${{ steps.determine_binary.outputs.tag_name }}
+          BINARY_PATH: ${{ steps.determine_binary.outputs.binary_path }}
         run: |
           set -e
           echo "==> Copying binaries to target server..."
-          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} build/dong-service ${{ vars.HOST_ALIAS }}:/tmp/
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} $BINARY_PATH build/dong-service ${{ vars.HOST_ALIAS }}:/tmp/
           
           echo "==> Copying migrations to target server..."
           scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} -r dong-service/migrations ${{ vars.HOST_ALIAS }}:/tmp/postgres-dong-service/
@@ -206,7 +285,7 @@ jobs:
           ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "
             set -e
             source /tmp/remote_env.sh
-            bash /tmp/remote_setup.sh \"$GIT_SHA\"
+            bash /tmp/remote_setup.sh \"$DEPLOY_TAG\"
             
             echo '==> Cleaning up temp files...'
             rm -f /tmp/dong-service
@@ -217,6 +296,7 @@ jobs:
       - name: Atomic swap + restart services
         env:
           LOGLEVEL: ${{ inputs.env == 'prod' && 'warn' || 'info' }}
+          DEPLOY_TAG: ${{ steps.determine_binary.outputs.tag_name }}
         run: |
           ssh -i ${{vars.SSH_PRIVATE_KEY_PATH}} ${{vars.HOST_ALIAS}} <<EOF
           #!/usr/bin/env bash
@@ -237,7 +317,7 @@ jobs:
           sudo systemctl stop dong-service || true
 
           echo "==> Atomically swapping to new binary..."
-          sudo ln -sfn dong-service-${GIT_SHA} /opt/dong-service/bin/dong-service
+          sudo ln -sfn dong-service-${DEPLOY_TAG} /opt/dong-service/bin/dong-service
 
           echo "==> Reloading and starting services..."
           sudo systemctl daemon-reload
