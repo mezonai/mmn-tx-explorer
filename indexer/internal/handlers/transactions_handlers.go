@@ -16,7 +16,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const DateFormat = "2006-01-02"
+const (
+	DateFormat = "2006-01-02"
+	MaxInfiniteTransactionsLimit = 1000
+)
 
 // GetTransactions godoc
 // @Summary Get all transactions
@@ -197,6 +200,10 @@ func handleTransactionsInfiniteRequest(c *gin.Context) {
 	if err != nil {
 		api.BadRequestErrorHandler(c, err)
 		return
+	}
+
+	if queryParams.Limit > MaxInfiniteTransactionsLimit {
+		queryParams.Limit = MaxInfiniteTransactionsLimit
 	}
 
 	walletAddress := queryParams.WalletAddress

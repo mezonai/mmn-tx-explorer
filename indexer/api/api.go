@@ -14,6 +14,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const DefaultQueryLimit = 5
+
 // Error represents an API error response
 // @Description Error represents an API error response
 type Error struct {
@@ -155,7 +157,7 @@ func ParseQueryParams(r *http.Request) (QueryParams, error) {
 		return QueryParams{}, err
 	}
 	if params.Limit == 0 {
-		params.Limit = 5
+		params.Limit = DefaultQueryLimit
 	}
 	return params, nil
 }
