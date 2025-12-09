@@ -20,7 +20,12 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
-require github.com/rogpeppe/go-internal v1.14.1 // indirect
+require (
+	github.com/chzyer/readline v1.5.1 // indirect
+	github.com/google/pprof v0.0.0-20251114195745-4902fdda35c8 // indirect
+	github.com/ianlancetaylor/demangle v0.0.0-20250417193237-f615e6bd150b // indirect
+	github.com/rogpeppe/go-internal v1.14.1 // indirect
+)
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
