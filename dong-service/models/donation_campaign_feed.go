@@ -2,29 +2,20 @@ package models
 
 import (
 	"time"
-    "encoding/json"
 )
 
-type FeedExtraInfo struct {
-    Title       string   `json:"title"`
-    Description string   `json:"description"`
-    ImageCIDs   []string `json:"image_cids"`
-}
 type DonationCampaignFeed struct {
-    ID             int64           `json:"id" db:"id"`
-    TxHash         string          `json:"tx_hash" db:"tx_hash"`
-    OwnerAddress   string          `json:"owner_address" db:"owner_address"`
-    CampaignAddress string         `json:"campaign_address" db:"campaign_address"`
-    ExtraInfo      json.RawMessage `json:"extra_info" db:"extra_info"` 
-    CreatedAt      time.Time       `json:"created_at" db:"created_at"`
-}
-type DonationCampaignFeedResponse struct {
-	ID             int64     `json:"id"`
-	TxHash         string    `json:"tx_hash"`
-	OwnerAddress   string    `json:"owner_address"`
-	CampaignAddress string   `json:"campaign_address"`
-	ExtraInfo      FeedExtraInfo `json:"extra_info"`
-	CreatedAt      time.Time `json:"created_at"`
+	ID              int64     `json:"id" db:"id"`
+	TxHash          string    `json:"tx_hash" db:"tx_hash"`
+	CreatorAddress  string    `json:"creator_address" db:"creator_address"`
+	CampaignAddress string    `json:"campaign_address" db:"campaign_address"`
+	Title           string    `json:"title" db:"title"`
+	Description     string    `json:"description" db:"description"`
+	ImageCIDs       []string  `json:"image_cids" db:"image_cids"`
+	ParentHash      string    `json:"parent_hash" db:"parent_hash"`
+	RootHash        string    `json:"root_hash" db:"root_hash"`
+	CreatedAt       time.Time `json:"created_at" db:"created_at"`
+	RootCreatedAt   time.Time `json:"root_created_at" db:"root_created_at"`
 }
 
 type UploadedImageInfo struct {

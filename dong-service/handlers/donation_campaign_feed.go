@@ -1,17 +1,19 @@
 package handlers
 
 import (
-    "dong-service/config"
-    "dong-service/logger"
-    "dong-service/middleware"
-    "dong-service/models"
-    "dong-service/repository"
-    "dong-service/services"
-    "encoding/json"
-    "github.com/gin-gonic/gin"
-    "io"
-    "net/http"
-    "bytes"    
+	"bytes"
+	"dong-service/config"
+	"dong-service/logger"
+	"dong-service/middleware"
+	"dong-service/models"
+	"dong-service/repository"
+	"dong-service/services"
+	"io"
+	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 type DonationCampaignFeedHandler struct {
@@ -21,53 +23,6 @@ type DonationCampaignFeedHandler struct {
 
 func NewDonationCampaignFeedHandler(repo *repository.DonationCampaignFeedRepository, cfg *config.Config) *DonationCampaignFeedHandler {
 	return &DonationCampaignFeedHandler{repo: repo, cfg: cfg}
-}
-
-// GetLatestCampaignFeed godoc
-// @Summary Get latest feed of a campaign
-// @Description Get the latest donation campaign feed by campaign address
-// @Tags campaign_feed
-// @Produce json
-// @Param campaign_address path string true "Campaign address"
-// @Success 200 {object} models.Response{data=models.DonationCampaignFeedResponse}
-// @Failure 400 {object} models.Response
-// @Failure 404 {object} models.Response
-// @Failure 500 {object} models.Response
-// @Router /api/v1/campaigns/latest-feed/{campaign_address} [get]
-func (h *DonationCampaignFeedHandler) GetLatestCampaignFeed(c *gin.Context) {
-    campaignAddr := c.Param("campaign_address")
-    if campaignAddr == "" {
-        logger.Error().Msg("Missing campaign_address parameter")
-        c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Missing campaign_address"))
-        return
-    }
-
-    feed, err := h.repo.GetLatestCampaignFeedByAddress(campaignAddr)
-    if err != nil {
-        logger.Error().Err(err).Str("campaign_address", campaignAddr).Msg("Failed to get latest campaign feed")
-        c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Internal server error"))
-        return
-    }
-    if feed == nil {
-        logger.Warn().Str("campaign_address", campaignAddr).Msg("No feed found for campaign")
-        c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, "No feed found"))
-        return
-    }
-
-    var extra models.FeedExtraInfo
-    _ = json.Unmarshal(feed.ExtraInfo, &extra)
-
-    resp := models.DonationCampaignFeedResponse{
-        ID:              feed.ID,
-        TxHash:          feed.TxHash,
-        OwnerAddress:    feed.OwnerAddress,
-        CampaignAddress: feed.CampaignAddress,
-        CreatedAt:       feed.CreatedAt,
-        ExtraInfo:       extra,
-    }
-
-    logger.Debug().Str("campaign_address", campaignAddr).Int64("feed_id", feed.ID).Msg("Latest campaign feed retrieved successfully")
-    c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Latest campaign feed retrieved", resp))
 }
 
 // ListCampaignFeedsByAddress godoc
@@ -89,7 +44,31 @@ func (h *DonationCampaignFeedHandler) ListCampaignFeedsByAddress(c *gin.Context)
 		return
 	}
 
-	feeds, err := h.repo.ListCampaignFeedsByAddress(campaignAddr)
+	// Query param
+	limitStr := c.DefaultQuery("limit", "10")
+	timestampLtStr := c.Query("timestamp_lt")
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid limit"))
+		return
+	}
+	if limit > 100 {
+		limit = 100
+	}
+
+	var timestampLt int64
+	if timestampLtStr == "" {
+		timestampLt = time.Now().Unix()
+	} else {
+		timestampLt, err = strconv.ParseInt(timestampLtStr, 10, 64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid timestamp_lt"))
+			return
+		}
+	}
+
+	feeds, err := h.repo.ListCampaignFeedsByAddress(campaignAddr, limit, timestampLt)
 	if err != nil {
 		logger.Error().Err(err).Str("campaign_address", campaignAddr).Msg("Failed to list campaign feeds")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Internal server error"))
@@ -100,22 +79,8 @@ func (h *DonationCampaignFeedHandler) ListCampaignFeedsByAddress(c *gin.Context)
 		c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, "No feeds found"))
 		return
 	}
-    
-	var resp []models.DonationCampaignFeedResponse
-	for _, feed := range feeds {
-		var extra models.FeedExtraInfo
-		_ = json.Unmarshal(feed.ExtraInfo, &extra)
-		resp = append(resp, models.DonationCampaignFeedResponse{
-			ID:              feed.ID,
-			TxHash:          feed.TxHash,
-			OwnerAddress:    feed.OwnerAddress,
-			CampaignAddress: feed.CampaignAddress,
-			CreatedAt:       feed.CreatedAt,
-			ExtraInfo:       extra,
-		})
-	}
 
-	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Campaign feeds retrieved", resp))
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Campaign feeds retrieved", feeds))
 }
 
 // UploadImage godoc

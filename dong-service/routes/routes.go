@@ -56,7 +56,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		walletHandler := handlers.NewWalletHandler(walletRepo, campaignRepo)
 		campaignFeedHandler := handlers.NewDonationCampaignFeedHandler(campaignFeedRepo, cfg)
 
-
 		// Campaign routes (protected)
 		campaignsPrivate := v1.Group("/admin/campaigns")
 		campaignsPrivate.Use(middleware.Authentication(cfg.JWT.Secret))
@@ -75,7 +74,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		campaignsPublic.GET("/:id", campaignHandler.GetCampaign)
 		campaignsPublic.GET("/:id/top-contributors", campaignHandler.GetTopContributors)
 		campaignsPublic.POST("/:id/sync", statsHandler.SyncCampaign)
-		campaignsPublic.GET("/latest-feed/:campaign_address", campaignFeedHandler.GetLatestCampaignFeed)
 		campaignsPublic.GET("/list-feed/:campaign_address", campaignFeedHandler.ListCampaignFeedsByAddress)
 
 		// Statistics routes (public)

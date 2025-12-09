@@ -1,10 +1,16 @@
-CREATE TABLE IF NOT EXISTS donation_campaign_feed (
+CREATE TABLE IF NOT EXISTS user_content (
     id BIGSERIAL PRIMARY KEY,
+    type TEXT NOT NULL,
     tx_hash VARCHAR(66) NOT NULL UNIQUE,
-    owner_address TEXT NOT NULL,
+    creator_address TEXT NOT NULL,
     campaign_address TEXT NOT NULL,
-    extra_info JSONB, 
+    title TEXT NOT NULL,
+    description TEXT,
+    image_cids TEXT[],
+    parent_hash VARCHAR(66),
+    root_hash VARCHAR(66),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-CREATE INDEX IF NOT EXISTS idx_campaign_feed_campaign_address ON donation_campaign_feed (campaign_address);
-CREATE INDEX IF NOT EXISTS idx_campaign_feed_transaction_timestamp ON donation_campaign_feed (created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_campaign_feed_campaign_address ON user_content (campaign_address);
+CREATE INDEX IF NOT EXISTS idx_campaign_feed_created_at ON user_content (created_at DESC);
