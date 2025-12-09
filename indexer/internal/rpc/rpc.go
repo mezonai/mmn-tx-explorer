@@ -79,6 +79,119 @@ func (rpc *Client) GetFullBlocks(ctx context.Context, blockNumbers []*big.Int) [
 		}}
 	}
 
+	if len(blockNumbers) == 0 {
+		return []GetFullBlockResult{}
+	}
+	
+	if rpc.areBlocksConsecutive(blockNumbers) {
+		return rpc.getFullBlocksByRange(ctx, blockNumbers)
+	}
+
+	return rpc.getFullBlocksByNumber(ctx, blockNumbers)
+}
+
+func (rpc *Client) areBlocksConsecutive(blockNumbers []*big.Int) bool {
+	if len(blockNumbers) <= 1 {
+		return true
+	}
+
+	sorted := make([]*big.Int, len(blockNumbers))
+	copy(sorted, blockNumbers)
+
+	for i := 0; i < len(sorted)-1; i++ {
+		for j := i + 1; j < len(sorted); j++ {
+			if sorted[i].Cmp(sorted[j]) > 0 {
+				sorted[i], sorted[j] = sorted[j], sorted[i]
+			}
+		}
+	}
+
+	for i := 1; i < len(sorted); i++ {
+		diff := new(big.Int).Sub(sorted[i], sorted[i-1])
+		if diff.Cmp(big.NewInt(1)) != 0 {
+			return false
+		}
+	}
+	return true
+}
+
+func (rpc *Client) getFullBlocksByRange(ctx context.Context, blockNumbers []*big.Int) []GetFullBlockResult {
+	sorted := make([]*big.Int, len(blockNumbers))
+	copy(sorted, blockNumbers)
+
+	for i := 0; i < len(sorted)-1; i++ {
+		for j := i + 1; j < len(sorted); j++ {
+			if sorted[i].Cmp(sorted[j]) > 0 {
+				sorted[i], sorted[j] = sorted[j], sorted[i]
+			}
+		}
+	}
+
+	fromSlot := sorted[0].Uint64()
+	toSlot := sorted[len(sorted)-1].Uint64()
+
+	res, err := rpc.mmnService.GetBlockByRange(ctx, fromSlot, toSlot)
+	if err != nil {
+		log.Error().
+			Uint64("from_slot", fromSlot).
+			Uint64("to_slot", toSlot).
+			Err(err).
+			Msg("GetFullBlocks: MMN service error - failed to get blocks by range")
+		return []GetFullBlockResult{{
+			Error: fmt.Errorf("failed to get blocks by range: %v", err),
+		}}
+	}
+
+	log.Info().
+		Int("requested_blocks", len(blockNumbers)).
+		Int("response_blocks_count", len(res.Blocks)).
+		Uint64("from_slot", fromSlot).
+		Uint64("to_slot", toSlot).
+		Msg("GetFullBlocks: MMN service range response received")
+
+	rawBlocks := make([]RPCFetchBatchResult[*big.Int, common.RawBlock], len(blockNumbers))
+
+	blockMap := make(map[uint64]*pb.BlockInfo)
+	for _, blk := range res.Blocks {
+		if blk != nil {
+			blockMap[blk.Slot] = blk
+		}
+	}
+
+	successfulBlocks := 0
+	failedBlocks := 0
+
+	for i, blockNum := range blockNumbers {
+		slot := blockNum.Uint64()
+		if blk, exists := blockMap[slot]; exists {
+			rawBlock := convertPBBlockInfoToRawBlock(blk)
+			rawBlocks[i] = RPCFetchBatchResult[*big.Int, common.RawBlock]{
+				Key:    blockNum,
+				Result: rawBlock,
+				Error:  nil,
+			}
+			successfulBlocks++
+		} else {
+			failedBlocks++
+			rawBlocks[i] = RPCFetchBatchResult[*big.Int, common.RawBlock]{
+				Key:    blockNum,
+				Result: nil,
+				Error:  fmt.Errorf("block not found in range response"),
+			}
+		}
+	}
+
+	log.Info().
+		Int("requested_blocks", len(blockNumbers)).
+		Int("successful_blocks", successfulBlocks).
+		Int("failed_blocks", failedBlocks).
+		Msg("GetFullBlocks: range processing summary")
+
+	results := SerializeFullBlocks(rpc.chainID, rawBlocks, nil, nil, nil)
+	return results
+}
+
+func (rpc *Client) getFullBlocksByNumber(ctx context.Context, blockNumbers []*big.Int) []GetFullBlockResult {
 	nums := make([]uint64, len(blockNumbers))
 	for i, n := range blockNumbers {
 		nums[i] = n.Uint64()
@@ -96,19 +209,10 @@ func (rpc *Client) GetFullBlocks(ctx context.Context, blockNumbers []*big.Int) [
 		}}
 	}
 
-	// Log MMN service response details
 	log.Info().
 		Int("requested_blocks", len(blockNumbers)).
 		Int("response_blocks_count", len(res.Blocks)).
 		Msg("GetFullBlocks: MMN service response received")
-
-	// Log first and last requested block numbers for easier tracking
-	if len(blockNumbers) > 0 {
-		log.Debug().
-			Str("first_requested_block", blockNumbers[0].String()).
-			Str("last_requested_block", blockNumbers[len(blockNumbers)-1].String()).
-			Msg("GetFullBlocks: requested block range")
-	}
 
 	rawBlocks := make([]RPCFetchBatchResult[*big.Int, common.RawBlock], len(blockNumbers))
 
@@ -345,6 +449,58 @@ func convertPBBlockToRawBlock(pbBlock *pb.Block) common.RawBlock {
 				txData,
 				fmt.Sprintf("%x", pbBlock.Hash),
 				pbBlock.Slot,
+				uint64(i),
+			)
+			transactions = append(transactions, rawTx)
+		}
+	}
+	rawBlock["transactions"] = transactions
+
+	// Set default values for Ethereum-compatible fields
+	rawBlock["nonce"] = "0x0"
+	rawBlock["sha3Uncles"] = "0x0000000000000000000000000000000000000000000000000000000000000000"
+	rawBlock["mixHash"] = "0x0000000000000000000000000000000000000000000000000000000000000000"
+	rawBlock["stateRoot"] = "0x0000000000000000000000000000000000000000000000000000000000000000"
+	rawBlock["transactionsRoot"] = "0x0000000000000000000000000000000000000000000000000000000000000000"
+	rawBlock["receiptsRoot"] = "0x0000000000000000000000000000000000000000000000000000000000000000"
+	rawBlock["logsBloom"] = "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+	rawBlock["difficulty"] = "0x0"
+	rawBlock["totalDifficulty"] = "0x0"
+	rawBlock["size"] = "0x0"
+	rawBlock["extraData"] = "0x" //nolint:goconst // protocol literal
+	rawBlock["gasLimit"] = "0x0"
+	rawBlock["gasUsed"] = "0x0"
+	rawBlock["baseFeePerGas"] = "0x0"
+	rawBlock["withdrawalsRoot"] = "0x0000000000000000000000000000000000000000000000000000000000000000"
+
+	return rawBlock
+}
+
+// convertPBBlockInfoToRawBlock converts a protobuf BlockInfo to common.RawBlock format
+func convertPBBlockInfoToRawBlock(pbBlockInfo *pb.BlockInfo) common.RawBlock {
+	rawBlock := make(common.RawBlock)
+
+	// Convert slot to block number
+	rawBlock["number"] = fmt.Sprintf("%x", pbBlockInfo.Slot)
+
+	// Convert hash
+	rawBlock["hash"] = fmt.Sprintf("%x", pbBlockInfo.Hash)
+	rawBlock["parentHash"] = fmt.Sprintf("%x", pbBlockInfo.PrevHash)
+
+	// Convert timestamp
+	rawBlock["timestamp"] = fmt.Sprintf("%x", pbBlockInfo.Timestamp)
+
+	// Convert miner/author
+	rawBlock["miner"] = pbBlockInfo.LeaderId
+
+	// Convert transactions from TransactionData
+	var transactions []interface{}
+	if pbBlockInfo.TransactionData != nil {
+		for i, txData := range pbBlockInfo.TransactionData {
+			rawTx := convertPBTransactionDataToRawTransaction(
+				txData,
+				fmt.Sprintf("%x", pbBlockInfo.Hash),
+				pbBlockInfo.Slot,
 				uint64(i),
 			)
 			transactions = append(transactions, rawTx)
