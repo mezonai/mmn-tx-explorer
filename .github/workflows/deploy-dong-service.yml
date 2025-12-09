@@ -96,8 +96,8 @@ jobs:
           cd dong-service
           TAG_NAME="${{ inputs.target_tag }}"
           if [ -z "$TAG_NAME" ]; then TAG_NAME="v0.0.0"; fi
-          echo "==> Building binary: dong-service-${TAG_NAME}"
           GOOS=linux GOARCH=amd64 go build -o ../build/dong-service-${TAG_NAME} .
+          echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
 
       - name: Get short SHA
         if: inputs.source_artifact != ''
@@ -122,7 +122,7 @@ jobs:
             build/dong-service-${{ steps.build_dong_binary.outputs.tag_name }}
 
   deploy:
-    if: always() && (needs.build.result == 'success' || inputs.existing_tag_to_deploy != '' || inputs.skip_build == 'true')
+    if: always()
     needs: build
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}

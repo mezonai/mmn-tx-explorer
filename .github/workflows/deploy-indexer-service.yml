@@ -114,7 +114,7 @@ jobs:
             build/indexer-${{ steps.build_indexer_binary.outputs.tag_name }}
 
   deploy-indexer:
-    if: always() && (needs.build.result == 'success' || inputs.existing_tag_to_deploy != '' || inputs.skip_build == 'true')
+    if: always()
     needs: build
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
