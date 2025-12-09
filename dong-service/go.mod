@@ -9,6 +9,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
 	github.com/gosimple/slug v1.15.0
+	github.com/h2non/filetype v1.1.3
 	github.com/ipfs/boxo v0.35.2
 	github.com/ipfs/kubo v0.39.0
 	github.com/lib/pq v1.10.9
