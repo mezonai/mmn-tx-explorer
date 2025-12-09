@@ -8,7 +8,7 @@ type DonationCampaignFeed struct {
 	ID              int64     `json:"id" db:"id"`
 	TxHash          string    `json:"tx_hash" db:"tx_hash"`
 	CreatorAddress  string    `json:"creator_address" db:"creator_address"`
-	CampaignAddress string    `json:"campaign_address" db:"campaign_address"`
+	CampaignAddress string    `json:"campaign_address" db:"related_address"`
 	Title           string    `json:"title" db:"title"`
 	Description     string    `json:"description" db:"description"`
 	ImageCIDs       []string  `json:"image_cids" db:"image_cids"`

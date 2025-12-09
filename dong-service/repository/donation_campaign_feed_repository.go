@@ -22,7 +22,7 @@ func NewDonationCampaignFeedRepository(db *sql.DB, dongSchema string) *DonationC
 func (r *DonationCampaignFeedRepository) ListCampaignFeedsByAddress(campaignAddress string, limit int, timestampLt int64) ([]*models.DonationCampaignFeed, error) {
 	query := fmt.Sprintf(`
         SELECT 
-            id, tx_hash, creator_address, campaign_address,
+            id, tx_hash, creator_address, related_address,
             title, description, image_cids, parent_hash,
             root_hash, created_at, root_created_at
         FROM (
@@ -36,11 +36,11 @@ func (r *DonationCampaignFeedRepository) ListCampaignFeedsByAddress(campaignAddr
                     PARTITION BY COALESCE(f.root_hash, f.tx_hash)
                 ) AS root_created_at
             FROM %s.user_content f
-            WHERE f.campaign_address = $1
+            WHERE f.related_address = $1
               AND f.type = $2
         ) t
         WHERE rn = 1
-          AND root_created_at <= to_timestamp($3)
+          AND root_created_at < to_timestamp($3)
         ORDER BY root_created_at DESC
         LIMIT $4;
     `, r.dongSchema)

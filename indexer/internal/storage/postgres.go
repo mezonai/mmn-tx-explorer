@@ -795,7 +795,7 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 				}
 				userContent.TxHash = tx.Hash
 				userContent.CreatorAddress = tx.FromAddress
-				userContent.CampaignAddress = tx.ToAddress
+				userContent.RelatedAddress = tx.ToAddress
 				userContent.CreatedAt = tx.TransactionTimestamp
 
 				userContents = append(userContents, userContent)
@@ -1696,7 +1696,7 @@ func (p *PostgresConnector) insertUserContentsTx(ctx context.Context, tx *sql.Tx
 			f.Type,
 			f.TxHash,
 			f.CreatorAddress,
-			f.CampaignAddress,
+			f.RelatedAddress,
 			f.Title,
 			f.Description,
 			pq.Array(f.ImageCIDs),
@@ -1708,7 +1708,7 @@ func (p *PostgresConnector) insertUserContentsTx(ctx context.Context, tx *sql.Tx
 
 	query := fmt.Sprintf(`
         INSERT INTO dong_schema.user_content
-        (type, tx_hash, creator_address, campaign_address, title, description, image_cids, parent_hash, root_hash, created_at)
+        (type, tx_hash, creator_address, related_address, title, description, image_cids, parent_hash, root_hash, created_at)
         VALUES %s
         ON CONFLICT (tx_hash) DO NOTHING`,
 		strings.Join(valueStrings, ","))

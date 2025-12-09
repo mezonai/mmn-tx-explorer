@@ -570,65 +570,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/campaigns/latest-feed/{campaign_address}": {
-            "get": {
-                "description": "Get the latest donation campaign feed by campaign address",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "campaign_feed"
-                ],
-                "summary": "Get latest feed of a campaign",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Campaign address",
-                        "name": "campaign_address",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/models.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/models.DonationCampaignFeedResponse"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/campaigns/list-feed/{campaign_address}": {
             "get": {
                 "description": "List all donation campaign feeds by campaign address",

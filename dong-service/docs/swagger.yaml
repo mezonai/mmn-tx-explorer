@@ -839,42 +839,6 @@ paths:
       summary: Get top contributors for a campaign
       tags:
       - campaigns
-  /api/v1/campaigns/latest-feed/{campaign_address}:
-    get:
-      description: Get the latest donation campaign feed by campaign address
-      parameters:
-      - description: Campaign address
-        in: path
-        name: campaign_address
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/models.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.DonationCampaignFeedResponse'
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/models.Response'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/models.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/models.Response'
-      summary: Get latest feed of a campaign
-      tags:
-      - campaign_feed
   /api/v1/campaigns/list-feed/{campaign_address}:
     get:
       description: List all donation campaign feeds by campaign address
