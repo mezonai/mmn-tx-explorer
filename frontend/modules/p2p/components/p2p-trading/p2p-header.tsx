@@ -7,7 +7,7 @@ import { Bolt } from 'lucide-react';
 
 const breadcrumbs: IBreadcrumb[] = [
   { label: 'Dashboard', href: ROUTES.HOME },
-  { label: 'P2P', href: ROUTES.P2PTRADING },
+  { label: 'P2P', href: ROUTES.P2P },
 ];
 
 export const P2PHeader = () => {

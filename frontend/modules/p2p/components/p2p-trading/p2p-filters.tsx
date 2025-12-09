@@ -1,4 +1,3 @@
-// components/p2p/p2p-filters.tsx
 'use client';
 
 import { useState, useEffect } from 'react';

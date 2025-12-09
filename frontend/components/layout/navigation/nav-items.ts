@@ -52,7 +52,7 @@ export const navGroupItems: NavGroup[] = [
       },
       {
         title: 'P2P Trading',
-        href: ROUTES.P2PTRADING,
+        href: ROUTES.P2P,
         icon: Sprout,
       },
     ],

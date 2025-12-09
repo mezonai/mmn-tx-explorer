@@ -28,8 +28,8 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
       headerContent: 'MZD / Rate',
       renderCell: (offer) => (
         <div>
-          <div className="text-xl font-bold text-white dark:text-white">
-            {offer.total_quantity.toLocaleString('en-US')}
+          <div className="text-primary text-xl font-bold dark:text-white">
+            {offer.total_quantity.toLocaleString('en-US')}{' '}
             <span className="text-xs font-normal text-gray-500">MZD</span>
           </div>
           <div className="mt-1 text-sm text-gray-400">
@@ -47,11 +47,13 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
         <div className="flex flex-col gap-1 text-gray-300 dark:text-gray-300">
           <span>
             <span className="text-gray-500 dark:text-gray-500">Available:</span>{' '}
-            <span className="font-medium text-white dark:text-white">{offer.quantity.toLocaleString('en-US')} MZD</span>
+            <span className="text-primary font-medium dark:text-white">
+              {offer.quantity.toLocaleString('en-US')} MZD
+            </span>
           </span>
           <span>
             <span className="text-gray-500 dark:text-gray-500">Limit:</span>{' '}
-            <span className="font-medium text-white dark:text-white">
+            <span className="text-primary font-medium dark:text-white">
               {offer.limit.min.toLocaleString('en-US')} - {offer.limit.max.toLocaleString('en-US')} MZD
             </span>
             <span className="ml-1 text-xs text-gray-500 dark:text-gray-500">/ transaction</span>

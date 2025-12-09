@@ -6,7 +6,7 @@ import { P2PHeader } from './p2p-header';
 import { P2PFiltersComponent } from './p2p-filters';
 import { useP2POffers } from '../../hooks/useP2POffers';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { P2POffersTabs } from './p2p-tabs-offers';
+import { P2POffersTabs } from './p2p-offers-tab';
 import { usePaginationQueryParam } from '@/hooks/usePaginationQueryParam';
 
 export const P2P = () => {
@@ -56,7 +56,6 @@ export const P2P = () => {
             limit={limit}
             onPageChange={handleChangePage}
             onLimitChange={handleChangeLimit}
-            // Truyền Callback xử lý filter
             onFilterChange={handleFilterChange}
           />
           <P2POffersTabs offers={offers?.data} isLoading={isLoading} />
