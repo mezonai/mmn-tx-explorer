@@ -54,14 +54,14 @@ jobs:
 
     steps:
       - name: Checkout
-        if: github.event_name == 'workflow_dispatch'
+        if: inputs.source_artifact == ''
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
           clean: false
 
       - name: Download source (from Artifact)
-        if: github.event_name == 'workflow_call'
+        if: inputs.source_artifact != ''
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.source_artifact }}

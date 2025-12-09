@@ -50,21 +50,21 @@ jobs:
       tag_name: ${{ steps.build_indexer_binary.outputs.tag_name }}
     steps:
       - name: Checkout
-        if: github.event_name == 'workflow_dispatch'
+        if: inputs.source_artifact == ''
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
           clean: false
 
       - name: Download source (from Artifact)
-        if: github.event_name == 'workflow_call'
+        if: inputs.source_artifact != ''
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.source_artifact }}
           path: .
 
       - name: Setup Go
-        if: inputs.skip_build == 'false' || (github.event_name == 'workflow_dispatch' && inputs.existing_tag_to_deploy == '')
+        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
         uses: actions/setup-go@v5
         with:
           go-version: "1.23"
@@ -72,7 +72,7 @@ jobs:
           check-latest: false
           
       - name: Run golangci-lint
-        if: inputs.skip_build == 'false' || (github.event_name == 'workflow_dispatch' && inputs.existing_tag_to_deploy == '')
+        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
         uses: golangci/golangci-lint-action@v8
         with:
           version: v2.5.0
@@ -81,7 +81,7 @@ jobs:
         continue-on-error: true
 
       - name: Build Indexer binary
-        if: inputs.skip_build == 'false' || (github.event_name == 'workflow_dispatch' && inputs.existing_tag_to_deploy == '')
+        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
         id: build_indexer_binary
         run: |
           mkdir -p build
@@ -92,7 +92,7 @@ jobs:
           echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
 
       - name: Get short SHA
-        if: github.event_name == 'workflow_call'
+        if: inputs.source_artifact != ''
         id: get_sha
         run: |
           if [ -n "${{ inputs.git_sha }}" ]; then
@@ -102,7 +102,7 @@ jobs:
           fi
 
       - name: Create Release and Upload binary
-        if: github.event_name == 'workflow_call' && inputs.skip_build == 'false'
+        if: inputs.source_artifact != '' && inputs.skip_build == 'false'
         id: create_release
         uses: softprops/action-gh-release@v2
         with:
@@ -149,7 +149,7 @@ jobs:
           echo "binary_path=build/indexer-$TAG_TO_DEPLOY" >> $GITHUB_OUTPUT
       
       - name: Download release binary using url 
-        if: inputs.existing_tag_to_deploy != '' || inputs.skip_build == 'true'
+        if: inputs.existing_tag_to_deploy != '' || inputs.source_artifact != ''
         run: | 
           set -e 
           OWNER=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f1)
