@@ -70,3 +70,17 @@ lock:
 # Cache Request Configuration
 cache_request:
   Cache_Exp: 20        # Cache expiration time in seconds
+
+# Rate Limit Configuration
+rate_limit:
+  ip_rate_limit_per_sec: 1
+  ip_rate_limit_burst: 3
+
+# Image Filter Configuration
+filter_image:
+  max_size_upload: 5 # MB
+  block_mime_types: 
+     - "image/svg+xml"
+  enable_virus_scan: false
+  virus_scan_url: "tcp://127.0.0.1:3310"
+  ipfs_url: "/ip4/127.0.0.1/tcp/5001"
