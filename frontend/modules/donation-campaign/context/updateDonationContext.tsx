@@ -66,16 +66,23 @@ export function UpdateDonationProvider({ campaign, children }: CreateDonationUpd
   const handleSubmit = async () => {
     try {
       setIsSaving(true);
-      const filePromises = form.images.map(async (base64, index) => {
-        const response = await fetch(base64);
-        const blob = await response.blob();
-        const mimeType = base64.split(',')[0].split(':')[1].split(';')[0];
-        const extension = mimeType.split('/')[1];
-        return new File([blob], `image-${index}.${extension}`, { type: mimeType });
-      });
-      const files = await Promise.all(filePromises);
+      
+      let imageCids: string[] = [];
 
-      const ipfs_images = await uploadImagesMutation.mutateAsync({ files });
+      if (form.images && form.images.length > 0) {
+        const filePromises = form.images.map(async (base64, index) => {
+          const response = await fetch(base64);
+          const blob = await response.blob();
+          const mimeType = base64.split(',')[0].split(':')[1].split(';')[0];
+          const extension = mimeType.split('/')[1];
+          return new File([blob], `image-${index}.${extension}`, { type: mimeType });
+        });
+        const files = await Promise.all(filePromises);
+        const ipfs_images = await uploadImagesMutation.mutateAsync({ files });
+        imageCids = ipfs_images.files.map((file) => file.file_cid);
+      }
+
+      // Get nonce and submit the update
       const nonceResponse = await mmnClient.getCurrentNonce(user?.id || '');
 
       const updateResponse = await mmnClient.postDonationCampaignFeed({
@@ -91,9 +98,10 @@ export function UpdateDonationProvider({ campaign, children }: CreateDonationUpd
           type: ETransferType.DonationFeedCampaign,
           title: form.title,
           description: form.description,
-          image_cids: ipfs_images.files.map((file) => file.file_cid),
+          image_cids: imageCids,
         },
       });
+
       if (updateResponse.ok) {
         toast.success('Donation update submitted successfully.');
         router.push(ROUTES.CAMPAIGN(campaign.slug));

@@ -1,2 +1,2 @@
 export * from './CreateCampaignContext';
-export * from './updateDonationContext';
+export * from './UpdateDonationContext';
