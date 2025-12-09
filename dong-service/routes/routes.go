@@ -9,6 +9,7 @@ import (
 	"dong-service/logger"
 	"dong-service/middleware"
 	"dong-service/repository"
+	"dong-service/services"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -98,5 +99,18 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		walletPublic := v1.Group("/wallets")
 		walletPublic.Use(middleware.ParseTokenAndAddToContext(cfg.JWT.Secret))
 		walletPublic.GET("/:address/detail", walletHandler.GetWalletDetail)
+
+		offerRepo := repository.NewOfferRepository(database.GetDB(), cfg.Database.Schema)
+		orderRepo := repository.NewOrderRepository(database.GetDB(), cfg.Database.Schema)
+
+		orderService := services.NewOrderService(orderRepo, offerRepo)
+		orderHandler := handlers.NewOrderHandler(orderService)
+
+		orders := v1.Group("/orders")
+		orders.Use(middleware.Authentication(cfg.JWT.Secret))
+		orders.GET("", orderHandler.ListOrdersByWallet)
+		orders.GET("/:id", orderHandler.GetOrderDetail)
+		orders.POST("/:id/confirm", orderHandler.ConfirmOrder)
+
 	}
 }
