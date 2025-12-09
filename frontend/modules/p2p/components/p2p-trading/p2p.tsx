@@ -1,4 +1,3 @@
-// app/p2p/page.tsx
 'use client';
 
 import { useState, useCallback } from 'react';

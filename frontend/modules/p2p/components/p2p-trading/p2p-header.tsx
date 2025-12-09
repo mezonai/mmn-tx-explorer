@@ -23,11 +23,6 @@ export const P2PHeader = () => {
             <h1 className="text-foreground text-2xl font-bold dark:text-white">Mezon P2P Trading</h1>
           </div>
         </div>
-        {/* <div className="flex items-center gap-4">
-          <button className="hover:text-foreground text-gray-500 dark:text-gray-400 dark:hover:text-white">
-            <Bell className="h-5 w-5" />
-          </button>
-        </div> */}
       </div>
     </div>
   );
