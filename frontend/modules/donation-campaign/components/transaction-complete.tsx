@@ -43,7 +43,7 @@ export const TransactionComplete = (props: TransactionCompleteProps) => {
               Amount {finalType === TransactionType.Withdraw ? 'Withdrawn' : 'Donated'}
             </p>
             <p className="text-brand-primary text-3xl font-bold">
-              {finalType === TransactionType.Withdraw ? NumberUtil.formatWithCommas(amount) : amount}
+              {amount}
               <span className="ml-1.5 text-xl font-medium">{finalSymbol}</span>
             </p>
           </div>

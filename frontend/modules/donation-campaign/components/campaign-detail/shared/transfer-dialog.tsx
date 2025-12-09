@@ -146,7 +146,7 @@ export function TransferDialog({
         </DialogHeader>
         {withdrawSuccess ? (
           <TransactionComplete
-            amount={amountToSend}
+            amount={NumberUtil.formatWithCommas(amountToSend)}
             symbol={APP_CONFIG.CHAIN_SYMBOL}
             type={TransactionType.Withdraw}
             onClose={() => {
