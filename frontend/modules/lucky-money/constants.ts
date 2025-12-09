@@ -11,6 +11,7 @@ export const EXPIRY_OPTIONS = [
 export const QUERY_KEYS = {
   CLAIMED_ENVELOPES: 'claimed-envelopes', 
   CREATED_ENVELOPES: 'created-envelopes',
+  RED_ENVELOPE_STATS_BY_USER: 'red-envelope-stats-by-user',
   RED_ENVELOPE_STATS: 'red-envelope-stats',
   RED_ENVELOPES: 'red-envelopes',
   RED_ENVELOPE_DETAIL: 'red-envelope-detail',
@@ -19,6 +20,7 @@ export const QUERY_KEYS = {
 
 export const RED_ENVELOPE_ENDPOINTS = {
   STATS: 'api/v1/red-envelopes/stats',
+  STATS_BY_USER: 'api/v1/red-envelopes/stats-by-user',
   CREATE_RED_ENVELOPE: 'api/v1/red-envelopes/create',
   CREATED_ENVELOPES_BY_USER: 'api/v1/red-envelopes/created-by-user',
   CLAIMED_ENVELOPES_BY_USER: 'api/v1/red-envelopes/claimed-by-user',
@@ -40,3 +42,5 @@ export const DEFAULT_FORM_VALUES: CreateRedEnvelopeForm = {
   randomDistribution: true,
   expiryHours: 1,
 };
+
+export const MAX_PARTICIPANT_COUNT = 500;

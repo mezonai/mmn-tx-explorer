@@ -1552,7 +1552,7 @@ func (p *PostgresConnector) insertTransactionsTx(
 	}
 
 	valueStrings := make([]string, len(transactions))
-	valueArgs := make([]interface{}, 0, len(transactions)*13)
+	valueArgs := make([]interface{}, 0, len(transactions)*14)
 
 	for i, t := range transactions {
 		base := i * 14
@@ -1582,6 +1582,7 @@ func (p *PostgresConnector) insertTransactionsTx(
 		)
 	}
 
+	nextIndex := len(valueArgs) + 1
 	insertQuery := fmt.Sprintf(`
 		WITH inserted AS (
 			INSERT INTO transactions (
@@ -1612,9 +1613,9 @@ func (p *PostgresConnector) insertTransactionsTx(
 		)
 		SELECT
 			COUNT(*) FILTER (WHERE is_new) AS inserted_count,
-			COUNT(*) FILTER (WHERE is_new AND transaction_extra_info_type IN ($%s, $%s) AND status = $%s) AS new_give_coffee
+			COUNT(*) FILTER (WHERE is_new AND transaction_extra_info_type IN ($%d, $%d) AND status = $%d) AS new_give_coffee
 		FROM inserted;
-	`, strings.Join(valueStrings, ","), common.TransactionExtraInfoGiveCoffee.String(), common.TransactionExtraInfoDongGiveCoffee.String(), pb.TransactionStatus_FINALIZED)
+	`, strings.Join(valueStrings, ","), nextIndex, nextIndex+1, nextIndex+2)
 
 	var insertedCount, newGiveCoffeeCount int
 
@@ -2184,10 +2185,10 @@ func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
 	averageBlockMs := int64(avgBlockTime * 1000)
 
 	var totalGiveCoffee int64
-	err = p.db.QueryRowContext(ctx, fmt.Sprintf(`
+	err = p.db.QueryRowContext(ctx, `
 		SELECT COUNT(*) FROM transactions
-		WHERE transaction_extra_info_type IN (%s, %s) AND status = %d
-	`, common.TransactionExtraInfoGiveCoffee.String(), common.TransactionExtraInfoDongGiveCoffee.String(), pb.TransactionStatus_FINALIZED)).Scan(&totalGiveCoffee)
+		WHERE transaction_extra_info_type IN ($1, $2) AND status = $3
+	`, common.TransactionExtraInfoGiveCoffee.String(), common.TransactionExtraInfoDongGiveCoffee.String(), pb.TransactionStatus_FINALIZED).Scan(&totalGiveCoffee)
 	if err != nil {
 		return fmt.Errorf("failed to count give_coffee transactions: %w", err)
 	}
