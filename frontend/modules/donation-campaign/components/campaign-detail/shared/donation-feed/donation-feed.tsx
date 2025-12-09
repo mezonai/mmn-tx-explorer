@@ -44,7 +44,7 @@ export const DonationFeed = ({ campaign }: { campaign: DonationCampaign }) => {
         <div className="border-muted-foreground/50 bg-background flex flex-col items-center justify-center rounded-2xl border py-12">
           <FileX2Icon className="text-primary my-4 h-10 w-10" />
           <h3 className="text-primary mb-2 text-lg font-semibold">No Updates Yet</h3>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground text-sm px-4">
             This campaign hasn't posted any updates yet. Check back later!
           </p>
         </div>
