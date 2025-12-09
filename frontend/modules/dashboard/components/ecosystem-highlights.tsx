@@ -116,7 +116,7 @@ export const EcosystemHighlights = () => {
           style={refHeight ? { minHeight: refHeight } : undefined}
         >
           <div className="mb-3 flex items-center justify-between">
-            <span className="font-semibold">Stake</span>
+            <span className="font-semibold">P2P</span>
             <div className="flex items-center gap-2">
               <span className="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-700 uppercase dark:bg-amber-900/30 dark:text-amber-300">
                 Coming Soon
@@ -124,7 +124,7 @@ export const EcosystemHighlights = () => {
               <i className="fa-solid fa-seedling text-[var(--color-brand-link)] dark:text-green-400"></i>
             </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">0 {APP_CONFIG.CHAIN_SYMBOL} staked</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">0 {APP_CONFIG.CHAIN_SYMBOL} in P2P trades</p>
         </div>
 
         <div

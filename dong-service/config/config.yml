@@ -43,7 +43,8 @@ oauth:
   user_info_url: "https://oauth2.mezon.ai/userinfo"
 
 redis:
-  address: "redis:6379"
+  address: ""
+  username: "default"
   password: ""
   db: 0
 
@@ -70,3 +71,8 @@ lock:
 # Cache Request Configuration
 cache_request:
   Cache_Exp: 20        # Cache expiration time in seconds
+
+# Event Configuration
+event:
+  api_url: "http://localhost:8899/api/event"
+  api_key: "MezonDongServiceEventAPIKey2024!"

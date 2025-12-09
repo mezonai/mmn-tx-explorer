@@ -127,5 +127,10 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		orders.GET("/:id", orderHandler.GetOrderDetail)
 		orders.POST("/:id/confirm", orderHandler.ConfirmOrder)
 		offersPrivateAuth.POST("/:id/orders", orderHandler.CreateOrder)
+		// Example routes (protected)
+		examplePrivate := v1.Group("/examples")
+		examplePrivate.Use(middleware.Authentication(cfg.JWT.Secret))
+		exampleHandler := handlers.NewExampleHandler()
+		examplePrivate.POST("/create-events", exampleHandler.CreateEvents)
 	}
 }
