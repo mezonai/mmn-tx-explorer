@@ -52,6 +52,7 @@ const (
 const (
 	WalletTypeDefault     = "DEFAULT"
 	WalletTypeRedEnvelope = "LUCKY_MONEY"
+	WalletTypeOffer       = "OFFER"
 )
 
 // Red Envelope Configuration
