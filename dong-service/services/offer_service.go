@@ -8,6 +8,7 @@ import (
 	"dong-service/repository"
 	"encoding/json"
 	"fmt"
+	"math"
 	"strconv"
 )
 
@@ -61,15 +62,9 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 	}
 
 	// build offer model
-	var priceInt int64
-	if req.Price != nil && *req.Price != "" {
-		p, err := strconv.ParseInt(*req.Price, 10, 64)
-		if err != nil {
-			_ = tx.Rollback()
-			return nil, fmt.Errorf("invalid price: %w", err)
-		}
-		priceInt = p
-	}
+	// Price for offers is computed as quantity * price_rate (rounded)
+	// parse provided price_rate (later we ensure it defaults to 1) and compute
+	var priceInt int64 = 0
 
 	quantityInt, err := strconv.ParseInt(req.Quantity, 10, 64)
 	if err != nil {
@@ -141,15 +136,22 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 	if req.PriceRate != nil && *req.PriceRate != "" {
 		priceRateStr = req.PriceRate
 	}
-	if offer.PriceType == constants.PriceTypeFixed {
-		v := "1"
-		priceRateStr = &v
-	}
 	if priceRateStr == nil {
 		v := "1"
 		priceRateStr = &v
 	}
 	offer.PriceRate = priceRateStr
+
+	// Compute final price = quantity * price_rate.
+	// price_rate is stored as string and may contain decimals. Parse it and
+	// multiply by quantity (int64) then round to nearest integer.
+	if priceRateStr != nil {
+		if rate, err := strconv.ParseFloat(*priceRateStr, 64); err == nil {
+			computed := float64(quantityInt) * rate
+			priceInt = int64(math.Round(computed))
+		}
+	}
+	offer.Price = priceInt
 
 	if err := s.repo.CreateOffer(ctx, offer, tx); err != nil {
 		_ = tx.Rollback()

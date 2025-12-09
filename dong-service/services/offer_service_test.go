@@ -126,3 +126,49 @@ func TestConfirmOffer_Success(t *testing.T) {
 		t.Fatalf("unmet expectations: %v", err)
 	}
 }
+
+func TestCreateOffer_ComputesPriceFromQuantityAndRate(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("sqlmock: %v", err)
+	}
+	defer db.Close()
+	database.DB = db
+
+	offerRepo := repository.NewOfferRepository(db, "public")
+	walletRepo := repository.NewIntermediaryWalletRepository(db, "public")
+	svc := NewOfferService(offerRepo, walletRepo)
+
+	// Begin transaction
+	mock.ExpectBegin()
+
+	// Offer insert
+	now := time.Now()
+	mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO public.offers (")).WillReturnRows(sqlmock.NewRows([]string{"offer_id", "created_at", "updated_at"}).AddRow(int64(13), now, now))
+
+	mock.ExpectCommit()
+
+	req := &models.CreateOfferRequest{
+		IntermediaryWalletID: func() *int64 { i := int64(2); return &i }(),
+		Side:                 models.OfferSideSell,
+		Symbol:               "MMN",
+		Quantity:             "100",
+		PriceRate:            func() *string { s := "2"; return &s }(),
+	}
+
+	o, err := svc.CreateOffer(context.Background(), req, "wallet-addr")
+	if err != nil {
+		t.Fatalf("expected success, got %v", err)
+	}
+	if o == nil {
+		t.Fatalf("expected created offer, got nil")
+	}
+
+	if o.Price != 200 {
+		t.Fatalf("expected computed price 200, got %d", o.Price)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet expectations: %v", err)
+	}
+}
