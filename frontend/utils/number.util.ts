@@ -44,4 +44,13 @@ export class NumberUtil {
     const scaled = num / scale;
     return scaled;
   }
+
+  static formatAndScaleDown(value: number, scale: number = 1_000_000): string {
+    if (!value) return '0';
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    if (isNaN(num)) return '0';
+
+    const scaled = num / scale;
+    return scaled.toString();
+  }
 }
