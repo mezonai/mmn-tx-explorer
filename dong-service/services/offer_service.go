@@ -161,21 +161,24 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 
 func (s *OfferService) ConfirmOffer(ctx context.Context, offerID int64, executionPrice *string, source *string, metadata *string) error {
 	db := database.GetDB()
-	pendingOrder, _ := s.orderRepo.GetPendingOrderForOffer(ctx, offerID)
+	pendingOrder, _ := s.orderRepo.GetOrderByID(ctx, offerID)
 
 	var txHash *string
 
 	if pendingOrder != nil && pendingOrder.WalletAddress != nil && s.blockchain != nil {
-
-		w, err := s.walletRepo.GetWalletByID(ctx, pendingOrder.IntermediaryWalletID)
-		if err == nil {
-
-			if pendingOrder.Amount > 0 {
-				txh, err := s.blockchain.TransferMoney(w.EncryptedPrivateKey, w.WalletAddress, *pendingOrder.WalletAddress, pendingOrder.Amount)
-				if err != nil {
-					return fmt.Errorf("failed to transfer funds during offer confirm: %w", err)
+		if pendingOrder.OfferID != nil {
+			of, err := s.repo.GetOfferByID(ctx, *pendingOrder.OfferID)
+			if err == nil {
+				w, err := s.walletRepo.GetWalletByID(ctx, of.IntermediaryWalletID)
+				if err == nil {
+					if pendingOrder.Amount > 0 {
+						txh, err := s.blockchain.TransferMoney(w.EncryptedPrivateKey, w.WalletAddress, *pendingOrder.WalletAddress, pendingOrder.Amount)
+						if err != nil {
+							return fmt.Errorf("failed to transfer funds during offer confirm: %w", err)
+						}
+						txHash = &txh
+					}
 				}
-				txHash = &txh
 			}
 		}
 	}
