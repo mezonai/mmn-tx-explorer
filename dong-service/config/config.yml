@@ -81,8 +81,6 @@ filter_image:
   max_size_upload: 5 # MB
   block_mime_types: 
      - "image/svg+xml"
-    #  - "image/gif"
-    #  - "image/x-icon"
   enable_virus_scan: false
   virus_scan_url: "tcp://127.0.0.1:3310"
   ipfs_url: "/ip4/127.0.0.1/tcp/5001"
