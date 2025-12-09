@@ -9,7 +9,6 @@ import { DonationCampaign } from '@/modules/donation-campaign';
 import { FileX2Icon, Loader2 } from 'lucide-react';
 import { useUser } from '@/providers';
 import { useDonationFeed } from '@/modules/donation-campaign/hooks';
-// import { mockDonationFeed } from '@/modules/donation-campaign/mocks/donationFeedMock';
 
 export const DonationFeed = ({ campaign }: { campaign: DonationCampaign }) => {
   const { user } = useUser();

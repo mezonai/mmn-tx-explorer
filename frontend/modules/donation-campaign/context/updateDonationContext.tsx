@@ -89,11 +89,9 @@ export function UpdateDonationProvider({ campaign, children }: CreateDonationUpd
         zkPub: zkProof?.public_input || '',
         extraInfo: {
           type: ETransferType.DonationFeedCampaign,
-          ExtraAttribute: JSON.stringify({
-            title: form.title,
-            description: form.description,
-            image_cids: ipfs_images.files.map((file) => file.file_cid),
-          }),
+          title: form.title,
+          description: form.description,
+          image_cids: ipfs_images.files.map((file) => file.file_cid),
         },
       });
       if (updateResponse.ok) {
