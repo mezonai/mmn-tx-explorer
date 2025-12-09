@@ -71,6 +71,9 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		if err != nil {
 			_ = tx.Rollback()
 			return nil, fmt.Errorf("invalid price: %v", err)
+		} else {
+			// When no explicit price supplied, use the offer's price so orders use offer price
+			priceInt = offer.Price
 		}
 	}
 
