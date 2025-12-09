@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogTitle, DialogTrigger, DialogHeader } from 
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { NumberUtil } from '@/utils';
+import { DonationCampaignService } from '@/modules/donation-campaign/api';
 import { APP_CONFIG } from '@/configs/app.config';
 import { Eye, EyeOff } from 'lucide-react';
 import { useTransferByPrivateKey } from '@/modules/transfer/hooks/useTransferByPrivateKey';
@@ -44,15 +45,17 @@ export function TransferDialog({
 
   const [currentBalanceValue, setCurrentBalanceValue] = useState<number>(0);
   const [withdrawSuccess, setWithdrawSuccess] = useState(false);
+  const amountToSend = form.amount ? form.amount : NumberUtil.formatAndScaleDown(currentBalanceValue);
 
   const fetchBalance = useCallback(async () => {
     try {
-      const newBalance = currentCampaign.current_balance ?? 0;
+      const updated = await DonationCampaignService.getCampaignById(currentCampaign.id);
+      const newBalance = updated?.current_balance ?? currentCampaign.current_balance ?? 0;
       setCurrentBalanceValue(newBalance);
     } catch (error) {
-      setCurrentBalanceValue(0);
+      setCurrentBalanceValue(currentCampaign.current_balance ?? 0);
     }
-  }, [walletAddress]);
+  }, [currentCampaign]);
 
   useEffect(() => {
     if (isDialogOpen) {
@@ -95,8 +98,7 @@ export function TransferDialog({
         return;
       }
 
-      const amountToSend = form.amount ? form.amount : NumberUtil.formatWithCommasAndScale(currentBalanceValue);
-      if (Number(amountToSend) > currentBalanceValue) {
+      if (Number(amountToSend) > Number(currentBalanceValue)) {
         toast.error('Insufficient balance. Please enter a lower amount.');
         return;
       }
@@ -123,7 +125,7 @@ export function TransferDialog({
       console.error('Transfer error:', error);
       toast.error(error?.message || 'Something went wrong');
     }
-  }, [form, transfer, walletAddress, fetchBalance, currentBalanceValue]);
+  }, [form, transfer, walletAddress, fetchBalance, currentBalanceValue, amountToSend]);
 
   const isButtonDisabled =
     loading || !form.privateKey.trim() || !form.recipientAddress.trim() || !safeValidateAddress(form.recipientAddress);
@@ -144,7 +146,7 @@ export function TransferDialog({
         </DialogHeader>
         {withdrawSuccess ? (
           <TransactionComplete
-            amount={form.amount ? Number(form.amount) : NumberUtil.scaleDown(currentBalanceValue)}
+            amount={NumberUtil.formatWithCommas(amountToSend)}
             symbol={APP_CONFIG.CHAIN_SYMBOL}
             type={TransactionType.Withdraw}
             onClose={() => {
