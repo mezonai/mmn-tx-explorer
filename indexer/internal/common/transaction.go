@@ -6,9 +6,9 @@ import (
 )
 
 const (
-	TxTypeTransferByZk         = 0
-	TxTypeTransferByKey        = 1
-	TxTypeDonationCampaignFeed = 2
+	TxTypeTransferByZk  = 0
+	TxTypeTransferByKey = 1
+	TxTypeUserContent   = 2
 )
 
 type RawTransaction = map[string]interface{}
@@ -23,7 +23,7 @@ type Transaction struct {
 	ToAddress                string                   `json:"to_address" ch:"to_address"`
 	TransactionTimestamp     time.Time                `json:"transaction_timestamp" ch:"transaction_timestamp"`
 	Value                    string                   `json:"value" ch:"value" swaggertype:"string"`
-	TransactionType          uint8                    `json:"transaction_type" ch:"transaction_type"`
+	TransactionType          int32                    `json:"transaction_type" ch:"transaction_type"`
 	Status                   *uint64                  `json:"status" ch:"status"`
 	TextData                 string                   `json:"text_data" ch:"text_data"`
 	ExtraInfo                string                   `json:"extra_info" ch:"extra_info"`
