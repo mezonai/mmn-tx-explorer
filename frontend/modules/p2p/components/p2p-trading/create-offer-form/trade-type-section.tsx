@@ -21,7 +21,6 @@ interface TradeTypeSectionProps {
 }
 
 const formatCurrency = (num: number): string => {
-  // Changed to en-US for English formatting (commas)
   return new Intl.NumberFormat('en-US').format(num);
 };
 
@@ -85,27 +84,21 @@ export const TradeTypeSection = ({
     const rawValue = getRawValue(e.target.value);
     if (rawValue === 0) {
       setMinDisplay('');
-      onLimitChange({ ...limit, min: 0 });
     } else {
-      const validatedValue = Math.min(rawValue, limit.max || amountMZD || Infinity);
-      setMinDisplay(formatCurrency(validatedValue));
-      onLimitChange({ ...limit, min: validatedValue });
+      setMinDisplay(formatCurrency(rawValue));
     }
+    onLimitChange({ ...limit, min: rawValue });
   };
 
   const handleMaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = getRawValue(e.target.value);
     if (rawValue === 0) {
       setMaxDisplay('');
-      onLimitChange({ ...limit, max: 0 });
     } else {
-      const maxAllowed = amountMZD || Infinity;
-      const validatedValue = Math.max(limit.min || 0, Math.min(rawValue, maxAllowed));
-      setMaxDisplay(formatCurrency(validatedValue));
-      onLimitChange({ ...limit, max: validatedValue });
+      setMaxDisplay(formatCurrency(rawValue));
     }
+    onLimitChange({ ...limit, max: rawValue });
   };
-
   return (
     <div className="space-y-4 border-b border-gray-800 pb-4 lg:border-r lg:border-b-0 lg:pr-6 lg:pb-0">
       {/* Header - Compact */}

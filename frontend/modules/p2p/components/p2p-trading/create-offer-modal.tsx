@@ -9,6 +9,8 @@ import { AmountSection } from './create-offer-form/amount-section';
 import { PaymentSection } from './create-offer-form/payment-section';
 import { CreateOfferFormState, CreateOfferRequest, TradeTypes } from '../../types';
 import { useCreateOffer } from '../../hooks/useCreateOffer';
+import { useTransfer } from '@/modules/transfer/hooks/useTransfer';
+import { toast } from 'sonner';
 
 interface FormErrors {
   amount?: string;
@@ -23,9 +25,8 @@ interface CreateOfferModalProps {
 
 export const CreateOfferModal = ({ onSubmit }: CreateOfferModalProps) => {
   const [open, setOpen] = useState(false);
-
-  const { mutate: createOffer, isPending } = useCreateOffer();
-
+  const { mutateAsync: createOfferAsync, isPending } = useCreateOffer();
+  const { transfer } = useTransfer();
   const [formData, setFormData] = useState<CreateOfferFormState>({
     side: TradeTypes.SELL,
     amount: 0,
@@ -104,7 +105,8 @@ export const CreateOfferModal = ({ onSubmit }: CreateOfferModalProps) => {
     return Object.keys(newErrors).length === 0 && Object.keys(newLimitErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    // Thêm async ở đây
     if (validateForm()) {
       const payload: CreateOfferRequest = {
         ...formData,
@@ -116,18 +118,29 @@ export const CreateOfferModal = ({ onSubmit }: CreateOfferModalProps) => {
         },
       };
 
-      createOffer(payload, {
-        onSuccess: () => {
-          if (onSubmit) {
-            onSubmit(payload);
-          }
-          console.log(payload);
-          setOpen(false);
-        },
-        onError: (error) => {
-          console.error('Error creating offer:', error);
-        },
-      });
+      try {
+        const data = await createOfferAsync(payload);
+        const result = await transfer(
+          {
+            recipientAddress: data.intermediary_wallet_address,
+            amount: payload.amount,
+            note: 'p2p-trading',
+          },
+          'p2p-trading'
+        );
+        if (result.success) {
+          toast.success('Create offer success!');
+        } else {
+          toast.error(result.error || 'Create offer fail. Please try again.');
+          console.error(result.error);
+        }
+        if (onSubmit) {
+          onSubmit(payload);
+        }
+        setOpen(false);
+      } catch (error) {
+        console.error('Error creating offer:', error);
+      }
     }
   };
 
