@@ -5,7 +5,7 @@ BEGIN
         SELECT 1 FROM pg_type WHERE typname = 'order_status'
     ) THEN
         CREATE TYPE order_status AS ENUM (
-            'PENDING', 'CONFIRMED', 'OPEN', 'CANCELED', 'FAILED', 'COMPLETED'
+            'PENDING', 'CONFIRMED', 'OPEN', 'CANCELED', 'FAILED'
         );
     END IF;
 END$$;
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS orders (
     buyer_wallet_address VARCHAR(255),
     amount BIGINT NOT NULL DEFAULT 0,
     price BIGINT NOT NULL DEFAULT 0,
-    status order_status NOT NULL DEFAULT 'PENDING',
+    status order_status NOT NULL DEFAULT 'OPEN',
     transfer_code VARCHAR(255),
     expires_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
