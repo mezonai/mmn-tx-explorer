@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"socket-service/models"
+	"socket-service/constant"
 )
 
 type EventRepository struct {
@@ -19,9 +20,9 @@ func NewEventRepository(db *sql.DB, eventSchema string) *EventRepository {
 	}
 }
 
-func (r *EventRepository) GetListEventByReceiveID(receiveAddress string) ([]models.Event, error) {
-	query := `SELECT id, type, payload, receive_address, status, create_at FROM events WHERE receive_address = $1 AND status = 'pending'`
-	rows, err := r.db.Query(query, receiveAddress)
+func (r *EventRepository) GetListEventByReceiver(receiveAddress string) ([]models.Event, error) {
+	query := `SELECT id, type, payload, receive_address, status, create_at FROM events WHERE receive_address = $1 AND status = $2`
+	rows, err := r.db.Query(query, receiveAddress, constant.EventStatusPending)
 	if err != nil {
 		return nil, err
 	}
