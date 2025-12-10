@@ -7,12 +7,13 @@ import (
 type TransactionExtraInfoType string
 
 const (
-	TransactionExtraInfoDongGiveCoffee   TransactionExtraInfoType = "dong-give-coffee"
-	TransactionExtraInfoGiveCoffee       TransactionExtraInfoType = "give-coffee"
-	TransactionExtraInfoDonationCampaign TransactionExtraInfoType = "donation-campaign"
-	TransactionExtraInfoWithdrawCampaign TransactionExtraInfoType = "withdraw-campaign"
-	TransactionExtraInfoLuckyMoney       TransactionExtraInfoType = "lucky-money"
-	TransactionExtraInfoTokenTransfer    TransactionExtraInfoType = "token-transfer"
+	TransactionExtraInfoDongGiveCoffee       TransactionExtraInfoType = "dong-give-coffee"
+	TransactionExtraInfoGiveCoffee           TransactionExtraInfoType = "give-coffee"
+	TransactionExtraInfoDonationCampaign     TransactionExtraInfoType = "donation-campaign"
+	TransactionExtraInfoWithdrawCampaign     TransactionExtraInfoType = "withdraw-campaign"
+	TransactionExtraInfoLuckyMoney           TransactionExtraInfoType = "lucky-money"
+	TransactionExtraInfoTokenTransfer        TransactionExtraInfoType = "token-transfer"
+	TransactionExtraInfoDonationCampaignFeed TransactionExtraInfoType = "donation-campaign-feed"
 )
 
 func (t TransactionExtraInfoType) String() string {
