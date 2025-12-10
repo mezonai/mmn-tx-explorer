@@ -118,6 +118,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 
 		orders := v1.Group("/orders")
 		orders.Use(middleware.Authentication(cfg.JWT.Secret))
+		orders.GET("/me", orderHandler.GetMyOrders)
 		orders.GET("", orderHandler.ListOrdersByWallet)
 		orders.GET("/:id", orderHandler.GetOrderDetail)
 		orders.POST("/:id/confirm", orderHandler.ConfirmOrder)

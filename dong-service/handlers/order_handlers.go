@@ -156,6 +156,28 @@ func (h *OrderHandler) ListOrdersByWallet(c *gin.Context) {
 	c.JSON(http.StatusOK, models.SuccessResponse(orders))
 }
 
+// GetMyOrders godoc
+// @Summary Get my orders
+// @Description Get all orders for the authenticated user's wallet address
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.Response{data=[]models.Order}
+// @Failure 500 {object} models.Response
+// @Security BearerAuth
+// @Router /api/v1/orders/me [get]
+func (h *OrderHandler) GetMyOrders(c *gin.Context) {
+	walletAddress, _ := utils.GetAddressFromContext(c)
+
+	orders, err := h.orderService.GetOrdersByWalletAddress(c.Request.Context(), walletAddress)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to list orders: "+err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, models.SuccessResponse(orders))
+}
+
 // ConfirmOrder godoc
 // @Summary Confirm order (mark PENDING -> CONFIRMED when funds received)
 // @Description Confirm an order and write CREATED_CONFIRMED or CANCELED history accordingly
