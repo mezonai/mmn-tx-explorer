@@ -23,7 +23,6 @@ export const useWebSocket = () => {
     const accessToken = tokenData?.access_token;
 
     if (accessToken) {
-      console.log('🔌 Initializing WebSocket connection...');
       wsManagerRef.current.connect(accessToken);
       isInitializedRef.current = true;
     }
