@@ -2,7 +2,7 @@
 
 import { STORAGE_KEYS } from '@/constant';
 import { safeJsonParse } from '@/utils';
-import { HEARTBEAT_ACK, HEARTBEAT_CHECK, HEARTBEAT_INTERVAL_MS, SERVER_PING, SERVER_PONG } from './constants';
+import { HEARTBEAT_ACK, HEARTBEAT_CHECK, HEARTBEAT_CHECK_INTERVAL_MS } from './constants';  
 
 export interface WebSocketEvent {
   id?: string;
@@ -43,20 +43,13 @@ export class WebSocketManager {
 
     this.ws.onmessage = (event) => {
       try {
-        const data = JSON.parse(event.data);
-
         // Handle heartbeat reply from server
-        if (data?.type === HEARTBEAT_ACK) {
-          return;
+        if (event.data === HEARTBEAT_ACK) {
+          console.log('Heartbeat ack received');
         }
 
-        // Respond to server ping if server initiates
-        if (data?.type === SERVER_PING) {
-          this.send({ type: SERVER_PONG });
-          return;
-        }
 
-        this.handleEvent(data);
+        this.handleEvent(JSON.parse(event.data));
       } catch (error) {
         console.error('Error parsing WebSocket message:', error);
       }
@@ -139,9 +132,9 @@ export class WebSocketManager {
     this.stopHeartbeat();
     this.heartbeatIntervalId = window.setInterval(() => {
       if (this.ws?.readyState === WebSocket.OPEN) {
-        this.send({ type: HEARTBEAT_CHECK });
+        this.send({HEARTBEAT_CHECK});
       }
-    }, HEARTBEAT_INTERVAL_MS);
+    }, HEARTBEAT_CHECK_INTERVAL_MS);
   }
 
   private stopHeartbeat() {
