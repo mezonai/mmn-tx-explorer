@@ -38,7 +38,7 @@ func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order, 
 }
 
 func (r *OrderRepository) HasActiveOrders(ctx context.Context, offerID int64) (bool, error) {
-	query := fmt.Sprintf("SELECT COUNT(1) FROM %s.orders WHERE offer_id = $1 AND status IN ('PENDING','CONFIRMED')", r.dongSchema)
+	query := fmt.Sprintf("SELECT COUNT(1) FROM %s.orders WHERE offer_id = $1 AND status IN ('PENDING')", r.dongSchema)
 	var cnt int64
 	if err := r.db.QueryRowContext(ctx, query, offerID).Scan(&cnt); err != nil {
 		return false, err
