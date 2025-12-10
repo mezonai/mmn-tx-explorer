@@ -9,24 +9,9 @@ interface ChatMessageItemProps {
 }
 
 export const ChatMessageItem = ({ message, currentUserId }: ChatMessageItemProps) => {
-  const isBuyer = message.senderType === 'buyer';
-  const isSeller = message.senderType === 'seller';
-  const isSystem = message.senderType === 'system';
-  const isCurrentUser = message.senderId === currentUserId;
-
-  if (isSystem) {
-    return (
-      <div className="flex justify-center">
-        <div className="bg-gray-800 text-gray-400 text-xs px-3 py-1 rounded-full border border-gray-700">
-          {message.content}
-        </div>
-      </div>
-    );
-  }
-
-  const getInitials = (senderId: string) => {
-    return senderId.charAt(0).toUpperCase();
-  };
+  const isBuyer = message.sender_type === 'buyer';
+  const isSeller = message.sender_type === 'seller';
+  const isCurrentUser = message.sender_id === currentUserId;
 
   const getAvatarColor = () => {
     if (isBuyer) return 'bg-brand-primary';
@@ -42,7 +27,7 @@ export const ChatMessageItem = ({ message, currentUserId }: ChatMessageItemProps
           getAvatarColor()
         )}
       >
-        {getInitials(message.senderId)}
+        {message.sender_id.charAt(0).toUpperCase()}
       </div>
       <div
         className={cn(
