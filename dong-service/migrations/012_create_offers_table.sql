@@ -7,7 +7,7 @@ END$$;
 
 CREATE TABLE IF NOT EXISTS offers (
     offer_id BIGSERIAL PRIMARY KEY,
-    intermediary_wallet_id BIGINT,
+    intermediary_wallet_address VARCHAR(255),
     seller_wallet_address VARCHAR(255),
     side VARCHAR(8) NOT NULL,
     symbol VARCHAR(64) NULL,
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS offers (
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_offers_symbol ON offers (symbol);
 CREATE INDEX IF NOT EXISTS idx_offers_status ON offers (status);
-CREATE INDEX IF NOT EXISTS idx_offers_intermediary_wallet_id ON offers (intermediary_wallet_id);
+CREATE INDEX IF NOT EXISTS idx_offers_intermediary_wallet_address ON offers (intermediary_wallet_address);
 
 -- Optional constraints / comments
 ALTER TABLE offers ADD CONSTRAINT IF NOT EXISTS chk_offers_side CHECK (side IN ('BUY', 'SELL'));

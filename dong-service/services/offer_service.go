@@ -30,7 +30,6 @@ type IOfferService interface {
 	ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, fromAmount *string, toAmount *string, pagination map[string]any) ([]models.Offer, error)
 	CountOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, fromAmount *string, toAmount *string) (int64, error)
 	GetOfferByID(ctx context.Context, id int64) (*models.Offer, error)
-	GetIntermediaryWalletAddress(ctx context.Context, walletID int64) (string, error)
 }
 
 func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string) (*models.Offer, error) {
@@ -42,8 +41,19 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 
 	var walletID int64
 	var intermediaryAddr string
-	if req.IntermediaryWalletID != nil {
-		walletID = *req.IntermediaryWalletID
+	if req.IntermediaryWalletAddress != nil && *req.IntermediaryWalletAddress != "" {
+		// Fetch wallet by address to get ID and verify it's an intermediary wallet
+		w, err := s.walletRepo.GetWalletByAddress(ctx, *req.IntermediaryWalletAddress)
+		if err != nil {
+			_ = tx.Rollback()
+			return nil, fmt.Errorf("failed to fetch intermediary wallet by address: %w", err)
+		}
+		walletID = w.ID
+		intermediaryAddr = w.WalletAddress
+		if err := s.walletRepo.UpdateIntermediaryWalletStatus(tx, ctx, walletID, constants.WalletTypeOffer); err != nil {
+			_ = tx.Rollback()
+			return nil, fmt.Errorf("failed to update intermediary wallet: %w", err)
+		}
 	} else {
 		wallet, err := s.walletRepo.GetOrCreateAvailableWallet(ctx, tx, constants.WalletTypeOffer)
 		if err != nil {
@@ -72,7 +82,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		b, err := json.Marshal(req.BankInfo)
 		if err != nil {
 			_ = tx.Rollback()
-			return nil, fmt.Errorf("invalid bank_info: %w", err)
+			return nil, fmt.Errorf("invalid bank info: %w", err)
 		}
 		ms := string(b)
 		bankInfoStr = &ms
@@ -107,17 +117,17 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 	}
 
 	offer := &models.Offer{
-		IntermediaryWalletID: walletID,
-		SellerWalletAddress:  intermediaryAddr,
-		Side:                 req.Side,
-		Symbol:               req.Symbol,
-		Amount:               amountInt,
-		TotalAmount:          amountInt,
-		Price:                priceInt,
-		PriceType:            constants.PriceTypeFixed,
-		Status:               string(constants.TradingPending),
-		BankInfo:             bankInfoStr,
-		Limit:                &models.OfferLimit{Min: limitMinInt, Max: limitMaxInt},
+		IntermediaryWalletAddress: &intermediaryAddr,
+		SellerWalletAddress:       walletAddr,
+		Side:                      req.Side,
+		Symbol:                    req.Symbol,
+		Amount:                    amountInt,
+		TotalAmount:               amountInt,
+		Price:                     priceInt,
+		PriceType:                 constants.PriceTypeFixed,
+		Status:                    string(constants.TradingPending),
+		BankInfo:                  bankInfoStr,
+		Limit:                     &models.OfferLimit{Min: limitMinInt, Max: limitMaxInt},
 	}
 
 	if req.PriceType != nil && *req.PriceType != "" {
@@ -152,10 +162,6 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		return nil, err
 	}
 
-	if intermediaryAddr != "" {
-		offer.SellerWalletAddress = intermediaryAddr
-	}
-
 	return offer, nil
 }
 
@@ -168,8 +174,8 @@ func (s *OfferService) ConfirmOffer(ctx context.Context, offerID int64, executio
 	if pendingOrder != nil && pendingOrder.BuyerWalletAddress != nil && s.blockchain != nil {
 		if pendingOrder.OfferID != nil {
 			of, err := s.repo.GetOfferByID(ctx, *pendingOrder.OfferID)
-			if err == nil {
-				w, err := s.walletRepo.GetWalletByID(ctx, of.IntermediaryWalletID)
+			if err == nil && of.IntermediaryWalletAddress != nil && *of.IntermediaryWalletAddress != "" {
+				w, err := s.walletRepo.GetWalletByAddress(ctx, *of.IntermediaryWalletAddress)
 				if err == nil {
 					if pendingOrder.Amount > 0 {
 						txh, err := s.blockchain.TransferMoney(w.EncryptedPrivateKey, w.WalletAddress, *pendingOrder.BuyerWalletAddress, pendingOrder.Amount)
@@ -223,12 +229,4 @@ func (s *OfferService) CountOffers(ctx context.Context, minPrice *string, maxPri
 
 func (s *OfferService) GetOfferByID(ctx context.Context, id int64) (*models.Offer, error) {
 	return s.repo.GetOfferByID(ctx, id)
-}
-
-func (s *OfferService) GetIntermediaryWalletAddress(ctx context.Context, walletID int64) (string, error) {
-	w, err := s.walletRepo.GetWalletByID(ctx, walletID)
-	if err != nil {
-		return "", err
-	}
-	return w.WalletAddress, nil
 }
