@@ -37,21 +37,6 @@ jobs:
     environment: ${{ inputs.env }}
     outputs:
       git_sha: ${{ steps.get_sha.outputs.git_sha }}
-    env:
-      NEXT_PUBLIC_APP_API_URL: ${{ vars.NEXT_PUBLIC_APP_API_URL }}
-      APP_API_URL_INTERNAL: ${{ vars.APP_API_URL_INTERNAL }}
-      NEXT_PUBLIC_CHAT_APP_MMN_API_URL: ${{ vars.NEXT_PUBLIC_CHAT_APP_MMN_API_URL }}
-      NEXT_PUBLIC_CHAT_APP_ZK_API_URL: ${{ vars.NEXT_PUBLIC_CHAT_APP_ZK_API_URL }}
-      NEXT_PUBLIC_BACKEND_API_URL: ${{ vars.NEXT_PUBLIC_BACKEND_API_URL }}
-      NEXT_PUBLIC_OAUTH2_API_URL: ${{ vars.NEXT_PUBLIC_OAUTH2_API_URL }}
-      NEXT_PUBLIC_OAUTH2_CLIENT_ID: ${{ vars.OAUTH_CLIENT_ID }}
-      NEXT_PUBLIC_OAUTH2_REDIRECT_URI: ${{ vars.NEXT_PUBLIC_OAUTH2_REDIRECT_URI }}
-      NEXT_PUBLIC_OAUTH2_SCOPE: ${{ vars.NEXT_PUBLIC_OAUTH2_SCOPE }}
-      NEXT_BASE_FE: ${{ vars.NEXT_BASE_FE }}
-      NEXT_PUBLIC_COBAR_API_URL: ${{ vars.NEXT_PUBLIC_COBAR_API_URL }}
-      NEXT_PUBLIC_COBAR_API_KEY: ${{ secrets.NEXT_PUBLIC_COBAR_API_KEY }}
-      NEXT_PUBLIC_TOP_MEZON_AI: ${{ vars.NEXT_PUBLIC_TOP_MEZON_AI }}
-
     steps:
       - name: Checkout
         if: inputs.source_artifact == ''
@@ -74,6 +59,20 @@ jobs:
           cache: ''
 
       - name: Build Frontend
+        env: 
+          NEXT_PUBLIC_APP_API_URL: ${{ vars.NEXT_PUBLIC_APP_API_URL }}
+          APP_API_URL_INTERNAL: ${{ vars.APP_API_URL_INTERNAL }}
+          NEXT_PUBLIC_CHAT_APP_MMN_API_URL: ${{ vars.NEXT_PUBLIC_CHAT_APP_MMN_API_URL }}
+          NEXT_PUBLIC_CHAT_APP_ZK_API_URL: ${{ vars.NEXT_PUBLIC_CHAT_APP_ZK_API_URL }}
+          NEXT_PUBLIC_BACKEND_API_URL: ${{ vars.NEXT_PUBLIC_BACKEND_API_URL }}
+          NEXT_PUBLIC_OAUTH2_API_URL: ${{ vars.NEXT_PUBLIC_OAUTH2_API_URL }}
+          NEXT_PUBLIC_OAUTH2_CLIENT_ID: ${{ vars.OAUTH_CLIENT_ID }}
+          NEXT_PUBLIC_OAUTH2_REDIRECT_URI: ${{ vars.NEXT_PUBLIC_OAUTH2_REDIRECT_URI }}
+          NEXT_PUBLIC_OAUTH2_SCOPE: ${{ vars.NEXT_PUBLIC_OAUTH2_SCOPE }}
+          NEXT_BASE_FE: ${{ vars.NEXT_BASE_FE }}
+          NEXT_PUBLIC_COBAR_API_URL: ${{ vars.NEXT_PUBLIC_COBAR_API_URL }}
+          NEXT_PUBLIC_COBAR_API_KEY: ${{ secrets.NEXT_PUBLIC_COBAR_API_KEY }}
+          NEXT_PUBLIC_TOP_MEZON_AI: ${{ vars.NEXT_PUBLIC_TOP_MEZON_AI }}
         run: |
           cd frontend
           npm install
