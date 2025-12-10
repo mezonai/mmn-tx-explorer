@@ -88,8 +88,6 @@ const (
 	TextDataLuckyMoney = "Lucky Money fund"
 )
 
-const ChainSymbol = "MZD"
-
 const (
 	TrandingOpen     = "OPEN"
 	TradingPending   = "PENDING"
