@@ -30,7 +30,6 @@ type IOfferService interface {
 	ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, fromAmount *string, toAmount *string, pagination map[string]any) ([]models.Offer, error)
 	CountOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, fromAmount *string, toAmount *string) (int64, error)
 	GetOfferByID(ctx context.Context, id int64) (*models.Offer, error)
-	GetIntermediaryWalletAddress(ctx context.Context, walletID int64) (string, error)
 }
 
 func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string) (*models.Offer, error) {
@@ -42,8 +41,19 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 
 	var walletID int64
 	var intermediaryAddr string
-	if req.IntermediaryWalletID != nil {
-		walletID = *req.IntermediaryWalletID
+	if req.IntermediaryWalletAddress != nil && *req.IntermediaryWalletAddress != "" {
+		// Fetch wallet by address to get ID and verify it's an intermediary wallet
+		w, err := s.walletRepo.GetWalletByAddress(ctx, *req.IntermediaryWalletAddress)
+		if err != nil {
+			_ = tx.Rollback()
+			return nil, fmt.Errorf("failed to fetch intermediary wallet by address: %w", err)
+		}
+		walletID = w.ID
+		intermediaryAddr = w.WalletAddress
+		if err := s.walletRepo.UpdateIntermediaryWalletStatus(tx, ctx, walletID, constants.WalletTypeOffer); err != nil {
+			_ = tx.Rollback()
+			return nil, fmt.Errorf("failed to update intermediary wallet: %w", err)
+		}
 	} else {
 		wallet, err := s.walletRepo.GetOrCreateAvailableWallet(ctx, tx, constants.WalletTypeOffer)
 		if err != nil {
@@ -61,25 +71,25 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 
 	var priceInt int64 = 0
 
-	quantityInt, err := strconv.ParseInt(req.Quantity, 10, 64)
+	amountInt, err := strconv.ParseInt(req.Amount, 10, 64)
 	if err != nil {
 		_ = tx.Rollback()
-		return nil, fmt.Errorf("invalid quantity: %w", err)
+		return nil, fmt.Errorf("invalid amount: %w", err)
 	}
 
-	var metadataStr *string
-	if req.Metadata != nil {
-		b, err := json.Marshal(req.Metadata)
+	var bankInfoStr *string
+	if req.BankInfo != nil {
+		b, err := json.Marshal(req.BankInfo)
 		if err != nil {
 			_ = tx.Rollback()
-			return nil, fmt.Errorf("invalid metadata: %w", err)
+			return nil, fmt.Errorf("invalid bank info: %w", err)
 		}
 		ms := string(b)
-		metadataStr = &ms
+		bankInfoStr = &ms
 	}
 
 	var limitMinInt int64 = 1
-	var limitMaxInt int64 = quantityInt
+	var limitMaxInt int64 = amountInt
 	if req.Limit != nil {
 		if req.Limit.Min != nil && *req.Limit.Min != "" {
 			v, err := strconv.ParseInt(*req.Limit.Min, 10, 64)
@@ -107,17 +117,17 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 	}
 
 	offer := &models.Offer{
-		IntermediaryWalletID: walletID,
-		WalletAddress:        intermediaryAddr,
-		Side:                 req.Side,
-		Symbol:               req.Symbol,
-		Quantity:             quantityInt,
-		TotalQuantity:        quantityInt,
-		Price:                priceInt,
-		PriceType:            constants.PriceTypeFixed,
-		Status:               string(constants.TradingPending),
-		Metadata:             metadataStr,
-		Limit:                &models.OfferLimit{Min: limitMinInt, Max: limitMaxInt},
+		IntermediaryWalletAddress: &intermediaryAddr,
+		SellerWalletAddress:       walletAddr,
+		Side:                      req.Side,
+		Symbol:                    req.Symbol,
+		Amount:                    amountInt,
+		TotalAmount:               amountInt,
+		Price:                     priceInt,
+		PriceType:                 constants.PriceTypeFixed,
+		Status:                    string(constants.TradingPending),
+		BankInfo:                  bankInfoStr,
+		Limit:                     &models.OfferLimit{Min: limitMinInt, Max: limitMaxInt},
 	}
 
 	if req.PriceType != nil && *req.PriceType != "" {
@@ -136,7 +146,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 
 	if priceRateStr != nil {
 		if rate, err := strconv.ParseFloat(*priceRateStr, 64); err == nil {
-			computed := float64(quantityInt) * rate
+			computed := float64(amountInt) * rate
 			priceInt = int64(math.Round(computed))
 		}
 	}
@@ -152,10 +162,6 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		return nil, err
 	}
 
-	if intermediaryAddr != "" {
-		offer.WalletAddress = intermediaryAddr
-	}
-
 	return offer, nil
 }
 
@@ -165,14 +171,14 @@ func (s *OfferService) ConfirmOffer(ctx context.Context, offerID int64, executio
 
 	var txHash *string
 
-	if pendingOrder != nil && pendingOrder.WalletAddress != nil && s.blockchain != nil {
+	if pendingOrder != nil && pendingOrder.BuyerWalletAddress != nil && s.blockchain != nil {
 		if pendingOrder.OfferID != nil {
 			of, err := s.repo.GetOfferByID(ctx, *pendingOrder.OfferID)
-			if err == nil {
-				w, err := s.walletRepo.GetWalletByID(ctx, of.IntermediaryWalletID)
+			if err == nil && of.IntermediaryWalletAddress != nil && *of.IntermediaryWalletAddress != "" {
+				w, err := s.walletRepo.GetWalletByAddress(ctx, *of.IntermediaryWalletAddress)
 				if err == nil {
 					if pendingOrder.Amount > 0 {
-						txh, err := s.blockchain.TransferMoney(w.EncryptedPrivateKey, w.WalletAddress, *pendingOrder.WalletAddress, pendingOrder.Amount)
+						txh, err := s.blockchain.TransferMoney(w.EncryptedPrivateKey, w.WalletAddress, *pendingOrder.BuyerWalletAddress, pendingOrder.Amount)
 						if err != nil {
 							return fmt.Errorf("failed to transfer funds during offer confirm: %w", err)
 						}
@@ -199,7 +205,7 @@ func (s *OfferService) ConfirmOffer(ctx context.Context, offerID int64, executio
 			return err
 		}
 
-		if err := s.repo.ApplyConfirmedQuantity(ctx, offerID, pendingOrder.Quantity, tx); err != nil {
+		if err := s.repo.ApplyConfirmedQuantity(ctx, offerID, pendingOrder.Amount, tx); err != nil {
 			_ = tx.Rollback()
 			return err
 		}
@@ -223,12 +229,4 @@ func (s *OfferService) CountOffers(ctx context.Context, minPrice *string, maxPri
 
 func (s *OfferService) GetOfferByID(ctx context.Context, id int64) (*models.Offer, error) {
 	return s.repo.GetOfferByID(ctx, id)
-}
-
-func (s *OfferService) GetIntermediaryWalletAddress(ctx context.Context, walletID int64) (string, error) {
-	w, err := s.walletRepo.GetWalletByID(ctx, walletID)
-	if err != nil {
-		return "", err
-	}
-	return w.WalletAddress, nil
 }

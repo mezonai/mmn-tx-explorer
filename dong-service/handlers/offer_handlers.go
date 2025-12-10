@@ -56,14 +56,8 @@ func (h *OfferHandler) CreateOffer(c *gin.Context) {
 
 	// Also fetch intermediary wallet address (frontend needs it to fund the intermediary wallet)
 	var intermediaryAddr string
-	if offer != nil && offer.IntermediaryWalletID != 0 {
-		addr, err := h.offerService.GetIntermediaryWalletAddress(c.Request.Context(), offer.IntermediaryWalletID)
-		if err != nil {
-			// log and continue — frontend can still call GET /intermediary-wallets/:id as fallback
-			logger.Error().Err(err).Int64("wallet_id", offer.IntermediaryWalletID).Msg("failed to fetch intermediary wallet address")
-		} else {
-			intermediaryAddr = addr
-		}
+	if offer != nil && offer.IntermediaryWalletAddress != nil {
+		intermediaryAddr = *offer.IntermediaryWalletAddress
 	}
 
 	// return composite response containing created offer and intermediary address if available
@@ -99,7 +93,7 @@ func (h *OfferHandler) ConfirmOffer(c *gin.Context) {
 	var body struct {
 		ExecutionPrice *string `json:"execution_price,omitempty"`
 		Source         *string `json:"source,omitempty"`
-		Metadata       *string `json:"metadata,omitempty"`
+		BankInfo       *string `json:"bank_info,omitempty"`
 	}
 	_ = c.ShouldBindJSON(&body)
 
@@ -109,7 +103,7 @@ func (h *OfferHandler) ConfirmOffer(c *gin.Context) {
 		return
 	}
 
-	if err := h.offerService.ConfirmOffer(c.Request.Context(), offerID, body.ExecutionPrice, body.Source, body.Metadata); err != nil {
+	if err := h.offerService.ConfirmOffer(c.Request.Context(), offerID, body.ExecutionPrice, body.Source, body.BankInfo); err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to confirm offer: "+err.Error()))
 		return
 	}
@@ -208,7 +202,8 @@ func (h *OfferHandler) ListOffers(c *gin.Context) {
 
 	var totalPage int64
 	if pg.Limit > 0 {
-		totalPage = (total + int64(pg.Limit)) / int64(pg.Limit)
+		// compute ceil(total / limit)
+		totalPage = (total + int64(pg.Limit) - 1) / int64(pg.Limit)
 	} else {
 		totalPage = 0
 	}
@@ -218,7 +213,7 @@ func (h *OfferHandler) ListOffers(c *gin.Context) {
 		"message": "Offers retrieved",
 		"data":    formattedOffers,
 		"meta": gin.H{
-			"page":        pg.Page,
+			"page":        pg.Page + 1,
 			"limit":       pg.Limit,
 			"total_items": total,
 			"total_pages": totalPage,
