@@ -7,6 +7,7 @@ import (
 	"socket-service/repository"
 	"socket-service/service"
 	"socket-service/utils"
+	"socket-service/constant"
 	"time"
     "sync"
 	"github.com/gin-gonic/gin"
@@ -43,7 +44,7 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 		return
 	}
 
-	events, err := h.repo.GetListEventByReceiveID(userAddress)
+	events, err := h.repo.GetListEventByReceiver(userAddress)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to get events for user")
 		conn.WriteMessage(websocket.TextMessage, []byte("Failed to get events: "+err.Error()))
@@ -98,10 +99,15 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 	}()
 
 	for {
-		if _, _, err := conn.ReadMessage(); err != nil {
+		messageType, message, err := conn.ReadMessage()
+		if err != nil {
 			logger.Info().Msgf("User %s disconnected", userAddress)
 			onceClose.Do(func() {close(done)})
 			return
+		}
+		if messageType == websocket.TextMessage && string(message) == constant.HeartbeatCheck {
+			conn.WriteMessage(websocket.TextMessage, []byte(constant.HeartbeatAck))
+			continue
 		}
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -18,34 +19,34 @@ const (
 
 var Logger zerolog.Logger
 
-
+// LogConfig represents logging configuration
 type LogConfig struct {
-	Level    string `mapstructure:"level"`     
-	Output   string `mapstructure:"output"`    
-	FilePath string `mapstructure:"file_path"` 
-	MaxSize  int    `mapstructure:"max_size"`  
-	MaxAge   int    `mapstructure:"max_age"`   
+	Level    string `mapstructure:"level"`     // debug, info, warn, error, fatal, panic
+	Output   string `mapstructure:"output"`    // stdout, file
+	FilePath string `mapstructure:"file_path"` // path to log file (when output=file)
+	MaxSize  int    `mapstructure:"max_size"`  // max size in megabytes before rotation (default: 100MB)
+	MaxAge   int    `mapstructure:"max_age"`   // max age in days to retain old log files (default: 30 days)
 }
 
-
+// InitLogger initializes the global logger with the provided configuration
 func InitLogger(cfg *LogConfig) error {
-
+	// Set log level
 	level := parseLogLevel(cfg.Level)
 	zerolog.SetGlobalLevel(level)
 
-
+	// Configure time format
 	zerolog.TimeFieldFormat = time.RFC3339
 
 	var writer io.Writer
 
-
+	// Default to stdout if not specified
 	if cfg.Output == "" {
 		cfg.Output = LogOutputStdout
 	}
 
 	switch cfg.Output {
 	case LogOutputStdout:
-
+		// Use console format for stdout
 		writer = zerolog.ConsoleWriter{
 			Out:        os.Stdout,
 			TimeFormat: "2006-01-02 15:04:05",
@@ -54,20 +55,20 @@ func InitLogger(cfg *LogConfig) error {
 		if cfg.FilePath == "" {
 			return fmt.Errorf("file_path is required when output is 'file'")
 		}
-
+		// Create log directory if it doesn't exist
 		logDir := filepath.Dir(cfg.FilePath)
 		if err := os.MkdirAll(logDir, 0o755); err != nil {
 			return fmt.Errorf("failed to create log directory: %w", err)
 		}
 
-
+		// Set default values for rotation
 		maxSize := cfg.MaxSize
 		if maxSize == 0 {
-			maxSize = 100 
+			maxSize = 100 // 100MB default
 		}
 		maxAge := cfg.MaxAge
 		if maxAge == 0 {
-			maxAge = 30 
+			maxAge = 30 // 30 days default
 		}
 
 		// Use lumberjack for log rotation
