@@ -9,7 +9,6 @@ import (
 	"dong-service/logger"
 	"dong-service/middleware"
 	"dong-service/repository"
-	"dong-service/services"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -38,9 +37,9 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 	}
 
 	queueService := repository.NewRedEnvelopeQueueService(database.RedisClient)
-	intermediaryWalletRepo := repository.NewIntermediaryWalletRepository(database.GetDB(), cfg.Database.Schema)
-	redEnvelopeRepo := repository.NewRedEnvelopeRepository(database.GetDB(), cfg.Database.Schema, blockchainService, intermediaryWalletRepo, queueService)
-	redEnvelopeHandler := handlers.NewRedEnvelopeHandler(redEnvelopeRepo, queueService, intermediaryWalletRepo)
+	walletRepo := repository.NewIntermediaryWalletRepository(database.GetDB(), cfg.Database.Schema)
+	redEnvelopeRepo := repository.NewRedEnvelopeRepository(database.GetDB(), cfg.Database.Schema, blockchainService, walletRepo, queueService)
+	redEnvelopeHandler := handlers.NewRedEnvelopeHandler(redEnvelopeRepo, queueService, walletRepo)
 
 	// API v1 routes
 	v1 := router.Group("/api/v1")
@@ -54,14 +53,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		campaignHandler := handlers.NewDonationCampaignHandler(campaignRepo)
 		statsHandler := handlers.NewCampaignStatisticsHandler(statsRepo)
 		walletHandler := handlers.NewWalletHandler(walletRepo, campaignRepo)
-
-		// Initialize offer & order repositories/services/handlers
-		offerRepo := repository.NewOfferRepository(database.GetDB(), cfg.Database.Schema)
-		orderRepo := repository.NewOrderRepository(database.GetDB(), cfg.Database.Schema)
-		offerService := services.NewOfferService(offerRepo, intermediaryWalletRepo, orderRepo, blockchainService)
-		orderService := services.NewOrderService(orderRepo, offerRepo)
-		offerHandler := handlers.NewOfferHandler(offerService)
-		orderHandler := handlers.NewOrderHandler(orderService)
 
 		// Campaign routes (protected)
 		campaignsPrivate := v1.Group("/admin/campaigns")
@@ -111,9 +102,14 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		// Offers (private) - create offer
 		offersPrivate := v1.Group("/offers")
 		offersPrivate.Use(middleware.ParseTokenAndAddToContext(cfg.JWT.Secret))
-		offersPrivate.GET("", offerHandler.ListOffers)
-		offersPrivate.GET("/:id", offerHandler.GetOfferDetail)
-		offersPrivate.GET("/:id/orders", orderHandler.ListOrdersForOffer)
-		offersPrivate.POST("", offerHandler.CreateOffer)
+		offersPrivateAuth := v1.Group("/offers")
+		offersPrivateAuth.Use(middleware.Authentication(cfg.JWT.Secret))
+
+		orders := v1.Group("/orders")
+		orders.Use(middleware.Authentication(cfg.JWT.Secret))
+		orders.GET("", orderHandler.ListOrdersByWallet)
+		orders.GET("/:id", orderHandler.GetOrderDetail)
+		orders.POST("/:id/confirm", orderHandler.ConfirmOrder)
+		offersPrivateAuth.POST("/:id/orders", orderHandler.CreateOrder)
 	}
 }
