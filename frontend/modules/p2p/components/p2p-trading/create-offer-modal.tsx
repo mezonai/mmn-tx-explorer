@@ -11,7 +11,7 @@ import { CreateOfferFormState, CreateOfferRequest, TradeTypes } from '../../type
 import { useCreateOffer } from '../../hooks/useCreateOffer';
 
 interface FormErrors {
-  quantity?: string;
+  amount?: string;
   price_rate?: string;
   account_number?: string;
   account_name?: string;
@@ -28,10 +28,10 @@ export const CreateOfferModal = ({ onSubmit }: CreateOfferModalProps) => {
 
   const [formData, setFormData] = useState<CreateOfferFormState>({
     side: TradeTypes.SELL,
-    quantity: 0,
+    amount: 0,
     price_rate: 1,
     limit: { min: 0, max: 0 },
-    metadata: { bank: 'MB', account_name: '', account_number: '' },
+    bank_info: { bank: 'MB', account_name: '', account_number: '' },
     symbol: 'MZD',
   });
 
@@ -42,10 +42,10 @@ export const CreateOfferModal = ({ onSubmit }: CreateOfferModalProps) => {
     if (open) {
       setFormData({
         side: TradeTypes.SELL,
-        quantity: 0,
+        amount: 0,
         price_rate: 1,
         limit: { min: 0, max: 0 },
-        metadata: { bank: 'MB', account_name: '', account_number: '' },
+        bank_info: { bank: 'MB', account_name: '', account_number: '' },
         symbol: 'MZD',
       });
       setErrors({});
@@ -58,8 +58,8 @@ export const CreateOfferModal = ({ onSubmit }: CreateOfferModalProps) => {
     const newLimitErrors: { min?: string; max?: string } = {};
 
     // Validate Quantity
-    if (formData.quantity <= 0) {
-      newErrors.quantity = 'Please enter the amount of MZD to sell';
+    if (formData.amount <= 0) {
+      newErrors.amount = 'Please enter the amount of MZD to sell';
     }
 
     // Validate Price Rate
@@ -72,29 +72,29 @@ export const CreateOfferModal = ({ onSubmit }: CreateOfferModalProps) => {
       // Min Limit Validation
       if (formData.limit.min <= 0) {
         newLimitErrors.min = 'Please enter the minimum limit';
-      } else if (formData.limit.min > formData.quantity) {
-        newLimitErrors.min = 'Minimum limit cannot exceed the sell quantity';
+      } else if (formData.limit.min > formData.amount) {
+        newLimitErrors.min = 'Minimum limit cannot exceed the sell amount';
       }
 
       // Max Limit Validation
       if (formData.limit.max <= 0) {
         newLimitErrors.max = 'Please enter the maximum limit';
-      } else if (formData.limit.max > formData.quantity) {
-        newLimitErrors.max = 'Maximum limit cannot exceed the sell quantity';
+      } else if (formData.limit.max > formData.amount) {
+        newLimitErrors.max = 'Maximum limit cannot exceed the sell amount';
       } else if (formData.limit.max < formData.limit.min) {
         newLimitErrors.max = 'Maximum limit must be greater than or equal to minimum limit';
       }
     }
 
     // Validate Metadata (Account Number)
-    if (!formData.metadata.account_number.trim()) {
+    if (!formData.bank_info.account_number.trim()) {
       newErrors.account_number = 'Please enter the account number';
-    } else if (!/^\d+$/.test(formData.metadata.account_number.trim())) {
+    } else if (!/^\d+$/.test(formData.bank_info.account_number.trim())) {
       newErrors.account_number = 'Account number must contain only digits';
     }
 
     // Validate Metadata (Account Name)
-    if (!formData.metadata.account_name.trim()) {
+    if (!formData.bank_info.account_name.trim()) {
       newErrors.account_name = 'Please enter the account name';
     }
 
@@ -108,7 +108,7 @@ export const CreateOfferModal = ({ onSubmit }: CreateOfferModalProps) => {
     if (validateForm()) {
       const payload: CreateOfferRequest = {
         ...formData,
-        quantity: formData.quantity.toString(),
+        amount: formData.amount.toString(),
         price_rate: formData.price_rate.toString(),
         limit: {
           min: formData.limit.min.toString(),
@@ -153,27 +153,27 @@ export const CreateOfferModal = ({ onSubmit }: CreateOfferModalProps) => {
             onExchangeRateChange={(rate) => setFormData({ ...formData, price_rate: rate })}
             limit={formData.limit}
             onLimitChange={(limit) => setFormData({ ...formData, limit })}
-            amountMZD={formData.quantity}
+            amountMZD={formData.amount}
             limitErrors={limitErrors}
           />
 
           <AmountSection
-            amountMZD={formData.quantity}
-            onAmountChange={(amount) => setFormData({ ...formData, quantity: amount })}
+            amountMZD={formData.amount}
+            onAmountChange={(amount) => setFormData({ ...formData, amount: amount })}
             exchangeRate={formData.price_rate}
-            error={errors.quantity}
+            error={errors.amount}
           />
 
           <PaymentSection
-            bank={formData.metadata.bank}
-            accountNumber={formData.metadata.account_number}
-            accountName={formData.metadata.account_name}
-            onBankChange={(bank) => setFormData((prev) => ({ ...prev, metadata: { ...prev.metadata, bank } }))}
+            bank={formData.bank_info.bank}
+            accountNumber={formData.bank_info.account_number}
+            accountName={formData.bank_info.account_name}
+            onBankChange={(bank) => setFormData((prev) => ({ ...prev, bank_info: { ...prev.bank_info, bank } }))}
             onAccountNumberChange={(account) =>
-              setFormData((prev) => ({ ...prev, metadata: { ...prev.metadata, account_number: account } }))
+              setFormData((prev) => ({ ...prev, bank_info: { ...prev.bank_info, account_number: account } }))
             }
             onAccountNameChange={(name) =>
-              setFormData((prev) => ({ ...prev, metadata: { ...prev.metadata, account_name: name } }))
+              setFormData((prev) => ({ ...prev, bank_info: { ...prev.bank_info, account_name: name } }))
             }
             error={errors.account_number}
             accountNameError={errors.account_name}

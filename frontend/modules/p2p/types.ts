@@ -36,24 +36,24 @@ export enum TradeTypes {
 }
 export interface CreateOfferFormState {
   side: TradeTypes;
-  quantity: number;
+  amount: number;
   price_rate: number;
   limit: {
     min: number;
     max: number;
   };
-  metadata: { bank: BankOption; account_number: string; account_name: string };
-  symbol: string;
+  bank_info: { bank: BankOption; account_number: string; account_name: string };
+  symbol?: string;
 }
 
 export interface CreateOfferRequest {
   side: TradeTypes;
-  quantity: string;
+  amount: string;
   price_rate: string;
   limit: {
     min: string;
     max: string;
   };
-  metadata: { bank: BankOption; account_number: string; account_name: string };
-  symbol: string;
+  bank_info: { bank: BankOption; account_number: string; account_name: string };
+  symbol?: string;
 }
