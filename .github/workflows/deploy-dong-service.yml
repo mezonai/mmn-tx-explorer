@@ -270,7 +270,7 @@ jobs:
         run: |
           set -e
           echo "==> Copying binaries to target server..."
-          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} $BINARY_PATH build/dong-service ${{ vars.HOST_ALIAS }}:/tmp/
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} "$BINARY_PATH" ${{ vars.HOST_ALIAS }}:/tmp/dong-service
           
           echo "==> Copying migrations to target server..."
           scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} -r dong-service/migrations ${{ vars.HOST_ALIAS }}:/tmp/postgres-dong-service/
