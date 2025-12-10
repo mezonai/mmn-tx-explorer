@@ -27,7 +27,7 @@ func NewIntermediaryWalletRepository(db *sql.DB, dongSchema string) *Intermediar
 func (r *IntermediaryWalletRepository) CreateWallet(ctx context.Context, wallet *models.IntermediaryWallet, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
 		INSERT INTO %s.intermediary_wallet 
-		(wallet_address, encrypted_private_key, status, type, created_at, updated_at)
+		(wallet_address, encrypted_private_key, status, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, NOW(), NOW())
 		RETURNING id, created_at, updated_at
 	`, r.dongSchema)
@@ -38,13 +38,12 @@ func (r *IntermediaryWalletRepository) CreateWallet(ctx context.Context, wallet 
 		wallet.WalletAddress,
 		wallet.EncryptedPrivateKey,
 		wallet.Status,
-		wallet.Type,
 	).Scan(&wallet.ID, &wallet.CreatedAt, &wallet.UpdatedAt)
 }
 
 func (r *IntermediaryWalletRepository) FindOldWallets(ctx context.Context, daysOld int) ([]models.IntermediaryWallet, error) {
 	query := fmt.Sprintf(`
-		SELECT id, wallet_address, encrypted_private_key, status, type, created_at, updated_at
+		SELECT id, wallet_address, encrypted_private_key, status, created_at, updated_at
 		FROM %s.intermediary_wallet
 		WHERE status = ANY($1) AND created_at < NOW() - INTERVAL '1 day' * $2
 		ORDER BY created_at ASC
@@ -73,7 +72,6 @@ func (r *IntermediaryWalletRepository) FindOldWallets(ctx context.Context, daysO
 			&wallet.WalletAddress,
 			&wallet.EncryptedPrivateKey,
 			&wallet.Status,
-			&wallet.Type,
 			&wallet.CreatedAt,
 			&wallet.UpdatedAt,
 		)
