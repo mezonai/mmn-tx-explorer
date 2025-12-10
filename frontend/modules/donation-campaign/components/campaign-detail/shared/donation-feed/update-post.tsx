@@ -7,6 +7,14 @@ import { CopyButton } from '@/components/ui/copy-button';
 import { ClientTimeDisplay } from '@/modules/transaction/components/transaction-details/shared/client-time-display';
 import { TxnHashLink } from '@/modules/transaction/components/transaction-list/list/shared';
 import { ipfsServiceURL } from '@/service';
+import { VersionHistoryDialog } from './version-history-dialog';
+import { useState } from 'react';
+import { useUser } from '@/providers';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ROUTES } from '@/configs/routes.config';
+import { useRouter } from 'next/navigation';
+
 
 interface UpdatePostProps {
   update: IDonationFeed;
@@ -30,7 +38,10 @@ function getImages(imageCids: string[], onImageClick: (url: string) => void) {
   );
 }
 
-export const UpdatePost = ({ update, onImageClick }: UpdatePostProps) => {
+export const UpdatePost = ({ update, campaign, onImageClick }: UpdatePostProps) => {
+  const [isVersionDialogOpen, setIsVersionDialogOpen] = useState(false);
+  const { user } = useUser();
+  const router = useRouter();
   return (
     <Card className={`dark:bg-card border-muted-foreground/30 gap-4 rounded-3xl bg-white/90 shadow-sm`}>
       <div className="flex w-full flex-col justify-between gap-3 px-4 md:flex-row">
@@ -48,6 +59,11 @@ export const UpdatePost = ({ update, onImageClick }: UpdatePostProps) => {
               <CopyButton textToCopy={update.creator_address} />
             </div>
           )}
+          {update.parent_hash && (
+            <Chip variant="warning" className="text-xs">
+              Edited - new version on chain
+            </Chip>
+          )}
         </div>
 
         <div className="text-muted-foreground flex flex-row gap-1 text-xs">
@@ -56,9 +72,10 @@ export const UpdatePost = ({ update, onImageClick }: UpdatePostProps) => {
             <p>On chain</p>
           </span>
 
-          {/* //TODO: wait for update post api*/}
-          {/* <div className="text-muted-foreground flex flex-row gap-1 text-xs">
+          {update.parent_hash && (
+            <div className="text-muted-foreground flex flex-row gap-1 text-xs">
               <span className="inline-flex items-center gap-1">
+                |
                 <VersionHistoryDialog
                   update={update}
                   isOpen={isVersionDialogOpen}
@@ -66,17 +83,39 @@ export const UpdatePost = ({ update, onImageClick }: UpdatePostProps) => {
                   onImageClick={onImageClick}
                 />
               </span>
-            </div> */}
-
-          {/* TODO: Wait for update post api */}
-          {/* {user?.id === campaign.creator && (
-            <div className="flex items-center text-sm text-muted-foreground">
-              <span className='px-2'>|</span>
-              <Button variant="link" className="text-muted-foreground p-0 text-xs">
-                Edit
-              </Button>
             </div>
-          )} */}
+          )}
+          {user?.walletAddress === update.creator_address && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="link"
+                  className="text-xs text-muted-foreground font-thin p-0 pl-2 hover:no-underline hover:text-brand-primary"
+                >
+                  •••
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-32 p-1" align="end">
+                <div className="flex flex-col">
+                  <Button
+                    variant="ghost"
+                    className="justify-start text-sm font-normal h-8"
+                    onClick={() => router.push(ROUTES.EDIT_DONATION_UPDATE(campaign.slug, update.tx_hash))}
+                  >
+                    Edit
+                  </Button>
+                  {/* <Button
+                    variant="ghost"
+                    className="justify-start text-sm font-normal h-8"
+                    onClick={() => {
+                    }}
+                  >
+                    Hide
+                  </Button> */}
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
         </div>
       </div>
       <div className="text-foreground text-md w-full px-4 break-words">{update.description}</div>

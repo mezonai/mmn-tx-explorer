@@ -32,6 +32,7 @@ interface UpdateFormProps {
     handleRemoveImage: (idx: number) => void;
     handleRemoveAll: () => void;
     onSubmit: () => void;
+    isEdit?: boolean;
 }
 
 export const UpdateForm = ({
@@ -46,6 +47,7 @@ export const UpdateForm = ({
     handleRemoveImage,
     handleRemoveAll,
     onSubmit,
+    isEdit = false,
 }: UpdateFormProps) => {
     const totalSize = images.reduce((sum, img) => sum + img.size, 0);
     const maxTotalSize = MAX_IMAGES_SIZE * 1024 * 1024;
@@ -177,10 +179,10 @@ export const UpdateForm = ({
                         {isSaving ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Submitting...
+                                {isEdit ? 'Updating...' : 'Submitting...'}
                             </>
                         ) : (
-                            'Submit'
+                            isEdit ? 'Update' : 'Submit'
                         )}
                     </Button>
                 </div>

@@ -166,10 +166,7 @@ export interface DonationUpdateForm {
   title: string;
   description: string;
   images: string[];
-}
 
-export interface UpdateResult {
-  success: boolean;
-  txHash?: string;
-  error?: string;
+  parent_hash?: string;
+  root_hash?: string;
 }

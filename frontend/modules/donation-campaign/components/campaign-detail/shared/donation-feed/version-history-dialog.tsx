@@ -3,7 +3,6 @@
 import { IDonationFeed } from '@/modules/donation-campaign';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Chip } from '@/components/shared';
 import { ClientTimeDisplay } from '@/modules/transaction/components/transaction-details/shared/client-time-display';
 import { TxnHashLink } from '@/modules/transaction/components/transaction-list/list/shared';
 import { ipfsServiceURL } from '@/service';
@@ -32,15 +31,15 @@ export const VersionHistoryDialog = ({ update, isOpen, onOpenChange, onImageClic
             <p className="mb-4">This feature will show the version history of this update.</p>
 
             <div className="space-y-3">
-              {/* Current Version */}
               <div className="bg-card rounded-lg border p-4">
                 <div className="mb-2 flex items-start justify-between">
                   <span className="text-muted-foreground text-xs">
                     <ClientTimeDisplay timestamp={new Date(update.created_at).getTime()} />
                   </span>
-                  <Chip variant="info" className="text-xs font-semibold">
-                    Current Version
-                  </Chip>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+                    <p>On chain</p>
+                  </span>
                 </div>
 
                 <p className="text-sm">{update.description}</p>
