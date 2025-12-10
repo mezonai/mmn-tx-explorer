@@ -96,22 +96,23 @@ jobs:
     env:
       TARGET_HOST: ${{ inputs.env == 'prod' && 'prod-indexer' || 'dev-indexer' }}
       GIT_SHA: ${{ needs.build.outputs.git_sha }}
-      NEXT_PUBLIC_APP_API_URL: ${{ vars.NEXT_PUBLIC_APP_API_URL }}
-      APP_API_URL_INTERNAL: ${{ vars.APP_API_URL_INTERNAL }}
-      NEXT_PUBLIC_CHAT_APP_MMN_API_URL: ${{ vars.NEXT_PUBLIC_CHAT_APP_MMN_API_URL }}
-      NEXT_PUBLIC_CHAT_APP_ZK_API_URL: ${{ vars.NEXT_PUBLIC_CHAT_APP_ZK_API_URL }}
-      NEXT_PUBLIC_BACKEND_API_URL: ${{ vars.NEXT_PUBLIC_BACKEND_API_URL }}
-      NEXT_PUBLIC_OAUTH2_API_URL: ${{ vars.NEXT_PUBLIC_OAUTH2_API_URL }}
-      NEXT_PUBLIC_OAUTH2_CLIENT_ID: ${{ vars.OAUTH_CLIENT_ID }}
-      NEXT_PUBLIC_OAUTH2_REDIRECT_URI: ${{ vars.NEXT_PUBLIC_OAUTH2_REDIRECT_URI }}
-      NEXT_PUBLIC_OAUTH2_SCOPE: ${{ vars.NEXT_PUBLIC_OAUTH2_SCOPE }}
-      NEXT_BASE_FE: ${{ vars.NEXT_BASE_FE }}
-      NEXT_PUBLIC_COBAR_API_URL: ${{ vars.NEXT_PUBLIC_COBAR_API_URL }}
-      NEXT_PUBLIC_COBAR_API_KEY: ${{ secrets.NEXT_PUBLIC_COBAR_API_KEY }}
-      NEXT_PUBLIC_TOP_MEZON_AI: ${{ vars.NEXT_PUBLIC_TOP_MEZON_AI }}
 
     steps:
       - name: Generate FE env file locally
+        env:
+          NEXT_PUBLIC_APP_API_URL: ${{ vars.NEXT_PUBLIC_APP_API_URL }}
+          APP_API_URL_INTERNAL: ${{ vars.APP_API_URL_INTERNAL }}
+          NEXT_PUBLIC_CHAT_APP_MMN_API_URL: ${{ vars.NEXT_PUBLIC_CHAT_APP_MMN_API_URL }}
+          NEXT_PUBLIC_CHAT_APP_ZK_API_URL: ${{ vars.NEXT_PUBLIC_CHAT_APP_ZK_API_URL }}
+          NEXT_PUBLIC_BACKEND_API_URL: ${{ vars.NEXT_PUBLIC_BACKEND_API_URL }}
+          NEXT_PUBLIC_OAUTH2_API_URL: ${{ vars.NEXT_PUBLIC_OAUTH2_API_URL }}
+          NEXT_PUBLIC_OAUTH2_CLIENT_ID: ${{ vars.OAUTH_CLIENT_ID }}
+          NEXT_PUBLIC_OAUTH2_REDIRECT_URI: ${{ vars.NEXT_PUBLIC_OAUTH2_REDIRECT_URI }}
+          NEXT_PUBLIC_OAUTH2_SCOPE: ${{ vars.NEXT_PUBLIC_OAUTH2_SCOPE }}
+          NEXT_BASE_FE: ${{ vars.NEXT_BASE_FE }}
+          NEXT_PUBLIC_COBAR_API_URL: ${{ vars.NEXT_PUBLIC_COBAR_API_URL }}
+          NEXT_PUBLIC_COBAR_API_KEY: ${{ secrets.NEXT_PUBLIC_COBAR_API_KEY }}
+          NEXT_PUBLIC_TOP_MEZON_AI: ${{ vars.NEXT_PUBLIC_TOP_MEZON_AI }}
         run: |
           printenv | grep -E '^(NEXT_|APP_)' > frontend.env
 
