@@ -129,19 +129,23 @@ export interface TopContributorsResponse {
   };
 }
 
-export interface FeedExtraInfo {
-  title: string;
-  description: string;
-  image_cids: string[];
-}
-
 export interface IDonationFeed {
   id: number;
   tx_hash: string;
-  owner_address: string;
+  creator_address: string;
   campaign_address: string;
-  extra_info: FeedExtraInfo;
+  title: string;
+  description: string;
+  image_cids: string[];
+  parent_hash: string;
+  root_hash: string;
   created_at: string;
+  root_created_at: string;
+}
+
+export interface DonationFeedParams {
+  limit?: number;
+  timestamp_lt?: string;
 }
 
 export interface UploadImageRequest {

@@ -1,20 +1,42 @@
-import { useQuery } from "@tanstack/react-query";
-import { DonationCampaignService } from "../api";
-import { QUERY_KEYS } from "../constants";
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { DonationCampaignService } from '../api';
+import { QUERY_KEYS } from '../constants';
+import { DonationFeedParams } from '../type';
 
-export const useDonationFeed = (address: string) => {
-  const {
-    data: donationFeedResponse,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: [QUERY_KEYS.DONATION_FEED, address],
-    queryFn: () => DonationCampaignService.getDonationFeed(address),
+export const useDonationFeed = (address: string, params?: Omit<DonationFeedParams, 'timestamp_lt'>) => {
+  const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
+    queryKey: [QUERY_KEYS.DONATION_FEED, address, params],
+    queryFn: ({ pageParam }) => {
+      const queryParams: DonationFeedParams = {
+        ...params,
+        limit: params?.limit || 10,
+      };
+
+      if (pageParam) {
+        queryParams.timestamp_lt = pageParam;
+      }
+
+      return DonationCampaignService.getDonationFeed({ address, params: queryParams });
+    },
+    getNextPageParam: (lastPage) => {
+      const feeds = lastPage.data;
+      if (!feeds || feeds.length === 0) return undefined;
+
+      const lastFeed = feeds[feeds.length - 1];
+      const timestamp = Math.floor(new Date(lastFeed.root_created_at).getTime() / 1000);
+
+      return feeds.length === (params?.limit || 10) ? timestamp.toString() : undefined;
+    },
+    initialPageParam: undefined as string | undefined,
   });
+  const donationFeed = data?.pages.flatMap((page) => page.data) || [];
+
   return {
-    donationFeed: donationFeedResponse?.data || [],
-    meta: donationFeedResponse?.meta,
+    donationFeed,
     isLoading,
     error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
   };
-}
+};
