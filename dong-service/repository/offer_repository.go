@@ -384,3 +384,49 @@ func (r *OfferRepository) ApplyConfirmedQuantity(ctx context.Context, offerID in
 	_, err := tx.ExecContext(ctx, query, qty, offerID)
 	return err
 }
+
+func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAddress string) ([]models.Offer, error) {
+	query := fmt.Sprintf(`
+		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, side, symbol, amount, total_amount, 
+		       min_amount, max_amount, price, price_rate, price_type, status, bank_info, created_at, updated_at
+		FROM %s.offers
+		WHERE seller_wallet_address = $1
+		ORDER BY created_at DESC
+	`, r.dongSchema)
+
+	rows, err := r.db.QueryContext(ctx, query, walletAddress)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var offers []models.Offer
+	for rows.Next() {
+		var o models.Offer
+		var minAmount, maxAmount int64
+		if err := rows.Scan(
+			&o.OfferID,
+			&o.IntermediaryWalletAddress,
+			&o.SellerWalletAddress,
+			&o.Side,
+			&o.Symbol,
+			&o.Amount,
+			&o.TotalAmount,
+			&minAmount,
+			&maxAmount,
+			&o.Price,
+			&o.PriceRate,
+			&o.PriceType,
+			&o.Status,
+			&o.BankInfo,
+			&o.CreatedAt,
+			&o.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		o.Limit = &models.OfferLimit{Min: minAmount, Max: maxAmount}
+		offers = append(offers, o)
+	}
+
+	return offers, rows.Err()
+}

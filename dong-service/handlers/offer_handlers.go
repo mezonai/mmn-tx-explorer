@@ -69,58 +69,14 @@ func (h *OfferHandler) CreateOffer(c *gin.Context) {
 	c.JSON(http.StatusCreated, models.SuccessResponseWithMessage("Offer created", resp))
 }
 
-// ConfirmOffer godoc
-// @Summary Confirm offer (mark an offer as confirmed)
-// @Description Mark an offer as CONFIRMED and write a CREATED_CONFIRMED history record
-// @Tags offers
-// @Accept json
-// @Produce json
-// @Param id path int true "Offer ID"
-// @Param body body object false "optional payload: {execution_price, source, metadata}"
-// @Success 200 {object} models.Response
-// @Failure 400 {object} models.Response
-// @Failure 404 {object} models.Response
-// @Failure 500 {object} models.Response
-// @Security BearerAuth
-// @Router /api/v1/offers/{id}/confirm [post]
-func (h *OfferHandler) ConfirmOffer(c *gin.Context) {
-	idStr := c.Param("id")
-	if idStr == "" {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Missing offer id"))
-		return
-	}
-
-	var body struct {
-		ExecutionPrice *string `json:"execution_price,omitempty"`
-		Source         *string `json:"source,omitempty"`
-		BankInfo       *string `json:"bank_info,omitempty"`
-	}
-	_ = c.ShouldBindJSON(&body)
-
-	offerID, err := utils.ParseInt64Param(c, "id")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "invalid offer id"))
-		return
-	}
-
-	if err := h.offerService.ConfirmOffer(c.Request.Context(), offerID, body.ExecutionPrice, body.Source, body.BankInfo); err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to confirm offer: "+err.Error()))
-		return
-	}
-
-	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Offer confirmed", nil))
-}
-
 // ListOffers godoc
 // @Summary List offers
-// @Description List offers with optional filters: min_price, max_price, status, symbol. Supports pagination query params page, limit, order, order_by.
+// @Description List offers with amount range filters. Supports pagination query params page, limit, order, order_by.
 // @Tags offers
 // @Accept json
 // @Produce json
-// @Param min_price query string false "minimum price"
-// @Param max_price query string false "maximum price"
-// @Param status query string false "offer status"
-// @Param symbol query string false "symbol"
+// @Param from_amount query string false "minimum amount"
+// @Param to_amount query string false "maximum amount"
 // @Param page query int false "page"
 // @Param limit query int false "limit"
 // @Success 200 {object} models.Response{data=[]models.Offer}
@@ -128,13 +84,8 @@ func (h *OfferHandler) ConfirmOffer(c *gin.Context) {
 // @Failure 500 {object} models.Response
 // @Router /api/v1/offers [get]
 func (h *OfferHandler) ListOffers(c *gin.Context) {
-	minPrice := c.Query("min_price")
-	maxPrice := c.Query("max_price")
-	rate := c.Query("rate")
 	fromAmount := c.Query("from_amount")
 	toAmount := c.Query("to_amount")
-	status := c.Query("status")
-	symbol := c.Query("symbol")
 
 	pg := utils.GetPaginationParams(c)
 	pagination := map[string]any{
@@ -142,27 +93,6 @@ func (h *OfferHandler) ListOffers(c *gin.Context) {
 		"order":    pg.Order,
 		"limit":    pg.Limit,
 		"offset":   pg.Offset,
-	}
-
-	var minP *string
-	var maxP *string
-	var rateP *string
-	var st *string
-	var sym *string
-	if minPrice != "" {
-		minP = &minPrice
-	}
-	if maxPrice != "" {
-		maxP = &maxPrice
-	}
-	if rate != "" {
-		rateP = &rate
-	}
-	if status != "" {
-		st = &status
-	}
-	if symbol != "" {
-		sym = &symbol
 	}
 
 	var fromP *string
@@ -174,13 +104,13 @@ func (h *OfferHandler) ListOffers(c *gin.Context) {
 		toP = &toAmount
 	}
 
-	offers, err := h.offerService.ListOffers(c.Request.Context(), minP, maxP, st, sym, rateP, fromP, toP, pagination)
+	offers, err := h.offerService.ListOffers(c.Request.Context(), fromP, toP, pagination)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to list offers: "+err.Error()))
 		return
 	}
 
-	total, err := h.offerService.CountOffers(c.Request.Context(), minP, maxP, st, sym, rateP, fromP, toP)
+	total, err := h.offerService.CountOffers(c.Request.Context(), fromP, toP)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to list offers: "+err.Error()))
 		return
@@ -262,4 +192,26 @@ func (h *OfferHandler) GetOfferDetail(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, models.SuccessResponse(offer))
+}
+
+// GetMyOffers godoc
+// @Summary Get my offers
+// @Description Get all offers created by the authenticated user's wallet address
+// @Tags offers
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.Response{data=[]models.Offer}
+// @Failure 500 {object} models.Response
+// @Security BearerAuth
+// @Router /api/v1/offers/me [get]
+func (h *OfferHandler) GetMyOffers(c *gin.Context) {
+	walletAddress, _ := utils.GetAddressFromContext(c)
+
+	offers, err := h.offerService.GetOffersByWalletAddress(c.Request.Context(), walletAddress)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to list offers: "+err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, models.SuccessResponse(offers))
 }

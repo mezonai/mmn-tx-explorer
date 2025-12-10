@@ -49,8 +49,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		campaignRepo := repository.NewDonationCampaignRepository(database.GetDB(), cfg.Database.Schema, cfg.Indexer.Schema)
 		statsRepo := repository.NewCampaignStatisticsRepository(database.GetDB(), cfg.Indexer.Schema, cfg.Database.Schema, cfg.Scheduler.RecentStatsWindowDays)
 		walletRepo := repository.NewWalletRepository(database.GetDB(), cfg.Indexer.Schema)
-
-		// Initialize handlers
 		campaignHandler := handlers.NewDonationCampaignHandler(campaignRepo)
 		statsHandler := handlers.NewCampaignStatisticsHandler(statsRepo)
 		walletHandler := handlers.NewWalletHandler(walletRepo, campaignRepo)
@@ -58,7 +56,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		// Campaign routes (protected)
 		campaignsPrivate := v1.Group("/admin/campaigns")
 		campaignsPrivate.Use(middleware.Authentication(cfg.JWT.Secret))
-		campaignsPrivate.POST("", campaignHandler.CreateCampaign)
 		campaignsPrivate.POST("/create-active", campaignHandler.CreateAndActiveCampaign)
 		campaignsPrivate.PUT("/:id", campaignHandler.UpdateCampaign)
 		campaignsPrivate.PATCH("/:id/activate", campaignHandler.ActivateCampaign)
@@ -100,37 +97,30 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		walletPublic.Use(middleware.ParseTokenAndAddToContext(cfg.JWT.Secret))
 		walletPublic.GET("/:address/detail", walletHandler.GetWalletDetail)
 
-		// Initialize offer and order repositories, services and handlers
+		// Offers (private) - create offer
+		offersPrivate := v1.Group("/offers")
+		offersPrivate.Use(middleware.Authentication(cfg.JWT.Secret))
+
 		offerRepo := repository.NewOfferRepository(database.GetDB(), cfg.Database.Schema)
 		orderRepo := repository.NewOrderRepository(database.GetDB(), cfg.Database.Schema)
 
 		offerService := services.NewOfferService(offerRepo, intermediaryWalletRepo, orderRepo, blockchainService)
-		orderService := services.NewOrderService(orderRepo, offerRepo)
+		orderService := services.NewOrderService(orderRepo, offerRepo, intermediaryWalletRepo, blockchainService)
 
 		offerHandler := handlers.NewOfferHandler(offerService)
 		orderHandler := handlers.NewOrderHandler(orderService)
 
-		// Offers (private) - create offer
-		offersPrivate := v1.Group("/offers")
-		offersPrivate.Use(middleware.ParseTokenAndAddToContext(cfg.JWT.Secret))
+		offersPrivate.GET("/me", offerHandler.GetMyOffers)
 		offersPrivate.GET("", offerHandler.ListOffers)
 		offersPrivate.GET("/:id", offerHandler.GetOfferDetail)
 		offersPrivate.GET("/:id/orders", orderHandler.ListOrdersForOffer)
-		// Create order requires authentication (user wallet address)
-		offersPrivateAuth := v1.Group("/offers")
-		offersPrivateAuth.Use(middleware.Authentication(cfg.JWT.Secret))
 		offersPrivate.POST("", offerHandler.CreateOffer)
+		offersPrivate.POST("/:id/orders", orderHandler.CreateOrder)
 
 		orders := v1.Group("/orders")
 		orders.Use(middleware.Authentication(cfg.JWT.Secret))
 		orders.GET("", orderHandler.ListOrdersByWallet)
 		orders.GET("/:id", orderHandler.GetOrderDetail)
 		orders.POST("/:id/confirm", orderHandler.ConfirmOrder)
-		offersPrivateAuth.POST("/:id/orders", orderHandler.CreateOrder)
-		// Example routes (protected)
-		examplePrivate := v1.Group("/examples")
-		examplePrivate.Use(middleware.Authentication(cfg.JWT.Secret))
-		exampleHandler := handlers.NewExampleHandler()
-		examplePrivate.POST("/create-events", exampleHandler.CreateEvents)
 	}
 }

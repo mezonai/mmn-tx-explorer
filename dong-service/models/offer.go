@@ -38,14 +38,13 @@ type OfferLimit struct {
 
 // CreateOfferRequest is the expected payload for the API request to create an offer
 type CreateOfferRequest struct {
-	IntermediaryWalletAddress *string                `json:"intermediary_wallet_address,omitempty"`
-	Side                      OfferSide              `json:"side" binding:"required"` // BUY or SELL
-	Symbol                    string                 `json:"symbol" binding:"required"`
-	Amount                    string                 `json:"amount" binding:"required"`
-	PriceRate                 *string                `json:"price_rate,omitempty"`
-	PriceType                 *string                `json:"price_type,omitempty"` // FIXED or FLOAT
-	BankInfo                  map[string]interface{} `json:"bank_info,omitempty"`
-	Limit                     *OfferLimitRequest     `json:"limit,omitempty"`
+	Side      OfferSide              `json:"side" binding:"required"` // BUY or SELL
+	Symbol    string                 `json:"symbol" binding:"required"`
+	Amount    string                 `json:"amount" binding:"required"`
+	PriceRate *string                `json:"price_rate,omitempty"`
+	PriceType *string                `json:"price_type,omitempty"` // FIXED or FLOAT
+	BankInfo  map[string]interface{} `json:"bank_info,omitempty"`
+	Limit     *OfferLimitRequest     `json:"limit,omitempty"`
 }
 
 type OfferLimitRequest struct {
