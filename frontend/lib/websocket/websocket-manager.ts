@@ -132,7 +132,7 @@ export class WebSocketManager {
     this.stopHeartbeat();
     this.heartbeatIntervalId = window.setInterval(() => {
       if (this.ws?.readyState === WebSocket.OPEN) {
-        this.send({HEARTBEAT_CHECK});
+        this.ws.send(HEARTBEAT_CHECK);
       }
     }, HEARTBEAT_CHECK_INTERVAL_MS);
   }
