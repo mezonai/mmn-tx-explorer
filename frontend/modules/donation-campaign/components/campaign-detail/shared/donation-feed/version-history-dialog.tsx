@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Chip } from '@/components/shared';
 import { ClientTimeDisplay } from '@/modules/transaction/components/transaction-details/shared/client-time-display';
 import { TxnHashLink } from '@/modules/transaction/components/transaction-list/list/shared';
-import { baseURL } from '@/service';
+import { ipfsServiceURL } from '@/service';
 
 interface VersionHistoryDialogProps {
   update: IDonationFeed;
@@ -54,7 +54,7 @@ export const VersionHistoryDialog = ({
                     {update.extra_info.image_cids.map((cid, idx) => (
                       <img
                         key={idx}
-                        src={`${baseURL}/ipfs/${cid}`}
+                        src={`${ipfsServiceURL}/${cid}`}
                         alt={`Version image ${idx + 1}`}
                         className="h-20 w-20 cursor-pointer rounded object-cover"
                         onClick={() => onImageClick(cid)}
@@ -81,7 +81,7 @@ export const VersionHistoryDialog = ({
                     {update.extra_info.image_cids.map((cid, idx) => (
                       <img
                         key={idx}
-                        src={`${baseURL}/ipfs/${cid}`}
+                        src={`${ipfsServiceURL}/${cid}`}
                         alt={`Version image ${idx + 1}`}
                         className="h-20 w-20 cursor-pointer rounded object-cover"
                         onClick={() => onImageClick(cid)}

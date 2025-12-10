@@ -6,7 +6,7 @@ import { Chip } from '@/components/shared';
 import { CopyButton } from '@/components/ui/copy-button';
 import { ClientTimeDisplay } from '@/modules/transaction/components/transaction-details/shared/client-time-display';
 import { TxnHashLink } from '@/modules/transaction/components/transaction-list/list/shared';
-import { baseURL } from '@/service';
+import { ipfsServiceURL } from '@/service';
 import { useState } from 'react';
 import { VersionHistoryDialog } from './version-history-dialog';
 import { useUser } from '@/providers';
@@ -25,7 +25,7 @@ function getImages(imageCids: string[], onImageClick: (url: string) => void) {
       {imageCids.map((img, idx) => (
         <img
           key={idx}
-          src={`${baseURL}/ipfs/${img}`}
+          src={`${ipfsServiceURL}/${img}`}
           alt={`Update Image ${idx + 1}`}
           className="h-40 w-full cursor-pointer rounded-md object-cover sm:h-32 md:h-24"
           onClick={() => onImageClick(img)}
