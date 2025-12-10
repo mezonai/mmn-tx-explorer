@@ -193,3 +193,25 @@ func (h *OfferHandler) GetOfferDetail(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.SuccessResponse(offer))
 }
+
+// GetMyOffers godoc
+// @Summary Get my offers
+// @Description Get all offers created by the authenticated user's wallet address
+// @Tags offers
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.Response{data=[]models.Offer}
+// @Failure 500 {object} models.Response
+// @Security BearerAuth
+// @Router /api/v1/offers/me [get]
+func (h *OfferHandler) GetMyOffers(c *gin.Context) {
+	walletAddress, _ := utils.GetAddressFromContext(c)
+
+	offers, err := h.offerService.GetOffersByWalletAddress(c.Request.Context(), walletAddress)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to list offers: "+err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, models.SuccessResponse(offers))
+}

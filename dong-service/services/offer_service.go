@@ -29,6 +29,7 @@ type IOfferService interface {
 	ListOffers(ctx context.Context, fromAmount *string, toAmount *string, pagination map[string]any) ([]models.Offer, error)
 	CountOffers(ctx context.Context, fromAmount *string, toAmount *string) (int64, error)
 	GetOfferByID(ctx context.Context, id int64) (*models.Offer, error)
+	GetOffersByWalletAddress(ctx context.Context, walletAddress string) ([]models.Offer, error)
 }
 
 func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string) (*models.Offer, error) {
@@ -162,4 +163,8 @@ func (s *OfferService) CountOffers(ctx context.Context, fromAmount *string, toAm
 
 func (s *OfferService) GetOfferByID(ctx context.Context, id int64) (*models.Offer, error) {
 	return s.repo.GetOfferByID(ctx, id)
+}
+
+func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddress string) ([]models.Offer, error) {
+	return s.repo.GetOffersByWalletAddress(ctx, walletAddress)
 }
