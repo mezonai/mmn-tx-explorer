@@ -3,6 +3,7 @@ package middleware
 import (
 	"socket-service/logger"
 	"time"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,8 +13,10 @@ func Logger() gin.HandlerFunc {
 		path := c.Request.URL.Path
 		raw := c.Request.URL.RawQuery
 
+		// Process request
 		c.Next()
 
+		// Calculate latency
 		latency := time.Since(startTime)
 		clientIP := c.ClientIP()
 		method := c.Request.Method
@@ -35,10 +38,12 @@ func Logger() gin.HandlerFunc {
 			Dur("latency", latency).
 			Str("user_agent", c.Request.UserAgent())
 
+		// Add error message if present
 		if errorMessage != "" {
 			logEvent = logEvent.Str("error", errorMessage)
 		}
 
+		// Add user_id if authenticated
 		if userID, exists := c.Get("user_id"); exists {
 			logEvent = logEvent.Str("user_id", userID.(string))
 		}

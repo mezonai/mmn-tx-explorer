@@ -16,8 +16,6 @@ import (
 type ExampleHandler struct {
 }
 
-// api thật thì mọi người truyền repo vào như các handler khác, ở router khởi tạo instance cũng vật
-
 func NewExampleHandler() *ExampleHandler {
 	return &ExampleHandler{}
 }
@@ -46,10 +44,7 @@ func (h *ExampleHandler) CreateEvents(c *gin.Context) {
 		return
 	}
 
-	// trường bắt buộc có receiveAddress,
-	//  Type có thể lấy ở FE hoặc Constant của BE ;
-	//  status, createat mặc định ở BE,
-	//  còn lại nhúng hết vào payload json
+//    TODO: trường bắt buộc phải có là receive_address , các trường còn lại ( ID, type, status, create_at ) thì tự động tạo, còn payload thì nhét hết phần còn lại vào
 
 	event := &models.Event{
 		ID:        uuid.New(),

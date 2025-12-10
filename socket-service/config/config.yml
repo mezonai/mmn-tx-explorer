@@ -10,7 +10,7 @@ database:
   username: admin
   password: password
   name: indexer
-  schema: dong_schema
+  schema: event_schema
   sslmode: disable
   max_open_conns: 50        # Increased for better concurrency
   max_idle_conns: 10        # Increased for better connection reuse

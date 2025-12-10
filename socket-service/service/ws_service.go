@@ -9,6 +9,7 @@ import (
 type WSService struct {
 	mu          sync.RWMutex
 	connections map[string][]*websocket.Conn
+// TODO a Hoàng: có thể dùng map.sync sau.
 }
 
 func NewWSService() *WSService {
