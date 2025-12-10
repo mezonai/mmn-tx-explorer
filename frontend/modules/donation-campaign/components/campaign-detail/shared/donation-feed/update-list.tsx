@@ -3,7 +3,7 @@ import { DonationCampaign, IDonationFeed } from '@/modules/donation-campaign';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useState } from 'react';
 import { UpdatePost } from './update-post';
-import { baseURL } from '@/service';
+import { ipfsServiceURL } from '@/service';
 
 export const UpdateList = ({ updates, campaign }: { updates: IDonationFeed[]; campaign: DonationCampaign }) => {
   const [open, setOpen] = useState(false);
@@ -22,15 +22,15 @@ export const UpdateList = ({ updates, campaign }: { updates: IDonationFeed[]; ca
   return (
     <>
       <div className="space-y-4">
-        {updates.map((update, index) => (
-          <UpdatePost key={update.id} update={update} campaign={campaign} isLatest={index === 0} onImageClick={handleImageClick} />
+        {updates.map((update) => (
+          <UpdatePost key={update.id} update={update} campaign={campaign} onImageClick={handleImageClick} />
         ))}
       </div>
       <Dialog open={open} onOpenChange={handleDialogOpenChange}>
         <DialogContent className="flex h-fit max-h-[95vh] w-fit max-w-[95vw] flex-col items-center justify-center border-none bg-transparent p-4 shadow-none">
           {selectedImg && (
             <img
-              src={`${baseURL}/ipfs/${selectedImg}`}
+              src={`${ipfsServiceURL}/${selectedImg}`}
               alt="Full Preview"
               className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
             />
