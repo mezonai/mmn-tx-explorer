@@ -21,8 +21,8 @@ func NewOrderRepository(db *sql.DB, dongSchema string) *OrderRepository {
 func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
 			    INSERT INTO %s.orders (
-						offer_id, buyer_wallet_address, amount, price, status, expires_at, created_at, updated_at
-					) VALUES ($1,$2,$3,$4,$5,$6,NOW(),NOW())
+						offer_id, wallet_address, quantity, amount, price, status, transfer_code, expires_at, created_at, updated_at
+					) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW(),NOW())
         RETURNING order_id, created_at, updated_at
     `, r.dongSchema)
 
@@ -32,6 +32,7 @@ func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order, 
 		order.Amount,
 		order.Price,
 		order.Status,
+		order.TransferCode,
 		order.ExpiresAt,
 	).Scan(&order.OrderID, &order.CreatedAt, &order.UpdatedAt)
 }
@@ -91,7 +92,7 @@ func (r *OrderRepository) CancelExpiredOrders(ctx context.Context, cutoff time.T
 }
 
 func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, error) {
-	base := fmt.Sprintf("SELECT order_id, offer_id, buyer_wallet_address, amount, price, status, expires_at, created_at, updated_at FROM %s.orders WHERE offer_id = $1", r.dongSchema)
+	base := fmt.Sprintf("SELECT order_id, offer_id, buyer_wallet_address, amount, price, status, transfer_code, expires_at, created_at, updated_at FROM %s.orders WHERE offer_id = $1", r.dongSchema)
 
 	// Default ordering and pagination
 	orderBy := "created_at"
@@ -135,6 +136,7 @@ func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, 
 			&o.Amount,
 			&o.Price,
 			&o.Status,
+			&o.TransferCode,
 			&o.ExpiresAt,
 			&o.CreatedAt,
 			&o.UpdatedAt,
@@ -148,7 +150,7 @@ func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, 
 }
 
 func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.Order, error) {
-	query := fmt.Sprintf("SELECT order_id, offer_id, buyer_wallet_address, amount, price, status, expires_at, created_at, updated_at FROM %s.orders WHERE order_id = $1", r.dongSchema)
+	query := fmt.Sprintf("SELECT order_id, offer_id, buyer_wallet_address, amount, price, status, transfer_code, expires_at, created_at, updated_at FROM %s.orders WHERE order_id = $1", r.dongSchema)
 	var o models.Order
 	row := r.db.QueryRowContext(ctx, query, id)
 	if err := row.Scan(
@@ -158,6 +160,7 @@ func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.O
 		&o.Amount,
 		&o.Price,
 		&o.Status,
+		&o.TransferCode,
 		&o.ExpiresAt,
 		&o.CreatedAt,
 		&o.UpdatedAt,
@@ -169,7 +172,7 @@ func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.O
 
 // GetOrdersByWalletAddress returns all orders created by a wallet address (most recent first)
 func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAddress string) ([]models.Order, error) {
-	query := fmt.Sprintf("SELECT order_id, offer_id, buyer_wallet_address, amount, price, status, expires_at, created_at, updated_at FROM %s.orders WHERE buyer_wallet_address = $1 ORDER BY created_at DESC", r.dongSchema)
+	query := fmt.Sprintf("SELECT order_id, offer_id, buyer_wallet_address, amount, price, status, transfer_code, expires_at, created_at, updated_at FROM %s.orders WHERE buyer_wallet_address = $1 ORDER BY created_at DESC", r.dongSchema)
 
 	rows, err := r.db.QueryContext(ctx, query, walletAddress)
 	if err != nil {
@@ -187,6 +190,7 @@ func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAd
 			&o.Amount,
 			&o.Price,
 			&o.Status,
+			&o.TransferCode,
 			&o.ExpiresAt,
 			&o.CreatedAt,
 			&o.UpdatedAt,

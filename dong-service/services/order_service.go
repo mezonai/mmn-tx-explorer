@@ -79,12 +79,21 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		walletAddrPtr = &a
 	}
 
+	// Generate transfer_code: SYMBOL + " " + OFFER_ID
+	var transferCode string
+	if offer.Symbol != "" {
+		transferCode = fmt.Sprintf("%s %d", offer.Symbol, offerID)
+	} else {
+		transferCode = fmt.Sprintf("ORDER %d", offerID)
+	}
+
 	order := &models.Order{
 		OfferID:            &offerID,
 		BuyerWalletAddress: walletAddrPtr,
 		Amount:             amountInt,
 		Price:              priceInt,
 		Status:             string(constants.TradingPending),
+		TransferCode:       &transferCode,
 		ExpiresAt:          nil,
 	}
 

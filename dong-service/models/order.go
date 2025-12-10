@@ -20,6 +20,7 @@ type Order struct {
 	Amount             int64      `json:"amount" db:"amount"`
 	Price              int64      `json:"price" db:"price"`
 	Status             string     `json:"status" db:"status"`
+	TransferCode       *string    `json:"transfer_code,omitempty" db:"transfer_code"`
 	ExpiresAt          *time.Time `json:"expires_at,omitempty" db:"expires_at"`
 	CreatedAt          time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt          time.Time  `json:"updated_at" db:"updated_at"`
