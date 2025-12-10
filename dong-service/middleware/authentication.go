@@ -45,11 +45,6 @@ func Authentication(jwtSecret string) gin.HandlerFunc {
 		}
 
 		c.Set("user", claims)
-		if userIdStr, ok := claims["user_id"].(string); ok {
-			c.Set("user_id", userIdStr)
-			address := utils.GenerateAddress(userIdStr)
-			c.Set("address", address)
-		}
 		c.Next()
 	}
 }
