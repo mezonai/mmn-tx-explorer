@@ -18,7 +18,7 @@ import { SellerConfirmButton } from './seller-confirm-button';
 import { BuyAmountSection } from './buy-amount-section';
 import { ChatSidebar } from './chat/chat-sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { P2POrder } from '../../types/p2p.types';
+import { P2POrder } from '../../types';
 
 interface TradingRoomProps {
   orderId: string;
@@ -31,14 +31,15 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
   const searchParams = useSearchParams();
   const isOfferMode = searchParams.get('type') === 'offer';
 
-  const { order, isLoading: orderLoading, updateOrderStatus } = useP2POrder(isOfferMode ? '' : orderId);
-  const offerIdParam = isOfferMode ? orderId : (order?.offerId ?? null);
-  const { offer, isLoading: offerLoading } = useP2POffer(offerIdParam);
-  const { createOrder, isLoading: isCreatingOrder } = useCreateOrder();
-  const { messages, isLoading: chatLoading, sendMessage } = useP2PChat(isOfferMode ? '' : orderId);
-
   const [error, setError] = useState<string | null>(null);
   const [createdOrder, setCreatedOrder] = useState<P2POrder | null>(null); // Store created order locally
+
+  const { order, isLoading: orderLoading, updateOrderStatus } = useP2POrder(isOfferMode ? '' : orderId);
+  const offerIdParam = isOfferMode ? orderId : (order ? String(order.offer_id) : null);
+  const { offer, isLoading: offerLoading } = useP2POffer(offerIdParam);
+  const { createOrder, isLoading: isCreatingOrder } = useCreateOrder();
+  const orderIdForChat = createdOrder ? String(createdOrder.order_id) : (isOfferMode ? '' : orderId);
+  const { messages, isLoading: chatLoading, sendMessage } = useP2PChat(orderIdForChat);
 
   // Use created order if available, otherwise use fetched order
   const currentOrder = createdOrder || order;
@@ -47,10 +48,10 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
   const userRole = useMemo(() => {
     if (isOfferMode && !createdOrder) return 'buyer'; // In offer mode before order creation, user is always buyer
     if (!user?.walletAddress || !currentOrder) return null;
-    if (currentOrder.buyerWalletAddress === user.walletAddress) return 'buyer';
-    if (currentOrder.sellerWalletAddress === user.walletAddress) return 'seller';
+    if (currentOrder.buyer_wallet_address === user.walletAddress) return 'buyer';
+    if (offer?.seller_wallet_address === user.walletAddress) return 'seller';
     return null;
-  }, [user?.walletAddress, currentOrder, isOfferMode, createdOrder]);
+  }, [user?.walletAddress, currentOrder, isOfferMode, createdOrder, offer]);
 
   const handleConfirmBuy = async (amountMZD: number, amountVND: number) => {
     if (!offer || !user?.walletAddress) {
@@ -82,7 +83,8 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
       setError(null);
       // Created order lives locally; update via service then sync local state
       if (createdOrder) {
-        const updated = await P2PService.updateOrderStatus(targetOrder.orderId, 'WAIT_CONFIRM');
+        const orderIdStr = String(targetOrder.order_id);
+        const updated = await P2PService.updateOrderStatus(orderIdStr, 'WAIT_CONFIRM');
         setCreatedOrder(updated);
         return;
       }
@@ -95,9 +97,13 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
     }
   };
 
-  const handleSellerConfirm = () => {
-    updateOrderStatus('PAYMENT_CONFIRMED');
-    // TODO: Call API to update order status
+  const handleSellerConfirm = async () => {
+    try {
+      await updateOrderStatus('PAYMENT_CONFIRMED');
+    } catch (err) {
+      setError('Có lỗi xảy ra khi cập nhật trạng thái. Vui lòng thử lại.');
+      console.error('Error updating order status:', err);
+    }
   };
 
   const handleSendMessage = (content: string) => {
@@ -123,16 +129,16 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
   // Offer mode or order created from offer - Show unified trading room
   if ((isOfferMode && offer) || createdOrder) {
     const displayOrder = createdOrder || {
-      orderId: '',
-      offerId: offer?.offerId || '',
-      buyerWalletAddress: user?.walletAddress || '',
-      sellerWalletAddress: offer?.sellerWalletAddress || '',
-      amountMZD: 0,
-      amountVND: 0,
-      exchangeRate: offer?.exchangeRate || 1,
-      status: 'PAYMENT_PENDING' as const,
-      createdAt: '',
-      expiresAt: '',
+      order_id: '',
+      offer_id: offer?.offer_id || '',
+      buyer_wallet_address: user?.walletAddress || '',
+      amount: 0,
+      price: 0,
+      order_status: 'PENDING' as const,
+      transfer_code: null,
+      expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
 
     const formatWallet = (address?: string) =>
@@ -152,13 +158,13 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
             <div>
               <h1 className="text-sm font-bold text-white">
                 {createdOrder
-                  ? `Đơn mua MZD #${createdOrder.orderId}`
-                  : `Mua MZD từ ${formatWallet(offer?.sellerWalletAddress)}`}
+                  ? `Đơn mua MZD #${createdOrder.order_id}`
+                  : `Mua MZD từ ${formatWallet(offer?.seller_wallet_address)}`}
               </h1>
               {!createdOrder && (
                 <div className="text-xs text-gray-400">
                   Đang giao dịch với{' '}
-                  <span className="text-brand-primary font-bold">{formatWallet(offer?.sellerWalletAddress)}</span>
+                  <span className="text-brand-primary font-bold">{formatWallet(offer?.seller_wallet_address)}</span>
                 </div>
               )}
             </div>
