@@ -3,7 +3,7 @@
 import { Lock } from 'lucide-react';
 import { ChatMessages } from './chat-messages';
 import { ChatInput } from './chat-input';
-import { ChatMessage } from '../../../types/p2p.types';
+import { ChatMessage } from '../../../types';
 
 interface ChatSidebarProps {
   messages: ChatMessage[];
