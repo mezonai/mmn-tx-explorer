@@ -61,25 +61,25 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 
 	var priceInt int64 = 0
 
-	quantityInt, err := strconv.ParseInt(req.Quantity, 10, 64)
+	amountInt, err := strconv.ParseInt(req.Amount, 10, 64)
 	if err != nil {
 		_ = tx.Rollback()
-		return nil, fmt.Errorf("invalid quantity: %w", err)
+		return nil, fmt.Errorf("invalid amount: %w", err)
 	}
 
-	var metadataStr *string
-	if req.Metadata != nil {
-		b, err := json.Marshal(req.Metadata)
+	var bankInfoStr *string
+	if req.BankInfo != nil {
+		b, err := json.Marshal(req.BankInfo)
 		if err != nil {
 			_ = tx.Rollback()
-			return nil, fmt.Errorf("invalid metadata: %w", err)
+			return nil, fmt.Errorf("invalid bank_info: %w", err)
 		}
 		ms := string(b)
-		metadataStr = &ms
+		bankInfoStr = &ms
 	}
 
 	var limitMinInt int64 = 1
-	var limitMaxInt int64 = quantityInt
+	var limitMaxInt int64 = amountInt
 	if req.Limit != nil {
 		if req.Limit.Min != nil && *req.Limit.Min != "" {
 			v, err := strconv.ParseInt(*req.Limit.Min, 10, 64)
@@ -108,15 +108,15 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 
 	offer := &models.Offer{
 		IntermediaryWalletID: walletID,
-		WalletAddress:        intermediaryAddr,
+		SellerWalletAddress:  intermediaryAddr,
 		Side:                 req.Side,
 		Symbol:               req.Symbol,
-		Quantity:             quantityInt,
-		TotalQuantity:        quantityInt,
+		Amount:               amountInt,
+		TotalAmount:          amountInt,
 		Price:                priceInt,
 		PriceType:            constants.PriceTypeFixed,
 		Status:               string(constants.TradingPending),
-		Metadata:             metadataStr,
+		BankInfo:             bankInfoStr,
 		Limit:                &models.OfferLimit{Min: limitMinInt, Max: limitMaxInt},
 	}
 
@@ -136,7 +136,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 
 	if priceRateStr != nil {
 		if rate, err := strconv.ParseFloat(*priceRateStr, 64); err == nil {
-			computed := float64(quantityInt) * rate
+			computed := float64(amountInt) * rate
 			priceInt = int64(math.Round(computed))
 		}
 	}
@@ -153,7 +153,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 	}
 
 	if intermediaryAddr != "" {
-		offer.WalletAddress = intermediaryAddr
+		offer.SellerWalletAddress = intermediaryAddr
 	}
 
 	return offer, nil
@@ -165,14 +165,14 @@ func (s *OfferService) ConfirmOffer(ctx context.Context, offerID int64, executio
 
 	var txHash *string
 
-	if pendingOrder != nil && pendingOrder.WalletAddress != nil && s.blockchain != nil {
+	if pendingOrder != nil && pendingOrder.BuyerWalletAddress != nil && s.blockchain != nil {
 		if pendingOrder.OfferID != nil {
 			of, err := s.repo.GetOfferByID(ctx, *pendingOrder.OfferID)
 			if err == nil {
 				w, err := s.walletRepo.GetWalletByID(ctx, of.IntermediaryWalletID)
 				if err == nil {
 					if pendingOrder.Amount > 0 {
-						txh, err := s.blockchain.TransferMoney(w.EncryptedPrivateKey, w.WalletAddress, *pendingOrder.WalletAddress, pendingOrder.Amount)
+						txh, err := s.blockchain.TransferMoney(w.EncryptedPrivateKey, w.WalletAddress, *pendingOrder.BuyerWalletAddress, pendingOrder.Amount)
 						if err != nil {
 							return fmt.Errorf("failed to transfer funds during offer confirm: %w", err)
 						}
@@ -199,7 +199,7 @@ func (s *OfferService) ConfirmOffer(ctx context.Context, offerID int64, executio
 			return err
 		}
 
-		if err := s.repo.ApplyConfirmedQuantity(ctx, offerID, pendingOrder.Quantity, tx); err != nil {
+		if err := s.repo.ApplyConfirmedQuantity(ctx, offerID, pendingOrder.Amount, tx); err != nil {
 			_ = tx.Rollback()
 			return err
 		}

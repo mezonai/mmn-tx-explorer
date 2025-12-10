@@ -15,17 +15,17 @@ const (
 type Offer struct {
 	OfferID              int64       `json:"offer_id" db:"offer_id"`
 	IntermediaryWalletID int64       `json:"intermediary_wallet_id" db:"intermediary_wallet_id"`
-	WalletAddress        string      `json:"wallet_address" db:"wallet_address"`
+	SellerWalletAddress  string      `json:"seller_wallet_address" db:"seller_wallet_address"`
 	Side                 OfferSide   `json:"side" db:"side"` // BUY or SELL
-	Symbol               string      `json:"symbol" db:"symbol"`
-	Quantity             int64       `json:"quantity" db:"quantity"` // numeric as string to support big ints
-	TotalQuantity        int64       `json:"total_quantity" db:"total_quantity"`
+	Symbol               *string     `json:"symbol,omitempty" db:"symbol"`
+	Amount               int64       `json:"amount" db:"amount"` // numeric as string to support big ints
+	TotalAmount          int64       `json:"total_amount" db:"total_amount"`
 	Limit                *OfferLimit `json:"limit,omitempty" db:"-"`
 	Price                int64       `json:"price" db:"price"`
 	PriceRate            *string     `json:"price_rate,omitempty" db:"price_rate"`
 	PriceType            string      `json:"price_type" db:"price_type"`
 	Status               string      `json:"status" db:"status"`
-	Metadata             *string     `json:"metadata,omitempty" db:"metadata"`
+	BankInfo             *string     `json:"bank_info,omitempty" db:"bank_info"`
 	CreatedAt            time.Time   `json:"created_at" db:"created_at"`
 	UpdatedAt            time.Time   `json:"updated_at" db:"updated_at"`
 }
@@ -40,11 +40,11 @@ type OfferLimit struct {
 type CreateOfferRequest struct {
 	IntermediaryWalletID *int64                 `json:"intermediary_wallet_id,omitempty"`
 	Side                 OfferSide              `json:"side" binding:"required"` // BUY or SELL
-	Symbol               string                 `json:"symbol" binding:"required"`
-	Quantity             string                 `json:"quantity" binding:"required"`
+	Symbol               *string                `json:"symbol,omitempty"`
+	Amount               string                 `json:"amount" binding:"required"`
 	PriceRate            *string                `json:"price_rate,omitempty"`
 	PriceType            *string                `json:"price_type,omitempty"` // FIXED or FLOAT
-	Metadata             map[string]interface{} `json:"metadata,omitempty"`
+	BankInfo             map[string]interface{} `json:"bank_info,omitempty"`
 	Limit                *OfferLimitRequest     `json:"limit,omitempty"`
 }
 

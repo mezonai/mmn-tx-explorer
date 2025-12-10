@@ -8,11 +8,11 @@ END$$;
 CREATE TABLE IF NOT EXISTS offers (
     offer_id BIGSERIAL PRIMARY KEY,
     intermediary_wallet_id BIGINT,
-    wallet_address VARCHAR(255),
+    seller_wallet_address VARCHAR(255),
     side VARCHAR(8) NOT NULL,
-    symbol VARCHAR(64) NOT NULL,
-    quantity BIGINT NOT NULL DEFAULT 0,
-    total_quantity BIGINT NOT NULL DEFAULT 0,
+    symbol VARCHAR(64) NULL,
+    amount BIGINT NOT NULL DEFAULT 0,
+    total_amount BIGINT NOT NULL DEFAULT 0,
     min_amount BIGINT,
     max_amount BIGINT,
     price BIGINT NOT NULL DEFAULT 0,
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS offers (
     price_type VARCHAR(32),
     status offer_status NOT NULL DEFAULT 'PENDING',
     transaction_hash TEXT,
-    metadata JSONB,
+    bank_info JSONB,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

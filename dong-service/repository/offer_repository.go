@@ -29,13 +29,13 @@ func containsIgnoreCase(slice []string, s string) bool {
 func (r *OfferRepository) CreateOffer(ctx context.Context, offer *models.Offer, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
 		INSERT INTO %s.offers (
-			intermediary_wallet_id, wallet_address, side, symbol, quantity, total_quantity, min_amount, max_amount, price, price_rate, price_type, status, metadata, created_at, updated_at
+			intermediary_wallet_id, seller_wallet_address, side, symbol, amount, total_amount, min_amount, max_amount, price, price_rate, price_type, status, bank_info, created_at, updated_at
 		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,NOW(),NOW())
         RETURNING offer_id, created_at, updated_at
     `, r.dongSchema)
 
 	minToSave := int64(1)
-	maxToSave := offer.Quantity
+	maxToSave := offer.Amount
 	if offer.Limit != nil {
 		if offer.Limit.Min > 0 {
 			minToSave = offer.Limit.Min
@@ -49,18 +49,18 @@ func (r *OfferRepository) CreateOffer(ctx context.Context, offer *models.Offer, 
 		ctx,
 		query,
 		offer.IntermediaryWalletID,
-		offer.WalletAddress,
+		offer.SellerWalletAddress,
 		offer.Side,
 		offer.Symbol,
-		offer.Quantity,
-		offer.TotalQuantity,
+		offer.Amount,
+		offer.TotalAmount,
 		minToSave,
 		maxToSave,
 		offer.Price,
 		offer.PriceRate,
 		offer.PriceType,
 		offer.Status,
-		offer.Metadata,
+		offer.BankInfo,
 	).Scan(&offer.OfferID, &offer.CreatedAt, &offer.UpdatedAt)
 }
 
@@ -87,7 +87,7 @@ func (r *OfferRepository) UpdateOfferStatus(ctx context.Context, offerID int64, 
 }
 
 func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, fromAmount *string, toAmount *string, pagination any) ([]models.Offer, error) {
-	base := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_id, wallet_address, side, symbol, quantity, total_quantity, min_amount, max_amount, price, price_rate, price_type, status, metadata, created_at, updated_at FROM %s.offers`, r.dongSchema)
+	base := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_id, seller_wallet_address, side, symbol, amount, total_amount, min_amount, max_amount, price, price_rate, price_type, status, bank_info, created_at, updated_at FROM %s.offers`, r.dongSchema)
 
 	whereClauses := []string{}
 	args := []any{}
@@ -133,15 +133,15 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 	}
 
 	if fromAmount != nil && strings.TrimSpace(*fromAmount) != "" && toAmount != nil && strings.TrimSpace(*toAmount) != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("quantity >= $%d AND quantity <= $%d", argCount, argCount+1))
+		whereClauses = append(whereClauses, fmt.Sprintf("amount >= $%d AND amount <= $%d", argCount, argCount+1))
 		args = append(args, strings.TrimSpace(*fromAmount), strings.TrimSpace(*toAmount))
 		argCount += 2
 	} else if fromAmount != nil && strings.TrimSpace(*fromAmount) != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("quantity >= $%d", argCount))
+		whereClauses = append(whereClauses, fmt.Sprintf("amount >= $%d", argCount))
 		args = append(args, strings.TrimSpace(*fromAmount))
 		argCount++
 	} else if toAmount != nil && strings.TrimSpace(*toAmount) != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("quantity <= $%d", argCount))
+		whereClauses = append(whereClauses, fmt.Sprintf("amount <= $%d", argCount))
 		args = append(args, strings.TrimSpace(*toAmount))
 		argCount++
 	}
@@ -158,7 +158,7 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 	if p, ok := pagination.(map[string]any); ok {
 		if v, ok := p["order_by"].(string); ok && v != "" {
 			switch strings.ToLower(v) {
-			case "created_at", "price", "quantity", "symbol":
+			case "created_at", "price", "amount", "symbol":
 				orderBy = v
 			}
 		}
@@ -190,18 +190,18 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 		err := rows.Scan(
 			&o.OfferID,
 			&o.IntermediaryWalletID,
-			&o.WalletAddress,
+			&o.SellerWalletAddress,
 			&o.Side,
 			&o.Symbol,
-			&o.Quantity,
-			&o.TotalQuantity,
+			&o.Amount,
+			&o.TotalAmount,
 			&minAmt,
 			&maxAmt,
 			&o.Price,
 			&o.PriceRate,
 			&o.PriceType,
 			&o.Status,
-			&o.Metadata,
+			&o.BankInfo,
 			&o.CreatedAt,
 			&o.UpdatedAt,
 		)
@@ -210,7 +210,7 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 		}
 
 		minVal := int64(1)
-		maxVal := o.Quantity
+		maxVal := o.Amount
 		if minAmt.Valid {
 			minVal = minAmt.Int64
 		}
@@ -272,15 +272,15 @@ func (r *OfferRepository) CountOffers(ctx context.Context, minPrice *string, max
 	}
 
 	if fromAmount != nil && strings.TrimSpace(*fromAmount) != "" && toAmount != nil && strings.TrimSpace(*toAmount) != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("quantity >= $%d AND quantity <= $%d", argCount, argCount+1))
+		whereClauses = append(whereClauses, fmt.Sprintf("amount >= $%d AND amount <= $%d", argCount, argCount+1))
 		args = append(args, strings.TrimSpace(*fromAmount), strings.TrimSpace(*toAmount))
 		argCount += 2
 	} else if fromAmount != nil && strings.TrimSpace(*fromAmount) != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("quantity >= $%d", argCount))
+		whereClauses = append(whereClauses, fmt.Sprintf("amount >= $%d", argCount))
 		args = append(args, strings.TrimSpace(*fromAmount))
 		argCount++
 	} else if toAmount != nil && strings.TrimSpace(*toAmount) != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("quantity <= $%d", argCount))
+		whereClauses = append(whereClauses, fmt.Sprintf("amount <= $%d", argCount))
 		args = append(args, strings.TrimSpace(*toAmount))
 		argCount++
 	}
@@ -299,7 +299,7 @@ func (r *OfferRepository) CountOffers(ctx context.Context, minPrice *string, max
 }
 
 func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*models.Offer, error) {
-	query := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_id, wallet_address, side, symbol, quantity, total_quantity, min_amount, max_amount, price, price_rate, price_type, status, metadata, created_at, updated_at FROM %s.offers WHERE offer_id = $1`, r.dongSchema)
+	query := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_id, seller_wallet_address, side, symbol, amount, total_amount, min_amount, max_amount, price, price_rate, price_type, status, bank_info, created_at, updated_at FROM %s.offers WHERE offer_id = $1`, r.dongSchema)
 
 	var o models.Offer
 	row := r.db.QueryRowContext(ctx, query, offerID)
@@ -308,18 +308,18 @@ func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*mod
 	if err := row.Scan(
 		&o.OfferID,
 		&o.IntermediaryWalletID,
-		&o.WalletAddress,
+		&o.SellerWalletAddress,
 		&o.Side,
 		&o.Symbol,
-		&o.Quantity,
-		&o.TotalQuantity,
+		&o.Amount,
+		&o.TotalAmount,
 		&minAmt,
 		&maxAmt,
 		&o.Price,
 		&o.PriceRate,
 		&o.PriceType,
 		&o.Status,
-		&o.Metadata,
+		&o.BankInfo,
 		&o.CreatedAt,
 		&o.UpdatedAt,
 	); err != nil {
@@ -330,7 +330,7 @@ func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*mod
 	}
 
 	minVal := int64(1)
-	maxVal := o.Quantity
+	maxVal := o.Amount
 	if minAmt.Valid {
 		minVal = minAmt.Int64
 	}
@@ -345,8 +345,8 @@ func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*mod
 func (r *OfferRepository) ReserveQuantity(ctx context.Context, offerID int64, qty int64, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
 		UPDATE %s.offers
-		SET quantity = quantity - $1, updated_at = NOW()
-		WHERE offer_id = $2 AND quantity >= $1
+		SET amount = amount - $1, updated_at = NOW()
+		WHERE offer_id = $2 AND amount >= $1
 	`, r.dongSchema)
 
 	res, err := tx.ExecContext(ctx, query, qty, offerID)
@@ -366,7 +366,7 @@ func (r *OfferRepository) ReserveQuantity(ctx context.Context, offerID int64, qt
 func (r *OfferRepository) ReleaseQuantity(ctx context.Context, offerID int64, qty int64, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
 		UPDATE %s.offers
-		SET quantity = quantity + $1, updated_at = NOW()
+		SET amount = amount + $1, updated_at = NOW()
 		WHERE offer_id = $2
 	`, r.dongSchema)
 
@@ -377,7 +377,7 @@ func (r *OfferRepository) ReleaseQuantity(ctx context.Context, offerID int64, qt
 func (r *OfferRepository) ApplyConfirmedQuantity(ctx context.Context, offerID int64, qty int64, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
 		UPDATE %s.offers
-		SET total_quantity = total_quantity - $1, updated_at = NOW(), status = CASE WHEN total_quantity - $1 <= 0 THEN 'COMPLETED' ELSE status END
+		SET total_amount = total_amount - $1, updated_at = NOW(), status = CASE WHEN total_amount - $1 <= 0 THEN 'COMPLETED' ELSE status END
 		WHERE offer_id = $2
 	`, r.dongSchema)
 
