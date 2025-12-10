@@ -22,8 +22,8 @@ export const UpdateList = ({ updates, campaign }: { updates: IDonationFeed[]; ca
   return (
     <>
       <div className="space-y-4">
-        {updates.map((update, index) => (
-          <UpdatePost key={update.id} update={update} campaign={campaign} isLatest={index === 0} onImageClick={handleImageClick} />
+        {updates.map((update) => (
+          <UpdatePost key={update.id} update={update} campaign={campaign} onImageClick={handleImageClick} />
         ))}
       </div>
       <Dialog open={open} onOpenChange={handleDialogOpenChange}>

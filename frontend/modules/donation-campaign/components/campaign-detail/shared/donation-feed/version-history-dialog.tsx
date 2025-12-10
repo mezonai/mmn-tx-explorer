@@ -15,12 +15,7 @@ interface VersionHistoryDialogProps {
   onImageClick: (url: string) => void;
 }
 
-export const VersionHistoryDialog = ({
-  update,
-  isOpen,
-  onOpenChange,
-  onImageClick,
-}: VersionHistoryDialogProps) => {
+export const VersionHistoryDialog = ({ update, isOpen, onOpenChange, onImageClick }: VersionHistoryDialogProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
