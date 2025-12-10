@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { CheckCircle2 } from 'lucide-react';
-import { P2POrder } from '../../types/p2p.types';
+import { P2POrder } from '../../types';
 
 interface SellerConfirmButtonProps {
   order: P2POrder;
@@ -15,7 +15,7 @@ export const SellerConfirmButton = ({ order, onConfirm }: SellerConfirmButtonPro
     onConfirm?.();
   };
 
-  if (order.status !== 'WAIT_CONFIRM') {
+  if (order.order_status !== 'WAIT_CONFIRM') {
     return null;
   }
 

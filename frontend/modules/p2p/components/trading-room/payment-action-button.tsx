@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, HelpCircle } from 'lucide-react';
-import { P2POrder } from '../../types/p2p.types';
+import { P2POrder } from '../../types';
 
 interface PaymentActionButtonProps {
   order: P2POrder;
@@ -15,7 +15,7 @@ export const PaymentActionButton = ({ order, onPaymentConfirmed }: PaymentAction
     onPaymentConfirmed?.();
   };
 
-  if (order.status !== 'PAYMENT_PENDING') {
+  if (order.order_status !== 'PENDING' && order.order_status !== 'PAYMENT_PENDING') {
     return null;
   }
 

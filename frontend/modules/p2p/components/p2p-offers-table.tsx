@@ -1,6 +1,6 @@
 'use client';
 
-import { P2POffer } from '../types/p2p.types';
+import { P2POffer } from '../types';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -52,22 +52,22 @@ export const P2POffersTable = ({ offers, isLoading, onOfferClick }: P2POffersTab
           </thead>
           <tbody className="divide-y divide-gray-800 text-sm">
             {offers.map((offer) => (
-              <tr key={offer.offerId} className="transition-colors hover:bg-gray-800/50">
+              <tr key={offer.offer_id} className="transition-colors hover:bg-gray-800/50">
                 <td className="px-6 py-4">
-                  <AdvertiserInfo walletAddress={offer.sellerWalletAddress} />
+                  <AdvertiserInfo walletAddress={offer.seller_wallet_address} />
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex flex-col">
                     <span className="font-medium">
-                      {offer.available.toLocaleString()} {APP_CONFIG.CHAIN_SYMBOL}
+                      {offer.amount.toLocaleString()} {APP_CONFIG.CHAIN_SYMBOL}
                     </span>
                     <span className="text-xs text-gray-500">
-                      Total: {offer.totalMZD.toLocaleString()} {APP_CONFIG.CHAIN_SYMBOL}
+                      Total: {offer.total_amount.toLocaleString()} {APP_CONFIG.CHAIN_SYMBOL}
                     </span>
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <span className="font-medium">{offer.exchangeRate.toFixed(4)} VND</span>
+                  <span className="font-medium">{offer.price_rate.toFixed(4)} VND</span>
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex flex-col text-xs">

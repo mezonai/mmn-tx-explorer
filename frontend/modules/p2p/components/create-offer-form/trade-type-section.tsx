@@ -1,13 +1,11 @@
 'use client';
 
+import { TradeTypes } from '@/modules/p2p/types';
 import { useState, useEffect } from 'react';
-import { Lock } from 'lucide-react';
-
-type TradeType = 'BUY' | 'SELL';
 
 interface TradeTypeSectionProps {
-  tradeType: TradeType;
-  onTradeTypeChange: (type: TradeType) => void;
+  tradeType: TradeTypes;
+  onTradeTypeChange?: (type: TradeTypes) => void;
   exchangeRate: number;
   onExchangeRateChange: (rate: number) => void;
   limit: {
@@ -23,7 +21,8 @@ interface TradeTypeSectionProps {
 }
 
 const formatCurrency = (num: number): string => {
-  return new Intl.NumberFormat('vi-VN').format(num);
+  // Changed to en-US for English formatting (commas)
+  return new Intl.NumberFormat('en-US').format(num);
 };
 
 const getRawValue = (val: string): number => {
@@ -32,7 +31,6 @@ const getRawValue = (val: string): number => {
 
 export const TradeTypeSection = ({
   tradeType,
-  onTradeTypeChange,
   exchangeRate,
   onExchangeRateChange,
   limit,
@@ -71,11 +69,9 @@ export const TradeTypeSection = ({
   const handleRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
 
-    // Cho phép nhập các ký tự: số, dấu chấm, và chuỗi rỗng
     if (value === '' || /^\d*\.?\d*$/.test(value)) {
       setRateDisplay(value);
 
-      // Chỉ update giá trị thực khi có số hợp lệ
       const numValue = parseFloat(value);
       if (!isNaN(numValue) && numValue >= 0) {
         onExchangeRateChange(numValue);
@@ -117,7 +113,7 @@ export const TradeTypeSection = ({
         <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-800 text-xs text-gray-400">
           1
         </span>
-        <h3 className="text-sm font-semibold text-white">Loại lệnh & Tài sản</h3>
+        <h3 className="text-sm font-semibold text-white">Order Type & Asset</h3>
       </div>
 
       {/* Trade Type & Asset - Grid Layout */}
@@ -173,7 +169,7 @@ export const TradeTypeSection = ({
             <div className="mt-2 border-t border-blue-800/20 pt-2">
               <div className="text-center">
                 <p className="mb-0.5 text-xs text-blue-400/80">Exchange rate</p>
-                <p className="text-lg font-bold text-white">1 MZD = {exchangeRate.toLocaleString('vi-VN')} VND</p>
+                <p className="text-lg font-bold text-white">1 MZD = {exchangeRate.toLocaleString('en-US')} VND</p>
               </div>
             </div>
           )}
@@ -183,11 +179,11 @@ export const TradeTypeSection = ({
       {/* Transaction Limits - Only for SELL */}
       {tradeType === 'SELL' && (
         <div>
-          <label className="mb-2 block text-xs font-medium text-gray-500">Giới hạn giao dịch (MZD)</label>
+          <label className="mb-2 block text-xs font-medium text-gray-500">Transaction Limits (MZD)</label>
           <div className="grid grid-cols-2 gap-3">
             {/* Min Limit */}
             <div>
-              <label className="mb-1 block text-xs text-gray-400">Tối thiểu</label>
+              <label className="mb-1 block text-xs text-gray-400">Minimum</label>
               <div className="relative">
                 <input
                   type="text"
@@ -207,7 +203,7 @@ export const TradeTypeSection = ({
 
             {/* Max Limit */}
             <div>
-              <label className="mb-1 block text-xs text-gray-400">Tối đa</label>
+              <label className="mb-1 block text-xs text-gray-400">Maximum</label>
               <div className="relative">
                 <input
                   type="text"
@@ -227,7 +223,7 @@ export const TradeTypeSection = ({
           </div>
           {amountMZD > 0 && (
             <p className="mt-2 text-xs text-gray-500">
-              Giới hạn tối đa: <span className="font-medium text-gray-400">{formatCurrency(amountMZD)} MZD</span>
+              Max limit: <span className="font-medium text-gray-400">{formatCurrency(amountMZD)} MZD</span>
             </p>
           )}
         </div>
@@ -235,29 +231,3 @@ export const TradeTypeSection = ({
     </div>
   );
 };
-
-// Demo Component
-export default function Demo() {
-  const [tradeType, setTradeType] = useState<TradeType>('SELL');
-  const [exchangeRate, setExchangeRate] = useState(0.85);
-  const [limit, setLimit] = useState({ min: 100, max: 5000 });
-  const [amountMZD] = useState(10000);
-
-  return (
-    <div className="min-h-screen bg-gray-950 p-6">
-      <div className="mx-auto max-w-2xl">
-        <div className="rounded-lg border border-gray-800 bg-gray-900 p-6">
-          <TradeTypeSection
-            tradeType={tradeType}
-            onTradeTypeChange={setTradeType}
-            exchangeRate={exchangeRate}
-            onExchangeRateChange={setExchangeRate}
-            limit={limit}
-            onLimitChange={setLimit}
-            amountMZD={amountMZD}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}

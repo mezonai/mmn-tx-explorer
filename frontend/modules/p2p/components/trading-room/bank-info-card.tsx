@@ -2,7 +2,7 @@
 
 import { Card } from '@/components/ui/card';
 import { CopyButton } from '@/components/ui/copy-button';
-import { P2POffer } from '../../types/p2p.types';
+import { P2POffer } from '../../types';
 import { Bolt } from 'lucide-react';
 
 type BankDetails = NonNullable<P2POffer['bankInfo']>;

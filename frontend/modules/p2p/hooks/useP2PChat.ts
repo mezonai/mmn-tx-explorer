@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChatMessage } from '../types/p2p.types';
+import { ChatMessage } from '../types';
 
 // Mock data - sẽ thay thế bằng API call sau
 const mockMessages: ChatMessage[] = [

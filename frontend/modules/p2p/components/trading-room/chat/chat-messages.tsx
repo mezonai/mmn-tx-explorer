@@ -1,6 +1,6 @@
 'use client';
 
-import { ChatMessage } from '../../../types/p2p.types';
+import { ChatMessage } from '../../../types';
 import { ChatMessageItem } from './chat-message-item';
 import { AlertTriangle } from 'lucide-react';
 

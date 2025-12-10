@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useUser } from '@/providers/AppProvider';
 import { P2PService } from '../api';
-import { P2POrder } from '../types/p2p.types';
+import { P2POrder } from '../types';
 import { useWebSocket, WebSocketEvent } from '@/lib/websocket';
 
 export const useP2POrders = () => {
@@ -64,24 +64,20 @@ export const useP2POrders = () => {
       }
 
       // Check if this order is for the current user (seller)
-      if (event.receive_address === user.walletAddress) {
+      const sellerAddress = (orderData.seller_wallet_address || orderData.sellerWalletAddress) as string | undefined;
+      if (sellerAddress === user.walletAddress) {
         // Seller received a new order
         const newOrder: P2POrder = {
-          orderId: (orderData.orderId || orderData.order_id) as string,
-          offerId: (orderData.offerId || orderData.offer_id) as string,
-          buyerWalletAddress:
-            (orderData.buyerWalletAddress || orderData.buyer_wallet_address) as string | undefined || '',
-          sellerWalletAddress: event.receive_address || '',
-          amountMZD: (orderData.amountMZD || orderData.amount_mzd) as number,
-          amountVND: (orderData.amountVND || orderData.amount_vnd) as number,
-          exchangeRate: (orderData.exchangeRate || orderData.exchange_rate) as number,
-          status: (orderData.status || 'PAYMENT_PENDING') as P2POrder['status'],
-          createdAt:
-            (orderData.createdAt || orderData.created_at || new Date().toISOString()) as string,
-          expiresAt:
-            (orderData.expiresAt ||
-              orderData.expires_at ||
-              new Date(Date.now() + 15 * 60 * 1000).toISOString()) as string,
+          order_id: (orderData.order_id || orderData.orderId) as string | number,
+          offer_id: (orderData.offer_id || orderData.offerId) as string | number,
+          buyer_wallet_address: (orderData.buyer_wallet_address || orderData.buyerWalletAddress) as string || '',
+          amount: (orderData.amount || 0) as number,
+          price: (orderData.price || 0) as number,
+          order_status: (orderData.order_status || orderData.status || 'PENDING') as string,
+          transfer_code: (orderData.transfer_code || orderData.transferCode) as string | null | undefined,
+          expires_at: (orderData.expires_at || orderData.expiresAt || new Date(Date.now() + 15 * 60 * 1000).toISOString()) as string,
+          created_at: (orderData.created_at || orderData.createdAt || new Date().toISOString()) as string,
+          updated_at: (orderData.updated_at || orderData.updatedAt || new Date().toISOString()) as string,
         };
 
         // Add new order to the beginning of the list
@@ -109,15 +105,19 @@ export const useP2POrders = () => {
       if (event.type !== 'ORDER_STATUS_UPDATED') return;
 
       const payload = event.payload as Record<string, unknown> | undefined;
-      const payloadOrderId = (payload?.['orderId'] || payload?.['order_id']) as string | undefined;
-      const statusRaw = payload?.['status'];
-      const status = typeof statusRaw === 'string' ? (statusRaw as P2POrder['status']) : undefined;
+      const payloadOrderId = (payload?.['order_id'] || payload?.['orderId']) as string | number | undefined;
+      const statusRaw = payload?.['order_status'] || payload?.['status'];
+      const status = typeof statusRaw === 'string' ? statusRaw : undefined;
 
       if (!payloadOrderId || !status) return;
 
       // Update matching order in list
       setOrders((prev) =>
-        prev.map((order) => (order.orderId === payloadOrderId ? { ...order, status } : order))
+        prev.map((order) => {
+          const orderIdStr = String(order.order_id);
+          const payloadOrderIdStr = String(payloadOrderId);
+          return orderIdStr === payloadOrderIdStr ? { ...order, order_status: status } : order;
+        })
       );
     };
 

@@ -1,58 +1,52 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { CreateOfferFormData } from '../types/p2p.types';
+import { Plus, Send, Loader2 } from 'lucide-react';
 import { TradeTypeSection } from './create-offer-form/trade-type-section';
 import { AmountSection } from './create-offer-form/amount-section';
 import { PaymentSection } from './create-offer-form/payment-section';
-import { Send } from 'lucide-react';
+import { CreateOfferFormState, CreateOfferRequest, TradeTypes } from '../types';
+import { useCreateOffer } from '../hooks/useCreateOffer';
 
-interface CreateOfferModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSubmit?: (data: CreateOfferFormData) => void;
-  isLoading?: boolean;
-  error?: string | null;
+interface FormErrors {
+  amount?: string;
+  price_rate?: string;
+  account_number?: string;
+  account_name?: string;
 }
 
-export const CreateOfferModal = ({ open, onOpenChange, onSubmit, isLoading = false, error }: CreateOfferModalProps) => {
-  const [formData, setFormData] = useState<CreateOfferFormData>({
-    tradeType: 'SELL',
-    amountMZD: 0,
-    exchangeRate: 1, // Default 1:1
-    limit: {
-      min: 0,
-      max: 0,
-    },
-    bank: 'MB',
-    accountNumber: '',
+interface CreateOfferModalProps {
+  onSubmit?: (data: CreateOfferRequest) => void;
+}
+
+export const CreateOfferModal = ({ onSubmit }: CreateOfferModalProps) => {
+  const [open, setOpen] = useState(false);
+
+  const { mutate: createOffer, isPending } = useCreateOffer();
+
+  const [formData, setFormData] = useState<CreateOfferFormState>({
+    side: TradeTypes.SELL,
+    amount: 0,
+    price_rate: 1,
+    limit: { min: 0, max: 0 },
+    bank_info: { bank: 'MB', account_name: '', account_number: '' },
+    symbol: 'MZD',
   });
 
-  const [errors, setErrors] = useState<Partial<Record<keyof CreateOfferFormData, string>>>({});
+  const [errors, setErrors] = useState<FormErrors>({});
   const [limitErrors, setLimitErrors] = useState<{ min?: string; max?: string }>({});
 
-  // Reset form when modal opens
   useEffect(() => {
     if (open) {
       setFormData({
-        tradeType: 'SELL',
-        amountMZD: 0,
-        exchangeRate: 1,
-        limit: {
-          min: 0,
-          max: 0,
-        },
-        bank: 'MB',
-        accountNumber: '',
+        side: TradeTypes.SELL,
+        amount: 0,
+        price_rate: 1,
+        limit: { min: 0, max: 0 },
+        bank_info: { bank: 'MB', account_name: '', account_number: '' },
+        symbol: 'MZD',
       });
       setErrors({});
       setLimitErrors({});
@@ -60,131 +54,148 @@ export const CreateOfferModal = ({ open, onOpenChange, onSubmit, isLoading = fal
   }, [open]);
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<Record<keyof CreateOfferFormData, string>> = {};
+    const newErrors: FormErrors = {};
     const newLimitErrors: { min?: string; max?: string } = {};
 
-    if (formData.amountMZD <= 0) {
-      newErrors.amountMZD = 'Vui lòng nhập số lượng MZD muốn bán';
+    // Validate Quantity
+    if (formData.amount <= 0) {
+      newErrors.amount = 'Please enter the amount of MZD to sell';
     }
 
-    if (formData.tradeType === 'SELL' && formData.exchangeRate <= 0) {
-      newErrors.exchangeRate = 'Vui lòng nhập tỉ giá bán';
+    // Validate Price Rate
+    if (formData.side === TradeTypes.SELL && formData.price_rate <= 0) {
+      newErrors.price_rate = 'Please enter the selling rate';
     }
 
-    // Validate limit
-    if (formData.tradeType === 'SELL') {
+    // Validate Limits
+    if (formData.side === TradeTypes.SELL) {
+      // Min Limit Validation
       if (formData.limit.min <= 0) {
-        newLimitErrors.min = 'Vui lòng nhập giới hạn tối thiểu';
-      } else if (formData.limit.min > formData.amountMZD) {
-        newLimitErrors.min = 'Giới hạn tối thiểu không được lớn hơn số MZD muốn bán';
+        newLimitErrors.min = 'Please enter the minimum limit';
+      } else if (formData.limit.min > formData.amount) {
+        newLimitErrors.min = 'Minimum limit cannot exceed the sell amount';
       }
 
+      // Max Limit Validation
       if (formData.limit.max <= 0) {
-        newLimitErrors.max = 'Vui lòng nhập giới hạn tối đa';
-      } else if (formData.limit.max > formData.amountMZD) {
-        newLimitErrors.max = 'Giới hạn tối đa không được lớn hơn số MZD muốn bán';
+        newLimitErrors.max = 'Please enter the maximum limit';
+      } else if (formData.limit.max > formData.amount) {
+        newLimitErrors.max = 'Maximum limit cannot exceed the sell amount';
       } else if (formData.limit.max < formData.limit.min) {
-        newLimitErrors.max = 'Giới hạn tối đa phải lớn hơn hoặc bằng giới hạn tối thiểu';
+        newLimitErrors.max = 'Maximum limit must be greater than or equal to minimum limit';
       }
     }
 
-    if (!formData.accountNumber.trim()) {
-      newErrors.accountNumber = 'Vui lòng nhập số tài khoản';
-    } else if (!/^\d+$/.test(formData.accountNumber.trim())) {
-      newErrors.accountNumber = 'Số tài khoản chỉ được chứa số';
+    // Validate Metadata (Account Number)
+    if (!formData.bank_info.account_number.trim()) {
+      newErrors.account_number = 'Please enter the account number';
+    } else if (!/^\d+$/.test(formData.bank_info.account_number.trim())) {
+      newErrors.account_number = 'Account number must contain only digits';
+    }
+
+    // Validate Metadata (Account Name)
+    if (!formData.bank_info.account_name.trim()) {
+      newErrors.account_name = 'Please enter the account name';
     }
 
     setErrors(newErrors);
     setLimitErrors(newLimitErrors);
+
     return Object.keys(newErrors).length === 0 && Object.keys(newLimitErrors).length === 0;
   };
 
   const handleSubmit = () => {
     if (validateForm()) {
-      console.log('📝 Create Offer Data:', {
-        tradeType: formData.tradeType,
-        amountMZD: formData.amountMZD,
-        amountMZDFormatted: new Intl.NumberFormat('vi-VN').format(formData.amountMZD),
-        exchangeRate: formData.exchangeRate,
-        exchangeRateDisplay: `1 MZD = ${formData.exchangeRate.toLocaleString('vi-VN')} VND`,
-        totalVND: formData.amountMZD * formData.exchangeRate,
-        totalVNDFormatted: new Intl.NumberFormat('vi-VN').format(formData.amountMZD * formData.exchangeRate),
+      const payload: CreateOfferRequest = {
+        ...formData,
+        amount: formData.amount.toString(),
+        price_rate: formData.price_rate.toString(),
         limit: {
-          min: formData.limit.min,
-          minFormatted: new Intl.NumberFormat('vi-VN').format(formData.limit.min),
-          max: formData.limit.max,
-          maxFormatted: new Intl.NumberFormat('vi-VN').format(formData.limit.max),
-          range: `${new Intl.NumberFormat('vi-VN').format(formData.limit.min)} - ${new Intl.NumberFormat('vi-VN').format(formData.limit.max)} MZD`,
+          min: formData.limit.min.toString(),
+          max: formData.limit.max.toString(),
         },
-        bank: formData.bank,
-        accountNumber: formData.accountNumber,
-      });
+      };
 
-      onSubmit?.(formData);
-      onOpenChange(false);
+      createOffer(payload, {
+        onSuccess: () => {
+          if (onSubmit) {
+            onSubmit(payload);
+          }
+          console.log(payload);
+          setOpen(false);
+        },
+        onError: (error) => {
+          console.error('Error creating offer:', error);
+        },
+      });
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button className="bg-brand-primary hover:bg-brand-primary/90 h-10 w-full shrink-0 rounded-lg font-bold text-white shadow-sm transition-all md:w-auto md:px-5">
+          <Plus className="mr-2 h-4 w-4" />
+          New Offer
+        </Button>
+      </DialogTrigger>
+
       <DialogContent className="max-w-6xl overflow-y-auto border-gray-300 dark:border-gray-800">
         <DialogHeader className="-mx-6 -mt-6 border-b border-gray-800 bg-gray-900/50 px-6 py-4 dark:bg-gray-900/50">
           <DialogTitle className="text-lg font-bold text-white">Create New Offer</DialogTitle>
-          {/* <DialogDescription className="text-xs text-gray-400">
-          </DialogDescription> */}
         </DialogHeader>
-
-        {error && (
-          <div className="mx-6 mt-4 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
-            {error}
-          </div>
-        )}
 
         <div className="grid grid-cols-1 gap-8 p-6 lg:grid-cols-3">
           <TradeTypeSection
-            tradeType={formData.tradeType}
-            onTradeTypeChange={(type) => setFormData({ ...formData, tradeType: type })}
-            exchangeRate={formData.exchangeRate}
-            onExchangeRateChange={(rate) => setFormData({ ...formData, exchangeRate: rate })}
+            tradeType={formData.side}
+            onTradeTypeChange={(type) => setFormData({ ...formData, side: type })}
+            exchangeRate={formData.price_rate}
+            onExchangeRateChange={(rate) => setFormData({ ...formData, price_rate: rate })}
             limit={formData.limit}
             onLimitChange={(limit) => setFormData({ ...formData, limit })}
-            amountMZD={formData.amountMZD}
+            amountMZD={formData.amount}
             limitErrors={limitErrors}
           />
 
-          {/* Phần 2: Khối lượng giao dịch */}
           <AmountSection
-            amountMZD={formData.amountMZD}
-            onAmountChange={(amount) => setFormData({ ...formData, amountMZD: amount })}
-            exchangeRate={formData.exchangeRate}
-            error={errors.amountMZD}
+            amountMZD={formData.amount}
+            onAmountChange={(amount) => setFormData({ ...formData, amount: amount })}
+            exchangeRate={formData.price_rate}
+            error={errors.amount}
           />
 
-          {/* Phần 3: Thanh toán */}
           <PaymentSection
-            bank={formData.bank}
-            accountNumber={formData.accountNumber}
-            onBankChange={(bank) => setFormData({ ...formData, bank })}
-            onAccountNumberChange={(account) => setFormData({ ...formData, accountNumber: account })}
-            error={errors.accountNumber}
+            bank={formData.bank_info.bank}
+            accountNumber={formData.bank_info.account_number}
+            accountName={formData.bank_info.account_name}
+            onBankChange={(bank) => setFormData((prev) => ({ ...prev, bank_info: { ...prev.bank_info, bank } }))}
+            onAccountNumberChange={(account) =>
+              setFormData((prev) => ({ ...prev, bank_info: { ...prev.bank_info, account_number: account } }))
+            }
+            onAccountNameChange={(name) =>
+              setFormData((prev) => ({ ...prev, bank_info: { ...prev.bank_info, account_name: name } }))
+            }
+            error={errors.account_number}
+            accountNameError={errors.account_name}
           />
         </div>
 
         <DialogFooter className="-mx-6 -mb-6 flex justify-end gap-3 border-t border-gray-800 bg-gray-900/30 px-4 py-4">
           <Button
             variant="ghost"
-            onClick={() => onOpenChange(false)}
+            onClick={() => setOpen(false)}
+            disabled={isPending}
             className="px-5 py-2 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white"
           >
             Cancel
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={isLoading}
-            className="bg-brand-primary flex items-center gap-2 px-8 py-2 text-sm font-bold text-white shadow-lg shadow-violet-900/20 transition hover:bg-violet-600 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={isPending}
+            className="bg-brand-primary flex items-center gap-2 px-8 py-2 text-sm font-bold text-white shadow-lg shadow-violet-900/20 transition hover:bg-violet-600 disabled:opacity-70"
           >
-            <Send className="h-3 w-3" />
-            {isLoading ? 'Đang tạo...' : 'Create Offer'}
+            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-3 w-3" />}
+            {isPending ? 'Creating...' : 'Create Offer'}
           </Button>
         </DialogFooter>
       </DialogContent>

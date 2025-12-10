@@ -1,57 +1,39 @@
 'use client';
 
-import { useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useState, useCallback } from 'react';
 import { P2PHeader } from './p2p-header';
 import { P2PFiltersComponent } from './p2p-filters';
-import { P2POffersTable } from './p2p-offers-table';
-import { P2POrdersList } from './p2p-orders-list';
-import { CreateOfferModal } from './create-offer-modal';
-import { P2POffer, CreateOfferFormData } from '../types/p2p.types';
 import { useP2POffers } from '../hooks/useP2POffers';
-import { useCreateOffer } from '../hooks/useCreateOffer';
-import { P2P_QUERY_KEYS } from '../constants';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useRouter } from 'next/navigation';
+import { P2POffersTabs } from './p2p-offers-tab';
+import { usePaginationQueryParam } from '@/hooks/usePaginationQueryParam';
 
 export const P2P = () => {
-  const [isCreateOfferModalOpen, setIsCreateOfferModalOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const { data: offers, isLoading } = useP2POffers({ page: 0, limit: 10 });
-  const { createOffer, isLoading: isCreatingOffer } = useCreateOffer();
+  const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
 
-  const handleNewOfferClick = () => {
-    setIsCreateOfferModalOpen(true);
-    setError(null);
-  };
+  const [filters, setFilters] = useState<{ min?: number; max?: number }>({});
 
-  const handleOfferClick = (offer: P2POffer) => {
-    router.push(`/p2p/trading/${offer.offerId}?type=offer`);
-  };
+  const handleFilterChange = useCallback(
+    (min: number | undefined, max: number | undefined) => {
+      setFilters((prev) => {
+        if (prev.min !== min || prev.max !== max) {
+          if (page !== 1) {
+            handleChangePage(1);
+          }
+          return { min, max };
+        }
+        return prev;
+      });
+    },
+    [page, handleChangePage]
+  );
 
-  const handleCreateOfferSubmit = async (data: CreateOfferFormData) => {
-    try {
-      setError(null);
-      const newOffer = await createOffer(data);
-      
-      if (newOffer) {
-        // Invalidate and refetch offers list
-        await queryClient.invalidateQueries({ queryKey: [P2P_QUERY_KEYS.OFFERS] });
-        
-        // Close modal
-        setIsCreateOfferModalOpen(false);
-        
-        // Optional: Show success message or navigate
-        console.log('✅ Offer created successfully:', newOffer);
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Có lỗi xảy ra khi tạo offer. Vui lòng thử lại.';
-      setError(errorMessage);
-      console.error('Error creating offer:', err);
-    }
-  };
+  const { data: offers, isLoading } = useP2POffers({
+    page: page - 1,
+    limit,
+    from_amount: filters.min,
+    to_amount: filters.max,
+  });
 
   return (
     <div className="w-full space-y-6">
@@ -65,25 +47,19 @@ export const P2P = () => {
         </TabsList>
 
         <TabsContent value="offers" className="space-y-6">
-          <P2PFiltersComponent onNewOfferClick={handleNewOfferClick} />
-          <P2POffersTable offers={offers?.data} isLoading={isLoading} onOfferClick={handleOfferClick} />
-        </TabsContent>
-
-        <TabsContent value="orders" className="space-y-6">
-          <P2POrdersList />
+          <P2PFiltersComponent
+            totalItems={offers?.meta.total_items}
+            totalPages={offers?.meta.total_pages}
+            isLoading={isLoading}
+            page={page}
+            limit={limit}
+            onPageChange={handleChangePage}
+            onLimitChange={handleChangeLimit}
+            onFilterChange={handleFilterChange}
+          />
+          <P2POffersTabs offers={offers?.data} isLoading={isLoading} />
         </TabsContent>
       </Tabs>
-
-      <CreateOfferModal
-        open={isCreateOfferModalOpen}
-        onOpenChange={(open) => {
-          setIsCreateOfferModalOpen(open);
-          if (!open) setError(null);
-        }}
-        onSubmit={handleCreateOfferSubmit}
-        isLoading={isCreatingOffer}
-        error={error}
-      />
     </div>
   );
 };
