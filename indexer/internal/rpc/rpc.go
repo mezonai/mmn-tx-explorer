@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"sort"
 
 	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
@@ -82,51 +83,36 @@ func (rpc *Client) GetFullBlocks(ctx context.Context, blockNumbers []*big.Int) [
 	if len(blockNumbers) == 0 {
 		return []GetFullBlockResult{}
 	}
-	
-	if rpc.areBlocksConsecutive(blockNumbers) {
-		return rpc.getFullBlocksByRange(ctx, blockNumbers)
+
+	if ok, sorted := rpc.areBlocksConsecutive(blockNumbers); ok {
+		return rpc.getFullBlocksByRange(ctx, sorted)
 	}
 
 	return rpc.getFullBlocksByNumber(ctx, blockNumbers)
 }
 
-func (rpc *Client) areBlocksConsecutive(blockNumbers []*big.Int) bool {
+func (rpc *Client) areBlocksConsecutive(blockNumbers []*big.Int) (bool, []*big.Int) {
 	if len(blockNumbers) <= 1 {
-		return true
+		return true, blockNumbers
 	}
 
 	sorted := make([]*big.Int, len(blockNumbers))
 	copy(sorted, blockNumbers)
 
-	for i := 0; i < len(sorted)-1; i++ {
-		for j := i + 1; j < len(sorted); j++ {
-			if sorted[i].Cmp(sorted[j]) > 0 {
-				sorted[i], sorted[j] = sorted[j], sorted[i]
-			}
-		}
-	}
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i].Cmp(sorted[j]) < 0
+	})
 
 	for i := 1; i < len(sorted); i++ {
 		diff := new(big.Int).Sub(sorted[i], sorted[i-1])
 		if diff.Cmp(big.NewInt(1)) != 0 {
-			return false
+			return false, sorted
 		}
 	}
-	return true
+	return true, sorted
 }
 
-func (rpc *Client) getFullBlocksByRange(ctx context.Context, blockNumbers []*big.Int) []GetFullBlockResult {
-	sorted := make([]*big.Int, len(blockNumbers))
-	copy(sorted, blockNumbers)
-
-	for i := 0; i < len(sorted)-1; i++ {
-		for j := i + 1; j < len(sorted); j++ {
-			if sorted[i].Cmp(sorted[j]) > 0 {
-				sorted[i], sorted[j] = sorted[j], sorted[i]
-			}
-		}
-	}
-
+func (rpc *Client) getFullBlocksByRange(ctx context.Context, sorted []*big.Int) []GetFullBlockResult {
 	fromSlot := sorted[0].Uint64()
 	toSlot := sorted[len(sorted)-1].Uint64()
 
@@ -143,13 +129,13 @@ func (rpc *Client) getFullBlocksByRange(ctx context.Context, blockNumbers []*big
 	}
 
 	log.Info().
-		Int("requested_blocks", len(blockNumbers)).
+		Int("requested_blocks", len(sorted)).
 		Int("response_blocks_count", len(res.Blocks)).
 		Uint64("from_slot", fromSlot).
 		Uint64("to_slot", toSlot).
 		Msg("GetFullBlocks: MMN service range response received")
 
-	rawBlocks := make([]RPCFetchBatchResult[*big.Int, common.RawBlock], len(blockNumbers))
+	rawBlocks := make([]RPCFetchBatchResult[*big.Int, common.RawBlock], len(sorted))
 
 	blockMap := make(map[uint64]*pb.BlockInfo)
 	for _, blk := range res.Blocks {
@@ -161,7 +147,7 @@ func (rpc *Client) getFullBlocksByRange(ctx context.Context, blockNumbers []*big
 	successfulBlocks := 0
 	failedBlocks := 0
 
-	for i, blockNum := range blockNumbers {
+	for i, blockNum := range sorted {
 		slot := blockNum.Uint64()
 		if blk, exists := blockMap[slot]; exists {
 			rawBlock := convertPBBlockInfoToRawBlock(blk)
@@ -182,7 +168,7 @@ func (rpc *Client) getFullBlocksByRange(ctx context.Context, blockNumbers []*big
 	}
 
 	log.Info().
-		Int("requested_blocks", len(blockNumbers)).
+		Int("requested_blocks", len(sorted)).
 		Int("successful_blocks", successfulBlocks).
 		Int("failed_blocks", failedBlocks).
 		Msg("GetFullBlocks: range processing summary")
