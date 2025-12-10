@@ -177,6 +177,8 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 		return
 	}
 
+	walletAddress, _ := utils.GetAddressFromContext(c)
+
 	var body struct {
 		ExecutionPrice *string `json:"execution_price,omitempty"`
 		Source         *string `json:"source,omitempty"`
@@ -190,7 +192,7 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 		return
 	}
 
-	if err := h.orderService.ConfirmOrder(c.Request.Context(), orderID, body.ExecutionPrice, body.Source, body.BankInfo); err != nil {
+	if err := h.orderService.ConfirmOrder(c.Request.Context(), orderID, walletAddress, body.ExecutionPrice, body.Source, body.BankInfo); err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to confirm order: "+err.Error()))
 		return
 	}
