@@ -98,6 +98,5 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		walletPublic := v1.Group("/wallets")
 		walletPublic.Use(middleware.ParseTokenAndAddToContext(cfg.JWT.Secret))
 		walletPublic.GET("/:address/detail", walletHandler.GetWalletDetail)
-
 	}
 }
