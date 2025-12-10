@@ -20,9 +20,9 @@ func NewOrderRepository(db *sql.DB, dongSchema string) *OrderRepository {
 
 func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
-			    INSERT INTO %s.orders (
-						offer_id, wallet_address, quantity, amount, price, status, transfer_code, expires_at, created_at, updated_at
-					) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW(),NOW())
+		    INSERT INTO %s.orders (
+			    offer_id, buyer_wallet_address, amount, price, status, transfer_code, expires_at, created_at, updated_at
+			) VALUES ($1,$2,$3,$4,$5,$6,$7,NOW(),NOW())
         RETURNING order_id, created_at, updated_at
     `, r.dongSchema)
 
@@ -176,7 +176,7 @@ func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAd
 
 	rows, err := r.db.QueryContext(ctx, query, walletAddress)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list orders by buyer_wallet_address: %w", err)
+		return nil, fmt.Errorf("failed to list orders by wallet_address: %w", err)
 	}
 	defer rows.Close()
 

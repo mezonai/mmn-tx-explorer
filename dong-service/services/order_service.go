@@ -62,9 +62,9 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		if err != nil {
 			_ = tx.Rollback()
 			return nil, fmt.Errorf("invalid price: %v", err)
+		} else {
+			priceInt = offer.Price
 		}
-	} else {
-		priceInt = offer.Price
 	}
 
 	amountInt, err := strconv.ParseInt(req.Amount, 10, 64)
