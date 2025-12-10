@@ -35,8 +35,8 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		return nil, fmt.Errorf("offer not found: %w", err)
 	}
 
-	if req.Quantity == "" {
-		return nil, fmt.Errorf("quantity required")
+	if req.Amount == "" {
+		return nil, fmt.Errorf("amount required")
 	}
 
 	if offer.Status != string(constants.TradingPending) && offer.Status != string(constants.TrandingOpen) {
@@ -67,17 +67,10 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		}
 	}
 
-	quantityInt, err := strconv.ParseInt(req.Quantity, 10, 64)
+	amountInt, err := strconv.ParseInt(req.Amount, 10, 64)
 	if err != nil {
 		_ = tx.Rollback()
-		return nil, fmt.Errorf("invalid quantity: %v", err)
-	}
-
-	var amountInt int64
-	if priceInt != 0 {
-		amountInt = quantityInt * priceInt
-	} else {
-		amountInt = 0
+		return nil, fmt.Errorf("invalid amount: %v", err)
 	}
 
 	var walletAddrPtr *string
@@ -86,17 +79,25 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		walletAddrPtr = &a
 	}
 
-	order := &models.Order{
-		OfferID:       &offerID,
-		WalletAddress: walletAddrPtr,
-		Quantity:      quantityInt,
-		Amount:        amountInt,
-		Price:         priceInt,
-		Status:        string(constants.TradingPending),
-		ExpiresAt:     nil,
+	// Generate transfer_code: SYMBOL + " " + OFFER_ID
+	var transferCode string
+	if offer.Symbol != "" {
+		transferCode = fmt.Sprintf("%s %d", offer.Symbol, offerID)
+	} else {
+		transferCode = fmt.Sprintf("ORDER %d", offerID)
 	}
 
-	if err := s.offerRepo.ReserveQuantity(ctx, offerID, quantityInt, tx); err != nil {
+	order := &models.Order{
+		OfferID:            &offerID,
+		BuyerWalletAddress: walletAddrPtr,
+		Amount:             amountInt,
+		Price:              priceInt,
+		Status:             string(constants.TradingPending),
+		TransferCode:       &transferCode,
+		ExpiresAt:          nil,
+	}
+
+	if err := s.offerRepo.ReserveQuantity(ctx, offerID, amountInt, tx); err != nil {
 		_ = tx.Rollback()
 		return nil, fmt.Errorf("failed to reserve offer quantity: %w", err)
 	}
@@ -163,7 +164,7 @@ func (s *OrderService) ConfirmOrder(ctx context.Context, orderID int64, executio
 		}
 
 		if o.OfferID != nil {
-			if err := s.offerRepo.ReleaseQuantity(ctx, *o.OfferID, o.Quantity, tx); err != nil {
+			if err := s.offerRepo.ReleaseQuantity(ctx, *o.OfferID, o.Amount, tx); err != nil {
 				_ = tx.Rollback()
 				return err
 			}
@@ -184,7 +185,7 @@ func (s *OrderService) ConfirmOrder(ctx context.Context, orderID int64, executio
 	}
 
 	if o.OfferID != nil {
-		if err := s.offerRepo.ApplyConfirmedQuantity(ctx, *o.OfferID, o.Quantity, tx); err != nil {
+		if err := s.offerRepo.ApplyConfirmedQuantity(ctx, *o.OfferID, o.Amount, tx); err != nil {
 			_ = tx.Rollback()
 			return err
 		}

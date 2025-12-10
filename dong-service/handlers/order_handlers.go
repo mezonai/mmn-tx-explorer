@@ -180,7 +180,7 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 	var body struct {
 		ExecutionPrice *string `json:"execution_price,omitempty"`
 		Source         *string `json:"source,omitempty"`
-		Metadata       *string `json:"metadata,omitempty"`
+		BankInfo       *string `json:"bank_info,omitempty"`
 	}
 	_ = c.ShouldBindJSON(&body)
 
@@ -190,7 +190,7 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 		return
 	}
 
-	if err := h.orderService.ConfirmOrder(c.Request.Context(), orderID, body.ExecutionPrice, body.Source, body.Metadata); err != nil {
+	if err := h.orderService.ConfirmOrder(c.Request.Context(), orderID, body.ExecutionPrice, body.Source, body.BankInfo); err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to confirm order: "+err.Error()))
 		return
 	}

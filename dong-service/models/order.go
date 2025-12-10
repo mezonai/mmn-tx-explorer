@@ -14,19 +14,19 @@ const (
 )
 
 type Order struct {
-	OrderID       int64      `json:"order_id" db:"order_id"`
-	OfferID       *int64     `json:"offer_id,omitempty" db:"offer_id"`
-	WalletAddress *string    `json:"wallet_address,omitempty" db:"wallet_address"`
-	Quantity      int64      `json:"quantity" db:"quantity"`
-	Amount        int64      `json:"amount" db:"amount"`
-	Price         int64      `json:"price" db:"price"`
-	Status        string     `json:"status" db:"status"`
-	ExpiresAt     *time.Time `json:"expires_at,omitempty" db:"expires_at"`
-	CreatedAt     time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt     time.Time  `json:"updated_at" db:"updated_at"`
+	OrderID            int64      `json:"order_id" db:"order_id"`
+	OfferID            *int64     `json:"offer_id,omitempty" db:"offer_id"`
+	BuyerWalletAddress *string    `json:"buyer_wallet_address,omitempty" db:"buyer_wallet_address"`
+	Amount             int64      `json:"amount" db:"amount"`
+	Price              int64      `json:"price" db:"price"`
+	Status             string     `json:"status" db:"status"`
+	TransferCode       *string    `json:"transfer_code,omitempty" db:"transfer_code"`
+	ExpiresAt          *time.Time `json:"expires_at,omitempty" db:"expires_at"`
+	CreatedAt          time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt          time.Time  `json:"updated_at" db:"updated_at"`
 }
 
 type CreateOrderRequest struct {
-	Quantity string  `json:"quantity" binding:"required"`
-	Price    *string `json:"price,omitempty"`
+	Amount string  `json:"amount" binding:"required"`
+	Price  *string `json:"price,omitempty"`
 }
