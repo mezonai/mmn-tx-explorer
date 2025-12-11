@@ -48,14 +48,19 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	order, err := h.orderService.CreateOrder(c.Request.Context(), id, &req, walletAddr)
+	order, offer, err := h.orderService.CreateOrder(c.Request.Context(), id, &req, walletAddr)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to create order")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to create order: "+err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusCreated, models.SuccessResponseWithMessage("Order created", order))
+	c.JSON(http.StatusCreated, gin.H{
+		"success":  true,
+		"message":  "Order created",
+		"order":    order,
+		"bankinfo": offer.BankInfo,
+	})
 }
 
 // ListOrdersForOffer godoc
@@ -120,40 +125,6 @@ func (h *OrderHandler) GetOrderDetail(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, models.SuccessResponse(o))
-}
-
-// ListOrdersByWallet godoc
-// @Summary List orders for a wallet address
-// @Description List all orders created by a wallet address (most recent first)
-// @Tags orders
-// @Accept json
-// @Produce json
-// @Param wallet_address query string false "wallet address" (if omitted, will use authenticated caller's address if present)
-// @Success 200 {object} models.Response{data=[]models.Order}
-// @Failure 400 {object} models.Response
-// @Failure 500 {object} models.Response
-// @Router /api/v1/orders [get]
-func (h *OrderHandler) ListOrdersByWallet(c *gin.Context) {
-	walletAddress := c.Query("wallet_address")
-	if walletAddress == "" {
-		// try to use authenticated address if present
-		if addr, ok := utils.GetAddressFromContext(c); ok {
-			walletAddress = addr
-		}
-	}
-
-	if walletAddress == "" {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "missing wallet_address query parameter or authenticated address"))
-		return
-	}
-
-	orders, _, err := h.orderService.GetOrdersByWalletAddress(c.Request.Context(), walletAddress, nil)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to list orders: "+err.Error()))
-		return
-	}
-
-	c.JSON(http.StatusOK, models.SuccessResponse(orders))
 }
 
 // GetMyOrders godoc

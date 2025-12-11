@@ -122,6 +122,5 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		orders.POST("/:id/confirm", orderHandler.ConfirmOrder)
 		orders.GET("/me", orderHandler.GetMyOrders)
 		orders.GET("/:id", orderHandler.GetOrderDetail)
-		orders.GET("", orderHandler.ListOrdersByWallet)
 	}
 }

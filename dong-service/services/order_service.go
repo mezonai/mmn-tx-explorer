@@ -10,7 +10,6 @@ import (
 	"dong-service/repository"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -28,23 +27,23 @@ func NewOrderService(repo *repository.OrderRepository, offerRepo *repository.Off
 }
 
 type IOrderService interface {
-	CreateOrder(ctx context.Context, offerID int64, req *models.CreateOrderRequest, walletAddress string) (*models.Order, error)
+	CreateOrder(ctx context.Context, offerID int64, req *models.CreateOrderRequest, walletAddress string) (*models.Order, *models.Offer, error)
 	ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, error)
 	GetOrderByID(ctx context.Context, id int64) (*models.Order, error)
 	ConfirmOrder(ctx context.Context, orderID int64, walletAddress string, executionPrice *string, source *string, metadata *string) error
 	GetOrdersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Order, int64, error)
 }
 
-func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *models.CreateOrderRequest, walletAddress string) (*models.Order, error) {
+func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *models.CreateOrderRequest, walletAddress string) (*models.Order, *models.Offer, error) {
 	offer, err := s.offerRepo.GetOfferByID(ctx, offerID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch offer: %w", err)
+		return nil, nil, fmt.Errorf("failed to fetch offer: %w", err)
 	}
 
 	db := database.GetDB()
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer func() {
 		if err != nil {
@@ -54,21 +53,12 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 
 	var priceInt int64
 	if req.Price != nil {
-		var parseErr error
-		priceInt, parseErr = strconv.ParseInt(*req.Price, 10, 64)
-		if parseErr != nil {
-			err = fmt.Errorf("invalid price: %v", parseErr)
-			return nil, err
-		}
+		priceInt = *req.Price
 	} else {
 		priceInt = offer.Price
 	}
 
-	amountInt, parseErr := strconv.ParseInt(req.Amount, 10, 64)
-	if parseErr != nil {
-		err = fmt.Errorf("invalid amount: %v", parseErr)
-		return nil, err
-	}
+	amountInt := req.Amount
 
 	var walletAddrPtr *string
 	if walletAddress != "" {
@@ -90,18 +80,18 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 
 	if err = s.offerRepo.ReserveQuantity(ctx, offerID, amountInt, tx); err != nil {
 		err = fmt.Errorf("failed to reserve offer quantity: %w", err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	if err = s.repo.CreateOrder(ctx, order, tx); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if err = tx.Commit(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return order, nil
+	return order, offer, nil
 }
 
 func (s *OrderService) ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, error) {
