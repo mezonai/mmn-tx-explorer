@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { APP_CONFIG } from '@/configs/app.config';
 import { Pagination } from '@/components/ui/pagination';
-import { CreateOfferModal } from './create-offer-modal';
+import { CreateOfferModal } from './create-offer-form/create-offer-modal';
 import { CreateOfferRequest } from '../../types';
 
 interface P2PFiltersComponentProps {

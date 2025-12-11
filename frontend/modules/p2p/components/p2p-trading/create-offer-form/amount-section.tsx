@@ -1,17 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Control, Controller, UseFormTrigger, useWatch } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
+import { CreateOfferFormValues } from './validation-schema';
 
 interface AmountSectionProps {
-  amountMZD: number;
-  onAmountChange: (amount: number) => void;
-  exchangeRate: number;
-  error?: string;
+  control: Control<CreateOfferFormValues>;
+  trigger: UseFormTrigger<CreateOfferFormValues>;
 }
 
-// Format number with commas
 const formatCurrency = (num: number): string => {
+  if (!num) return '';
   return new Intl.NumberFormat('en-US').format(num);
 };
 
@@ -19,39 +18,9 @@ const getRawValue = (val: string): number => {
   return parseFloat(val.replace(/,/g, '')) || 0;
 };
 
-export const AmountSection = ({ amountMZD, onAmountChange, exchangeRate, error }: AmountSectionProps) => {
-  const [displayValue, setDisplayValue] = useState<string>('');
-
-  useEffect(() => {
-    if (amountMZD > 0) {
-      setDisplayValue(formatCurrency(amountMZD));
-    } else {
-      setDisplayValue('');
-    }
-  }, [amountMZD]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = getRawValue(e.target.value);
-    if (rawValue === 0) {
-      setDisplayValue('');
-      onAmountChange(0);
-    } else {
-      const formatted = formatCurrency(rawValue);
-      setDisplayValue(formatted);
-      onAmountChange(rawValue);
-    }
-  };
-
-  const setQuickAmount = (value: number) => {
-    setDisplayValue(formatCurrency(value));
-    onAmountChange(value);
-    const input = document.getElementById('amountInput');
-    if (input) {
-      input.classList.add('bg-gray-700');
-      setTimeout(() => input.classList.remove('bg-gray-700'), 200);
-    }
-  };
-
+export const AmountSection = ({ control, trigger }: AmountSectionProps) => {
+  const amountMZD = useWatch({ control, name: 'amount' });
+  const exchangeRate = useWatch({ control, name: 'price_rate' });
   const totalVND = exchangeRate > 0 ? amountMZD * exchangeRate : 0;
 
   return (
@@ -66,45 +35,52 @@ export const AmountSection = ({ amountMZD, onAmountChange, exchangeRate, error }
       <div>
         <label className="mb-2 block text-xs font-medium text-gray-500 uppercase">Amount to Sell (MZD)</label>
         <div className="group relative">
-          <Input
-            id="amountInput"
-            type="text"
-            placeholder="Ex: 5,000,000"
-            value={displayValue}
-            onChange={handleInputChange}
-            className={`bg-input/30 dark:bg-input/30 focus:border-brand-primary w-full rounded-md border-gray-700 px-3 py-2.5 text-lg font-bold text-white placeholder-gray-600 transition-colors group-hover:border-gray-600 focus:outline-none ${
-              error ? 'border-red-500' : ''
-            }`}
+          <Controller
+            control={control}
+            name="amount"
+            render={({ field, fieldState: { error } }) => (
+              <>
+                <Input
+                  {...field}
+                  value={formatCurrency(field.value)}
+                  onChange={(e) => {
+                    const val = getRawValue(e.target.value);
+                    field.onChange(val);
+                    trigger(['limit.min', 'limit.max']);
+                  }}
+                  type="text"
+                  placeholder="Ex: 5,000,000"
+                  className={`bg-input/30 dark:bg-input/30 focus:border-brand-primary w-full rounded-md border-gray-700 px-3 py-2.5 text-lg font-bold text-white placeholder-gray-600 transition-colors group-hover:border-gray-600 focus:outline-none ${
+                    error ? 'border-red-500' : ''
+                  }`}
+                />
+                <span className="absolute top-3.5 right-3 text-xs font-bold text-gray-500">MZD</span>
+                {error && <p className="mt-1 text-xs text-red-500">{error.message}</p>}
+              </>
+            )}
           />
-          <span className="absolute top-3.5 right-3 text-xs font-bold text-gray-500">MZD</span>
         </div>
-        {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
 
         <div className="mt-3 grid grid-cols-4 gap-2">
-          <button
-            onClick={() => setQuickAmount(100000)}
-            className="rounded border border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 transition hover:bg-gray-700"
-          >
-            100k
-          </button>
-          <button
-            onClick={() => setQuickAmount(500000)}
-            className="rounded border border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 transition hover:bg-gray-700"
-          >
-            500k
-          </button>
-          <button
-            onClick={() => setQuickAmount(1000000)}
-            className="rounded border border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 transition hover:bg-gray-700"
-          >
-            1M
-          </button>
-          <button
-            onClick={() => setQuickAmount(5000000)}
-            className="rounded border border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 transition hover:bg-gray-700"
-          >
-            5M
-          </button>
+          {[100000, 500000, 1000000, 5000000].map((val) => (
+            <Controller
+              key={val}
+              control={control}
+              name="amount"
+              render={({ field }) => (
+                <button
+                  type="button"
+                  onClick={() => {
+                    field.onChange(val);
+                    trigger(['limit.min', 'limit.max']);
+                  }}
+                  className="rounded border border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 transition hover:bg-gray-700 hover:text-white"
+                >
+                  {val >= 1000000 ? `${val / 1000000}M` : `${val / 1000}k`}
+                </button>
+              )}
+            />
+          ))}
         </div>
       </div>
 
