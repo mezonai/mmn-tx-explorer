@@ -23,9 +23,9 @@ export const useDonationFeed = (address: string, params?: Omit<DonationFeedParam
       if (!feeds || feeds.length === 0) return undefined;
 
       const lastFeed = feeds[feeds.length - 1];
-      const timestamp = Math.floor(new Date(lastFeed.root_created_at).getTime() / 1000);
+      const timestamp = new Date(lastFeed.root_created_at).toISOString();
 
-      return feeds.length === (params?.limit || 10) ? timestamp.toString() : undefined;
+      return feeds.length === (params?.limit || 10) ? timestamp : undefined;
     },
     initialPageParam: undefined as string | undefined,
   });
