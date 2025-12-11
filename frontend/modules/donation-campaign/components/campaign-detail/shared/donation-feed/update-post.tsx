@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ROUTES } from '@/configs/routes.config';
 import { useRouter } from 'next/navigation';
-
+import { Pencil, RotateCcw } from 'lucide-react';
 
 interface UpdatePostProps {
   update: IDonationFeed;
@@ -72,38 +72,37 @@ export const UpdatePost = ({ update, campaign, onImageClick }: UpdatePostProps) 
             <p>On chain</p>
           </span>
 
-          {update.parent_hash && (
-            <div className="text-muted-foreground flex flex-row gap-1 text-xs">
-              <span className="inline-flex items-center gap-1">
-                |
-                <VersionHistoryDialog
-                  update={update}
-                  isOpen={isVersionDialogOpen}
-                  onOpenChange={setIsVersionDialogOpen}
-                  onImageClick={onImageClick}
-                />
-              </span>
-            </div>
-          )}
           {user?.walletAddress === update.creator_address && (
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="link"
-                  className="text-xs text-muted-foreground font-thin p-0 pl-2 hover:no-underline hover:text-brand-primary"
+                  className="text-muted-foreground hover:text-brand-primary p-0 pl-2 text-xs font-thin hover:no-underline"
                 >
                   •••
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-32 p-1" align="end">
+              <PopoverContent className="bg-background w-auto p-1" align="end">
                 <div className="flex flex-col">
                   <Button
                     variant="ghost"
-                    className="justify-start text-sm font-normal h-8"
-                    onClick={() => router.push(ROUTES.EDIT_DONATION_UPDATE(campaign.slug, update.tx_hash))}
+                    className="h-8 justify-start text-sm font-normal"
+                    onClick={() => router.push(ROUTES.EDIT_DONATION_UPDATE(campaign.slug, String(update.id)))}
                   >
+                    <Pencil className="text-primary mr-2 h-4 w-4" />
                     Edit
                   </Button>
+                  {update.parent_hash && (
+                    <Button variant="ghost" className="h-8 justify-start text-sm font-normal">
+                      <RotateCcw className="text-primary mr-2 h-4 w-4" />
+                      <VersionHistoryDialog
+                        update={update}
+                        isOpen={isVersionDialogOpen}
+                        onOpenChange={setIsVersionDialogOpen}
+                        onImageClick={onImageClick}
+                      />
+                    </Button>
+                  )}
                   {/* <Button
                     variant="ghost"
                     className="justify-start text-sm font-normal h-8"

@@ -18,7 +18,7 @@ export const VersionHistoryDialog = ({ update, isOpen, onOpenChange, onImageClic
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="link" className="text-muted-foreground p-0 text-xs">
+        <Button variant="ghost" className="h-8 justify-start p-0 text-sm font-normal">
           See previous version
         </Button>
       </DialogTrigger>

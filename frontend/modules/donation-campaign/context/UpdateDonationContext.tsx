@@ -44,13 +44,12 @@ function validateForm(form: DonationUpdateForm): DonationUpdateValidation {
 const CreateDonationUpdateContext = createContext<CreateDonationUpdateContextType | undefined>(undefined);
 
 interface CreateDonationUpdateProviderProps {
-  txHash?: string;
   updatePost?: IDonationFeed;
   campaign: DonationCampaign;
   children: ReactNode;
 }
 
-export function UpdateDonationProvider({ txHash, updatePost, campaign, children }: CreateDonationUpdateProviderProps) {
+export function UpdateDonationProvider({ updatePost, campaign, children }: CreateDonationUpdateProviderProps) {
   const [form, setForm] = useState<DonationUpdateForm>(INITIAL_FORM);
   const uploadImagesMutation = useUploadDonationImages();
   const [isSaving, setIsSaving] = useState(false);
@@ -84,7 +83,6 @@ export function UpdateDonationProvider({ txHash, updatePost, campaign, children 
         imageCids = ipfs_images.files.map((file) => file.file_cid);
       }
 
-      // Get nonce and submit the update
       const nonceResponse = await mmnClient.getCurrentNonce(user?.id || '');
       
       const extraInfo = {
@@ -117,7 +115,7 @@ export function UpdateDonationProvider({ txHash, updatePost, campaign, children 
         toast.error('Failed to submit update.');
       }
     } catch (error) {
-      toast.error('Failed to submit update. ');
+      toast.error('Failed to submit update.');
     } finally {
       setIsSaving(false);
     }

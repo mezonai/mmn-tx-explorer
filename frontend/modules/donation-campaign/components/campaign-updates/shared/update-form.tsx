@@ -127,7 +127,7 @@ export const UpdateForm = ({
                                     </label>
                                 )}
                             </div>
-                            <div className="mt-3 flex flex-col items-start gap-3 py-3 md:flex-row md:justify-between">
+                            <div className="mt-3 flex flex-col items-center gap-3 py-3 md:flex-row md:justify-between">
                                 <p className="text-xs font-medium text-gray-600">
                                     Current: {formatFileSize(totalSize)} / {MAX_IMAGES_SIZE} {UNIT}
                                 </p>

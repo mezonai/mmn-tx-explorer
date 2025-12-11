@@ -11,14 +11,15 @@ export const metadata: Metadata = {
 interface EditCampaignUpdatePageProps {
   params: Promise<{
     slug: string;
-    txHash: string;
+    id: string;
   }>;
 }
 
 export default async function EditCampaignUpdatePage({ params }: EditCampaignUpdatePageProps) {
-  const { slug, txHash } = await params;
+  const { slug, id } = await params;
+  const postId = Number(id);
 
-  if (!txHash) {
+  if (!postId) {
     notFound();
   }
 
@@ -28,8 +29,7 @@ export default async function EditCampaignUpdatePage({ params }: EditCampaignUpd
       address: campaign.donation_wallet,
     });
 
-    // Find the post with the matching tx_hash
-    const updatePost = feedResponse.data.find((post: IDonationFeed) => post.tx_hash === txHash);
+    const updatePost = feedResponse.data.find((post: IDonationFeed) => post.id === postId);
 
     if (!updatePost) {
       notFound();

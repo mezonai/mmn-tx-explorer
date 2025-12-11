@@ -10,7 +10,7 @@ interface EditUpdateProps {
 }
 export const EditUpdate = ({ campaign, updatePost }: EditUpdateProps) => {
   return (
-    <UpdateDonationProvider campaign={campaign} txHash={updatePost.tx_hash} updatePost={updatePost}>
+    <UpdateDonationProvider campaign={campaign} updatePost={updatePost}>
       <EditUpdateContent updatePost={updatePost} />
     </UpdateDonationProvider>
   );

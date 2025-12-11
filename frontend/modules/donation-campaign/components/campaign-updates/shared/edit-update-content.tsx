@@ -35,16 +35,17 @@ export const EditUpdateContent = ({ updatePost }: EditUpdateContentProps) => {
 
   useEffect(() => {
     setForm({
-      ...form,
       title: updatePost.title,
       description: updatePost.description,
-      images: updatePost.image_cids,
+      images: [],
+      parent_hash: updatePost.tx_hash,
+      root_hash: updatePost.root_hash || updatePost.tx_hash,
     });
     
     if (updatePost.image_cids && updatePost.image_cids.length > 0) {
       setPreviews(updatePost.image_cids.map(cid => `${ipfsServiceURL}/${cid}`));
     }
-  }, [updatePost]);
+  }, [updatePost.id]); 
 
   const totalSize = images.reduce((sum, img) => sum + img.size, 0);
   const maxTotalSize = MAX_IMAGES_SIZE * 1024 * 1024;
