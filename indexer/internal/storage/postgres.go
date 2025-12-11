@@ -787,7 +787,7 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 		var userContents []common.UserContent
 		for i := range blockData.Transactions {
 			tx := &blockData.Transactions[i]
-			if tx.TransactionType == common.TxTypeUserContent {
+			if tx.TransactionType == common.TxTypeUserContent && tx.Status != nil && *tx.Status != (uint64)(pb.TransactionStatus_FAILED) {
 				var userContent common.UserContent
 				err := json.Unmarshal([]byte(tx.ExtraInfo), &userContent)
 				if err != nil {
