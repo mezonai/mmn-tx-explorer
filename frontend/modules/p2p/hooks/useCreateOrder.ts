@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useUser } from '@/providers/AppProvider';
 import { P2PService } from '../api';
-import { P2POrder, P2POffer } from '../types/p2p.types';
+import { P2POrder, P2POffer } from '../types';
 
 export const useCreateOrder = () => {
   const { user } = useUser();
@@ -17,17 +17,16 @@ export const useCreateOrder = () => {
     setIsLoading(true);
 
     try {
+      // Calculate price from amountVND if not provided, or use offer price_rate
+      const price = amountVND || amountMZD * offer.price_rate;
+
       const order = await P2PService.createOrder({
-        offerId: offer.offerId,
-        amountMZD,
-        amountVND,
+        offer_id: offer.offer_id,
+        amount: amountMZD,
+        price: price,
       });
 
-      // Ensure buyer wallet reflects current user in mock mode
-      return {
-        ...order,
-        buyerWalletAddress: user.walletAddress,
-      };
+      return order;
     } catch (error) {
       console.error('Error creating order:', error);
       throw error;

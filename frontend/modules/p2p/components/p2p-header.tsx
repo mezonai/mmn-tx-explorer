@@ -3,7 +3,7 @@
 import { BreadcrumbNavigation } from '@/components/shared';
 import { IBreadcrumb } from '@/types';
 import { ROUTES } from '@/configs/routes.config';
-import { Bolt, Bell } from 'lucide-react';
+import { Bolt } from 'lucide-react';
 
 const breadcrumbs: IBreadcrumb[] = [
   { label: 'Dashboard', href: ROUTES.HOME },
@@ -23,11 +23,6 @@ export const P2PHeader = () => {
             <h1 className="text-foreground text-2xl font-bold dark:text-white">Mezon P2P Trading</h1>
           </div>
         </div>
-        {/* <div className="flex items-center gap-4">
-          <button className="hover:text-foreground text-gray-500 dark:text-gray-400 dark:hover:text-white">
-            <Bell className="h-5 w-5" />
-          </button>
-        </div> */}
       </div>
     </div>
   );

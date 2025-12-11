@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { P2PService } from '../api';
-import { P2POffer } from '../types/p2p.types';
+import { P2POffer } from '../types';
 
 export const useP2POffer = (offerId: string | null) => {
   const [offer, setOffer] = useState<P2POffer | null>(null);

@@ -10,12 +10,11 @@ interface AmountSectionProps {
   error?: string;
 }
 
-// Format số với dấu phẩy
+// Format number with commas
 const formatCurrency = (num: number): string => {
   return new Intl.NumberFormat('en-US').format(num);
 };
 
-// Lấy giá trị số từ string có dấu phẩy
 const getRawValue = (val: string): number => {
   return parseFloat(val.replace(/,/g, '')) || 0;
 };
@@ -46,7 +45,6 @@ export const AmountSection = ({ amountMZD, onAmountChange, exchangeRate, error }
   const setQuickAmount = (value: number) => {
     setDisplayValue(formatCurrency(value));
     onAmountChange(value);
-    // Visual feedback
     const input = document.getElementById('amountInput');
     if (input) {
       input.classList.add('bg-gray-700');
@@ -54,78 +52,69 @@ export const AmountSection = ({ amountMZD, onAmountChange, exchangeRate, error }
     }
   };
 
-  // Tính tổng VND nhận về dựa vào tỉ giá
   const totalVND = exchangeRate > 0 ? amountMZD * exchangeRate : 0;
 
   return (
-    <div className="space-y-5 border-b lg:border-b-0 lg:border-r border-gray-800 pb-4 lg:pb-0 lg:pr-8">
-      <h3 className="text-white font-bold text-sm flex items-center gap-2 mb-3">
-        <span className="bg-gray-800 w-5 h-5 rounded-full flex items-center justify-center text-xs text-gray-400">
+    <div className="space-y-5 border-b border-gray-800 pb-4 lg:border-r lg:border-b-0 lg:pr-8 lg:pb-0">
+      <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-white">
+        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-800 text-xs text-gray-400">
           2
         </span>
-        Khối lượng giao dịch
+        Trading Volume
       </h3>
 
       <div>
-        <label className="block text-xs text-gray-500 mb-2 font-medium uppercase">
-          Số tiền MZD muốn bán
-        </label>
-        <div className="relative group">
+        <label className="mb-2 block text-xs font-medium text-gray-500 uppercase">Amount to Sell (MZD)</label>
+        <div className="group relative">
           <Input
             id="amountInput"
             type="text"
-            placeholder="VD: 5,000,000"
+            placeholder="Ex: 5,000,000"
             value={displayValue}
             onChange={handleInputChange}
-            className={`w-full bg-input/30 dark:bg-input/30 border-gray-700 rounded-md px-3 py-2.5 text-white focus:border-brand-primary focus:outline-none font-bold text-lg placeholder-gray-600 group-hover:border-gray-600 transition-colors ${
+            className={`bg-input/30 dark:bg-input/30 focus:border-brand-primary w-full rounded-md border-gray-700 px-3 py-2.5 text-lg font-bold text-white placeholder-gray-600 transition-colors group-hover:border-gray-600 focus:outline-none ${
               error ? 'border-red-500' : ''
             }`}
           />
-          <span className="absolute right-3 top-3.5 text-gray-500 text-xs font-bold">MZD</span>
+          <span className="absolute top-3.5 right-3 text-xs font-bold text-gray-500">MZD</span>
         </div>
-        {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+        {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
 
-        <div className="grid grid-cols-4 gap-2 mt-3">
+        <div className="mt-3 grid grid-cols-4 gap-2">
           <button
             onClick={() => setQuickAmount(100000)}
-            className="py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded text-xs text-gray-300 transition"
+            className="rounded border border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 transition hover:bg-gray-700"
           >
             100k
           </button>
           <button
             onClick={() => setQuickAmount(500000)}
-            className="py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded text-xs text-gray-300 transition"
+            className="rounded border border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 transition hover:bg-gray-700"
           >
             500k
           </button>
           <button
             onClick={() => setQuickAmount(1000000)}
-            className="py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded text-xs text-gray-300 transition"
+            className="rounded border border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 transition hover:bg-gray-700"
           >
-            1 triệu
+            1M
           </button>
           <button
             onClick={() => setQuickAmount(5000000)}
-            className="py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded text-xs text-gray-300 transition"
+            className="rounded border border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 transition hover:bg-gray-700"
           >
-            5 triệu
+            5M
           </button>
         </div>
       </div>
 
       <div className="pt-2">
-        <label className="block text-xs text-gray-500 mb-2 font-medium uppercase">
-          Tổng tiền nhận về (VND)
-        </label>
-        <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg px-4 py-4 flex flex-col items-center justify-center h-24">
+        <label className="mb-2 block text-xs font-medium text-gray-500 uppercase">Total Received (VND)</label>
+        <div className="flex h-24 flex-col items-center justify-center rounded-lg border border-gray-700/50 bg-gray-800/50 px-4 py-4">
           <span className="text-2xl font-bold text-green-400">{formatCurrency(totalVND)}</span>
-          <span className="text-xs text-gray-500 font-bold mt-1">VND</span>
+          <span className="mt-1 text-xs font-bold text-gray-500">VND</span>
         </div>
       </div>
     </div>
   );
 };
-
-
-
-

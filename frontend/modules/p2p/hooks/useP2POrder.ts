@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { P2PService } from '../api';
-import { P2POrder } from '../types/p2p.types';
+import { P2POrder } from '../types';
 import { useWebSocket, WebSocketEvent } from '@/lib/websocket';
 
 export const useP2POrder = (orderId: string) => {
@@ -47,16 +47,20 @@ export const useP2POrder = (orderId: string) => {
     };
   }, [orderId]);
 
-  const updateOrderStatus = async (status: P2POrder['status']) => {
+  const updateOrderStatus = async (status: string, transferCode?: string) => {
     if (!order) return;
 
     const prevOrder = order;
     try {
       // Optimistic update
-      setOrder({ ...order, status });
+      setOrder({ ...order, order_status: status });
+      if (transferCode) {
+        setOrder({ ...order, order_status: status, transfer_code: transferCode });
+      }
 
       // Call API
-      const updated = await P2PService.updateOrderStatus(order.orderId, status);
+      const orderIdStr = String(order.order_id);
+      const updated = await P2PService.updateOrderStatus(orderIdStr, status, transferCode);
       setOrder(updated);
     } catch (err) {
       // Revert on error
@@ -71,16 +75,19 @@ export const useP2POrder = (orderId: string) => {
 
     const handleStatusUpdate = (event: WebSocketEvent) => {
       const payload = event.payload as Record<string, unknown> | undefined;
-      const payloadOrderId = (payload?.['orderId'] || payload?.['order_id']) as string | undefined;
-      if (event.type !== 'ORDER_STATUS_UPDATED' || !payloadOrderId || payloadOrderId !== orderId) {
+      const payloadOrderId = (payload?.['order_id'] || payload?.['orderId']) as string | number | undefined;
+      const orderIdStr = String(orderId);
+      const payloadOrderIdStr = payloadOrderId ? String(payloadOrderId) : undefined;
+      
+      if (event.type !== 'ORDER_STATUS_UPDATED' || !payloadOrderIdStr || payloadOrderIdStr !== orderIdStr) {
         return;
       }
 
-      const statusRaw = payload?.['status'];
-      const status = typeof statusRaw === 'string' ? (statusRaw as P2POrder['status']) : undefined;
+      const statusRaw = payload?.['order_status'] || payload?.['status'];
+      const status = typeof statusRaw === 'string' ? statusRaw : undefined;
       if (!status) return;
 
-      setOrder((current) => (current ? { ...current, status } : current));
+      setOrder((current) => (current ? { ...current, order_status: status } : current));
     };
 
     wsManager.on('ORDER_STATUS_UPDATED', handleStatusUpdate);

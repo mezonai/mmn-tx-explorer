@@ -1,6 +1,6 @@
 'use client';
 
-import { P2POrder } from '../../types/p2p.types';
+import { P2POrder } from '../../types';
 import { cn } from '@/lib/utils';
 
 interface ProgressStepsProps {
@@ -17,6 +17,7 @@ export const ProgressSteps = ({ order }: ProgressStepsProps) => {
   // Map order status to step index
   const getStepIndex = (status: string): number => {
     switch (status) {
+      case 'PENDING':
       case 'PAYMENT_PENDING':
         return 0;
       case 'WAIT_CONFIRM':
@@ -30,7 +31,7 @@ export const ProgressSteps = ({ order }: ProgressStepsProps) => {
     }
   };
 
-  const activeStepIndex = getStepIndex(order.status);
+  const activeStepIndex = getStepIndex(order.order_status);
 
   return (
     <div className="mb-8 flex items-center justify-between px-4">

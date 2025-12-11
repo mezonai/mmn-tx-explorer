@@ -4,7 +4,7 @@ import { useP2POrders } from '../hooks/useP2POrders';
 import { OrderRow } from './order-row';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { P2POrder } from '../types/p2p.types';
+import { P2POrder } from '../types';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/configs/routes.config';
 
@@ -13,7 +13,7 @@ export const P2POrdersList = () => {
   const router = useRouter();
 
   const handleOpenToConfirm = (order: P2POrder) => {
-    router.push(ROUTES.P2P_TRADING_ROOM(order.orderId));
+    router.push(ROUTES.P2P_TRADING_ROOM(String(order.order_id)));
   };
 
   if (isLoading) {
@@ -55,7 +55,7 @@ export const P2POrdersList = () => {
           </thead>
           <tbody className="divide-y divide-gray-800 text-sm">
             {orders.map((order) => (
-              <OrderRow key={order.orderId} order={order} onOpenToConfirm={handleOpenToConfirm} />
+              <OrderRow key={String(order.order_id)} order={order} onOpenToConfirm={handleOpenToConfirm} />
             ))}
           </tbody>
         </table>

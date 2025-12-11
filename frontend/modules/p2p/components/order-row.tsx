@@ -1,6 +1,6 @@
 'use client';
 
-import { P2POrder } from '../types/p2p.types';
+import { P2POrder } from '../types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
@@ -8,6 +8,8 @@ import { ROUTES } from '@/configs/routes.config';
 import { cn } from '@/lib/utils';
 import { Clock, CheckCircle2 } from 'lucide-react';
 import { AddressDisplay } from '@/components/shared/address-display';
+import { useP2POffer } from '../hooks/useP2POffer';
+import { useMemo } from 'react';
 
 interface OrderRowProps {
   order: P2POrder;
@@ -16,9 +18,10 @@ interface OrderRowProps {
 
 export const OrderRow = ({ order, onOpenToConfirm }: OrderRowProps) => {
   const router = useRouter();
+  const { offer } = useP2POffer(String(order.offer_id));
 
   const handleRowClick = () => {
-    router.push(ROUTES.P2P_TRADING_ROOM(order.orderId));
+    router.push(ROUTES.P2P_TRADING_ROOM(String(order.order_id)));
   };
 
   const handleOpenToConfirm = (e: React.MouseEvent) => {
@@ -26,8 +29,9 @@ export const OrderRow = ({ order, onOpenToConfirm }: OrderRowProps) => {
     onOpenToConfirm?.(order);
   };
 
-  const getStatusBadge = (status: P2POrder['status']) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
+      case 'PENDING':
       case 'PAYMENT_PENDING':
         return <Badge variant="outline" className="text-yellow-500 border-yellow-500">Chờ thanh toán</Badge>;
       case 'WAIT_CONFIRM':
@@ -56,50 +60,59 @@ export const OrderRow = ({ order, onOpenToConfirm }: OrderRowProps) => {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  // Calculate display values
+  const amountMZD = order.amount;
+  const amountVND = order.price;
+  const sellerAddress = offer?.seller_wallet_address || '';
+
   return (
     <tr
       onClick={handleRowClick}
       className={cn(
         'cursor-pointer transition-colors hover:bg-gray-800/50',
-        order.status === 'WAIT_CONFIRM' && 'bg-orange-500/10 border-l-4 border-l-orange-500'
+        order.order_status === 'WAIT_CONFIRM' && 'bg-orange-500/10 border-l-4 border-l-orange-500'
       )}
     >
       <td className="px-6 py-4">
         <div className="flex flex-col gap-1">
-          <div className="font-medium text-white">#{order.orderId}</div>
+          <div className="font-medium text-white">#{order.order_id}</div>
           <div className="text-xs text-gray-500">
-            {new Date(order.createdAt).toLocaleString('vi-VN')}
+            {new Date(order.created_at).toLocaleString('vi-VN')}
           </div>
         </div>
       </td>
       <td className="px-6 py-4">
         <div className="flex flex-col gap-1">
           <div className="font-medium text-white">
-            {order.amountMZD.toLocaleString('vi-VN')} <span className="text-xs text-gray-500">MZD</span>
+            {amountMZD.toLocaleString('vi-VN')} <span className="text-xs text-gray-500">MZD</span>
           </div>
           <div className="text-xs text-gray-500">
-            {order.amountVND.toLocaleString('vi-VN')} <span className="text-gray-400">VND</span>
+            {amountVND.toLocaleString('vi-VN')} <span className="text-gray-400">VND</span>
           </div>
         </div>
       </td>
       <td className="px-6 py-4">
         <div className="flex flex-col gap-2">
-          <div className="text-xs uppercase text-gray-500">Seller wallet</div>
-          <AddressDisplay
-            address={order.sellerWalletAddress}
-            href={ROUTES.WALLET(order.sellerWalletAddress)}
-          />
+          {sellerAddress && (
+            <>
+              <div className="text-xs uppercase text-gray-500">Seller wallet</div>
+              <AddressDisplay
+                address={sellerAddress}
+                href={ROUTES.WALLET(sellerAddress)}
+              />
+            </>
+          )}
           <div className="text-xs uppercase text-gray-500 mt-2">Buyer wallet</div>
           <AddressDisplay
-            address={order.buyerWalletAddress}
-            href={ROUTES.WALLET(order.buyerWalletAddress)}
+            address={order.buyer_wallet_address}
+            href={ROUTES.WALLET(order.buyer_wallet_address)}
           />
         </div>
       </td>
       <td className="px-6 py-4">
         <div className="flex items-center gap-2">
-          {getStatusBadge(order.status)}
-          {order.status === 'WAIT_CONFIRM' && (
+          {getStatusBadge(order.order_status)}
+          {order.order_status === 'WAIT_CONFIRM' && (
             <span className="text-xs text-orange-500 font-medium animate-pulse">New</span>
           )}
         </div>
@@ -107,12 +120,12 @@ export const OrderRow = ({ order, onOpenToConfirm }: OrderRowProps) => {
       <td className="px-6 py-4">
         <div className="flex items-center gap-2 text-sm text-gray-400">
           <Clock className="h-4 w-4" />
-          <span>{formatTimeRemaining(order.expiresAt)}</span>
+          <span>{formatTimeRemaining(order.expires_at)}</span>
         </div>
       </td>
       <td className="px-6 py-4">
         <div className="flex items-center gap-2">
-          {order.status === 'WAIT_CONFIRM' ? (
+          {order.order_status === 'WAIT_CONFIRM' ? (
             <Button
               onClick={handleOpenToConfirm}
               className="bg-orange-500 hover:bg-orange-600 text-white font-medium"

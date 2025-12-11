@@ -1,39 +1,60 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { P2PFilters } from '../types/p2p.types';
-import { Plus } from 'lucide-react';
-import { Pagination } from '@/components/ui/pagination';
 import { APP_CONFIG } from '@/configs/app.config';
+import { Pagination } from '@/components/ui/pagination';
+import { CreateOfferModal } from './create-offer-modal';
+import { CreateOfferRequest } from '../types'; 
 
-interface P2PFiltersProps {
-  filters?: P2PFilters;
-  onFiltersChange?: (filters: P2PFilters) => void;
-  onNewOfferClick?: () => void;
+interface P2PFiltersComponentProps {
+  totalItems: number | undefined;
+  totalPages: number | undefined;
+  isLoading?: boolean | undefined;
+  page: number;
+  limit: number;
+  onPageChange: (page: number) => void;
+  onLimitChange: (limit: number) => void;
+  onFilterChange: (min: number | undefined, max: number | undefined) => void;
+  onOfferCreate?: (data: CreateOfferRequest) => void;
 }
 
-export const P2PFiltersComponent = ({ filters, onFiltersChange, onNewOfferClick }: P2PFiltersProps) => {
+export const P2PFiltersComponent = ({
+  totalItems = 0,
+  totalPages = 1,
+  isLoading = false,
+  page,
+  limit,
+  onPageChange,
+  onLimitChange,
+  onFilterChange,
+  onOfferCreate,
+}: P2PFiltersComponentProps) => {
   const [minAmount, setMinAmount] = useState<string>('');
   const [maxAmount, setMaxAmount] = useState<string>('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const minVal = minAmount ? Number(minAmount) : undefined;
+      const maxVal = maxAmount ? Number(maxAmount) : undefined;
+      onFilterChange(minVal, maxVal);
+    }, 500);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minAmount, maxAmount]);
 
   return (
     <div className="flex w-full flex-col gap-4 py-2 md:flex-row md:items-center md:justify-between">
       <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center">
-        <Button
-          onClick={onNewOfferClick}
-          className="bg-brand-primary hover:bg-brand-primary/90 h-10 w-full shrink-0 rounded-lg font-bold text-white shadow-sm transition-all md:w-auto md:px-5"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          New Offer
-        </Button>
+        <CreateOfferModal onSubmit={onOfferCreate} />
 
         <div className="bg-background border-input ring-offset-background focus-within:ring-brand-primary flex h-10 w-full items-center rounded-lg border shadow-sm focus-within:ring-1 md:w-auto">
           <div className="bg-muted/50 text-brand-primary flex h-full items-center border-r px-3 text-[10px] font-bold tracking-wider uppercase select-none">
-            total amount
+            Available amount
           </div>
 
+          {/* Min Input */}
           <div className="relative flex flex-1 items-center md:w-32">
             <Input
               type="text"
@@ -49,6 +70,7 @@ export const P2PFiltersComponent = ({ filters, onFiltersChange, onNewOfferClick 
 
           <span className="text-muted-foreground px-1">-</span>
 
+          {/* Max Input */}
           <div className="relative flex flex-1 items-center md:w-32">
             <Input
               type="text"
@@ -66,7 +88,15 @@ export const P2PFiltersComponent = ({ filters, onFiltersChange, onNewOfferClick 
 
       <div className="flex shrink-0 justify-center md:justify-end">
         <div className="scale-90 md:scale-100">
-          <Pagination limit={1} />
+          <Pagination
+            page={page}
+            limit={limit}
+            totalItems={totalItems}
+            totalPages={totalPages}
+            isLoading={isLoading}
+            onChangePage={onPageChange}
+            onChangeLimit={onLimitChange}
+          />
         </div>
       </div>
     </div>

@@ -7,7 +7,7 @@ import (
 	"socket-service/models"
 	"socket-service/repository"
 	"socket-service/service"
-
+    "socket-service/constant"
 	"github.com/gin-gonic/gin"
 )
 
@@ -41,13 +41,15 @@ func (h *HTTPHandler) SaveEvent(c *gin.Context) {
 		}
 	}
 	if sentToOnline {
-		event.Status = "sent"
+		event.Status = constant.EventStatusSent
+	} else {
+		event.Status = constant.EventStatusPending
+		if err := h.repo.SaveEvent(&event); err != nil {
+			logger.Error().Err(err).Msg("Failed to save event")
+			c.JSON(http.StatusInternalServerError, "Failed to save event: "+err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, "Event saved successfully")
 	}
 
-	if err := h.repo.SaveEvent(&event); err != nil {
-		logger.Error().Err(err).Msg("Failed to save event")
-		c.JSON(http.StatusInternalServerError, "Failed to save event: "+err.Error())
-		return
-	}
-	c.JSON(http.StatusOK, "Event saved successfully")
 }
