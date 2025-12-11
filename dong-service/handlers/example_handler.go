@@ -44,15 +44,17 @@ func (h *ExampleHandler) CreateEvents(c *gin.Context) {
 		return
 	}
 
-//    TODO: trường bắt buộc phải có là receive_address , các trường còn lại ( ID, type, status, create_at ) thì tự động tạo, còn payload thì nhét hết phần còn lại vào
+	// TODO: The required field is receive_address.
+	// The other fields (ID, type, status, created_at) are generated automatically,
+	// and the remaining data should all be placed into payload.
 
 	event := &models.Event{
-		ID:        uuid.New(),
-		Type:      eventType,
-		Payload:   json.RawMessage(payloadBytes),
+		ID:             uuid.New(),
+		Type:           eventType,
+		Payload:        json.RawMessage(payloadBytes),
 		ReceiveAddress: receiveAddress,
-		Status:    "pending",
-		CreateAt:  time.Now(),
+		Status:         "pending",
+		CreateAt:       time.Now(),
 	}
 	if err := services.Event.SendEvent(event); err != nil {
 		logger.Error().Err(err).Msg("Sending event to socket-service failed")
