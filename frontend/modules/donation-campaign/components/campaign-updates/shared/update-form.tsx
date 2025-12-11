@@ -116,7 +116,7 @@ export const UpdateForm = ({
                     <span className="text-xs text-gray-400">Add More</span>
                     <Input
                       type="file"
-                      accept="image/*"
+                      accept=".jpg,.jpeg,.png,.heic,.heif,image/jpeg,image/png,image/heic,image/heif"
                       multiple
                       onChange={handleImageChange}
                       className="hidden"
@@ -150,7 +150,7 @@ export const UpdateForm = ({
                 <p className="text-muted-foreground/70 text-sm">Click to upload images</p>
                 <Input
                   type="file"
-                  accept="image/jpeg,image/png"
+                  accept="image/jpeg, image/png, image/jpg, image/heic"
                   multiple
                   onChange={handleImageChange}
                   className="hidden"

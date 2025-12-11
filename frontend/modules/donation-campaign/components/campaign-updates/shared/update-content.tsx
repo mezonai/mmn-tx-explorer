@@ -11,7 +11,16 @@ import { useCreateDonationUpdateContext } from '../../../context';
 import { UpdateForm } from './update-form';
 
 const UNIT = 'MB';
-const MAX_IMAGES_SIZE = 5;
+const MAX_IMAGES_SIZE = 20;
+const ALLOWED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/heic',
+  'image/heif',
+  'image/heic-sequence',
+  'image/heif-sequence',
+];
 
 export const CreateUpdateContent = () => {
   const params = useParams<{ slug: string }>();
@@ -33,6 +42,21 @@ export const CreateUpdateContent = () => {
   const handleImageChange = async (e: ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     const files = Array.from(e.target.files);
+
+    // Validate file types - check both MIME type and extension for HEIC
+    const invalidFiles = files.filter((file) => {
+      const isValidMimeType = ALLOWED_IMAGE_TYPES.includes(file.type);
+      const hasHeicExtension = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
+      return !isValidMimeType && !hasHeicExtension;
+    });
+
+    if (invalidFiles.length > 0) {
+      toast.error(
+        `Only JPEG, JPG, PNG, and HEIC images are allowed. Invalid file(s): ${invalidFiles.map((f) => f.name).join(', ')}`
+      );
+      e.target.value = '';
+      return;
+    }
 
     setIsCompressing(true);
     try {
