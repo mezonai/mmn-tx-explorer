@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 type DonationCampaignFeedHandler struct {
@@ -46,12 +45,7 @@ func (h *DonationCampaignFeedHandler) ListCampaignFeedsByAddress(c *gin.Context)
 		return
 	}
 
-	var userAddress string
-	if v, exists := c.Get("address"); exists {
-		if addr, ok := v.(string); ok {
-			userAddress = addr
-		}
-	}
+	userAddress, _ := utils.GetAddressFromContext(c)
 
 	// Query param
 	limitStr := c.DefaultQuery("limit", "10")
@@ -89,28 +83,28 @@ func (h *DonationCampaignFeedHandler) ListCampaignFeedsByAddress(c *gin.Context)
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Campaign feeds retrieved", feeds))
 }
 
-// SwitchVisibleFeed godoc
-// @Summary Toggle visibility of a feed
-// @Description Switch visible/unvisible state of a feed by its hash
+// UpdateVisibleFeed godoc
+// @Summary Update visibility of a feed
+// @Description Update visible/unvisible state of parent & child feed by its root hash
 // @Tags campaign_feed
 // @Produce json
-// @Param feed_hash path string true "Feed hash"
+// @Param root_feed_hash path string true "Feed hash"
 // @Success 200 {object} models.Response
 // @Failure 400 {object} models.Response
 // @Failure 500 {object} models.Response
-// @Router /api/v1/campaigns/switch-visible-feed/{feed_hash} [patch]
-func (h *DonationCampaignFeedHandler) SwitchVisibleFeed(c *gin.Context) {
-	feedHash := c.Param("feed_hash")
+// @Router /api/v1/campaigns/update-visible-feed/{root_feed_hash} [patch]
+func (h *DonationCampaignFeedHandler) UpdateVisibleFeed(c *gin.Context) {
+	feedHash := c.Param("root_feed_hash")
 	if feedHash == "" {
-		logger.Error().Msg("Missing feed_hash parameter")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Missing feed_hash"))
+		logger.Error().Msg("Missing root_feed_hash parameter")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Missing root_feed_hash"))
 		return
 	}
 
 	// Validate feed is existing
 	feed, err := h.repo.FindCampaignFeedByHash(feedHash)
 	if err != nil {
-		logger.Error().Err(err).Str("feed_hash", feedHash).Msg("Failed to find campaign feed")
+		logger.Error().Err(err).Str("root_feed_hash", feedHash).Msg("Failed to find campaign feed")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Internal server error"))
 		return
 	}
@@ -119,30 +113,36 @@ func (h *DonationCampaignFeedHandler) SwitchVisibleFeed(c *gin.Context) {
 		return
 	}
 
-	// Validate user is the creator of the feed
-	claims, exists := c.Get("user")
-	if !exists {
-		logger.Error().Msg("User claims not found in context")
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "Unauthorized"))
+	// Validate feed is the root feed
+	if feed.ParentHash != nil || feed.RootHash != nil {
+		logger.Error().Str("root_feed_hash", feedHash).Msg("Feed is not a root feed")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Donation campaign feed is not a root feed"))
 		return
 	}
 
-	userClaims := claims.(jwt.MapClaims)
-	userAddress := utils.GenerateAddress(userClaims["user_id"].(string))
+	// Validate user is the creator of the feed
+	userAddress, _ := utils.GetAddressFromContext(c)
 	if feed.CreatorAddress != userAddress {
 		logger.Error().Str("user_address", userAddress).Str("creator_address", feed.CreatorAddress).Msg("User is not the creator of the feed")
 		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, "You are not the creator of this feed"))
 		return
 	}
 
-	err = h.repo.SwitchVisibleFeed(feedHash)
+	var req models.UpdateVisibleFeedRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Error().Err(err).Msg("Failed to bind update visible feed request")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid request body"))
+		return
+	}
+
+	err = h.repo.UpdateVisibleFeed(feedHash, &req)
 	if err != nil {
-		logger.Error().Err(err).Str("feed_hash", feedHash).Msg("Failed to switch visible feed")
+		logger.Error().Err(err).Str("root_feed_hash", feedHash).Msg("Failed to update visible feed")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Internal server error"))
 		return
 	}
 
-	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Switched visible feed successfully", nil))
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Updated visible feed successfully", nil))
 }
 
 // UploadImage godoc

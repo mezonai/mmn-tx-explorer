@@ -688,21 +688,21 @@
                 }
             }
         },
-        "/api/v1/campaigns/switch-visible-feed/{feed_hash}": {
+        "/api/v1/campaigns/update-visible-feed/{root_feed_hash}": {
             "patch": {
-                "description": "Switch visible/unvisible state of a feed by its hash",
+                "description": "Update visible/unvisible state of parent \u0026 child feed by its root hash",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "campaign_feed"
                 ],
-                "summary": "Toggle visibility of a feed",
+                "summary": "Update visibility of a feed",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "Feed hash",
-                        "name": "feed_hash",
+                        "name": "root_feed_hash",
                         "in": "path",
                         "required": true
                     }

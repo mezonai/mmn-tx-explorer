@@ -916,13 +916,14 @@ paths:
       summary: Get a donation campaign by slug
       tags:
       - campaigns
-  /api/v1/campaigns/switch-visible-feed/{feed_hash}:
+  /api/v1/campaigns/update-visible-feed/{root_feed_hash}:
     patch:
-      description: Switch visible/unvisible state of a feed by its hash
+      description: Update visible/unvisible state of parent & child feed by its root
+        hash
       parameters:
       - description: Feed hash
         in: path
-        name: feed_hash
+        name: root_feed_hash
         required: true
         type: string
       produces:
@@ -940,7 +941,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/models.Response'
-      summary: Toggle visibility of a feed
+      summary: Update visibility of a feed
       tags:
       - campaign_feed
   /api/v1/red-envelopes/claimed-by-user:

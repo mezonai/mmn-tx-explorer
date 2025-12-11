@@ -19,6 +19,10 @@ type DonationCampaignFeed struct {
 	RootCreatedAt   time.Time `json:"root_created_at" db:"root_created_at"`
 }
 
+type UpdateVisibleFeedRequest struct {
+	Visible bool `json:"visible"`
+}
+
 type UploadedImageInfo struct {
 	FileName string `json:"file_name"`
 	FileCID  string `json:"file_cid"`

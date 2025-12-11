@@ -132,16 +132,17 @@ func (r *DonationCampaignFeedRepository) FindCampaignFeedByHash(feedHash string)
 	return &feed, nil
 }
 
-func (r *DonationCampaignFeedRepository) SwitchVisibleFeed(feedHash string) error {
+func (r *DonationCampaignFeedRepository) UpdateVisibleFeed(feedHash string, req *models.UpdateVisibleFeedRequest) error {
 	query := fmt.Sprintf(`
 		UPDATE %s.user_content
-		SET visible = NOT visible
-		WHERE tx_hash = $1;
+		SET visible = $2
+		WHERE 
+			root_hash = $1 OR tx_hash = $1;
 	`, r.dongSchema)
 
-	_, err := r.db.Exec(query, feedHash)
+	_, err := r.db.Exec(query, feedHash, req.Visible)
 	if err != nil {
-		return fmt.Errorf("failed to switch visible feed: %w", err)
+		return fmt.Errorf("failed to update visible feed: %w", err)
 	}
 
 	return nil
