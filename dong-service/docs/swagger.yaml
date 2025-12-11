@@ -67,20 +67,34 @@ definitions:
     - total_amount
     - total_claims
     type: object
-  models.DonationCampaignFeedResponse:
+  models.DonationCampaignFeed:
     properties:
       campaign_address:
         type: string
       created_at:
         type: string
-      extra_info:
-        $ref: '#/definitions/models.FeedExtraInfo'
+      creator_address:
+        type: string
+      description:
+        type: string
       id:
         type: integer
-      owner_address:
+      image_cids:
+        items:
+          type: string
+        type: array
+      parent_hash:
+        type: string
+      root_created_at:
+        type: string
+      root_hash:
+        type: string
+      title:
         type: string
       tx_hash:
         type: string
+      visible:
+        type: boolean
     type: object
   models.DonationCampaignResponse:
     properties:
@@ -122,17 +136,6 @@ definitions:
         type: string
       verified:
         type: boolean
-    type: object
-  models.FeedExtraInfo:
-    properties:
-      description:
-        type: string
-      image_cids:
-        items:
-          type: string
-        type: array
-      title:
-        type: string
     type: object
   models.HealthResponse:
     properties:
@@ -859,7 +862,7 @@ paths:
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/models.DonationCampaignFeedResponse'
+                    $ref: '#/definitions/models.DonationCampaignFeed'
                   type: array
               type: object
         "400":
@@ -913,6 +916,33 @@ paths:
       summary: Get a donation campaign by slug
       tags:
       - campaigns
+  /api/v1/campaigns/switch-visible-feed/{feed_hash}:
+    patch:
+      description: Switch visible/unvisible state of a feed by its hash
+      parameters:
+      - description: Feed hash
+        in: path
+        name: feed_hash
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Toggle visibility of a feed
+      tags:
+      - campaign_feed
   /api/v1/red-envelopes/claimed-by-user:
     get:
       consumes:

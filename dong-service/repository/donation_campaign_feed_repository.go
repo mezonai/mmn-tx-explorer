@@ -20,33 +20,46 @@ func NewDonationCampaignFeedRepository(db *sql.DB, dongSchema string) *DonationC
 	return &DonationCampaignFeedRepository{db: db, dongSchema: dongSchema}
 }
 
-func (r *DonationCampaignFeedRepository) ListCampaignFeedsByAddress(campaignAddress string, limit int, timestampLt time.Time) ([]*models.DonationCampaignFeed, error) {
+func (r *DonationCampaignFeedRepository) ListCampaignFeedsByAddress(campaignAddress string, limit int, timestampLt time.Time, userAddress string) ([]*models.DonationCampaignFeed, error) {
+	var userAddressParam interface{}
+	if userAddress != "" {
+		userAddressParam = userAddress
+	} else {
+		userAddressParam = nil
+	}
+
 	query := fmt.Sprintf(`
         SELECT 
-            id, tx_hash, creator_address, related_address,
-            title, description, image_cids, parent_hash,
-            root_hash, created_at, root_created_at
-        FROM (
-            SELECT 
-                f.*,
-                ROW_NUMBER() OVER (
-                    PARTITION BY COALESCE(f.root_hash, f.tx_hash)
-                    ORDER BY f.created_at DESC
-                ) AS rn,
-                MIN(f.created_at) OVER (
-                    PARTITION BY COALESCE(f.root_hash, f.tx_hash)
-                ) AS root_created_at
-            FROM %s.user_content f
-            WHERE f.related_address = $1
-              AND f.type = $2
-        ) t
-        WHERE rn = 1
-          AND root_created_at < $3
-        ORDER BY root_created_at DESC
-        LIMIT $4;
+			id, tx_hash, creator_address, related_address,
+			title, description, image_cids, parent_hash,
+			root_hash, visible, created_at, root_created_at
+		FROM (
+			SELECT
+				f.*,
+				ROW_NUMBER() OVER (
+					PARTITION BY COALESCE(f.root_hash, f.tx_hash)
+					ORDER BY f.created_at DESC
+				) AS rn,
+				MIN(f.created_at) OVER (
+					PARTITION BY COALESCE(f.root_hash, f.tx_hash)
+				) AS root_created_at
+			FROM %s.user_content f
+			WHERE 
+				f.related_address = $1
+				AND f.type = $2
+				AND (
+						($5::text IS NOT NULL AND f.creator_address = $5::text)
+						OR f.visible = TRUE
+					)
+		) t
+		WHERE 
+			rn = 1
+			AND root_created_at < $3
+		ORDER BY root_created_at DESC
+		LIMIT $4;
     `, r.dongSchema)
 
-	rows, err := r.db.Query(query, campaignAddress, FeedTypeDonationCampaign, timestampLt, limit)
+	rows, err := r.db.Query(query, campaignAddress, FeedTypeDonationCampaign, timestampLt, limit, userAddressParam)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list campaign feeds: %w", err)
 	}
@@ -67,6 +80,7 @@ func (r *DonationCampaignFeedRepository) ListCampaignFeedsByAddress(campaignAddr
 			pq.Array(&feed.ImageCIDs),
 			&feed.ParentHash,
 			&feed.RootHash,
+			&feed.Visible,
 			&feed.CreatedAt,
 			&feed.RootCreatedAt,
 		); err != nil {
@@ -81,4 +95,54 @@ func (r *DonationCampaignFeedRepository) ListCampaignFeedsByAddress(campaignAddr
 	}
 
 	return feeds, nil
+}
+
+func (r *DonationCampaignFeedRepository) FindCampaignFeedByHash(feedHash string) (*models.DonationCampaignFeed, error) {
+	query := fmt.Sprintf(`
+		SELECT 
+			id, tx_hash, creator_address, related_address,
+			title, description, image_cids, parent_hash,
+			root_hash, visible, created_at
+		FROM %s.user_content
+		WHERE tx_hash = $1;
+	`, r.dongSchema)
+
+	var feed models.DonationCampaignFeed
+	err := r.db.QueryRow(query, feedHash).Scan(
+		&feed.ID,
+		&feed.TxHash,
+		&feed.CreatorAddress,
+		&feed.CampaignAddress,
+		&feed.Title,
+		&feed.Description,
+		pq.Array(&feed.ImageCIDs),
+		&feed.ParentHash,
+		&feed.RootHash,
+		&feed.Visible,
+		&feed.CreatedAt,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to find campaign feed by hash: %w", err)
+	}
+
+	return &feed, nil
+}
+
+func (r *DonationCampaignFeedRepository) SwitchVisibleFeed(feedHash string) error {
+	query := fmt.Sprintf(`
+		UPDATE %s.user_content
+		SET visible = NOT visible
+		WHERE tx_hash = $1;
+	`, r.dongSchema)
+
+	_, err := r.db.Exec(query, feedHash)
+	if err != nil {
+		return fmt.Errorf("failed to switch visible feed: %w", err)
+	}
+
+	return nil
 }

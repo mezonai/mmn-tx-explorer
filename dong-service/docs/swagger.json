@@ -600,7 +600,7 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/models.DonationCampaignFeedResponse"
+                                                "$ref": "#/definitions/models.DonationCampaignFeed"
                                             }
                                         }
                                     }
@@ -675,6 +675,47 @@
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/campaigns/switch-visible-feed/{feed_hash}": {
+            "patch": {
+                "description": "Switch visible/unvisible state of a feed by its hash",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "campaign_feed"
+                ],
+                "summary": "Toggle visibility of a feed",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Feed hash",
+                        "name": "feed_hash",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/models.Response"
                         }
@@ -1884,7 +1925,7 @@
                 }
             }
         },
-        "models.DonationCampaignFeedResponse": {
+        "models.DonationCampaignFeed": {
             "type": "object",
             "properties": {
                 "campaign_address": {
@@ -1893,17 +1934,38 @@
                 "created_at": {
                     "type": "string"
                 },
-                "extra_info": {
-                    "$ref": "#/definitions/models.FeedExtraInfo"
+                "creator_address": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
                 },
                 "id": {
                     "type": "integer"
                 },
-                "owner_address": {
+                "image_cids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "parent_hash": {
+                    "type": "string"
+                },
+                "root_created_at": {
+                    "type": "string"
+                },
+                "root_hash": {
+                    "type": "string"
+                },
+                "title": {
                     "type": "string"
                 },
                 "tx_hash": {
                     "type": "string"
+                },
+                "visible": {
+                    "type": "boolean"
                 }
             }
         },
@@ -1966,23 +2028,6 @@
                 },
                 "verified": {
                     "type": "boolean"
-                }
-            }
-        },
-        "models.FeedExtraInfo": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "image_cids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "title": {
-                    "type": "string"
                 }
             }
         },

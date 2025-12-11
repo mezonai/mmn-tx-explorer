@@ -8,12 +8,14 @@ import (
 	"dong-service/models"
 	"dong-service/repository"
 	"dong-service/services"
+	"dong-service/utils"
 	"io"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type DonationCampaignFeedHandler struct {
@@ -31,7 +33,7 @@ func NewDonationCampaignFeedHandler(repo *repository.DonationCampaignFeedReposit
 // @Tags campaign_feed
 // @Produce json
 // @Param campaign_address path string true "Campaign address"
-// @Success 200 {object} models.Response{data=[]models.DonationCampaignFeedResponse}
+// @Success 200 {object} models.Response{data=[]models.DonationCampaignFeed}
 // @Failure 400 {object} models.Response
 // @Failure 404 {object} models.Response
 // @Failure 500 {object} models.Response
@@ -42,6 +44,13 @@ func (h *DonationCampaignFeedHandler) ListCampaignFeedsByAddress(c *gin.Context)
 		logger.Error().Msg("Missing campaign_address parameter")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Missing campaign_address"))
 		return
+	}
+
+	var userAddress string
+	if v, exists := c.Get("address"); exists {
+		if addr, ok := v.(string); ok {
+			userAddress = addr
+		}
 	}
 
 	// Query param
@@ -70,7 +79,7 @@ func (h *DonationCampaignFeedHandler) ListCampaignFeedsByAddress(c *gin.Context)
 		}
 	}
 
-	feeds, err := h.repo.ListCampaignFeedsByAddress(campaignAddr, limit, timestampLt)
+	feeds, err := h.repo.ListCampaignFeedsByAddress(campaignAddr, limit, timestampLt, userAddress)
 	if err != nil {
 		logger.Error().Err(err).Str("campaign_address", campaignAddr).Msg("Failed to list campaign feeds")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Internal server error"))
@@ -78,6 +87,62 @@ func (h *DonationCampaignFeedHandler) ListCampaignFeedsByAddress(c *gin.Context)
 	}
 
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Campaign feeds retrieved", feeds))
+}
+
+// SwitchVisibleFeed godoc
+// @Summary Toggle visibility of a feed
+// @Description Switch visible/unvisible state of a feed by its hash
+// @Tags campaign_feed
+// @Produce json
+// @Param feed_hash path string true "Feed hash"
+// @Success 200 {object} models.Response
+// @Failure 400 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Router /api/v1/campaigns/switch-visible-feed/{feed_hash} [patch]
+func (h *DonationCampaignFeedHandler) SwitchVisibleFeed(c *gin.Context) {
+	feedHash := c.Param("feed_hash")
+	if feedHash == "" {
+		logger.Error().Msg("Missing feed_hash parameter")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Missing feed_hash"))
+		return
+	}
+
+	// Validate feed is existing
+	feed, err := h.repo.FindCampaignFeedByHash(feedHash)
+	if err != nil {
+		logger.Error().Err(err).Str("feed_hash", feedHash).Msg("Failed to find campaign feed")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Internal server error"))
+		return
+	}
+	if feed == nil {
+		c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, "Donation campaign feed not found"))
+		return
+	}
+
+	// Validate user is the creator of the feed
+	claims, exists := c.Get("user")
+	if !exists {
+		logger.Error().Msg("User claims not found in context")
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "Unauthorized"))
+		return
+	}
+
+	userClaims := claims.(jwt.MapClaims)
+	userAddress := utils.GenerateAddress(userClaims["user_id"].(string))
+	if feed.CreatorAddress != userAddress {
+		logger.Error().Str("user_address", userAddress).Str("creator_address", feed.CreatorAddress).Msg("User is not the creator of the feed")
+		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, "You are not the creator of this feed"))
+		return
+	}
+
+	err = h.repo.SwitchVisibleFeed(feedHash)
+	if err != nil {
+		logger.Error().Err(err).Str("feed_hash", feedHash).Msg("Failed to switch visible feed")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Internal server error"))
+		return
+	}
+
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Switched visible feed successfully", nil))
 }
 
 // UploadImage godoc
