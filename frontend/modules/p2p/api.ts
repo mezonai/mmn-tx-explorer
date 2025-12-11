@@ -2,11 +2,7 @@ import { IPaginatedResponse } from '@/types';
 import { CreateOfferRequest, IP2POfferListParams, P2POffer } from './types';
 import { apiDongClient } from '@/service';
 import { P2P_ENDPOINTS } from './constants';
-import {
-  P2POrder,
-  CreateOrderRequest,
-  UpdateOrderStatusRequest,
-} from './types';
+import { P2POrder, CreateOrderRequest, UpdateOrderStatusRequest } from './types';
 
 export class P2PService {
   // Offer methods
@@ -27,7 +23,10 @@ export class P2PService {
 
   // Order methods
   static async createOrder(orderData: CreateOrderRequest): Promise<P2POrder> {
-    const { data } = await apiDongClient.post<{ data: P2POrder }>(P2P_ENDPOINTS.ORDERS, orderData);
+    console.log('Creating order with data:', orderData);
+    const id = orderData.offer_id.toString();
+    console.log('Using offer ID:', id);
+    const { data } = await apiDongClient.post<{ data: P2POrder }>(P2P_ENDPOINTS.ORDERS(id), orderData);
     return data.data;
   }
 
@@ -43,10 +42,7 @@ export class P2PService {
     if (transferCode) {
       updateData.transfer_code = transferCode;
     }
-    const { data } = await apiDongClient.patch<{ data: P2POrder }>(
-      P2P_ENDPOINTS.ORDER_STATUS(orderId),
-      updateData
-    );
+    const { data } = await apiDongClient.patch<{ data: P2POrder }>(P2P_ENDPOINTS.ORDER_STATUS(orderId), updateData);
     return data.data;
   }
 

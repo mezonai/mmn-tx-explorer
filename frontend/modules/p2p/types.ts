@@ -86,8 +86,8 @@ export interface P2POrder {
 
 // Request interface for creating an order
 export interface CreateOrderRequest {
-  offer_id: string | number;
-  amount: string | number; // Amount in MZD (smallest unit)
+  offer_id: string;
+  amount: number; // Amount in MZD (smallest unit)
   price?: string | number; // Optional price in VND (calculated from offer if not provided)
 }
 
