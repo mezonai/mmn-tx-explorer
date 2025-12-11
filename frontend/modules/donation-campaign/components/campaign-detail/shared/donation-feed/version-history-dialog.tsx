@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ClientTimeDisplay } from '@/modules/transaction/components/transaction-details/shared/client-time-display';
 import { TxnHashLink } from '@/modules/transaction/components/transaction-list/list/shared';
 import { ipfsServiceURL } from '@/service';
+import { useDonationFeedHistory } from '@/modules/donation-campaign/hooks';
 
 interface VersionHistoryDialogProps {
   update: IDonationFeed;
@@ -15,6 +16,9 @@ interface VersionHistoryDialogProps {
 }
 
 export const VersionHistoryDialog = ({ update, isOpen, onOpenChange, onImageClick }: VersionHistoryDialogProps) => {
+  const { donationFeedHistoryResponse, isLoading, error } = useDonationFeedHistory(update.root_hash);
+  const history = donationFeedHistoryResponse?.data || [];
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
@@ -27,73 +31,73 @@ export const VersionHistoryDialog = ({ update, isOpen, onOpenChange, onImageClic
           <DialogTitle className="text-primary">Update Version History</DialogTitle>
         </DialogHeader>
         <div className="bg-background space-y-4 py-4">
-          <div className="text-muted-foreground text-sm">
-            <p className="mb-4">This feature will show the version history of this update.</p>
+          {isLoading && (
+            <div className="flex items-center justify-center py-8">
+              <p className="text-muted-foreground">Loading version history...</p>
+            </div>
+          )}
 
+          {error && (
+            <div className="flex items-center justify-center py-8">
+              <p className="text-red-500">Error loading version history.</p>
+            </div>
+          )}
+
+          {!isLoading && !error && history.length === 0 && (
+            <div className="flex items-center justify-center py-8">
+              <p className="text-muted-foreground">No version history available.</p>
+            </div>
+          )}
+
+          {!isLoading && !error && history.length > 0 && (
             <div className="space-y-3">
-              <div className="bg-card rounded-lg border p-4">
-                <div className="mb-2 flex items-start justify-between">
-                  <span className="text-muted-foreground text-xs">
-                    <ClientTimeDisplay timestamp={new Date(update.created_at).getTime()} />
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
-                    <p>On chain</p>
-                  </span>
-                </div>
-
-                <p className="text-sm">{update.description}</p>
-                {update.image_cids.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {update.image_cids.map((cid, idx) => (
-                      <img
-                        key={idx}
-                        src={`${ipfsServiceURL}/${cid}`}
-                        alt={`Version image ${idx + 1}`}
-                        className="h-20 w-20 cursor-pointer rounded object-cover"
-                        onClick={() => onImageClick(cid)}
-                      />
-                    ))}
+              {history.map((version: IDonationFeed, index: number) => (
+                <div key={version.tx_hash} className="bg-card rounded-lg border p-4">
+                  <div className="mb-3 flex items-start justify-between">
+                    <div className="text-muted-foreground mb-1 text-xs">
+                      <ClientTimeDisplay timestamp={new Date(version.created_at).getTime()} />
+                    </div>
+                    {index === 0 && (
+                      <div className="text-muted-foreground flex flex-row gap-1 text-xs">
+                        <span className="inline-flex items-center gap-1">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+                          <p>On chain</p>
+                        </span>
+                      </div>
+                    )}
                   </div>
-                )}
-                <div className="mt-2 text-xs text-gray-500">
-                  TxHash: <TxnHashLink hash={update.tx_hash} isPending={false} className="text-brand-primary" />
-                </div>
-              </div>
 
-              {/* Previous Version (Placeholder) */}
-              <div className="bg-card rounded-lg border p-4">
-                <div className="mb-2 flex items-start justify-between">
-                  <span className="text-muted-foreground text-xs">
-                    <ClientTimeDisplay timestamp={new Date(update.created_at).getTime()} />
-                  </span>
-                </div>
+                  <div className="space-y-2">
+                    <div>
+                      <h4 className="mb-1 text-sm font-semibold break-words">{version.title}</h4>
+                      <p className="text-muted-foreground text-sm break-words">{version.description}</p>
+                    </div>
 
-                <p className="text-sm">{update.description}</p>
-                {update.image_cids.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {update.image_cids.map((cid, idx) => (
-                      <img
-                        key={idx}
-                        src={`${ipfsServiceURL}/${cid}`}
-                        alt={`Version image ${idx + 1}`}
-                        className="h-20 w-20 cursor-pointer rounded object-cover"
-                        onClick={() => onImageClick(cid)}
-                      />
-                    ))}
+                    {version.image_cids && version.image_cids.length > 0 && (
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+                        {version.image_cids.map((cid, idx) => (
+                          <img
+                            key={idx}
+                            src={`${ipfsServiceURL}/${cid}`}
+                            alt={`Version ${history.length - index} Image ${idx + 1}`}
+                            className="h-20 w-full cursor-pointer rounded-md object-cover"
+                            onClick={() => onImageClick(cid)}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    <div className="mt-2 text-xs text-gray-500">
+                      TxHash:
+                      <TxnHashLink hash={version.tx_hash} isPending={false} className="text-brand-primary" />
+                    </div>
                   </div>
-                )}
-                <div className="mt-2 text-xs text-gray-500">
-                  TxHash: <TxnHashLink hash={update.tx_hash} isPending={false} className="text-brand-primary" />
                 </div>
-              </div>
-
-              {/* Placeholder for future versions */}
+              ))}
               <div className="rounded-lg border p-4 opacity-50">
                 <p className="text-center text-xs text-gray-500">Previous versions will appear here when available</p>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -130,6 +130,14 @@ export class DonationCampaignService {
     return data;
   }
 
+  static async donationFeedHistory(root_hash:string): Promise<IPaginatedResponse<IDonationFeed[]>> {
+    const { data } = await apiDongClient.get<IPaginatedResponse<IDonationFeed[]>>(
+      DONATION_ENDPOINTS.DONATION_FEED_HISTORY(root_hash),
+      { meta: { authOptional: true } } as InternalAxiosRequestConfig
+    );
+    return data;
+  }
+
   static async uploadDonationImages(imageData: UploadImageRequest): Promise<UploadImageResponse> {
     const formData = new FormData();
     imageData.files.forEach((file) => {
