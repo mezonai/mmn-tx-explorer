@@ -880,6 +880,40 @@ paths:
       summary: List all feeds of a campaign
       tags:
       - campaign_feed
+  /api/v1/campaigns/list-history-feed/{root_feed_hash}:
+    get:
+      description: Retrieve all previous campaign feeds that belong to the same root_feed_hash
+      parameters:
+      - description: Root feed hash
+        in: path
+        name: root_feed_hash
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.DonationCampaignFeed'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Get previous feeds by root hash
+      tags:
+      - campaign_feed
   /api/v1/campaigns/slug/{slug}:
     get:
       description: Get details of a specific donation campaign by its slug

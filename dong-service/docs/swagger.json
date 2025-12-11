@@ -629,6 +629,62 @@
                 }
             }
         },
+        "/api/v1/campaigns/list-history-feed/{root_feed_hash}": {
+            "get": {
+                "description": "Retrieve all previous campaign feeds that belong to the same root_feed_hash",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "campaign_feed"
+                ],
+                "summary": "Get previous feeds by root hash",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Root feed hash",
+                        "name": "root_feed_hash",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.DonationCampaignFeed"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/campaigns/slug/{slug}": {
             "get": {
                 "description": "Get details of a specific donation campaign by its slug",

@@ -145,6 +145,34 @@ func (h *DonationCampaignFeedHandler) UpdateVisibleFeed(c *gin.Context) {
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Updated visible feed successfully", nil))
 }
 
+// ListHistoryFeedsByRootHash godoc
+// @Summary Get previous feeds by root hash
+// @Description Retrieve all previous campaign feeds that belong to the same root_feed_hash
+// @Tags campaign_feed
+// @Produce json
+// @Param root_feed_hash path string true "Root feed hash"
+// @Success 200 {object} models.Response{data=[]models.DonationCampaignFeed}
+// @Failure 400 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Router /api/v1/campaigns/list-history-feed/{root_feed_hash} [get]
+func (h *DonationCampaignFeedHandler) ListHistoryFeedsByRootHash(c *gin.Context) {
+	rootFeedHash := c.Param("root_feed_hash")
+	if rootFeedHash == "" {
+		logger.Error().Msg("Missing root_feed_hash parameter")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Missing root_feed_hash"))
+		return
+	}
+
+	feeds, err := h.repo.ListHistoryFeedsByRootHash(rootFeedHash)
+	if err != nil {
+		logger.Error().Err(err).Str("root_feed_hash", rootFeedHash).Msg("Failed to list previous campaign feeds")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Internal server error"))
+		return
+	}
+
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Previous campaign feeds retrieved", feeds))
+}
+
 // UploadImage godoc
 // @Summary Upload images for a campaign
 // @Description Upload images, scan for virus (if enabled), and store to IPFS
