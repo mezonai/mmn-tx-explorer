@@ -146,6 +146,8 @@ export const CreateUpdateContent = () => {
   };
 
   const handleRemoveImage = (idx: number) => {
+    URL.revokeObjectURL(previews[idx]);
+    
     const newImages = images.filter((_, i) => i !== idx);
     setImages(newImages);
     const newPreviews = previews.filter((_, i) => i !== idx);
@@ -166,6 +168,8 @@ export const CreateUpdateContent = () => {
   };
 
   const handleRemoveAll = () => {
+    previews.forEach((preview) => URL.revokeObjectURL(preview));
+    
     setImages([]);
     setPreviews([]);
     setForm({ ...form, images: [] });
