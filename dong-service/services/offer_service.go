@@ -180,6 +180,11 @@ func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddre
 }
 
 func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.UpdateOfferStatusRequest) error {
+	offer, err := s.repo.GetOfferByID(ctx, req.OfferID)
+	if err != nil {
+		return fmt.Errorf("failed to get offer: %w", err)
+	}
+
 	// Verify transaction exists in blockchain
 	if s.blockchain != nil {
 		txInfo, err := s.blockchain.GetTransaction(req.TxHash)
@@ -189,6 +194,27 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 		if txInfo == nil {
 			return fmt.Errorf("transaction not found in blockchain")
 		}
+
+		if txInfo.Status != constants.TxStatusConfirmed && txInfo.Status != constants.TxStatusFinalized {
+			return fmt.Errorf("transaction not confirmed: status=%d", txInfo.Status)
+		}
+
+		if txInfo.Sender != offer.SellerWalletAddress {
+			return fmt.Errorf("transaction sender mismatch: expected %s, got %s", offer.SellerWalletAddress, txInfo.Sender)
+		}
+
+		if offer.IntermediaryWalletAddress != nil && txInfo.Recipient != *offer.IntermediaryWalletAddress {
+			return fmt.Errorf("transaction recipient mismatch: expected %s, got %s", *offer.IntermediaryWalletAddress, txInfo.Recipient)
+		}
+
+		actualAmount := int64(txInfo.Amount.Uint64() / 1000000)
+		if actualAmount != offer.Amount {
+			return fmt.Errorf("transaction amount mismatch: expected %d, got %d", offer.Amount, actualAmount)
+		}
+
+		if offer.Status != constants.TradingPending {
+			return fmt.Errorf("offer status invalid for update: current status %s", offer.Status)
+		}
 	}
 
 	db := database.GetDB()
@@ -196,15 +222,11 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 	if err != nil {
 		return err
 	}
+	defer tx.Rollback()
 
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-		} else {
-			err = tx.Commit()
-		}
-	}()
+	if err = s.repo.UpdateOfferStatus(ctx, req.OfferID, req.Status, tx, &req.TxHash); err != nil {
+		return err
+	}
 
-	err = s.repo.UpdateOfferStatus(ctx, req.OfferID, req.Status, tx, &req.TxHash)
-	return err
+	return tx.Commit()
 }

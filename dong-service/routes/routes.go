@@ -117,7 +117,10 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		offersPrivate.GET("/:id", offerHandler.GetOfferDetail)
 		offersPrivate.GET("/:id/orders", orderHandler.ListOrdersForOffer)
 		offersPrivate.POST("/:id/orders", orderHandler.CreateOrder)
-		offersPrivate.GET("", offerHandler.ListOffers)
+
+		// Offers (public)
+		offersPublic := v1.Group("/offers")
+		offersPublic.GET("", offerHandler.ListOffers)
 
 		orders := v1.Group("/orders")
 		orders.Use(middleware.Authentication(cfg.JWT.Secret))
@@ -125,6 +128,5 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		orders.POST("/:id/confirm", orderHandler.ConfirmOrder)
 		orders.GET("/me", orderHandler.GetMyOrders)
 		orders.GET("/:id", orderHandler.GetOrderDetail)
-		orders.GET("", orderHandler.ListOrdersByWallet)
 	}
 }
