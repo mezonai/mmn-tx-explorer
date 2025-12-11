@@ -15,7 +15,7 @@ export const PaymentActionButton = ({ order, onPaymentConfirmed }: PaymentAction
     onPaymentConfirmed?.();
   };
 
-  if (order.order_status !== 'PENDING' && order.order_status !== 'PAYMENT_PENDING') {
+  if (order.order_status !== 'OPEN') {
     return null;
   }
 

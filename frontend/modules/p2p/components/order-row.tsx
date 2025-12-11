@@ -31,17 +31,16 @@ export const OrderRow = ({ order, onOpenToConfirm }: OrderRowProps) => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'PENDING':
-      case 'PAYMENT_PENDING':
+      case 'OPEN':
         return <Badge variant="outline" className="text-yellow-500 border-yellow-500">Chờ thanh toán</Badge>;
-      case 'WAIT_CONFIRM':
-        return <Badge variant="outline" className="text-orange-500 border-orange-500">Chờ xác nhận</Badge>;
-      case 'PAYMENT_CONFIRMED':
-        return <Badge variant="outline" className="text-blue-500 border-blue-500">Đã xác nhận</Badge>;
-      case 'COMPLETED':
+      case 'PENDING':
+        return <Badge variant="outline" className="text-yellow-500 border-yellow-500">Chờ thanh toán</Badge>;
+      case 'CONFIRMED':
         return <Badge variant="outline" className="text-emerald-500 border-emerald-500">Hoàn thành</Badge>;
-      case 'CANCELLED':
+      case 'CANCELED':
         return <Badge variant="outline" className="text-red-500 border-red-500">Đã hủy</Badge>;
+      case 'FAILED':
+        return <Badge variant="outline" className="text-red-500 border-red-500">Lỗi</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -70,7 +69,7 @@ export const OrderRow = ({ order, onOpenToConfirm }: OrderRowProps) => {
       onClick={handleRowClick}
       className={cn(
         'cursor-pointer transition-colors hover:bg-gray-800/50',
-        order.order_status === 'WAIT_CONFIRM' && 'bg-orange-500/10 border-l-4 border-l-orange-500'
+        order.order_status === 'PENDING' && 'bg-orange-500/10 border-l-4 border-l-orange-500'
       )}
     >
       <td className="px-6 py-4">
@@ -112,7 +111,7 @@ export const OrderRow = ({ order, onOpenToConfirm }: OrderRowProps) => {
       <td className="px-6 py-4">
         <div className="flex items-center gap-2">
           {getStatusBadge(order.order_status)}
-          {order.order_status === 'WAIT_CONFIRM' && (
+          {order.order_status === 'PENDING' && (
             <span className="text-xs text-orange-500 font-medium animate-pulse">New</span>
           )}
         </div>
@@ -125,7 +124,7 @@ export const OrderRow = ({ order, onOpenToConfirm }: OrderRowProps) => {
       </td>
       <td className="px-6 py-4">
         <div className="flex items-center gap-2">
-          {order.order_status === 'WAIT_CONFIRM' ? (
+          {order.order_status === 'PENDING' ? (
             <Button
               onClick={handleOpenToConfirm}
               className="bg-orange-500 hover:bg-orange-600 text-white font-medium"

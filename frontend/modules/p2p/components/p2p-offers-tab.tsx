@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ROUTES } from '@/configs/routes.config';
 import { AddressDisplay } from '@/components/shared';
 import { P2POffer } from '../types';
+import { useRouter } from 'next/navigation';
 
 interface P2POffersTableProps {
   offers: P2POffer[] | undefined;
@@ -15,6 +16,8 @@ interface P2POffersTableProps {
 }
 
 export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps) => {
+  const router = useRouter();
+
   const columns: TTableColumn<P2POffer>[] = [
     {
       headerContent: 'Seller',
@@ -67,8 +70,11 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
     },
     {
       headerContent: 'Action',
-      renderCell: () => (
-        <Button className="rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600">
+      renderCell: (offer) => (
+        <Button
+          onClick={() => router.push(ROUTES.P2P_TRADING_ROOM(String(offer.offer_id), 'offer'))}
+          className="rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600"
+        >
           Buy đồng
         </Button>
       ),

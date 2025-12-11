@@ -15,7 +15,7 @@ export const SellerConfirmButton = ({ order, onConfirm }: SellerConfirmButtonPro
     onConfirm?.();
   };
 
-  if (order.order_status !== 'WAIT_CONFIRM') {
+  if (order.order_status !== 'PENDING') {
     return null;
   }
 

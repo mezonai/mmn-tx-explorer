@@ -63,12 +63,11 @@ export interface CreateOfferRequest {
 
 // Order status enum matching backend
 export enum OrderStatus {
+  OPEN = 'OPEN',
   PENDING = 'PENDING',
-  PAYMENT_PENDING = 'PAYMENT_PENDING',
-  WAIT_CONFIRM = 'WAIT_CONFIRM',
-  PAYMENT_CONFIRMED = 'PAYMENT_CONFIRMED',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED',
+  CONFIRMED = 'CONFIRMED',
+  CANCELED = 'CANCELED',
+  FAILED = 'FAILED',
 }
 
 // P2POrder interface matching backend schema
