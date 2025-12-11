@@ -9,9 +9,19 @@ import { compressImage, formatFileSize } from '@/utils';
 import { toast } from 'sonner';
 import { useCreateDonationUpdateContext } from '../../../context';
 import { UpdateForm } from './update-form';
+import heic2any from 'heic2any';
 
 const UNIT = 'MB';
-const MAX_IMAGES_SIZE = 5;
+const MAX_IMAGES_SIZE = 20;
+const ALLOWED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/heic',
+  'image/heif',
+  'image/heic-sequence',
+  'image/heif-sequence',
+];
 
 export const CreateUpdateContent = () => {
   const params = useParams<{ slug: string }>();
@@ -34,6 +44,21 @@ export const CreateUpdateContent = () => {
     if (!e.target.files) return;
     const files = Array.from(e.target.files);
 
+    // Validate file types - check both MIME type and extension for HEIC
+    const invalidFiles = files.filter((file) => {
+      const isValidMimeType = ALLOWED_IMAGE_TYPES.includes(file.type);
+      const hasHeicExtension = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
+      return !isValidMimeType && !hasHeicExtension;
+    });
+
+    if (invalidFiles.length > 0) {
+      toast.error(
+        `Only JPEG, JPG, PNG, and HEIC images are allowed. Invalid file(s): ${invalidFiles.map((f) => f.name).join(', ')}`
+      );
+      e.target.value = '';
+      return;
+    }
+
     setIsCompressing(true);
     try {
       const availableSize = maxTotalSize - totalSize;
@@ -48,7 +73,32 @@ export const CreateUpdateContent = () => {
       const compressedFiles = await Promise.all(
         files.map(async (file) => {
           try {
-            const compressed = await compressImage(file);
+            let processedFile = file;
+            const isHeic =
+              file.type === 'image/heic' ||
+              file.type === 'image/heif' ||
+              file.name.toLowerCase().endsWith('.heic') ||
+              file.name.toLowerCase().endsWith('.heif');
+
+            if (isHeic) {
+              try {
+                const convertedBlob = await heic2any({
+                  blob: file,
+                  toType: 'image/jpeg',
+                  quality: 0.9,
+                });
+
+                const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+                processedFile = new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), {
+                  type: 'image/jpeg',
+                });
+              } catch (heicError) {
+                toast.error(`Failed to convert HEIC file: ${file.name}`);
+                return null;
+              }
+            }
+
+            const compressed = await compressImage(processedFile);
             return compressed;
           } catch (err) {
             toast.error(`Failed to compress ${file.name}. Please try a different image.`);
@@ -96,6 +146,8 @@ export const CreateUpdateContent = () => {
   };
 
   const handleRemoveImage = (idx: number) => {
+    URL.revokeObjectURL(previews[idx]);
+    
     const newImages = images.filter((_, i) => i !== idx);
     setImages(newImages);
     const newPreviews = previews.filter((_, i) => i !== idx);
@@ -116,6 +168,8 @@ export const CreateUpdateContent = () => {
   };
 
   const handleRemoveAll = () => {
+    previews.forEach((preview) => URL.revokeObjectURL(preview));
+    
     setImages([]);
     setPreviews([]);
     setForm({ ...form, images: [] });

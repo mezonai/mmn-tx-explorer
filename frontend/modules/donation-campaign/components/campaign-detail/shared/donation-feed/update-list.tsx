@@ -27,7 +27,7 @@ export const UpdateList = ({ updates, campaign }: { updates: IDonationFeed[]; ca
         ))}
       </div>
       <Dialog open={open} onOpenChange={handleDialogOpenChange}>
-        <DialogContent className="flex h-fit max-h-[95vh] w-fit max-w-[95vw] flex-col items-center justify-center border-none bg-transparent p-4 shadow-none">
+        <DialogContent className="flex h-fit max-h-[95vh] w-fit max-w-[95vw] flex-col items-center justify-center border-none bg-transparent p-4 shadow-none [&>button]:-top-2 [&>button]:-right-2 [&>button]:flex [&>button]:h-10 [&>button]:w-10 [&>button]:items-center [&>button]:justify-center [&>button]:rounded-full [&>button]:bg-gray-700 [&>button]:text-white [&>button]:opacity-100">
           {selectedImg && (
             <img
               src={`${ipfsServiceURL}/${selectedImg}`}

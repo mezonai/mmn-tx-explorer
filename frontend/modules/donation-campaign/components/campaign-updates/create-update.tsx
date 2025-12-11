@@ -12,5 +12,6 @@ export const CreateUpdate = ({ campaign }: CreateUpdateProps) => {
     <UpdateDonationProvider campaign={campaign}>
       <CreateUpdateContent />
     </UpdateDonationProvider>
+   
   );
 };
