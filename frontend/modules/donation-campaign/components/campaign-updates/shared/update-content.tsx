@@ -9,6 +9,7 @@ import { compressImage, formatFileSize } from '@/utils';
 import { toast } from 'sonner';
 import { useCreateDonationUpdateContext } from '../../../context';
 import { UpdateForm } from './update-form';
+import heic2any from 'heic2any';
 
 const UNIT = 'MB';
 const MAX_IMAGES_SIZE = 20;
@@ -72,7 +73,32 @@ export const CreateUpdateContent = () => {
       const compressedFiles = await Promise.all(
         files.map(async (file) => {
           try {
-            const compressed = await compressImage(file);
+            let processedFile = file;
+            const isHeic =
+              file.type === 'image/heic' ||
+              file.type === 'image/heif' ||
+              file.name.toLowerCase().endsWith('.heic') ||
+              file.name.toLowerCase().endsWith('.heif');
+
+            if (isHeic) {
+              try {
+                const convertedBlob = await heic2any({
+                  blob: file,
+                  toType: 'image/jpeg',
+                  quality: 0.9,
+                });
+
+                const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+                processedFile = new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), {
+                  type: 'image/jpeg',
+                });
+              } catch (heicError) {
+                toast.error(`Failed to convert HEIC file: ${file.name}`);
+                return null;
+              }
+            }
+
+            const compressed = await compressImage(processedFile);
             return compressed;
           } catch (err) {
             toast.error(`Failed to compress ${file.name}. Please try a different image.`);

@@ -11,7 +11,7 @@ import { formatFileSize } from '@/utils';
 import { ChangeEvent } from 'react';
 
 const UNIT = 'MB';
-const MAX_IMAGES_SIZE = 5;
+const MAX_IMAGES_SIZE = 20;
 
 interface UpdateFormProps {
   form: {
