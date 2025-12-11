@@ -62,7 +62,7 @@ export const DonationFeed = ({ campaign }: { campaign: DonationCampaign }) => {
           <Loader2 className="text-brand-primary h-12 w-12 animate-spin" />
         </div>
       )}
-      {error && (
+      {!isLoading && (error || donationFeed.length === 0) && (
         <div className="border-muted-foreground/50 bg-background flex flex-col items-center justify-center rounded-2xl border py-12">
           <FileX2Icon className="text-primary my-4 h-10 w-10" />
           <h3 className="text-primary mb-2 text-lg font-semibold">No Updates Yet</h3>
@@ -72,7 +72,7 @@ export const DonationFeed = ({ campaign }: { campaign: DonationCampaign }) => {
         </div>
       )}
 
-      {donationFeed && donationFeed.length > 0 && (
+      {!isLoading && donationFeed && donationFeed.length > 0 && (
         <>
           <UpdateList updates={donationFeed} campaign={campaign} />
 
