@@ -145,13 +145,6 @@ export class WebSocketManager {
     }
   }
 
-  private send(payload: Record<string, unknown>) {
-    try {
-      this.ws?.send(JSON.stringify(payload));
-    } catch (err) {
-      console.error('Error sending WebSocket message:', err);
-    }
-  }
 
   private getStoredToken(): string | null {
     if (typeof window === 'undefined') {
