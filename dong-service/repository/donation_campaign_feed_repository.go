@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"dong-service/models"
 	"fmt"
+	"time"
 
 	"github.com/lib/pq"
 )
@@ -19,7 +20,7 @@ func NewDonationCampaignFeedRepository(db *sql.DB, dongSchema string) *DonationC
 	return &DonationCampaignFeedRepository{db: db, dongSchema: dongSchema}
 }
 
-func (r *DonationCampaignFeedRepository) ListCampaignFeedsByAddress(campaignAddress string, limit int, timestampLt int64) ([]*models.DonationCampaignFeed, error) {
+func (r *DonationCampaignFeedRepository) ListCampaignFeedsByAddress(campaignAddress string, limit int, timestampLt time.Time) ([]*models.DonationCampaignFeed, error) {
 	query := fmt.Sprintf(`
         SELECT 
             id, tx_hash, creator_address, related_address,
@@ -40,7 +41,7 @@ func (r *DonationCampaignFeedRepository) ListCampaignFeedsByAddress(campaignAddr
               AND f.type = $2
         ) t
         WHERE rn = 1
-          AND root_created_at < to_timestamp($3)
+          AND root_created_at < $3
         ORDER BY root_created_at DESC
         LIMIT $4;
     `, r.dongSchema)
@@ -51,11 +52,10 @@ func (r *DonationCampaignFeedRepository) ListCampaignFeedsByAddress(campaignAddr
 	}
 	defer rows.Close()
 
-	var feeds []*models.DonationCampaignFeed
+	feeds := []*models.DonationCampaignFeed{}
 
 	for rows.Next() {
 		var feed models.DonationCampaignFeed
-		var description, parentHash, rootHash sql.NullString
 
 		if err := rows.Scan(
 			&feed.ID,
@@ -63,24 +63,14 @@ func (r *DonationCampaignFeedRepository) ListCampaignFeedsByAddress(campaignAddr
 			&feed.CreatorAddress,
 			&feed.CampaignAddress,
 			&feed.Title,
-			&description,
+			&feed.Description,
 			pq.Array(&feed.ImageCIDs),
-			&parentHash,
-			&rootHash,
+			&feed.ParentHash,
+			&feed.RootHash,
 			&feed.CreatedAt,
 			&feed.RootCreatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan campaign feed: %w", err)
-		}
-
-		if description.Valid {
-			feed.Description = description.String
-		}
-		if parentHash.Valid {
-			feed.ParentHash = parentHash.String
-		}
-		if rootHash.Valid {
-			feed.RootHash = rootHash.String
 		}
 
 		feeds = append(feeds, &feed)

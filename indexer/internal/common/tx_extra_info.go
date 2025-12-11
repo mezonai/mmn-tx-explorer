@@ -21,12 +21,13 @@ func (t TransactionExtraInfoType) String() string {
 }
 
 var strToType = map[string]TransactionExtraInfoType{
-	"dong-give-coffee":  TransactionExtraInfoDongGiveCoffee,
-	"give_coffee":       TransactionExtraInfoGiveCoffee,
-	"donation-campaign": TransactionExtraInfoDonationCampaign,
-	"withdraw-campaign": TransactionExtraInfoWithdrawCampaign,
-	"lucky-money":       TransactionExtraInfoLuckyMoney,
-	"token-transfer":    TransactionExtraInfoTokenTransfer,
+	"dong-give-coffee":       TransactionExtraInfoDongGiveCoffee,
+	"give_coffee":            TransactionExtraInfoGiveCoffee,
+	"donation-campaign":      TransactionExtraInfoDonationCampaign,
+	"withdraw-campaign":      TransactionExtraInfoWithdrawCampaign,
+	"lucky-money":            TransactionExtraInfoLuckyMoney,
+	"token-transfer":         TransactionExtraInfoTokenTransfer,
+	"donation-campaign-feed": TransactionExtraInfoDonationCampaignFeed,
 }
 
 func ParseTransactionExtraInfoType(s string) TransactionExtraInfoType {

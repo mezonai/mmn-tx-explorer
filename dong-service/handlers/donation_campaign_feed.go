@@ -57,12 +57,14 @@ func (h *DonationCampaignFeedHandler) ListCampaignFeedsByAddress(c *gin.Context)
 		limit = 100
 	}
 
-	var timestampLt int64
+	var timestampLt time.Time
+	var errTime error
+
 	if timestampLtStr == "" {
-		timestampLt = time.Now().Unix()
+		timestampLt = time.Now()
 	} else {
-		timestampLt, err = strconv.ParseInt(timestampLtStr, 10, 64)
-		if err != nil {
+		timestampLt, errTime = time.Parse(time.RFC3339Nano, timestampLtStr)
+		if errTime != nil {
 			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid timestamp_lt"))
 			return
 		}
@@ -72,11 +74,6 @@ func (h *DonationCampaignFeedHandler) ListCampaignFeedsByAddress(c *gin.Context)
 	if err != nil {
 		logger.Error().Err(err).Str("campaign_address", campaignAddr).Msg("Failed to list campaign feeds")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Internal server error"))
-		return
-	}
-	if len(feeds) == 0 {
-		logger.Warn().Str("campaign_address", campaignAddr).Msg("No feeds found for campaign")
-		c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, "No feeds found"))
 		return
 	}
 

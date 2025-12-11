@@ -12,8 +12,8 @@ type DonationCampaignFeed struct {
 	Title           string    `json:"title" db:"title"`
 	Description     string    `json:"description" db:"description"`
 	ImageCIDs       []string  `json:"image_cids" db:"image_cids"`
-	ParentHash      string    `json:"parent_hash" db:"parent_hash"`
-	RootHash        string    `json:"root_hash" db:"root_hash"`
+	ParentHash      *string   `json:"parent_hash" db:"parent_hash"`
+	RootHash        *string   `json:"root_hash" db:"root_hash"`
 	CreatedAt       time.Time `json:"created_at" db:"created_at"`
 	RootCreatedAt   time.Time `json:"root_created_at" db:"root_created_at"`
 }
