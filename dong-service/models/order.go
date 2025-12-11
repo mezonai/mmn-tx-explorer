@@ -19,6 +19,7 @@ type Order struct {
 	BuyerWalletAddress *string    `json:"buyer_wallet_address,omitempty" db:"buyer_wallet_address"`
 	Amount             int64      `json:"amount" db:"amount"`
 	Price              int64      `json:"price" db:"price"`
+	TransactionHash    *string    `json:"transaction_hash,omitempty" db:"transaction_hash"`
 	Status             string     `json:"status" db:"status"`
 	TransferCode       *string    `json:"transfer_code,omitempty" db:"transfer_code"`
 	ExpiresAt          *time.Time `json:"expires_at,omitempty" db:"expires_at"`

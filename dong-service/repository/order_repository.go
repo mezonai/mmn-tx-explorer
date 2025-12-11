@@ -57,6 +57,19 @@ func (r *OrderRepository) UpdateOrderStatus(ctx context.Context, orderID int64, 
 	return err
 }
 
+func (r *OrderRepository) UpdateOrderStatusWithTxHash(ctx context.Context, orderID int64, status string, txHash *string, tx *sql.Tx) error {
+	if txHash != nil {
+		query := fmt.Sprintf(`
+			UPDATE %s.orders
+			SET status = $1, transaction_hash = $2, updated_at = NOW()
+			WHERE order_id = $3
+		`, r.dongSchema)
+		_, err := tx.ExecContext(ctx, query, status, *txHash, orderID)
+		return err
+	}
+	return r.UpdateOrderStatus(ctx, orderID, status, tx)
+}
+
 func (r *OrderRepository) CancelExpiredOrders(ctx context.Context, cutoff time.Time, tx *sql.Tx) (int64, error) {
 	query := fmt.Sprintf(`
 		WITH cancelled AS (
@@ -92,7 +105,7 @@ func (r *OrderRepository) CancelExpiredOrders(ctx context.Context, cutoff time.T
 }
 
 func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, error) {
-	base := fmt.Sprintf("SELECT order_id, offer_id, buyer_wallet_address, amount, price, status, transfer_code, expires_at, created_at, updated_at FROM %s.orders WHERE offer_id = $1", r.dongSchema)
+	base := fmt.Sprintf("SELECT order_id, offer_id, buyer_wallet_address, amount, price, transaction_hash, status, transfer_code, expires_at, created_at, updated_at FROM %s.orders WHERE offer_id = $1", r.dongSchema)
 
 	// Default ordering and pagination
 	orderBy := "created_at"
@@ -135,6 +148,7 @@ func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, 
 			&o.BuyerWalletAddress,
 			&o.Amount,
 			&o.Price,
+			&o.TransactionHash,
 			&o.Status,
 			&o.TransferCode,
 			&o.ExpiresAt,
@@ -150,7 +164,7 @@ func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, 
 }
 
 func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.Order, error) {
-	query := fmt.Sprintf("SELECT order_id, offer_id, buyer_wallet_address, amount, price, status, transfer_code, expires_at, created_at, updated_at FROM %s.orders WHERE order_id = $1", r.dongSchema)
+	query := fmt.Sprintf("SELECT order_id, offer_id, buyer_wallet_address, amount, price, transaction_hash, status, transfer_code, expires_at, created_at, updated_at FROM %s.orders WHERE order_id = $1", r.dongSchema)
 	var o models.Order
 	row := r.db.QueryRowContext(ctx, query, id)
 	if err := row.Scan(
@@ -159,6 +173,7 @@ func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.O
 		&o.BuyerWalletAddress,
 		&o.Amount,
 		&o.Price,
+		&o.TransactionHash,
 		&o.Status,
 		&o.TransferCode,
 		&o.ExpiresAt,
@@ -171,8 +186,17 @@ func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.O
 }
 
 // GetOrdersByWalletAddress returns all orders created by a wallet address (most recent first)
-func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAddress string) ([]models.Order, error) {
-	query := fmt.Sprintf("SELECT order_id, offer_id, buyer_wallet_address, amount, price, status, transfer_code, expires_at, created_at, updated_at FROM %s.orders WHERE buyer_wallet_address = $1 ORDER BY created_at DESC", r.dongSchema)
+func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Order, error) {
+	query := fmt.Sprintf("SELECT order_id, offer_id, buyer_wallet_address, amount, price, transaction_hash, status, transfer_code, expires_at, created_at, updated_at FROM %s.orders WHERE buyer_wallet_address = $1 ORDER BY created_at DESC", r.dongSchema)
+
+	if pagination != nil {
+		if limit, ok := pagination["limit"].(int); ok && limit > 0 {
+			query += fmt.Sprintf(" LIMIT %d", limit)
+		}
+		if offset, ok := pagination["offset"].(int); ok && offset > 0 {
+			query += fmt.Sprintf(" OFFSET %d", offset)
+		}
+	}
 
 	rows, err := r.db.QueryContext(ctx, query, walletAddress)
 	if err != nil {
@@ -189,6 +213,7 @@ func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAd
 			&o.BuyerWalletAddress,
 			&o.Amount,
 			&o.Price,
+			&o.TransactionHash,
 			&o.Status,
 			&o.TransferCode,
 			&o.ExpiresAt,
@@ -201,4 +226,16 @@ func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAd
 	}
 
 	return out, rows.Err()
+}
+
+func (r *OrderRepository) CountOrdersByWalletAddress(ctx context.Context, walletAddress string) (int64, error) {
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s.orders WHERE buyer_wallet_address = $1", r.dongSchema)
+
+	var total int64
+	err := r.db.QueryRowContext(ctx, query, walletAddress).Scan(&total)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count orders by wallet_address: %w", err)
+	}
+
+	return total, nil
 }

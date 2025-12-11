@@ -32,7 +32,7 @@ type IOrderService interface {
 	ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, error)
 	GetOrderByID(ctx context.Context, id int64) (*models.Order, error)
 	ConfirmOrder(ctx context.Context, orderID int64, walletAddress string, executionPrice *string, source *string, metadata *string) error
-	GetOrdersByWalletAddress(ctx context.Context, walletAddress string) ([]models.Order, error)
+	GetOrdersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Order, int64, error)
 }
 
 func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *models.CreateOrderRequest, walletAddress string) (*models.Order, error) {
@@ -112,8 +112,16 @@ func (s *OrderService) GetOrderByID(ctx context.Context, id int64) (*models.Orde
 	return s.repo.GetOrderByID(ctx, id)
 }
 
-func (s *OrderService) GetOrdersByWalletAddress(ctx context.Context, walletAddress string) ([]models.Order, error) {
-	return s.repo.GetOrdersByWalletAddress(ctx, walletAddress)
+func (s *OrderService) GetOrdersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Order, int64, error) {
+	orders, err := s.repo.GetOrdersByWalletAddress(ctx, walletAddress, pagination)
+	if err != nil {
+		return nil, 0, err
+	}
+	count, err := s.repo.CountOrdersByWalletAddress(ctx, walletAddress)
+	if err != nil {
+		return nil, 0, err
+	}
+	return orders, count, nil
 }
 
 func (s *OrderService) ConfirmOrder(ctx context.Context, orderID int64, walletAddress string, executionPrice *string, source *string, metadata *string) error {
@@ -238,11 +246,35 @@ func (s *OrderService) ConfirmOrder(ctx context.Context, orderID int64, walletAd
 			return fmt.Errorf("seller can only confirm pending orders; current status=%s", o.Status)
 		}
 
-		if err = s.repo.UpdateOrderStatus(ctx, orderID, string(models.OrderStatusConfirmed), tx); err != nil {
-			return err
+		// Transfer funds from intermediary wallet to buyer wallet BEFORE updating database
+		var transferTxHash *string
+		if offer != nil && offer.IntermediaryWalletAddress != nil && *offer.IntermediaryWalletAddress != "" && o.BuyerWalletAddress != nil && s.blockchain != nil {
+			intermediaryWallet, walletErr := s.walletRepo.GetWalletByAddress(ctx, *offer.IntermediaryWalletAddress)
+			if walletErr != nil {
+				err = fmt.Errorf("failed to fetch intermediary wallet: %w", walletErr)
+				return err
+			}
+
+			if intermediaryWallet != nil && o.Amount > 0 {
+				txHash, transferErr := s.blockchain.TransferMoney(intermediaryWallet.EncryptedPrivateKey, *offer.IntermediaryWalletAddress, *o.BuyerWalletAddress, o.Amount)
+				if transferErr != nil {
+					err = fmt.Errorf("failed to transfer funds to buyer: %w", transferErr)
+					return err
+				}
+				transferTxHash = &txHash
+			}
 		}
 
-		// Deduct from offer amount
+		if transferTxHash != nil {
+			if err = s.repo.UpdateOrderStatusWithTxHash(ctx, orderID, string(models.OrderStatusConfirmed), transferTxHash, tx); err != nil {
+				return err
+			}
+		} else {
+			if err = s.repo.UpdateOrderStatus(ctx, orderID, string(models.OrderStatusConfirmed), tx); err != nil {
+				return err
+			}
+		}
+
 		if o.OfferID != nil {
 			if err = s.offerRepo.ApplyConfirmedQuantity(ctx, *o.OfferID, o.Amount, tx); err != nil {
 				return err
@@ -251,21 +283,6 @@ func (s *OrderService) ConfirmOrder(ctx context.Context, orderID int64, walletAd
 
 		if err = tx.Commit(); err != nil {
 			return err
-		}
-
-		// Transfer funds from intermediary wallet to buyer wallet
-		if offer != nil && offer.IntermediaryWalletAddress != nil && *offer.IntermediaryWalletAddress != "" && o.BuyerWalletAddress != nil && s.blockchain != nil {
-			intermediaryWallet, walletErr := s.walletRepo.GetWalletByAddress(ctx, *offer.IntermediaryWalletAddress)
-			if walletErr != nil {
-				return fmt.Errorf("failed to fetch intermediary wallet: %w", walletErr)
-			}
-
-			if intermediaryWallet != nil && o.Amount > 0 {
-				_, transferErr := s.blockchain.TransferMoney(intermediaryWallet.EncryptedPrivateKey, *offer.IntermediaryWalletAddress, *o.BuyerWalletAddress, o.Amount)
-				if transferErr != nil {
-					return fmt.Errorf("failed to transfer funds to buyer: %w", transferErr)
-				}
-			}
 		}
 
 		return nil
