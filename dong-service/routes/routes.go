@@ -75,6 +75,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		campaignsPublic.GET("/:id/top-contributors", campaignHandler.GetTopContributors)
 		campaignsPublic.POST("/:id/sync", statsHandler.SyncCampaign)
 		campaignsPublic.GET("/list-feed/:campaign_address", middleware.ParseTokenAndAddToContext(cfg.JWT.Secret), campaignFeedHandler.ListCampaignFeedsByAddress)
+		campaignsPublic.GET("/list-history-feed/:root_feed_hash", campaignFeedHandler.ListHistoryFeedsByRootHash)
 		campaignsPublic.PATCH("/update-visible-feed/:root_feed_hash", middleware.Authentication(cfg.JWT.Secret), campaignFeedHandler.UpdateVisibleFeed)
 
 		// Statistics routes (public)

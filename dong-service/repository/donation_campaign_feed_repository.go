@@ -147,3 +147,46 @@ func (r *DonationCampaignFeedRepository) UpdateVisibleFeed(feedHash string, req 
 
 	return nil
 }
+
+func (r *DonationCampaignFeedRepository) ListHistoryFeedsByRootHash(rootFeedHash string) ([]*models.DonationCampaignFeed, error) {
+	query := fmt.Sprintf(`
+		SELECT
+			id, tx_hash, creator_address, related_address,
+			title, description, image_cids, parent_hash,
+			root_hash, visible, created_at
+		FROM %s.user_content
+		WHERE 
+			root_hash = $1 OR tx_hash = $1
+		ORDER BY created_at DESC;
+	`, r.dongSchema)
+	rows, err := r.db.Query(query, rootFeedHash)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list previous feeds by root hash: %w", err)
+	}
+	defer rows.Close()
+
+	feeds := []*models.DonationCampaignFeed{}
+	for rows.Next() {
+		var feed models.DonationCampaignFeed
+		if err := rows.Scan(
+			&feed.ID,
+			&feed.TxHash,
+			&feed.CreatorAddress,
+			&feed.CampaignAddress,
+			&feed.Title,
+			&feed.Description,
+			pq.Array(&feed.ImageCIDs),
+			&feed.ParentHash,
+			&feed.RootHash,
+			&feed.Visible,
+			&feed.CreatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("failed to scan campaign feed: %w", err)
+		}
+		feeds = append(feeds, &feed)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+	return feeds, nil
+}
