@@ -135,18 +135,18 @@ export const CreateUpdate = () => {
             <div>
               {previews.length > 0 && (
                 <>
-                  <div className="mt-4 flex flex-wrap items-center justify-center gap-4">
+                  <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
                     {previews.map((src, idx) => (
-                      <div key={idx} className="group relative py-3">
+                      <div key={idx} className="group relative">
                         <img
                           src={src}
                           alt={`Preview ${idx + 1}`}
-                          className="hover:border-primary/40 shadow-primary/20 max-w-60 rounded border object-cover shadow-sm hover:shadow-md md:h-32 md:w-32"
+                          className="hover:border-primary/40 shadow-primary/20 h-32 w-full rounded border object-cover shadow-sm hover:shadow-md"
                         />
                         <Button
                           variant="ghost"
                           onClick={() => handleRemoveImage(idx)}
-                          className="absolute top-0 right-0 rounded-full text-white"
+                          className="absolute -top-2 -right-1 h-6 w-6 rounded-full bg-gray-700 p-0 text-white shadow-md"
                           aria-label="Remove image"
                         >
                           <X className="h-4 w-4" />
@@ -154,7 +154,7 @@ export const CreateUpdate = () => {
                       </div>
                     ))}
                     {totalSize < maxTotalSize && (
-                      <label className="hover:border-brand-primary flex h-32 w-32 cursor-pointer flex-col items-center justify-center rounded border-2 border-dashed border-gray-300 transition-colors">
+                      <label className="hover:border-brand-primary flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded border-2 border-dashed border-gray-300 transition-colors">
                         <span className="text-2xl text-gray-400">+</span>
                         <span className="text-xs text-gray-400">Add More</span>
                         <Input
