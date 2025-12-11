@@ -7,7 +7,6 @@ import (
 	"dong-service/services"
 	"dong-service/utils"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -110,24 +109,10 @@ func (h *OfferHandler) ListOffers(c *gin.Context) {
 		return
 	}
 
-	total, err := h.offerService.CountOffers(c.Request.Context(), fromP, toP)
+	total, err := h.offerService.CountOffers(c.Request.Context(), nil, fromP, toP)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to list offers: "+err.Error()))
 		return
-	}
-
-	formattedOffers := make([]models.Offer, len(offers))
-	for i, of := range offers {
-		formattedOffers[i] = of
-		if of.PriceRate != nil {
-			s := *of.PriceRate
-			s = strings.TrimRight(s, "0")
-			s = strings.TrimRight(s, ".")
-			if s == "" {
-				s = "0"
-			}
-			formattedOffers[i].PriceRate = &s
-		}
 	}
 
 	var totalPage int64
@@ -141,7 +126,7 @@ func (h *OfferHandler) ListOffers(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "Offers retrieved",
-		"data":    formattedOffers,
+		"data":    offers,
 		"meta": gin.H{
 			"page":        pg.Page + 1,
 			"limit":       pg.Limit,
@@ -180,17 +165,6 @@ func (h *OfferHandler) GetOfferDetail(c *gin.Context) {
 		return
 	}
 
-	// normalize price_rate for output
-	if offer.PriceRate != nil {
-		s := *offer.PriceRate
-		s = strings.TrimRight(s, "0")
-		s = strings.TrimRight(s, ".")
-		if s == "" {
-			s = "0"
-		}
-		offer.PriceRate = &s
-	}
-
 	c.JSON(http.StatusOK, models.SuccessResponse(offer))
 }
 
@@ -200,6 +174,8 @@ func (h *OfferHandler) GetOfferDetail(c *gin.Context) {
 // @Tags offers
 // @Accept json
 // @Produce json
+// @Param page query int false "page"
+// @Param limit query int false "limit"
 // @Success 200 {object} models.Response{data=[]models.Offer}
 // @Failure 500 {object} models.Response
 // @Security BearerAuth
@@ -207,11 +183,59 @@ func (h *OfferHandler) GetOfferDetail(c *gin.Context) {
 func (h *OfferHandler) GetMyOffers(c *gin.Context) {
 	walletAddress, _ := utils.GetAddressFromContext(c)
 
-	offers, err := h.offerService.GetOffersByWalletAddress(c.Request.Context(), walletAddress)
+	pg := utils.GetPaginationParams(c)
+	pagination := map[string]any{"limit": pg.Limit, "offset": pg.Offset}
+
+	offers, total, err := h.offerService.GetOffersByWalletAddress(c.Request.Context(), walletAddress, pagination)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to list offers: "+err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, models.SuccessResponse(offers))
+	var totalPage int64
+	if pg.Limit > 0 {
+		totalPage = (total + int64(pg.Limit) - 1) / int64(pg.Limit)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Offers retrieved",
+		"data":    offers,
+		"meta": gin.H{
+			"page":        pg.Page + 1,
+			"limit":       pg.Limit,
+			"total_items": total,
+			"total_pages": totalPage,
+		},
+	})
+}
+
+// UpdateOfferStatus godoc
+// @Summary Update offer status
+// @Description Update offer status with transaction hash verification
+// @Tags offers
+// @Accept json
+// @Produce json
+// @Param request body models.UpdateOfferStatusRequest true "Update Offer Status"
+// @Success 200 {object} models.Response
+// @Failure 400 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Security BearerAuth
+// @Router /api/v1/offers/update-status [post]
+func (h *OfferHandler) UpdateOfferStatus(c *gin.Context) {
+	var req models.UpdateOfferStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid request: "+err.Error()))
+		return
+	}
+
+	if err := h.offerService.UpdateOfferStatus(c.Request.Context(), &req); err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to update offer status: "+err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Offer status updated successfully",
+	})
 }

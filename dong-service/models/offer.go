@@ -22,7 +22,7 @@ type Offer struct {
 	TotalAmount               int64       `json:"total_amount" db:"total_amount"`
 	Limit                     *OfferLimit `json:"limit,omitempty" db:"-"`
 	Price                     int64       `json:"price" db:"price"`
-	PriceRate                 *string     `json:"price_rate,omitempty" db:"price_rate"`
+	PriceRate                 *float64    `json:"price_rate,omitempty" db:"price_rate"`
 	PriceType                 string      `json:"price_type" db:"price_type"`
 	Status                    string      `json:"status" db:"status"`
 	BankInfo                  *string     `json:"bank_info,omitempty" db:"bank_info"`
@@ -50,4 +50,10 @@ type CreateOfferRequest struct {
 type OfferLimitRequest struct {
 	Min *string `json:"min,omitempty"`
 	Max *string `json:"max,omitempty"`
+}
+
+type UpdateOfferStatusRequest struct {
+	OfferID int64  `json:"offer_id" binding:"required"`
+	Status  string `json:"status" binding:"required"`
+	TxHash  string `json:"tx_hash" binding:"required"`
 }

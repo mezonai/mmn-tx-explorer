@@ -56,6 +56,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		// Campaign routes (protected)
 		campaignsPrivate := v1.Group("/admin/campaigns")
 		campaignsPrivate.Use(middleware.Authentication(cfg.JWT.Secret))
+		campaignsPrivate.POST("", campaignHandler.CreateCampaign)
 		campaignsPrivate.POST("/create-active", campaignHandler.CreateAndActiveCampaign)
 		campaignsPrivate.PUT("/:id", campaignHandler.UpdateCampaign)
 		campaignsPrivate.PATCH("/:id/activate", campaignHandler.ActivateCampaign)
@@ -110,17 +111,20 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		offerHandler := handlers.NewOfferHandler(offerService)
 		orderHandler := handlers.NewOrderHandler(orderService)
 
+		offersPrivate.POST("", offerHandler.CreateOffer)
+		offersPrivate.POST("/update-status", offerHandler.UpdateOfferStatus)
 		offersPrivate.GET("/me", offerHandler.GetMyOffers)
-		offersPrivate.GET("", offerHandler.ListOffers)
 		offersPrivate.GET("/:id", offerHandler.GetOfferDetail)
 		offersPrivate.GET("/:id/orders", orderHandler.ListOrdersForOffer)
-		offersPrivate.POST("", offerHandler.CreateOffer)
 		offersPrivate.POST("/:id/orders", orderHandler.CreateOrder)
+		offersPrivate.GET("", offerHandler.ListOffers)
 
 		orders := v1.Group("/orders")
 		orders.Use(middleware.Authentication(cfg.JWT.Secret))
-		orders.GET("", orderHandler.ListOrdersByWallet)
-		orders.GET("/:id", orderHandler.GetOrderDetail)
+
 		orders.POST("/:id/confirm", orderHandler.ConfirmOrder)
+		orders.GET("/me", orderHandler.GetMyOrders)
+		orders.GET("/:id", orderHandler.GetOrderDetail)
+		orders.GET("", orderHandler.ListOrdersByWallet)
 	}
 }

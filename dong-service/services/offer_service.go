@@ -27,9 +27,10 @@ func NewOfferService(repo *repository.OfferRepository, walletRepo *repository.In
 type IOfferService interface {
 	CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string) (*models.Offer, error)
 	ListOffers(ctx context.Context, fromAmount *string, toAmount *string, pagination map[string]any) ([]models.Offer, error)
-	CountOffers(ctx context.Context, fromAmount *string, toAmount *string) (int64, error)
+	CountOffers(ctx context.Context, walletAddress *string, fromAmount *string, toAmount *string) (int64, error)
 	GetOfferByID(ctx context.Context, id int64) (*models.Offer, error)
-	GetOffersByWalletAddress(ctx context.Context, walletAddress string) ([]models.Offer, error)
+	GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Offer, int64, error)
+	UpdateOfferStatus(ctx context.Context, req *models.UpdateOfferStatusRequest) error
 }
 
 func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string) (*models.Offer, error) {
@@ -115,7 +116,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		TotalAmount:               amountInt,
 		Price:                     priceInt,
 		PriceType:                 constants.PriceTypeFixed,
-		Status:                    constants.TradingPending,
+		Status:                    constants.TrandingOpen,
 		BankInfo:                  bankInfoStr,
 		Limit:                     &models.OfferLimit{Min: limitMinInt, Max: limitMaxInt},
 	}
@@ -124,21 +125,22 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		offer.PriceType = *req.PriceType
 	}
 
-	var priceRateStr *string
+	var priceRateFloat *float64
 	if req.PriceRate != nil && *req.PriceRate != "" {
-		priceRateStr = req.PriceRate
-	}
-	if priceRateStr == nil {
-		v := "1"
-		priceRateStr = &v
-	}
-	offer.PriceRate = priceRateStr
-
-	if priceRateStr != nil {
-		if rate, parseErr := strconv.ParseFloat(*priceRateStr, 64); parseErr == nil {
-			computed := float64(amountInt) * rate
-			priceInt = int64(math.Round(computed))
+		if r, parseErr := strconv.ParseFloat(*req.PriceRate, 64); parseErr == nil {
+			priceRateFloat = &r
 		}
+	}
+	// default to 1.0 if not provided
+	if priceRateFloat == nil {
+		def := 1.0
+		priceRateFloat = &def
+	}
+	offer.PriceRate = priceRateFloat
+
+	if priceRateFloat != nil {
+		computed := float64(amountInt) * (*priceRateFloat)
+		priceInt = int64(math.Round(computed))
 	}
 	offer.Price = priceInt
 
@@ -157,14 +159,52 @@ func (s *OfferService) ListOffers(ctx context.Context, fromAmount *string, toAmo
 	return s.repo.ListOffers(ctx, nil, nil, nil, nil, nil, fromAmount, toAmount, pagination)
 }
 
-func (s *OfferService) CountOffers(ctx context.Context, fromAmount *string, toAmount *string) (int64, error) {
-	return s.repo.CountOffers(ctx, nil, nil, nil, nil, nil, fromAmount, toAmount)
+func (s *OfferService) CountOffers(ctx context.Context, walletAddress *string, fromAmount *string, toAmount *string) (int64, error) {
+	return s.repo.CountOffers(ctx, walletAddress, fromAmount, toAmount)
 }
 
 func (s *OfferService) GetOfferByID(ctx context.Context, id int64) (*models.Offer, error) {
 	return s.repo.GetOfferByID(ctx, id)
 }
 
-func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddress string) ([]models.Offer, error) {
-	return s.repo.GetOffersByWalletAddress(ctx, walletAddress)
+func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Offer, int64, error) {
+	offers, err := s.repo.GetOffersByWalletAddress(ctx, walletAddress, pagination)
+	if err != nil {
+		return nil, 0, err
+	}
+	count, err := s.repo.CountOffers(ctx, &walletAddress, nil, nil)
+	if err != nil {
+		return nil, 0, err
+	}
+	return offers, count, nil
+}
+
+func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.UpdateOfferStatusRequest) error {
+	// Verify transaction exists in blockchain
+	if s.blockchain != nil {
+		txInfo, err := s.blockchain.GetTransaction(req.TxHash)
+		if err != nil {
+			return fmt.Errorf("failed to verify transaction: %w", err)
+		}
+		if txInfo == nil {
+			return fmt.Errorf("transaction not found in blockchain")
+		}
+	}
+
+	db := database.GetDB()
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
+	err = s.repo.UpdateOfferStatus(ctx, req.OfferID, req.Status, tx, &req.TxHash)
+	return err
 }

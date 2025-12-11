@@ -1,7 +1,7 @@
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'offer_status') THEN
-        CREATE TYPE offer_status AS ENUM ('PENDING', 'CONFIRMED', 'CANCELED', 'FAILED', 'COMPLETED');
+        CREATE TYPE offer_status AS ENUM ('OPEN', 'PENDING', 'CONFIRMED', 'CANCELED', 'FAILED', 'COMPLETED');
     END IF;
 END$$;
 
@@ -13,12 +13,12 @@ CREATE TABLE IF NOT EXISTS offers (
     symbol VARCHAR(64) NULL,
     amount BIGINT NOT NULL DEFAULT 0,
     total_amount BIGINT NOT NULL DEFAULT 0,
-    min_amount BIGINT,
-    max_amount BIGINT,
+    min_amount BIGINT NOT NULL DEFAULT 1,
+    max_amount BIGINT NOT NULL,
     price BIGINT NOT NULL DEFAULT 0,
-    price_rate TEXT,
-    price_type VARCHAR(32),
-    status offer_status NOT NULL DEFAULT 'PENDING',
+    price_rate NUMERIC(6, 4),
+    price_type VARCHAR(32) NOT NULL DEFAULT 'FIXED',
+    status offer_status NOT NULL DEFAULT 'OPEN',
     transaction_hash TEXT,
     bank_info JSONB,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -30,7 +30,14 @@ CREATE INDEX IF NOT EXISTS idx_offers_symbol ON offers (symbol);
 CREATE INDEX IF NOT EXISTS idx_offers_status ON offers (status);
 CREATE INDEX IF NOT EXISTS idx_offers_intermediary_wallet_address ON offers (intermediary_wallet_address);
 
--- Optional constraints / comments
-ALTER TABLE offers ADD CONSTRAINT IF NOT EXISTS chk_offers_side CHECK (side IN ('BUY', 'SELL'));
-ALTER TABLE offers ADD CONSTRAINT IF NOT EXISTS chk_offers_price_type CHECK (price_type IN ('FIXED', 'FLOAT'));
-
+-- Optional constraints
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_offers_side') THEN
+        ALTER TABLE offers ADD CONSTRAINT chk_offers_side CHECK (side IN ('BUY', 'SELL'));
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_offers_price_type') THEN
+        ALTER TABLE offers ADD CONSTRAINT chk_offers_price_type CHECK (price_type IN ('FIXED', 'FLOAT'));
+    END IF;
+END$$;
