@@ -14,8 +14,13 @@ type DonationCampaignFeed struct {
 	ImageCIDs       []string  `json:"image_cids" db:"image_cids"`
 	ParentHash      *string   `json:"parent_hash" db:"parent_hash"`
 	RootHash        *string   `json:"root_hash" db:"root_hash"`
+	Visible         bool      `json:"visible" db:"visible"`
 	CreatedAt       time.Time `json:"created_at" db:"created_at"`
 	RootCreatedAt   time.Time `json:"root_created_at" db:"root_created_at"`
+}
+
+type UpdateVisibleFeedRequest struct {
+	Visible bool `json:"visible"`
 }
 
 type UploadedImageInfo struct {

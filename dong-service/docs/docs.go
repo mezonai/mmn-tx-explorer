@@ -603,7 +603,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/models.DonationCampaignFeedResponse"
+                                                "$ref": "#/definitions/models.DonationCampaignFeed"
                                             }
                                         }
                                     }
@@ -678,6 +678,47 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/campaigns/update-visible-feed/{root_feed_hash}": {
+            "patch": {
+                "description": "Update visible/unvisible state of parent \u0026 child feed by its root hash",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "campaign_feed"
+                ],
+                "summary": "Update visibility of a feed",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Feed hash",
+                        "name": "root_feed_hash",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/models.Response"
                         }
@@ -1887,7 +1928,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.DonationCampaignFeedResponse": {
+        "models.DonationCampaignFeed": {
             "type": "object",
             "properties": {
                 "campaign_address": {
@@ -1896,17 +1937,38 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "extra_info": {
-                    "$ref": "#/definitions/models.FeedExtraInfo"
+                "creator_address": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
                 },
                 "id": {
                     "type": "integer"
                 },
-                "owner_address": {
+                "image_cids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "parent_hash": {
+                    "type": "string"
+                },
+                "root_created_at": {
+                    "type": "string"
+                },
+                "root_hash": {
+                    "type": "string"
+                },
+                "title": {
                     "type": "string"
                 },
                 "tx_hash": {
                     "type": "string"
+                },
+                "visible": {
+                    "type": "boolean"
                 }
             }
         },
@@ -1969,23 +2031,6 @@ const docTemplate = `{
                 },
                 "verified": {
                     "type": "boolean"
-                }
-            }
-        },
-        "models.FeedExtraInfo": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "image_cids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "title": {
-                    "type": "string"
                 }
             }
         },

@@ -8,6 +8,7 @@ import (
 	"dong-service/models"
 	"dong-service/repository"
 	"dong-service/services"
+	"dong-service/utils"
 	"io"
 	"net/http"
 	"strconv"
@@ -31,7 +32,7 @@ func NewDonationCampaignFeedHandler(repo *repository.DonationCampaignFeedReposit
 // @Tags campaign_feed
 // @Produce json
 // @Param campaign_address path string true "Campaign address"
-// @Success 200 {object} models.Response{data=[]models.DonationCampaignFeedResponse}
+// @Success 200 {object} models.Response{data=[]models.DonationCampaignFeed}
 // @Failure 400 {object} models.Response
 // @Failure 404 {object} models.Response
 // @Failure 500 {object} models.Response
@@ -43,6 +44,8 @@ func (h *DonationCampaignFeedHandler) ListCampaignFeedsByAddress(c *gin.Context)
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Missing campaign_address"))
 		return
 	}
+
+	userAddress, _ := utils.GetAddressFromContext(c)
 
 	// Query param
 	limitStr := c.DefaultQuery("limit", "10")
@@ -70,7 +73,7 @@ func (h *DonationCampaignFeedHandler) ListCampaignFeedsByAddress(c *gin.Context)
 		}
 	}
 
-	feeds, err := h.repo.ListCampaignFeedsByAddress(campaignAddr, limit, timestampLt)
+	feeds, err := h.repo.ListCampaignFeedsByAddress(campaignAddr, limit, timestampLt, userAddress)
 	if err != nil {
 		logger.Error().Err(err).Str("campaign_address", campaignAddr).Msg("Failed to list campaign feeds")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Internal server error"))
@@ -78,6 +81,68 @@ func (h *DonationCampaignFeedHandler) ListCampaignFeedsByAddress(c *gin.Context)
 	}
 
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Campaign feeds retrieved", feeds))
+}
+
+// UpdateVisibleFeed godoc
+// @Summary Update visibility of a feed
+// @Description Update visible/unvisible state of parent & child feed by its root hash
+// @Tags campaign_feed
+// @Produce json
+// @Param root_feed_hash path string true "Feed hash"
+// @Success 200 {object} models.Response
+// @Failure 400 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Router /api/v1/campaigns/update-visible-feed/{root_feed_hash} [patch]
+func (h *DonationCampaignFeedHandler) UpdateVisibleFeed(c *gin.Context) {
+	feedHash := c.Param("root_feed_hash")
+	if feedHash == "" {
+		logger.Error().Msg("Missing root_feed_hash parameter")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Missing root_feed_hash"))
+		return
+	}
+
+	// Validate feed is existing
+	feed, err := h.repo.FindCampaignFeedByHash(feedHash)
+	if err != nil {
+		logger.Error().Err(err).Str("root_feed_hash", feedHash).Msg("Failed to find campaign feed")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Internal server error"))
+		return
+	}
+	if feed == nil {
+		c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, "Donation campaign feed not found"))
+		return
+	}
+
+	// Validate feed is the root feed
+	if feed.ParentHash != nil || feed.RootHash != nil {
+		logger.Error().Str("root_feed_hash", feedHash).Msg("Feed is not a root feed")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Donation campaign feed is not a root feed"))
+		return
+	}
+
+	// Validate user is the creator of the feed
+	userAddress, _ := utils.GetAddressFromContext(c)
+	if feed.CreatorAddress != userAddress {
+		logger.Error().Str("user_address", userAddress).Str("creator_address", feed.CreatorAddress).Msg("User is not the creator of the feed")
+		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, "You are not the creator of this feed"))
+		return
+	}
+
+	var req models.UpdateVisibleFeedRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Error().Err(err).Msg("Failed to bind update visible feed request")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid request body"))
+		return
+	}
+
+	err = h.repo.UpdateVisibleFeed(feedHash, &req)
+	if err != nil {
+		logger.Error().Err(err).Str("root_feed_hash", feedHash).Msg("Failed to update visible feed")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Internal server error"))
+		return
+	}
+
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Updated visible feed successfully", nil))
 }
 
 // UploadImage godoc
