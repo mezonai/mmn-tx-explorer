@@ -74,11 +74,11 @@ cache_request:
 # Rate Limit Configuration
 rate_limit:
   ip_rate_limit_per_sec: 1
-  ip_rate_limit_burst: 3
+  ip_rate_limit_burst: 1
 
 # Image Filter Configuration
 filter_image:
-  max_size_upload: 5 # MB
+  max_size_upload: 20 # MB
   block_mime_types: 
      - "image/svg+xml"
   enable_virus_scan: false
