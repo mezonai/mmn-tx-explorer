@@ -147,7 +147,7 @@ func (h *OrderHandler) ListOrdersByWallet(c *gin.Context) {
 		return
 	}
 
-	orders, err := h.orderService.GetOrdersByWalletAddress(c.Request.Context(), walletAddress)
+	orders, _, err := h.orderService.GetOrdersByWalletAddress(c.Request.Context(), walletAddress, nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to list orders: "+err.Error()))
 		return
@@ -162,6 +162,8 @@ func (h *OrderHandler) ListOrdersByWallet(c *gin.Context) {
 // @Tags orders
 // @Accept json
 // @Produce json
+// @Param page query int false "page"
+// @Param limit query int false "limit"
 // @Success 200 {object} models.Response{data=[]models.Order}
 // @Failure 500 {object} models.Response
 // @Security BearerAuth
@@ -169,13 +171,31 @@ func (h *OrderHandler) ListOrdersByWallet(c *gin.Context) {
 func (h *OrderHandler) GetMyOrders(c *gin.Context) {
 	walletAddress, _ := utils.GetAddressFromContext(c)
 
-	orders, err := h.orderService.GetOrdersByWalletAddress(c.Request.Context(), walletAddress)
+	pg := utils.GetPaginationParams(c)
+	pagination := map[string]any{"limit": pg.Limit, "offset": pg.Offset}
+
+	orders, total, err := h.orderService.GetOrdersByWalletAddress(c.Request.Context(), walletAddress, pagination)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to list orders: "+err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, models.SuccessResponse(orders))
+	var totalPage int64
+	if pg.Limit > 0 {
+		totalPage = (total + int64(pg.Limit)) / int64(pg.Limit)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Orders retrieved",
+		"data":    orders,
+		"meta": gin.H{
+			"page":        pg.Page,
+			"limit":       pg.Limit,
+			"total_items": total,
+			"total_pages": totalPage,
+		},
+	})
 }
 
 // ConfirmOrder godoc
