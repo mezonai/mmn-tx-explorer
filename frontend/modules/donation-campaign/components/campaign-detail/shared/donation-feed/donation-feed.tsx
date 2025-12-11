@@ -8,14 +8,36 @@ import { UpdateList } from './update-list';
 import { DonationCampaign } from '@/modules/donation-campaign';
 import { FileX2Icon, Loader2 } from 'lucide-react';
 import { useUser } from '@/providers';
-// import { mockDonationFeed } from '@/modules/donation-campaign/mocks/donationFeedMock';
+import { useDonationFeed } from '@/modules/donation-campaign/hooks';
+import { useEffect, useRef } from 'react';
 
 export const DonationFeed = ({ campaign }: { campaign: DonationCampaign }) => {
   const { user } = useUser();
-  // Using mock data for now
-  // const donationFeed = mockDonationFeed;
-  const isLoading = false;
-  const error = true;
+  const { donationFeed, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useDonationFeed(
+    campaign.donation_wallet
+  );
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => {
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
+    };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
     <div className="w-full space-y-6">
@@ -40,17 +62,27 @@ export const DonationFeed = ({ campaign }: { campaign: DonationCampaign }) => {
           <Loader2 className="text-brand-primary h-12 w-12 animate-spin" />
         </div>
       )}
-      {error && (
+      {!isLoading && (error || donationFeed.length === 0) && (
         <div className="border-muted-foreground/50 bg-background flex flex-col items-center justify-center rounded-2xl border py-12">
           <FileX2Icon className="text-primary my-4 h-10 w-10" />
           <h3 className="text-primary mb-2 text-lg font-semibold">No Updates Yet</h3>
-          <p className="text-muted-foreground text-sm px-4">
+          <p className="text-muted-foreground px-4 text-sm">
             This campaign hasn't posted any updates yet. Check back later!
           </p>
         </div>
       )}
 
-      {/* <UpdateList updates={donationFeed} /> */}
+      {!isLoading && donationFeed && donationFeed.length > 0 && (
+        <>
+          <UpdateList updates={donationFeed} campaign={campaign} />
+
+          {hasNextPage && (
+            <div ref={observerTarget} className="flex justify-center py-4">
+              {isFetchingNextPage && <Loader2 className="text-brand-primary h-8 w-8 animate-spin" />}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 };

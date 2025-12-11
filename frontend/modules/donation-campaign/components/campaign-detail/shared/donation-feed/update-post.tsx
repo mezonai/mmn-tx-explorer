@@ -14,10 +14,10 @@ interface UpdatePostProps {
   onImageClick: (url: string) => void;
 }
 
-function getImages(update: IDonationFeed, onImageClick: (url: string) => void) {
+function getImages(imageCids: string[], onImageClick: (url: string) => void) {
   return (
     <div className="grid w-full grid-cols-1 gap-2 p-2 pl-3 sm:grid-cols-3 md:grid-cols-6">
-      {update.extra_info.image_cids.map((img, idx) => (
+      {imageCids.map((img, idx) => (
         <img
           key={idx}
           src={`${ipfsServiceURL}/${img}`}
@@ -36,16 +36,18 @@ export const UpdatePost = ({ update, onImageClick }: UpdatePostProps) => {
       <div className="flex w-full flex-col justify-between gap-3 px-4 md:flex-row">
         <div className="flex flex-row flex-wrap gap-2">
           <Chip variant="brand" className="">
-            {update.extra_info.title}
+            {update.title}
           </Chip>
 
           <div className="pt-2 text-xs text-gray-400">
             <ClientTimeDisplay timestamp={new Date(update.created_at).getTime()} />
           </div>
-          <div className="pt-2 text-xs text-gray-500 lg:block">
-            · posted by {update.owner_address.slice(0, 3)}...{update.owner_address.slice(-4)}{' '}
-            <CopyButton textToCopy={update.owner_address} />
-          </div>
+          {update.creator_address && (
+            <div className="pt-2 text-xs text-gray-500 lg:block">
+              · posted by {update.creator_address.slice(0, 3)}...{update.creator_address.slice(-4)}{' '}
+              <CopyButton textToCopy={update.creator_address} />
+            </div>
+          )}
         </div>
 
         <div className="text-muted-foreground flex flex-row gap-1 text-xs">
@@ -77,9 +79,9 @@ export const UpdatePost = ({ update, onImageClick }: UpdatePostProps) => {
           )} */}
         </div>
       </div>
-      <div className="text-foreground text-md w-full px-4 break-words">{update.extra_info.description}</div>
+      <div className="text-foreground text-md w-full px-4 break-words">{update.description}</div>
 
-      {getImages(update, onImageClick)}
+      {getImages(update.image_cids || [], onImageClick)}
 
       <div className="flex w-full flex-row justify-end gap-4 px-4">
         <span className="text-sm">TxHash: </span>

@@ -43,10 +43,10 @@ export const VersionHistoryDialog = ({ update, isOpen, onOpenChange, onImageClic
                   </Chip>
                 </div>
 
-                <p className="text-sm">{update.extra_info.description}</p>
-                {update.extra_info.image_cids.length > 0 && (
+                <p className="text-sm">{update.description}</p>
+                {update.image_cids.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {update.extra_info.image_cids.map((cid, idx) => (
+                    {update.image_cids.map((cid, idx) => (
                       <img
                         key={idx}
                         src={`${ipfsServiceURL}/${cid}`}
@@ -70,10 +70,10 @@ export const VersionHistoryDialog = ({ update, isOpen, onOpenChange, onImageClic
                   </span>
                 </div>
 
-                <p className="text-sm">{update.extra_info.description}</p>
-                {update.extra_info.image_cids.length > 0 && (
+                <p className="text-sm">{update.description}</p>
+                {update.image_cids.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {update.extra_info.image_cids.map((cid, idx) => (
+                    {update.image_cids.map((cid, idx) => (
                       <img
                         key={idx}
                         src={`${ipfsServiceURL}/${cid}`}

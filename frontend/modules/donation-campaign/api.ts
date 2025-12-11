@@ -6,6 +6,10 @@ import {
   CreateCampaignRequest,
   DonationCampaign,
   TopContributorsResponse,
+  IDonationFeed,
+  DonationFeedParams,
+  UploadImageRequest,
+  UploadImageResponse,
 } from './type';
 import { DONATION_ENDPOINTS } from './constants';
 import { InternalAxiosRequestConfig } from 'axios';
@@ -72,8 +76,8 @@ export class DonationCampaignService {
   static async deleteCampaign(id: string): Promise<void> {
     await apiDongClient.delete(DONATION_ENDPOINTS.DELETE_CAMPAIGN(id));
   }
-  
-    static async getUserDonations(params: { page?: number; limit?: number } = {}) {
+
+  static async getUserDonations(params: { page?: number; limit?: number } = {}) {
     const { data } = await apiDongClient.get(DONATION_ENDPOINTS.MY_DONATIONS, {
       meta: { authOptional: false },
       params,
@@ -108,6 +112,38 @@ export class DonationCampaignService {
   static async refreshCampaignRaised(id: string): Promise<DonationCampaign> {
     const { data } = await apiDongClient.post<{ data: DonationCampaign }>(
       DONATION_ENDPOINTS.REFRESH_CAMPAIGN_RAISED(id)
+    );
+    return data.data;
+  }
+
+  static async getDonationFeed({
+    address,
+    params,
+  }: {
+    address: string;
+    params?: DonationFeedParams;
+  }): Promise<IPaginatedResponse<IDonationFeed[]>> {
+    const { data } = await apiDongClient.get<IPaginatedResponse<IDonationFeed[]>>(
+      DONATION_ENDPOINTS.DONATION_FEED(address),
+      { meta: { authOptional: true }, params } as InternalAxiosRequestConfig
+    );
+    return data;
+  }
+
+  static async uploadDonationImages(imageData: UploadImageRequest): Promise<UploadImageResponse> {
+    const formData = new FormData();
+    imageData.files.forEach((file) => {
+      formData.append('files', file);
+    });
+
+    const { data } = await apiDongClient.post<{ data: UploadImageResponse }>(
+      DONATION_ENDPOINTS.DONATION_FEED_UPLOAD_IMAGES,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
     );
     return data.data;
   }
