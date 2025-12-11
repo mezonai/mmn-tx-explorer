@@ -73,7 +73,7 @@ export const useP2POrders = () => {
           buyer_wallet_address: (orderData.buyer_wallet_address || orderData.buyerWalletAddress) as string || '',
           amount: (orderData.amount || 0) as number,
           price: (orderData.price || 0) as number,
-          order_status: (orderData.order_status || orderData.status || 'PENDING') as string,
+          order_status: (orderData.order_status || orderData.status || 'OPEN') as string,
           transfer_code: (orderData.transfer_code || orderData.transferCode) as string | null | undefined,
           expires_at: (orderData.expires_at || orderData.expiresAt || new Date(Date.now() + 15 * 60 * 1000).toISOString()) as string,
           created_at: (orderData.created_at || orderData.createdAt || new Date().toISOString()) as string,

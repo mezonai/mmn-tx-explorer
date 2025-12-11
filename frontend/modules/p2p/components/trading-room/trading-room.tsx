@@ -84,13 +84,13 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
       // Created order lives locally; update via service then sync local state
       if (createdOrder) {
         const orderIdStr = String(targetOrder.order_id);
-        const updated = await P2PService.updateOrderStatus(orderIdStr, 'WAIT_CONFIRM');
+        const updated = await P2PService.updateOrderStatus(orderIdStr, 'PENDING');
         setCreatedOrder(updated);
         return;
       }
 
       // Existing order fetched from API; delegate to hook (includes API call)
-      await updateOrderStatus('WAIT_CONFIRM');
+      await updateOrderStatus('PENDING');
     } catch (err) {
       setError('Có lỗi xảy ra khi cập nhật trạng thái. Vui lòng thử lại.');
       console.error('Error updating order status:', err);
@@ -99,7 +99,7 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
 
   const handleSellerConfirm = async () => {
     try {
-      await updateOrderStatus('PAYMENT_CONFIRMED');
+      await updateOrderStatus('CONFIRMED');
     } catch (err) {
       setError('Có lỗi xảy ra khi cập nhật trạng thái. Vui lòng thử lại.');
       console.error('Error updating order status:', err);
@@ -134,7 +134,7 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
       buyer_wallet_address: user?.walletAddress || '',
       amount: 0,
       price: 0,
-      order_status: 'PENDING' as const,
+      order_status: 'OPEN' as const,
       transfer_code: null,
       expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
       created_at: new Date().toISOString(),
