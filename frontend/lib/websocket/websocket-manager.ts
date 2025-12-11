@@ -1,5 +1,9 @@
 // frontend/lib/websocket/websocket-manager.ts
 
+import { STORAGE_KEYS } from '@/constant';
+import { safeJsonParse } from '@/utils';
+import { HEARTBEAT_ACK, HEARTBEAT_CHECK, HEARTBEAT_CHECK_INTERVAL_MS } from './constants';  
+
 export interface WebSocketEvent {
   id?: string;
   type: string;
@@ -17,7 +21,7 @@ export class WebSocketManager {
   private listeners: Map<string, Set<(data: WebSocketEvent) => void>> = new Map();
   private wsUrl: string;
   private heartbeatIntervalId: number | null = null;
-  private heartbeatMs = 20000; // send ping every 20s
+  private shouldReconnect = true;
 
   constructor(wsUrl: string = 'ws://localhost:8899') {
     this.wsUrl = wsUrl;
@@ -25,64 +29,61 @@ export class WebSocketManager {
 
   connect(token: string) {
     if (this.ws?.readyState === WebSocket.OPEN) {
-      console.log('WebSocket already connected');
       return;
     }
 
     const url = `${this.wsUrl}/ws/connect?token=${encodeURIComponent(token)}`;
-    console.log('Connecting to WebSocket:', url.replace(token, '***'));
-
     this.ws = new WebSocket(url);
 
     this.ws.onopen = () => {
-      console.log('✅ WebSocket connected');
+      this.shouldReconnect = true;
       this.reconnectAttempts = 0;
       this.startHeartbeat();
+      console.log('WebSocket connected');
     };
 
     this.ws.onmessage = (event) => {
       try {
-        const data = JSON.parse(event.data);
-        console.log('📨 WebSocket message received:', data);
-
         // Handle heartbeat reply from server
-        if (data?.type === 'PONG') {
-          return;
+        if (event.data === HEARTBEAT_ACK) {
+          console.log('Heartbeat ack received');
         }
 
-        // Respond to server ping if server initiates
-        if (data?.type === 'PING') {
-          this.send({ type: 'PONG' });
-          return;
-        }
 
-        this.handleEvent(data);
+        this.handleEvent(JSON.parse(event.data));
       } catch (error) {
         console.error('Error parsing WebSocket message:', error);
       }
     };
 
     this.ws.onclose = () => {
-      console.log('❌ WebSocket disconnected');
-       this.stopHeartbeat();
+      this.stopHeartbeat();
       this.ws = null;
-      this.attemptReconnect(token);
+      this.attemptReconnect();
     };
 
     this.ws.onerror = (error) => {
-      console.error('❌ WebSocket error:', error);
+      console.error('WebSocket error:', error);
     };
   }
 
-  private attemptReconnect(token: string) {
+  private attemptReconnect() {
+    if (!this.shouldReconnect) {
+      return;
+    }
+
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
-      console.log(`🔄 Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
       setTimeout(() => {
-        this.connect(token);
+        const freshToken = this.getStoredToken();
+        if (!freshToken) {
+          console.error('No token available for reconnection');
+          return;
+        }
+        this.connect(freshToken);
       }, this.reconnectDelay);
     } else {
-      console.error('❌ Max reconnection attempts reached');
+      console.error('Max reconnection attempts reached');
     }
   }
 
@@ -116,6 +117,7 @@ export class WebSocketManager {
 
   disconnect() {
     if (this.ws) {
+      this.shouldReconnect = false;
       this.ws.close();
       this.ws = null;
     }
@@ -131,9 +133,9 @@ export class WebSocketManager {
     this.stopHeartbeat();
     this.heartbeatIntervalId = window.setInterval(() => {
       if (this.ws?.readyState === WebSocket.OPEN) {
-        this.send({ type: 'PING' });
+        this.ws.send(HEARTBEAT_CHECK);
       }
-    }, this.heartbeatMs);
+    }, HEARTBEAT_CHECK_INTERVAL_MS);
   }
 
   private stopHeartbeat() {
@@ -143,12 +145,15 @@ export class WebSocketManager {
     }
   }
 
-  private send(payload: Record<string, unknown>) {
-    try {
-      this.ws?.send(JSON.stringify(payload));
-    } catch (err) {
-      console.error('Error sending WebSocket message:', err);
+
+  private getStoredToken(): string | null {
+    if (typeof window === 'undefined') {
+      return null;
     }
+    const tokenData = safeJsonParse<{ access_token?: string }>(
+      localStorage.getItem(STORAGE_KEYS.TOKEN),
+    );
+    return tokenData?.access_token ?? null;
   }
 }
 

@@ -60,7 +60,7 @@ export function AppProvider({ children }: AppProviderProps) {
       (async () => {
         try {
           await AuthenticationService.refreshLogin(localToken.refresh_token);
-          // ✅ Init WebSocket after successful token refresh
+          // Init WebSocket after successful token refresh
           const refreshedToken = safeJsonParse<{ access_token?: string }>(localStorage.getItem(STORAGE_KEYS.TOKEN));
           if (refreshedToken?.access_token) {
             const wsManager = getWebSocketManager();
@@ -87,7 +87,7 @@ export function AppProvider({ children }: AppProviderProps) {
       const kpStr = localStorage.getItem(STORAGE_KEYS.KEY_PAIR);
       if (kpStr) setKeypair(safeJsonParse(kpStr));
 
-      // ✅ Init WebSocket if user is already logged in
+      // Init WebSocket if user is already logged in
       const tokenData = safeJsonParse<{ access_token?: string }>(localStorage.getItem(STORAGE_KEYS.TOKEN));
       if (tokenData?.access_token) {
         const wsManager = getWebSocketManager();
@@ -120,7 +120,7 @@ export function AppProvider({ children }: AppProviderProps) {
         if (fetchedZk) {
           setZkProof(fetchedZk);
         }
-        // ✅ Init WebSocket after successful login
+        // Init WebSocket after successful login
         if (userInfo.access_token) {
           const wsManager = getWebSocketManager();
           wsManager.connect(userInfo.access_token);
@@ -204,7 +204,7 @@ export function useAuthActions() {
     if (refreshToken) {
       axios.post(AUTHENTICATION_ENDPOINT.LOGOUT, { refresh_token: refreshToken });
     }
-    // ✅ Disconnect WebSocket when logging out
+    // Disconnect WebSocket when logging out
     const wsManager = getWebSocketManager();
     wsManager.disconnect();
     clearAuthStorage();
