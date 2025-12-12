@@ -16,8 +16,6 @@ import (
 type ExampleHandler struct {
 }
 
-// api thật thì mọi người truyền repo vào như các handler khác, ở router khởi tạo instance cũng vật
-
 func NewExampleHandler() *ExampleHandler {
 	return &ExampleHandler{}
 }
@@ -46,18 +44,17 @@ func (h *ExampleHandler) CreateEvents(c *gin.Context) {
 		return
 	}
 
-	// trường bắt buộc có receiveAddress,
-	//  Type có thể lấy ở FE hoặc Constant của BE ;
-	//  status, createat mặc định ở BE,
-	//  còn lại nhúng hết vào payload json
+	// TODO: The required field is receive_address.
+	// The other fields (ID, type, status, created_at) are generated automatically,
+	// and the remaining data should all be placed into payload.
 
 	event := &models.Event{
-		ID:        uuid.New(),
-		Type:      eventType,
-		Payload:   json.RawMessage(payloadBytes),
+		ID:             uuid.New(),
+		Type:           eventType,
+		Payload:        json.RawMessage(payloadBytes),
 		ReceiveAddress: receiveAddress,
-		Status:    "pending",
-		CreateAt:  time.Now(),
+		Status:         "pending",
+		CreateAt:       time.Now(),
 	}
 	if err := services.Event.SendEvent(event); err != nil {
 		logger.Error().Err(err).Msg("Sending event to socket-service failed")
