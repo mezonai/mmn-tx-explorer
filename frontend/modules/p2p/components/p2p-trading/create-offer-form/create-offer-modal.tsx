@@ -3,10 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-// Import UI components
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-// Import Icons: Thêm Info icon
 import { Plus, Send, Loader2, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -17,16 +15,13 @@ import { CreateOfferFormValues, createOfferSchema } from './validation-schema';
 import { TradeTypeSection } from './trade-type-section';
 import { AmountSection } from './amount-section';
 import { PaymentSection } from './payment-section';
+import { useUpdateOfferStatus } from '@/modules/p2p/hooks/useUpdateOfferStatus';
 
-interface CreateOfferModalProps {
-  onSubmit?: (data: CreateOfferRequest) => void;
-}
-
-export const CreateOfferModal = ({ onSubmit }: CreateOfferModalProps) => {
+export const CreateOfferModal = () => {
   const [open, setOpen] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false); // State cho dialog confirm
   const [pendingData, setPendingData] = useState<CreateOfferFormValues | null>(null);
-
+  const { mutate: updateOfferStatus } = useUpdateOfferStatus();
   const { mutateAsync: createOfferAsync, isPending } = useCreateOffer();
   const { transfer } = useTransfer();
 
@@ -88,13 +83,18 @@ export const CreateOfferModal = ({ onSubmit }: CreateOfferModalProps) => {
       );
 
       if (transferResult.success) {
+        setTimeout(() => {
+          updateOfferStatus({
+            offer_id: Number(resultData.offer.offer_id),
+            tx_hash: transferResult.txHash!,
+            status: 'CONFIRMED',
+          });
+        }, 2000);
         toast.success('Create offer success!');
-        if (onSubmit) onSubmit(payload);
-
         setShowConfirm(false);
         setOpen(false);
       } else {
-        toast.error(transferResult.error || 'Create offer fail. Please try again.');
+        toast.error('Create offer fail. Please try again.');
         console.error(transferResult.error);
         setShowConfirm(false);
       }
@@ -183,13 +183,13 @@ export const CreateOfferModal = ({ onSubmit }: CreateOfferModalProps) => {
               )}
             </Button>
 
-            <button
+            <Button
               onClick={() => setShowConfirm(false)}
               disabled={isPending}
               className="text-muted-foreground hover:text-foreground w-full text-center text-xs transition disabled:opacity-50"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

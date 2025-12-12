@@ -1,5 +1,11 @@
 import { IPaginatedResponse } from '@/types';
-import { CreateOfferRequest, CreateOfferResponse, IP2POfferListParams, P2POffer } from './types';
+import {
+  CreateOfferRequest,
+  CreateOfferResponse,
+  IP2POfferListParams,
+  P2POffer,
+  UpdateOfferStatusRequest,
+} from './types';
 import { apiDongClient } from '@/service';
 import { P2P_ENDPOINTS } from './constants';
 
@@ -11,5 +17,9 @@ export class P2PService {
   static async createOffers(offerData: CreateOfferRequest): Promise<CreateOfferResponse> {
     const { data } = await apiDongClient.post<{ data: CreateOfferResponse }>(P2P_ENDPOINTS.OFFERS, offerData);
     return data.data;
+  }
+  static async updateOfferStatus(payload: UpdateOfferStatusRequest) {
+    const { data } = await apiDongClient.post(P2P_ENDPOINTS.UPDATE_OFFER_STATUS, payload);
+    return data;
   }
 }

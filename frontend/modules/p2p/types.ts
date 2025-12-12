@@ -1,3 +1,5 @@
+import { OFFERS_STATUS } from './constants';
+
 export type BankOption = 'MB' | 'VCB' | 'TCB' | 'ACB' | 'TPBANK' | 'VIETCOMBANK';
 
 export interface P2POffer {
@@ -62,4 +64,10 @@ export interface CreateOfferRequest {
 export interface CreateOfferResponse {
   intermediary_wallet_address: string;
   offer: P2POffer;
+}
+export type OfferStatus = (typeof OFFERS_STATUS)[keyof typeof OFFERS_STATUS];
+export interface UpdateOfferStatusRequest {
+  offer_id: number;
+  status: OfferStatus;
+  tx_hash: string;
 }

@@ -5,7 +5,7 @@ import { z } from 'zod';
 export const createOfferSchema = z
   .object({
     side: z.nativeEnum(TradeTypes),
-    amount: z.number({ message: 'Amount is required' }).gt(0, 'Please enter the amount of MZD to sell'),
+    amount: z.number({ message: 'Amount is required' }).gt(0, 'Please enter the amount of đồng to sell'),
     price_rate: z.number().min(0, 'Rate must be positive'),
     limit: z.object({
       min: z.number().min(0),

@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { APP_CONFIG } from '@/configs/app.config';
 import { Pagination } from '@/components/ui/pagination';
 import { CreateOfferModal } from './create-offer-form/create-offer-modal';
-import { CreateOfferRequest } from '../../types';
 
 interface P2PFiltersComponentProps {
   totalItems: number | undefined;
@@ -16,7 +15,6 @@ interface P2PFiltersComponentProps {
   onPageChange: (page: number) => void;
   onLimitChange: (limit: number) => void;
   onFilterChange: (min: number | undefined, max: number | undefined) => void;
-  onOfferCreate?: (data: CreateOfferRequest) => void;
 }
 
 export const P2PFiltersComponent = ({
@@ -28,7 +26,6 @@ export const P2PFiltersComponent = ({
   onPageChange,
   onLimitChange,
   onFilterChange,
-  onOfferCreate,
 }: P2PFiltersComponentProps) => {
   const [minAmount, setMinAmount] = useState<string>('');
   const [maxAmount, setMaxAmount] = useState<string>('');
@@ -47,7 +44,7 @@ export const P2PFiltersComponent = ({
   return (
     <div className="flex w-full flex-col gap-4 py-2 md:flex-row md:items-center md:justify-between">
       <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center">
-        <CreateOfferModal onSubmit={onOfferCreate} />
+        <CreateOfferModal />
 
         <div className="bg-background border-input ring-offset-background focus-within:ring-brand-primary flex h-10 w-full items-center rounded-lg border shadow-sm focus-within:ring-1 md:w-auto">
           <div className="bg-muted/50 text-brand-primary flex h-full items-center border-r px-3 text-[10px] font-bold tracking-wider uppercase select-none">

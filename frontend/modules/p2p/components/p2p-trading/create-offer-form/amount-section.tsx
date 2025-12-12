@@ -3,6 +3,7 @@
 import { Control, Controller, UseFormTrigger, useWatch } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { CreateOfferFormValues } from './validation-schema';
+import { APP_CONFIG } from '@/configs/app.config';
 
 interface AmountSectionProps {
   control: Control<CreateOfferFormValues>;
@@ -17,7 +18,7 @@ const formatCurrency = (num: number): string => {
 const getRawValue = (val: string): number => {
   return parseFloat(val.replace(/,/g, '')) || 0;
 };
-
+const MAX_AMOUNT = 1000000000000;
 export const AmountSection = ({ control, trigger }: AmountSectionProps) => {
   const amountMZD = useWatch({ control, name: 'amount' });
   const exchangeRate = useWatch({ control, name: 'price_rate' });
@@ -33,7 +34,9 @@ export const AmountSection = ({ control, trigger }: AmountSectionProps) => {
       </h3>
 
       <div>
-        <label className="mb-2 block text-xs font-medium text-gray-500 uppercase">Amount to Sell (MZD)</label>
+        <label className="mb-2 block text-xs font-medium text-gray-500 uppercase">
+          Amount to Sell ({APP_CONFIG.CHAIN_SYMBOL})
+        </label>
         <div className="group relative">
           <Controller
             control={control}
@@ -45,6 +48,7 @@ export const AmountSection = ({ control, trigger }: AmountSectionProps) => {
                   value={formatCurrency(field.value)}
                   onChange={(e) => {
                     const val = getRawValue(e.target.value);
+                    if (val > MAX_AMOUNT) return;
                     field.onChange(val);
                     trigger(['limit.min', 'limit.max']);
                   }}
@@ -54,7 +58,9 @@ export const AmountSection = ({ control, trigger }: AmountSectionProps) => {
                     error ? 'border-red-500' : ''
                   }`}
                 />
-                <span className="absolute top-3.5 right-3 text-xs font-bold text-gray-500">MZD</span>
+                <span className="absolute top-3.5 right-3 text-xs font-bold text-gray-500">
+                  {APP_CONFIG.CHAIN_SYMBOL}
+                </span>
                 {error && <p className="mt-1 text-xs text-red-500">{error.message}</p>}
               </>
             )}
@@ -87,7 +93,7 @@ export const AmountSection = ({ control, trigger }: AmountSectionProps) => {
       <div className="pt-2">
         <label className="mb-2 block text-xs font-medium text-gray-500 uppercase">Total Received (VND)</label>
         <div className="flex h-24 flex-col items-center justify-center rounded-lg border border-gray-700/50 bg-gray-800/50 px-4 py-4">
-          <span className="text-2xl font-bold text-green-400">{formatCurrency(totalVND)}</span>
+          <span className="text-xl font-bold text-green-400">{formatCurrency(totalVND)}</span>
           <span className="mt-1 text-xs font-bold text-gray-500">VND</span>
         </div>
       </div>

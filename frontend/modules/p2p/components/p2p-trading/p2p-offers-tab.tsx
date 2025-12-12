@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ROUTES } from '@/configs/routes.config';
 import { AddressDisplay } from '@/components/shared';
 import { P2POffer } from '../../types';
+import { APP_CONFIG } from '@/configs/app.config';
 
 interface P2POffersTableProps {
   offers: P2POffer[] | undefined;
@@ -25,15 +26,18 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
       align: 'left',
     },
     {
-      headerContent: 'MZD / Rate',
+      headerContent: 'Đồng / Rate',
       renderCell: (offer) => (
         <div>
           <div className="text-primary text-xl font-bold dark:text-white">
-            {offer.total_amount.toLocaleString('en-US')} <span className="text-xs font-normal text-gray-500">MZD</span>
+            {offer.total_amount.toLocaleString('en-US')}{' '}
+            <span className="text-xs font-normal text-gray-500">{APP_CONFIG.CHAIN_SYMBOL}</span>
           </div>
           <div className="mt-1 text-sm text-gray-400">
             Exchange Rate:{' '}
-            <span className="text-brand-primary font-semibold">{offer.price_rate.toLocaleString('vi-VN')} VND/MZD</span>
+            <span className="text-brand-primary font-semibold">
+              {offer.price_rate.toLocaleString('vi-VN')} VND/{APP_CONFIG.CHAIN_SYMBOL}
+            </span>
           </div>
         </div>
       ),
@@ -46,12 +50,15 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
         <div className="flex flex-col gap-1 text-gray-300 dark:text-gray-300">
           <span>
             <span className="text-gray-500 dark:text-gray-500">Available:</span>{' '}
-            <span className="text-primary font-medium dark:text-white">{offer.amount.toLocaleString('en-US')} MZD</span>
+            <span className="text-primary font-medium dark:text-white">
+              {offer.amount.toLocaleString('en-US')} {APP_CONFIG.CHAIN_SYMBOL}
+            </span>
           </span>
           <span>
             <span className="text-gray-500 dark:text-gray-500">Limit:</span>{' '}
             <span className="text-primary font-medium dark:text-white">
-              {offer.limit.min.toLocaleString('en-US')} - {offer.limit.max.toLocaleString('en-US')} MZD
+              {offer.limit.min.toLocaleString('en-US')} - {offer.limit.max.toLocaleString('en-US')}{' '}
+              {APP_CONFIG.CHAIN_SYMBOL}
             </span>
             <span className="ml-1 text-xs text-gray-500 dark:text-gray-500">/ transaction</span>
           </span>
