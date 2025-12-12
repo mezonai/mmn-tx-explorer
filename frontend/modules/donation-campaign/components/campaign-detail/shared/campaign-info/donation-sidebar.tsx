@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { ROUTES } from '@/configs/routes.config';
 import { APP_CONFIG } from '@/configs/app.config';
 import { cn } from '@/lib/utils';
-import { useHidden } from '../provider';
+import { useHidden } from '../../provider';
 import QRCode from 'react-qr-code';
 import { useRef } from 'react';
 import { Download } from 'lucide-react';
