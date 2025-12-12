@@ -80,7 +80,7 @@ export function UpdateDonationProvider({ updatePost, campaign, children }: Creat
         });
         const files = await Promise.all(filePromises);
         const ipfs_images = await uploadImagesMutation.mutateAsync({ files });
-        const newCids = ipfs_images.files.map((file) => file.file_cid);
+        const newCids = ipfs_images.files.map((file: { file_cid: any }) => file.file_cid);
         imageCids = [...newCids];
       }
 
