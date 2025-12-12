@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ROUTES } from '@/configs/routes.config';
 import { useRouter } from 'next/navigation';
-import { EyeClosed, Pencil, RotateCcw } from 'lucide-react';
+import { EyeClosed, Pencil } from 'lucide-react';
 import { useToggleHideDonationFeed } from '@/modules/donation-campaign/hooks';
 
 interface UpdatePostProps {
@@ -56,7 +56,7 @@ export const UpdatePost = ({ update, campaign, onImageClick }: UpdatePostProps) 
     >
       <div className="flex w-full flex-col justify-between gap-3 px-4 md:flex-row">
         <div className="flex flex-row flex-wrap gap-2">
-          <Chip variant={isHidden ? 'warning' : 'brand'} className="">
+          <Chip variant={isHidden ? 'outline-default' : 'brand'} className="">
             {update.title}
           </Chip>
 

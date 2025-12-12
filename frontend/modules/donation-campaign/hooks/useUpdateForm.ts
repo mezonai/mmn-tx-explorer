@@ -2,7 +2,6 @@ import { useState, ChangeEvent, useEffect } from 'react';
 import { compressImage, formatFileSize } from '@/utils';
 import { toast } from 'sonner';
 import { useCreateDonationUpdateContext } from '../context';
-import heic2any from 'heic2any';
 import { IDonationFeed } from '../type';
 import { ipfsServiceURL } from '@/service';
 
@@ -38,7 +37,7 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
         ...form,
         title: updatePost.title,
         description: updatePost.description,
-        images: [], 
+        images: [],
         existingImageCids: updatePost.image_cids || [],
       });
 
@@ -91,6 +90,7 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
 
             if (isHeic) {
               try {
+                const heic2any = (await import('heic2any')).default;
                 const convertedBlob = await heic2any({
                   blob: file,
                   toType: 'image/jpeg',

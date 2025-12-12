@@ -7,7 +7,7 @@ import { ClientTimeDisplay } from '@/modules/transaction/components/transaction-
 import { TxnHashLink } from '@/modules/transaction/components/transaction-list/list/shared';
 import { ipfsServiceURL } from '@/service';
 import { useDonationFeedHistory } from '@/modules/donation-campaign/hooks';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RotateCcw } from 'lucide-react';
 
 interface VersionHistoryDialogProps {
   update: IDonationFeed;
@@ -24,6 +24,7 @@ export const VersionHistoryDialog = ({ update, isOpen, onOpenChange, onImageClic
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button variant="ghost" className="h-8 justify-start p-0 text-sm font-normal">
+          <RotateCcw className="text-primary mr-2 h-4 w-4" />
           See previous version
         </Button>
       </DialogTrigger>
