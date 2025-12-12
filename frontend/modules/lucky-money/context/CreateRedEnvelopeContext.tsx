@@ -1,8 +1,9 @@
 'use client';
 
-import { createContext, ReactNode, useCallback, useContext, useState } from 'react';
-import { CreateRedEnvelopeForm, CreateRedEnvelopeRequest, RedEnvelope, UpdateStatusRedEnvelopeRequest } from '../type';
-import { DEFAULT_FORM_VALUES, MAX_PARTICIPANT_COUNT } from '../constants';
+import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
+import { useForm, FormProvider, UseFormReturn } from 'react-hook-form';
+import { CreateRedEnvelopeForm, CreateRedEnvelopeRequest, RedEnvelope } from '../type';
+import { DEFAULT_FORM_VALUES } from '../constants';
 import { useUser } from '@/providers';
 import { mmnClient } from '@/modules/auth';
 import { useTransfer } from '@/modules/transfer/hooks/useTransfer';
@@ -10,15 +11,11 @@ import { toast } from 'sonner';
 import { RedEnvelopeService } from '../api';
 import { ETransactionStatus, TransactionService } from '@/modules/transaction';
 import { useCreateRedEnvelope } from '../hooks/useCreateRedEnvelope';
-import { ROUTES } from '@/configs/routes.config';
 import { useRouter } from 'next/navigation';
 
 interface CreateRedEnvelopeContextType {
-  form: CreateRedEnvelopeForm;
-  updateField: <K extends keyof CreateRedEnvelopeForm>(field: K, value: CreateRedEnvelopeForm[K]) => void;
-  resetForm: () => void;
-  toRequest: () => CreateRedEnvelopeRequest;
-  initiateCreation: () => void;
+  methods: UseFormReturn<CreateRedEnvelopeForm>;
+  initiateCreation: (data: CreateRedEnvelopeForm) => void;
   confirmCreation: () => void;
   showConfirmModal: boolean;
   setShowConfirmModal: (show: boolean) => void;
@@ -26,7 +23,10 @@ interface CreateRedEnvelopeContextType {
   totalAmount: number;
   isPending: boolean;
   isSuccess: boolean;
+  resetForm: () => void;
+  userBalance: number;
 }
+
 const CreateRedEnvelopeContext = createContext<CreateRedEnvelopeContextType | undefined>(undefined);
 
 export function CreateRedEnvelopeProvider({ children }: { children: ReactNode }) {
@@ -34,116 +34,84 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
   const { transfer } = useTransfer();
   const createRedEnvelopeMutation = useCreateRedEnvelope();
   const { user } = useUser();
-  const [form, setForm] = useState<CreateRedEnvelopeForm>(DEFAULT_FORM_VALUES);
-  const updateField = useCallback(
-    <K extends keyof CreateRedEnvelopeForm>(field: K, value: CreateRedEnvelopeForm[K]) => {
-      setForm((prev) => ({ ...prev, [field]: value }));
-    },
-    []
-  );
+
+  const methods = useForm<CreateRedEnvelopeForm>({
+    defaultValues: DEFAULT_FORM_VALUES,
+    mode: 'onChange',
+  });
 
   const [generatedEnvelope, setGeneratedEnvelope] = useState<RedEnvelope | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [totalAmount, setTotalAmount] = useState<number>(0);
-  const resetForm = useCallback(() => {
-    setForm(DEFAULT_FORM_VALUES);
-  }, []);
+  const [userBalance, setUserBalance] = useState<number>(0);
 
-  const toRequest = useCallback((): CreateRedEnvelopeRequest => {
-    const now = new Date();
-    const endDate = new Date(now.getTime() + (form.expiryHours || 0) * 60 * 60 * 1000);
-    return {
-      name: form.name,
-      total_amount: form.totalAmount || 0,
-      total_claims: form.participantCount || 0,
-      min_amount: form.amountMin || 0,
-      max_amount: form.amountMax || 0,
-      description: form.message,
-      is_random_distribution: form.randomDistribution,
-      start_date: now.toISOString(),
-      end_date: endDate.toISOString(),
-      owner_wallet: user?.walletAddress,
-    };
-  }, [form, user?.walletAddress]);
-
-  const initiateCreation = useCallback(async () => {
-    setIsSuccess(false);
-    setGeneratedEnvelope(null);
-
+  const fetchUserBalance = useCallback(async () => {
+    if (!user || !user.id) return;
     try {
-      if (!user || !user.id) {
-        toast.error('User not authenticated');
-        return;
-      }
-
       const account = await mmnClient.getAccountByUserId(user.id);
-      if (Number(account.balance) / 1000000 < form.totalAmount) {
-        throw new Error('Balance Insufficient');
-      }
-
-      if (!form.totalAmount || form.totalAmount <= 0 || !Number.isInteger(form.totalAmount)) {
-        throw new Error('Total amount must be greater than zero or integer');
-      }
-
-      if (
-        !form.participantCount ||
-        form.participantCount <= 0 ||
-        !Number.isInteger(form.participantCount) ||
-        form.participantCount > MAX_PARTICIPANT_COUNT
-      ) {
-        throw new Error(`Participant count must be a positive integer and must not exceed ${MAX_PARTICIPANT_COUNT}.`);
-      }
-
-      if (form.randomDistribution) {
-        if (!form.amountMin || form.amountMin <= 0 || !Number.isInteger(form.amountMin)) {
-          throw new Error('Amount min must be greater than zero or integer');
-        }
-
-        if (!form.amountMax || form.amountMax <= 0 || !Number.isInteger(form.amountMax)) {
-          throw new Error('Amount max must be greater than zero or integer');
-        }
-        if (form.amountMin > form.amountMax) {
-          throw new Error('Amount min cannot be greater than amount max.');
-        }
-        if (form.totalAmount < form.amountMin * form.participantCount) {
-          throw new Error('Total amount is insufficient for the minimum per participant.');
-        }
-        if (form.totalAmount > form.amountMax * form.participantCount) {
-          throw new Error('Total amount is insufficient for the maximum per participant.');
-        }
-      }
-
-      setShowConfirmModal(true);
-      setTotalAmount(form.totalAmount);
+      const balance = Number(account.balance) / 1000000;
+      setUserBalance(balance);
     } catch (error) {
-      const errMsg = error instanceof Error ? error.message : String(error);
-      toast.error(errMsg);
+      console.error('Failed to fetch balance', error);
+      setUserBalance(0);
     }
-  }, [form, user, mmnClient]);
+  }, [user]);
+
+  useEffect(() => {
+    fetchUserBalance();
+  }, [fetchUserBalance]);
+
+  const createRequestFromData = useCallback(
+    (data: CreateRedEnvelopeForm): CreateRedEnvelopeRequest => {
+      const now = new Date();
+      const endDate = new Date(now.getTime() + (data.expiryHours || 24) * 60 * 60 * 1000);
+      return {
+        name: data.name,
+        total_amount: data.totalAmount,
+        total_claims: data.participantCount,
+        min_amount: data.amountMin || 0,
+        max_amount: data.amountMax || 0,
+        description: data.message,
+        is_random_distribution: data.randomDistribution,
+        start_date: now.toISOString(),
+        end_date: endDate.toISOString(),
+        owner_wallet: user?.walletAddress,
+      };
+    },
+    [user?.walletAddress]
+  );
+
+  const initiateCreation = useCallback(
+    async (data: CreateRedEnvelopeForm) => {
+      setGeneratedEnvelope(null);
+      setTotalAmount(data.totalAmount);
+      setShowConfirmModal(true);
+    },
+    [user, mmnClient]
+  );
 
   const confirmCreation = useCallback(async () => {
+    const data = methods.getValues();
     setShowConfirmModal(false);
     setIsProcessing(true);
-    let route = ROUTES.LUCKY_MONEY as string;
     try {
-      const envelope = await createRedEnvelopeMutation.mutateAsync(toRequest());
+      const requestPayload = createRequestFromData(data);
+      const envelope = await createRedEnvelopeMutation.mutateAsync(requestPayload);
 
       const result = await transfer(
         {
           recipientAddress: envelope.red_envelope_wallet,
-          amount: form.totalAmount.toString(),
-          note: form.message,
+          amount: data.totalAmount.toString(),
+          note: data.message,
         },
         'lucky-money'
       );
 
       if (result.success) {
         toast.success('Transfer money successfully!');
-        if (!result.txHash) {
-          throw new Error('Transaction hash not found after transfer.');
-        }
+        if (!result.txHash) throw new Error('Transaction hash not found.');
 
         await new Promise((resolve) => setTimeout(resolve, 2000));
         const transactionDetail = await pollTransactionStatus(result.txHash);
@@ -151,25 +119,18 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
         if (transactionDetail && transactionDetail.status === ETransactionStatus.Passed) {
           finalStatus = ETransactionStatus.Passed;
           toast.success('Create Lucky Money successfully');
-          route = ROUTES.LUCKY_MONEY_DETAIL(envelope.id);
           setGeneratedEnvelope(envelope);
+          setIsSuccess(true);
         } else {
           toast.error('Could not confirm transaction. Create Lucky Money fail.');
           setGeneratedEnvelope(null);
         }
 
-        const req: UpdateStatusRedEnvelopeRequest = {
-          id: envelope.id,
-          status: finalStatus,
-        };
-        await RedEnvelopeService.updateRedEnvelopeStatus(req);
+        await RedEnvelopeService.updateRedEnvelopeStatus({ id: envelope.id, status: finalStatus });
+        fetchUserBalance();
       } else {
-        toast.error('Transfer step failed. Create Lucky Money fail.');
-        const req: UpdateStatusRedEnvelopeRequest = {
-          id: envelope.id,
-          status: ETransactionStatus.Failed,
-        };
-        await RedEnvelopeService.updateRedEnvelopeStatus(req);
+        toast.error('Transfer failed.');
+        await RedEnvelopeService.updateRedEnvelopeStatus({ id: envelope.id, status: ETransactionStatus.Failed });
       }
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : String(error);
@@ -178,18 +139,14 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
     } finally {
       setIsProcessing(false);
     }
+  }, [methods, transfer, createRedEnvelopeMutation, createRequestFromData, isSuccess, router]);
 
-    router.push(route);
-    setIsSuccess(true);
-  }, [form, user?.id, transfer, createRedEnvelopeMutation, mmnClient, toRequest]);
+  const resetForm = useCallback(() => methods.reset(), [methods]);
 
   return (
     <CreateRedEnvelopeContext.Provider
       value={{
-        form,
-        updateField,
-        resetForm,
-        toRequest,
+        methods,
         initiateCreation,
         confirmCreation,
         showConfirmModal,
@@ -198,45 +155,31 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
         totalAmount,
         isPending: isProcessing,
         isSuccess,
+        resetForm,
+        userBalance,
       }}
     >
-      {children}
+      <FormProvider {...methods}>{children}</FormProvider>
     </CreateRedEnvelopeContext.Provider>
   );
 }
 
 export function useCreateRedEnvelopeContext() {
   const context = useContext(CreateRedEnvelopeContext);
-  if (!context) {
-    throw new Error('useCreateRedEnvelopeContext must be used within CreateRedEnvelopeProvider');
-  }
+  if (!context) throw new Error('useCreateRedEnvelopeContext must be used within CreateRedEnvelopeProvider');
   return context;
 }
 
 async function pollTransactionStatus(txHash: string, retries = 3, delays = [2000, 3000]): Promise<any | null> {
   await new Promise((res) => setTimeout(res, 2000));
-
   for (let i = 0; i < retries; i++) {
     try {
       const transactionDetail = await TransactionService.getTransactionDetails(txHash);
-      if (transactionDetail.status === ETransactionStatus.Passed) {
-        return transactionDetail;
-      }
-
-      if (transactionDetail.status === ETransactionStatus.Failed) {
-        return transactionDetail;
-      }
-
-      if (i < retries - 1) {
-        const delay = delays[i];
-        await new Promise((res) => setTimeout(res, delay));
-      }
+      if (transactionDetail.status === ETransactionStatus.Passed) return transactionDetail;
+      if (transactionDetail.status === ETransactionStatus.Failed) return transactionDetail;
+      if (i < retries - 1) await new Promise((res) => setTimeout(res, delays[i]));
     } catch (error) {
-      console.error(`[pollTransactionStatus] API Error on attempt ${i + 1}/${retries}:`, error);
-      if (i < retries - 1) {
-        const delay = delays[i];
-        await new Promise((res) => setTimeout(res, delay));
-      }
+      if (i < retries - 1) await new Promise((res) => setTimeout(res, delays[i]));
     }
   }
   return null;

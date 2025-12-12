@@ -10,6 +10,20 @@ import { IBreadcrumb } from '@/types';
 import { ROUTES } from '@/configs/routes.config';
 import { BreadcrumbNavigation } from '@/components/shared';
 import { useRedEnvelopeDetail } from '../../hooks/useRedEnvelopeDetail';
+import { RedEnvelopeConfirmDialog } from '../create-red-envelope/confirm-transfer-dialog';
+import React, { useState } from 'react';
+
+const RED_ENVELOPE_SVG_STRING = `
+<svg width="100" height="120" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="5" y="5" width="90" height="110" rx="10" fill="black" />
+  <rect x="10" y="10" width="80" height="100" rx="8" fill="#DC2626" />
+  <path d="M10 10 L50 45 L90 10" stroke="#991B1B" stroke-width="2" fill="none" />
+  <path d="M10 10 L50 45 L90 10 Z" fill="#B91C1C" opacity="0.5" />
+  <circle cx="50" cy="50" r="12" fill="#FBBF24" />
+  <circle cx="50" cy="50" r="8" fill="#F59E0B" />
+</svg>
+`;
+const iconSvgBase64 = `data:image/svg+xml;base64,${btoa(RED_ENVELOPE_SVG_STRING)}`;
 
 const breadcrumbs: IBreadcrumb[] = [
   { label: 'Lucky Money', href: ROUTES.LUCKY_MONEY },
@@ -17,6 +31,8 @@ const breadcrumbs: IBreadcrumb[] = [
 ] as const;
 
 export const RedEnvelopeDetail = () => {
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
   const {
     stats,
     recipients,
@@ -30,7 +46,7 @@ export const RedEnvelopeDetail = () => {
     qrCodeValue,
     qrSize,
     truncateChars,
-    handleCloseSession,
+    closeSession,
     isLoading,
     isError,
     refetch,
@@ -65,6 +81,18 @@ export const RedEnvelopeDetail = () => {
     );
   }
 
+  const onOpenCloseSessionModal = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isClosable && !isClosing) {
+      setShowConfirmModal(true);
+    }
+  };
+
+  const handleConfirmCloseSession = () => {
+    setShowConfirmModal(false);
+    closeSession();
+  };
+
   return (
     <div className="text-foreground min-h-screen p-4 font-sans md:p-8 dark:text-white">
       <div className="mx-auto max-w-7xl">
@@ -91,12 +119,19 @@ export const RedEnvelopeDetail = () => {
               {displayedStatus}
             </span>
             <button
-              onClick={handleCloseSession}
+              onClick={onOpenCloseSessionModal}
               disabled={!isClosable || isClosing}
               className="flex w-auto cursor-pointer items-center justify-center gap-2 rounded-lg border border-red-300 px-3 py-2 text-sm font-semibold whitespace-nowrap text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent md:px-4 md:text-base dark:border-[rgb(239_68_68_/_0.6)] dark:text-red-400 dark:hover:bg-[rgb(239_68_68_/_0.1)]"
             >
               {isClosing ? 'Closing...' : 'Close Session'}
             </button>
+            <RedEnvelopeConfirmDialog
+              open={showConfirmModal}
+              onOpenChange={setShowConfirmModal}
+              onConfirm={handleConfirmCloseSession}
+              amount={stats.total_amount - stats.total_claimed_amount}
+              isCreate={false}
+            />
           </div>
         </header>
 
@@ -132,8 +167,32 @@ export const RedEnvelopeDetail = () => {
             Share Lucky Money
           </h2>
           <div className="flex flex-col items-center gap-4 md:flex-row md:items-stretch md:gap-6">
-            <div className="w-auto max-w-[220px] flex-shrink-0 rounded-lg bg-white p-2 md:p-3 dark:bg-white">
-              <QRCode value={qrCodeValue} size={qrSize} style={{ width: '100%', height: 'auto' }} />
+            <div className="relative w-auto max-w-[220px] flex-shrink-0 rounded-lg bg-white p-2 md:p-3 dark:bg-white">
+              <QRCode
+                value={qrCodeValue}
+                size={qrSize}
+                style={{ width: '100%', height: 'auto' }}
+                level="H" 
+              />
+
+              <div
+                className="absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-lg bg-white"
+                style={{
+                  width: '28%', 
+                  height: '28%',
+                  padding: 2,
+                }}
+              >
+                <img
+                  src={iconSvgBase64}
+                  alt="icon"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                  }}
+                />
+              </div>
             </div>
             <div className="flex w-full flex-grow flex-col gap-4">
               <div>

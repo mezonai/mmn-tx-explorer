@@ -34,10 +34,10 @@ export const RED_ENVELOPE_ENDPOINTS = {
 
 export const DEFAULT_FORM_VALUES: CreateRedEnvelopeForm = {
   name: 'Lucky Money',
-  totalAmount: 100,
-  participantCount: 10,
-  amountMin: 10,
-  amountMax: 20,
+  totalAmount: 0,
+  participantCount: 0,
+  amountMin: 0,
+  amountMax: 0,
   message: 'Good luck',
   randomDistribution: true,
   expiryHours: 1,
