@@ -121,7 +121,14 @@ export const UpdatePost = ({ update, campaign, onImageClick }: UpdatePostProps) 
           )}
         </div>
       </div>
-      <div className="text-foreground text-md w-full px-4 break-words">{update.description}</div>
+      <div className="text-foreground text-md w-full px-4 break-words">
+        {update.description.split('\n').map((line, index) => (
+          <span key={index}>
+            {line}
+            {index < update.description.split('\n').length - 1 && <br />}
+          </span>
+        ))}
+      </div>
 
       {getImages(update.image_cids || [], onImageClick)}
 
