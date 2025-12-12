@@ -40,6 +40,11 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		return nil, nil, fmt.Errorf("failed to fetch offer: %w", err)
 	}
 
+	hasActive, err := s.repo.HasActiveOrders(ctx, offerID)
+	if hasActive {
+		return nil, nil, fmt.Errorf("offer already has active pending orders")
+	}
+
 	db := database.GetDB()
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
