@@ -7,6 +7,7 @@ import { ClientTimeDisplay } from '@/modules/transaction/components/transaction-
 import { TxnHashLink } from '@/modules/transaction/components/transaction-list/list/shared';
 import { ipfsServiceURL } from '@/service';
 import { useDonationFeedHistory } from '@/modules/donation-campaign/hooks';
+import { Loader2 } from 'lucide-react';
 
 interface VersionHistoryDialogProps {
   update: IDonationFeed;
@@ -33,7 +34,7 @@ export const VersionHistoryDialog = ({ update, isOpen, onOpenChange, onImageClic
         <div className="bg-background space-y-4 py-4">
           {isLoading && (
             <div className="flex items-center justify-center py-8">
-              <p className="text-muted-foreground">Loading version history...</p>
+              <Loader2 className="text-brand-primary h-12 w-12 animate-spin" />
             </div>
           )}
 
