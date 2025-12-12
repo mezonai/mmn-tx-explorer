@@ -132,29 +132,18 @@ export const UpdatePost = ({ update, campaign, onImageClick }: UpdatePostProps) 
                     </>
                   )}
                   {hasEditHistory && update.visible && (
-                    <Button variant="ghost" className="h-8 justify-start text-sm font-normal">
-                      <RotateCcw className="text-primary mr-2 h-4 w-4" />
-                      <VersionHistoryDialog
-                        update={update}
-                        isOpen={isVersionDialogOpen}
-                        onOpenChange={setIsVersionDialogOpen}
-                        onImageClick={onImageClick}
-                      />
-                    </Button>
+                    <VersionHistoryDialog
+                      update={update}
+                      isOpen={isVersionDialogOpen}
+                      onOpenChange={setIsVersionDialogOpen}
+                      onImageClick={onImageClick}
+                    />
                   )}
                 </div>
               </PopoverContent>
             </Popover>
           )}
         </div>
-      </div>
-      <div className="text-foreground text-md w-full px-4 break-words">
-        {update.description.split('\n').map((line, index) => (
-          <span key={index}>
-            {line}
-            {index < update.description.split('\n').length - 1 && <br />}
-          </span>
-        ))}
       </div>
 
       <div className="text-foreground text-md w-full px-4 break-words">
@@ -163,7 +152,14 @@ export const UpdatePost = ({ update, campaign, onImageClick }: UpdatePostProps) 
             This update has been hidden from the public feed, but the record remains on chain for audit purposes.
           </div>
         ) : (
-          update.description
+          <div className="text-foreground text-md w-full px-4 break-words">
+            {update.description.split('\n').map((line, index) => (
+              <span key={index}>
+                {line}
+                {index < update.description.split('\n').length - 1 && <br />}
+              </span>
+            ))}
+          </div>
         )}
       </div>
 
