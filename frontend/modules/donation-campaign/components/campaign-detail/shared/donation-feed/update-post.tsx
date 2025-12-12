@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ROUTES } from '@/configs/routes.config';
 import { useRouter } from 'next/navigation';
-import { Pencil, RotateCcw } from 'lucide-react';
+import { Pencil } from 'lucide-react';
 
 interface UpdatePostProps {
   update: IDonationFeed;
@@ -105,15 +105,12 @@ export const UpdatePost = ({ update, campaign, onImageClick }: UpdatePostProps) 
                     </>
                   )}
                   {update.parent_hash && (
-                    <Button variant="ghost" className="h-8 justify-start text-sm font-normal">
-                      <RotateCcw className="text-primary mr-2 h-4 w-4" />
-                      <VersionHistoryDialog
-                        update={update}
-                        isOpen={isVersionDialogOpen}
-                        onOpenChange={setIsVersionDialogOpen}
-                        onImageClick={onImageClick}
-                      />
-                    </Button>
+                    <VersionHistoryDialog
+                      update={update}
+                      isOpen={isVersionDialogOpen}
+                      onOpenChange={setIsVersionDialogOpen}
+                      onImageClick={onImageClick}
+                    />
                   )}
                 </div>
               </PopoverContent>
