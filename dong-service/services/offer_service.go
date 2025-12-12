@@ -14,14 +14,15 @@ import (
 )
 
 type OfferService struct {
-	repo       *repository.OfferRepository
-	walletRepo *repository.IntermediaryWalletRepository
-	orderRepo  *repository.OrderRepository
-	blockchain *blockchain.BlockchainService
+	repo           *repository.OfferRepository
+	walletRepo     *repository.IntermediaryWalletRepository
+	userWalletRepo *repository.WalletRepository
+	orderRepo      *repository.OrderRepository
+	blockchain     *blockchain.BlockchainService
 }
 
-func NewOfferService(repo *repository.OfferRepository, walletRepo *repository.IntermediaryWalletRepository, orderRepo *repository.OrderRepository, blockchain *blockchain.BlockchainService) *OfferService {
-	return &OfferService{repo: repo, walletRepo: walletRepo, orderRepo: orderRepo, blockchain: blockchain}
+func NewOfferService(repo *repository.OfferRepository, walletRepo *repository.IntermediaryWalletRepository, userWalletRepo *repository.WalletRepository, orderRepo *repository.OrderRepository, blockchain *blockchain.BlockchainService) *OfferService {
+	return &OfferService{repo: repo, walletRepo: walletRepo, userWalletRepo: userWalletRepo, orderRepo: orderRepo, blockchain: blockchain}
 }
 
 type IOfferService interface {
@@ -34,6 +35,29 @@ type IOfferService interface {
 }
 
 func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string) (*models.Offer, error) {
+	// Parse offer amount first for balance check
+	amountInt, parseErr := strconv.ParseInt(req.Amount, 10, 64)
+	if parseErr != nil {
+		return nil, fmt.Errorf("invalid amount: %w", parseErr)
+	}
+
+	if s.userWalletRepo != nil {
+		userWallet, err := s.userWalletRepo.GetByAddress(walletAddr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get wallet balance: %w", err)
+		}
+
+		balanceInt, parseErr := strconv.ParseInt(userWallet.Balance, 10, 64)
+		if parseErr != nil {
+			return nil, fmt.Errorf("invalid wallet balance format: %w", parseErr)
+		}
+
+		requiredBalance := amountInt * 1000000
+		if balanceInt < requiredBalance {
+			return nil, fmt.Errorf("insufficient balance: have %d, need %d", balanceInt, requiredBalance)
+		}
+	}
+
 	db := database.GetDB()
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -61,12 +85,6 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 	}
 
 	var priceInt int64 = 0
-
-	amountInt, parseErr := strconv.ParseInt(req.Amount, 10, 64)
-	if parseErr != nil {
-		err = fmt.Errorf("invalid amount: %w", parseErr)
-		return nil, err
-	}
 
 	var bankInfoStr *string
 	if req.BankInfo != nil {
