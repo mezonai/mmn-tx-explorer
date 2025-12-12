@@ -72,7 +72,7 @@ export const UpdatePost = ({ update, campaign, onImageClick }: UpdatePostProps) 
             <p>On chain</p>
           </span>
 
-          {user?.walletAddress === update.creator_address && (
+          {(user?.walletAddress === update.creator_address || update.parent_hash) && (
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -84,14 +84,26 @@ export const UpdatePost = ({ update, campaign, onImageClick }: UpdatePostProps) 
               </PopoverTrigger>
               <PopoverContent className="bg-background w-auto p-1" align="end">
                 <div className="flex flex-col">
-                  <Button
-                    variant="ghost"
-                    className="h-8 justify-start text-sm font-normal"
-                    onClick={() => router.push(ROUTES.EDIT_DONATION_UPDATE(campaign.slug, String(update.id)))}
-                  >
-                    <Pencil className="text-primary mr-2 h-4 w-4" />
-                    Edit
-                  </Button>
+                  {user?.walletAddress === update.creator_address && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        className="h-8 justify-start text-sm font-normal"
+                        onClick={() => router.push(ROUTES.EDIT_DONATION_UPDATE(campaign.slug, String(update.id)))}
+                      >
+                        <Pencil className="text-primary mr-2 h-4 w-4" />
+                        Edit
+                      </Button>
+                      {/* <Button
+                        variant="ghost"
+                        className="h-8 justify-start text-sm font-normal"
+                        onClick={() => {}}
+                      >
+                        <EyeClosed className="text-primary mr-2 h-4 w-4" />
+                        Hide
+                      </Button> */}
+                    </>
+                  )}
                   {update.parent_hash && (
                     <Button variant="ghost" className="h-8 justify-start text-sm font-normal">
                       <RotateCcw className="text-primary mr-2 h-4 w-4" />
@@ -103,14 +115,6 @@ export const UpdatePost = ({ update, campaign, onImageClick }: UpdatePostProps) 
                       />
                     </Button>
                   )}
-                  {/* <Button
-                    variant="ghost"
-                    className="justify-start text-sm font-normal h-8"
-                    onClick={() => {
-                    }}
-                  >
-                    Hide
-                  </Button> */}
                 </div>
               </PopoverContent>
             </Popover>
