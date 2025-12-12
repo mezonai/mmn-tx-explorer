@@ -45,10 +45,7 @@ export class WebSocketManager {
     this.ws.onmessage = (event) => {
       try {
         // Handle heartbeat reply from server
-        if (event.data === HEARTBEAT_ACK) {
-          console.log('Heartbeat ack received');
-        }
-        this.handleEvent(JSON.parse(event.data));
+        console.log('event', event);
       } catch (error) {
         console.error('Error parsing WebSocket message:', error);
       }
