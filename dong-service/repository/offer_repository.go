@@ -3,10 +3,11 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"dong-service/models"
 	"fmt"
 	"strconv"
 	"strings"
+
+	"dong-service/models"
 )
 
 type OfferRepository struct {
@@ -207,22 +208,7 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 			return nil, fmt.Errorf("failed to scan offer: %w", err)
 		}
 
-		minVal := int64(1)
-		maxVal := o.Amount
-		if minAmt.Valid {
-			minVal = minAmt.Int64
-		}
-		if maxAmt.Valid {
-			maxVal = maxAmt.Int64
-		}
-		if priceRate.Valid {
-			v := priceRate.Float64
-			o.PriceRate = &v
-		} else {
-			o.PriceRate = nil
-		}
-		o.Limit = &models.OfferLimit{Min: minVal, Max: maxVal}
-
+		r.processOfferNullableFields(&o, minAmt, maxAmt, priceRate)
 		out = append(out, o)
 	}
 
@@ -265,14 +251,31 @@ func (r *OfferRepository) CountOffers(ctx context.Context, walletAddress *string
 	return total, nil
 }
 
-func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*models.Offer, error) {
-	query := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_address, seller_wallet_address, side, symbol, amount, total_amount, min_amount, max_amount, price, price_rate, price_type, status, bank_info, created_at, updated_at FROM %s.offers WHERE offer_id = $1`, r.dongSchema)
+// processOfferNullableFields handles nullable fields and sets defaults for an offer
+func (r *OfferRepository) processOfferNullableFields(o *models.Offer, minAmt, maxAmt sql.NullInt64, priceRate sql.NullFloat64) {
+	minVal := int64(1)
+	maxVal := o.Amount
+	if minAmt.Valid {
+		minVal = minAmt.Int64
+	}
+	if maxAmt.Valid {
+		maxVal = maxAmt.Int64
+	}
+	if priceRate.Valid {
+		v := priceRate.Float64
+		o.PriceRate = &v
+	} else {
+		o.PriceRate = nil
+	}
+	o.Limit = &models.OfferLimit{Min: minVal, Max: maxVal}
+}
 
+func (r *OfferRepository) ScanOfferRow(row *sql.Row) (*models.Offer, error) {
 	var o models.Offer
-	row := r.db.QueryRowContext(ctx, query, offerID)
 	var minAmt sql.NullInt64
 	var maxAmt sql.NullInt64
 	var priceRate sql.NullFloat64
+
 	if err := row.Scan(
 		&o.OfferID,
 		&o.IntermediaryWalletAddress,
@@ -297,23 +300,35 @@ func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*mod
 		return nil, fmt.Errorf("failed to scan offer: %w", err)
 	}
 
-	minVal := int64(1)
-	maxVal := o.Amount
-	if minAmt.Valid {
-		minVal = minAmt.Int64
-	}
-	if maxAmt.Valid {
-		maxVal = maxAmt.Int64
-	}
-	if priceRate.Valid {
-		v := priceRate.Float64
-		o.PriceRate = &v
-	} else {
-		o.PriceRate = nil
-	}
-	o.Limit = &models.OfferLimit{Min: minVal, Max: maxVal}
-
+	r.processOfferNullableFields(&o, minAmt, maxAmt, priceRate)
 	return &o, nil
+}
+
+func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*models.Offer, error) {
+	query := fmt.Sprintf(`
+		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, side, symbol, 
+		       amount, total_amount, min_amount, max_amount, price, price_rate, price_type, 
+		       status, bank_info, created_at, updated_at 
+		FROM %s.offers 
+		WHERE offer_id = $1
+	`, r.dongSchema)
+
+	row := r.db.QueryRowContext(ctx, query, offerID)
+	return r.ScanOfferRow(row)
+}
+
+func (r *OfferRepository) GetOfferByIDForUpdate(ctx context.Context, offerID int64, tx *sql.Tx) (*models.Offer, error) {
+	query := fmt.Sprintf(`
+		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, side, symbol, 
+		       amount, total_amount, min_amount, max_amount, price, price_rate, price_type, 
+		       status, bank_info, created_at, updated_at
+		FROM %s.offers
+		WHERE offer_id = $1
+		FOR UPDATE
+	`, r.dongSchema)
+
+	row := tx.QueryRowContext(ctx, query, offerID)
+	return r.ScanOfferRow(row)
 }
 
 func (r *OfferRepository) ReserveQuantity(ctx context.Context, offerID int64, qty int64, tx *sql.Tx) error {
@@ -409,21 +424,7 @@ func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAd
 			return nil, err
 		}
 
-		minVal := int64(0)
-		maxVal := o.Amount
-		if minAmount.Valid {
-			minVal = minAmount.Int64
-		}
-		if maxAmount.Valid {
-			maxVal = maxAmount.Int64
-		}
-		if priceRate.Valid {
-			v := priceRate.Float64
-			o.PriceRate = &v
-		} else {
-			o.PriceRate = nil
-		}
-		o.Limit = &models.OfferLimit{Min: minVal, Max: maxVal}
+		r.processOfferNullableFields(&o, minAmount, maxAmount, priceRate)
 		offers = append(offers, o)
 	}
 
