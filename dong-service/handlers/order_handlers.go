@@ -13,10 +13,11 @@ import (
 
 type OrderHandler struct {
 	orderService services.IOrderService
+	offerService services.IOfferService
 }
 
-func NewOrderHandler(orderService services.IOrderService) *OrderHandler {
-	return &OrderHandler{orderService: orderService}
+func NewOrderHandler(orderService services.IOrderService, offerService services.IOfferService) *OrderHandler {
+	return &OrderHandler{orderService: orderService, offerService: offerService}
 }
 
 // CreateOrder godoc
@@ -48,14 +49,19 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	order, err := h.orderService.CreateOrder(c.Request.Context(), id, &req, walletAddr)
+	order, offer, err := h.orderService.CreateOrder(c.Request.Context(), id, &req, walletAddr)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to create order")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to create order: "+err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusCreated, models.SuccessResponseWithMessage("Order created", order))
+	c.JSON(http.StatusCreated, gin.H{
+		"success":  true,
+		"message":  "Order created",
+		"order":    order,
+		"bankinfo": offer.BankInfo,
+	})
 }
 
 // ListOrdersForOffer godoc
@@ -120,40 +126,6 @@ func (h *OrderHandler) GetOrderDetail(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, models.SuccessResponse(o))
-}
-
-// ListOrdersByWallet godoc
-// @Summary List orders for a wallet address
-// @Description List all orders created by a wallet address (most recent first)
-// @Tags orders
-// @Accept json
-// @Produce json
-// @Param wallet_address query string false "wallet address" (if omitted, will use authenticated caller's address if present)
-// @Success 200 {object} models.Response{data=[]models.Order}
-// @Failure 400 {object} models.Response
-// @Failure 500 {object} models.Response
-// @Router /api/v1/orders [get]
-func (h *OrderHandler) ListOrdersByWallet(c *gin.Context) {
-	walletAddress := c.Query("wallet_address")
-	if walletAddress == "" {
-		// try to use authenticated address if present
-		if addr, ok := utils.GetAddressFromContext(c); ok {
-			walletAddress = addr
-		}
-	}
-
-	if walletAddress == "" {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "missing wallet_address query parameter or authenticated address"))
-		return
-	}
-
-	orders, _, err := h.orderService.GetOrdersByWalletAddress(c.Request.Context(), walletAddress, nil)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to list orders: "+err.Error()))
-		return
-	}
-
-	c.JSON(http.StatusOK, models.SuccessResponse(orders))
 }
 
 // GetMyOrders godoc
@@ -234,9 +206,42 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 		return
 	}
 
-	if err := h.orderService.ConfirmOrder(c.Request.Context(), orderID, walletAddress, body.ExecutionPrice, body.Source, body.BankInfo); err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to confirm order: "+err.Error()))
+	// Load order to check role
+	order, err := h.orderService.GetOrderByID(c.Request.Context(), orderID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, "order not found"))
 		return
+	}
+
+	// Load offer to determine seller
+	var offer *models.Offer
+	if order.OfferID != nil {
+		offer, err = h.offerService.GetOfferByID(c.Request.Context(), *order.OfferID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to fetch offer"))
+			return
+		}
+	}
+
+	// Check if caller is seller or buyer
+	isSeller := offer != nil && walletAddress == offer.SellerWalletAddress
+	isBuyer := order.BuyerWalletAddress != nil && walletAddress == *order.BuyerWalletAddress
+
+	if !isSeller && !isBuyer {
+		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, "caller is neither buyer nor seller"))
+		return
+	}
+
+	if isBuyer {
+		if err := h.orderService.ConfirmOrderAsBuyer(c.Request.Context(), orderID, order); err != nil {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to confirm order: "+err.Error()))
+			return
+		}
+	} else if isSeller {
+		if err := h.orderService.ConfirmOrderAsSeller(c.Request.Context(), orderID, order, offer); err != nil {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to confirm order: "+err.Error()))
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Order confirmed", nil))

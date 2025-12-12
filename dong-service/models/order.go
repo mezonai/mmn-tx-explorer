@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type OrderStatus string
 
@@ -28,6 +30,6 @@ type Order struct {
 }
 
 type CreateOrderRequest struct {
-	Amount string  `json:"amount" binding:"required"`
-	Price  *string `json:"price,omitempty"`
+	Amount int64  `json:"amount" binding:"required"`
+	Price  *int64 `json:"price,omitempty"`
 }
