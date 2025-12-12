@@ -108,7 +108,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		orderService := services.NewOrderService(orderRepo, offerRepo, intermediaryWalletRepo, blockchainService)
 
 		offerHandler := handlers.NewOfferHandler(offerService)
-		orderHandler := handlers.NewOrderHandler(orderService)
+		orderHandler := handlers.NewOrderHandler(orderService, offerService)
 
 		offersPrivate.POST("", offerHandler.CreateOffer)
 		offersPrivate.GET("/me", offerHandler.GetMyOffers)

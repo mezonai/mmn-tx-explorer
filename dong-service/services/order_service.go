@@ -31,15 +31,12 @@ type IOrderService interface {
 	ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, error)
 	GetOrderByID(ctx context.Context, id int64) (*models.Order, error)
 	ConfirmOrder(ctx context.Context, orderID int64, walletAddress string, executionPrice *string, source *string, metadata *string) error
+	ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o *models.Order) error
+	ConfirmOrderAsSeller(ctx context.Context, orderID int64, o *models.Order, offer *models.Offer) error
 	GetOrdersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Order, int64, error)
 }
 
 func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *models.CreateOrderRequest, walletAddress string) (*models.Order, *models.Offer, error) {
-	offer, err := s.offerRepo.GetOfferByID(ctx, offerID)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to fetch offer: %w", err)
-	}
-
 	hasActive, err := s.repo.HasActiveOrders(ctx, offerID)
 	if hasActive {
 		return nil, nil, fmt.Errorf("offer already has active pending orders")
@@ -56,6 +53,12 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		}
 	}()
 
+	// Get offer with row-level lock to prevent concurrent order creation
+	offer, err := s.offerRepo.GetOfferByIDForUpdate(ctx, offerID, tx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to fetch offer: %w", err)
+	}
+
 	var priceInt int64
 	if req.Price != nil {
 		priceInt = *req.Price
@@ -64,6 +67,15 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 	}
 
 	amountInt := req.Amount
+
+	if offer.Limit != nil {
+		if amountInt < offer.Limit.Min {
+			return nil, nil, fmt.Errorf("order amount %d is below minimum limit %d", amountInt, offer.Limit.Min)
+		}
+		if amountInt > offer.Limit.Max {
+			return nil, nil, fmt.Errorf("order amount %d exceeds maximum limit %d", amountInt, offer.Limit.Max)
+		}
+	}
 
 	var walletAddrPtr *string
 	if walletAddress != "" {
@@ -126,15 +138,6 @@ func (s *OrderService) ConfirmOrder(ctx context.Context, orderID int64, walletAd
 		return fmt.Errorf("failed to fetch order: %w", err)
 	}
 
-	// Load offer to determine seller
-	var offer *models.Offer
-	if o.OfferID != nil {
-		offer, err = s.offerRepo.GetOfferByID(ctx, *o.OfferID)
-		if err != nil {
-			return fmt.Errorf("failed to fetch offer: %w", err)
-		}
-	}
-
 	// Check expiry
 	now := time.Now().UTC()
 	var expired bool
@@ -142,19 +145,19 @@ func (s *OrderService) ConfirmOrder(ctx context.Context, orderID int64, walletAd
 		expired = now.After(*o.ExpiresAt)
 	}
 
-	db := database.GetDB()
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-		}
-	}()
-
 	// Handle expired order
 	if expired {
+		db := database.GetDB()
+		tx, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if err != nil {
+				_ = tx.Rollback()
+			}
+		}()
+
 		if err = s.repo.UpdateOrderStatus(ctx, orderID, string(models.OrderStatusCanceled), tx); err != nil {
 			return err
 		}
@@ -172,116 +175,145 @@ func (s *OrderService) ConfirmOrder(ctx context.Context, orderID int64, walletAd
 		return fmt.Errorf("order expired and was cancelled")
 	}
 
-	// Determine if caller is seller or buyer
-	isSeller := offer != nil && walletAddress == offer.SellerWalletAddress
-	isBuyer := o.BuyerWalletAddress != nil && walletAddress == *o.BuyerWalletAddress
+	return fmt.Errorf("use ConfirmOrderAsBuyer or ConfirmOrderAsSeller methods directly")
+}
 
-	if !isSeller && !isBuyer {
-		return fmt.Errorf("caller is neither buyer nor seller")
+func (s *OrderService) ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o *models.Order) error {
+	// Buyer confirm: OPEN -> PENDING
+	if o.Status != string(models.OrderStatusOpen) {
+		return fmt.Errorf("buyer can only confirm open orders; current status=%s", o.Status)
 	}
 
-	if isBuyer {
-		// Buyer confirm: OPEN -> PENDING
-		if o.Status != string(models.OrderStatusOpen) {
-			return fmt.Errorf("buyer can only confirm open orders; current status=%s", o.Status)
+	db := database.GetDB()
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	if err = s.repo.UpdateOrderStatus(ctx, orderID, string(models.OrderStatusPending), tx); err != nil {
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	// Send ORDER_CONFIRMED event to seller
+	go func() {
+		var receiveAddr string
+		if o.OfferID != nil {
+			of, err := s.offerRepo.GetOfferByID(context.Background(), *o.OfferID)
+			if err == nil {
+				receiveAddr = of.SellerWalletAddress
+			}
 		}
 
-		if err = s.repo.UpdateOrderStatus(ctx, orderID, string(models.OrderStatusPending), tx); err != nil {
+		if receiveAddr == "" {
+			return
+		}
+
+		payload := map[string]any{
+			"order_id": fmt.Sprint(o.OrderID),
+			"amount":   o.Amount,
+		}
+		p, _ := json.Marshal(payload)
+
+		event := &models.Event{
+			ID:             uuid.New(),
+			Type:           "ORDER_CONFIRMED",
+			Payload:        p,
+			ReceiveAddress: receiveAddr,
+			Status:         "pending",
+			CreateAt:       time.Now().UTC(),
+		}
+
+		if Event == nil {
+			return
+		}
+
+		if err := Event.SendEvent(event); err != nil {
+			logger.Error().Err(err).Msg("failed to send ORDER_CONFIRMED event")
+		}
+	}()
+
+	return nil
+}
+
+func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, o *models.Order, offer *models.Offer) error {
+	// Seller confirm: PENDING -> CONFIRMED + transfer funds + deduct offer amount
+	if o.Status != string(models.OrderStatusPending) {
+		return fmt.Errorf("seller can only confirm pending orders; current status=%s", o.Status)
+	}
+
+	db := database.GetDB()
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	// Transfer funds from intermediary wallet to buyer wallet BEFORE updating database
+	var transferTxHash *string
+	if offer != nil && offer.IntermediaryWalletAddress != nil && *offer.IntermediaryWalletAddress != "" && o.BuyerWalletAddress != nil && s.blockchain != nil {
+		intermediaryWallet, walletErr := s.walletRepo.GetWalletByAddress(ctx, *offer.IntermediaryWalletAddress)
+		if walletErr != nil {
+			err = fmt.Errorf("failed to fetch intermediary wallet: %w", walletErr)
 			return err
 		}
 
-		if err = tx.Commit(); err != nil {
+		if err = s.repo.UpdateOrderStatus(ctx, orderID, string(models.OrderStatusConfirmed), tx); err != nil {
 			return err
 		}
 
-		// Send ORDER_CONFIRMED event to seller
-		go func() {
-			var receiveAddr string
-			if o.OfferID != nil {
-				of, err := s.offerRepo.GetOfferByID(context.Background(), *o.OfferID)
-				if err == nil {
-					receiveAddr = of.SellerWalletAddress
-				}
-			}
-
-			if receiveAddr == "" {
-				return
-			}
-
-			payload := map[string]any{
-				"order_id": fmt.Sprint(o.OrderID),
-				"amount":   o.Amount,
-			}
-			p, _ := json.Marshal(payload)
-
-			event := &models.Event{
-				ID:             uuid.New(),
-				Type:           "ORDER_CONFIRMED",
-				Payload:        p,
-				ReceiveAddress: receiveAddr,
-				Status:         "pending",
-				CreateAt:       time.Now().UTC(),
-			}
-
-			if Event == nil {
-				return
-			}
-
-			if err := Event.SendEvent(event); err != nil {
-				logger.Error().Err(err).Msg("failed to send ORDER_CONFIRMED event")
-			}
-		}()
-
-		return nil
-	}
-
-	if isSeller {
-		// Seller confirm: PENDING -> CONFIRMED + transfer funds + deduct offer amount
-		if o.Status != string(models.OrderStatusPending) {
-			return fmt.Errorf("seller can only confirm pending orders; current status=%s", o.Status)
-		}
-
-		// Transfer funds from intermediary wallet to buyer wallet BEFORE updating database
-		var transferTxHash *string
-		if offer != nil && offer.IntermediaryWalletAddress != nil && *offer.IntermediaryWalletAddress != "" && o.BuyerWalletAddress != nil && s.blockchain != nil {
-			intermediaryWallet, walletErr := s.walletRepo.GetWalletByAddress(ctx, *offer.IntermediaryWalletAddress)
-			if walletErr != nil {
-				err = fmt.Errorf("failed to fetch intermediary wallet: %w", walletErr)
+		if intermediaryWallet != nil && o.Amount > 0 {
+			txHash, transferErr := s.blockchain.TransferMoney(intermediaryWallet.EncryptedPrivateKey, *offer.IntermediaryWalletAddress, *o.BuyerWalletAddress, o.Amount)
+			if transferErr != nil {
+				err = fmt.Errorf("failed to transfer funds to buyer: %w", transferErr)
 				return err
 			}
 
-			if intermediaryWallet != nil && o.Amount > 0 {
-				txHash, transferErr := s.blockchain.TransferMoney(intermediaryWallet.EncryptedPrivateKey, *offer.IntermediaryWalletAddress, *o.BuyerWalletAddress, o.Amount)
-				if transferErr != nil {
-					err = fmt.Errorf("failed to transfer funds to buyer: %w", transferErr)
+			transferTxHash = &txHash
+
+			// Check transaction status with retry logic
+			status, statusErr := s.blockchain.CheckTransactionStatus(txHash)
+
+			// Status 2 = COMPLETED
+			if statusErr == nil && status == 2 {
+				logger.Info().
+					Str("tx_hash", txHash).
+					Msg("Transaction completed successfully")
+				if err = s.repo.UpdateOrderStatusWithTxHash(ctx, orderID, string(models.OrderStatusCompleted), transferTxHash, tx); err != nil {
 					return err
 				}
-				transferTxHash = &txHash
-			}
-		}
-
-		if transferTxHash != nil {
-			if err = s.repo.UpdateOrderStatusWithTxHash(ctx, orderID, string(models.OrderStatusConfirmed), transferTxHash, tx); err != nil {
-				return err
-			}
-		} else {
-			if err = s.repo.UpdateOrderStatus(ctx, orderID, string(models.OrderStatusConfirmed), tx); err != nil {
+			} else if status == 0 || status == 1 || status == 3 {
+				// Status 0, 1, 3 = PENDING, CONFIRMED, FAILED
+				if err = s.repo.UpdateOrderStatusWithTxHash(ctx, orderID, string(models.OrderStatusFailed), transferTxHash, tx); err != nil {
+					return err
+				}
+				err = fmt.Errorf("transaction failed with status %d", status)
 				return err
 			}
 		}
-
-		if o.OfferID != nil {
-			if err = s.offerRepo.ApplyConfirmedQuantity(ctx, *o.OfferID, o.Amount, tx); err != nil {
-				return err
-			}
-		}
-
-		if err = tx.Commit(); err != nil {
-			return err
-		}
-
-		return nil
 	}
 
-	return fmt.Errorf("unable to determine caller role")
+	if o.OfferID != nil {
+		if err = s.offerRepo.ApplyConfirmedQuantity(ctx, *o.OfferID, o.Amount, tx); err != nil {
+			return err
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
 }

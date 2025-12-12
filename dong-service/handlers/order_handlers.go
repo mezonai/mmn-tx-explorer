@@ -13,10 +13,11 @@ import (
 
 type OrderHandler struct {
 	orderService services.IOrderService
+	offerService services.IOfferService
 }
 
-func NewOrderHandler(orderService services.IOrderService) *OrderHandler {
-	return &OrderHandler{orderService: orderService}
+func NewOrderHandler(orderService services.IOrderService, offerService services.IOfferService) *OrderHandler {
+	return &OrderHandler{orderService: orderService, offerService: offerService}
 }
 
 // CreateOrder godoc
@@ -205,9 +206,42 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 		return
 	}
 
-	if err := h.orderService.ConfirmOrder(c.Request.Context(), orderID, walletAddress, body.ExecutionPrice, body.Source, body.BankInfo); err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to confirm order: "+err.Error()))
+	// Load order to check role
+	order, err := h.orderService.GetOrderByID(c.Request.Context(), orderID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, "order not found"))
 		return
+	}
+
+	// Load offer to determine seller
+	var offer *models.Offer
+	if order.OfferID != nil {
+		offer, err = h.offerService.GetOfferByID(c.Request.Context(), *order.OfferID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to fetch offer"))
+			return
+		}
+	}
+
+	// Check if caller is seller or buyer
+	isSeller := offer != nil && walletAddress == offer.SellerWalletAddress
+	isBuyer := order.BuyerWalletAddress != nil && walletAddress == *order.BuyerWalletAddress
+
+	if !isSeller && !isBuyer {
+		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, "caller is neither buyer nor seller"))
+		return
+	}
+
+	if isBuyer {
+		if err := h.orderService.ConfirmOrderAsBuyer(c.Request.Context(), orderID, order); err != nil {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to confirm order: "+err.Error()))
+			return
+		}
+	} else if isSeller {
+		if err := h.orderService.ConfirmOrderAsSeller(c.Request.Context(), orderID, order, offer); err != nil {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to confirm order: "+err.Error()))
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Order confirmed", nil))
