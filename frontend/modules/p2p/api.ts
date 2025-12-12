@@ -20,6 +20,8 @@ export class P2PService {
   }
   static async updateOfferStatus(payload: UpdateOfferStatusRequest) {
     const { data } = await apiDongClient.post(P2P_ENDPOINTS.UPDATE_OFFER_STATUS, payload);
+  static async getMyOffers(params: IP2POfferListParams): Promise<IPaginatedResponse<P2POffer[]>> {
+    const { data } = await apiDongClient.get<IPaginatedResponse<P2POffer[]>>(P2P_ENDPOINTS.MY_OFFERS, { params });
     return data;
   }
 }
