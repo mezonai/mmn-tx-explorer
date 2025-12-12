@@ -77,7 +77,7 @@ export interface P2POrder {
   buyer_wallet_address: string;
   amount: number; // BIGINT - amount in MZD (smallest unit)
   price: number; // BIGINT - price in VND (smallest unit)
-  order_status: OrderStatus | string; // Default 'PENDING'
+  status: OrderStatus | string; // Default 'PENDING'
   transfer_code?: string | null;
   expires_at: string; // TIMESTAMPTZ
   created_at: string; // TIMESTAMPTZ
@@ -86,14 +86,14 @@ export interface P2POrder {
 
 // Request interface for creating an order
 export interface CreateOrderRequest {
-  offer_id: string;
+  offer_id: string | number;
   amount: number; // Amount in MZD (smallest unit)
   price?: string | number; // Optional price in VND (calculated from offer if not provided)
 }
 
 // Request interface for updating order status
 export interface UpdateOrderStatusRequest {
-  order_status: OrderStatus | string;
+  status: OrderStatus | string;
   transfer_code?: string;
 }
 

@@ -69,7 +69,7 @@ export const OrderRow = ({ order, onOpenToConfirm }: OrderRowProps) => {
       onClick={handleRowClick}
       className={cn(
         'cursor-pointer transition-colors hover:bg-gray-800/50',
-        order.order_status === 'PENDING' && 'bg-orange-500/10 border-l-4 border-l-orange-500'
+        order.status === 'PENDING' && 'bg-orange-500/10 border-l-4 border-l-orange-500'
       )}
     >
       <td className="px-6 py-4">
@@ -110,8 +110,8 @@ export const OrderRow = ({ order, onOpenToConfirm }: OrderRowProps) => {
       </td>
       <td className="px-6 py-4">
         <div className="flex items-center gap-2">
-          {getStatusBadge(order.order_status)}
-          {order.order_status === 'PENDING' && (
+          {getStatusBadge(order.status)}
+          {order.status === 'PENDING' && (
             <span className="text-xs text-orange-500 font-medium animate-pulse">New</span>
           )}
         </div>
@@ -124,7 +124,7 @@ export const OrderRow = ({ order, onOpenToConfirm }: OrderRowProps) => {
       </td>
       <td className="px-6 py-4">
         <div className="flex items-center gap-2">
-          {order.order_status === 'PENDING' ? (
+          {order.status === 'PENDING' ? (
             <Button
               onClick={handleOpenToConfirm}
               className="bg-orange-500 hover:bg-orange-600 text-white font-medium"

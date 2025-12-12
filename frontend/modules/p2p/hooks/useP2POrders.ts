@@ -73,7 +73,7 @@ export const useP2POrders = () => {
           buyer_wallet_address: (orderData.buyer_wallet_address || orderData.buyerWalletAddress) as string || '',
           amount: (orderData.amount || 0) as number,
           price: (orderData.price || 0) as number,
-          order_status: (orderData.order_status || orderData.status || 'OPEN') as string,
+          status: (orderData.status || orderData.status || 'OPEN') as string,
           transfer_code: (orderData.transfer_code || orderData.transferCode) as string | null | undefined,
           expires_at: (orderData.expires_at || orderData.expiresAt || new Date(Date.now() + 15 * 60 * 1000).toISOString()) as string,
           created_at: (orderData.created_at || orderData.createdAt || new Date().toISOString()) as string,
@@ -106,7 +106,7 @@ export const useP2POrders = () => {
 
       const payload = event.payload as Record<string, unknown> | undefined;
       const payloadOrderId = (payload?.['order_id'] || payload?.['orderId']) as string | number | undefined;
-      const statusRaw = payload?.['order_status'] || payload?.['status'];
+      const statusRaw = payload?.['status'] || payload?.['status'];
       const status = typeof statusRaw === 'string' ? statusRaw : undefined;
 
       if (!payloadOrderId || !status) return;
@@ -116,7 +116,7 @@ export const useP2POrders = () => {
         prev.map((order) => {
           const orderIdStr = String(order.order_id);
           const payloadOrderIdStr = String(payloadOrderId);
-          return orderIdStr === payloadOrderIdStr ? { ...order, order_status: status } : order;
+          return orderIdStr === payloadOrderIdStr ? { ...order, status: status } : order;
         })
       );
     };

@@ -61,17 +61,38 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
 
     try {
       setError(null);
+      console.log('🛒 [handleConfirmBuy] Starting order creation:', {
+        amountMZD,
+        amountVND,
+        offer_id: offer.offer_id,
+        user_wallet: user.walletAddress,
+      });
+
       const newOrder = await createOrder(offer, amountMZD, amountVND);
 
+      console.log('✅ [handleConfirmBuy] Order created successfully:', {
+        order_id: newOrder?.order_id,
+        status: newOrder?.status,
+        offer_id: newOrder?.offer_id,
+        amount: newOrder?.amount,
+        price: newOrder?.price,
+        buyer_wallet_address: newOrder?.buyer_wallet_address,
+        full_order_response: newOrder,
+      });
+
       if (newOrder) {
+        console.log('💾 [handleConfirmBuy] Setting createdOrder state...');
         // Store created order locally instead of navigating
         setCreatedOrder(newOrder);
+        console.log('✅ [handleConfirmBuy] createdOrder state updated');
         // Update chat to use new order ID
         // Note: useP2PChat will need to be updated to handle this
+      } else {
+        console.warn('⚠️ [handleConfirmBuy] newOrder is null or undefined');
       }
     } catch (err) {
+      console.error('❌ [handleConfirmBuy] Error creating order:', err);
       setError('Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại.');
-      console.error('Error creating order:', err);
     }
   };
 
@@ -134,7 +155,7 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
       buyer_wallet_address: user?.walletAddress || '',
       amount: 0,
       price: 0,
-      order_status: 'OPEN' as const,
+      status: 'OPEN' as const,
       transfer_code: null,
       expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
       created_at: new Date().toISOString(),

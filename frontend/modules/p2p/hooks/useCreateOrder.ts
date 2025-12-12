@@ -20,15 +20,34 @@ export const useCreateOrder = () => {
       // Calculate price from amountVND if not provided, or use offer price_rate
       const price = amountVND || amountMZD * offer.price_rate;
 
+      console.log('📤 [useCreateOrder] Calling P2PService.createOrder with:', {
+        offer_id: offer.offer_id,
+        amount: amountMZD,
+        price: price,
+        calculated_from: amountVND ? 'amountVND' : 'amountMZD * price_rate',
+      });
+
       const order = await P2PService.createOrder({
         offer_id: offer.offer_id,
         amount: amountMZD,
         price: price,
       });
 
+      console.log('📥 [useCreateOrder] API Response received:', {
+        order_id: order?.order_id,
+        status: order?.status,
+        offer_id: order?.offer_id,
+        amount: order?.amount,
+        price: order?.price,
+        buyer_wallet_address: order?.buyer_wallet_address,
+        expires_at: order?.expires_at,
+        created_at: order?.created_at,
+        full_response: order,
+      });
+
       return order;
     } catch (error) {
-      console.error('Error creating order:', error);
+      console.error('❌ [useCreateOrder] Error in createOrder:', error);
       throw error;
     } finally {
       setIsLoading(false);

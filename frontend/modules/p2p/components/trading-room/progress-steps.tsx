@@ -28,7 +28,7 @@ export const ProgressSteps = ({ order }: ProgressStepsProps) => {
     }
   };
 
-  const activeStepIndex = getStepIndex(order.order_status);
+  const activeStepIndex = getStepIndex(order.status);
 
   return (
     <div className="mb-8 flex items-center justify-between px-4">

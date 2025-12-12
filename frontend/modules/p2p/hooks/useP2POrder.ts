@@ -53,9 +53,9 @@ export const useP2POrder = (orderId: string) => {
     const prevOrder = order;
     try {
       // Optimistic update
-      setOrder({ ...order, order_status: status });
+      setOrder({ ...order, status: status });
       if (transferCode) {
-        setOrder({ ...order, order_status: status, transfer_code: transferCode });
+        setOrder({ ...order, status: status, transfer_code: transferCode });
       }
 
       // Call API
@@ -78,16 +78,15 @@ export const useP2POrder = (orderId: string) => {
       const payloadOrderId = (payload?.['order_id'] || payload?.['orderId']) as string | number | undefined;
       const orderIdStr = String(orderId);
       const payloadOrderIdStr = payloadOrderId ? String(payloadOrderId) : undefined;
-      
       if (event.type !== 'ORDER_STATUS_UPDATED' || !payloadOrderIdStr || payloadOrderIdStr !== orderIdStr) {
         return;
       }
 
-      const statusRaw = payload?.['order_status'] || payload?.['status'];
+      const statusRaw = payload?.['status'] || payload?.['status'];
       const status = typeof statusRaw === 'string' ? statusRaw : undefined;
       if (!status) return;
 
-      setOrder((current) => (current ? { ...current, order_status: status } : current));
+      setOrder((current) => (current ? { ...current, status: status } : current));
     };
 
     wsManager.on('ORDER_STATUS_UPDATED', handleStatusUpdate);
