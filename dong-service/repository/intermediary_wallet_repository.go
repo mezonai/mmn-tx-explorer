@@ -228,7 +228,7 @@ func (r *IntermediaryWalletRepository) UpdateIntermediaryWalletStatus(tx *sql.Tx
 	return nil
 }
 
-func (r *IntermediaryWalletRepository) GetOrCreateAvailableWallet(ctx context.Context, tx *sql.Tx) (*models.IntermediaryWallet, error) {
+func (r *IntermediaryWalletRepository) GetOrCreateAvailableWallet(ctx context.Context, tx *sql.Tx, walletType string) (*models.IntermediaryWallet, error) {
 	wallet, err := r.GetAvailableWallet(ctx, tx)
 	if err != nil && err.Error() != "no available wallets in the pool" {
 		return nil, fmt.Errorf("failed to get available wallet: %w", err)

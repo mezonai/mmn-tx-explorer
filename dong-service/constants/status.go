@@ -60,6 +60,7 @@ const (
 const (
 	WalletTypeDefault     = "DEFAULT"
 	WalletTypeRedEnvelope = "LUCKY_MONEY"
+	WalletTypeOffer       = "OFFER"
 )
 
 // Red Envelope Configuration
@@ -93,6 +94,19 @@ const (
 
 const (
 	TextDataLuckyMoney = "Lucky Money fund"
+)
+
+const (
+	TrandingOpen     = "OPEN"
+	TradingPending   = "PENDING"
+	TradingConfirmed = "CONFIRMED"
+	TradingCanceled  = "CANCELED"
+	TradingFailed    = "FAILED"
+)
+
+const (
+	PriceTypeFixed = "FIXED"
+	PriceTypeFloat = "FLOAT"
 )
 
 // GetStatusName returns the human-readable name for a status code

@@ -38,9 +38,9 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 	}
 
 	queueService := repository.NewRedEnvelopeQueueService(database.RedisClient)
-	walletRepo := repository.NewIntermediaryWalletRepository(database.GetDB(), cfg.Database.Schema)
-	redEnvelopeRepo := repository.NewRedEnvelopeRepository(database.GetDB(), cfg.Database.Schema, blockchainService, walletRepo, queueService)
-	redEnvelopeHandler := handlers.NewRedEnvelopeHandler(redEnvelopeRepo, queueService, walletRepo)
+	intermediaryWalletRepo := repository.NewIntermediaryWalletRepository(database.GetDB(), cfg.Database.Schema)
+	redEnvelopeRepo := repository.NewRedEnvelopeRepository(database.GetDB(), cfg.Database.Schema, blockchainService, intermediaryWalletRepo, queueService)
+	redEnvelopeHandler := handlers.NewRedEnvelopeHandler(redEnvelopeRepo, queueService, intermediaryWalletRepo)
 
 	// API v1 routes
 	v1 := router.Group("/api/v1")
@@ -49,8 +49,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		campaignRepo := repository.NewDonationCampaignRepository(database.GetDB(), cfg.Database.Schema, cfg.Indexer.Schema)
 		statsRepo := repository.NewCampaignStatisticsRepository(database.GetDB(), cfg.Indexer.Schema, cfg.Database.Schema, cfg.Scheduler.RecentStatsWindowDays)
 		walletRepo := repository.NewWalletRepository(database.GetDB(), cfg.Indexer.Schema)
-
-		// Initialize handlers
 		campaignHandler := handlers.NewDonationCampaignHandler(campaignRepo)
 		statsHandler := handlers.NewCampaignStatisticsHandler(statsRepo)
 		walletHandler := handlers.NewWalletHandler(walletRepo, campaignRepo)
@@ -58,7 +56,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		// Campaign routes (protected)
 		campaignsPrivate := v1.Group("/admin/campaigns")
 		campaignsPrivate.Use(middleware.Authentication(cfg.JWT.Secret))
-		campaignsPrivate.POST("", campaignHandler.CreateCampaign)
 		campaignsPrivate.POST("/create-active", campaignHandler.CreateAndActiveCampaign)
 		campaignsPrivate.PUT("/:id", campaignHandler.UpdateCampaign)
 		campaignsPrivate.PATCH("/:id/activate", campaignHandler.ActivateCampaign)
@@ -111,22 +108,17 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		orderService := services.NewOrderService(orderRepo, offerRepo, intermediaryWalletRepo, blockchainService)
 
 		offerHandler := handlers.NewOfferHandler(offerService)
-		orderHandler := handlers.NewOrderHandler(orderService, offerService)
+		orderHandler := handlers.NewOrderHandler(orderService)
 
 		offersPrivate.POST("", offerHandler.CreateOffer)
-		offersPrivate.POST("/update-status", offerHandler.UpdateOfferStatus)
 		offersPrivate.GET("/me", offerHandler.GetMyOffers)
 		offersPrivate.GET("/:id", offerHandler.GetOfferDetail)
 		offersPrivate.GET("/:id/orders", orderHandler.ListOrdersForOffer)
 		offersPrivate.POST("/:id/orders", orderHandler.CreateOrder)
-
-		// Offers (public)
-		offersPublic := v1.Group("/offers")
-		offersPublic.GET("", offerHandler.ListOffers)
+		offersPrivate.GET("", offerHandler.ListOffers)
 
 		orders := v1.Group("/orders")
 		orders.Use(middleware.Authentication(cfg.JWT.Secret))
-
 		orders.POST("/:id/confirm", orderHandler.ConfirmOrder)
 		orders.GET("/me", orderHandler.GetMyOrders)
 		orders.GET("/:id", orderHandler.GetOrderDetail)
