@@ -48,11 +48,13 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		campaignRepo := repository.NewDonationCampaignRepository(database.GetDB(), cfg.Database.Schema, cfg.Indexer.Schema)
 		statsRepo := repository.NewCampaignStatisticsRepository(database.GetDB(), cfg.Indexer.Schema, cfg.Database.Schema, cfg.Scheduler.RecentStatsWindowDays)
 		walletRepo := repository.NewWalletRepository(database.GetDB(), cfg.Indexer.Schema)
+		campaignFeedRepo := repository.NewDonationCampaignFeedRepository(database.GetDB(), cfg.Database.Schema)
 
 		// Initialize handlers
 		campaignHandler := handlers.NewDonationCampaignHandler(campaignRepo)
 		statsHandler := handlers.NewCampaignStatisticsHandler(statsRepo)
 		walletHandler := handlers.NewWalletHandler(walletRepo, campaignRepo)
+		campaignFeedHandler := handlers.NewDonationCampaignFeedHandler(campaignFeedRepo, cfg)
 
 		// Campaign routes (protected)
 		campaignsPrivate := v1.Group("/admin/campaigns")
@@ -63,6 +65,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		campaignsPrivate.PATCH("/:id/activate", campaignHandler.ActivateCampaign)
 		campaignsPrivate.PATCH("/:id/close", campaignHandler.CloseCampaign)
 		campaignsPrivate.DELETE("/:id", campaignHandler.DeleteDraftCampaign)
+		campaignsPrivate.POST("/upload-image", campaignFeedHandler.UploadImage)
 
 		// Campaign routes (public)
 		campaignsPublic := v1.Group("/campaigns")
@@ -71,6 +74,9 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		campaignsPublic.GET("/:id", campaignHandler.GetCampaign)
 		campaignsPublic.GET("/:id/top-contributors", campaignHandler.GetTopContributors)
 		campaignsPublic.POST("/:id/sync", statsHandler.SyncCampaign)
+		campaignsPublic.GET("/list-feed/:campaign_address", middleware.ParseTokenAndAddToContext(cfg.JWT.Secret), campaignFeedHandler.ListCampaignFeedsByAddress)
+		campaignsPublic.GET("/list-history-feed/:root_feed_hash", campaignFeedHandler.ListHistoryFeedsByRootHash)
+		campaignsPublic.PATCH("/update-visible-feed/:root_feed_hash", middleware.Authentication(cfg.JWT.Secret), campaignFeedHandler.UpdateVisibleFeed)
 
 		// Statistics routes (public)
 		statsPublic := v1.Group("/stats")
