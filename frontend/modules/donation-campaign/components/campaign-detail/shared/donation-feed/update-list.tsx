@@ -1,23 +1,53 @@
 'use client';
 import { DonationCampaign, IDonationFeed } from '@/modules/donation-campaign';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useState } from 'react';
 import { UpdatePost } from './update-post';
 import { ipfsServiceURL } from '@/service';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useEffect } from 'react';
 
 export const UpdateList = ({ updates, campaign }: { updates: IDonationFeed[]; campaign: DonationCampaign }) => {
   const [open, setOpen] = useState(false);
-  const [selectedImg, setSelectedImg] = useState<string | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const allImages = updates.flatMap((update) => update.image_cids || []);
 
-  const handleImageClick = (img: string) => {
-    setSelectedImg(img);
-    setOpen(true);
+  const handleImageClick = (imageCid: string) => {
+    const index = allImages.indexOf(imageCid);
+    if (index !== -1) {
+      setCurrentIndex(index);
+      setOpen(true);
+    }
   };
 
-  const handleDialogOpenChange = (isOpen: boolean) => {
-    setOpen(isOpen);
-    if (!isOpen) setSelectedImg(null);
+  const goToNext = () => {
+    setCurrentIndex((prev) => (prev + 1) % allImages.length);
   };
+
+  const goToPrev = () => {
+    setCurrentIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') {
+        goToNext();
+      } else if (e.key === 'ArrowLeft') {
+        goToPrev();
+      } else if (e.key === 'Escape') {
+        handleClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, allImages.length]);
 
   return (
     <>
@@ -26,18 +56,62 @@ export const UpdateList = ({ updates, campaign }: { updates: IDonationFeed[]; ca
           <UpdatePost key={update.id} update={update} campaign={campaign} onImageClick={handleImageClick} />
         ))}
       </div>
-      <Dialog open={open} onOpenChange={handleDialogOpenChange}>
-        <DialogContent className="flex h-fit max-h-[95vh] w-fit max-w-[95vw] flex-col items-center justify-center border-none bg-transparent p-4 shadow-none [&>button]:-top-2 [&>button]:-right-2 [&>button]:flex [&>button]:h-10 [&>button]:w-10 [&>button]:items-center [&>button]:justify-center [&>button]:rounded-full [&>button]:bg-gray-700 [&>button]:text-white [&>button]:opacity-100">
-          {selectedImg && (
-            <img
-              src={`${ipfsServiceURL}/${selectedImg}`}
-              alt="Full Preview"
-              className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
-            />
+
+      {open && allImages.length > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90" onClick={handleClose}>
+          <Button
+            onClick={handleClose}
+            className="absolute top-4 right-4 z-50 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
+            aria-label="Close"
+          >
+            <X className="h-6 w-6" />
+          </Button>
+
+          {allImages.length > 1 && (
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                goToPrev();
+              }}
+              className="absolute top-1/2 left-4 z-50 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white transition-colors hover:bg-white/20"
+              aria-label="Previous image"
+            >
+              <ChevronLeft className="h-8 w-8" />
+            </Button>
           )}
-          <DialogTitle className="sr-only">Image Preview</DialogTitle>
-        </DialogContent>
-      </Dialog>
+
+          <div
+            className="relative flex max-h-[90vh] max-w-[90vw] items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={`${ipfsServiceURL}/${allImages[currentIndex]}`}
+              alt={`Image ${currentIndex + 1} of ${allImages.length}`}
+              className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
+              loading="eager"
+            />
+          </div>
+
+          {allImages.length > 1 && (
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                goToNext();
+              }}
+              className="absolute top-1/2 right-4 z-50 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white transition-colors hover:bg-white/20"
+              aria-label="Next image"
+            >
+              <ChevronRight className="h-8 w-8" />
+            </Button>
+          )}
+
+          {allImages.length > 1 && (
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm">
+              {currentIndex + 1} / {allImages.length}
+            </div>
+          )}
+        </div>
+      )}
     </>
   );
 };
