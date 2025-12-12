@@ -67,7 +67,7 @@ export function UpdateDonationProvider({ updatePost, campaign, children }: Creat
   const handleSubmit = async () => {
     try {
       setIsSaving(true);
-      
+
       let imageCids: string[] = [];
 
       if (form.images && form.images.length > 0) {
@@ -80,11 +80,16 @@ export function UpdateDonationProvider({ updatePost, campaign, children }: Creat
         });
         const files = await Promise.all(filePromises);
         const ipfs_images = await uploadImagesMutation.mutateAsync({ files });
-        imageCids = ipfs_images.files.map((file) => file.file_cid);
+        const newCids = ipfs_images.files.map((file) => file.file_cid);
+        imageCids = [...newCids];
+      }
+
+      if (form.existingImageCids && form.existingImageCids.length > 0) {
+        imageCids = [...form.existingImageCids, ...imageCids];
       }
 
       const nonceResponse = await mmnClient.getCurrentNonce(user?.id || '');
-      
+
       const extraInfo = {
         type: ETransferType.DonationFeedCampaign,
         title: form.title,

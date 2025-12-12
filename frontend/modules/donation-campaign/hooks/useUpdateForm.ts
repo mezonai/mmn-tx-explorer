@@ -26,22 +26,24 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
   const { form, setForm, validation, handleSubmit, isSaving } = useCreateDonationUpdateContext();
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [existingImageCids, setExistingImageCids] = useState<string[]>([]);
   const [isCompressing, setIsCompressing] = useState(false);
 
   const totalSize = images.reduce((sum, img) => sum + img.size, 0);
   const maxTotalSize = MAX_IMAGES_SIZE * 1024 * 1024;
 
-  // Initialize form with existing data if editing
   useEffect(() => {
     if (updatePost) {
       setForm({
         ...form,
         title: updatePost.title,
         description: updatePost.description,
-        images: updatePost.image_cids,
+        images: [], 
+        existingImageCids: updatePost.image_cids || [],
       });
 
       if (updatePost.image_cids && updatePost.image_cids.length > 0) {
+        setExistingImageCids(updatePost.image_cids);
         setPreviews(updatePost.image_cids.map((cid) => `${ipfsServiceURL}/${cid}`));
       }
     }
@@ -126,9 +128,10 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
           );
         } else {
           setImages(newImages);
-          setPreviews(newImages.map((file) => URL.createObjectURL(file)));
+          const existingPreviews = existingImageCids.map((cid) => `${ipfsServiceURL}/${cid}`);
+          const newFilePreviews = newImages.map((file) => URL.createObjectURL(file));
+          setPreviews([...existingPreviews, ...newFilePreviews]);
 
-          // Convert files to base64 for form storage
           Promise.all(
             newImages.map((file) => {
               return new Promise<string>((resolve) => {
@@ -138,7 +141,7 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
               });
             })
           ).then((base64Images) => {
-            setForm({ ...form, images: base64Images });
+            setForm({ ...form, images: base64Images, existingImageCids });
           });
 
           toast.success(`${validFiles.length} image${validFiles.length > 1 ? 's' : ''} uploaded successfully!`);
@@ -153,33 +156,43 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
   };
 
   const handleRemoveImage = (idx: number) => {
-    URL.revokeObjectURL(previews[idx]);
+    const existingCount = existingImageCids.length;
 
-    const newImages = images.filter((_, i) => i !== idx);
-    setImages(newImages);
+    if (idx < existingCount) {
+      const newExistingCids = existingImageCids.filter((_, i) => i !== idx);
+      setExistingImageCids(newExistingCids);
+      setForm({ ...form, existingImageCids: newExistingCids });
+    } else {
+      const newImageIdx = idx - existingCount;
+      URL.revokeObjectURL(previews[idx]);
+      const newImages = images.filter((_, i) => i !== newImageIdx);
+      setImages(newImages);
+
+      Promise.all(
+        newImages.map((file) => {
+          return new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(file);
+          });
+        })
+      ).then((base64Images) => {
+        setForm({ ...form, images: base64Images, existingImageCids });
+      });
+    }
+
     const newPreviews = previews.filter((_, i) => i !== idx);
     setPreviews(newPreviews);
-
-    // Update form with base64 strings
-    Promise.all(
-      newImages.map((file) => {
-        return new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(file);
-        });
-      })
-    ).then((base64Images) => {
-      setForm({ ...form, images: base64Images });
-    });
   };
 
   const handleRemoveAll = () => {
-    previews.forEach((preview) => URL.revokeObjectURL(preview));
+    const existingCount = existingImageCids.length;
+    previews.slice(existingCount).forEach((preview) => URL.revokeObjectURL(preview));
 
     setImages([]);
     setPreviews([]);
-    setForm({ ...form, images: [] });
+    setExistingImageCids([]);
+    setForm({ ...form, images: [], existingImageCids: [] });
     toast.success('All images removed');
   };
 

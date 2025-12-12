@@ -165,7 +165,8 @@ export interface UploadImageResponse {
 export interface DonationUpdateForm {
   title: string;
   description: string;
-  images: string[];
+  images: string[]; 
+  existingImageCids?: string[]; 
 
   parent_hash?: string;
   root_hash?: string;
