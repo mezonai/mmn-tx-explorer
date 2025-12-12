@@ -64,7 +64,10 @@ func (r *RedEnvelopeRepository) Create(req *models.CreateRedEnvelopeRequest, cre
 	var result models.RedEnvelope
 	ctx := context.Background()
 	redEnvelopeWallet, err := r.walletRepo.GetOrCreateAvailableWallet(ctx, tx)
-	fmt.Println("Red Envelope Wallet:", redEnvelopeWallet)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get or create available wallet: %w", err)
+	}
+
 	err = tx.QueryRow(
 		query,
 		req.Name,
@@ -201,11 +204,12 @@ func (r *RedEnvelopeRepository) GetTotalClaimedAmount(id string) (int64, error) 
 func (r *RedEnvelopeRepository) GetStatsByUser(userID int64) (map[string]interface{}, error) {
 	totalSentQuery := fmt.Sprintf(`
 		SELECT 
-			COALESCE(SUM(re.total_amount), 0) AS total_sent,
-			COUNT(DISTINCT re.id) AS count_sent_envelopes
+			COALESCE(SUM(resm.amount), 0) AS total_sent,
+			COALESCE(COUNT(resm.claimed_user_id), 0) AS total_recipients 
 		FROM %s.red_envelope re
-		WHERE re.creator = $1 AND re.status = ANY($2);
-	`, r.dongSchema)
+		JOIN %s.red_envelope_split_money resm ON resm.red_envelope_id = re.id
+		WHERE re.creator = $1 AND re.status = ANY($2) AND resm.status = $3;
+	`, r.dongSchema, r.dongSchema)
 
 	listStatus := []string{
 		constants.RedEnvelopeStatusPublished,
@@ -214,15 +218,15 @@ func (r *RedEnvelopeRepository) GetStatsByUser(userID int64) (map[string]interfa
 
 	var stats struct {
 		TotalSend             int64
-		CountSentEnvelopes    int64
+		TotalRecipients       int64
 		TotalClaimed          int64
 		CountClaimedEnvelopes int64
 		TotalActiveEnvelopes  int64
 	}
 
-	err := r.db.QueryRow(totalSentQuery, userID, pq.Array(listStatus)).Scan(
+	err := r.db.QueryRow(totalSentQuery, userID, pq.Array(listStatus), constants.RedEnvelopeSplitMoneyStatusClaimed).Scan(
 		&stats.TotalSend,
-		&stats.CountSentEnvelopes,
+		&stats.TotalRecipients,
 	)
 
 	if err != nil {
@@ -261,7 +265,7 @@ func (r *RedEnvelopeRepository) GetStatsByUser(userID int64) (map[string]interfa
 
 	result := map[string]interface{}{
 		"total_sent":              stats.TotalSend,
-		"count_sent_envelopes":    stats.CountSentEnvelopes,
+		"total_recipients":        stats.TotalRecipients,
 		"total_claimed":           stats.TotalClaimed,
 		"count_claimed_envelopes": stats.CountClaimedEnvelopes,
 		"total_active_envelopes":  stats.TotalActiveEnvelopes,
@@ -808,6 +812,11 @@ func (r *RedEnvelopeRepository) GetClaimAmount(id, walletAddress string, claimSt
 			return models.ClaimAmount{}, fmt.Errorf("query failed: %w", err)
 		}
 
+		// Commit transaction before returning success
+		if err = tx.Commit(); err != nil {
+			return models.ClaimAmount{}, fmt.Errorf("failed to commit transaction: %w", err)
+		}
+
 		return models.ClaimAmount{
 			ID:          existingSplit.ID,
 			Amount:      existingSplit.Amount,
@@ -821,7 +830,7 @@ func (r *RedEnvelopeRepository) GetClaimAmount(id, walletAddress string, claimSt
 		return models.ClaimAmount{}, fmt.Errorf("all claim attempts for this red envelope have been used")
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err = tx.Commit(); err != nil {
 		return models.ClaimAmount{}, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
@@ -882,11 +891,13 @@ func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUs
 	}
 
 	if envelope.Status != constants.RedEnvelopeStatusPublished {
-		return fmt.Errorf("red envelope is not published")
+		err = fmt.Errorf("red envelope is not published")
+		return err
 	}
 
 	if envelope.ClaimedCount >= envelope.TotalClaims {
-		return fmt.Errorf("red envelope is fully claimed")
+		err = fmt.Errorf("red envelope is fully claimed")
+		return err
 	}
 
 	claimAmount, err := r.GetAmountBySplitID(splitMoneyID)

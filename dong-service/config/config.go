@@ -22,7 +22,7 @@ type Config struct {
 	Scheduler    SchedulerConfig    `mapstructure:"scheduler"`
 	Lock         LockConfig         `mapstructure:"lock"`
 	CacheRequest CacheRequestConfig `mapstructure:"cache_request"`
-	Event 	   EventConfig        `mapstructure:"event"`
+	Event 	   	 EventConfig        `mapstructure:"event"`
 }
 
 type ServerConfig struct {

@@ -98,11 +98,5 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		walletPublic := v1.Group("/wallets")
 		walletPublic.Use(middleware.ParseTokenAndAddToContext(cfg.JWT.Secret))
 		walletPublic.GET("/:address/detail", walletHandler.GetWalletDetail)
-
-		// Example routes (protected)
-		examplePrivate := v1.Group("/examples")
-		examplePrivate.Use(middleware.Authentication(cfg.JWT.Secret))
-		exampleHandler := handlers.NewExampleHandler()
-		examplePrivate.POST("/create-events", exampleHandler.CreateEvents)
 	}
 }

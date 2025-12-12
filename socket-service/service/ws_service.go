@@ -8,8 +8,7 @@ import (
 
 type WSService struct {
 	mu          sync.RWMutex
-	connections map[string][]*websocket.Conn
-// TODO a Hoàng: có thể dùng map.sync sau.
+	connections map[string][]*websocket.Conn // TODO: Consider using sync.Map later to avoid locking the entire WSService
 }
 
 func NewWSService() *WSService {
