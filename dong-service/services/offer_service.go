@@ -212,7 +212,7 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 			return fmt.Errorf("transaction amount mismatch: expected %d, got %d", offer.Amount, actualAmount)
 		}
 
-		if offer.Status != constants.TradingPending {
+		if offer.Status != constants.TradingPending && req.Status != constants.TrandingOpen {
 			return fmt.Errorf("offer status invalid for update: current status %s", offer.Status)
 		}
 	}
