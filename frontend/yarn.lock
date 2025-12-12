@@ -2853,10 +2853,10 @@ mkdirp@^3.0.1:
   resolved "https://registry.npmjs.org/mkdirp/-/mkdirp-3.0.1.tgz"
   integrity sha512-+NsyUUAZDmo6YVHzL/stxSu3t9YS1iljliy3BSDrXJ/dkn1KYdmtZODGGjLcc9XLgVVpH4KshHB8XmZgMhaBXg==
 
-mmn-client-js@^1.0.13:
-  version "1.0.13"
-  resolved "https://registry.yarnpkg.com/mmn-client-js/-/mmn-client-js-1.0.13.tgz#cb91444a37b8c97678948fbb5ab1b844d58b91e4"
-  integrity sha512-ZrJsOzKI1yZijLCzp+wMKwdpocilYIpIPLKs2IF+KWLmfQ0paHvgxS789w+qnuH9Aq6zPJJorH7Cw7AMSxxgMw==
+mmn-client-js@^1.0.14:
+  version "1.0.14"
+  resolved "https://registry.yarnpkg.com/mmn-client-js/-/mmn-client-js-1.0.14.tgz#2177d8f42a975546a36f859a0d7013affb6e8bac"
+  integrity sha512-fghX81vtxPeK5l9aoaANl8z2hrSw6riXIa2Wod0IOLtLMuPzE8jMPgV3KrAbfx7j4o6sXg4sWm4sN2rWhzYlJg==
   dependencies:
     bip39 "^3.1.0"
     bs58 "^5.0.0"

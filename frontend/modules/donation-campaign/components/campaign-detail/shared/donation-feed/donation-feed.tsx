@@ -3,7 +3,6 @@
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ROUTES } from '@/configs/routes.config';
-import { UpdateInstruction } from './update-instruction';
 import { UpdateList } from './update-list';
 import { DonationCampaign } from '@/modules/donation-campaign';
 import { FileX2Icon, Loader2 } from 'lucide-react';
@@ -56,7 +55,6 @@ export const DonationFeed = ({ campaign }: { campaign: DonationCampaign }) => {
           )}
         </div>
       </div>
-      <UpdateInstruction />
       {isLoading && (
         <div className="flex items-center justify-center py-8">
           <Loader2 className="text-brand-primary h-12 w-12 animate-spin" />
