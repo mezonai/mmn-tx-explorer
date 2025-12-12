@@ -2,7 +2,7 @@
 
 import { STORAGE_KEYS } from '@/constant';
 import { safeJsonParse } from '@/utils';
-import { HEARTBEAT_ACK, HEARTBEAT_CHECK, HEARTBEAT_CHECK_INTERVAL_MS } from './constants';  
+import { HEARTBEAT_ACK, HEARTBEAT_CHECK, HEARTBEAT_CHECK_INTERVAL_MS } from './constants';
 
 export interface WebSocketEvent {
   id?: string;
@@ -48,8 +48,6 @@ export class WebSocketManager {
         if (event.data === HEARTBEAT_ACK) {
           console.log('Heartbeat ack received');
         }
-
-
         this.handleEvent(JSON.parse(event.data));
       } catch (error) {
         console.error('Error parsing WebSocket message:', error);
@@ -145,14 +143,11 @@ export class WebSocketManager {
     }
   }
 
-
   private getStoredToken(): string | null {
     if (typeof window === 'undefined') {
       return null;
     }
-    const tokenData = safeJsonParse<{ access_token?: string }>(
-      localStorage.getItem(STORAGE_KEYS.TOKEN),
-    );
+    const tokenData = safeJsonParse<{ access_token?: string }>(localStorage.getItem(STORAGE_KEYS.TOKEN));
     return tokenData?.access_token ?? null;
   }
 }
