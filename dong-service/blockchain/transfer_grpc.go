@@ -172,9 +172,6 @@ func (s *BlockchainService) TransferMoney(encryptedPrivateKey, fromAddress, toAd
 	}
 }
 
-// CheckTransactionStatus checks the transaction status with retry logic
-// Retries 3 times with 0.5s delay between attempts
-// Returns status and error
 func (s *BlockchainService) CheckTransactionStatus(txHash string) (int32, error) {
 	maxRetries := 3
 	retryDelay := 500 * time.Millisecond

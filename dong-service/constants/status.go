@@ -129,3 +129,19 @@ func IsValidStatus(status int16) bool {
 		status == CampaignStatusActive ||
 		status == CampaignStatusClosed
 }
+
+const (
+	TxStatusPending   int32 = 0 // Transaction is pending
+	TxStatusConfirmed int32 = 1 // Transaction is confirmed
+	TxStatusFinalized int32 = 2 // Transaction is finalized
+	TxStatusFailed    int32 = 3 // Transaction failed
+)
+
+const (
+	TrandingOpen     = "OPEN"
+	TradingPending   = "PENDING"
+	TradingConfirmed = "CONFIRMED"
+	TradingCanceled  = "CANCELED"
+	TradingFailed    = "FAILED"
+	TradingCompleted = "COMPLETED"
+)
