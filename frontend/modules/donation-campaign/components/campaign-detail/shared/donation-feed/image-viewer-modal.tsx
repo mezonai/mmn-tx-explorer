@@ -120,7 +120,7 @@ export const ImageViewerModal = ({ isOpen, images, initialIndex, onClose }: Imag
   }, [isOpen, isMobile, showControls, currentIndex]);
 
   const hasMultipleImages = images.length > 1;
-  const navigationButtonClasses = `absolute top-1/2 z-50 h-12 w-12 -translate-y-1/2 rounded-full p-2 text-black transition-all duration-300 md:pointer-events-auto md:opacity-100 ${
+  const navigationButtonClasses = `absolute top-1/2 z-50 h-8 w-8 -translate-y-1/2 rounded-full p-2 text-black transition-all duration-300 md:pointer-events-auto md:opacity-100 ${
     showControls ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
   }`;
 
@@ -144,7 +144,7 @@ export const ImageViewerModal = ({ isOpen, images, initialIndex, onClose }: Imag
             goToPrev();
           }}
           variant="secondary"
-          className={`${navigationButtonClasses} left-2 md:left-4`}
+          className={`${navigationButtonClasses} left-5`}
           aria-label="Previous image"
         >
           <ChevronLeft className="h-6 w-6" />
@@ -183,7 +183,7 @@ export const ImageViewerModal = ({ isOpen, images, initialIndex, onClose }: Imag
             goToNext();
           }}
           variant="secondary"
-          className={`${navigationButtonClasses} right-2 md:right-4`}
+          className={`${navigationButtonClasses} right-5`}
           aria-label="Next image"
         >
           <ChevronRight className="h-6 w-6" />
