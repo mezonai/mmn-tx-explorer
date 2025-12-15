@@ -323,15 +323,14 @@ func (r *DonationCampaignRepository) GetAll(status *int16, verified *bool, q *st
 	}
 
 	if q != nil && strings.TrimSpace(*q) != "" {
-		search := strings.TrimSpace(*q)
 		whereClauses = append(
 			whereClauses,
 			fmt.Sprintf(
-				"unaccent(lower(coalesce(dc.name, '') || ' ' || coalesce(dc.description, ''))) LIKE unaccent(lower($%d))",
+				"dc.body_search @@ plainto_tsquery('simple', unaccent($%d))",
 				argCount,
 			),
 		)
-		args = append(args, "%"+search+"%")
+		args = append(args, strings.TrimSpace(*q))
 		argCount++
 	}
 
@@ -593,15 +592,14 @@ func (r *DonationCampaignRepository) Count(status *int16, verified *bool, q *str
 	}
 
 	if q != nil && strings.TrimSpace(*q) != "" {
-		search := strings.TrimSpace(*q)
 		whereClauses = append(
 			whereClauses,
 			fmt.Sprintf(
-				"unaccent(lower(coalesce(dc.name, '') || ' ' || coalesce(dc.description, ''))) LIKE unaccent(lower($%d))",
+				"dc.body_search @@ plainto_tsquery('simple', unaccent($%d))",
 				argCount,
 			),
 		)
-		args = append(args, "%"+search+"%")
+		args = append(args, strings.TrimSpace(*q))
 		argCount++
 	}
 
