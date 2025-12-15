@@ -108,15 +108,15 @@ export const CreateOfferModal = () => {
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button className="bg-brand-primary hover:bg-brand-primary/90 h-10 w-full shrink-0 rounded-lg font-bold text-white shadow-sm transition-all md:w-auto md:px-5">
+          <Button className="bg-brand-primary h-10 w-full shrink-0 rounded-lg font-bold text-white shadow-sm transition-all md:w-auto md:px-5">
             <Plus className="mr-2 h-4 w-4" />
             New Offer
           </Button>
         </DialogTrigger>
 
-        <DialogContent className="max-w-6xl overflow-y-auto border-gray-300 dark:border-gray-800">
-          <DialogHeader className="-mx-6 -mt-6 border-b border-gray-800 bg-gray-900/50 px-6 py-4 dark:bg-gray-900/50">
-            <DialogTitle className="text-lg font-bold text-white">Create New Offer</DialogTitle>
+        <DialogContent className="border-border max-w-6xl overflow-y-auto border">
+          <DialogHeader className="border-b--border mx-6 -mt-6 border-b py-4">
+            <DialogTitle className="text-brand-primary text-lg font-bold">Create New Offer</DialogTitle>
           </DialogHeader>
 
           <form onSubmit={form.handleSubmit(onPreSubmit)}>
@@ -126,19 +126,19 @@ export const CreateOfferModal = () => {
               <PaymentSection control={form.control} />
             </div>
 
-            <DialogFooter className="-mx-6 -mb-6 flex justify-end gap-3 border-t border-gray-800 bg-gray-900/30 px-4 py-4">
+            <DialogFooter className="border-t-border -mx-6 -mb-6 flex justify-end gap-3 border-t px-4 py-4">
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => setOpen(false)}
                 disabled={isPending}
-                className="px-5 py-2 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white"
+                className="text-muted-foreground px-5 py-2 text-sm font-medium"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                className="bg-brand-primary flex items-center gap-2 px-8 py-2 text-sm font-bold text-white shadow-lg shadow-violet-900/20 transition hover:bg-violet-600 disabled:opacity-70"
+                className="bg-brand-primary flex items-center gap-2 px-8 py-2 text-sm font-bold text-white shadow-lg transition disabled:opacity-70"
               >
                 <Send className="h-3 w-3" />
                 Create Offer
@@ -186,7 +186,7 @@ export const CreateOfferModal = () => {
             <Button
               onClick={() => setShowConfirm(false)}
               disabled={isPending}
-              className="text-muted-foreground hover:text-foreground w-full text-center text-xs transition disabled:opacity-50"
+              className="hover:text-foreground bg-brand-primary w-full rounded-xl text-center text-xs text-white transition disabled:opacity-50"
             >
               Cancel
             </Button>

@@ -4,7 +4,7 @@ import { Control, Controller, UseFormTrigger, useWatch } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { CreateOfferFormValues } from './validation-schema';
 import { APP_CONFIG } from '@/configs/app.config';
-
+import { cn } from '@/lib/utils';
 interface AmountSectionProps {
   control: Control<CreateOfferFormValues>;
   trigger: UseFormTrigger<CreateOfferFormValues>;
@@ -25,16 +25,16 @@ export const AmountSection = ({ control, trigger }: AmountSectionProps) => {
   const totalVND = exchangeRate > 0 ? amountMZD * exchangeRate : 0;
 
   return (
-    <div className="space-y-5 border-b border-gray-800 pb-4 lg:border-r lg:border-b-0 lg:pr-8 lg:pb-0">
-      <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-white">
-        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-800 text-xs text-gray-400">
+    <div className="border-border space-y-5 border-b pb-4 lg:border-r lg:border-b-0 lg:pr-8 lg:pb-0">
+      <h3 className="mb-3 flex items-center gap-2 text-sm font-bold">
+        <span className="bg-card text-muted-foreground flex h-5 w-5 items-center justify-center rounded-full text-xs">
           2
         </span>
-        Trading Volume
+        <span className="text-foreground">Trading Volume</span>
       </h3>
 
       <div>
-        <label className="mb-2 block text-xs font-medium text-gray-500 uppercase">
+        <label className="text-muted-foreground mb-2 block text-xs font-medium uppercase">
           Amount to Sell ({APP_CONFIG.CHAIN_SYMBOL})
         </label>
         <div className="group relative">
@@ -54,14 +54,15 @@ export const AmountSection = ({ control, trigger }: AmountSectionProps) => {
                   }}
                   type="text"
                   placeholder="Ex: 5,000,000"
-                  className={`bg-input/30 dark:bg-input/30 focus:border-brand-primary w-full rounded-md border-gray-700 px-3 py-2.5 text-lg font-bold text-white placeholder-gray-600 transition-colors group-hover:border-gray-600 focus:outline-none ${
-                    error ? 'border-red-500' : ''
-                  }`}
+                  className={cn(
+                    'bg-input/30 w-full rounded-md border px-3 py-2.5 text-lg font-bold transition-colors focus:outline-none',
+                    error ? 'border-utility-error-600' : 'border-border'
+                  )}
                 />
-                <span className="absolute top-3.5 right-3 text-xs font-bold text-gray-500">
+                <span className="absolute top-4.5 right-2 text-xs font-bold text-gray-500">
                   {APP_CONFIG.CHAIN_SYMBOL}
                 </span>
-                {error && <p className="mt-1 text-xs text-red-500">{error.message}</p>}
+                {error && <p className="text-utility-error-600 mt-1 text-xs">{error.message}</p>}
               </>
             )}
           />
@@ -80,7 +81,7 @@ export const AmountSection = ({ control, trigger }: AmountSectionProps) => {
                     field.onChange(val);
                     trigger(['limit.min', 'limit.max']);
                   }}
-                  className="rounded border border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 transition hover:bg-gray-700 hover:text-white"
+                  className="border-border bg-card text-primary hover:border-brand-primary rounded border py-1.5 text-sm font-medium transition"
                 >
                   {val >= 1000000 ? `${val / 1000000}M` : `${val / 1000}k`}
                 </button>
@@ -91,10 +92,10 @@ export const AmountSection = ({ control, trigger }: AmountSectionProps) => {
       </div>
 
       <div className="pt-2">
-        <label className="mb-2 block text-xs font-medium text-gray-500 uppercase">Total Received (VND)</label>
-        <div className="flex h-24 flex-col items-center justify-center rounded-lg border border-gray-700/50 bg-gray-800/50 px-4 py-4">
-          <span className="text-xl font-bold text-green-400">{formatCurrency(totalVND)}</span>
-          <span className="mt-1 text-xs font-bold text-gray-500">VND</span>
+        <label className="text-muted-foreground mb-2 block text-xs font-medium uppercase">Total Received (VND)</label>
+        <div className="border-border bg-card flex h-24 flex-col items-center justify-center rounded-lg border px-4 py-4">
+          <span className="text-utility-success-600 text-xl font-bold">{formatCurrency(totalVND)}</span>
+          <span className="text-muted-foreground mt-1 text-xs font-bold">VND</span>
         </div>
       </div>
     </div>
