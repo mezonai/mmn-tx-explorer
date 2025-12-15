@@ -4,6 +4,7 @@ import {
   CreateOfferResponse,
   IP2POfferListParams,
   P2POffer,
+  P2POrder,
   UpdateOfferStatusRequest,
 } from './types';
 import { apiDongClient } from '@/service';
@@ -24,6 +25,10 @@ export class P2PService {
   }
   static async getMyOffers(params: IP2POfferListParams): Promise<IPaginatedResponse<P2POffer[]>> {
     const { data } = await apiDongClient.get<IPaginatedResponse<P2POffer[]>>(P2P_ENDPOINTS.MY_OFFERS, { params });
+    return data;
+  }
+  static async getMyOrders(params: IP2POfferListParams): Promise<IPaginatedResponse<P2POrder[]>> {
+    const { data } = await apiDongClient.get<IPaginatedResponse<P2POrder[]>>(P2P_ENDPOINTS.MY_ORDERS, { params });
     return data;
   }
 }

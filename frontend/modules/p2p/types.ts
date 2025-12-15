@@ -55,8 +55,8 @@ export interface CreateOfferRequest {
   amount: string;
   price_rate: string;
   limit: {
-    min: string;
-    max: string;
+    min: number;
+    max: number;
   };
   bank_info: { bank: BankOption; account_number: string; account_name: string };
   symbol?: string;
@@ -70,4 +70,18 @@ export interface UpdateOfferStatusRequest {
   offer_id: number;
   status: OfferStatus;
   tx_hash: string;
+}
+export interface P2POrder {
+  order_id: number;
+  offer_id: number;
+  buyer_wallet_address: string;
+  seller_wallet_address: string;
+  amount: number;
+  price: number;
+  status: OfferStatus;
+  transfer_code: string;
+  expires_at: string;
+  created_at: string;
+  updated_at: string;
+  bank_info: string;
 }
