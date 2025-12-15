@@ -185,27 +185,6 @@ export const EcosystemHighlights = () => {
             {gameResponse?.totalCount} active games are waiting for you
           </p>
         </Link>
-        <Link
-          href={ROUTES.TRANSFER}
-          className="bg-card hover:border-primary/50 dark:hover:border-primary/50 flex cursor-pointer flex-col rounded-xl border border-gray-300 p-6 shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-link)] dark:border-gray-700 dark:bg-slate-800"
-          style={refHeight ? { minHeight: refHeight } : undefined}
-          onClick={(e) => {
-            e.preventDefault();
-            router.push(ROUTES.TRANSFER);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              router.push(ROUTES.TRANSFER);
-            }
-          }}
-        >
-          <div className="mb-3 flex items-center justify-between">
-            <span className="font-semibold">Give Coffee</span>
-            <i className="fa-solid fa-mug-saucer text-[var(--color-brand-link)] dark:text-yellow-400"></i>
-          </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">0 cups sent (on-chain + payment)</p>
-        </Link>
       </div>
     </section>
   );

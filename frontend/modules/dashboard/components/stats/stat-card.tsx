@@ -1,5 +1,10 @@
+"use client";
+
+import Link from 'next/link';
 import { ComponentType, SVGProps } from 'react';
 import { useEffect, useState } from 'react';
+import { ROUTES } from '@/configs/routes.config';
+import { StatTitle } from './stat-titles';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NumberUtil } from '@/utils';
@@ -39,15 +44,15 @@ export const StatCard = ({ icon: Icon, faIconClass, title, value, subValue }: St
   const getAccent = (t: string) => {
     if (isDark) {
       switch (t) {
-        case 'Total Blocks':
+        case StatTitle.TotalBlocks:
           return { bg: 'bg-[var(--color-brand-link)]/20', icon: 'text-[var(--color-brand-link)]' };
-        case 'Total Transactions':
+        case StatTitle.TotalTransactions:
           return { bg: 'bg-blue-500/20', icon: 'text-blue-400' };
-        case 'Average Block Time':
+        case StatTitle.AverageBlockTime:
           return { bg: 'bg-green-500/20', icon: 'text-green-400' };
-        case 'Total Wallet':
+        case StatTitle.TotalWallet:
           return { bg: 'bg-orange-500/20', icon: 'text-orange-400' };
-        case 'Total Give Coffee':
+        case StatTitle.TotalGiveCoffee:
           return { bg: 'bg-yellow-500/20', icon: 'text-yellow-400' };
         default:
           return { bg: 'bg-[var(--color-brand-link)]/20', icon: 'text-[var(--color-brand-link)]' };
@@ -66,8 +71,28 @@ export const StatCard = ({ icon: Icon, faIconClass, title, value, subValue }: St
     'hover:border-primary/50 dark:hover:border-primary/50 rounded-xl border border-gray-300 transition-colors dark:border-gray-700'
   );
 
-  return (
-    <Card className={cardClassName}>
+  const isLink = title === 'Total Blocks';
+  const getRouteForTitle = (t: string): string | undefined => {
+    switch (t) {
+      case StatTitle.TotalBlocks:
+        return ROUTES.BLOCKS;
+      case StatTitle.TotalTransactions:
+        return ROUTES.TRANSACTIONS;
+      case StatTitle.TotalWallet:
+        return ROUTES.WALLETS;
+      case StatTitle.AverageBlockTime:
+        return ROUTES.BLOCKS;
+      case StatTitle.TotalGiveCoffee:
+        return ROUTES.TRANSFER;
+      default:
+        return undefined;
+    }
+  };
+
+  const route = getRouteForTitle(title);
+
+  const content = (
+    <Card className={cn(cardClassName, isLink ? 'cursor-pointer' : '')}>
       <CardContent className="p-6">
         <div className="mb-4 flex items-center justify-between">
           <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', accent.bg)}>
@@ -92,5 +117,13 @@ export const StatCard = ({ icon: Icon, faIconClass, title, value, subValue }: St
         )}
       </CardContent>
     </Card>
+  );
+
+  return route ? (
+    <Link href={route} aria-label={`View ${deriveLabel(title)}`}>
+      {content}
+    </Link>
+  ) : (
+    content
   );
 };
