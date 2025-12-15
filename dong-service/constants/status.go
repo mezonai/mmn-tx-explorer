@@ -104,11 +104,6 @@ const (
 	TradingFailed    = "FAILED"
 )
 
-const (
-	PriceTypeFixed = "FIXED"
-	PriceTypeFloat = "FLOAT"
-)
-
 // GetStatusName returns the human-readable name for a status code
 func GetStatusName(status int16) string {
 	switch status {
