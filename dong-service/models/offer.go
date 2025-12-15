@@ -21,9 +21,8 @@ type Offer struct {
 	Amount                    int64       `json:"amount" db:"amount"` // numeric as string to support big ints
 	TotalAmount               int64       `json:"total_amount" db:"total_amount"`
 	Limit                     *OfferLimit `json:"limit,omitempty" db:"-"`
-	Price                     int64       `json:"price" db:"price"`
+	PayableAmount             int64       `json:"payable_amount" db:"payable_amount"`
 	PriceRate                 *float64    `json:"price_rate,omitempty" db:"price_rate"`
-	PriceType                 string      `json:"price_type" db:"price_type"`
 	Status                    string      `json:"status" db:"status"`
 	BankInfo                  *string     `json:"bank_info,omitempty" db:"bank_info"`
 	CreatedAt                 time.Time   `json:"created_at" db:"created_at"`
@@ -42,7 +41,6 @@ type CreateOfferRequest struct {
 	Symbol    string                 `json:"symbol" binding:"required"`
 	Amount    string                 `json:"amount" binding:"required"`
 	PriceRate *string                `json:"price_rate,omitempty"`
-	PriceType *string                `json:"price_type,omitempty"` // FIXED or FLOAT
 	BankInfo  map[string]interface{} `json:"bank_info,omitempty"`
 	Limit     *OfferLimitRequest     `json:"limit,omitempty"`
 }

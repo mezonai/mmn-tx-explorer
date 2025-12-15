@@ -132,15 +132,10 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		Symbol:                    req.Symbol,
 		Amount:                    amountInt,
 		TotalAmount:               amountInt,
-		Price:                     priceInt,
-		PriceType:                 constants.PriceTypeFixed,
+		PayableAmount:             priceInt,
 		Status:                    constants.TrandingOpen,
 		BankInfo:                  bankInfoStr,
 		Limit:                     &models.OfferLimit{Min: limitMinInt, Max: limitMaxInt},
-	}
-
-	if req.PriceType != nil && *req.PriceType != "" {
-		offer.PriceType = *req.PriceType
 	}
 
 	var priceRateFloat *float64
@@ -160,7 +155,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		computed := float64(amountInt) * (*priceRateFloat)
 		priceInt = int64(math.Round(computed))
 	}
-	offer.Price = priceInt
+	offer.PayableAmount = priceInt
 
 	if err = s.repo.CreateOffer(ctx, offer, tx); err != nil {
 		return nil, err
