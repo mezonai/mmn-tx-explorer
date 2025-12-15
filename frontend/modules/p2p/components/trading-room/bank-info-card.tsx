@@ -5,11 +5,9 @@ import { CopyButton } from '@/components/ui/copy-button';
 import { P2POffer } from '../../types';
 import { Bolt } from 'lucide-react';
 
-type BankDetails = NonNullable<P2POffer['bankInfo']>;
-
 interface BankInfoCardProps {
-  bankInfo?: BankDetails;
-  transferCode?: string;
+  bank_info?: P2POffer['bank_info'];
+  transfer_code?: string;
 }
 
 const bankLabels: Record<string, string> = {
@@ -21,12 +19,12 @@ const bankLabels: Record<string, string> = {
   VIETCOMBANK: 'Vietcombank',
 };
 
-export const BankInfoCard = ({ bankInfo, transferCode }: BankInfoCardProps) => {
-  if (!bankInfo) {
+export const BankInfoCard = ({ bank_info, transfer_code }: BankInfoCardProps) => {
+  if (!bank_info) {
     return null;
   }
 
-  const bankLabel = bankLabels[bankInfo.bank] || bankInfo.bank;
+  const bankLabel = bankLabels[bank_info.bank] || bank_info.bank;
 
   return (
     <Card className="bg-card rounded-xl p-6 mb-8 border border-gray-800">
@@ -43,30 +41,30 @@ export const BankInfoCard = ({ bankInfo, transferCode }: BankInfoCardProps) => {
         <div className="flex justify-between items-center group p-2 hover:bg-gray-800/50 rounded transition">
           <div>
             <div className="text-xs text-gray-500 uppercase font-medium">Số tài khoản</div>
-            <div className="text-lg font-mono text-white font-bold tracking-wider">{bankInfo.accountNumber}</div>
+            <div className="text-lg font-mono text-white font-bold tracking-wider">{bank_info.account_number}</div>
           </div>
-          <CopyButton textToCopy={bankInfo.accountNumber} className="text-gray-400 hover:text-white p-2 transition" />
+          <CopyButton textToCopy={bank_info.account_number} className="text-gray-400 hover:text-white p-2 transition" />
         </div>
 
         {/* Ngân hàng */}
         <div className="flex justify-between items-center group p-2 hover:bg-gray-800/50 rounded transition">
           <div>
             <div className="text-xs text-gray-500 uppercase font-medium">Ngân hàng</div>
-            <div className="text-base text-white font-bold">{bankLabel}</div>
+            <div className="text-base text-white font-bold">{bank_info.bank}</div>
           </div>
-          <CopyButton textToCopy={bankLabel} className="text-gray-400 hover:text-white p-2 transition" />
+          <CopyButton textToCopy={bank_info.bank} className="text-gray-400 hover:text-white p-2 transition" />
         </div>
 
         {/* Nội dung chuyển khoản */}
-        {transferCode && (
+        {transfer_code && (
           <div className="flex justify-between items-center group bg-yellow-500/5 p-3 rounded border border-yellow-500/20">
             <div>
               <div className="text-xs text-yellow-600 dark:text-yellow-500 uppercase font-bold mb-1">
                 Nội dung chuyển khoản (Bắt buộc)
               </div>
-              <div className="text-xl font-mono text-yellow-500 font-bold tracking-widest">{transferCode}</div>
+              <div className="text-xl font-mono text-yellow-500 font-bold tracking-widest">{transfer_code}</div>
             </div>
-            <CopyButton textToCopy={transferCode} className="text-yellow-500 hover:text-yellow-300 p-2 transition" />
+            <CopyButton textToCopy={transfer_code} className="text-yellow-500 hover:text-yellow-300 p-2 transition" />
           </div>
         )}
       </div>

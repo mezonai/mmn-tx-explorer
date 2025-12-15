@@ -16,7 +16,7 @@ export interface P2POffer {
     accountNumber: string;
     accountName: string;
   };
-  transferCode?: string;
+  transfer_code?: string;
   symbol: string;
   created_at: string;
   update_at: string;
@@ -78,6 +78,11 @@ export interface P2POrder {
   amount: number; // BIGINT - amount in MZD (smallest unit)
   price: number; // BIGINT - price in VND (smallest unit)
   status: OrderStatus | string; // Default 'PENDING'
+  bank_info?: {
+    bank: string;
+    account_number: string;
+    account_name: string;
+  };
   transfer_code?: string | null;
   expires_at: string; // TIMESTAMPTZ
   created_at: string; // TIMESTAMPTZ

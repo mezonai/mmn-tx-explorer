@@ -74,5 +74,5 @@ cache_request:
 
 # Event Configuration
 event:
-  api_url: "http://localhost:8899/api/event"
+  api_url: "http://172.16.10.111:8899/api/event"
   api_key: "MezonDongServiceEventAPIKey2024!"
