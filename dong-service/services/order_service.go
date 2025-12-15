@@ -53,6 +53,9 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 	}
 
 	hasActive, err := s.repo.HasActiveOrders(ctx, offerID, tx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to check active orders: %w", err)
+	}
 	if hasActive {
 		return nil, nil, fmt.Errorf("offer already has active pending orders")
 	}
