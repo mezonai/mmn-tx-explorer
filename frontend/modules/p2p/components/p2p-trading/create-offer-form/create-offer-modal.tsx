@@ -19,7 +19,7 @@ import { useUpdateOfferStatus } from '@/modules/p2p/hooks/useUpdateOfferStatus';
 
 export const CreateOfferModal = () => {
   const [open, setOpen] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false); // State cho dialog confirm
+  const [showConfirm, setShowConfirm] = useState(false);
   const [pendingData, setPendingData] = useState<CreateOfferFormValues | null>(null);
   const { mutate: updateOfferStatus } = useUpdateOfferStatus();
   const { mutateAsync: createOfferAsync, isPending } = useCreateOffer();
@@ -63,11 +63,11 @@ export const CreateOfferModal = () => {
 
     const payload: CreateOfferRequest = {
       ...pendingData,
-      amount: pendingData.amount.toString(),
+      amount: pendingData.amount,
       price_rate: pendingData.price_rate.toString(),
       limit: {
-        min: pendingData.limit.min.toString(),
-        max: pendingData.limit.max.toString(),
+        min: pendingData.limit.min,
+        max: pendingData.limit.max,
       },
     };
 
@@ -76,7 +76,7 @@ export const CreateOfferModal = () => {
       const transferResult = await transfer(
         {
           recipientAddress: resultData.intermediary_wallet_address,
-          amount: payload.amount,
+          amount: payload.amount.toString(),
           note: 'p2p-trading',
         },
         'p2p-trading'
