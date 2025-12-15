@@ -20,12 +20,26 @@ func NewDonationCampaignFeedRepository(db *sql.DB, dongSchema string) *DonationC
 	return &DonationCampaignFeedRepository{db: db, dongSchema: dongSchema}
 }
 
-func (r *DonationCampaignFeedRepository) ListCampaignFeedsByAddress(campaignAddress string, limit int, timestampLt time.Time, userAddress string) ([]*models.DonationCampaignFeed, error) {
+func (r *DonationCampaignFeedRepository) ListCampaignFeedsByAddress(campaignAddress string, limit int, timestampLt time.Time, userAddress string, ownerAddress *string, isOwner *bool) ([]*models.DonationCampaignFeed, error) {
 	var userAddressParam interface{}
 	if userAddress != "" {
 		userAddressParam = userAddress
 	} else {
 		userAddressParam = nil
+	}
+
+	var ownerAddressParam interface{}
+	if ownerAddress != nil && *ownerAddress != "" {
+		ownerAddressParam = *ownerAddress
+	} else {
+		ownerAddressParam = nil
+	}
+
+	var isOwnerParam interface{}
+	if isOwner != nil {
+		isOwnerParam = *isOwner
+	} else {
+		isOwnerParam = nil
 	}
 
 	query := fmt.Sprintf(`
@@ -48,6 +62,16 @@ func (r *DonationCampaignFeedRepository) ListCampaignFeedsByAddress(campaignAddr
 				f.related_address = $1
 				AND f.type = $2
 				AND (
+						$7::bool IS NULL
+						OR (
+								$6::text IS NOT NULL
+								AND (
+										($7::bool = TRUE AND f.creator_address = $6::text)
+										OR ($7::bool = FALSE AND f.creator_address <> $6::text)
+									)
+						)
+					)
+				AND (
 						($5::text IS NOT NULL AND f.creator_address = $5::text)
 						OR f.visible = TRUE
 					)
@@ -59,7 +83,7 @@ func (r *DonationCampaignFeedRepository) ListCampaignFeedsByAddress(campaignAddr
 		LIMIT $4;
     `, r.dongSchema)
 
-	rows, err := r.db.Query(query, campaignAddress, FeedTypeDonationCampaign, timestampLt, limit, userAddressParam)
+	rows, err := r.db.Query(query, campaignAddress, FeedTypeDonationCampaign, timestampLt, limit, userAddressParam, ownerAddressParam, isOwnerParam)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list campaign feeds: %w", err)
 	}
