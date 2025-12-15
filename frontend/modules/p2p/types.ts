@@ -38,10 +38,10 @@ export enum TradeTypes {
   SELL = 'SELL',
   BUY = 'BUY',
 }
-export interface CreateOfferFormState {
+export interface CreateOfferRequest {
   side: TradeTypes;
   amount: number;
-  price_rate: number;
+  price_rate: string;
   limit: {
     min: number;
     max: number;
@@ -50,17 +50,6 @@ export interface CreateOfferFormState {
   symbol?: string;
 }
 
-export interface CreateOfferRequest {
-  side: TradeTypes;
-  amount: string;
-  price_rate: string;
-  limit: {
-    min: string;
-    max: string;
-  };
-  bank_info: { bank: BankOption; account_number: string; account_name: string };
-  symbol?: string;
-}
 export interface CreateOfferResponse {
   intermediary_wallet_address: string;
   offer: P2POffer;
