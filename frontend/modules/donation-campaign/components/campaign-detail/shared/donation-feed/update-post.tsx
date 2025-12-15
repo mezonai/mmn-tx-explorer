@@ -11,10 +11,10 @@ import { ipfsServiceURL } from '@/service';
 interface UpdatePostProps {
   update: IDonationFeed;
   campaign: DonationCampaign;
-  onImageClick: (url: string) => void;
+  onImageClick: (images: string[], index: number) => void;
 }
 
-function getImages(imageCids: string[], onImageClick: (url: string) => void) {
+function getImages(imageCids: string[], onImageClick: (images: string[], index: number) => void) {
   return (
     <div className="grid w-full grid-cols-1 gap-2 p-2 pl-3 sm:grid-cols-3 md:grid-cols-6">
       {imageCids.map((img, idx) => (
@@ -23,7 +23,7 @@ function getImages(imageCids: string[], onImageClick: (url: string) => void) {
           src={`${ipfsServiceURL}/${img}`}
           alt={`Update Image ${idx + 1}`}
           className="h-35 w-full cursor-pointer rounded-md object-cover"
-          onClick={() => onImageClick(img)}
+          onClick={() => onImageClick(imageCids, idx)}
         />
       ))}
     </div>
