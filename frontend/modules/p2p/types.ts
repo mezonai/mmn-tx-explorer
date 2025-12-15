@@ -51,11 +51,11 @@ export interface CreateOfferFormState {
 
 export interface CreateOfferRequest {
   side: TradeTypes;
-  amount: string;
-  price_rate: string;
+  amount: number;
+  price_rate: number;
   limit: {
-    min: string;
-    max: string;
+    min: number;
+    max: number;
   };
   bank_info: { bank: BankOption; account_number: string; account_name: string };
   symbol?: string;
@@ -93,7 +93,7 @@ export interface P2POrder {
 export interface CreateOrderRequest {
   offer_id: string | number;
   amount: number; // Amount in MZD (smallest unit)
-  price?: string | number; // Optional price in VND (calculated from offer if not provided)
+  price?: number | null; // Optional price in VND (calculated from offer if not provided)
 }
 
 // Request interface for updating order status
