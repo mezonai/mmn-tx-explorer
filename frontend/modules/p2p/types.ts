@@ -11,10 +11,10 @@ export interface P2POffer {
     max: number;
   };
   price_rate: number;
-  bankInfo?: {
-    bank: BankOption;
-    accountNumber: string;
-    accountName: string;
+  bank_info?: {
+    bank: string;
+    account_number: string;
+    account_name: string;
   };
   transfer_code?: string;
   symbol: string;

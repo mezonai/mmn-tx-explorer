@@ -7,7 +7,7 @@ import { Bolt } from 'lucide-react';
 
 interface BankInfoCardProps {
   bank_info?: P2POffer['bank_info'];
-  transfer_code?: string;
+  transfer_code?: P2POffer['transfer_code'];
 }
 
 const bankLabels: Record<string, string> = {

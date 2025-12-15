@@ -212,7 +212,7 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
             {createdOrder && (
               <>
                 <OrderInfoCard order={createdOrder} />
-                <BankInfoCard bankInfo={offer?.bankInfo} transferCode={offer?.transferCode} />
+                <BankInfoCard bank_info={offer?.bank_info} transfer_code={offer?.transfer_code} />
                 {userRole === 'buyer' && (
                   <PaymentActionButton order={createdOrder} onPaymentConfirmed={handlePaymentConfirmed} />
                 )}
@@ -256,7 +256,7 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
         <div className="overflow-y-auto border-r border-gray-800 p-6 md:w-7/12 lg:w-8/12">
           <ProgressSteps order={order} />
           <OrderInfoCard order={order} />
-          {offer && <BankInfoCard bankInfo={offer.bankInfo} transferCode={offer.transferCode} />}
+          {offer && <BankInfoCard bank_info={offer.bank_info} transfer_code={offer.transfer_code} />}
 
           {/* Conditional rendering based on user role */}
           {userRole === 'buyer' && <PaymentActionButton order={order} onPaymentConfirmed={handlePaymentConfirmed} />}
