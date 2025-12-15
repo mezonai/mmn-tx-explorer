@@ -9,9 +9,11 @@ import { VersionHistoryDialog } from '../../shared/donation-feed';
 import { TxnHashLink } from '@/modules/transaction/components/transaction-list/list/shared';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/configs/routes.config';
-import { JSX } from 'react';
+import { JSX, useState } from 'react';
 import { useUser } from '@/providers';
 import { Pencil } from 'lucide-react';
+
+const MAX_IMAGES_DISPLAY = 18;
 
 interface UpdatePostDesktopProps {
   update: IDonationFeed;
@@ -32,6 +34,10 @@ export const UpdatePostDesktop = ({
 }: UpdatePostDesktopProps) => {
   const { user } = useUser();
   const router = useRouter();
+  const [showAllImages, setShowAllImages] = useState(false);
+  const visibleImages = showAllImages ? update.image_cids : update.image_cids.slice(0, MAX_IMAGES_DISPLAY);
+  const hasMoreImages = update.image_cids.length > MAX_IMAGES_DISPLAY;
+
   return (
     <Card className={`dark:bg-card border-muted-foreground/30 gap-4 rounded-3xl bg-white/90 pt-3 shadow-sm`}>
       <div className="hidden w-full md:flex md:flex-row md:items-center md:justify-between md:gap-3">
@@ -107,7 +113,7 @@ export const UpdatePostDesktop = ({
         ))}
       </div>
 
-      {getImages(update.image_cids || [], onImageClick)}
+      {getImages(visibleImages || [], onImageClick)}
 
       <div className="flex w-full flex-row justify-end gap-4 px-4">
         <span className="text-sm">TxHash: </span>
@@ -115,6 +121,13 @@ export const UpdatePostDesktop = ({
           <TxnHashLink hash={update.tx_hash} isPending={false} className="text-brand-primary" />
         </span>
       </div>
+      {hasMoreImages && !showAllImages && (
+        <div className="flex justify-center pb-2">
+          <Button variant="link" size="sm" onClick={() => setShowAllImages(true)}>
+            See more ({update.image_cids.length - MAX_IMAGES_DISPLAY})
+          </Button>
+        </div>
+      )}
     </Card>
   );
 };
