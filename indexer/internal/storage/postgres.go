@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/lib/pq"
 	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc"
@@ -801,9 +802,33 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 	// Insert all transactions for this block inside the same transaction
 	var addressStats map[string]WalletStats
 	if len(blockData.Transactions) > 0 {
+		// Insert transactions and get affected address stats
 		addressStats, err = p.insertTransactionsTx(ctx, tx, blockData.Transactions)
 		if err != nil {
 			return false, err
+		}
+
+		// Insert donation campaign feeds if any
+		var userContents []common.UserContent
+		for i := range blockData.Transactions {
+			tx := &blockData.Transactions[i]
+			if tx.TransactionType == common.TxTypeUserContent && tx.Status != nil && *tx.Status != (uint64)(pb.TransactionStatus_FAILED) {
+				var userContent common.UserContent
+				err := json.Unmarshal([]byte(tx.ExtraInfo), &userContent)
+				if err != nil {
+					continue
+				}
+				userContent.TxHash = tx.Hash
+				userContent.CreatorAddress = tx.FromAddress
+				userContent.RelatedAddress = tx.ToAddress
+				userContent.CreatedAt = tx.TransactionTimestamp
+
+				userContents = append(userContents, userContent)
+			}
+		}
+		err = p.insertUserContentsTx(ctx, tx, userContents)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -1684,6 +1709,48 @@ func (p *PostgresConnector) insertTransactionsTx(
 	}
 
 	return walletStats, nil
+}
+
+func (p *PostgresConnector) insertUserContentsTx(ctx context.Context, tx *sql.Tx, items []common.UserContent) error {
+	if len(items) == 0 {
+		return nil
+	}
+
+	valueStrings := make([]string, 0, len(items))
+	valueArgs := make([]interface{}, 0, len(items)*10)
+
+	for i, f := range items {
+		base := i*10 + 1
+
+		valueStrings = append(valueStrings,
+			fmt.Sprintf("($%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d)",
+				base, base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9,
+			),
+		)
+
+		valueArgs = append(valueArgs,
+			f.Type,
+			f.TxHash,
+			f.CreatorAddress,
+			f.RelatedAddress,
+			f.Title,
+			f.Description,
+			pq.Array(f.ImageCIDs),
+			f.ParentHash,
+			f.RootHash,
+			f.CreatedAt,
+		)
+	}
+
+	query := fmt.Sprintf(`
+        INSERT INTO dong_schema.user_content
+        (type, tx_hash, creator_address, related_address, title, description, image_cids, parent_hash, root_hash, created_at)
+        VALUES %s
+        ON CONFLICT (tx_hash) DO NOTHING`,
+		strings.Join(valueStrings, ","))
+
+	_, err := tx.ExecContext(ctx, query, valueArgs...)
+	return err
 }
 
 func (p *PostgresConnector) scanBlock(rows *sql.Rows, block *common.Block) error {

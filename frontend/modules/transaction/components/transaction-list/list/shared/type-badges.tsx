@@ -18,10 +18,10 @@ const getTransactionTypeInfo = (type: ETransactionType) => {
   switch (type) {
     case ETransactionType.TokenTransfer:
       return 'warning';
-    case ETransactionType.DonationCampaign:
-      return 'brand';
     case ETransactionType.WithdrawCampaign:
-      return 'default';
+      return 'brand';
+    case ETransactionType.DonationFeed:
+      return 'info';
     default:
       return 'default';
   }
