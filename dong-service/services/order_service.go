@@ -38,9 +38,6 @@ type IOrderService interface {
 
 func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *models.CreateOrderRequest, walletAddress string) (*models.Order, *models.Offer, error) {
 	hasActive, err := s.repo.HasActiveOrders(ctx, offerID)
-	if hasActive {
-		return nil, nil, fmt.Errorf("offer already has active pending orders")
-	}
 
 	db := database.GetDB()
 	tx, err := db.BeginTx(ctx, nil)
@@ -59,11 +56,15 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		return nil, nil, fmt.Errorf("failed to fetch offer: %w", err)
 	}
 
+	if hasActive {
+		return nil, nil, fmt.Errorf("offer already has active pending orders")
+	}
+
 	var priceInt int64
-	if req.Price != nil {
-		priceInt = *req.Price
+	if req.PayableAmount != nil {
+		priceInt = *req.PayableAmount
 	} else {
-		priceInt = offer.Price
+		priceInt = offer.PayableAmount
 	}
 
 	amountInt := req.Amount
@@ -89,7 +90,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		OfferID:            &offerID,
 		BuyerWalletAddress: walletAddrPtr,
 		Amount:             amountInt,
-		Price:              priceInt,
+		PayableAmount:      priceInt,
 		Status:             constants.TrandingOpen,
 		TransferCode:       &transferCode,
 		ExpiresAt:          &expiresAt,
@@ -204,42 +205,14 @@ func (s *OrderService) ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o
 	}
 
 	// Send ORDER_CONFIRMED event to seller
-	go func() {
-		var receiveAddr string
-		if o.OfferID != nil {
-			of, err := s.offerRepo.GetOfferByID(context.Background(), *o.OfferID)
-			if err == nil {
-				receiveAddr = of.SellerWalletAddress
-			}
+	if o.OfferID != nil {
+		// fetch seller address and fire event asynchronously
+		of, err := s.offerRepo.GetOfferByID(context.Background(), *o.OfferID)
+		if err == nil && of.SellerWalletAddress != "" {
+			payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.Amount}
+			go s.sendOrderEvent(of.SellerWalletAddress, "ORDER_CONFIRMED", payload)
 		}
-
-		if receiveAddr == "" {
-			return
-		}
-
-		payload := map[string]any{
-			"order_id": fmt.Sprint(o.OrderID),
-			"amount":   o.Amount,
-		}
-		p, _ := json.Marshal(payload)
-
-		event := &models.Event{
-			ID:             uuid.New(),
-			Type:           "ORDER_CONFIRMED",
-			Payload:        p,
-			ReceiveAddress: receiveAddr,
-			Status:         "pending",
-			CreateAt:       time.Now().UTC(),
-		}
-
-		if Event == nil {
-			return
-		}
-
-		if err := Event.SendEvent(event); err != nil {
-			logger.Error().Err(err).Msg("failed to send ORDER_CONFIRMED event")
-		}
-	}()
+	}
 
 	return nil
 }
@@ -294,6 +267,11 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 				if err = s.repo.UpdateOrderStatusWithTxHash(ctx, orderID, string(models.OrderStatusCompleted), transferTxHash, tx); err != nil {
 					return err
 				}
+
+				if o.BuyerWalletAddress != nil && *o.BuyerWalletAddress != "" {
+					payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.Amount, "tx_hash": txHash}
+					go s.sendOrderEvent(*o.BuyerWalletAddress, "ORDER_COMPLETED", payload)
+				}
 			} else if status == 0 || status == 1 || status == 3 {
 				// Status 0, 1, 3 = PENDING, CONFIRMED, FAILED
 				if err = s.repo.UpdateOrderStatusWithTxHash(ctx, orderID, string(models.OrderStatusFailed), transferTxHash, tx); err != nil {
@@ -316,4 +294,28 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 	}
 
 	return nil
+}
+
+func (s *OrderService) sendOrderEvent(receiveAddr string, eventType string, payload map[string]any) {
+	if receiveAddr == "" {
+		return
+	}
+	p, _ := json.Marshal(payload)
+
+	event := &models.Event{
+		ID:             uuid.New(),
+		Type:           eventType,
+		Payload:        p,
+		ReceiveAddress: receiveAddr,
+		Status:         "pending",
+		CreateAt:       time.Now().UTC(),
+	}
+
+	if Event == nil {
+		return
+	}
+
+	if err := Event.SendEvent(event); err != nil {
+		logger.Error().Err(err).Msgf("failed to send %s event", eventType)
+	}
 }

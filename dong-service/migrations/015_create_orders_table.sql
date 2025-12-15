@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS orders (
     offer_id BIGINT,
     buyer_wallet_address VARCHAR(255),
     amount BIGINT NOT NULL DEFAULT 0,
-    price BIGINT NOT NULL DEFAULT 0,
+    payable_amount BIGINT NOT NULL DEFAULT 0,
     transaction_hash TEXT,
     status order_status NOT NULL DEFAULT 'OPEN',
     transfer_code VARCHAR(255),
@@ -29,9 +29,9 @@ CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders (created_at);
 -- Add constraints and FK in a single maintenance block
 DO $$ BEGIN
     -- numeric constraints
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_orders_positive_values') THEN
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_orders_positive_values') THEN
         ALTER TABLE orders
-            ADD CONSTRAINT chk_orders_positive_values CHECK (amount >= 0 AND price >= 0);
+            ADD CONSTRAINT chk_orders_positive_values CHECK (amount >= 0 AND payable_amount >= 0);
     END IF;
 
     -- foreign key

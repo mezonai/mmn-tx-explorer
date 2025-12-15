@@ -20,7 +20,7 @@ type Order struct {
 	OfferID            *int64     `json:"offer_id,omitempty" db:"offer_id"`
 	BuyerWalletAddress *string    `json:"buyer_wallet_address,omitempty" db:"buyer_wallet_address"`
 	Amount             int64      `json:"amount" db:"amount"`
-	Price              int64      `json:"price" db:"price"`
+	PayableAmount      int64      `json:"payable_amount" db:"payable_amount"`
 	TransactionHash    *string    `json:"transaction_hash,omitempty" db:"transaction_hash"`
 	Status             string     `json:"status" db:"status"`
 	TransferCode       *string    `json:"transfer_code,omitempty" db:"transfer_code"`
@@ -30,6 +30,6 @@ type Order struct {
 }
 
 type CreateOrderRequest struct {
-	Amount int64  `json:"amount" binding:"required"`
-	Price  *int64 `json:"price,omitempty"`
+	Amount        int64  `json:"amount" binding:"required"`
+	PayableAmount *int64 `json:"payable_amount,omitempty"`
 }
