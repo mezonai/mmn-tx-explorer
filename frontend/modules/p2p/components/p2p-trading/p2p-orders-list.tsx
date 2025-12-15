@@ -64,7 +64,7 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
       return `${seconds}s`;
     };
 
-    const className = remainingMs <= 0 ? 'text-utility-error-600' : 'text-utility-success-600';
+    const className = remainingMs <= 0 ? 'text-utility-error-600 font-bold' : 'text-utility-success-600 font-bold';
 
     return <p className={className}>{fmt(remainingMs)}</p>;
   };
@@ -113,8 +113,8 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
       headerContent: 'STATUS',
       renderCell: (order) => (
         <div className="flex items-center gap-2">
-          <Chip variant={getTransactionTypeInfo(order.status)} className="gap-1.5 rounded-md">
-            <span className="text-sm">{order.status}</span>
+          <Chip variant={getTransactionTypeInfo(order.status)} className="gap-1.5 rounded-sm">
+            <span>{order.status}</span>
           </Chip>
         </div>
       ),
