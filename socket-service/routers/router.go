@@ -25,11 +25,6 @@ func SetupRouters(router *gin.Engine, cfg *config.Config) {
 	ws.Use(tokenMiddleware)
 	ws.GET("/connect", wsHandler.HandleWS)
 
-	// publisher WS endpoint for backend services (authenticated with API key)
-	wsProducer := router.Group("/ws")
-	wsProducer.Use(apikeyMiddleware)
-	wsProducer.GET("/publish", wsHandler.HandleWSPublish)
-
 	http := router.Group("/api")
 	http.Use(apikeyMiddleware)
 	http.POST("/event", httpHandler.SaveEvent)

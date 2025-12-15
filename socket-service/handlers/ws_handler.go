@@ -113,14 +113,3 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 		}
 	}
 }
-
-// HandleWSPublish handles publishing messages to WebSocket clients (for backend services)
-func (h *WSHandler) HandleWSPublish(c *gin.Context) {
-	var payload map[string]interface{}
-	if err := c.BindJSON(&payload); err != nil {
-		c.JSON(400, gin.H{"error": "Invalid payload"})
-		return
-	}
-
-	c.JSON(200, gin.H{"status": "published", "data": payload})
-}
