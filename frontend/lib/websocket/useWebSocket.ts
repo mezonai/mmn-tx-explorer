@@ -14,24 +14,45 @@ export const useWebSocket = () => {
   const isInitializedRef = useRef(false);
 
   useEffect(() => {
-    // Only initialize once
-    if (isInitializedRef.current) {
-      return;
+    // Hàm lấy token mới từ localStorage
+    const getLatestToken = async (): Promise<string | null> => {
+      const tokenData = safeJsonParse<{ access_token?: string }>(
+        localStorage.getItem(STORAGE_KEYS.TOKEN)
+      );
+      return tokenData?.access_token ?? null;
+    };
+
+    // Setup token expired handler
+    if (!isInitializedRef.current) {
+      wsManagerRef.current.setTokenExpiredHandler(getLatestToken);
     }
 
-    const tokenData = safeJsonParse<{ access_token?: string }>(localStorage.getItem(STORAGE_KEYS.TOKEN));
+    // Get current token and connect
+    const tokenData = safeJsonParse<{ access_token?: string }>(
+      localStorage.getItem(STORAGE_KEYS.TOKEN)
+    );
     const accessToken = tokenData?.access_token;
 
     if (accessToken) {
-      wsManagerRef.current.connect(accessToken);
-      isInitializedRef.current = true;
+      // Nếu đã có connection và token khác → reconnect với token mới
+      const currentToken = (wsManagerRef.current as any).currentToken;
+      
+      if (isInitializedRef.current && currentToken !== accessToken) {
+        console.log('Token changed after refresh, reconnecting...');
+        wsManagerRef.current.disconnect();
+        wsManagerRef.current.connect(accessToken);
+      } else if (!isInitializedRef.current) {
+        // First time connect
+        wsManagerRef.current.connect(accessToken);
+        isInitializedRef.current = true;
+      }
     }
 
-    // Don't disconnect on unmount - keep connection alive across component re-renders
+    // Cleanup on unmount (optional)
     // return () => {
     //   wsManagerRef.current.disconnect();
     // };
-  }, []);
+  }, []); // Empty dependency để chỉ chạy 1 lần
 
   return wsManagerRef.current;
 };

@@ -70,8 +70,8 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
         },
         price_rate: offer.price_rate,
         price_rate_display: `1 MZD = ${offer.price_rate.toLocaleString('vi-VN')} VND`,
-        bank_info: offer.bank_info, // TODO: Fix this
-        transferCode: offer.transfer_code, // TODO: Fix this
+        bank_info: offer.bank_info,
+        transfer_code: offer.transfer_code,
       });
       console.log('💰 Purchase Details:', {
         amountMZD: amountMZD,
