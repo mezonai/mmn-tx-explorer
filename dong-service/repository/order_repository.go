@@ -37,10 +37,10 @@ func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order, 
 	).Scan(&order.OrderID, &order.CreatedAt, &order.UpdatedAt)
 }
 
-func (r *OrderRepository) HasActiveOrders(ctx context.Context, offerID int64) (bool, error) {
-	query := fmt.Sprintf("SELECT COUNT(1) FROM %s.orders WHERE offer_id = $1 AND status IN ('PENDING', 'OPEN')", r.dongSchema)
+func (r *OrderRepository) HasActiveOrders(ctx context.Context, offerID int64, tx *sql.Tx) (bool, error) {
+	query := fmt.Sprintf("SELECT COUNT(1) FROM %s.orders WHERE offer_id = $1 AND status IN ('PENDING', 'OPEN') FOR UPDATE", r.dongSchema)
 	var cnt int64
-	if err := r.db.QueryRowContext(ctx, query, offerID).Scan(&cnt); err != nil {
+	if err := tx.QueryRowContext(ctx, query, offerID).Scan(&cnt); err != nil {
 		return false, err
 	}
 	return cnt > 0, nil

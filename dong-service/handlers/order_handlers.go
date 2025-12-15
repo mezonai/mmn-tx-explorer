@@ -7,6 +7,7 @@ import (
 	"dong-service/services"
 	"dong-service/utils"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -205,10 +206,20 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 		return
 	}
 
-	// Load order to check role
 	order, err := h.orderService.GetOrderByID(c.Request.Context(), orderID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, "order not found"))
+		return
+	}
+
+	now := time.Now().UTC()
+	var expired bool
+	if order.ExpiresAt != nil {
+		expired = now.After(*order.ExpiresAt)
+	}
+
+	if expired {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "order has expired"))
 		return
 	}
 
@@ -222,7 +233,6 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 		}
 	}
 
-	// Check if caller is seller or buyer
 	isSeller := offer != nil && walletAddress == offer.SellerWalletAddress
 	isBuyer := order.BuyerWalletAddress != nil && walletAddress == *order.BuyerWalletAddress
 

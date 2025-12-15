@@ -193,7 +193,7 @@ func (s *BlockchainService) CheckTransactionStatus(txHash string) (int32, error)
 		}
 
 		// Status 3 = FAILED
-		if status == (constants.TxStatusFinalized) {
+		if status == (constants.TxStatusFailed) {
 			logger.Error().
 				Str("tx_hash", txHash).
 				Msg("Transaction failed")

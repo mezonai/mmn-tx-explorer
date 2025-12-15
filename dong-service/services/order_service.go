@@ -30,14 +30,12 @@ type IOrderService interface {
 	CreateOrder(ctx context.Context, offerID int64, req *models.CreateOrderRequest, walletAddress string) (*models.Order, *models.Offer, error)
 	ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, error)
 	GetOrderByID(ctx context.Context, id int64) (*models.Order, error)
-	ConfirmOrder(ctx context.Context, orderID int64, walletAddress string, executionPrice *string, source *string, metadata *string) error
 	ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o *models.Order) error
 	ConfirmOrderAsSeller(ctx context.Context, orderID int64, o *models.Order, offer *models.Offer) error
 	GetOrdersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Order, int64, error)
 }
 
 func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *models.CreateOrderRequest, walletAddress string) (*models.Order, *models.Offer, error) {
-	hasActive, err := s.repo.HasActiveOrders(ctx, offerID)
 	db := database.GetDB()
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -49,29 +47,28 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		}
 	}()
 
-	// Get offer with row-level lock to prevent concurrent order creation
 	offer, err := s.offerRepo.GetOfferByIDForUpdate(ctx, offerID, tx)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to fetch offer: %w", err)
 	}
 
+	hasActive, err := s.repo.HasActiveOrders(ctx, offerID, tx)
 	if hasActive {
 		return nil, nil, fmt.Errorf("offer already has active pending orders")
 	}
 
-	payableAmountInt := offer.PayableAmount
+	payableAmount := offer.PayableAmount
 	if req.PayableAmount != nil {
-		payableAmountInt = *req.PayableAmount
+		payableAmount = *req.PayableAmount
 	}
-
-	amountInt := req.Amount
+	amount := req.Amount
 
 	if offer.Limit != nil {
-		if amountInt < offer.Limit.Min {
-			return nil, nil, fmt.Errorf("order amount %d is below minimum limit %d", amountInt, offer.Limit.Min)
+		if amount < offer.Limit.Min {
+			return nil, nil, fmt.Errorf("order amount %d is below minimum limit %d", amount, offer.Limit.Min)
 		}
-		if amountInt > offer.Limit.Max {
-			return nil, nil, fmt.Errorf("order amount %d exceeds maximum limit %d", amountInt, offer.Limit.Max)
+		if amount > offer.Limit.Max {
+			return nil, nil, fmt.Errorf("order amount %d exceeds maximum limit %d", amount, offer.Limit.Max)
 		}
 	}
 
@@ -81,19 +78,18 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 	}
 
 	transferCode := fmt.Sprintf("ORDER %d", offerID)
-
 	expiresAt := time.Now().UTC().Add(15 * time.Minute)
 	order := &models.Order{
 		OfferID:            &offerID,
 		BuyerWalletAddress: walletAddrPtr,
-		Amount:             amountInt,
-		PayableAmount:      payableAmountInt,
+		Amount:             amount,
+		PayableAmount:      payableAmount,
 		Status:             constants.TrandingOpen,
 		TransferCode:       &transferCode,
 		ExpiresAt:          &expiresAt,
 	}
 
-	if err = s.offerRepo.ReserveQuantity(ctx, offerID, amountInt, tx); err != nil {
+	if err = s.offerRepo.ReserveQuantity(ctx, offerID, amount, tx); err != nil {
 		err = fmt.Errorf("failed to reserve offer quantity: %w", err)
 		return nil, nil, err
 	}
@@ -165,61 +161,6 @@ func (s *OrderService) GetOrdersByWalletAddress(ctx context.Context, walletAddre
 	}
 
 	return orders, count, nil
-}
-
-func (s *OrderService) ConfirmOrder(ctx context.Context, orderID int64, walletAddress string, executionPrice *string, source *string, metadata *string) error {
-	// load order
-	o, err := s.repo.GetOrderByID(ctx, orderID)
-	if err != nil {
-		return fmt.Errorf("failed to fetch order: %w", err)
-	}
-
-	// Check expiry
-	now := time.Now().UTC()
-	var expired bool
-	if o.ExpiresAt != nil {
-		expired = now.After(*o.ExpiresAt)
-	}
-
-	// Handle expired order
-	if expired {
-		db := database.GetDB()
-		tx, err := db.BeginTx(ctx, nil)
-		if err != nil {
-			return err
-		}
-		defer func() {
-			if err != nil {
-				_ = tx.Rollback()
-			}
-		}()
-
-		if err = s.repo.UpdateOrderStatus(ctx, orderID, string(models.OrderStatusCanceled), tx); err != nil {
-			return err
-		}
-
-		if o.OfferID != nil {
-			if err = s.offerRepo.ReleaseQuantity(ctx, *o.OfferID, o.Amount, tx); err != nil {
-				return err
-			}
-		}
-
-		if err = tx.Commit(); err != nil {
-			return err
-		}
-
-		if o.OfferID != nil {
-			of, err := s.offerRepo.GetOfferByID(context.Background(), *o.OfferID)
-			if err == nil && of != nil {
-				payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.Amount}
-				go s.sendOrderEvent(of.SellerWalletAddress, "ORDER_CANCELED", payload)
-			}
-		}
-
-		return fmt.Errorf("order expired and was cancelled")
-	}
-
-	return fmt.Errorf("use ConfirmOrderAsBuyer or ConfirmOrderAsSeller methods directly")
 }
 
 func (s *OrderService) ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o *models.Order) error {
