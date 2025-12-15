@@ -38,7 +38,6 @@ type IOrderService interface {
 
 func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *models.CreateOrderRequest, walletAddress string) (*models.Order, *models.Offer, error) {
 	hasActive, err := s.repo.HasActiveOrders(ctx, offerID)
-
 	db := database.GetDB()
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -60,11 +59,9 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		return nil, nil, fmt.Errorf("offer already has active pending orders")
 	}
 
-	var priceInt int64
+	payableAmountInt := offer.PayableAmount
 	if req.PayableAmount != nil {
-		priceInt = *req.PayableAmount
-	} else {
-		priceInt = offer.PayableAmount
+		payableAmountInt = *req.PayableAmount
 	}
 
 	amountInt := req.Amount
@@ -90,7 +87,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		OfferID:            &offerID,
 		BuyerWalletAddress: walletAddrPtr,
 		Amount:             amountInt,
-		PayableAmount:      priceInt,
+		PayableAmount:      payableAmountInt,
 		Status:             constants.TrandingOpen,
 		TransferCode:       &transferCode,
 		ExpiresAt:          &expiresAt,
@@ -109,15 +106,42 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		return nil, nil, err
 	}
 
+	order.BankInfo = offer.BankInfo
+	order.SellerWalletAddress = &offer.SellerWalletAddress
+
 	return order, offer, nil
 }
 
 func (s *OrderService) ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, error) {
-	return s.repo.ListOrdersByOffer(ctx, offerID, pagination)
+	orders, err := s.repo.ListOrdersByOffer(ctx, offerID, pagination)
+	if err != nil {
+		return nil, err
+	}
+
+	of, err := s.offerRepo.GetOfferByID(ctx, offerID)
+	if err == nil && of != nil {
+		for i := range orders {
+			orders[i].BankInfo = of.BankInfo
+		}
+	}
+
+	return orders, nil
 }
 
 func (s *OrderService) GetOrderByID(ctx context.Context, id int64) (*models.Order, error) {
-	return s.repo.GetOrderByID(ctx, id)
+	o, err := s.repo.GetOrderByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if o != nil && o.OfferID != nil {
+		of, err := s.offerRepo.GetOfferByID(ctx, *o.OfferID)
+		if err == nil && of != nil {
+			o.BankInfo = of.BankInfo
+		}
+	}
+
+	return o, nil
 }
 
 func (s *OrderService) GetOrdersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Order, int64, error) {
@@ -129,6 +153,17 @@ func (s *OrderService) GetOrdersByWalletAddress(ctx context.Context, walletAddre
 	if err != nil {
 		return nil, 0, err
 	}
+
+	for i := range orders {
+		if orders[i].OfferID != nil {
+			of, err := s.offerRepo.GetOfferByID(ctx, *orders[i].OfferID)
+			if err == nil && of != nil {
+				orders[i].BankInfo = of.BankInfo
+				orders[i].SellerWalletAddress = &of.SellerWalletAddress
+			}
+		}
+	}
+
 	return orders, count, nil
 }
 
@@ -173,6 +208,14 @@ func (s *OrderService) ConfirmOrder(ctx context.Context, orderID int64, walletAd
 			return err
 		}
 
+		if o.OfferID != nil {
+			of, err := s.offerRepo.GetOfferByID(context.Background(), *o.OfferID)
+			if err == nil && of != nil {
+				payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.Amount}
+				go s.sendOrderEvent(of.SellerWalletAddress, "ORDER_CANCELED", payload)
+			}
+		}
+
 		return fmt.Errorf("order expired and was cancelled")
 	}
 
@@ -206,7 +249,6 @@ func (s *OrderService) ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o
 
 	// Send ORDER_CONFIRMED event to seller
 	if o.OfferID != nil {
-		// fetch seller address and fire event asynchronously
 		of, err := s.offerRepo.GetOfferByID(context.Background(), *o.OfferID)
 		if err == nil && of.SellerWalletAddress != "" {
 			payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.Amount}

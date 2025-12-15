@@ -49,7 +49,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	order, offer, err := h.orderService.CreateOrder(c.Request.Context(), id, &req, walletAddr)
+	order, _, err := h.orderService.CreateOrder(c.Request.Context(), id, &req, walletAddr)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to create order")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to create order: "+err.Error()))
@@ -57,10 +57,9 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"success":  true,
-		"message":  "Order created",
-		"order":    order,
-		"bankinfo": offer.BankInfo,
+		"success": true,
+		"message": "Order created",
+		"order":   order,
 	})
 }
 

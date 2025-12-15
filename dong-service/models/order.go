@@ -16,17 +16,19 @@ const (
 )
 
 type Order struct {
-	OrderID            int64      `json:"order_id" db:"order_id"`
-	OfferID            *int64     `json:"offer_id,omitempty" db:"offer_id"`
-	BuyerWalletAddress *string    `json:"buyer_wallet_address,omitempty" db:"buyer_wallet_address"`
-	Amount             int64      `json:"amount" db:"amount"`
-	PayableAmount      int64      `json:"payable_amount" db:"payable_amount"`
-	TransactionHash    *string    `json:"transaction_hash,omitempty" db:"transaction_hash"`
-	Status             string     `json:"status" db:"status"`
-	TransferCode       *string    `json:"transfer_code,omitempty" db:"transfer_code"`
-	ExpiresAt          *time.Time `json:"expires_at,omitempty" db:"expires_at"`
-	CreatedAt          time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt          time.Time  `json:"updated_at" db:"updated_at"`
+	OrderID             int64      `json:"order_id" db:"order_id"`
+	OfferID             *int64     `json:"offer_id,omitempty" db:"offer_id"`
+	BuyerWalletAddress  *string    `json:"buyer_wallet_address,omitempty" db:"buyer_wallet_address"`
+	Amount              int64      `json:"amount" db:"amount"`
+	PayableAmount       int64      `json:"payable_amount" db:"payable_amount"`
+	TransactionHash     *string    `json:"transaction_hash,omitempty" db:"transaction_hash"`
+	Status              string     `json:"status" db:"status"`
+	TransferCode        *string    `json:"transfer_code,omitempty" db:"transfer_code"`
+	ExpiresAt           *time.Time `json:"expires_at,omitempty" db:"expires_at"`
+	CreatedAt           time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt           time.Time  `json:"updated_at" db:"updated_at"`
+	BankInfo            *string    `json:"bank_info,omitempty" db:"-"`
+	SellerWalletAddress *string    `json:"seller_wallet_address,omitempty" db:"-"`
 }
 
 type CreateOrderRequest struct {
