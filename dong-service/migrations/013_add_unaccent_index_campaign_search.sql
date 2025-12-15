@@ -1,7 +1,3 @@
-<<<<<<< Updated upstream
-CREATE EXTENSION IF NOT EXISTS unaccent;
-
-=======
 -- Enable unaccent extension
 CREATE EXTENSION IF NOT EXISTS unaccent;
 
@@ -25,4 +21,3 @@ CREATE TRIGGER trg_donation_campaign_body_search
 -- Update existing data with unaccent
 UPDATE dong_schema.donation_campaign
 SET body_search = to_tsvector('simple', unaccent(coalesce(name, '') || ' ' || coalesce(description, '')));
->>>>>>> Stashed changes
