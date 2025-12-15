@@ -61,7 +61,8 @@ export const UpdateList = ({ updates, campaign }: { updates: IDonationFeed[]; ca
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90" onClick={handleClose}>
           <Button
             onClick={handleClose}
-            className="absolute top-4 right-4 z-50 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
+            variant="secondary"
+            className="absolute top-4 right-4 z-50 rounded-full p-2 text-black transition-colors"
             aria-label="Close"
           >
             <X className="h-6 w-6" />
@@ -73,7 +74,8 @@ export const UpdateList = ({ updates, campaign }: { updates: IDonationFeed[]; ca
                 e.stopPropagation();
                 goToPrev();
               }}
-              className="absolute top-1/2 left-4 z-50 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white transition-colors hover:bg-white/20"
+              variant="secondary"
+              className="absolute top-1/2 left-0 z-50 -translate-y-1/2 rounded-full p-3 text-black transition-colors md:left-4"
               aria-label="Previous image"
             >
               <ChevronLeft className="h-8 w-8" />
@@ -98,7 +100,8 @@ export const UpdateList = ({ updates, campaign }: { updates: IDonationFeed[]; ca
                 e.stopPropagation();
                 goToNext();
               }}
-              className="absolute top-1/2 right-4 z-50 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white transition-colors hover:bg-white/20"
+              variant="secondary"
+              className="absolute top-1/2 right-0 z-50 -translate-y-1/2 rounded-full p-3 text-black transition-colors md:right-4"
               aria-label="Next image"
             >
               <ChevronRight className="h-8 w-8" />
@@ -106,7 +109,7 @@ export const UpdateList = ({ updates, campaign }: { updates: IDonationFeed[]; ca
           )}
 
           {allImages.length > 1 && (
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm">
+            <div className="bg-background/70 text-foreground absolute bottom-6 left-1/2 -translate-x-1/2 rounded-full px-4 py-2 text-sm font-medium backdrop-blur-sm">
               {currentIndex + 1} / {allImages.length}
             </div>
           )}
