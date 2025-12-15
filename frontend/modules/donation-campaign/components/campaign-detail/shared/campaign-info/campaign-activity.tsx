@@ -15,10 +15,10 @@ import { useHidden } from '../../provider';
 import { useEffect, useMemo, useState } from 'react';
 import { DonationCampaignService } from '@/modules/donation-campaign/api';
 import { DEFAULT_DEBOUNCE_TIME, useBreakpoint } from '@/hooks';
-import { RecentActivityTable } from '../../desktop/funding-activity/recent-activity-table';
-import { RecentActivityCardsMobile } from '../../mobile/funding-activity/recent-activity-card';
-import { WithdrawHistoryTable } from '../../desktop/funding-activity/withdraw-history-table';
-import { WithdrawHistoryCard } from '../../mobile/funding-activity/withdraw-history-card';
+import { RecentActivityTable } from '../../desktop/funding-activity';
+import { RecentActivityCardsMobile } from '../../mobile/funding-activity';
+import { WithdrawHistoryTable } from '../../desktop/funding-activity';
+import { WithdrawHistoryCard } from '../../mobile/funding-activity';
 import { DonationCampaign } from '@/modules/donation-campaign/type';
 
 const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {

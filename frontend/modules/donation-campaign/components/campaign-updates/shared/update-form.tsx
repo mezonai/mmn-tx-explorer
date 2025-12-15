@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Folder, X, Loader2 } from 'lucide-react';
 import { formatFileSize } from '@/utils';
-import { ChangeEvent } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
+import { ipfsServiceURL } from '@/service';
 
 const UNIT = 'MB';
 const MAX_IMAGES_SIZE = 20;
@@ -28,12 +29,25 @@ interface UpdateFormProps {
   previews: string[];
   isCompressing: boolean;
   isSaving: boolean;
+  isFetchingSizes?: boolean;
+  totalSize?: number;
   handleImageChange: (e: ChangeEvent<HTMLInputElement>) => void;
   handleRemoveImage: (idx: number) => void;
   handleRemoveAll: () => void;
   onSubmit: () => void;
   isEdit?: boolean;
 }
+
+const getImagesize = async (imageCid: string): Promise<number> => {
+  try {
+    const response = await fetch(`${ipfsServiceURL}/${imageCid}`);
+    const blob = await response.blob();
+    return blob.size;
+  } catch (error) {
+    console.error('Error fetching image size for CID:', imageCid, error);
+    return 0;
+  }
+};
 
 export const UpdateForm = ({
   form,
@@ -49,7 +63,27 @@ export const UpdateForm = ({
   onSubmit,
   isEdit = false,
 }: UpdateFormProps) => {
-  const totalSize = images.reduce((sum, img) => sum + img.size, 0);
+  const [existingImagesSize, setExistingImagesSize] = useState(0);
+  const [isFetchingLocalSizes, setIsFetchingLocalSizes] = useState(false);
+
+  useEffect(() => {
+    const existingCids = (form as any).existingImageCids || [];
+    if (isEdit && existingCids.length > 0) {
+      const fetchSizes = async () => {
+        setIsFetchingLocalSizes(true);
+        const sizes = await Promise.all(existingCids.map((cid: string) => getImagesize(cid)));
+        const total = sizes.reduce((sum, size) => sum + size, 0);
+        setExistingImagesSize(total);
+        setIsFetchingLocalSizes(false);
+      };
+      fetchSizes();
+    } else {
+      setExistingImagesSize(0);
+    }
+  }, [(form as any).existingImageCids, isEdit]);
+
+  const newImagesSize = images.reduce((sum, img) => sum + img.size, 0);
+  const totalSize = isEdit ? existingImagesSize + newImagesSize : newImagesSize;
   const maxTotalSize = MAX_IMAGES_SIZE * 1024 * 1024;
 
   return (
@@ -85,10 +119,24 @@ export const UpdateForm = ({
           />
         </div>
         <Separator className="my-4 w-full" />
+        {isFetchingLocalSizes && (
+          <div className="text-brand-primary flex items-center justify-center gap-2 p-3 text-sm">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Calculating image sizes...</span>
+          </div>
+        )}
         {isCompressing && (
           <div className="text-brand-primary flex items-center justify-center gap-2 p-3 text-sm">
             <Loader2 className="h-4 w-4 animate-spin" />
             <span>Compressing images...</span>
+          </div>
+        )}
+        {!isFetchingLocalSizes && totalSize > maxTotalSize && (
+          <div className="bg-destructive/10 border-destructive/30 text-destructive rounded-lg border p-3 text-sm">
+            <p className="font-semibold">Total size exceeds limit</p>
+            <p className="mt-1">
+              Current: {formatFileSize(totalSize)} / {MAX_IMAGES_SIZE} {UNIT}. Please remove some images to continue.
+            </p>
           </div>
         )}
         <div>
@@ -129,7 +177,13 @@ export const UpdateForm = ({
               </div>
               <div className="mt-3 flex flex-col items-center gap-3 py-3 md:flex-row md:justify-between">
                 <p className="text-xs font-medium text-gray-600">
-                  Current: {formatFileSize(totalSize)} / {MAX_IMAGES_SIZE} {UNIT}
+                  {isFetchingLocalSizes ? (
+                    <>Calculating total size...</>
+                  ) : (
+                    <>
+                      Current: {formatFileSize(totalSize)} / {MAX_IMAGES_SIZE} {UNIT}
+                    </>
+                  )}
                 </p>
                 <Button
                   variant="destructive"
@@ -163,7 +217,13 @@ export const UpdateForm = ({
                 Supported: JPG, PNG. Total size limit: {MAX_IMAGES_SIZE} {UNIT} for all images (auto-compressed)
               </p>
               <p className="mt-1 text-xs font-medium text-gray-600">
-                Current: {formatFileSize(totalSize)} / {MAX_IMAGES_SIZE} {UNIT}
+                {isFetchingLocalSizes ? (
+                  <>Calculating total size...</>
+                ) : (
+                  <>
+                    Current: {formatFileSize(totalSize)} / {MAX_IMAGES_SIZE} {UNIT}
+                  </>
+                )}
               </p>
             </div>
           )}
@@ -174,7 +234,7 @@ export const UpdateForm = ({
             variant="default"
             className="bg-brand-primary hover:bg-brand-primary/80 shadow-brand-primary/10 w-full rounded-xl text-white shadow-lg"
             onClick={onSubmit}
-            disabled={isSaving || !validation.isTitle || !validation.isDescription}
+            disabled={isSaving || !validation.isTitle || !validation.isDescription || totalSize > maxTotalSize}
           >
             {isEdit
               ? isSaving
