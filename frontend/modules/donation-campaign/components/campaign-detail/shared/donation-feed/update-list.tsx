@@ -58,11 +58,11 @@ export const UpdateList = ({ updates, campaign }: { updates: IDonationFeed[]; ca
       </div>
 
       {open && allImages.length > 0 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90" onClick={handleClose}>
+        <div className="fixed inset-0 z-50 flex h-full items-center justify-center bg-black/90" onClick={handleClose}>
           <Button
             onClick={handleClose}
             variant="secondary"
-            className="absolute top-4 right-4 z-50 rounded-full p-2 text-black transition-colors"
+            className="absolute top-4 right-4 z-50 h-10 w-10 rounded-full p-2 text-black transition-colors"
             aria-label="Close"
           >
             <X className="h-6 w-6" />
@@ -101,7 +101,7 @@ export const UpdateList = ({ updates, campaign }: { updates: IDonationFeed[]; ca
                 goToNext();
               }}
               variant="secondary"
-              className="absolute top-1/2 right-0 z-50 -translate-y-1/2 rounded-full p-3 text-black transition-colors md:right-4"
+              className="absolute top-1/2 right-0 z-50 h-10 w-10 -translate-y-1/2 rounded-full p-3 text-black transition-colors md:right-4"
               aria-label="Next image"
             >
               <ChevronRight className="h-8 w-8" />
