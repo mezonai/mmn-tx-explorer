@@ -39,15 +39,10 @@ type OfferLimit struct {
 type CreateOfferRequest struct {
 	Side      OfferSide              `json:"side" binding:"required"` // BUY or SELL
 	Symbol    string                 `json:"symbol" binding:"required"`
-	Amount    string                 `json:"amount" binding:"required"`
+	Amount    int64                  `json:"amount" binding:"required"`
 	PriceRate *string                `json:"price_rate,omitempty"`
 	BankInfo  map[string]interface{} `json:"bank_info,omitempty"`
-	Limit     *OfferLimitRequest     `json:"limit,omitempty"`
-}
-
-type OfferLimitRequest struct {
-	Min *string `json:"min,omitempty"`
-	Max *string `json:"max,omitempty"`
+	Limit     *OfferLimit            `json:"limit,omitempty"`
 }
 
 type UpdateOfferStatusRequest struct {

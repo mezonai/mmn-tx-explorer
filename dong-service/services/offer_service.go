@@ -2,12 +2,15 @@ package services
 
 import (
 	"context"
+	"database/sql"
 	"dong-service/blockchain"
 	"dong-service/constants"
 	"dong-service/database"
+	"dong-service/logger"
 	"dong-service/models"
 	"dong-service/repository"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"strconv"
@@ -35,26 +38,26 @@ type IOfferService interface {
 }
 
 func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string) (*models.Offer, error) {
-	// Parse offer amount first for balance check
-	amountInt, parseErr := strconv.ParseInt(req.Amount, 10, 64)
-	if parseErr != nil {
-		return nil, fmt.Errorf("invalid amount: %w", parseErr)
-	}
+	amountInt := req.Amount
 
 	if s.userWalletRepo != nil {
 		userWallet, err := s.userWalletRepo.GetByAddress(walletAddr)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get wallet balance: %w", err)
-		}
+			if errors.Is(err, sql.ErrNoRows) {
+				logger.Warn().Str("wallet", walletAddr).Msg("Wallet not indexed yet, skipping balance check")
+			} else {
+				return nil, fmt.Errorf("failed to get wallet balance: %w", err)
+			}
+		} else {
+			balanceInt, parseErr := strconv.ParseInt(userWallet.Balance, 10, 64)
+			if parseErr != nil {
+				return nil, fmt.Errorf("invalid wallet balance format: %w", parseErr)
+			}
 
-		balanceInt, parseErr := strconv.ParseInt(userWallet.Balance, 10, 64)
-		if parseErr != nil {
-			return nil, fmt.Errorf("invalid wallet balance format: %w", parseErr)
-		}
-
-		requiredBalance := amountInt * 1000000
-		if balanceInt < requiredBalance {
-			return nil, fmt.Errorf("insufficient balance: have %d, need %d", balanceInt, requiredBalance)
+			requiredBalance := amountInt * 1000000
+			if balanceInt < requiredBalance {
+				return nil, fmt.Errorf("insufficient balance: have %d, need %d", balanceInt, requiredBalance)
+			}
 		}
 	}
 
@@ -100,22 +103,8 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 	var limitMinInt int64 = 1
 	var limitMaxInt int64 = amountInt
 	if req.Limit != nil {
-		if req.Limit.Min != nil && *req.Limit.Min != "" {
-			v, parseErr := strconv.ParseInt(*req.Limit.Min, 10, 64)
-			if parseErr != nil {
-				err = fmt.Errorf("invalid limit_min: %w", parseErr)
-				return nil, err
-			}
-			limitMinInt = v
-		}
-		if req.Limit.Max != nil && *req.Limit.Max != "" {
-			v, parseErr := strconv.ParseInt(*req.Limit.Max, 10, 64)
-			if parseErr != nil {
-				err = fmt.Errorf("invalid limit_max: %w", parseErr)
-				return nil, err
-			}
-			limitMaxInt = v
-		}
+		limitMinInt = req.Limit.Min
+		limitMaxInt = req.Limit.Max
 	}
 
 	if limitMinInt < 1 {
@@ -241,5 +230,20 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 		return err
 	}
 
-	return tx.Commit()
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	if req.Status == constants.TradingFailed || req.Status == constants.TradingCompleted || req.Status == constants.TradingCanceled {
+		offer, err := s.repo.GetOfferByID(ctx, req.OfferID)
+		if err == nil && offer != nil && offer.IntermediaryWalletAddress != nil && *offer.IntermediaryWalletAddress != "" {
+			w, wErr := s.walletRepo.GetWalletByAddress(ctx, *offer.IntermediaryWalletAddress)
+			if wErr == nil && w != nil {
+				if upErr := s.walletRepo.UpdateWalletStatus(ctx, w.ID, constants.RedEnvelopeWalletStatusReady); upErr != nil {
+				}
+			}
+		}
+	}
+
+	return nil
 }
