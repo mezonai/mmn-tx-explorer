@@ -89,7 +89,7 @@ export function AppProvider({ children }: AppProviderProps) {
 
       // Init WebSocket if user is already logged in
       const tokenData = safeJsonParse<{ access_token?: string }>(localStorage.getItem(STORAGE_KEYS.TOKEN));
-      if (tokenData?.access_token) {
+      if (tokenData?.access_token && !localToken) {
         const wsManager = getWebSocketManager();
         wsManager.connect(tokenData.access_token);
       }
