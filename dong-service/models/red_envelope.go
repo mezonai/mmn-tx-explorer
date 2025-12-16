@@ -30,6 +30,7 @@ type IntermediaryWallet struct {
 	WalletAddress       string    `json:"wallet_address" db:"wallet_address"`
 	EncryptedPrivateKey string    `json:"-" db:"encrypted_private_key"`
 	Status              string    `json:"status" db:"status"`
+	Type                string    `json:"type" db:"type"`
 	CreatedAt           time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt           time.Time `json:"updated_at" db:"updated_at"`
 }

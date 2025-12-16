@@ -1,0 +1,6 @@
+ALTER TABLE user_content
+ADD COLUMN IF NOT EXISTS visible BOOLEAN DEFAULT TRUE;
+
+UPDATE user_content
+SET visible = TRUE
+WHERE visible IS NULL;
