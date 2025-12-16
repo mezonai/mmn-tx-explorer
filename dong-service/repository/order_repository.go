@@ -38,12 +38,13 @@ func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order, 
 }
 
 func (r *OrderRepository) HasActiveOrders(ctx context.Context, offerID int64, tx *sql.Tx) (bool, error) {
-	query := fmt.Sprintf("SELECT COUNT(1) FROM %s.orders WHERE offer_id = $1 AND status IN ('PENDING', 'OPEN') FOR UPDATE", r.dongSchema)
-	var cnt int64
-	if err := tx.QueryRowContext(ctx, query, offerID).Scan(&cnt); err != nil {
-		return false, err
+	query := fmt.Sprintf("SELECT 1 FROM %s.orders WHERE offer_id = $1 AND status IN ('PENDING','OPEN') LIMIT 1 FOR UPDATE", r.dongSchema)
+	var v int
+	err := tx.QueryRowContext(ctx, query, offerID).Scan(&v)
+	if err == sql.ErrNoRows {
+		return false, nil
 	}
-	return cnt > 0, nil
+	return err == nil, err
 }
 
 func (r *OrderRepository) UpdateOrderStatus(ctx context.Context, orderID int64, status string, tx *sql.Tx) error {
