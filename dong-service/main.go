@@ -146,6 +146,10 @@ func main() {
 	scheduler.InitializeWalletPoolMaintenanceJob(cronjob, ctx, cfg.Database.Schema)
 	cronjob.Start()
 
+	ordersExpiryInterval := 60 * time.Second
+	cancelExpiredOrdersTask := scheduler.CreateCancelExpiredOrdersTask(ordersExpiryInterval, cfg.Database.Schema)
+	schedulerInstance.AddTask(cancelExpiredOrdersTask)
+
 	// Start server in a goroutine
 	addr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)
 	logger.Info().Str("address", addr).Msg("Starting HTTP server")

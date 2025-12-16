@@ -9,6 +9,7 @@ import (
 	"dong-service/logger"
 	"dong-service/middleware"
 	"dong-service/repository"
+	"dong-service/services"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -37,9 +38,9 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 	}
 
 	queueService := repository.NewRedEnvelopeQueueService(database.RedisClient)
-	walletRepo := repository.NewIntermediaryWalletRepository(database.GetDB(), cfg.Database.Schema)
-	redEnvelopeRepo := repository.NewRedEnvelopeRepository(database.GetDB(), cfg.Database.Schema, blockchainService, walletRepo, queueService)
-	redEnvelopeHandler := handlers.NewRedEnvelopeHandler(redEnvelopeRepo, queueService, walletRepo)
+	intermediaryWalletRepo := repository.NewIntermediaryWalletRepository(database.GetDB(), cfg.Database.Schema)
+	redEnvelopeRepo := repository.NewRedEnvelopeRepository(database.GetDB(), cfg.Database.Schema, blockchainService, intermediaryWalletRepo, queueService)
+	redEnvelopeHandler := handlers.NewRedEnvelopeHandler(redEnvelopeRepo, queueService, intermediaryWalletRepo)
 
 	// API v1 routes
 	v1 := router.Group("/api/v1")
@@ -104,5 +105,36 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		walletPublic := v1.Group("/wallets")
 		walletPublic.Use(middleware.ParseTokenAndAddToContext(cfg.JWT.Secret))
 		walletPublic.GET("/:address/detail", walletHandler.GetWalletDetail)
+
+		// Offers (private) - create offer
+		offersPrivate := v1.Group("/offers")
+		offersPrivate.Use(middleware.Authentication(cfg.JWT.Secret))
+
+		offerRepo := repository.NewOfferRepository(database.GetDB(), cfg.Database.Schema)
+		orderRepo := repository.NewOrderRepository(database.GetDB(), cfg.Database.Schema)
+
+		offerService := services.NewOfferService(offerRepo, intermediaryWalletRepo, walletRepo, orderRepo, blockchainService)
+		orderService := services.NewOrderService(orderRepo, offerRepo, intermediaryWalletRepo, blockchainService)
+
+		offerHandler := handlers.NewOfferHandler(offerService)
+		orderHandler := handlers.NewOrderHandler(orderService)
+
+		offersPrivate.POST("", offerHandler.CreateOffer)
+		offersPrivate.POST("/update-status", offerHandler.UpdateOfferStatus)
+		offersPrivate.GET("/me", offerHandler.GetMyOffers)
+		offersPrivate.GET("/:id", offerHandler.GetOfferDetail)
+		offersPrivate.GET("/:id/orders", orderHandler.ListOrdersForOffer)
+		offersPrivate.POST("/:id/orders", orderHandler.CreateOrder)
+
+		// Offers (public)
+		offersPublic := v1.Group("/offers")
+		offersPublic.GET("", offerHandler.ListOffers)
+
+		orders := v1.Group("/orders")
+		orders.Use(middleware.Authentication(cfg.JWT.Secret))
+
+		orders.POST("/:id/confirm", orderHandler.ConfirmOrder)
+		orders.GET("/me", orderHandler.GetMyOrders)
+		orders.GET("/:id", orderHandler.GetOrderDetail)
 	}
 }
