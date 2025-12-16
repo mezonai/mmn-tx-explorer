@@ -63,7 +63,7 @@ func (r *RedEnvelopeRepository) Create(req *models.CreateRedEnvelopeRequest, cre
 
 	var result models.RedEnvelope
 	ctx := context.Background()
-	redEnvelopeWallet, err := r.walletRepo.GetOrCreateAvailableWallet(ctx, tx)
+	redEnvelopeWallet, err := r.walletRepo.GetOrCreateAvailableWallet(ctx, tx, constants.WalletTypeRedEnvelope)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get or create available wallet: %w", err)
 	}

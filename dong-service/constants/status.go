@@ -28,6 +28,14 @@ const (
 	TransactionStatusFINALIZED int16 = 2
 )
 
+// Blockchain Transaction Status Constants (from MMN SDK)
+const (
+	TxStatusPending   int32 = 0 // Transaction is pending
+	TxStatusConfirmed int32 = 1 // Transaction is confirmed
+	TxStatusFinalized int32 = 2 // Transaction is finalized
+	TxStatusFailed    int32 = 3 // Transaction failed
+)
+
 const (
 	RedEnvelopeStatusPending   = "PENDING"   // Awaiting transaction confirmation
 	RedEnvelopeStatusPublished = "PUBLISHED" // Active and claimable
@@ -52,6 +60,7 @@ const (
 const (
 	WalletTypeDefault     = "DEFAULT"
 	WalletTypeRedEnvelope = "LUCKY_MONEY"
+	WalletTypeOffer       = "OFFER"
 )
 
 // Red Envelope Configuration
@@ -85,6 +94,15 @@ const (
 
 const (
 	TextDataLuckyMoney = "Lucky Money fund"
+)
+
+const (
+	TrandingOpen     = "OPEN"
+	TradingPending   = "PENDING"
+	TradingConfirmed = "CONFIRMED"
+	TradingCanceled  = "CANCELED"
+	TradingFailed    = "FAILED"
+	TradingCompleted = "COMPLETED"
 )
 
 // GetStatusName returns the human-readable name for a status code

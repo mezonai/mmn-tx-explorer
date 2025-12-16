@@ -27,8 +27,8 @@ func NewIntermediaryWalletRepository(db *sql.DB, dongSchema string) *Intermediar
 func (r *IntermediaryWalletRepository) CreateWallet(ctx context.Context, wallet *models.IntermediaryWallet, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
 		INSERT INTO %s.intermediary_wallet 
-		(wallet_address, encrypted_private_key, status, created_at, updated_at)
-		VALUES ($1, $2, $3, NOW(), NOW())
+		(wallet_address, encrypted_private_key, status, type, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, NOW(), NOW())
 		RETURNING id, created_at, updated_at
 	`, r.dongSchema)
 
@@ -38,12 +38,13 @@ func (r *IntermediaryWalletRepository) CreateWallet(ctx context.Context, wallet 
 		wallet.WalletAddress,
 		wallet.EncryptedPrivateKey,
 		wallet.Status,
+		wallet.Type,
 	).Scan(&wallet.ID, &wallet.CreatedAt, &wallet.UpdatedAt)
 }
 
 func (r *IntermediaryWalletRepository) FindOldWallets(ctx context.Context, daysOld int) ([]models.IntermediaryWallet, error) {
 	query := fmt.Sprintf(`
-		SELECT id, wallet_address, encrypted_private_key, status, created_at, updated_at
+		SELECT id, wallet_address, encrypted_private_key, status, type, created_at, updated_at
 		FROM %s.intermediary_wallet
 		WHERE status = ANY($1) AND created_at < NOW() - INTERVAL '1 day' * $2
 		ORDER BY created_at ASC
@@ -72,6 +73,7 @@ func (r *IntermediaryWalletRepository) FindOldWallets(ctx context.Context, daysO
 			&wallet.WalletAddress,
 			&wallet.EncryptedPrivateKey,
 			&wallet.Status,
+			&wallet.Type,
 			&wallet.CreatedAt,
 			&wallet.UpdatedAt,
 		)
@@ -151,13 +153,13 @@ func (r *IntermediaryWalletRepository) CreateWallets(ctx context.Context, wallet
 		return err
 	}
 
-	query := fmt.Sprintf("INSERT INTO %s.intermediary_wallet (wallet_address, encrypted_private_key, status, created_at, updated_at) VALUES ", r.dongSchema)
+	query := fmt.Sprintf("INSERT INTO %s.intermediary_wallet (wallet_address, encrypted_private_key, status, type, created_at, updated_at) VALUES ", r.dongSchema)
 	vals := []interface{}{}
 
 	for i, w := range wallets {
-		n := i * 3
-		query += fmt.Sprintf("($%d, $%d, $%d, NOW(), NOW()),", n+1, n+2, n+3)
-		vals = append(vals, w.WalletAddress, w.EncryptedPrivateKey, w.Status)
+		n := i * 4
+		query += fmt.Sprintf("($%d, $%d, $%d, $%d, NOW(), NOW()),", n+1, n+2, n+3, n+4)
+		vals = append(vals, w.WalletAddress, w.EncryptedPrivateKey, w.Status, w.Type)
 	}
 
 	query = query[0 : len(query)-1]
@@ -192,7 +194,7 @@ func (r *IntermediaryWalletRepository) CreateWallets(ctx context.Context, wallet
 
 func (r *IntermediaryWalletRepository) GetWalletByAddress(ctx context.Context, address string) (*models.IntermediaryWallet, error) {
 	query := fmt.Sprintf(`
-		SELECT id, wallet_address, encrypted_private_key, status, created_at, updated_at
+		SELECT id, wallet_address, encrypted_private_key, status, type, created_at, updated_at
 		FROM %s.intermediary_wallet
 		WHERE wallet_address = $1
 	`, r.dongSchema)
@@ -203,6 +205,7 @@ func (r *IntermediaryWalletRepository) GetWalletByAddress(ctx context.Context, a
 		&wallet.WalletAddress,
 		&wallet.EncryptedPrivateKey,
 		&wallet.Status,
+		&wallet.Type,
 		&wallet.CreatedAt,
 		&wallet.UpdatedAt,
 	)
@@ -228,7 +231,7 @@ func (r *IntermediaryWalletRepository) UpdateIntermediaryWalletStatus(tx *sql.Tx
 	return nil
 }
 
-func (r *IntermediaryWalletRepository) GetOrCreateAvailableWallet(ctx context.Context, tx *sql.Tx) (*models.IntermediaryWallet, error) {
+func (r *IntermediaryWalletRepository) GetOrCreateAvailableWallet(ctx context.Context, tx *sql.Tx, walletType string) (*models.IntermediaryWallet, error) {
 	wallet, err := r.GetAvailableWallet(ctx, tx)
 	if err != nil && err.Error() != "no available wallets in the pool" {
 		return nil, fmt.Errorf("failed to get available wallet: %w", err)
@@ -249,6 +252,7 @@ func (r *IntermediaryWalletRepository) GetOrCreateAvailableWallet(ctx context.Co
 			WalletAddress:       address,
 			EncryptedPrivateKey: encryptedKey,
 			Status:              constants.RedEnvelopeWalletStatusInUse,
+			Type:                walletType,
 		}
 
 		err = r.CreateWallet(ctx, wallet, tx)
@@ -266,7 +270,7 @@ func (r *IntermediaryWalletRepository) GetOrCreateAvailableWallet(ctx context.Co
 
 func (r *IntermediaryWalletRepository) GetAvailableWallet(ctx context.Context, tx *sql.Tx) (*models.IntermediaryWallet, error) {
 	query := fmt.Sprintf(`
-		SELECT id, wallet_address, encrypted_private_key, status, created_at, updated_at
+		SELECT id, wallet_address, encrypted_private_key, status, type, created_at, updated_at
 		FROM %s.intermediary_wallet
 		WHERE status = $1
 		ORDER BY created_at DESC
@@ -280,6 +284,7 @@ func (r *IntermediaryWalletRepository) GetAvailableWallet(ctx context.Context, t
 		&wallet.WalletAddress,
 		&wallet.EncryptedPrivateKey,
 		&wallet.Status,
+		&wallet.Type,
 		&wallet.CreatedAt,
 		&wallet.UpdatedAt,
 	)

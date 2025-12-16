@@ -100,6 +100,23 @@ func (s *BlockchainService) Transfer(fromAddress, toAddress string, amount int64
 	return resp.TxHash, nil
 }
 
+func (s *BlockchainService) GetTransaction(txHash string) (*mmnClient.TxInfo, error) {
+	if s.mmnClient == nil {
+		return nil, fmt.Errorf("mmn client not initialized")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	txInfo, err := s.mmnClient.GetTxByHash(ctx, txHash)
+	if err != nil {
+		logger.Error().Err(err).Str("tx_hash", txHash).Msg("Failed to get transaction by hash")
+		return nil, fmt.Errorf("failed to get transaction: %w", err)
+	}
+
+	return &txInfo, nil
+}
+
 func (s *BlockchainService) Close() error {
 	if s.mmnClient != nil {
 		return s.mmnClient.Close()
