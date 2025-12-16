@@ -31,8 +31,12 @@ export const CampaignPreviewCard = ({ preview }: CampaignPreviewProps) => {
           </p>
 
           <p className="mt-2 line-clamp-3 text-xs break-all text-gray-600 dark:text-gray-400">
-            {preview.shortDescription ||
-              'Short description helps donors grasp the impact and call to action in seconds.'}
+            {preview.shortDescription.split('\n').map((line, index) => (
+              <span key={index}>
+                {line}
+                {index < preview.shortDescription.split('\n').length - 1 && <br />}
+              </span>
+            )) || 'Short description helps donors grasp the impact and call to action in seconds.'}
           </p>
 
           <div className="mt-5">
