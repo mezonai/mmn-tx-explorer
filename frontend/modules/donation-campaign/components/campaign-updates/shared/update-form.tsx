@@ -11,9 +11,6 @@ import { formatFileSize } from '@/utils';
 import { ChangeEvent, useEffect, useState } from 'react';
 import { ipfsServiceURL } from '@/service';
 
-const UNIT = 'MB';
-const MAX_IMAGES_SIZE = 20;
-
 interface UpdateFormProps {
   form: {
     title: string;
@@ -37,6 +34,9 @@ interface UpdateFormProps {
   onSubmit: () => void;
   isEdit?: boolean;
   setExistingSize?: (size: number) => void;
+  unit?: string;
+  maxSize?: number;
+  maxImagesAllowed?: number;
 }
 
 const getImagesize = async (imageCid: string): Promise<number> => {
@@ -64,6 +64,9 @@ export const UpdateForm = ({
   onSubmit,
   isEdit = false,
   setExistingSize,
+  unit = 'MB',
+  maxSize = 20,
+  maxImagesAllowed = 50,
 }: UpdateFormProps) => {
   const [existingImagesSize, setExistingImagesSize] = useState(0);
   const [isFetchingLocalSizes, setIsFetchingLocalSizes] = useState(false);
@@ -88,7 +91,9 @@ export const UpdateForm = ({
 
   const newImagesSize = images.reduce((sum, img) => sum + img.size, 0);
   const totalSize = isEdit ? existingImagesSize + newImagesSize : newImagesSize;
-  const maxTotalSize = MAX_IMAGES_SIZE * 1024 * 1024;
+  const maxTotalSize = maxSize * 1024 * 1024;
+
+  const totalImagesCount = isEdit ? ((form as any).existingImageCids?.length || 0) + images.length : images.length;
 
   return (
     <Card className="border-primary/40 bg-card shadow-brand-primary/10 w-full max-w-[700px] rounded-3xl border p-3 shadow-lg dark:border-white/10">
@@ -123,21 +128,6 @@ export const UpdateForm = ({
           />
         </div>
         <Separator className="my-4 w-full" />
-        {isFetchingLocalSizes && (
-          <div className="text-brand-primary flex items-center justify-center gap-2 p-3 text-sm">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Calculating image sizes...</span>
-          </div>
-        )}
-
-        {!isFetchingLocalSizes && totalSize > maxTotalSize && (
-          <div className="bg-destructive/10 border-destructive/30 text-destructive rounded-lg border p-3 text-sm">
-            <p className="font-semibold">Total size exceeds limit</p>
-            <p className="mt-1">
-              Current: {formatFileSize(totalSize)} / {MAX_IMAGES_SIZE} {UNIT}. Please remove some images to continue.
-            </p>
-          </div>
-        )}
         <div>
           {previews.length > 0 && (
             <>
@@ -159,7 +149,7 @@ export const UpdateForm = ({
                     </Button>
                   </div>
                 ))}
-                {totalSize < maxTotalSize && (
+                {totalSize < maxTotalSize && totalImagesCount < maxImagesAllowed && (
                   <label className="hover:border-brand-primary flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded border-2 border-dashed border-gray-300 transition-colors">
                     <span className="text-2xl text-gray-400">+</span>
                     <span className="text-xs text-gray-400">Add More</span>
@@ -180,7 +170,14 @@ export const UpdateForm = ({
                     <>Calculating total size...</>
                   ) : (
                     <>
-                      Current: {formatFileSize(totalSize)} / {MAX_IMAGES_SIZE} {UNIT}
+                      <span className="text-brand-primary font-semibold">{formatFileSize(totalSize)}</span>
+                      <span className="text-muted-foreground">
+                        {' '}
+                        / {maxSize} {unit}
+                      </span>
+                      <span className="mx-2 text-gray-400">•</span>
+                      <span className="text-brand-primary font-semibold">{totalImagesCount}</span>
+                      <span className="text-muted-foreground"> / {maxImagesAllowed} images</span>
                     </>
                   )}
                 </p>
@@ -193,13 +190,13 @@ export const UpdateForm = ({
                   Remove all images
                 </Button>
               </div>
-              {isCompressing && (
-                <div className="text-brand-primary flex items-center justify-center gap-2 p-3 text-sm">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Compressing images...</span>
-                </div>
-              )}
             </>
+          )}
+          {isCompressing && (
+            <div className="text-brand-primary flex items-center justify-center gap-2 p-3 text-sm">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Compressing images...</span>
+            </div>
           )}
           {previews.length === 0 && (
             <div>
@@ -219,17 +216,9 @@ export const UpdateForm = ({
                 />
               </label>
               <p className="mt-1 text-xs text-gray-500">
-                Supported: JPG, PNG, HEIC Total size limit: {MAX_IMAGES_SIZE} {UNIT} for all images (auto-compressed)
+                Supported: JPG, PNG, HEIC Total size limit: {maxSize} {unit} for all images (auto-compressed)
               </p>
-              <p className="mt-1 text-xs font-medium text-gray-600">
-                {isFetchingLocalSizes ? (
-                  <>Calculating total size...</>
-                ) : (
-                  <>
-                    Current: {formatFileSize(totalSize)} / {MAX_IMAGES_SIZE} {UNIT}
-                  </>
-                )}
-              </p>
+              <p className="mt-1 text-xs text-gray-500">Maximum images allowed: {maxImagesAllowed} images</p>
             </div>
           )}
         </div>

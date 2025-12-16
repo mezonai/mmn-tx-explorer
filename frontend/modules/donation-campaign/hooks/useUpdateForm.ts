@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useCreateDonationUpdateContext } from '../context';
 import { IDonationFeed } from '../type';
 import { ipfsServiceURL } from '@/service';
+import { max } from 'date-fns';
 
 const UNIT = 'MB';
 const MAX_IMAGES_SIZE = 20;
@@ -16,6 +17,7 @@ const ALLOWED_IMAGE_TYPES = [
   'image/heic-sequence',
   'image/heif-sequence',
 ];
+const MAX_IMAGES_ALLOWED = 50;
 
 interface UseUpdateFormProps {
   updatePost?: IDonationFeed;
@@ -133,6 +135,10 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
           toast.error(
             `Total size would exceed ${MAX_IMAGES_SIZE} ${UNIT} limit. Current: ${formatFileSize(totalSize)}. Try uploading fewer or smaller images.`
           );
+        } else if (newImages.length + existingImageCids.length > MAX_IMAGES_ALLOWED) {
+          toast.error(
+            `You can upload a maximum of ${MAX_IMAGES_ALLOWED} images per update. Please remove some images to continue.`
+          );
         } else {
           setImages(newImages);
           const existingPreviews = existingImageCids.map((cid) => `${ipfsServiceURL}/${cid}`);
@@ -228,5 +234,8 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
     handleRemoveAll,
     onSubmit,
     setExistingSize,
+    unit: UNIT,
+    maxSize: MAX_IMAGES_SIZE,
+    maxImagesAllowed: MAX_IMAGES_ALLOWED,
   };
 };
