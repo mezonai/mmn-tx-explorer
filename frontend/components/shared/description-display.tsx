@@ -8,7 +8,7 @@ interface DescriptionDisplayProps {
 
 export const DescriptionDisplay = ({ description, lineShow, className }: DescriptionDisplayProps) => {
   return (
-    <p
+    <div
       className={cn(
         'mt-2 w-full text-sm leading-6 break-words whitespace-pre-line text-gray-600 dark:text-gray-400',
         lineShow && `line-clamp-${lineShow}`,
@@ -20,6 +20,6 @@ export const DescriptionDisplay = ({ description, lineShow, className }: Descrip
           {para}
         </p>
       ))}
-    </p>
+    </div>
   );
 };
