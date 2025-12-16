@@ -196,7 +196,7 @@ func (s *BlockchainService) CheckTransactionStatus(txHash string) (int32, error)
 				time.Sleep(retryDelay)
 				continue
 			}
-			return 0, fmt.Errorf("failed to get transaction after %d attempts: %w", maxRetries, err)
+			return constants.TxStatusPending, fmt.Errorf("failed to get transaction after %d attempts: %w", maxRetries, err)
 		}
 
 		status := int32(txResp.Status)
@@ -227,5 +227,5 @@ func (s *BlockchainService) CheckTransactionStatus(txHash string) (int32, error)
 		}
 	}
 
-	return 0, fmt.Errorf("failed to check transaction status after %d attempts", maxRetries)
+	return constants.TxStatusPending, fmt.Errorf("failed to check transaction status after %d attempts", maxRetries)
 }

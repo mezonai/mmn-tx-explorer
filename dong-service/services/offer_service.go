@@ -234,7 +234,7 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 		return err
 	}
 
-	if req.Status == constants.TradingFailed || req.Status == constants.TradingCompleted || req.Status == constants.TradingCanceled {
+	if req.Status == constants.TradingFailed {
 		offer, err := s.repo.GetOfferByID(ctx, req.OfferID)
 		if err == nil && offer != nil && offer.IntermediaryWalletAddress != nil && *offer.IntermediaryWalletAddress != "" {
 			w, wErr := s.walletRepo.GetWalletByAddress(ctx, *offer.IntermediaryWalletAddress)
