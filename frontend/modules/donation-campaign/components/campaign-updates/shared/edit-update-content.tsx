@@ -34,6 +34,7 @@ export const EditUpdateContent = ({ updatePost }: EditUpdateContentProps) => {
     handleRemoveImage,
     handleRemoveAll,
     onSubmit,
+    setExistingSize,
   } = useUpdateForm({ updatePost });
 
   return (
@@ -58,6 +59,7 @@ export const EditUpdateContent = ({ updatePost }: EditUpdateContentProps) => {
           handleRemoveAll={handleRemoveAll}
           onSubmit={onSubmit}
           isEdit={true}
+          setExistingSize={setExistingSize}
         />
       </div>
     </div>

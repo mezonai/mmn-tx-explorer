@@ -36,6 +36,7 @@ interface UpdateFormProps {
   handleRemoveAll: () => void;
   onSubmit: () => void;
   isEdit?: boolean;
+  setExistingSize?: (size: number) => void;
 }
 
 const getImagesize = async (imageCid: string): Promise<number> => {
@@ -62,6 +63,7 @@ export const UpdateForm = ({
   handleRemoveAll,
   onSubmit,
   isEdit = false,
+  setExistingSize,
 }: UpdateFormProps) => {
   const [existingImagesSize, setExistingImagesSize] = useState(0);
   const [isFetchingLocalSizes, setIsFetchingLocalSizes] = useState(false);
@@ -74,11 +76,13 @@ export const UpdateForm = ({
         const sizes = await Promise.all(existingCids.map((cid: string) => getImagesize(cid)));
         const total = sizes.reduce((sum, size) => sum + size, 0);
         setExistingImagesSize(total);
+        setExistingSize?.(total);
         setIsFetchingLocalSizes(false);
       };
       fetchSizes();
     } else {
       setExistingImagesSize(0);
+      setExistingSize?.(0);
     }
   }, [(form as any).existingImageCids, isEdit]);
 
@@ -125,12 +129,7 @@ export const UpdateForm = ({
             <span>Calculating image sizes...</span>
           </div>
         )}
-        {isCompressing && (
-          <div className="text-brand-primary flex items-center justify-center gap-2 p-3 text-sm">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Compressing images...</span>
-          </div>
-        )}
+
         {!isFetchingLocalSizes && totalSize > maxTotalSize && (
           <div className="bg-destructive/10 border-destructive/30 text-destructive rounded-lg border p-3 text-sm">
             <p className="font-semibold">Total size exceeds limit</p>
@@ -194,6 +193,12 @@ export const UpdateForm = ({
                   Remove all images
                 </Button>
               </div>
+              {isCompressing && (
+                <div className="text-brand-primary flex items-center justify-center gap-2 p-3 text-sm">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Compressing images...</span>
+                </div>
+              )}
             </>
           )}
           {previews.length === 0 && (
@@ -214,7 +219,7 @@ export const UpdateForm = ({
                 />
               </label>
               <p className="mt-1 text-xs text-gray-500">
-                Supported: JPG, PNG. Total size limit: {MAX_IMAGES_SIZE} {UNIT} for all images (auto-compressed)
+                Supported: JPG, PNG, HEIC Total size limit: {MAX_IMAGES_SIZE} {UNIT} for all images (auto-compressed)
               </p>
               <p className="mt-1 text-xs font-medium text-gray-600">
                 {isFetchingLocalSizes ? (
