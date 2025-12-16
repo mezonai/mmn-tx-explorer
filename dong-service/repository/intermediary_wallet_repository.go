@@ -43,7 +43,7 @@ func (r *IntermediaryWalletRepository) CreateWallet(ctx context.Context, wallet 
 
 func (r *IntermediaryWalletRepository) FindOldWallets(ctx context.Context, daysOld int) ([]models.IntermediaryWallet, error) {
 	query := fmt.Sprintf(`
-		SELECT id, wallet_address, encrypted_private_key, status, created_at, updated_at
+		SELECT id, wallet_address, encrypted_private_key, status, type, created_at, updated_at
 		FROM %s.intermediary_wallet
 		WHERE status = ANY($1) AND created_at < NOW() - INTERVAL '1 day' * $2
 		ORDER BY created_at ASC
@@ -72,6 +72,7 @@ func (r *IntermediaryWalletRepository) FindOldWallets(ctx context.Context, daysO
 			&wallet.WalletAddress,
 			&wallet.EncryptedPrivateKey,
 			&wallet.Status,
+			&wallet.Type,
 			&wallet.CreatedAt,
 			&wallet.UpdatedAt,
 		)
@@ -151,13 +152,13 @@ func (r *IntermediaryWalletRepository) CreateWallets(ctx context.Context, wallet
 		return err
 	}
 
-	query := fmt.Sprintf("INSERT INTO %s.intermediary_wallet (wallet_address, encrypted_private_key, status, created_at, updated_at) VALUES ", r.dongSchema)
+	query := fmt.Sprintf("INSERT INTO %s.intermediary_wallet (wallet_address, encrypted_private_key, status, type, created_at, updated_at) VALUES ", r.dongSchema)
 	vals := []interface{}{}
 
 	for i, w := range wallets {
-		n := i * 3
-		query += fmt.Sprintf("($%d, $%d, $%d, NOW(), NOW()),", n+1, n+2, n+3)
-		vals = append(vals, w.WalletAddress, w.EncryptedPrivateKey, w.Status)
+		n := i * 4
+		query += fmt.Sprintf("($%d, $%d, $%d, $%d, NOW(), NOW()),", n+1, n+2, n+3, n+4)
+		vals = append(vals, w.WalletAddress, w.EncryptedPrivateKey, w.Status, w.Type)
 	}
 
 	query = query[0 : len(query)-1]
@@ -192,7 +193,7 @@ func (r *IntermediaryWalletRepository) CreateWallets(ctx context.Context, wallet
 
 func (r *IntermediaryWalletRepository) GetWalletByAddress(ctx context.Context, address string) (*models.IntermediaryWallet, error) {
 	query := fmt.Sprintf(`
-		SELECT id, wallet_address, encrypted_private_key, status, created_at, updated_at
+		SELECT id, wallet_address, encrypted_private_key, status, type, created_at, updated_at
 		FROM %s.intermediary_wallet
 		WHERE wallet_address = $1
 	`, r.dongSchema)
@@ -203,6 +204,7 @@ func (r *IntermediaryWalletRepository) GetWalletByAddress(ctx context.Context, a
 		&wallet.WalletAddress,
 		&wallet.EncryptedPrivateKey,
 		&wallet.Status,
+		&wallet.Type,
 		&wallet.CreatedAt,
 		&wallet.UpdatedAt,
 	)
