@@ -45,6 +45,7 @@ export const UpdatePostDesktop = ({
   const isDescLong = update.description.length > MAX_DESC_CHARACTERS;
   const shortenDescription = expandedDesc ? update.description : update.description.slice(0, MAX_DESC_CHARACTERS);
 
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const toggleHideDonationFeed = useToggleHideDonationFeed();
 
   const isHidden = !update.visible;
@@ -88,7 +89,7 @@ export const UpdatePostDesktop = ({
             </Chip>
           )}
           {showMenu && (
-            <Popover>
+            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="link"
@@ -119,6 +120,7 @@ export const UpdatePostDesktop = ({
                             root_hash: update.root_hash ?? update.tx_hash,
                             visible: !update.visible,
                           });
+                          setIsPopoverOpen(false);
                         }}
                       >
                         <EyeClosed className="text-primary mr-2 h-4 w-4" />
