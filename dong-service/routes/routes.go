@@ -49,18 +49,24 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		campaignRepo := repository.NewDonationCampaignRepository(database.GetDB(), cfg.Database.Schema, cfg.Indexer.Schema)
 		statsRepo := repository.NewCampaignStatisticsRepository(database.GetDB(), cfg.Indexer.Schema, cfg.Database.Schema, cfg.Scheduler.RecentStatsWindowDays)
 		walletRepo := repository.NewWalletRepository(database.GetDB(), cfg.Indexer.Schema)
+		campaignFeedRepo := repository.NewDonationCampaignFeedRepository(database.GetDB(), cfg.Database.Schema)
+
+		// Initialize handlers
 		campaignHandler := handlers.NewDonationCampaignHandler(campaignRepo)
 		statsHandler := handlers.NewCampaignStatisticsHandler(statsRepo)
 		walletHandler := handlers.NewWalletHandler(walletRepo, campaignRepo)
+		campaignFeedHandler := handlers.NewDonationCampaignFeedHandler(campaignFeedRepo, cfg)
 
 		// Campaign routes (protected)
 		campaignsPrivate := v1.Group("/admin/campaigns")
 		campaignsPrivate.Use(middleware.Authentication(cfg.JWT.Secret))
+		campaignsPrivate.POST("", campaignHandler.CreateCampaign)
 		campaignsPrivate.POST("/create-active", campaignHandler.CreateAndActiveCampaign)
 		campaignsPrivate.PUT("/:id", campaignHandler.UpdateCampaign)
 		campaignsPrivate.PATCH("/:id/activate", campaignHandler.ActivateCampaign)
 		campaignsPrivate.PATCH("/:id/close", campaignHandler.CloseCampaign)
 		campaignsPrivate.DELETE("/:id", campaignHandler.DeleteDraftCampaign)
+		campaignsPrivate.POST("/upload-image", campaignFeedHandler.UploadImage)
 
 		// Campaign routes (public)
 		campaignsPublic := v1.Group("/campaigns")
@@ -69,6 +75,9 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		campaignsPublic.GET("/:id", campaignHandler.GetCampaign)
 		campaignsPublic.GET("/:id/top-contributors", campaignHandler.GetTopContributors)
 		campaignsPublic.POST("/:id/sync", statsHandler.SyncCampaign)
+		campaignsPublic.GET("/list-feed/:campaign_address", middleware.ParseTokenAndAddToContext(cfg.JWT.Secret), campaignFeedHandler.ListCampaignFeedsByAddress)
+		campaignsPublic.GET("/list-history-feed/:root_feed_hash", campaignFeedHandler.ListHistoryFeedsByRootHash)
+		campaignsPublic.PATCH("/update-visible-feed/:root_feed_hash", middleware.Authentication(cfg.JWT.Secret), campaignFeedHandler.UpdateVisibleFeed)
 
 		// Statistics routes (public)
 		statsPublic := v1.Group("/stats")
@@ -104,18 +113,23 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		offerRepo := repository.NewOfferRepository(database.GetDB(), cfg.Database.Schema)
 		orderRepo := repository.NewOrderRepository(database.GetDB(), cfg.Database.Schema)
 
-		offerService := services.NewOfferService(offerRepo, intermediaryWalletRepo, orderRepo, blockchainService)
+		offerService := services.NewOfferService(offerRepo, intermediaryWalletRepo, walletRepo, orderRepo, blockchainService)
 		orderService := services.NewOrderService(orderRepo, offerRepo, intermediaryWalletRepo, blockchainService)
 
 		offerHandler := handlers.NewOfferHandler(offerService)
 		orderHandler := handlers.NewOrderHandler(orderService, offerService)
 
 		offersPrivate.POST("", offerHandler.CreateOffer)
+		offersPrivate.POST("/update-status", offerHandler.UpdateOfferStatus)
 		offersPrivate.GET("/me", offerHandler.GetMyOffers)
 		offersPrivate.GET("/:id", offerHandler.GetOfferDetail)
 		offersPrivate.GET("/:id/orders", orderHandler.ListOrdersForOffer)
 		offersPrivate.POST("/:id/orders", orderHandler.CreateOrder)
 		offersPrivate.GET("", offerHandler.ListOffers)
+
+		// Offers (public)
+		offersPublic := v1.Group("/offers")
+		offersPublic.GET("", offerHandler.ListOffers)
 
 		orders := v1.Group("/orders")
 		orders.Use(middleware.Authentication(cfg.JWT.Secret))
