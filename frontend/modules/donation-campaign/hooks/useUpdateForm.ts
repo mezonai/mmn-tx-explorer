@@ -26,10 +26,16 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [existingImageCids, setExistingImageCids] = useState<string[]>([]);
+  const [existingImagesSize, setExistingImagesSize] = useState<number>(0);
   const [isCompressing, setIsCompressing] = useState(false);
 
-  const totalSize = images.reduce((sum, img) => sum + img.size, 0);
+  const newImagesSize = images.reduce((sum, img) => sum + img.size, 0);
+  const totalSize = newImagesSize + existingImagesSize;
   const maxTotalSize = MAX_IMAGES_SIZE * 1024 * 1024;
+
+  const setExistingSize = (size: number) => {
+    setExistingImagesSize(size);
+  };
 
   useEffect(() => {
     if (updatePost) {
@@ -120,9 +126,10 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
 
       if (validFiles.length > 0) {
         const newImages = [...images, ...validFiles];
-        const newTotalSize = newImages.reduce((sum, img) => sum + img.size, 0);
+        const newImagesTotal = newImages.reduce((sum, img) => sum + img.size, 0);
+        const combinedTotalSize = newImagesTotal + existingImagesSize;
 
-        if (newTotalSize > maxTotalSize) {
+        if (combinedTotalSize > maxTotalSize) {
           toast.error(
             `Total size would exceed ${MAX_IMAGES_SIZE} ${UNIT} limit. Current: ${formatFileSize(totalSize)}. Try uploading fewer or smaller images.`
           );
@@ -220,5 +227,6 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
     handleRemoveImage,
     handleRemoveAll,
     onSubmit,
+    setExistingSize,
   };
 };
