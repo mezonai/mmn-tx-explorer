@@ -828,7 +828,7 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 		}
 		err = p.insertUserContentsTx(ctx, tx, userContents)
 		if err != nil {
-			return err
+			return false, err
 		}
 	}
 
