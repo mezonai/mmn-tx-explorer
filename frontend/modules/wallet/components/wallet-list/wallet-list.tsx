@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 const DEFAULT_VALUE_DATA_SEARCH: IWalletListParams = {
   page: PAGINATION.DEFAULT_PAGE,
   limit: PAGINATION.DEFAULT_LIMIT,
-  sort_by: 'balance',
+  sort_by: 'transaction_count',
   sort_order: ESortOrder.DESC,
   force_consistent_data: true,
 } as const;
