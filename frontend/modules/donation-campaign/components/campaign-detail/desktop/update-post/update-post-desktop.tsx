@@ -14,6 +14,7 @@ import { useUser } from '@/providers';
 import { Pencil } from 'lucide-react';
 
 const MAX_IMAGES_DISPLAY = 18;
+const MAX_DESC_CHARACTERS = 300;
 
 interface UpdatePostDesktopProps {
   update: IDonationFeed;
@@ -34,9 +35,14 @@ export const UpdatePostDesktop = ({
 }: UpdatePostDesktopProps) => {
   const { user } = useUser();
   const router = useRouter();
+
   const [showAllImages, setShowAllImages] = useState(false);
   const visibleImages = showAllImages ? update.image_cids : update.image_cids.slice(0, MAX_IMAGES_DISPLAY);
   const hasMoreImages = update.image_cids.length > MAX_IMAGES_DISPLAY;
+
+  const [expandedDesc, setExpandedDesc] = useState(false);
+  const isDescLong = update.description.length > MAX_DESC_CHARACTERS;
+  const shortenDescription = expandedDesc ? update.description : update.description.slice(0, MAX_DESC_CHARACTERS);
 
   return (
     <Card className={`dark:bg-card border-muted-foreground/30 gap-4 rounded-3xl bg-white/90 pt-3 shadow-sm`}>
@@ -103,14 +109,41 @@ export const UpdatePostDesktop = ({
           )}
         </div>
       </div>
-      <div className="text-foreground text-md flex w-full flex-col px-4">
+      <div className="text-foreground text-md w-full px-4">
         <h3 className="text-lg font-semibold break-words text-gray-900 dark:text-white">{update.title}</h3>
-        {update.description.split('\n').map((line, index) => (
-          <span key={index} className="text-foreground mt-2 text-sm break-words">
-            {line}
-            {index < update.description.split('\n').length - 1 && <br />}
-          </span>
-        ))}
+
+        <div className="mt-2 text-sm break-words">
+          {shortenDescription.split('\n').map((line, index, arr) => (
+            <span key={index}>
+              {line}
+              {index < arr.length - 1 && (
+                <>
+                  <br />
+                  <span className="block h-3" />
+                </>
+              )}
+            </span>
+          ))}
+
+          {!expandedDesc && isDescLong && (
+            <span
+              className="text-brand-primary ml-1 cursor-pointer text-sm font-semibold hover:underline"
+              onClick={() => setExpandedDesc(true)}
+            >
+              … See more
+            </span>
+          )}
+
+          {expandedDesc && isDescLong && (
+            <span
+              className="text-brand-primary ml-1 cursor-pointer text-sm font-semibold hover:underline"
+              onClick={() => setExpandedDesc(false)}
+            >
+              {' '}
+              Show less
+            </span>
+          )}
+        </div>
       </div>
 
       {getImages(visibleImages || [], onImageClick)}
