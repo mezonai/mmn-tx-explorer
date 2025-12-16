@@ -28,7 +28,7 @@ export class WebSocketManager {
   public currentToken: string | null = null;
   private isConnecting = false;
 
-  constructor(wsUrl: string = 'ws://172.16.10.111:8899') {
+  constructor(wsUrl: string = 'ws://localhost:8899') {
     this.wsUrl = wsUrl;
   }
 
@@ -65,7 +65,7 @@ export class WebSocketManager {
       this.reconnectAttempts = 0;
       this.awaitingHeartbeatAck = false;
       this.startHeartbeat();
-      console.log('Websocket connected');
+     
     };
 
     this.ws.onmessage = (event) => {
@@ -305,7 +305,7 @@ export const getWebSocketManager = (): WebSocketManager => {
   if (!wsManagerInstance) {
     const globalProcess = (globalThis as { process?: { env?: Record<string, string> } } | undefined)?.process;
     const wsEnv = globalProcess?.env?.NEXT_PUBLIC_WEBSOCKET_URL;
-    const wsUrl = wsEnv || 'ws://172.16.10.111:8899';
+    const wsUrl = wsEnv || 'ws://localhost:8899';
     wsManagerInstance = new WebSocketManager(wsUrl);
   }
   return wsManagerInstance;
