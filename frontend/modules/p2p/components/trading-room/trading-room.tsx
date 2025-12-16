@@ -18,6 +18,7 @@ import { BuyAmountSection } from './buy-amount-section';
 import { ChatSidebar } from './chat/chat-sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { P2POrder } from '../../types';
+import { toast } from 'sonner';
 
 interface TradingRoomProps {
   orderId: string;
@@ -90,7 +91,9 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
         setCreatedOrder(newOrder);
       }
     } catch (err) {
-      console.error('Error creating order:', err);
+      toast.error('Failed to create order', {
+        description: 'Please try again later',
+      });
       setError('Something went wrong while creating the order. Please try again.');
     }
   };
