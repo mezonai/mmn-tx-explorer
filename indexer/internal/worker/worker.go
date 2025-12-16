@@ -31,9 +31,16 @@ func (w *Worker) processChunkWithRetry(ctx context.Context, chunk []*big.Int, re
 	default:
 	}
 
+	if len(chunk) == 0 {
+		return
+	}
+
+	fromSlot := chunk[0].Uint64()
+	toSlot := chunk[len(chunk)-1].Uint64()
+
 	// Acquire semaphore only for the RPC request
 	sem <- struct{}{}
-	results := w.rpc.GetFullBlocks(ctx, chunk)
+	results := w.rpc.GetFullBlocks(ctx, fromSlot, toSlot)
 	<-sem // Release semaphore immediately after RPC request
 
 	if len(chunk) == 1 {
@@ -46,12 +53,18 @@ func (w *Worker) processChunkWithRetry(ctx context.Context, chunk []*big.Int, re
 	var failedBlocks []*big.Int
 	var successfulResults []rpc.GetFullBlockResult
 
+	successMap := make(map[uint64]bool)
 	for i := range results {
 		result := &results[i]
-		if result.Error != nil {
-			failedBlocks = append(failedBlocks, chunk[i])
-		} else {
+		if result.Error == nil && result.BlockNumber != nil {
 			successfulResults = append(successfulResults, *result)
+			successMap[result.BlockNumber.Uint64()] = true
+		}
+	}
+
+	for _, blockNum := range chunk {
+		if !successMap[blockNum.Uint64()] {
+			failedBlocks = append(failedBlocks, blockNum)
 		}
 	}
 

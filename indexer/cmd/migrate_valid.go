@@ -213,7 +213,15 @@ func (m *Migrator) FetchBlocksFromRPC(blockNumbers []*big.Int) ([]common.BlockDa
 			end = len(blockNumbers)
 		}
 		batch := blockNumbers[i:end]
-		blockData := m.rpcClient.GetFullBlocks(context.Background(), batch)
+
+		if len(batch) == 0 {
+			continue
+		}
+
+		fromSlot := batch[0].Uint64()
+		toSlot := batch[len(batch)-1].Uint64()
+
+		blockData := m.rpcClient.GetFullBlocks(context.Background(), fromSlot, toSlot)
 
 		for i := range blockData {
 			block := &blockData[i]
