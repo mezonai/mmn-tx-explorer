@@ -8,9 +8,9 @@ interface ProgressStepsProps {
 }
 
 const steps = [
-  { id: 1, label: 'Thanh toán', status: 'OPEN' as const },
-  { id: 2, label: 'Chờ xác nhận', status: 'PENDING' as const },
-  { id: 3, label: 'Hoàn tất', status: 'CONFIRMED' as const },
+  { id: 1, label: 'Payment', status: 'OPEN' as const },
+  { id: 2, label: 'Pending confirmation', status: 'PENDING' as const },
+  { id: 3, label: 'Completed', status: 'CONFIRMED' as const },
 ];
 
 export const ProgressSteps = ({ order }: ProgressStepsProps) => {

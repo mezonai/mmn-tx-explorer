@@ -26,7 +26,7 @@ export const useP2POrders = () => {
       setOrders(data);
     } catch (err) {
       console.error('Error fetching P2P orders:', err);
-      setError('Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.');
+      setError('Unable to load your orders. Please try again later.');
       setOrders([]);
     } finally {
       setIsLoading(false);
@@ -49,8 +49,6 @@ export const useP2POrders = () => {
     }
 
     const handleCreateOrder = (event: WebSocketEvent) => {
-      console.log('📦 Received CREATE_ORDER event:', event);
-
       // Parse payload if it's a string
       let orderData: Record<string, unknown>;
       try {
@@ -82,7 +80,6 @@ export const useP2POrders = () => {
 
         // Add new order to the beginning of the list
         setOrders((prev) => [newOrder, ...prev]);
-        console.log('✅ New order added to list:', newOrder);
       }
     };
 

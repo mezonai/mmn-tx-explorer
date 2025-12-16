@@ -1,47 +1,69 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, HelpCircle } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import { P2POrder } from '../../types';
+import { P2PService } from '../../api';
 
 interface PaymentActionButtonProps {
   order: P2POrder;
-  onPaymentConfirmed?: () => void;
+  /**
+   * Status to send to the backend. Default: 'PENDING' (buyer has paid).
+   * Can pass 'CONFIRMED' to reuse the component for the seller flow.
+   */
+  nextStatus?: string;
+  /**
+   * Button label. Default: "I have transferred, notify the seller"
+   */
+  buttonText?: string;
+  /**
+   * Callback after backend returns the updated order.
+   */
+  onStatusUpdated?: (order: P2POrder) => void;
 }
 
-export const PaymentActionButton = ({ order, onPaymentConfirmed }: PaymentActionButtonProps) => {
-  console.log('🔍 [PaymentActionButton] Component rendered with order:', {
-    order_id: order?.order_id,
-    status: order?.status,
-    order_status_type: typeof order?.status,
-    will_show_button: order?.status === 'OPEN',
-    full_order: order,
-  });
+export const PaymentActionButton = ({
+  order,
+  nextStatus = 'PENDING',
+  buttonText = 'I have transferred, notify the seller',
+  onStatusUpdated,
+}: PaymentActionButtonProps) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleConfirm = () => {
-    // TODO: Call API to confirm payment
-    onPaymentConfirmed?.();
+  const handleConfirm = async () => {
+    if (isSubmitting) return;
+
+    try {
+      setIsSubmitting(true);
+      const updated = await P2PService.updateOrderStatus(String(order.order_id), nextStatus);
+      const patchedOrder = updated || { ...order, status: nextStatus };
+      onStatusUpdated?.(patchedOrder);
+    } catch (error) {
+      console.error('Error updating order status:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (order.status !== 'OPEN') {
-    console.log('❌ [PaymentActionButton] Not showing button - status is not OPEN:', order.status);
     return null;
   }
 
-  console.log('✅ [PaymentActionButton] Showing button - status is OPEN');
   return (
     <div>
       <Button
         onClick={handleConfirm}
-        className="bg-brand-primary mb-4 flex w-full items-center justify-center gap-2 rounded-xl py-4 text-lg font-bold text-white shadow-lg shadow-violet-900/20 transition hover:bg-violet-600"
+        disabled={isSubmitting}
+        className="bg-brand-primary mb-4 flex w-full items-center justify-center gap-2 rounded-xl py-4 text-lg font-bold text-white shadow-lg shadow-violet-900/20 transition hover:bg-violet-600 disabled:cursor-not-allowed disabled:opacity-70"
       >
         <CheckCircle2 className="h-5 w-5" />
-        Đã chuyển tiền, thông báo cho người bán
+        {isSubmitting ? 'Processing...' : buttonText}
       </Button>
       <div className="px-4 text-center text-sm text-gray-500">
-        Chỉ ấn nút trên khi bạn đã thực sự chuyển khoản thành công.{' '}
+        Only click the button after you have successfully transferred the money.{' '}
         <a href="#" className="text-brand-primary ml-1 hover:underline">
-          Cần trợ giúp?
+          Need help?
         </a>
       </div>
     </div>

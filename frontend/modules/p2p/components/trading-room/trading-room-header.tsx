@@ -29,22 +29,22 @@ export const TradingRoomHeader = ({ order }: TradingRoomHeaderProps) => {
   const sellerAddress = offer?.seller_wallet_address || '';
 
   return (
-    <header className="h-14 border-b border-gray-800 flex items-center px-6 bg-card justify-between shrink-0">
+    <header className="bg-card flex h-14 shrink-0 items-center justify-between border-b border-gray-800 px-6">
       <div className="flex items-center gap-4">
         <button
           onClick={() => router.back()}
-          className="text-gray-400 hover:text-white transition"
+          className="text-gray-400 transition hover:text-white"
           aria-label="Go back"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div>
-          <h1 className="font-bold text-white text-sm">
-            Đơn mua MZD <span className="text-gray-500">#{order.order_id}</span>
+          <h1 className="text-sm font-bold text-white">
+            MZD buy order <span className="text-gray-500">#{order.order_id}</span>
           </h1>
           {sellerAddress && (
-            <div className="text-xs text-gray-400 flex items-center gap-1">
-              Đang giao dịch với
+            <div className="flex items-center gap-1 text-xs text-gray-400">
+              Trading with
               <AddressDisplay
                 address={sellerAddress}
                 href={ROUTES.WALLET(sellerAddress)}
@@ -54,14 +54,10 @@ export const TradingRoomHeader = ({ order }: TradingRoomHeaderProps) => {
           )}
         </div>
       </div>
-      <div className="flex items-center gap-2 text-yellow-500 bg-yellow-500/10 px-3 py-1 rounded-full text-sm font-bold">
+      <div className="flex items-center gap-2 rounded-full bg-yellow-500/10 px-3 py-1 text-sm font-bold text-yellow-500">
         <Clock className="h-4 w-4" />
         {remainingTime.minutes}:{remainingTime.seconds.toString().padStart(2, '0')}
       </div>
     </header>
   );
 };
-
-
-
-
