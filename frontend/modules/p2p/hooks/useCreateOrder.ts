@@ -34,14 +34,16 @@ export const useCreateOrder = () => {
       });
 
       console.log('📥 [useCreateOrder] API Response received:', {
-        order_id: order?.order_id,
-        status: order?.status,
-        offer_id: order?.offer_id,
-        amount: order?.amount,
-        price: order?.price,
-        buyer_wallet_address: order?.buyer_wallet_address,
-        expires_at: order?.expires_at,
-        created_at: order?.created_at,
+        order_id: order.order_id,
+        status: order.status,
+        offer_id: order.offer_id,
+        amount: order.amount,
+        payable_amount: order.payable_amount,
+        price: order.price,
+        buyer_wallet_address: order.buyer_wallet_address,
+        seller_wallet_address: order.seller_wallet_address,
+        expires_at: order.expires_at,
+        created_at: order.created_at,
         full_response: order,
       });
 

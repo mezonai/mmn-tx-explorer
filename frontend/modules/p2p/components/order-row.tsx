@@ -61,8 +61,8 @@ export const OrderRow = ({ order, onOpenToConfirm }: OrderRowProps) => {
 
   // Calculate display values
   const amountMZD = order.amount;
-  const amountVND = order.price;
-  const sellerAddress = offer?.seller_wallet_address || '';
+  const amountVND = order.payable_amount || order.price || 0;
+  const sellerAddress = order.seller_wallet_address || offer?.seller_wallet_address || '';
 
   return (
     <tr

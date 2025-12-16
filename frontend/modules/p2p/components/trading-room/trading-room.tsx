@@ -35,10 +35,10 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
   const [createdOrder, setCreatedOrder] = useState<P2POrder | null>(null); // Store created order locally
 
   const { order, isLoading: orderLoading, updateOrderStatus } = useP2POrder(isOfferMode ? '' : orderId);
-  const offerIdParam = isOfferMode ? orderId : (order ? String(order.offer_id) : null);
+  const offerIdParam = isOfferMode ? orderId : order ? String(order.offer_id) : null;
   const { offer, isLoading: offerLoading } = useP2POffer(offerIdParam);
   const { createOrder, isLoading: isCreatingOrder } = useCreateOrder();
-  const orderIdForChat = createdOrder ? String(createdOrder.order_id) : (isOfferMode ? '' : orderId);
+  const orderIdForChat = createdOrder ? String(createdOrder.order_id) : isOfferMode ? '' : orderId;
   const { messages, isLoading: chatLoading, sendMessage } = useP2PChat(orderIdForChat);
 
   // Use created order if available, otherwise use fetched order
@@ -155,6 +155,7 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
       buyer_wallet_address: user?.walletAddress || '',
       amount: 0,
       price: 0,
+      payable_amount: 0,
       status: 'OPEN' as const,
       transfer_code: null,
       expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),

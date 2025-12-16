@@ -75,14 +75,18 @@ export interface P2POrder {
   order_id: string | number; // BIGSERIAL from backend
   offer_id: string | number; // BIGINT from backend
   buyer_wallet_address: string;
+  seller_wallet_address?: string; // Seller wallet address from backend
   amount: number; // BIGINT - amount in MZD (smallest unit)
-  price: number; // BIGINT - price in VND (smallest unit)
+  price?: number; // BIGINT - price in VND (smallest unit) - deprecated, use payable_amount
+  payable_amount?: number; // BIGINT - payable amount in VND (smallest unit) - from API response
   status: OrderStatus | string; // Default 'PENDING'
-  bank_info?: {
-    bank: string;
-    account_number: string;
-    account_name: string;
-  };
+  bank_info?:
+    | string
+    | {
+        bank: string;
+        account_number: string;
+        account_name: string;
+      }; // Can be JSON string or object
   transfer_code?: string | null;
   expires_at: string; // TIMESTAMPTZ
   created_at: string; // TIMESTAMPTZ

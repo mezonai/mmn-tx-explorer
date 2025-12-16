@@ -13,7 +13,7 @@ export const OrderInfoCard = ({ order }: OrderInfoCardProps) => {
   const { offer } = useP2POffer(String(order.offer_id));
 
   // Calculate values from order fields
-  const amountVND = order.price; // price is in VND (smallest unit)
+  const amountVND = order.payable_amount || order.price || 0; // payable_amount is in VND (smallest unit)
   const amountMZD = order.amount; // amount is in MZD (smallest unit)
   const exchangeRate = useMemo(() => {
     if (amountMZD > 0) {
