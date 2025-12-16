@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { useP2POrder } from '../../hooks/useP2POrder';
@@ -41,6 +41,20 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
   const orderIdForChat = createdOrder ? String(createdOrder.order_id) : isOfferMode ? '' : orderId;
   const { messages, isLoading: chatLoading, sendMessage } = useP2PChat(orderIdForChat);
 
+  // Sync createdOrder with order from useP2POrder when order updates via WebSocket
+  useEffect(() => {
+    if (createdOrder && order && String(createdOrder.order_id) === String(order.order_id)) {
+      // If order was updated via WebSocket, sync it to createdOrder
+      if (order.status !== createdOrder.status) {
+        console.log('🔄 [TradingRoom] Syncing createdOrder with updated order from WebSocket:', {
+          oldStatus: createdOrder.status,
+          newStatus: order.status,
+        });
+        setCreatedOrder(order);
+      }
+    }
+  }, [order, createdOrder]);
+
   // Use created order if available, otherwise use fetched order
   const currentOrder = createdOrder || order;
 
@@ -48,9 +62,16 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
   const userRole = useMemo(() => {
     if (isOfferMode && !createdOrder) return 'buyer'; // In offer mode before order creation, user is always buyer
     if (!user?.walletAddress || !currentOrder) return null;
+
+    // Buyer check
     if (currentOrder.buyer_wallet_address === user.walletAddress) return 'buyer';
-    if (offer?.seller_wallet_address === user.walletAddress) return 'seller';
-    return null;
+
+    // Seller check (prefer explicit seller wallet from order or offer)
+    const sellerWallet = currentOrder.seller_wallet_address || offer?.seller_wallet_address;
+    if (sellerWallet && sellerWallet === user.walletAddress) return 'seller';
+
+    // Fallback: if not buyer, assume seller (for cases seller_wallet_address missing in payload)
+    return 'seller';
   }, [user?.walletAddress, currentOrder, isOfferMode, createdOrder, offer]);
 
   const handleConfirmBuy = async (amountMZD: number, amountVND: number) => {

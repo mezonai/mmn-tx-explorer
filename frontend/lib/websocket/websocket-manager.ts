@@ -104,8 +104,10 @@ export class WebSocketManager {
             return;
           }
         }
+        console.log('event.data', event.data);
 
-        this.handleEvent(event.data);
+        // Always emit parsed object (fallback to raw data if parsing fails)
+        this.handleEvent(parsedData ?? event.data);
       } catch {
         // Silently handle parsing errors
       }

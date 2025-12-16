@@ -78,21 +78,59 @@ export const useP2POrder = (orderId: string) => {
       const payloadOrderId = (payload?.['order_id'] || payload?.['orderId']) as string | number | undefined;
       const orderIdStr = String(orderId);
       const payloadOrderIdStr = payloadOrderId ? String(payloadOrderId) : undefined;
-      if (event.type !== 'ORDER_STATUS_UPDATED' || !payloadOrderIdStr || payloadOrderIdStr !== orderIdStr) {
+
+      // Handle ORDER_STATUS_UPDATED event
+      if (event.type === 'ORDER_STATUS_UPDATED') {
+        if (!payloadOrderIdStr || payloadOrderIdStr !== orderIdStr) {
+          return;
+        }
+
+        const statusRaw = payload?.['status'] || payload?.['status'];
+        const status = typeof statusRaw === 'string' ? statusRaw : undefined;
+        if (!status) return;
+
+        console.log('📡 [useP2POrder] Received ORDER_STATUS_UPDATED, updating status to:', status);
+        setOrder((current) => (current ? { ...current, status: status } : current));
         return;
       }
 
-      const statusRaw = payload?.['status'] || payload?.['status'];
-      const status = typeof statusRaw === 'string' ? statusRaw : undefined;
-      if (!status) return;
+      // Handle ORDER_CONFIRMED event (when buyer confirms payment)
+      if (event.type === 'ORDER_CONFIRMED') {
+        if (!payloadOrderIdStr || payloadOrderIdStr !== orderIdStr) {
+          return;
+        }
 
-      setOrder((current) => (current ? { ...current, status: status } : current));
+        console.log('📡 [useP2POrder] Received ORDER_CONFIRMED, updating status to PENDING');
+        // Optimistic update: immediately update status to PENDING for instant UI feedback
+        setOrder((current) => {
+          if (!current) return current;
+          console.log('⚡ [useP2POrder] Optimistic update: status OPEN -> PENDING');
+          return { ...current, status: 'PENDING' };
+        });
+
+        // Fetch full order data to ensure we have all updated information
+        const fetchUpdatedOrder = async () => {
+          try {
+            const updatedOrder = await P2PService.getOrderById(orderIdStr);
+            setOrder(updatedOrder);
+            console.log('✅ [useP2POrder] Order updated from API after ORDER_CONFIRMED:', updatedOrder);
+          } catch (error) {
+            console.error('❌ [useP2POrder] Error fetching updated order:', error);
+            // Keep optimistic update if fetch fails
+          }
+        };
+
+        fetchUpdatedOrder();
+      }
     };
 
+    // Listen for both event types
     wsManager.on('ORDER_STATUS_UPDATED', handleStatusUpdate);
+    wsManager.on('ORDER_CONFIRMED', handleStatusUpdate);
 
     return () => {
       wsManager.off('ORDER_STATUS_UPDATED', handleStatusUpdate);
+      wsManager.off('ORDER_CONFIRMED', handleStatusUpdate);
     };
   }, [orderId, wsManager]);
 
