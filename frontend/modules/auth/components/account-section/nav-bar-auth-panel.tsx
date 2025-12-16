@@ -51,7 +51,7 @@ export const NavBarAuthPanel: React.FC = () => {
   }, [open]);
 
   return user ? (
-    <div className="relative hidden items-center md:flex" ref={panelRef}>
+    <div className="relative hidden items-center lg:flex" ref={panelRef}>
       <button className={classname} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
         <img
           src={user.avatar}
@@ -172,7 +172,7 @@ export const NavBarAuthPanel: React.FC = () => {
       )}
     </div>
   ) : (
-    <Button onClick={login} className={'bg-brand-primary hidden rounded-lg font-semibold text-white shadow-xs md:flex'}>
+    <Button onClick={login} className="bg-brand-primary hidden rounded-lg font-semibold text-white shadow-xs lg:flex">
       <>
         <span>Login with Mezon</span>
         <ArrowRightToLine />
