@@ -28,7 +28,7 @@ func (r *IntermediaryWalletRepository) CreateWallet(ctx context.Context, wallet 
 	query := fmt.Sprintf(`
 		INSERT INTO %s.intermediary_wallet 
 		(wallet_address, encrypted_private_key, status, type, created_at, updated_at)
-		VALUES ($1, $2, $3, NOW(), NOW())
+		VALUES ($1, $2, $3, $4, NOW(), NOW())
 		RETURNING id, created_at, updated_at
 	`, r.dongSchema)
 
@@ -284,9 +284,9 @@ func (r *IntermediaryWalletRepository) GetAvailableWallet(ctx context.Context, t
 		&wallet.WalletAddress,
 		&wallet.EncryptedPrivateKey,
 		&wallet.Status,
+		&wallet.Type,
 		&wallet.CreatedAt,
 		&wallet.UpdatedAt,
-		&wallet.Type,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
