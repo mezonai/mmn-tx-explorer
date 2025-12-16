@@ -248,18 +248,7 @@ func (rh *ReorgHandler) getNewBlocksByNumber(ctx context.Context, blockHeaders [
 		wg.Add(1)
 		go func(chunk []*big.Int) {
 			defer wg.Done()
-			minBlock, maxBlock := chunk[0], chunk[0]
-			for i := 1; i < len(chunk); i++ {
-				if chunk[i].Cmp(minBlock) < 0 {
-					minBlock = chunk[i]
-				}
-				if chunk[i].Cmp(maxBlock) > 0 {
-					maxBlock = chunk[i]
-				}
-			}
-			fromSlot := minBlock.Uint64()
-			toSlot := maxBlock.Uint64()
-			resultsCh <- rh.rpc.GetBlocks(ctx, fromSlot, toSlot)
+			resultsCh <- rh.rpc.GetBlocks(ctx, chunk)
 			if config.Cfg.RPC.Blocks.BatchDelay > 0 {
 				time.Sleep(time.Duration(config.Cfg.RPC.Blocks.BatchDelay) * time.Millisecond)
 			}

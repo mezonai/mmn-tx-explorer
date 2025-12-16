@@ -38,7 +38,7 @@ type BlocksPerRequestConfig struct {
 
 type IRPCClient interface {
 	GetFullBlocks(ctx context.Context, fromSlot, toSlot uint64) []GetFullBlockResult
-	GetBlocks(ctx context.Context, fromSlot, toSlot uint64) []GetBlocksResult
+	GetBlocks(ctx context.Context, blockNumbers []*big.Int) []GetBlocksResult
 	GetTransactions(ctx context.Context, txHashes []string) []GetTransactionsResult
 	GetLatestBlockNumber(ctx context.Context) (*big.Int, error)
 	GetChainID() *big.Int
@@ -236,7 +236,9 @@ func (rpc *Client) HasCode(ctx context.Context, address string) (bool, error) {
 	return false, nil
 }
 
-func (rpc *Client) GetBlocks(ctx context.Context, fromSlot, toSlot uint64) []GetBlocksResult {
+func (rpc *Client) GetBlocks(ctx context.Context, blockNumbers []*big.Int) []GetBlocksResult {
+	fromSlot := blockNumbers[0].Uint64()
+	toSlot := blockNumbers[len(blockNumbers)-1].Uint64()
 	fullBlocks := rpc.GetFullBlocks(ctx, fromSlot, toSlot)
 
 	results := make([]GetBlocksResult, len(fullBlocks))
