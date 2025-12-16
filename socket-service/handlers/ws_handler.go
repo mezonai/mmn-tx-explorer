@@ -3,18 +3,16 @@ package handlers
 import (
 	"net/http"
 	"socket-service/config"
-	"socket-service/constant"
 	"socket-service/logger"
 	"socket-service/repository"
 	"socket-service/service"
 	"socket-service/utils"
-	"sync"
+	"socket-service/constant"
 	"time"
-
+    "sync"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
-
 type WSHandler struct {
 	repo  *repository.EventRepository
 	cfg   *config.Config
@@ -38,7 +36,7 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 		logger.Error().Err(err).Msg("WebSocket upgrade failed")
 		return
 	}
-	defer conn.Close()
+    defer conn.Close()
 	userAddress, err := utils.GetUserAddressFromContext(c)
 	if err != nil {
 		logger.Error().Err(err).Msg("Unauthorized WebSocket connection attempt")
@@ -77,7 +75,7 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 	defer func() {
 		h.wsSvc.RemoveConnection(userAddress, conn)
 	}()
-
+	
 	done := make(chan struct{})
 	var onceClose sync.Once
 	go func() {
@@ -89,7 +87,7 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 				conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
 				if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 					logger.Error().Err(err).Msg("Ping failed, closing connection")
-					onceClose.Do(func() { close(done) })
+					onceClose.Do(func() {close(done)})
 					return
 				} else {
 					logger.Info().Msgf("Ping sent to user %s", userAddress)
@@ -104,7 +102,7 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 		messageType, message, err := conn.ReadMessage()
 		if err != nil {
 			logger.Info().Msgf("User %s disconnected", userAddress)
-			onceClose.Do(func() { close(done) })
+			onceClose.Do(func() {close(done)})
 			return
 		}
 		if messageType == websocket.TextMessage && string(message) == constant.HeartbeatCheck {
