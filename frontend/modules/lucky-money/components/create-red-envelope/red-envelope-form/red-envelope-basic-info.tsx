@@ -85,7 +85,10 @@ export function BasicInfo() {
           className={cn('mt-2', errors.name && 'border-red-400')}
           placeholder="Lucky Money"
           disabled={isSuccess}
-          {...register('name', { required: 'Name is required' })}
+          {...register('name', {
+            required: 'Name is required',
+            maxLength: { value: 200, message: 'Name must not exceed 200 characters' },
+          })}
         />
         <ErrorMsg message={errors.name?.message} />
       </div>

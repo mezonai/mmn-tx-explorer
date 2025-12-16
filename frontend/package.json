@@ -37,7 +37,7 @@
     "rc-progress": "^4.0.0",
     "react": "19.2.0",
     "react-datepicker": "^8.8.0",
-    "react-dom": "19.1.0",
+    "react-dom": "19.2.0",
     "react-hook-form": "^7.68.0",
     "react-paginate": "^8.3.0",
     "react-qr-code": "^2.0.18",
