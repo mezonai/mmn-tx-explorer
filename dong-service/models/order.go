@@ -1,6 +1,8 @@
 package models
 
 import (
+	"dong-service/utils"
+	"encoding/json"
 	"time"
 )
 
@@ -34,4 +36,17 @@ type Order struct {
 type CreateOrderRequest struct {
 	Amount        int64  `json:"amount" binding:"required"`
 	PayableAmount *int64 `json:"payable_amount,omitempty"`
+}
+
+func (o Order) MarshalJSON() ([]byte, error) {
+	type Alias Order
+	aux := &struct {
+		BankInfo interface{} `json:"bank_info,omitempty"`
+		*Alias
+	}{
+		Alias:    (*Alias)(&o),
+		BankInfo: utils.ParseBankInfoString(o.BankInfo),
+	}
+
+	return json.Marshal(aux)
 }
