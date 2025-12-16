@@ -37,9 +37,16 @@ export const BankInfoCard = ({ bank_info, transfer_code }: BankInfoCardProps) =>
         <div className="group flex items-center justify-between rounded p-2 transition hover:bg-gray-800/50">
           <div>
             <div className="text-xs font-medium text-gray-500 uppercase">Bank</div>
-            <div className="text-base font-bold text-white">{bank_info.bank}</div>
+            <div className="text-base font-bold text-white">{bank_info.bank_name}</div>
           </div>
-          <CopyButton textToCopy={bank_info.bank} className="p-2 text-gray-400 transition hover:text-white" />
+          <CopyButton textToCopy={bank_info.bank_name} className="p-2 text-gray-400 transition hover:text-white" />
+        </div>
+        <div className="group flex items-center justify-between rounded p-2 transition hover:bg-gray-800/50">
+          <div>
+            <div className="text-xs font-medium text-gray-500 uppercase">Account name</div>
+            <div className="text-base font-bold text-white">{bank_info.account_name}</div>
+          </div>
+          <CopyButton textToCopy={bank_info.account_name} className="p-2 text-gray-400 transition hover:text-white" />
         </div>
 
         {transfer_code && (

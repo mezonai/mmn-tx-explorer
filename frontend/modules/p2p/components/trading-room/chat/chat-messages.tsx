@@ -21,7 +21,7 @@ export const ChatMessages = ({ messages, currentUserId }: ChatMessagesProps) => 
         <div className="bg-red-900/20 text-red-400 text-xs px-4 py-2 rounded border border-red-900/30 text-center max-w-[90%] flex items-start gap-2">
           <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
           <span>
-            Cảnh báo: Không cung cấp mật khẩu ví, OTP hoặc private key cho bất kỳ ai, kể cả nhân viên hỗ trợ.
+            Warning: Do not provide your wallet password, OTP, or private key to anyone, even support staff.
           </span>
         </div>
       </div>

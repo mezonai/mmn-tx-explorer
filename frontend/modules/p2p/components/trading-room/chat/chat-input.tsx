@@ -42,7 +42,7 @@ export const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
         </button>
         <Input
           type="text"
-          placeholder="Nhập tin nhắn..."
+          placeholder="Enter message..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           className="bg-transparent border-none focus:ring-0 text-white flex-1 text-sm placeholder-gray-600"
