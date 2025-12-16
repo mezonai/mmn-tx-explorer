@@ -1,21 +1,52 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, HelpCircle } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import { P2POrder } from '../../types';
+import { P2PService } from '../../api';
 
 interface PaymentActionButtonProps {
   order: P2POrder;
-  onPaymentConfirmed?: () => void;
+  /**
+   * Status to send to the backend. Default: 'PENDING' (buyer has paid).
+   * Can pass 'CONFIRMED' to reuse the component for the seller flow.
+   */
+  nextStatus?: string;
+  /**
+   * Button label. Default: "I have transferred, notify the seller"
+   */
+  buttonText?: string;
+  /**
+   * Callback after backend returns the updated order.
+   */
+  onStatusUpdated?: (order: P2POrder) => void;
 }
 
-export const PaymentActionButton = ({ order, onPaymentConfirmed }: PaymentActionButtonProps) => {
-  const handleConfirm = () => {
-    // TODO: Call API to confirm payment
-    onPaymentConfirmed?.();
+export const PaymentActionButton = ({
+  order,
+  nextStatus = 'PENDING',
+  buttonText = 'I have transferred, notify the seller',
+  onStatusUpdated,
+}: PaymentActionButtonProps) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleConfirm = async () => {
+    if (isSubmitting) return;
+
+    try {
+      setIsSubmitting(true);
+      const updated = await P2PService.updateOrderStatus(String(order.order_id), nextStatus);
+      const patchedOrder = updated || { ...order, status: nextStatus };
+      onStatusUpdated?.(patchedOrder);
+    } catch (error) {
+      console.error('Error updating order status:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  if (order.order_status !== 'PENDING' && order.order_status !== 'PAYMENT_PENDING') {
+  if (order.status !== 'OPEN') {
     return null;
   }
 
@@ -23,21 +54,18 @@ export const PaymentActionButton = ({ order, onPaymentConfirmed }: PaymentAction
     <div>
       <Button
         onClick={handleConfirm}
-        className="w-full bg-brand-primary hover:bg-violet-600 text-white font-bold text-lg py-4 rounded-xl shadow-lg shadow-violet-900/20 transition mb-4 flex items-center justify-center gap-2"
+        disabled={isSubmitting}
+        className="bg-brand-primary mb-4 flex w-full items-center justify-center gap-2 rounded-xl py-4 text-lg font-bold text-white shadow-lg shadow-violet-900/20 transition hover:bg-violet-600 disabled:cursor-not-allowed disabled:opacity-70"
       >
         <CheckCircle2 className="h-5 w-5" />
-        Đã chuyển tiền, thông báo cho người bán
+        {isSubmitting ? 'Processing...' : buttonText}
       </Button>
-      <div className="text-center text-sm text-gray-500 px-4">
-        Chỉ ấn nút trên khi bạn đã thực sự chuyển khoản thành công.{' '}
-        <a href="#" className="text-brand-primary hover:underline ml-1">
-          Cần trợ giúp?
+      <div className="px-4 text-center text-sm text-gray-500">
+        Only click the button after you have successfully transferred the money.{' '}
+        <a href="#" className="text-brand-primary ml-1 hover:underline">
+          Need help?
         </a>
       </div>
     </div>
   );
 };
-
-
-
-

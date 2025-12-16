@@ -12,12 +12,12 @@ interface BuyAmountSectionProps {
   isLoading?: boolean;
 }
 
-// Format số với dấu phẩy
+// Format number with locale separators
 const formatCurrency = (num: number): string => {
   return new Intl.NumberFormat('vi-VN').format(num);
 };
 
-// Lấy giá trị số từ string có dấu phẩy
+// Extract numeric value from a formatted string
 const getRawValue = (val: string): number => {
   return parseFloat(val.replace(/\./g, '').replace(/,/g, '')) || 0;
 };
@@ -26,7 +26,7 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
   const [amountMZD, setAmountMZD] = useState<number>(0);
   const [displayValue, setDisplayValue] = useState<string>('');
 
-  // Tính VND dựa vào tỉ giá
+  // Calculate VND based on the exchange rate
   const amountVND = amountMZD > 0 && offer.price_rate > 0 ? amountMZD * offer.price_rate : 0;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,7 +35,7 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
       setDisplayValue('');
       setAmountMZD(0);
     } else {
-      // Cho phép nhập tự do, không validate ngay
+      // Allow free input without immediate validation
       const formatted = formatCurrency(rawValue);
       setDisplayValue(formatted);
       setAmountMZD(rawValue);
@@ -44,7 +44,7 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
 
   // Calculate available amount (remaining amount in offer)
   const available = offer.amount; // Use amount as available for now
-  
+
   const setQuickAmount = (value: number) => {
     const validatedValue = Math.max(offer.limit.min, Math.min(value, Math.min(offer.limit.max, available)));
     setDisplayValue(formatCurrency(validatedValue));
@@ -53,34 +53,6 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
 
   const handleConfirm = () => {
     if (amountMZD >= offer.limit.min && amountMZD <= Math.min(offer.limit.max, available)) {
-      // Console log đầy đủ thông tin khi xác nhận mua
-      console.log('📦 Offer Information:', {
-        offer_id: offer.offer_id,
-        seller_wallet_address: offer.seller_wallet_address,
-        total_amount: offer.total_amount,
-        total_amount_formatted: formatCurrency(offer.total_amount),
-        available: available,
-        available_formatted: formatCurrency(available),
-        limit: {
-          min: offer.limit.min,
-          min_formatted: formatCurrency(offer.limit.min),
-          max: offer.limit.max,
-          max_formatted: formatCurrency(offer.limit.max),
-          range: `${formatCurrency(offer.limit.min)} - ${formatCurrency(offer.limit.max)} MZD`,
-        },
-        price_rate: offer.price_rate,
-        price_rate_display: `1 MZD = ${offer.price_rate.toLocaleString('vi-VN')} VND`,
-        bankInfo: offer.bankInfo,
-      });
-      console.log('💰 Purchase Details:', {
-        amountMZD: amountMZD,
-        amountMZDFormatted: formatCurrency(amountMZD),
-        amountVND: amountVND,
-        amountVNDFormatted: formatCurrency(amountVND),
-        price_rate: offer.price_rate,
-        calculation: `${formatCurrency(amountMZD)} MZD × ${offer.price_rate.toLocaleString('vi-VN')} = ${formatCurrency(amountVND)} VND`,
-      });
-
       onConfirmBuy(amountMZD, amountVND);
     }
   };
@@ -90,11 +62,11 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
   return (
     <div className="mb-6 space-y-4">
       <div>
-        <label className="mb-2 block text-sm font-medium text-gray-400">Số lượng MZD muốn mua</label>
+        <label className="mb-2 block text-sm font-medium text-gray-400">MZD amount to buy</label>
         <div className="relative">
           <Input
             type="text"
-            placeholder={`Tối thiểu: ${formatCurrency(offer.limit.min)} - Tối đa: ${formatCurrency(
+            placeholder={`Minimum: ${formatCurrency(offer.limit.min)} - Maximum: ${formatCurrency(
               Math.min(offer.limit.max, available)
             )}`}
             value={displayValue}
@@ -103,7 +75,7 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
           />
           <span className="absolute top-3.5 right-3 text-xs font-bold text-gray-500">MZD</span>
         </div>
-        <div className="mt-1 text-xs text-gray-500">Khả dụng: {formatCurrency(available)} MZD</div>
+        <div className="mt-1 text-xs text-gray-500">Available: {formatCurrency(available)} MZD</div>
       </div>
 
       <div className="grid grid-cols-4 gap-2">
@@ -136,13 +108,13 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
       {amountMZD > 0 && (
         <div className="rounded-lg border border-gray-700/50 bg-gray-800/50 px-4 py-4">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm text-gray-400">Số tiền cần thanh toán</span>
+            <span className="text-sm text-gray-400">Amount to pay</span>
             <span className="text-2xl font-bold text-green-400">
               {formatCurrency(amountVND)} <span className="text-sm">VND</span>
             </span>
           </div>
           <div className="flex items-center justify-between text-xs text-gray-500">
-            <span>Tỉ giá: {offer.price_rate.toLocaleString('vi-VN')} VND/MZD</span>
+            <span>Rate: {offer.price_rate.toLocaleString('vi-VN')} VND/MZD</span>
             <span>≈ {formatCurrency(amountMZD)} MZD</span>
           </div>
         </div>
@@ -155,13 +127,13 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
           className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-8 py-3 text-base font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <CheckCircle2 className="h-5 w-5" />
-          {isLoading ? 'Đang xử lý...' : 'Xác nhận mua'}
+          {isLoading ? 'Processing...' : 'Confirm purchase'}
         </Button>
       </div>
 
       {!isValidAmount && amountMZD > 0 && (
         <p className="text-center text-xs text-red-500">
-          Số lượng phải từ {formatCurrency(offer.limit.min)} đến{' '}
+          Amount must be between {formatCurrency(offer.limit.min)} and{' '}
           {formatCurrency(Math.min(offer.limit.max, available))} MZD
         </p>
       )}

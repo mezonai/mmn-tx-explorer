@@ -8,30 +8,27 @@ interface ProgressStepsProps {
 }
 
 const steps = [
-  { id: 1, label: 'Thanh toán', status: 'PAYMENT_PENDING' as const },
-  { id: 2, label: 'Chờ xác nhận', status: 'WAIT_CONFIRM' as const },
-  { id: 3, label: 'Hoàn tất', status: 'COMPLETED' as const },
+  { id: 1, label: 'Payment', status: 'OPEN' as const },
+  { id: 2, label: 'Pending confirmation', status: 'PENDING' as const },
+  { id: 3, label: 'Completed', status: 'CONFIRMED' as const },
 ];
 
 export const ProgressSteps = ({ order }: ProgressStepsProps) => {
   // Map order status to step index
   const getStepIndex = (status: string): number => {
     switch (status) {
-      case 'PENDING':
-      case 'PAYMENT_PENDING':
+      case 'OPEN':
         return 0;
-      case 'WAIT_CONFIRM':
+      case 'PENDING':
         return 1;
-      case 'PAYMENT_CONFIRMED':
-        return 1; // Also map PAYMENT_CONFIRMED to step 2 for backward compatibility
-      case 'COMPLETED':
+      case 'CONFIRMED':
         return 2;
       default:
         return 0;
     }
   };
 
-  const activeStepIndex = getStepIndex(order.order_status);
+  const activeStepIndex = getStepIndex(order.status);
 
   return (
     <div className="mb-8 flex items-center justify-between px-4">
