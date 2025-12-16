@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/configs/routes.config';
 import { JSX, useState } from 'react';
 import { useUser } from '@/providers';
-import { EyeClosed, Pencil } from 'lucide-react';
+import { Eye, EyeClosed, Pencil } from 'lucide-react';
 import { useToggleHideDonationFeed } from '@/modules/donation-campaign/hooks';
 
 const MAX_IMAGES_DISPLAY = 18;
@@ -123,8 +123,17 @@ export const UpdatePostDesktop = ({
                           setIsPopoverOpen(false);
                         }}
                       >
-                        <EyeClosed className="text-primary mr-2 h-4 w-4" />
-                        {isHidden ? 'Unhide' : 'Hide'}
+                        {isHidden ? (
+                          <>
+                            <Eye className="text-primary mr-2 h-4 w-4" />
+                            Unhide
+                          </>
+                        ) : (
+                          <>
+                            <EyeClosed className="text-primary mr-2 h-4 w-4" />
+                            Hide
+                          </>
+                        )}
                       </Button>
                     </>
                   )}
