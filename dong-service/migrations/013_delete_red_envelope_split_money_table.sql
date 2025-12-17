@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS red_envelope_split_money;

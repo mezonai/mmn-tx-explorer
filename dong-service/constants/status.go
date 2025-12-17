@@ -44,12 +44,6 @@ const (
 )
 
 const (
-	RedEnvelopeSplitMoneyStatusAvailable = "AVAILABLE"
-	RedEnvelopeSplitMoneyStatusReserved  = "RESERVED"
-	RedEnvelopeSplitMoneyStatusClaimed   = "CLAIMED"
-)
-
-const (
 	WalletTypeDefault     = "DEFAULT"
 	WalletTypeRedEnvelope = "LUCKY_MONEY"
 )
@@ -74,9 +68,7 @@ const (
 )
 
 const (
-	ClaimStatusError         = 0
-	ClaimStatusSuccess       = 1
-	ClaimStatusAlreadyQueued = 2
+	AmountError = 0
 )
 
 const (

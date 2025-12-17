@@ -12,11 +12,8 @@ definitions:
     properties:
       id:
         type: string
-      split_money_id:
-        type: integer
     required:
     - id
-    - split_money_id
     type: object
   models.CreateDonationCampaignRequest:
     properties:
@@ -1262,15 +1259,10 @@ paths:
       summary: Get Recipients by red envelope id
       tags:
       - red_envelopes
-  /api/v1/red_envelopes/{id}/claim:
+  /api/v1/red_envelopes/claim:
     post:
       description: User claims a red envelope and receives money
       parameters:
-      - description: Red Envelope ID
-        in: path
-        name: id
-        required: true
-        type: string
       - description: ClaimRedEnvelopeRequest
         in: body
         name: claim

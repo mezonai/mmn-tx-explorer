@@ -94,7 +94,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		redEnvelopePrivate.GET("/detail/:id", redEnvelopeHandler.GetDetailRedEnvelopeByID)
 		redEnvelopePrivate.POST("/close-session", redEnvelopeHandler.CloseSessionRedEnvelope)
 		redEnvelopePrivate.GET("/claim-amount", redEnvelopeHandler.ClaimAmountRedEnvelope)
-		redEnvelopePrivate.POST("/:id/claim", redEnvelopeHandler.ClaimRedEnvelope)
+		redEnvelopePrivate.POST("/claim", redEnvelopeHandler.ClaimRedEnvelope)
 
 		// Red Envelope routes (public)
 		redEnvelopePublic := v1.Group("/red-envelopes")
