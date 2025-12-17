@@ -71,7 +71,6 @@ export const StatCard = ({ icon: Icon, faIconClass, title, value, subValue }: St
     'hover:border-primary/50 dark:hover:border-primary/50 rounded-xl border border-gray-300 transition-colors dark:border-gray-700'
   );
 
-  const isLink = title === 'Total Blocks';
   const getRouteForTitle = (t: string): string | undefined => {
     switch (t) {
       case StatTitle.TotalBlocks:
@@ -92,7 +91,7 @@ export const StatCard = ({ icon: Icon, faIconClass, title, value, subValue }: St
   const route = getRouteForTitle(title);
 
   const content = (
-    <Card className={cn(cardClassName, isLink ? 'cursor-pointer' : '')}>
+    <Card className={cn(cardClassName, route ? 'cursor-pointer' : '')}>
       <CardContent className="p-6">
         <div className="mb-4 flex items-center justify-between">
           <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', accent.bg)}>
