@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 interface AmountSectionProps {
   control: Control<CreateOfferFormValues>;
   trigger: UseFormTrigger<CreateOfferFormValues>;
+  userBalance: string;
 }
 
 const formatCurrency = (num: number): string => {
@@ -19,10 +20,10 @@ const getRawValue = (val: string): number => {
   return parseFloat(val.replace(/,/g, '')) || 0;
 };
 const MAX_AMOUNT = 1000000000000;
-export const AmountSection = ({ control, trigger }: AmountSectionProps) => {
+export const AmountSection = ({ control, trigger, userBalance }: AmountSectionProps) => {
   const amountMZD = useWatch({ control, name: 'amount' });
   const exchangeRate = useWatch({ control, name: 'price_rate' });
-  const totalVND = exchangeRate > 0 ? amountMZD * exchangeRate : 0;
+  const totalVND = parseFloat(exchangeRate) > 0 ? amountMZD * parseFloat(exchangeRate) : 0;
 
   return (
     <div className="border-border space-y-5 border-b pb-4 lg:border-r lg:border-b-0 lg:pr-8 lg:pb-0">
@@ -48,6 +49,7 @@ export const AmountSection = ({ control, trigger }: AmountSectionProps) => {
                   value={formatCurrency(field.value)}
                   onChange={(e) => {
                     const val = getRawValue(e.target.value);
+                    console.log(val);
                     if (val > MAX_AMOUNT) return;
                     field.onChange(val);
                     trigger(['limit.min', 'limit.max']);
@@ -56,7 +58,9 @@ export const AmountSection = ({ control, trigger }: AmountSectionProps) => {
                   placeholder="Ex: 5,000,000"
                   className={cn(
                     'bg-input/30 w-full rounded-md border px-3 py-2.5 text-lg font-bold transition-colors focus:outline-none',
-                    error ? 'border-utility-error-600' : 'border-border'
+                    error
+                      ? 'border-utility-error-600! !focus:border-utility-error-600 focus:ring-0 focus-visible:ring-0'
+                      : 'border-border'
                   )}
                 />
                 <span className="absolute top-4.5 right-2 text-xs font-bold text-gray-500">
@@ -68,6 +72,11 @@ export const AmountSection = ({ control, trigger }: AmountSectionProps) => {
           />
         </div>
 
+        <div className="text-brand-primary mt-2 flex justify-end text-sm">
+          <span>
+            Balance: {userBalance ? userBalance : '-'} {APP_CONFIG.CHAIN_SYMBOL}
+          </span>
+        </div>
         <div className="mt-3 grid grid-cols-4 gap-2">
           {[100000, 500000, 1000000, 5000000].map((val) => (
             <Controller
