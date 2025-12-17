@@ -247,7 +247,7 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 func (s *OfferService) releaseIntermediaryWallet(ctx context.Context, walletAddress string) {
 	wallet, walletErr := s.walletRepo.GetWalletByAddress(ctx, walletAddress)
 	if walletErr == nil && wallet != nil {
-		if updateErr := s.walletRepo.UpdateWalletStatus(ctx, wallet.ID, constants.WalletTypeDefault); updateErr != nil {
+		if updateErr := s.walletRepo.UpdateWalletStatus(ctx, wallet.ID, constants.RedEnvelopeWalletStatusReady); updateErr != nil {
 			logger.Error().Err(updateErr).Int64("wallet_id", wallet.ID).Msg("Failed to reset intermediary wallet status")
 		} else {
 			logger.Info().Int64("wallet_id", wallet.ID).Str("address", walletAddress).Msg("Released intermediary wallet")
