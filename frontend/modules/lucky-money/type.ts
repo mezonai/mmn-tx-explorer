@@ -94,11 +94,9 @@ export interface UpdateStatusRedEnvelopeRequest {
 
 export interface ClaimEnvelopeRequest {
   id: UUID;
-  split_money_id: number;     
 }
 
 export interface RedEnvelopeClaim {
-  split_money_id: number;
   amount: number;
   description: string;
 }
