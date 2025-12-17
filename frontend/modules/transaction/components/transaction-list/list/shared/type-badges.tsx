@@ -14,8 +14,6 @@ interface TypeBadgesSkeletonProps {
 
 const getTransactionTypeInfo = (type: ETransferType) => {
   switch (type) {
-    case ETransferType.TokenTransfer:
-      return 'bg-yellow-100 text-yellow-600 dark:bg-yellow-500/10 dark:text-yellow-300';
     case ETransferType.DonationCampaign:
       return 'bg-green-100 text-green-600 dark:bg-green-500/10 dark:text-green-300';
     case ETransferType.WithdrawCampaign:
@@ -27,8 +25,9 @@ const getTransactionTypeInfo = (type: ETransferType) => {
     case ETransferType.GiveCoffee:
     case ETransferType.DongGiveCoffee:
       return 'bg-orange-100 text-orange-600 dark:bg-orange-500/10 dark:text-orange-300';
+    case ETransferType.TokenTransfer:
     default:
-      return 'bg-red-100 text-red-600 dark:bg-red-500/10 dark:text-red-300';
+      return 'bg-yellow-100 text-yellow-600 dark:bg-yellow-500/10 dark:text-yellow-300';
   }
 };
 
