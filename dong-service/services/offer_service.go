@@ -188,7 +188,10 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 	}
 
 	// Verify transaction exists in blockchain
-	if s.blockchain != nil {
+	if s.blockchain != nil && req.Status == constants.TradingConfirmed {
+		if offer.Status != constants.TrandingOpen {
+			return fmt.Errorf("offer status invalid for confirmation: %s", offer.Status)
+		}
 		txInfo, err := s.blockchain.GetTransaction(req.TxHash)
 		if err != nil {
 			return fmt.Errorf("failed to verify transaction: %w", err)
@@ -213,10 +216,6 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 		if actualAmount != offer.Amount {
 			return fmt.Errorf("transaction amount mismatch: expected %d, got %d", offer.Amount, actualAmount)
 		}
-
-		if offer.Status != constants.TradingPending && req.Status != constants.TrandingOpen {
-			return fmt.Errorf("offer status invalid for update: current status %s", offer.Status)
-		}
 	}
 
 	db := database.GetDB()
@@ -234,7 +233,7 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 		return err
 	}
 
-	if req.Status == constants.TradingFailed || req.Status == constants.TradingCompleted || req.Status == constants.TradingCanceled {
+	if req.Status == constants.TradingFailed {
 		offer, err := s.repo.GetOfferByID(ctx, req.OfferID)
 		if err == nil && offer != nil && offer.IntermediaryWalletAddress != nil && *offer.IntermediaryWalletAddress != "" {
 			w, wErr := s.walletRepo.GetWalletByAddress(ctx, *offer.IntermediaryWalletAddress)
