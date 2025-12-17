@@ -22,10 +22,10 @@ func NewOfferRepository(db *sql.DB, dongSchema string) *OfferRepository {
 func (r *OfferRepository) CreateOffer(ctx context.Context, offer *models.Offer, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
 				INSERT INTO %s.offers (
-								intermediary_wallet_address, seller_wallet_address, side, symbol, amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, bank_info, created_at, updated_at
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW(),NOW())
-        RETURNING offer_id, created_at, updated_at
-    `, r.dongSchema)
+								intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, bank_info, created_at, updated_at
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,NOW(),NOW())
+		RETURNING offer_id, created_at, updated_at
+	`, r.dongSchema)
 
 	minToSave := int64(1)
 	maxToSave := offer.Amount
@@ -47,6 +47,7 @@ func (r *OfferRepository) CreateOffer(ctx context.Context, offer *models.Offer, 
 		query,
 		offer.IntermediaryWalletAddress,
 		offer.SellerWalletAddress,
+		offer.SellerUserID,
 		offer.Side,
 		offer.Symbol,
 		offer.Amount,
@@ -79,7 +80,7 @@ func (r *OfferRepository) UpdateOfferStatus(
 }
 
 func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, fromAmount *string, toAmount *string, pagination any) ([]models.Offer, error) {
-	base := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_address, seller_wallet_address, side, symbol, amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, bank_info, created_at, updated_at FROM %s.offers`, r.dongSchema)
+	base := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, bank_info, created_at, updated_at FROM %s.offers`, r.dongSchema)
 
 	whereClauses := []string{}
 	args := []any{}
@@ -189,6 +190,7 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 			&o.OfferID,
 			&o.IntermediaryWalletAddress,
 			&o.SellerWalletAddress,
+			&o.SellerUserID,
 			&o.Side,
 			&o.Symbol,
 			&o.Amount,
@@ -278,6 +280,7 @@ func (r *OfferRepository) ScanOfferRow(row *sql.Row) (*models.Offer, error) {
 		&o.OfferID,
 		&o.IntermediaryWalletAddress,
 		&o.SellerWalletAddress,
+		&o.SellerUserID,
 		&o.Side,
 		&o.Symbol,
 		&o.Amount,
@@ -303,7 +306,7 @@ func (r *OfferRepository) ScanOfferRow(row *sql.Row) (*models.Offer, error) {
 
 func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*models.Offer, error) {
 	query := fmt.Sprintf(`
-		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, side, symbol, 
+		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, 
 		       amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, 
 		       bank_info, created_at, updated_at 
 		FROM %s.offers 
@@ -316,7 +319,7 @@ func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*mod
 
 func (r *OfferRepository) GetOfferByIDForUpdate(ctx context.Context, offerID int64, tx *sql.Tx) (*models.Offer, error) {
 	query := fmt.Sprintf(`
-		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, side, symbol, 
+		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, 
 		       amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, 
 		       bank_info, created_at, updated_at
 		FROM %s.offers
@@ -373,7 +376,7 @@ func (r *OfferRepository) ApplyConfirmedQuantity(ctx context.Context, offerID in
 
 func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Offer, error) {
 	query := fmt.Sprintf(`
-		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, side, symbol, amount, total_amount, 
+		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, amount, total_amount, 
 		       min_amount, max_amount, payable_amount, price_rate, status, bank_info, created_at, updated_at
 		FROM %s.offers
 		WHERE seller_wallet_address = $1
@@ -404,6 +407,7 @@ func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAd
 			&o.OfferID,
 			&o.IntermediaryWalletAddress,
 			&o.SellerWalletAddress,
+			&o.SellerUserID,
 			&o.Side,
 			&o.Symbol,
 			&o.Amount,

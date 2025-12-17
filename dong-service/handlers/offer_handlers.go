@@ -46,7 +46,13 @@ func (h *OfferHandler) CreateOffer(c *gin.Context) {
 		return
 	}
 
-	offer, err := h.offerService.CreateOffer(c.Request.Context(), &req, creatorAddr)
+	userID, err := utils.GetUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "authentication required"))
+		return
+	}
+
+	offer, err := h.offerService.CreateOffer(c.Request.Context(), &req, creatorAddr, userID)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to create offer")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to create offer: "+err.Error()))

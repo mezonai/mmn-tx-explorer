@@ -21,14 +21,15 @@ func NewOrderRepository(db *sql.DB, dongSchema string) *OrderRepository {
 func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
 			INSERT INTO %s.orders (
-				offer_id, buyer_wallet_address, amount, payable_amount, status, transfer_code, expires_at, created_at, updated_at
-			) VALUES ($1,$2,$3,$4,$5,$6,$7,NOW(),NOW())
+				offer_id, buyer_wallet_address, buyer_user_id, amount, payable_amount, status, transfer_code, expires_at, created_at, updated_at
+			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW(),NOW())
         RETURNING order_id, created_at, updated_at
     `, r.dongSchema)
 
 	return tx.QueryRowContext(ctx, query,
 		order.OfferID,
 		order.BuyerWalletAddress,
+		order.BuyerUserID,
 		order.Amount,
 		order.PayableAmount,
 		order.Status,
@@ -106,7 +107,7 @@ func (r *OrderRepository) CancelExpiredOrders(ctx context.Context, cutoff time.T
 }
 
 func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, error) {
-	base := fmt.Sprintf("SELECT order_id, offer_id, buyer_wallet_address, amount, payable_amount, transaction_hash, status, transfer_code, expires_at, created_at, updated_at FROM %s.orders WHERE offer_id = $1", r.dongSchema)
+	base := fmt.Sprintf("SELECT order_id, offer_id, buyer_wallet_address, buyer_user_id, amount, payable_amount, transaction_hash, status, transfer_code, expires_at, created_at, updated_at FROM %s.orders WHERE offer_id = $1", r.dongSchema)
 
 	// Default ordering and pagination
 	orderBy := "created_at"
@@ -147,6 +148,7 @@ func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, 
 			&o.OrderID,
 			&o.OfferID,
 			&o.BuyerWalletAddress,
+			&o.BuyerUserID,
 			&o.Amount,
 			&o.PayableAmount,
 			&o.TransactionHash,
@@ -165,13 +167,22 @@ func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, 
 }
 
 func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.Order, error) {
-	query := fmt.Sprintf("SELECT order_id, offer_id, buyer_wallet_address, amount, payable_amount, transaction_hash, status, transfer_code, expires_at, created_at, updated_at FROM %s.orders WHERE order_id = $1", r.dongSchema)
+	query := fmt.Sprintf("SELECT order_id, offer_id, buyer_wallet_address, buyer_user_id, amount, payable_amount, transaction_hash, status, transfer_code, expires_at, created_at, updated_at FROM %s.orders WHERE order_id = $1", r.dongSchema)
 	var o models.Order
 	row := r.db.QueryRowContext(ctx, query, id)
 	if err := row.Scan(
 		&o.OrderID,
 		&o.OfferID,
 		&o.BuyerWalletAddress,
+		&o.Amount,
+		&o.PayableAmount,
+		&o.TransactionHash,
+		&o.Status,
+		&o.TransferCode,
+		&o.ExpiresAt,
+		&o.CreatedAt,
+		&o.UpdatedAt,
+		&o.BuyerUserID,
 		&o.Amount,
 		&o.PayableAmount,
 		&o.TransactionHash,
@@ -188,7 +199,7 @@ func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.O
 
 // GetOrdersByWalletAddress returns all orders created by a wallet address (most recent first)
 func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Order, error) {
-	query := fmt.Sprintf("SELECT order_id, offer_id, buyer_wallet_address, amount, payable_amount, transaction_hash, status, transfer_code, expires_at, created_at, updated_at FROM %s.orders WHERE buyer_wallet_address = $1 ORDER BY created_at DESC", r.dongSchema)
+	query := fmt.Sprintf("SELECT order_id, offer_id, buyer_wallet_address, buyer_user_id, amount, payable_amount, transaction_hash, status, transfer_code, expires_at, created_at, updated_at FROM %s.orders WHERE buyer_wallet_address = $1 ORDER BY created_at DESC", r.dongSchema)
 
 	if pagination != nil {
 		if limit, ok := pagination["limit"].(int); ok && limit > 0 {
@@ -212,6 +223,7 @@ func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAd
 			&o.OrderID,
 			&o.OfferID,
 			&o.BuyerWalletAddress,
+			&o.BuyerUserID,
 			&o.Amount,
 			&o.PayableAmount,
 			&o.TransactionHash,
