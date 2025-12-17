@@ -374,14 +374,30 @@ func (r *OfferRepository) ApplyConfirmedQuantity(ctx context.Context, offerID in
 	return err
 }
 
-func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Offer, error) {
+func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, error) {
+	whereClauses := []string{"seller_wallet_address = $1"}
+	args := []any{walletAddress}
+	argCount := 2
+
+	if fromAmount != nil && *fromAmount != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("amount >= $%d", argCount))
+		args = append(args, *fromAmount)
+		argCount++
+	}
+
+	if toAmount != nil && *toAmount != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("amount <= $%d", argCount))
+		args = append(args, *toAmount)
+		argCount++
+	}
+
 	query := fmt.Sprintf(`
 		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, amount, total_amount, 
 		       min_amount, max_amount, payable_amount, price_rate, status, bank_info, created_at, updated_at
 		FROM %s.offers
-		WHERE seller_wallet_address = $1
+		WHERE %s
 		ORDER BY created_at DESC
-	`, r.dongSchema)
+	`, r.dongSchema, strings.Join(whereClauses, " AND "))
 
 	if pagination != nil {
 		if limit, ok := pagination["limit"].(int); ok && limit > 0 {
@@ -392,7 +408,7 @@ func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAd
 		}
 	}
 
-	rows, err := r.db.QueryContext(ctx, query, walletAddress)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}

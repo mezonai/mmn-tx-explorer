@@ -182,6 +182,8 @@ func (h *OfferHandler) GetOfferDetail(c *gin.Context) {
 // @Produce json
 // @Param page query int false "page"
 // @Param limit query int false "limit"
+// @Param from_amount query string false "minimum amount"
+// @Param to_amount query string false "maximum amount"
 // @Success 200 {object} models.Response{data=[]models.Offer}
 // @Failure 500 {object} models.Response
 // @Security BearerAuth
@@ -189,8 +191,20 @@ func (h *OfferHandler) GetOfferDetail(c *gin.Context) {
 func (h *OfferHandler) GetMyOffers(c *gin.Context) {
 	walletAddress, _ := utils.GetAddressFromContext(c)
 
+	fromAmount := c.Query("from_amount")
+	toAmount := c.Query("to_amount")
+
 	pg := utils.GetPaginationParams(c)
 	pagination := map[string]any{"limit": pg.Limit, "offset": pg.Offset}
+
+	var fromP *string
+	var toP *string
+	if fromAmount != "" {
+		fromP = &fromAmount
+	}
+	if toAmount != "" {
+		toP = &toAmount
+	}
 
 	offers, total, err := h.offerService.GetOffersByWalletAddress(c.Request.Context(), walletAddress, pagination)
 	if err != nil {
