@@ -64,7 +64,7 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
       return `${seconds}s`;
     };
 
-    const className = remainingMs <= 0 ? 'text-utility-error-600 font-bold' : 'text-utility-success-600 font-bold';
+    const className = remainingMs <= 0 ? 'text-error-primary-600 font-bold' : 'text-utility-success-600 font-bold';
 
     return <p className={className}>{fmt(remainingMs)}</p>;
   };
@@ -101,7 +101,7 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
             {new Intl.NumberFormat('en-US').format(Number(order.amount))} {APP_CONFIG.CHAIN_SYMBOL}
           </p>
           <p className="text-muted-foreground text-xs">
-            {new Intl.NumberFormat('en-US').format(Number(order.price))} VND
+            {new Intl.NumberFormat('en-US').format(Number(order.pay_amount))} VND
           </p>
         </div>
       ),

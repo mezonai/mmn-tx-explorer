@@ -66,7 +66,7 @@ export interface P2POrder {
   buyer_wallet_address: string;
   seller_wallet_address: string;
   amount: number;
-  price: number;
+  pay_amount: number;
   status: OfferStatus;
   transfer_code: string;
   expires_at: string;
