@@ -1,10 +1,10 @@
 import { Card } from '@/components/ui/card';
 import { DonationCampaign, IDonationFeed } from '@/modules/donation-campaign/type';
 import { UpdatePostHeader } from './update-post-header';
-import { UpdatePostBody } from './update-post-body';
+import { UpdatePostBody } from '../../shared/donation-feed/update-post/';
 import { useUser } from '@/providers';
 import { JSX, useState } from 'react';
-import { UpdatePostFooter } from './update-post-footer';
+import { UpdatePostFooter } from '../../shared/donation-feed/update-post/';
 
 const MAX_IMAGES_DISPLAY = 18;
 const MAX_DESC_CHARACTERS = 300;

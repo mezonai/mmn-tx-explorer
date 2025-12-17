@@ -2,7 +2,7 @@
 import { DonationCampaign, IDonationFeed } from '@/modules/donation-campaign';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useState } from 'react';
-import { UpdatePost } from './update-post';
+import { UpdatePost } from './update-post/update-post';
 import { ipfsServiceURL } from '@/service';
 
 export const UpdateList = ({ updates, campaign }: { updates: IDonationFeed[]; campaign: DonationCampaign }) => {
