@@ -11,7 +11,7 @@ export const getTransactionTypeLabel = (type: ETransferType): string => {
       return 'Withdraw Campaign';
     case ETransferType.LuckyMoney:
       return 'Lucky Money';
-    case ETransferType.DonationFeed:
+    case ETransferType.DonationFeedCampaign:
       return 'Donation Feed';
     default:
       return 'Token Transfer';
