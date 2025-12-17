@@ -1,4 +1,3 @@
-// schema.ts
 import { TradeTypes } from '@/modules/p2p/types';
 import { z } from 'zod';
 
@@ -6,7 +5,11 @@ export const createOfferSchema = z
   .object({
     side: z.nativeEnum(TradeTypes),
     amount: z.number({ message: 'Amount is required' }).gt(0, 'Please enter the amount of đồng to sell'),
-    price_rate: z.number().min(0, 'Rate must be positive'),
+    price_rate: z
+      .string()
+      .min(1, 'Rate is required')
+      .refine((val) => !isNaN(parseFloat(val)), 'Invalid number format')
+      .refine((val) => parseFloat(val) > 0, 'Rate must be greater than 0'),
     limit: z.object({
       min: z.number().min(0),
       max: z.number().min(0),
@@ -24,7 +27,7 @@ export const createOfferSchema = z
   })
   .superRefine((data, ctx) => {
     if (data.side === TradeTypes.SELL) {
-      if (data.price_rate <= 0) {
+      if (parseFloat(data.price_rate) <= 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: 'Please enter the selling rate',

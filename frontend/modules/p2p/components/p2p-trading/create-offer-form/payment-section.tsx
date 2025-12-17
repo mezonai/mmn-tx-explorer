@@ -113,9 +113,10 @@ export const PaymentSection = ({ control }: PaymentSectionProps) => {
 
       <div className="border-brand-primary bg-card mt-2 rounded border p-3">
         <p className="flex items-start gap-2 text-xs leading-relaxed">
-          <Info className="text-brand-primary mt-0.5 h-3 w-3 flex-shrink-0" />
+          <Info className="text-brand-primary mt-0.5 h-3 w-3 shrink-0" />
           <span className="text-muted-foreground">
-            Note: The bank account owner name must match your KYC name on Mezon.
+            {' '}
+            Note: Please ensure the Account Name entered matches exactly the bank account holder&apos;s name.
           </span>
         </p>
       </div>

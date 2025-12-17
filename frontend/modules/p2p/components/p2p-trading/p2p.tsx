@@ -41,12 +41,15 @@ export const P2P = () => {
   const { data: myOffers, isLoading: isMyOffersLoading } = useP2PMyOffers({
     page: page - 1,
     limit,
+    from_amount: filters.min,
+    to_amount: filters.max,
   });
   const { data: myOrders, isLoading: isMyOrdersLoading } = useMyOrders({
     page: page - 1,
     limit,
+    from_amount: filters.min,
+    to_amount: filters.max,
   });
-
   return (
     <div className="w-full space-y-6">
       <P2PHeader />
@@ -86,17 +89,16 @@ export const P2P = () => {
           <P2POrdersList orders={myOrders?.data} isLoading={isMyOrdersLoading} />
         </TabsContent>
         <TabsContent value="my-offers" className="space-y-6">
-          <div className="py-2">
-            <Pagination
-              page={page}
-              limit={limit}
-              totalItems={myOffers?.meta.total_items ?? 0}
-              totalPages={myOffers?.meta.total_pages ?? 0}
-              isLoading={isMyOffersLoading}
-              onChangePage={handleChangePage}
-              onChangeLimit={handleChangeLimit}
-            />
-          </div>
+          <P2PFiltersComponent
+            totalItems={myOffers?.meta.total_items}
+            totalPages={myOffers?.meta.total_pages}
+            isLoading={isMyOffersLoading}
+            page={page}
+            limit={limit}
+            onPageChange={handleChangePage}
+            onLimitChange={handleChangeLimit}
+            onFilterChange={handleFilterChange}
+          />
           <P2POffersTabs offers={myOffers?.data} isLoading={isMyOffersLoading} />
         </TabsContent>
       </Tabs>

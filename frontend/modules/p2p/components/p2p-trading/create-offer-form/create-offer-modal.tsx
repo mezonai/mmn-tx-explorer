@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Plus, Send, Loader2, Info } from 'lucide-react';
 import { toast } from 'sonner';
-
+import { z } from 'zod';
 import { useTransfer } from '@/modules/transfer/hooks/useTransfer';
 import { CreateOfferRequest, TradeTypes } from '@/modules/p2p/types';
 import { useCreateOffer } from '@/modules/p2p/hooks/useCreateOffer';
@@ -16,6 +16,10 @@ import { TradeTypeSection } from './trade-type-section';
 import { AmountSection } from './amount-section';
 import { PaymentSection } from './payment-section';
 import { useUpdateOfferStatus } from '@/modules/p2p/hooks/useUpdateOfferStatus';
+import { APP_CONFIG } from '@/configs/app.config';
+import { useUser } from '@/providers';
+import { mmnClient } from '@/modules/auth';
+import { NumberUtil } from '@/utils';
 
 export const CreateOfferModal = () => {
   const [open, setOpen] = useState(false);
@@ -24,13 +28,27 @@ export const CreateOfferModal = () => {
   const { mutate: updateOfferStatus } = useUpdateOfferStatus();
   const { mutateAsync: createOfferAsync, isPending } = useCreateOffer();
   const { transfer } = useTransfer();
-
+  const { user } = useUser();
+  const [balance, setBalance] = useState<string>('0');
+  const formSchema = useMemo(() => {
+    return createOfferSchema.superRefine((data, ctx) => {
+      if (data.side === TradeTypes.SELL) {
+        if (data.amount > Number(balance.replace(/,/g, ''))) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Insufficient balance',
+            path: ['amount'],
+          });
+        }
+      }
+    });
+  }, [balance]);
   const form = useForm<CreateOfferFormValues>({
-    resolver: zodResolver(createOfferSchema),
+    resolver: zodResolver(formSchema),
     defaultValues: {
       side: TradeTypes.SELL,
       amount: 0,
-      price_rate: 0,
+      price_rate: '0',
       limit: { min: 0, max: 0 },
       bank_info: { bank: 'MB' as const, account_name: '', account_number: '' },
       symbol: 'MZD',
@@ -43,7 +61,7 @@ export const CreateOfferModal = () => {
       form.reset({
         side: TradeTypes.SELL,
         amount: 0,
-        price_rate: 1,
+        price_rate: '0',
         limit: { min: 0, max: 0 },
         bank_info: { bank: 'MB', account_name: '', account_number: '' },
         symbol: 'MZD',
@@ -52,6 +70,21 @@ export const CreateOfferModal = () => {
       setPendingData(null);
     }
   }, [open, form]);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchBalance = async () => {
+      if (!user?.id) return;
+      try {
+        const account = await mmnClient.getAccountByUserId(user.id);
+        if (mounted && account?.balance) setBalance(NumberUtil.formatWithCommasAndScale(account.balance));
+      } catch {}
+    };
+    fetchBalance();
+    return () => {
+      mounted = false;
+    };
+  }, [user?.id]);
 
   const onPreSubmit = (data: CreateOfferFormValues) => {
     setPendingData(data);
@@ -64,7 +97,7 @@ export const CreateOfferModal = () => {
     const payload: CreateOfferRequest = {
       ...pendingData,
       amount: pendingData.amount,
-      price_rate: pendingData.price_rate.toString(),
+      price_rate: pendingData.price_rate,
       limit: {
         min: pendingData.limit.min,
         max: pendingData.limit.max,
@@ -94,7 +127,14 @@ export const CreateOfferModal = () => {
         setShowConfirm(false);
         setOpen(false);
       } else {
-        toast.error('Create offer fail. Please try again.');
+        toast.error(JSON.parse(transferResult.error || '').message || 'Create offer fail. Please try again.');
+        setTimeout(() => {
+          updateOfferStatus({
+            offer_id: Number(resultData.offer.offer_id),
+            tx_hash: ' ',
+            status: 'FAILED',
+          });
+        }, 2000);
         console.error(transferResult.error);
         setShowConfirm(false);
       }
@@ -122,7 +162,7 @@ export const CreateOfferModal = () => {
           <form onSubmit={form.handleSubmit(onPreSubmit)}>
             <div className="grid grid-cols-1 gap-8 p-6 lg:grid-cols-3">
               <TradeTypeSection control={form.control} />
-              <AmountSection control={form.control} trigger={form.trigger} />
+              <AmountSection control={form.control} trigger={form.trigger} userBalance={balance} />
               <PaymentSection control={form.control} />
             </div>
 
@@ -149,7 +189,7 @@ export const CreateOfferModal = () => {
       </Dialog>
 
       <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
-        <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="sm:max-w-[425px]">
+        <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="sm:max-w-106.25">
           <DialogHeader>
             <DialogTitle className="text-brand-primary pb-2 text-left text-lg font-semibold">
               Confirm Offer Creation
@@ -161,7 +201,7 @@ export const CreateOfferModal = () => {
             <p className="text-muted-foreground text-sm leading-relaxed">
               To activate this <span className="font-semibold">{pendingData?.side}</span> offer, you need to transfer{' '}
               <span className="text-brand-primary font-bold">
-                {pendingData?.amount ? Number(pendingData.amount).toLocaleString() : '0'} {pendingData?.symbol}
+                {pendingData?.amount ? Number(pendingData.amount).toLocaleString() : '0'} {APP_CONFIG.CHAIN_SYMBOL}
               </span>{' '}
               to the system wallet. Please click the{' '}
               <span className="text-brand-primary font-bold">Confirm & Transfer</span> button to proceed.

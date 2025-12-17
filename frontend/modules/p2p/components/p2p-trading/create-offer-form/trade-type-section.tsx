@@ -82,19 +82,31 @@ export const TradeTypeSection = ({ control }: TradeTypeSectionProps) => {
               <Controller
                 control={control}
                 name="price_rate"
-                render={({ field }) => (
+                render={({ field: { value, onChange, ...fieldProps } }) => (
                   <div className="flex-1">
                     <input
+                      {...fieldProps}
                       type="text"
-                      value={field.value || ''}
-                      onChange={(e) => {
-                        const val = parseFloat(e.target.value);
-                        if (val > MAX_AMOUNT) return;
-                        if (!isNaN(val) || e.target.value === '') {
-                          field.onChange(isNaN(val) ? 0 : val);
-                        }
-                      }}
+                      value={value}
                       placeholder="0.8"
+                      autoComplete="off"
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (!/^\d*\.?\d*$/.test(val)) {
+                          return;
+                        }
+                        const cleanVal = val.replace(/^0+(?=\d)/, '');
+                        if (cleanVal !== '' && parseFloat(cleanVal) > MAX_AMOUNT) {
+                          return;
+                        }
+                        if (cleanVal.includes('.')) {
+                          const decimalPart = cleanVal.split('.')[1];
+                          if (decimalPart && decimalPart.length > 3) {
+                            return;
+                          }
+                        }
+                        onChange(cleanVal);
+                      }}
                       className={cn(
                         'bg-input/30 text-foreground w-full rounded border px-3 py-1.5 text-sm focus:outline-none',
                         errors.price_rate ? 'border-utility-error-600' : 'border-border'
@@ -108,12 +120,12 @@ export const TradeTypeSection = ({ control }: TradeTypeSectionProps) => {
 
             {errors.price_rate && <p className="text-utility-error-600 mt-1 text-xs">{errors.price_rate.message}</p>}
 
-            {exchangeRate > 0 && (
+            {parseFloat(exchangeRate) > 0 && (
               <div className="border-border mt-2 border-t pt-2">
                 <div className="text-center">
                   <p className="text-brand-primary mb-0.5 text-xs">Exchange rate</p>
                   <p className="text-foreground text-lg font-bold">
-                    1 {APP_CONFIG.CHAIN_SYMBOL} = {exchangeRate.toLocaleString('en-US')} VND
+                    1 {APP_CONFIG.CHAIN_SYMBOL} = {parseFloat(exchangeRate).toLocaleString('en-US')} VND
                   </p>
                 </div>
               </div>
