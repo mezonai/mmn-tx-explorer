@@ -127,7 +127,14 @@ export const CreateOfferModal = () => {
         setShowConfirm(false);
         setOpen(false);
       } else {
-        toast.error('Create offer fail. Please try again.');
+        toast.error(JSON.parse(transferResult.error || '').message || 'Create offer fail. Please try again.');
+        setTimeout(() => {
+          updateOfferStatus({
+            offer_id: Number(resultData.offer.offer_id),
+            tx_hash: ' ',
+            status: 'FAILED',
+          });
+        }, 2000);
         console.error(transferResult.error);
         setShowConfirm(false);
       }

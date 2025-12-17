@@ -49,7 +49,6 @@ export const AmountSection = ({ control, trigger, userBalance }: AmountSectionPr
                   value={formatCurrency(field.value)}
                   onChange={(e) => {
                     const val = getRawValue(e.target.value);
-                    console.log(val);
                     if (val > MAX_AMOUNT) return;
                     field.onChange(val);
                     trigger(['limit.min', 'limit.max']);
