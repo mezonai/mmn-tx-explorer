@@ -22,6 +22,8 @@ const getTransactionTypeInfo = (type: ETransferType) => {
       return 'bg-blue-100 text-blue-600 dark:bg-blue-500/10 dark:text-blue-300';
     case ETransferType.LuckyMoney:
       return 'bg-pink-100 text-pink-600 dark:bg-pink-500/10 dark:text-pink-300';
+    case ETransferType.DonationFeedCampaign:
+      return 'bg-purple-100 text-purple-600 dark:bg-purple-500/10 dark:text-purple-300';
     case ETransferType.GiveCoffee:
     case ETransferType.DongGiveCoffee:
       return 'bg-orange-100 text-orange-600 dark:bg-orange-500/10 dark:text-orange-300';

@@ -165,22 +165,22 @@ func (r *IntermediaryWalletRepository) CreateWallets(ctx context.Context, wallet
 
 	rows, err := tx.QueryContext(ctx, query, vals...)
 	if err != nil {
-		if err = tx.Rollback(); err != nil {
-			logger.Error().Err(err).Msg("Tx Rollback error")
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			logger.Error().Err(rollbackErr).Msg("Tx Rollback error")
 		}
 		return err
 	}
 	defer func() {
-		if err := rows.Close(); err != nil {
-			logger.Error().Err(err).Msg("Rows close error")
+		if closeErr := rows.Close(); closeErr != nil {
+			logger.Error().Err(closeErr).Msg("Rows close error")
 		}
 	}()
 
 	i := 0
 	for rows.Next() {
 		if err := rows.Scan(&wallets[i].ID, &wallets[i].CreatedAt, &wallets[i].UpdatedAt); err != nil {
-			if err = tx.Rollback(); err != nil {
-				logger.Error().Err(err).Msg("Tx Rollback error")
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				logger.Error().Err(rollbackErr).Msg("Tx Rollback error")
 			}
 			return err
 		}

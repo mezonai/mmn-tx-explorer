@@ -67,6 +67,35 @@ definitions:
     - total_amount
     - total_claims
     type: object
+  models.DonationCampaignFeed:
+    properties:
+      campaign_address:
+        type: string
+      created_at:
+        type: string
+      creator_address:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      image_cids:
+        items:
+          type: string
+        type: array
+      parent_hash:
+        type: string
+      root_created_at:
+        type: string
+      root_hash:
+        type: string
+      title:
+        type: string
+      tx_hash:
+        type: string
+      visible:
+        type: boolean
+    type: object
   models.DonationCampaignResponse:
     properties:
       created_at:
@@ -317,6 +346,22 @@ definitions:
       goal:
         type: integer
       url:
+        type: string
+    type: object
+  models.UploadImageResponse:
+    properties:
+      files:
+        items:
+          $ref: '#/definitions/models.UploadedImageInfo'
+        type: array
+      folder_cid:
+        type: string
+    type: object
+  models.UploadedImageInfo:
+    properties:
+      file_cid:
+        type: string
+      file_name:
         type: string
     type: object
   models.WalletDetailResponse:
@@ -577,6 +622,46 @@ paths:
       summary: Create and immediately activate a new donation campaign
       tags:
       - campaigns
+  /api/v1/admin/campaigns/upload-image:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload images, scan for virus (if enabled), and store to IPFS
+      parameters:
+      - description: Images to upload
+        in: formData
+        name: files
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.UploadImageResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - BearerAuth: []
+      summary: Upload images for a campaign
+      tags:
+      - campaign_feed
   /api/v1/campaigns:
     get:
       description: Get a list of all donation campaigns with pagination
@@ -757,6 +842,78 @@ paths:
       summary: Get top contributors for a campaign
       tags:
       - campaigns
+  /api/v1/campaigns/list-feed/{campaign_address}:
+    get:
+      description: List all donation campaign feeds by campaign address
+      parameters:
+      - description: Campaign address
+        in: path
+        name: campaign_address
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.DonationCampaignFeed'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: List all feeds of a campaign
+      tags:
+      - campaign_feed
+  /api/v1/campaigns/list-history-feed/{root_feed_hash}:
+    get:
+      description: Retrieve all previous campaign feeds that belong to the same root_feed_hash
+      parameters:
+      - description: Root feed hash
+        in: path
+        name: root_feed_hash
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.DonationCampaignFeed'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Get previous feeds by root hash
+      tags:
+      - campaign_feed
   /api/v1/campaigns/slug/{slug}:
     get:
       description: Get details of a specific donation campaign by its slug
@@ -793,6 +950,34 @@ paths:
       summary: Get a donation campaign by slug
       tags:
       - campaigns
+  /api/v1/campaigns/update-visible-feed/{root_feed_hash}:
+    patch:
+      description: Update visible/unvisible state of parent & child feed by its root
+        hash
+      parameters:
+      - description: Feed hash
+        in: path
+        name: root_feed_hash
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Update visibility of a feed
+      tags:
+      - campaign_feed
   /api/v1/red-envelopes/claimed-by-user:
     get:
       consumes:
@@ -959,11 +1144,35 @@ paths:
                 data:
                   type: object
               type: object
-        "500":
-          description: Internal Server Error
+        "400":
+          description: Bad Request
           schema:
             $ref: '#/definitions/models.Response'
       summary: Get red envelope statistics
+      tags:
+      - red_envelopes
+  /api/v1/red-envelopes/stats-by-user:
+    get:
+      consumes:
+      - application/json
+      description: Get overall statistics for red envelope sessions by user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Get red envelope statistics by user
       tags:
       - red_envelopes
   /api/v1/red-envelopes/update-status-red-envelope:

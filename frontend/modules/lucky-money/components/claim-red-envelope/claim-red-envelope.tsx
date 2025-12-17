@@ -1,17 +1,11 @@
 'use client';
-import { useEffect } from "react"; 
-import { Gift } from "lucide-react";
-import { toast } from "sonner";
-import { useClaimRedEnvelopeContext } from "../../context/ClaimRedEnvelopeContext";
+import { useEffect } from 'react';
+import { Gift } from 'lucide-react';
+import { toast } from 'sonner';
+import { useClaimRedEnvelopeContext } from '../../context/ClaimRedEnvelopeContext';
 
 const RedEnvelopeIcon = () => (
-  <svg
-    width="100"
-    height="120"
-    viewBox="0 0 100 120"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+  <svg width="100" height="120" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect x="5" y="5" width="90" height="110" fill="black" />
     <rect x="10" y="10" width="80" height="100" fill="#DC2626" />
     <path d="M10 10 L50 45 L90 10 Z" fill="#B91C1C" />
@@ -20,24 +14,29 @@ const RedEnvelopeIcon = () => (
 );
 
 const SparkleIcon = ({ className }: { className?: string }) => (
-  <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+  <svg
+    className={className}
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    xmlns="http://www.w3.org/2000/svg"
+  >
     <path d="M12 2L9.19995 9.19995L2 12L9.19995 14.8L12 22L14.8 14.8L22 12L14.8 9.19995L12 2Z" />
   </svg>
 );
 
 const OpeningScreen = ({ isLoading }: { isLoading: boolean }) => (
-  <div
-    className="w-full bg-transparent border-none p-0 text-left"
-  >
+  <div className="w-full border-none bg-transparent p-0 text-left">
     <div className="w-full">
-      <div className="border border-[rgb(246_199_68_/_0.5)] bg-[rgb(255_59_99_/_0.3)] rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 backdrop-blur-sm shadow-lg w-full ">
+      <div className="w-full rounded-xl border border-[rgb(246_199_68_/_0.5)] bg-[rgb(255_59_99_/_0.3)] p-4 shadow-lg backdrop-blur-sm sm:rounded-2xl sm:p-6 md:p-8">
         <div className="flex flex-col items-center justify-center space-y-3 sm:space-y-4 md:space-y-6">
-          <p className="text-[rgb(246_199_68)] text-sm sm:text-base md:text-lg tracking-wider">
+          <p className="text-sm tracking-wider text-[rgb(246_199_68)] sm:text-base md:text-lg">
             {'Open the Lucky money ...'}
           </p>
-          <div className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 flex items-center justify-center">
-            <div className="absolute inset-0 bg-yellow-600/20 rounded-full animate-pulse"></div>
-            <Gift className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-yellow-500 z-10" />
+          <div className="relative flex h-20 w-20 items-center justify-center sm:h-24 sm:w-24 md:h-32 md:w-32">
+            <div className="absolute inset-0 animate-pulse rounded-full bg-yellow-600/20"></div>
+            <Gift className="z-10 h-4 w-4 text-yellow-500 sm:h-5 sm:w-5 md:h-6 md:w-6" />
           </div>
         </div>
       </div>
@@ -45,53 +44,57 @@ const OpeningScreen = ({ isLoading }: { isLoading: boolean }) => (
   </div>
 );
 
-const RevealedScreen = ({ 
-  amount, 
-  description, 
-  onClaim, 
+const RevealedScreen = ({
+  amount,
+  description,
+  onClaim,
   isLoading,
-  isError 
-}: { 
-  amount: number; 
-  description?: string; 
-  onClaim: () => void; 
-  isLoading: boolean; 
-  isError: boolean; 
+  isError,
+  isSuccess,
+}: {
+  amount: number;
+  description?: string;
+  onClaim: () => void;
+  isLoading: boolean;
+  isError: boolean;
+  isSuccess: boolean;
 }) => (
-  <div className="flex flex-col items-center w-full text-center">
-    <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-5xl font-bold text-[rgb(246_199_68)] my-2 sm:my-3 md:my-4 break-words leading-tight">
+  <div className="flex w-full flex-col items-center text-center">
+    <h2 className="my-2 text-xl leading-tight font-bold break-words text-[rgb(246_199_68)] sm:my-3 sm:text-2xl md:my-4 md:text-3xl lg:text-5xl">
       + {amount.toLocaleString('en-US')} đồng
     </h2>
-    <p className="text-muted-foreground dark:text-gray-400 italic text-xs sm:text-sm md:text-base lg:text-lg mb-3 sm:mb-4 md:mb-6 lg:mb-8 leading-relaxed">
-      {description || "Wishing you a happy, healthy, and prosperous New Year!"}
+    <p className="text-muted-foreground mb-3 text-xs leading-relaxed italic sm:mb-4 sm:text-sm md:mb-6 md:text-base lg:mb-8 lg:text-lg dark:text-gray-400">
+      {description || 'Wishing you a happy, healthy, and prosperous New Year!'}
     </p>
-    <div className="flex flex-col w-full space-y-2 sm:space-y-3 md:space-y-4 pt-2 sm:pt-3 md:pt-4">
-      <button 
+    <div className="flex w-full flex-col space-y-2 pt-2 sm:space-y-3 sm:pt-3 md:space-y-4 md:pt-4">
+      <button
         onClick={onClaim}
-        disabled={isLoading || isError}
-        className="w-full bg-gradient-to-r from-pink-500 to-red-500 text-white font-semibold py-2 sm:py-2.5 md:py-3 px-3 sm:px-4 md:px-6 rounded-full shadow-lg transform transition-transform hover:scale-105 disabled:opacity-70 cursor-pointer disabled:cursor-not-allowed text-xs sm:text-sm md:text-base">
-        {isError ? "Claim Failed" : "Claim to Wallet"} 
+        disabled={isLoading || isError || isSuccess}
+        className="w-full transform cursor-pointer rounded-full bg-gradient-to-r from-pink-500 to-red-500 px-3 py-2 text-xs font-semibold text-white shadow-lg transition-transform hover:scale-105 disabled:cursor-not-allowed disabled:opacity-70 sm:px-4 sm:py-2.5 sm:text-sm md:px-6 md:py-3 md:text-base"
+      >
+        {isSuccess ? 'Claimed Successfully' : isError ? 'Claim Failed' : 'Claim to Wallet'}
       </button>
 
-      <button className="w-full bg-transparent border-2 border-yellow-500 text-yellow-500 font-semibold py-2 sm:py-2.5 md:py-3 px-3 sm:px-4 md:px-6 rounded-full flex items-center justify-center space-x-1.5 sm:space-x-2 transform transition-transform hover:scale-105 cursor-pointer text-xs sm:text-sm md:text-base">
+      {/* <button className="flex w-full transform cursor-pointer items-center justify-center space-x-1.5 rounded-full border-2 border-yellow-500 bg-transparent px-3 py-2 text-xs font-semibold text-yellow-500 transition-transform hover:scale-105 sm:space-x-2 sm:px-4 sm:py-2.5 sm:text-sm md:px-6 md:py-3 md:text-base">
         <span>Share your luck</span>
-        <SparkleIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-      </button>
+        <SparkleIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+      </button> */}
     </div>
   </div>
 );
 
 export const ClaimRedEnvelope = () => {
-  const { 
-    status, 
-    claimMutationData, 
-    error, 
-    handleClaim, 
-    handleClaimAmount, 
-    isLoading, 
+  const {
+    status,
+    claimMutationData,
+    error,
+    handleClaim,
+    handleClaimAmount,
+    isLoading,
     isClaiming,
-    claimError,    
-    isClaimError   
+    claimError,
+    isClaimError,
+    isClaimSuccess,
   } = useClaimRedEnvelopeContext();
 
   useEffect(() => {
@@ -101,15 +104,16 @@ export const ClaimRedEnvelope = () => {
         handleClaimAmount();
       }, 2500);
     }
-    return () => { if (timerId) clearTimeout(timerId); };
+    return () => {
+      if (timerId) clearTimeout(timerId);
+    };
   }, [status, handleClaimAmount]);
 
   useEffect(() => {
     if (isClaimError && claimError) {
-      const errorMessage = (claimError as any)?.response?.data?.message 
-        || claimError?.message 
-        || "Claim failed. Please try again.";
-      
+      const errorMessage =
+        (claimError as any)?.response?.data?.message || claimError?.message || 'Claim failed. Please try again.';
+
       toast.error(errorMessage);
     }
   }, [isClaimError, claimError]);
@@ -119,30 +123,25 @@ export const ClaimRedEnvelope = () => {
       case 'idle':
         return <OpeningScreen isLoading={isLoading} />;
       case 'success':
-        return claimMutationData?.amount 
-          ? <RevealedScreen 
-              onClaim={handleClaim} 
-              isLoading={isLoading || isClaiming} 
-              amount={claimMutationData.amount} 
-              description={claimMutationData.description}
-              isError={isClaimError} 
-            /> 
-          : <p className="text-foreground dark:text-white">Claim Successfully!</p>; 
-      
+        return claimMutationData?.amount ? (
+          <RevealedScreen
+            onClaim={handleClaim}
+            isLoading={isLoading || isClaiming}
+            amount={claimMutationData.amount}
+            description={claimMutationData.description}
+            isError={isClaimError}
+            isSuccess={isClaimSuccess}
+          />
+        ) : (
+          <p className="text-foreground dark:text-white">Claim Successfully!</p>
+        );
       case 'error':
-        const errorMessage = (error as any)?.response?.data?.message || error?.message || "Something went wrong.";
+        const errorMessage = (error as any)?.response?.data?.message || error?.message || 'Something went wrong.';
         return (
-          <div className="flex flex-col items-center w-full max-w-md text-center pt-4 sm:pt-8 md:pt-16 px-2">
-            <p className="text-red-600 dark:text-red-400 mb-3 sm:mb-4 text-xs sm:text-sm md:text-base leading-relaxed">
+          <div className="flex w-full max-w-md flex-col items-center px-2 pt-4 text-center sm:pt-8">
+            <p className="text-lg font-bold break-words text-[rgb(246_199_68)] first-letter:uppercase sm:text-xl md:text-2xl dark:text-[rgb(246_199_68)]">
               {errorMessage}
             </p>
-            <button 
-              onClick={handleClaim}
-              disabled={isLoading}
-              className="w-full bg-gradient-to-r from-pink-500 to-red-500 text-white font-semibold py-2 sm:py-2.5 md:py-3 px-3 sm:px-4 md:px-6 rounded-full shadow-lg transform transition-transform hover:scale-105 text-xs sm:text-sm md:text-base"
-            >
-              Retry
-            </button>
           </div>
         );
       default:
@@ -150,35 +149,41 @@ export const ClaimRedEnvelope = () => {
     }
   };
 
+  const getTitle = () => {
+    if (status === 'success') return 'Congratulation!';
+    if (status === 'error') return '';
+    return 'Lucky money is opening';
+  };
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen text-foreground dark:text-white font-sans bg-background px-3 sm:px-4">
+    <div className="text-foreground bg-background flex min-h-screen flex-col items-center justify-center px-3 font-sans sm:px-4 dark:text-white">
       <header className="mb-4 sm:mb-6 md:mb-8">
-        <div className='animate-bounce'>
+        <div className="animate-bounce">
           <RedEnvelopeIcon />
         </div>
       </header>
 
-      <main className="flex flex-col items-center w-full max-w-sm text-center px-2 sm:px-4">
-        <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-[rgb(246_199_68)] mb-2 sm:mb-3 leading-tight">
-          {status === 'success' ? 'Congratulation!' : 'Lucky money is opening'}
+      <main className="flex w-full max-w-sm flex-col items-center px-2 text-center sm:px-4">
+        <h1 className="mb-2 text-lg leading-tight font-bold text-[rgb(246_199_68)] sm:mb-3 sm:text-xl md:text-2xl lg:text-3xl">
+          {getTitle()}
         </h1>
-        <p className="text-muted-foreground dark:text-gray-300 text-xs sm:text-sm md:text-base lg:text-lg mb-3 sm:mb-4 md:mb-6 lg:mb-10 leading-relaxed">
-         {status === 'idle' && (
-           <>
-             You are about to receive a gift from {' '}
-             <span className="font-bold text-foreground dark:text-white">
-               Mezon Red Envelope
-             </span>
-           </>
-         )}
-          {status === 'success' && 'You have received a gift!'}
-          {status === 'error' && 'Unable to open the red envelope...'}
-        </p>
-        
-        <div className="relative w-full min-h-[250px] sm:min-h-[280px] md:min-h-[300px] lg:h-[350px]">
+        {status !== 'error' && (
+          <p className="text-muted-foreground mb-3 text-xs sm:mb-4 sm:text-sm md:mb-6 md:text-base lg:mb-10 lg:text-lg dark:text-gray-300">
+            {status === 'idle' && (
+              <>
+                You are about to receive a gift from{' '}
+                <span className="text-foreground font-bold dark:text-white">Mezon Red Envelope</span>
+              </>
+            )}
+            {status === 'success' &&
+              'You have received a gift! Please click the "Claim to Wallet" button to receive the funds.'}
+          </p>
+        )}
+
+        <div className="relative min-h-[250px] w-full sm:min-h-[280px] md:min-h-[300px] lg:h-[350px]">
           {renderContent()}
         </div>
       </main>
     </div>
-  )
-}
+  );
+};
