@@ -95,16 +95,17 @@ export const TradeTypeSection = ({ control }: TradeTypeSectionProps) => {
                         if (!/^\d*\.?\d*$/.test(val)) {
                           return;
                         }
-                        if (val !== '' && parseFloat(val) > MAX_AMOUNT) {
+                        const cleanVal = val.replace(/^0+(?=\d)/, '');
+                        if (cleanVal !== '' && parseFloat(cleanVal) > MAX_AMOUNT) {
                           return;
                         }
-                        if (val.includes('.')) {
-                          const decimalPart = val.split('.')[1];
+                        if (cleanVal.includes('.')) {
+                          const decimalPart = cleanVal.split('.')[1];
                           if (decimalPart && decimalPart.length > 3) {
                             return;
                           }
                         }
-                        onChange(val);
+                        onChange(cleanVal);
                       }}
                       className={cn(
                         'bg-input/30 text-foreground w-full rounded border px-3 py-1.5 text-sm focus:outline-none',
