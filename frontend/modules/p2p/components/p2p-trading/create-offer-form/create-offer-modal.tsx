@@ -163,7 +163,7 @@ export const CreateOfferModal = () => {
               <span className="text-brand-primary font-bold">
                 {pendingData?.amount ? Number(pendingData.amount).toLocaleString() : '0'} {pendingData?.symbol}
               </span>{' '}
-              to the intermediary wallet. Please click the{' '}
+              to the system wallet. Please click the{' '}
               <span className="text-brand-primary font-bold">Confirm & Transfer</span> button to proceed.
             </p>
           </div>

@@ -26,15 +26,10 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
       align: 'left',
     },
     {
-      headerContent: 'Đồng / Rate',
+      headerContent: 'Rate',
       renderCell: (offer) => (
         <div>
-          <div className="text-primary text-xl font-bold dark:text-white">
-            {offer.total_amount.toLocaleString('en-US')}{' '}
-            <span className="text-xs font-normal text-gray-500">{APP_CONFIG.CHAIN_SYMBOL}</span>
-          </div>
           <div className="mt-1 text-sm text-gray-400">
-            Exchange Rate:{' '}
             <span className="text-brand-primary font-semibold">
               {offer.price_rate.toLocaleString('vi-VN')} VND/{APP_CONFIG.CHAIN_SYMBOL}
             </span>
@@ -42,12 +37,12 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
         </div>
       ),
       skeletonContent: <Skeleton className="h-6 w-24" />,
-      align: 'center',
+      align: 'left',
     },
     {
       headerContent: 'Available / Limit',
       renderCell: (offer) => (
-        <div className="flex flex-col gap-1 text-gray-300 dark:text-gray-300">
+        <div className="flex flex-col gap-1 text-left text-gray-300 dark:text-gray-300">
           <span>
             <span className="text-gray-500 dark:text-gray-500">Available:</span>{' '}
             <span className="text-primary font-medium dark:text-white">
@@ -60,7 +55,6 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
               {offer.limit.min.toLocaleString('en-US')} - {offer.limit.max.toLocaleString('en-US')}{' '}
               {APP_CONFIG.CHAIN_SYMBOL}
             </span>
-            <span className="ml-1 text-xs text-gray-500 dark:text-gray-500">/ transaction</span>
           </span>
         </div>
       ),
@@ -70,7 +64,7 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
           <Skeleton className="h-4 w-48" />
         </div>
       ),
-      align: 'center',
+      align: 'left',
     },
     {
       headerContent: 'Action',
