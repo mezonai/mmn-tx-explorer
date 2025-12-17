@@ -237,13 +237,29 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 	if req.Status == constants.TradingFailed {
 		offer, err := s.repo.GetOfferByID(ctx, req.OfferID)
 		if err == nil && offer != nil && offer.IntermediaryWalletAddress != nil && *offer.IntermediaryWalletAddress != "" {
-			w, wErr := s.walletRepo.GetWalletByAddress(ctx, *offer.IntermediaryWalletAddress)
-			if wErr == nil && w != nil {
-				if upErr := s.walletRepo.UpdateWalletStatus(ctx, w.ID, constants.RedEnvelopeWalletStatusReady); upErr != nil {
-				}
-			}
+			s.releaseIntermediaryWallet(ctx, *offer.IntermediaryWalletAddress)
 		}
 	}
 
 	return nil
+}
+
+func (s *OfferService) releaseIntermediaryWallet(ctx context.Context, walletAddress string) {
+	wallet, walletErr := s.walletRepo.GetWalletByAddress(ctx, walletAddress)
+	if walletErr == nil && wallet != nil {
+		if updateErr := s.walletRepo.UpdateWalletStatus(ctx, wallet.ID, constants.RedEnvelopeWalletStatusReady); updateErr != nil {
+			logger.Error().Err(updateErr).Int64("wallet_id", wallet.ID).Msg("Failed to reset intermediary wallet status")
+		} else {
+			logger.Info().Int64("wallet_id", wallet.ID).Str("address", walletAddress).Msg("Released intermediary wallet")
+		}
+	}
+}
+
+func (s *OfferService) ReleaseIntermediaryWalletIfOfferComplete(ctx context.Context, offerID int64, tx *sql.Tx) {
+	updatedOffer, getErr := s.repo.GetOfferByIDForUpdate(ctx, offerID, tx)
+	if getErr == nil && updatedOffer != nil && updatedOffer.Amount == 0 {
+		if updatedOffer.IntermediaryWalletAddress != nil && *updatedOffer.IntermediaryWalletAddress != "" {
+			s.releaseIntermediaryWallet(ctx, *updatedOffer.IntermediaryWalletAddress)
+		}
+	}
 }
