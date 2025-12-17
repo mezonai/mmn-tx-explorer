@@ -22,8 +22,8 @@ type Config struct {
 	Scheduler    SchedulerConfig    `mapstructure:"scheduler"`
 	Lock         LockConfig         `mapstructure:"lock"`
 	CacheRequest CacheRequestConfig `mapstructure:"cache_request"`
-	RateLimit 	 RateLimitConfig `mapstructure:"rate_limit"`
-	FilterImage  FilterImageConfig `mapstructure:"filter_image"`
+	RateLimit    RateLimitConfig    `mapstructure:"rate_limit"`
+	FilterImage  FilterImageConfig  `mapstructure:"filter_image"`
 }
 
 type ServerConfig struct {
@@ -83,6 +83,7 @@ type SchedulerConfig struct {
 	SyncContributorsInterval    int `mapstructure:"sync_contributors_interval"`     // in seconds
 	ExpiredRedEnvelopesInterval int `mapstructure:"expired_red_envelopes_interval"` // in seconds
 	RecentStatsWindowDays       int `mapstructure:"recent_stats_window_days"`
+	ExpiredOrdersInterval       int `mapstructure:"expired_orders_interval"` // in seconds
 }
 
 type LockConfig struct {
@@ -96,16 +97,16 @@ type CacheRequestConfig struct {
 }
 
 type RateLimitConfig struct {
-	IPRateLimitPerSec   int `mapstructure:"ip_rate_limit_per_sec"`
-	IPRateLimitBurst	   int `mapstructure:"ip_rate_limit_burst"`
+	IPRateLimitPerSec int `mapstructure:"ip_rate_limit_per_sec"`
+	IPRateLimitBurst  int `mapstructure:"ip_rate_limit_burst"`
 }
 
 type FilterImageConfig struct {
-	MaxSizeUpload int `mapstructure:"max_size_upload"` 
-	EnableVirusScan bool `mapstructure:"enable_virus_scan"`
-	BlockMimeTypes []string `mapstructure:"block_mime_types"`
-	VirusScanURL string `mapstructure:"virus_scan_url"`
-	IPFSURL string `mapstructure:"ipfs_url"`
+	MaxSizeUpload   int      `mapstructure:"max_size_upload"`
+	EnableVirusScan bool     `mapstructure:"enable_virus_scan"`
+	BlockMimeTypes  []string `mapstructure:"block_mime_types"`
+	VirusScanURL    string   `mapstructure:"virus_scan_url"`
+	IPFSURL         string   `mapstructure:"ipfs_url"`
 }
 
 func LoadConfig(cfgFile string) (*Config, error) {
