@@ -8,20 +8,23 @@ import { UpdateFormHeader } from './update-form-header';
 import { Basicfield } from './basic-field';
 import { UploadImages } from './upload-images';
 import { FormSubmit } from './form-submit';
+import { ReferenceTx } from './reference-tx';
 
 interface UpdateFormProps {
   form: {
     title: string;
     description: string;
+    reference_tx_hashes: string[] ;
     images: string[];
   };
-  setForm: (form: { title: string; description: string; images: string[] }) => void;
+  setForm: (form: { title: string; description: string; reference_tx_hashes: string[]; images: string[] }) => void;
   validation: {
     isTitle: boolean;
     isDescription: boolean;
   };
   images: File[];
   previews: string[];
+  existingTxHashes?: string[];
   isCompressing: boolean;
   isSaving: boolean;
   isFetchingSizes?: boolean;
@@ -54,6 +57,7 @@ export const UpdateForm = ({
   validation,
   images,
   previews,
+  existingTxHashes,
   isCompressing,
   isSaving,
   handleImageChange,
@@ -69,7 +73,10 @@ export const UpdateForm = ({
   const [existingImagesSize, setExistingImagesSize] = useState(0);
   const [isFetchingLocalSizes, setIsFetchingLocalSizes] = useState(false);
 
+
+
   useEffect(() => {
+    console.log('existingTxHashes', existingTxHashes);
     const existingCids = (form as any).existingImageCids || [];
     if (isEdit && existingCids.length > 0) {
       const fetchSizes = async () => {
@@ -97,7 +104,8 @@ export const UpdateForm = ({
     <Card className="border-primary/40 bg-card shadow-brand-primary/10 w-full max-w-[700px] rounded-3xl border p-3 shadow-lg dark:border-white/10">
       <UpdateFormHeader />
       <CardContent className="text-brand-primary space-y-5 p-5 text-left">
-        <Basicfield form={form} setForm={setForm} validation={validation} />
+        <Basicfield form={form} setForm={setForm} />
+        <ReferenceTx form={form} setForm={setForm} existingTxHashes={existingTxHashes} />
         <Separator className="my-4 w-full" />
         <UploadImages
           previews={previews}

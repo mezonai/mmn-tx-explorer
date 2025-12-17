@@ -4,7 +4,6 @@ import { toast } from 'sonner';
 import { useCreateDonationUpdateContext } from '../context';
 import { IDonationFeed } from '../type';
 import { ipfsServiceURL } from '@/service';
-import { max } from 'date-fns';
 
 const UNIT = 'MB';
 const MAX_IMAGES_SIZE = 20;
@@ -31,6 +30,8 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
   const [existingImagesSize, setExistingImagesSize] = useState<number>(0);
   const [isCompressing, setIsCompressing] = useState(false);
 
+  const [existingTxHashes, setExistingTxHashes] = useState<string[]>([]);
+
   const newImagesSize = images.reduce((sum, img) => sum + img.size, 0);
   const totalSize = newImagesSize + existingImagesSize;
   const maxTotalSize = MAX_IMAGES_SIZE * 1024 * 1024;
@@ -42,9 +43,10 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
   useEffect(() => {
     if (updatePost) {
       setForm({
-        ...form,
         title: updatePost.title,
         description: updatePost.description,
+        reference_tx_hashes: updatePost.reference_tx_hashes || [],
+        existingTxHashes: updatePost.reference_tx_hashes || [],
         images: [],
         existingImageCids: updatePost.image_cids || [],
       });
@@ -53,8 +55,12 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
         setExistingImageCids(updatePost.image_cids);
         setPreviews(updatePost.image_cids.map((cid) => `${ipfsServiceURL}/${cid}`));
       }
+
+      if (updatePost.reference_tx_hashes && updatePost.reference_tx_hashes.length > 0) {
+        setExistingTxHashes(updatePost.reference_tx_hashes);
+      }
     }
-  }, [updatePost]);
+  }, [updatePost, setForm]);
 
   const handleImageChange = async (e: ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
@@ -209,6 +215,8 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
     toast.success('All images removed');
   };
 
+
+
   const onSubmit = () => {
     if (!validation.isTitle) {
       toast.error('Please enter a valid title');
@@ -227,6 +235,7 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
     validation,
     images,
     previews,
+    existingTxHashes,
     isCompressing,
     isSaving,
     handleImageChange,

@@ -11,7 +11,10 @@ import { ROUTES } from '@/configs/routes.config';
 const INITIAL_FORM: DonationUpdateForm = {
   title: '',
   description: '',
+  reference_tx_hashes: [],
   images: [],
+  existingImageCids: [],
+  existingTxHashes: [],
 };
 
 interface DonationUpdateValidation {
@@ -69,6 +72,7 @@ export function UpdateDonationProvider({ updatePost, campaign, children }: Creat
       setIsSaving(true);
 
       let imageCids: string[] = [];
+      let refTxHashes: string[] = [];
 
       if (form.images && form.images.length > 0) {
         const filePromises = form.images.map(async (base64, index) => {
@@ -88,6 +92,11 @@ export function UpdateDonationProvider({ updatePost, campaign, children }: Creat
         imageCids = [...form.existingImageCids, ...imageCids];
       }
 
+      // Use form.reference_tx_hashes which contains all hashes (existing + new)
+      if (form.reference_tx_hashes && form.reference_tx_hashes.length > 0) {
+        refTxHashes = [...form.reference_tx_hashes];
+      }
+
       const nonceResponse = await mmnClient.getCurrentNonce(user?.id || '');
 
       const extraInfo = {
@@ -95,6 +104,7 @@ export function UpdateDonationProvider({ updatePost, campaign, children }: Creat
         title: form.title,
         description: form.description,
         image_cids: imageCids,
+        reference_tx_hashes: refTxHashes,
         ...(updatePost && {
           parent_hash: updatePost.tx_hash,
           root_hash: updatePost.root_hash || updatePost.tx_hash,

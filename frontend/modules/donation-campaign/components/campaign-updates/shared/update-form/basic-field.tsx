@@ -1,21 +1,17 @@
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@radix-ui/react-separator';
 
 interface BasicfieldProps {
   form: {
     title: string;
     description: string;
+    reference_tx_hashes: string[];
     images: string[];
   };
-  setForm: (form: { title: string; description: string; images: string[] }) => void;
-  validation: {
-    isTitle: boolean;
-    isDescription: boolean;
-  };
+  setForm: (form: { title: string; description: string; reference_tx_hashes: string[]; images: string[] }) => void;
 }
 
-export const Basicfield = ({ form, setForm, validation }: BasicfieldProps) => {
+export const Basicfield = ({ form, setForm }: BasicfieldProps) => {
   return (
     <>
       <div className="">

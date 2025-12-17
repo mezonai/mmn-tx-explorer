@@ -28,6 +28,7 @@ export const EditUpdateContent = ({ updatePost }: EditUpdateContentProps) => {
     validation,
     images,
     previews,
+    existingTxHashes,
     isCompressing,
     isSaving,
     handleImageChange,
@@ -54,6 +55,7 @@ export const EditUpdateContent = ({ updatePost }: EditUpdateContentProps) => {
           validation={validation}
           images={images}
           previews={previews}
+          existingTxHashes={existingTxHashes}
           isCompressing={isCompressing}
           isSaving={isSaving}
           handleImageChange={handleImageChange}
