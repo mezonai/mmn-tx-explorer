@@ -247,7 +247,7 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 			status, statusErr := s.blockchain.CheckTransactionStatus(txHash)
 
 			// Status 2 = COMPLETED
-			if statusErr == nil && status == constants.TxStatusConfirmed {
+			if statusErr == nil && status == constants.TxStatusFinalized {
 				logger.Info().
 					Str("tx_hash", txHash).
 					Msg("Transaction completed successfully")
