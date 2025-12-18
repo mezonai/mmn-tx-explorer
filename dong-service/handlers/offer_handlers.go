@@ -206,7 +206,7 @@ func (h *OfferHandler) GetMyOffers(c *gin.Context) {
 		toP = &toAmount
 	}
 
-	offers, total, err := h.offerService.GetOffersByWalletAddress(c.Request.Context(), walletAddress, pagination)
+	offers, total, err := h.offerService.GetOffersByWalletAddress(c.Request.Context(), walletAddress, pagination, fromP, toP)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to list offers: "+err.Error()))
 		return

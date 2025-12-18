@@ -110,6 +110,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 	order.BankInfo = offer.BankInfo
 	order.SellerWalletAddress = &offer.SellerWalletAddress
 	order.SellerUserID = &offer.SellerUserID
+	order.PriceRate = offer.PriceRate
 
 	return order, offer, nil
 }
@@ -126,6 +127,7 @@ func (s *OrderService) ListOrdersByOffer(ctx context.Context, offerID int64, pag
 			orders[i].BankInfo = of.BankInfo
 			orders[i].SellerWalletAddress = &of.SellerWalletAddress
 			orders[i].SellerUserID = &of.SellerUserID
+			orders[i].PriceRate = of.PriceRate
 		}
 	}
 
@@ -144,6 +146,7 @@ func (s *OrderService) GetOrderByID(ctx context.Context, id int64) (*models.Orde
 			o.BankInfo = of.BankInfo
 			o.SellerWalletAddress = &of.SellerWalletAddress
 			o.SellerUserID = &of.SellerUserID
+			o.PriceRate = of.PriceRate
 		}
 	}
 
@@ -167,6 +170,7 @@ func (s *OrderService) GetOrdersByWalletAddress(ctx context.Context, walletAddre
 				orders[i].BankInfo = of.BankInfo
 				orders[i].SellerWalletAddress = &of.SellerWalletAddress
 				orders[i].SellerUserID = &of.SellerUserID
+				orders[i].PriceRate = of.PriceRate
 			}
 		}
 	}
