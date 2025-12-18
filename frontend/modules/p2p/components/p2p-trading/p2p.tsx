@@ -8,7 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { P2POffersTabs } from './p2p-offers-list';
 import { usePaginationQueryParam } from '@/hooks/usePaginationQueryParam';
 import { useP2PMyOffers } from '../../hooks/useP2PMyOffers';
-import { Pagination } from '@/components/ui/pagination';
 import { useMyOrders } from '../../hooks/useMyOrders';
 import { P2POrdersList } from './p2p-orders-list';
 import { PAGINATION } from '@/constant';
