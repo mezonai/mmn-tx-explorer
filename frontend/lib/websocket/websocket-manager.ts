@@ -2,7 +2,14 @@
 
 import { STORAGE_KEYS } from '@/constant';
 import { safeJsonParse } from '@/utils';
-import { HEARTBEAT_ACK, HEARTBEAT_CHECK, HEARTBEAT_CHECK_INTERVAL_MS, HEARTBEAT_TIMEOUT_MS } from './constants';
+import {
+  HEARTBEAT_ACK,
+  HEARTBEAT_CHECK,
+  HEARTBEAT_CHECK_INTERVAL_MS,
+  HEARTBEAT_TIMEOUT_MS,
+  MAX_RECONNECT_ATTEMPTS,
+  RECONNECT_DELAY_MS,
+} from './constants';
 
 export interface WebSocketEvent {
   id?: string;
@@ -16,8 +23,8 @@ export interface WebSocketEvent {
 export class WebSocketManager {
   private ws: WebSocket | null = null;
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
-  private reconnectDelay = 3000;
+  private maxReconnectAttempts = MAX_RECONNECT_ATTEMPTS;
+  private reconnectDelay = RECONNECT_DELAY_MS;
   private listeners: Map<string, Set<(data: WebSocketEvent) => void>> = new Map();
   private wsUrl: string;
   private heartbeatIntervalId: number | null = null;
@@ -32,31 +39,46 @@ export class WebSocketManager {
     this.wsUrl = wsUrl;
   }
 
-  connect(token: string) {
+  async connect(token?: string) {
+    // Get fresh token if not provided or always try to get the latest from provider
+    let activeToken = token;
+    if (this.tokenProvider) {
+      activeToken = (await this.tokenProvider()) || activeToken;
+    }
+
+    if (!activeToken) {
+      activeToken = this.getStoredToken() || undefined;
+    }
+
+    if (!activeToken) {
+      console.warn('No token available for WebSocket connection');
+      return;
+    }
+
     // If already connected with the same token, do nothing
     if (
       this.ws &&
       (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) &&
-      this.currentToken === token
+      this.currentToken === activeToken
     ) {
       return;
     }
 
-    // Prevent concurrent connection attempts (race condition protection)
+    // Prevent concurrent connection attempts
     if (this.isConnecting) {
       return;
     }
 
-    // If connected with different token, disconnect first to reconnect with new token
-    if (this.ws && this.currentToken !== token) {
-      this.shouldReconnect = false; // Prevent auto-reconnect during manual reconnect
+    // If connected with different token, disconnect first
+    if (this.ws && this.currentToken !== activeToken) {
+      this.shouldReconnect = false;
       this.ws.close();
       this.ws = null;
     }
 
     this.isConnecting = true;
-    this.currentToken = token;
-    const url = `${this.wsUrl}/ws/connect?token=${encodeURIComponent(token)}`;
+    this.currentToken = activeToken;
+    const url = `${this.wsUrl}/ws/connect?token=${encodeURIComponent(activeToken)}`;
     this.ws = new WebSocket(url);
 
     this.ws.onopen = () => {
@@ -65,7 +87,7 @@ export class WebSocketManager {
       this.reconnectAttempts = 0;
       this.awaitingHeartbeatAck = false;
       this.startHeartbeat();
-     
+      console.log('Websocket connected');
     };
 
     this.ws.onmessage = (event) => {
@@ -76,7 +98,7 @@ export class WebSocketManager {
           return;
         }
 
-        // Check if message indicates token expired
+        // Parse and handle message
         let parsedData: unknown;
         try {
           parsedData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
@@ -84,30 +106,10 @@ export class WebSocketManager {
           parsedData = event.data;
         }
 
-        // Handle token expired error from server
-        if (
-          typeof parsedData === 'object' &&
-          parsedData !== null &&
-          ('error' in parsedData || 'status' in parsedData || 'code' in parsedData)
-        ) {
-          const errorData = parsedData as { error?: string; status?: number; code?: number; message?: string };
-          const isTokenExpired =
-            errorData.status === 401 ||
-            errorData.code === 401 ||
-            errorData.error?.toLowerCase().includes('token') ||
-            errorData.error?.toLowerCase().includes('unauthorized') ||
-            errorData.message?.toLowerCase().includes('token') ||
-            errorData.message?.toLowerCase().includes('unauthorized');
-
-          if (isTokenExpired) {
-            this.handleTokenExpired();
-            return;
-          }
-        }
-
-        this.handleEvent(event.data);
-      } catch {
-        // Silently handle parsing errors
+        console.log('Websocket message received:', parsedData);
+        this.handleEvent(parsedData ?? event.data);
+      } catch (error) {
+        console.error('Error handling websocket message:', error);
       }
     };
 
@@ -138,13 +140,8 @@ export class WebSocketManager {
 
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
-      setTimeout(async () => {
-        // Always try to get fresh token (which will auto-refresh if needed)
-        const freshToken = this.tokenProvider ? await this.tokenProvider() : this.getStoredToken();
-        if (!freshToken) {
-          return;
-        }
-        this.connect(freshToken);
+      setTimeout(() => {
+        this.connect(); // connect() now handles token refreshing internally
       }, this.reconnectDelay);
     }
   }
@@ -153,9 +150,9 @@ export class WebSocketManager {
     // If the payload has a `type` field, use it for routing; otherwise only wildcard listeners receive it.
     const eventType =
       typeof event === 'object' &&
-      event !== null &&
-      'type' in event &&
-      typeof (event as { type?: unknown }).type === 'string'
+        event !== null &&
+        'type' in event &&
+        typeof (event as { type?: unknown }).type === 'string'
         ? (event as { type: string }).type
         : undefined;
 
@@ -263,7 +260,6 @@ export class WebSocketManager {
   }
 
   private async handleTokenExpired() {
-    this.shouldReconnect = false; // Prevent normal reconnect
     this.isConnecting = false;
 
     if (this.ws) {
@@ -272,29 +268,8 @@ export class WebSocketManager {
     }
 
     this.stopHeartbeat();
-
-    // Try to get fresh token using token provider
-    if (this.tokenProvider) {
-      try {
-        const freshToken = await this.tokenProvider();
-        if (freshToken) {
-          this.shouldReconnect = true;
-          this.reconnectAttempts = 0; // Reset retry counter
-          this.connect(freshToken);
-          return;
-        }
-      } catch {
-        // Silently handle token refresh errors
-      }
-    }
-
-    // Fallback: try to get token from storage
-    const storedToken = this.getStoredToken();
-    if (storedToken) {
-      this.shouldReconnect = true;
-      this.reconnectAttempts = 0;
-      this.connect(storedToken);
-    }
+    this.reconnectAttempts = 0; // Reset retry counter for a "fresh" start
+    this.connect(); // This will refresh token via provider
   }
 }
 
