@@ -170,7 +170,6 @@ export interface DonationUpdateForm {
   reference_tx_hashes: string[];
   images: string[];
   existingImageCids?: string[];
-  existingTxHashes?: string[];
 
   parent_hash?: string;
   root_hash?: string;
