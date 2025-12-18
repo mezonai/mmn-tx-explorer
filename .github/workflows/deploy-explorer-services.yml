@@ -36,43 +36,44 @@ jobs:
           path: .
           retention-days: 1
 
-  # deploy-indexer:
-  #   needs: prepare-source
-  #   uses: ./.github/workflows/deploy-indexer-service.yml
-  #   with:
-  #     env: ${{ inputs.env }}
-  #     ref: ${{ inputs.ref }}
-  #     git_sha: ${{ needs.prepare-source.outputs.git_sha }}
-  #     source_artifact: source-code
-  #   secrets:
-  #     POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+  deploy-indexer:
+    needs: prepare-source
+    uses: ./.github/workflows/deploy-indexer-service.yml
+    with:
+      env: ${{ inputs.env }}
+      ref: ${{ inputs.ref }}
+      git_sha: ${{ needs.prepare-source.outputs.git_sha }}
+      source_artifact: source-code
+    secrets:
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
 
-  # deploy-dong:
-  #   needs: prepare-source
-  #   uses: ./.github/workflows/deploy-dong-service.yml
-  #   with:
-  #     env: ${{ inputs.env }}
-  #     ref: ${{ inputs.ref }}
-  #     git_sha: ${{ needs.prepare-source.outputs.git_sha }}
-  #     source_artifact: source-code
-  #   secrets:
-  #     POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-  #     JWT_SECRET: ${{ secrets.JWT_SECRET }}
-  #     OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
-  #     REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
-  #     AES_SECRET_KEY: ${{ secrets.AES_SECRET_KEY }}
-
-  # deploy-frontend:
-  #   needs: prepare-source
-  #   uses: ./.github/workflows/deploy-frontend-service.yml
-  #   with:
-  #     env: ${{ inputs.env }}
-  #     ref: ${{ inputs.ref }}
-  #     git_sha: ${{ needs.prepare-source.outputs.git_sha }}
-  #     source_artifact: source-code
-  #   secrets:
-  #     OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
-  #     NEXT_PUBLIC_COBAR_API_KEY: ${{ secrets.NEXT_PUBLIC_COBAR_API_KEY }}
+  deploy-dong:
+    needs: prepare-source
+    uses: ./.github/workflows/deploy-dong-service.yml
+    with:
+      env: ${{ inputs.env }}
+      ref: ${{ inputs.ref }}
+      git_sha: ${{ needs.prepare-source.outputs.git_sha }}
+      source_artifact: source-code
+    secrets:
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
+      REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+      AES_SECRET_KEY: ${{ secrets.AES_SECRET_KEY }}
+      EVENT_API_KEY: ${{ secrets.EVENT_API_KEY }}
+ 
+  deploy-frontend:
+    needs: prepare-source
+    uses: ./.github/workflows/deploy-frontend-service.yml
+    with:
+      env: ${{ inputs.env }}
+      ref: ${{ inputs.ref }}
+      git_sha: ${{ needs.prepare-source.outputs.git_sha }}
+      source_artifact: source-code
+    secrets:
+      OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
+      NEXT_PUBLIC_COBAR_API_KEY: ${{ secrets.NEXT_PUBLIC_COBAR_API_KEY }}
 
   deploy-socket:
     needs: prepare-source
@@ -85,5 +86,5 @@ jobs:
     secrets:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
-      JWT_API_KEY: ${{ secrets.JWT_API_KEY }}
+      EVENT_API_KEY: ${{ secrets.EVENT_API_KEY }}
       REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
