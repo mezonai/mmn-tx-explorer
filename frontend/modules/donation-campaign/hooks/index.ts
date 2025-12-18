@@ -11,3 +11,4 @@ export * from './useUploadDonationImages';
 export * from './useDonationFeed';
 export * from './useUpdateForm';
 export * from './useDonationFeedHistory'
+export * from './useToggleHideDonationFeed';
