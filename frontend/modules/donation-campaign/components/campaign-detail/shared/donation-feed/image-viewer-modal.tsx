@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useBreakpoint } from '@/hooks';
@@ -76,19 +77,25 @@ export const ImageViewerModal = ({ isOpen, images, initialIndex, onClose }: Imag
     const handleKeyDown = (e: KeyboardEvent) => {
       switch (e.key) {
         case 'ArrowRight':
+          e.preventDefault();
+          e.stopPropagation();
           goToNext();
           break;
         case 'ArrowLeft':
+          e.preventDefault();
+          e.stopPropagation();
           goToPrev();
           break;
         case 'Escape':
+          e.preventDefault();
+          e.stopPropagation();
           handleClose();
           break;
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [isOpen, images.length]);
 
   useEffect(() => {
@@ -126,12 +133,25 @@ export const ImageViewerModal = ({ isOpen, images, initialIndex, onClose }: Imag
 
   if (!isOpen || images.length === 0) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex h-full items-center justify-center bg-black" onClick={handleClose}>
+  const modalContent = (
+    <div
+      className="pointer-events-auto fixed inset-0 z-[9999] flex h-screen w-screen items-center justify-center bg-black"
+      onClick={(e) => {
+        e.stopPropagation();
+        handleClose();
+      }}
+      onMouseDown={(e) => e.stopPropagation()}
+      onMouseUp={(e) => e.stopPropagation()}
+    >
       <Button
-        onClick={handleClose}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleClose();
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
+        onMouseUp={(e) => e.stopPropagation()}
         variant="secondary"
-        className="absolute top-4 right-4 z-50 h-10 w-10 rounded-full p-2 text-black transition-colors"
+        className="absolute top-4 right-4 z-[10000] h-10 w-10 rounded-full p-2 text-black transition-colors"
         aria-label="Close"
       >
         <X className="h-6 w-6" />
@@ -152,7 +172,7 @@ export const ImageViewerModal = ({ isOpen, images, initialIndex, onClose }: Imag
       )}
 
       <div
-        className="relative flex max-h-[100vh] max-w-[90vw] items-center justify-center overflow-hidden"
+        className="relative flex h-screen w-screen items-center justify-center overflow-hidden"
         onClick={(e) => {
           e.stopPropagation();
           toggleControls();
@@ -161,13 +181,13 @@ export const ImageViewerModal = ({ isOpen, images, initialIndex, onClose }: Imag
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="relative h-[90vh] w-[90vw]">
+        <div className="relative h-screen w-screen">
           {images.map((cid, i) => (
             <img
               key={i}
               src={`${ipfsServiceURL}/${cid}`}
               alt={`Image ${i + 1} of ${images.length}`}
-              className={`absolute inset-0 m-auto max-h-full max-w-full rounded-lg object-contain transition-opacity duration-300 ease-out ${
+              className={`absolute inset-0 m-auto max-h-screen max-w-screen object-contain transition-opacity duration-300 ease-out ${
                 i === currentIndex ? 'opacity-100' : 'opacity-0'
               }`}
               draggable={false}
@@ -197,4 +217,6 @@ export const ImageViewerModal = ({ isOpen, images, initialIndex, onClose }: Imag
       )}
     </div>
   );
+
+  return typeof window !== 'undefined' ? createPortal(modalContent, document.body) : null;
 };
