@@ -66,11 +66,12 @@ export interface P2POrder {
   buyer_wallet_address: string;
   seller_wallet_address: string;
   amount: number;
-  pay_amount: number;
+  payable_amount: number;
   status: OfferStatus;
   transfer_code: string;
   expires_at: string;
   created_at: string;
   updated_at: string;
   bank_info: string;
+  price_rate: number;
 }

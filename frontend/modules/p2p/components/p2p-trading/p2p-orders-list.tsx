@@ -91,22 +91,36 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
         />
       ),
       skeletonContent: <Skeleton className="h-3 w-24" />,
-      align: 'center',
+      align: 'left',
+    },
+    {
+      headerContent: 'RATE',
+      renderCell: (order) => (
+        <div>
+          <div className="mt-1 text-sm text-gray-400">
+            <span className="text-brand-primary font-semibold">
+              {order.price_rate.toLocaleString('vi-VN')} VND/{APP_CONFIG.CHAIN_SYMBOL}
+            </span>
+          </div>
+        </div>
+      ),
+      skeletonContent: <Skeleton className="h-6 w-24" />,
+      align: 'left',
     },
     {
       headerContent: 'AMOUNT',
       renderCell: (order) => (
         <div className="text-sm">
-          <p className="text-utility-success-600 font-medium">
+          <p className="text-utility-success-600 text-left font-bold">
             {new Intl.NumberFormat('en-US').format(Number(order.amount))} {APP_CONFIG.CHAIN_SYMBOL}
           </p>
-          <p className="text-muted-foreground text-xs">
-            {new Intl.NumberFormat('en-US').format(Number(order.pay_amount))} VND
+          <p className="text-muted-foreground text-left text-xs">
+            {new Intl.NumberFormat('en-US').format(Number(order.amount * order.price_rate))} VND
           </p>
         </div>
       ),
       skeletonContent: <Skeleton className="h-3 w-24" />,
-      align: 'center',
+      align: 'left',
     },
 
     {
