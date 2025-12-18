@@ -78,24 +78,21 @@ export const ImageViewerModal = ({ isOpen, images, initialIndex, onClose }: Imag
       switch (e.key) {
         case 'ArrowRight':
           e.preventDefault();
-          e.stopPropagation();
           goToNext();
           break;
         case 'ArrowLeft':
           e.preventDefault();
-          e.stopPropagation();
           goToPrev();
           break;
         case 'Escape':
           e.preventDefault();
-          e.stopPropagation();
           handleClose();
           break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown, true);
-    return () => window.removeEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, images.length]);
 
   useEffect(() => {
@@ -137,19 +134,13 @@ export const ImageViewerModal = ({ isOpen, images, initialIndex, onClose }: Imag
     <div
       className="pointer-events-auto fixed inset-0 z-[9999] flex h-screen w-screen items-center justify-center bg-black"
       onClick={(e) => {
-        e.stopPropagation();
         handleClose();
       }}
-      onMouseDown={(e) => e.stopPropagation()}
-      onMouseUp={(e) => e.stopPropagation()}
     >
       <Button
         onClick={(e) => {
-          e.stopPropagation();
           handleClose();
         }}
-        onMouseDown={(e) => e.stopPropagation()}
-        onMouseUp={(e) => e.stopPropagation()}
         variant="secondary"
         className="absolute top-4 right-4 z-[10000] h-10 w-10 rounded-full p-2 text-black transition-colors"
         aria-label="Close"
