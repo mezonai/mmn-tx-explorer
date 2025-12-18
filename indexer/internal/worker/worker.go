@@ -8,7 +8,6 @@ import (
 	"time"
 
 	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
-	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/metrics"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc"
 	"github.com/rs/zerolog/log"
@@ -24,26 +23,30 @@ func NewWorker(rpcClient rpc.IRPCClient) *Worker {
 	}
 }
 
-func (w *Worker) processChunkWithRetry(ctx context.Context, chunk []*big.Int, resultsCh chan<- []rpc.GetFullBlockResult, sem chan struct{}) {
+func (w *Worker) processRangeWithRetry(ctx context.Context, fromBlock, toBlock *big.Int, resultsCh chan<- []rpc.GetFullBlockResult, sem chan struct{}) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
 	}
 
-	if len(chunk) == 0 {
+	if fromBlock == nil || toBlock == nil {
+		return
+	}
+	if fromBlock.Cmp(toBlock) > 0 {
 		return
 	}
 
-	fromSlot := chunk[0].Uint64()
-	toSlot := chunk[len(chunk)-1].Uint64()
+	fromSlot := fromBlock.Uint64()
+	toSlot := toBlock.Uint64()
+	expectedCount := int64(toSlot-fromSlot) + 1
 
 	// Acquire semaphore only for the RPC request
 	sem <- struct{}{}
 	results := w.rpc.GetFullBlocks(ctx, fromSlot, toSlot)
 	<-sem // Release semaphore immediately after RPC request
 
-	if len(chunk) == 1 {
+	if expectedCount == 1 {
 		// chunk size 1 is the minimum, so we return whatever we get
 		resultsCh <- results
 		return
@@ -62,9 +65,9 @@ func (w *Worker) processChunkWithRetry(ctx context.Context, chunk []*big.Int, re
 		}
 	}
 
-	for _, blockNum := range chunk {
-		if !successMap[blockNum.Uint64()] {
-			failedBlocks = append(failedBlocks, blockNum)
+	for slot := fromSlot; slot <= toSlot; slot++ {
+		if !successMap[slot] {
+			failedBlocks = append(failedBlocks, new(big.Int).SetUint64(slot))
 		}
 	}
 
@@ -81,7 +84,7 @@ func (w *Worker) processChunkWithRetry(ctx context.Context, chunk []*big.Int, re
 
 	// can't split any further, so try one last time
 	if len(failedBlocks) == 1 {
-		w.processChunkWithRetry(ctx, failedBlocks, resultsCh, sem)
+		w.processRangeWithRetry(ctx, failedBlocks[0], failedBlocks[0], resultsCh, sem)
 		return
 	}
 
@@ -97,32 +100,47 @@ func (w *Worker) processChunkWithRetry(ctx context.Context, chunk []*big.Int, re
 
 	go func() {
 		defer wg.Done()
-		w.processChunkWithRetry(ctx, leftChunk, resultsCh, sem)
+		w.processRangeWithRetry(ctx, leftChunk[0], leftChunk[len(leftChunk)-1], resultsCh, sem)
 	}()
 
 	go func() {
 		defer wg.Done()
-		w.processChunkWithRetry(ctx, rightChunk, resultsCh, sem)
+		w.processRangeWithRetry(ctx, rightChunk[0], rightChunk[len(rightChunk)-1], resultsCh, sem)
 	}()
 
 	wg.Wait()
 }
 
-func (w *Worker) Run(ctx context.Context, blockNumbers []*big.Int) []rpc.GetFullBlockResult {
-	blockCount := len(blockNumbers)
+func (w *Worker) Run(ctx context.Context, fromBlock, toBlock *big.Int) []rpc.GetFullBlockResult {
+	if fromBlock == nil || toBlock == nil {
+		return nil
+	}
+	if fromBlock.Cmp(toBlock) > 0 {
+		return nil
+	}
+
 	blockPerRequestConfig := w.rpc.GetBlocksPerRequest()
-	chunks := common.SliceToChunks(blockNumbers, blockPerRequestConfig.Blocks)
+	chunkSize := int64(blockPerRequestConfig.Blocks)
+	if chunkSize <= 0 {
+		chunkSize = 1
+	}
+	blockCount := new(big.Int).Sub(toBlock, fromBlock).Int64() + 1
+	if blockCount <= 0 {
+		return nil
+	}
 
 	var wg sync.WaitGroup
-	resultsCh := make(chan []rpc.GetFullBlockResult, blockCount)
+	resultsCh := make(chan []rpc.GetFullBlockResult, int(blockCount))
 
 	// Create a semaphore channel to limit concurrent goroutines
 	sem := make(chan struct{}, blockPerRequestConfig.ConcurrentRequests)
 
-	log.Debug().Msgf("Worker Processing %d blocks in %d chunks of max %d blocks", blockCount, len(chunks), w.rpc.GetBlocksPerRequest().Blocks)
+	chunkCount := (blockCount + chunkSize - 1) / chunkSize
+	log.Debug().Msgf("Worker Processing %d blocks in %d chunks of max %d blocks", blockCount, chunkCount, w.rpc.GetBlocksPerRequest().Blocks)
 
-	for i, chunk := range chunks {
-		if i > 0 {
+	chunkIdx := int64(0)
+	for start := new(big.Int).Set(fromBlock); start.Cmp(toBlock) <= 0; start.Add(start, big.NewInt(chunkSize)) {
+		if chunkIdx > 0 {
 			time.Sleep(time.Duration(config.Cfg.RPC.Blocks.BatchDelay) * time.Millisecond)
 		}
 		select {
@@ -133,11 +151,17 @@ func (w *Worker) Run(ctx context.Context, blockNumbers []*big.Int) []rpc.GetFull
 			// keep processing
 		}
 
+		end := new(big.Int).Add(start, big.NewInt(chunkSize-1))
+		if end.Cmp(toBlock) > 0 {
+			end = new(big.Int).Set(toBlock)
+		}
+
 		wg.Add(1)
-		go func(chunk []*big.Int) {
+		go func(chunkFrom, chunkTo *big.Int) {
 			defer wg.Done()
-			w.processChunkWithRetry(ctx, chunk, resultsCh, sem)
-		}(chunk)
+			w.processRangeWithRetry(ctx, chunkFrom, chunkTo, resultsCh, sem)
+		}(new(big.Int).Set(start), new(big.Int).Set(end))
+		chunkIdx++
 	}
 
 	go func() {

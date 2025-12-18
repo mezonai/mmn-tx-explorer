@@ -251,7 +251,7 @@ func (c *Committer) asyncPublishDefault(blockData []common.BlockData, highest ui
 	}
 }
 
-func (c *Committer) getBlockNumbersToCommit(ctx context.Context) ([]*big.Int, error) {
+func (c *Committer) getBlockNumbersToCommit(ctx context.Context) (fromBlock *big.Int, toBlock *big.Int, err error) {
 	startTime := time.Now()
 	defer func() {
 		log.Debug().Str("metric", "get_block_numbers_to_commit_duration").Msgf("getBlockNumbersToCommit duration: %f", time.Since(startTime).Seconds())
@@ -261,7 +261,7 @@ func (c *Committer) getBlockNumbersToCommit(ctx context.Context) ([]*big.Int, er
 	latestCommittedBlockNumber, err := c.storage.MainStorage.GetMaxBlockNumber(c.rpc.GetChainID())
 	log.Debug().Msgf("Committer found this max block number in main storage: %s", latestCommittedBlockNumber.String())
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if latestCommittedBlockNumber.Sign() == 0 {
@@ -271,36 +271,32 @@ func (c *Committer) getBlockNumbersToCommit(ctx context.Context) ([]*big.Int, er
 		lastCommitted := new(big.Int).SetUint64(c.lastCommittedBlock.Load())
 		if latestCommittedBlockNumber.Cmp(lastCommitted) < 0 {
 			log.Warn().Msgf("Max block in storage (%s) is less than last committed block in memory (%s).", latestCommittedBlockNumber.String(), lastCommitted.String())
-			return []*big.Int{}, nil
+			return nil, nil, nil
 		}
 	}
 
 	startBlock := new(big.Int).Add(latestCommittedBlockNumber, big.NewInt(1))
 	endBlock, err := c.getBlockToCommitUntil(ctx, latestCommittedBlockNumber)
 	if err != nil {
-		return nil, fmt.Errorf("error getting block to commit until: %v", err)
+		return nil, nil, fmt.Errorf("error getting block to commit until: %v", err)
 	}
 
 	blockCount := new(big.Int).Sub(endBlock, startBlock).Int64() + 1
 	if blockCount < 0 {
-		return []*big.Int{}, fmt.Errorf("more blocks have been committed than the RPC has available - possible chain reset")
+		return nil, nil, fmt.Errorf("more blocks have been committed than the RPC has available - possible chain reset")
 	}
 	if blockCount == 0 {
-		return []*big.Int{}, nil
+		return nil, nil, nil
 	}
-	blockNumbers := make([]*big.Int, blockCount)
-	for i := int64(0); i < blockCount; i++ {
-		blockNumber := new(big.Int).Add(startBlock, big.NewInt(i))
-		blockNumbers[i] = blockNumber
-	}
-	return blockNumbers, nil
+
+	return startBlock, endBlock, nil
 }
 
-func (c *Committer) getBlockNumbersToPublish(ctx context.Context) ([]*big.Int, error) {
+func (c *Committer) getBlockNumbersToPublish(ctx context.Context) (*big.Int, *big.Int, error) {
 	latestPublishedBlockNumber, err := c.storage.StagingStorage.GetLastPublishedBlockNumber(c.rpc.GetChainID())
 	log.Debug().Msgf("Committer found this last published block number in staging storage: %s", latestPublishedBlockNumber.String())
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if latestPublishedBlockNumber.Sign() == 0 {
@@ -310,29 +306,25 @@ func (c *Committer) getBlockNumbersToPublish(ctx context.Context) ([]*big.Int, e
 		lastPublished := new(big.Int).SetUint64(c.lastPublishedBlock.Load())
 		if latestPublishedBlockNumber.Cmp(lastPublished) < 0 {
 			log.Warn().Msgf("Max block in storage (%s) is less than last published block in memory (%s).", latestPublishedBlockNumber.String(), lastPublished.String())
-			return []*big.Int{}, nil
+			return nil, nil, nil
 		}
 	}
 
 	startBlock := new(big.Int).Add(latestPublishedBlockNumber, big.NewInt(1))
 	endBlock, err := c.getBlockToCommitUntil(ctx, latestPublishedBlockNumber)
 	if err != nil {
-		return nil, fmt.Errorf("error getting block to commit until: %v", err)
+		return nil, nil, fmt.Errorf("error getting block to commit until: %v", err)
 	}
 
 	blockCount := new(big.Int).Sub(endBlock, startBlock).Int64() + 1
 	if blockCount < 0 {
-		return []*big.Int{}, fmt.Errorf("more blocks have been committed than the RPC has available - possible chain reset")
+		return nil, nil, fmt.Errorf("more blocks have been committed than the RPC has available - possible chain reset")
 	}
 	if blockCount == 0 {
-		return []*big.Int{}, nil
+		return nil, nil, nil
 	}
-	blockNumbers := make([]*big.Int, blockCount)
-	for i := int64(0); i < blockCount; i++ {
-		blockNumber := new(big.Int).Add(startBlock, big.NewInt(i))
-		blockNumbers[i] = blockNumber
-	}
-	return blockNumbers, nil
+
+	return startBlock, endBlock, nil
 }
 
 func (c *Committer) getBlockToCommitUntil(ctx context.Context, latestCommittedBlockNumber *big.Int) (*big.Int, error) {
@@ -353,10 +345,17 @@ func (c *Committer) getBlockToCommitUntil(ctx context.Context, latestCommittedBl
 	}
 }
 
-func (c *Committer) fetchBlockData(ctx context.Context, blockNumbers []*big.Int) ([]common.BlockData, error) {
+func (c *Committer) fetchBlockData(ctx context.Context, fromBlock, toBlock *big.Int) ([]common.BlockData, error) {
+	if fromBlock == nil || toBlock == nil {
+		return nil, nil
+	}
+	if fromBlock.Cmp(toBlock) > 0 {
+		return nil, nil
+	}
+
 	if c.workMode == WorkModeBackfill {
 		startTime := time.Now()
-		blocksData, err := c.storage.StagingStorage.GetStagingData(&storage.QueryFilter{BlockNumbers: blockNumbers, ChainID: c.rpc.GetChainID()})
+		blocksData, err := c.storage.StagingStorage.GetStagingData(&storage.QueryFilter{StartBlock: fromBlock, EndBlock: toBlock, ChainID: c.rpc.GetChainID()})
 		log.Debug().Str("metric", "get_staging_data_duration").Msgf("StagingStorage.GetStagingData duration: %f", time.Since(startTime).Seconds())
 		metrics.GetStagingDataDuration.Observe(time.Since(startTime).Seconds())
 
@@ -364,14 +363,14 @@ func (c *Committer) fetchBlockData(ctx context.Context, blockNumbers []*big.Int)
 			return nil, fmt.Errorf("error fetching blocks to commit: %v", err)
 		}
 		if len(blocksData) == 0 {
-			log.Warn().Msgf("Committer didn't find the following range in staging: %v - %v", blockNumbers[0].Int64(), blockNumbers[len(blockNumbers)-1].Int64())
-			c.handleMissingStagingData(ctx, blockNumbers)
+			log.Warn().Msgf("Committer didn't find the following range in staging: %v - %v", fromBlock.Int64(), toBlock.Int64())
+			c.handleMissingStagingData(ctx, fromBlock, toBlock)
 			return nil, nil
 		}
 		return blocksData, nil
 	} else {
 		poller := NewBoundlessPoller(c.rpc, c.storage)
-		blocksData, err := poller.PollWithoutSaving(ctx, blockNumbers)
+		blocksData, err := poller.PollWithoutSaving(ctx, fromBlock, toBlock)
 		if err != nil {
 			return nil, fmt.Errorf("poller error: %v", err)
 		}
@@ -379,8 +378,15 @@ func (c *Committer) fetchBlockData(ctx context.Context, blockNumbers []*big.Int)
 	}
 }
 
-func (c *Committer) getSequentialBlockData(ctx context.Context, blockNumbers []*big.Int) ([]common.BlockData, error) {
-	blocksData, err := c.fetchBlockData(ctx, blockNumbers)
+func (c *Committer) getSequentialBlockData(ctx context.Context, fromBlock, toBlock *big.Int) ([]common.BlockData, error) {
+	if fromBlock == nil || toBlock == nil {
+		return nil, nil
+	}
+	if fromBlock.Cmp(toBlock) > 0 {
+		return nil, nil
+	}
+
+	blocksData, err := c.fetchBlockData(ctx, fromBlock, toBlock)
 	if err != nil {
 		return nil, err
 	}
@@ -409,8 +415,8 @@ func (c *Committer) getSequentialBlockData(ctx context.Context, blockNumbers []*
 		return blocksData[i].Block.Number.Cmp(blocksData[j].Block.Number) < 0
 	})
 
-	if blocksData[0].Block.Number.Cmp(blockNumbers[0]) != 0 {
-		return nil, c.handleGap(ctx, blockNumbers[0], &blocksData[0].Block)
+	if blocksData[0].Block.Number.Cmp(fromBlock) != 0 {
+		return nil, c.handleGap(ctx, fromBlock, &blocksData[0].Block)
 	}
 
 	var sequentialBlockData []common.BlockData
@@ -439,25 +445,25 @@ func (c *Committer) getSequentialBlockData(ctx context.Context, blockNumbers []*
 }
 
 func (c *Committer) getSequentialBlockDataToCommit(ctx context.Context) ([]common.BlockData, error) {
-	blocksToCommit, err := c.getBlockNumbersToCommit(ctx)
+	fromBlock, toBlock, err := c.getBlockNumbersToCommit(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error determining blocks to commit: %v", err)
 	}
-	if len(blocksToCommit) == 0 {
+	if fromBlock == nil || toBlock == nil {
 		return nil, nil
 	}
-	return c.getSequentialBlockData(ctx, blocksToCommit)
+	return c.getSequentialBlockData(ctx, fromBlock, toBlock)
 }
 
 func (c *Committer) getSequentialBlockDataToPublish(ctx context.Context) ([]common.BlockData, error) {
-	blocksToPublish, err := c.getBlockNumbersToPublish(ctx)
+	fromBlock, toBlock, err := c.getBlockNumbersToPublish(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error determining blocks to commit: %v", err)
 	}
-	if len(blocksToPublish) == 0 {
+	if fromBlock == nil || toBlock == nil {
 		return nil, nil
 	}
-	return c.getSequentialBlockData(ctx, blocksToPublish)
+	return c.getSequentialBlockData(ctx, fromBlock, toBlock)
 }
 
 func (c *Committer) publish(ctx context.Context) error {
@@ -543,13 +549,20 @@ func (c *Committer) handleGap(ctx context.Context, expectedStartBlockNumber *big
 	}
 
 	log.Debug().Msgf("Polling %d blocks while handling gap: %v", len(missingBlockNumbers), missingBlockNumbers)
-	poller.Poll(ctx, missingBlockNumbers)
+	poller.Poll(ctx, missingBlockNumbers[0], missingBlockNumbers[len(missingBlockNumbers)-1])
 	return fmt.Errorf("first block number (%s) in commit batch does not match expected (%s)", actualFirstBlock.Number.String(), expectedStartBlockNumber.String())
 }
 
-func (c *Committer) handleMissingStagingData(ctx context.Context, blocksToCommit []*big.Int) {
+func (c *Committer) handleMissingStagingData(ctx context.Context, fromBlock, toBlock *big.Int) {
+	if fromBlock == nil || toBlock == nil {
+		return
+	}
+	if fromBlock.Cmp(toBlock) > 0 {
+		return
+	}
+
 	// Checks if there are any blocks in staging after the current range end
-	lastStagedBlockNumber, err := c.storage.StagingStorage.GetLastStagedBlockNumber(c.rpc.GetChainID(), blocksToCommit[len(blocksToCommit)-1], big.NewInt(0))
+	lastStagedBlockNumber, err := c.storage.StagingStorage.GetLastStagedBlockNumber(c.rpc.GetChainID(), toBlock, big.NewInt(0))
 	if err != nil {
 		log.Error().Err(err).Msg("Error checking staged data for missing range")
 		return
@@ -558,13 +571,16 @@ func (c *Committer) handleMissingStagingData(ctx context.Context, blocksToCommit
 		log.Debug().Msgf("Committer is caught up with staging. No need to poll for missing blocks.")
 		return
 	}
-	log.Debug().Msgf("Detected missing blocks in staging data starting from %s.", blocksToCommit[0].String())
+	log.Debug().Msgf("Detected missing blocks in staging data starting from %s.", fromBlock.String())
 
 	poller := NewBoundlessPoller(c.rpc, c.storage)
-	blocksToPoll := blocksToCommit
-	if len(blocksToCommit) > int(poller.blocksPerPoll) {
-		blocksToPoll = blocksToCommit[:int(poller.blocksPerPoll)]
+
+	toPoll := new(big.Int).Set(toBlock)
+	limitTo := new(big.Int).Add(fromBlock, big.NewInt(poller.blocksPerPoll-1))
+	if toPoll.Cmp(limitTo) > 0 {
+		toPoll = limitTo
 	}
-	poller.Poll(ctx, blocksToPoll)
-	log.Debug().Msgf("Polled %d blocks due to committer detecting them as missing. Range: %s - %s", len(blocksToPoll), blocksToPoll[0].String(), blocksToPoll[len(blocksToPoll)-1].String())
+
+	poller.Poll(ctx, fromBlock, toPoll)
+	log.Debug().Msgf("Polled blocks due to committer detecting them as missing. Range: %s - %s", fromBlock.String(), toPoll.String())
 }

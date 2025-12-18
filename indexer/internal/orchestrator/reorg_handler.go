@@ -273,7 +273,12 @@ func (rh *ReorgHandler) getNewBlocksByNumber(ctx context.Context, blockHeaders [
 
 func (rh *ReorgHandler) handleReorg(ctx context.Context, reorgedBlockNumbers []*big.Int) error {
 	log.Debug().Msgf("Handling reorg for blocks %v", reorgedBlockNumbers)
-	results := rh.worker.Run(ctx, reorgedBlockNumbers)
+	results := make([]rpc.GetFullBlockResult, 0, len(reorgedBlockNumbers))
+	for i := range reorgedBlockNumbers {
+		bn := reorgedBlockNumbers[i]
+		batch := rh.worker.Run(ctx, bn, bn)
+		results = append(results, batch...)
+	}
 	data := make([]common.BlockData, 0, len(results))
 	blocksToDelete := make([]*big.Int, 0, len(results))
 	for i := range results {

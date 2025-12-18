@@ -140,7 +140,7 @@ func (p *Poller) Start(ctx context.Context) {
 					p.workModeMutex.RUnlock()
 
 					blockRangeMutex.Lock()
-					blockNumbers, err := p.getNextBlockRange(pollCtx)
+					fromBlock, toBlock, err := p.getNextBlockRange(pollCtx)
 					blockRangeMutex.Unlock()
 
 					if pollCtx.Err() != nil {
@@ -154,7 +154,7 @@ func (p *Poller) Start(ctx context.Context) {
 						continue
 					}
 
-					lastPolledBlock := p.Poll(pollCtx, blockNumbers)
+					lastPolledBlock := p.Poll(pollCtx, fromBlock, toBlock)
 					if p.reachedPollLimit(lastPolledBlock) {
 						log.Warn().Msg("Reached poll limit, exiting poller")
 						cancel()
@@ -202,8 +202,8 @@ func (p *Poller) Start(ctx context.Context) {
 	}
 }
 
-func (p *Poller) Poll(ctx context.Context, blockNumbers []*big.Int) (lastPolledBlock *big.Int) {
-	blockData, failedResults := p.PollWithoutSaving(ctx, blockNumbers)
+func (p *Poller) Poll(ctx context.Context, fromBlock, toBlock *big.Int) (lastPolledBlock *big.Int) {
+	blockData, failedResults := p.PollWithoutSaving(ctx, fromBlock, toBlock)
 	if len(blockData) > 0 || len(failedResults) > 0 {
 		p.StageResults(blockData, failedResults)
 	}
@@ -221,24 +221,29 @@ func (p *Poller) Poll(ctx context.Context, blockNumbers []*big.Int) (lastPolledB
 	return highestBlockNumber
 }
 
-func (p *Poller) PollWithoutSaving(ctx context.Context, blockNumbers []*big.Int) ([]common.BlockData, []rpc.GetFullBlockResult) {
-	if len(blockNumbers) < 1 {
+func (p *Poller) PollWithoutSaving(ctx context.Context, fromBlock, toBlock *big.Int) ([]common.BlockData, []rpc.GetFullBlockResult) {
+	if fromBlock == nil || toBlock == nil {
 		log.Debug().Msg("No blocks to poll, skipping")
 		return nil, nil
 	}
-	endBlock := blockNumbers[len(blockNumbers)-1]
+	if fromBlock.Cmp(toBlock) > 0 {
+		log.Debug().Msg("No blocks to poll, invalid range")
+		return nil, nil
+	}
+
+	endBlock := toBlock
 	if endBlock != nil {
 		p.lastPolledBlockMutex.Lock()
 		p.lastPolledBlock = endBlock
 		p.lastPolledBlockMutex.Unlock()
 	}
-	log.Debug().Msgf("Polling %d blocks starting from %s to %s", len(blockNumbers), blockNumbers[0], endBlock)
+	log.Debug().Msgf("Polling blocks starting from %s to %s", fromBlock, endBlock)
 
 	endBlockNumberFloat, _ := endBlock.Float64()
 	metrics.PollerLastTriggeredBlock.Set(endBlockNumberFloat)
 
 	recoveryWorker := worker.NewWorker(p.rpc)
-	results := recoveryWorker.Run(ctx, blockNumbers)
+	results := recoveryWorker.Run(ctx, fromBlock, toBlock)
 	blockData, failedResults := p.convertPollResultsToBlockData(results)
 	return blockData, failedResults
 }
@@ -307,10 +312,10 @@ func (p *Poller) reachedPollLimit(blockNumber *big.Int) bool {
 	return blockNumber.Cmp(p.pollUntilBlock) >= 0
 }
 
-func (p *Poller) getNextBlockRange(ctx context.Context) ([]*big.Int, error) {
+func (p *Poller) getNextBlockRange(ctx context.Context) (fromBlock *big.Int, toBlock *big.Int, err error) {
 	latestBlock, err := p.rpc.GetLatestBlockNumber(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	p.lastPolledBlockMutex.RLock()
 	lastPolled := new(big.Int).Set(p.lastPolledBlock)
@@ -320,15 +325,15 @@ func (p *Poller) getNextBlockRange(ctx context.Context) ([]*big.Int, error) {
 	startBlock := new(big.Int).Add(lastPolled, big.NewInt(1))
 	if startBlock.Cmp(latestBlock) > 0 {
 		log.Debug().Msgf("Start block %s is greater than latest block %s, skipping", startBlock, latestBlock)
-		return nil, ErrNoNewBlocks
+		return nil, nil, ErrNoNewBlocks
 	}
 	endBlock := p.getEndBlockForRange(startBlock, latestBlock)
 	if startBlock.Cmp(endBlock) > 0 {
 		log.Debug().Msgf("Invalid range: start block %s is greater than end block %s, skipping", startBlock, endBlock)
-		return nil, nil
+		return nil, nil, nil
 	}
 
-	return p.createBlockNumbersForRange(startBlock, endBlock), nil
+	return startBlock, endBlock, nil
 }
 
 func (p *Poller) getEndBlockForRange(startBlock, latestBlock *big.Int) *big.Int {
@@ -341,15 +346,6 @@ func (p *Poller) getEndBlockForRange(startBlock, latestBlock *big.Int) *big.Int 
 		endBlock = p.pollUntilBlock
 	}
 	return endBlock
-}
-
-func (p *Poller) createBlockNumbersForRange(startBlock, endBlock *big.Int) []*big.Int {
-	blockCount := new(big.Int).Sub(endBlock, startBlock).Int64() + 1
-	blockNumbers := make([]*big.Int, blockCount)
-	for i := int64(0); i < blockCount; i++ {
-		blockNumbers[i] = new(big.Int).Add(startBlock, big.NewInt(i))
-	}
-	return blockNumbers
 }
 
 func (p *Poller) handleBlockFailures(results []rpc.GetFullBlockResult) {
