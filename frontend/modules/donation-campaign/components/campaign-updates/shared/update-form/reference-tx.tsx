@@ -1,10 +1,9 @@
 'use client';
 
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback } from 'react';
 import { Chip } from '@/components/shared';
 import { X } from 'lucide-react';
 import { toast } from 'sonner';
-import { Input } from '@/components/ui/input';
 
 const TX_HASH_REGEX = /^[a-f0-9]{64}$/;
 const MAX_HASHES = 10;
@@ -16,11 +15,10 @@ interface ReferenceTxProps {
     reference_tx_hashes: string[];
     images: string[];
   };
-  existingTxHashes?: string[];
   setForm: (form: { title: string; description: string; reference_tx_hashes: string[]; images: string[] }) => void;
 }
 
-export const ReferenceTx = ({ form, existingTxHashes, setForm }: ReferenceTxProps) => {
+export const ReferenceTx = ({ form, setForm }: ReferenceTxProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const cursorPositionRef = useRef<number>(0);
   const hashes = form.reference_tx_hashes || [];
@@ -149,14 +147,14 @@ export const ReferenceTx = ({ form, existingTxHashes, setForm }: ReferenceTxProp
   }, []);
 
   return (
-    <div className="space-y-2">
-      <label className="text-primary text-xs tracking-[0.2em] uppercase dark:text-white">
+    <div className="space-y-3">
+      <p className="text-primary text-xs tracking-[0.2em] uppercase dark:text-white">
         Transaction Hashes
         {hashes.length > 0 && <span className="text-muted-foreground ml-2 text-xs">({hashes.length})</span>}
-      </label>
+      </p>
 
       <div
-        className="border-input bg-background focus-within:ring-ring flex min-h-[96px] w-full cursor-text flex-wrap content-start items-start gap-2 rounded-md border px-3 py-2 text-sm transition-shadow focus-within:ring-2 focus-within:outline-none"
+        className="border-input bg-background focus-within:ring-ring flex min-h-[96px] w-full cursor-text flex-wrap content-start items-start gap-2 rounded-md border px-3 py-3 text-sm transition-shadow focus-within:ring-2 focus-within:outline-none"
         onClick={() => editorRef.current?.focus()}
       >
         {hashes.map((hash) => (
@@ -181,7 +179,7 @@ export const ReferenceTx = ({ form, existingTxHashes, setForm }: ReferenceTxProp
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
           onInput={handleInput}
-          className="min-w-[120px] flex-1 overflow-hidden whitespace-nowrap outline-none"
+          className="min-w-[120px] flex-1 overflow-hidden outline-none"
           suppressContentEditableWarning
           data-placeholder={hashes.length === 0 ? 'Paste or type transaction hashes...' : ''}
         />
@@ -190,6 +188,11 @@ export const ReferenceTx = ({ form, existingTxHashes, setForm }: ReferenceTxProp
       {hashes.length > 0 && (
         <p className="text-xs text-gray-500">You can add up to {MAX_HASHES} referenced transaction hashes.</p>
       )}
+      {hashes.length === 0 ? (
+        <p className="text-xs text-gray-500">
+          Enter valid transaction hashes, separated by Enter, Space, commas, or semicolons.
+        </p>
+      ) : null}
     </div>
   );
 };

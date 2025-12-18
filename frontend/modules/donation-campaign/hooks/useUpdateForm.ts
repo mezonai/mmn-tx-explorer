@@ -30,8 +30,6 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
   const [existingImagesSize, setExistingImagesSize] = useState<number>(0);
   const [isCompressing, setIsCompressing] = useState(false);
 
-  const [existingTxHashes, setExistingTxHashes] = useState<string[]>([]);
-
   const newImagesSize = images.reduce((sum, img) => sum + img.size, 0);
   const totalSize = newImagesSize + existingImagesSize;
   const maxTotalSize = MAX_IMAGES_SIZE * 1024 * 1024;
@@ -46,7 +44,6 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
         title: updatePost.title,
         description: updatePost.description,
         reference_tx_hashes: updatePost.reference_tx_hashes || [],
-        existingTxHashes: updatePost.reference_tx_hashes || [],
         images: [],
         existingImageCids: updatePost.image_cids || [],
       });
@@ -55,10 +52,6 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
         setExistingImageCids(updatePost.image_cids);
         setPreviews(updatePost.image_cids.map((cid) => `${ipfsServiceURL}/${cid}`));
       }
-
-      if (updatePost.reference_tx_hashes && updatePost.reference_tx_hashes.length > 0) {
-        setExistingTxHashes(updatePost.reference_tx_hashes);
-      }
     }
   }, [updatePost, setForm]);
 
@@ -66,7 +59,6 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
     if (!e.target.files) return;
     const files = Array.from(e.target.files);
 
-    // Validate file types - check both MIME type and extension for HEIC
     const invalidFiles = files.filter((file) => {
       const isValidMimeType = ALLOWED_IMAGE_TYPES.includes(file.type);
       const hasHeicExtension = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
@@ -215,8 +207,6 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
     toast.success('All images removed');
   };
 
-
-
   const onSubmit = () => {
     if (!validation.isTitle) {
       toast.error('Please enter a valid title');
@@ -235,7 +225,6 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
     validation,
     images,
     previews,
-    existingTxHashes,
     isCompressing,
     isSaving,
     handleImageChange,

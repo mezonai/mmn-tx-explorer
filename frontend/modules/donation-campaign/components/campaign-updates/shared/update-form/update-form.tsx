@@ -14,7 +14,7 @@ interface UpdateFormProps {
   form: {
     title: string;
     description: string;
-    reference_tx_hashes: string[] ;
+    reference_tx_hashes: string[];
     images: string[];
   };
   setForm: (form: { title: string; description: string; reference_tx_hashes: string[]; images: string[] }) => void;
@@ -24,7 +24,6 @@ interface UpdateFormProps {
   };
   images: File[];
   previews: string[];
-  existingTxHashes?: string[];
   isCompressing: boolean;
   isSaving: boolean;
   isFetchingSizes?: boolean;
@@ -57,7 +56,6 @@ export const UpdateForm = ({
   validation,
   images,
   previews,
-  existingTxHashes,
   isCompressing,
   isSaving,
   handleImageChange,
@@ -73,10 +71,7 @@ export const UpdateForm = ({
   const [existingImagesSize, setExistingImagesSize] = useState(0);
   const [isFetchingLocalSizes, setIsFetchingLocalSizes] = useState(false);
 
-
-
   useEffect(() => {
-    console.log('existingTxHashes', existingTxHashes);
     const existingCids = (form as any).existingImageCids || [];
     if (isEdit && existingCids.length > 0) {
       const fetchSizes = async () => {
@@ -105,7 +100,7 @@ export const UpdateForm = ({
       <UpdateFormHeader />
       <CardContent className="text-brand-primary space-y-5 p-5 text-left">
         <Basicfield form={form} setForm={setForm} />
-        <ReferenceTx form={form} setForm={setForm} existingTxHashes={existingTxHashes} />
+        <ReferenceTx form={form} setForm={setForm} />
         <Separator className="my-4 w-full" />
         <UploadImages
           previews={previews}
