@@ -1,6 +1,8 @@
 package models
 
 import (
+	"dong-service/utils"
+	"encoding/json"
 	"time"
 )
 
@@ -49,4 +51,17 @@ type UpdateOfferStatusRequest struct {
 	OfferID int64  `json:"offer_id" binding:"required"`
 	Status  string `json:"status" binding:"required"`
 	TxHash  string `json:"tx_hash" binding:"required"`
+}
+
+func (o Offer) MarshalJSON() ([]byte, error) {
+	type Alias Offer
+	aux := &struct {
+		BankInfo interface{} `json:"bank_info,omitempty"`
+		*Alias
+	}{
+		Alias:    (*Alias)(&o),
+		BankInfo: utils.ParseBankInfoString(o.BankInfo),
+	}
+
+	return json.Marshal(aux)
 }
