@@ -94,6 +94,14 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
       align: 'left',
     },
     {
+      headerContent: 'BUYER',
+      renderCell: (order) => (
+        <AddressDisplay address={order.buyer_wallet_address} href={ROUTES.WALLET(order.buyer_wallet_address)} />
+      ),
+      skeletonContent: <Skeleton className="h-3 w-24" />,
+      align: 'left',
+    },
+    {
       headerContent: 'RATE',
       renderCell: (order) => (
         <div>

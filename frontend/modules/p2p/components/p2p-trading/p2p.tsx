@@ -11,11 +11,13 @@ import { useP2PMyOffers } from '../../hooks/useP2PMyOffers';
 import { Pagination } from '@/components/ui/pagination';
 import { useMyOrders } from '../../hooks/useMyOrders';
 import { P2POrdersList } from './p2p-orders-list';
+import { PAGINATION } from '@/constant';
 
 export const P2P = () => {
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
 
   const [filters, setFilters] = useState<{ min?: number; max?: number }>({});
+  const [tab, setTab] = useState<'offers' | 'orders' | 'my-offers'>('offers');
 
   const handleFilterChange = useCallback(
     (min: number | undefined, max: number | undefined) => {
@@ -50,11 +52,22 @@ export const P2P = () => {
     from_amount: filters.min,
     to_amount: filters.max,
   });
+  const handleTabChange = (value: 'offers' | 'orders' | 'my-offers') => {
+    setTab(value);
+    setFilters({});
+    handleChangePage(PAGINATION.DEFAULT_PAGE);
+    handleChangeLimit(PAGINATION.DEFAULT_LIMIT);
+  };
+
   return (
     <div className="w-full space-y-6">
       <P2PHeader />
 
-      <Tabs defaultValue="offers" className="w-full">
+      <Tabs
+        value={tab}
+        onValueChange={(v) => handleTabChange(v as 'offers' | 'orders' | 'my-offers')}
+        className="w-full"
+      >
         <TabsList>
           <TabsTrigger value="offers">Offers</TabsTrigger>
           <TabsTrigger value="orders">My Orders</TabsTrigger>
