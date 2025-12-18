@@ -75,17 +75,16 @@ export const P2P = () => {
           <P2POffersTabs offers={offers?.data} isLoading={isLoading} />
         </TabsContent>
         <TabsContent value="orders" className="space-y-6">
-          <div className="py-2">
-            <Pagination
-              page={page}
-              limit={limit}
-              totalItems={myOrders?.meta.total_items ?? 0}
-              totalPages={myOrders?.meta.total_pages ?? 0}
-              isLoading={isMyOrdersLoading}
-              onChangePage={handleChangePage}
-              onChangeLimit={handleChangeLimit}
-            />
-          </div>
+          <P2PFiltersComponent
+            totalItems={myOrders?.meta.total_items}
+            totalPages={myOrders?.meta.total_pages}
+            isLoading={isMyOrdersLoading}
+            page={page}
+            limit={limit}
+            onPageChange={handleChangePage}
+            onLimitChange={handleChangeLimit}
+            onFilterChange={handleFilterChange}
+          />
           <P2POrdersList orders={myOrders?.data} isLoading={isMyOrdersLoading} />
         </TabsContent>
         <TabsContent value="my-offers" className="space-y-6">
