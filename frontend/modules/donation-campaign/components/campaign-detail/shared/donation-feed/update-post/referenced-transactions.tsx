@@ -20,7 +20,7 @@ export const ReferencedTransactions = ({ referencedTxns }: ReferencedTransaction
         </AccordionTrigger>
         <AccordionContent>
           {referencedTxns?.map((txHash, index) => (
-            <div className="flex w-full flex-row items-start p-3 hover:bg-gray-800" key={txHash}>
+            <div className="flex w-full flex-row items-start p-3 hover:bg-gray-100 dark:hover:bg-gray-800" key={txHash}>
               <span className="px-2">#{index + 1}</span>
               <TxnHashLink key={txHash} hash={txHash} isPending={false} hasTooltip={false} />
             </div>
