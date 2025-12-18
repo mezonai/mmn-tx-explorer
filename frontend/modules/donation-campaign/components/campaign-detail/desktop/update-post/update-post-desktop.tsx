@@ -63,15 +63,10 @@ export const UpdatePostDesktop = ({
         onImageClick={onImageClick}
         maxImagesDisplay={MAX_IMAGES_DISPLAY}
         showAllImages={showAllImages}
-      />
-      <UpdatePostFooter
-        isHidden={isHidden}
         hasMoreImages={hasMoreImages}
-        update={update}
-        showAllImages={showAllImages}
         setShowAllImages={setShowAllImages}
-        maxImagesDisplay={MAX_IMAGES_DISPLAY}
       />
+      <UpdatePostFooter isHidden={isHidden} update={update} />
     </Card>
   );
 };

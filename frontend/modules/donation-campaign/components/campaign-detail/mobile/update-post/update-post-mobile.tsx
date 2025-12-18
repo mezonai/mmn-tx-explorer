@@ -1,4 +1,3 @@
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { DonationCampaign, IDonationFeed } from '@/modules/donation-campaign/type';
 import { JSX, useState } from 'react';
@@ -66,16 +65,11 @@ export const UpdatePostMobile = ({
         onImageClick={onImageClick}
         maxImagesDisplay={MAX_IMAGES_DISPLAY}
         showAllImages={showAllImages}
+        hasMoreImages={hasMoreImages}
+        setShowAllImages={setShowAllImages}
       />
 
-      <UpdatePostFooter
-        isHidden={isHidden}
-        hasMoreImages={hasMoreImages}
-        update={update}
-        showAllImages={showAllImages}
-        setShowAllImages={setShowAllImages}
-        maxImagesDisplay={MAX_IMAGES_DISPLAY}
-      />
+      <UpdatePostFooter isHidden={isHidden} update={update} />
     </Card>
   );
 };

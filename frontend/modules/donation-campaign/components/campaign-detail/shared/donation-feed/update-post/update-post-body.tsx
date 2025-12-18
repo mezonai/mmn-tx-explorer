@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { IDonationFeed } from '@/modules/donation-campaign/type';
 import { JSX } from 'react';
 
@@ -12,6 +13,8 @@ interface UpdatePostBodyProps {
   onImageClick: (url: string) => void;
   maxImagesDisplay: number;
   showAllImages: boolean;
+  hasMoreImages: boolean;
+  setShowAllImages: (showAll: boolean) => void;
 }
 
 export const UpdatePostBody = ({
@@ -25,6 +28,8 @@ export const UpdatePostBody = ({
   onImageClick,
   maxImagesDisplay,
   showAllImages,
+  hasMoreImages,
+  setShowAllImages,
 }: UpdatePostBodyProps) => {
   const visibleImages = showAllImages ? update.image_cids : update.image_cids.slice(0, maxImagesDisplay);
   return (
@@ -75,6 +80,13 @@ export const UpdatePostBody = ({
         </div>
       )}
       {!isHidden && <>{getImages(visibleImages || [], onImageClick)}</>}
+      {hasMoreImages && !showAllImages && !isHidden && (
+        <div className="flex justify-center pb-2">
+          <Button variant="link" size="sm" onClick={() => setShowAllImages(true)}>
+            See more ({update.image_cids.length - maxImagesDisplay})
+          </Button>
+        </div>
+      )}
     </>
   );
 };
