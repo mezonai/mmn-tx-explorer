@@ -12,6 +12,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip
 import { useState } from 'react';
 import { BadgeCheck } from 'lucide-react';
 import { useUser } from '@/providers';
+import { DescriptionDisplay } from '@/components/shared';
 
 export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
   const [currentCampaign, setCurrentCampaign] = useState(campaign);
@@ -71,7 +72,8 @@ export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
           </Tooltip>
         )}
       </div>
-      <p className="text-muted-foreground max-w-2xl break-words">{campaign.description}</p>
+
+      <DescriptionDisplay description={campaign.description} className="text-muted-foreground text-md max-w-2xl" />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <ProgressCard
