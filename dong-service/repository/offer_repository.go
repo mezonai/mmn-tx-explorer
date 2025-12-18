@@ -94,6 +94,8 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 		whereClauses = append(whereClauses, "status NOT IN ('CANCELED', 'FAILED', 'COMPLETED')")
 	}
 
+	whereClauses = append(whereClauses, "amount > 0")
+
 	if minPrice != nil && *minPrice != "" {
 		whereClauses = append(whereClauses, fmt.Sprintf("payable_amount >= $%d", argCount))
 		args = append(args, *minPrice)
