@@ -189,9 +189,16 @@ func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.O
 	return &o, nil
 }
 
-// GetOrdersByWalletAddress returns all orders created by a wallet address (most recent first)
+// GetOrdersByWalletAddress returns all orders where wallet is buyer OR seller (most recent first)
 func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Order, error) {
-	query := fmt.Sprintf("SELECT order_id, offer_id, buyer_wallet_address, buyer_user_id, amount, payable_amount, transaction_hash, status, transfer_code, expires_at, created_at, updated_at FROM %s.orders WHERE buyer_wallet_address = $1 ORDER BY created_at DESC", r.dongSchema)
+	query := fmt.Sprintf(`
+		SELECT o.order_id, o.offer_id, o.buyer_wallet_address, o.buyer_user_id, o.amount, o.payable_amount, 
+		       o.transaction_hash, o.status, o.transfer_code, o.expires_at, o.created_at, o.updated_at 
+		FROM %s.orders o
+		LEFT JOIN %s.offers of ON o.offer_id = of.offer_id
+		WHERE o.buyer_wallet_address = $1 OR of.seller_wallet_address = $1
+		ORDER BY o.created_at DESC
+	`, r.dongSchema, r.dongSchema)
 
 	if pagination != nil {
 		if limit, ok := pagination["limit"].(int); ok && limit > 0 {
@@ -234,7 +241,12 @@ func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAd
 }
 
 func (r *OrderRepository) CountOrdersByWalletAddress(ctx context.Context, walletAddress string) (int64, error) {
-	query := fmt.Sprintf("SELECT COUNT(*) FROM %s.orders WHERE buyer_wallet_address = $1", r.dongSchema)
+	query := fmt.Sprintf(`
+		SELECT COUNT(*) 
+		FROM %s.orders o
+		LEFT JOIN %s.offers of ON o.offer_id = of.offer_id
+		WHERE o.buyer_wallet_address = $1 OR of.seller_wallet_address = $1
+	`, r.dongSchema, r.dongSchema)
 
 	var total int64
 	err := r.db.QueryRowContext(ctx, query, walletAddress).Scan(&total)
