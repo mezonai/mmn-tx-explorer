@@ -13,7 +13,6 @@ const INITIAL_FORM: DonationUpdateForm = {
   description: '',
   reference_tx_hashes: [],
   images: [],
-  existingImageCids: [],
 };
 
 interface DonationUpdateValidation {
