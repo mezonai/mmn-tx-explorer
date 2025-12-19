@@ -2,7 +2,7 @@
 
 import { ArrowLeft, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { P2POrder } from '../../types';
 import { AddressDisplay } from '@/components/shared/address-display';
 import { ROUTES } from '@/configs/routes.config';
@@ -16,10 +16,20 @@ interface TradingRoomHeaderProps {
 export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) => {
   const router = useRouter();
   const { offer } = useP2POffer(String(order.offer_id));
+  const [currentTime, setCurrentTime] = useState(Date.now());
+
+  // Update current time every second for countdown
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Calculate remaining time and check if expired
   const { remainingTime, isExpired } = useMemo(() => {
-    const now = new Date().getTime();
+    const now = currentTime;
     const expires = new Date(order.expires_at).getTime();
     const diff = Math.max(0, expires - now);
     const minutes = Math.floor(diff / 60000);
@@ -29,7 +39,7 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
       remainingTime: { minutes, seconds },
       isExpired: expired
     };
-  }, [order.expires_at]);
+  }, [order.expires_at, currentTime]);
 
   // Determine counterparty address based on user role
   const counterpartyAddress = useMemo(() => {
@@ -71,8 +81,8 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
         </div>
       </div>
       <div className={`flex items-center gap-2 rounded-full px-3 py-1 text-sm font-bold ${isExpired
-          ? 'bg-red-500/10 text-red-500'
-          : 'bg-yellow-500/10 text-yellow-500'
+        ? 'bg-red-500/10 text-red-500'
+        : 'bg-yellow-500/10 text-yellow-500'
         }`}>
         <Clock className="h-4 w-4" />
         {remainingTime.minutes}:{remainingTime.seconds.toString().padStart(2, '0')}
