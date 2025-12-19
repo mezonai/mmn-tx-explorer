@@ -85,7 +85,6 @@ export class WebSocketManager {
       this.shouldReconnect = true;
       this.reconnectAttempts = 0;
       this.startHeartbeat();
-      console.log('Websocket connected');
     };
 
     this.ws.onmessage = (event) => {
