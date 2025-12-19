@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
 import { APP_CONFIG } from '@/configs/app.config';
 import { Pagination } from '@/components/ui/pagination';
+import { CreateOfferModal } from './create-offer-form/create-offer-modal';
 
 interface P2PFiltersComponentProps {
   totalItems: number | undefined;
@@ -30,6 +29,7 @@ export const P2PFiltersComponent = ({
 }: P2PFiltersComponentProps) => {
   const [minAmount, setMinAmount] = useState<string>('');
   const [maxAmount, setMaxAmount] = useState<string>('');
+
   useEffect(() => {
     const timer = setTimeout(() => {
       const minVal = minAmount ? Number(minAmount) : undefined;
@@ -44,10 +44,7 @@ export const P2PFiltersComponent = ({
   return (
     <div className="flex w-full flex-col gap-4 py-2 md:flex-row md:items-center md:justify-between">
       <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center">
-        <Button className="bg-brand-primary hover:bg-brand-primary/90 h-10 w-full shrink-0 rounded-lg font-bold text-white shadow-sm transition-all md:w-auto md:px-5">
-          <Plus className="mr-2 h-4 w-4" />
-          New Offer
-        </Button>
+        <CreateOfferModal />
 
         <div className="bg-background border-input ring-offset-background focus-within:ring-brand-primary flex h-10 w-full items-center rounded-lg border shadow-sm focus-within:ring-1 md:w-auto">
           <div className="bg-muted/50 text-brand-primary flex h-full items-center border-r px-3 text-[10px] font-bold tracking-wider uppercase select-none">

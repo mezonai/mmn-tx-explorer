@@ -1,27 +1,31 @@
+import { OFFERS_STATUS } from './constants';
+
 export type BankOption = 'MB' | 'VCB' | 'TCB' | 'ACB' | 'TPBANK' | 'VIETCOMBANK';
 
 export interface P2POffer {
-  offer_id: string;
-  intermediary_wallet_id: number;
-  seller_wallet_address: string;
-  total_amount: number;
   amount: number;
-  limit: {
-    min: number;
-    max: number;
-  };
-  price_rate: number;
+  created_at: string;
+  intermediary_wallet_address: number;
   bankInfo?: {
     bank: BankOption;
     accountNumber: string;
     accountName: string;
   };
-  transferCode?: string;
+  limit: {
+    min: number;
+    max: number;
+  };
+  offer_id: string;
+  price: number;
+  price_rate: number;
+  price_type: string;
+  side: TradeTypes;
+  seller_wallet_address: string;
+  total_amount: number;
+
   symbol: string;
-  created_at: string;
   update_at: string;
   status: string;
-  price_type: string;
 }
 export interface IP2POfferListParams {
   page: number;
@@ -29,4 +33,30 @@ export interface IP2POfferListParams {
   rate?: number;
   from_amount?: number;
   to_amount?: number;
+}
+export enum TradeTypes {
+  SELL = 'SELL',
+  BUY = 'BUY',
+}
+export interface CreateOfferRequest {
+  side: TradeTypes;
+  amount: number;
+  price_rate: string;
+  limit: {
+    min: number;
+    max: number;
+  };
+  bank_info: { bank: BankOption; account_number: string; account_name: string };
+  symbol?: string;
+}
+
+export interface CreateOfferResponse {
+  intermediary_wallet_address: string;
+  offer: P2POffer;
+}
+export type OfferStatus = (typeof OFFERS_STATUS)[keyof typeof OFFERS_STATUS];
+export interface UpdateOfferStatusRequest {
+  offer_id: number;
+  status: OfferStatus;
+  tx_hash: string;
 }
