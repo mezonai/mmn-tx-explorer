@@ -4,6 +4,7 @@ import { useRef, useCallback } from 'react';
 import { Chip } from '@/components/shared';
 import { X } from 'lucide-react';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 
 const TX_HASH_REGEX = /^[a-f0-9]{64}$/;
 const MAX_HASHES = 10;
@@ -146,12 +147,30 @@ export const ReferenceTx = ({ form, setForm }: ReferenceTxProps) => {
     }
   }, []);
 
+  const handleClearAll = useCallback(() => {
+    setForm({
+      ...form,
+      reference_tx_hashes: [],
+    });
+  }, [form, setForm]);
+
   return (
     <div className="space-y-3">
-      <p className="text-primary text-xs tracking-[0.2em] uppercase dark:text-white">
-        Transaction Hashes
-        {hashes.length > 0 && <span className="text-muted-foreground ml-2 text-xs">({hashes.length})</span>}
-      </p>
+      <div className="flex flex-row items-center justify-between">
+        <p className="text-primary text-xs tracking-[0.2em] uppercase dark:text-white">
+          Transaction Hashes
+          {hashes.length > 0 && <span className="text-muted-foreground ml-2 text-xs">({hashes.length})</span>}
+        </p>
+        {hashes.length > 0 && (
+          <Button
+            variant="ghost"
+            className="text-destructive/90 text-xs hover:bg-transparent dark:hover:bg-transparent"
+            onClick={handleClearAll}
+          >
+            Clear
+          </Button>
+        )}
+      </div>
 
       <div
         className="border-input bg-background focus-within:ring-ring flex min-h-[96px] w-full cursor-text flex-wrap content-start items-start gap-2 rounded-md border px-3 py-3 text-sm transition-shadow focus-within:ring-2 focus-within:outline-none"
