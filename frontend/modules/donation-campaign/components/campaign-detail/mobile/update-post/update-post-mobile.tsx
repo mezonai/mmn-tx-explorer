@@ -5,8 +5,6 @@ import { useUser } from '@/providers';
 import { UpdatePostHeader } from './update-post-header';
 import { UpdatePostBody } from '../../shared/donation-feed/update-post/';
 import { UpdatePostFooter } from '../../shared/donation-feed/update-post/';
-import { useRouter } from 'next/navigation';
-import { useToggleHideDonationFeed } from '@/modules/donation-campaign/hooks';
 
 const MAX_IMAGES_DISPLAY = 3;
 const MAX_DESC_CHARACTERS = 200;
@@ -14,8 +12,8 @@ const MAX_DESC_CHARACTERS = 200;
 interface UpdatePostMobileProps {
   update: IDonationFeed;
   campaign: DonationCampaign;
-  onImageClick: (url: string) => void;
-  getImages: (imageCids: string[], onImageClick: (url: string) => void) => JSX.Element;
+  onImageClick: (images: string[], index: number) => void;
+  getImages: (imageCids: string[], onImageClick: (images: string[], index: number) => void) => JSX.Element;
   isVersionDialogOpen: boolean;
   setIsVersionDialogOpen: (isOpen: boolean) => void;
 }
@@ -29,7 +27,6 @@ export const UpdatePostMobile = ({
   setIsVersionDialogOpen,
 }: UpdatePostMobileProps) => {
   const { user } = useUser();
-  const router = useRouter();
 
   const [showAllImages, setShowAllImages] = useState(false);
   const hasMoreImages = update.image_cids.length > MAX_IMAGES_DISPLAY;

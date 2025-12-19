@@ -9,8 +9,8 @@ interface UpdatePostBodyProps {
   isDescLong: boolean;
   expandedDesc: boolean;
   setExpandedDesc: (expanded: boolean) => void;
-  getImages: (imageCids: string[], onImageClick: (url: string) => void) => JSX.Element;
-  onImageClick: (url: string) => void;
+  getImages: (imageCids: string[], onImageClick: (images: string[], index: number) => void) => JSX.Element;
+  onImageClick: (images: string[], index: number) => void;
   maxImagesDisplay: number;
   showAllImages: boolean;
   hasMoreImages: boolean;
@@ -57,7 +57,6 @@ export const UpdatePostBody = ({
               </span>
             ))}
 
-            {/* use description display component later */}
             {!expandedDesc && isDescLong && (
               <span
                 className="text-brand-primary ml-1 cursor-pointer text-sm font-semibold hover:underline"

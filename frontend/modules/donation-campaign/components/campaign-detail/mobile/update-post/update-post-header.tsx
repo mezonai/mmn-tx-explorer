@@ -18,7 +18,7 @@ interface UpdatePostHeaderProps {
   isHidden: boolean;
   isVersionDialogOpen: boolean;
   setIsVersionDialogOpen: (isOpen: boolean) => void;
-  onImageClick: (url: string) => void;
+  onImageClick: (images: string[], index: number) => void;
 }
 
 export const UpdatePostHeader = ({
@@ -29,7 +29,6 @@ export const UpdatePostHeader = ({
   isHidden,
   isVersionDialogOpen,
   setIsVersionDialogOpen,
-  onImageClick,
 }: UpdatePostHeaderProps) => {
   const router = useRouter();
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
@@ -95,7 +94,6 @@ export const UpdatePostHeader = ({
                     update={update}
                     isOpen={isVersionDialogOpen}
                     onOpenChange={setIsVersionDialogOpen}
-                    onImageClick={onImageClick}
                   />
                 )}
               </div>

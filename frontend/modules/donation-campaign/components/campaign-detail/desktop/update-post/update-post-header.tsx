@@ -19,7 +19,6 @@ interface UpdatePostHeaderProps {
   campaign: DonationCampaign;
   isVersionDialogOpen: boolean;
   setIsVersionDialogOpen: (isOpen: boolean) => void;
-  onImageClick: (url: string) => void;
 }
 
 export const UpdatePostHeader = ({
@@ -30,7 +29,6 @@ export const UpdatePostHeader = ({
   campaign,
   isVersionDialogOpen,
   setIsVersionDialogOpen,
-  onImageClick,
 }: UpdatePostHeaderProps) => {
   const router = useRouter();
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
@@ -123,7 +121,6 @@ export const UpdatePostHeader = ({
                     update={update}
                     isOpen={isVersionDialogOpen}
                     onOpenChange={setIsVersionDialogOpen}
-                    onImageClick={onImageClick}
                   />
                 )}
               </div>
