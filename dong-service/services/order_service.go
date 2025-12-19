@@ -267,11 +267,11 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 				}
 
 				if o.OfferID != nil {
-					if err = s.offerRepo.ApplyConfirmedQuantity(ctx, *o.OfferID, o.Amount, tx); err != nil {
-						return err
-					}
 					if s.offerService != nil {
 						s.offerService.ReleaseIntermediaryWalletIfOfferComplete(ctx, *o.OfferID, tx)
+					}
+					if err = s.offerRepo.CheckAndCompleteIfEmpty(ctx, *o.OfferID, tx); err != nil {
+						return err
 					}
 				}
 

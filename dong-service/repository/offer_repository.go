@@ -365,14 +365,14 @@ func (r *OfferRepository) ReleaseQuantity(ctx context.Context, offerID int64, qt
 	return err
 }
 
-func (r *OfferRepository) ApplyConfirmedQuantity(ctx context.Context, offerID int64, qty int64, tx *sql.Tx) error {
+func (r *OfferRepository) CheckAndCompleteIfEmpty(ctx context.Context, offerID int64, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
 		UPDATE %s.offers
-		SET total_amount = total_amount - $1, updated_at = NOW(), status = CASE WHEN total_amount - $1 <= 0 THEN 'COMPLETED' ELSE status END
-		WHERE offer_id = $2
+		SET status = 'COMPLETED', updated_at = NOW()
+		WHERE offer_id = $1 AND amount <= 0 AND status != 'COMPLETED'
 	`, r.dongSchema)
 
-	_, err := tx.ExecContext(ctx, query, qty, offerID)
+	_, err := tx.ExecContext(ctx, query, offerID)
 	return err
 }
 
