@@ -77,6 +77,7 @@ jobs:
           NEXT_PUBLIC_COBAR_API_KEY: ${{ secrets.NEXT_PUBLIC_COBAR_API_KEY }}
           NEXT_PUBLIC_TOP_MEZON_AI: ${{ vars.NEXT_PUBLIC_TOP_MEZON_AI }}
           NEXT_PUBLIC_BASE_FE: ${{ vars.NEXT_BASE_FE }}
+          NEXT_PUBLIC_WEBSOCKET_URL: ${{ vars.NEXT_PUBLIC_WEBSOCKET_URL }}
         run: |
           cd frontend
           npm install
@@ -119,6 +120,7 @@ jobs:
           NEXT_PUBLIC_COBAR_API_KEY: ${{ secrets.NEXT_PUBLIC_COBAR_API_KEY }}
           NEXT_PUBLIC_TOP_MEZON_AI: ${{ vars.NEXT_PUBLIC_TOP_MEZON_AI }}
           NEXT_PUBLIC_BASE_FE: ${{ vars.NEXT_BASE_FE }}
+          NEXT_PUBLIC_WEBSOCKET_URL: ${{ vars.NEXT_PUBLIC_WEBSOCKET_URL}}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
@@ -142,6 +144,7 @@ jobs:
           NEXT_PUBLIC_COBAR_API_KEY=${NEXT_PUBLIC_COBAR_API_KEY}
           NEXT_PUBLIC_TOP_MEZON_AI=${NEXT_PUBLIC_TOP_MEZON_AI}
           NEXT_PUBLIC_BASE_FE=${NEXT_BASE_FE}
+          NEXT_PUBLIC_WEBSOCKET_URL=${NEXT_PUBLIC_WEBSOCKET_URL}
           EON
 
           sudo chown -R mmn:mmn /opt/frontend
@@ -167,6 +170,7 @@ jobs:
           printf "export NEXT_PUBLIC_COBAR_API_KEY=%q\n" "$NEXT_PUBLIC_COBAR_API_KEY" >> remote_env.sh
           printf "export NEXT_PUBLIC_TOP_MEZON_AI=%q\n" "$NEXT_PUBLIC_TOP_MEZON_AI" >> remote_env.sh
           printf "export NEXT_PUBLIC_BASE_FE=%q\n" "$NEXT_BASE_FE" >> remote_env.sh
+          printf "export NEXT_PUBLIC_WEBSOCKET_URL=%q\n" "$NEXT_PUBLIC_WEBSOCKET_URL" >> remote_env.sh
       
       - name:  Prepare and deploy to target server
         run: |
