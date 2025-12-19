@@ -92,7 +92,7 @@ export const ImageViewerModal = ({ isOpen, images, initialIndex, onClose }: Imag
     };
 
     window.addEventListener('keydown', handleKeyDown, true);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [isOpen, images.length]);
 
   useEffect(() => {
