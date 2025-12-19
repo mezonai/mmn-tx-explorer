@@ -35,5 +35,4 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_offers_side') THEN
         ALTER TABLE offers ADD CONSTRAINT chk_offers_side CHECK (side IN ('BUY', 'SELL'));
     END IF;
-    
 END$$;
