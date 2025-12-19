@@ -28,7 +28,7 @@ func NewOrderService(repo *repository.OrderRepository, offerRepo *repository.Off
 }
 
 type IOrderService interface {
-	CreateOrder(ctx context.Context, offerID int64, req *models.CreateOrderRequest, walletAddress string) (*models.Order, *models.Offer, error)
+	CreateOrder(ctx context.Context, offerID int64, req *models.CreateOrderRequest, walletAddress string, buyerUserID int64) (*models.Order, *models.Offer, error)
 	ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, error)
 	GetOrderByID(ctx context.Context, id int64) (*models.Order, error)
 	ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o *models.Order) error
@@ -36,7 +36,7 @@ type IOrderService interface {
 	GetOrdersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Order, int64, error)
 }
 
-func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *models.CreateOrderRequest, walletAddress string) (*models.Order, *models.Offer, error) {
+func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *models.CreateOrderRequest, walletAddress string, buyerUserID int64) (*models.Order, *models.Offer, error) {
 	db := database.GetDB()
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -86,6 +86,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 	order := &models.Order{
 		OfferID:            &offerID,
 		BuyerWalletAddress: walletAddrPtr,
+		BuyerUserID:        buyerUserID,
 		Amount:             amount,
 		PayableAmount:      payableAmount,
 		Status:             constants.TrandingOpen,
@@ -108,6 +109,8 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 
 	order.BankInfo = offer.BankInfo
 	order.SellerWalletAddress = &offer.SellerWalletAddress
+	order.SellerUserID = &offer.SellerUserID
+	order.PriceRate = offer.PriceRate
 
 	return order, offer, nil
 }
@@ -122,6 +125,9 @@ func (s *OrderService) ListOrdersByOffer(ctx context.Context, offerID int64, pag
 	if err == nil && of != nil {
 		for i := range orders {
 			orders[i].BankInfo = of.BankInfo
+			orders[i].SellerWalletAddress = &of.SellerWalletAddress
+			orders[i].SellerUserID = &of.SellerUserID
+			orders[i].PriceRate = of.PriceRate
 		}
 	}
 
@@ -138,6 +144,9 @@ func (s *OrderService) GetOrderByID(ctx context.Context, id int64) (*models.Orde
 		of, err := s.offerRepo.GetOfferByID(ctx, *o.OfferID)
 		if err == nil && of != nil {
 			o.BankInfo = of.BankInfo
+			o.SellerWalletAddress = &of.SellerWalletAddress
+			o.SellerUserID = &of.SellerUserID
+			o.PriceRate = of.PriceRate
 		}
 	}
 
@@ -160,6 +169,8 @@ func (s *OrderService) GetOrdersByWalletAddress(ctx context.Context, walletAddre
 			if err == nil && of != nil {
 				orders[i].BankInfo = of.BankInfo
 				orders[i].SellerWalletAddress = &of.SellerWalletAddress
+				orders[i].SellerUserID = &of.SellerUserID
+				orders[i].PriceRate = of.PriceRate
 			}
 		}
 	}

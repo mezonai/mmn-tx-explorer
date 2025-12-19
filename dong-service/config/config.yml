@@ -85,3 +85,8 @@ filter_image:
   enable_virus_scan: false
   virus_scan_url: "tcp://127.0.0.1:3310"
   ipfs_url: "/ip4/127.0.0.1/tcp/5001"
+
+# Event Configuration
+event:
+  api_url: "http://localhost:8899/api/event"
+  api_key: "MezonDongServiceEventAPIKey2024!"

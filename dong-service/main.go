@@ -83,6 +83,10 @@ func main() {
 		logger.Fatal().Err(err).Msg("Failed to initialize Redis whitelist")
 	}
 
+	if err = services.InitEventService(cfg.Event.APIURL, cfg.Event.APIKey); err != nil {
+		logger.Fatal().Err(err).Msg("Failed to initialize Event Service")
+	}
+
 	if err := services.InitIPFSService(cfg.FilterImage.IPFSURL); err != nil {
 		logger.Fatal().Err(err).Msg("Failed to initialize IPFS service")
 	}

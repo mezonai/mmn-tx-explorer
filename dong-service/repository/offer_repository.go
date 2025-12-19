@@ -22,10 +22,10 @@ func NewOfferRepository(db *sql.DB, dongSchema string) *OfferRepository {
 func (r *OfferRepository) CreateOffer(ctx context.Context, offer *models.Offer, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
 				INSERT INTO %s.offers (
-								intermediary_wallet_address, seller_wallet_address, side, symbol, amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, bank_info, created_at, updated_at
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW(),NOW())
-        RETURNING offer_id, created_at, updated_at
-    `, r.dongSchema)
+								intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, bank_info, created_at, updated_at
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,NOW(),NOW())
+		RETURNING offer_id, created_at, updated_at
+	`, r.dongSchema)
 
 	minToSave := int64(1)
 	maxToSave := offer.Amount
@@ -47,6 +47,7 @@ func (r *OfferRepository) CreateOffer(ctx context.Context, offer *models.Offer, 
 		query,
 		offer.IntermediaryWalletAddress,
 		offer.SellerWalletAddress,
+		offer.SellerUserID,
 		offer.Side,
 		offer.Symbol,
 		offer.Amount,
@@ -79,7 +80,7 @@ func (r *OfferRepository) UpdateOfferStatus(
 }
 
 func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, fromAmount *string, toAmount *string, pagination any) ([]models.Offer, error) {
-	base := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_address, seller_wallet_address, side, symbol, amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, bank_info, created_at, updated_at FROM %s.offers`, r.dongSchema)
+	base := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, bank_info, created_at, updated_at FROM %s.offers`, r.dongSchema)
 
 	whereClauses := []string{}
 	args := []any{}
@@ -92,6 +93,8 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 	} else {
 		whereClauses = append(whereClauses, "status NOT IN ('CANCELED', 'FAILED', 'COMPLETED')")
 	}
+
+	whereClauses = append(whereClauses, "amount > 0")
 
 	if minPrice != nil && *minPrice != "" {
 		whereClauses = append(whereClauses, fmt.Sprintf("payable_amount >= $%d", argCount))
@@ -189,6 +192,7 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 			&o.OfferID,
 			&o.IntermediaryWalletAddress,
 			&o.SellerWalletAddress,
+			&o.SellerUserID,
 			&o.Side,
 			&o.Symbol,
 			&o.Amount,
@@ -278,6 +282,7 @@ func (r *OfferRepository) ScanOfferRow(row *sql.Row) (*models.Offer, error) {
 		&o.OfferID,
 		&o.IntermediaryWalletAddress,
 		&o.SellerWalletAddress,
+		&o.SellerUserID,
 		&o.Side,
 		&o.Symbol,
 		&o.Amount,
@@ -303,7 +308,7 @@ func (r *OfferRepository) ScanOfferRow(row *sql.Row) (*models.Offer, error) {
 
 func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*models.Offer, error) {
 	query := fmt.Sprintf(`
-		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, side, symbol, 
+		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, 
 		       amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, 
 		       bank_info, created_at, updated_at 
 		FROM %s.offers 
@@ -316,7 +321,7 @@ func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*mod
 
 func (r *OfferRepository) GetOfferByIDForUpdate(ctx context.Context, offerID int64, tx *sql.Tx) (*models.Offer, error) {
 	query := fmt.Sprintf(`
-		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, side, symbol, 
+		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, 
 		       amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, 
 		       bank_info, created_at, updated_at
 		FROM %s.offers
@@ -371,14 +376,30 @@ func (r *OfferRepository) CheckAndCompleteIfEmpty(ctx context.Context, offerID i
 	return err
 }
 
-func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Offer, error) {
+func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, error) {
+	whereClauses := []string{"seller_wallet_address = $1"}
+	args := []any{walletAddress}
+	argCount := 2
+
+	if fromAmount != nil && *fromAmount != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("amount >= $%d", argCount))
+		args = append(args, *fromAmount)
+		argCount++
+	}
+
+	if toAmount != nil && *toAmount != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("amount <= $%d", argCount))
+		args = append(args, *toAmount)
+		argCount++
+	}
+
 	query := fmt.Sprintf(`
-		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, side, symbol, amount, total_amount, 
+		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, amount, total_amount, 
 		       min_amount, max_amount, payable_amount, price_rate, status, bank_info, created_at, updated_at
 		FROM %s.offers
-		WHERE seller_wallet_address = $1
+		WHERE %s
 		ORDER BY created_at DESC
-	`, r.dongSchema)
+	`, r.dongSchema, strings.Join(whereClauses, " AND "))
 
 	if pagination != nil {
 		if limit, ok := pagination["limit"].(int); ok && limit > 0 {
@@ -389,7 +410,7 @@ func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAd
 		}
 	}
 
-	rows, err := r.db.QueryContext(ctx, query, walletAddress)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -404,6 +425,7 @@ func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAd
 			&o.OfferID,
 			&o.IntermediaryWalletAddress,
 			&o.SellerWalletAddress,
+			&o.SellerUserID,
 			&o.Side,
 			&o.Symbol,
 			&o.Amount,

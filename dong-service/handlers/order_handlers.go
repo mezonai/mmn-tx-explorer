@@ -50,7 +50,13 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	order, _, err := h.orderService.CreateOrder(c.Request.Context(), id, &req, walletAddr)
+	userID, err := utils.GetUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "authentication required"))
+		return
+	}
+
+	order, _, err := h.orderService.CreateOrder(c.Request.Context(), id, &req, walletAddr, userID)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to create order")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to create order: "+err.Error()))
