@@ -19,4 +19,5 @@ export const OFFERS_STATUS = {
   CONFIRMED: 'CONFIRMED',
   CANCELED: 'CANCELED',
   FAILED: 'FAILED',
+  COMPLETE: 'COMPLETE',
 } as const;

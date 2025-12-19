@@ -11,7 +11,8 @@ import { useP2PMyOffers } from '../../hooks/useP2PMyOffers';
 import { useMyOrders } from '../../hooks/useMyOrders';
 import { P2POrdersList } from './p2p-orders-list';
 import { PAGINATION } from '@/constant';
-
+import { OrderMobileCard } from './mobile/order-card';
+import OfferMobileCard from './mobile/offer-card';
 export const P2P = () => {
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
 
@@ -84,7 +85,15 @@ export const P2P = () => {
             onLimitChange={handleChangeLimit}
             onFilterChange={handleFilterChange}
           />
-          <P2POffersTabs offers={offers?.data} isLoading={isLoading} />
+
+          <div className="block lg:hidden">
+            {offers?.data.map((offer) => (
+              <OfferMobileCard key={offer.offer_id} offer={offer} />
+            ))}
+          </div>
+          <div className="hidden lg:block">
+            <P2POffersTabs offers={offers?.data} isLoading={isLoading} />
+          </div>
         </TabsContent>
         <TabsContent value="orders" className="space-y-6">
           <P2PFiltersComponent
@@ -97,7 +106,15 @@ export const P2P = () => {
             onLimitChange={handleChangeLimit}
             onFilterChange={handleFilterChange}
           />
-          <P2POrdersList orders={myOrders?.data} isLoading={isMyOrdersLoading} />
+
+          <div className="block lg:hidden">
+            {myOrders?.data.map((order) => (
+              <OrderMobileCard key={order.order_id} order={order} />
+            ))}
+          </div>
+          <div className="hidden lg:block">
+            <P2POrdersList orders={myOrders?.data} isLoading={isMyOrdersLoading} />
+          </div>
         </TabsContent>
         <TabsContent value="my-offers" className="space-y-6">
           <P2PFiltersComponent
@@ -110,7 +127,14 @@ export const P2P = () => {
             onLimitChange={handleChangeLimit}
             onFilterChange={handleFilterChange}
           />
-          <P2POffersTabs offers={myOffers?.data} isLoading={isMyOffersLoading} />
+          <div className="block lg:hidden">
+            {myOffers?.data.map((offer) => (
+              <OfferMobileCard key={offer.offer_id} offer={offer} />
+            ))}
+          </div>
+          <div className="hidden lg:block">
+            <P2POffersTabs offers={myOffers?.data} isLoading={isMyOffersLoading} />
+          </div>
         </TabsContent>
       </Tabs>
     </div>

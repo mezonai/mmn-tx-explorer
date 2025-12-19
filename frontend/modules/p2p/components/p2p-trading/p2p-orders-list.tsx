@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+'use client';
 import { Card } from '@/components/ui/card';
-import { OfferStatus, P2POrder } from '../../types';
+import { P2POrder } from '../../types';
 import { Table } from '@/components/ui/table';
 import { TTableColumn } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -8,66 +8,15 @@ import { APP_CONFIG } from '@/configs/app.config';
 import { AddressDisplay, Chip } from '@/components/shared';
 import { ROUTES } from '@/configs/routes.config';
 import { Button } from '@/components/ui/button';
-import { OFFERS_STATUS } from '../../constants';
+import { Countdown } from '../shared/count-down';
+import { getTransactionTypeInfo } from '../../util';
 
 interface P2POrdersListProps {
   orders: P2POrder[] | undefined;
   isLoading?: boolean;
 }
-const getTransactionTypeInfo = (type: OfferStatus) => {
-  switch (type) {
-    case OFFERS_STATUS.OPEN:
-      return 'success';
-    case OFFERS_STATUS.FAILED:
-      return 'error';
-    case OFFERS_STATUS.PENDING:
-      return 'warning';
-    case OFFERS_STATUS.CONFIRMED:
-      return 'info';
-    case OFFERS_STATUS.CANCELED:
-      return 'brand';
-    default:
-      return 'default';
-  }
-};
+
 export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
-  const Countdown = ({ expiresAt }: { expiresAt?: string | number | Date }) => {
-    const getMs = (v?: string | number | Date) => {
-      if (!v) return 0;
-      const d = typeof v === 'string' || typeof v === 'number' ? new Date(v) : v;
-      const t = d instanceof Date && !isNaN(d.getTime()) ? d.getTime() : 0;
-      return Math.max(0, t - Date.now());
-    };
-
-    const [remainingMs, setRemainingMs] = useState(() => getMs(expiresAt));
-
-    useEffect(() => {
-      setRemainingMs(getMs(expiresAt));
-      const id = setInterval(() => {
-        const ms = getMs(expiresAt);
-        setRemainingMs(ms);
-        if (ms <= 0) clearInterval(id);
-      }, 1000);
-      return () => clearInterval(id);
-    }, [expiresAt]);
-
-    const fmt = (ms: number) => {
-      if (ms <= 0) return 'Expired!';
-      const sec = Math.floor(ms / 1000);
-      const days = Math.floor(sec / 86400);
-      const hours = Math.floor((sec % 86400) / 3600);
-      const minutes = Math.floor((sec % 3600) / 60);
-      const seconds = sec % 60;
-      if (days > 0) return `${days}d ${hours}h`;
-      if (hours > 0) return `${hours}h ${minutes}m`;
-      if (minutes > 0) return `${minutes}m ${seconds}s`;
-      return `${seconds}s`;
-    };
-
-    const className = remainingMs <= 0 ? 'text-error-primary-600 font-bold' : 'text-utility-success-600 font-bold';
-
-    return <p className={className}>{fmt(remainingMs)}</p>;
-  };
   const columns: TTableColumn<P2POrder>[] = [
     {
       headerContent: 'ORDER ID',
@@ -107,7 +56,7 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
         <div>
           <div className="mt-1 text-sm text-gray-400">
             <span className="text-brand-primary font-semibold">
-              {order.price_rate.toLocaleString('vi-VN')} VND/{APP_CONFIG.CHAIN_SYMBOL}
+              1 {APP_CONFIG.CHAIN_SYMBOL} = {order.price_rate.toLocaleString('vi-VN')} VND
             </span>
           </div>
         </div>
@@ -116,7 +65,7 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
       align: 'left',
     },
     {
-      headerContent: 'AMOUNT',
+      headerContent: 'AMOUNT/TOTAL AMOUNT',
       renderCell: (order) => (
         <div className="text-sm">
           <p className="text-utility-success-600 text-left font-bold">
@@ -163,7 +112,6 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
       align: 'center',
     },
   ];
-  console.log(orders);
   return (
     <Card className="bg-card overflow-hidden border-gray-300 dark:border-gray-800">
       <div className="overflow-x-auto">
