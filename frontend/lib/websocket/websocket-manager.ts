@@ -28,9 +28,8 @@ export class WebSocketManager {
   private listeners: Map<string, Set<(data: WebSocketEvent) => void>> = new Map();
   private wsUrl: string;
   private heartbeatIntervalId: number | null = null;
-  private heartbeatTimeoutId: number | null = null;
+  private connectionDeadline: number = 0;
   private shouldReconnect = true;
-  private awaitingHeartbeatAck = false;
   private tokenProvider: (() => Promise<string | null>) | null = null;
   public currentToken: string | null = null;
   private isConnecting = false;
@@ -85,7 +84,6 @@ export class WebSocketManager {
       this.isConnecting = false;
       this.shouldReconnect = true;
       this.reconnectAttempts = 0;
-      this.awaitingHeartbeatAck = false;
       this.startHeartbeat();
       console.log('Websocket connected');
     };
@@ -93,8 +91,8 @@ export class WebSocketManager {
     this.ws.onmessage = (event) => {
       try {
         if (event.data === HEARTBEAT_ACK) {
-          this.awaitingHeartbeatAck = false;
-          this.clearHeartbeatTimeout();
+          // Extend deadline on valid Pong
+          this.connectionDeadline = Date.now() + HEARTBEAT_TIMEOUT_MS;
           return;
         }
 
@@ -203,37 +201,33 @@ export class WebSocketManager {
 
   private startHeartbeat() {
     this.stopHeartbeat();
+
+    // Set initial deadline
+    this.connectionDeadline = Date.now() + HEARTBEAT_TIMEOUT_MS;
+
     this.heartbeatIntervalId = window.setInterval(() => {
       if (this.ws?.readyState === WebSocket.OPEN) {
-        if (this.awaitingHeartbeatAck) {
+        // 1. Check Deadline
+        if (Date.now() > this.connectionDeadline) {
+          console.warn('Heartbeat deadline exceeded, reconnecting...');
           this.forceReconnect();
           return;
         }
 
-        this.awaitingHeartbeatAck = true;
+        // 2. Send usage Ping (Blindly)
+        // We don't care if this specific ping is acknowledged,
+        // we just care that we receive *some* ACK eventually to extend the deadline.
         this.ws.send(HEARTBEAT_CHECK);
-
-        this.heartbeatTimeoutId = window.setTimeout(() => {
-          this.forceReconnect();
-        }, HEARTBEAT_TIMEOUT_MS);
       }
     }, HEARTBEAT_CHECK_INTERVAL_MS);
   }
 
-  private clearHeartbeatTimeout() {
-    if (this.heartbeatTimeoutId !== null) {
-      clearTimeout(this.heartbeatTimeoutId);
-      this.heartbeatTimeoutId = null;
-    }
-  }
 
   private stopHeartbeat() {
     if (this.heartbeatIntervalId !== null) {
       clearInterval(this.heartbeatIntervalId);
       this.heartbeatIntervalId = null;
     }
-    this.clearHeartbeatTimeout();
-    this.awaitingHeartbeatAck = false;
   }
 
   private forceReconnect() {
