@@ -16,14 +16,15 @@ import (
 )
 
 type OrderService struct {
-	repo       *repository.OrderRepository
-	offerRepo  *repository.OfferRepository
-	walletRepo *repository.IntermediaryWalletRepository
-	blockchain *blockchain.BlockchainService
+	repo         *repository.OrderRepository
+	offerRepo    *repository.OfferRepository
+	walletRepo   *repository.IntermediaryWalletRepository
+	blockchain   *blockchain.BlockchainService
+	offerService *OfferService
 }
 
-func NewOrderService(repo *repository.OrderRepository, offerRepo *repository.OfferRepository, walletRepo *repository.IntermediaryWalletRepository, blockchain *blockchain.BlockchainService) *OrderService {
-	return &OrderService{repo: repo, offerRepo: offerRepo, walletRepo: walletRepo, blockchain: blockchain}
+func NewOrderService(repo *repository.OrderRepository, offerRepo *repository.OfferRepository, walletRepo *repository.IntermediaryWalletRepository, blockchain *blockchain.BlockchainService, offerService *OfferService) *OrderService {
+	return &OrderService{repo: repo, offerRepo: offerRepo, walletRepo: walletRepo, blockchain: blockchain, offerService: offerService}
 }
 
 type IOrderService interface {
@@ -246,7 +247,7 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 			status, statusErr := s.blockchain.CheckTransactionStatus(txHash)
 
 			// Status 2 = COMPLETED
-			if statusErr == nil && status == 2 {
+			if statusErr == nil && status == constants.TxStatusFinalized {
 				logger.Info().
 					Str("tx_hash", txHash).
 					Msg("Transaction completed successfully")
@@ -254,24 +255,34 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 					return err
 				}
 
+				if o.OfferID != nil {
+					if s.offerService != nil {
+						s.offerService.ReleaseIntermediaryWalletIfOfferComplete(ctx, *o.OfferID, tx)
+					}
+					if err = s.offerRepo.CheckAndCompleteIfEmpty(ctx, *o.OfferID, tx); err != nil {
+						return err
+					}
+				}
+
 				if o.BuyerWalletAddress != nil && *o.BuyerWalletAddress != "" {
 					payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.Amount, "tx_hash": txHash}
 					go s.sendOrderEvent(*o.BuyerWalletAddress, "ORDER_COMPLETED", payload)
 				}
-			} else if status == 0 || status == 1 || status == 3 {
+			} else if status == constants.TxStatusPending || status == constants.TxStatusConfirmed || status == constants.TxStatusFailed {
 				// Status 0, 1, 3 = PENDING, CONFIRMED, FAILED
+				if o.OfferID != nil {
+					if releaseErr := s.offerRepo.ReleaseQuantity(ctx, *o.OfferID, o.Amount, tx); releaseErr != nil {
+						logger.Error().Err(releaseErr).Int64("offer_id", *o.OfferID).Int64("amount", o.Amount).Msg("Failed to release quantity after transaction failure")
+					} else {
+						logger.Info().Int64("offer_id", *o.OfferID).Int64("amount", o.Amount).Msg("Released quantity back to offer after transaction failure")
+					}
+				}
 				if err = s.repo.UpdateOrderStatusWithTxHash(ctx, orderID, string(models.OrderStatusFailed), transferTxHash, tx); err != nil {
 					return err
 				}
 				err = fmt.Errorf("transaction failed with status %d", status)
 				return err
 			}
-		}
-	}
-
-	if o.OfferID != nil {
-		if err = s.offerRepo.ApplyConfirmedQuantity(ctx, *o.OfferID, o.Amount, tx); err != nil {
-			return err
 		}
 	}
 

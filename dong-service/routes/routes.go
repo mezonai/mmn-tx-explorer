@@ -114,7 +114,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		orderRepo := repository.NewOrderRepository(database.GetDB(), cfg.Database.Schema)
 
 		offerService := services.NewOfferService(offerRepo, intermediaryWalletRepo, walletRepo, orderRepo, blockchainService)
-		orderService := services.NewOrderService(orderRepo, offerRepo, intermediaryWalletRepo, blockchainService)
+		orderService := services.NewOrderService(orderRepo, offerRepo, intermediaryWalletRepo, blockchainService, offerService)
 
 		offerHandler := handlers.NewOfferHandler(offerService)
 		orderHandler := handlers.NewOrderHandler(orderService, offerService)
