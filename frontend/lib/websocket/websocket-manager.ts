@@ -222,7 +222,6 @@ export class WebSocketManager {
     }, HEARTBEAT_CHECK_INTERVAL_MS);
   }
 
-
   private stopHeartbeat() {
     if (this.heartbeatIntervalId !== null) {
       clearInterval(this.heartbeatIntervalId);

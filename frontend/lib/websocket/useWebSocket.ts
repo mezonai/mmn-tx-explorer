@@ -6,17 +6,13 @@ import { STORAGE_KEYS } from '@/constant';
 import { safeJsonParse } from '@/utils';
 import { AuthenticationService } from '@/modules/auth';
 
-/**
- * Hook to initialize and manage WebSocket connection
- * Automatically connects when user is authenticated
- */
 export const useWebSocket = () => {
   const wsManagerRef = useRef(getWebSocketManager());
   const isInitializedRef = useRef(false);
   const refreshRetryRef = useRef(0);
 
   useEffect(() => {
-    // Get latest token, automatically refresh if needed (similar to interceptor)
+    // Get latest token, automatically refresh if needed (for reconnection scenarios)
     const getLatestToken = async (): Promise<string | null> => {
       try {
         const tokenData = safeJsonParse<{ access_token?: string; refresh_token?: string }>(
@@ -28,7 +24,7 @@ export const useWebSocket = () => {
         }
 
         // If refresh_token exists, try to refresh to ensure token is still valid
-        // Similar to interceptor logic, only retry once to avoid loop
+        // Only retry once to avoid loop
         if (tokenData.refresh_token && refreshRetryRef.current < 1) {
           try {
             refreshRetryRef.current++;
@@ -55,28 +51,13 @@ export const useWebSocket = () => {
     };
 
     // Setup token expired handler (only once)
+    // This is used when WebSocket needs to reconnect due to token expiration
     if (!isInitializedRef.current) {
       wsManagerRef.current.setTokenExpiredHandler(getLatestToken);
       isInitializedRef.current = true;
     }
 
-    // Connect if token exists
-    // websocket-manager.connect() will handle race condition by checking:
-    // - If already connected with same token → do nothing
-    // - If connected with different token → disconnect and reconnect with new token
-    // - If not connected → connect normally
-    const tokenData = safeJsonParse<{ access_token?: string }>(localStorage.getItem(STORAGE_KEYS.TOKEN));
-    const accessToken = tokenData?.access_token;
-
-    if (accessToken) {
-      wsManagerRef.current.connect(accessToken);
-    }
-
-    // Cleanup on unmount (optional)
-    // return () => {
-    //   wsManagerRef.current.disconnect();
-    // };
-  }, []); // Empty dependency array to run only once
+  }, []);
 
   return wsManagerRef.current;
 };
