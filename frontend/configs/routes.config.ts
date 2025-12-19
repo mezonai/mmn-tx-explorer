@@ -26,4 +26,5 @@ export const ROUTES = {
   EXPORT_CSV: '/export-transactions-csv',
 
   CREATE_DONATION_UPDATE: (slug: string) => `/donation-campaign/${slug}/create-update`,
+  EDIT_DONATION_UPDATE: (slug: string, id: string) => `/donation-campaign/${slug}/edit-update/${id}`,
 } as const;

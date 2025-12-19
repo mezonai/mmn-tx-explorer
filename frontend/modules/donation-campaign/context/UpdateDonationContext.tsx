@@ -1,4 +1,4 @@
-import { DonationUpdateForm, DonationCampaign } from '../type';
+import { DonationUpdateForm, DonationCampaign, IDonationFeed } from '../type';
 import { createContext, ReactNode, useState, useContext } from 'react';
 import { useUploadDonationImages } from '../hooks';
 import { mmnClient } from '@/modules/auth';
@@ -44,11 +44,12 @@ function validateForm(form: DonationUpdateForm): DonationUpdateValidation {
 const CreateDonationUpdateContext = createContext<CreateDonationUpdateContextType | undefined>(undefined);
 
 interface CreateDonationUpdateProviderProps {
+  updatePost?: IDonationFeed;
   campaign: DonationCampaign;
   children: ReactNode;
 }
 
-export function UpdateDonationProvider({ campaign, children }: CreateDonationUpdateProviderProps) {
+export function UpdateDonationProvider({ updatePost, campaign, children }: CreateDonationUpdateProviderProps) {
   const [form, setForm] = useState<DonationUpdateForm>(INITIAL_FORM);
   const uploadImagesMutation = useUploadDonationImages();
   const [isSaving, setIsSaving] = useState(false);
@@ -66,7 +67,7 @@ export function UpdateDonationProvider({ campaign, children }: CreateDonationUpd
   const handleSubmit = async () => {
     try {
       setIsSaving(true);
-      
+
       let imageCids: string[] = [];
 
       if (form.images && form.images.length > 0) {
@@ -79,11 +80,26 @@ export function UpdateDonationProvider({ campaign, children }: CreateDonationUpd
         });
         const files = await Promise.all(filePromises);
         const ipfs_images = await uploadImagesMutation.mutateAsync({ files });
-        imageCids = ipfs_images.files.map((file) => file.file_cid);
+        const newCids = ipfs_images.files.map((file: { file_cid: any }) => file.file_cid);
+        imageCids = [...newCids];
       }
 
-      // Get nonce and submit the update
+      if (form.existingImageCids && form.existingImageCids.length > 0) {
+        imageCids = [...form.existingImageCids, ...imageCids];
+      }
+
       const nonceResponse = await mmnClient.getCurrentNonce(user?.id || '');
+
+      const extraInfo = {
+        type: ETransferType.DonationFeedCampaign,
+        title: form.title,
+        description: form.description,
+        image_cids: imageCids,
+        ...(updatePost && {
+          parent_hash: updatePost.tx_hash,
+          root_hash: updatePost.root_hash || updatePost.tx_hash,
+        }),
+      };
 
       const updateResponse = await mmnClient.postDonationCampaignFeed({
         sender: user?.walletAddress || '',
@@ -94,22 +110,17 @@ export function UpdateDonationProvider({ campaign, children }: CreateDonationUpd
         privateKey: privateKey || '',
         zkProof: zkProof?.proof || '',
         zkPub: zkProof?.public_input || '',
-        extraInfo: {
-          type: ETransferType.DonationFeedCampaign,
-          title: form.title,
-          description: form.description,
-          image_cids: imageCids,
-        },
+        extraInfo,
       });
 
       if (updateResponse.ok) {
-        toast.success('Donation update submitted successfully.');
+        toast.success(updatePost ? 'Update edited successfully.' : 'Update submitted successfully.');
         router.push(ROUTES.CAMPAIGN(campaign.slug));
       } else {
         toast.error('Failed to submit update.');
       }
     } catch (error) {
-      toast.error('Failed to submit update. ');
+      toast.error('Failed to submit update.');
     } finally {
       setIsSaving(false);
     }

@@ -1,43 +1,45 @@
 'use client';
-import { DonationCampaign, IDonationFeed } from '@/modules/donation-campaign';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+
 import { useState } from 'react';
+import { DonationCampaign, IDonationFeed } from '@/modules/donation-campaign';
 import { UpdatePost } from './update-post';
-import { ipfsServiceURL } from '@/service';
+import { ImageViewerModal } from './image-viewer-modal';
 
-export const UpdateList = ({ updates, campaign }: { updates: IDonationFeed[]; campaign: DonationCampaign }) => {
+interface UpdateListProps {
+  updates: IDonationFeed[];
+  campaign: DonationCampaign;
+}
+
+export const UpdateList = ({ updates, campaign }: UpdateListProps) => {
   const [open, setOpen] = useState(false);
-  const [selectedImg, setSelectedImg] = useState<string | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [viewerImages, setViewerImages] = useState<string[]>([]);
 
-  const handleImageClick = (img: string) => {
-    setSelectedImg(img);
+  const handleImageClick = (images: string[], index: number) => {
+    const normalizedImages = Array.isArray(images) ? images : [];
+    setViewerImages(normalizedImages);
+    setCurrentIndex(index);
     setOpen(true);
   };
 
-  const handleDialogOpenChange = (isOpen: boolean) => {
-    setOpen(isOpen);
-    if (!isOpen) setSelectedImg(null);
+  const handleClose = () => {
+    setOpen(false);
   };
 
   return (
     <>
       <div className="space-y-4">
         {updates.map((update) => (
-          <UpdatePost key={update.id} update={update} campaign={campaign} onImageClick={handleImageClick} />
+          <UpdatePost
+            key={update.id}
+            update={update}
+            campaign={campaign}
+            onImageClick={(images, index) => handleImageClick(images, index)}
+          />
         ))}
       </div>
-      <Dialog open={open} onOpenChange={handleDialogOpenChange}>
-        <DialogContent className="flex h-fit max-h-[95vh] w-fit max-w-[95vw] flex-col items-center justify-center border-none bg-transparent p-4 shadow-none [&>button]:-top-2 [&>button]:-right-2 [&>button]:flex [&>button]:h-10 [&>button]:w-10 [&>button]:items-center [&>button]:justify-center [&>button]:rounded-full [&>button]:bg-gray-700 [&>button]:text-white [&>button]:opacity-100">
-          {selectedImg && (
-            <img
-              src={`${ipfsServiceURL}/${selectedImg}`}
-              alt="Full Preview"
-              className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
-            />
-          )}
-          <DialogTitle className="sr-only">Image Preview</DialogTitle>
-        </DialogContent>
-      </Dialog>
+
+      <ImageViewerModal isOpen={open} images={viewerImages} initialIndex={currentIndex} onClose={handleClose} />
     </>
   );
 };
