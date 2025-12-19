@@ -19,8 +19,8 @@ const MAX_DESC_CHARACTERS = 200;
 interface UpdatePostMobileProps {
   update: IDonationFeed;
   campaign: DonationCampaign;
-  onImageClick: (url: string) => void;
-  getImages: (imageCids: string[], onImageClick: (url: string) => void) => JSX.Element;
+  onImageClick: (images: string[], index: number) => void;
+  getImages: (imageCids: string[], onImageClick: (images: string[], index: number) => void) => JSX.Element;
   isVersionDialogOpen: boolean;
   setIsVersionDialogOpen: (isOpen: boolean) => void;
 }
@@ -115,7 +115,7 @@ export const UpdatePostMobile = ({
                       update={update}
                       isOpen={isVersionDialogOpen}
                       onOpenChange={setIsVersionDialogOpen}
-                      onImageClick={onImageClick}
+
                     />
                   )}
                 </div>
