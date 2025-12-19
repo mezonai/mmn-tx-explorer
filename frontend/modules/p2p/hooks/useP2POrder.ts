@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { P2PService } from '../api';
-import { P2POrder } from '../types';
+import { P2POrder, OrderStatus } from '../types';
 import { useWebSocket, WebSocketEvent } from '@/lib/websocket';
 
 export const useP2POrder = (orderId: string) => {
@@ -47,15 +47,15 @@ export const useP2POrder = (orderId: string) => {
     };
   }, [orderId]);
 
-  const updateOrderStatus = async (status: string, transferCode?: string) => {
+  const updateOrderStatus = async (status: OrderStatus | string, transferCode?: string) => {
     if (!order) return;
 
     const prevOrder = order;
     try {
       // Optimistic update
-      setOrder({ ...order, status: status });
+      setOrder({ ...order, status: status as OrderStatus });
       if (transferCode) {
-        setOrder({ ...order, status: status, transfer_code: transferCode });
+        setOrder({ ...order, status: status as OrderStatus, transfer_code: transferCode });
       }
 
       // Call API
@@ -91,7 +91,7 @@ export const useP2POrder = (orderId: string) => {
         const status = typeof statusRaw === 'string' ? statusRaw : undefined;
         if (!status) return;
 
-        setOrder((current) => (current ? { ...current, status: status } : current));
+        setOrder((current) => (current ? { ...current, status: status as OrderStatus } : current));
         return;
       }
 
@@ -104,7 +104,7 @@ export const useP2POrder = (orderId: string) => {
         // Optimistic update: immediately update status to PENDING for instant UI feedback
         setOrder((current) => {
           if (!current) return current;
-          return { ...current, status: 'PENDING' };
+          return { ...current, status: OrderStatus.PENDING };
         });
 
         // Fetch full order data to ensure we have all updated information
@@ -131,7 +131,7 @@ export const useP2POrder = (orderId: string) => {
         // Immediately update status to COMPLETED for instant UI feedback
         setOrder((current) => {
           if (!current) return current;
-          return { ...current, status: 'COMPLETED' };
+          return { ...current, status: OrderStatus.COMPLETED };
         });
 
         // Fetch full order data to ensure we have all updated information (e.g., tx_hash)

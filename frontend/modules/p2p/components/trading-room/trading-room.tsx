@@ -17,7 +17,7 @@ import { SellerConfirmButton } from './seller-confirm-button';
 import { BuyAmountSection } from './buy-amount-section';
 //import { ChatSidebar } from './chat/chat-sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { P2POrder } from '../../types';
+import { P2POrder, OrderStatus } from '../../types';
 import { toast } from 'sonner';
 
 interface TradingRoomProps {
@@ -32,7 +32,7 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
   const isOfferMode = searchParams.get('type') === 'offer';
 
   const [error, setError] = useState<string | null>(null);
-  const [localStatus, setLocalStatus] = useState<string | null>(null); // Local override for order status (buyer optimistic UI)
+  const [localStatus, setLocalStatus] = useState<OrderStatus | null>(null); // Local override for order status (buyer optimistic UI)
 
   const { order, isLoading: orderLoading, updateOrderStatus } = useP2POrder(isOfferMode ? '' : orderId);
   // Only fetch offer in offer mode, or when we have an order and need to show bank info
@@ -93,7 +93,7 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
   const handleSellerConfirm = async () => {
     try {
       await updateOrderStatus('CONFIRMED');
-      setLocalStatus('CONFIRMED');
+      setLocalStatus(OrderStatus.CONFIRMED);
     } catch (err: any) {
       console.error('Error updating order status:', err);
       if (err?.response?.data?.message === 'order has expired') {
@@ -127,18 +127,20 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
 
   // Offer mode - Show buy form
   if (isOfferMode && offer) {
-    const displayOrder = {
+    const displayOrder: P2POrder = {
       order_id: '',
       offer_id: offer?.offer_id || '',
       buyer_wallet_address: user?.walletAddress || '',
       amount: 0,
       price: 0,
       payable_amount: 0,
-      status: 'OPEN' as const,
+      status: OrderStatus.OPEN,
       transfer_code: null,
       expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      bank_info: offer.bank_info,
+      price_rate: offer.price_rate,
     };
 
     const formatWallet = (address?: string) =>
@@ -216,7 +218,7 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
 
   return (
     <div className="bg-background flex h-screen flex-col">
-      <TradingRoomHeader order={effectiveOrder} />
+      <TradingRoomHeader order={effectiveOrder} userRole={userRole} />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Main Content (Left Side) */}
@@ -235,14 +237,20 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
           )}
 
           <OrderInfoCard order={effectiveOrder} />
-          {offer && <BankInfoCard bank_info={offer.bank_info} transfer_code={offer.transfer_code} />}
+          {order && order.bank_info && order.transfer_code && (
+            <BankInfoCard
+              bank_info={order.bank_info}
+              transfer_code={order.transfer_code}
+              amount={order.payable_amount || order.price}
+            />
+          )}
 
           {/* Conditional rendering based on user role */}
           {userRole === 'buyer' && (
             <PaymentActionButton
               order={effectiveOrder}
               nextStatus="PENDING"
-              onStatusUpdated={(updated) => setLocalStatus(String(updated.status))}
+              onStatusUpdated={(updated) => setLocalStatus(updated.status)}
             />
           )}
           {userRole === 'seller' && <SellerConfirmButton order={effectiveOrder} onConfirm={handleSellerConfirm} />}

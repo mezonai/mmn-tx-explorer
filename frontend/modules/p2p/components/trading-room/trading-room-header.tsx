@@ -10,9 +10,10 @@ import { useP2POffer } from '../../hooks/useP2POffer';
 
 interface TradingRoomHeaderProps {
   order: P2POrder;
+  userRole?: 'buyer' | 'seller' | null;
 }
 
-export const TradingRoomHeader = ({ order }: TradingRoomHeaderProps) => {
+export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) => {
   const router = useRouter();
   const { offer } = useP2POffer(String(order.offer_id));
 
@@ -26,7 +27,18 @@ export const TradingRoomHeader = ({ order }: TradingRoomHeaderProps) => {
     return { minutes, seconds };
   }, [order.expires_at]);
 
-  const sellerAddress = offer?.seller_wallet_address || '';
+  // Determine counterparty address based on user role
+  const counterpartyAddress = useMemo(() => {
+    if (!userRole) return '';
+
+    if (userRole === 'buyer') {
+      // If user is buyer, show seller's address
+      return order.seller_wallet_address || offer?.seller_wallet_address || '';
+    } else {
+      // If user is seller, show buyer's address
+      return order.buyer_wallet_address || '';
+    }
+  }, [userRole, order.seller_wallet_address, order.buyer_wallet_address, offer?.seller_wallet_address]);
 
   return (
     <header className="bg-card flex h-14 shrink-0 items-center justify-between border-b border-gray-800 px-6">
@@ -42,12 +54,12 @@ export const TradingRoomHeader = ({ order }: TradingRoomHeaderProps) => {
           <h1 className="text-sm font-bold text-white">
             MZD buy order <span className="text-gray-500">#{order.order_id}</span>
           </h1>
-          {sellerAddress && (
+          {counterpartyAddress && (
             <div className="flex items-center gap-1 text-xs text-gray-400">
               Trading with
               <AddressDisplay
-                address={sellerAddress}
-                href={ROUTES.WALLET(sellerAddress)}
+                address={counterpartyAddress}
+                href={ROUTES.WALLET(counterpartyAddress)}
                 className="text-brand-primary font-bold"
               />
             </div>

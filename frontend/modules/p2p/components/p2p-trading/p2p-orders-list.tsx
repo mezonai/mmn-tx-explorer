@@ -10,7 +10,7 @@ import { AddressDisplay, Chip } from '@/components/shared';
 import { ROUTES } from '@/configs/routes.config';
 import { Button } from '@/components/ui/button';
 import { Countdown } from '../shared/count-down';
-import { getTransactionTypeInfo } from '../../util';
+import { getOrderStatusInfo } from '../../util';
 
 interface P2POrdersListProps {
   orders: P2POrder[] | undefined;
@@ -86,7 +86,7 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
       headerContent: 'STATUS',
       renderCell: (order) => (
         <div className="flex items-center gap-2">
-          <Chip variant={getTransactionTypeInfo(order.status)} className="gap-1.5 rounded-sm">
+          <Chip variant={getOrderStatusInfo(order.status)} className="gap-1.5 rounded-sm">
             <span>{order.status}</span>
           </Chip>
         </div>
