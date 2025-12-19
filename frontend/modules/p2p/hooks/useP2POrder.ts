@@ -119,16 +119,45 @@ export const useP2POrder = (orderId: string) => {
         };
 
         fetchUpdatedOrder();
+        return;
+      }
+
+      // Handle ORDER_COMPLETED event (when seller confirms money received and releases MZD)
+      if (event.type === 'ORDER_COMPLETED') {
+        if (!payloadOrderIdStr || payloadOrderIdStr !== orderIdStr) {
+          return;
+        }
+
+        // Immediately update status to COMPLETED for instant UI feedback
+        setOrder((current) => {
+          if (!current) return current;
+          return { ...current, status: 'COMPLETED' };
+        });
+
+        // Fetch full order data to ensure we have all updated information (e.g., tx_hash)
+        const fetchUpdatedOrder = async () => {
+          try {
+            const updatedOrder = await P2PService.getOrderById(orderIdStr);
+            setOrder(updatedOrder);
+          } catch (error) {
+            console.error('Error fetching updated order after completion:', error);
+            // Keep optimistic update if fetch fails
+          }
+        };
+
+        fetchUpdatedOrder();
       }
     };
 
-    // Listen for both event types
+    // Listen for all order event types
     wsManager.on('ORDER_STATUS_UPDATED', handleStatusUpdate);
     wsManager.on('ORDER_CONFIRMED', handleStatusUpdate);
+    wsManager.on('ORDER_COMPLETED', handleStatusUpdate);
 
     return () => {
       wsManager.off('ORDER_STATUS_UPDATED', handleStatusUpdate);
       wsManager.off('ORDER_CONFIRMED', handleStatusUpdate);
+      wsManager.off('ORDER_COMPLETED', handleStatusUpdate);
     };
   }, [orderId, wsManager]);
 
