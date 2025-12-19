@@ -142,6 +142,7 @@ export interface IDonationFeed {
   image_cids: string[];
   parent_hash: string;
   root_hash: string;
+  visible: boolean;
   created_at: string;
   root_created_at: string;
 }
@@ -169,10 +170,8 @@ export interface DonationUpdateForm {
   title: string;
   description: string;
   images: string[];
-}
+  existingImageCids?: string[];
 
-export interface UpdateResult {
-  success: boolean;
-  txHash?: string;
-  error?: string;
+  parent_hash?: string;
+  root_hash?: string;
 }
