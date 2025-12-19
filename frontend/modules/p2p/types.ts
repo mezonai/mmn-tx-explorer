@@ -85,7 +85,7 @@ export interface P2POrder {
   amount: number; // BIGINT - amount in MZD (smallest unit)
   price?: number; // BIGINT - price in VND (smallest unit) - deprecated, use payable_amount
   payable_amount?: number; // BIGINT - payable amount in VND (smallest unit) - from API response
-  status: OrderStatus | string; // Default 'PENDING'
+  status: OrderStatus; // Default 'PENDING'
   bank_info?:
   | string
   | {
@@ -97,6 +97,7 @@ export interface P2POrder {
   expires_at: string; // TIMESTAMPTZ
   created_at: string; // TIMESTAMPTZ
   updated_at: string; // TIMESTAMPTZ
+  price_rate: number;
 }
 
 // Request interface for creating an order

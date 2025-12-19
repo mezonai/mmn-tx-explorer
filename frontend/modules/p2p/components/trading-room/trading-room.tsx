@@ -94,9 +94,14 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
     try {
       await updateOrderStatus('CONFIRMED');
       setLocalStatus('CONFIRMED');
-    } catch (err) {
-      setError('Something went wrong while updating status. Please try again.');
+    } catch (err: any) {
       console.error('Error updating order status:', err);
+      if (err?.response?.data?.message === 'order has expired') {
+        toast.error('Order has expired');
+        setError('Order has expired');
+      } else {
+        setError('Something went wrong while updating status. Please try again.');
+      }
     }
   };
 
