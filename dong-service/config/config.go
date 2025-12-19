@@ -24,6 +24,7 @@ type Config struct {
 	CacheRequest CacheRequestConfig `mapstructure:"cache_request"`
 	RateLimit    RateLimitConfig    `mapstructure:"rate_limit"`
 	FilterImage  FilterImageConfig  `mapstructure:"filter_image"`
+	Event        EventConfig        `mapstructure:"event"`
 }
 
 type ServerConfig struct {
@@ -107,6 +108,11 @@ type FilterImageConfig struct {
 	BlockMimeTypes  []string `mapstructure:"block_mime_types"`
 	VirusScanURL    string   `mapstructure:"virus_scan_url"`
 	IPFSURL         string   `mapstructure:"ipfs_url"`
+}
+
+type EventConfig struct {
+	APIURL string `mapstructure:"api_url"`
+	APIKey string `mapstructure:"api_key"`
 }
 
 func LoadConfig(cfgFile string) (*Config, error) {
