@@ -8,13 +8,14 @@ import { P2POrder } from '../../types';
 interface SellerConfirmButtonProps {
   order: P2POrder;
   onConfirm?: () => Promise<void> | void;
+  disabled?: boolean;
 }
 
-export const SellerConfirmButton = ({ order, onConfirm }: SellerConfirmButtonProps) => {
+export const SellerConfirmButton = ({ order, onConfirm, disabled = false }: SellerConfirmButtonProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleConfirm = async () => {
-    if (isSubmitting) return;
+    if (isSubmitting || disabled) return;
 
     try {
       setIsSubmitting(true);
@@ -34,7 +35,7 @@ export const SellerConfirmButton = ({ order, onConfirm }: SellerConfirmButtonPro
     <div>
       <Button
         onClick={handleConfirm}
-        disabled={isSubmitting}
+        disabled={isSubmitting || disabled}
         className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 py-4 text-lg font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-70"
       >
         <CheckCircle2 className="h-5 w-5" />

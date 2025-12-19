@@ -21,6 +21,10 @@ interface PaymentActionButtonProps {
    * Callback after backend returns the updated order.
    */
   onStatusUpdated?: (order: P2POrder) => void;
+  /**
+   * Disable the button (e.g., when order has expired)
+   */
+  disabled?: boolean;
 }
 
 export const PaymentActionButton = ({
@@ -28,11 +32,12 @@ export const PaymentActionButton = ({
   nextStatus = 'PENDING',
   buttonText = 'I have transferred, notify the seller',
   onStatusUpdated,
+  disabled = false,
 }: PaymentActionButtonProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleConfirm = async () => {
-    if (isSubmitting) return;
+    if (isSubmitting || disabled) return;
 
     try {
       setIsSubmitting(true);
@@ -54,7 +59,7 @@ export const PaymentActionButton = ({
     <div>
       <Button
         onClick={handleConfirm}
-        disabled={isSubmitting}
+        disabled={isSubmitting || disabled}
         className="bg-brand-primary mb-4 flex w-full items-center justify-center gap-2 rounded-xl py-4 text-lg font-bold text-white shadow-lg shadow-violet-900/20 transition hover:bg-violet-600 disabled:cursor-not-allowed disabled:opacity-70"
       >
         <CheckCircle2 className="h-5 w-5" />

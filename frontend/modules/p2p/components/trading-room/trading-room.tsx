@@ -33,6 +33,7 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
 
   const [error, setError] = useState<string | null>(null);
   const [localStatus, setLocalStatus] = useState<OrderStatus | null>(null); // Local override for order status (buyer optimistic UI)
+  const [isExpired, setIsExpired] = useState<boolean>(false); // Track if order has expired
 
   const { order, isLoading: orderLoading, updateOrderStatus } = useP2POrder(isOfferMode ? '' : orderId);
   // Only fetch offer in offer mode, or when we have an order and need to show bank info
@@ -42,6 +43,25 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
   //const orderIdForChat = isOfferMode ? '' : orderId;
   //const { messages, isLoading: chatLoading, sendMessage } = useP2PChat(orderIdForChat);
 
+  // Check if order has expired (real-time countdown)
+  useEffect(() => {
+    if (!order || isOfferMode) return;
+
+    const checkExpiration = () => {
+      const now = new Date().getTime();
+      const expires = new Date(order.expires_at).getTime();
+      const hasExpired = now >= expires;
+      setIsExpired(hasExpired);
+    };
+
+    // Check immediately
+    checkExpiration();
+
+    // Update every second
+    const interval = setInterval(checkExpiration, 1000);
+
+    return () => clearInterval(interval);
+  }, [order, isOfferMode]);
 
   // Detect user role (buyer or seller)
   const userRole = useMemo(() => {
@@ -236,6 +256,14 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
             </div>
           )}
 
+          {/* Expired order warning */}
+          {isExpired && effectiveOrder.status !== 'COMPLETED' && effectiveOrder.status !== 'CONFIRMED' && (
+            <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-center">
+              <p className="text-lg font-bold text-red-400">⚠ Order has expired</p>
+              <p className="mt-1 text-sm text-red-300">This order can no longer be processed</p>
+            </div>
+          )}
+
           <OrderInfoCard order={effectiveOrder} />
           {order && order.bank_info && order.transfer_code && (
             <BankInfoCard
@@ -251,9 +279,16 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
               order={effectiveOrder}
               nextStatus="PENDING"
               onStatusUpdated={(updated) => setLocalStatus(updated.status)}
+              disabled={isExpired}
             />
           )}
-          {userRole === 'seller' && <SellerConfirmButton order={effectiveOrder} onConfirm={handleSellerConfirm} />}
+          {userRole === 'seller' && (
+            <SellerConfirmButton
+              order={effectiveOrder}
+              onConfirm={handleSellerConfirm}
+              disabled={isExpired}
+            />
+          )}
         </div>
 
         {/* Chat Sidebar (Right Side) 

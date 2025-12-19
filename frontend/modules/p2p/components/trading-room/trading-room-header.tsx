@@ -17,14 +17,18 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
   const router = useRouter();
   const { offer } = useP2POffer(String(order.offer_id));
 
-  // Calculate remaining time
-  const remainingTime = useMemo(() => {
+  // Calculate remaining time and check if expired
+  const { remainingTime, isExpired } = useMemo(() => {
     const now = new Date().getTime();
     const expires = new Date(order.expires_at).getTime();
     const diff = Math.max(0, expires - now);
     const minutes = Math.floor(diff / 60000);
     const seconds = Math.floor((diff % 60000) / 1000);
-    return { minutes, seconds };
+    const expired = now >= expires;
+    return {
+      remainingTime: { minutes, seconds },
+      isExpired: expired
+    };
   }, [order.expires_at]);
 
   // Determine counterparty address based on user role
@@ -66,7 +70,10 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
           )}
         </div>
       </div>
-      <div className="flex items-center gap-2 rounded-full bg-yellow-500/10 px-3 py-1 text-sm font-bold text-yellow-500">
+      <div className={`flex items-center gap-2 rounded-full px-3 py-1 text-sm font-bold ${isExpired
+          ? 'bg-red-500/10 text-red-500'
+          : 'bg-yellow-500/10 text-yellow-500'
+        }`}>
         <Clock className="h-4 w-4" />
         {remainingTime.minutes}:{remainingTime.seconds.toString().padStart(2, '0')}
       </div>
