@@ -7,6 +7,7 @@ import { DonationCampaign } from '../../type';
 import { Separator } from '@/components/ui/separator';
 import { DonationFeed } from './shared';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CommunityFeed } from './shared/community-feed';
 
 interface CampaignDetailProps {
   campaign: DonationCampaign;
@@ -42,6 +43,12 @@ export const CampaignDetail = async ({ campaign }: CampaignDetailProps) => {
                 Updates
               </TabsTrigger>
               <TabsTrigger
+                value={'community'}
+                className="text-muted-foreground data-[state=active]:border-brand-primary mr-5 rounded-none border-0 px-0 data-[state=active]:border-b data-[state=active]:text-foreground"
+              >
+                Community
+              </TabsTrigger>
+              <TabsTrigger
                 value={'activity'}
                 className="text-muted-foreground data-[state=active]:border-brand-primary mr-5 rounded-none border-0 px-0 data-[state=active]:border-b data-[state=active]:text-foreground"
               >
@@ -55,6 +62,9 @@ export const CampaignDetail = async ({ campaign }: CampaignDetailProps) => {
             </TabsContent>
             <TabsContent value="update">
               <DonationFeed campaign = {campaign} />
+            </TabsContent>
+            <TabsContent value="community">
+              <CommunityFeed campaign={campaign} />
             </TabsContent>
           </Tabs>
         </div>

@@ -1,20 +1,17 @@
 'use client';
-
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ROUTES } from '@/configs/routes.config';
-import { UpdateList } from './update-list';
+import { UpdateList } from '../donation-feed/update-list';
 import { DonationCampaign } from '@/modules/donation-campaign';
 import { FileX2Icon, Loader2 } from 'lucide-react';
-import { useUser } from '@/providers';
 import { useDonationFeed } from '@/modules/donation-campaign/hooks';
 import { useEffect, useRef } from 'react';
 
-export const DonationFeed = ({ campaign }: { campaign: DonationCampaign }) => {
-  const { user } = useUser();
+export const CommunityFeed = ({ campaign }: { campaign: DonationCampaign }) => {
   const { donationFeed, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useDonationFeed(
     campaign.donation_wallet,
-    { isOwner: true }
+    { isOwner: false }
   );
   const observerTarget = useRef<HTMLDivElement>(null);
 
@@ -43,17 +40,17 @@ export const DonationFeed = ({ campaign }: { campaign: DonationCampaign }) => {
     <div className="w-full space-y-6">
       <div className="flex w-full flex-row justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Updates</h2>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Follow the full journey of this campaign.</p>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Community Feed</h2>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            Join the conversation. Share your thoughts and support for this campaign.
+          </p>
         </div>
         <div>
-          {user?.id === campaign.creator && (
-            <Link href={ROUTES.CREATE_DONATION_UPDATE(campaign.slug)} passHref>
-              <Button variant="default" className="bg-brand-primary hover:bg-brand-primary/80 text-white">
-                + Add Update
-              </Button>
-            </Link>
-          )}
+          <Link href={ROUTES.CREATE_DONATION_UPDATE(campaign.slug)} passHref>
+            <Button variant="default" className="bg-brand-primary hover:bg-brand-primary/80 text-white">
+              + Add Update
+            </Button>
+          </Link>
         </div>
       </div>
       {isLoading && (

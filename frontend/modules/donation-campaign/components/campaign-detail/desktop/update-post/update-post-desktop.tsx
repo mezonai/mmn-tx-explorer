@@ -72,12 +72,10 @@ export const UpdatePostDesktop = ({
           <div className="text-xs text-gray-400">
             <ClientTimeDisplay timestamp={new Date(update.created_at).getTime()} />
           </div>
-          {isCreator && (
-            <div className="hidden text-xs text-gray-500 lg:block">
-              · posted by {update.creator_address.slice(0, 3)}...{update.creator_address.slice(-4)}{' '}
-              <CopyButton textToCopy={update.creator_address} />
-            </div>
-          )}
+          <div className="hidden text-xs text-gray-500 lg:block">
+            · posted by {update.creator_address.slice(0, 3)}...{update.creator_address.slice(-4)}{' '}
+            <CopyButton textToCopy={update.creator_address} />
+          </div>
         </div>
 
         <div
