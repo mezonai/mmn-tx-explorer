@@ -29,15 +29,15 @@ func NewOfferService(repo *repository.OfferRepository, walletRepo *repository.In
 }
 
 type IOfferService interface {
-	CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string) (*models.Offer, error)
+	CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string, sellerUserID int64) (*models.Offer, error)
 	ListOffers(ctx context.Context, fromAmount *string, toAmount *string, pagination map[string]any) ([]models.Offer, error)
 	CountOffers(ctx context.Context, walletAddress *string, fromAmount *string, toAmount *string) (int64, error)
 	GetOfferByID(ctx context.Context, id int64) (*models.Offer, error)
-	GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Offer, int64, error)
+	GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, int64, error)
 	UpdateOfferStatus(ctx context.Context, req *models.UpdateOfferStatusRequest) error
 }
 
-func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string) (*models.Offer, error) {
+func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string, sellerUserID int64) (*models.Offer, error) {
 	amountInt := req.Amount
 
 	if s.userWalletRepo != nil {
@@ -117,6 +117,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 	offer := &models.Offer{
 		IntermediaryWalletAddress: &intermediaryAddr,
 		SellerWalletAddress:       walletAddr,
+		SellerUserID:              sellerUserID,
 		Side:                      req.Side,
 		Symbol:                    req.Symbol,
 		Amount:                    amountInt,
@@ -169,12 +170,12 @@ func (s *OfferService) GetOfferByID(ctx context.Context, id int64) (*models.Offe
 	return s.repo.GetOfferByID(ctx, id)
 }
 
-func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Offer, int64, error) {
-	offers, err := s.repo.GetOffersByWalletAddress(ctx, walletAddress, pagination)
+func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, int64, error) {
+	offers, err := s.repo.GetOffersByWalletAddress(ctx, walletAddress, pagination, fromAmount, toAmount)
 	if err != nil {
 		return nil, 0, err
 	}
-	count, err := s.repo.CountOffers(ctx, &walletAddress, nil, nil)
+	count, err := s.repo.CountOffers(ctx, &walletAddress, fromAmount, toAmount)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -188,7 +189,10 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 	}
 
 	// Verify transaction exists in blockchain
-	if s.blockchain != nil {
+	if s.blockchain != nil && req.Status == constants.TradingConfirmed {
+		if offer.Status != constants.TrandingOpen {
+			return fmt.Errorf("offer status invalid for confirmation: %s", offer.Status)
+		}
 		txInfo, err := s.blockchain.GetTransaction(req.TxHash)
 		if err != nil {
 			return fmt.Errorf("failed to verify transaction: %w", err)
@@ -213,10 +217,6 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 		if actualAmount != offer.Amount {
 			return fmt.Errorf("transaction amount mismatch: expected %d, got %d", offer.Amount, actualAmount)
 		}
-
-		if offer.Status != constants.TradingPending && req.Status != constants.TrandingOpen {
-			return fmt.Errorf("offer status invalid for update: current status %s", offer.Status)
-		}
 	}
 
 	db := database.GetDB()
@@ -234,16 +234,32 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 		return err
 	}
 
-	if req.Status == constants.TradingFailed || req.Status == constants.TradingCompleted || req.Status == constants.TradingCanceled {
+	if req.Status == constants.TradingFailed {
 		offer, err := s.repo.GetOfferByID(ctx, req.OfferID)
 		if err == nil && offer != nil && offer.IntermediaryWalletAddress != nil && *offer.IntermediaryWalletAddress != "" {
-			w, wErr := s.walletRepo.GetWalletByAddress(ctx, *offer.IntermediaryWalletAddress)
-			if wErr == nil && w != nil {
-				if upErr := s.walletRepo.UpdateWalletStatus(ctx, w.ID, constants.RedEnvelopeWalletStatusReady); upErr != nil {
-				}
-			}
+			s.releaseIntermediaryWallet(ctx, *offer.IntermediaryWalletAddress)
 		}
 	}
 
 	return nil
+}
+
+func (s *OfferService) releaseIntermediaryWallet(ctx context.Context, walletAddress string) {
+	wallet, walletErr := s.walletRepo.GetWalletByAddress(ctx, walletAddress)
+	if walletErr == nil && wallet != nil {
+		if updateErr := s.walletRepo.UpdateWalletStatus(ctx, wallet.ID, constants.RedEnvelopeWalletStatusReady); updateErr != nil {
+			logger.Error().Err(updateErr).Int64("wallet_id", wallet.ID).Msg("Failed to reset intermediary wallet status")
+		} else {
+			logger.Info().Int64("wallet_id", wallet.ID).Str("address", walletAddress).Msg("Released intermediary wallet")
+		}
+	}
+}
+
+func (s *OfferService) ReleaseIntermediaryWalletIfOfferComplete(ctx context.Context, offerID int64, tx *sql.Tx) {
+	updatedOffer, getErr := s.repo.GetOfferByIDForUpdate(ctx, offerID, tx)
+	if getErr == nil && updatedOffer != nil && updatedOffer.Amount == 0 {
+		if updatedOffer.IntermediaryWalletAddress != nil && *updatedOffer.IntermediaryWalletAddress != "" {
+			s.releaseIntermediaryWallet(ctx, *updatedOffer.IntermediaryWalletAddress)
+		}
+	}
 }

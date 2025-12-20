@@ -19,7 +19,7 @@ function NavbarItem({ item }: { item: NavItem }) {
       href={item.href}
       target={item.target}
       className={cn(
-        'hover:bg-sidebar-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground hover:text-primary block cursor-pointer space-y-1 rounded-sm px-4 py-3 text-sm leading-none no-underline transition-colors outline-none select-none',
+        'hover:bg-sidebar-accent focus:bg-accent focus:text-accent-foreground hover:text-primary block cursor-pointer space-y-1 rounded-sm px-4 py-3 text-sm leading-none no-underline transition-colors outline-none select-none',
         isActive ? 'text-primary' : 'text-muted-foreground'
       )}
     >

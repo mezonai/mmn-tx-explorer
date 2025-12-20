@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"socket-service/models"
 	"socket-service/constant"
+	"socket-service/models"
 )
 
 type EventRepository struct {
@@ -39,8 +39,8 @@ func (r *EventRepository) GetListEventByReceiver(receiveAddress string) ([]model
 }
 
 func (r *EventRepository) SaveEvent(event *models.Event) error {
-	query := fmt.Sprintf("INSERT INTO %s.events (id, type, payload, receive_address, status, create_at) VALUES ($1, $2, $3, $4, $5, $6)", r.eventSchema)
-	_, err := r.db.ExecContext(context.Background(), query, event.ID, event.Type, event.Payload, event.ReceiveAddress, event.Status, event.CreateAt)
+	query := fmt.Sprintf("INSERT INTO %s.events (type, payload, receive_address, status, create_at) VALUES ($1, $2, $3, $4, $5) RETURNING id", r.eventSchema)
+	err := r.db.QueryRowContext(context.Background(), query, event.Type, event.Payload, event.ReceiveAddress, event.Status, event.CreateAt).Scan(&event.ID)
 	return err
 }
 

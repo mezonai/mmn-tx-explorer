@@ -1,6 +1,8 @@
 package models
 
 import (
+	"dong-service/utils"
+	"encoding/json"
 	"time"
 )
 
@@ -14,6 +16,7 @@ const (
 
 type Offer struct {
 	OfferID                   int64       `json:"offer_id" db:"offer_id"`
+	SellerUserID              int64       `json:"seller_user_id" db:"seller_user_id"`
 	IntermediaryWalletAddress *string     `json:"intermediary_wallet_address,omitempty" db:"intermediary_wallet_address"`
 	SellerWalletAddress       string      `json:"seller_wallet_address" db:"seller_wallet_address"`
 	Side                      OfferSide   `json:"side" db:"side"` // BUY or SELL
@@ -49,4 +52,17 @@ type UpdateOfferStatusRequest struct {
 	OfferID int64  `json:"offer_id" binding:"required"`
 	Status  string `json:"status" binding:"required"`
 	TxHash  string `json:"tx_hash" binding:"required"`
+}
+
+func (o Offer) MarshalJSON() ([]byte, error) {
+	type Alias Offer
+	aux := &struct {
+		BankInfo interface{} `json:"bank_info,omitempty"`
+		*Alias
+	}{
+		Alias:    (*Alias)(&o),
+		BankInfo: utils.ParseBankInfoString(o.BankInfo),
+	}
+
+	return json.Marshal(aux)
 }

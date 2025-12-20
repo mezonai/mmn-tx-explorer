@@ -114,10 +114,10 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		orderRepo := repository.NewOrderRepository(database.GetDB(), cfg.Database.Schema)
 
 		offerService := services.NewOfferService(offerRepo, intermediaryWalletRepo, walletRepo, orderRepo, blockchainService)
-		orderService := services.NewOrderService(orderRepo, offerRepo, intermediaryWalletRepo, blockchainService)
+		orderService := services.NewOrderService(orderRepo, offerRepo, intermediaryWalletRepo, blockchainService, offerService)
 
 		offerHandler := handlers.NewOfferHandler(offerService)
-		orderHandler := handlers.NewOrderHandler(orderService)
+		orderHandler := handlers.NewOrderHandler(orderService, offerService)
 
 		offersPrivate.POST("", offerHandler.CreateOffer)
 		offersPrivate.POST("/update-status", offerHandler.UpdateOfferStatus)
@@ -132,7 +132,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 
 		orders := v1.Group("/orders")
 		orders.Use(middleware.Authentication(cfg.JWT.Secret))
-
 		orders.POST("/:id/confirm", orderHandler.ConfirmOrder)
 		orders.GET("/me", orderHandler.GetMyOrders)
 		orders.GET("/:id", orderHandler.GetOrderDetail)

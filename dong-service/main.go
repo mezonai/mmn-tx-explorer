@@ -83,10 +83,14 @@ func main() {
 		logger.Fatal().Err(err).Msg("Failed to initialize Redis whitelist")
 	}
 
+	if err = services.InitEventService(cfg.Event.APIURL, cfg.Event.APIKey); err != nil {
+		logger.Fatal().Err(err).Msg("Failed to initialize Event Service")
+	}
+
 	if err := services.InitIPFSService(cfg.FilterImage.IPFSURL); err != nil {
 		logger.Fatal().Err(err).Msg("Failed to initialize IPFS service")
 	}
-    
+
 	if cfg.FilterImage.EnableVirusScan {
 		if err := services.InitClamAVService(cfg.FilterImage.VirusScanURL); err != nil {
 			logger.Fatal().Err(err).Msg("Failed to initialize ClamAV service")
@@ -146,7 +150,7 @@ func main() {
 	scheduler.InitializeWalletPoolMaintenanceJob(cronjob, ctx, cfg.Database.Schema)
 	cronjob.Start()
 
-	ordersExpiryInterval := 60 * time.Second
+	ordersExpiryInterval := time.Duration(cfg.Scheduler.ExpiredOrdersInterval) * time.Second
 	cancelExpiredOrdersTask := scheduler.CreateCancelExpiredOrdersTask(ordersExpiryInterval, cfg.Database.Schema)
 	schedulerInstance.AddTask(cancelExpiredOrdersTask)
 

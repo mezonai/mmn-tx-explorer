@@ -8,6 +8,7 @@ import { getCampaignStatusLabel, getCampaignStatusVariant } from '../../../utils
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/configs/routes.config';
 import { BadgeCheck } from 'lucide-react';
+import { DescriptionDisplay } from '@/components/shared';
 
 interface CampaignCardProps {
   campaign: DonationCampaign;
@@ -84,12 +85,12 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
         </div>
         <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{daysLeft}</span>
       </div>
-      <h3 className="dark:group-hover:text-brand-primary group-hover:text-primary dark:group-hover:text-primary-light mt-4 text-lg font-semibold text-gray-900 transition dark:text-white">
+      <h3 className="dark:group-hover:text-brand-primary group-hover:text-primary dark:group-hover:text-primary-light mt-4 text-lg font-semibold break-words text-gray-900 transition dark:text-white">
         <Link href={ROUTES.CAMPAIGN(slug)}>{name}</Link>
       </h3>
-      <p className="mt-2 line-clamp-3 w-full text-sm leading-6 break-words text-gray-600 dark:text-gray-400">
-        {description}
-      </p>
+
+      <DescriptionDisplay description={description} lineShow={3} />
+
       <div className="mt-auto flex flex-col gap-6 pt-6">
         <div>
           <div className="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
