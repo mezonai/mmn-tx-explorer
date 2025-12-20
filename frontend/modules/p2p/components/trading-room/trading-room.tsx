@@ -6,7 +6,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useP2POrder } from '../../hooks/useP2POrder';
 import { useP2POffer } from '../../hooks/useP2POffer';
 import { useCreateOrder } from '../../hooks/useCreateOrder';
-import { useP2PChat } from '../../hooks/useP2PChat';
+//import { useP2PChat } from '../../hooks/useP2PChat';
 import { useUser } from '@/providers/AppProvider';
 import { TradingRoomHeader } from './trading-room-header';
 import { ProgressSteps } from './progress-steps';
@@ -15,9 +15,9 @@ import { BankInfoCard } from './bank-info-card';
 import { PaymentActionButton } from './payment-action-button';
 import { SellerConfirmButton } from './seller-confirm-button';
 import { BuyAmountSection } from './buy-amount-section';
-import { ChatSidebar } from './chat/chat-sidebar';
+//import { ChatSidebar } from './chat/chat-sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { P2POrder } from '../../types';
+import { P2POrder, OrderStatus } from '../../types';
 import { toast } from 'sonner';
 
 interface TradingRoomProps {
@@ -32,43 +32,52 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
   const isOfferMode = searchParams.get('type') === 'offer';
 
   const [error, setError] = useState<string | null>(null);
-  const [createdOrder, setCreatedOrder] = useState<P2POrder | null>(null); // Store created order locally
-  const [localStatus, setLocalStatus] = useState<string | null>(null); // Local override for order status (buyer optimistic UI)
+  const [localStatus, setLocalStatus] = useState<OrderStatus | null>(null); // Local override for order status (buyer optimistic UI)
+  const [isExpired, setIsExpired] = useState<boolean>(false); // Track if order has expired
 
   const { order, isLoading: orderLoading, updateOrderStatus } = useP2POrder(isOfferMode ? '' : orderId);
-  const offerIdParam = isOfferMode ? orderId : order ? String(order.offer_id) : null;
+  // Only fetch offer in offer mode, or when we have an order and need to show bank info
+  const offerIdParam = isOfferMode ? orderId : (order ? String(order.offer_id) : null);
   const { offer, isLoading: offerLoading } = useP2POffer(offerIdParam);
   const { createOrder, isLoading: isCreatingOrder } = useCreateOrder();
-  const orderIdForChat = createdOrder ? String(createdOrder.order_id) : isOfferMode ? '' : orderId;
-  const { messages, isLoading: chatLoading, sendMessage } = useP2PChat(orderIdForChat);
+  //const orderIdForChat = isOfferMode ? '' : orderId;
+  //const { messages, isLoading: chatLoading, sendMessage } = useP2PChat(orderIdForChat);
 
-  // Sync createdOrder with order from useP2POrder when order updates via WebSocket
+  // Check if order has expired (real-time countdown)
   useEffect(() => {
-    if (createdOrder && order && String(createdOrder.order_id) === String(order.order_id)) {
-      if (order.status !== createdOrder.status) {
-        setCreatedOrder(order);
-      }
-    }
-  }, [order, createdOrder]);
+    if (!order || isOfferMode) return;
 
-  // Use created order if available, otherwise use fetched order
-  const currentOrder = createdOrder || order;
+    const checkExpiration = () => {
+      const now = new Date().getTime();
+      const expires = new Date(order.expires_at).getTime();
+      const hasExpired = now >= expires;
+      setIsExpired(hasExpired);
+    };
+
+    // Check immediately
+    checkExpiration();
+
+    // Update every second
+    const interval = setInterval(checkExpiration, 1000);
+
+    return () => clearInterval(interval);
+  }, [order, isOfferMode]);
 
   // Detect user role (buyer or seller)
   const userRole = useMemo(() => {
-    if (isOfferMode && !createdOrder) return 'buyer'; // In offer mode before order creation, user is always buyer
-    if (!user?.walletAddress || !currentOrder) return null;
+    if (isOfferMode) return 'buyer'; // In offer mode before order creation, user is always buyer
+    if (!user?.walletAddress || !order) return null;
 
     // Buyer check
-    if (currentOrder.buyer_wallet_address === user.walletAddress) return 'buyer';
+    if (order.buyer_wallet_address === user.walletAddress) return 'buyer';
 
     // Seller check (prefer explicit seller wallet from order or offer)
-    const sellerWallet = currentOrder.seller_wallet_address || offer?.seller_wallet_address;
+    const sellerWallet = order.seller_wallet_address || offer?.seller_wallet_address;
     if (sellerWallet && sellerWallet === user.walletAddress) return 'seller';
 
     // Fallback: if not buyer, assume seller (for cases seller_wallet_address missing in payload)
     return 'seller';
-  }, [user?.walletAddress, currentOrder, isOfferMode, createdOrder, offer]);
+  }, [user?.walletAddress, order, isOfferMode, offer]);
 
   // Reset localStatus when canonical order status changes (e.g., via WebSocket)
   useEffect(() => {
@@ -88,7 +97,8 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
       const newOrder = await createOrder(offer, amountMZD, amountVND);
 
       if (newOrder) {
-        setCreatedOrder(newOrder);
+        // Navigate to order page - component will re-mount due to key prop in page.tsx
+        router.push(`/p2p/trading-room/${newOrder.order_id}`);
       }
     } catch (err) {
       toast.error('Failed to create order', {
@@ -103,20 +113,26 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
   const handleSellerConfirm = async () => {
     try {
       await updateOrderStatus('CONFIRMED');
-    } catch (err) {
-      setError('Something went wrong while updating status. Please try again.');
+      setLocalStatus(OrderStatus.CONFIRMED);
+    } catch (err: any) {
       console.error('Error updating order status:', err);
+      if (err?.response?.data?.message === 'order has expired') {
+        toast.error('Order has expired');
+        setError('Order has expired');
+      } else {
+        setError('Something went wrong while updating status. Please try again.');
+      }
     }
   };
 
-  const handleSendMessage = (content: string) => {
-    const userId = user?.id || currentUserId || 'user1';
-    const senderType = userRole === 'buyer' ? 'buyer' : 'seller';
-    sendMessage(content, userId, senderType);
-  };
+  //const handleSendMessage = (content: string) => {
+  //const userId = user?.id || currentUserId || 'user1';
+  //const senderType = userRole === 'buyer' ? 'buyer' : 'seller';
+  //sendMessage(content, userId, senderType);
+  //};
 
   // Loading state
-  if ((isOfferMode && offerLoading && !createdOrder) || (!isOfferMode && (orderLoading || !order) && !createdOrder)) {
+  if ((isOfferMode && offerLoading) || (!isOfferMode && (orderLoading || !order))) {
     return (
       <div className="flex h-screen flex-col">
         <div className="bg-card h-14 border-b border-gray-800" />
@@ -129,20 +145,22 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
     );
   }
 
-  // Offer mode or order created from offer - Show unified trading room
-  if ((isOfferMode && offer) || createdOrder) {
-    const displayOrder = createdOrder || {
+  // Offer mode - Show buy form
+  if (isOfferMode && offer) {
+    const displayOrder: P2POrder = {
       order_id: '',
       offer_id: offer?.offer_id || '',
       buyer_wallet_address: user?.walletAddress || '',
       amount: 0,
       price: 0,
       payable_amount: 0,
-      status: 'OPEN' as const,
+      status: OrderStatus.OPEN,
       transfer_code: null,
       expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      bank_info: offer.bank_info,
+      price_rate: offer.price_rate,
     };
 
     const formatWallet = (address?: string) =>
@@ -161,16 +179,12 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
             </button>
             <div>
               <h1 className="text-sm font-bold text-white">
-                {createdOrder
-                  ? `MZD buy order #${createdOrder.order_id}`
-                  : `Buy MZD from ${formatWallet(offer?.seller_wallet_address)}`}
+                Buy MZD from {formatWallet(offer?.seller_wallet_address)}
               </h1>
-              {!createdOrder && (
-                <div className="text-xs text-gray-400">
-                  Trading with{' '}
-                  <span className="text-brand-primary font-bold">{formatWallet(offer?.seller_wallet_address)}</span>
-                </div>
-              )}
+              <div className="text-xs text-gray-400">
+                Trading with{' '}
+                <span className="text-brand-primary font-bold">{formatWallet(offer?.seller_wallet_address)}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -180,9 +194,6 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
           <div className="overflow-y-auto border-r border-gray-800 p-6 md:w-7/12 lg:w-8/12">
             <ProgressSteps order={displayOrder} />
 
-            {userRole === 'buyer' && displayOrder.status === 'PENDING' && (
-              <p className="mb-4 text-sm text-gray-400">Waiting for the seller to confirm</p>
-            )}
 
             {error && (
               <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
@@ -190,34 +201,18 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
               </div>
             )}
 
-            {/* Show BuyAmountSection if order not created yet */}
-            {!createdOrder && offer && (
-              <BuyAmountSection offer={offer} onConfirmBuy={handleConfirmBuy} isLoading={isCreatingOrder} />
-            )}
-
-            {/* Show OrderInfoCard, BankInfoCard, and PaymentActionButton if order is created */}
-            {createdOrder && (
-              <>
-                <OrderInfoCard order={createdOrder} />
-                <BankInfoCard bank_info={offer?.bank_info} transfer_code={offer?.transfer_code} />
-                {userRole === 'buyer' && (
-                  <PaymentActionButton
-                    order={createdOrder}
-                    nextStatus="PENDING"
-                    onStatusUpdated={(updated) => setCreatedOrder(updated)}
-                  />
-                )}
-              </>
-            )}
+            {/* Show BuyAmountSection in offer mode */}
+            <BuyAmountSection offer={offer} onConfirmBuy={handleConfirmBuy} isLoading={isCreatingOrder} />
           </div>
 
-          {/* Chat Sidebar (Right Side) */}
+          {/* Chat Sidebar (Right Side) 
           <ChatSidebar
             messages={messages}
             currentUserId={user?.id || currentUserId || ''}
             onSendMessage={handleSendMessage}
             isLoading={chatLoading}
           />
+          */}
         </div>
       </div>
     );
@@ -243,38 +238,67 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
 
   return (
     <div className="bg-background flex h-screen flex-col">
-      <TradingRoomHeader order={effectiveOrder} />
+      <TradingRoomHeader order={effectiveOrder} userRole={userRole} />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Main Content (Left Side) */}
         <div className="overflow-y-auto border-r border-gray-800 p-6 md:w-7/12 lg:w-8/12">
           <ProgressSteps order={effectiveOrder} />
 
+          {/* Status messages */}
           {userRole === 'buyer' && effectiveOrder.status === 'PENDING' && (
             <p className="mb-4 text-sm text-gray-400">Waiting for the seller to confirm</p>
           )}
 
+          {(effectiveOrder.status === 'COMPLETED' || effectiveOrder.status === 'CONFIRMED') && (
+            <div className="mb-4 rounded-lg border border-green-500/20 bg-green-500/10 p-4 text-center">
+              <p className="text-lg font-bold text-green-400">✓ Transaction completed successfully</p>
+            </div>
+          )}
+
+          {/* Expired order warning */}
+          {isExpired && effectiveOrder.status !== 'COMPLETED' && effectiveOrder.status !== 'CONFIRMED' && (
+            <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-center">
+              <p className="text-lg font-bold text-red-400">⚠ Order has expired</p>
+              <p className="mt-1 text-sm text-red-300">This order can no longer be processed</p>
+            </div>
+          )}
+
           <OrderInfoCard order={effectiveOrder} />
-          {offer && <BankInfoCard bank_info={offer.bank_info} transfer_code={offer.transfer_code} />}
+          {order && order.bank_info && order.transfer_code && (
+            <BankInfoCard
+              bank_info={order.bank_info}
+              transfer_code={order.transfer_code}
+              amount={order.payable_amount || order.price}
+            />
+          )}
 
           {/* Conditional rendering based on user role */}
           {userRole === 'buyer' && (
             <PaymentActionButton
-              order={order}
+              order={effectiveOrder}
               nextStatus="PENDING"
-              onStatusUpdated={(updated) => setLocalStatus(String(updated.status))}
+              onStatusUpdated={(updated) => setLocalStatus(updated.status)}
+              disabled={isExpired}
             />
           )}
-          {userRole === 'seller' && <SellerConfirmButton order={effectiveOrder} onConfirm={handleSellerConfirm} />}
+          {userRole === 'seller' && (
+            <SellerConfirmButton
+              order={effectiveOrder}
+              onConfirm={handleSellerConfirm}
+              disabled={isExpired}
+            />
+          )}
         </div>
 
-        {/* Chat Sidebar (Right Side) */}
+        {/* Chat Sidebar (Right Side) 
         <ChatSidebar
           messages={messages}
           currentUserId={user?.id || currentUserId || ''}
           onSendMessage={handleSendMessage}
           isLoading={chatLoading}
         />
+        */}
       </div>
     </div>
   );

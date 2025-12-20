@@ -5,10 +5,12 @@ import { P2PHeader } from './p2p-header';
 import { P2PFiltersComponent } from './p2p-filters';
 import { useP2POffers } from '../../hooks/useP2POffers';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { P2POffersTabs } from './p2p-offers-tab';
+import { P2POffersTabs } from './p2p-offers-list';
 import { usePaginationQueryParam } from '@/hooks/usePaginationQueryParam';
 import { useP2PMyOffers } from '../../hooks/useP2PMyOffers';
 import { Pagination } from '@/components/ui/pagination';
+import { useMyOrders } from '../../hooks/useMyOrders';
+import { P2POrdersList } from './p2p-orders-list';
 
 export const P2P = () => {
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
@@ -42,6 +44,12 @@ export const P2P = () => {
     from_amount: filters.min,
     to_amount: filters.max,
   });
+  const { data: myOrders, isLoading: isMyOrdersLoading } = useMyOrders({
+    page: page - 1,
+    limit,
+    from_amount: filters.min,
+    to_amount: filters.max,
+  });
   return (
     <div className="w-full space-y-6">
       <P2PHeader />
@@ -65,6 +73,19 @@ export const P2P = () => {
             onFilterChange={handleFilterChange}
           />
           <P2POffersTabs offers={offers?.data} isLoading={isLoading} />
+        </TabsContent>
+        <TabsContent value="orders" className="space-y-6">
+          <P2PFiltersComponent
+            totalItems={myOrders?.meta.total_items}
+            totalPages={myOrders?.meta.total_pages}
+            isLoading={isMyOrdersLoading}
+            page={page}
+            limit={limit}
+            onPageChange={handleChangePage}
+            onLimitChange={handleChangeLimit}
+            onFilterChange={handleFilterChange}
+          />
+          <P2POrdersList orders={myOrders?.data} isLoading={isMyOrdersLoading} />
         </TabsContent>
         <TabsContent value="my-offers" className="space-y-6">
           <P2PFiltersComponent
