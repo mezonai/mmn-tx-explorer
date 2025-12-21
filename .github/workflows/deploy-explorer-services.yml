@@ -21,15 +21,15 @@ on:
         description: "(Optional) Existing tag"
         required: false
       deploy_indexer:
-        description: "Deploy Indexer Service?"
+        description: "Deploy Indexer Service"
         type: boolean
         default: true
       deploy_dong:
-        description: "Deploy Dong Service?"
+        description: "Deploy Dong Service"
         type: boolean
         default: true
       deploy_frontend:
-        description: "Deploy Frontend Service?"
+        description: "Deploy Frontend Service"
         type: boolean
         default: true
 
