@@ -20,6 +20,18 @@ on:
       existing_tag_to_deploy:
         description: "(Optional) Existing tag"
         required: false
+      deploy_indexer:
+        description: "Deploy Indexer Service?"
+        type: boolean
+        default: true
+      deploy_dong:
+        description: "Deploy Dong Service?"
+        type: boolean
+        default: true
+      deploy_frontend:
+        description: "Deploy Frontend Service?"
+        type: boolean
+        default: true
 
 jobs:
   determine_tags:
@@ -88,7 +100,7 @@ jobs:
 
   deploy-indexer:
     needs: [determine_tags, prepare-source]
-    if: always() && needs.prepare-source.result == 'success'
+    if: inputs.deploy_indexer == true && needs.prepare-source.result == 'success'
     uses: ./.github/workflows/deploy-indexer-service.yml
     with:
       env: ${{ inputs.env }}
@@ -102,6 +114,7 @@ jobs:
 
   deploy-dong:
     needs: [determine_tags, prepare-source]
+    if: inputs.deploy_dong == true && needs.prepare-source.result == 'success'
     uses: ./.github/workflows/deploy-dong-service.yml
     with:
       env: ${{ inputs.env }}
@@ -119,6 +132,7 @@ jobs:
 
   deploy-frontend:
     needs: prepare-source
+    if: inputs.deploy_frontend == true && needs.prepare-source.result == 'success'
     uses: ./.github/workflows/deploy-frontend-service.yml
     with:
       env: ${{ inputs.env }}
