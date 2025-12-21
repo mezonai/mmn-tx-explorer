@@ -36,6 +36,7 @@ on:
 jobs:
   determine_tags:
     runs-on: [self-hosted, Linux, mezon-runner]
+    if: ${{ inputs.deploy_indexer == true || inputs.deploy_dong == true }}
     outputs:
       target_tag: ${{ steps.get_tag.outputs.target_tag }}
       skip_build: ${{ steps.get_tag.outputs.skip_build}}
