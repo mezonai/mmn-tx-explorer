@@ -73,6 +73,7 @@ jobs:
           NEXT_PUBLIC_COBAR_API_URL: ${{ vars.NEXT_PUBLIC_COBAR_API_URL }}
           NEXT_PUBLIC_COBAR_API_KEY: ${{ secrets.NEXT_PUBLIC_COBAR_API_KEY }}
           NEXT_PUBLIC_TOP_MEZON_AI: ${{ vars.NEXT_PUBLIC_TOP_MEZON_AI }}
+          NEXT_PUBLIC_BASE_FE: ${{ vars.NEXT_BASE_FE }}
         run: |
           cd frontend
           npm install
@@ -113,6 +114,7 @@ jobs:
           NEXT_PUBLIC_COBAR_API_URL: ${{ vars.NEXT_PUBLIC_COBAR_API_URL }}
           NEXT_PUBLIC_COBAR_API_KEY: ${{ secrets.NEXT_PUBLIC_COBAR_API_KEY }}
           NEXT_PUBLIC_TOP_MEZON_AI: ${{ vars.NEXT_PUBLIC_TOP_MEZON_AI }}
+          NEXT_PUBLIC_BASE_FE: ${{ vars.NEXT_BASE_FE }}
         run: |
           printenv | grep -E '^(NEXT_|APP_)' > frontend.env
 

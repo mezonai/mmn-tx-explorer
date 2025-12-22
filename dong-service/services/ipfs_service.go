@@ -41,26 +41,31 @@ func (s *IPFSService) UploadImagesAsFolder(ctx context.Context, images map[strin
 	for name, reader := range images {
 		dirMap[name] = files.NewReaderFile(reader)
 	}
+	logger.Info().Int("file_count", len(dirMap)).Msg("Uploading images to IPFS as folder")
 	dir := files.NewMapDirectory(dirMap)
 	p, err := s.client.Unixfs().Add(ctx, dir, options.Unixfs.CidVersion(1), options.Unixfs.RawLeaves(true))
 	if err != nil {
 		return "", nil, err
 	}
 	folderCID := strings.TrimPrefix(p.String(), "/ipfs/")
+	logger.Info().Str("folder_cid", folderCID).Msg("Images uploaded to IPFS successfully")
 	if err := s.client.Pin().Add(ctx, p); err != nil {
 		return "", nil, err
 	}
-	
+
 	fileCIDs := make(map[string]string)
 	pth, err := boxopath.NewPath("/ipfs/" + folderCID)
     if err != nil {
         return folderCID, nil, err
     }
-	ch := make(chan iface.DirEntry, 10)
+	logger.Info().Str("folder_cid", folderCID).Msg("Listing files in IPFS folder")
+
+	ch := make(chan iface.DirEntry, len(images))
 	err = s.client.Unixfs().Ls(ctx, pth, ch)
 	if err != nil {
 		return folderCID, nil, err
 	}
+	logger.Info().Str("folder_cid", folderCID).Msg("Collecting file CIDs from IPFS folder")
 	for entry := range ch {
 		if entry.Name == "" {
 			continue
