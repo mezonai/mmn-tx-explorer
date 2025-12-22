@@ -60,3 +60,18 @@ export interface UpdateOfferStatusRequest {
   status: OfferStatus;
   tx_hash: string;
 }
+export interface P2POrder {
+  order_id: number;
+  offer_id: number;
+  buyer_wallet_address: string;
+  seller_wallet_address: string;
+  amount: number;
+  payable_amount: number;
+  status: OfferStatus;
+  transfer_code: string;
+  expires_at: string;
+  created_at: string;
+  updated_at: string;
+  bank_info: string;
+  price_rate: number;
+}
