@@ -115,13 +115,7 @@ export class WebSocketManager {
       this.stopHeartbeat();
       this.ws = null;
 
-      // Check if close was due to authentication error (code 1008 = policy violation, often used for auth errors)
-      // Some servers may close with 1008 when token is invalid
-      if (event.code === 1008 || event.code === 1002) {
-        this.handleTokenExpired();
-      } else {
-        this.attemptReconnect();
-      }
+      this.attemptReconnect();
     };
 
     this.ws.onerror = () => {
