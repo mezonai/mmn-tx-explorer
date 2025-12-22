@@ -9,6 +9,9 @@ import { TxnHashLink } from '@/modules/transaction/components/transaction-list/l
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/configs/routes.config';
 import { JSX, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeSanitize from 'rehype-sanitize';
 import { useUser } from '@/providers';
 import { EyeClosed, Pencil, Eye } from 'lucide-react';
 import { useToggleHideDonationFeed } from '@/modules/donation-campaign/hooks';
@@ -42,7 +45,6 @@ export const UpdatePostMobile = ({
 
   const [expandedDesc, setExpandedDesc] = useState(false);
   const isDescLong = update.description.length > MAX_DESC_CHARACTERS;
-  const shortenDescription = expandedDesc ? update.description : update.description.slice(0, MAX_DESC_CHARACTERS);
 
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const toggleHideDonationFeed = useToggleHideDonationFeed();
@@ -115,7 +117,6 @@ export const UpdatePostMobile = ({
                       update={update}
                       isOpen={isVersionDialogOpen}
                       onOpenChange={setIsVersionDialogOpen}
-
                     />
                   )}
                 </div>
@@ -150,26 +151,36 @@ export const UpdatePostMobile = ({
         <div className="text-foreground text-md w-full px-4">
           <h3 className="text-lg font-semibold break-words text-gray-900 dark:text-white">{update.title}</h3>
 
-          <div className="mt-2 text-sm break-words">
-            {shortenDescription.split('\n').map((line, index, arr) => (
-              <span key={index}>
-                {line}
-                {index < arr.length - 1 && (
-                  <>
-                    <br />
-                    <span className="block h-3" />
-                  </>
-                )}
-              </span>
-            ))}
+          <div className="relative mt-2 max-w-none text-sm break-words">
+            <div
+              className={`prose prose-sm dark:prose-invert transition-all ${!expandedDesc && isDescLong ? 'max-h-[6rem] overflow-hidden' : ''}`}
+            >
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeSanitize]}
+                components={{
+                  h1: ({ node, ...props }) => <h1 className="mt-4 mb-2 text-3xl font-bold" {...props} />,
+                  h2: ({ node, ...props }) => <h2 className="mt-3 mb-2 text-xl font-bold" {...props} />,
+                  h3: ({ node, ...props }) => <h3 className="mt-2 mb-1 text-base font-semibold" {...props} />,
+                  ul: ({ node, ...props }) => <ul className="my-2 list-inside list-disc space-y-1" {...props} />,
+                  ol: ({ node, ...props }) => <ol className="my-2 list-inside list-decimal space-y-1" {...props} />,
+                  li: ({ node, ...props }) => <li className="text-gray-900 dark:text-white" {...props} />,
+                }}
+              >
+                {update.description}
+              </ReactMarkdown>
+            </div>
 
             {!expandedDesc && isDescLong && (
-              <span
-                className="text-brand-primary ml-1 cursor-pointer text-sm font-semibold hover:underline"
-                onClick={() => setExpandedDesc(true)}
-              >
-                … See more
-              </span>
+              <>
+                <div className="pointer-events-none absolute right-0 left-0 mt-[-1.75rem] h-8 bg-gradient-to-t from-white/90 dark:from-black/20" />
+                <span
+                  className="text-brand-primary ml-1 cursor-pointer text-sm font-semibold hover:underline"
+                  onClick={() => setExpandedDesc(true)}
+                >
+                  … See more
+                </span>
+              </>
             )}
 
             {expandedDesc && isDescLong && (
