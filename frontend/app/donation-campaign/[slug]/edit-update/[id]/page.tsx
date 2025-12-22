@@ -1,7 +1,7 @@
 import { EditUpdate } from '@/modules/donation-campaign/components/campaign-updates';
 import type { Metadata } from 'next';
 import { ProtectedRoute } from '@/modules/auth/components/ProtectedRoute';
-import { DonationCampaignService, IDonationFeed } from '@/modules/donation-campaign';
+import { DonationCampaignService, IDonationFeed, DonationFeedParams } from '@/modules/donation-campaign';
 import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
@@ -29,7 +29,19 @@ export default async function EditCampaignUpdatePage({ params }: EditCampaignUpd
       address: campaign.donation_wallet,
     });
 
-    const updatePost = feedResponse.data.find((post: IDonationFeed) => post.id === postId);
+    let updatePost = feedResponse.data.find((post: IDonationFeed) => post.id === postId);
+
+    if (!updatePost) {
+      try {
+        const ownerFeedResponse = await DonationCampaignService.getDonationFeed({
+          address: campaign.donation_wallet,
+          params: { isOwner: false } as DonationFeedParams,
+        });
+        updatePost = ownerFeedResponse.data.find((post: IDonationFeed) => post.id === postId);
+      } catch (err) {
+        console.warn('Owner feed fetch failed, continuing without it:', err);
+      }
+    }
 
     if (!updatePost) {
       notFound();
