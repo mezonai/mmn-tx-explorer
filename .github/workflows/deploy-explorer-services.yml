@@ -1,5 +1,4 @@
-﻿# Tên file: deploy-explorer-services.yml
-name: Deploy Transaction Explorer Services
+﻿name: Deploy Transaction Explorer Services
 permissions:
   contents: write
 

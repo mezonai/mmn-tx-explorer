@@ -21,9 +21,6 @@ on:
         description: "Git ref (branch, tag, or commit)"
         type: string
         required: true
-      git_sha:
-        type: string
-        required: false
       source_artifact:
         type: string
         required: false
@@ -35,8 +32,6 @@ jobs:
   build:
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
-    outputs:
-      git_sha: ${{ steps.get_sha.outputs.git_sha }}
     steps:
       - name: Checkout
         if: inputs.source_artifact == ''
@@ -81,22 +76,12 @@ jobs:
           npm run build
           cd ..
 
-      - name: Get short SHA
-        id: get_sha
-        run: |
-          if [ -n "${{ inputs.git_sha }}" ]; then
-            echo "git_sha=${{ inputs.git_sha }}" >> $GITHUB_OUTPUT
-          else
-            echo "git_sha=$(git rev-parse --short=8 HEAD)" >> $GITHUB_OUTPUT
-          fi
-
   deploy:
     needs: build
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
     env:
       TARGET_HOST: ${{ inputs.env == 'prod' && 'prod-indexer' || 'dev-indexer' }}
-      GIT_SHA: ${{ needs.build.outputs.git_sha }}
 
     steps:
       - name: Generate FE env file locally

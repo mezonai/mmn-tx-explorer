@@ -25,9 +25,6 @@ on:
       ref:
         type: string
         required: true
-      git_sha:
-        type: string
-        required: false
       source_artifact:
         type: string
         required: false
@@ -54,7 +51,6 @@ jobs:
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
     outputs:
-      git_sha: ${{ steps.get_sha.outputs.git_sha }}
       tag_name: ${{ steps.build_dong_binary.outputs.tag_name }}
     steps:
       - name: Checkout
@@ -98,16 +94,6 @@ jobs:
           if [ -z "$TAG_NAME" ]; then TAG_NAME="v0.0.0"; fi
           GOOS=linux GOARCH=amd64 go build -o ../build/dong-service-${TAG_NAME} .
           echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
-
-      - name: Get short SHA
-        if: inputs.source_artifact != ''
-        id: get_sha
-        run: |
-          if [ -n "${{ inputs.git_sha }}" ]; then
-            echo "git_sha=${{ inputs.git_sha }}" >> $GITHUB_OUTPUT
-          else
-            echo "git_sha=$(git rev-parse --short=8 HEAD)" >> $GITHUB_OUTPUT
-          fi
 
       - name: Create Release and Upload binary
         if: inputs.source_artifact != '' && inputs.skip_build == 'false' 
