@@ -103,8 +103,6 @@ export class WebSocketManager {
         } catch {
           parsedData = event.data;
         }
-
-        console.log('Websocket message received:', parsedData);
         this.handleEvent(parsedData ?? event.data);
       } catch (error) {
         console.error('Error handling websocket message:', error);
@@ -116,13 +114,7 @@ export class WebSocketManager {
       this.stopHeartbeat();
       this.ws = null;
 
-      // Check if close was due to authentication error (code 1008 = policy violation, often used for auth errors)
-      // Some servers may close with 1008 when token is invalid
-      if (event.code === 1008 || event.code === 1002) {
-        this.handleTokenExpired();
-      } else {
-        this.attemptReconnect();
-      }
+      this.attemptReconnect();
     };
 
     this.ws.onerror = () => {
@@ -252,18 +244,6 @@ export class WebSocketManager {
     this.tokenProvider = handler;
   }
 
-  private async handleTokenExpired() {
-    this.isConnecting = false;
-
-    if (this.ws) {
-      this.ws.close();
-      this.ws = null;
-    }
-
-    this.stopHeartbeat();
-    this.reconnectAttempts = 0; // Reset retry counter for a "fresh" start
-    this.connect(); // This will refresh token via provider
-  }
 }
 
 // Singleton instance
