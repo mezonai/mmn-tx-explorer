@@ -3,16 +3,18 @@ package handlers
 import (
 	"net/http"
 	"socket-service/config"
+	"socket-service/constant"
 	"socket-service/logger"
 	"socket-service/repository"
 	"socket-service/service"
 	"socket-service/utils"
-	"socket-service/constant"
+	"sync"
 	"time"
-    "sync"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
+
 type WSHandler struct {
 	repo  *repository.EventRepository
 	cfg   *config.Config
@@ -36,7 +38,7 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 		logger.Error().Err(err).Msg("WebSocket upgrade failed")
 		return
 	}
-    defer conn.Close()
+	defer conn.Close()
 	userAddress, err := utils.GetUserAddressFromContext(c)
 	if err != nil {
 		logger.Error().Err(err).Msg("Unauthorized WebSocket connection attempt")
@@ -47,18 +49,21 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 	events, err := h.repo.GetListEventByReceiver(userAddress)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to get events for user")
+		conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
 		conn.WriteMessage(websocket.TextMessage, []byte("Failed to get events: "+err.Error()))
 		return
 	}
+	
 	if len(events) > 0 {
 		for _, event := range events {
+			conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
 			if err := conn.WriteJSON(event); err != nil {
 				logger.Error().Err(err).Msg("Failed to send event to user")
 				return
 			} else {
-				event.Status = "sent"
-				if err := h.repo.UpdateEventStatus(event.ID.String(), "sent"); err != nil {
-					logger.Error().Err(err).Msg("Failed to update event status after sending via WS")
+				logger.Info().Msgf("Event sent to user %s: %s", userAddress, event.ID)
+				if err := h.repo.DeleteEvent(event.ID.String()); err != nil {
+					logger.Error().Err(err).Msgf("Failed to delete event %s after sending to user %s", event.ID, userAddress)
 				}
 			}
 		}
@@ -75,7 +80,7 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 	defer func() {
 		h.wsSvc.RemoveConnection(userAddress, conn)
 	}()
-	
+
 	done := make(chan struct{})
 	var onceClose sync.Once
 	go func() {
@@ -87,7 +92,7 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 				conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
 				if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 					logger.Error().Err(err).Msg("Ping failed, closing connection")
-					onceClose.Do(func() {close(done)})
+					onceClose.Do(func() { close(done) })
 					return
 				} else {
 					logger.Info().Msgf("Ping sent to user %s", userAddress)
@@ -102,11 +107,14 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 		messageType, message, err := conn.ReadMessage()
 		if err != nil {
 			logger.Info().Msgf("User %s disconnected", userAddress)
-			onceClose.Do(func() {close(done)})
+			onceClose.Do(func() { close(done) })
 			return
 		}
 		if messageType == websocket.TextMessage && string(message) == constant.HeartbeatCheck {
+			logger.Info().Msgf("Heartbeat check received from user %s", userAddress)
+			conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
 			conn.WriteMessage(websocket.TextMessage, []byte(constant.HeartbeatAck))
+			logger.Info().Msgf("Heartbeat ack sent to user %s", userAddress)
 			continue
 		}
 	}

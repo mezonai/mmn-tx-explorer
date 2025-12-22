@@ -315,7 +315,6 @@ func (s *OrderService) sendOrderEvent(receiveAddr string, eventType string, payl
 		Type:           eventType,
 		Payload:        p,
 		ReceiveAddress: receiveAddr,
-		Status:         "pending",
 		CreateAt:       time.Now().UTC(),
 	}
 
