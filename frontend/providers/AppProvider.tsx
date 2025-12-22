@@ -58,6 +58,9 @@ export function AppProvider({ children }: AppProviderProps) {
   useEffect(() => {
     const localTokenStr = localStorage.getItem(STORAGE_KEYS.TOKEN);
     const localToken = localTokenStr ? safeJsonParse(localTokenStr) : null;
+    const userStored = localStorage.getItem(STORAGE_KEYS.USER_INFO);
+
+    // Handle token refresh if token exists
     if (localToken) {
       (async () => {
         try {
@@ -77,7 +80,8 @@ export function AppProvider({ children }: AppProviderProps) {
         }
       })();
     }
-    const userStored = localStorage.getItem(STORAGE_KEYS.USER_INFO);
+
+    // Handle user state restoration if user info exists
     if (userStored) {
       const u = safeJsonParse(userStored);
       setUser(u);
@@ -91,6 +95,7 @@ export function AppProvider({ children }: AppProviderProps) {
       // Init WebSocket if user is already logged in
       const tokenData = safeJsonParse<{ access_token?: string }>(localStorage.getItem(STORAGE_KEYS.TOKEN));
       if (tokenData?.access_token) {
+        const wsManager = getWebSocketManager();
         wsManager.connect(tokenData.access_token);
       }
       return;

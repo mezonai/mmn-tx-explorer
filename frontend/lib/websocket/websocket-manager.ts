@@ -2,7 +2,14 @@
 
 import { STORAGE_KEYS } from '@/constant';
 import { safeJsonParse } from '@/utils';
-import { HEARTBEAT_ACK, HEARTBEAT_CHECK, HEARTBEAT_CHECK_INTERVAL_MS } from './constants';  
+import {
+  HEARTBEAT_ACK,
+  HEARTBEAT_CHECK,
+  HEARTBEAT_CHECK_INTERVAL_MS,
+  HEARTBEAT_TIMEOUT_MS,
+  MAX_RECONNECT_ATTEMPTS,
+  RECONNECT_DELAY_MS,
+} from './constants';
 
 export interface WebSocketEvent {
   id?: string;
@@ -16,54 +23,110 @@ export interface WebSocketEvent {
 export class WebSocketManager {
   private ws: WebSocket | null = null;
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
-  private reconnectDelay = 3000;
+  private maxReconnectAttempts = MAX_RECONNECT_ATTEMPTS;
+  private reconnectDelay = RECONNECT_DELAY_MS;
   private listeners: Map<string, Set<(data: WebSocketEvent) => void>> = new Map();
   private wsUrl: string;
   private heartbeatIntervalId: number | null = null;
+  private connectionDeadline: number = 0;
   private shouldReconnect = true;
+  private tokenProvider: (() => Promise<string | null>) | null = null;
+  public currentToken: string | null = null;
+  private isConnecting = false;
 
-  constructor(wsUrl: string = 'ws://localhost:8899') {
+  constructor(wsUrl: string = 'ws://172.16.10.111:8899') {
     this.wsUrl = wsUrl;
   }
 
-  connect(token: string) {
-    if (this.ws?.readyState === WebSocket.OPEN) {
+  async connect(token?: string) {
+    // Get fresh token if not provided or always try to get the latest from provider
+    let activeToken = token;
+    if (this.tokenProvider) {
+      activeToken = (await this.tokenProvider()) || activeToken;
+    }
+
+    if (!activeToken) {
+      activeToken = this.getStoredToken() || undefined;
+    }
+
+    if (!activeToken) {
+      console.warn('No token available for WebSocket connection');
       return;
     }
 
-    const url = `${this.wsUrl}/ws/connect?token=${encodeURIComponent(token)}`;
+    // If already connected with the same token, do nothing
+    if (
+      this.ws &&
+      (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) &&
+      this.currentToken === activeToken
+    ) {
+      return;
+    }
+
+    // Prevent concurrent connection attempts
+    if (this.isConnecting) {
+      return;
+    }
+
+    // If connected with different token, disconnect first
+    if (this.ws && this.currentToken !== activeToken) {
+      this.shouldReconnect = false;
+      this.ws.close();
+      this.ws = null;
+    }
+
+    this.isConnecting = true;
+    this.currentToken = activeToken;
+    const url = `${this.wsUrl}/ws/connect?token=${encodeURIComponent(activeToken)}`;
     this.ws = new WebSocket(url);
 
     this.ws.onopen = () => {
+      this.isConnecting = false;
       this.shouldReconnect = true;
       this.reconnectAttempts = 0;
       this.startHeartbeat();
-      console.log('WebSocket connected');
     };
 
     this.ws.onmessage = (event) => {
       try {
-        // Handle heartbeat reply from server
         if (event.data === HEARTBEAT_ACK) {
-          console.log('Heartbeat ack received');
+          // Extend deadline on valid Pong
+          this.connectionDeadline = Date.now() + HEARTBEAT_TIMEOUT_MS;
+          return;
         }
 
+        // Parse and handle message
+        let parsedData: unknown;
+        try {
+          parsedData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        } catch {
+          parsedData = event.data;
+        }
 
-        this.handleEvent(JSON.parse(event.data));
+        console.log('Websocket message received:', parsedData);
+        this.handleEvent(parsedData ?? event.data);
       } catch (error) {
-        console.error('Error parsing WebSocket message:', error);
+        console.error('Error handling websocket message:', error);
       }
     };
 
-    this.ws.onclose = () => {
+    this.ws.onclose = (event) => {
+      this.isConnecting = false;
       this.stopHeartbeat();
       this.ws = null;
-      this.attemptReconnect();
+
+      // Check if close was due to authentication error (code 1008 = policy violation, often used for auth errors)
+      // Some servers may close with 1008 when token is invalid
+      if (event.code === 1008 || event.code === 1002) {
+        this.handleTokenExpired();
+      } else {
+        this.attemptReconnect();
+      }
     };
 
-    this.ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
+    this.ws.onerror = () => {
+      this.isConnecting = false;
+      // Silently handle WebSocket errors
     };
   }
 
@@ -75,29 +138,33 @@ export class WebSocketManager {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
       setTimeout(() => {
-        const freshToken = this.getStoredToken();
-        if (!freshToken) {
-          console.error('No token available for reconnection');
-          return;
-        }
-        this.connect(freshToken);
+        this.connect(); // connect() now handles token refreshing internally
       }, this.reconnectDelay);
-    } else {
-      console.error('Max reconnection attempts reached');
     }
   }
 
-  private handleEvent(event: WebSocketEvent) {
+  private handleEvent(event: unknown) {
+    // If the payload has a `type` field, use it for routing; otherwise only wildcard listeners receive it.
+    const eventType =
+      typeof event === 'object' &&
+        event !== null &&
+        'type' in event &&
+        typeof (event as { type?: unknown }).type === 'string'
+        ? (event as { type: string }).type
+        : undefined;
+
     // Emit event to listeners
-    const listeners = this.listeners.get(event.type);
-    if (listeners) {
-      listeners.forEach((listener) => listener(event));
+    if (eventType) {
+      const listeners = this.listeners.get(eventType);
+      if (listeners) {
+        listeners.forEach((listener) => listener(event as WebSocketEvent));
+      }
     }
 
     // Also emit to wildcard listeners
     const wildcardListeners = this.listeners.get('*');
     if (wildcardListeners) {
-      wildcardListeners.forEach((listener) => listener(event));
+      wildcardListeners.forEach((listener) => listener(event as WebSocketEvent));
     }
   }
 
@@ -121,6 +188,8 @@ export class WebSocketManager {
       this.ws.close();
       this.ws = null;
     }
+    this.isConnecting = false;
+    this.currentToken = null;
     this.listeners.clear();
     this.stopHeartbeat();
   }
@@ -131,8 +200,22 @@ export class WebSocketManager {
 
   private startHeartbeat() {
     this.stopHeartbeat();
+
+    // Set initial deadline
+    this.connectionDeadline = Date.now() + HEARTBEAT_TIMEOUT_MS;
+
     this.heartbeatIntervalId = window.setInterval(() => {
       if (this.ws?.readyState === WebSocket.OPEN) {
+        // 1. Check Deadline
+        if (Date.now() > this.connectionDeadline) {
+          console.warn('Heartbeat deadline exceeded, reconnecting...');
+          this.forceReconnect();
+          return;
+        }
+
+        // 2. Send usage Ping (Blindly)
+        // We don't care if this specific ping is acknowledged,
+        // we just care that we receive *some* ACK eventually to extend the deadline.
         this.ws.send(HEARTBEAT_CHECK);
       }
     }, HEARTBEAT_CHECK_INTERVAL_MS);
@@ -145,15 +228,40 @@ export class WebSocketManager {
     }
   }
 
+  private forceReconnect() {
+    this.stopHeartbeat();
+    this.isConnecting = false;
 
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
+
+    this.attemptReconnect();
+  }
   private getStoredToken(): string | null {
     if (typeof window === 'undefined') {
       return null;
     }
-    const tokenData = safeJsonParse<{ access_token?: string }>(
-      localStorage.getItem(STORAGE_KEYS.TOKEN),
-    );
+    const tokenData = safeJsonParse<{ access_token?: string }>(localStorage.getItem(STORAGE_KEYS.TOKEN));
     return tokenData?.access_token ?? null;
+  }
+
+  setTokenExpiredHandler(handler: () => Promise<string | null>) {
+    this.tokenProvider = handler;
+  }
+
+  private async handleTokenExpired() {
+    this.isConnecting = false;
+
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
+
+    this.stopHeartbeat();
+    this.reconnectAttempts = 0; // Reset retry counter for a "fresh" start
+    this.connect(); // This will refresh token via provider
   }
 }
 
@@ -162,7 +270,9 @@ let wsManagerInstance: WebSocketManager | null = null;
 
 export const getWebSocketManager = (): WebSocketManager => {
   if (!wsManagerInstance) {
-    const wsUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'ws://localhost:8899';
+    const globalProcess = (globalThis as { process?: { env?: Record<string, string> } } | undefined)?.process;
+    const wsEnv = globalProcess?.env?.NEXT_PUBLIC_WEBSOCKET_URL;
+    const wsUrl = wsEnv || 'ws://172.16.10.111:8899';
     wsManagerInstance = new WebSocketManager(wsUrl);
   }
   return wsManagerInstance;
