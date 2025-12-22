@@ -87,12 +87,12 @@ export const P2P = () => {
           />
 
           <div className="block lg:hidden">
-            {offers?.data.map((offer) => (
+            {(offers?.data ?? []).map((offer) => (
               <OfferMobileCard key={offer.offer_id} offer={offer} />
             ))}
           </div>
           <div className="hidden lg:block">
-            <P2POffersTabs offers={offers?.data} isLoading={isLoading} />
+            <P2POffersTabs offers={offers?.data ?? []} isLoading={isLoading} />
           </div>
         </TabsContent>
         <TabsContent value="orders" className="space-y-6">
@@ -108,12 +108,12 @@ export const P2P = () => {
           />
 
           <div className="block lg:hidden">
-            {myOrders?.data.map((order) => (
+            {(myOrders?.data ?? []).map((order) => (
               <OrderMobileCard key={order.order_id} order={order} />
             ))}
           </div>
           <div className="hidden lg:block">
-            <P2POrdersList orders={myOrders?.data} isLoading={isMyOrdersLoading} />
+            <P2POrdersList orders={myOrders?.data ?? []} isLoading={isMyOrdersLoading} />
           </div>
         </TabsContent>
         <TabsContent value="my-offers" className="space-y-6">
@@ -128,12 +128,12 @@ export const P2P = () => {
             onFilterChange={handleFilterChange}
           />
           <div className="block lg:hidden">
-            {myOffers?.data.map((offer) => (
+            {(myOffers?.data ?? []).map((offer) => (
               <OfferMobileCard key={offer.offer_id} offer={offer} />
             ))}
           </div>
           <div className="hidden lg:block">
-            <P2POffersTabs offers={myOffers?.data} isLoading={isMyOffersLoading} />
+            <P2POffersTabs offers={myOffers?.data ?? []} isLoading={isMyOffersLoading} />
           </div>
         </TabsContent>
       </Tabs>
