@@ -20,6 +20,15 @@ export interface WebSocketEvent {
   create_at?: string;
 }
 
+
+const getWebSocketUrl = (): string => {
+  const wsUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL;
+  if (!wsUrl) {
+    throw new Error('NEXT_PUBLIC_WEBSOCKET_URL is not defined in environment variables');
+  }
+  return wsUrl;
+};
+
 export class WebSocketManager {
   private ws: WebSocket | null = null;
   private reconnectAttempts = 0;
@@ -34,8 +43,8 @@ export class WebSocketManager {
   public currentToken: string | null = null;
   private isConnecting = false;
 
-  constructor(wsUrl: string = 'ws://172.16.10.111:8899') {
-    this.wsUrl = wsUrl;
+  constructor(wsUrl?: string) {
+    this.wsUrl = wsUrl || getWebSocketUrl();
   }
 
   async connect(token?: string) {
@@ -85,6 +94,7 @@ export class WebSocketManager {
       this.shouldReconnect = true;
       this.reconnectAttempts = 0;
       this.startHeartbeat();
+      console.log('Websocket connected');
     };
 
     this.ws.onmessage = (event) => {
@@ -231,6 +241,7 @@ export class WebSocketManager {
 
     this.attemptReconnect();
   }
+
   private getStoredToken(): string | null {
     if (typeof window === 'undefined') {
       return null;
@@ -242,7 +253,6 @@ export class WebSocketManager {
   setTokenExpiredHandler(handler: () => Promise<string | null>) {
     this.tokenProvider = handler;
   }
-
 }
 
 // Singleton instance
@@ -250,10 +260,7 @@ let wsManagerInstance: WebSocketManager | null = null;
 
 export const getWebSocketManager = (): WebSocketManager => {
   if (!wsManagerInstance) {
-    const globalProcess = (globalThis as { process?: { env?: Record<string, string> } } | undefined)?.process;
-    const wsEnv = globalProcess?.env?.NEXT_PUBLIC_WEBSOCKET_URL;
-    const wsUrl = wsEnv || 'ws://172.16.10.111:8899';
-    wsManagerInstance = new WebSocketManager(wsUrl);
+    wsManagerInstance = new WebSocketManager();
   }
   return wsManagerInstance;
 };
