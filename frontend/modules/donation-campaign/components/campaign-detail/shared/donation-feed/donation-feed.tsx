@@ -13,8 +13,7 @@ import { useEffect, useRef } from 'react';
 export const DonationFeed = ({ campaign }: { campaign: DonationCampaign }) => {
   const { user } = useUser();
   const { donationFeed, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useDonationFeed(
-    campaign.donation_wallet,
-    { isOwner: true }
+    campaign.donation_wallet
   );
   const observerTarget = useRef<HTMLDivElement>(null);
 
