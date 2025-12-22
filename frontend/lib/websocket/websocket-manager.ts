@@ -20,13 +20,22 @@ export interface WebSocketEvent {
   create_at?: string;
 }
 
+
+const getWebSocketUrl = (): string => {
+  const wsUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL;
+  if (!wsUrl) {
+    throw new Error('NEXT_PUBLIC_WEBSOCKET_URL is not defined in environment variables');
+  }
+  return wsUrl;
+};
+
 export class WebSocketManager {
   private ws: WebSocket | null = null;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = MAX_RECONNECT_ATTEMPTS;
   private reconnectDelay = RECONNECT_DELAY_MS;
   private listeners: Map<string, Set<(data: WebSocketEvent) => void>> = new Map();
-
+  private wsUrl: string;
   private heartbeatIntervalId: number | null = null;
   private connectionDeadline: number = 0;
   private shouldReconnect = true;
@@ -34,7 +43,9 @@ export class WebSocketManager {
   public currentToken: string | null = null;
   private isConnecting = false;
 
-  constructor(private wsUrl: string) { }
+  constructor(wsUrl?: string) {
+    this.wsUrl = wsUrl || getWebSocketUrl();
+  }
 
   async connect(token?: string) {
     // Get fresh token if not provided or always try to get the latest from provider
@@ -230,6 +241,7 @@ export class WebSocketManager {
 
     this.attemptReconnect();
   }
+
   private getStoredToken(): string | null {
     if (typeof window === 'undefined') {
       return null;
@@ -241,7 +253,6 @@ export class WebSocketManager {
   setTokenExpiredHandler(handler: () => Promise<string | null>) {
     this.tokenProvider = handler;
   }
-
 }
 
 // Singleton instance
@@ -249,9 +260,7 @@ let wsManagerInstance: WebSocketManager | null = null;
 
 export const getWebSocketManager = (): WebSocketManager => {
   if (!wsManagerInstance) {
-    wsManagerInstance = new WebSocketManager(
-      process.env.NEXT_PUBLIC_WEBSOCKET_URL || ''
-    );
+    wsManagerInstance = new WebSocketManager();
   }
   return wsManagerInstance;
 };
