@@ -102,8 +102,6 @@ export class WebSocketManager {
         } catch {
           parsedData = event.data;
         }
-
-        console.log('Websocket message received:', parsedData);
         this.handleEvent(parsedData ?? event.data);
       } catch (error) {
         console.error('Error handling websocket message:', error);
@@ -245,18 +243,6 @@ export class WebSocketManager {
     this.tokenProvider = handler;
   }
 
-  private async handleTokenExpired() {
-    this.isConnecting = false;
-
-    if (this.ws) {
-      this.ws.close();
-      this.ws = null;
-    }
-
-    this.stopHeartbeat();
-    this.reconnectAttempts = 0; // Reset retry counter for a "fresh" start
-    this.connect(); // This will refresh token via provider
-  }
 }
 
 // Singleton instance
