@@ -19,7 +19,6 @@ import { toast } from 'sonner';
 import { IZkProof, IEphemeralKeyPair } from 'mmn-client-js';
 import { safeJsonParse, clearAuthStorage } from '@/utils';
 import { useWebSocket } from '@/lib/websocket/useWebSocket';
-import { getWebSocketManager } from '@/lib/websocket/websocket-manager';
 
 interface AppContextType {
   isAuthenticated: boolean;
@@ -54,7 +53,7 @@ export function AppProvider({ children }: AppProviderProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const wsManager = useWebSocket(); // Setup WebSocket with token refresh handler
+  const wsManager = useWebSocket();
   useEffect(() => {
     const localTokenStr = localStorage.getItem(STORAGE_KEYS.TOKEN);
     const localToken = localTokenStr ? safeJsonParse(localTokenStr) : null;
@@ -62,7 +61,6 @@ export function AppProvider({ children }: AppProviderProps) {
       (async () => {
         try {
           await AuthenticationService.refreshLogin(localToken.refresh_token);
-          // Init WebSocket after successful token refresh
           const refreshedToken = safeJsonParse<{ access_token?: string }>(localStorage.getItem(STORAGE_KEYS.TOKEN));
           if (refreshedToken?.access_token) {
             wsManager.connect(refreshedToken.access_token);
@@ -88,7 +86,6 @@ export function AppProvider({ children }: AppProviderProps) {
       const kpStr = localStorage.getItem(STORAGE_KEYS.KEY_PAIR);
       if (kpStr) setKeypair(safeJsonParse(kpStr));
 
-      // Init WebSocket if user is already logged in
       const tokenData = safeJsonParse<{ access_token?: string }>(localStorage.getItem(STORAGE_KEYS.TOKEN));
       if (tokenData?.access_token) {
         wsManager.connect(tokenData.access_token);
@@ -120,7 +117,7 @@ export function AppProvider({ children }: AppProviderProps) {
         if (fetchedZk) {
           setZkProof(fetchedZk);
         }
-        // Init WebSocket after successful login
+
         if (userInfo.access_token) {
           wsManager.connect(userInfo.access_token);
         }
@@ -137,7 +134,6 @@ export function AppProvider({ children }: AppProviderProps) {
     };
 
     handleAuthentication(code);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const value: AppContextType = {
@@ -203,9 +199,6 @@ export function useAuthActions() {
     if (refreshToken) {
       axios.post(AUTHENTICATION_ENDPOINT.LOGOUT, { refresh_token: refreshToken });
     }
-    // Disconnect WebSocket when logging out
-    // Note: wsManager is available from the parent scope (useWebSocket hook)
-    // wsManager.disconnect(); // Cannot access here - will be handled by cleanup
     clearAuthStorage();
     setUser(null);
     setZkProof(null);
