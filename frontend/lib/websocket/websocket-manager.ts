@@ -26,7 +26,7 @@ export class WebSocketManager {
   private maxReconnectAttempts = MAX_RECONNECT_ATTEMPTS;
   private reconnectDelay = RECONNECT_DELAY_MS;
   private listeners: Map<string, Set<(data: WebSocketEvent) => void>> = new Map();
-  private wsUrl: string;
+
   private heartbeatIntervalId: number | null = null;
   private connectionDeadline: number = 0;
   private shouldReconnect = true;
@@ -34,9 +34,7 @@ export class WebSocketManager {
   public currentToken: string | null = null;
   private isConnecting = false;
 
-  constructor(wsUrl: string = 'ws://localhost:8899') {
-    this.wsUrl = wsUrl;
-  }
+  constructor(private wsUrl: string) { }
 
   async connect(token?: string) {
     // Get fresh token if not provided or always try to get the latest from provider
@@ -251,10 +249,9 @@ let wsManagerInstance: WebSocketManager | null = null;
 
 export const getWebSocketManager = (): WebSocketManager => {
   if (!wsManagerInstance) {
-    const globalProcess = (globalThis as { process?: { env?: Record<string, string> } } | undefined)?.process;
-    const wsEnv = globalProcess?.env?.NEXT_PUBLIC_WEBSOCKET_URL;
-    const wsUrl = wsEnv || 'ws://localhost:8899';
-    wsManagerInstance = new WebSocketManager(wsUrl);
+    wsManagerInstance = new WebSocketManager(
+      process.env.NEXT_PUBLIC_WEBSOCKET_URL || ''
+    );
   }
   return wsManagerInstance;
 };
