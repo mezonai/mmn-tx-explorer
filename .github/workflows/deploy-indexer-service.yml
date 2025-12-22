@@ -25,9 +25,6 @@ on:
       ref:
         type: string
         required: true
-      source_artifact:
-        type: string
-        required: false
       target_tag:
         type: string
         required: true
@@ -46,18 +43,11 @@ jobs:
       tag_name: ${{ steps.build_indexer_binary.outputs.tag_name }}
     steps:
       - name: Checkout
-        if: inputs.source_artifact == ''
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
           clean: false
-
-      - name: Download source (from Artifact)
-        if: inputs.source_artifact != ''
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ inputs.source_artifact }}
-          path: .
+          fetch-depth: 1
 
       - name: Setup Go
         if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
@@ -88,7 +78,7 @@ jobs:
           echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
 
       - name: Create Release and Upload binary
-        if: inputs.source_artifact != '' && inputs.skip_build == 'false'
+        if: inputs.skip_build == 'false'
         id: create_release
         uses: softprops/action-gh-release@v2
         with:
@@ -135,7 +125,7 @@ jobs:
           echo "binary_path=build/indexer-$TAG_TO_DEPLOY" >> $GITHUB_OUTPUT
       
       - name: Download release binary using url 
-        if: inputs.existing_tag_to_deploy != '' || inputs.source_artifact != ''
+        if: inputs.existing_tag_to_deploy != ''
         run: | 
           set -e 
           OWNER=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f1)

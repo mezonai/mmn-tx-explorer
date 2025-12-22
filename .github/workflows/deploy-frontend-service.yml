@@ -21,9 +21,6 @@ on:
         description: "Git ref (branch, tag, or commit)"
         type: string
         required: true
-      source_artifact:
-        type: string
-        required: false
     secrets:
       NEXT_PUBLIC_COBAR_API_KEY:
         required: true
@@ -34,18 +31,11 @@ jobs:
     environment: ${{ inputs.env }}
     steps:
       - name: Checkout
-        if: inputs.source_artifact == ''
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
           clean: false
-
-      - name: Download source (from Artifact)
-        if: inputs.source_artifact != ''
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ inputs.source_artifact }}
-          path: .
+          fetch-depth: 1
 
       - name: Setup Node.js
         uses: actions/setup-node@v3

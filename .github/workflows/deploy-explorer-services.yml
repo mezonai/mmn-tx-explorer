@@ -78,12 +78,18 @@ jobs:
 
   prepare-source:
     runs-on: [self-hosted, Linux, mezon-runner]
+    outputs:
+      git_sha: ${{ steps.get_sha.outputs.git_sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
           clean: false
+
+      - name: Get short SHA
+        id: get_sha
+        run: echo "git_sha=$(git rev-parse --short=8 HEAD)" >> $GITHUB_OUTPUT
 
       - name: Upload source code artifact
         uses: actions/upload-artifact@v4
@@ -99,6 +105,7 @@ jobs:
     with:
       env: ${{ inputs.env }}
       ref: ${{ inputs.ref }}
+      git_sha: ${{ needs.prepare-source.outputs.git_sha }}
       source_artifact: source-code
       target_tag: ${{ needs.determine_tags.outputs.target_tag }} 
       skip_build: ${{ needs.determine_tags.outputs.skip_build }}
@@ -112,6 +119,7 @@ jobs:
     with:
       env: ${{ inputs.env }}
       ref: ${{ inputs.ref }}
+      git_sha: ${{ needs.prepare-source.outputs.git_sha }}
       source_artifact: source-code
       target_tag: ${{ needs.determine_tags.outputs.target_tag }} 
       skip_build: ${{ needs.determine_tags.outputs.skip_build }}
@@ -129,6 +137,7 @@ jobs:
     with:
       env: ${{ inputs.env }}
       ref: ${{ inputs.ref }}
+      git_sha: ${{ needs.prepare-source.outputs.git_sha }}
       source_artifact: source-code
     secrets:
       NEXT_PUBLIC_COBAR_API_KEY: ${{ secrets.NEXT_PUBLIC_COBAR_API_KEY }}
