@@ -19,7 +19,7 @@ database:
   
 
 redis:
-  address: "redis:6379"
+  address: "localhost:6379"
   password: ""
   db: 0
 
