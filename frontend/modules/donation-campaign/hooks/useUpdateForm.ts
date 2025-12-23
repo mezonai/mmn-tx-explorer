@@ -1,10 +1,10 @@
 import { useState, ChangeEvent, useEffect } from 'react';
-import { compressImage, formatFileSize } from '@/utils';
+import { formatFileSize } from '@/utils';
 import { toast } from 'sonner';
 import { useCreateDonationUpdateContext } from '../context';
 import { IDonationFeed } from '../type';
 import { ipfsServiceURL } from '@/service';
-import { max } from 'date-fns';
+import { useImageCompression } from './useImageCompression';
 
 const UNIT = 'MB';
 const MAX_IMAGES_SIZE = 20;
@@ -25,11 +25,11 @@ interface UseUpdateFormProps {
 
 export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
   const { form, setForm, validation, handleSubmit, isSaving } = useCreateDonationUpdateContext();
+  const { compressImage, isCompressing } = useImageCompression();
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [existingImageCids, setExistingImageCids] = useState<string[]>([]);
   const [existingImagesSize, setExistingImagesSize] = useState<number>(0);
-  const [isCompressing, setIsCompressing] = useState(false);
 
   const newImagesSize = images.reduce((sum, img) => sum + img.size, 0);
   const totalSize = newImagesSize + existingImagesSize;
@@ -75,17 +75,15 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
       return;
     }
 
-    setIsCompressing(true);
+    const availableSize = maxTotalSize - totalSize;
+
+    if (availableSize <= 0) {
+      toast.error(`Total size limit reached (${MAX_IMAGES_SIZE} ${UNIT} for all images).`);
+      e.target.value = '';
+      return;
+    }
+
     try {
-      const availableSize = maxTotalSize - totalSize;
-
-      if (availableSize <= 0) {
-        toast.error(`Total size limit reached (${MAX_IMAGES_SIZE} ${UNIT} for all images).`);
-        setIsCompressing(false);
-        e.target.value = '';
-        return;
-      }
-
       const compressedFiles = await Promise.all(
         files.map(async (file) => {
           try {
@@ -115,10 +113,19 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
               }
             }
 
-            const compressed = await compressImage(processedFile);
-            return compressed;
+            const compressedFile = await compressImage(processedFile);
+
+            if (compressedFile && compressedFile.size > availableSize) {
+              toast.error(
+                `Cannot upload ${file.name} as it exceeds the available size limit. Available size: ${(
+                  availableSize /
+                  (1024 * 1024)
+                ).toFixed(2)} ${UNIT}.`
+              );
+              return null;
+            }
+            return compressedFile;
           } catch (err) {
-            toast.error(`Failed to compress ${file.name}. Please try a different image.`);
             return null;
           }
         })
@@ -163,7 +170,6 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
     } catch (err) {
       toast.error('Failed to process images. Please try again.');
     } finally {
-      setIsCompressing(false);
       e.target.value = '';
     }
   };
