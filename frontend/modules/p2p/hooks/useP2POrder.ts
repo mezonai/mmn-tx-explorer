@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { P2PService } from '../api';
 import { P2POrder, OrderStatus } from '../types';
+import { P2P_EVENT_TYPES } from '../constants';
 import { useWebSocket, WebSocketEvent } from '@/lib/websocket';
 
 export const useP2POrder = (orderId: string) => {
@@ -52,42 +53,46 @@ export const useP2POrder = (orderId: string) => {
 
     const prevOrder = order;
     try {
-      // Optimistic update
-      setOrder({ ...order, status: status as OrderStatus });
-      if (transferCode) {
-        setOrder({ ...order, status: status as OrderStatus, transfer_code: transferCode });
-      }
 
-      // Call API
+      const optimisticUpdate: Partial<P2POrder> = { status: status as OrderStatus };
+      if (transferCode) {
+        optimisticUpdate.transfer_code = transferCode;
+      }
+      setOrder({ ...order, ...optimisticUpdate });
+
       const orderIdStr = String(order.order_id);
       const updated = await P2PService.updateOrderStatus(orderIdStr, status, transferCode);
       if (updated) {
         setOrder(updated);
       }
     } catch (err) {
-      // Revert on error
       setOrder(prevOrder);
       throw err;
     }
   };
 
-  // Listen for order status updates via WebSocket
   useEffect(() => {
     if (!orderId || !wsManager) return;
+    const orderIdStr = String(orderId);
+    const refreshOrder = async () => {
+      try {
+        const updatedOrder = await P2PService.getOrderById(orderIdStr);
+        setOrder(updatedOrder);
+      } catch (error) {
+        console.error('Error refreshing order:', error);
+      }
+    };
 
     const handleStatusUpdate = (event: WebSocketEvent) => {
       const payload = event.payload as Record<string, unknown> | undefined;
       const payloadOrderId = (payload?.['order_id'] || payload?.['orderId']) as string | number | undefined;
-      const orderIdStr = String(orderId);
       const payloadOrderIdStr = payloadOrderId ? String(payloadOrderId) : undefined;
 
-      // Handle ORDER_STATUS_UPDATED event
-      if (event.type === 'ORDER_STATUS_UPDATED') {
-        if (!payloadOrderIdStr || payloadOrderIdStr !== orderIdStr) {
-          return;
-        }
-
-        const statusRaw = payload?.['status'] || payload?.['status'];
+      if (!payloadOrderIdStr || payloadOrderIdStr !== orderIdStr) {
+        return;
+      }
+      if (event.type === P2P_EVENT_TYPES.ORDER_STATUS_UPDATED) {
+        const statusRaw = payload?.['status'];
         const status = typeof statusRaw === 'string' ? statusRaw : undefined;
         if (!status) return;
 
@@ -95,69 +100,20 @@ export const useP2POrder = (orderId: string) => {
         return;
       }
 
-      // Handle ORDER_CONFIRMED event (when buyer confirms payment)
-      if (event.type === 'ORDER_CONFIRMED') {
-        if (!payloadOrderIdStr || payloadOrderIdStr !== orderIdStr) {
-          return;
-        }
-
-        // Optimistic update: immediately update status to PENDING for instant UI feedback
-        setOrder((current) => {
-          if (!current) return current;
-          return { ...current, status: OrderStatus.PENDING };
-        });
-
-        // Fetch full order data to ensure we have all updated information
-        const fetchUpdatedOrder = async () => {
-          try {
-            const updatedOrder = await P2PService.getOrderById(orderIdStr);
-            setOrder(updatedOrder);
-          } catch (error) {
-            console.error('Error fetching updated order:', error);
-            // Keep optimistic update if fetch fails
-          }
-        };
-
-        fetchUpdatedOrder();
+      if (event.type === P2P_EVENT_TYPES.ORDER_CONFIRMED || event.type === P2P_EVENT_TYPES.ORDER_COMPLETED) {
+        refreshOrder();
         return;
-      }
-
-      // Handle ORDER_COMPLETED event (when seller confirms money received and releases MZD)
-      if (event.type === 'ORDER_COMPLETED') {
-        if (!payloadOrderIdStr || payloadOrderIdStr !== orderIdStr) {
-          return;
-        }
-
-        // Immediately update status to COMPLETED for instant UI feedback
-        setOrder((current) => {
-          if (!current) return current;
-          return { ...current, status: OrderStatus.COMPLETED };
-        });
-
-        // Fetch full order data to ensure we have all updated information (e.g., tx_hash)
-        const fetchUpdatedOrder = async () => {
-          try {
-            const updatedOrder = await P2PService.getOrderById(orderIdStr);
-            setOrder(updatedOrder);
-          } catch (error) {
-            console.error('Error fetching updated order after completion:', error);
-            // Keep optimistic update if fetch fails
-          }
-        };
-
-        fetchUpdatedOrder();
       }
     };
 
-    // Listen for all order event types
-    wsManager.on('ORDER_STATUS_UPDATED', handleStatusUpdate);
-    wsManager.on('ORDER_CONFIRMED', handleStatusUpdate);
-    wsManager.on('ORDER_COMPLETED', handleStatusUpdate);
+    wsManager.on(P2P_EVENT_TYPES.ORDER_STATUS_UPDATED, handleStatusUpdate);
+    wsManager.on(P2P_EVENT_TYPES.ORDER_CONFIRMED, handleStatusUpdate);
+    wsManager.on(P2P_EVENT_TYPES.ORDER_COMPLETED, handleStatusUpdate);
 
     return () => {
-      wsManager.off('ORDER_STATUS_UPDATED', handleStatusUpdate);
-      wsManager.off('ORDER_CONFIRMED', handleStatusUpdate);
-      wsManager.off('ORDER_COMPLETED', handleStatusUpdate);
+      wsManager.off(P2P_EVENT_TYPES.ORDER_STATUS_UPDATED, handleStatusUpdate);
+      wsManager.off(P2P_EVENT_TYPES.ORDER_CONFIRMED, handleStatusUpdate);
+      wsManager.off(P2P_EVENT_TYPES.ORDER_COMPLETED, handleStatusUpdate);
     };
   }, [orderId, wsManager]);
 
