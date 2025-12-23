@@ -33,11 +33,11 @@ export default async function EditCampaignUpdatePage({ params }: EditCampaignUpd
 
     if (!updatePost) {
       try {
-        const ownerFeedResponse = await DonationCampaignService.getDonationFeed({
+        const feedResponse = await DonationCampaignService.getDonationFeed({
           address: campaign.donation_wallet,
           params: { isOwner: false } as DonationFeedParams,
         });
-        updatePost = ownerFeedResponse.data.find((post: IDonationFeed) => post.id === postId);
+        updatePost = feedResponse.data.find((post: IDonationFeed) => post.id === postId);
       } catch (err) {
         console.warn('Owner feed fetch failed, continuing without it:', err);
       }
