@@ -18,6 +18,7 @@ import { BuyAmountSection } from './buy-amount-section';
 import { Skeleton } from '@/components/ui/skeleton';
 import { P2POrder, OrderStatus } from '../../types';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 
 interface TradingRoomProps {
   orderId: string;
@@ -152,13 +153,14 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
       <div className="bg-background flex h-screen flex-col">
         <div className=" flex h-14 shrink-0 items-center justify-between border-b border-border px-6">
           <div className="flex items-center gap-4">
-            <button
+            <Button
               onClick={() => router.back()}
               className="text-muted-foreground transition hover:text-foreground"
               aria-label="Go back"
+              variant="ghost"
             >
               <ArrowLeft className="h-5 w-5" />
-            </button>
+            </Button>
             <div>
               <h1 className="text-sm font-bold text-muted-foreground">
                 Buy MZD from {formatWallet(offer?.seller_wallet_address)}
