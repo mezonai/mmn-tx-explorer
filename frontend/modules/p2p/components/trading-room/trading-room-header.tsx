@@ -58,13 +58,13 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
   return (
     <header className=" flex h-14 shrink-0 items-center justify-between border-b border-border px-2">
       <div className="flex items-center gap-4">
-        <button
+        <Button
           onClick={() => router.back()}
           className="text-muted-foreground transition hover:text-foreground"
           aria-label="Go back"
         >
           <ArrowLeft className="h-5 w-5" />
-        </button>
+        </Button>
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
             <h1 className="text-sm font-bold text-muted-foreground">
