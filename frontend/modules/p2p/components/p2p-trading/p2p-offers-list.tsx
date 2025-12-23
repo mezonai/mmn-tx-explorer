@@ -28,12 +28,12 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
       align: 'left',
     },
     {
-      headerContent: 'Rate',
-      renderCell: (offer) => (
+      headerContent: 'RATE',
+      renderCell: (order) => (
         <div>
           <div className="mt-1 text-sm text-gray-400">
             <span className="text-brand-primary font-semibold">
-              {offer.price_rate.toLocaleString('vi-VN')} VND/{APP_CONFIG.CHAIN_SYMBOL}
+              1 {APP_CONFIG.CHAIN_SYMBOL} = {order.price_rate.toLocaleString('vi-VN')} VND
             </span>
           </div>
         </div>

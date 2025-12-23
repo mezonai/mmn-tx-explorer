@@ -56,19 +56,27 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
   }, [userRole, order.seller_wallet_address, order.buyer_wallet_address, offer?.seller_wallet_address]);
 
   return (
-    <header className="bg-card flex h-14 shrink-0 items-center justify-between border-b border-border px-6">
-      <div className="flex items-center gap-4">
+    <header className=" flex h-14 shrink-0 items-center justify-between border-b border-border px-2">
+      <div className="flex items-center">
         <Button
           onClick={() => router.back()}
           className="text-muted-foreground transition hover:text-foreground"
           aria-label="Go back"
+          variant="ghost"
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div>
-          <h1 className="text-sm font-bold text-muted-foreground">
-            MZD buy order <span className="text-muted-foreground">#{order.order_id}</span>
-          </h1>
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2">
+            <h1 className="text-sm font-bold text-muted-foreground">
+              MZD buy order <span className="text-muted-foreground">#{order.order_id}</span>
+            </h1>
+            {isExpired && order.status !== 'COMPLETED' && order.status !== 'CONFIRMED' && (
+              <span className="md:hidden text-[10px] font-black bg-red-500 text-white px-1.5 pt-1 pb-0.5 rounded uppercase leading-none">
+                Expired
+              </span>
+            )}
+          </div>
           {counterpartyAddress && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               Trading with
@@ -81,6 +89,14 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
           )}
         </div>
       </div>
+
+      {isExpired && order.status !== 'COMPLETED' && order.status !== 'CONFIRMED' && (
+        <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 flex-col items-center pointer-events-none">
+
+          <span className="text-sm font-black uppercase tracking-wider text-red-500">⚠ Order has expired</span>
+          <span className="text-[12px] text-red-400 mt-0.5 font-medium">This order can no longer be processed</span>
+        </div>
+      )}
       <div className={`flex items-center gap-2 rounded-full px-3 py-1 text-sm font-bold ${isExpired
         ? 'bg-red-500/10 text-red-500'
         : 'bg-yellow-500/10 text-yellow-500'
