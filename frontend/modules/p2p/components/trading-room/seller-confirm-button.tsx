@@ -36,7 +36,7 @@ export const SellerConfirmButton = ({ order, onConfirm, disabled = false }: Sell
       <Button
         onClick={handleConfirm}
         disabled={isSubmitting || disabled}
-        className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 py-4 text-lg font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-70"
+        className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 py-4 text-base md:text-lg lg:text-lg font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-70"
       >
         <CheckCircle2 className="h-5 w-5" />
         {isSubmitting ? 'Confirming...' : 'Confirm money received, release MZD'}

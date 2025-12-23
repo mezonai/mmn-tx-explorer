@@ -13,8 +13,8 @@ export const OrderInfoCard = ({ order }: OrderInfoCardProps) => {
   const { offer } = useP2POffer(String(order.offer_id));
 
   // Calculate values from order fields
-  const amountVND = order.payable_amount || order.price || 0; // payable_amount is in VND (smallest unit)
-  const amountMZD = order.amount; // amount is in MZD (smallest unit)
+  const amountVND = order.payable_amount || order.price || 0;
+  const amountMZD = order.amount;
   const exchangeRate = useMemo(() => {
     if (amountMZD > 0) {
       return amountVND / amountMZD;
@@ -23,22 +23,29 @@ export const OrderInfoCard = ({ order }: OrderInfoCardProps) => {
   }, [amountMZD, amountVND, offer?.price_rate]);
 
   return (
-    <Card className="bg-card mb-6 rounded-xl border border-border p-6 shadow-lg">
-      <div className="mb-1 text-sm text-muted-foreground">Amount to pay</div>
-      <div className="mb-4 text-3xl font-bold tracking-wide text-green-400">
-        {amountVND.toLocaleString('vi-VN')} VND
+    <Card className="bg-card mb-4 rounded-lg border border-border p-4 shadow-lg">
+      {/* Amount to Pay Section */}
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-xs text-muted-foreground mb-1">Amount to pay</span>
+        <span className="text-2xl font-bold text-green-400">
+          {amountVND.toLocaleString('vi-VN')} <span className="text-sm">VND</span>
+        </span>
       </div>
 
-      <div className="flex items-center justify-between border-t border-border py-3 text-sm">
-        <span className="text-muted-foreground">Exchange rate</span>
-        <span className="rounded bg-muted px-2 py-1 text-xs text-foreground">
+      {/* Exchange Rate */}
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-xs text-muted-foreground">Exchange rate</span>
+        <span className="rounded bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
           1 MZD = {exchangeRate.toLocaleString('vi-VN')} VND
         </span>
       </div>
 
-      <div className="flex items-center justify-between border-t border-border py-3 text-sm">
-        <span className="text-muted-foreground">MZD you will receive</span>
-        <span className="brand-primary text-xl font-bold">{amountMZD.toLocaleString('vi-VN')} MZD</span>
+      {/* MZD to Receive */}
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-muted-foreground">MZD you will receive</span>
+        <span className="brand-primary text-lg font-bold">
+          {amountMZD.toLocaleString('vi-VN')} <span className="text-xs">MZD</span>
+        </span>
       </div>
     </Card>
   );
