@@ -77,7 +77,6 @@ export enum OrderStatus {
   COMPLETED = 'COMPLETED',
 }
 
-// P2POrder interface matching backend schema
 export interface P2POrder {
   order_id: string | number;
   offer_id: string | number;
@@ -99,27 +98,15 @@ export interface P2POrder {
   price_rate: number;
 }
 
-// Request interface for creating an order
 export interface CreateOrderRequest {
   offer_id: string | number;
   amount: number;
-  price?: number | null;
+  payable_amount: number;
 }
 
-// Request interface for updating order status
 export interface UpdateOrderStatusRequest {
   status: OrderStatus | string;
   transfer_code?: string;
-}
-
-// Chat message interface
-export interface ChatMessage {
-  id: string;
-  order_id: string;
-  sender_type: 'buyer' | 'seller';
-  sender_id: string;
-  content: string;
-  created_at: string;
 }
 
 export interface ProgressStep {
