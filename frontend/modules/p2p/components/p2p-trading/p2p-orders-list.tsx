@@ -37,8 +37,8 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
       renderCell: (order) => (
         <AddressDisplay
           addressClassName="text-brand-primary"
-          address={order.seller_wallet_address || ''}
-          href={ROUTES.WALLET(order.seller_wallet_address || '')}
+          address={order.seller_wallet_address}
+          href={ROUTES.WALLET(order.seller_wallet_address)}
         />
       ),
       skeletonContent: <Skeleton className="h-3 w-24" />,
