@@ -17,13 +17,13 @@ import { BuyAmountSection } from './buy-amount-section';
 import { Skeleton } from '@/components/ui/skeleton';
 import { P2POrder, OrderStatus } from '../../types';
 import { toast } from 'sonner';
+import { ChatSidebar } from './chat-section';
 
 interface TradingRoomProps {
   orderId: string;
-  currentUserId?: string;
 }
 
-export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
+export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   const { user } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -34,10 +34,9 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
   const [isExpired, setIsExpired] = useState<boolean>(false);
 
   const { order, isLoading: orderLoading, updateOrderStatus } = useP2POrder(isOfferMode ? '' : orderId);
-  const offerIdParam = isOfferMode ? orderId : (order ? String(order.offer_id) : null);
+  const offerIdParam = isOfferMode ? orderId : order ? String(order.offer_id) : null;
   const { offer, isLoading: offerLoading } = useP2POffer(offerIdParam);
   const { createOrder, isLoading: isCreatingOrder } = useCreateOrder();
-
 
   useEffect(() => {
     if (!order || isOfferMode) return;
@@ -85,17 +84,15 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
       const newOrder = await createOrder(offer, amountMZD, amountVND);
 
       if (newOrder) {
-
         router.push(`/p2p/trading-room/${newOrder.order_id}`);
       }
-    } catch (err) {
+    } catch {
       toast.error('Failed to create order', {
         description: 'Please try again later',
       });
       setError('Something went wrong while creating the order. Please try again.');
     }
   };
-
 
   const handleSellerConfirm = async () => {
     try {
@@ -115,7 +112,7 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
   if ((isOfferMode && offerLoading) || (!isOfferMode && (orderLoading || !order))) {
     return (
       <div className="flex h-screen flex-col">
-        <div className="bg-card h-14 border-b border-border" />
+        <div className="bg-card border-border h-14 border-b" />
         <div className="flex-1 p-6">
           <Skeleton className="mb-6 h-20 w-full" />
           <Skeleton className="mb-6 h-64 w-full" />
@@ -124,7 +121,6 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
       </div>
     );
   }
-
 
   if (isOfferMode && offer) {
     const displayOrder: P2POrder = {
@@ -148,20 +144,20 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
 
     return (
       <div className="bg-background flex h-screen flex-col">
-        <div className="bg-card flex h-14 shrink-0 items-center justify-between border-b border-border px-6">
+        <div className="bg-card border-border flex h-14 shrink-0 items-center justify-between border-b px-6">
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.back()}
-              className="text-muted-foreground transition hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground transition"
               aria-label="Go back"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div>
-              <h1 className="text-sm font-bold text-muted-foreground">
+              <h1 className="text-muted-foreground text-sm font-bold">
                 Buy MZD from {formatWallet(offer?.seller_wallet_address)}
               </h1>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-muted-foreground text-xs">
                 Trading with{' '}
                 <span className="text-brand-primary font-bold">{formatWallet(offer?.seller_wallet_address)}</span>
               </div>
@@ -170,41 +166,36 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
         </div>
 
         <div className="flex flex-1 overflow-hidden">
-
-          <div className="overflow-y-auto border-r border-border p-6 md:w-7/12 lg:w-8/12">
+          <div className="border-border overflow-y-auto border-r p-6 md:w-7/12 lg:w-8/12">
             <ProgressSteps order={displayOrder} />
 
-
             {error && (
-              <div className="mb-4 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+              <div className="border-destructive/20 bg-destructive/10 text-destructive mb-4 rounded-lg border p-3 text-sm">
                 {error}
               </div>
             )}
 
             <BuyAmountSection offer={offer} onConfirmBuy={handleConfirmBuy} isLoading={isCreatingOrder} />
           </div>
-
-
+          <ChatSidebar sellerId={offer.seller_user_id} />
         </div>
       </div>
     );
   }
 
-
   if (!order) {
     return (
       <div className="flex h-screen flex-col">
-        <div className="bg-card h-14 border-b border-border" />
+        <div className="bg-card border-border h-14 border-b" />
         <div className="flex flex-1 items-center justify-center p-6">
           <div className="text-center">
-            <h2 className="mb-2 text-xl font-bold text-foreground">Order not found</h2>
+            <h2 className="text-foreground mb-2 text-xl font-bold">Order not found</h2>
             <p className="text-muted-foreground">This order does not exist or has been removed.</p>
           </div>
         </div>
       </div>
     );
   }
-
 
   const effectiveOrder: P2POrder = localStatus ? { ...order, status: localStatus } : order;
 
@@ -213,12 +204,11 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
       <TradingRoomHeader order={effectiveOrder} userRole={userRole} />
 
       <div className="flex flex-1 overflow-hidden">
-
-        <div className="overflow-y-auto border-r border-border p-6 md:w-7/12 lg:w-8/12">
+        <div className="border-border overflow-y-auto border-r p-6 md:w-7/12 lg:w-8/12">
           <ProgressSteps order={effectiveOrder} />
 
           {userRole === 'buyer' && effectiveOrder.status === 'PENDING' && (
-            <p className="mb-4 text-sm text-muted-foreground">Waiting for the seller to confirm</p>
+            <p className="text-muted-foreground mb-4 text-sm">Waiting for the seller to confirm</p>
           )}
 
           {(effectiveOrder.status === 'COMPLETED' || effectiveOrder.status === 'CONFIRMED') && (
@@ -252,14 +242,10 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
             />
           )}
           {userRole === 'seller' && (
-            <SellerConfirmButton
-              order={effectiveOrder}
-              onConfirm={handleSellerConfirm}
-              disabled={isExpired}
-            />
+            <SellerConfirmButton order={effectiveOrder} onConfirm={handleSellerConfirm} disabled={isExpired} />
           )}
         </div>
-
+        <ChatSidebar sellerId={offer!.seller_user_id} />
       </div>
     </div>
   );

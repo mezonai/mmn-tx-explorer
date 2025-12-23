@@ -6,6 +6,7 @@ export interface P2POffer {
   offer_id: string;
   intermediary_wallet_id: number;
   seller_wallet_address: string;
+  seller_user_id: string;
   total_amount: number;
   amount: number;
   limit: {
