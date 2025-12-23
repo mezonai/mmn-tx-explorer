@@ -26,7 +26,7 @@ export const ProgressSteps = ({ order }: ProgressStepsProps) => {
   const activeStepIndex = getStepIndex(order.status);
 
   return (
-    <div className="mb-8">
+    <div className="mb-4">
       <div className="flex items-center justify-between">
         {PROGRESS_STEPS.map((step, index) => {
           const isActive = index <= activeStepIndex;
@@ -39,7 +39,7 @@ export const ProgressSteps = ({ order }: ProgressStepsProps) => {
               <div className="flex flex-col items-center gap-2">
                 <div
                   className={cn(
-                    'flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold',
+                    'flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold',
                     isActive ? 'bg-brand-primary text-white' : 'bg-muted text-muted-foreground'
                   )}
                 >
@@ -52,7 +52,7 @@ export const ProgressSteps = ({ order }: ProgressStepsProps) => {
 
               {/* Connecting line (except for last step) */}
               {index < PROGRESS_STEPS.length - 1 && (
-                <div className="relative mx-4 h-2 flex-1 rounded bg-muted mb-4">
+                <div className="relative mx-4 h-2 flex-1 rounded bg-gray-400 mb-4">
                   <div
                     className={cn(
                       'absolute top-0 left-0 h-full rounded bg-brand-primary transition-all duration-500',

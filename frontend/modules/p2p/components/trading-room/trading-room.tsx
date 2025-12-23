@@ -11,6 +11,7 @@ import { TradingRoomHeader } from './trading-room-header';
 import { ProgressSteps } from './progress-steps';
 import { OrderInfoCard } from './order-info-card';
 import { BankInfoCard } from './bank-info-card';
+import { QrCodeCard } from './qr-code-card';
 import { PaymentActionButton } from './payment-action-button';
 import { SellerConfirmButton } from './seller-confirm-button';
 import { BuyAmountSection } from './buy-amount-section';
@@ -148,7 +149,7 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
 
     return (
       <div className="bg-background flex h-screen flex-col">
-        <div className="bg-card flex h-14 shrink-0 items-center justify-between border-b border-border px-6">
+        <div className=" flex h-14 shrink-0 items-center justify-between border-b border-border px-6">
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.back()}
@@ -214,7 +215,7 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
 
       <div className="flex flex-1 overflow-hidden">
 
-        <div className="overflow-y-auto border-r border-border p-6 md:w-7/12 lg:w-8/12">
+        <div className="overflow-y-auto border-r border-border p-4 md:w-7/12 lg:w-8/12">
           <ProgressSteps order={effectiveOrder} />
 
           {userRole === 'buyer' && effectiveOrder.status === 'PENDING' && (
@@ -227,21 +228,30 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
             </div>
           )}
 
-          {isExpired && effectiveOrder.status !== 'COMPLETED' && effectiveOrder.status !== 'CONFIRMED' && (
-            <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-center">
-              <p className="text-lg font-bold text-red-400">⚠ Order has expired</p>
-              <p className="mt-1 text-sm text-red-300">This order can no longer be processed</p>
-            </div>
-          )}
 
-          <OrderInfoCard order={effectiveOrder} />
-          {order && order.bank_info && order.transfer_code && (
-            <BankInfoCard
-              bank_info={order.bank_info}
-              transfer_code={order.transfer_code}
-              amount={order.payable_amount || order.price}
-            />
-          )}
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 mb-4">
+            <div className="lg:col-span-7 space-y-6">
+              <OrderInfoCard order={effectiveOrder} />
+              {order && order.bank_info && order.transfer_code && (
+                <BankInfoCard
+                  bank_info={order.bank_info}
+                  transfer_code={order.transfer_code}
+                  amount={order.payable_amount || order.price}
+                />
+              )}
+            </div>
+
+            <div className="lg:col-span-5">
+              {order && order.bank_info && (
+                <QrCodeCard
+                  bank_info={order.bank_info}
+                  transfer_code={order.transfer_code}
+                  amount={order.payable_amount || order.price}
+                />
+              )}
+            </div>
+          </div>
 
           {userRole === 'buyer' && (
             <PaymentActionButton
@@ -259,7 +269,6 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
             />
           )}
         </div>
-
       </div>
     </div>
   );

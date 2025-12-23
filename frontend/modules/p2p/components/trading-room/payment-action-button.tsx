@@ -57,20 +57,22 @@ export const PaymentActionButton = ({
 
   return (
     <div>
-      <Button
-        onClick={handleConfirm}
-        disabled={isSubmitting || disabled}
-        className="bg-brand-primary mb-4 flex w-full items-center justify-center gap-2 rounded-xl py-4 text-lg font-bold text-white shadow-lg shadow-violet-900/20 transition hover:bg-violet-600 disabled:cursor-not-allowed disabled:opacity-70"
-      >
-        <CheckCircle2 className="h-5 w-5" />
-        {isSubmitting ? 'Processing...' : buttonText}
-      </Button>
+      <div className="mt-4 flex justify-center">
+        <Button
+          onClick={handleConfirm}
+          disabled={isSubmitting || disabled}
+          className="bg-brand-primary mb-4 flex items-center justify-center gap-2 rounded-xl py-4 text-base md:text-lg lg:text-lg font-bold text-white shadow-lg shadow-violet-900/20 transition hover:bg-violet-600 disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          <CheckCircle2 className="h-5 w-5" />
+          {isSubmitting ? 'Processing...' : buttonText}
+        </Button>
+      </div>
       <div className="px-4 text-center text-sm text-gray-500">
         Only click the button after you have successfully transferred the money.{' '}
         <a href="#" className="text-brand-primary ml-1 hover:underline">
           Need help?
         </a>
       </div>
-    </div>
+    </div >
   );
 };
