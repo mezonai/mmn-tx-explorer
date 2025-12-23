@@ -125,8 +125,23 @@ export class DonationCampaignService {
   }): Promise<IPaginatedResponse<IDonationFeed[]>> {
     const { data } = await apiDongClient.get<IPaginatedResponse<IDonationFeed[]>>(
       DONATION_ENDPOINTS.DONATION_FEED(address),
-      { meta: { authOptional: true }, params } as InternalAxiosRequestConfig
+      { params } as InternalAxiosRequestConfig
     );
+    return data;
+  }
+
+  static async donationFeedHistory(root_hash: string): Promise<IPaginatedResponse<IDonationFeed[]>> {
+    const { data } = await apiDongClient.get<IPaginatedResponse<IDonationFeed[]>>(
+      DONATION_ENDPOINTS.DONATION_FEED_HISTORY(root_hash),
+      { meta: { authOptional: true } } as InternalAxiosRequestConfig
+    );
+    return data;
+  }
+
+  static async toggleHideDonationFeed(root_hash: string, visible: boolean): Promise<any> {
+    const { data } = await apiDongClient.patch(DONATION_ENDPOINTS.TOGGLE_HIDE_DONATION_FEED(root_hash), {
+      visible,
+    });
     return data;
   }
 
