@@ -52,60 +52,38 @@ func (w *Worker) processRangeWithRetry(ctx context.Context, fromBlock, toBlock *
 		return
 	}
 
-	// Check for failed blocks
-	var failedBlocks []*big.Int
-	var successfulResults []rpc.GetFullBlockResult
-
-	successMap := make(map[uint64]bool)
+	hasError := false
 	for i := range results {
-		result := &results[i]
-		if result.Error == nil && result.BlockNumber != nil {
-			successfulResults = append(successfulResults, *result)
-			successMap[result.BlockNumber.Uint64()] = true
+		if results[i].Error != nil {
+			hasError = true
+			break
 		}
 	}
 
-	for slot := fromSlot; slot <= toSlot; slot++ {
-		if !successMap[slot] {
-			failedBlocks = append(failedBlocks, new(big.Int).SetUint64(slot))
-		}
-	}
-
-	log.Debug().Msgf("Out of %d blocks, %d successful, %d failed", len(results), len(successfulResults), len(failedBlocks))
-	// If we have successful results, send them
-	if len(successfulResults) > 0 {
-		resultsCh <- successfulResults
-	}
-
-	// If no blocks failed, we're done
-	if len(failedBlocks) == 0 {
+	if !hasError {
+		resultsCh <- results
 		return
 	}
 
-	// can't split any further, so try one last time
-	if len(failedBlocks) == 1 {
-		w.processRangeWithRetry(ctx, failedBlocks[0], failedBlocks[0], resultsCh, sem)
-		return
-	}
+	midSlot := (fromSlot + toSlot) / 2
+	leftFrom := new(big.Int).SetUint64(fromSlot)
+	leftTo := new(big.Int).SetUint64(midSlot)
+	rightFrom := new(big.Int).SetUint64(midSlot + 1)
+	rightTo := new(big.Int).SetUint64(toSlot)
 
-	// Split failed blocks in half and retry
-	mid := len(failedBlocks) / 2
-	leftChunk := failedBlocks[:mid]
-	rightChunk := failedBlocks[mid:]
-
-	log.Debug().Msgf("Splitting %d failed blocks into chunks of %d and %d", len(failedBlocks), len(leftChunk), len(rightChunk))
+	log.Debug().Msgf("RPC range failed, splitting range %d-%d into %d-%d and %d-%d", fromSlot, toSlot, fromSlot, midSlot, midSlot+1, toSlot)
 
 	var wg sync.WaitGroup
 	wg.Add(2)
 
 	go func() {
 		defer wg.Done()
-		w.processRangeWithRetry(ctx, leftChunk[0], leftChunk[len(leftChunk)-1], resultsCh, sem)
+		w.processRangeWithRetry(ctx, leftFrom, leftTo, resultsCh, sem)
 	}()
 
 	go func() {
 		defer wg.Done()
-		w.processRangeWithRetry(ctx, rightChunk[0], rightChunk[len(rightChunk)-1], resultsCh, sem)
+		w.processRangeWithRetry(ctx, rightFrom, rightTo, resultsCh, sem)
 	}()
 
 	wg.Wait()
