@@ -57,7 +57,7 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
 
   return (
     <header className=" flex h-14 shrink-0 items-center justify-between border-b border-border px-2">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center">
         <Button
           onClick={() => router.back()}
           className="text-muted-foreground transition hover:text-foreground"
@@ -72,7 +72,7 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
               MZD buy order <span className="text-muted-foreground">#{order.order_id}</span>
             </h1>
             {isExpired && order.status !== 'COMPLETED' && order.status !== 'CONFIRMED' && (
-              <span className="md:hidden text-[10px] font-black bg-red-500 text-white px-1.5 p-0.5 rounded uppercase leading-none">
+              <span className="md:hidden text-[10px] font-black bg-red-500 text-white px-1.5 pt-1 pb-0.5 rounded uppercase leading-none">
                 Expired
               </span>
             )}

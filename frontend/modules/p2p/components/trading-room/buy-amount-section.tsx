@@ -71,7 +71,7 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
             )}`}
             value={displayValue}
             onChange={handleInputChange}
-            className="bg-input/30 dark:bg-input/30 focus:border-brand-primary w-full rounded-md border-border px-3 py-2.5 text-lg font-bold text-foreground placeholder:text-muted-foreground focus:outline-none"
+            className="bg-input/30 dark:bg-input/30 focus:border-brand-primary w-full rounded-md border-border px-3 py-2.5  font-bold text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
           <span className="absolute top-3.5 right-3 text-xs font-bold text-muted-foreground">MZD</span>
         </div>
@@ -132,7 +132,7 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
         <Button
           onClick={handleConfirm}
           disabled={!isValidAmount || isLoading}
-          className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-8 py-3 text-base font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-8 py-3 text-base md:text-lg lg:text-lg font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <CheckCircle2 className="h-5 w-5" />
           {isLoading ? 'Processing...' : 'Confirm purchase'}

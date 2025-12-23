@@ -152,7 +152,7 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
     return (
       <div className="bg-background flex h-screen flex-col">
         <div className=" flex h-14 shrink-0 items-center justify-between border-b border-border px-6">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center">
             <Button
               onClick={() => router.back()}
               className="text-muted-foreground transition hover:text-foreground"
@@ -173,9 +173,8 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
           </div>
         </div>
 
-        <div className="flex flex-1 overflow-hidden">
-
-          <div className="overflow-y-auto border-r border-border p-6 md:w-7/12 lg:w-8/12">
+        <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+          <div className="w-full md:w-7/12 lg:w-8/12 overflow-y-auto border-b md:border-b-0 md:border-r border-border p-6">
             <ProgressSteps order={displayOrder} />
 
 
@@ -216,9 +215,8 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
     <div className="bg-background flex h-screen flex-col">
       <TradingRoomHeader order={effectiveOrder} userRole={userRole} />
 
-      <div className="flex flex-1 overflow-hidden">
-
-        <div className="overflow-y-auto border-r border-border p-4 md:w-7/12 lg:w-8/12">
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+        <div className="w-full md:w-7/12 lg:w-8/12 overflow-y-auto border-b md:border-b-0 md:border-r border-border p-4">
           <ProgressSteps order={effectiveOrder} />
 
           {userRole === 'buyer' && effectiveOrder.status === 'PENDING' && (
