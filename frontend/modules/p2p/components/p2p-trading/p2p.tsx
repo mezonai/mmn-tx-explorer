@@ -8,14 +8,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { P2POffersTabs } from './p2p-offers-list';
 import { usePaginationQueryParam } from '@/hooks/usePaginationQueryParam';
 import { useP2PMyOffers } from '../../hooks/useP2PMyOffers';
-import { Pagination } from '@/components/ui/pagination';
 import { useMyOrders } from '../../hooks/useMyOrders';
 import { P2POrdersList } from './p2p-orders-list';
-
+import { PAGINATION } from '@/constant';
+import { OrderMobileCard } from './mobile/order-card';
+import OfferMobileCard from './mobile/offer-card';
 export const P2P = () => {
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
 
   const [filters, setFilters] = useState<{ min?: number; max?: number }>({});
+  const [tab, setTab] = useState<'offers' | 'orders' | 'my-offers'>('offers');
 
   const handleFilterChange = useCallback(
     (min: number | undefined, max: number | undefined) => {
@@ -50,11 +52,22 @@ export const P2P = () => {
     from_amount: filters.min,
     to_amount: filters.max,
   });
+  const handleTabChange = (value: 'offers' | 'orders' | 'my-offers') => {
+    setTab(value);
+    setFilters({});
+    handleChangePage(PAGINATION.DEFAULT_PAGE);
+    handleChangeLimit(PAGINATION.DEFAULT_LIMIT);
+  };
+
   return (
     <div className="w-full space-y-6">
       <P2PHeader />
 
-      <Tabs defaultValue="offers" className="w-full">
+      <Tabs
+        value={tab}
+        onValueChange={(v) => handleTabChange(v as 'offers' | 'orders' | 'my-offers')}
+        className="w-full"
+      >
         <TabsList>
           <TabsTrigger value="offers">Offers</TabsTrigger>
           <TabsTrigger value="orders">My Orders</TabsTrigger>
@@ -72,7 +85,36 @@ export const P2P = () => {
             onLimitChange={handleChangeLimit}
             onFilterChange={handleFilterChange}
           />
-          <P2POffersTabs offers={offers?.data} isLoading={isLoading} />
+
+          <div className="block lg:hidden">
+            {(offers?.data ?? []).map((offer) => (
+              <OfferMobileCard key={offer.offer_id} offer={offer} />
+            ))}
+          </div>
+          <div className="hidden lg:block">
+            <P2POffersTabs offers={offers?.data ?? []} isLoading={isLoading} />
+          </div>
+        </TabsContent>
+        <TabsContent value="orders" className="space-y-6">
+          <P2PFiltersComponent
+            totalItems={myOrders?.meta.total_items}
+            totalPages={myOrders?.meta.total_pages}
+            isLoading={isMyOrdersLoading}
+            page={page}
+            limit={limit}
+            onPageChange={handleChangePage}
+            onLimitChange={handleChangeLimit}
+            onFilterChange={handleFilterChange}
+          />
+
+          <div className="block lg:hidden">
+            {(myOrders?.data ?? []).map((order) => (
+              <OrderMobileCard key={order.order_id} order={order} />
+            ))}
+          </div>
+          <div className="hidden lg:block">
+            <P2POrdersList orders={myOrders?.data ?? []} isLoading={isMyOrdersLoading} />
+          </div>
         </TabsContent>
         <TabsContent value="orders" className="space-y-6">
           <P2PFiltersComponent
@@ -98,7 +140,14 @@ export const P2P = () => {
             onLimitChange={handleChangeLimit}
             onFilterChange={handleFilterChange}
           />
-          <P2POffersTabs offers={myOffers?.data} isLoading={isMyOffersLoading} />
+          <div className="block lg:hidden">
+            {(myOffers?.data ?? []).map((offer) => (
+              <OfferMobileCard key={offer.offer_id} offer={offer} />
+            ))}
+          </div>
+          <div className="hidden lg:block">
+            <P2POffersTabs offers={myOffers?.data ?? []} isLoading={isMyOffersLoading} />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
