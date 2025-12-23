@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2 } from 'lucide-react';
-import { P2POrder } from '../../types';
+import { OrderStatus, P2POrder } from '../../types';
 import { P2PService } from '../../api';
 
 interface PaymentActionButtonProps {
@@ -29,7 +29,7 @@ interface PaymentActionButtonProps {
 
 export const PaymentActionButton = ({
   order,
-  nextStatus = 'PENDING',
+  nextStatus = OrderStatus.PENDING,
   buttonText = 'I have transferred, notify the seller',
   onStatusUpdated,
   disabled = false,
@@ -51,7 +51,7 @@ export const PaymentActionButton = ({
     }
   };
 
-  if (order.status !== 'OPEN') {
+  if (order.status !== OrderStatus.OPEN) {
     return null;
   }
 
