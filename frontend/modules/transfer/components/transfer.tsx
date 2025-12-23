@@ -74,7 +74,7 @@ export const Transfer = () => {
           amount: amount,
           note: note.trim(),
         },
-        ETransferType.TokenTransfer
+        ETransferType.DongGiveCoffee
       );
 
       if (result.success) {
