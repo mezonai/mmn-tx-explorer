@@ -448,3 +448,21 @@ func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAd
 
 	return offers, rows.Err()
 }
+
+func (r *OfferRepository) ExistsByTxHash(ctx context.Context, txHash string) (bool, error) {
+	query := fmt.Sprintf(`
+        SELECT 1
+        FROM %s.offers
+        WHERE transaction_hash = $1
+    `, r.dongSchema)
+
+	var one int
+	err := r.db.QueryRowContext(ctx, query, txHash).Scan(&one)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}

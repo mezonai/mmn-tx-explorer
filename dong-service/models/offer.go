@@ -40,7 +40,7 @@ type OfferLimit struct {
 
 // CreateOfferRequest is the expected payload for the API request to create an offer
 type CreateOfferRequest struct {
-	Side      OfferSide              `json:"side" binding:"required"` // BUY or SELL
+	Side      OfferSide              `json:"side" binding:"required,oneof=BUY SELL"` // BUY or SELL
 	Symbol    string                 `json:"symbol" binding:"required"`
 	Amount    int64                  `json:"amount" binding:"required"`
 	PriceRate *string                `json:"price_rate,omitempty"`
