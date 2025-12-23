@@ -6,7 +6,6 @@ import { ArrowLeft } from 'lucide-react';
 import { useP2POrder } from '../../hooks/useP2POrder';
 import { useP2POffer } from '../../hooks/useP2POffer';
 import { useCreateOrder } from '../../hooks/useCreateOrder';
-//import { useP2PChat } from '../../hooks/useP2PChat';
 import { useUser } from '@/providers/AppProvider';
 import { TradingRoomHeader } from './trading-room-header';
 import { ProgressSteps } from './progress-steps';
@@ -15,14 +14,13 @@ import { BankInfoCard } from './bank-info-card';
 import { PaymentActionButton } from './payment-action-button';
 import { SellerConfirmButton } from './seller-confirm-button';
 import { BuyAmountSection } from './buy-amount-section';
-//import { ChatSidebar } from './chat/chat-sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { P2POrder, OrderStatus } from '../../types';
 import { toast } from 'sonner';
 
 interface TradingRoomProps {
   orderId: string;
-  currentUserId?: string; // TODO: Get from auth context
+  currentUserId?: string;
 }
 
 export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
@@ -32,18 +30,15 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
   const isOfferMode = searchParams.get('type') === 'offer';
 
   const [error, setError] = useState<string | null>(null);
-  const [localStatus, setLocalStatus] = useState<OrderStatus | null>(null); // Local override for order status (buyer optimistic UI)
-  const [isExpired, setIsExpired] = useState<boolean>(false); // Track if order has expired
+  const [localStatus, setLocalStatus] = useState<OrderStatus | null>(null);
+  const [isExpired, setIsExpired] = useState<boolean>(false);
 
   const { order, isLoading: orderLoading, updateOrderStatus } = useP2POrder(isOfferMode ? '' : orderId);
-  // Only fetch offer in offer mode, or when we have an order and need to show bank info
   const offerIdParam = isOfferMode ? orderId : (order ? String(order.offer_id) : null);
   const { offer, isLoading: offerLoading } = useP2POffer(offerIdParam);
   const { createOrder, isLoading: isCreatingOrder } = useCreateOrder();
-  //const orderIdForChat = isOfferMode ? '' : orderId;
-  //const { messages, isLoading: chatLoading, sendMessage } = useP2PChat(orderIdForChat);
 
-  // Check if order has expired (real-time countdown)
+
   useEffect(() => {
     if (!order || isOfferMode) return;
 
@@ -54,32 +49,25 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
       setIsExpired(hasExpired);
     };
 
-    // Check immediately
     checkExpiration();
 
-    // Update every second
     const interval = setInterval(checkExpiration, 1000);
 
     return () => clearInterval(interval);
   }, [order, isOfferMode]);
 
-  // Detect user role (buyer or seller)
   const userRole = useMemo(() => {
-    if (isOfferMode) return 'buyer'; // In offer mode before order creation, user is always buyer
+    if (isOfferMode) return 'buyer';
     if (!user?.walletAddress || !order) return null;
 
-    // Buyer check
     if (order.buyer_wallet_address === user.walletAddress) return 'buyer';
 
-    // Seller check (prefer explicit seller wallet from order or offer)
     const sellerWallet = order.seller_wallet_address || offer?.seller_wallet_address;
     if (sellerWallet && sellerWallet === user.walletAddress) return 'seller';
 
-    // Fallback: if not buyer, assume seller (for cases seller_wallet_address missing in payload)
     return 'seller';
   }, [user?.walletAddress, order, isOfferMode, offer]);
 
-  // Reset localStatus when canonical order status changes (e.g., via WebSocket)
   useEffect(() => {
     if (order?.status) {
       setLocalStatus(null);
@@ -97,7 +85,7 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
       const newOrder = await createOrder(offer, amountMZD, amountVND);
 
       if (newOrder) {
-        // Navigate to order page - component will re-mount due to key prop in page.tsx
+
         router.push(`/p2p/trading-room/${newOrder.order_id}`);
       }
     } catch (err) {
@@ -108,7 +96,6 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
     }
   };
 
-  // Buyer status update now handled inside PaymentActionButton
 
   const handleSellerConfirm = async () => {
     try {
@@ -125,13 +112,6 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
     }
   };
 
-  //const handleSendMessage = (content: string) => {
-  //const userId = user?.id || currentUserId || 'user1';
-  //const senderType = userRole === 'buyer' ? 'buyer' : 'seller';
-  //sendMessage(content, userId, senderType);
-  //};
-
-  // Loading state
   if ((isOfferMode && offerLoading) || (!isOfferMode && (orderLoading || !order))) {
     return (
       <div className="flex h-screen flex-col">
@@ -145,7 +125,7 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
     );
   }
 
-  // Offer mode - Show buy form
+
   if (isOfferMode && offer) {
     const displayOrder: P2POrder = {
       order_id: '',
@@ -190,7 +170,7 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
         </div>
 
         <div className="flex flex-1 overflow-hidden">
-          {/* Main Content (Left Side) */}
+
           <div className="overflow-y-auto border-r border-gray-800 p-6 md:w-7/12 lg:w-8/12">
             <ProgressSteps order={displayOrder} />
 
@@ -201,24 +181,16 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
               </div>
             )}
 
-            {/* Show BuyAmountSection in offer mode */}
             <BuyAmountSection offer={offer} onConfirmBuy={handleConfirmBuy} isLoading={isCreatingOrder} />
           </div>
 
-          {/* Chat Sidebar (Right Side) 
-          <ChatSidebar
-            messages={messages}
-            currentUserId={user?.id || currentUserId || ''}
-            onSendMessage={handleSendMessage}
-            isLoading={chatLoading}
-          />
-          */}
+
         </div>
       </div>
     );
   }
 
-  // Order mode - Show normal trading room
+
   if (!order) {
     return (
       <div className="flex h-screen flex-col">
@@ -233,7 +205,7 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
     );
   }
 
-  // Apply local status override for normal order mode (buyer optimistic UI)
+
   const effectiveOrder: P2POrder = localStatus ? { ...order, status: localStatus } : order;
 
   return (
@@ -241,11 +213,10 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
       <TradingRoomHeader order={effectiveOrder} userRole={userRole} />
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Main Content (Left Side) */}
+
         <div className="overflow-y-auto border-r border-gray-800 p-6 md:w-7/12 lg:w-8/12">
           <ProgressSteps order={effectiveOrder} />
 
-          {/* Status messages */}
           {userRole === 'buyer' && effectiveOrder.status === 'PENDING' && (
             <p className="mb-4 text-sm text-gray-400">Waiting for the seller to confirm</p>
           )}
@@ -256,7 +227,6 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
             </div>
           )}
 
-          {/* Expired order warning */}
           {isExpired && effectiveOrder.status !== 'COMPLETED' && effectiveOrder.status !== 'CONFIRMED' && (
             <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-center">
               <p className="text-lg font-bold text-red-400">⚠ Order has expired</p>
@@ -273,7 +243,6 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
             />
           )}
 
-          {/* Conditional rendering based on user role */}
           {userRole === 'buyer' && (
             <PaymentActionButton
               order={effectiveOrder}
@@ -291,14 +260,6 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
           )}
         </div>
 
-        {/* Chat Sidebar (Right Side) 
-        <ChatSidebar
-          messages={messages}
-          currentUserId={user?.id || currentUserId || ''}
-          onSendMessage={handleSendMessage}
-          isLoading={chatLoading}
-        />
-        */}
       </div>
     </div>
   );

@@ -79,30 +79,38 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
       </div>
 
       <div className="grid grid-cols-4 gap-2">
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => setQuickAmount(offer.limit.min)}
-          className="rounded border border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 transition hover:bg-gray-700"
+          className="h-auto rounded border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 hover:bg-gray-700 hover:text-gray-300"
         >
           Min
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => setQuickAmount(Math.floor(available / 4))}
-          className="rounded border border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 transition hover:bg-gray-700"
+          className="h-auto rounded border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 hover:bg-gray-700 hover:text-gray-300"
         >
           25%
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => setQuickAmount(Math.floor(available / 2))}
-          className="rounded border border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 transition hover:bg-gray-700"
+          className="h-auto rounded border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 hover:bg-gray-700 hover:text-gray-300"
         >
           50%
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => setQuickAmount(Math.min(available, offer.limit.max))}
-          className="rounded border border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 transition hover:bg-gray-700"
+          className="h-auto rounded border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 hover:bg-gray-700 hover:text-gray-300"
         >
           Max
-        </button>
+        </Button>
       </div>
 
       {amountMZD > 0 && (
