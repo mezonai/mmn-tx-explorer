@@ -42,7 +42,7 @@ const OfferMobileCard = ({ offer }: OfferMobileCardProps) => {
 
       <div className="pt-1">
         <Button className="w-full rounded-xl bg-emerald-500 py-3 font-bold text-white shadow-md transition hover:bg-emerald-600 active:scale-[0.98]">
-          Buy {APP_CONFIG.CHAIN_SYMBOL}
+          Buy Mezon Đồng
         </Button>
       </div>
     </div>
