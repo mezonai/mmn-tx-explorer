@@ -9,6 +9,10 @@ import { useTopRaisedRatioCampaign } from '@/modules/donation-campaign/hooks/use
 import { APP_CONFIG } from '@/configs/app.config';
 import { useRedEnvelopeStats } from '@/modules/lucky-money/hooks';
 import { useGames } from '@/modules/mezon-game/hooks/useGames';
+import { HandHeart, Gift, Sprout, Store, Gamepad2 } from 'lucide-react';
+import { Transaction } from '@/assets/icons';
+import { Chip } from '@/components/shared';
+
 export const EcosystemHighlights = () => {
   const { campaign, percentageDisplay, barPercentage, isLoading, error } = useTopRaisedRatioCampaign();
   const router = useRouter();
@@ -50,7 +54,7 @@ export const EcosystemHighlights = () => {
         >
           <div className="mb-3 flex items-center justify-between">
             <span className="flex items-center gap-2 font-semibold">Donation Campaigns</span>
-            <i className="fa-solid fa-hand-holding-heart text-[var(--color-brand-link)]"></i>
+            <HandHeart className="text-brand-primary h-6 w-6" />
           </div>
           {isLoading ? (
             <div>
@@ -101,7 +105,7 @@ export const EcosystemHighlights = () => {
             <div className="mb-3 flex items-center justify-between">
               <span className="font-semibold">Lucky Money</span>
               <div className="flex items-center gap-2">
-                <i className="fa-solid fa-gift text-[var(--color-brand-link)] dark:text-red-400"></i>
+                <Gift className="text-brand-primary h-6 w-6 dark:text-red-400" />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -118,10 +122,10 @@ export const EcosystemHighlights = () => {
           <div className="mb-3 flex items-center justify-between">
             <span className="font-semibold">Stake</span>
             <div className="flex items-center gap-2">
-              <span className="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-700 uppercase dark:bg-amber-900/30 dark:text-amber-300">
-                Coming Soon
-              </span>
-              <i className="fa-solid fa-seedling text-[var(--color-brand-link)] dark:text-green-400"></i>
+              <Chip variant="warning" size="sm">
+                Coming Soon{' '}
+              </Chip>
+              <Sprout className="text-brand-primary h-6 w-6 dark:text-green-400" />
             </div>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400">0 {APP_CONFIG.CHAIN_SYMBOL} staked</p>
@@ -134,10 +138,10 @@ export const EcosystemHighlights = () => {
           <div className="mb-3 flex items-center justify-between">
             <span className="font-semibold">Swap</span>
             <div className="flex items-center gap-2">
-              <span className="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-700 uppercase dark:bg-amber-900/30 dark:text-amber-300">
-                Coming Soon
-              </span>
-              <i className="fa-solid fa-right-left text-[var(--color-brand-link)] dark:text-blue-400"></i>
+              <Chip variant="warning" size="sm">
+                Coming Soon{' '}
+              </Chip>
+              <Transaction className="text-brand-primary h-6 w-6 dark:text-blue-400" />
             </div>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400">24h volume: 0 {APP_CONFIG.CHAIN_SYMBOL}</p>
@@ -161,7 +165,7 @@ export const EcosystemHighlights = () => {
           <div className="mb-3 flex items-center justify-between">
             <span className="font-semibold">Cobar.vn</span>
             <div className="flex items-center gap-2">
-              <i className="fa-solid fa-store text-orange-400"></i>
+              <Store className="text-brand-primary h-6 w-6 dark:text-orange-400" />
             </div>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400">Integrated Mezon payment marketplace</p>
@@ -178,7 +182,7 @@ export const EcosystemHighlights = () => {
           <div className="mb-3 flex items-center justify-between">
             <span className="font-semibold">Mezon Games</span>
             <div className="flex items-center gap-2">
-              <i className="fa-solid fa-gamepad text-[var(--color-brand-link)] dark:text-pink-400"></i>
+              <Gamepad2 className="text-brand-primary h-6 w-6 dark:text-pink-400" />
             </div>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400">
