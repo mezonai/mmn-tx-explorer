@@ -1,4 +1,3 @@
-import { OFFERS_STATUS } from './constants';
 import { OrderStatus } from './types';
 
 export const getOrderStatusInfo = (type: OrderStatus) => {
