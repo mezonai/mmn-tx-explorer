@@ -121,3 +121,15 @@ export interface ChatMessage {
   content: string;
   created_at: string;
 }
+
+export interface ProgressStep {
+  id: number;
+  label: string;
+  status: OrderStatus;
+}
+
+export const PROGRESS_STEPS: ProgressStep[] = [
+  { id: 1, label: 'Payment', status: OrderStatus.OPEN },
+  { id: 2, label: 'Pending confirmation', status: OrderStatus.PENDING },
+  { id: 3, label: 'Completed', status: OrderStatus.COMPLETED },
+];

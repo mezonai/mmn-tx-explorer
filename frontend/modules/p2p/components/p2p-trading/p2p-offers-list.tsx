@@ -72,7 +72,6 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
       headerContent: 'Action',
       renderCell: (offer) => (
         <Button onClick={() => {
-          console.log(offer.offer_id);
           router.push(ROUTES.P2P_TRADING_ROOM(offer.offer_id, 'offer'))
         }} className="rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600">
           Buy đồng

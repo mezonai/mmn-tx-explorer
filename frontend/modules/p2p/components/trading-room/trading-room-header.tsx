@@ -7,6 +7,7 @@ import { P2POrder } from '../../types';
 import { AddressDisplay } from '@/components/shared/address-display';
 import { ROUTES } from '@/configs/routes.config';
 import { useP2POffer } from '../../hooks/useP2POffer';
+import { Button } from '@/components/ui/button';
 
 interface TradingRoomHeaderProps {
   order: P2POrder;
@@ -57,13 +58,13 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
   return (
     <header className="bg-card flex h-14 shrink-0 items-center justify-between border-b border-gray-800 px-6">
       <div className="flex items-center gap-4">
-        <button
+        <Button
           onClick={() => router.back()}
           className="text-gray-400 transition hover:text-white"
           aria-label="Go back"
         >
           <ArrowLeft className="h-5 w-5" />
-        </button>
+        </Button>
         <div>
           <h1 className="text-sm font-bold text-white">
             MZD buy order <span className="text-gray-500">#{order.order_id}</span>
