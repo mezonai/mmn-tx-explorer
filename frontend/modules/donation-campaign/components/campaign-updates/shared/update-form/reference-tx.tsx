@@ -28,11 +28,6 @@ export const ReferenceTx = ({ form, setForm }: ReferenceTxProps) => {
     (newHashes: string[]) => {
       const totalHashes = hashes.length + newHashes.length;
 
-      if (hashes.length >= MAX_HASHES) {
-        toast.error(`You can only add up to ${MAX_HASHES} transaction hashes.`);
-        return;
-      }
-
       if (totalHashes > MAX_HASHES) {
         toast.error(`You can only add up to ${MAX_HASHES} transaction hashes.`);
         return;
