@@ -132,6 +132,7 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
       order_id: '',
       offer_id: offer?.offer_id || '',
       buyer_wallet_address: user?.walletAddress || '',
+      seller_wallet_address: offer?.seller_wallet_address || '',
       amount: 0,
       price: 0,
       payable_amount: 0,

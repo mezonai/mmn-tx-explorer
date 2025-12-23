@@ -79,31 +79,31 @@ export enum OrderStatus {
 
 // P2POrder interface matching backend schema
 export interface P2POrder {
-  order_id: string | number; // BIGSERIAL from backend
-  offer_id: string | number; // BIGINT from backend
+  order_id: string | number;
+  offer_id: string | number;
   buyer_wallet_address: string;
-  seller_wallet_address?: string; // Seller wallet address from backend
-  amount: number; // BIGINT - amount in MZD (smallest unit)
-  price?: number; // BIGINT - price in VND (smallest unit) - deprecated, use payable_amount
-  payable_amount?: number; // BIGINT - payable amount in VND (smallest unit) - from API response
-  status: OrderStatus; // Default 'PENDING'
+  seller_wallet_address: string;
+  amount: number;
+  price?: number;
+  payable_amount?: number;
+  status: OrderStatus;
   bank_info?: {
     bank: string;
     account_number: string;
     account_name: string;
   };
   transfer_code?: string | null;
-  expires_at: string; // TIMESTAMPTZ
-  created_at: string; // TIMESTAMPTZ
-  updated_at: string; // TIMESTAMPTZ
+  expires_at: string;
+  created_at: string;
+  updated_at: string;
   price_rate: number;
 }
 
 // Request interface for creating an order
 export interface CreateOrderRequest {
   offer_id: string | number;
-  amount: number; // Amount in MZD (smallest unit)
-  price?: number | null; // Optional price in VND (calculated from offer if not provided)
+  amount: number;
+  price?: number | null;
 }
 
 // Request interface for updating order status
