@@ -115,7 +115,7 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
   if ((isOfferMode && offerLoading) || (!isOfferMode && (orderLoading || !order))) {
     return (
       <div className="flex h-screen flex-col">
-        <div className="bg-card h-14 border-b border-gray-800" />
+        <div className="bg-card h-14 border-b border-border" />
         <div className="flex-1 p-6">
           <Skeleton className="mb-6 h-20 w-full" />
           <Skeleton className="mb-6 h-64 w-full" />
@@ -148,20 +148,20 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
 
     return (
       <div className="bg-background flex h-screen flex-col">
-        <div className="bg-card flex h-14 shrink-0 items-center justify-between border-b border-gray-800 px-6">
+        <div className="bg-card flex h-14 shrink-0 items-center justify-between border-b border-border px-6">
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.back()}
-              className="text-gray-400 transition hover:text-white"
+              className="text-muted-foreground transition hover:text-foreground"
               aria-label="Go back"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div>
-              <h1 className="text-sm font-bold text-white">
+              <h1 className="text-sm font-bold text-muted-foreground">
                 Buy MZD from {formatWallet(offer?.seller_wallet_address)}
               </h1>
-              <div className="text-xs text-gray-400">
+              <div className="text-xs text-muted-foreground">
                 Trading with{' '}
                 <span className="text-brand-primary font-bold">{formatWallet(offer?.seller_wallet_address)}</span>
               </div>
@@ -171,12 +171,12 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
 
         <div className="flex flex-1 overflow-hidden">
 
-          <div className="overflow-y-auto border-r border-gray-800 p-6 md:w-7/12 lg:w-8/12">
+          <div className="overflow-y-auto border-r border-border p-6 md:w-7/12 lg:w-8/12">
             <ProgressSteps order={displayOrder} />
 
 
             {error && (
-              <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
+              <div className="mb-4 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
                 {error}
               </div>
             )}
@@ -194,11 +194,11 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
   if (!order) {
     return (
       <div className="flex h-screen flex-col">
-        <div className="bg-card h-14 border-b border-gray-800" />
+        <div className="bg-card h-14 border-b border-border" />
         <div className="flex flex-1 items-center justify-center p-6">
           <div className="text-center">
-            <h2 className="mb-2 text-xl font-bold text-white">Order not found</h2>
-            <p className="text-gray-400">This order does not exist or has been removed.</p>
+            <h2 className="mb-2 text-xl font-bold text-foreground">Order not found</h2>
+            <p className="text-muted-foreground">This order does not exist or has been removed.</p>
           </div>
         </div>
       </div>
@@ -214,11 +214,11 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
 
       <div className="flex flex-1 overflow-hidden">
 
-        <div className="overflow-y-auto border-r border-gray-800 p-6 md:w-7/12 lg:w-8/12">
+        <div className="overflow-y-auto border-r border-border p-6 md:w-7/12 lg:w-8/12">
           <ProgressSteps order={effectiveOrder} />
 
           {userRole === 'buyer' && effectiveOrder.status === 'PENDING' && (
-            <p className="mb-4 text-sm text-gray-400">Waiting for the seller to confirm</p>
+            <p className="mb-4 text-sm text-muted-foreground">Waiting for the seller to confirm</p>
           )}
 
           {(effectiveOrder.status === 'COMPLETED' || effectiveOrder.status === 'CONFIRMED') && (

@@ -40,19 +40,19 @@ export const ProgressSteps = ({ order }: ProgressStepsProps) => {
                 <div
                   className={cn(
                     'flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold',
-                    isActive ? 'bg-brand-primary text-white' : 'bg-gray-700 text-gray-400'
+                    isActive ? 'bg-brand-primary text-white' : 'bg-muted text-muted-foreground'
                   )}
                 >
                   {isCompleted ? '✓' : step.id}
                 </div>
-                <div className={cn('text-xs font-medium text-center', isActive ? 'text-brand-primary' : 'text-gray-400')}>
+                <div className={cn('text-xs font-medium text-center', isActive ? 'text-brand-primary' : 'text-muted-foreground')}>
                   {step.label}
                 </div>
               </div>
 
               {/* Connecting line (except for last step) */}
               {index < PROGRESS_STEPS.length - 1 && (
-                <div className="relative mx-4 h-1 flex-1 rounded bg-gray-700 mb-4">
+                <div className="relative mx-4 h-2 flex-1 rounded bg-muted mb-4">
                   <div
                     className={cn(
                       'absolute top-0 left-0 h-full rounded bg-brand-primary transition-all duration-500',
