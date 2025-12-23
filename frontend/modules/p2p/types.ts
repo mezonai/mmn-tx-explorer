@@ -1,4 +1,4 @@
-import { OFFERS_STATUS } from './constants';
+import { OFFERS_STATUS, P2P_TAB } from './constants';
 
 export type BankOption = 'MB' | 'VCB' | 'TCB' | 'ACB' | 'TPBANK' | 'VIETCOMBANK';
 
@@ -21,6 +21,7 @@ export interface P2POffer {
   price_type: string;
   side: TradeTypes;
   seller_wallet_address: string;
+  seller_user_id: string;
   total_amount: number;
 
   symbol: string;
@@ -75,3 +76,4 @@ export interface P2POrder {
   bank_info: string;
   price_rate: number;
 }
+export type P2PTabType = (typeof P2P_TAB)[keyof typeof P2P_TAB];

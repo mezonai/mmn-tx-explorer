@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { P2PHeader } from './p2p-header';
 import { P2PFiltersComponent } from './p2p-filters';
 import { useP2POffers } from '../../hooks/useP2POffers';
@@ -10,55 +10,50 @@ import { usePaginationQueryParam } from '@/hooks/usePaginationQueryParam';
 import { useP2PMyOffers } from '../../hooks/useP2PMyOffers';
 import { useMyOrders } from '../../hooks/useMyOrders';
 import { P2POrdersList } from './p2p-orders-list';
-import { PAGINATION } from '@/constant';
 import { OrderMobileCard } from './mobile/order-card';
 import OfferMobileCard from './mobile/offer-card';
+import { useQueryParam } from '@/hooks';
+import { P2PTabType } from '../../types';
+import { P2P_TAB } from '../../constants';
 export const P2P = () => {
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
-
-  const [filters, setFilters] = useState<{ min?: number; max?: number }>({});
-  const [tab, setTab] = useState<'offers' | 'orders' | 'my-offers'>('offers');
-
+  const { value: tab, handleChangeValue: setTab } = useQueryParam<P2PTabType>({
+    queryParam: 'tab',
+    defaultValue: P2P_TAB.OFFERS,
+    clearParams: ['page', 'min', 'max'],
+  });
+  const { value: min, handleChangeValue: setMin } = useQueryParam<number>({
+    queryParam: 'min',
+    defaultValue: 0,
+  });
+  const { value: max, handleChangeValue: setMax } = useQueryParam<number>({
+    queryParam: 'max',
+    defaultValue: 0,
+  });
   const handleFilterChange = useCallback(
-    (min: number | undefined, max: number | undefined) => {
-      setFilters((prev) => {
-        if (prev.min !== min || prev.max !== max) {
-          if (page !== 1) {
-            handleChangePage(1);
-          }
-          return { min, max };
-        }
-        return prev;
-      });
-    },
-    [page, handleChangePage]
-  );
+    (newMin: number | undefined, newMax: number | undefined) => {
+      if (newMin !== undefined) setMin(newMin);
+      if (newMax !== undefined) setMax(newMax);
 
-  const { data: offers, isLoading } = useP2POffers({
+      if (page !== 1) {
+        handleChangePage(1);
+      }
+    },
+    [page, handleChangePage, setMin, setMax]
+  );
+  const apiParams = {
     page: page - 1,
     limit,
-    from_amount: filters.min,
-    to_amount: filters.max,
-  });
-  const { data: myOffers, isLoading: isMyOffersLoading } = useP2PMyOffers({
-    page: page - 1,
-    limit,
-    from_amount: filters.min,
-    to_amount: filters.max,
-  });
-  const { data: myOrders, isLoading: isMyOrdersLoading } = useMyOrders({
-    page: page - 1,
-    limit,
-    from_amount: filters.min,
-    to_amount: filters.max,
-  });
-  const handleTabChange = (value: 'offers' | 'orders' | 'my-offers') => {
-    setTab(value);
-    setFilters({});
-    handleChangePage(PAGINATION.DEFAULT_PAGE);
-    handleChangeLimit(PAGINATION.DEFAULT_LIMIT);
+    from_amount: min || undefined,
+    to_amount: max || undefined,
   };
 
+  const { data: offers, isLoading } = useP2POffers(apiParams, tab === P2P_TAB.OFFERS);
+  const { data: myOffers, isLoading: isMyOffersLoading } = useP2PMyOffers(apiParams, tab === P2P_TAB.MY_OFFERS);
+  const { data: myOrders, isLoading: isMyOrdersLoading } = useMyOrders(apiParams, tab === P2P_TAB.ORDERS);
+  const handleTabChange = (value: string) => {
+    setTab(value as P2PTabType);
+  };
   return (
     <div className="w-full space-y-6">
       <P2PHeader />
