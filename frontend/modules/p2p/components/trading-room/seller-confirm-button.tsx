@@ -41,7 +41,7 @@ export const SellerConfirmButton = ({ order, onConfirm, disabled = false }: Sell
         <CheckCircle2 className="h-5 w-5" />
         {isSubmitting ? 'Confirming...' : 'Confirm money received, release MZD'}
       </Button>
-      <div className="px-4 text-center text-sm text-gray-500">
+      <div className="px-4 text-center text-sm text-muted-foreground">
         Only click the button after you have received the transfer from the buyer.
       </div>
     </div>

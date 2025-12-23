@@ -62,7 +62,7 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
   return (
     <div className="mb-6 space-y-4">
       <div>
-        <label className="mb-2 block text-sm font-medium text-gray-400">MZD amount to buy</label>
+        <label className="mb-2 block text-sm font-medium text-muted-foreground">MZD amount to buy</label>
         <div className="relative">
           <Input
             type="text"
@@ -71,11 +71,11 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
             )}`}
             value={displayValue}
             onChange={handleInputChange}
-            className="bg-input/30 dark:bg-input/30 focus:border-brand-primary w-full rounded-md border-gray-700 px-3 py-2.5 text-lg font-bold text-white placeholder-gray-600 focus:outline-none"
+            className="bg-input/30 dark:bg-input/30 focus:border-brand-primary w-full rounded-md border-border px-3 py-2.5 text-lg font-bold text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
-          <span className="absolute top-3.5 right-3 text-xs font-bold text-gray-500">MZD</span>
+          <span className="absolute top-3.5 right-3 text-xs font-bold text-muted-foreground">MZD</span>
         </div>
-        <div className="mt-1 text-xs text-gray-500">Available: {formatCurrency(available)} MZD</div>
+        <div className="mt-1 text-xs text-muted-foreground">Available: {formatCurrency(available)} MZD</div>
       </div>
 
       <div className="grid grid-cols-4 gap-2">
@@ -83,7 +83,7 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
           variant="outline"
           size="sm"
           onClick={() => setQuickAmount(offer.limit.min)}
-          className="h-auto rounded border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 hover:bg-gray-700 hover:text-gray-300"
+          className="h-auto rounded border-border bg-muted py-1.5 text-xs text-foreground hover:bg-muted/80"
         >
           Min
         </Button>
@@ -91,7 +91,7 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
           variant="outline"
           size="sm"
           onClick={() => setQuickAmount(Math.floor(available / 4))}
-          className="h-auto rounded border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 hover:bg-gray-700 hover:text-gray-300"
+          className="h-auto rounded border-border bg-muted py-1.5 text-xs text-foreground hover:bg-muted/80"
         >
           25%
         </Button>
@@ -99,7 +99,7 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
           variant="outline"
           size="sm"
           onClick={() => setQuickAmount(Math.floor(available / 2))}
-          className="h-auto rounded border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 hover:bg-gray-700 hover:text-gray-300"
+          className="h-auto rounded border-border bg-muted py-1.5 text-xs text-foreground hover:bg-muted/80"
         >
           50%
         </Button>
@@ -107,21 +107,21 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
           variant="outline"
           size="sm"
           onClick={() => setQuickAmount(Math.min(available, offer.limit.max))}
-          className="h-auto rounded border-gray-700 bg-gray-800 py-1.5 text-xs text-gray-300 hover:bg-gray-700 hover:text-gray-300"
+          className="h-auto rounded border-border bg-muted py-1.5 text-xs text-foreground hover:bg-muted/80"
         >
           Max
         </Button>
       </div>
 
       {amountMZD > 0 && (
-        <div className="rounded-lg border border-gray-700/50 bg-gray-800/50 px-4 py-4">
+        <div className="rounded-lg border border-border bg-muted/50 px-4 py-4">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm text-gray-400">Amount to pay</span>
+            <span className="text-sm text-muted-foreground">Amount to pay</span>
             <span className="text-2xl font-bold text-green-400">
               {formatCurrency(amountVND)} <span className="text-sm">VND</span>
             </span>
           </div>
-          <div className="flex items-center justify-between text-xs text-gray-500">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>Rate: {offer.price_rate.toLocaleString('vi-VN')} VND/MZD</span>
             <span>≈ {formatCurrency(amountMZD)} MZD</span>
           </div>

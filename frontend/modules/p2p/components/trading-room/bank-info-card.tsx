@@ -41,9 +41,9 @@ export const BankInfoCard = ({ bank_info, transfer_code, amount }: BankInfoCardP
   }
 
   return (
-    <Card className="bg-card mb-8 rounded-xl border border-gray-800 p-6">
+    <Card className="bg-card mb-8 rounded-xl border border-border p-6">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="font-bold text-white">Bank transfer details</h3>
+        <h3 className="font-bold text-foreground">Bank transfer details</h3>
         <span className="flex items-center gap-1 rounded bg-yellow-500/20 px-2 py-1 text-xs font-bold text-yellow-500">
           <Bolt className="h-3 w-3" />
           Instant transfer 24/7
@@ -54,28 +54,28 @@ export const BankInfoCard = ({ bank_info, transfer_code, amount }: BankInfoCardP
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Left column - Bank information */}
         <div className="space-y-4">
-          <div className="group flex items-center justify-between rounded p-2 transition hover:bg-gray-800/50">
+          <div className="group flex items-center justify-between rounded p-2 transition hover:bg-muted/50">
             <div>
-              <div className="text-xs font-medium text-gray-500 uppercase">Account number</div>
-              <div className="font-mono text-lg font-bold tracking-wider text-white">{bank_info.account_number}</div>
+              <div className="text-xs font-medium text-muted-foreground uppercase">Account number</div>
+              <div className="font-mono text-lg font-bold tracking-wider text-foreground">{bank_info.account_number}</div>
             </div>
-            <CopyButton textToCopy={bank_info.account_number} className="p-2 text-gray-400 transition hover:text-white" />
+            <CopyButton textToCopy={bank_info.account_number} className="p-2 text-muted-foreground transition hover:text-foreground" />
           </div>
 
-          <div className="group flex items-center justify-between rounded p-2 transition hover:bg-gray-800/50">
+          <div className="group flex items-center justify-between rounded p-2 transition hover:bg-muted/50">
             <div>
-              <div className="text-xs font-medium text-gray-500 uppercase">Bank</div>
-              <div className="text-base font-bold text-white">{bank_info.bank}</div>
+              <div className="text-xs font-medium text-muted-foreground uppercase">Bank</div>
+              <div className="text-base font-bold text-foreground">{bank_info.bank}</div>
             </div>
-            <CopyButton textToCopy={bank_info.bank} className="p-2 text-gray-400 transition hover:text-white" />
+            <CopyButton textToCopy={bank_info.bank} className="p-2 text-muted-foreground transition hover:text-foreground" />
           </div>
 
-          <div className="group flex items-center justify-between rounded p-2 transition hover:bg-gray-800/50">
+          <div className="group flex items-center justify-between rounded p-2 transition hover:bg-muted/50">
             <div>
-              <div className="text-xs font-medium text-gray-500 uppercase">Account name</div>
-              <div className="text-base font-bold text-white">{bank_info.account_name}</div>
+              <div className="text-xs font-medium text-muted-foreground uppercase">Account name</div>
+              <div className="text-base font-bold text-foreground">{bank_info.account_name}</div>
             </div>
-            <CopyButton textToCopy={bank_info.account_name} className="p-2 text-gray-400 transition hover:text-white" />
+            <CopyButton textToCopy={bank_info.account_name} className="p-2 text-muted-foreground transition hover:text-foreground" />
           </div>
 
           {transfer_code && (
@@ -92,7 +92,7 @@ export const BankInfoCard = ({ bank_info, transfer_code, amount }: BankInfoCardP
         </div>
 
         {/* Right column - QR Code */}
-        <div className="flex flex-col items-center justify-center rounded-lg border border-gray-700/50 bg-gray-800/30 p-4">
+        <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-muted/30 p-4">
           {qrCodeUrl ? (
             <div className="relative">
               <img
@@ -103,8 +103,8 @@ export const BankInfoCard = ({ bank_info, transfer_code, amount }: BankInfoCardP
               />
             </div>
           ) : (
-            <div className="flex h-[280px] w-[280px] items-center justify-center rounded-lg border border-dashed border-gray-700 bg-gray-900/50">
-              <p className="text-center text-sm text-gray-500">QR code unavailable</p>
+            <div className="flex h-[280px] w-[280px] items-center justify-center rounded-lg border border-dashed border-border bg-muted/50">
+              <p className="text-center text-sm text-muted-foreground">QR code unavailable</p>
             </div>
           )}
         </div>

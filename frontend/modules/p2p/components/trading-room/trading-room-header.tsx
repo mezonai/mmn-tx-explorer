@@ -56,21 +56,21 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
   }, [userRole, order.seller_wallet_address, order.buyer_wallet_address, offer?.seller_wallet_address]);
 
   return (
-    <header className="bg-card flex h-14 shrink-0 items-center justify-between border-b border-gray-800 px-6">
+    <header className="bg-card flex h-14 shrink-0 items-center justify-between border-b border-border px-6">
       <div className="flex items-center gap-4">
         <Button
           onClick={() => router.back()}
-          className="text-gray-400 transition hover:text-white"
+          className="text-muted-foreground transition hover:text-foreground"
           aria-label="Go back"
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-sm font-bold text-white">
-            MZD buy order <span className="text-gray-500">#{order.order_id}</span>
+          <h1 className="text-sm font-bold text-muted-foreground">
+            MZD buy order <span className="text-muted-foreground">#{order.order_id}</span>
           </h1>
           {counterpartyAddress && (
-            <div className="flex items-center gap-1 text-xs text-gray-400">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
               Trading with
               <AddressDisplay
                 address={counterpartyAddress}
