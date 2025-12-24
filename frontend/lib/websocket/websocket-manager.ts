@@ -33,7 +33,7 @@ export class WebSocketManager {
   private isConnecting = false;
 
   constructor() {
-    this.wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8899';
+    this.wsUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'ws://localhost:8899';
   }
 
   async connect(token?: string) {
@@ -124,9 +124,9 @@ export class WebSocketManager {
   private handleEvent(event: unknown) {
     const eventType =
       typeof event === 'object' &&
-      event !== null &&
-      'type' in event &&
-      typeof (event as { type?: unknown }).type === 'string'
+        event !== null &&
+        'type' in event &&
+        typeof (event as { type?: unknown }).type === 'string'
         ? (event as { type: string }).type
         : undefined;
 
