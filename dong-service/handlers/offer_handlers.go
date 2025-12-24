@@ -7,6 +7,7 @@ import (
 	"dong-service/services"
 	"dong-service/utils"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -43,6 +44,31 @@ func (h *OfferHandler) CreateOffer(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error().Err(err).Msg("invalid create offer request")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid request: "+err.Error()))
+		return
+	}
+
+	// Validate request
+	if req.Amount <= 0 {
+		logger.Error().Msg("invalid create offer request: amount must be greater than 0")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid request: amount must be greater than 0"))
+		return
+	}
+
+	if req.Limit != nil && (req.Limit.Min < 0 || req.Limit.Max < 0 || req.Limit.Min > req.Limit.Max) {
+		logger.Error().Msg("invalid create offer request: invalid limit values")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid request: invalid limit values"))
+		return
+	}
+
+	var priceRateFloat *float64
+	if req.PriceRate != nil && *req.PriceRate != "" {
+		if r, parseErr := strconv.ParseFloat(*req.PriceRate, 64); parseErr == nil {
+			priceRateFloat = &r
+		}
+	}
+	if priceRateFloat != nil && *priceRateFloat <= 0 {
+		logger.Error().Msg("invalid create offer request: price rate must be greater than 0")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid request: price rate must be greater than 0"))
 		return
 	}
 
@@ -246,6 +272,23 @@ func (h *OfferHandler) UpdateOfferStatus(c *gin.Context) {
 	var req models.UpdateOfferStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid request: "+err.Error()))
+		return
+	}
+
+	// Validate request
+	userAddress, _ := utils.GetAddressFromContext(c)
+	var offer, err = h.offerService.GetOfferByID(c.Request.Context(), req.OfferID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, "Offer not found"))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to get offer: "+err.Error()))
+		return
+	}
+
+	if offer.SellerWalletAddress != userAddress {
+		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, "You are not the creator of this offer"))
 		return
 	}
 

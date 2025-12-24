@@ -7,6 +7,7 @@ import (
 	"dong-service/services"
 	"dong-service/utils"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -47,6 +48,16 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error().Err(err).Msg("invalid create order request")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid request: "+err.Error()))
+		return
+	}
+
+	// Validate request
+	if req.Amount < 0 {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "amount must be non-negative"))
+		return
+	}
+	if req.PayableAmount != nil && *req.PayableAmount < 0 {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "payable amount must be non-negative"))
 		return
 	}
 
@@ -205,6 +216,19 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 		BankInfo       *string `json:"bank_info,omitempty"`
 	}
 	_ = c.ShouldBindJSON(&body)
+
+	// Validate request
+	var executionPrice *float64
+	if body.ExecutionPrice != nil && *body.ExecutionPrice != "" {
+		if r, parseErr := strconv.ParseFloat(*body.ExecutionPrice, 64); parseErr == nil {
+			executionPrice = &r
+		}
+	}
+	if executionPrice != nil && *executionPrice < 0 {
+		logger.Error().Msg("invalid confirm order request: execution price must be non-negative")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid request: execution price must be non-negative"))
+		return
+	}
 
 	orderID, err := utils.ParseInt64Param(c, "id")
 	if err != nil {
