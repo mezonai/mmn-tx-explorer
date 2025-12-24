@@ -99,10 +99,8 @@ export function AppProvider({ children }: AppProviderProps) {
         const userObject = processAndStoreUser(userInfo.user, senderAddress);
         setUser(userObject);
         const fetchedZk = await fetchAndStoreZkProof(
-          userInfo.user.user_id || userInfo.user.sub,
           keypair.publicKey,
           userInfo.auth_token,
-          senderAddress
         );
         if (fetchedZk) {
           setZkProof(fetchedZk);

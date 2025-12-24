@@ -17,7 +17,6 @@ export const handleTokenStorage = (userInfo: LoginResponse) => {
     refresh_token: userInfo.refresh_token,
   };
   localStorage.setItem(STORAGE_KEYS.TOKEN, JSON.stringify(token));
-  localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, userInfo.auth_token);
 };
 
 export const generateAndStoreKeyPair = () => {
@@ -39,17 +38,13 @@ export const processAndStoreUser = (userInfo: LoginResponse['user'], senderAddre
 };
 
 export const fetchAndStoreZkProof = async (
-  userId: string,
   ephemeralPublicKey: string,
-  jwt: string,
-  address: string
+  jwt: string
 ) => {
   try {
     const zkProof = await zkClient.getZkProofs({
-      userId,
       ephemeralPublicKey,
       jwt,
-      address,
     });
     localStorage.setItem(STORAGE_KEYS.ZK_PROOF, JSON.stringify(zkProof));
     return zkProof;
