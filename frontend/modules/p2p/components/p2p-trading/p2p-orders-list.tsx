@@ -1,4 +1,5 @@
 'use client';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { P2POrder } from '../../types';
 import { Table } from '@/components/ui/table';
@@ -9,7 +10,7 @@ import { AddressDisplay, Chip } from '@/components/shared';
 import { ROUTES } from '@/configs/routes.config';
 import { Button } from '@/components/ui/button';
 import { Countdown } from '../shared/count-down';
-import { getTransactionTypeInfo } from '../../util';
+import { getOrderStatusInfo } from '../../util';
 
 interface P2POrdersListProps {
   orders: P2POrder[] | undefined;
@@ -17,6 +18,7 @@ interface P2POrdersListProps {
 }
 
 export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
+  const router = useRouter();
   const columns: TTableColumn<P2POrder>[] = [
     {
       headerContent: 'ORDER ID',
@@ -84,7 +86,7 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
       headerContent: 'STATUS',
       renderCell: (order) => (
         <div className="flex items-center gap-2">
-          <Chip variant={getTransactionTypeInfo(order.status)} className="gap-1.5 rounded-sm">
+          <Chip variant={getOrderStatusInfo(order.status)} className="gap-1.5 rounded-sm">
             <span>{order.status}</span>
           </Chip>
         </div>
@@ -103,7 +105,7 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
       renderCell: (order) => (
         <Button
           className="bg-primary/10 text-brand-primary dark:hover:bg-brand-primary dark:bg-brand-primary/10 dark:border-brand-primary dark:text-primary-light inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition hover:text-white dark:border dark:hover:text-white"
-          onClick={() => console.log('view', order.order_id)}
+          onClick={() => router.push(ROUTES.P2P_TRADING_ROOM(order.order_id.toString()))}
         >
           View
         </Button>
