@@ -46,7 +46,7 @@ func (r *DonationCampaignFeedRepository) ListCampaignFeedsByAddress(campaignAddr
         SELECT 
 			id, tx_hash, creator_address, related_address,
 			title, description, image_cids, parent_hash,
-			root_hash, visible, created_at, root_created_at
+			root_hash, reference_tx_hashes, visible, created_at, root_created_at
 		FROM (
 			SELECT
 				f.*,
@@ -104,6 +104,7 @@ func (r *DonationCampaignFeedRepository) ListCampaignFeedsByAddress(campaignAddr
 			pq.Array(&feed.ImageCIDs),
 			&feed.ParentHash,
 			&feed.RootHash,
+			pq.Array(&feed.ReferenceTxHashes),
 			&feed.Visible,
 			&feed.CreatedAt,
 			&feed.RootCreatedAt,

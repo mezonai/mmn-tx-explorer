@@ -323,7 +323,13 @@ func (r *DonationCampaignRepository) GetAll(status *int16, verified *bool, q *st
 	}
 
 	if q != nil && strings.TrimSpace(*q) != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("(dc.body_search @@ plainto_tsquery('simple', $%d))", argCount))
+		whereClauses = append(
+			whereClauses,
+			fmt.Sprintf(
+				"dc.body_search @@ plainto_tsquery('simple', unaccent($%d))",
+				argCount,
+			),
+		)
 		args = append(args, strings.TrimSpace(*q))
 		argCount++
 	}
@@ -586,7 +592,13 @@ func (r *DonationCampaignRepository) Count(status *int16, verified *bool, q *str
 	}
 
 	if q != nil && strings.TrimSpace(*q) != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("(dc.body_search @@ plainto_tsquery('simple', $%d))", argCount))
+		whereClauses = append(
+			whereClauses,
+			fmt.Sprintf(
+				"dc.body_search @@ plainto_tsquery('simple', unaccent($%d))",
+				argCount,
+			),
+		)
 		args = append(args, strings.TrimSpace(*q))
 		argCount++
 	}
