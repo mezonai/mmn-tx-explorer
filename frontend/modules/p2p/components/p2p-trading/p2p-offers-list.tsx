@@ -9,6 +9,7 @@ import { ROUTES } from '@/configs/routes.config';
 import { AddressDisplay } from '@/components/shared';
 import { P2POffer } from '../../types';
 import { APP_CONFIG } from '@/configs/app.config';
+import { useRouter } from 'next/navigation';
 import { useUser } from '@/providers';
 
 interface P2POffersTableProps {
@@ -17,6 +18,7 @@ interface P2POffersTableProps {
 }
 
 export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps) => {
+  const router = useRouter();
   const { user } = useUser();
   const columns: TTableColumn<P2POffer>[] = [
     {
@@ -70,12 +72,13 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
     },
     {
       headerContent: 'Action',
-      renderCell: (offer) =>
-        user && offer.seller_user_id !== user.id ? (
-          <Button className="rounded-lg bg-emerald-500 px-2 py-2 font-bold text-white transition hover:bg-emerald-600">
-            Buy Mezon Đồng
-          </Button>
-        ) : null,
+      renderCell: (offer) => (
+        <Button onClick={() => {
+          router.push(ROUTES.P2P_TRADING_ROOM(offer.offer_id, 'offer'))
+        }} className="rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600">
+          Buy Mezon đồng
+        </Button>
+      ),
       skeletonContent: <Skeleton className="h-9 w-24 rounded-lg" />,
       align: 'center',
     },

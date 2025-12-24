@@ -6,6 +6,8 @@ import {
   P2POffer,
   P2POrder,
   UpdateOfferStatusRequest,
+  CreateOrderRequest,
+  UpdateOrderStatusRequest,
 } from './types';
 import { apiDongClient } from '@/service';
 import { P2P_ENDPOINTS } from './constants';
@@ -31,4 +33,34 @@ export class P2PService {
     const { data } = await apiDongClient.get<IPaginatedResponse<P2POrder[]>>(P2P_ENDPOINTS.MY_ORDERS, { params });
     return data;
   }
+
+  static async getOfferById(offerId: string): Promise<P2POffer> {
+    const { data } = await apiDongClient.get<{ data: P2POffer }>(P2P_ENDPOINTS.OFFER_BY_ID(offerId));
+    return data.data;
+  }
+  // Order methods
+  static async createOrder(orderData: CreateOrderRequest): Promise<P2POrder> {
+    const { data } = await apiDongClient.post<{ order: P2POrder }>(
+      P2P_ENDPOINTS.CREATE_ORDER(String(orderData.offer_id)),
+      orderData
+    );
+    return data.order;
+  }
+
+  static async getOrderById(orderId: string): Promise<P2POrder> {
+    const { data } = await apiDongClient.get<{ data: P2POrder }>(P2P_ENDPOINTS.ORDER_BY_ID(orderId));
+    return data.data;
+  }
+
+  static async updateOrderStatus(orderId: string, status: string, transferCode?: string): Promise<P2POrder> {
+    const updateData: UpdateOrderStatusRequest = {
+      status: status,
+    };
+    if (transferCode) {
+      updateData.transfer_code = transferCode;
+    }
+    const { data } = await apiDongClient.post<{ data: P2POrder }>(P2P_ENDPOINTS.ORDER_STATUS(orderId), updateData);
+    return data.data;
+  }
+
 }
