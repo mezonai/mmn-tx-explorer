@@ -10,6 +10,7 @@ import { Folder, X, Loader2 } from 'lucide-react';
 import { formatFileSize } from '@/utils';
 import { ChangeEvent, useEffect, useState } from 'react';
 import { ipfsServiceURL } from '@/service';
+import { IMAGE_CONSTRAINTS } from '../../../constants';
 
 interface UpdateFormProps {
   form: {
@@ -64,9 +65,6 @@ export const UpdateForm = ({
   onSubmit,
   isEdit = false,
   setExistingSize,
-  unit = 'MB',
-  maxSize = 20,
-  maxImagesAllowed = 50,
 }: UpdateFormProps) => {
   const [existingImagesSize, setExistingImagesSize] = useState(0);
   const [isFetchingLocalSizes, setIsFetchingLocalSizes] = useState(false);
@@ -91,7 +89,7 @@ export const UpdateForm = ({
 
   const newImagesSize = images.reduce((sum, img) => sum + img.size, 0);
   const totalSize = isEdit ? existingImagesSize + newImagesSize : newImagesSize;
-  const maxTotalSize = maxSize * 1024 * 1024;
+  const maxTotalSize = IMAGE_CONSTRAINTS.MAX_IMAGES_SIZE * 1024 * 1024;
 
   const totalImagesCount = isEdit ? ((form as any).existingImageCids?.length || 0) + images.length : images.length;
 
@@ -149,7 +147,7 @@ export const UpdateForm = ({
                     </Button>
                   </div>
                 ))}
-                {totalSize < maxTotalSize && totalImagesCount < maxImagesAllowed && (
+                {totalSize < maxTotalSize && totalImagesCount < IMAGE_CONSTRAINTS.MAX_IMAGES_ALLOWED && (
                   <label className="hover:border-brand-primary flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded border-2 border-dashed border-gray-300 transition-colors">
                     <span className="text-2xl text-gray-400">+</span>
                     <span className="text-xs text-gray-400">Add More</span>
@@ -173,11 +171,11 @@ export const UpdateForm = ({
                       <span className="text-brand-primary font-semibold">{formatFileSize(totalSize)}</span>
                       <span className="text-muted-foreground">
                         {' '}
-                        / {maxSize} {unit}
+                        / {IMAGE_CONSTRAINTS.MAX_IMAGES_SIZE} {IMAGE_CONSTRAINTS.UNIT}
                       </span>
                       <span className="mx-2 text-gray-400">•</span>
                       <span className="text-brand-primary font-semibold">{totalImagesCount}</span>
-                      <span className="text-muted-foreground"> / {maxImagesAllowed} images</span>
+                      <span className="text-muted-foreground"> / {IMAGE_CONSTRAINTS.MAX_IMAGES_ALLOWED} images</span>
                     </>
                   )}
                 </p>
@@ -216,9 +214,12 @@ export const UpdateForm = ({
                 />
               </label>
               <p className="mt-1 text-xs text-gray-500">
-                Supported: JPG, PNG, HEIC Total size limit: {maxSize} {unit} for all images (auto-compressed)
+                Supported: JPG, PNG, HEIC Total size limit: {IMAGE_CONSTRAINTS.MAX_IMAGES_SIZE} {IMAGE_CONSTRAINTS.UNIT}{' '}
+                for all images (auto-compressed)
               </p>
-              <p className="mt-1 text-xs text-gray-500">Maximum images allowed: {maxImagesAllowed} images</p>
+              <p className="mt-1 text-xs text-gray-500">
+                Maximum images allowed: {IMAGE_CONSTRAINTS.MAX_IMAGES_ALLOWED} images
+              </p>
             </div>
           )}
         </div>

@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { toast } from 'sonner';
 
 const getOutputFormat = (file: File): 'jpeg' | 'png' => {
@@ -7,9 +6,7 @@ const getOutputFormat = (file: File): 'jpeg' | 'png' => {
   return 'jpeg';
 };
 
-export const useImageCompression = () => {
-  const [isCompressing, setIsCompressing] = useState(false);
-
+export const ImageCompression = () => {
   const compressImage = async (processedFile: File): Promise<File | null> => {
     try {
       const response = await fetch(`/api/image-compression`, {
@@ -39,28 +36,26 @@ export const useImageCompression = () => {
         const compressedFile = new File([bytes], result.filename, { type: result.mime });
         return compressedFile;
       } else {
-        toast.error(`Image compression failed for ${processedFile.name}: ${result.error}`);
+        toast.error(`Image compression failed for ${processedFile.name}`);
         return null;
       }
     } catch (err) {
       toast.error(`Failed to compress ${processedFile.name}. Please try a different image.`);
       return null;
+    } finally {
     }
   };
 
   const compressImages = async (files: File[]): Promise<File[]> => {
-    setIsCompressing(true);
     try {
       const compressedFiles = await Promise.all(files.map(async (file) => await compressImage(file)));
       return compressedFiles.filter((file): file is File => file !== null);
     } finally {
-      setIsCompressing(false);
     }
   };
 
   return {
     compressImage,
     compressImages,
-    isCompressing,
   };
 };
