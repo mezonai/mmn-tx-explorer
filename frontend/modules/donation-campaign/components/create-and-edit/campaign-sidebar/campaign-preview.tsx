@@ -6,6 +6,7 @@ import { getCampaignStatusLabel, getCampaignStatusVariant } from '../../../utils
 import { CampaignPreview } from '@/modules/donation-campaign/type';
 import { APP_CONFIG } from '@/configs/app.config';
 import { NumberUtil } from '@/utils';
+import { DescriptionDisplay } from '@/components/shared';
 
 interface CampaignPreviewProps {
   preview: CampaignPreview;
@@ -30,10 +31,14 @@ export const CampaignPreviewCard = ({ preview }: CampaignPreviewProps) => {
             {preview.name || 'Campaign name goes here'}
           </p>
 
-          <p className="mt-2 line-clamp-3 text-xs break-all text-gray-600 dark:text-gray-400">
-            {preview.shortDescription ||
-              'Short description helps donors grasp the impact and call to action in seconds.'}
-          </p>
+          <DescriptionDisplay
+            description={
+              preview.shortDescription ||
+              'Short description helps donors grasp the impact and call to action in seconds.'
+            }
+            lineShow={3}
+            className="mt-2 text-xs break-all text-gray-600 dark:text-gray-400"
+          />
 
           <div className="mt-5">
             <div className="flex items-center justify-between text-[11px] font-medium text-gray-500 dark:text-gray-400">

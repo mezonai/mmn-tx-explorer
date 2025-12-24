@@ -110,3 +110,18 @@ func GetAddressFromContext(c *gin.Context) (string, bool) {
 
 	return addressStr, true
 }
+
+func GetUserIDStringFromContext(c *gin.Context) (string, error) {
+	user, ok := c.Get("user")
+	if !ok {
+		return "", jwt.ErrTokenInvalidClaims
+	}
+
+	userID, ok := user.(jwt.MapClaims)["user_id"].(string)
+	if !ok {
+		return "", jwt.ErrTokenInvalidClaims
+	}
+
+	fmt.Println("userID", userID)
+	return userID, nil
+}
