@@ -27,7 +27,7 @@ export const MoreInfoButton = ({ transaction }: MoreInfoButtonProps) => {
             <div className="flex justify-between gap-2">
               <p className="text-foreground font-semibold">Txn type</p>
               <p className="text-foreground/50 text-end font-normal">
-                {getTransactionTypeLabel(transaction.transaction_type)}
+                {getTransactionTypeLabel(transaction.transaction_extra_info_type)}
               </p>
             </div>
             <div className="flex justify-between gap-2">

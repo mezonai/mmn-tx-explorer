@@ -35,10 +35,10 @@ export const CampaignDetail = async ({ campaign }: CampaignDetailProps) => {
 
         <div className="z-10 flex flex-col items-center justify-between lg:flex-row">
           <Tabs defaultValue="update" className="w-full gap-0">
-            <TabsList className="pb-0 w-full bg-transparent px-0 lg:w-fit dark:bg-transparent">
+            <TabsList className="w-full bg-transparent px-0 pb-0 lg:w-fit dark:bg-transparent">
               <TabsTrigger
                 value={'update'}
-                className="text-muted-foreground data-[state=active]:border-brand-primary mr-5 rounded-none border-0 px-0 data-[state=active]:border-b data-[state=active]:text-foreground"
+                className="text-muted-foreground data-[state=active]:border-brand-primary data-[state=active]:text-foreground mr-5 rounded-none border-0 px-0 data-[state=active]:border-b"
               >
                 Updates
               </TabsTrigger>
@@ -50,7 +50,7 @@ export const CampaignDetail = async ({ campaign }: CampaignDetailProps) => {
               </TabsTrigger>
               <TabsTrigger
                 value={'activity'}
-                className="text-muted-foreground data-[state=active]:border-brand-primary mr-5 rounded-none border-0 px-0 data-[state=active]:border-b data-[state=active]:text-foreground"
+                className="text-muted-foreground data-[state=active]:border-brand-primary data-[state=active]:text-foreground mr-5 rounded-none border-0 px-0 data-[state=active]:border-b"
               >
                 Fundraising Activity
               </TabsTrigger>
@@ -61,7 +61,7 @@ export const CampaignDetail = async ({ campaign }: CampaignDetailProps) => {
               <CampaignActivity campaign={campaign} walletAddress={campaign.donation_wallet} />
             </TabsContent>
             <TabsContent value="update">
-              <DonationFeed campaign = {campaign} />
+              <DonationFeed campaign={campaign} />
             </TabsContent>
             <TabsContent value="community">
               <CommunityFeed campaign={campaign} />

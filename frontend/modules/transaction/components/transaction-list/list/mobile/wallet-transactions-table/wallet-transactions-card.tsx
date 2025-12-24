@@ -52,7 +52,7 @@ export const WalletTransactionsCard = ({ transaction, index, walletAddress }: Wa
       <div className="flex items-center justify-between gap-2">
         <div className="text-foreground text-xs">Type</div>
         <Chip variant="warning" className="gap-1.5 rounded-md">
-          <span>{getTransactionTypeLabel(transaction.transaction_type)}</span>
+          <span>{getTransactionTypeLabel(transaction.transaction_extra_info_type)}</span>
         </Chip>
       </div>
       <div className="flex items-center justify-between gap-2">
