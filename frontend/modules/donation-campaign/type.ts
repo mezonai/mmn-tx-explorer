@@ -128,3 +128,47 @@ export interface TopContributorsResponse {
     contributors: TopContributor[];
   };
 }
+
+export interface IDonationFeed {
+  id: number;
+  tx_hash: string;
+  creator_address: string;
+  campaign_address: string;
+  title: string;
+  description: string;
+  image_cids: string[];
+  parent_hash: string;
+  root_hash: string;
+  visible: boolean;
+  created_at: string;
+  root_created_at: string;
+}
+
+export interface DonationFeedParams {
+  limit?: number;
+  timestamp_lt?: string;
+}
+
+export interface UploadImageRequest {
+  files: File[];
+}
+
+export interface FileItem {
+  file_name: string;
+  file_cid: string;
+}
+
+export interface UploadImageResponse {
+  folder_cid: string;
+  files: FileItem[];
+}
+
+export interface DonationUpdateForm {
+  title: string;
+  description: string;
+  images: string[];
+  existingImageCids?: string[];
+
+  parent_hash?: string;
+  root_hash?: string;
+}

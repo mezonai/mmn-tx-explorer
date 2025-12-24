@@ -116,7 +116,7 @@ func serializeTransaction(chainID *big.Int, tx map[string]interface{}) common.Tr
 		ToAddress:            interfaceToString(tx["to"]),
 		TransactionTimestamp: hexToTime(tx["transactionTimestamp"]),
 		Value:                interfaceToString(tx["value"]),
-		TransactionType:      uint8(hexToUint64(tx["type"])),
+		TransactionType:      int32(hexToUint64(tx["transaction_type"])),
 		Status:               tx["status"].(*uint64),
 		TextData:             interfaceToString(tx["textData"]),
 		ExtraInfo:            interfaceToString(tx["extra_info"]),

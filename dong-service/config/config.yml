@@ -59,6 +59,7 @@ logging:
 scheduler:
   sync_contributors_interval: 600  # sync every 10 minutes (600 seconds)
   expired_red_envelopes_interval: 3600  # sync every 60 minutes (3600 seconds)
+  expired_orders_interval: 60  # check expired orders every 60 seconds
   recent_stats_window_days: 7      # lookback window in days used by recent_amount & sync jobs
 
 # Lock Configuration
@@ -70,3 +71,22 @@ lock:
 # Cache Request Configuration
 cache_request:
   Cache_Exp: 20        # Cache expiration time in seconds
+
+# Rate Limit Configuration
+rate_limit:
+  ip_rate_limit_per_sec: 1
+  ip_rate_limit_burst: 2
+
+# Image Filter Configuration
+filter_image:
+  max_size_upload: 20 # MB
+  block_mime_types: 
+     - "image/svg+xml"
+  enable_virus_scan: false
+  virus_scan_url: "tcp://127.0.0.1:3310"
+  ipfs_url: "/ip4/127.0.0.1/tcp/5001"
+
+# Event Configuration
+event:
+  api_url: "http://localhost:8899/api/event"
+  api_key: "MezonDongServiceEventAPIKey2024!"

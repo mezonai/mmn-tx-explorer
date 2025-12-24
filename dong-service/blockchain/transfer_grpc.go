@@ -100,6 +100,23 @@ func (s *BlockchainService) Transfer(fromAddress, toAddress string, amount int64
 	return resp.TxHash, nil
 }
 
+func (s *BlockchainService) GetTransaction(txHash string) (*mmnClient.TxInfo, error) {
+	if s.mmnClient == nil {
+		return nil, fmt.Errorf("mmn client not initialized")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	txInfo, err := s.mmnClient.GetTxByHash(ctx, txHash)
+	if err != nil {
+		logger.Error().Err(err).Str("tx_hash", txHash).Msg("Failed to get transaction by hash")
+		return nil, fmt.Errorf("failed to get transaction: %w", err)
+	}
+
+	return &txInfo, nil
+}
+
 func (s *BlockchainService) Close() error {
 	if s.mmnClient != nil {
 		return s.mmnClient.Close()
@@ -153,4 +170,62 @@ func (s *BlockchainService) TransferMoney(encryptedPrivateKey, fromAddress, toAd
 			return txHash, nil
 		}
 	}
+}
+
+// CheckTransactionStatus checks the transaction status with retry logic
+// Retries 3 times with 0.5s delay between attempts
+// Returns status and error
+func (s *BlockchainService) CheckTransactionStatus(txHash string) (int32, error) {
+	maxRetries := 3
+	retryDelay := 500 * time.Millisecond
+
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+		txResp, err := s.mmnClient.GetTxByHash(ctx, txHash)
+		cancel()
+
+		if err != nil {
+			logger.Error().
+				Err(err).
+				Str("tx_hash", txHash).
+				Int("attempt", attempt).
+				Msg("Failed to get transaction by hash")
+
+			if attempt < maxRetries {
+				time.Sleep(retryDelay)
+				continue
+			}
+			return constants.TxStatusPending, fmt.Errorf("failed to get transaction after %d attempts: %w", maxRetries, err)
+		}
+
+		status := int32(txResp.Status)
+
+		// Status 2 = COMPLETED
+		if status == constants.TxStatusFinalized {
+			logger.Info().
+				Str("tx_hash", txHash).
+				Msg("Transaction completed successfully")
+			return status, nil
+		}
+
+		// Status 3 = FAILED
+		if status == (constants.TxStatusFailed) {
+			logger.Error().
+				Str("tx_hash", txHash).
+				Msg("Transaction failed")
+			return status, fmt.Errorf("transaction failed with status %d", status)
+		}
+
+		// Status 0 or 1 = PENDING or CONFIRMED - retry if we have attempts left
+		if status == constants.TxStatusPending || status == constants.TxStatusConfirmed {
+			if attempt < maxRetries {
+				time.Sleep(retryDelay)
+				continue
+			}
+			return status, fmt.Errorf("transaction still pending/confirming after %d attempts (status: %d)", maxRetries, status)
+		}
+	}
+
+	return constants.TxStatusPending, fmt.Errorf("failed to check transaction status after %d attempts", maxRetries)
 }
