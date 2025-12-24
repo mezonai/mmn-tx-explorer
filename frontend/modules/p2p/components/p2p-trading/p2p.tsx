@@ -90,6 +90,7 @@ export const P2P = () => {
             <P2POffersTabs offers={offers?.data ?? []} isLoading={isLoading} />
           </div>
         </TabsContent>
+
         <TabsContent value="orders" className="space-y-6">
           <P2PFiltersComponent
             totalItems={myOrders?.meta.total_items}
@@ -111,19 +112,7 @@ export const P2P = () => {
             <P2POrdersList orders={myOrders?.data ?? []} isLoading={isMyOrdersLoading} />
           </div>
         </TabsContent>
-        <TabsContent value="orders" className="space-y-6">
-          <P2PFiltersComponent
-            totalItems={myOrders?.meta.total_items}
-            totalPages={myOrders?.meta.total_pages}
-            isLoading={isMyOrdersLoading}
-            page={page}
-            limit={limit}
-            onPageChange={handleChangePage}
-            onLimitChange={handleChangeLimit}
-            onFilterChange={handleFilterChange}
-          />
-          <P2POrdersList orders={myOrders?.data} isLoading={isMyOrdersLoading} />
-        </TabsContent>
+
         <TabsContent value="my-offers" className="space-y-6">
           <P2PFiltersComponent
             totalItems={myOffers?.meta.total_items}
@@ -141,7 +130,7 @@ export const P2P = () => {
             ))}
           </div>
           <div className="hidden lg:block">
-            <P2POffersTabs offers={myOffers?.data ?? []} isLoading={isMyOffersLoading} />
+            <P2POffersTabs offers={myOffers?.data ?? []} isLoading={isMyOffersLoading} showAction={false} />
           </div>
         </TabsContent>
       </Tabs>
