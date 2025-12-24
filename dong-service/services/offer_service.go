@@ -29,7 +29,7 @@ func NewOfferService(repo *repository.OfferRepository, walletRepo *repository.In
 }
 
 type IOfferService interface {
-	CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string, sellerUserID int64) (*models.Offer, error)
+	CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string, sellerUserID string) (*models.Offer, error)
 	ListOffers(ctx context.Context, fromAmount *string, toAmount *string, pagination map[string]any) ([]models.Offer, error)
 	CountOffers(ctx context.Context, walletAddress *string, fromAmount *string, toAmount *string) (int64, error)
 	GetOfferByID(ctx context.Context, id int64) (*models.Offer, error)
@@ -37,7 +37,7 @@ type IOfferService interface {
 	UpdateOfferStatus(ctx context.Context, req *models.UpdateOfferStatusRequest) error
 }
 
-func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string, sellerUserID int64) (*models.Offer, error) {
+func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string, sellerUserID string) (*models.Offer, error) {
 	amountInt := req.Amount
 
 	if s.userWalletRepo != nil {

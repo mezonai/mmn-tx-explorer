@@ -50,7 +50,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	userID, err := utils.GetUserIDFromContext(c)
+	userID, err := utils.GetUserIDStringFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "authentication required"))
 		return
