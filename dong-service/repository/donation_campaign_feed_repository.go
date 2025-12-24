@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"dong-service/models"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/lib/pq"
@@ -21,26 +22,39 @@ func NewDonationCampaignFeedRepository(db *sql.DB, dongSchema string) *DonationC
 }
 
 func (r *DonationCampaignFeedRepository) ListCampaignFeedsByAddress(campaignAddress string, limit int, timestampLt time.Time, userAddress string, ownerAddress *string, isOwner *bool) ([]*models.DonationCampaignFeed, error) {
-	var userAddressParam interface{}
+	var whereClauses []string
+	var args []interface{}
+	argCount := 1
+
+	whereClauses = append(whereClauses, fmt.Sprintf("f.related_address = $%d", argCount))
+	args = append(args, campaignAddress)
+	argCount++
+
+	whereClauses = append(whereClauses, fmt.Sprintf("f.type = $%d", argCount))
+	args = append(args, FeedTypeDonationCampaign)
+	argCount++
+
+	if isOwner != nil && ownerAddress != nil && *ownerAddress != "" {
+		if *isOwner {
+			whereClauses = append(whereClauses, fmt.Sprintf("f.creator_address = $%d", argCount))
+		} else {
+			whereClauses = append(whereClauses, fmt.Sprintf("f.creator_address <> $%d", argCount))
+		}
+		args = append(args, *ownerAddress)
+		argCount++
+	}
+
 	if userAddress != "" {
-		userAddressParam = userAddress
+		whereClauses = append(whereClauses, fmt.Sprintf("(f.creator_address = $%d OR f.visible = TRUE)", argCount))
+		args = append(args, userAddress)
+		argCount++
 	} else {
-		userAddressParam = nil
+		whereClauses = append(whereClauses, "f.visible = TRUE")
 	}
 
-	var ownerAddressParam interface{}
-	if ownerAddress != nil && *ownerAddress != "" {
-		ownerAddressParam = *ownerAddress
-	} else {
-		ownerAddressParam = nil
-	}
-
-	var isOwnerParam interface{}
-	if isOwner != nil {
-		isOwnerParam = *isOwner
-	} else {
-		isOwnerParam = nil
-	}
+	timestampArgNum := argCount
+	argCount++
+	limitArgNum := argCount
 
 	query := fmt.Sprintf(`
         SELECT 
@@ -58,32 +72,18 @@ func (r *DonationCampaignFeedRepository) ListCampaignFeedsByAddress(campaignAddr
 					PARTITION BY COALESCE(f.root_hash, f.tx_hash)
 				) AS root_created_at
 			FROM %s.user_content f
-			WHERE 
-				f.related_address = $1
-				AND f.type = $2
-				AND (
-						$7::bool IS NULL
-						OR (
-								$6::text IS NOT NULL
-								AND (
-										($7::bool = TRUE AND f.creator_address = $6::text)
-										OR ($7::bool = FALSE AND f.creator_address <> $6::text)
-									)
-						)
-					)
-				AND (
-						($5::text IS NOT NULL AND f.creator_address = $5::text)
-						OR f.visible = TRUE
-					)
+			WHERE %s
 		) t
 		WHERE 
 			rn = 1
-			AND root_created_at < $3
+			AND root_created_at < $%d
 		ORDER BY root_created_at DESC
-		LIMIT $4;
-    `, r.dongSchema)
+		LIMIT $%d;
+    `, r.dongSchema, strings.Join(whereClauses, " AND "), timestampArgNum, limitArgNum)
 
-	rows, err := r.db.Query(query, campaignAddress, FeedTypeDonationCampaign, timestampLt, limit, userAddressParam, ownerAddressParam, isOwnerParam)
+	args = append(args, timestampLt, limit)
+
+	rows, err := r.db.Query(query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list campaign feeds: %w", err)
 	}
