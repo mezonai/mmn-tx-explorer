@@ -61,7 +61,7 @@ export const BankInfoCard = ({ bank_info, transfer_code, amount }: BankInfoCardP
           {transfer_code && (
             <div className="group flex items-center justify-between rounded border border-yellow-500/30 bg-yellow-500/5 p-2 transition hover:bg-yellow-500/10">
               <div>
-                <div className="text-[10px] font-black text-yellow-600 uppercase dark:text-yellow-500">
+                <div className="text-[10px] font-bold text-yellow-600 uppercase dark:text-yellow-500">
                   Transfer note (required)
                 </div>
                 <div className="font-mono text-base font-bold text-yellow-500">{transfer_code}</div>

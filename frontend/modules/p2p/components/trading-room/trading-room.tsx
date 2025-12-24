@@ -23,10 +23,9 @@ import { APP_CONFIG } from '@/configs/app.config';
 
 interface TradingRoomProps {
   orderId: string;
-  currentUserId?: string;
 }
 
-export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
+export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   const { user } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
