@@ -10,8 +10,12 @@ export enum ETransactionType {
 }
 
 export enum ETransferType {
-  TokenTransfer = 'dong-give-coffee',
+  TokenTransfer = 'token-transfer',
+  DonationCampaign = 'donation-campaign',
   WithdrawCampaign = 'withdraw-campaign',
+  GiveCoffee = 'give-coffee',
+  DongGiveCoffee = 'dong-give-coffee',
+  LuckyMoney = 'lucky-money',
   DonationFeedCampaign = 'donation-campaign-feed',
 }
 

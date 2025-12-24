@@ -37,8 +37,8 @@ export const WalletTransactionsTable = ({
     },
     {
       headerContent: 'Type',
-      dataKey: 'transaction_type',
-      renderCell: (tx) => <TypeBadges type={tx.transaction_type} />,
+      dataKey: 'transaction_extra_info_type',
+      renderCell: (tx) => <TypeBadges type={tx.transaction_extra_info_type} />,
       skeletonContent: <Skeleton className="h-5.5 w-24" />,
       align: 'center',
     },
