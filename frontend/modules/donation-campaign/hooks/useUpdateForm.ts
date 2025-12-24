@@ -4,7 +4,6 @@ import { toast } from 'sonner';
 import { useCreateDonationUpdateContext } from '../context';
 import { IDonationFeed } from '../type';
 import { ipfsServiceURL } from '@/service';
-import { max } from 'date-fns';
 
 const UNIT = 'MB';
 const MAX_IMAGES_SIZE = 20;
@@ -42,9 +41,9 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
   useEffect(() => {
     if (updatePost) {
       setForm({
-        ...form,
         title: updatePost.title,
         description: updatePost.description,
+        reference_tx_hashes: updatePost.reference_tx_hashes || [],
         images: [],
         existingImageCids: updatePost.image_cids || [],
       });
@@ -54,13 +53,12 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
         setPreviews(updatePost.image_cids.map((cid) => `${ipfsServiceURL}/${cid}`));
       }
     }
-  }, [updatePost]);
+  }, [updatePost, setForm]);
 
   const handleImageChange = async (e: ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     const files = Array.from(e.target.files);
 
-    // Validate file types - check both MIME type and extension for HEIC
     const invalidFiles = files.filter((file) => {
       const isValidMimeType = ALLOWED_IMAGE_TYPES.includes(file.type);
       const hasHeicExtension = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
