@@ -3,8 +3,8 @@
 import { DonationCampaign, IDonationFeed } from '@/modules/donation-campaign';
 import { ipfsServiceURL } from '@/service';
 import { useState } from 'react';
-import { UpdatePostDesktop } from '../../desktop/update-post';
-import { UpdatePostMobile } from '../../mobile/update-post';
+import { UpdatePostDesktop } from '../../../desktop/update-post';
+import { UpdatePostMobile } from '../../../mobile/update-post';
 import { useBreakpoint } from '@/hooks';
 import { EBreakpoint } from '@/enums';
 

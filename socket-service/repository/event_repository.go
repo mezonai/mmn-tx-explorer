@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"socket-service/constant"
 	"socket-service/models"
 )
 
@@ -21,8 +20,8 @@ func NewEventRepository(db *sql.DB, eventSchema string) *EventRepository {
 }
 
 func (r *EventRepository) GetListEventByReceiver(receiveAddress string) ([]models.Event, error) {
-	query := `SELECT id, type, payload, receive_address, status, create_at FROM events WHERE receive_address = $1 AND status = $2`
-	rows, err := r.db.Query(query, receiveAddress, constant.EventStatusPending)
+	query := fmt.Sprintf("SELECT id, type, payload, receive_address, create_at FROM %s.events WHERE receive_address = $1", r.eventSchema)
+	rows, err := r.db.Query(query, receiveAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +29,7 @@ func (r *EventRepository) GetListEventByReceiver(receiveAddress string) ([]model
 	var events []models.Event
 	for rows.Next() {
 		var event models.Event
-		if err := rows.Scan(&event.ID, &event.Type, &event.Payload, &event.ReceiveAddress, &event.Status, &event.CreateAt); err != nil {
+		if err := rows.Scan(&event.ID, &event.Type, &event.Payload, &event.ReceiveAddress, &event.CreateAt); err != nil {
 			return nil, err
 		}
 		events = append(events, event)
@@ -39,13 +38,13 @@ func (r *EventRepository) GetListEventByReceiver(receiveAddress string) ([]model
 }
 
 func (r *EventRepository) SaveEvent(event *models.Event) error {
-	query := fmt.Sprintf("INSERT INTO %s.events (type, payload, receive_address, status, create_at) VALUES ($1, $2, $3, $4, $5) RETURNING id", r.eventSchema)
-	err := r.db.QueryRowContext(context.Background(), query, event.Type, event.Payload, event.ReceiveAddress, event.Status, event.CreateAt).Scan(&event.ID)
+	query := fmt.Sprintf("INSERT INTO %s.events (id, type, payload, receive_address, create_at) VALUES ($1, $2, $3, $4, $5)", r.eventSchema)
+	_, err := r.db.ExecContext(context.Background(), query, event.ID, event.Type, event.Payload, event.ReceiveAddress, event.CreateAt)
 	return err
 }
 
-func (r *EventRepository) UpdateEventStatus(eventID string, status string) error {
-	query := fmt.Sprintf("UPDATE %s.events SET status = $1 WHERE id = $2", r.eventSchema)
-	_, err := r.db.ExecContext(context.Background(), query, status, eventID)
+func (r *EventRepository) DeleteEvent(eventID string) error {
+	query := fmt.Sprintf("DELETE FROM %s.events WHERE id = $1", r.eventSchema)
+	_, err := r.db.ExecContext(context.Background(), query, eventID)
 	return err
 }

@@ -183,6 +183,14 @@ func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddre
 }
 
 func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.UpdateOfferStatusRequest) error {
+	exists, err := s.repo.ExistsByTxHash(ctx, req.TxHash)
+	if err != nil {
+		return fmt.Errorf("failed to check existing tx hash: %w", err)
+	}
+	if exists {
+		return fmt.Errorf("transaction with hash %s is already used", req.TxHash)
+	}
+
 	offer, err := s.repo.GetOfferByID(ctx, req.OfferID)
 	if err != nil {
 		return fmt.Errorf("failed to get offer: %w", err)

@@ -7,8 +7,8 @@ import (
 	"socket-service/models"
 	"socket-service/repository"
 	"socket-service/service"
-    "socket-service/constant"
 	"github.com/gin-gonic/gin"
+	"time"
 )
 
 type HTTPHandler struct {
@@ -32,6 +32,7 @@ func (h *HTTPHandler) SaveEvent(c *gin.Context) {
 	sentToOnline := false
 	if conns, ok := h.wsSvc.GetConnections(event.ReceiveAddress); ok {
 		for _, conn := range conns {
+			conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
 			if err := conn.WriteJSON(event); err != nil {
 				logger.Error().Err(err).Msg("Failed to send event to online user")
 			} else {
@@ -40,16 +41,13 @@ func (h *HTTPHandler) SaveEvent(c *gin.Context) {
 			}
 		}
 	}
-	if sentToOnline {
-		event.Status = constant.EventStatusSent
-	} else {
-		event.Status = constant.EventStatusPending
+    if (!sentToOnline) {
 		if err := h.repo.SaveEvent(&event); err != nil {
 			logger.Error().Err(err).Msg("Failed to save event")
 			c.JSON(http.StatusInternalServerError, "Failed to save event: "+err.Error())
 			return
 		}
-		c.JSON(http.StatusOK, "Event saved successfully")
+		c.JSON(http.StatusOK, "Users offline, event saved successfully")
 	}
 
 }

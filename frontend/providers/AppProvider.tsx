@@ -2,7 +2,6 @@
 
 import { STORAGE_KEYS } from '@/constant';
 import {
-  AUTHENTICATION_CONSTANTS,
   AUTHENTICATION_ENDPOINT,
   AuthenticationService,
   fetchAndStoreZkProof,
@@ -19,6 +18,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { IZkProof, IEphemeralKeyPair } from 'mmn-client-js';
 import { safeJsonParse, clearAuthStorage } from '@/utils';
+import { useWebSocket } from '@/lib/websocket/useWebSocket';
 
 interface AppContextType {
   isAuthenticated: boolean;
@@ -53,6 +53,7 @@ export function AppProvider({ children }: AppProviderProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const wsManager = useWebSocket();
   useEffect(() => {
     const localTokenStr = localStorage.getItem(STORAGE_KEYS.TOKEN);
     const localToken = localTokenStr ? safeJsonParse(localTokenStr) : null;
@@ -60,6 +61,10 @@ export function AppProvider({ children }: AppProviderProps) {
       (async () => {
         try {
           await AuthenticationService.refreshLogin(localToken.refresh_token);
+          const refreshedToken = safeJsonParse<{ access_token?: string }>(localStorage.getItem(STORAGE_KEYS.TOKEN));
+          if (refreshedToken?.access_token) {
+            wsManager.connect(refreshedToken.access_token);
+          }
         } catch {
           clearAuthStorage();
           setUser(null);
@@ -80,6 +85,11 @@ export function AppProvider({ children }: AppProviderProps) {
 
       const kpStr = localStorage.getItem(STORAGE_KEYS.KEY_PAIR);
       if (kpStr) setKeypair(safeJsonParse(kpStr));
+
+      const tokenData = safeJsonParse<{ access_token?: string }>(localStorage.getItem(STORAGE_KEYS.TOKEN));
+      if (tokenData?.access_token) {
+        wsManager.connect(tokenData.access_token);
+      }
       return;
     }
     const code = searchParams.get('authCode');
@@ -106,6 +116,10 @@ export function AppProvider({ children }: AppProviderProps) {
         );
         if (fetchedZk) {
           setZkProof(fetchedZk);
+        }
+
+        if (userInfo.access_token) {
+          wsManager.connect(userInfo.access_token);
         }
         router.replace(pathname);
         toast.success('Login successful!');
@@ -168,7 +182,6 @@ export function useKeypair() {
 
 export function useAuthActions() {
   const { setIsAuthenticated, setUser, setZkProof, setKeypair } = useApp();
-  const router = useRouter();
   const login = () => {
     const csrfToken = generateCsrfToken();
     const currentPath = location.pathname + location.search;
