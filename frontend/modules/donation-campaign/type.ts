@@ -139,6 +139,7 @@ export interface IDonationFeed {
   campaign_address: string;
   title: string;
   description: string;
+  reference_tx_hashes: string[];
   image_cids: string[];
   parent_hash: string;
   root_hash: string;
@@ -169,6 +170,7 @@ export interface UploadImageResponse {
 export interface DonationUpdateForm {
   title: string;
   description: string;
+  reference_tx_hashes: string[];
   images: string[];
   existingImageCids?: string[];
 
