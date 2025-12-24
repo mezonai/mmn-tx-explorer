@@ -124,9 +124,9 @@ export class WebSocketManager {
   private handleEvent(event: unknown) {
     const eventType =
       typeof event === 'object' &&
-        event !== null &&
-        'type' in event &&
-        typeof (event as { type?: unknown }).type === 'string'
+      event !== null &&
+      'type' in event &&
+      typeof (event as { type?: unknown }).type === 'string'
         ? (event as { type: string }).type
         : undefined;
 
