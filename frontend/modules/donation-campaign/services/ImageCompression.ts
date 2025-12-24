@@ -1,4 +1,5 @@
 import { toast } from 'sonner';
+import { DONATION_ENDPOINTS } from '../constants';
 
 const getOutputFormat = (file: File): 'jpeg' | 'png' => {
   const lowerName = file.name.toLowerCase();
@@ -9,7 +10,7 @@ const getOutputFormat = (file: File): 'jpeg' | 'png' => {
 export const ImageCompression = () => {
   const compressImage = async (processedFile: File): Promise<File | null> => {
     try {
-      const response = await fetch(`/api/image-compression`, {
+      const response = await fetch(DONATION_ENDPOINTS.IMAGE_COMPRESSION, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
