@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { APP_CONFIG } from '@/configs/app.config';
 import { ROUTES } from '@/configs/routes.config';
 import { Countdown } from '../../shared/count-down';
-import { getTransactionTypeInfo } from '@/modules/p2p/util';
+import { getOrderStatusInfo } from '@/modules/p2p/util';
 import { P2POrder } from '@/modules/p2p/types';
 interface OrderMobileCardProps {
   order: P2POrder;
@@ -18,7 +18,7 @@ export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
           <p className="text-muted-foreground text-xs">Offer #{order.offer_id}</p>
         </div>
         <div className="flex flex-col items-end gap-2">
-          <Chip variant={getTransactionTypeInfo(order.status)} className="gap-1.5 rounded-sm px-2 py-0.5 text-[11px]">
+          <Chip variant={getOrderStatusInfo(order.status)} className="gap-1.5 rounded-sm px-2 py-0.5 text-[11px]">
             <span>{order.status}</span>
           </Chip>
           <Countdown expiresAt={order.expires_at} />

@@ -7,12 +7,12 @@ export const metadata: Metadata = {
 };
 
 interface TradingRoomPageProps {
-  params: {
+  params: Promise<{
     orderId: string;
-  };
+  }>;
 }
 
-export default function TradingRoomPage({ params }: TradingRoomPageProps) {
-  // orderId can be either an order ID or an offer ID (when type=offer query param is present)
-  return <TradingRoom orderId={params.orderId} />;
+export default async function TradingRoomPage({ params }: TradingRoomPageProps) {
+  const { orderId } = await params;
+  return <TradingRoom orderId={orderId} />;
 }
