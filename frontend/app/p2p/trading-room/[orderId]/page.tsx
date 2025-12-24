@@ -17,7 +17,3 @@ export default function TradingRoomPage({ params }: TradingRoomPageProps) {
   // Use key prop to force re-mount when orderId changes (e.g., when navigating from offer to order)
   return <TradingRoom key={params.orderId} orderId={params.orderId} />;
 }
-
-
-
-
