@@ -30,9 +30,9 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
   useEffect(() => {
     if (updatePost) {
       setForm({
-        ...form,
         title: updatePost.title,
         description: updatePost.description,
+        reference_tx_hashes: updatePost.reference_tx_hashes || [],
         images: [],
         existingImageCids: updatePost.image_cids || [],
       });
@@ -41,7 +41,7 @@ export const useUpdateForm = ({ updatePost }: UseUpdateFormProps = {}) => {
         initializeExistingImages(updatePost.image_cids);
       }
     }
-  }, [updatePost]);
+  }, [updatePost, setForm]);
 
   const onSubmit = () => {
     if (!validation.isTitle) {
