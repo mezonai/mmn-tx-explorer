@@ -42,7 +42,7 @@ export const BankInfoCard = ({ bank_info, transfer_code, amount }: BankInfoCardP
             <div className="group flex items-center justify-between rounded bg-muted/30 p-2 transition hover:bg-muted/50 border border-border/50">
               <div>
                 <div className="text-[10px] font-bold text-muted-foreground uppercase">Account number</div>
-                <div className="font-mono text-sm font-bold tracking-wider text-foreground">{bank_info.account_number}</div>
+                <div className="font-mono text-sm font-bold text-foreground">{bank_info.account_number}</div>
               </div>
               <CopyButton textToCopy={bank_info.account_number} className="h-7 w-7 text-muted-foreground transition hover:text-foreground" />
             </div>
@@ -64,7 +64,7 @@ export const BankInfoCard = ({ bank_info, transfer_code, amount }: BankInfoCardP
                 <div className="text-[10px] font-black text-yellow-600 uppercase dark:text-yellow-500">
                   Transfer note (required)
                 </div>
-                <div className="font-mono text-base font-bold tracking-widest text-yellow-500">{transfer_code}</div>
+                <div className="font-mono text-base font-bold text-yellow-500">{transfer_code}</div>
               </div>
               <CopyButton textToCopy={transfer_code} className="h-7 w-7 text-yellow-500 transition hover:text-yellow-400" />
             </div>

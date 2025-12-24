@@ -8,6 +8,7 @@ import { AddressDisplay } from '@/components/shared/address-display';
 import { ROUTES } from '@/configs/routes.config';
 import { useP2POffer } from '../../hooks/useP2POffer';
 import { Button } from '@/components/ui/button';
+import { APP_CONFIG } from '@/configs/app.config';
 
 interface TradingRoomHeaderProps {
   order: P2POrder;
@@ -69,7 +70,7 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
             <h1 className="text-sm font-bold text-muted-foreground">
-              MZD buy order <span className="text-muted-foreground">#{order.order_id}</span>
+              {APP_CONFIG.CHAIN_SYMBOL} buy order <span className="text-muted-foreground">#{order.order_id}</span>
             </h1>
             {isExpired && order.status !== 'COMPLETED' && order.status !== 'CONFIRMED' && (
               <span className="md:hidden text-[10px] font-black bg-red-500 text-white px-1.5 pt-1 pb-0.5 rounded uppercase leading-none">
