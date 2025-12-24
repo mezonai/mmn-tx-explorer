@@ -23,6 +23,7 @@ export interface P2POffer {
   created_at: string;
   update_at: string;
   status: string;
+  seller_user_id: string;
   price_type: string;
 }
 

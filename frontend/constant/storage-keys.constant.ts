@@ -8,6 +8,7 @@ const STORAGE_KEYS = {
   KEY_PAIR: 'key_pair',
   ZK_PROOF: 'zkProof',
   SHOW_MINE_CAMPAIGNS: 'show_mine_campaigns',
+  LIGHT_CLIENT: 'light_client',
 } as const;
 
 export { STORAGE_KEYS };
