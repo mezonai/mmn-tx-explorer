@@ -141,6 +141,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       updated_at: new Date().toISOString(),
       bank_info: offer.bank_info,
       price_rate: offer.price_rate,
+      buyer_user_id: '',
+      seller_user_id: '',
     };
 
     const formatWallet = (address?: string) =>
@@ -257,7 +259,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
             <SellerConfirmButton order={effectiveOrder} onConfirm={handleSellerConfirm} disabled={isExpired} />
           )}
         </div>
-        <ChatSidebar sellerId={offer!.seller_user_id} />
+        <ChatSidebar sellerId={userRole === 'buyer' ? order.seller_user_id : order.buyer_user_id} />
       </div>
     </div>
   );
