@@ -90,23 +90,6 @@ CREATE TRIGGER update_blocks_updated_at BEFORE UPDATE ON blocks
 CREATE TRIGGER update_transactions_updated_at BEFORE UPDATE ON transactions
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Unschedule pg_cron job (if exists)
-DO $$
-DECLARE
-    job_id integer;
-BEGIN
-    IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
-        SELECT jobid INTO job_id
-        FROM cron.job
-        WHERE jobname = 'pg_partman_maintenance';
-
-        IF job_id IS NOT NULL THEN
-            PERFORM cron.unschedule(job_id);
-        END IF;
-    END IF;
-END
-$$;
-
 -- Drop new partitioned tables (CASCADE removes all partitions managed by pg_partman)
 DROP TABLE IF EXISTS blocks_new CASCADE;
 DROP TABLE IF EXISTS transactions_new CASCADE;

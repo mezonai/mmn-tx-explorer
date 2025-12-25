@@ -97,23 +97,6 @@ SET infinite_time_partitions = true,
     retention_keep_table = true
 WHERE parent_table IN ('public.blocks_new', 'public.transactions_new');
 
--- Schedule daily pg_partman maintenance at 3 AM
-DO $$
-BEGIN
-    -- pg_cron can be installed but not configured (shared_preload_libraries / cron.database_name).
-    -- Do not fail the whole migration if scheduling is unavailable.
-    PERFORM cron.schedule(
-        'pg_partman_maintenance',
-        '0 3 * * *',
-        $cron$SELECT partman.run_maintenance_proc()$cron$
-    );
-EXCEPTION
-    WHEN undefined_function OR invalid_schema_name OR insufficient_privilege OR object_not_in_prerequisite_state THEN
-        -- Skip scheduling; maintenance can be set up later by DBA/ops.
-        NULL;
-END
-$$;
-
 -- Backfill data
 INSERT INTO blocks_new (chain_id, block_number, block_timestamp, hash, parent_hash, transaction_count, created_at, updated_at)
 SELECT chain_id, block_number, block_timestamp, hash, parent_hash, transaction_count, created_at, updated_at
@@ -176,7 +159,6 @@ CREATE TRIGGER update_transactions_updated_at BEFORE UPDATE ON transactions
 
 -- Recreate indexes on new tables
 CREATE INDEX IF NOT EXISTS idx_blocks_chain_id_transaction_count ON blocks(chain_id, transaction_count);
-
 CREATE INDEX IF NOT EXISTS idx_transactions_block_hash ON transactions(block_hash);
 CREATE INDEX IF NOT EXISTS idx_transactions_hash ON transactions(hash);
 CREATE INDEX IF NOT EXISTS idx_transactions_only_from_address ON transactions(from_address);
