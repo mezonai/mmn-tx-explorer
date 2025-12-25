@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2 } from 'lucide-react';
 import { P2POrder } from '../../types';
+import { APP_CONFIG } from '@/configs/app.config';
 
 interface SellerConfirmButtonProps {
   order: P2POrder;
@@ -37,10 +38,10 @@ export const SellerConfirmButton = ({ order, onConfirm, disabled = false }: Sell
         <Button
           onClick={handleConfirm}
           disabled={isSubmitting || disabled}
-          className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-8 py-3 text-base md:text-lg lg:text-lg font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600"
         >
           <CheckCircle2 className="h-5 w-5" />
-          {isSubmitting ? 'Confirming...' : 'Confirm money received, release MZD'}
+          {isSubmitting ? 'Confirming...' : `Confirm money received, release ${APP_CONFIG.CHAIN_SYMBOL}`}
         </Button>
       </div>
       <div className="px-4 text-center text-sm text-muted-foreground mt-2">

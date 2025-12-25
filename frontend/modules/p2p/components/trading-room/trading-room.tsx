@@ -19,13 +19,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { P2POrder, OrderStatus } from '../../types';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { APP_CONFIG } from '@/configs/app.config';
 
 interface TradingRoomProps {
   orderId: string;
-  currentUserId?: string;
 }
 
-export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
+export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   const { user } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -91,9 +91,6 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
         router.push(`/p2p/trading-room/${newOrder.order_id}`);
       }
     } catch (err) {
-      toast.error('Failed to create order', {
-        description: 'Please try again later',
-      });
       setError('Something went wrong while creating the order. Please try again.');
     }
   };
@@ -163,7 +160,7 @@ export const TradingRoom = ({ orderId, currentUserId }: TradingRoomProps) => {
             </Button>
             <div>
               <h1 className="text-sm font-bold text-muted-foreground">
-                Buy MZD from {formatWallet(offer?.seller_wallet_address)}
+                Buy {APP_CONFIG.CHAIN_SYMBOL} from {formatWallet(offer?.seller_wallet_address)}
               </h1>
               <div className="text-xs text-muted-foreground">
                 Trading with{' '}
