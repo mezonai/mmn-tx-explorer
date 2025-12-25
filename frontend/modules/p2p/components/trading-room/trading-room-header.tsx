@@ -8,7 +8,6 @@ import { AddressDisplay } from '@/components/shared/address-display';
 import { ROUTES } from '@/configs/routes.config';
 import { useP2POffer } from '../../hooks/useP2POffer';
 import { Button } from '@/components/ui/button';
-import { APP_CONFIG } from '@/configs/app.config';
 import { Chip } from '@/components/shared';
 
 interface TradingRoomHeaderProps {

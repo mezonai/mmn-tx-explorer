@@ -1,10 +1,9 @@
 'use client';
 
-import { useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { CopyButton } from '@/components/ui/copy-button';
 import { P2POffer } from '../../types';
-import { Bolt, QrCode } from 'lucide-react';
+import { Bolt } from 'lucide-react';
 
 interface BankInfoCardProps {
   bank_info?: P2POffer['bank_info'];

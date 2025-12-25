@@ -3,7 +3,6 @@
 import { Card } from '@/components/ui/card';
 import { P2POrder } from '../../types';
 import { useP2POffer } from '../../hooks/useP2POffer';
-import { useMemo } from 'react';
 import { APP_CONFIG } from '@/configs/app.config';
 
 interface OrderInfoCardProps {
