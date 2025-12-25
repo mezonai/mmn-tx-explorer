@@ -35,9 +35,9 @@ export const OrderInfoCard = ({ order }: OrderInfoCardProps) => {
 
       {/* MZD to Receive */}
       <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">{APP_CONFIG.CHAIN_SYMBOL} you will receive</span>
-        <span className="brand-primary text-lg font-bold">
-          {order.amount} <span className="text-xs">{APP_CONFIG.CHAIN_SYMBOL}</span>
+        <span className="text-xs text-muted-foreground">You will receive</span>
+        <span className="brand-primary font-semibold">
+          {order.amount} <span className="">{APP_CONFIG.CHAIN_SYMBOL}</span>
         </span>
       </div>
     </Card>

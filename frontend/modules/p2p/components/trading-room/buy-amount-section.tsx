@@ -53,7 +53,7 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
   return (
     <div className="mb-6 space-y-4">
       <div>
-        <label className="mb-2 block text-sm font-medium text-muted-foreground">{APP_CONFIG.CHAIN_SYMBOL} amount to buy</label>
+        <label className="mb-2 block text-sm font-medium text-muted-foreground">Amount to buy</label>
         <div className="relative">
           <Input
             type="text"
