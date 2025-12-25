@@ -41,14 +41,27 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
   };
 
   const available = offer.amount;
+  const initialMin = offer.limit.min;
+  const effectiveMax = Math.min(offer.limit.max, available);
+
+  let placeholder = `Minimum: ${formatCurrency(initialMin)} - Maximum: ${formatCurrency(effectiveMax)}`;
+  let isDisabled = false;
+
+  if (available === 0) {
+    placeholder = 'Minimum: 0 - Maximum: 0';
+    isDisabled = true;
+  } else if (available < initialMin) {
+    placeholder = 'The available amount is below the minimum requirement.';
+    isDisabled = true;
+  }
 
   const handleConfirm = () => {
-    if (amountMZD >= offer.limit.min && amountMZD <= Math.min(offer.limit.max, available)) {
+    if (amountMZD >= initialMin && amountMZD <= effectiveMax) {
       onConfirmBuy(amountMZD, amountVND);
     }
   };
 
-  const isValidAmount = amountMZD >= offer.limit.min && amountMZD <= Math.min(offer.limit.max, available);
+  const isValidAmount = amountMZD >= initialMin && amountMZD <= effectiveMax;
 
   return (
     <div className="mb-6 space-y-4">
@@ -57,11 +70,10 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
         <div className="relative">
           <Input
             type="text"
-            placeholder={`Minimum: ${formatCurrency(offer.limit.min)} - Maximum: ${formatCurrency(
-              Math.min(offer.limit.max, available)
-            )}`}
+            placeholder={placeholder}
             value={displayValue}
             onChange={handleInputChange}
+            disabled={isDisabled}
             className="bg-input/30 dark:bg-input/30 focus:border-brand-primary w-full rounded-md border-border px-3 py-2.5  font-bold text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
           <span className="absolute top-3.5 right-3 text-xs font-bold text-muted-foreground">{APP_CONFIG.CHAIN_SYMBOL}</span>
@@ -98,8 +110,8 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
 
       {!isValidAmount && amountMZD > 0 && (
         <p className="text-center text-xs text-red-500">
-          Amount must be between {formatCurrency(offer.limit.min)} and{' '}
-          {formatCurrency(Math.min(offer.limit.max, available))} {APP_CONFIG.CHAIN_SYMBOL}
+          Amount must be between {formatCurrency(initialMin)} and{' '}
+          {formatCurrency(effectiveMax)} {APP_CONFIG.CHAIN_SYMBOL}
         </p>
       )}
     </div>
