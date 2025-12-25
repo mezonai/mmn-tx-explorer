@@ -8,19 +8,11 @@ import { ChannelMessage, LightSocket } from 'mezon-light-sdk';
 import { STORAGE_KEYS } from '@/constant';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { formatChatTime, isSameDay } from '../../util';
 
 interface ChatSidebarProps {
   sellerId: string;
 }
-
-const formatChatTime = (timestamp: string) => {
-  const date = new Date(Number(timestamp));
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-};
-
-const isSameDay = (ts1: string, ts2: string) => {
-  return new Date(Number(ts1)).toDateString() === new Date(Number(ts2)).toDateString();
-};
 
 export const ChatSidebar = ({ sellerId }: ChatSidebarProps) => {
   const [messages, setMessages] = useState<ChannelMessage[]>([]);
