@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import Link from 'next/link';
 import { ComponentType, SVGProps } from 'react';
@@ -45,20 +45,18 @@ export const StatCard = ({ icon: Icon, faIconClass, title, value, subValue }: St
     if (isDark) {
       switch (t) {
         case StatTitle.TotalBlocks:
-          return { bg: 'bg-[var(--color-brand-link)]/20', icon: 'text-[var(--color-brand-link)]' };
+          return { bg: 'bg-brand-primary/20', icon: 'text-brand-primary' };
         case StatTitle.TotalTransactions:
           return { bg: 'bg-blue-500/20', icon: 'text-blue-400' };
         case StatTitle.AverageBlockTime:
           return { bg: 'bg-green-500/20', icon: 'text-green-400' };
         case StatTitle.TotalWallet:
           return { bg: 'bg-orange-500/20', icon: 'text-orange-400' };
-        case StatTitle.TotalGiveCoffee:
-          return { bg: 'bg-yellow-500/20', icon: 'text-yellow-400' };
         default:
-          return { bg: 'bg-[var(--color-brand-link)]/20', icon: 'text-[var(--color-brand-link)]' };
+          return { bg: 'bg-brand-primary/20', icon: 'text-brand-primary' };
       }
     }
-    return { bg: 'bg-[var(--color-brand-link)]/20', icon: 'text-[var(--color-brand-link)]' };
+    return { bg: 'bg-brand-primary/20', icon: 'text-brand-primary' };
   };
 
   const accent = getAccent(title);
@@ -81,8 +79,6 @@ export const StatCard = ({ icon: Icon, faIconClass, title, value, subValue }: St
         return ROUTES.WALLETS;
       case StatTitle.AverageBlockTime:
         return ROUTES.BLOCKS;
-      case StatTitle.TotalGiveCoffee:
-        return ROUTES.TRANSFER;
       default:
         return undefined;
     }
