@@ -20,6 +20,7 @@ import { P2POrder, OrderStatus } from '../../types';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { ChatSidebar } from './chat-sidebar';
+import { ROUTES } from '@/configs/routes.config';
 
 interface TradingRoomProps {
   orderId: string;
@@ -86,7 +87,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       const newOrder = await createOrder(offer, amountMZD, amountVND);
 
       if (newOrder) {
-        router.push(`/p2p/trading-room/${newOrder.order_id}`);
+        router.push(ROUTES.P2P_TRADING_ROOM(String(newOrder.order_id)));
       }
     } catch {
       toast.error('Failed to create order', {

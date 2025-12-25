@@ -1,6 +1,7 @@
 import { STORAGE_KEYS } from '@/constant';
 import { MmnClient, ZkClient } from 'mmn-client-js';
-import { LoginResponse, StateObject } from './type';
+import { LoginResponse } from './type';
+import { LightClient } from 'mezon-light-sdk';
 
 const mmnURL = process.env.NEXT_PUBLIC_CHAT_APP_MMN_API_URL ?? '';
 const zkURL = process.env.NEXT_PUBLIC_CHAT_APP_ZK_API_URL ?? '';
@@ -66,3 +67,17 @@ export function generateCsrfToken(length = 32): string {
   }
   return result;
 }
+export const createLightClient = async (id_token: string, user_id: string, username: string, serverkey: string) => {
+  try {
+    const light_client = await LightClient.authenticate({
+      id_token,
+      user_id,
+      username,
+      serverkey,
+    });
+    localStorage.setItem(STORAGE_KEYS.LIGHT_CLIENT, JSON.stringify(light_client));
+    return light_client;
+  } catch (error) {
+    console.error('Error creating light client', error);
+  }
+};

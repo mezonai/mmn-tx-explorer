@@ -4,6 +4,7 @@ import { STORAGE_KEYS } from '@/constant';
 import {
   AUTHENTICATION_ENDPOINT,
   AuthenticationService,
+  createLightClient,
   fetchAndStoreZkProof,
   generateAndStoreKeyPair,
   generateCsrfToken,
@@ -20,6 +21,7 @@ import { IZkProof, IEphemeralKeyPair } from 'mmn-client-js';
 import { safeJsonParse, clearAuthStorage } from '@/utils';
 import { useWebSocket } from '@/lib/websocket/useWebSocket';
 import { LightClient } from 'mezon-light-sdk';
+import { serverkey } from '../service/index';
 interface AppContextType {
   isAuthenticated: boolean;
   setIsAuthenticated: (value: boolean) => void;
@@ -48,7 +50,6 @@ interface AppProviderProps {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: AppProviderProps) {
-  const serverkey = process.env.NEXT_PUBLIC_MEZON_SERVER_KEY!;
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
   const [zkProof, setZkProof] = useState<IZkProof | null>(null);
@@ -58,11 +59,34 @@ export function AppProvider({ children }: AppProviderProps) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const wsManager = useWebSocket();
+  const resetSession = () => {
+    clearAuthStorage();
+    setUser(null);
+    setZkProof(null);
+    setKeypair(null);
+    setLightClient(null);
+    setIsAuthenticated(false);
+  };
   useEffect(() => {
     const localTokenStr = localStorage.getItem(STORAGE_KEYS.TOKEN);
     const localToken = localTokenStr ? safeJsonParse(localTokenStr) : null;
-    const lightClientStr = localStorage.getItem(STORAGE_KEYS.LIGHT_CLIENT);
 
+    if (localToken) {
+      (async () => {
+        try {
+          await AuthenticationService.refreshLogin(localToken.refresh_token);
+          const refreshedToken = safeJsonParse<{ access_token?: string }>(localStorage.getItem(STORAGE_KEYS.TOKEN));
+          if (refreshedToken?.access_token) {
+            wsManager.connect(refreshedToken.access_token);
+          }
+        } catch {
+          resetSession();
+          toast.error('Session expired, please log in again.');
+        }
+      })();
+    }
+
+    const lightClientStr = localStorage.getItem(STORAGE_KEYS.LIGHT_CLIENT);
     const lightClient = lightClientStr ? safeJsonParse(lightClientStr) : null;
 
     if (lightClient) {
@@ -77,34 +101,12 @@ export function AppProvider({ children }: AppProviderProps) {
           });
           setLightClient(light_client);
         } catch {
-          clearAuthStorage();
-          setUser(null);
-          setZkProof(null);
-          setKeypair(null);
-          setLightClient(null);
-          setIsAuthenticated(false);
+          resetSession();
           toast.error('Session expired, please log in again.');
         }
       })();
     }
-    if (localToken) {
-      (async () => {
-        try {
-          await AuthenticationService.refreshLogin(localToken.refresh_token);
-          const refreshedToken = safeJsonParse<{ access_token?: string }>(localStorage.getItem(STORAGE_KEYS.TOKEN));
-          if (refreshedToken?.access_token) {
-            wsManager.connect(refreshedToken.access_token);
-          }
-        } catch {
-          clearAuthStorage();
-          setUser(null);
-          setZkProof(null);
-          setKeypair(null);
-          setIsAuthenticated(false);
-          toast.error('Session expired, please log in again.');
-        }
-      })();
-    }
+
     const userStored = localStorage.getItem(STORAGE_KEYS.USER_INFO);
     if (userStored) {
       const u = safeJsonParse(userStored);
@@ -137,15 +139,16 @@ export function AppProvider({ children }: AppProviderProps) {
         setKeypair(keypair);
         const senderAddress = mmnClient.getAddressFromUserId(userInfo.user.user_id);
         const userObject = processAndStoreUser(userInfo.user, senderAddress);
-        const light_client = await LightClient.authenticate({
-          id_token: userInfo.auth_token,
-          user_id: userInfo.user.user_id,
-          username: userInfo.user.username,
-          serverkey,
-        });
-        localStorage.setItem(STORAGE_KEYS.LIGHT_CLIENT, JSON.stringify(light_client));
-        setLightClient(light_client);
         setUser(userObject);
+        const light_client = await createLightClient(
+          userInfo.auth_token,
+          userInfo.user.user_id,
+          userInfo.user.username,
+          serverkey
+        );
+        if (light_client) {
+          setLightClient(light_client);
+        }
         const fetchedZk = await fetchAndStoreZkProof(
           userInfo.user.user_id || userInfo.user.sub,
           keypair.publicKey,
@@ -162,12 +165,7 @@ export function AppProvider({ children }: AppProviderProps) {
         router.replace(pathname);
         toast.success('Login successful!');
       } catch {
-        clearAuthStorage();
-        setUser(null);
-        setZkProof(null);
-        setKeypair(null);
-        setLightClient(null);
-        setIsAuthenticated(false);
+        resetSession();
         toast.error('Login failed!');
       }
     };
@@ -225,7 +223,7 @@ export function useLightClient() {
   return { lightClient, setLightClient };
 }
 export function useAuthActions() {
-  const { setIsAuthenticated, setUser, setZkProof, setKeypair } = useApp();
+  const { setIsAuthenticated, setUser, setZkProof, setKeypair, setLightClient } = useApp();
   const login = () => {
     const csrfToken = generateCsrfToken();
     const currentPath = location.pathname + location.search;
@@ -245,6 +243,7 @@ export function useAuthActions() {
     }
     clearAuthStorage();
     setUser(null);
+    setLightClient(null);
     setZkProof(null);
     setKeypair(null);
     setIsAuthenticated(false);

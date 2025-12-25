@@ -9,7 +9,7 @@ const dongServiceURL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 const gameServiceURL = process.env.NEXT_PUBLIC_TOP_MEZON_AI + '/api';
 const ipfsServiceURL = process.env.NEXT_PUBLIC_BASE_FE + '/ipfs';
 // const baseURL = 'http://localhost:8080';
-
+const serverkey = process.env.NEXT_PUBLIC_MEZON_SERVER_KEY!;
 const cobarClient = axios.create({
   baseURL: '/api/cobar',
   headers: {
@@ -74,4 +74,4 @@ apiDongClient.interceptors.response.use(
   }
 );
 
-export { apiClient, apiDongClient, cobarClient, apiGameClient, ipfsServiceURL };
+export { apiClient, apiDongClient, cobarClient, apiGameClient, ipfsServiceURL, serverkey };

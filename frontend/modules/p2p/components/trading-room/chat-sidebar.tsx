@@ -5,6 +5,9 @@ import { Send, AlertTriangle, Loader2, MessageCircle, X, Info } from 'lucide-rea
 import { cn } from '@/lib/utils';
 import { useLightClient, useUser } from '@/providers';
 import { ChannelMessage, LightSocket } from 'mezon-light-sdk';
+import { STORAGE_KEYS } from '@/constant';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
 
 interface ChatSidebarProps {
   sellerId: string;
@@ -51,7 +54,10 @@ export const ChatSidebar = ({ sellerId }: ChatSidebarProps) => {
     const initChat = async () => {
       try {
         const isExpired = await lightClient.isSessionExpired();
-        if (isExpired) await lightClient.refreshSession();
+        if (isExpired) {
+          await lightClient.refreshSession();
+          localStorage.setItem(STORAGE_KEYS.LIGHT_CLIENT, JSON.stringify(lightClient));
+        }
         if (!isMounted) return;
 
         const sdk = lightClient;
@@ -131,25 +137,27 @@ export const ChatSidebar = ({ sellerId }: ChatSidebarProps) => {
 
   return (
     <>
-      <button
+      <Button
+        size="icon"
         onClick={() => setIsMobileOpen(true)}
         className={cn(
-          'bg-brand-primary fixed right-6 bottom-6 z-40 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition-all active:scale-95 md:hidden',
+          'bg-brand-primary fixed right-6 bottom-6 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition-all active:scale-95 md:hidden',
+          'hover:bg-brand-primary/90',
           isMobileOpen && 'scale-0 opacity-0'
         )}
       >
-        <MessageCircle className="h-6 w-6" />
+        <MessageCircle className="size-6" />
 
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-[#0B0E11]">
+          <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-black">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
-      </button>
+      </Button>
 
       <div
         className={cn(
-          'fixed inset-0 z-50 flex flex-col bg-white transition-transform duration-300 md:relative md:inset-auto md:flex md:h-full md:w-87.5 md:translate-y-0 md:border-l md:border-gray-200 lg:w-125 dark:bg-[#0B0E11] dark:md:border-gray-800',
+          'fixed inset-0 z-50 flex flex-col bg-white transition-transform duration-300 md:relative md:inset-auto md:z-0 md:flex md:h-full md:w-87.5 md:translate-y-0 md:border-l md:border-gray-200 lg:w-125 dark:bg-black dark:md:border-gray-800',
           isMobileOpen ? 'translate-y-0' : 'translate-y-full md:translate-y-0'
         )}
       >
@@ -158,12 +166,14 @@ export const ChatSidebar = ({ sellerId }: ChatSidebarProps) => {
             <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
             <h2 className="text-sm font-bold text-gray-900 dark:text-white">Trading Room</h2>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setIsMobileOpen(false)}
             className="rounded-full p-2 hover:bg-gray-100 md:hidden dark:hover:bg-gray-800"
           >
             <X className="h-5 w-5 text-gray-500" />
-          </button>
+          </Button>
         </div>
 
         <div
@@ -292,9 +302,9 @@ export const ChatSidebar = ({ sellerId }: ChatSidebarProps) => {
         </div>
 
         {/* Input Area */}
-        <div className="shrink-0 border-t border-gray-200 bg-white p-4 pb-8 md:pb-4 dark:border-gray-800 dark:bg-[#0B0E11]">
-          <form onSubmit={handleSendMessage} className="relative flex items-end">
-            <textarea
+        <div className="shrink-0 border-t border-gray-200 bg-white p-4 pb-8 md:pb-4 dark:border-gray-800 dark:bg-black">
+          <form onSubmit={handleSendMessage} className="relative w-full">
+            <Textarea
               ref={textareaRef}
               rows={1}
               value={inputValue}
@@ -302,17 +312,29 @@ export const ChatSidebar = ({ sellerId }: ChatSidebarProps) => {
               onKeyDown={handleKeyDown}
               placeholder="Type a message..."
               className={cn(
-                'focus:border-brand-primary max-h-50 min-h-10.5 w-full rounded-lg border border-gray-200 bg-gray-50 py-2.5 pr-12 pl-4 text-sm text-gray-900 transition-all focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white',
-                'resize-none overflow-y-auto break-all whitespace-pre-wrap'
+                'max-h-50 min-h-10.5 w-full resize-none shadow-none',
+                'bg-gray-50 dark:bg-gray-900',
+                'border-gray-200 dark:border-gray-700',
+                'focus:border-brand-primary focus:ring-0 focus-visible:ring-0',
+                'text-sm text-gray-900 dark:text-white',
+                'py-2.5 pr-12 pl-4',
+                'overflow-y-auto break-all whitespace-pre-wrap'
               )}
             />
-            <button
+            <Button
               type="submit"
               disabled={!inputValue.trim()}
-              className="text-brand-primary hover:bg-brand-primary/10 absolute right-2 bottom-1 rounded-md p-1.5 disabled:text-gray-400 dark:disabled:text-gray-600"
+              variant="ghost"
+              size="icon"
+              className={cn(
+                'absolute right-2 bottom-1.5',
+                'h-auto w-auto p-1.5',
+                'text-brand-primary hover:bg-brand-primary/10',
+                'disabled:text-gray-400 dark:disabled:text-gray-600'
+              )}
             >
               {isConnected ? <Send className="h-5 w-5" /> : <Loader2 className="h-5 w-5 animate-spin" />}
-            </button>
+            </Button>
           </form>
         </div>
       </div>
