@@ -7,7 +7,6 @@ import { DonationCampaign } from '../../type';
 import { Separator } from '@/components/ui/separator';
 import { DonationFeed } from './shared';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CommunityFeed } from './shared/community-feed';
 
 interface CampaignDetailProps {
   campaign: DonationCampaign;
@@ -44,7 +43,7 @@ export const CampaignDetail = async ({ campaign }: CampaignDetailProps) => {
               </TabsTrigger>
               <TabsTrigger
                 value={'community'}
-                className="text-muted-foreground data-[state=active]:border-brand-primary mr-5 rounded-none border-0 px-0 data-[state=active]:border-b data-[state=active]:text-foreground"
+                className="text-muted-foreground data-[state=active]:border-brand-primary data-[state=active]:text-foreground mr-5 rounded-none border-0 px-0 data-[state=active]:border-b"
               >
                 Community
               </TabsTrigger>
@@ -61,10 +60,20 @@ export const CampaignDetail = async ({ campaign }: CampaignDetailProps) => {
               <CampaignActivity campaign={campaign} walletAddress={campaign.donation_wallet} />
             </TabsContent>
             <TabsContent value="update">
-              <DonationFeed campaign={campaign} />
+              <DonationFeed
+                campaign={campaign}
+                isOwner={true}
+                feedTitle="Updates"
+                feedDescription="Follow the full journey of this campaign."
+              />
             </TabsContent>
             <TabsContent value="community">
-              <CommunityFeed campaign={campaign} />
+              <DonationFeed
+                campaign={campaign}
+                isOwner={false}
+                feedTitle="Community"
+                feedDescription="Join the conversation. Share your thoughts and support for this campaign."
+              />
             </TabsContent>
           </Tabs>
         </div>
