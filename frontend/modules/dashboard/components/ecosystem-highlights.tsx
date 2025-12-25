@@ -60,7 +60,7 @@ export const EcosystemHighlights = ({ giveCoffeeStats }: EcosystemHighlightsProp
             <>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 <span
-                  className="cursor-pointer rounded-sm font-medium hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-link)]"
+                  className="cursor-pointer rounded-sm font-medium hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
                   role="link"
                   tabIndex={0}
                   title={`Open ${campaign.name}`}

@@ -56,7 +56,7 @@ export const StatCard = ({ icon: Icon, faIconClass, title, value, subValue }: St
           return { bg: 'bg-brand-primary/20', icon: 'text-brand-primary' };
       }
     }
-    return { bg: 'bg-brand-primary/20', icon: 'text-brand-primary' };
+    return { bg: 'bg-brand-primary/10', icon: 'text-brand-primary' };
   };
 
   const accent = getAccent(title);
