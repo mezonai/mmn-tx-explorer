@@ -7,11 +7,15 @@ import { useTopRaisedRatioCampaign } from '@/modules/donation-campaign/hooks/use
 import { APP_CONFIG } from '@/configs/app.config';
 import { useRedEnvelopeStats } from '@/modules/lucky-money/hooks';
 import { useGames } from '@/modules/mezon-game/hooks/useGames';
-import { HandHeart, Gift, Sprout, Store, Gamepad2 } from 'lucide-react';
+import { HandHeart, Gift, Sprout, Store, Gamepad2, Coffee } from 'lucide-react';
 import { Transaction } from '@/assets/icons';
 import { EcoCard } from './eco-card';
 
-export const EcosystemHighlights = () => {
+interface EcosystemHighlightsProps {
+  giveCoffeeStats?: number;
+}
+
+export const EcosystemHighlights = ({ giveCoffeeStats }: EcosystemHighlightsProps) => {
   const { campaign, percentageDisplay, barPercentage, isLoading, error } = useTopRaisedRatioCampaign();
   const router = useRouter();
   const { data: gameResponse } = useGames({
@@ -111,6 +115,12 @@ export const EcosystemHighlights = () => {
           icon={<Gamepad2 className="text-brand-primary h-6 w-6 dark:text-pink-400" />}
           description={`${gameResponse?.totalCount} active games are waiting for you`}
           route={ROUTES.MEZON_GAME}
+        />
+        <EcoCard
+          title="Give Coffee"
+          icon={<Coffee className="text-brand-primary h-6 w-6 dark:text-yellow-400" />}
+          route={ROUTES.TRANSFER}
+          description={`${giveCoffeeStats ?? 0} cups sent (on-chain + payment)`}
         />
       </div>
     </section>

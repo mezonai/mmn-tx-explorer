@@ -1,31 +1,28 @@
 'use client';
 
 import { StatCard } from './stat-card';
-import { useStats } from '../../hooks/useStas';
 import { StatTitle } from './stat-titles';
 import { Cube01, Transaction, Clock, Wallet02 } from '@/assets/icons';
-import { Coffee } from 'lucide-react';
 
-export const Stats = () => {
-  const stats = useStats();
+interface StatsProps {
+  blockStats?: number;
+  totalTxStats?: number;
+  avgBlockTimeStats?: number;
+  totalWalletsStats?: number;
+}
+
+export const Stats = ({ blockStats, totalTxStats, avgBlockTimeStats, totalWalletsStats }: StatsProps) => {
   const statCards = [
-    { title: StatTitle.TotalBlocks, value: stats?.total_blocks, icon: Cube01 },
-    { title: StatTitle.TotalTransactions, value: stats?.total_transactions, icon: Transaction },
-    { title: StatTitle.AverageBlockTime, value: stats?.average_block_time, subValue: '(s)', icon: Clock },
-    { title: StatTitle.TotalWallet, value: stats?.total_wallets, icon: Wallet02 },
-    { title: StatTitle.TotalGiveCoffee, value: stats?.total_give_coffee, icon: Coffee },
+    { title: StatTitle.TotalBlocks, value: blockStats, icon: Cube01 },
+    { title: StatTitle.TotalTransactions, value: totalTxStats, icon: Transaction },
+    { title: StatTitle.AverageBlockTime, value: avgBlockTimeStats, subValue: '(s)', icon: Clock },
+    { title: StatTitle.TotalWallet, value: totalWalletsStats, icon: Wallet02 },
   ];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {statCards.map((item) => (
-        <StatCard
-          key={item.title}
-          icon={item.icon}
-          title={item.title}
-          value={item.value}
-          subValue={item.subValue}
-        />
+        <StatCard key={item.title} icon={item.icon} title={item.title} value={item.value} subValue={item.subValue} />
       ))}
     </div>
   );
