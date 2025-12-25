@@ -11,6 +11,7 @@ import { ROUTES } from '@/configs/routes.config';
 const INITIAL_FORM: DonationUpdateForm = {
   title: '',
   description: '',
+  reference_tx_hashes: [],
   images: [],
 };
 
@@ -95,6 +96,7 @@ export function UpdateDonationProvider({ updatePost, campaign, children }: Creat
         title: form.title,
         description: form.description,
         image_cids: imageCids,
+        reference_tx_hashes: form.reference_tx_hashes,
         ...(updatePost && {
           parent_hash: updatePost.tx_hash,
           root_hash: updatePost.root_hash || updatePost.tx_hash,

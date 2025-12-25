@@ -1,13 +1,20 @@
-import { ETransactionStatus, ETransactionType } from './enums';
+import { ETransferType, ETransactionStatus } from './enums';
 
-export const getTransactionTypeLabel = (type: ETransactionType): string => {
+export const getTransactionTypeLabel = (type: ETransferType): string => {
   switch (type) {
-    case ETransactionType.TokenTransfer:
-      return 'Token Transfer';
-    case ETransactionType.WithdrawCampaign:
+    case ETransferType.GiveCoffee:
+    case ETransferType.DongGiveCoffee:
+      return 'Give Coffee';
+    case ETransferType.DonationCampaign:
+      return 'Donation Campaign';
+    case ETransferType.WithdrawCampaign:
       return 'Withdraw Campaign';
-    case ETransactionType.DonationFeed:
+    case ETransferType.LuckyMoney:
+      return 'Lucky Money';
+    case ETransferType.DonationFeedCampaign:
       return 'Donation Feed';
+    default:
+      return 'Token Transfer';
   }
 };
 
