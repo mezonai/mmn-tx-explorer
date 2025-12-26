@@ -1,4 +1,4 @@
-import { OFFERS_STATUS } from './constants';
+import { OFFERS_STATUS, P2P_TAB } from './constants';
 
 export type BankOption = 'MB' | 'VCB' | 'TCB' | 'ACB' | 'TPBANK' | 'VIETCOMBANK';
 
@@ -13,12 +13,9 @@ export interface P2POffer {
     max: number;
   };
   price_rate: number;
-  bank_info?: {
-    bank: string;
-    account_number: string;
-    account_name: string;
-  };
-  transfer_code?: string;
+  price_type: string;
+  side: TradeTypes;
+  seller_user_id: string;
   symbol: string;
   created_at: string;
   update_at: string;
@@ -68,7 +65,6 @@ export interface UpdateOfferStatusRequest {
   status: OfferStatus;
   tx_hash: string;
 }
-// Order status enum matching backend
 export enum OrderStatus {
   OPEN = 'OPEN',
   PENDING = 'PENDING',
@@ -100,6 +96,7 @@ export interface P2POrder {
   updated_at: string;
   price_rate: number;
 }
+export type P2PTabType = (typeof P2P_TAB)[keyof typeof P2P_TAB];
 
 export interface CreateOrderRequest {
   offer_id: string | number;

@@ -1,15 +1,20 @@
+'use client';
 import { AddressDisplay } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { APP_CONFIG } from '@/configs/app.config';
 import { ROUTES } from '@/configs/routes.config';
 import { P2POffer } from '@/modules/p2p/types';
+import { useUser } from '@/providers';
+import { useRouter } from 'next/navigation';
 import React from 'react';
 interface OfferMobileCardProps {
   offer: P2POffer;
 }
 const OfferMobileCard = ({ offer }: OfferMobileCardProps) => {
+  const router = useRouter();
+  const { user } = useUser();
   return (
-    <div className="bg-background border-border mb-2 space-y-4 rounded-xl border p-4 shadow-sm">
+    <div className="bg-card border-border mb-2 space-y-4 rounded-xl border p-4 shadow-sm">
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">Seller</span>
@@ -41,9 +46,16 @@ const OfferMobileCard = ({ offer }: OfferMobileCardProps) => {
       </div>
 
       <div className="pt-1">
-        <Button className="w-full rounded-xl bg-emerald-500 py-3 font-bold text-white shadow-md transition hover:bg-emerald-600 active:scale-[0.98]">
-          Buy {APP_CONFIG.CHAIN_SYMBOL}
-        </Button>
+        {user?.id !== offer.seller_user_id && (
+          <Button
+            onClick={() => {
+              router.push(ROUTES.P2P_TRADING_ROOM(offer.offer_id, 'offer'));
+            }}
+            className="w-full rounded-xl bg-emerald-500 py-3 font-bold text-white shadow-md transition hover:bg-emerald-600 active:scale-[0.98]"
+          >
+            Buy Mezon Đồng
+          </Button>
+        )}
       </div>
     </div>
   );

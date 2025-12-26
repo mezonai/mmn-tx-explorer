@@ -25,6 +25,11 @@ export const OFFERS_STATUS = {
   FAILED: 'FAILED',
   COMPLETE: 'COMPLETE',
 } as const;
+export const P2P_TAB = {
+  OFFERS: 'offers',
+  ORDERS: 'orders',
+  MY_OFFERS: 'my-offers',
+} as const;
 
 export const P2P_EVENT_TYPES = {
   ORDER_STATUS_UPDATED: 'ORDER_STATUS_UPDATED',

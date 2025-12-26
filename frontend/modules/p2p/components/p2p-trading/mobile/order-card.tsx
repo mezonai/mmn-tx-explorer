@@ -1,3 +1,5 @@
+'use client';
+
 import { AddressDisplay, Chip } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { APP_CONFIG } from '@/configs/app.config';
@@ -5,12 +7,14 @@ import { ROUTES } from '@/configs/routes.config';
 import { Countdown } from '../../shared/count-down';
 import { getOrderStatusInfo } from '@/modules/p2p/util';
 import { P2POrder } from '@/modules/p2p/types';
+import { useRouter } from 'next/navigation';
 interface OrderMobileCardProps {
   order: P2POrder;
 }
 export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
+  const router = useRouter();
   return (
-    <div className="bg-background border-border mb-2 space-y-4 rounded-xl border p-4 shadow-sm">
+    <div className="bg-card border-border mb-2 space-y-4 rounded-xl border p-4 shadow-sm">
       <div className="flex items-start justify-between">
         <div>
           <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">Order ID</span>
@@ -70,7 +74,7 @@ export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
       <div className="pt-2">
         <Button
           className="bg-primary/10 text-brand-primary dark:hover:bg-brand-primary dark:bg-brand-primary/10 dark:border-brand-primary dark:text-primary-light flex w-full items-center justify-center rounded-xl py-3 text-sm font-bold transition hover:text-white dark:border dark:hover:text-white"
-          onClick={() => console.log('view', order.order_id)}
+          onClick={() => router.push(ROUTES.P2P_TRADING_ROOM(order.order_id.toString()))}
         >
           View Order Details
         </Button>
