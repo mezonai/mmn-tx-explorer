@@ -20,8 +20,12 @@ export interface P2POffer {
   created_at: string;
   update_at: string;
   status: string;
-  seller_user_id: string;
-  price_type: string;
+  bank_info?: {
+    bank: string;
+    account_number: string;
+    account_name: string;
+  };
+  transfer_code?: string;
 }
 
 export interface IP2POfferListParams {
