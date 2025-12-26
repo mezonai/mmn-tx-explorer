@@ -188,6 +188,13 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 		return models.SyncCampaignResponse{TotalAmount: 0, TotalContributors: 0, TotalWithdrawn: 0}, fmt.Errorf("failed to get campaign: %w", err)
 	}
 
+	var currentBalance int64
+	balanceQuery := fmt.Sprintf(`SELECT COALESCE(balance, 0) FROM %s.wallet WHERE address = $1`, r.indexerSchema)
+	err = r.db.QueryRowContext(ctx, balanceQuery, campaign.DonationWallet).Scan(&currentBalance)
+	if err != nil {
+		currentBalance = 0
+	}
+
 	// If statistics are already newer than the latest finalized transaction for this wallet, skip sync
 	earlyCheckQuery := fmt.Sprintf(`
 		SELECT MAX(transaction_timestamp) AS last_ts
@@ -205,16 +212,9 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 
 	if lastTS.IsZero() || campaign.UpdatedAt.After(lastTS) {
 		logger.Info().Int64("campaign_id", campaignID).Time("updated_at", campaign.UpdatedAt).Time("last_ts", lastTS).Msg("Campaign statistics are already up to date")
+		totalWithdrawn := campaign.TotalAmount - currentBalance
 
-		// Get current balance from wallet for the response
-		var currentBalance int64
-		balanceQuery := fmt.Sprintf(`SELECT COALESCE(balance, 0) FROM %s.wallet WHERE address = $1`, r.indexerSchema)
-		err = r.db.QueryRowContext(ctx, balanceQuery, campaign.DonationWallet).Scan(&currentBalance)
-		if err != nil {
-			currentBalance = 0
-		}
-
-		return models.SyncCampaignResponse{TotalAmount: campaign.TotalAmount, TotalContributors: campaign.TotalContributor, CurrentBalance: currentBalance, TotalWithdrawn: campaign.TotalWithdrawn}, nil
+		return models.SyncCampaignResponse{TotalAmount: campaign.TotalAmount, TotalContributors: campaign.TotalContributor, CurrentBalance: currentBalance, TotalWithdrawn: totalWithdrawn}, nil
 	}
 
 	// Sync contributors for this campaign
@@ -270,12 +270,12 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 				campaign_wallet,
 				SUM(total_donate)::BIGINT as total_amount,
 				COUNT(DISTINCT sender_wallet) as contributor_count,
-				COALESCE(w.balance, 0) as current_balance,
-				SUM(total_donate) - COALESCE(w.balance, 0) AS total_withdrawn
+				COALESCE(MAX(w.balance), 0) as current_balance,
+				SUM(total_donate) - COALESCE(MAX(w.balance) AS total_withdrawn
 			FROM %s.campaign_contributor cc
 			LEFT JOIN %s.wallet w ON w.address = cc.campaign_wallet
 			WHERE cc.campaign_wallet = $1
-			GROUP BY cc.campaign_wallet, w.balance
+			GROUP BY cc.campaign_wallet
 		) cc_stats ON dc.donation_wallet = cc_stats.campaign_wallet
 		WHERE cs.campaign_wallet = dc.donation_wallet
 		AND dc.id = $2
