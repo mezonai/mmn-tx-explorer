@@ -4,7 +4,8 @@ import { Control, Controller, useWatch, useFormState } from 'react-hook-form';
 import { TradeTypes } from '@/modules/p2p/types';
 import { CreateOfferFormValues } from './validation-schema';
 import { APP_CONFIG } from '@/configs/app.config';
-import { cn, formatCurrency } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/modules/p2p/util';
 
 interface TradeTypeSectionProps {
   control: Control<CreateOfferFormValues>;

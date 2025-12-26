@@ -4,7 +4,8 @@ import { Control, Controller, UseFormTrigger, useWatch } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { CreateOfferFormValues } from './validation-schema';
 import { APP_CONFIG } from '@/configs/app.config';
-import { cn, formatCurrency } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/modules/p2p/util';
 interface AmountSectionProps {
   control: Control<CreateOfferFormValues>;
   trigger: UseFormTrigger<CreateOfferFormValues>;

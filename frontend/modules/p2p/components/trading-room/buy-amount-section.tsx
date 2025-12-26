@@ -7,7 +7,7 @@ import { P2POffer } from '../../types';
 import { CheckCircle2 } from 'lucide-react';
 import { APP_CONFIG } from '@/configs/app.config';
 import { ConfirmPurchaseModal } from './confirm-purchase-modal';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@/modules/p2p/util';
 
 interface BuyAmountSectionProps {
   offer: P2POffer;

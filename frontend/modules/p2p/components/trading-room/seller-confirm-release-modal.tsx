@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { APP_CONFIG } from '@/configs/app.config';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@/modules/p2p/util';
 
 interface SellerConfirmReleaseModalProps {
     open: boolean;
