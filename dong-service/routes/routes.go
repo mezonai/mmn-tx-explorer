@@ -54,7 +54,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		campaignHandler := handlers.NewDonationCampaignHandler(campaignRepo)
 		statsHandler := handlers.NewCampaignStatisticsHandler(statsRepo)
 		walletHandler := handlers.NewWalletHandler(walletRepo, campaignRepo)
-		campaignFeedHandler := handlers.NewDonationCampaignFeedHandler(campaignFeedRepo, cfg)
+		campaignFeedHandler := handlers.NewDonationCampaignFeedHandler(campaignFeedRepo, campaignRepo, cfg)
 
 		// Campaign routes (protected)
 		campaignsPrivate := v1.Group("/admin/campaigns")
