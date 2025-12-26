@@ -842,10 +842,9 @@ func (p *PostgresConnector) insertBlockTx(ctx context.Context, tx *sql.Tx, block
 			RETURNING 1
 		)
 		SELECT 
-			(SELECT COUNT(*) FROM inserted) AS inserted_count,
-			(SELECT COUNT(*) FROM updated) AS updated_count`
+			(SELECT COUNT(*) FROM inserted) AS inserted_count`
 
-	var insertedCount, updatedCount int
+	var insertedCount int
 	if err := tx.QueryRowContext(ctx, blockInsert,
 		bigIntToString(block.ChainID),
 		bigIntToString(block.Number),
@@ -853,7 +852,7 @@ func (p *PostgresConnector) insertBlockTx(ctx context.Context, tx *sql.Tx, block
 		block.Hash,
 		block.ParentHash,
 		block.TransactionCount,
-	).Scan(&insertedCount, &updatedCount); err != nil {
+	).Scan(&insertedCount); err != nil {
 		return fmt.Errorf("failed to insert block: %w", err)
 	}
 
