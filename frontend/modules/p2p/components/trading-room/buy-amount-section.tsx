@@ -12,6 +12,7 @@ interface BuyAmountSectionProps {
   offer: P2POffer;
   onConfirmBuy: (amountMZD: number, amountVND: number) => void;
   isLoading?: boolean;
+  extraDisabled?: boolean;
 }
 
 const formatCurrency = (num: number): string => {
@@ -22,7 +23,7 @@ const getRawValue = (val: string): number => {
   return parseFloat(val.replace(/\./g, '').replace(/,/g, '')) || 0;
 };
 
-export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: BuyAmountSectionProps) => {
+export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false, extraDisabled = false }: BuyAmountSectionProps) => {
   const [amountMZD, setAmountMZD] = useState<number>(0);
   const [displayValue, setDisplayValue] = useState<string>('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -47,7 +48,7 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
   const effectiveMax = Math.min(offer.limit.max, available);
 
   let placeholder = `Minimum: ${formatCurrency(initialMin)} - Maximum: ${formatCurrency(effectiveMax)}`;
-  let isDisabled = false;
+  let isDisabled = extraDisabled;
 
   if (available === 0) {
     placeholder = 'Minimum: 0 - Maximum: 0';
@@ -58,7 +59,7 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
   }
 
   const handleConfirm = () => {
-    if (amountMZD >= initialMin && amountMZD <= effectiveMax) {
+    if (amountMZD >= initialMin && amountMZD <= effectiveMax && !extraDisabled) {
       setShowConfirmModal(true);
     }
   };
@@ -107,7 +108,7 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
       <div className="mt-4 flex justify-center">
         <Button
           onClick={handleConfirm}
-          disabled={!isValidAmount || isLoading}
+          disabled={!isValidAmount || isLoading || extraDisabled}
           className="rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600"
         >
           <CheckCircle2 className="h-5 w-5" />
@@ -115,7 +116,7 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
         </Button>
       </div>
 
-      {!isValidAmount && amountMZD > 0 && (
+      {!isValidAmount && amountMZD > 0 && !extraDisabled && (
         <p className="text-center text-xs text-red-500">
           Amount must be between {formatCurrency(initialMin)} and{' '}
           {formatCurrency(effectiveMax)} {APP_CONFIG.CHAIN_SYMBOL}

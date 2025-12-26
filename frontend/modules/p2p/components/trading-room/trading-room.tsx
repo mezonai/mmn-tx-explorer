@@ -6,6 +6,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useP2POrder } from '../../hooks/useP2POrder';
 import { useP2POffer } from '../../hooks/useP2POffer';
 import { useCreateOrder } from '../../hooks/useCreateOrder';
+import { useMyOrders } from '../../hooks/useMyOrders';
 import { useUser } from '@/providers/AppProvider';
 import { TradingRoomHeader } from './trading-room-header';
 import { ProgressSteps } from './progress-steps';
@@ -39,6 +40,18 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   const offerIdParam = isOfferMode ? orderId : (order ? String(order.offer_id) : null);
   const { offer, isLoading: offerLoading } = useP2POffer(offerIdParam);
   const { createOrder, isLoading: isCreatingOrder } = useCreateOrder();
+  const { data: myOrdersData } = useMyOrders({
+    page: 0,
+    limit: 50,
+  });
+
+  const activeOrderForThisOffer = useMemo(() => {
+    if (!isOfferMode || !myOrdersData?.data || !orderId) return null;
+    return myOrdersData.data.find(
+      (o: P2POrder) =>
+        String(o.offer_id) === String(orderId) && (o.status === OrderStatus.OPEN || o.status === OrderStatus.PENDING)
+    );
+  }, [isOfferMode, myOrdersData?.data, orderId]);
 
 
   useEffect(() => {
@@ -174,6 +187,18 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
         <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
           <div className="w-full md:w-7/12 lg:w-8/12 overflow-y-auto border-b md:border-b-0 md:border-r border-border p-6">
             <ProgressSteps order={displayOrder} />
+            {activeOrderForThisOffer && (
+              <div className="mb-6 rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-4 text-yellow-600 dark:text-yellow-500">
+                <p className="font-bold flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
+                  Offer Temporarily Locked
+                </p>
+
+                <span className="text-sm mt-1">
+                  This offer is locked because a transaction is in progress. Please try again after it’s completed.
+                </span>
+              </div>
+            )}
 
 
             {error && (
@@ -182,7 +207,12 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
               </div>
             )}
 
-            <BuyAmountSection offer={offer} onConfirmBuy={handleConfirmBuy} isLoading={isCreatingOrder} />
+            <BuyAmountSection
+              offer={offer}
+              onConfirmBuy={handleConfirmBuy}
+              isLoading={isCreatingOrder}
+              extraDisabled={!!activeOrderForThisOffer}
+            />
           </div>
 
 

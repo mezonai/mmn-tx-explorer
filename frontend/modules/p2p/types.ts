@@ -99,9 +99,7 @@ export interface P2POrder {
 }
 
 export interface CreateOrderRequest {
-  offer_id: string | number;
   amount: number;
-  payable_amount: number;
 }
 
 export interface UpdateOrderStatusRequest {
