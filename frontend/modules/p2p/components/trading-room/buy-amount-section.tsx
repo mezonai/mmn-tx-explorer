@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { P2POffer } from '../../types';
 import { CheckCircle2 } from 'lucide-react';
 import { APP_CONFIG } from '@/configs/app.config';
+import { ConfirmPurchaseModal } from './confirm-purchase-modal';
 
 interface BuyAmountSectionProps {
   offer: P2POffer;
@@ -24,6 +25,7 @@ const getRawValue = (val: string): number => {
 export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: BuyAmountSectionProps) => {
   const [amountMZD, setAmountMZD] = useState<number>(0);
   const [displayValue, setDisplayValue] = useState<string>('');
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const amountVND = amountMZD > 0 && offer.price_rate > 0 ? amountMZD * offer.price_rate : 0;
 
@@ -57,8 +59,13 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
 
   const handleConfirm = () => {
     if (amountMZD >= initialMin && amountMZD <= effectiveMax) {
-      onConfirmBuy(amountMZD, amountVND);
+      setShowConfirmModal(true);
     }
+  };
+
+  const handleFinalConfirm = () => {
+    onConfirmBuy(amountMZD, amountVND);
+    setShowConfirmModal(false);
   };
 
   const isValidAmount = amountMZD >= initialMin && amountMZD <= effectiveMax;
@@ -114,6 +121,16 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
           {formatCurrency(effectiveMax)} {APP_CONFIG.CHAIN_SYMBOL}
         </p>
       )}
+
+      <ConfirmPurchaseModal
+        open={showConfirmModal}
+        onOpenChange={setShowConfirmModal}
+        amountToBuy={amountMZD}
+        amountToPay={amountVND}
+        priceRate={offer.price_rate}
+        onConfirm={handleFinalConfirm}
+        isLoading={isLoading}
+      />
     </div>
   );
 };

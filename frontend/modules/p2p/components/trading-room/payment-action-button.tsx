@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle2 } from 'lucide-react';
 import { P2POrder } from '../../types';
 import { P2PService } from '../../api';
+import { OrderStatus } from '../../types';
+import { toast } from 'sonner';
 
 interface PaymentActionButtonProps {
   order: P2POrder;
@@ -29,7 +31,7 @@ interface PaymentActionButtonProps {
 
 export const PaymentActionButton = ({
   order,
-  nextStatus = 'PENDING',
+  nextStatus = OrderStatus.PENDING,
   buttonText = 'I have transferred, notify the seller',
   onStatusUpdated,
   disabled = false,
@@ -44,14 +46,15 @@ export const PaymentActionButton = ({
       const updated = await P2PService.updateOrderStatus(String(order.order_id), nextStatus);
       const patchedOrder = updated || { ...order, status: nextStatus };
       onStatusUpdated?.(patchedOrder);
+      toast.success('You have notified the seller. Please wait for the confirmation');
     } catch (error) {
-      console.error('Error updating order status:', error);
+      toast.error('Failed to notify the seller. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (order.status !== 'OPEN') {
+  if (order.status !== OrderStatus.OPEN) {
     return null;
   }
 

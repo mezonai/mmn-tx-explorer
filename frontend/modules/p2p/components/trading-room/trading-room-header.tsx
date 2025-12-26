@@ -9,6 +9,7 @@ import { ROUTES } from '@/configs/routes.config';
 import { useP2POffer } from '../../hooks/useP2POffer';
 import { Button } from '@/components/ui/button';
 import { Chip } from '@/components/shared';
+import { OrderStatus } from '../../types';
 
 interface TradingRoomHeaderProps {
   order: P2POrder;
@@ -72,7 +73,7 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
             <h1 className="text-sm font-bold text-muted-foreground">
               Order <span className="text-muted-foreground">#{order.order_id}</span>
             </h1>
-            {isExpired && order.status !== 'COMPLETED' && order.status !== 'CONFIRMED' && (
+            {isExpired && order.status !== OrderStatus.COMPLETED && order.status !== OrderStatus.CONFIRMED && (
               <Chip variant="error" className="md:hidden text-[12px] px-1.5 pt-1 pb-0.5 rounded uppercase leading-none">
                 <span className="text-red-500">Expired</span>
               </Chip>
@@ -91,7 +92,7 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
         </div>
       </div>
 
-      {isExpired && order.status !== 'COMPLETED' && order.status !== 'CONFIRMED' && (
+      {isExpired && order.status !== OrderStatus.COMPLETED && order.status !== OrderStatus.CONFIRMED && (
         <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 flex-col items-center pointer-events-none">
 
           <span className="text-sm font-black uppercase tracking-wider text-red-500">⚠ Order has expired</span>

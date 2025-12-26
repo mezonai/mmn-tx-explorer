@@ -108,6 +108,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       } else {
         setError('Something went wrong while updating status. Please try again.');
       }
+      throw err;
     }
   };
 
