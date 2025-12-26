@@ -78,7 +78,7 @@ jobs:
           NEXT_PUBLIC_TOP_MEZON_AI: ${{ vars.NEXT_PUBLIC_TOP_MEZON_AI }}
           NEXT_PUBLIC_BASE_FE: ${{ vars.NEXT_BASE_FE }}
           NEXT_PUBLIC_WEBSOCKET_URL: ${{ vars.NEXT_PUBLIC_WEBSOCKET_URL }}
-          NEXT_PUBLIC_MEZON_SERVER_KEY: ${{ vars.NEXT_PUBLIC_MEZON_SERVER_KEY }}
+          NEXT_PUBLIC_MEZON_SERVER_KEY: ${{ secrets.NEXT_PUBLIC_MEZON_SERVER_KEY }}
         run: |
           cd frontend
           npm install
@@ -122,7 +122,7 @@ jobs:
           NEXT_PUBLIC_TOP_MEZON_AI: ${{ vars.NEXT_PUBLIC_TOP_MEZON_AI }}
           NEXT_PUBLIC_BASE_FE: ${{ vars.NEXT_BASE_FE }}
           NEXT_PUBLIC_WEBSOCKET_URL: ${{ vars.NEXT_PUBLIC_WEBSOCKET_URL}}
-          NEXT_PUBLIC_MEZON_SERVER_KEY: ${{ vars.NEXT_PUBLIC_MEZON_SERVER_KEY }}
+          NEXT_PUBLIC_MEZON_SERVER_KEY: ${{ secrets.NEXT_PUBLIC_MEZON_SERVER_KEY }}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
