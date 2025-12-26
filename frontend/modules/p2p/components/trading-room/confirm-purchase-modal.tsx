@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Info, Loader2 } from 'lucide-react';
 import { APP_CONFIG } from '@/configs/app.config';
+import { formatCurrency } from '@/lib/utils';
 
 interface ConfirmPurchaseModalProps {
     open: boolean;
@@ -15,9 +16,6 @@ interface ConfirmPurchaseModalProps {
     isLoading?: boolean;
 }
 
-const formatCurrency = (num: number): string => {
-    return new Intl.NumberFormat('vi-VN').format(num);
-};
 
 export const ConfirmPurchaseModal = ({
     open,

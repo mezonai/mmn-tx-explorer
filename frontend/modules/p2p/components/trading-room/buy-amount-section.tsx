@@ -7,6 +7,7 @@ import { P2POffer } from '../../types';
 import { CheckCircle2 } from 'lucide-react';
 import { APP_CONFIG } from '@/configs/app.config';
 import { ConfirmPurchaseModal } from './confirm-purchase-modal';
+import { formatCurrency } from '@/lib/utils';
 
 interface BuyAmountSectionProps {
   offer: P2POffer;
@@ -15,9 +16,6 @@ interface BuyAmountSectionProps {
   extraDisabled?: boolean;
 }
 
-const formatCurrency = (num: number): string => {
-  return new Intl.NumberFormat('vi-VN').format(num);
-};
 
 const getRawValue = (val: string): number => {
   return parseFloat(val.replace(/\./g, '').replace(/,/g, '')) || 0;

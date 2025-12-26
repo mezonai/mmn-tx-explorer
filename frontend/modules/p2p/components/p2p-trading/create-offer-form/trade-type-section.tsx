@@ -4,16 +4,12 @@ import { Control, Controller, useWatch, useFormState } from 'react-hook-form';
 import { TradeTypes } from '@/modules/p2p/types';
 import { CreateOfferFormValues } from './validation-schema';
 import { APP_CONFIG } from '@/configs/app.config';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 
 interface TradeTypeSectionProps {
   control: Control<CreateOfferFormValues>;
 }
 
-const formatCurrency = (num: number): string => {
-  if (!num) return '';
-  return new Intl.NumberFormat('en-US').format(num);
-};
 
 const getRawValue = (val: string): number => {
   return parseFloat(val.replace(/\./g, '').replace(/,/g, '')) || 0;

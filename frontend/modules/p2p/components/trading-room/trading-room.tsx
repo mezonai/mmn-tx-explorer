@@ -21,6 +21,8 @@ import { P2POrder, OrderStatus } from '../../types';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { APP_CONFIG } from '@/configs/app.config';
+import { AddressDisplay } from '@/components/shared/address-display';
+import { ROUTES } from '@/configs/routes.config';
 
 interface TradingRoomProps {
   orderId: string;
@@ -100,8 +102,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       const newOrder = await createOrder(offer, amountMZD, amountVND);
 
       if (newOrder) {
-
-        router.push(`/p2p/trading-room/${newOrder.order_id}`);
+        router.push(ROUTES.P2P_TRADING_ROOM(newOrder.order_id));
       }
     } catch (err) {
       setError('Something went wrong while creating the order. Please try again.');
@@ -173,12 +174,21 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-sm font-bold text-muted-foreground">
-                Buy {APP_CONFIG.CHAIN_SYMBOL} from {formatWallet(offer?.seller_wallet_address)}
+              <h1 className="text-sm flex items-center gap-1 font-bold text-muted-foreground">
+                Buy {APP_CONFIG.CHAIN_SYMBOL} from{' '}
+                <AddressDisplay
+                  addressClassName="text-brand-primary"
+                  address={offer?.seller_wallet_address}
+                  href={ROUTES.WALLET(offer?.seller_wallet_address)}
+                />
               </h1>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs flex items-center gap-1 text-muted-foreground">
                 Trading with{' '}
-                <span className="text-brand-primary font-bold">{formatWallet(offer?.seller_wallet_address)}</span>
+                <AddressDisplay
+                  addressClassName="text-brand-primary"
+                  address={offer?.seller_wallet_address}
+                  href={ROUTES.WALLET(offer?.seller_wallet_address)}
+                />
               </div>
             </div>
           </div>

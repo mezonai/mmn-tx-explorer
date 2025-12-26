@@ -78,8 +78,8 @@ export enum OrderStatus {
 }
 
 export interface P2POrder {
-  order_id: string | number;
-  offer_id: string | number;
+  order_id: string;
+  offer_id: string;
   buyer_wallet_address: string;
   seller_wallet_address: string;
   amount: number;

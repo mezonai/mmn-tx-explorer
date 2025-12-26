@@ -4,17 +4,13 @@ import { Control, Controller, UseFormTrigger, useWatch } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { CreateOfferFormValues } from './validation-schema';
 import { APP_CONFIG } from '@/configs/app.config';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 interface AmountSectionProps {
   control: Control<CreateOfferFormValues>;
   trigger: UseFormTrigger<CreateOfferFormValues>;
   userBalance: string;
 }
 
-const formatCurrency = (num: number): string => {
-  if (!num) return '';
-  return new Intl.NumberFormat('en-US').format(num);
-};
 
 const getRawValue = (val: string): number => {
   return parseFloat(val.replace(/,/g, '')) || 0;

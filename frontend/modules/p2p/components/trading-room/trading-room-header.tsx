@@ -10,6 +10,7 @@ import { useP2POffer } from '../../hooks/useP2POffer';
 import { Button } from '@/components/ui/button';
 import { Chip } from '@/components/shared';
 import { OrderStatus } from '../../types';
+import { TriangleAlert } from 'lucide-react';
 
 interface TradingRoomHeaderProps {
   order: P2POrder;
@@ -95,7 +96,7 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
       {isExpired && order.status !== OrderStatus.COMPLETED && order.status !== OrderStatus.CONFIRMED && (
         <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 flex-col items-center pointer-events-none">
 
-          <span className="text-sm font-black uppercase tracking-wider text-red-500">⚠ Order has expired</span>
+          <span className="flex items-center gap-2 text-sm font-black uppercase tracking-wider text-red-500"> <TriangleAlert className="h-4 w-4" /> Order has expired</span>
           <span className="text-[12px] text-red-400 mt-0.5 font-medium">This order can no longer be processed</span>
         </div>
       )}
