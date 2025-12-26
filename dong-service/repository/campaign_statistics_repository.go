@@ -271,7 +271,7 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 				SUM(total_donate)::BIGINT as total_amount,
 				COUNT(DISTINCT sender_wallet) as contributor_count,
 				COALESCE(MAX(w.balance), 0) as current_balance,
-				SUM(total_donate) - COALESCE(MAX(w.balance) AS total_withdrawn
+				SUM(total_donate) - COALESCE(MAX(w.balance), 0) AS total_withdrawn
 			FROM %s.campaign_contributor cc
 			LEFT JOIN %s.wallet w ON w.address = cc.campaign_wallet
 			WHERE cc.campaign_wallet = $1
