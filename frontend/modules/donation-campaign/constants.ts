@@ -11,11 +11,14 @@ export const DONATION_ENDPOINTS = {
   DELETE_CAMPAIGN: (id: string) => `/api/v1/admin/campaigns/${id}`,
   DONATIONS: '/donations',
   MY_DONATIONS: '/donations/my-donations',
+  DONATION_FEED: (address: string) => `/api/v1/campaigns/list-feed/${address}`,
+  DONATION_FEED_UPLOAD_IMAGES: 'api/v1/admin/campaigns/upload-image',
+  DONATION_FEED_HISTORY: (root_hash: string) => `/api/v1/campaigns/list-history-feed/${root_hash}`,
+  TOGGLE_HIDE_DONATION_FEED: (root_hash: string) => `/api/v1/campaigns/update-visible-feed/${root_hash}`,
   PUBLISH_CAMPAIGN: (id: string) => `/api/v1/campaigns/${id}/activate`,
   TOP_CONTRIBUTOR: (id: string) => `/api/v1/campaigns/${id}/top-contributors`,
   REFRESH_CAMPAIGN_RAISED: (id: string) => `/api/v1/campaigns/${id}/sync`,
 } as const;
-
 export const QUERY_KEYS = {
   CAMPAIGNS: 'campaigns',
   TOP_CAMPAIGNS: 'top-campaigns',
@@ -23,4 +26,6 @@ export const QUERY_KEYS = {
   CAMPAIGN_STATS: 'campaign-stats',
   USER_DONATIONS: 'user-donations',
   TOP_CONTRIBUTOR: 'top-contributors',
+  DONATION_FEED: 'donation-feed',
+  DONATION_FEED_HISTORY: 'donation-feed-history',
 } as const;

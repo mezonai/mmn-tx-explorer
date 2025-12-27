@@ -35,6 +35,24 @@ export class NumberUtil {
     const scaled = num / scale;
     return scaled.toLocaleString('en-US');
   }
+  static formatWithCommasAndScaleShort(value: number | string, scale: number = 1_000_000): string {
+    if (!value) return '0';
+
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    if (isNaN(num)) return '0';
+
+    const scaled = num / scale;
+
+    const format = (n: number, divisor: number, suffix: string) => {
+      return (n / divisor).toFixed(1) + suffix;
+    };
+
+    if (scale >= 1_000_000_000) return format(scaled, 1_000_000_000, 'B');
+    if (scale >= 1_000_000) return format(scaled, 1_000_000, 'M');
+    if (scale >= 1_000) return format(scaled, 1_000, 'K');
+
+    return scaled.toLocaleString('en-US');
+  }
 
   static scaleDown(value: number, scale: number = 1_000_000): number {
     if (!value) return 0;
@@ -43,5 +61,14 @@ export class NumberUtil {
 
     const scaled = num / scale;
     return scaled;
+  }
+
+  static formatAndScaleDown(value: number, scale: number = 1_000_000): string {
+    if (!value) return '0';
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    if (isNaN(num)) return '0';
+
+    const scaled = num / scale;
+    return scaled.toString();
   }
 }

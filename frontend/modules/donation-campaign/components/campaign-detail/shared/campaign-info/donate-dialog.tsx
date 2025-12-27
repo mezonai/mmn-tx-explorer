@@ -9,12 +9,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { useTransfer } from '@/modules/transfer/hooks/useTransfer';
 import { NumberUtil } from '@/utils';
 import { APP_CONFIG } from '@/configs/app.config';
-import { CopyButton } from '@/components/ui/copy-button';
-import { ETransferType, TRANSACTIONS_QUERY_KEY } from '@/modules/transaction';
+import { TRANSACTIONS_QUERY_KEY } from '@/modules/transaction';
 import { useQueryClient } from '@tanstack/react-query';
-import { DonationCampaignService } from '@/modules/donation-campaign/api';
 import { QUERY_KEYS } from '@/modules/donation-campaign/constants';
 import { TransactionComplete, TransactionType } from '@/modules/donation-campaign/components/transaction-complete';
+import { ETransferType } from '@/modules/transaction';
 
 export function DonateDialog({ walletAddress, campaignId }: { walletAddress: string; campaignId: string }) {
   const { transfer, loading, user } = useTransfer();

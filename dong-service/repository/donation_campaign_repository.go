@@ -323,7 +323,13 @@ func (r *DonationCampaignRepository) GetAll(status *int16, verified *bool, q *st
 	}
 
 	if q != nil && strings.TrimSpace(*q) != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("(dc.body_search @@ plainto_tsquery('simple', $%d))", argCount))
+		whereClauses = append(
+			whereClauses,
+			fmt.Sprintf(
+				"dc.body_search @@ plainto_tsquery('simple', unaccent($%d))",
+				argCount,
+			),
+		)
 		args = append(args, strings.TrimSpace(*q))
 		argCount++
 	}
@@ -586,7 +592,13 @@ func (r *DonationCampaignRepository) Count(status *int16, verified *bool, q *str
 	}
 
 	if q != nil && strings.TrimSpace(*q) != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("(dc.body_search @@ plainto_tsquery('simple', $%d))", argCount))
+		whereClauses = append(
+			whereClauses,
+			fmt.Sprintf(
+				"dc.body_search @@ plainto_tsquery('simple', unaccent($%d))",
+				argCount,
+			),
+		)
 		args = append(args, strings.TrimSpace(*q))
 		argCount++
 	}
@@ -826,4 +838,24 @@ func (r *DonationCampaignRepository) IsCampaignWallet(address string) (bool, err
 	}
 
 	return exists, nil
+}
+
+func (r *DonationCampaignRepository) GetCreatorByDonationWallet(donationWallet string) (int64, error) {
+	query := fmt.Sprintf(`
+		SELECT creator
+		FROM %s.donation_campaign
+		WHERE donation_wallet = $1
+		LIMIT 1
+	`, r.dongSchema)
+
+	var creator int64
+	err := r.db.QueryRow(query, donationWallet).Scan(&creator)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, ErrNotFound
+		}
+		return 0, fmt.Errorf("failed to get campaign creator by donation wallet: %w", err)
+	}
+
+	return creator, nil
 }

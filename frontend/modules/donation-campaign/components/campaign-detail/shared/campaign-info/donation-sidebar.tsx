@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { ROUTES } from '@/configs/routes.config';
 import { APP_CONFIG } from '@/configs/app.config';
 import { cn } from '@/lib/utils';
-import { useHidden } from '../provider';
+import { useHidden } from '../../provider';
 import QRCode from 'react-qr-code';
 import { useRef } from 'react';
 import { Download } from 'lucide-react';
@@ -261,7 +261,7 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
             </div>
           </div>
 
-          <div className="mt-2 flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-2 flex flex-col items-center gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="group relative shrink-0">
               <div className="from-brand-primary/20 absolute -inset-1 rounded-xl bg-gradient-to-br to-purple-500/20 opacity-0 blur-lg transition duration-500 group-hover:opacity-100" />
 

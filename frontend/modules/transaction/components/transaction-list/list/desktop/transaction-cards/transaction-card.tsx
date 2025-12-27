@@ -39,7 +39,7 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
       {transaction ? (
         <>
           <div className="flex items-center justify-between">
-            <TypeBadges type={transaction.transaction_type} />
+            <TypeBadges type={transaction.transaction_extra_info_type} />
             <span className={`${getStatusColor(transaction.status)} flex items-center gap-1 text-xs`}>
               {getStatusIcon(transaction.status)} {getStatusText(transaction.status)}
             </span>
