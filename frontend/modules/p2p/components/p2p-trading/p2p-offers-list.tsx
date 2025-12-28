@@ -10,15 +10,18 @@ import { AddressDisplay } from '@/components/shared';
 import { P2POffer } from '../../types';
 import { APP_CONFIG } from '@/configs/app.config';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@/providers';
 
 interface P2POffersTableProps {
   offers: P2POffer[] | undefined;
   isLoading?: boolean;
+  showAction?: boolean;
 }
 
-export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps) => {
+export const P2POffersTabs = ({ offers, isLoading = false, showAction = true }: P2POffersTableProps) => {
   const router = useRouter();
-  const columns: TTableColumn<P2POffer>[] = [
+  const { user } = useUser();
+  const rawColumns: (TTableColumn<P2POffer> | null)[] = [
     {
       headerContent: 'Seller',
       renderCell: (offer) => (
@@ -68,19 +71,26 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
       ),
       align: 'left',
     },
-    {
-      headerContent: 'Action',
-      renderCell: (offer) => (
-        <Button onClick={() => {
-          router.push(ROUTES.P2P_TRADING_ROOM(offer.offer_id, 'offer'))
-        }} className="rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600">
-          Buy đồng
-        </Button>
-      ),
-      skeletonContent: <Skeleton className="h-9 w-24 rounded-lg" />,
-      align: 'center',
-    },
+    showAction
+      ? {
+          headerContent: 'Action',
+          renderCell: (offer) =>
+            user && offer.seller_user_id !== user.id ? (
+              <Button
+                onClick={() => {
+                  router.push(ROUTES.P2P_TRADING_ROOM(offer.offer_id, 'offer'));
+                }}
+                className="rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600"
+              >
+                Buy Mezon đồng
+              </Button>
+            ) : null,
+          skeletonContent: <Skeleton className="h-9 w-24 rounded-lg" />,
+          align: 'center',
+        }
+      : null,
   ];
+  const columns = rawColumns.filter((col): col is TTableColumn<P2POffer> => col !== null);
 
   return (
     <Card className="bg-card overflow-hidden border-gray-300 dark:border-gray-800">

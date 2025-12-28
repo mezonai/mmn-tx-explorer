@@ -35,38 +35,40 @@ export const createOfferSchema = z
         });
       }
 
-      if (data.limit.min <= 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Please enter the minimum limit',
-          path: ['limit', 'min'],
-        });
-      } else if (data.limit.min > data.amount) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Minimum limit cannot exceed the sell amount',
-          path: ['limit', 'min'],
-        });
-      }
+      if (data.amount > 0) {
+        if (data.limit.min <= 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Please enter the minimum limit',
+            path: ['limit', 'min'],
+          });
+        } else if (data.limit.min > data.amount) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Minimum limit cannot exceed the sell amount',
+            path: ['limit', 'min'],
+          });
+        }
 
-      if (data.limit.max <= 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Please enter the maximum limit',
-          path: ['limit', 'max'],
-        });
-      } else if (data.limit.max > data.amount) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Maximum limit cannot exceed the sell amount',
-          path: ['limit', 'max'],
-        });
-      } else if (data.limit.max < data.limit.min) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Maximum limit must be greater than minimum limit',
-          path: ['limit', 'max'],
-        });
+        if (data.limit.max <= 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Please enter the maximum limit',
+            path: ['limit', 'max'],
+          });
+        } else if (data.limit.max > data.amount) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Maximum limit cannot exceed the sell amount',
+            path: ['limit', 'max'],
+          });
+        } else if (data.limit.max < data.limit.min) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Maximum limit must be greater than minimum limit',
+            path: ['limit', 'max'],
+          });
+        }
       }
     }
   });

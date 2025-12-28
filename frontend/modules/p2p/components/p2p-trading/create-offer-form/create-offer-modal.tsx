@@ -74,17 +74,22 @@ export const CreateOfferModal = () => {
   useEffect(() => {
     let mounted = true;
     const fetchBalance = async () => {
-      if (!user?.id) return;
+      if (!open || !user?.id) return;
+
       try {
         const account = await mmnClient.getAccountByUserId(user.id);
-        if (mounted && account?.balance) setBalance(NumberUtil.formatWithCommasAndScale(account.balance));
-      } catch {}
+        if (mounted && account?.balance) {
+          setBalance(NumberUtil.formatWithCommasAndScale(account.balance));
+        }
+      } catch (error) {
+        console.error('Fetch balance error:', error);
+      }
     };
     fetchBalance();
     return () => {
       mounted = false;
     };
-  }, [user?.id]);
+  }, [open, user?.id]);
 
   const onPreSubmit = (data: CreateOfferFormValues) => {
     setPendingData(data);
@@ -148,8 +153,8 @@ export const CreateOfferModal = () => {
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button className="bg-brand-primary h-10 w-full shrink-0 rounded-lg font-bold text-white shadow-sm transition-all md:w-auto md:px-5">
-            <Plus className="mr-2 h-4 w-4" />
+          <Button className="bg-brand-primary h-10 w-full shrink-0 gap-1 rounded-lg font-bold text-white shadow-sm transition-all md:w-auto md:px-5">
+            <Plus className="h-4 w-4" />
             New Offer
           </Button>
         </DialogTrigger>

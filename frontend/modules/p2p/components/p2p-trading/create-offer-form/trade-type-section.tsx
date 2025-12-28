@@ -93,7 +93,7 @@ export const TradeTypeSection = ({ control }: TradeTypeSectionProps) => {
                           return;
                         }
                         const cleanVal = val.replace(/^0+(?=\d)/, '');
-                        if (cleanVal !== '' && parseFloat(cleanVal) > MAX_AMOUNT) {
+                        if (cleanVal !== '' && parseFloat(cleanVal) >= MAX_AMOUNT) {
                           return;
                         }
                         if (cleanVal.includes('.')) {
