@@ -1,6 +1,6 @@
 module github.com/mezonai/mmn-tx-explorer/indexer
 
-go 1.24.0
+go 1.25
 
 toolchain go1.24.11
 

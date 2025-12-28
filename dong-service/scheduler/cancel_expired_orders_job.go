@@ -26,7 +26,7 @@ func (j *CancelExpiredOrdersJob) Run(ctx context.Context) error {
 		return err
 	}
 
-	cutoff := time.Now().UTC().Add(-15 * time.Minute)
+	cutoff := time.Now().UTC()
 	count, err := j.orderRepo.CancelExpiredOrders(ctx, cutoff, tx)
 	if err != nil {
 		_ = tx.Rollback()

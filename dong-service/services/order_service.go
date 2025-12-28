@@ -10,6 +10,7 @@ import (
 	"dong-service/repository"
 	"encoding/json"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/google/uuid"
@@ -61,11 +62,14 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		return nil, nil, fmt.Errorf("offer already has active pending orders")
 	}
 
-	payableAmount := offer.PayableAmount
-	if req.PayableAmount != nil {
-		payableAmount = *req.PayableAmount
-	}
 	amount := req.Amount
+	var payableAmount int64
+	if offer.PriceRate != nil {
+		computed := float64(amount) * (*offer.PriceRate)
+		payableAmount = int64(math.Round(computed))
+	} else {
+		payableAmount = amount
+	}
 
 	if offer.Limit != nil {
 		if amount < offer.Limit.Min {
