@@ -2,10 +2,12 @@ package handlers
 
 import (
 	"database/sql"
+	"dong-service/constants"
 	"dong-service/logger"
 	"dong-service/models"
 	"dong-service/services"
 	"dong-service/utils"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -54,7 +56,7 @@ func (h *OfferHandler) CreateOffer(c *gin.Context) {
 		return
 	}
 
-	if req.Limit != nil && (req.Limit.Min < 0 || req.Limit.Max < 0 || req.Limit.Min > req.Limit.Max) {
+	if req.Limit != nil && (req.Limit.Min < 0 || req.Limit.Max < 0 || req.Limit.Min > req.Limit.Max || req.Limit.Min > req.Amount || req.Limit.Max > req.Amount) {
 		logger.Error().Msg("invalid create offer request: invalid limit values")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid request: invalid limit values"))
 		return
@@ -81,6 +83,12 @@ func (h *OfferHandler) CreateOffer(c *gin.Context) {
 	offer, err := h.offerService.CreateOffer(c.Request.Context(), &req, creatorAddr, userID)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to create offer")
+
+		if errors.Is(err, constants.ErrInsufficientAccountBalance) {
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Failed to create offer: "+err.Error()))
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to create offer: "+err.Error()))
 		return
 	}
@@ -293,6 +301,11 @@ func (h *OfferHandler) UpdateOfferStatus(c *gin.Context) {
 	}
 
 	if err := h.offerService.UpdateOfferStatus(c.Request.Context(), &req); err != nil {
+		if errors.Is(err, constants.ErrTxHashAlreadyUsed) {
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Failed to update offer status: "+err.Error()))
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to update offer status: "+err.Error()))
 		return
 	}

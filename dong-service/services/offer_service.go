@@ -56,7 +56,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 
 			requiredBalance := amountInt * 1000000
 			if balanceInt < requiredBalance {
-				return nil, fmt.Errorf("insufficient balance: have %d, need %d", balanceInt, requiredBalance)
+				return nil, constants.ErrInsufficientAccountBalance
 			}
 		}
 	}
@@ -188,7 +188,7 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 		return fmt.Errorf("failed to check existing tx hash: %w", err)
 	}
 	if exists {
-		return fmt.Errorf("transaction with hash %s is already used", req.TxHash)
+		return constants.ErrTxHashAlreadyUsed
 	}
 
 	offer, err := s.repo.GetOfferByID(ctx, req.OfferID)

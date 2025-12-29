@@ -2,10 +2,12 @@ package handlers
 
 import (
 	"database/sql"
+	"dong-service/constants"
 	"dong-service/logger"
 	"dong-service/models"
 	"dong-service/services"
 	"dong-service/utils"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -44,6 +46,20 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		return
 	}
 
+	offer, err := h.offerService.GetOfferByID(c.Request.Context(), id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, "offer not found"))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to fetch offer: "+err.Error()))
+		return
+	}
+	if offer.Status != constants.TradingConfirmed && offer.Status != constants.TradingFailed {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "offer is not ready to accept orders"))
+		return
+	}
+
 	var req models.CreateOrderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error().Err(err).Msg("invalid create order request")
@@ -52,9 +68,20 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	}
 
 	// Validate request
-	if req.Amount < 0 {
+	amount := req.Amount
+	if amount < 0 {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "amount must be non-negative"))
 		return
+	}
+	if offer.Limit != nil {
+		if amount < offer.Limit.Min {
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "order amount is below minimum limit"))
+			return
+		}
+		if amount > offer.Limit.Max {
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "order amount exceeds maximum limit"))
+			return
+		}
 	}
 	if req.PayableAmount != nil && *req.PayableAmount < 0 {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "payable amount must be non-negative"))
@@ -70,6 +97,12 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	order, _, err := h.orderService.CreateOrder(c.Request.Context(), id, &req, walletAddr, userID)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to create order")
+
+		if errors.Is(err, constants.ErrOfferHasActiveOrders) {
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Failed to create order: "+err.Error()))
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to create order: "+err.Error()))
 		return
 	}
