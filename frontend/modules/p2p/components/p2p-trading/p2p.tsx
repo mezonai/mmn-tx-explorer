@@ -20,7 +20,7 @@ export const P2P = () => {
   const { value: tab, handleChangeValue: setTab } = useQueryParam<P2PTabType>({
     queryParam: 'tab',
     defaultValue: P2P_TAB.OFFERS,
-    clearParams: ['page', 'min', 'max'],
+    clearParams: ['page', 'min', 'max', 'sort'],
   });
   const { value: min, handleChangeValue: setMin } = useQueryParam<number>({
     queryParam: 'min',
@@ -29,6 +29,10 @@ export const P2P = () => {
   const { value: max, handleChangeValue: setMax } = useQueryParam<number>({
     queryParam: 'max',
     defaultValue: 0,
+  });
+  const { value: sort, handleChangeValue: setSort } = useQueryParam<string>({
+    queryParam: 'sort',
+    defaultValue: 'rate_asc',
   });
   const handleFilterChange = useCallback(
     (newMin: number | undefined, newMax: number | undefined) => {
@@ -41,11 +45,22 @@ export const P2P = () => {
     },
     [page, handleChangePage, setMin, setMax]
   );
+  const handleSortChange = useCallback(
+    (value: string) => {
+      setSort(value);
+      if (page !== 1) {
+        handleChangePage(1);
+      }
+    },
+    [setSort, page, handleChangePage]
+  );
   const apiParams = {
     page: page - 1,
     limit,
     from_amount: min || undefined,
     to_amount: max || undefined,
+    order_by: sort?.includes('rate') ? 'price_rate' : undefined,
+    order: sort?.includes('desc') ? 'desc' : 'asc',
   };
 
   const { data: offers, isLoading } = useP2POffers(apiParams, tab === P2P_TAB.OFFERS);
@@ -79,6 +94,9 @@ export const P2P = () => {
             onPageChange={handleChangePage}
             onLimitChange={handleChangeLimit}
             onFilterChange={handleFilterChange}
+            showSort={true}
+            sortValue={sort}
+            onSortChange={handleSortChange}
           />
 
           <div className="block lg:hidden">
