@@ -32,9 +32,10 @@ export interface P2POffer {
 export interface IP2POfferListParams {
   page: number;
   limit: number;
-  rate?: number;
+  order_by?: string;
   from_amount?: number;
   to_amount?: number;
+  order?: string;
 }
 
 export interface IP2POfferListParams {

@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { APP_CONFIG } from '@/configs/app.config';
 import { Pagination } from '@/components/ui/pagination';
 import { CreateOfferModal } from './create-offer-form/create-offer-modal';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface P2PFiltersComponentProps {
   totalItems: number | undefined;
@@ -15,6 +16,9 @@ interface P2PFiltersComponentProps {
   onPageChange: (page: number) => void;
   onLimitChange: (limit: number) => void;
   onFilterChange: (min: number | undefined, max: number | undefined) => void;
+  showSort?: boolean;
+  sortValue?: string;
+  onSortChange?: (value: string) => void;
 }
 
 export const P2PFiltersComponent = ({
@@ -26,6 +30,9 @@ export const P2PFiltersComponent = ({
   onPageChange,
   onLimitChange,
   onFilterChange,
+  showSort = false,
+  sortValue,
+  onSortChange,
 }: P2PFiltersComponentProps) => {
   const [minAmount, setMinAmount] = useState<string>('');
   const [maxAmount, setMaxAmount] = useState<string>('');
@@ -42,8 +49,8 @@ export const P2PFiltersComponent = ({
   }, [minAmount, maxAmount]);
 
   return (
-    <div className="flex w-full flex-col gap-4 py-2 md:flex-row md:items-center md:justify-between">
-      <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center">
+    <div className="flex w-full flex-col gap-4 py-2 xl:flex-row xl:items-center xl:justify-between">
+      <div className="flex w-full flex-col gap-3 xl:w-auto xl:flex-row xl:items-center">
         <CreateOfferModal />
 
         <div className="bg-background border-input ring-offset-background focus-within:ring-brand-primary flex h-10 w-full items-center rounded-lg border shadow-sm focus-within:ring-1 md:w-auto">
@@ -81,6 +88,19 @@ export const P2PFiltersComponent = ({
             </span>
           </div>
         </div>
+        {showSort && (
+          <div className="w-full md:w-52">
+            <Select value={sortValue} onValueChange={onSortChange}>
+              <SelectTrigger className="bg-background h-10 w-full">
+                <SelectValue placeholder="Sort by price" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="rate_asc">Rate: Low → High</SelectItem>
+                <SelectItem value="rate_desc">Rate: High → Low</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       <div className="flex shrink-0 justify-center md:justify-end">
