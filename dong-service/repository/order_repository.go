@@ -77,7 +77,7 @@ func (r *OrderRepository) CancelExpiredOrders(ctx context.Context, cutoff time.T
 		WITH cancelled AS (
 			UPDATE %s.orders
 			SET status = 'CANCELED', updated_at = NOW()
-			WHERE status = 'PENDING' AND created_at < $1
+			WHERE status IN ('OPEN', 'PENDING') AND expires_at < $1
 			RETURNING order_id, offer_id, amount
 		),
 		restored AS (
