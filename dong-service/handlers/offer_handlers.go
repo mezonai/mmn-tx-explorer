@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"dong-service/constants"
 	"dong-service/logger"
 	"dong-service/models"
 	"dong-service/services"
@@ -318,38 +319,38 @@ func (h *OfferHandler) UpdateOfferStatus(c *gin.Context) {
 func (h *OfferHandler) CancelOffer(c *gin.Context) {
 	id, err := utils.ParseInt64Param(c, "id")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "invalid id"))
+		logger.Error().Msg("Invalid offer ID parameter")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody))
 		return
 	}
-
-	userAddress, _ := utils.GetAddressFromContext(c)
 
 	offer, err := h.offerService.GetOfferByID(c.Request.Context(), id)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, "Offer not found"))
+
+			c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, constants.ErrOfferNotFound))
 			return
 		}
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to get offer: "+err.Error()))
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToGetOffer+": "+err.Error()))
 		return
 	}
 	
 	if offer == nil {
-		c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, "Offer not found"))
+		c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, constants.ErrOfferNotFound))
 		return
 	}
-	
+	userAddress, _ := utils.GetAddressFromContext(c)
 	if offer.SellerWalletAddress != userAddress {
-		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, "You are not the creator of this offer"))
+		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, constants.ErrOfferNotFoundNoPermission))
 		return
 	}
 
 	if err := h.offerService.CancelOffer(c.Request.Context(), id, offer); err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to cancel offer: "+ err.Error()))
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToCancelOffer+": "+err.Error()))
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"message": "Offer canceled successfully",
+		"message": constants.MsgOfferCancelled,
 	})
 }

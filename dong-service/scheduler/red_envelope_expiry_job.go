@@ -71,7 +71,7 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 				logger.Error().Err(err).Msg("Failed to get wallet")
 				isSuccess = false
 			} else {
-				_, err = j.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, remainingBalance)
+				_, err = j.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, remainingBalance, constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
 				if err != nil {
 					logger.Error().Err(err).Msg("Failed to transfer funds")
 					isSuccess = false

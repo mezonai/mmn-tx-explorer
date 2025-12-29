@@ -14,6 +14,7 @@ const (
 	ErrInvalidOrExpiredRefreshToken   = "Invalid or expired refresh token!"
 	ErrPermissionDenied               = "You don't have permission to perform this action"
 	ErrCampaignNotFoundOrNoPermission = "Donation campaign not found or you don't have permission"
+	ErrOfferNotFoundNoPermission	  = "Offer not found or you don't have permission"
 )
 
 // Validation Errors
@@ -54,6 +55,12 @@ const (
 	ErrFailedToCloseRedEnvelope        = "Failed to close red envelope"
 	ErrFailedToClaimAmount             = "Failed to claim amount"
 	ErrFailedToClaim                   = "Failed to claim red envelope"
+	ErrOfferNotFound                   = "Offer not found"
+	ErrFailedToGetOffer				   = "Failed to get offer"
+	ErrFailedToCancelOffer             = "Failed to cancel offer"
+	ErrFailedToCancelOfferWithOrder    = "Failed to cancel offer with active orders"
+	ErrFailedToRefundOfferAmount       = "Failed to refund offer amount"
+
 )
 
 // Business Logic Errors
@@ -83,6 +90,7 @@ const (
 	MsgRedEnvelopeClosed           = "Red envelope closed successfully"
 	MsgRedEnvelopeAmountClaimed    = "Red envelope amount claimed successfully"
 	MsgRedEnvelopeClaimed          = "Red envelope claimed successfully"
+	MsgOfferCancelled              = "Offer cancelled successfully"
 )
 
 // Logout Messages

@@ -14,6 +14,7 @@ const (
 	TransactionExtraInfoLuckyMoney           TransactionExtraInfoType = "lucky-money"
 	TransactionExtraInfoTokenTransfer        TransactionExtraInfoType = "token-transfer"
 	TransactionExtraInfoDonationCampaignFeed TransactionExtraInfoType = "donation-campaign-feed"
+	TransactionExtraInfoP2PTrading           TransactionExtraInfoType = "p2p-trading"
 )
 
 func (t TransactionExtraInfoType) String() string {
@@ -28,6 +29,7 @@ var strToType = map[string]TransactionExtraInfoType{
 	"lucky-money":            TransactionExtraInfoLuckyMoney,
 	"token-transfer":         TransactionExtraInfoTokenTransfer,
 	"donation-campaign-feed": TransactionExtraInfoDonationCampaignFeed,
+	"p2p-trading":            TransactionExtraInfoP2PTrading,
 }
 
 func ParseTransactionExtraInfoType(s string) TransactionExtraInfoType {
