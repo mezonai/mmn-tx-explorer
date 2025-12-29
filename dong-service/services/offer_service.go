@@ -35,6 +35,7 @@ type IOfferService interface {
 	GetOfferByID(ctx context.Context, id int64) (*models.Offer, error)
 	GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, int64, error)
 	UpdateOfferStatus(ctx context.Context, req *models.UpdateOfferStatusRequest) error
+	CancelOffer(ctx context.Context, offerId int64, offer *models.Offer) error
 }
 
 func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string, sellerUserID string) (*models.Offer, error) {
@@ -249,6 +250,92 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 		}
 	}
 
+	return nil
+}
+
+func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *models.Offer) error {
+	if offer.Status != constants.TrandingOpen && offer.Status != constants.TradingConfirmed {
+		return fmt.Errorf("cannot cancel offer with status: %s", offer.Status)
+	}
+	
+	db := database.GetDB()
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	hasActive, err := s.orderRepo.HasActiveOrders(ctx, offerId, tx)
+	if err != nil {
+		return fmt.Errorf("failed to check active orders for offer: %w", err)
+	}
+	if hasActive {
+		return fmt.Errorf("cannot cancel offer with active orders")
+	}
+
+	needsRefund := 
+		offer.Status == constants.TradingConfirmed &&
+		offer.IntermediaryWalletAddress != nil &&
+		*offer.IntermediaryWalletAddress != "" &&
+		offer.Amount > 0 &&
+		s.blockchain != nil &&
+		s.walletRepo != nil
+
+	var refundTxHash *string
+	if needsRefund {
+		intermediaryWallet, walletErr := s.walletRepo.GetWalletByAddress(ctx, *offer.IntermediaryWalletAddress)
+		if walletErr != nil {
+			err = fmt.Errorf("failed to fetch intermediary wallet: %w", walletErr)
+			return err
+		}
+
+		if intermediaryWallet == nil {
+			err = fmt.Errorf("intermediary wallet not found for address: %s", *offer.IntermediaryWalletAddress)
+			return err
+		}
+
+		txHash, transferErr := s.blockchain.TransferMoney(
+			intermediaryWallet.EncryptedPrivateKey,
+			*offer.IntermediaryWalletAddress,
+			offer.SellerWalletAddress,
+			offer.Amount,
+		)
+		if transferErr != nil {
+			err = fmt.Errorf("failed to refund amount to seller: %w", transferErr)
+			return err
+		}
+
+		refundTxHash = &txHash
+
+		status, statusErr := s.blockchain.CheckTransactionStatus(txHash)
+
+		if statusErr == nil && status == constants.TxStatusFinalized {
+			if err = s.repo.UpdateOfferStatus(ctx, offerId, constants.TradingCanceled, tx, refundTxHash); err != nil {
+				return fmt.Errorf("failed to update offer status after refund: %w", err)
+			}
+
+			if offer.IntermediaryWalletAddress != nil && *offer.IntermediaryWalletAddress != "" && s.walletRepo != nil {
+				s.releaseIntermediaryWallet(ctx, *offer.IntermediaryWalletAddress)
+			}
+		} else if status == constants.TxStatusPending || status == constants.TxStatusConfirmed || status == constants.TxStatusFailed {
+			err = fmt.Errorf("refund transaction not finalized, status: %d", status)
+			return err
+		} else {
+			err = fmt.Errorf("failed to verify refund transaction: %w", statusErr)
+			return err
+		}
+	} else {
+		err = fmt.Errorf("Failed to cancel offer")
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
 	return nil
 }
 

@@ -125,6 +125,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		offersPrivate.GET("/:id", offerHandler.GetOfferDetail)
 		offersPrivate.GET("/:id/orders", orderHandler.ListOrdersForOffer)
 		offersPrivate.POST("/:id/orders", orderHandler.CreateOrder)
+		offersPrivate.PATCH("/:id/cancel", offerHandler.CancelOffer)
 
 		// Offers (public)
 		offersPublic := v1.Group("/offers")
