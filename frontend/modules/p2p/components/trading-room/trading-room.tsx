@@ -6,7 +6,6 @@ import { ArrowLeft } from 'lucide-react';
 import { useP2POrder } from '../../hooks/useP2POrder';
 import { useP2POffer } from '../../hooks/useP2POffer';
 import { useCreateOrder } from '../../hooks/useCreateOrder';
-import { useMyOrders } from '../../hooks/useMyOrders';
 import { useUser } from '@/providers/AppProvider';
 import { TradingRoomHeader } from './trading-room-header';
 import { ProgressSteps } from './progress-steps';
@@ -23,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { APP_CONFIG } from '@/configs/app.config';
 import { AddressDisplay } from '@/components/shared/address-display';
 import { ROUTES } from '@/configs/routes.config';
+import { ChatSidebar } from './chat-sidebar';
 
 interface TradingRoomProps {
   orderId: string;
@@ -42,18 +42,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   const offerIdParam = isOfferMode ? orderId : order ? String(order.offer_id) : null;
   const { offer, isLoading: offerLoading } = useP2POffer(offerIdParam);
   const { createOrder, isLoading: isCreatingOrder } = useCreateOrder();
-  const { data: myOrdersData } = useMyOrders({
-    page: 0,
-    limit: 50,
-  });
 
-  const activeOrderForThisOffer = useMemo(() => {
-    if (!isOfferMode || !myOrdersData?.data || !orderId) return null;
-    return myOrdersData.data.find(
-      (o: P2POrder) =>
-        String(o.offer_id) === String(orderId) && (o.status === OrderStatus.OPEN || o.status === OrderStatus.PENDING)
-    );
-  }, [isOfferMode, myOrdersData?.data, orderId]);
 
   useEffect(() => {
     if (!order || isOfferMode) return;
@@ -196,7 +185,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
         <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
           <div className="border-border w-full overflow-y-auto border-b p-6 md:w-7/12 md:border-r md:border-b-0 lg:w-8/12">
             <ProgressSteps order={displayOrder} />
-            {activeOrderForThisOffer && (
+            {offer.has_active_order && (
               <div className="mb-6 rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-4 text-yellow-600 dark:text-yellow-500">
                 <p className="font-bold flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
@@ -219,7 +208,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
               offer={offer}
               onConfirmBuy={handleConfirmBuy}
               isLoading={isCreatingOrder}
-              extraDisabled={!!activeOrderForThisOffer}
+              extraDisabled={offer.has_active_order}
             />
           </div>
           <ChatSidebar sellerId={offer.seller_user_id} />

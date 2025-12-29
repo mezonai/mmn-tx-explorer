@@ -26,6 +26,7 @@ export interface P2POffer {
     account_name: string;
   };
   transfer_code?: string;
+  has_active_order?: boolean;
 }
 
 export interface IP2POfferListParams {

@@ -22,10 +22,16 @@ type OfferService struct {
 	userWalletRepo *repository.WalletRepository
 	orderRepo      *repository.OrderRepository
 	blockchain     *blockchain.BlockchainService
+	orderService   *OrderService
 }
 
 func NewOfferService(repo *repository.OfferRepository, walletRepo *repository.IntermediaryWalletRepository, userWalletRepo *repository.WalletRepository, orderRepo *repository.OrderRepository, blockchain *blockchain.BlockchainService) *OfferService {
 	return &OfferService{repo: repo, walletRepo: walletRepo, userWalletRepo: userWalletRepo, orderRepo: orderRepo, blockchain: blockchain}
+}
+
+// SetOrderService sets the order service dependency (to avoid circular dependency)
+func (s *OfferService) SetOrderService(orderService *OrderService) {
+	s.orderService = orderService
 }
 
 type IOfferService interface {
@@ -167,7 +173,20 @@ func (s *OfferService) CountOffers(ctx context.Context, walletAddress *string, f
 }
 
 func (s *OfferService) GetOfferByID(ctx context.Context, id int64) (*models.Offer, error) {
-	return s.repo.GetOfferByID(ctx, id)
+	offer, err := s.repo.GetOfferByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if this offer has active orders
+	if s.orderService != nil && offer != nil {
+		hasActive, checkErr := s.orderService.HasActiveOrdersForOffer(ctx, id)
+		if checkErr == nil {
+			offer.HasActiveOrder = &hasActive
+		}
+	}
+
+	return offer, nil
 }
 
 func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, int64, error) {
