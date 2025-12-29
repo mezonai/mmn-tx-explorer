@@ -4,6 +4,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2 } from 'lucide-react';
 import { P2POrder } from '../../types';
+import { APP_CONFIG } from '@/configs/app.config';
+import { OrderStatus } from '../../types';
+import { SellerConfirmReleaseModal } from './seller-confirm-release-modal';
+import { toast } from 'sonner';
 
 interface SellerConfirmButtonProps {
   order: P2POrder;
@@ -13,21 +17,30 @@ interface SellerConfirmButtonProps {
 
 export const SellerConfirmButton = ({ order, onConfirm, disabled = false }: SellerConfirmButtonProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-  const handleConfirm = async () => {
+  const handleButtonClick = () => {
+    if (!isSubmitting && !disabled) {
+      setShowConfirmModal(true);
+    }
+  };
+
+  const handleFinalConfirm = async () => {
     if (isSubmitting || disabled) return;
 
     try {
       setIsSubmitting(true);
       await onConfirm?.();
+      toast.success(`Payment confirmed. ${APP_CONFIG.CHAIN_SYMBOL} has been released to the buyer.`);
+      setShowConfirmModal(false);
     } catch (error) {
-      console.error('Error confirming payment:', error);
+      toast.error('Failed to confirm payment. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (order.status !== 'PENDING') {
+  if (order.status !== OrderStatus.PENDING) {
     return null;
   }
 
@@ -35,17 +48,26 @@ export const SellerConfirmButton = ({ order, onConfirm, disabled = false }: Sell
     <div>
       <div className="mt-4 flex justify-center">
         <Button
-          onClick={handleConfirm}
+          onClick={handleButtonClick}
           disabled={isSubmitting || disabled}
-          className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-8 py-3 text-base md:text-lg lg:text-lg font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600"
         >
           <CheckCircle2 className="h-5 w-5" />
-          {isSubmitting ? 'Confirming...' : 'Confirm money received, release MZD'}
+          {isSubmitting ? 'Confirming...' : `Confirm money received, release ${APP_CONFIG.CHAIN_SYMBOL}`}
         </Button>
       </div>
       <div className="px-4 text-center text-sm text-muted-foreground mt-2">
         Only click the button after you have received the transfer from the buyer.
       </div>
+
+      <SellerConfirmReleaseModal
+        open={showConfirmModal}
+        onOpenChange={setShowConfirmModal}
+        amountToRelease={order.amount}
+        amountReceived={order.amount * order.price_rate}
+        onConfirm={handleFinalConfirm}
+        isLoading={isSubmitting}
+      />
     </div>
   );
 };

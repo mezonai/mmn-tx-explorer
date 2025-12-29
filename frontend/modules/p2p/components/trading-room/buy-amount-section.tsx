@@ -5,28 +5,27 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { P2POffer } from '../../types';
 import { CheckCircle2 } from 'lucide-react';
+import { APP_CONFIG } from '@/configs/app.config';
+import { ConfirmPurchaseModal } from './confirm-purchase-modal';
+import { formatCurrency } from '@/modules/p2p/util';
 
 interface BuyAmountSectionProps {
   offer: P2POffer;
   onConfirmBuy: (amountMZD: number, amountVND: number) => void;
   isLoading?: boolean;
+  extraDisabled?: boolean;
 }
 
-// Format number with locale separators
-const formatCurrency = (num: number): string => {
-  return new Intl.NumberFormat('vi-VN').format(num);
-};
 
-// Extract numeric value from a formatted string
 const getRawValue = (val: string): number => {
   return parseFloat(val.replace(/\./g, '').replace(/,/g, '')) || 0;
 };
 
-export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: BuyAmountSectionProps) => {
+export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false, extraDisabled = false }: BuyAmountSectionProps) => {
   const [amountMZD, setAmountMZD] = useState<number>(0);
   const [displayValue, setDisplayValue] = useState<string>('');
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-  // Calculate VND based on the exchange rate
   const amountVND = amountMZD > 0 && offer.price_rate > 0 ? amountMZD * offer.price_rate : 0;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,83 +34,59 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
       setDisplayValue('');
       setAmountMZD(0);
     } else {
-      // Allow free input without immediate validation
+
       const formatted = formatCurrency(rawValue);
       setDisplayValue(formatted);
       setAmountMZD(rawValue);
     }
   };
 
-  // Calculate available amount (remaining amount in offer)
-  const available = offer.amount; // Use amount as available for now
+  const available = offer.amount;
+  const initialMin = offer.limit.min;
+  const effectiveMax = Math.min(offer.limit.max, available);
 
-  const setQuickAmount = (value: number) => {
-    const validatedValue = Math.max(offer.limit.min, Math.min(value, Math.min(offer.limit.max, available)));
-    setDisplayValue(formatCurrency(validatedValue));
-    setAmountMZD(validatedValue);
-  };
+  let placeholder = `Minimum: ${formatCurrency(initialMin)} - Maximum: ${formatCurrency(effectiveMax)}`;
+  let isDisabled = extraDisabled;
+
+  if (available === 0) {
+    placeholder = 'Minimum: 0 - Maximum: 0';
+    isDisabled = true;
+  } else if (available < initialMin) {
+    placeholder = 'The available amount is below the minimum requirement.';
+    isDisabled = true;
+  }
 
   const handleConfirm = () => {
-    if (amountMZD >= offer.limit.min && amountMZD <= Math.min(offer.limit.max, available)) {
-      onConfirmBuy(amountMZD, amountVND);
+    if (amountMZD >= initialMin && amountMZD <= effectiveMax && !extraDisabled) {
+      setShowConfirmModal(true);
     }
   };
 
-  const isValidAmount = amountMZD >= offer.limit.min && amountMZD <= Math.min(offer.limit.max, available);
+  const handleFinalConfirm = () => {
+    onConfirmBuy(amountMZD, amountVND);
+    setShowConfirmModal(false);
+  };
+
+  const isValidAmount = amountMZD >= initialMin && amountMZD <= effectiveMax;
 
   return (
     <div className="mb-6 space-y-4">
       <div>
-        <label className="mb-2 block text-sm font-medium text-muted-foreground">MZD amount to buy</label>
+        <label className="mb-2 block text-sm font-medium text-muted-foreground">Amount to buy</label>
         <div className="relative">
           <Input
             type="text"
-            placeholder={`Minimum: ${formatCurrency(offer.limit.min)} - Maximum: ${formatCurrency(
-              Math.min(offer.limit.max, available)
-            )}`}
+            placeholder={placeholder}
             value={displayValue}
             onChange={handleInputChange}
+            disabled={isDisabled}
             className="bg-input/30 dark:bg-input/30 focus:border-brand-primary w-full rounded-md border-border px-3 py-2.5  font-bold text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
-          <span className="absolute top-3.5 right-3 text-xs font-bold text-muted-foreground">MZD</span>
+          <span className="absolute top-3.5 right-3 text-xs font-bold text-muted-foreground">{APP_CONFIG.CHAIN_SYMBOL}</span>
         </div>
-        <div className="mt-1 text-xs text-muted-foreground">Available: {formatCurrency(available)} MZD</div>
+        <div className="mt-1 text-xs text-muted-foreground">Available: {formatCurrency(available)} {APP_CONFIG.CHAIN_SYMBOL}</div>
       </div>
 
-      <div className="grid grid-cols-4 gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setQuickAmount(offer.limit.min)}
-          className="h-auto rounded border-border bg-muted py-1.5 text-xs text-foreground hover:bg-muted/80"
-        >
-          Min
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setQuickAmount(Math.floor(available / 4))}
-          className="h-auto rounded border-border bg-muted py-1.5 text-xs text-foreground hover:bg-muted/80"
-        >
-          25%
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setQuickAmount(Math.floor(available / 2))}
-          className="h-auto rounded border-border bg-muted py-1.5 text-xs text-foreground hover:bg-muted/80"
-        >
-          50%
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setQuickAmount(Math.min(available, offer.limit.max))}
-          className="h-auto rounded border-border bg-muted py-1.5 text-xs text-foreground hover:bg-muted/80"
-        >
-          Max
-        </Button>
-      </div>
 
       {amountMZD > 0 && (
         <div className="rounded-lg border border-border bg-muted/50 px-4 py-4">
@@ -122,8 +97,8 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
             </span>
           </div>
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Rate: {offer.price_rate.toLocaleString('vi-VN')} VND/MZD</span>
-            <span>≈ {formatCurrency(amountMZD)} MZD</span>
+            <span>Rate: {offer.price_rate.toLocaleString('vi-VN')} VND/{APP_CONFIG.CHAIN_SYMBOL}</span>
+            <span>≈ {formatCurrency(amountMZD)} {APP_CONFIG.CHAIN_SYMBOL}</span>
           </div>
         </div>
       )}
@@ -131,20 +106,30 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: Buy
       <div className="mt-4 flex justify-center">
         <Button
           onClick={handleConfirm}
-          disabled={!isValidAmount || isLoading}
-          className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-8 py-3 text-base md:text-lg lg:text-lg font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={!isValidAmount || isLoading || extraDisabled}
+          className="rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600"
         >
           <CheckCircle2 className="h-5 w-5" />
           {isLoading ? 'Processing...' : 'Confirm purchase'}
         </Button>
       </div>
 
-      {!isValidAmount && amountMZD > 0 && (
+      {!isValidAmount && amountMZD > 0 && !extraDisabled && (
         <p className="text-center text-xs text-red-500">
-          Amount must be between {formatCurrency(offer.limit.min)} and{' '}
-          {formatCurrency(Math.min(offer.limit.max, available))} MZD
+          Amount must be between {formatCurrency(initialMin)} and{' '}
+          {formatCurrency(effectiveMax)} {APP_CONFIG.CHAIN_SYMBOL}
         </p>
       )}
+
+      <ConfirmPurchaseModal
+        open={showConfirmModal}
+        onOpenChange={setShowConfirmModal}
+        amountToBuy={amountMZD}
+        amountToPay={amountVND}
+        priceRate={offer.price_rate}
+        onConfirm={handleFinalConfirm}
+        isLoading={isLoading}
+      />
     </div>
   );
 };

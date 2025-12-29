@@ -158,7 +158,7 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 	if p, ok := pagination.(map[string]any); ok {
 		if v, ok := p["order_by"].(string); ok && v != "" {
 			switch strings.ToLower(v) {
-			case "created_at", "payable_amount", "amount", "symbol":
+			case "created_at", "payable_amount", "amount", "symbol", "price_rate":
 				orderBy = v
 			}
 		}
