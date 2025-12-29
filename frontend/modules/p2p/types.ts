@@ -26,6 +26,7 @@ export interface P2POffer {
     account_name: string;
   };
   transfer_code?: string;
+  has_active_order?: boolean;
 }
 
 export interface IP2POfferListParams {
@@ -79,8 +80,8 @@ export enum OrderStatus {
 }
 
 export interface P2POrder {
-  order_id: string | number;
-  offer_id: string | number;
+  order_id: string;
+  offer_id: string;
   buyer_wallet_address: string;
   buyer_user_id: string;
   seller_wallet_address: string;
@@ -103,9 +104,7 @@ export interface P2POrder {
 export type P2PTabType = (typeof P2P_TAB)[keyof typeof P2P_TAB];
 
 export interface CreateOrderRequest {
-  offer_id: string | number;
   amount: number;
-  payable_amount: number;
 }
 
 export interface UpdateOrderStatusRequest {

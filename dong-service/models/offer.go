@@ -28,6 +28,7 @@ type Offer struct {
 	PriceRate                 *float64    `json:"price_rate,omitempty" db:"price_rate"`
 	Status                    string      `json:"status" db:"status"`
 	BankInfo                  *string     `json:"bank_info,omitempty" db:"bank_info"`
+	HasActiveOrder            *bool       `json:"has_active_order,omitempty" db:"-"` // Not stored in DB, computed on demand
 	CreatedAt                 time.Time   `json:"created_at" db:"created_at"`
 	UpdatedAt                 time.Time   `json:"updated_at" db:"updated_at"`
 }

@@ -182,6 +182,23 @@ func (s *OrderService) GetOrdersByWalletAddress(ctx context.Context, walletAddre
 	return orders, count, nil
 }
 
+// HasActiveOrdersForOffer checks if an offer has any active (PENDING or OPEN) orders
+func (s *OrderService) HasActiveOrdersForOffer(ctx context.Context, offerID int64) (bool, error) {
+	db := database.GetDB()
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return false, err
+	}
+	defer tx.Rollback()
+
+	hasActive, err := s.repo.HasActiveOrders(ctx, offerID, tx)
+	if err != nil {
+		return false, err
+	}
+
+	return hasActive, nil
+}
+
 func (s *OrderService) ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o *models.Order) error {
 	// Buyer confirm: OPEN -> PENDING
 	if o.Status != string(models.OrderStatusOpen) {
