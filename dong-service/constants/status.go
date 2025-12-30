@@ -125,3 +125,8 @@ func IsValidStatus(status int16) bool {
 		status == CampaignStatusActive ||
 		status == CampaignStatusClosed
 }
+
+// Max price_rate offer
+const (
+	MaxPriceRateOffer float64 = 1000000.0
+)

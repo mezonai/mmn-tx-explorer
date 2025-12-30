@@ -9,6 +9,7 @@ import (
 	"dong-service/utils"
 	"errors"
 	"net/http"
+	"regexp"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -64,14 +65,27 @@ func (h *OfferHandler) CreateOffer(c *gin.Context) {
 
 	var priceRateFloat *float64
 	if req.PriceRate != nil && *req.PriceRate != "" {
+		if !regexp.MustCompile(`^(0|[1-9]\d{0,5})(\.\d{1,3})?$`).MatchString(*req.PriceRate) {
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid request: price rate must be a number less than 1,000,000 with up to 3 decimal places."))
+			return
+		}
+
 		if r, parseErr := strconv.ParseFloat(*req.PriceRate, 64); parseErr == nil {
 			priceRateFloat = &r
 		}
 	}
-	if priceRateFloat != nil && *priceRateFloat <= 0 {
-		logger.Error().Msg("invalid create offer request: price rate must be greater than 0")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid request: price rate must be greater than 0"))
-		return
+	if priceRateFloat != nil {
+		if *priceRateFloat <= 0 {
+			logger.Error().Msg("invalid create offer request: price rate must be greater than 0")
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid request: price rate must be greater than 0"))
+			return
+		}
+
+		if *priceRateFloat >= constants.MaxPriceRateOffer {
+			logger.Error().Msg("invalid create offer request: price rate must be less than to 1,000,000")
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid request: price rate must be less than to 1,000,000"))
+			return
+		}
 	}
 
 	userID, err := utils.GetUserIDStringFromContext(c)
