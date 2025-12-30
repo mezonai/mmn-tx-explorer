@@ -68,14 +68,25 @@ func (r *OfferRepository) UpdateOfferStatus(
 	tx *sql.Tx,
 	txHash *string,
 ) error {
-
-	query := fmt.Sprintf(`
+	query := ""
+	args := []any{}
+	if txHash == nil {
+		query = fmt.Sprintf(`
+        UPDATE %s.offers
+        SET status = $1, updated_at = NOW()
+        WHERE offer_id = $2
+    `, r.dongSchema)
+		args = append(args, status, offerID)
+	} else {
+		query = fmt.Sprintf(`
         UPDATE %s.offers
         SET status = $1, transaction_hash = $2, updated_at = NOW()
         WHERE offer_id = $3
     `, r.dongSchema)
+		args = append(args, status, *txHash, offerID)
+	}
 
-	_, err := tx.ExecContext(ctx, query, status, *txHash, offerID)
+	_, err := tx.ExecContext(ctx, query, args...)
 	return err
 }
 

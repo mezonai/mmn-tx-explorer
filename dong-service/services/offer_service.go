@@ -252,7 +252,11 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
 
 	if err = s.repo.UpdateOfferStatus(ctx, req.OfferID, req.Status, tx, &req.TxHash); err != nil {
 		return err
@@ -296,26 +300,25 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 		return fmt.Errorf(constants.ErrFailedToCancelOfferWithOrder)
 	}
 
-	needsRefund := 
+	needsRefund :=
 		offer.Status == constants.TradingConfirmed &&
-		offer.IntermediaryWalletAddress != nil &&
-		*offer.IntermediaryWalletAddress != "" &&
-		offer.Amount > 0 &&
-		s.blockchain != nil &&
-		s.walletRepo != nil
+			offer.IntermediaryWalletAddress != nil &&
+			*offer.IntermediaryWalletAddress != "" &&
+			offer.Amount > 0 &&
+			s.blockchain != nil &&
+			s.walletRepo != nil
 
-	var refundTxHash *string
 	if needsRefund {
-		intermediaryWallet, walletErr := s.walletRepo.GetWalletByAddress(ctx, *offer.IntermediaryWalletAddress)
-		if walletErr != nil {
+		intermediaryWallet, err := s.walletRepo.GetWalletByAddress(ctx, *offer.IntermediaryWalletAddress)
+		if err != nil {
 			return err
 		}
 
 		if intermediaryWallet == nil {
-			return err
+			return fmt.Errorf("intermediary wallet not found")
 		}
 
-		txHash, transferErr := s.blockchain.TransferMoney(
+		txHash, err := s.blockchain.TransferMoney(
 			intermediaryWallet.EncryptedPrivateKey,
 			*offer.IntermediaryWalletAddress,
 			offer.SellerWalletAddress,
@@ -323,18 +326,16 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 			constants.TextDataP2PTrading,
 			constants.ExtraInfoP2PTrading,
 		)
-		if transferErr != nil {
-			logger.Error().Err(transferErr).Int64("offer_id", offerId).Msg(constants.ErrFailedToRefundOfferAmount)
+		if err != nil {
+			logger.Error().Err(err).Int64("offer_id", offerId).Msg(constants.ErrFailedToRefundOfferAmount)
 			return err
 		}
 
-		refundTxHash = &txHash
+		status, err := s.blockchain.CheckTransactionStatus(txHash)
 
-		status, statusErr := s.blockchain.CheckTransactionStatus(txHash)
-
-		if statusErr == nil && status == constants.TxStatusFinalized {
+		if err == nil && status == constants.TxStatusFinalized {
 			logger.Info().Int64("offer_id", offerId).Str("tx_hash", txHash).Msg("Refund transaction finalized for canceled offer")
-			if err = s.repo.UpdateOfferStatus(ctx, offerId, constants.TradingCanceled, tx, refundTxHash); err != nil {
+			if err = s.repo.UpdateOfferStatus(ctx, offerId, constants.TradingCanceled, tx, nil); err != nil {
 				return err
 			}
 
@@ -344,6 +345,8 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 			}
 		} else if status == constants.TxStatusPending || status == constants.TxStatusConfirmed || status == constants.TxStatusFailed {
 			err = fmt.Errorf("refund transaction not finalized yet for canceled offer")
+			return err
+		} else if err != nil {
 			return err
 		}
 	} else {
