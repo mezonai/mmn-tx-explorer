@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"dong-service/constants"
 	"dong-service/logger"
 	"dong-service/models"
 	"dong-service/services"
@@ -300,5 +301,56 @@ func (h *OfferHandler) UpdateOfferStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "Offer status updated successfully",
+	})
+}
+
+// CancelOffer godoc
+// @Summary Cancel an offer
+// @Description Cancel an existing offer
+// @Tags offers
+// @Accept json
+// @Produce json
+// @Param id path int true "Offer ID"
+// @Success 200 {object} models.Response
+// @Failure 400 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Security BearerAuth
+// @Router /api/v1/offers/{id}/cancel [patch]
+func (h *OfferHandler) CancelOffer(c *gin.Context) {
+	id, err := utils.ParseInt64Param(c, "id")
+	if err != nil {
+		logger.Error().Msg("Invalid offer ID parameter")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody))
+		return
+	}
+
+	offer, err := h.offerService.GetOfferByID(c.Request.Context(), id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+
+			c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, constants.ErrOfferNotFound))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToGetOffer+": "+err.Error()))
+		return
+	}
+	
+	if offer == nil {
+		c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, constants.ErrOfferNotFound))
+		return
+	}
+	userAddress, _ := utils.GetAddressFromContext(c)
+	if offer.SellerWalletAddress != userAddress {
+		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, constants.ErrOfferNotFoundNoPermission))
+		return
+	}
+
+	if err := h.offerService.CancelOffer(c.Request.Context(), id, offer); err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToCancelOffer+": "+err.Error()))
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": constants.MsgOfferCancelled,
 	})
 }

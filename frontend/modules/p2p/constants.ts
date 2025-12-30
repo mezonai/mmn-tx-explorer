@@ -2,6 +2,7 @@ export const P2P_ENDPOINTS = {
   OFFERS: '/api/v1/offers',
   UPDATE_OFFER_STATUS: '/api/v1/offers/update-status',
   MY_OFFERS: '/api/v1/offers/me',
+  CANCEL_OFFER: (id: string) => `/api/v1/offers/${id}/cancel`,
   MY_ORDERS: '/api/v1/orders/me',
   OFFER_BY_ID: (id: string) => `/api/v1/offers/${id}`,
   CREATE_ORDER: (offerId: string) => `/api/v1/offers/${offerId}/orders`,

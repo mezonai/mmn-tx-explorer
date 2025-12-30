@@ -38,6 +38,12 @@ export class P2PService {
     const { data } = await apiDongClient.get<{ data: P2POffer }>(P2P_ENDPOINTS.OFFER_BY_ID(offerId));
     return data.data;
   }
+
+  static async cancelOffer(offerId: string): Promise<P2POffer> {
+    const { data } = await apiDongClient.patch<{ data: P2POffer }>(P2P_ENDPOINTS.CANCEL_OFFER(offerId));
+    return data.data;
+  }
+
   // Order methods
   static async createOrder(offerId: string | number, orderData: CreateOrderRequest): Promise<P2POrder> {
     const { data } = await apiDongClient.post<{ order: P2POrder }>(
@@ -62,5 +68,4 @@ export class P2PService {
     const { data } = await apiDongClient.post<{ data: P2POrder }>(P2P_ENDPOINTS.ORDER_STATUS(orderId), updateData);
     return data.data;
   }
-
 }

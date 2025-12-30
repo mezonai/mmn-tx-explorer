@@ -11,6 +11,8 @@ import { P2POffer } from '../../types';
 import { APP_CONFIG } from '@/configs/app.config';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/providers';
+import { CancelConfirmDialog } from './cancel-confirm-dialog';
+import { OFFERS_STATUS } from '../../constants';
 
 interface P2POffersTableProps {
   offers: P2POffer[] | undefined;
@@ -74,17 +76,22 @@ export const P2POffersTabs = ({ offers, isLoading = false, showAction = true }: 
     showAction
       ? {
           headerContent: 'Action',
-          renderCell: (offer) =>
-            user && offer.seller_user_id !== user.id ? (
-              <Button
-                onClick={() => {
-                  router.push(ROUTES.P2P_TRADING_ROOM(offer.offer_id, 'offer'));
-                }}
-                className="rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600"
-              >
-                Buy Mezon đồng
-              </Button>
-            ) : null,
+          renderCell: (offer) => (
+            <div className="w-[50%]">
+              {user && offer.seller_user_id !== user.id ? (
+                <Button
+                  onClick={() => {
+                    router.push(ROUTES.P2P_TRADING_ROOM(offer.offer_id, 'offer'));
+                  }}
+                  className="w-full rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600"
+                >
+                  Buy Mezon đồng
+                </Button>
+              ) : (
+                offer.status !== OFFERS_STATUS.CANCELED && <CancelConfirmDialog offer={offer} />
+              )}
+            </div>
+          ),
           skeletonContent: <Skeleton className="h-9 w-24 rounded-lg" />,
           align: 'center',
         }

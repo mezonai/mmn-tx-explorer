@@ -25,6 +25,8 @@ const getTransactionTypeInfo = (type: ETransferType) => {
     case ETransferType.GiveCoffee:
     case ETransferType.DongGiveCoffee:
       return 'bg-orange-100 text-orange-600 dark:bg-orange-500/10 dark:text-orange-300';
+    case ETransferType.P2PTrading:
+      return 'bg-teal-100 text-teal-600 dark:bg-teal-500/10 dark:text-teal-300';
     case ETransferType.TokenTransfer:
     default:
       return 'bg-yellow-100 text-yellow-600 dark:bg-yellow-500/10 dark:text-yellow-300';
