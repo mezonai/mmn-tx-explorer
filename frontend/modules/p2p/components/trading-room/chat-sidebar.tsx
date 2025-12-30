@@ -105,7 +105,7 @@ export const ChatSidebar = ({ sellerId }: ChatSidebarProps) => {
     if (!inputValue.trim() || !socketRef.current || !channelIdRef.current) return;
     const content = inputValue;
     setInputValue('');
-    setShowLimitWarning(false); // NEW: Reset warning on send
+    setShowLimitWarning(false);
     try {
       await socketRef.current.sendDM(channelIdRef.current, { t: content });
     } catch (err) {
@@ -118,12 +118,8 @@ export const ChatSidebar = ({ sellerId }: ChatSidebarProps) => {
     let newValue = target.value;
 
     if (newValue.length > MAX_CHAR_LIMIT) {
-      // Truncate to limit
       newValue = newValue.slice(0, MAX_CHAR_LIMIT);
       setShowLimitWarning(true);
-
-      // Optional: Hide warning after 3 seconds
-      setTimeout(() => setShowLimitWarning(false), 3000);
     } else {
       setShowLimitWarning(false);
     }
