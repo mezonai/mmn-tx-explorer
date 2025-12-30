@@ -128,7 +128,10 @@ func IsValidStatus(status int16) bool {
 		status == CampaignStatusClosed
 }
 
-// Max price_rate offer
+// Offer related constants
 const (
-	MaxPriceRateOffer float64 = 1000000.0
+	MaxPriceRateOffer         float64 = 1000000.0
+	MaxLengthSymbol           int     = 64
+	MaxTotalBankInfoSize      int     = 1024
+	MaxIndividualBankInfoSize int     = 128
 )
