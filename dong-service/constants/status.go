@@ -90,10 +90,12 @@ const (
 
 const (
 	ExtraInfoLuckyMoney = `{"type":"lucky-money"}`
+	ExtraInfoP2PTrading = `{"type":"p2p-trading"}`
 )
 
 const (
 	TextDataLuckyMoney = "Lucky Money fund"
+	TextDataP2PTrading = "P2P Trading"
 )
 
 const (
@@ -125,3 +127,8 @@ func IsValidStatus(status int16) bool {
 		status == CampaignStatusActive ||
 		status == CampaignStatusClosed
 }
+
+// Max price_rate offer
+const (
+	MaxPriceRateOffer float64 = 1000000.0
+)

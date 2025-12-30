@@ -2,11 +2,14 @@ package handlers
 
 import (
 	"database/sql"
+	"dong-service/constants"
 	"dong-service/logger"
 	"dong-service/models"
 	"dong-service/services"
 	"dong-service/utils"
+	"errors"
 	"net/http"
+	"regexp"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -54,7 +57,7 @@ func (h *OfferHandler) CreateOffer(c *gin.Context) {
 		return
 	}
 
-	if req.Limit != nil && (req.Limit.Min < 0 || req.Limit.Max < 0 || req.Limit.Min > req.Limit.Max) {
+	if req.Limit != nil && (req.Limit.Min < 0 || req.Limit.Max < 0 || req.Limit.Min > req.Limit.Max || req.Limit.Min > req.Amount || req.Limit.Max > req.Amount) {
 		logger.Error().Msg("invalid create offer request: invalid limit values")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid request: invalid limit values"))
 		return
@@ -62,14 +65,27 @@ func (h *OfferHandler) CreateOffer(c *gin.Context) {
 
 	var priceRateFloat *float64
 	if req.PriceRate != nil && *req.PriceRate != "" {
+		if !regexp.MustCompile(`^(0|[1-9]\d{0,5})(\.\d{1,3})?$`).MatchString(*req.PriceRate) {
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid request: price rate must be a number less than 1,000,000 with up to 3 decimal places."))
+			return
+		}
+
 		if r, parseErr := strconv.ParseFloat(*req.PriceRate, 64); parseErr == nil {
 			priceRateFloat = &r
 		}
 	}
-	if priceRateFloat != nil && *priceRateFloat <= 0 {
-		logger.Error().Msg("invalid create offer request: price rate must be greater than 0")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid request: price rate must be greater than 0"))
-		return
+	if priceRateFloat != nil {
+		if *priceRateFloat <= 0 {
+			logger.Error().Msg("invalid create offer request: price rate must be greater than 0")
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid request: price rate must be greater than 0"))
+			return
+		}
+
+		if *priceRateFloat >= constants.MaxPriceRateOffer {
+			logger.Error().Msg("invalid create offer request: price rate must be less than to 1,000,000")
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid request: price rate must be less than to 1,000,000"))
+			return
+		}
 	}
 
 	userID, err := utils.GetUserIDStringFromContext(c)
@@ -81,6 +97,12 @@ func (h *OfferHandler) CreateOffer(c *gin.Context) {
 	offer, err := h.offerService.CreateOffer(c.Request.Context(), &req, creatorAddr, userID)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to create offer")
+
+		if errors.Is(err, constants.ErrInsufficientAccountBalance) {
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Failed to create offer: "+err.Error()))
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to create offer: "+err.Error()))
 		return
 	}
@@ -141,7 +163,7 @@ func (h *OfferHandler) ListOffers(c *gin.Context) {
 		return
 	}
 
-	total, err := h.offerService.CountOffers(c.Request.Context(), nil, fromP, toP)
+	total, err := h.offerService.CountOffers(c.Request.Context(), nil, nil, nil, []string{constants.TradingPending, constants.TradingConfirmed}, nil, nil, fromP, toP)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to list offers: "+err.Error()))
 		return
@@ -293,6 +315,11 @@ func (h *OfferHandler) UpdateOfferStatus(c *gin.Context) {
 	}
 
 	if err := h.offerService.UpdateOfferStatus(c.Request.Context(), &req); err != nil {
+		if errors.Is(err, constants.ErrTxHashAlreadyUsed) {
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Failed to update offer status: "+err.Error()))
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to update offer status: "+err.Error()))
 		return
 	}
@@ -300,5 +327,56 @@ func (h *OfferHandler) UpdateOfferStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "Offer status updated successfully",
+	})
+}
+
+// CancelOffer godoc
+// @Summary Cancel an offer
+// @Description Cancel an existing offer
+// @Tags offers
+// @Accept json
+// @Produce json
+// @Param id path int true "Offer ID"
+// @Success 200 {object} models.Response
+// @Failure 400 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Security BearerAuth
+// @Router /api/v1/offers/{id}/cancel [patch]
+func (h *OfferHandler) CancelOffer(c *gin.Context) {
+	id, err := utils.ParseInt64Param(c, "id")
+	if err != nil {
+		logger.Error().Msg("Invalid offer ID parameter")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody))
+		return
+	}
+
+	offer, err := h.offerService.GetOfferByID(c.Request.Context(), id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+
+			c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, constants.ErrOfferNotFound))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToGetOffer+": "+err.Error()))
+		return
+	}
+	
+	if offer == nil {
+		c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, constants.ErrOfferNotFound))
+		return
+	}
+	userAddress, _ := utils.GetAddressFromContext(c)
+	if offer.SellerWalletAddress != userAddress {
+		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, constants.ErrOfferNotFoundNoPermission))
+		return
+	}
+
+	if err := h.offerService.CancelOffer(c.Request.Context(), id, offer); err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToCancelOffer+": "+err.Error()))
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": constants.MsgOfferCancelled,
 	})
 }

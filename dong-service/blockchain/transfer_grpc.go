@@ -144,7 +144,7 @@ func scaleAmountToDecimals(originalAmount interface{}) (string, error) {
 	return scaledAmount.String(), nil
 }
 
-func (s *BlockchainService) TransferMoney(encryptedPrivateKey, fromAddress, toAddress string, amount int64) (string, error) {
+func (s *BlockchainService) TransferMoney(encryptedPrivateKey, fromAddress, toAddress string, amount int64, textData string, extraInfoType string) (string, error) {
 	privateKey, err := utils.DecryptPrivateKey(encryptedPrivateKey)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to decrypt private key")
@@ -155,8 +155,8 @@ func (s *BlockchainService) TransferMoney(encryptedPrivateKey, fromAddress, toAd
 			toAddress,
 			amount,
 			privateKey,
-			constants.TextDataLuckyMoney,
-			constants.ExtraInfoLuckyMoney,
+			textData,
+			extraInfoType,
 		)
 		if err != nil {
 			logger.Error().Err(err).Msg("Failed to transfer funds")

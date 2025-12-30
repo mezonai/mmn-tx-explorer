@@ -3,10 +3,12 @@ import { AddressDisplay } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { APP_CONFIG } from '@/configs/app.config';
 import { ROUTES } from '@/configs/routes.config';
+import { OFFERS_STATUS } from '@/modules/p2p/constants';
 import { P2POffer } from '@/modules/p2p/types';
 import { useUser } from '@/providers';
 import { useRouter } from 'next/navigation';
 import React from 'react';
+import { CancelConfirmDialog } from '../cancel-confirm-dialog';
 interface OfferMobileCardProps {
   offer: P2POffer;
 }
@@ -46,15 +48,17 @@ const OfferMobileCard = ({ offer }: OfferMobileCardProps) => {
       </div>
 
       <div className="pt-1">
-        {user?.id !== offer.seller_user_id && (
+        {user && offer.seller_user_id !== user.id ? (
           <Button
             onClick={() => {
               router.push(ROUTES.P2P_TRADING_ROOM(offer.offer_id, 'offer'));
             }}
-            className="w-full rounded-xl bg-emerald-500 py-3 font-bold text-white shadow-md transition hover:bg-emerald-600 active:scale-[0.98]"
+            className="w-full rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600"
           >
-            Buy Mezon Đồng
+            Buy Mezon đồng
           </Button>
+        ) : (
+          offer.status !== OFFERS_STATUS.CANCELED && <CancelConfirmDialog offer={offer} />
         )}
       </div>
     </div>

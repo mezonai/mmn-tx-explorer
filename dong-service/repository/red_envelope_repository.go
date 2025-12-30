@@ -340,7 +340,7 @@ func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status str
 		if err != nil {
 			logger.Error().Err(err).Msg("Failed to get wallet")
 		} else {
-			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, envelope.TotalAmount)
+			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, envelope.TotalAmount, constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
 			if err != nil {
 				return fmt.Errorf("failed to transfer money to owner wallet: %w", err)
 			}
@@ -725,7 +725,7 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 		if err != nil {
 			logger.Error().Err(err).Msg("Failed to get wallet")
 		} else {
-			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, envelope.RemainingAmount)
+			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, envelope.RemainingAmount, constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
 			if err != nil {
 				return err
 			}
@@ -914,7 +914,7 @@ func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUs
 	}
 
 	var txHash string
-	txHash, err = r.blockchainService.TransferMoney(walletInfo.EncryptedPrivateKey, envelope.RedEnvelopeWallet, claimerWallet, claimAmount)
+	txHash, err = r.blockchainService.TransferMoney(walletInfo.EncryptedPrivateKey, envelope.RedEnvelopeWallet, claimerWallet, claimAmount, constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
 	if err != nil {
 		logger.Error().Err(err).
 			Str("from", envelope.RedEnvelopeWallet).

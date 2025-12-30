@@ -59,7 +59,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		return nil, nil, fmt.Errorf("failed to check active orders: %w", err)
 	}
 	if hasActive {
-		return nil, nil, fmt.Errorf("offer already has active pending orders")
+		return nil, nil, constants.ErrOfferHasActiveOrders
 	}
 
 	amount := req.Amount
@@ -69,15 +69,6 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		payableAmount = int64(math.Round(computed))
 	} else {
 		payableAmount = amount
-	}
-
-	if offer.Limit != nil {
-		if amount < offer.Limit.Min {
-			return nil, nil, fmt.Errorf("order amount %d is below minimum limit %d", amount, offer.Limit.Min)
-		}
-		if amount > offer.Limit.Max {
-			return nil, nil, fmt.Errorf("order amount %d exceeds maximum limit %d", amount, offer.Limit.Max)
-		}
 	}
 
 	var walletAddrPtr *string
@@ -267,7 +258,7 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 		}
 
 		if intermediaryWallet != nil && o.Amount > 0 {
-			txHash, transferErr := s.blockchain.TransferMoney(intermediaryWallet.EncryptedPrivateKey, *offer.IntermediaryWalletAddress, *o.BuyerWalletAddress, o.Amount)
+			txHash, transferErr := s.blockchain.TransferMoney(intermediaryWallet.EncryptedPrivateKey, *offer.IntermediaryWalletAddress, *o.BuyerWalletAddress, o.Amount, constants.TextDataP2PTrading, constants.ExtraInfoP2PTrading)
 			if transferErr != nil {
 				err = fmt.Errorf("failed to transfer funds to buyer: %w", transferErr)
 				return err

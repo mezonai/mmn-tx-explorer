@@ -37,10 +37,11 @@ func (s *OfferService) SetOrderService(orderService *OrderService) {
 type IOfferService interface {
 	CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string, sellerUserID string) (*models.Offer, error)
 	ListOffers(ctx context.Context, fromAmount *string, toAmount *string, pagination map[string]any) ([]models.Offer, error)
-	CountOffers(ctx context.Context, walletAddress *string, fromAmount *string, toAmount *string) (int64, error)
+	CountOffers(ctx context.Context, walletAddress *string, minPrice *string, maxPrice *string, statuses []string, symbol *string, rate *string, fromAmount *string, toAmount *string) (int64, error)
 	GetOfferByID(ctx context.Context, id int64) (*models.Offer, error)
 	GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, int64, error)
 	UpdateOfferStatus(ctx context.Context, req *models.UpdateOfferStatusRequest) error
+	CancelOffer(ctx context.Context, offerId int64, offer *models.Offer) error
 }
 
 func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string, sellerUserID string) (*models.Offer, error) {
@@ -62,7 +63,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 
 			requiredBalance := amountInt * 1000000
 			if balanceInt < requiredBalance {
-				return nil, fmt.Errorf("insufficient balance: have %d, need %d", balanceInt, requiredBalance)
+				return nil, constants.ErrInsufficientAccountBalance
 			}
 		}
 	}
@@ -168,8 +169,8 @@ func (s *OfferService) ListOffers(ctx context.Context, fromAmount *string, toAmo
 	return s.repo.ListOffers(ctx, nil, nil, nil, nil, nil, fromAmount, toAmount, pagination)
 }
 
-func (s *OfferService) CountOffers(ctx context.Context, walletAddress *string, fromAmount *string, toAmount *string) (int64, error) {
-	return s.repo.CountOffers(ctx, walletAddress, fromAmount, toAmount)
+func (s *OfferService) CountOffers(ctx context.Context, walletAddress *string, minPrice *string, maxPrice *string, statuses []string, symbol *string, rate *string, fromAmount *string, toAmount *string) (int64, error) {
+	return s.repo.CountOffers(ctx, walletAddress, minPrice, maxPrice, statuses, symbol, rate, fromAmount, toAmount)
 }
 
 func (s *OfferService) GetOfferByID(ctx context.Context, id int64) (*models.Offer, error) {
@@ -194,7 +195,7 @@ func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddre
 	if err != nil {
 		return nil, 0, err
 	}
-	count, err := s.repo.CountOffers(ctx, &walletAddress, fromAmount, toAmount)
+	count, err := s.repo.CountOffers(ctx, &walletAddress, nil, nil, nil, nil, nil, fromAmount, toAmount)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -207,7 +208,7 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 		return fmt.Errorf("failed to check existing tx hash: %w", err)
 	}
 	if exists {
-		return fmt.Errorf("transaction with hash %s is already used", req.TxHash)
+		return constants.ErrTxHashAlreadyUsed
 	}
 
 	offer, err := s.repo.GetOfferByID(ctx, req.OfferID)
@@ -251,7 +252,11 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
 
 	if err = s.repo.UpdateOfferStatus(ctx, req.OfferID, req.Status, tx, &req.TxHash); err != nil {
 		return err
@@ -268,6 +273,90 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 		}
 	}
 
+	return nil
+}
+
+func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *models.Offer) error {
+	if offer.Status != constants.TrandingOpen && offer.Status != constants.TradingConfirmed {
+		return fmt.Errorf("cannot cancel offer with status: %s", offer.Status)
+	}
+
+	db := database.GetDB()
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	hasActive, err := s.orderRepo.HasActiveOrders(ctx, offerId, tx)
+	if err != nil {
+		return err
+	}
+	if hasActive {
+		return fmt.Errorf(constants.ErrFailedToCancelOfferWithOrder)
+	}
+
+	needsRefund :=
+		offer.Status == constants.TradingConfirmed &&
+			offer.IntermediaryWalletAddress != nil &&
+			*offer.IntermediaryWalletAddress != "" &&
+			offer.Amount > 0 &&
+			s.blockchain != nil &&
+			s.walletRepo != nil
+
+	if needsRefund {
+		intermediaryWallet, err := s.walletRepo.GetWalletByAddress(ctx, *offer.IntermediaryWalletAddress)
+		if err != nil {
+			return err
+		}
+
+		if intermediaryWallet == nil {
+			return fmt.Errorf("intermediary wallet not found")
+		}
+
+		txHash, err := s.blockchain.TransferMoney(
+			intermediaryWallet.EncryptedPrivateKey,
+			*offer.IntermediaryWalletAddress,
+			offer.SellerWalletAddress,
+			offer.Amount,
+			constants.TextDataP2PTrading,
+			constants.ExtraInfoP2PTrading,
+		)
+		if err != nil {
+			logger.Error().Err(err).Int64("offer_id", offerId).Msg(constants.ErrFailedToRefundOfferAmount)
+			return err
+		}
+
+		status, err := s.blockchain.CheckTransactionStatus(txHash)
+
+		if err == nil && status == constants.TxStatusFinalized {
+			logger.Info().Int64("offer_id", offerId).Str("tx_hash", txHash).Msg("Refund transaction finalized for canceled offer")
+			if err = s.repo.UpdateOfferStatus(ctx, offerId, constants.TradingCanceled, tx, nil); err != nil {
+				return err
+			}
+
+			if offer.IntermediaryWalletAddress != nil && *offer.IntermediaryWalletAddress != "" && s.walletRepo != nil {
+				logger.Info().Int64("offer_id", offerId).Str("wallet_address", *offer.IntermediaryWalletAddress).Msg("Releasing intermediary wallet for canceled offer")
+				s.releaseIntermediaryWallet(ctx, *offer.IntermediaryWalletAddress)
+			}
+		} else if status == constants.TxStatusPending || status == constants.TxStatusConfirmed || status == constants.TxStatusFailed {
+			err = fmt.Errorf("refund transaction not finalized yet for canceled offer")
+			return err
+		} else if err != nil {
+			return err
+		}
+	} else {
+		err = fmt.Errorf(constants.ErrFailedToCancelOffer)
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
+	}
 	return nil
 }
 
