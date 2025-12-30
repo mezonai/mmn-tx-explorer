@@ -37,7 +37,7 @@ func (s *OfferService) SetOrderService(orderService *OrderService) {
 type IOfferService interface {
 	CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string, sellerUserID string) (*models.Offer, error)
 	ListOffers(ctx context.Context, fromAmount *string, toAmount *string, pagination map[string]any) ([]models.Offer, error)
-	CountOffers(ctx context.Context, walletAddress *string, fromAmount *string, toAmount *string) (int64, error)
+	CountOffers(ctx context.Context, walletAddress *string, minPrice *string, maxPrice *string, statuses []string, symbol *string, rate *string, fromAmount *string, toAmount *string) (int64, error)
 	GetOfferByID(ctx context.Context, id int64) (*models.Offer, error)
 	GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, int64, error)
 	UpdateOfferStatus(ctx context.Context, req *models.UpdateOfferStatusRequest) error
@@ -168,8 +168,8 @@ func (s *OfferService) ListOffers(ctx context.Context, fromAmount *string, toAmo
 	return s.repo.ListOffers(ctx, nil, nil, nil, nil, nil, fromAmount, toAmount, pagination)
 }
 
-func (s *OfferService) CountOffers(ctx context.Context, walletAddress *string, fromAmount *string, toAmount *string) (int64, error) {
-	return s.repo.CountOffers(ctx, walletAddress, fromAmount, toAmount)
+func (s *OfferService) CountOffers(ctx context.Context, walletAddress *string, minPrice *string, maxPrice *string, statuses []string, symbol *string, rate *string, fromAmount *string, toAmount *string) (int64, error) {
+	return s.repo.CountOffers(ctx, walletAddress, minPrice, maxPrice, statuses, symbol, rate, fromAmount, toAmount)
 }
 
 func (s *OfferService) GetOfferByID(ctx context.Context, id int64) (*models.Offer, error) {
@@ -194,7 +194,7 @@ func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddre
 	if err != nil {
 		return nil, 0, err
 	}
-	count, err := s.repo.CountOffers(ctx, &walletAddress, fromAmount, toAmount)
+	count, err := s.repo.CountOffers(ctx, &walletAddress, nil, nil, nil, nil, nil, fromAmount, toAmount)
 	if err != nil {
 		return nil, 0, err
 	}

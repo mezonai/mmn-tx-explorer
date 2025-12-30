@@ -55,7 +55,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to fetch offer: "+err.Error()))
 		return
 	}
-	if offer.Status != constants.TradingConfirmed && offer.Status != constants.TradingFailed {
+	if offer.Status != constants.TradingConfirmed {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "offer is not ready to accept orders"))
 		return
 	}

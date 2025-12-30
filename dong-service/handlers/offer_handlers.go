@@ -163,7 +163,7 @@ func (h *OfferHandler) ListOffers(c *gin.Context) {
 		return
 	}
 
-	total, err := h.offerService.CountOffers(c.Request.Context(), nil, fromP, toP)
+	total, err := h.offerService.CountOffers(c.Request.Context(), nil, nil, nil, []string{constants.TradingPending, constants.TradingConfirmed}, nil, nil, fromP, toP)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to list offers: "+err.Error()))
 		return

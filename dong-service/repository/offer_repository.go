@@ -217,11 +217,23 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 	return out, rows.Err()
 }
 
-func (r *OfferRepository) CountOffers(ctx context.Context, walletAddress *string, fromAmount *string, toAmount *string) (int64, error) {
+func (r *OfferRepository) CountOffers(ctx context.Context, walletAddress *string, minPrice *string, maxPrice *string, statuses []string, symbol *string, rate *string, fromAmount *string, toAmount *string) (int64, error) {
 	query := fmt.Sprintf(`SELECT COUNT(*) FROM %s.offers`, r.dongSchema)
 	whereClauses := []string{}
 	args := []any{}
 	argCount := 1
+
+	// Apply status filter if provided
+	if len(statuses) > 0 {
+		placeholders := []string{}
+		for _, status := range statuses {
+			placeholders = append(placeholders, fmt.Sprintf("$%d", argCount))
+			args = append(args, status)
+			argCount++
+		}
+		whereClauses = append(whereClauses, fmt.Sprintf("status IN (%s)", strings.Join(placeholders, ", ")))
+		whereClauses = append(whereClauses, "amount > 0")
+	}
 
 	if walletAddress != nil && *walletAddress != "" {
 		whereClauses = append(whereClauses, fmt.Sprintf("seller_wallet_address = $%d", argCount))
@@ -229,12 +241,53 @@ func (r *OfferRepository) CountOffers(ctx context.Context, walletAddress *string
 		argCount++
 	}
 
-	if fromAmount != nil && strings.TrimSpace(*fromAmount) != "" {
+	if minPrice != nil && *minPrice != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("payable_amount >= $%d", argCount))
+		args = append(args, *minPrice)
+		argCount++
+	}
+	if maxPrice != nil && *maxPrice != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("payable_amount <= $%d", argCount))
+		args = append(args, *maxPrice)
+		argCount++
+	}
+
+	if symbol != nil && strings.TrimSpace(*symbol) != "" {
+		sym := strings.TrimSpace(*symbol)
+		vals := []string{sym}
+
+		if len(vals) == 1 {
+			whereClauses = append(whereClauses, fmt.Sprintf("LOWER(symbol) = LOWER($%d)", argCount))
+			args = append(args, vals[0])
+			argCount++
+		} else {
+			parts := []string{}
+			for i := range vals {
+				parts = append(parts, fmt.Sprintf("LOWER(symbol) = LOWER($%d)", argCount))
+				args = append(args, vals[i])
+				argCount++
+			}
+			whereClauses = append(whereClauses, "("+strings.Join(parts, " OR ")+")")
+		}
+	}
+
+	if rate != nil && strings.TrimSpace(*rate) != "" {
+		if rv, parseErr := strconv.ParseFloat(strings.TrimSpace(*rate), 64); parseErr == nil {
+			whereClauses = append(whereClauses, fmt.Sprintf("price_rate >= $%d", argCount))
+			args = append(args, rv)
+			argCount++
+		}
+	}
+
+	if fromAmount != nil && strings.TrimSpace(*fromAmount) != "" && toAmount != nil && strings.TrimSpace(*toAmount) != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("amount >= $%d AND amount <= $%d", argCount, argCount+1))
+		args = append(args, strings.TrimSpace(*fromAmount), strings.TrimSpace(*toAmount))
+		argCount += 2
+	} else if fromAmount != nil && strings.TrimSpace(*fromAmount) != "" {
 		whereClauses = append(whereClauses, fmt.Sprintf("amount >= $%d", argCount))
 		args = append(args, strings.TrimSpace(*fromAmount))
 		argCount++
-	}
-	if toAmount != nil && strings.TrimSpace(*toAmount) != "" {
+	} else if toAmount != nil && strings.TrimSpace(*toAmount) != "" {
 		whereClauses = append(whereClauses, fmt.Sprintf("amount <= $%d", argCount))
 		args = append(args, strings.TrimSpace(*toAmount))
 		argCount++
