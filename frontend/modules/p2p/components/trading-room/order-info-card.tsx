@@ -12,30 +12,29 @@ interface OrderInfoCardProps {
 export const OrderInfoCard = ({ order }: OrderInfoCardProps) => {
   const { offer } = useP2POffer(String(order.offer_id));
 
-
-
   return (
-    <Card className="bg-card mb-4 rounded-lg border border-border p-4 shadow-lg">
-      <div className="flex items-center justify-between ">
-        <span className="text-xs text-muted-foreground mb-1">Amount to pay</span>
-        <span className="text-2xl font-bold text-green-400">
-          {order.payable_amount} <span className="text-sm">VND</span>
-        </span>
-      </div>
+    <Card className="bg-card rounded-lg border border-border p-3 shadow-lg mb-3">
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">Amount to pay</span>
+          <span className="text-xl font-bold text-green-400">
+            {order.payable_amount} <span className="text-xs">VND</span>
+          </span>
+        </div>
 
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">Exchange rate</span>
+          <span className="text-brand-primary text-sm font-semibold">
+            1 {APP_CONFIG.CHAIN_SYMBOL} = {order.price_rate.toLocaleString('vi-VN')} VND
+          </span>
+        </div>
 
-      <div className="flex items-center justify-between ">
-        <span className="text-xs text-muted-foreground">Exchange rate</span>
-        <span className="text-brand-primary font-semibold">
-          1 {APP_CONFIG.CHAIN_SYMBOL} = {order.price_rate.toLocaleString('vi-VN')} VND
-        </span>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">You will receive</span>
-        <span className="brand-primary font-semibold">
-          {order.amount} <span className="">{APP_CONFIG.CHAIN_SYMBOL}</span>
-        </span>
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">You will receive</span>
+          <span className="brand-primary text-sm font-semibold">
+            {order.amount} <span className="">{APP_CONFIG.CHAIN_SYMBOL}</span>
+          </span>
+        </div>
       </div>
     </Card>
   );

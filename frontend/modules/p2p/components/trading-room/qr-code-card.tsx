@@ -62,27 +62,29 @@ export const QrCodeCard = ({ bank_info, transfer_code, amount }: QrCodeCardProps
 
     return (
         <Card className="mb-4 rounded-lg border border-border p-4 shadow-lg h-full">
-            <div className="flex flex-1 flex-col items-center justify-center">
+            <div className="flex flex-1 flex-col items-center justify-center space-y-6">
                 {qrCodeUrl ? (
-                    <div className="w-full flex flex-col items-center gap-3">
-                        <img
-                            src={qrCodeUrl}
-                            alt="VietQR Payment Code"
-                            className="h-auto w-auto max-h-[320px] max-w-[320px] rounded-lg bg-white"
-                            loading="lazy"
-                        />
+                    <>
+                        <div className="w-full max-w-[90%] aspect-square flex items-center justify-center">
+                            <img
+                                src={qrCodeUrl}
+                                alt="VietQR Payment Code"
+                                className="w-[90%] h-full object-contain rounded-lg bg-white"
+                                loading="lazy"
+                            />
+                        </div>
                         <Button
-                            className="mt-6 bg-primary text-white hover:bg-primary/80"
+                            className="bg-primary text-white hover:bg-primary/80"
                             onClick={handleDownload}
                             variant="outline"
                             size="sm"
                         >
-                            <Download className="w-4 h-4" />
+                            <Download className="w-4 h-4 mr-2" />
                             Download QR Code
                         </Button>
-                    </div>
+                    </>
                 ) : (
-                    <div className="flex h-[300px] w-[300px] items-center justify-center rounded-lg border border-dashed border-border bg-muted/50">
+                    <div className="w-full max-w-[400px] aspect-square flex items-center justify-center rounded-lg border border-dashed border-border bg-muted/50">
                         <p className="text-center text-sm text-muted-foreground">QR code unavailable</p>
                     </div>
                 )}

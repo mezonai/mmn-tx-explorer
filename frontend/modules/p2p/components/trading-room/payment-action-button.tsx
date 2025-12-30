@@ -60,11 +60,12 @@ export const PaymentActionButton = ({
 
   return (
     <div>
-      <div className="mt-4 flex justify-center">
+      <div className="mt-4">
         <Button
           onClick={handleConfirm}
           disabled={isSubmitting || disabled}
-          className="bg-brand-primary shadow-primary/30 hover:bg-brand-primary/80 focus-visible:outline-primary dark:hover:bg-brand-primary/90 border-1px border-primary inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 dark:shadow-none"        >
+          className="w-full bg-emerald-500 hover:bg-emerald-600 inline-flex items-center justify-center rounded-lg px-5 py-6 text-base font-semibold text-white shadow-lg transition gap-2"
+        >
           <CheckCircle2 className="h-5 w-5" />
           {isSubmitting ? 'Processing...' : buttonText}
         </Button>
@@ -72,6 +73,6 @@ export const PaymentActionButton = ({
       <div className="px-4 text-center text-sm text-gray-500 mt-2">
         Only click the button after you have successfully transferred the money.
       </div>
-    </div >
+    </div>
   );
 };
