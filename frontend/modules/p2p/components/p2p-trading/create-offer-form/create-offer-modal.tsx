@@ -167,8 +167,13 @@ export const CreateOfferModal = () => {
 
           <form onSubmit={form.handleSubmit(onPreSubmit)}>
             <div className="grid grid-cols-1 gap-8 p-6 lg:grid-cols-3">
-              <TradeTypeSection control={form.control} />
-              <AmountSection control={form.control} trigger={form.trigger} userBalance={balance} />
+              <TradeTypeSection control={form.control} trigger={form.trigger} />
+              <AmountSection
+                control={form.control}
+                trigger={form.trigger}
+                userBalance={balance}
+                setValue={form.setValue}
+              />
               <PaymentSection control={form.control} />
             </div>
 

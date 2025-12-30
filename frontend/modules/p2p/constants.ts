@@ -28,7 +28,7 @@ export const OFFERS_STATUS = {
 } as const;
 export const P2P_TAB = {
   OFFERS: 'offers',
-  ORDERS: 'orders',
+  MY_TRADING: 'my-trading',
   MY_OFFERS: 'my-offers',
 } as const;
 

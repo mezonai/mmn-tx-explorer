@@ -122,7 +122,7 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
           rows={orders}
           isLoading={isLoading}
           classNameLayout="rounded-xl"
-          nullDataContext="No orders match your filters"
+          nullDataContext="No trading activities match your filters"
         />
       </div>
     </Card>

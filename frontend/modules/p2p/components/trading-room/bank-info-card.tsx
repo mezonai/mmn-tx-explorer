@@ -8,7 +8,7 @@ import { Bolt } from 'lucide-react';
 interface BankInfoCardProps {
   bank_info?: P2POffer['bank_info'];
   transfer_code?: string | null;
-  amount?: number; // Amount in VND
+  amount?: number;
 }
 
 export const BankInfoCard = ({ bank_info, transfer_code, amount }: BankInfoCardProps) => {
@@ -17,55 +17,55 @@ export const BankInfoCard = ({ bank_info, transfer_code, amount }: BankInfoCardP
   }
 
   return (
-    <Card className="bg-card rounded-xl border border-border">
-      <div className="p-4">
+    <Card className="bg-card rounded-lg border border-border">
+      <div className="p-3 mb-3">
         <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-sm font-bold text-foreground">Bank transfer details</h3>
-          <span className="flex items-center gap-1 rounded bg-yellow-500/20 px-2 py-0.5 text-xs font-bold text-yellow-500">
-            <Bolt className="h-3 w-3" />
+          <h3 className="text-xs font-bold text-foreground">Bank transfer details</h3>
+          <span className="flex items-center gap-1 rounded bg-yellow-500/20 px-1.5 py-0.5 text-[10px] font-bold text-yellow-500">
+            <Bolt className="h-2.5 w-2.5" />
             24/7
           </span>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-2">
           {/* Bank & Account Number */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2">
             <div className="group flex items-center justify-between rounded bg-muted/30 p-2 transition hover:bg-muted/50 border border-border/50">
-              <div>
-                <div className="text-[10px] font-bold text-muted-foreground uppercase">Bank</div>
-                <div className="text-sm font-bold text-foreground">{bank_info.bank}</div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[9px] font-bold text-muted-foreground uppercase">Bank</div>
+                <div className="text-xs font-bold text-foreground truncate">{bank_info.bank}</div>
               </div>
-              <CopyButton textToCopy={bank_info.bank} className="h-7 w-7 text-muted-foreground transition hover:text-foreground" />
+              <CopyButton textToCopy={bank_info.bank} className="h-6 w-6 ml-1 flex-shrink-0 text-muted-foreground transition hover:text-foreground" />
             </div>
 
             <div className="group flex items-center justify-between rounded bg-muted/30 p-2 transition hover:bg-muted/50 border border-border/50">
-              <div>
-                <div className="text-[10px] font-bold text-muted-foreground uppercase">Account number</div>
-                <div className="font-mono text-sm font-bold text-foreground">{bank_info.account_number}</div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[9px] font-bold text-muted-foreground uppercase">Account number</div>
+                <div className="font-mono text-xs font-bold text-foreground truncate">{bank_info.account_number}</div>
               </div>
-              <CopyButton textToCopy={bank_info.account_number} className="h-7 w-7 text-muted-foreground transition hover:text-foreground" />
+              <CopyButton textToCopy={bank_info.account_number} className="h-6 w-6 ml-1 flex-shrink-0 text-muted-foreground transition hover:text-foreground" />
             </div>
           </div>
 
           {/* Account Name */}
           <div className="group flex items-center justify-between rounded bg-muted/30 p-2 transition hover:bg-muted/50 border border-border/50">
-            <div>
-              <div className="text-[10px] font-bold text-muted-foreground uppercase">Account name</div>
-              <div className="text-sm font-bold text-foreground uppercase">{bank_info.account_name}</div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[9px] font-bold text-muted-foreground uppercase">Account name</div>
+              <div className="text-xs font-bold text-foreground uppercase truncate">{bank_info.account_name}</div>
             </div>
-            <CopyButton textToCopy={bank_info.account_name} className="h-7 w-7 text-muted-foreground transition hover:text-foreground" />
+            <CopyButton textToCopy={bank_info.account_name} className="h-6 w-6 ml-1 flex-shrink-0 text-muted-foreground transition hover:text-foreground" />
           </div>
 
           {/* Transfer Note */}
           {transfer_code && (
             <div className="group flex items-center justify-between rounded border border-yellow-500/30 bg-yellow-500/5 p-2 transition hover:bg-yellow-500/10">
-              <div>
-                <div className="text-[10px] font-bold text-yellow-600 uppercase dark:text-yellow-500">
+              <div className="min-w-0 flex-1">
+                <div className="text-[9px] font-bold text-yellow-600 uppercase dark:text-yellow-500">
                   Transfer note (required)
                 </div>
-                <div className="font-mono text-base font-bold text-yellow-500">{transfer_code}</div>
+                <div className="font-mono text-sm font-bold text-yellow-500">{transfer_code}</div>
               </div>
-              <CopyButton textToCopy={transfer_code} className="h-7 w-7 text-yellow-500 transition hover:text-yellow-400" />
+              <CopyButton textToCopy={transfer_code} className="h-6 w-6 ml-1 flex-shrink-0 text-yellow-500 transition hover:text-yellow-400" />
             </div>
           )}
         </div>
