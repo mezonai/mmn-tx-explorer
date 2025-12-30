@@ -10,6 +10,7 @@ import (
 	"dong-service/repository"
 	"encoding/json"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/google/uuid"
@@ -61,11 +62,14 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		return nil, nil, fmt.Errorf("offer already has active pending orders")
 	}
 
-	payableAmount := offer.PayableAmount
-	if req.PayableAmount != nil {
-		payableAmount = *req.PayableAmount
-	}
 	amount := req.Amount
+	var payableAmount int64
+	if offer.PriceRate != nil {
+		computed := float64(amount) * (*offer.PriceRate)
+		payableAmount = int64(math.Round(computed))
+	} else {
+		payableAmount = amount
+	}
 
 	if offer.Limit != nil {
 		if amount < offer.Limit.Min {
@@ -176,6 +180,23 @@ func (s *OrderService) GetOrdersByWalletAddress(ctx context.Context, walletAddre
 	}
 
 	return orders, count, nil
+}
+
+// HasActiveOrdersForOffer checks if an offer has any active (PENDING or OPEN) orders
+func (s *OrderService) HasActiveOrdersForOffer(ctx context.Context, offerID int64) (bool, error) {
+	db := database.GetDB()
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return false, err
+	}
+	defer tx.Rollback()
+
+	hasActive, err := s.repo.HasActiveOrders(ctx, offerID, tx)
+	if err != nil {
+		return false, err
+	}
+
+	return hasActive, nil
 }
 
 func (s *OrderService) ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o *models.Order) error {

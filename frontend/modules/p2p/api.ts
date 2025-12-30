@@ -39,9 +39,9 @@ export class P2PService {
     return data.data;
   }
   // Order methods
-  static async createOrder(orderData: CreateOrderRequest): Promise<P2POrder> {
+  static async createOrder(offerId: string | number, orderData: CreateOrderRequest): Promise<P2POrder> {
     const { data } = await apiDongClient.post<{ order: P2POrder }>(
-      P2P_ENDPOINTS.CREATE_ORDER(String(orderData.offer_id)),
+      P2P_ENDPOINTS.CREATE_ORDER(String(offerId)),
       orderData
     );
     return data.order;

@@ -143,16 +143,17 @@ func main() {
 	expiryRedEnvelopeTask := scheduler.CreateRedEnvelopeExpiryTask(expiryCheckInterval, cfg.Database.Schema, blockchainService)
 	schedulerInstance.AddTask(expiryRedEnvelopeTask)
 
+	// Add cancel expired orders task
+	ordersExpiryInterval := time.Duration(cfg.Scheduler.ExpiredOrdersInterval) * time.Second
+	cancelExpiredOrdersTask := scheduler.CreateCancelExpiredOrdersTask(ordersExpiryInterval, cfg.Database.Schema)
+	schedulerInstance.AddTask(cancelExpiredOrdersTask)
+
 	// Start scheduler
 	schedulerInstance.Start(ctx)
 
 	cronjob := cron.New(cron.WithLocation(time.Local))
 	scheduler.InitializeWalletPoolMaintenanceJob(cronjob, ctx, cfg.Database.Schema)
 	cronjob.Start()
-
-	ordersExpiryInterval := time.Duration(cfg.Scheduler.ExpiredOrdersInterval) * time.Second
-	cancelExpiredOrdersTask := scheduler.CreateCancelExpiredOrdersTask(ordersExpiryInterval, cfg.Database.Schema)
-	schedulerInstance.AddTask(cancelExpiredOrdersTask)
 
 	// Start server in a goroutine
 	addr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)

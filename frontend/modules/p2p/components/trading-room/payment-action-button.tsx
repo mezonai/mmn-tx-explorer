@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2 } from 'lucide-react';
-import { OrderStatus, P2POrder } from '../../types';
+import { P2POrder } from '../../types';
 import { P2PService } from '../../api';
+import { OrderStatus } from '../../types';
+import { toast } from 'sonner';
 
 interface PaymentActionButtonProps {
   order: P2POrder;
@@ -44,8 +46,9 @@ export const PaymentActionButton = ({
       const updated = await P2PService.updateOrderStatus(String(order.order_id), nextStatus);
       const patchedOrder = updated || { ...order, status: nextStatus };
       onStatusUpdated?.(patchedOrder);
+      toast.success('You have notified the seller. Please wait for the confirmation');
     } catch (error) {
-      console.error('Error updating order status:', error);
+      toast.error('Failed to notify the seller. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -61,17 +64,13 @@ export const PaymentActionButton = ({
         <Button
           onClick={handleConfirm}
           disabled={isSubmitting || disabled}
-          className="bg-brand-primary mb-4 flex items-center justify-center gap-2 rounded-xl py-4 text-base md:text-lg lg:text-lg font-bold text-white shadow-lg shadow-violet-900/20 transition hover:bg-violet-600 disabled:cursor-not-allowed disabled:opacity-70"
-        >
+          className="bg-brand-primary shadow-primary/30 hover:bg-brand-primary/80 focus-visible:outline-primary dark:hover:bg-brand-primary/90 border-1px border-primary inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 dark:shadow-none"        >
           <CheckCircle2 className="h-5 w-5" />
           {isSubmitting ? 'Processing...' : buttonText}
         </Button>
       </div>
-      <div className="px-4 text-center text-sm text-gray-500">
-        Only click the button after you have successfully transferred the money.{' '}
-        <a href="#" className="text-brand-primary ml-1 hover:underline">
-          Need help?
-        </a>
+      <div className="px-4 text-center text-sm text-gray-500 mt-2">
+        Only click the button after you have successfully transferred the money.
       </div>
     </div >
   );

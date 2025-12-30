@@ -15,10 +15,8 @@ export const useCreateOrder = () => {
     }
     setIsLoading(true);
     try {
-      const order = await P2PService.createOrder({
-        offer_id: offer.offer_id,
+      const order = await P2PService.createOrder(offer.offer_id, {
         amount: amountMZD,
-        payable_amount: payableAmount,
       });
       return order;
     } catch (error) {

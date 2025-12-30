@@ -19,8 +19,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { P2POrder, OrderStatus } from '../../types';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { ChatSidebar } from './chat-sidebar';
+import { APP_CONFIG } from '@/configs/app.config';
+import { AddressDisplay } from '@/components/shared/address-display';
 import { ROUTES } from '@/configs/routes.config';
+import { ChatSidebar } from './chat-sidebar';
 
 interface TradingRoomProps {
   orderId: string;
@@ -40,6 +42,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   const offerIdParam = isOfferMode ? orderId : order ? String(order.offer_id) : null;
   const { offer, isLoading: offerLoading } = useP2POffer(offerIdParam);
   const { createOrder, isLoading: isCreatingOrder } = useCreateOrder();
+
 
   useEffect(() => {
     if (!order || isOfferMode) return;
@@ -87,12 +90,9 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       const newOrder = await createOrder(offer, amountMZD, amountVND);
 
       if (newOrder) {
-        router.push(ROUTES.P2P_TRADING_ROOM(String(newOrder.order_id)));
+        router.push(ROUTES.P2P_TRADING_ROOM(newOrder.order_id));
       }
-    } catch {
-      toast.error('Failed to create order', {
-        description: 'Please try again later',
-      });
+    } catch (err) {
       setError('Something went wrong while creating the order. Please try again.');
     }
   };
@@ -109,6 +109,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       } else {
         setError('Something went wrong while updating status. Please try again.');
       }
+      throw err;
     }
   };
 
@@ -161,12 +162,21 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-muted-foreground text-sm font-bold">
-                Buy MZD from {formatWallet(offer?.seller_wallet_address)}
+              <h1 className="text-sm flex items-center gap-1 font-bold text-muted-foreground">
+                Buy {APP_CONFIG.CHAIN_SYMBOL} from{' '}
+                <AddressDisplay
+                  addressClassName="text-brand-primary"
+                  address={offer?.seller_wallet_address}
+                  href={ROUTES.WALLET(offer?.seller_wallet_address)}
+                />
               </h1>
-              <div className="text-muted-foreground text-xs">
+              <div className="text-xs flex items-center gap-1 text-muted-foreground">
                 Trading with{' '}
-                <span className="text-brand-primary font-bold">{formatWallet(offer?.seller_wallet_address)}</span>
+                <AddressDisplay
+                  addressClassName="text-brand-primary"
+                  address={offer?.seller_wallet_address}
+                  href={ROUTES.WALLET(offer?.seller_wallet_address)}
+                />
               </div>
             </div>
           </div>
@@ -175,6 +185,18 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
         <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
           <div className="border-border w-full overflow-y-auto border-b p-6 md:w-7/12 md:border-r md:border-b-0 lg:w-8/12">
             <ProgressSteps order={displayOrder} />
+            {offer.has_active_order && (
+              <div className="mb-6 rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-4 text-yellow-600 dark:text-yellow-500">
+                <p className="font-bold flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
+                  Offer Temporarily Locked
+                </p>
+
+                <span className="text-sm mt-1">
+                  This offer is locked because a transaction is in progress. Please try again after it’s completed.
+                </span>
+              </div>
+            )}
 
             {error && (
               <div className="border-destructive/20 bg-destructive/10 text-destructive mb-4 rounded-lg border p-3 text-sm">
@@ -182,7 +204,12 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
               </div>
             )}
 
-            <BuyAmountSection offer={offer} onConfirmBuy={handleConfirmBuy} isLoading={isCreatingOrder} />
+            <BuyAmountSection
+              offer={offer}
+              onConfirmBuy={handleConfirmBuy}
+              isLoading={isCreatingOrder}
+              extraDisabled={offer.has_active_order}
+            />
           </div>
           <ChatSidebar sellerId={offer.seller_user_id} />
         </div>
