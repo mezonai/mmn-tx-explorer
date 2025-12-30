@@ -28,6 +28,6 @@ export const isSameDay = (ts1: string, ts2: string) => {
 };
 
 export const formatCurrency = (num: number): string => {
-    if (!num) return '';
-    return new Intl.NumberFormat('en-US').format(num);
+  if (!num) return '';
+  return new Intl.NumberFormat('en-US').format(num);
 };

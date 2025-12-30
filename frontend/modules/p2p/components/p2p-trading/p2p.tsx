@@ -15,18 +15,20 @@ import OfferMobileCard from './mobile/offer-card';
 import { useQueryParam } from '@/hooks';
 import { P2PTabType } from '../../types';
 import { P2P_TAB } from '../../constants';
+import { useUpdateQueryParams } from '@/hooks/useUpdateQueryParams';
 export const P2P = () => {
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
+  const { updateParams } = useUpdateQueryParams();
   const { value: tab, handleChangeValue: setTab } = useQueryParam<P2PTabType>({
     queryParam: 'tab',
     defaultValue: P2P_TAB.OFFERS,
     clearParams: ['page', 'min', 'max', 'sort'],
   });
-  const { value: min, handleChangeValue: setMin } = useQueryParam<number>({
+  const { value: min } = useQueryParam<number>({
     queryParam: 'min',
     defaultValue: 0,
   });
-  const { value: max, handleChangeValue: setMax } = useQueryParam<number>({
+  const { value: max } = useQueryParam<number>({
     queryParam: 'max',
     defaultValue: 0,
   });
@@ -36,14 +38,13 @@ export const P2P = () => {
   });
   const handleFilterChange = useCallback(
     (newMin: number | undefined, newMax: number | undefined) => {
-      if (newMin !== undefined) setMin(newMin);
-      if (newMax !== undefined) setMax(newMax);
-
-      if (page !== 1) {
-        handleChangePage(1);
-      }
+      updateParams({
+        min: newMin,
+        max: newMax,
+        page: page !== 1 ? 1 : undefined,
+      });
     },
-    [page, handleChangePage, setMin, setMax]
+    [updateParams, page]
   );
   const handleSortChange = useCallback(
     (value: string) => {
@@ -65,7 +66,7 @@ export const P2P = () => {
 
   const { data: offers, isLoading } = useP2POffers(apiParams, tab === P2P_TAB.OFFERS);
   const { data: myOffers, isLoading: isMyOffersLoading } = useP2PMyOffers(apiParams, tab === P2P_TAB.MY_OFFERS);
-  const { data: myOrders, isLoading: isMyOrdersLoading } = useMyOrders(apiParams, tab === P2P_TAB.ORDERS);
+  const { data: myTrading, isLoading: isMyTradingLoading } = useMyOrders(apiParams, tab === P2P_TAB.MY_TRADING);
   const handleTabChange = (value: string) => {
     setTab(value as P2PTabType);
   };
@@ -75,16 +76,16 @@ export const P2P = () => {
 
       <Tabs
         value={tab}
-        onValueChange={(v) => handleTabChange(v as 'offers' | 'orders' | 'my-offers')}
+        onValueChange={(v) => handleTabChange(v as 'offers' | 'my-trading' | 'my-offers')}
         className="w-full"
       >
         <TabsList>
-          <TabsTrigger value="offers">Offers</TabsTrigger>
-          <TabsTrigger value="orders">My Orders</TabsTrigger>
-          <TabsTrigger value="my-offers">My Offers</TabsTrigger>
+          <TabsTrigger value={P2P_TAB.OFFERS}>Offers</TabsTrigger>
+          <TabsTrigger value={P2P_TAB.MY_TRADING}>My Trading</TabsTrigger>
+          <TabsTrigger value={P2P_TAB.MY_OFFERS}>My Offers</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="offers" className="space-y-6">
+        <TabsContent value={P2P_TAB.OFFERS} className="space-y-6">
           <P2PFiltersComponent
             totalItems={offers?.meta.total_items}
             totalPages={offers?.meta.total_pages}
@@ -109,11 +110,11 @@ export const P2P = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="orders" className="space-y-6">
+        <TabsContent value={P2P_TAB.MY_TRADING} className="space-y-6">
           <P2PFiltersComponent
-            totalItems={myOrders?.meta.total_items}
-            totalPages={myOrders?.meta.total_pages}
-            isLoading={isMyOrdersLoading}
+            totalItems={myTrading?.meta.total_items}
+            totalPages={myTrading?.meta.total_pages}
+            isLoading={isMyTradingLoading}
             page={page}
             limit={limit}
             onPageChange={handleChangePage}
@@ -122,16 +123,16 @@ export const P2P = () => {
           />
 
           <div className="block lg:hidden">
-            {(myOrders?.data ?? []).map((order) => (
-              <OrderMobileCard key={order.order_id} order={order} />
+            {(myTrading?.data ?? []).map((td) => (
+              <OrderMobileCard key={td.order_id} order={td} />
             ))}
           </div>
           <div className="hidden lg:block">
-            <P2POrdersList orders={myOrders?.data ?? []} isLoading={isMyOrdersLoading} />
+            <P2POrdersList orders={myTrading?.data ?? []} isLoading={isMyTradingLoading} />
           </div>
         </TabsContent>
 
-        <TabsContent value="my-offers" className="space-y-6">
+        <TabsContent value={P2P_TAB.MY_OFFERS} className="space-y-6">
           <P2PFiltersComponent
             totalItems={myOffers?.meta.total_items}
             totalPages={myOffers?.meta.total_pages}
