@@ -20,6 +20,7 @@ import { APP_CONFIG } from '@/configs/app.config';
 import { useUser } from '@/providers';
 import { mmnClient } from '@/modules/auth';
 import { NumberUtil } from '@/utils';
+import { ETransferType } from '@/modules/transaction';
 
 export const CreateOfferModal = () => {
   const [open, setOpen] = useState(false);
@@ -117,7 +118,7 @@ export const CreateOfferModal = () => {
           amount: payload.amount.toString(),
           note: 'p2p-trading',
         },
-        'p2p-trading'
+        ETransferType.P2PTrading
       );
 
       if (transferResult.success) {

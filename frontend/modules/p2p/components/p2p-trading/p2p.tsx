@@ -130,7 +130,7 @@ export const P2P = () => {
             ))}
           </div>
           <div className="hidden lg:block">
-            <P2POffersTabs offers={myOffers?.data ?? []} isLoading={isMyOffersLoading} showAction={false} />
+            <P2POffersTabs offers={myOffers?.data ?? []} isLoading={isMyOffersLoading} />
           </div>
         </TabsContent>
       </Tabs>

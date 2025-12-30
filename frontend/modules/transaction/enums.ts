@@ -17,6 +17,7 @@ export enum ETransferType {
   DongGiveCoffee = 'dong-give-coffee',
   LuckyMoney = 'lucky-money',
   DonationFeedCampaign = 'donation-campaign-feed',
+  P2PTrading = 'p2p-trading',
 }
 
 export enum ETransactionStatus {
