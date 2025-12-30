@@ -62,14 +62,14 @@ export const QrCodeCard = ({ bank_info, transfer_code, amount }: QrCodeCardProps
 
     return (
         <Card className="mb-4 rounded-lg border border-border p-4 shadow-lg h-full">
-            <div className="flex flex-1 flex-col items-center justify-center space-y-8">
+            <div className="flex flex-1 flex-col items-center justify-center space-y-6">
                 {qrCodeUrl ? (
                     <>
                         <div className="w-full max-w-[90%] aspect-square flex items-center justify-center">
                             <img
                                 src={qrCodeUrl}
                                 alt="VietQR Payment Code"
-                                className="w-[90%] h-[95%] object-contain rounded-lg bg-white"
+                                className="w-[90%] h-full object-contain rounded-lg bg-white"
                                 loading="lazy"
                             />
                         </div>

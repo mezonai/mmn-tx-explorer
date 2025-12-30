@@ -107,7 +107,7 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false, extra
         <Button
           onClick={handleConfirm}
           disabled={!isValidAmount || isLoading || extraDisabled}
-          className="rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600"
+          className="w-full bg-emerald-500 hover:bg-emerald-600 inline-flex items-center justify-center rounded-lg px-5 py-6 text-base font-semibold text-white shadow-lg transition gap-2"
         >
           <CheckCircle2 className="h-5 w-5" />
           {isLoading ? 'Processing...' : 'Confirm purchase'}
