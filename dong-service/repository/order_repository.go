@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/lib/pq"
 )
 
 type OrderRepository struct {
@@ -255,4 +257,48 @@ func (r *OrderRepository) CountOrdersByWalletAddress(ctx context.Context, wallet
 	}
 
 	return total, nil
+}
+
+// HasActiveOrdersByOfferList checks which offers from the provided list have active orders.
+// Returns a map where key is offer_id and value is true if that offer has active orders (PENDING or OPEN status).
+func (r *OrderRepository) HasActiveOrdersByOfferList(ctx context.Context, offerIDs []int64) (map[int64]bool, error) {
+	// Return empty map if no offer IDs provided
+	if len(offerIDs) == 0 {
+		return make(map[int64]bool), nil
+	}
+
+	// Query to find all offer_ids that have active orders
+	query := fmt.Sprintf(`
+		SELECT DISTINCT offer_id 
+		FROM %s.orders 
+		WHERE offer_id = ANY($1) AND status IN ('PENDING', 'OPEN')
+	`, r.dongSchema)
+
+	rows, err := r.db.QueryContext(ctx, query, pq.Array(offerIDs))
+	if err != nil {
+		return nil, fmt.Errorf("failed to check active orders for offers: %w", err)
+	}
+	defer rows.Close()
+
+	// Build a set of offer_ids that have active orders
+	activeOffers := make(map[int64]bool)
+	for rows.Next() {
+		var offerID int64
+		if err := rows.Scan(&offerID); err != nil {
+			return nil, fmt.Errorf("failed to scan offer_id: %w", err)
+		}
+		activeOffers[offerID] = true
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// Initialize result map with all offer IDs
+	result := make(map[int64]bool, len(offerIDs))
+	for _, offerID := range offerIDs {
+		result[offerID] = activeOffers[offerID] // Will be false if not in activeOffers
+	}
+
+	return result, nil
 }

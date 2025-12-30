@@ -49,14 +49,22 @@ const OfferMobileCard = ({ offer }: OfferMobileCardProps) => {
 
       <div className="pt-1">
         {user && offer.seller_user_id !== user.id ? (
-          <Button
-            onClick={() => {
-              router.push(ROUTES.P2P_TRADING_ROOM(offer.offer_id, 'offer'));
-            }}
-            className="w-full rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600"
-          >
-            Buy Mezon đồng
-          </Button>
+          offer.has_active_order ? (
+            <div className="flex h-10 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-900/20">
+              <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
+                Order in progress
+              </span>
+            </div>
+          ) : (
+            <Button
+              onClick={() => {
+                router.push(ROUTES.P2P_TRADING_ROOM(offer.offer_id, 'offer'));
+              }}
+              className="w-full rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600"
+            >
+              Buy Mezon đồng
+            </Button>
+          )
         ) : (
           offer.status !== OFFERS_STATUS.CANCELED && <CancelConfirmDialog offer={offer} />
         )}

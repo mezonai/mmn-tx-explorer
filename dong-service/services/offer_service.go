@@ -166,7 +166,38 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 }
 
 func (s *OfferService) ListOffers(ctx context.Context, fromAmount *string, toAmount *string, pagination map[string]any) ([]models.Offer, error) {
-	return s.repo.ListOffers(ctx, nil, nil, nil, nil, nil, fromAmount, toAmount, pagination)
+	offers, err := s.repo.ListOffers(ctx, nil, nil, nil, nil, nil, fromAmount, toAmount, pagination)
+	if err != nil {
+		return nil, err
+	}
+
+	// If no offers returned, return early
+	if len(offers) == 0 {
+		return offers, nil
+	}
+
+	// Extract offer IDs from the list
+	offerIDs := make([]int64, len(offers))
+	for i, offer := range offers {
+		offerIDs[i] = offer.OfferID
+	}
+
+	// Get map of offers that have active orders
+	offerHasActiveOrders, err := s.orderRepo.HasActiveOrdersByOfferList(ctx, offerIDs)
+	if err != nil {
+		// Log error but don't fail the entire request
+		logger.Error("Failed to check active orders for offers", "error", err)
+		// Return offers without has_active_order field set
+		return offers, nil
+	}
+
+	// Map has_active_order back to each offer
+	for i := range offers {
+		hasActive := offerHasActiveOrders[offers[i].OfferID]
+		offers[i].HasActiveOrder = &hasActive
+	}
+
+	return offers, nil
 }
 
 func (s *OfferService) CountOffers(ctx context.Context, walletAddress *string, minPrice *string, maxPrice *string, statuses []string, symbol *string, rate *string, fromAmount *string, toAmount *string) (int64, error) {

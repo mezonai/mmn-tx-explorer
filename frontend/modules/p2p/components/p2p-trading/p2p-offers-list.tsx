@@ -75,10 +75,17 @@ export const P2POffersTabs = ({ offers, isLoading = false, showAction = true }: 
     },
     showAction
       ? {
-          headerContent: 'Action',
-          renderCell: (offer) => (
-            <div className="w-[50%]">
-              {user && offer.seller_user_id !== user.id ? (
+        headerContent: 'Action',
+        renderCell: (offer) => (
+          <div className="w-[50%]">
+            {user && offer.seller_user_id !== user.id ? (
+              offer.has_active_order ? (
+                <div className="text-center">
+                  <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
+                    Order in progress
+                  </span>
+                </div>
+              ) : (
                 <Button
                   onClick={() => {
                     router.push(ROUTES.P2P_TRADING_ROOM(offer.offer_id, 'offer'));
@@ -87,14 +94,15 @@ export const P2POffersTabs = ({ offers, isLoading = false, showAction = true }: 
                 >
                   Buy Mezon đồng
                 </Button>
-              ) : (
-                offer.status !== OFFERS_STATUS.CANCELED && <CancelConfirmDialog offer={offer} />
-              )}
-            </div>
-          ),
-          skeletonContent: <Skeleton className="h-9 w-24 rounded-lg" />,
-          align: 'center',
-        }
+              )
+            ) : (
+              offer.status !== OFFERS_STATUS.CANCELED && <CancelConfirmDialog offer={offer} />
+            )}
+          </div>
+        ),
+        skeletonContent: <Skeleton className="h-9 w-24 rounded-lg" />,
+        align: 'center',
+      }
       : null,
   ];
   const columns = rawColumns.filter((col): col is TTableColumn<P2POffer> => col !== null);
