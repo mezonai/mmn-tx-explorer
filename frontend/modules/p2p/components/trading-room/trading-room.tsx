@@ -231,7 +231,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       <TradingRoomHeader order={effectiveOrder} userRole={userRole} />
 
       <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
-        <div className="border-border w-full overflow-y-auto border-b p-4 md:w-7/12 md:border-r md:border-b-0 lg:w-8/12">
+        <div className="border-border w-full overflow-y-auto border-b p-4 md:w-8/12 md:border-r md:border-b-0 lg:w-10/12">
           <ProgressSteps order={effectiveOrder} />
 
           {userRole === 'buyer' && effectiveOrder.status === 'PENDING' && (
