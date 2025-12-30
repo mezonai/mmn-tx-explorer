@@ -1,29 +1,23 @@
 'use client';
 
-import { Control, Controller, UseFormTrigger, useWatch } from 'react-hook-form';
-import { Input } from '@/components/ui/input';
+import { Control, Controller, UseFormSetValue, UseFormTrigger, useWatch } from 'react-hook-form';
 import { CreateOfferFormValues } from './validation-schema';
 import { APP_CONFIG } from '@/configs/app.config';
-import { cn } from '@/lib/utils';
+import { CurrencyInput } from '../../shared/currency-input';
+import { formatCurrency } from '@/modules/p2p/util';
+
 interface AmountSectionProps {
   control: Control<CreateOfferFormValues>;
   trigger: UseFormTrigger<CreateOfferFormValues>;
+  setValue: UseFormSetValue<CreateOfferFormValues>;
   userBalance: string;
 }
 
-const formatCurrency = (num: number): string => {
-  if (!num) return '';
-  return new Intl.NumberFormat('en-US').format(num);
-};
-
-const getRawValue = (val: string): number => {
-  return parseFloat(val.replace(/,/g, '')) || 0;
-};
-const MAX_AMOUNT = 1000000000000;
-export const AmountSection = ({ control, trigger, userBalance }: AmountSectionProps) => {
+export const AmountSection = ({ control, trigger, setValue, userBalance }: AmountSectionProps) => {
   const amountMZD = useWatch({ control, name: 'amount' });
   const exchangeRate = useWatch({ control, name: 'price_rate' });
-  const totalVND = parseFloat(exchangeRate) > 0 ? amountMZD * parseFloat(exchangeRate) : 0;
+
+  const totalVND = (parseFloat(exchangeRate) || 0) > 0 ? (amountMZD || 0) * (parseFloat(exchangeRate) || 0) : 0;
 
   return (
     <div className="border-border space-y-5 border-b pb-4 lg:border-r lg:border-b-0 lg:pr-8 lg:pb-0">
@@ -43,30 +37,14 @@ export const AmountSection = ({ control, trigger, userBalance }: AmountSectionPr
             control={control}
             name="amount"
             render={({ field, fieldState: { error } }) => (
-              <>
-                <Input
-                  {...field}
-                  value={formatCurrency(field.value)}
-                  onChange={(e) => {
-                    const val = getRawValue(e.target.value);
-                    if (val > MAX_AMOUNT) return;
-                    field.onChange(val);
-                    trigger(['limit.min', 'limit.max']);
-                  }}
-                  type="text"
-                  placeholder="Ex: 5,000,000"
-                  className={cn(
-                    'bg-input/30 w-full rounded-md border px-3 py-2.5 text-lg font-bold transition-colors focus:outline-none',
-                    error
-                      ? 'border-utility-error-600! !focus:border-utility-error-600 focus:ring-0 focus-visible:ring-0'
-                      : 'border-border'
-                  )}
-                />
-                <span className="absolute top-4.5 right-2 text-xs font-bold text-gray-500">
-                  {APP_CONFIG.CHAIN_SYMBOL}
-                </span>
-                {error && <p className="text-utility-error-600 mt-1 text-xs">{error.message}</p>}
-              </>
+              <CurrencyInput
+                value={field.value}
+                onChange={(val) => {
+                  field.onChange(val);
+                  trigger(['limit.min', 'limit.max']);
+                }}
+                error={error?.message}
+              />
             )}
           />
         </div>
@@ -78,23 +56,17 @@ export const AmountSection = ({ control, trigger, userBalance }: AmountSectionPr
         </div>
         <div className="mt-3 grid grid-cols-4 gap-2">
           {[100000, 500000, 1000000, 5000000].map((val) => (
-            <Controller
+            <button
               key={val}
-              control={control}
-              name="amount"
-              render={({ field }) => (
-                <button
-                  type="button"
-                  onClick={() => {
-                    field.onChange(val);
-                    trigger(['limit.min', 'limit.max']);
-                  }}
-                  className="border-border bg-card text-primary hover:border-brand-primary rounded border py-1.5 text-sm font-medium transition"
-                >
-                  {val >= 1000000 ? `${val / 1000000}M` : `${val / 1000}k`}
-                </button>
-              )}
-            />
+              type="button"
+              onClick={() => {
+                setValue('amount', val, { shouldValidate: true, shouldDirty: true });
+                trigger(['limit.min', 'limit.max']);
+              }}
+              className="border-border bg-card text-primary hover:border-brand-primary rounded border py-1.5 text-sm font-medium transition"
+            >
+              {val >= 1000000 ? `${val / 1000000}M` : `${val / 1000}k`}
+            </button>
           ))}
         </div>
       </div>

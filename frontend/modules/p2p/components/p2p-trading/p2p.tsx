@@ -50,7 +50,7 @@ export const P2P = () => {
 
   const { data: offers, isLoading } = useP2POffers(apiParams, tab === P2P_TAB.OFFERS);
   const { data: myOffers, isLoading: isMyOffersLoading } = useP2PMyOffers(apiParams, tab === P2P_TAB.MY_OFFERS);
-  const { data: myOrders, isLoading: isMyOrdersLoading } = useMyOrders(apiParams, tab === P2P_TAB.ORDERS);
+  const { data: myTradingRoom, isLoading: isMyTradingRoomLoading } = useMyOrders(apiParams, tab === P2P_TAB.ORDERS);
   const handleTabChange = (value: string) => {
     setTab(value as P2PTabType);
   };
@@ -65,7 +65,7 @@ export const P2P = () => {
       >
         <TabsList>
           <TabsTrigger value="offers">Offers</TabsTrigger>
-          <TabsTrigger value="orders">My Orders</TabsTrigger>
+          <TabsTrigger value="my-trading-room">My Trading Room</TabsTrigger>
           <TabsTrigger value="my-offers">My Offers</TabsTrigger>
         </TabsList>
 
@@ -91,11 +91,11 @@ export const P2P = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="orders" className="space-y-6">
+        <TabsContent value="my-trading-room" className="space-y-6">
           <P2PFiltersComponent
-            totalItems={myOrders?.meta.total_items}
-            totalPages={myOrders?.meta.total_pages}
-            isLoading={isMyOrdersLoading}
+            totalItems={myTradingRoom?.meta.total_items}
+            totalPages={myTradingRoom?.meta.total_pages}
+            isLoading={isMyTradingRoomLoading}
             page={page}
             limit={limit}
             onPageChange={handleChangePage}
@@ -104,12 +104,12 @@ export const P2P = () => {
           />
 
           <div className="block lg:hidden">
-            {(myOrders?.data ?? []).map((order) => (
-              <OrderMobileCard key={order.order_id} order={order} />
+            {(myTradingRoom?.data ?? []).map((td) => (
+              <OrderMobileCard key={td.order_id} order={td} />
             ))}
           </div>
           <div className="hidden lg:block">
-            <P2POrdersList orders={myOrders?.data ?? []} isLoading={isMyOrdersLoading} />
+            <P2POrdersList orders={myTradingRoom?.data ?? []} isLoading={isMyTradingRoomLoading} />
           </div>
         </TabsContent>
 

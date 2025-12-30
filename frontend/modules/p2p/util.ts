@@ -26,3 +26,8 @@ export const formatChatTime = (timestamp: string) => {
 export const isSameDay = (ts1: string, ts2: string) => {
   return new Date(Number(ts1)).toDateString() === new Date(Number(ts2)).toDateString();
 };
+export const formatCurrency = (num: number | string): string => {
+  if (!num && num !== 0) return '';
+  const val = typeof num === 'string' ? parseFloat(num) : num;
+  return new Intl.NumberFormat('en-US').format(val);
+};

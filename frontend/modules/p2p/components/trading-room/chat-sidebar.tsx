@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Send, AlertTriangle, Loader2, MessageCircle, X, Info } from 'lucide-react';
+import { Send, AlertTriangle, Loader2, MessageCircle, X, Info, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLightClient, useUser } from '@/providers';
 import { ChannelMessage, LightSocket } from 'mezon-light-sdk';
@@ -13,6 +13,8 @@ import { formatChatTime, isSameDay } from '../../util';
 interface ChatSidebarProps {
   sellerId: string;
 }
+
+const MAX_CHAR_LIMIT = 5000;
 
 export const ChatSidebar = ({ sellerId }: ChatSidebarProps) => {
   const [messages, setMessages] = useState<ChannelMessage[]>([]);
@@ -31,6 +33,8 @@ export const ChatSidebar = ({ sellerId }: ChatSidebarProps) => {
 
   const { lightClient } = useLightClient();
   const { user } = useUser();
+
+  const [showLimitWarning, setShowLimitWarning] = useState(false);
 
   useEffect(() => {
     isMobileOpenRef.current = isMobileOpen;
@@ -101,6 +105,7 @@ export const ChatSidebar = ({ sellerId }: ChatSidebarProps) => {
     if (!inputValue.trim() || !socketRef.current || !channelIdRef.current) return;
     const content = inputValue;
     setInputValue('');
+    setShowLimitWarning(false); // NEW: Reset warning on send
     try {
       await socketRef.current.sendDM(channelIdRef.current, { t: content });
     } catch (err) {
@@ -110,7 +115,22 @@ export const ChatSidebar = ({ sellerId }: ChatSidebarProps) => {
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const target = e.target;
-    setInputValue(target.value);
+    let newValue = target.value;
+
+    if (newValue.length > MAX_CHAR_LIMIT) {
+      // Truncate to limit
+      newValue = newValue.slice(0, MAX_CHAR_LIMIT);
+      setShowLimitWarning(true);
+
+      // Optional: Hide warning after 3 seconds
+      setTimeout(() => setShowLimitWarning(false), 3000);
+    } else {
+      setShowLimitWarning(false);
+    }
+
+    setInputValue(newValue);
+
+    // Resize logic
     target.style.height = 'auto';
     target.style.height = `${Math.min(target.scrollHeight, 150)}px`;
   };
@@ -295,6 +315,12 @@ export const ChatSidebar = ({ sellerId }: ChatSidebarProps) => {
 
         {/* Input Area */}
         <div className="shrink-0 border-t border-gray-200 bg-white p-4 pb-8 md:pb-4 dark:border-gray-800 dark:bg-black">
+          {showLimitWarning && (
+            <div className="animate-in fade-in slide-in-from-bottom-1 mb-2 flex items-center gap-2 rounded-md bg-red-50 p-2 text-xs text-red-600 dark:bg-red-900/20 dark:text-red-400">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>Message limit reached. Maximum {MAX_CHAR_LIMIT} characters allowed.</span>
+            </div>
+          )}
           <form onSubmit={handleSendMessage} className="relative w-full">
             <Textarea
               ref={textareaRef}
@@ -307,6 +333,7 @@ export const ChatSidebar = ({ sellerId }: ChatSidebarProps) => {
                 'max-h-50 min-h-10.5 w-full resize-none shadow-none',
                 'bg-gray-50 dark:bg-gray-900',
                 'border-gray-200 dark:border-gray-700',
+                showLimitWarning ? 'border-red-300 focus:border-red-500' : 'focus:border-brand-primary',
                 'focus:border-brand-primary focus:ring-0 focus-visible:ring-0',
                 'text-sm text-gray-900 dark:text-white',
                 'py-2.5 pr-12 pl-4',
