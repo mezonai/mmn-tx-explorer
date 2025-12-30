@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { P2POrder } from '../../types';
 import { useP2POffer } from '../../hooks/useP2POffer';
 import { APP_CONFIG } from '@/configs/app.config';
+import { formatCurrency } from '@/modules/p2p/util';
 
 interface OrderInfoCardProps {
   order: P2POrder;
@@ -11,7 +12,8 @@ interface OrderInfoCardProps {
 
 export const OrderInfoCard = ({ order }: OrderInfoCardProps) => {
   const { offer } = useP2POffer(String(order.offer_id));
-
+  const priceRate = offer?.price_rate || 0;
+  const amountVND = priceRate > 0 ? priceRate * order.amount : 0;
 
 
   return (
@@ -19,7 +21,7 @@ export const OrderInfoCard = ({ order }: OrderInfoCardProps) => {
       <div className="flex items-center justify-between ">
         <span className="text-xs text-muted-foreground mb-1">Amount to pay</span>
         <span className="text-2xl font-bold text-green-400">
-          {order.payable_amount} <span className="text-sm">VND</span>
+          {formatCurrency(amountVND)} <span className="text-sm">VND</span>
         </span>
       </div>
 

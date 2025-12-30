@@ -6,6 +6,7 @@ import { P2POffer } from '../../types';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { APP_CONFIG } from '@/configs/app.config';
+import { formatCurrency } from '@/modules/p2p/util';
 
 interface CancelConfirmDialogProps {
   offer: P2POffer;
@@ -15,6 +16,7 @@ export const CancelConfirmDialog = ({ offer }: CancelConfirmDialogProps) => {
   const [open, setOpen] = useState(false);
   const { mutateAsync: cancelOfferAsync, isPending } = useCancelOffer();
   const router = useRouter();
+  const totalVND = offer.price_rate > 0 ? offer.amount * offer.price_rate : 0;
 
   const handleCancel = async () => {
     if (offer) {
@@ -118,7 +120,7 @@ export const CancelConfirmDialog = ({ offer }: CancelConfirmDialogProps) => {
                 </label>
                 <div className="group relative">
                   <div className="bg-input/30 border-border w-full rounded-md border px-2 py-2 text-sm font-bold sm:px-3 sm:py-2.5 sm:text-base lg:text-lg">
-                    {offer.amount}
+                    {formatCurrency(offer.amount)}
 
                     <span className="absolute top-2 right-2 text-[10px] font-bold text-gray-500 sm:top-2.5 sm:text-xs lg:top-4.5">
                       {APP_CONFIG.CHAIN_SYMBOL}
@@ -133,7 +135,7 @@ export const CancelConfirmDialog = ({ offer }: CancelConfirmDialogProps) => {
                 </label>
                 <div className="border-border bg-card flex h-20 flex-col items-center justify-center rounded-lg border px-3 py-3 sm:h-24 sm:px-4 sm:py-4">
                   <span className="text-utility-success-600 text-base font-bold sm:text-lg lg:text-xl">
-                    {offer.amount * offer.price_rate}
+                    {formatCurrency(totalVND)}
                   </span>
                   <span className="text-muted-foreground mt-0.5 text-[10px] font-bold sm:mt-1 sm:text-xs">VND</span>
                 </div>
