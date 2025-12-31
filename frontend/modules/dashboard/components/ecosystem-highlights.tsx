@@ -60,7 +60,7 @@ export const EcosystemHighlights = ({ giveCoffeeStats }: EcosystemHighlightsProp
             <>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 <span
-                  className="cursor-pointer rounded-sm font-medium hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+                  className="focus-visible:ring-brand-primary cursor-pointer rounded-sm font-medium hover:underline focus:outline-none focus-visible:ring-2"
                   role="link"
                   tabIndex={0}
                   title={`Open ${campaign.name}`}
@@ -90,12 +90,10 @@ export const EcosystemHighlights = ({ giveCoffeeStats }: EcosystemHighlightsProp
           icon={<Gift className="text-brand-primary h-6 w-6 dark:text-red-400" />}
           description={`${redEnvelopeStats.stats.total_active_envelopes} envelopes active • ${redEnvelopeStats.stats.total_claimed.toLocaleString('en-US')} ${APP_CONFIG.CHAIN_SYMBOL} total`}
         />
-
         <EcoCard
-          title="Stake"
+          title="P2P Trading"
           icon={<Sprout className="text-brand-primary h-6 w-6 dark:text-green-400" />}
-          description={`0 ${APP_CONFIG.CHAIN_SYMBOL} staked`}
-          comingSoon
+          route={ROUTES.P2P}
         />
         <EcoCard
           title="Swap"

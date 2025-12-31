@@ -1,6 +1,6 @@
 'use client';
 
-import { Control, Controller, useWatch, useFormState } from 'react-hook-form';
+import { Control, Controller, useWatch, useFormState, UseFormTrigger } from 'react-hook-form';
 import { TradeTypes } from '@/modules/p2p/types';
 import { CreateOfferFormValues } from './validation-schema';
 import { APP_CONFIG } from '@/configs/app.config';
@@ -9,6 +9,7 @@ import { formatCurrency } from '@/modules/p2p/util';
 
 interface TradeTypeSectionProps {
   control: Control<CreateOfferFormValues>;
+  trigger: UseFormTrigger<CreateOfferFormValues>;
 }
 
 
@@ -17,7 +18,7 @@ const getRawValue = (val: string): number => {
 };
 const MAX_AMOUNT = 1000000;
 const LIMIT_MAX_AMOUNT = 1000000000000;
-export const TradeTypeSection = ({ control }: TradeTypeSectionProps) => {
+export const TradeTypeSection = ({ control, trigger }: TradeTypeSectionProps) => {
   const { errors } = useFormState({ control });
 
   const tradeType = useWatch({ control, name: 'side' });
@@ -151,6 +152,7 @@ export const TradeTypeSection = ({ control }: TradeTypeSectionProps) => {
                           onChange={(e) => {
                             if (getRawValue(e.target.value) > LIMIT_MAX_AMOUNT) return;
                             field.onChange(getRawValue(e.target.value));
+                            trigger(['limit.max']);
                           }}
                           className={cn(
                             'bg-input/30 text-foreground w-full rounded border px-3 py-1.5 pr-12 text-sm focus:outline-none',
@@ -186,6 +188,7 @@ export const TradeTypeSection = ({ control }: TradeTypeSectionProps) => {
                             onChange={(e) => {
                               if (getRawValue(e.target.value) > LIMIT_MAX_AMOUNT) return;
                               field.onChange(getRawValue(e.target.value));
+                              trigger(['limit.min']);
                             }}
                             className={cn(
                               'bg-input/30 text-foreground w-full rounded border px-3 py-1.5 pr-12 text-sm focus:outline-none',

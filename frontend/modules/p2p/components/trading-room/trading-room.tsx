@@ -43,7 +43,6 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   const { offer, isLoading: offerLoading } = useP2POffer(offerIdParam);
   const { createOrder, isLoading: isCreatingOrder } = useCreateOrder();
 
-
   useEffect(() => {
     if (!order || isOfferMode) return;
 
@@ -55,9 +54,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
     };
 
     checkExpiration();
-
     const interval = setInterval(checkExpiration, 1000);
-
     return () => clearInterval(interval);
   }, [order, isOfferMode]);
 
@@ -146,9 +143,6 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       seller_user_id: '',
     };
 
-    const formatWallet = (address?: string) =>
-      (address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'N/A') as string;
-
     return (
       <div className="bg-background flex h-screen flex-col">
         <div className="border-border flex h-14 shrink-0 items-center justify-between border-b px-6">
@@ -191,9 +185,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
                   <span className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
                   Offer Temporarily Locked
                 </p>
-
                 <span className="text-sm mt-1">
-                  This offer is locked because a transaction is in progress. Please try again after it’s completed.
+                  This offer is locked because a transaction is in progress. Please try again after it's completed.
                 </span>
               </div>
             )}
@@ -238,7 +231,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       <TradingRoomHeader order={effectiveOrder} userRole={userRole} />
 
       <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
-        <div className="border-border w-full overflow-y-auto border-b p-4 md:w-7/12 md:border-r md:border-b-0 lg:w-8/12">
+        <div className="border-border w-full overflow-y-auto border-b p-4 md:w-8/12 md:border-r md:border-b-0 lg:w-10/12">
           <ProgressSteps order={effectiveOrder} />
 
           {userRole === 'buyer' && effectiveOrder.status === 'PENDING' && (
@@ -251,8 +244,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
             </div>
           )}
 
-          <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-12">
-            <div className="space-y-6 lg:col-span-7">
+          <div className="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-12">
+            <div className="lg:col-span-8">
               <OrderInfoCard order={effectiveOrder} />
               {order && order.bank_info && order.transfer_code && (
                 <BankInfoCard
@@ -261,9 +254,23 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
                   amount={order.payable_amount || order.price}
                 />
               )}
+
+              <div className="space-y-2">
+                {userRole === 'buyer' && (
+                  <PaymentActionButton
+                    order={effectiveOrder}
+                    nextStatus="PENDING"
+                    onStatusUpdated={(updated) => setLocalStatus(updated.status)}
+                    disabled={isExpired}
+                  />
+                )}
+                {userRole === 'seller' && (
+                  <SellerConfirmButton order={effectiveOrder} onConfirm={handleSellerConfirm} disabled={isExpired} />
+                )}
+              </div>
             </div>
 
-            <div className="lg:col-span-5">
+            <div className="lg:col-span-4 ">
               {order && order.bank_info && (
                 <QrCodeCard
                   bank_info={order.bank_info}
@@ -273,18 +280,6 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
               )}
             </div>
           </div>
-
-          {userRole === 'buyer' && (
-            <PaymentActionButton
-              order={effectiveOrder}
-              nextStatus="PENDING"
-              onStatusUpdated={(updated) => setLocalStatus(updated.status)}
-              disabled={isExpired}
-            />
-          )}
-          {userRole === 'seller' && (
-            <SellerConfirmButton order={effectiveOrder} onConfirm={handleSellerConfirm} disabled={isExpired} />
-          )}
         </div>
         <ChatSidebar sellerId={userRole === 'buyer' ? order.seller_user_id : order.buyer_user_id} />
       </div>
