@@ -130,7 +130,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		Amount:                    amountInt,
 		TotalAmount:               amountInt,
 		PayableAmount:             priceInt,
-		Status:                    constants.TrandingOpen,
+		Status:                    constants.TradingOpen,
 		BankInfo:                  bankInfoStr,
 		Limit:                     &models.OfferLimit{Min: limitMinInt, Max: limitMaxInt},
 	}
@@ -166,7 +166,31 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 }
 
 func (s *OfferService) ListOffers(ctx context.Context, fromAmount *string, toAmount *string, pagination map[string]any) ([]models.Offer, error) {
-	return s.repo.ListOffers(ctx, nil, nil, nil, nil, nil, fromAmount, toAmount, pagination)
+	offers, err := s.repo.ListOffers(ctx, nil, nil, nil, nil, nil, fromAmount, toAmount, pagination)
+	if err != nil || len(offers) == 0 {
+		return offers, err
+	}
+
+	// Extract offer IDs
+	offerIDs := make([]int64, len(offers))
+	for i, offer := range offers {
+		offerIDs[i] = offer.OfferID
+	}
+
+	// Get active orders map
+	activeOrdersMap, err := s.orderRepo.HasActiveOrdersByOfferList(ctx, offerIDs)
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to check active orders for offers")
+		return offers, nil
+	}
+
+	// Map has_active_order to offers
+	for i := range offers {
+		hasActive := activeOrdersMap[offers[i].OfferID]
+		offers[i].HasActiveOrder = &hasActive
+	}
+
+	return offers, nil
 }
 
 func (s *OfferService) CountOffers(ctx context.Context, walletAddress *string, minPrice *string, maxPrice *string, statuses []string, symbol *string, rate *string, fromAmount *string, toAmount *string) (int64, error) {
@@ -199,6 +223,23 @@ func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddre
 	if err != nil {
 		return nil, 0, err
 	}
+
+	// Add has_active_order field
+	if len(offers) > 0 {
+		offerIDs := make([]int64, len(offers))
+		for i, offer := range offers {
+			offerIDs[i] = offer.OfferID
+		}
+
+		activeOrdersMap, err := s.orderRepo.HasActiveOrdersByOfferList(ctx, offerIDs)
+		if err == nil {
+			for i := range offers {
+				hasActive := activeOrdersMap[offers[i].OfferID]
+				offers[i].HasActiveOrder = &hasActive
+			}
+		}
+	}
+
 	return offers, count, nil
 }
 
@@ -218,7 +259,7 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 
 	// Verify transaction exists in blockchain
 	if s.blockchain != nil && req.Status == constants.TradingConfirmed {
-		if offer.Status != constants.TrandingOpen {
+		if offer.Status != constants.TradingOpen {
 			return fmt.Errorf("offer status invalid for confirmation: %s", offer.Status)
 		}
 		txInfo, err := s.blockchain.GetTransaction(req.TxHash)
@@ -277,7 +318,7 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 }
 
 func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *models.Offer) error {
-	if offer.Status != constants.TrandingOpen && offer.Status != constants.TradingConfirmed {
+	if offer.Status != constants.TradingOpen && offer.Status != constants.TradingConfirmed {
 		return fmt.Errorf("cannot cancel offer with status: %s", offer.Status)
 	}
 

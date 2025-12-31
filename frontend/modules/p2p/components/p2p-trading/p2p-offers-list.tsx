@@ -13,14 +13,14 @@ import { useRouter } from 'next/navigation';
 import { useUser } from '@/providers';
 import { CancelConfirmDialog } from './cancel-confirm-dialog';
 import { OFFERS_STATUS } from '../../constants';
+import { TriangleAlert } from 'lucide-react';
 
 interface P2POffersTableProps {
   offers: P2POffer[] | undefined;
   isLoading?: boolean;
-  showAction?: boolean;
 }
 
-export const P2POffersTabs = ({ offers, isLoading = false, showAction = true }: P2POffersTableProps) => {
+export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps) => {
   const router = useRouter();
   const { user } = useUser();
   const rawColumns: (TTableColumn<P2POffer> | null)[] = [
@@ -73,29 +73,41 @@ export const P2POffersTabs = ({ offers, isLoading = false, showAction = true }: 
       ),
       align: 'left',
     },
-    showAction
-      ? {
-          headerContent: 'Action',
-          renderCell: (offer) => (
-            <div className="w-[50%]">
-              {user && offer.seller_user_id !== user.id ? (
-                <Button
-                  onClick={() => {
-                    router.push(ROUTES.P2P_TRADING_ROOM(offer.offer_id, 'offer'));
-                  }}
-                  className="w-full rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600"
-                >
-                  Buy Mezon đồng
-                </Button>
-              ) : (
-                offer.status !== OFFERS_STATUS.CANCELED && <CancelConfirmDialog offer={offer} />
-              )}
+    {
+      headerContent: 'Action',
+      renderCell: (offer) => (
+        <div className="w-[50%]">
+          {offer.has_active_order ? (
+            <div className="group relative mx-auto w-full overflow-hidden rounded-lg border border-amber-500/50 bg-amber-500/10 px-1 shadow-[0_0_10px_-3px_rgba(245,158,11,0.2)] backdrop-blur-sm">
+              <div className="absolute inset-0 animate-pulse bg-[linear-gradient(45deg,transparent_25%,rgba(245,158,11,0.5)_25%,rgba(245,158,11,0.5)_50%,transparent_50%,transparent_75%,rgba(245,158,11,0.5)_75%,rgba(245,158,11,0.5)_100%)] bg-size-[12px_12px] opacity-20 dark:opacity-10" />
+
+              <div className="absolute inset-0 -translate-x-full animate-[shimmer_2.5s_infinite] bg-linear-to-r from-transparent via-amber-500/10 to-transparent" />
+
+              <div className="relative z-10 flex items-center justify-center gap-2 py-2.5 text-amber-700 dark:text-amber-300">
+                <TriangleAlert className="h-4 w-4 stroke-2" />
+
+                <span className="text-xs font-bold tracking-wider whitespace-nowrap uppercase">
+                  Trading in Progress
+                </span>
+              </div>
             </div>
-          ),
-          skeletonContent: <Skeleton className="h-9 w-24 rounded-lg" />,
-          align: 'center',
-        }
-      : null,
+          ) : user && offer.seller_user_id !== user?.id ? (
+            <Button
+              onClick={() => {
+                router.push(ROUTES.P2P_TRADING_ROOM(offer.offer_id, 'offer'));
+              }}
+              className="w-full rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600"
+            >
+              Buy Mezon đồng
+            </Button>
+          ) : (
+            offer.status !== OFFERS_STATUS.CANCELED && <CancelConfirmDialog offer={offer} />
+          )}
+        </div>
+      ),
+      skeletonContent: <Skeleton className="h-9 w-24 rounded-lg" />,
+      align: 'center',
+    },
   ];
   const columns = rawColumns.filter((col): col is TTableColumn<P2POffer> => col !== null);
 

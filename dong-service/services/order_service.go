@@ -84,7 +84,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		BuyerUserID:        buyerUserID,
 		Amount:             amount,
 		PayableAmount:      payableAmount,
-		Status:             constants.TrandingOpen,
+		Status:             constants.TradingOpen,
 		TransferCode:       &transferCode,
 		ExpiresAt:          &expiresAt,
 	}
