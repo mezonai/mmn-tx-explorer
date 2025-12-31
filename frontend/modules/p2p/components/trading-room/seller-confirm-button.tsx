@@ -50,13 +50,13 @@ export const SellerConfirmButton = ({ order, onConfirm, disabled = false }: Sell
         <Button
           onClick={handleButtonClick}
           disabled={isSubmitting || disabled}
-          className="w-full bg-emerald-500 hover:bg-emerald-600 inline-flex items-center justify-center rounded-lg px-5 py-6 text-base font-semibold text-white shadow-lg transition gap-2"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-500 px-5 py-6 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-600 md:text-base"
         >
           <CheckCircle2 className="h-5 w-5" />
           {isSubmitting ? 'Confirming...' : `Confirm money received, release ${APP_CONFIG.CHAIN_SYMBOL}`}
         </Button>
       </div>
-      <div className="px-4 text-center text-sm text-muted-foreground mt-2">
+      <div className="text-muted-foreground mt-2 px-4 text-center text-sm">
         Only click the button after you have received the transfer from the buyer.
       </div>
 
