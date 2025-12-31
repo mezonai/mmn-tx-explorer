@@ -223,6 +223,23 @@ func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddre
 	if err != nil {
 		return nil, 0, err
 	}
+
+	// Add has_active_order field
+	if len(offers) > 0 {
+		offerIDs := make([]int64, len(offers))
+		for i, offer := range offers {
+			offerIDs[i] = offer.OfferID
+		}
+
+		activeOrdersMap, err := s.orderRepo.HasActiveOrdersByOfferList(ctx, offerIDs)
+		if err == nil {
+			for i := range offers {
+				hasActive := activeOrdersMap[offers[i].OfferID]
+				offers[i].HasActiveOrder = &hasActive
+			}
+		}
+	}
+
 	return offers, count, nil
 }
 
