@@ -130,7 +130,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		Amount:                    amountInt,
 		TotalAmount:               amountInt,
 		PayableAmount:             priceInt,
-		Status:                    constants.TrandingOpen,
+		Status:                    constants.TradingOpen,
 		BankInfo:                  bankInfoStr,
 		Limit:                     &models.OfferLimit{Min: limitMinInt, Max: limitMaxInt},
 	}
@@ -259,7 +259,7 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 
 	// Verify transaction exists in blockchain
 	if s.blockchain != nil && req.Status == constants.TradingConfirmed {
-		if offer.Status != constants.TrandingOpen {
+		if offer.Status != constants.TradingOpen {
 			return fmt.Errorf("offer status invalid for confirmation: %s", offer.Status)
 		}
 		txInfo, err := s.blockchain.GetTransaction(req.TxHash)
@@ -318,7 +318,7 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 }
 
 func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *models.Offer) error {
-	if offer.Status != constants.TrandingOpen && offer.Status != constants.TradingConfirmed {
+	if offer.Status != constants.TradingOpen && offer.Status != constants.TradingConfirmed {
 		return fmt.Errorf("cannot cancel offer with status: %s", offer.Status)
 	}
 

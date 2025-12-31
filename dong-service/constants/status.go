@@ -99,7 +99,7 @@ const (
 )
 
 const (
-	TrandingOpen     = "OPEN"
+	TradingOpen     = "OPEN"
 	TradingPending   = "PENDING"
 	TradingConfirmed = "CONFIRMED"
 	TradingCanceled  = "CANCELED"
