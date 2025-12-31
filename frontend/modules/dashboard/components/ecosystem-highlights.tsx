@@ -90,11 +90,11 @@ export const EcosystemHighlights = ({ giveCoffeeStats }: EcosystemHighlightsProp
           icon={<Gift className="text-brand-primary h-6 w-6 dark:text-red-400" />}
           description={`${redEnvelopeStats.stats.total_active_envelopes} envelopes active • ${redEnvelopeStats.stats.total_claimed.toLocaleString('en-US')} ${APP_CONFIG.CHAIN_SYMBOL} total`}
         />
-        <EcoCard
+        {/* <EcoCard
           title="P2P Trading"
           icon={<Sprout className="text-brand-primary h-6 w-6 dark:text-green-400" />}
           route={ROUTES.P2P}
-        />
+        /> */}
         <EcoCard
           title="Swap"
           icon={<Transaction className="text-brand-primary h-6 w-6 dark:text-blue-400" />}
