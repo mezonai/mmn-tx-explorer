@@ -5,6 +5,7 @@ import { APP_CONFIG } from '@/configs/app.config';
 import { TypeBadges, TypeBadgesSkeleton } from '../../shared';
 import { TxnHashLinkDashboard } from '../../shared/txn-hash-link';
 import { WalletAddressDisplay } from '@/modules/wallet/components/wallet-list/list/shared';
+import { CheckCircle, XCircle } from '@/assets/icons';
 
 interface TransactionCardProps {
   transaction?: ITransaction;
@@ -13,10 +14,10 @@ interface TransactionCardProps {
 export const TransactionCard = ({ transaction }: TransactionCardProps) => {
   const getStatusIcon = (status?: ETransactionStatus) => {
     if (status === ETransactionStatus.Confirmed || status === ETransactionStatus.Passed) {
-      return <i className="fa-solid fa-circle-check"></i>;
+      return <CheckCircle />;
     }
     if (status === ETransactionStatus.Failed) {
-      return <i className="fa-solid fa-circle-xmark"></i>;
+      return <XCircle />;
     }
     return null;
   };
@@ -39,7 +40,7 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
       {transaction ? (
         <>
           <div className="flex items-center justify-between">
-            <TypeBadges type={transaction.transaction_type} />
+            <TypeBadges type={transaction.transaction_extra_info_type} />
             <span className={`${getStatusColor(transaction.status)} flex items-center gap-1 text-xs`}>
               {getStatusIcon(transaction.status)} {getStatusText(transaction.status)}
             </span>

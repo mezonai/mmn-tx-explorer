@@ -1,0 +1,29 @@
+package routers
+
+import (
+	"socket-service/config"
+	"socket-service/database"
+	"socket-service/handlers"
+	"socket-service/middleware"
+	"socket-service/repository"
+	"socket-service/service"
+
+	"github.com/gin-gonic/gin"
+)
+
+func SetupRouters(router *gin.Engine, cfg *config.Config) {
+
+	WSService := service.NewWSService()
+	eventRepo := repository.NewEventRepository(database.GetDB(), cfg.Database.Schema)
+	httpHandler := handlers.NewHTTPHandler(eventRepo, cfg, WSService)
+	wsHandler := handlers.NewWSHandler(eventRepo, cfg, WSService)
+	tokenMiddleware := middleware.ValidateToken(cfg.JWT.Secret)
+	apikeyMiddleware := middleware.ValidateAPIKey(cfg.Event.APIKey)
+
+	ws := router.Group("/ws")
+	ws.Use(tokenMiddleware)
+	ws.GET("/connect", wsHandler.HandleWS)
+	http := router.Group("/api")
+	http.Use(apikeyMiddleware)
+	http.POST("/event", httpHandler.SaveEvent)
+}

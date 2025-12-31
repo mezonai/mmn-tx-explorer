@@ -15,6 +15,7 @@ import { ExportTransactionsModal } from '@/components/ExportTransactionsModal';
 import { exportTransactionsToCSV } from '@/utils/export-csv';
 import { toast } from 'sonner';
 import { DateTimeUtil } from '@/utils';
+import { Download } from 'lucide-react';
 
 interface TransactionHistoryCardProps {
   walletAddress: string;
@@ -124,7 +125,7 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
                 <span className="mr-2 animate-pulse">Exporting...</span>
               ) : (
                 <>
-                  <i className="fa-solid fa-file-csv mr-2"></i>
+                  <Download className="mr-2 h-4 w-4" />
                   Export to CSV
                 </>
               )}

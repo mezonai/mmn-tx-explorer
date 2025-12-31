@@ -32,7 +32,7 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
             )}
           </div>
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-medium">
-            {transaction ? <TypeBadges type={transaction.transaction_type} /> : <TypeBadgesSkeleton />}
+            {transaction ? <TypeBadges type={transaction.transaction_extra_info_type} /> : <TypeBadgesSkeleton />}
             {transaction ? <TxStatusBadge status={transaction.status} /> : <TxStatusSkeleton className="h-5.5 w-24" />}
           </div>
           {transaction ? (

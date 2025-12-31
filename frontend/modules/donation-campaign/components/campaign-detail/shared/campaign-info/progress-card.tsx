@@ -47,7 +47,12 @@ export function ProgressCard({
 
       <CardContent className="pt-0">
         <p className="text-3xl font-semibold text-gray-900 dark:text-white">
-          {NumberUtil.formatWithCommasAndScale(raised)}
+          <span className="hidden truncate md:inline lg:hidden">
+            {NumberUtil.formatWithCommasAndScaleShort(raised)}
+          </span>
+
+          <span className="md:hidden lg:inline">{NumberUtil.formatWithCommasAndScale(raised)}</span>
+
           <span className="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400">{APP_CONFIG.CHAIN_SYMBOL}</span>
         </p>
       </CardContent>

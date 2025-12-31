@@ -13,13 +13,14 @@ interface TxnHashLinkProps {
   hash: string;
   isPending: boolean;
   className?: string;
+  hasTooltip?: boolean;
 }
 
 interface TxnHashLinkSkeletonProps {
   className?: string;
 }
 
-export const TxnHashLink = ({ hash, isPending, className }: TxnHashLinkProps) => {
+export const TxnHashLink = ({ hash, isPending, className, hasTooltip = true }: TxnHashLinkProps) => {
   return (
     <div className={cn('flex flex-1 items-center gap-1', className)}>
       <Tooltip>
@@ -32,7 +33,9 @@ export const TxnHashLink = ({ hash, isPending, className }: TxnHashLinkProps) =>
             </Link>
           </Button>
         </TooltipTrigger>
-        <TooltipContent className="bg-foreground max-w-xs text-center text-sm break-all">{hash}</TooltipContent>
+        {hasTooltip && (
+          <TooltipContent className="bg-foreground max-w-xs text-center text-sm break-all">{hash}</TooltipContent>
+        )}
       </Tooltip>
       <CopyButton textToCopy={hash} />
     </div>
