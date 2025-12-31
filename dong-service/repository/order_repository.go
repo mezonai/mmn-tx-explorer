@@ -262,12 +262,11 @@ func (r *OrderRepository) CountOrdersByWalletAddress(ctx context.Context, wallet
 // HasActiveOrdersByOfferList checks which offers from the provided list have active orders.
 // Returns a map where key is offer_id and value is true if that offer has active orders (PENDING or OPEN status).
 func (r *OrderRepository) HasActiveOrdersByOfferList(ctx context.Context, offerIDs []int64) (map[int64]bool, error) {
-	// Return empty map if no offer IDs provided
+	result := make(map[int64]bool)
 	if len(offerIDs) == 0 {
-		return make(map[int64]bool), nil
+		return result, nil
 	}
 
-	// Query to find all offer_ids that have active orders
 	query := fmt.Sprintf(`
 		SELECT DISTINCT offer_id 
 		FROM %s.orders 
@@ -280,25 +279,13 @@ func (r *OrderRepository) HasActiveOrdersByOfferList(ctx context.Context, offerI
 	}
 	defer rows.Close()
 
-	// Build a set of offer_ids that have active orders
-	activeOffers := make(map[int64]bool)
 	for rows.Next() {
 		var offerID int64
 		if err := rows.Scan(&offerID); err != nil {
 			return nil, fmt.Errorf("failed to scan offer_id: %w", err)
 		}
-		activeOffers[offerID] = true
+		result[offerID] = true
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	// Initialize result map with all offer IDs
-	result := make(map[int64]bool, len(offerIDs))
-	for _, offerID := range offerIDs {
-		result[offerID] = activeOffers[offerID] // Will be false if not in activeOffers
-	}
-
-	return result, nil
+	return result, rows.Err()
 }
