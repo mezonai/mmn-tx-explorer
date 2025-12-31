@@ -14,18 +14,19 @@ const (
 	ErrInvalidOrExpiredRefreshToken   = "Invalid or expired refresh token!"
 	ErrPermissionDenied               = "You don't have permission to perform this action"
 	ErrCampaignNotFoundOrNoPermission = "Donation campaign not found or you don't have permission"
+	ErrOfferNotFoundNoPermission	  = "Offer not found or you don't have permission"
 )
 
 // Validation Errors
 const (
-	ErrInvalidRequestBody = "Invalid request body"
-	ErrInvalidCampaignID  = "Invalid campaign ID"
-	ErrInvalidStatus      = "Invalid status"
-	ErrNoFieldsToUpdate   = "No fields to update"
-	ErrInvalidDateFormat  = "Invalid date format : must be YYYY-MM-DD"
-	ErrEndDateInPast      = "End date must be in the future"
-	ErrInvalidGoalAmount  = "Goal must be greater than 0 and less than or equal to 100 billion"
-	ErrInvalidURL         = "Invalid URL format"
+	ErrInvalidRequestBody   = "Invalid request body"
+	ErrInvalidCampaignID    = "Invalid campaign ID"
+	ErrInvalidStatus        = "Invalid status"
+	ErrNoFieldsToUpdate     = "No fields to update"
+	ErrInvalidDateFormat    = "Invalid date format : must be YYYY-MM-DD"
+	ErrEndDateInPast        = "End date must be in the future"
+	ErrInvalidGoalAmount    = "Goal must be greater than 0 and less than or equal to 100 billion"
+	ErrInvalidURL           = "Invalid URL format"
 	ErrInternalServer       = "Internal server error"
 	ErrMissingRedEnvelopeID = "Red Envelope ID must not null"
 )
@@ -54,6 +55,12 @@ const (
 	ErrFailedToCloseRedEnvelope        = "Failed to close red envelope"
 	ErrFailedToClaimAmount             = "Failed to claim amount"
 	ErrFailedToClaim                   = "Failed to claim red envelope"
+	ErrOfferNotFound                   = "Offer not found"
+	ErrFailedToGetOffer				   = "Failed to get offer"
+	ErrFailedToCancelOffer             = "Failed to cancel offer"
+	ErrFailedToCancelOfferWithOrder    = "Failed to cancel offer with active orders"
+	ErrFailedToRefundOfferAmount       = "Failed to refund offer amount"
+
 )
 
 // Business Logic Errors
@@ -83,6 +90,7 @@ const (
 	MsgRedEnvelopeClosed           = "Red envelope closed successfully"
 	MsgRedEnvelopeAmountClaimed    = "Red envelope amount claimed successfully"
 	MsgRedEnvelopeClaimed          = "Red envelope claimed successfully"
+	MsgOfferCancelled              = "Offer cancelled successfully"
 )
 
 // Logout Messages
@@ -98,7 +106,10 @@ const (
 )
 
 var (
-	ErrAlreadyClaimed = errors.New("you have already claimed this lucky money")
-	ErrLimitReached   = errors.New("red envelope claims limit reached")
-	ErrQueueNotInit   = errors.New("queue not initialized or expired")
+	ErrAlreadyClaimed             = errors.New("you have already claimed this lucky money")
+	ErrLimitReached               = errors.New("red envelope claims limit reached")
+	ErrQueueNotInit               = errors.New("queue not initialized or expired")
+	ErrInsufficientAccountBalance = errors.New("insufficient account balance")
+	ErrOfferHasActiveOrders       = errors.New("offer already has active pending orders")
+	ErrTxHashAlreadyUsed          = errors.New("transaction hash already used")
 )
