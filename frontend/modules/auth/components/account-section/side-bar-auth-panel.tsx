@@ -9,6 +9,8 @@ import { ROUTES } from '@/configs/routes.config';
 import { APP_CONFIG } from '@/configs/app.config';
 import { useTheme } from '@/providers/ThemeProvider';
 import { STORAGE_KEYS } from '@/constant';
+import { Globe, Megaphone, Moon, Sun, LogOut } from 'lucide-react';
+import { Wallet02, ChevronRight } from '@/assets/icons';
 
 export const SidebarAuthPanel = () => {
   const { user } = useUser();
@@ -82,7 +84,7 @@ export const SidebarAuthPanel = () => {
             <div className="flex items-center justify-between">
               <span className="text-gray-600 dark:text-gray-400">Network</span>
               <span className="flex items-center space-x-1 text-gray-900 dark:text-gray-200">
-                <i className="fa-solid fa-globe text-xs"></i>
+                <Globe className="h-4 w-4" />
                 <span>{APP_CONFIG.CHAIN_NAME}</span>
               </span>
             </div>
@@ -103,50 +105,53 @@ export const SidebarAuthPanel = () => {
               className="group flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-gray-900 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800"
             >
               <span className="flex items-center space-x-2">
-                <i className="fa-solid fa-wallet w-4 text-center text-[var(--color-brand-primary)]"></i>
-                <span className="transition-colors">Account Overview</span>
+                <Wallet02 className="text-brand-primary h-4 w-4" />
+                <span className="font-medium transition-colors">Account Overview</span>
               </span>
-              <i className="fa-solid fa-chevron-right text-xs text-gray-500 transition-all group-hover:translate-x-0.5"></i>
+              <ChevronRight className="h-4 w-4 text-gray-500 transition-all group-hover:translate-x-0.5" />
             </a>
-            <button
+            <Button
+              variant="ghost"
               onClick={() => {
                 if (typeof window !== 'undefined') {
                   sessionStorage.setItem(STORAGE_KEYS.SHOW_MINE_CAMPAIGNS, 'true');
                   window.location.href = ROUTES.DONATION_CAMPAIGN;
                 }
               }}
-              className="text-brand-primary group flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800"
+              className="group flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800"
             >
               <span className="flex items-center space-x-2">
-                <i className="fa-solid fa-user w-4 text-center text-[var(--color-brand-primary)]"></i>
+                <Megaphone className="text-brand-primary h-4 w-4" />
                 <span className="transition-colors">My Campaigns</span>
               </span>
-              <i className="fa-solid fa-chevron-right text-xs text-gray-500 transition-all group-hover:translate-x-0.5"></i>
-            </button>
-            <button
+              <ChevronRight className="h-4 w-4 text-gray-500 transition-all group-hover:translate-x-0.5" />
+            </Button>
+            <Button
+              variant="ghost"
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               className="group flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-gray-900 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800"
             >
               <span className="flex items-center space-x-2">
-                <i
-                  className={cn(
-                    'w-4 text-center text-[var(--color-brand-primary)]',
-                    theme === 'dark' ? 'fa-solid fa-moon' : 'fa-solid fa-sun'
-                  )}
-                ></i>
+                {theme === 'dark' ? (
+                  <Sun className="text-brand-primary h-4 w-4" />
+                ) : (
+                  <Moon className="text-brand-primary h-4 w-4" />
+                )}
+
                 <span className="transition-colors">Toggle {theme === 'dark' ? 'Light' : 'Dark'} Mode</span>
               </span>
-              <i className="fa-solid fa-chevron-right text-xs text-gray-500 transition-all group-hover:translate-x-0.5"></i>
-            </button>
+              <ChevronRight className="h-4 w-4 text-gray-500 transition-all group-hover:translate-x-0.5" />
+            </Button>
           </div>
 
           <div className="border-t border-gray-300 dark:border-gray-700"></div>
-          <button
+          <Button
             onClick={logout}
             className="w-full cursor-pointer rounded-lg border border-red-500/40 bg-transparent py-2 text-sm font-semibold text-red-400 transition hover:bg-red-500/20"
           >
-            <i className="fa-solid fa-right-from-bracket mr-2"></i> Logout
-          </button>
+            <LogOut className="mr-2 inline-block h-4 w-4" />
+            Logout
+          </Button>
         </div>
       )}
     </div>
