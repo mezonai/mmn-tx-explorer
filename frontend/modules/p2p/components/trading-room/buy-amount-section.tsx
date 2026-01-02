@@ -84,7 +84,37 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false, extra
           />
           <span className="absolute top-3.5 right-3 text-xs font-bold text-muted-foreground">{APP_CONFIG.CHAIN_SYMBOL}</span>
         </div>
-        <div className="mt-1 text-xs text-muted-foreground">Available: {formatCurrency(available)} {APP_CONFIG.CHAIN_SYMBOL}</div>
+        <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+          <div>Available: {formatCurrency(available)} {APP_CONFIG.CHAIN_SYMBOL}</div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setAmountMZD(initialMin);
+                setDisplayValue(formatCurrency(initialMin));
+              }}
+              disabled={isDisabled}
+              className={`rounded border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all disabled:cursor-not-allowed disabled:opacity-30 ${amountMZD === initialMin && amountMZD > 0
+                  ? 'border-brand-primary/50 bg-brand-primary/10 text-brand-primary'
+                  : 'border-border bg-muted/30 text-muted-foreground hover:border-brand-primary/50 hover:bg-brand-primary/10 hover:text-brand-primary'
+                }`}
+            >
+              Min
+            </button>
+            <button
+              onClick={() => {
+                setAmountMZD(effectiveMax);
+                setDisplayValue(formatCurrency(effectiveMax));
+              }}
+              disabled={isDisabled}
+              className={`rounded border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all disabled:cursor-not-allowed disabled:opacity-30 ${amountMZD === effectiveMax && amountMZD > 0
+                  ? 'border-brand-primary/50 bg-brand-primary/10 text-brand-primary'
+                  : 'border-border bg-muted/30 text-muted-foreground hover:border-brand-primary/50 hover:bg-brand-primary/10 hover:text-brand-primary'
+                }`}
+            >
+              Max
+            </button>
+          </div>
+        </div>
       </div>
 
 
