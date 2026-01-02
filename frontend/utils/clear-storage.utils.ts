@@ -5,6 +5,7 @@ export const AUTH_STORAGE_KEYS: readonly string[] = [
   STORAGE_KEYS.USER_INFO,
   STORAGE_KEYS.KEY_PAIR,
   STORAGE_KEYS.ZK_PROOF,
+  STORAGE_KEYS.LIGHT_CLIENT,
 ] as const;
 
 export function clearAuthStorage(): void {
