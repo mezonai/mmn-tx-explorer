@@ -12,6 +12,5 @@ type Event struct {
 	Type      		string          `json:"type"`
 	Payload   		json.RawMessage `json:"payload"`
 	ReceiveAddress  string          `json:"receive_address"`
-	Status    		string          `json:"status"`
 	CreateAt  		time.Time       `json:"create_at"`
 }

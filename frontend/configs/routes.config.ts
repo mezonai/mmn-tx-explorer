@@ -16,8 +16,8 @@ export const ROUTES = {
   MEZON_GAME: '/mezon-game',
   PENDING_TRANSACTION: (hash: string) => `/transactions/pending/${hash}`,
   PROFILE: '/profile',
-  P2P: '/p2p',  
-  P2P_TRADING_ROOM: (orderId: string, type?: 'offer') => 
+  P2P: '/p2p',
+  P2P_TRADING_ROOM: (orderId: string, type?: 'offer') =>
     `/p2p/trading-room/${orderId}${type === 'offer' ? '?type=offer' : ''}`,
   SWAP: '/swap',
   TRANSACTION: (hash: string, queryParams?: string) => `/transactions/${hash}${queryParams ? `?${queryParams}` : ''}`,

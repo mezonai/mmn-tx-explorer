@@ -49,18 +49,21 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 	events, err := h.repo.GetListEventByReceiver(userAddress)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to get events for user")
+		conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
 		conn.WriteMessage(websocket.TextMessage, []byte("Failed to get events: "+err.Error()))
 		return
 	}
+	
 	if len(events) > 0 {
 		for _, event := range events {
+			conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
 			if err := conn.WriteJSON(event); err != nil {
 				logger.Error().Err(err).Msg("Failed to send event to user")
 				return
 			} else {
-				event.Status = "sent"
-				if err := h.repo.UpdateEventStatus(event.ID.String(), "sent"); err != nil {
-					logger.Error().Err(err).Msg("Failed to update event status after sending via WS")
+				logger.Info().Msgf("Event sent to user %s: %s", userAddress, event.ID)
+				if err := h.repo.DeleteEvent(event.ID.String()); err != nil {
+					logger.Error().Err(err).Msgf("Failed to delete event %s after sending to user %s", event.ID, userAddress)
 				}
 			}
 		}
@@ -108,7 +111,10 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 			return
 		}
 		if messageType == websocket.TextMessage && string(message) == constant.HeartbeatCheck {
+			logger.Info().Msgf("Heartbeat check received from user %s", userAddress)
+			conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
 			conn.WriteMessage(websocket.TextMessage, []byte(constant.HeartbeatAck))
+			logger.Info().Msgf("Heartbeat ack sent to user %s", userAddress)
 			continue
 		}
 	}

@@ -82,6 +82,7 @@ func (s *WalletPoolService) CreateWallets(ctx context.Context, count int) error 
 			WalletAddress:       address,
 			EncryptedPrivateKey: encryptedKey,
 			Status:              constants.RedEnvelopeWalletStatusReady,
+			Type:                constants.WalletTypeDefault,
 		})
 	}
 
@@ -92,6 +93,10 @@ func (s *WalletPoolService) CreateWallets(ctx context.Context, count int) error 
 			Msg("Failed to create wallets")
 		return fmt.Errorf("failed to create wallets: %w", err)
 	}
+
+	logger.Info().
+		Int("requested_wallets", count).
+		Msg("Successfully created wallets")
 
 	return nil
 }

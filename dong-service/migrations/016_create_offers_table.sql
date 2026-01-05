@@ -15,9 +15,8 @@ CREATE TABLE IF NOT EXISTS offers (
     total_amount BIGINT NOT NULL DEFAULT 0,
     min_amount BIGINT NOT NULL DEFAULT 1,
     max_amount BIGINT NOT NULL,
-    price BIGINT NOT NULL DEFAULT 0,
+    payable_amount BIGINT NOT NULL DEFAULT 0,
     price_rate NUMERIC(6, 4),
-    price_type VARCHAR(32) NOT NULL DEFAULT 'FIXED',
     status offer_status NOT NULL DEFAULT 'OPEN',
     transaction_hash TEXT,
     bank_info JSONB,
@@ -35,9 +34,5 @@ DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_offers_side') THEN
         ALTER TABLE offers ADD CONSTRAINT chk_offers_side CHECK (side IN ('BUY', 'SELL'));
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_offers_price_type') THEN
-        ALTER TABLE offers ADD CONSTRAINT chk_offers_price_type CHECK (price_type IN ('FIXED', 'FLOAT'));
     END IF;
 END$$;

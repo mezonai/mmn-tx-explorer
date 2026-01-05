@@ -3,7 +3,8 @@
 import { Card } from '@/components/ui/card';
 import { P2POrder } from '../../types';
 import { useP2POffer } from '../../hooks/useP2POffer';
-import { useMemo } from 'react';
+import { APP_CONFIG } from '@/configs/app.config';
+import { formatCurrency } from '@/modules/p2p/util';
 
 interface OrderInfoCardProps {
   order: P2POrder;
@@ -11,34 +12,32 @@ interface OrderInfoCardProps {
 
 export const OrderInfoCard = ({ order }: OrderInfoCardProps) => {
   const { offer } = useP2POffer(String(order.offer_id));
-
-  // Calculate values from order fields
-  const amountVND = order.price; // price is in VND (smallest unit)
-  const amountMZD = order.amount; // amount is in MZD (smallest unit)
-  const exchangeRate = useMemo(() => {
-    if (amountMZD > 0) {
-      return amountVND / amountMZD;
-    }
-    return offer?.price_rate || 0;
-  }, [amountMZD, amountVND, offer?.price_rate]);
+  const priceRate = offer?.price_rate || 0;
+  const amountVND = priceRate > 0 ? priceRate * order.amount : 0;
 
   return (
-    <Card className="bg-card mb-6 rounded-xl border border-gray-800 p-6 shadow-lg">
-      <div className="mb-1 text-sm text-gray-400">Số tiền cần thanh toán</div>
-      <div className="mb-4 text-3xl font-bold tracking-wide text-green-400">
-        {amountVND.toLocaleString('vi-VN')} VND
-      </div>
+    <Card className="bg-card rounded-lg border border-border p-3 shadow-lg mb-3">
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">Amount to pay</span>
+          <span className="text-xl font-bold text-green-400">
+            {formatCurrency(amountVND)} <span className="text-xs">VND</span>
+          </span>
+        </div>
 
-      <div className="flex items-center justify-between border-t border-gray-800 py-3 text-sm">
-        <span className="text-gray-400">Tỷ giá</span>
-        <span className="rounded bg-gray-800 px-2 py-1 text-xs text-gray-300">
-          1 MZD = {exchangeRate.toLocaleString('vi-VN')} VND
-        </span>
-      </div>
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">Exchange rate</span>
+          <span className="text-brand-primary text-sm font-semibold">
+            1 {APP_CONFIG.CHAIN_SYMBOL} = {order.price_rate.toLocaleString('vi-VN')} VND
+          </span>
+        </div>
 
-      <div className="flex items-center justify-between border-t border-gray-800 py-3 text-sm">
-        <span className="text-gray-400">Số lượng MZD sẽ nhận</span>
-        <span className="brand-primary text-xl font-bold">{amountMZD.toLocaleString('vi-VN')} MZD</span>
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">You will receive</span>
+          <span className="brand-primary text-sm font-semibold">
+            {order.amount} <span className="">{APP_CONFIG.CHAIN_SYMBOL}</span>
+          </span>
+        </div>
       </div>
     </Card>
   );

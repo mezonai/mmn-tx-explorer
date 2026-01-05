@@ -1,3 +1,5 @@
+import { OFFERS_STATUS, P2P_TAB } from './constants';
+
 export type BankOption = 'MB' | 'VCB' | 'TCB' | 'ACB' | 'TPBANK' | 'VIETCOMBANK';
 
 export interface P2POffer {
@@ -11,17 +13,29 @@ export interface P2POffer {
     max: number;
   };
   price_rate: number;
-  bankInfo?: {
-    bank: BankOption;
-    accountNumber: string;
-    accountName: string;
-  };
-  transferCode?: string;
+  price_type: string;
+  side: TradeTypes;
+  seller_user_id: string;
   symbol: string;
   created_at: string;
   update_at: string;
   status: string;
-  price_type: string;
+  bank_info?: {
+    bank: string;
+    account_number: string;
+    account_name: string;
+  };
+  transfer_code?: string;
+  has_active_order?: boolean;
+}
+
+export interface IP2POfferListParams {
+  page: number;
+  limit: number;
+  order_by?: string;
+  from_amount?: number;
+  to_amount?: number;
+  order?: string;
 }
 
 export interface IP2POfferListParams {
@@ -31,16 +45,14 @@ export interface IP2POfferListParams {
   from_amount?: number;
   to_amount?: number;
 }
-
 export enum TradeTypes {
   SELL = 'SELL',
   BUY = 'BUY',
 }
-
-export interface CreateOfferFormState {
+export interface CreateOfferRequest {
   side: TradeTypes;
   amount: number;
-  price_rate: number;
+  price_rate: string;
   limit: {
     min: number;
     max: number;
@@ -49,60 +61,66 @@ export interface CreateOfferFormState {
   symbol?: string;
 }
 
-export interface CreateOfferRequest {
-  side: TradeTypes;
-  amount: string;
-  price_rate: string;
-  limit: {
-    min: string;
-    max: string;
-  };
-  bank_info: { bank: BankOption; account_number: string; account_name: string };
-  symbol?: string;
+export interface CreateOfferResponse {
+  intermediary_wallet_address: string;
+  offer: P2POffer;
 }
-
-// Order status enum matching backend
+export type OfferStatus = (typeof OFFERS_STATUS)[keyof typeof OFFERS_STATUS];
+export interface UpdateOfferStatusRequest {
+  offer_id: number;
+  status: OfferStatus;
+  tx_hash: string;
+}
 export enum OrderStatus {
   OPEN = 'OPEN',
   PENDING = 'PENDING',
   CONFIRMED = 'CONFIRMED',
   CANCELED = 'CANCELED',
   FAILED = 'FAILED',
+  COMPLETED = 'COMPLETED',
 }
 
-// P2POrder interface matching backend schema
 export interface P2POrder {
-  order_id: string | number; // BIGSERIAL from backend
-  offer_id: string | number; // BIGINT from backend
+  order_id: string;
+  offer_id: string;
   buyer_wallet_address: string;
-  amount: number; // BIGINT - amount in MZD (smallest unit)
-  price: number; // BIGINT - price in VND (smallest unit)
-  order_status: OrderStatus | string; // Default 'PENDING'
+  buyer_user_id: string;
+  seller_wallet_address: string;
+  seller_user_id: string;
+  amount: number;
+  price?: number;
+  payable_amount?: number;
+  status: OrderStatus;
+  bank_info?: {
+    bank: string;
+    account_number: string;
+    account_name: string;
+  };
   transfer_code?: string | null;
-  expires_at: string; // TIMESTAMPTZ
-  created_at: string; // TIMESTAMPTZ
-  updated_at: string; // TIMESTAMPTZ
+  expires_at: string;
+  created_at: string;
+  updated_at: string;
+  price_rate: number;
 }
+export type P2PTabType = (typeof P2P_TAB)[keyof typeof P2P_TAB];
 
-// Request interface for creating an order
 export interface CreateOrderRequest {
-  offer_id: string | number;
-  amount: string | number; // Amount in MZD (smallest unit)
-  price?: string | number; // Optional price in VND (calculated from offer if not provided)
+  amount: number;
 }
 
-// Request interface for updating order status
 export interface UpdateOrderStatusRequest {
-  order_status: OrderStatus | string;
+  status: OrderStatus | string;
   transfer_code?: string;
 }
 
-// Chat message interface
-export interface ChatMessage {
-  id: string;
-  order_id: string;
-  sender_type: 'buyer' | 'seller';
-  sender_id: string;
-  content: string;
-  created_at: string;
+export interface ProgressStep {
+  id: number;
+  label: string;
+  status: OrderStatus;
 }
+
+export const PROGRESS_STEPS: ProgressStep[] = [
+  { id: 1, label: 'Payment', status: OrderStatus.OPEN },
+  { id: 2, label: 'Pending confirmation', status: OrderStatus.PENDING },
+  { id: 3, label: 'Completed', status: OrderStatus.COMPLETED },
+];

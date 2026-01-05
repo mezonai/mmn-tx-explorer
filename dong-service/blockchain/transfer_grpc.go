@@ -144,7 +144,7 @@ func scaleAmountToDecimals(originalAmount interface{}) (string, error) {
 	return scaledAmount.String(), nil
 }
 
-func (s *BlockchainService) TransferMoney(encryptedPrivateKey, fromAddress, toAddress string, amount int64) (string, error) {
+func (s *BlockchainService) TransferMoney(encryptedPrivateKey, fromAddress, toAddress string, amount int64, textData string, extraInfoType string) (string, error) {
 	privateKey, err := utils.DecryptPrivateKey(encryptedPrivateKey)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to decrypt private key")
@@ -155,8 +155,8 @@ func (s *BlockchainService) TransferMoney(encryptedPrivateKey, fromAddress, toAd
 			toAddress,
 			amount,
 			privateKey,
-			constants.TextDataLuckyMoney,
-			constants.ExtraInfoLuckyMoney,
+			textData,
+			extraInfoType,
 		)
 		if err != nil {
 			logger.Error().Err(err).Msg("Failed to transfer funds")
@@ -172,6 +172,9 @@ func (s *BlockchainService) TransferMoney(encryptedPrivateKey, fromAddress, toAd
 	}
 }
 
+// CheckTransactionStatus checks the transaction status with retry logic
+// Retries 3 times with 0.5s delay between attempts
+// Returns status and error
 func (s *BlockchainService) CheckTransactionStatus(txHash string) (int32, error) {
 	maxRetries := 3
 	retryDelay := 500 * time.Millisecond
@@ -193,7 +196,7 @@ func (s *BlockchainService) CheckTransactionStatus(txHash string) (int32, error)
 				time.Sleep(retryDelay)
 				continue
 			}
-			return 0, fmt.Errorf("failed to get transaction after %d attempts: %w", maxRetries, err)
+			return constants.TxStatusPending, fmt.Errorf("failed to get transaction after %d attempts: %w", maxRetries, err)
 		}
 
 		status := int32(txResp.Status)
@@ -207,7 +210,7 @@ func (s *BlockchainService) CheckTransactionStatus(txHash string) (int32, error)
 		}
 
 		// Status 3 = FAILED
-		if status == (constants.TxStatusFinalized) {
+		if status == (constants.TxStatusFailed) {
 			logger.Error().
 				Str("tx_hash", txHash).
 				Msg("Transaction failed")
@@ -224,5 +227,5 @@ func (s *BlockchainService) CheckTransactionStatus(txHash string) (int32, error)
 		}
 	}
 
-	return 0, fmt.Errorf("failed to check transaction status after %d attempts", maxRetries)
+	return constants.TxStatusPending, fmt.Errorf("failed to check transaction status after %d attempts", maxRetries)
 }

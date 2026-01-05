@@ -4,36 +4,50 @@ import { useEffect, useRef } from 'react';
 import { getWebSocketManager } from './websocket-manager';
 import { STORAGE_KEYS } from '@/constant';
 import { safeJsonParse } from '@/utils';
+import { AuthenticationService } from '@/modules/auth';
 
-/**
- * Hook to initialize and manage WebSocket connection
- * Automatically connects when user is authenticated
- */
 export const useWebSocket = () => {
   const wsManagerRef = useRef(getWebSocketManager());
   const isInitializedRef = useRef(false);
+  const refreshRetryRef = useRef(0);
 
   useEffect(() => {
-    // Only initialize once
-    if (isInitializedRef.current) {
-      return;
-    }
+    const getLatestToken = async (): Promise<string | null> => {
+      try {
+        const tokenData = safeJsonParse<{ access_token?: string; refresh_token?: string }>(
+          localStorage.getItem(STORAGE_KEYS.TOKEN)
+        );
 
-    const tokenData = safeJsonParse<{ access_token?: string }>(localStorage.getItem(STORAGE_KEYS.TOKEN));
-    const accessToken = tokenData?.access_token;
+        if (!tokenData?.access_token) {
+          return null;
+        }
 
-    if (accessToken) {
+        if (tokenData.refresh_token && refreshRetryRef.current < 1) {
+          try {
+            refreshRetryRef.current++;
+            await AuthenticationService.refreshLogin(tokenData.refresh_token);
+            refreshRetryRef.current = 0;
+            const refreshedTokenData = safeJsonParse<{ access_token?: string }>(
+              localStorage.getItem(STORAGE_KEYS.TOKEN)
+            );
+            return refreshedTokenData?.access_token ?? null;
+          } catch {
+            refreshRetryRef.current = 0;
+            return tokenData.access_token;
+          }
+        }
 
-      wsManagerRef.current.connect(accessToken);
+        return tokenData.access_token;
+      } catch {
+        return null;
+      }
+    };
+
+    if (!isInitializedRef.current) {
+      wsManagerRef.current.setTokenExpiredHandler(getLatestToken);
       isInitializedRef.current = true;
     }
-
-    // Don't disconnect on unmount - keep connection alive across component re-renders
-    // return () => {
-    //   wsManagerRef.current.disconnect();
-    // };
   }, []);
 
   return wsManagerRef.current;
 };
-

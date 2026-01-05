@@ -28,6 +28,14 @@ const (
 	TransactionStatusFINALIZED int16 = 2
 )
 
+// Blockchain Transaction Status Constants (from MMN SDK)
+const (
+	TxStatusPending   int32 = 0 // Transaction is pending
+	TxStatusConfirmed int32 = 1 // Transaction is confirmed
+	TxStatusFinalized int32 = 2 // Transaction is finalized
+	TxStatusFailed    int32 = 3 // Transaction failed
+)
+
 const (
 	RedEnvelopeStatusPending   = "PENDING"   // Awaiting transaction confirmation
 	RedEnvelopeStatusPublished = "PUBLISHED" // Active and claimable
@@ -82,10 +90,21 @@ const (
 
 const (
 	ExtraInfoLuckyMoney = `{"type":"lucky-money"}`
+	ExtraInfoP2PTrading = `{"type":"p2p-trading"}`
 )
 
 const (
 	TextDataLuckyMoney = "Lucky Money fund"
+	TextDataP2PTrading = "P2P Trading"
+)
+
+const (
+	TradingOpen     = "OPEN"
+	TradingPending   = "PENDING"
+	TradingConfirmed = "CONFIRMED"
+	TradingCanceled  = "CANCELED"
+	TradingFailed    = "FAILED"
+	TradingCompleted = "COMPLETED"
 )
 
 // GetStatusName returns the human-readable name for a status code
@@ -109,18 +128,10 @@ func IsValidStatus(status int16) bool {
 		status == CampaignStatusClosed
 }
 
+// Offer related constants
 const (
-	TxStatusPending   int32 = 0 // Transaction is pending
-	TxStatusConfirmed int32 = 1 // Transaction is confirmed
-	TxStatusFinalized int32 = 2 // Transaction is finalized
-	TxStatusFailed    int32 = 3 // Transaction failed
-)
-
-const (
-	TrandingOpen     = "OPEN"
-	TradingPending   = "PENDING"
-	TradingConfirmed = "CONFIRMED"
-	TradingCanceled  = "CANCELED"
-	TradingFailed    = "FAILED"
-	TradingCompleted = "COMPLETED"
+	MaxPriceRateOffer         float64 = 1000000.0
+	MaxLengthSymbol           int     = 64
+	MaxTotalBankInfoSize      int     = 1024
+	MaxIndividualBankInfoSize int     = 128
 )

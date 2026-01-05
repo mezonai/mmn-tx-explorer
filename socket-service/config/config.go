@@ -1,20 +1,22 @@
 package config
 
 import (
-	"socket-service/logger"
 	"fmt"
+	"socket-service/logger"
 	"strings"
+
 	"github.com/spf13/viper"
 )
 
 // Config represents the application configuration
 type Config struct {
-	Server       ServerConfig       `mapstructure:"server"`
-	Database     DatabaseConfig     `mapstructure:"database"`
-	JWT          JWTConfig          `mapstructure:"jwt"`
-	Redis        RedisConfig        `mapstructure:"redis"`
-	Logging      logger.LogConfig   `mapstructure:"logging"`
-	WebSocket    WebSocketConfig    `mapstructure:"websocket"`
+	Server    ServerConfig     `mapstructure:"server"`
+	Database  DatabaseConfig   `mapstructure:"database"`
+	JWT       JWTConfig        `mapstructure:"jwt"`
+	Redis     RedisConfig      `mapstructure:"redis"`
+	Logging   logger.LogConfig `mapstructure:"logging"`
+	WebSocket WebSocketConfig  `mapstructure:"websocket"`
+	Event     EventConfig      `mapstructure:"event"`
 }
 
 type ServerConfig struct {
@@ -38,8 +40,11 @@ type DatabaseConfig struct {
 }
 
 type JWTConfig struct {
-	Secret      string `mapstructure:"secret"`
-	APIKey    string `mapstructure:"api_key"`
+	Secret string `mapstructure:"secret"`
+}
+
+type EventConfig struct {
+	APIKey string `mapstructure:"api_key"`
 }
 
 type RedisConfig struct {

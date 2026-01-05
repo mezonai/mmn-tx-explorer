@@ -5,72 +5,71 @@ import { CopyButton } from '@/components/ui/copy-button';
 import { P2POffer } from '../../types';
 import { Bolt } from 'lucide-react';
 
-type BankDetails = NonNullable<P2POffer['bankInfo']>;
-
 interface BankInfoCardProps {
-  bankInfo?: BankDetails;
-  transferCode?: string;
+  bank_info?: P2POffer['bank_info'];
+  transfer_code?: string | null;
+  amount?: number;
 }
 
-const bankLabels: Record<string, string> = {
-  MB: 'MB Bank',
-  VCB: 'Vietcombank',
-  TCB: 'Techcombank',
-  ACB: 'ACB',
-  TPBANK: 'TPBank',
-  VIETCOMBANK: 'Vietcombank',
-};
-
-export const BankInfoCard = ({ bankInfo, transferCode }: BankInfoCardProps) => {
-  if (!bankInfo) {
+export const BankInfoCard = ({ bank_info, transfer_code, amount }: BankInfoCardProps) => {
+  if (!bank_info) {
     return null;
   }
 
-  const bankLabel = bankLabels[bankInfo.bank] || bankInfo.bank;
-
   return (
-    <Card className="bg-card rounded-xl p-6 mb-8 border border-gray-800">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="font-bold text-white">Thông tin chuyển khoản</h3>
-        <span className="text-xs bg-yellow-500/20 text-yellow-500 px-2 py-1 rounded font-bold flex items-center gap-1">
-          <Bolt className="h-3 w-3" />
-          Chuyển tiền nhanh 24/7
-        </span>
-      </div>
-
-      <div className="space-y-4">
-        {/* Số tài khoản */}
-        <div className="flex justify-between items-center group p-2 hover:bg-gray-800/50 rounded transition">
-          <div>
-            <div className="text-xs text-gray-500 uppercase font-medium">Số tài khoản</div>
-            <div className="text-lg font-mono text-white font-bold tracking-wider">{bankInfo.accountNumber}</div>
-          </div>
-          <CopyButton textToCopy={bankInfo.accountNumber} className="text-gray-400 hover:text-white p-2 transition" />
+    <Card className="bg-card rounded-lg border border-border">
+      <div className="p-3 mb-3">
+        <div className="mb-2 flex items-center justify-between">
+          <h3 className="text-xs font-bold text-foreground">Bank transfer details</h3>
+          <span className="flex items-center gap-1 rounded bg-yellow-500/20 px-1.5 py-0.5 text-[10px] font-bold text-yellow-500">
+            <Bolt className="h-2.5 w-2.5" />
+            24/7
+          </span>
         </div>
 
-        {/* Ngân hàng */}
-        <div className="flex justify-between items-center group p-2 hover:bg-gray-800/50 rounded transition">
-          <div>
-            <div className="text-xs text-gray-500 uppercase font-medium">Ngân hàng</div>
-            <div className="text-base text-white font-bold">{bankLabel}</div>
-          </div>
-          <CopyButton textToCopy={bankLabel} className="text-gray-400 hover:text-white p-2 transition" />
-        </div>
-
-        {/* Nội dung chuyển khoản */}
-        {transferCode && (
-          <div className="flex justify-between items-center group bg-yellow-500/5 p-3 rounded border border-yellow-500/20">
-            <div>
-              <div className="text-xs text-yellow-600 dark:text-yellow-500 uppercase font-bold mb-1">
-                Nội dung chuyển khoản (Bắt buộc)
+        <div className="space-y-2">
+          {/* Bank & Account Number */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="group flex items-center justify-between rounded bg-muted/30 p-2 transition hover:bg-muted/50 border border-border/50">
+              <div className="min-w-0 flex-1">
+                <div className="text-[9px] font-bold text-muted-foreground uppercase">Bank</div>
+                <div className="text-xs font-bold text-foreground truncate">{bank_info.bank}</div>
               </div>
-              <div className="text-xl font-mono text-yellow-500 font-bold tracking-widest">{transferCode}</div>
+              <CopyButton textToCopy={bank_info.bank} className="h-6 w-6 ml-1 flex-shrink-0 text-muted-foreground transition hover:text-foreground" />
             </div>
-            <CopyButton textToCopy={transferCode} className="text-yellow-500 hover:text-yellow-300 p-2 transition" />
+
+            <div className="group flex items-center justify-between rounded bg-muted/30 p-2 transition hover:bg-muted/50 border border-border/50">
+              <div className="min-w-0 flex-1">
+                <div className="text-[9px] font-bold text-muted-foreground uppercase">Account number</div>
+                <div className="font-mono text-xs font-bold text-foreground truncate">{bank_info.account_number}</div>
+              </div>
+              <CopyButton textToCopy={bank_info.account_number} className="h-6 w-6 ml-1 flex-shrink-0 text-muted-foreground transition hover:text-foreground" />
+            </div>
           </div>
-        )}
+
+          {/* Account Name */}
+          <div className="group flex items-center justify-between rounded bg-muted/30 p-2 transition hover:bg-muted/50 border border-border/50">
+            <div className="min-w-0 flex-1">
+              <div className="text-[9px] font-bold text-muted-foreground uppercase">Account name</div>
+              <div className="text-xs font-bold text-foreground uppercase truncate">{bank_info.account_name}</div>
+            </div>
+            <CopyButton textToCopy={bank_info.account_name} className="h-6 w-6 ml-1 flex-shrink-0 text-muted-foreground transition hover:text-foreground" />
+          </div>
+
+          {/* Transfer Note */}
+          {transfer_code && (
+            <div className="group flex items-center justify-between rounded border border-yellow-500/30 bg-yellow-500/5 p-2 transition hover:bg-yellow-500/10">
+              <div className="min-w-0 flex-1">
+                <div className="text-[9px] font-bold text-yellow-600 uppercase dark:text-yellow-500">
+                  Transfer note (required)
+                </div>
+                <div className="font-mono text-sm font-bold text-yellow-500">{transfer_code}</div>
+              </div>
+              <CopyButton textToCopy={transfer_code} className="h-6 w-6 ml-1 flex-shrink-0 text-yellow-500 transition hover:text-yellow-400" />
+            </div>
+          )}
+        </div>
       </div>
     </Card>
   );
 };
-

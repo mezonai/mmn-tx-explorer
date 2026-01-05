@@ -37,6 +37,8 @@ on:
         required: true
       AES_SECRET_KEY:
         required: true
+      EVENT_API_KEY:
+        required: true
 
 jobs:
   build:
@@ -119,6 +121,8 @@ jobs:
           AES_SECRET_KEY: ${{ secrets.AES_SECRET_KEY }}
           BLOCKCHAIN_RPC_URL: ${{vars.MMN_GRPC_URL}}
           BLOCKCHAIN_USE_TLS: ${{vars.MMN_GRPC_USE_TLS}}
+          EVENT_API_URL: ${{ vars.EVENT_API_URL}}
+          EVENT_API_KEY: ${{ secrets.EVENT_API_KEY }}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
@@ -147,6 +151,8 @@ jobs:
           AES_SECRET_KEY='${AES_SECRET_KEY}'
           BLOCKCHAIN_RPC_URL='${BLOCKCHAIN_RPC_URL}'
           BLOCKCHAIN_USE_TLS='${BLOCKCHAIN_USE_TLS}'
+          EVENT_API_URL='${EVENT_API_URL}'
+          EVENT_API_KEY='${EVENT_API_KEY}'
           EON
 
           sudo chown -R mmn:mmn /opt/dong-service
@@ -186,6 +192,8 @@ jobs:
           printf "export AES_SECRET_KEY=%q\n" "$AES_SECRET_KEY" >> remote_env.sh
           printf "export BLOCKCHAIN_RPC_URL=%q\n" "$BLOCKCHAIN_RPC_URL" >> remote_env.sh
           printf "export BLOCKCHAIN_USE_TLS=%q\n" "$BLOCKCHAIN_USE_TLS" >> remote_env.sh
+          printf "export EVENT_API_URL=%q\n" "$EVENT_API_URL" >> remote_env.sh
+          printf "export EVENT_API_KEY=%q\n" "$EVENT_API_KEY" >> remote_env.sh
 
       - name: Prepare and deploy to target server
         run: |

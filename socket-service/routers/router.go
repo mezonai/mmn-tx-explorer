@@ -18,20 +18,12 @@ func SetupRouters(router *gin.Engine, cfg *config.Config) {
 	httpHandler := handlers.NewHTTPHandler(eventRepo, cfg, WSService)
 	wsHandler := handlers.NewWSHandler(eventRepo, cfg, WSService)
 	tokenMiddleware := middleware.ValidateToken(cfg.JWT.Secret)
-	apikeyMiddleware := middleware.ValidateAPIKey(cfg.JWT.APIKey)
+	apikeyMiddleware := middleware.ValidateAPIKey(cfg.Event.APIKey)
 
-	// public WS endpoint for frontend clients (authenticated with JWT)
 	ws := router.Group("/ws")
 	ws.Use(tokenMiddleware)
 	ws.GET("/connect", wsHandler.HandleWS)
-
-	// publisher WS endpoint for backend services (authenticated with API key)
-	wsProducer := router.Group("/ws")
-	wsProducer.Use(apikeyMiddleware)
-	wsProducer.GET("/publish", wsHandler.HandleWSPublish)
-
 	http := router.Group("/api")
 	http.Use(apikeyMiddleware)
 	http.POST("/event", httpHandler.SaveEvent)
-
 }
