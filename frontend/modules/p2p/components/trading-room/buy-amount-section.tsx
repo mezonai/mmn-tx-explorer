@@ -89,34 +89,34 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false, extra
         <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
           <div>Available: {formatCurrency(available)} {APP_CONFIG.CHAIN_SYMBOL}</div>
           <div className="flex gap-2">
-            <button
+            <Button
               onClick={() => {
                 setAmountMZD(initialMin);
                 setDisplayValue(formatCurrency(initialMin));
                 setSelectionType('min');
               }}
               disabled={isDisabled}
-              className={`rounded border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all disabled:cursor-not-allowed disabled:opacity-30 ${selectionType === 'min'
+              className={`h-[30px] rounded border text-[10px] font-bold uppercase tracking-wider transition-all disabled:cursor-not-allowed disabled:opacity-30 ${selectionType === 'min'
                 ? 'border-brand-primary/50 bg-brand-primary/10 text-brand-primary'
                 : 'border-border bg-muted/30 text-muted-foreground hover:border-brand-primary/50 hover:bg-brand-primary/10 hover:text-brand-primary'
                 }`}
             >
               Buy Min
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => {
                 setAmountMZD(effectiveMax);
                 setDisplayValue(formatCurrency(effectiveMax));
                 setSelectionType('max');
               }}
               disabled={isDisabled}
-              className={`rounded border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all disabled:cursor-not-allowed disabled:opacity-30 ${selectionType === 'max'
+              className={`h-[30px] rounded border text-[10px] font-bold uppercase tracking-wider transition-all disabled:cursor-not-allowed disabled:opacity-30 ${selectionType === 'max'
                 ? 'border-brand-primary/50 bg-brand-primary/10 text-brand-primary'
                 : 'border-border bg-muted/30 text-muted-foreground hover:border-brand-primary/50 hover:bg-brand-primary/10 hover:text-brand-primary'
                 }`}
             >
               Buy Max
-            </button>
+            </Button>
           </div>
         </div>
       </div>
