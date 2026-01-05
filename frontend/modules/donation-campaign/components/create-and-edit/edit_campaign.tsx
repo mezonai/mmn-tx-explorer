@@ -15,15 +15,8 @@ function EditCampaignContent() {
   const slug = params?.slug ? String(params.slug) : '';
   const { data: campaign } = useCampaign(slug);
   const { updateField } = useCreateCampaignContext();
-  const { user } = useUser();
-  const router = useRouter();
 
   useEffect(() => {
-    if (campaign && user && user.id !== campaign.creator) {
-      router.replace(ROUTES.CAMPAIGN(campaign.slug));
-      return;
-    }
-
     if (campaign) {
       updateField('name', campaign.name || '');
       updateField('shortDescription', campaign.description || '');
