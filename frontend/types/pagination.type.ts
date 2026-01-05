@@ -11,6 +11,7 @@ export interface IPaginationMeta {
   signature: string;
   total_items: number;
   total_pages: number;
+  total_available?: number;
 }
 
 export type TOnChangePage = (selected: number) => void;
