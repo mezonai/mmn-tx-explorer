@@ -190,15 +190,22 @@ func (h *OfferHandler) ListOffers(c *gin.Context) {
 		totalPage = 0
 	}
 
+	totalAvailable, err := h.offerService.SumOfferAmounts(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to calculate total available: "+err.Error()))
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "Offers retrieved",
 		"data":    offers,
 		"meta": gin.H{
-			"page":        pg.Page + 1,
-			"limit":       pg.Limit,
-			"total_items": total,
-			"total_pages": totalPage,
+			"page":            pg.Page + 1,
+			"limit":           pg.Limit,
+			"total_items":     total,
+			"total_pages":     totalPage,
+			"total_available": totalAvailable,
 		},
 	})
 }
