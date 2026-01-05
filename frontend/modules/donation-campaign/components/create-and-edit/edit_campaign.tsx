@@ -4,17 +4,26 @@ import { CampaignSidebar } from './campaign-sidebar';
 import { CampaignHeader } from './campaign-header';
 import { Separator } from '@/components/ui/separator';
 import { CampaignForm } from './campaign-form';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useCampaign } from '../../hooks';
 import { useEffect } from 'react';
+import { useUser } from '@/providers/AppProvider';
+import { ROUTES } from '@/configs/routes.config';
 
 function EditCampaignContent() {
   const params = useParams<{ slug: string }>();
   const slug = params?.slug ? String(params.slug) : '';
   const { data: campaign } = useCampaign(slug);
   const { updateField } = useCreateCampaignContext();
+  const { user } = useUser();
+  const router = useRouter();
 
   useEffect(() => {
+    if (campaign && user && user.id !== campaign.creator) {
+      router.replace(ROUTES.CAMPAIGN(campaign.slug));
+      return;
+    }
+
     if (campaign) {
       updateField('name', campaign.name || '');
       updateField('shortDescription', campaign.description || '');
@@ -46,6 +55,17 @@ export const EditCampaign = () => {
   const params = useParams<{ slug: string }>();
   const slug = params?.slug ? String(params.slug) : '';
   const { data: campaign } = useCampaign(slug);
+  const { user } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (campaign && user && user.id !== campaign.creator) {
+      router.replace(ROUTES.CAMPAIGN(campaign.slug));
+    }
+  }, [campaign, router, user]);
+
+  if (campaign && user && user.id !== campaign.creator) return null;
+
   return (
     <CreateCampaignProvider id={campaign?.id}>
       <EditCampaignContent />
