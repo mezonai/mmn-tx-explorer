@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { P2PService } from '../api';
-import { P2P_QUERY_KEYS } from '../constants';
+import { P2P_QUERY_KEYS, P2P_STATS_STALE_TIME, P2P_STATS_REFETCH_INTERVAL } from '../constants';
 
 export const useP2PStats = () => {
     return useQuery({
@@ -16,7 +16,8 @@ export const useP2PStats = () => {
                 totalAvailableAmount: response.meta?.total_available || 0,
             };
         },
-        staleTime: 30000,
-        refetchInterval: 60000,
+        staleTime: P2P_STATS_STALE_TIME,
+        refetchInterval: P2P_STATS_REFETCH_INTERVAL,
     });
 };
+
