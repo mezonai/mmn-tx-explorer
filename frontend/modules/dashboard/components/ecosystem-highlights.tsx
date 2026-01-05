@@ -8,7 +8,7 @@ import { APP_CONFIG } from '@/configs/app.config';
 import { useRedEnvelopeStats } from '@/modules/lucky-money/hooks';
 import { useGames } from '@/modules/mezon-game/hooks/useGames';
 import { useP2PStats } from '@/modules/p2p/hooks';
-import { HandHeart, Gift, Sprout, Store, Gamepad2, Coffee } from 'lucide-react';
+import { HandHeart, Gift, Sprout, Store, Gamepad2, Coffee, TrendingUp } from 'lucide-react';
 import { Transaction } from '@/assets/icons';
 import { EcoCard } from './eco-card';
 
@@ -94,7 +94,7 @@ export const EcosystemHighlights = ({ giveCoffeeStats }: EcosystemHighlightsProp
         />
         <EcoCard
           title="P2P Trading"
-          icon={<Sprout className="text-brand-primary h-6 w-6 dark:text-green-400" />}
+          icon={<TrendingUp className="text-brand-primary h-6 w-6 dark:text-green-400" />}
           route={ROUTES.P2P}
         >
           <div className="text-sm text-gray-600 dark:text-gray-400">
