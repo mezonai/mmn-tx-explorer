@@ -25,11 +25,13 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false, extra
   const [amountMZD, setAmountMZD] = useState<number>(0);
   const [displayValue, setDisplayValue] = useState<string>('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [selectionType, setSelectionType] = useState<'min' | 'max' | 'none'>('none');
 
   const amountVND = amountMZD > 0 && offer.price_rate > 0 ? amountMZD * offer.price_rate : 0;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = getRawValue(e.target.value);
+    setSelectionType('none');
     if (rawValue === 0) {
       setDisplayValue('');
       setAmountMZD(0);
@@ -91,27 +93,29 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false, extra
               onClick={() => {
                 setAmountMZD(initialMin);
                 setDisplayValue(formatCurrency(initialMin));
+                setSelectionType('min');
               }}
               disabled={isDisabled}
-              className={`rounded border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all disabled:cursor-not-allowed disabled:opacity-30 ${amountMZD === initialMin && amountMZD > 0
-                  ? 'border-brand-primary/50 bg-brand-primary/10 text-brand-primary'
-                  : 'border-border bg-muted/30 text-muted-foreground hover:border-brand-primary/50 hover:bg-brand-primary/10 hover:text-brand-primary'
+              className={`rounded border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all disabled:cursor-not-allowed disabled:opacity-30 ${selectionType === 'min'
+                ? 'border-brand-primary/50 bg-brand-primary/10 text-brand-primary'
+                : 'border-border bg-muted/30 text-muted-foreground hover:border-brand-primary/50 hover:bg-brand-primary/10 hover:text-brand-primary'
                 }`}
             >
-              Min
+              Buy Min
             </button>
             <button
               onClick={() => {
                 setAmountMZD(effectiveMax);
                 setDisplayValue(formatCurrency(effectiveMax));
+                setSelectionType('max');
               }}
               disabled={isDisabled}
-              className={`rounded border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all disabled:cursor-not-allowed disabled:opacity-30 ${amountMZD === effectiveMax && amountMZD > 0
-                  ? 'border-brand-primary/50 bg-brand-primary/10 text-brand-primary'
-                  : 'border-border bg-muted/30 text-muted-foreground hover:border-brand-primary/50 hover:bg-brand-primary/10 hover:text-brand-primary'
+              className={`rounded border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all disabled:cursor-not-allowed disabled:opacity-30 ${selectionType === 'max'
+                ? 'border-brand-primary/50 bg-brand-primary/10 text-brand-primary'
+                : 'border-border bg-muted/30 text-muted-foreground hover:border-brand-primary/50 hover:bg-brand-primary/10 hover:text-brand-primary'
                 }`}
             >
-              Max
+              Buy Max
             </button>
           </div>
         </div>
