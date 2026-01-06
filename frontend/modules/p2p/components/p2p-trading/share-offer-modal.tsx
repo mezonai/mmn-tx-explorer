@@ -13,7 +13,6 @@ interface ShareOfferModalProps {
 export const ShareOfferModal = ({ offer }: ShareOfferModalProps) => {
     const [open, setOpen] = useState(false);
     const [copied, setCopied] = useState(false);
-    // Giả lập path cho đúng context
     const path = `/p2p/trading-room/${offer.offer_id}?type=offer`;
     const [shareLink, setShareLink] = useState(path);
 
