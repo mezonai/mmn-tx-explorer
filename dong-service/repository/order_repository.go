@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"strings"
 	"time"
-
-	"github.com/lib/pq"
 )
 
 type OrderRepository struct {
@@ -38,16 +36,6 @@ func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order, 
 		order.TransferCode,
 		order.ExpiresAt,
 	).Scan(&order.OrderID, &order.CreatedAt, &order.UpdatedAt)
-}
-
-func (r *OrderRepository) HasActiveOrders(ctx context.Context, offerID int64, tx *sql.Tx) (bool, error) {
-	query := fmt.Sprintf("SELECT 1 FROM %s.orders WHERE offer_id = $1 AND status IN ('PENDING','OPEN') LIMIT 1 FOR UPDATE", r.dongSchema)
-	var v int
-	err := tx.QueryRowContext(ctx, query, offerID).Scan(&v)
-	if err == sql.ErrNoRows {
-		return false, nil
-	}
-	return err == nil, err
 }
 
 func (r *OrderRepository) UpdateOrderStatus(ctx context.Context, orderID int64, status string, tx *sql.Tx) error {
@@ -258,34 +246,15 @@ func (r *OrderRepository) CountOrdersByWalletAddress(ctx context.Context, wallet
 
 	return total, nil
 }
-
-// HasActiveOrdersByOfferList checks which offers from the provided list have active orders.
-// Returns a map where key is offer_id and value is true if that offer has active orders (PENDING or OPEN status).
-func (r *OrderRepository) HasActiveOrdersByOfferList(ctx context.Context, offerIDs []int64) (map[int64]bool, error) {
-	result := make(map[int64]bool)
-	if len(offerIDs) == 0 {
-		return result, nil
-	}
-
+func (r *OrderRepository) CountActiveOrdersByWalletAddress(ctx context.Context, walletAddress string) (int64, error) {
 	query := fmt.Sprintf(`
-		SELECT DISTINCT offer_id 
+		SELECT COUNT(*) 
 		FROM %s.orders 
-		WHERE offer_id = ANY($1) AND status IN ('PENDING', 'OPEN')
+		WHERE buyer_wallet_address = $1 
+		AND status IN ('PENDING', 'OPEN')
 	`, r.dongSchema)
 
-	rows, err := r.db.QueryContext(ctx, query, pq.Array(offerIDs))
-	if err != nil {
-		return nil, fmt.Errorf("failed to check active orders for offers: %w", err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var offerID int64
-		if err := rows.Scan(&offerID); err != nil {
-			return nil, fmt.Errorf("failed to scan offer_id: %w", err)
-		}
-		result[offerID] = true
-	}
-
-	return result, rows.Err()
+	var count int64
+	err := r.db.QueryRowContext(ctx, query, walletAddress).Scan(&count)
+	return count, err
 }
