@@ -163,17 +163,35 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		return nil, err
 	}
 
-	// Send socket event to notify all users about new offer
-	SendSocketEvent("", constants.OFFER_LIST_REFRESH, map[string]any{
-		"action": "created",
-		"offer":  offer,
-	})
-
 	return offer, nil
 }
 
 func (s *OfferService) ListOffers(ctx context.Context, fromAmount *string, toAmount *string, pagination map[string]any) ([]models.Offer, error) {
-	return s.repo.ListOffers(ctx, nil, nil, nil, nil, nil, fromAmount, toAmount, pagination)
+	offers, err := s.repo.ListOffers(ctx, nil, nil, nil, nil, nil, fromAmount, toAmount, pagination)
+	if err != nil || len(offers) == 0 {
+		return offers, err
+	}
+
+	// Extract offer IDs
+	offerIDs := make([]int64, len(offers))
+	for i, offer := range offers {
+		offerIDs[i] = offer.OfferID
+	}
+
+	// Get active orders map
+	activeOrdersMap, err := s.orderRepo.HasActiveOrdersByOfferList(ctx, offerIDs)
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to check active orders for offers")
+		return offers, nil
+	}
+
+	// Map has_active_order to offers
+	for i := range offers {
+		hasActive := activeOrdersMap[offers[i].OfferID]
+		offers[i].HasActiveOrder = &hasActive
+	}
+
+	return offers, nil
 }
 
 func (s *OfferService) CountOffers(ctx context.Context, walletAddress *string, minPrice *string, maxPrice *string, statuses []string, symbol *string, rate *string, fromAmount *string, toAmount *string) (int64, error) {
@@ -181,7 +199,20 @@ func (s *OfferService) CountOffers(ctx context.Context, walletAddress *string, m
 }
 
 func (s *OfferService) GetOfferByID(ctx context.Context, id int64) (*models.Offer, error) {
-	return s.repo.GetOfferByID(ctx, id)
+	offer, err := s.repo.GetOfferByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if this offer has active orders
+	if s.orderService != nil && offer != nil {
+		hasActive, checkErr := s.orderService.HasActiveOrdersForOffer(ctx, id)
+		if checkErr == nil {
+			offer.HasActiveOrder = &hasActive
+		}
+	}
+
+	return offer, nil
 }
 
 func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, int64, error) {
@@ -192,6 +223,22 @@ func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddre
 	count, err := s.repo.CountOffers(ctx, &walletAddress, nil, nil, nil, nil, nil, fromAmount, toAmount)
 	if err != nil {
 		return nil, 0, err
+	}
+
+	// Add has_active_order field
+	if len(offers) > 0 {
+		offerIDs := make([]int64, len(offers))
+		for i, offer := range offers {
+			offerIDs[i] = offer.OfferID
+		}
+
+		activeOrdersMap, err := s.orderRepo.HasActiveOrdersByOfferList(ctx, offerIDs)
+		if err == nil {
+			for i := range offers {
+				hasActive := activeOrdersMap[offers[i].OfferID]
+				offers[i].HasActiveOrder = &hasActive
+			}
+		}
 	}
 
 	return offers, count, nil
@@ -287,6 +334,14 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 		}
 	}()
 
+	hasActive, err := s.orderRepo.HasActiveOrders(ctx, offerId, tx)
+	if err != nil {
+		return err
+	}
+	if hasActive {
+		return fmt.Errorf(constants.ErrFailedToCancelOfferWithOrder)
+	}
+
 	needsRefund :=
 		offer.Status == constants.TradingConfirmed &&
 			offer.IntermediaryWalletAddress != nil &&
@@ -345,7 +400,6 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 		return err
 	}
 
-	// Send socket event to notify all users about offer cancellation
 	SendSocketEvent("", constants.OFFER_LIST_REFRESH, map[string]any{
 		"action":   "cancelled",
 		"offer_id": offerId,

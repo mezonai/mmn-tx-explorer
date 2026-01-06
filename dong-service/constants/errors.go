@@ -110,4 +110,5 @@ var (
 	ErrQueueNotInit               = errors.New("queue not initialized or expired")
 	ErrInsufficientAccountBalance = errors.New("insufficient account balance")
 	ErrTxHashAlreadyUsed          = errors.New("transaction hash already used")
+	ErrUserOrderLimitExceeded     = errors.New("user has reached the maximum limit of 10 active orders")
 )

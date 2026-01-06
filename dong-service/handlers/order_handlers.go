@@ -7,7 +7,7 @@ import (
 	"dong-service/models"
 	"dong-service/services"
 	"dong-service/utils"
-	"fmt"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -94,21 +94,15 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	activeOrderCount, err := h.orderService.CountActiveOrdersByWalletAddress(c.Request.Context(), walletAddr)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to count active orders")
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to check active orders"))
-		return
-	}
-
-	if activeOrderCount > constants.MaxActiveOrdersPerUser {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, fmt.Sprintf("You have reached the maximum limit of %d active orders", constants.MaxActiveOrdersPerUser)))
-		return
-	}
-
 	order, _, err := h.orderService.CreateOrder(c.Request.Context(), id, &req, walletAddr, userID)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to create order")
+
+		if errors.Is(err, constants.ErrUserOrderLimitExceeded) {
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Failed to create order: "+err.Error()))
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to create order: "+err.Error()))
 		return
 	}

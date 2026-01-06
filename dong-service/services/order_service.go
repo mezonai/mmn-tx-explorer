@@ -32,7 +32,6 @@ type IOrderService interface {
 	ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o *models.Order) error
 	ConfirmOrderAsSeller(ctx context.Context, orderID int64, o *models.Order, offer *models.Offer) error
 	GetOrdersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Order, int64, error)
-	CountActiveOrdersByWalletAddress(ctx context.Context, walletAddress string) (int64, error)
 }
 
 func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *models.CreateOrderRequest, walletAddress string, buyerUserID string) (*models.Order, *models.Offer, error) {
@@ -50,6 +49,15 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 	offer, err := s.offerRepo.GetOfferByIDForUpdate(ctx, offerID, tx)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to fetch offer: %w", err)
+	}
+
+	// Check if user has reached the limit of 10 active orders
+	activeOrderCount, err := s.repo.CountActiveOrdersByUser(ctx, buyerUserID, tx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to check user active orders: %w", err)
+	}
+	if activeOrderCount >= constants.MaxActiveOrdersPerUser {
+		return nil, nil, constants.ErrUserOrderLimitExceeded
 	}
 
 	amount := req.Amount
@@ -160,11 +168,29 @@ func (s *OrderService) GetOrdersByWalletAddress(ctx context.Context, walletAddre
 		}
 	}
 
+	// SendSocketEvent("", constants.OFFER_LIST_REFRESH, map[string]any{
+	// 	"action": "created",
+	// 	"offer":  offer,
+	// })
+
 	return orders, count, nil
 }
 
-func (s *OrderService) CountActiveOrdersByWalletAddress(ctx context.Context, walletAddress string) (int64, error) {
-	return s.repo.CountActiveOrdersByWalletAddress(ctx, walletAddress)
+// HasActiveOrdersForOffer checks if an offer has any active (PENDING or OPEN) orders
+func (s *OrderService) HasActiveOrdersForOffer(ctx context.Context, offerID int64) (bool, error) {
+	db := database.GetDB()
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return false, err
+	}
+	defer tx.Rollback()
+
+	hasActive, err := s.repo.HasActiveOrders(ctx, offerID, tx)
+	if err != nil {
+		return false, err
+	}
+
+	return hasActive, nil
 }
 
 func (s *OrderService) ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o *models.Order) error {
