@@ -32,7 +32,6 @@ export const ShareOfferModal = ({ offer }: ShareOfferModalProps) => {
 
     const socialApps = [
         { name: 'Facebook', icon: Facebook, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 hover:bg-blue-200 dark:bg-blue-950/50 dark:hover:bg-blue-900/50', href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}` },
-        { name: 'Instagram', icon: Instagram, color: 'text-pink-600 dark:text-pink-400', bg: 'bg-pink-100 hover:bg-pink-200 dark:bg-pink-950/50 dark:hover:bg-pink-900/50', href: '#' },
         { name: 'WhatsApp', icon: MessageCircle, color: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 hover:bg-green-200 dark:bg-green-950/50 dark:hover:bg-green-900/50', href: `https://wa.me/?text=${encodeURIComponent(shareLink)}` },
         { name: 'Telegram', icon: Send, color: 'text-blue-500 dark:text-blue-300', bg: 'bg-blue-100 hover:bg-blue-200 dark:bg-blue-950/50 dark:hover:bg-blue-900/50', href: `https://t.me/share/url?url=${encodeURIComponent(shareLink)}` },
     ];
