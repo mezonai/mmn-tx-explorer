@@ -179,18 +179,6 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
         <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
           <div className="border-border w-full overflow-y-auto border-b p-6 md:w-7/12 md:border-r md:border-b-0 lg:w-8/12">
             <ProgressSteps order={displayOrder} />
-            {offer.has_active_order && (
-              <div className="mb-6 rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-4 text-yellow-600 dark:text-yellow-500">
-                <p className="font-bold flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
-                  Offer Temporarily Locked
-                </p>
-                <span className="text-sm mt-1">
-                  This offer is locked because a transaction is in progress. Please try again after it's completed.
-                </span>
-              </div>
-            )}
-
             {error && (
               <div className="border-destructive/20 bg-destructive/10 text-destructive mb-4 rounded-lg border p-3 text-sm">
                 {error}
@@ -201,7 +189,6 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
               offer={offer}
               onConfirmBuy={handleConfirmBuy}
               isLoading={isCreatingOrder}
-              extraDisabled={offer.has_active_order}
             />
           </div>
           <ChatSidebar sellerId={offer.seller_user_id} />
