@@ -1324,23 +1324,24 @@ func (p *PostgresConnector) GetCount(ctx context.Context, table string, qf *Quer
 	return count, err
 }
 
-func (p *PostgresConnector) GetDashboardStats(ctx context.Context, qf *QueryFilter) (totalBlocks, totalTransactions, totalWallets uint64, averageBlockTime float64, totalGiveCoffee uint64, err error) {
+func (p *PostgresConnector) GetDashboardStats(ctx context.Context, qf *QueryFilter) (totalBlocks, totalTransactions, totalWallets uint64, averageBlockTime float64, totalGiveCoffee uint64, totalP2POfferAvailable float64, err error) {
 	query := `
         SELECT 
             COALESCE(MAX(CASE WHEN key = 'total_blocks' THEN value::bigint END), 0) as blocks,
             COALESCE(MAX(CASE WHEN key = 'total_transactions' THEN value::bigint END), 0) as transactions,
             COALESCE(MAX(CASE WHEN key = 'total_wallets' THEN value::bigint END), 0) as wallets,
 			COALESCE(MAX(CASE WHEN key = 'average_block' THEN value::float END) / 1000.0, 0.0) as avg_block_time,
-			COALESCE(MAX(CASE WHEN key = 'total_give_coffee' THEN value::bigint END), 0) as total_give_coffee
+			COALESCE(MAX(CASE WHEN key = 'total_give_coffee' THEN value::bigint END), 0) as total_give_coffee,
+			COALESCE(MAX(CASE WHEN key = 'total_p2p_offer_available' THEN value::float END), 0.0) as total_p2p_offer_available
         FROM stats
     `
 
-	err = p.db.QueryRowContext(ctx, query).Scan(&totalBlocks, &totalTransactions, &totalWallets, &averageBlockTime, &totalGiveCoffee)
+	err = p.db.QueryRowContext(ctx, query).Scan(&totalBlocks, &totalTransactions, &totalWallets, &averageBlockTime, &totalGiveCoffee, &totalP2POfferAvailable)
 	if err != nil {
-		return 0, 0, 0, 0, 0, fmt.Errorf("failed to get dashboard stats: %w", err)
+		return 0, 0, 0, 0, 0, 0, fmt.Errorf("failed to get dashboard stats: %w", err)
 	}
 
-	return totalBlocks, totalTransactions, totalWallets, averageBlockTime, totalGiveCoffee, nil
+	return totalBlocks, totalTransactions, totalWallets, averageBlockTime, totalGiveCoffee, totalP2POfferAvailable, nil
 }
 
 func (p *PostgresConnector) GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error) {

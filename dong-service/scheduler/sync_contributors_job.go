@@ -86,6 +86,18 @@ func (j *SyncContributorsJob) Run(ctx context.Context) error {
 			Msg("Campaign statistics updated")
 	}
 
+	// Update P2P offer stats
+	totalP2POfferAmount, err := j.statsRepo.UpdateTotalP2POfferStat(ctx)
+	if err != nil {
+		logger.Error().
+			Err(err).
+			Msg("Failed to update total_p2p_offer_available stat")
+	} else {
+		logger.Info().
+			Int64("total_p2p_offer_amount", totalP2POfferAmount).
+			Msg("P2P offer stats updated")
+	}
+
 	duration := time.Since(startTime)
 	logger.Info().
 		Int("total_processed", totalProcessed).

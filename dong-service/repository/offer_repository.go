@@ -530,15 +530,3 @@ func (r *OfferRepository) ExistsByTxHash(ctx context.Context, txHash string) (bo
 	}
 	return true, nil
 }
-
-func (r *OfferRepository) SumOfferAmounts(ctx context.Context) (int64, error) {
-	query := fmt.Sprintf(`
-        SELECT COALESCE(SUM(amount), 0)
-        FROM %s.offers
-        WHERE status = 'CONFIRMED' AND amount > 0
-    `, r.dongSchema)
-
-	var total int64
-	err := r.db.QueryRowContext(ctx, query).Scan(&total)
-	return total, err
-}
