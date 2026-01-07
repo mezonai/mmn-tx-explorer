@@ -13,3 +13,4 @@ export * from './page-header';
 export * from './refresh-button';
 export * from './stat-card';
 export * from './theme-toggle';
+export * from './description-display';

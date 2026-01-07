@@ -38,6 +38,40 @@ definitions:
     - donation_wallet
     - name
     type: object
+  models.CreateOfferRequest:
+    properties:
+      amount:
+        type: integer
+      bank_info:
+        additionalProperties: true
+        type: object
+      limit:
+        $ref: '#/definitions/models.OfferLimit'
+      price_rate:
+        type: string
+      side:
+        allOf:
+        - $ref: '#/definitions/models.OfferSide'
+        description: BUY or SELL
+        enum:
+        - BUY
+        - SELL
+      symbol:
+        type: string
+    required:
+    - amount
+    - side
+    - symbol
+    type: object
+  models.CreateOrderRequest:
+    properties:
+      amount:
+        type: integer
+      payable_amount:
+        type: integer
+    required:
+    - amount
+    type: object
   models.CreateRedEnvelopeRequest:
     properties:
       description:
@@ -67,20 +101,38 @@ definitions:
     - total_amount
     - total_claims
     type: object
-  models.DonationCampaignFeedResponse:
+  models.DonationCampaignFeed:
     properties:
       campaign_address:
         type: string
       created_at:
         type: string
-      extra_info:
-        $ref: '#/definitions/models.FeedExtraInfo'
+      creator_address:
+        type: string
+      description:
+        type: string
       id:
         type: integer
-      owner_address:
+      image_cids:
+        items:
+          type: string
+        type: array
+      parent_hash:
+        type: string
+      reference_tx_hashes:
+        items:
+          type: string
+        type: array
+      root_created_at:
+        type: string
+      root_hash:
+        type: string
+      title:
         type: string
       tx_hash:
         type: string
+      visible:
+        type: boolean
     type: object
   models.DonationCampaignResponse:
     properties:
@@ -122,17 +174,6 @@ definitions:
         type: string
       verified:
         type: boolean
-    type: object
-  models.FeedExtraInfo:
-    properties:
-      description:
-        type: string
-      image_cids:
-        items:
-          type: string
-        type: array
-      title:
-        type: string
     type: object
   models.HealthResponse:
     properties:
@@ -198,6 +239,92 @@ definitions:
       user_id:
         type: string
       username:
+        type: string
+    type: object
+  models.Offer:
+    properties:
+      amount:
+        description: numeric as string to support big ints
+        type: integer
+      bank_info:
+        type: string
+      created_at:
+        type: string
+      intermediary_wallet_address:
+        type: string
+      limit:
+        $ref: '#/definitions/models.OfferLimit'
+      offer_id:
+        type: integer
+      payable_amount:
+        type: integer
+      price_rate:
+        type: number
+      seller_user_id:
+        type: string
+      seller_wallet_address:
+        type: string
+      side:
+        allOf:
+        - $ref: '#/definitions/models.OfferSide'
+        description: BUY or SELL
+      status:
+        type: string
+      symbol:
+        type: string
+      total_amount:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  models.OfferLimit:
+    properties:
+      max:
+        type: integer
+      min:
+        type: integer
+    type: object
+  models.OfferSide:
+    enum:
+    - BUY
+    - SELL
+    type: string
+    x-enum-varnames:
+    - OfferSideBuy
+    - OfferSideSell
+  models.Order:
+    properties:
+      amount:
+        type: integer
+      bank_info:
+        type: string
+      buyer_user_id:
+        type: string
+      buyer_wallet_address:
+        type: string
+      created_at:
+        type: string
+      expires_at:
+        type: string
+      offer_id:
+        type: integer
+      order_id:
+        type: integer
+      payable_amount:
+        type: integer
+      price_rate:
+        type: number
+      seller_user_id:
+        type: string
+      seller_wallet_address:
+        type: string
+      status:
+        type: string
+      transaction_hash:
+        type: string
+      transfer_code:
+        type: string
+      updated_at:
         type: string
     type: object
   models.PaginatedResponse:
@@ -344,6 +471,19 @@ definitions:
         type: integer
       url:
         type: string
+    type: object
+  models.UpdateOfferStatusRequest:
+    properties:
+      offer_id:
+        type: integer
+      status:
+        type: string
+      tx_hash:
+        type: string
+    required:
+    - offer_id
+    - status
+    - tx_hash
     type: object
   models.UploadImageResponse:
     properties:
@@ -848,6 +988,11 @@ paths:
         name: campaign_address
         required: true
         type: string
+      - description: 'Filter feeds by campaign owner (default true). If true: only
+          owner''s feeds; if false: non-owner feeds'
+        in: query
+        name: isOwner
+        type: boolean
       produces:
       - application/json
       responses:
@@ -859,7 +1004,7 @@ paths:
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/models.DonationCampaignFeedResponse'
+                    $ref: '#/definitions/models.DonationCampaignFeed'
                   type: array
               type: object
         "400":
@@ -875,6 +1020,40 @@ paths:
           schema:
             $ref: '#/definitions/models.Response'
       summary: List all feeds of a campaign
+      tags:
+      - campaign_feed
+  /api/v1/campaigns/list-history-feed/{root_feed_hash}:
+    get:
+      description: Retrieve all previous campaign feeds that belong to the same root_feed_hash
+      parameters:
+      - description: Root feed hash
+        in: path
+        name: root_feed_hash
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.DonationCampaignFeed'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Get previous feeds by root hash
       tags:
       - campaign_feed
   /api/v1/campaigns/slug/{slug}:
@@ -913,6 +1092,465 @@ paths:
       summary: Get a donation campaign by slug
       tags:
       - campaigns
+  /api/v1/campaigns/update-visible-feed/{root_feed_hash}:
+    patch:
+      description: Update visible/unvisible state of parent & child feed by its root
+        hash
+      parameters:
+      - description: Feed hash
+        in: path
+        name: root_feed_hash
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Update visibility of a feed
+      tags:
+      - campaign_feed
+  /api/v1/offers:
+    get:
+      consumes:
+      - application/json
+      description: List offers with amount range filters. Supports pagination query
+        params page, limit, order, order_by.
+      parameters:
+      - description: minimum amount
+        in: query
+        name: from_amount
+        type: string
+      - description: maximum amount
+        in: query
+        name: to_amount
+        type: string
+      - description: page
+        in: query
+        name: page
+        type: integer
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Offer'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: List offers
+      tags:
+      - offers
+    post:
+      consumes:
+      - application/json
+      description: Create a new trading offer and record initial offer history
+      parameters:
+      - description: Create Offer
+        in: body
+        name: offer
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateOfferRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Offer'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - BearerAuth: []
+      summary: Create a new offer
+      tags:
+      - offers
+  /api/v1/offers/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get full offer details by id
+      parameters:
+      - description: Offer ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Offer'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Get offer detail
+      tags:
+      - offers
+  /api/v1/offers/{id}/cancel:
+    patch:
+      consumes:
+      - application/json
+      description: Cancel an existing offer
+      parameters:
+      - description: Offer ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - BearerAuth: []
+      summary: Cancel an offer
+      tags:
+      - offers
+  /api/v1/offers/{id}/orders:
+    get:
+      consumes:
+      - application/json
+      description: List all orders created against an offer
+      parameters:
+      - description: Offer ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: page
+        in: query
+        name: page
+        type: integer
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Order'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: List orders for an offer
+      tags:
+      - orders
+    post:
+      consumes:
+      - application/json
+      description: Create an order under an offer (offers can have multiple orders)
+      parameters:
+      - description: Offer ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Create Order
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Order'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - BearerAuth: []
+      summary: Create an order against an offer
+      tags:
+      - orders
+  /api/v1/offers/me:
+    get:
+      consumes:
+      - application/json
+      description: Get all offers created by the authenticated user's wallet address
+      parameters:
+      - description: page
+        in: query
+        name: page
+        type: integer
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: minimum amount
+        in: query
+        name: from_amount
+        type: string
+      - description: maximum amount
+        in: query
+        name: to_amount
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Offer'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - BearerAuth: []
+      summary: Get my offers
+      tags:
+      - offers
+  /api/v1/offers/update-status:
+    post:
+      consumes:
+      - application/json
+      description: Update offer status with transaction hash verification
+      parameters:
+      - description: Update Offer Status
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateOfferStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - BearerAuth: []
+      summary: Update offer status
+      tags:
+      - offers
+  /api/v1/orders/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Fetch order details by id
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Order'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Get order detail
+      tags:
+      - orders
+  /api/v1/orders/{id}/confirm:
+    post:
+      consumes:
+      - application/json
+      description: Confirm an order and write CREATED_CONFIRMED or CANCELED history
+        accordingly
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 'optional payload: {execution_price, source, metadata}'
+        in: body
+        name: body
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - BearerAuth: []
+      summary: Confirm order (mark PENDING -> CONFIRMED when funds received)
+      tags:
+      - orders
+  /api/v1/orders/me:
+    get:
+      consumes:
+      - application/json
+      description: Get all orders for the authenticated user's wallet address
+      parameters:
+      - description: page
+        in: query
+        name: page
+        type: integer
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Order'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - BearerAuth: []
+      summary: Get my orders
+      tags:
+      - orders
   /api/v1/red-envelopes/claimed-by-user:
     get:
       consumes:

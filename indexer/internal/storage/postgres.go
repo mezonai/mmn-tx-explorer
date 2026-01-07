@@ -169,12 +169,12 @@ var defaultBlockFields = []string{
 
 var defaultTransactionFields = []string{
 	"chain_id", "hash", "nonce", "block_hash", "block_number", "from_address", "to_address",
-	"transaction_timestamp", "value", "transaction_type", "status", "text_data", "extra_info",
+	"transaction_timestamp", "value", "transaction_type", "status", "text_data", "extra_info", "transaction_extra_info_type",
 }
 
 var defaultExportTransactionFields = []string{
 	"chain_id", "hash", "nonce", "block_hash", "block_number", "from_address", "to_address",
-	"transaction_timestamp", "value", "transaction_type", "status", "text_data",
+	"transaction_timestamp", "value", "transaction_type", "status", "text_data", "transaction_extra_info_type",
 }
 
 var defaultWalletFields = []string{
@@ -787,7 +787,7 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 		var userContents []common.UserContent
 		for i := range blockData.Transactions {
 			tx := &blockData.Transactions[i]
-			if tx.TransactionType == common.TxTypeUserContent {
+			if tx.TransactionType == common.TxTypeUserContent && tx.Status != nil && *tx.Status != (uint64)(pb.TransactionStatus_FAILED) {
 				var userContent common.UserContent
 				err := json.Unmarshal([]byte(tx.ExtraInfo), &userContent)
 				if err != nil {
@@ -1681,14 +1681,15 @@ func (p *PostgresConnector) insertUserContentsTx(ctx context.Context, tx *sql.Tx
 	}
 
 	valueStrings := make([]string, 0, len(items))
-	valueArgs := make([]interface{}, 0, len(items)*10)
+	valueArgs := make([]interface{}, 0, len(items)*11)
 
 	for i, f := range items {
-		base := i*10 + 1
+		base := i*11 + 1
 
 		valueStrings = append(valueStrings,
-			fmt.Sprintf("($%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d)",
-				base, base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9,
+			fmt.Sprintf("($%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d)",
+				base, base+1, base+2, base+3, base+4,
+				base+5, base+6, base+7, base+8, base+9, base+10,
 			),
 		)
 
@@ -1702,15 +1703,17 @@ func (p *PostgresConnector) insertUserContentsTx(ctx context.Context, tx *sql.Tx
 			pq.Array(f.ImageCIDs),
 			f.ParentHash,
 			f.RootHash,
+			pq.Array(f.ReferenceTxHashes),
 			f.CreatedAt,
 		)
 	}
 
 	query := fmt.Sprintf(`
-        INSERT INTO dong_schema.user_content
-        (type, tx_hash, creator_address, related_address, title, description, image_cids, parent_hash, root_hash, created_at)
-        VALUES %s
-        ON CONFLICT (tx_hash) DO NOTHING`,
+		INSERT INTO dong_schema.user_content
+		(type, tx_hash, creator_address, related_address, title, description,
+		 image_cids, parent_hash, root_hash, reference_tx_hashes, created_at)
+		VALUES %s
+		ON CONFLICT (tx_hash) DO NOTHING`,
 		strings.Join(valueStrings, ","))
 
 	_, err := tx.ExecContext(ctx, query, valueArgs...)
@@ -1755,14 +1758,14 @@ func (p *PostgresConnector) scanTransaction(rows *sql.Rows, tx *common.Transacti
 	if isExport {
 		if err := rows.Scan(
 			&chainIDStr, &tx.Hash, &tx.Nonce, &tx.BlockHash, &blockNumberStr, &tx.FromAddress, &tx.ToAddress,
-			&transactionTimestamp, &valueStr, &tx.TransactionType, &status, &tx.TextData,
+			&transactionTimestamp, &valueStr, &tx.TransactionType, &status, &tx.TextData, &tx.TransactionExtraInfoType,
 		); err != nil {
 			return err
 		}
 	} else {
 		if err := rows.Scan(
 			&chainIDStr, &tx.Hash, &tx.Nonce, &tx.BlockHash, &blockNumberStr, &tx.FromAddress, &tx.ToAddress,
-			&transactionTimestamp, &valueStr, &tx.TransactionType, &status, &tx.TextData, &extraInfo,
+			&transactionTimestamp, &valueStr, &tx.TransactionType, &status, &tx.TextData, &extraInfo, &tx.TransactionExtraInfoType,
 		); err != nil {
 			return err
 		}

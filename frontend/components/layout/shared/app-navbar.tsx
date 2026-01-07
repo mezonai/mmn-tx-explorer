@@ -17,16 +17,16 @@ export function AppNavbar() {
             <Link href={ROUTES.HOME}>
               <AppLogo />
             </Link>
-            <GlobalSearch className="hidden w-64 md:flex" />
+            <GlobalSearch className="hidden w-64 lg:flex" />
           </div>
 
-          <nav className="hidden md:flex">
+          <nav className="hidden lg:flex">
             <NavbarMenu />
           </nav>
 
           <div className="flex items-center gap-4">
             <NavBarAuthPanel />
-            <div className="sm:hidden">
+            <div className="lg:hidden">
               <SidebarTrigger />
             </div>
           </div>
