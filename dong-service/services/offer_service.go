@@ -162,10 +162,6 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		return nil, err
 	}
 
-	SendSocketEvent("", constants.OFFER_LIST_REFRESH, map[string]any{
-		"action": "created",
-	})
-
 	return offer, nil
 }
 
@@ -317,6 +313,10 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 			s.releaseIntermediaryWallet(ctx, *offer.IntermediaryWalletAddress)
 		}
 	}
+
+	SendSocketEvent("", constants.OFFER_LIST_REFRESH, map[string]any{
+		"action": "created",
+	})
 
 	return nil
 }
