@@ -104,6 +104,8 @@ jobs:
           POSTGRES_PORT: ${{ vars.POSTGRES_PORT }}
           FRONTEND_URL: ${{ vars.FRONTEND_URL }}
         run: |
+          CORS_ORIGINS=$(echo "${FRONTEND_URL}" | tr ',' ' ')
+
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
           set -euo pipefail
@@ -121,7 +123,7 @@ jobs:
           STORAGE_MAIN_POSTGRES_DATABASE=${POSTGRES_DB}
           STORAGE_MAIN_POSTGRES_SSLMODE=disable
           MIGRATIONS_PATH=/opt/indexer/migrations/postgres
-          CORS_ALLOW_ORIGINS=${FRONTEND_URL}
+          CORS_ALLOW_ORIGINS='${CORS_ALLOW_ORIGINS}'
           EON
 
           sudo chown -R mmn:mmn /opt/indexer
@@ -144,6 +146,7 @@ jobs:
           printf "export POSTGRES_PASSWORD=%q\n" "$POSTGRES_PASSWORD" >> remote_env.sh
           printf "export POSTGRES_HOST=%q\n" "$POSTGRES_HOST" >> remote_env.sh
           printf "export POSTGRES_PORT=%q\n" "$POSTGRES_PORT" >> remote_env.sh
+          printf "export CORS_ALLOW_ORIGINS=%q\n" "$CORS_ORIGINS" >> remote_env.sh
 
       - name: Prepare and deploy to target server
         run: |
