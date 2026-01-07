@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { P2POffer } from '../../types';
 import { useState, useEffect } from 'react';
-import { Facebook, Instagram, Link as LinkIcon, MessageCircle, Send, Twitter, Check, Copy, Share2 } from 'lucide-react';
+import { Facebook, Link as LinkIcon, MessageCircle, Send, Check, Copy, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ShareOfferModalProps {
@@ -66,12 +66,7 @@ export const ShareOfferModal = ({ offer }: ShareOfferModalProps) => {
                                 rel="noopener noreferrer"
                                 className={`flex h-12 w-12 items-center justify-center rounded-full transition-all duration-200 hover:-translate-y-1 ${app.bg} ${app.color} border border-border/50 hover:border-border shadow-sm hover:shadow-md`}
                                 title={app.name}
-                                onClick={(e) => {
-                                    if (app.href === '#') {
-                                        e.preventDefault();
-                                        toast.info('Sharing to Instagram is not supported solely via web link.');
-                                    }
-                                }}
+
                             >
                                 <app.icon className="h-5 w-5" />
                             </a>
