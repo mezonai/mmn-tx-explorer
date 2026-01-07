@@ -168,11 +168,6 @@ func (s *OrderService) GetOrdersByWalletAddress(ctx context.Context, walletAddre
 		}
 	}
 
-	// SendSocketEvent("", constants.OFFER_LIST_REFRESH, map[string]any{
-	// 	"action": "created",
-	// 	"offer":  offer,
-	// })
-
 	return orders, count, nil
 }
 
