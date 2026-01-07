@@ -8,12 +8,9 @@ import (
 	"dong-service/logger"
 	"dong-service/models"
 	"dong-service/repository"
-	"encoding/json"
 	"fmt"
 	"math"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type OrderService struct {
@@ -220,7 +217,7 @@ func (s *OrderService) ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o
 		of, err := s.offerRepo.GetOfferByID(context.Background(), *o.OfferID)
 		if err == nil && of.SellerWalletAddress != "" {
 			payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.Amount}
-			go s.sendOrderEvent(of.SellerWalletAddress, "ORDER_CONFIRMED", payload)
+			go SendSocketEvent(of.SellerWalletAddress, "ORDER_CONFIRMED", payload)
 		}
 	}
 
@@ -289,7 +286,7 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 
 				if o.BuyerWalletAddress != nil && *o.BuyerWalletAddress != "" {
 					payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.Amount, "tx_hash": txHash}
-					go s.sendOrderEvent(*o.BuyerWalletAddress, "ORDER_COMPLETED", payload)
+					go SendSocketEvent(*o.BuyerWalletAddress, "ORDER_COMPLETED", payload)
 				}
 			} else if status == constants.TxStatusPending || status == constants.TxStatusConfirmed || status == constants.TxStatusFailed {
 				// Status 0, 1, 3 = PENDING, CONFIRMED, FAILED
@@ -314,27 +311,4 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 	}
 
 	return nil
-}
-
-func (s *OrderService) sendOrderEvent(receiveAddr string, eventType string, payload map[string]any) {
-	if receiveAddr == "" {
-		return
-	}
-	p, _ := json.Marshal(payload)
-
-	event := &models.Event{
-		ID:             uuid.New(),
-		Type:           eventType,
-		Payload:        p,
-		ReceiveAddress: receiveAddr,
-		CreateAt:       time.Now().UTC(),
-	}
-
-	if Event == nil {
-		return
-	}
-
-	if err := Event.SendEvent(event); err != nil {
-		logger.Error().Err(err).Msgf("failed to send %s event", eventType)
-	}
 }

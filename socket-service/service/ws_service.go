@@ -48,3 +48,13 @@ func (s *WSService) GetConnections(userAddress string) ([]*websocket.Conn, bool)
 	conns, ok := s.connections[userAddress]
 	return conns, ok
 }
+
+func (s *WSService) GetAllConnections() []*websocket.Conn {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	allConns := make([]*websocket.Conn, 0)
+	for _, conns := range s.connections {
+		allConns = append(allConns, conns...)
+	}
+	return allConns
+}

@@ -162,6 +162,10 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		return nil, err
 	}
 
+	SendSocketEvent("", constants.OFFER_LIST_REFRESH, map[string]any{
+		"action": "created",
+	})
+
 	return offer, nil
 }
 
@@ -398,6 +402,11 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 	if err = tx.Commit(); err != nil {
 		return err
 	}
+
+	SendSocketEvent("", constants.OFFER_LIST_REFRESH, map[string]any{
+		"action": "cancelled",
+	})
+
 	return nil
 }
 
