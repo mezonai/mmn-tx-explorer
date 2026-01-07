@@ -2,15 +2,11 @@ package services
 
 import (
 	"bytes"
+	"dong-service/logger"
+	"dong-service/models"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
-
-	"dong-service/logger"
-	"dong-service/models"
-
-	"github.com/google/uuid"
 )
 
 type EventService struct {
@@ -49,27 +45,4 @@ func (s *EventService) SendEvent(event *models.Event) error {
 		return fmt.Errorf("socket-service trả về mã lỗi: %d", resp.StatusCode)
 	}
 	return nil
-}
-
-// SendSocketEvent sends a socket event notification
-// Empty receiveAddr broadcasts to all connected users
-// Non-empty receiveAddr sends to specific user only
-func SendSocketEvent(receiveAddr string, eventType string, payload map[string]any) {
-	p, _ := json.Marshal(payload)
-
-	event := &models.Event{
-		ID:             uuid.New(),
-		Type:           eventType,
-		Payload:        p,
-		ReceiveAddress: receiveAddr,
-		CreateAt:       time.Now().UTC(),
-	}
-
-	if Event == nil {
-		return
-	}
-
-	if err := Event.SendEvent(event); err != nil {
-		logger.Error().Err(err).Msgf("failed to send %s event", eventType)
-	}
 }
