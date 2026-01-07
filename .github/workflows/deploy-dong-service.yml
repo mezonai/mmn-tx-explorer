@@ -123,6 +123,7 @@ jobs:
           BLOCKCHAIN_USE_TLS: ${{vars.MMN_GRPC_USE_TLS}}
           EVENT_API_URL: ${{ vars.EVENT_API_URL}}
           EVENT_API_KEY: ${{ secrets.EVENT_API_KEY }}
+          FRONTEND_URL: ${{ vars.FRONTEND_URL }}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
@@ -153,6 +154,7 @@ jobs:
           BLOCKCHAIN_USE_TLS='${BLOCKCHAIN_USE_TLS}'
           EVENT_API_URL='${EVENT_API_URL}'
           EVENT_API_KEY='${EVENT_API_KEY}'
+          CORS_ALLOW_ORIGINS='${FRONTEND_URL}'
           EON
 
           sudo chown -R mmn:mmn /opt/dong-service

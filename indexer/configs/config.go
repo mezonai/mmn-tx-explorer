@@ -126,7 +126,10 @@ type TimeRangeConfig struct {
 }
 
 type CORSConfig struct {
-	AllowedOrigins []string `mapstructure:"allowedOrigins"`
+	AllowedOrigins []string `mapstructure:"allow_origins"`
+	AllowMethods   []string `mapstructure:"allow_methods"`
+	AllowHeaders   []string `mapstructure:"allow_headers"`
+	AllowCreds     bool     `mapstructure:"allow_credentials"`
 }
 
 type APIConfig struct {
@@ -137,7 +140,6 @@ type APIConfig struct {
 	AbiDecodingEnabled  bool                     `mapstructure:"abiDecodingEnabled"`
 	Thirdweb            ThirdwebConfig           `mapstructure:"thirdweb"`
 	TimeRange           TimeRangeConfig          `mapstructure:"timeRange"`
-	CORS                CORSConfig               `mapstructure:"cors"`
 }
 
 type BlockPublisherConfig struct {
@@ -194,6 +196,7 @@ type StatsWorkerConfig struct {
 type Config struct {
 	RPC              RPCConfig              `mapstructure:"rpc"`
 	Log              LogConfig              `mapstructure:"log"`
+	CORS             CORSConfig             `mapstructure:"cors"`
 	Poller           PollerConfig           `mapstructure:"poller"`
 	Committer        CommitterConfig        `mapstructure:"committer"`
 	FailureRecoverer FailureRecovererConfig `mapstructure:"failureRecoverer"`
