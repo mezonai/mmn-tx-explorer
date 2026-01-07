@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { P2POffer } from '../../types';
-import { MessageCircle } from 'lucide-react';
+import { TriangleAlert } from 'lucide-react';
 
 interface QrCodeCardProps {
     bank_info?: P2POffer['bank_info'];
@@ -69,7 +69,7 @@ export const QrCodeCard = ({ bank_info, transfer_code, amount }: QrCodeCardProps
                         <div className="text-center px-4 animate-pulse">
                             <p className="text-[13px] font-medium text-amber-500 leading-tight">
                                 <span className="flex items-center justify-center gap-1 mb-1">
-                                    <MessageCircle className="w-4 h-4" /> Recommendation:
+                                    <TriangleAlert className="w-4 h-4" /> Recommendation:
                                 </span>
                                 To avoid delays, please message the seller to confirm they are online before making the payment.
                             </p>
