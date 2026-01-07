@@ -398,12 +398,6 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 	if err = tx.Commit(); err != nil {
 		return err
 	}
-
-	SendSocketEvent("", constants.OFFER_LIST_REFRESH, map[string]any{
-		"action":   "cancelled",
-		"offer_id": offerId,
-	})
-
 	return nil
 }
 
