@@ -24,7 +24,7 @@ export const EcosystemHighlights = ({ giveCoffeeStats }: EcosystemHighlightsProp
     sortOrder: 'DESC',
   });
   const redEnvelopeStats = useRedEnvelopeStats();
-  const { data: p2pStats } = useP2PStats();
+  const p2pStats = useP2PStats();
 
   const donationRef = useRef<HTMLAnchorElement | null>(null);
   const [refHeight, setRefHeight] = useState<number | null>(null);
@@ -96,15 +96,8 @@ export const EcosystemHighlights = ({ giveCoffeeStats }: EcosystemHighlightsProp
           title="P2P Trading"
           icon={<TrendingUp className="text-brand-primary h-6 w-6 dark:text-green-400" />}
           route={ROUTES.P2P}
-        >
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            <div>{p2pStats?.totalOffers || 0} active offers</div>
-            <div>
-              Total available: {(p2pStats?.totalAvailableAmount || 0).toLocaleString('en-US')}{' '}
-              {APP_CONFIG.CHAIN_SYMBOL}
-            </div>
-          </div>
-        </EcoCard>
+          description={`${p2pStats.stats.totalOffers} active offers • ${p2pStats.stats.totalAvailableAmount.toLocaleString('en-US')} ${APP_CONFIG.CHAIN_SYMBOL} available`}
+        />
         <EcoCard
           title="Swap"
           icon={<Transaction className="text-brand-primary h-6 w-6 dark:text-blue-400" />}
