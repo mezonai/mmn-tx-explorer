@@ -315,7 +315,7 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 	}
 
 	SendSocketEvent("", constants.OFFER_LIST_REFRESH, map[string]any{
-		"action": "created",
+		"action": "created p2p offer",
 	})
 
 	return nil
@@ -404,7 +404,7 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 	}
 
 	SendSocketEvent("", constants.OFFER_LIST_REFRESH, map[string]any{
-		"action": "cancelled",
+		"action": "cancelled p2p offer",
 	})
 
 	return nil
