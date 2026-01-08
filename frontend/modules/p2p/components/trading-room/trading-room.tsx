@@ -89,8 +89,9 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       if (newOrder) {
         router.push(ROUTES.P2P_TRADING_ROOM(newOrder.order_id));
       }
-    } catch (err) {
-      setError('Something went wrong while creating the order. Please try again.');
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.message || 'Something went wrong while creating the order. Please try again.';
+      setError(errorMessage);
     }
   };
 
