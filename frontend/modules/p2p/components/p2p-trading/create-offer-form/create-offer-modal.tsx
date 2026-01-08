@@ -149,15 +149,16 @@ export const CreateOfferModal = () => {
             return transferResult.error || 'Create offer fail. Please try again.';
           }
         })();
-        toast.error(errorMsg);
+        setShowConfirm(false);
         await updateOfferStatus({
           offer_id: Number(resultData.offer.offer_id),
           tx_hash: ' ',
           status: 'FAILED',
         });
-        setShowConfirm(false);
+        toast.error(errorMsg);
       }
     } catch (error: any) {
+      setShowConfirm(false);
       console.error('Error creating offer:', error);
 
       const apiErrorMessage =
@@ -169,7 +170,6 @@ export const CreateOfferModal = () => {
       const displayMessage = Array.isArray(apiErrorMessage) ? apiErrorMessage.join(', ') : apiErrorMessage;
 
       toast.error(displayMessage);
-      setShowConfirm(false);
     }
   };
 
