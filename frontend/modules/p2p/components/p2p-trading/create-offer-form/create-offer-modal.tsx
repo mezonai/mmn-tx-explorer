@@ -21,16 +21,20 @@ import { useUser } from '@/providers';
 import { mmnClient } from '@/modules/auth';
 import { NumberUtil } from '@/utils';
 import { ETransferType } from '@/modules/transaction';
+import { useQueryClient } from '@tanstack/react-query';
+import { P2P_QUERY_KEYS } from '@/modules/p2p/constants';
 
 export const CreateOfferModal = () => {
   const [open, setOpen] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [pendingData, setPendingData] = useState<CreateOfferFormValues | null>(null);
-  const { mutate: updateOfferStatus } = useUpdateOfferStatus();
+  const { mutateAsync: updateOfferStatus } = useUpdateOfferStatus();
   const { mutateAsync: createOfferAsync, isPending } = useCreateOffer();
   const { transfer } = useTransfer();
   const { user } = useUser();
   const [balance, setBalance] = useState<string>('0');
+  const queryClient = useQueryClient();
+
   const formSchema = useMemo(() => {
     return createOfferSchema.superRefine((data, ctx) => {
       if (data.side === TradeTypes.SELL) {
@@ -44,6 +48,7 @@ export const CreateOfferModal = () => {
       }
     });
   }, [balance]);
+
   const form = useForm<CreateOfferFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -112,6 +117,7 @@ export const CreateOfferModal = () => {
 
     try {
       const resultData = await createOfferAsync(payload);
+
       const transferResult = await transfer(
         {
           recipientAddress: resultData.intermediary_wallet_address,
@@ -122,30 +128,47 @@ export const CreateOfferModal = () => {
       );
 
       if (transferResult.success) {
-        setTimeout(() => {
-          updateOfferStatus({
-            offer_id: Number(resultData.offer.offer_id),
-            tx_hash: transferResult.txHash!,
-            status: 'CONFIRMED',
-          });
-        }, 2000);
-        toast.success('Create offer success!');
         setShowConfirm(false);
         setOpen(false);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        await updateOfferStatus({
+          offer_id: Number(resultData.offer.offer_id),
+          tx_hash: transferResult.txHash!,
+          status: 'CONFIRMED',
+        });
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: [P2P_QUERY_KEYS.OFFER] }),
+          queryClient.invalidateQueries({ queryKey: [P2P_QUERY_KEYS.MY_OFFERS] }),
+        ]);
+        toast.success('Create offer success!');
       } else {
-        toast.error(JSON.parse(transferResult.error || '').message || 'Create offer fail. Please try again.');
-        setTimeout(() => {
-          updateOfferStatus({
-            offer_id: Number(resultData.offer.offer_id),
-            tx_hash: ' ',
-            status: 'FAILED',
-          });
-        }, 2000);
-        console.error(transferResult.error);
+        const errorMsg = (() => {
+          try {
+            return JSON.parse(transferResult.error || '').message;
+          } catch {
+            return transferResult.error || 'Create offer fail. Please try again.';
+          }
+        })();
+        toast.error(errorMsg);
+        await updateOfferStatus({
+          offer_id: Number(resultData.offer.offer_id),
+          tx_hash: ' ',
+          status: 'FAILED',
+        });
         setShowConfirm(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating offer:', error);
+
+      const apiErrorMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        'An unexpected error occurred';
+
+      const displayMessage = Array.isArray(apiErrorMessage) ? apiErrorMessage.join(', ') : apiErrorMessage;
+
+      toast.error(displayMessage);
       setShowConfirm(false);
     }
   };
