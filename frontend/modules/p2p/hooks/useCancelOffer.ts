@@ -7,10 +7,10 @@ export const useCancelOffer = () => {
   return useMutation({
     mutationFn: (offerId: string) => P2PService.cancelOffer(offerId),
     onSuccess: (_data, id) => {
-        // Invalidate relevant queries
+        // Invalidate relevant queries to refresh the data
         queryClient.invalidateQueries({ queryKey: [P2P_QUERY_KEYS.OFFER, id] });
         queryClient.invalidateQueries({ queryKey: [P2P_QUERY_KEYS.MY_OFFERS] });
-      
+        queryClient.invalidateQueries({ queryKey: [P2P_QUERY_KEYS.OFFERS] });
     },
   });
 };
