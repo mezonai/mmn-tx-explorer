@@ -246,54 +246,44 @@ func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddre
 func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.UpdateOfferStatusRequest) error {
 	exists, err := s.repo.ExistsByTxHash(ctx, req.TxHash)
 	if err != nil {
-		logger.Error().Err(err).Str("tx_hash", req.TxHash).Msg("Failed to check existing tx hash")
 		return fmt.Errorf("failed to check existing tx hash: %w", err)
 	}
 	if exists {
-		logger.Warn().Str("tx_hash", req.TxHash).Msg("Transaction hash already used")
 		return constants.ErrTxHashAlreadyUsed
 	}
 
 	offer, err := s.repo.GetOfferByID(ctx, req.OfferID)
 	if err != nil {
-		logger.Error().Err(err).Int64("offer_id", req.OfferID).Msg("Failed to get offer")
 		return fmt.Errorf("failed to get offer: %w", err)
 	}
 
 	// Verify transaction exists in blockchain
 	if s.blockchain != nil && req.Status == constants.TradingConfirmed {
 		if offer.Status != constants.TradingOpen {
-			logger.Error().Int64("offer_id", req.OfferID).Str("current_status", offer.Status).Msg("Offer status invalid for confirmation")
 			return fmt.Errorf("offer status invalid for confirmation: %s", offer.Status)
 		}
 		txInfo, err := s.blockchain.GetTransaction(req.TxHash)
 		if err != nil {
-			logger.Error().Err(err).Str("tx_hash", req.TxHash).Msg("Failed to verify transaction")
 			return fmt.Errorf("failed to verify transaction: %w", err)
 		}
 		if txInfo == nil {
-			logger.Error().Str("tx_hash", req.TxHash).Msg("Transaction not found in blockchain")
 			return fmt.Errorf("transaction not found in blockchain")
 		}
 
 		if txInfo.Status != constants.TxStatusConfirmed && txInfo.Status != constants.TxStatusFinalized {
-			logger.Error().Str("tx_hash", req.TxHash).Int("status", int(txInfo.Status)).Msg("Transaction not confirmed")
 			return fmt.Errorf("transaction not confirmed: status=%d", txInfo.Status)
 		}
 
 		if txInfo.Sender != offer.SellerWalletAddress {
-			logger.Error().Str("tx_hash", req.TxHash).Str("expected_sender", offer.SellerWalletAddress).Str("actual_sender", txInfo.Sender).Msg("Transaction sender mismatch")
 			return fmt.Errorf("transaction sender mismatch: expected %s, got %s", offer.SellerWalletAddress, txInfo.Sender)
 		}
 
 		if offer.IntermediaryWalletAddress != nil && txInfo.Recipient != *offer.IntermediaryWalletAddress {
-			logger.Error().Str("tx_hash", req.TxHash).Str("expected_recipient", *offer.IntermediaryWalletAddress).Str("actual_recipient", txInfo.Recipient).Msg("Transaction recipient mismatch")
 			return fmt.Errorf("transaction recipient mismatch: expected %s, got %s", *offer.IntermediaryWalletAddress, txInfo.Recipient)
 		}
 
 		actualAmount := int64(txInfo.Amount.Uint64() / 1000000)
 		if actualAmount != offer.Amount {
-			logger.Error().Str("tx_hash", req.TxHash).Int64("expected_amount", offer.Amount).Int64("actual_amount", actualAmount).Msg("Transaction amount mismatch")
 			return fmt.Errorf("transaction amount mismatch: expected %d, got %d", offer.Amount, actualAmount)
 		}
 	}
@@ -301,7 +291,6 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 	db := database.GetDB()
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
-		logger.Error().Err(err).Int64("offer_id", req.OfferID).Msg("Failed to begin transaction")
 		return err
 	}
 	defer func() {
@@ -311,16 +300,12 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 	}()
 
 	if err = s.repo.UpdateOfferStatus(ctx, req.OfferID, req.Status, tx, &req.TxHash); err != nil {
-		logger.Error().Err(err).Int64("offer_id", req.OfferID).Str("status", req.Status).Msg("Failed to update offer status")
 		return err
 	}
 
 	if err = tx.Commit(); err != nil {
-		logger.Error().Err(err).Int64("offer_id", req.OfferID).Msg("Failed to commit transaction")
 		return err
 	}
-
-	logger.Info().Int64("offer_id", req.OfferID).Str("status", req.Status).Str("tx_hash", req.TxHash).Msg("Offer status updated successfully")
 
 	if req.Status == constants.TradingFailed {
 		offer, err := s.repo.GetOfferByID(ctx, req.OfferID)
