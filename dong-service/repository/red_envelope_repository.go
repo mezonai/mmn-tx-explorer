@@ -1084,3 +1084,19 @@ func (r *RedEnvelopeRepository) CheckUserIDClaimNotMatch(redEnvelopeID string, u
 
 	return userID == claimedUserID, nil
 }
+
+func (r *RedEnvelopeRepository) CheckUserAddressClaimNotMatch(redEnvelopeID string, address string, splitMoneyID int64) (bool, error) {
+	query := fmt.Sprintf(`
+			SELECT claimed_address
+			FROM %s.red_envelope_split_money
+			WHERE id = $1 AND red_envelope_id = $2 AND status = $3
+		`, r.dongSchema)
+
+	var claimedAddress string
+	err := r.db.QueryRow(query, splitMoneyID, redEnvelopeID, constants.RedEnvelopeSplitMoneyStatusReserved).Scan(&claimedAddress)
+	if err != nil {
+		return false, fmt.Errorf("failed to get claimed address: %w", err)
+	}
+
+	return address == claimedAddress, nil
+}

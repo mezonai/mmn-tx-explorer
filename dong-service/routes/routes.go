@@ -138,5 +138,11 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		orders.POST("/:id/confirm", orderHandler.ConfirmOrder)
 		orders.GET("/me", orderHandler.GetMyOrders)
 		orders.GET("/:id", orderHandler.GetOrderDetail)
+
+		// ZK QR Claims
+		zkClaims := v1.Group("/red-envelopes/qr")
+		zkClaims.Use(middleware.ZKAuthentication())
+		zkClaims.POST("/claim-amount", redEnvelopeHandler.ClaimAmountRedEnvelope)
+		zkClaims.POST("/:id/claim", redEnvelopeHandler.ClaimRedEnvelope)
 	}
 }

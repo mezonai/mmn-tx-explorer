@@ -382,15 +382,34 @@ func (r *RedEnvelopeHandler) CloseSessionRedEnvelope(c *gin.Context) {
 // @Failure 500 {object} models.Response
 // @Router /api/v1/red_envelopes/claim-amount [get]
 func (r *RedEnvelopeHandler) ClaimAmountRedEnvelope(c *gin.Context) {
-	userID, err := utils.GetUserIDFromContext(c)
+	var userID int64
+	var userAddress string
+	var isZK bool
+	var err error
+
+	userID, err = utils.GetUserIDFromContext(c)
 	if err != nil {
-		logger.Error().Err(err).Msg("Unauthorized claim amount attempt")
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
-		return
+		addr, ok := utils.GetAddressFromContext(c)
+		if !ok {
+			logger.Error().Err(err).Msg("Unauthorized claim amount attempt")
+			c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
+			return
+		}
+		userAddress = addr
+		isZK = true
+	} else {
+		userAddress = utils.GenerateAddress(strconv.FormatInt(userID, 10))
 	}
 
 	id := c.Query("id")
-	claimStatus, err := r.queueService.AttemptClaim(id, userID)
+
+	var claimStatus int
+	if isZK {
+		claimStatus, err = r.queueService.AttemptClaimByAddress(id, userAddress)
+	} else {
+		claimStatus, err = r.queueService.AttemptClaim(id, userID)
+	}
+
 	if err != nil {
 		logger.Error().Err(err).Str("envelope_id", id).Msg("Error during queue check")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, err.Error()))
@@ -402,8 +421,6 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelope(c *gin.Context) {
 		return
 	}
 
-	userAddress := utils.GenerateAddress(strconv.FormatInt(userID, 10))
-
 	splitMoney, err := r.repo.GetClaimAmount(id, userAddress, claimStatus, userID)
 	if err != nil {
 		if errors.Is(err, constants.ErrAlreadyClaimed) {
@@ -411,7 +428,13 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelope(c *gin.Context) {
 			return
 		}
 		logger.Error().Err(err).Str("envelope_id", id).Msg("Failed to get claim amount")
-		r.queueService.RollbackClaim(id, userID)
+
+		if isZK {
+			r.queueService.RollbackClaimByAddress(id, userAddress)
+		} else {
+			r.queueService.RollbackClaim(id, userID)
+		}
+
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
@@ -451,22 +474,39 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelope(c *gin.Context) {
 		return
 	}
 
-	userID, err := utils.GetUserIDFromContext(c)
+	var userID int64
+	var userAddress string
+	var isZK bool
+	var err error
+
+	userID, err = utils.GetUserIDFromContext(c)
 	if err != nil {
-		logger.Error().Err(err).Msg("Unauthorized claim amount attempt")
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
-		return
+		addr, ok := utils.GetAddressFromContext(c)
+		if !ok {
+			logger.Error().Err(err).Msg("Unauthorized claim attempt")
+			c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
+			return
+		}
+		userAddress = addr
+		isZK = true
+	} else {
+		userAddress = utils.GenerateAddress(strconv.FormatInt(userID, 10))
 	}
 
-	userAddress := utils.GenerateAddress(strconv.FormatInt(userID, 10))
+	var canClaim bool
+	if isZK {
+		canClaim, err = r.repo.CheckUserAddressClaimNotMatch(req.ID, userAddress, req.SplitMoneyID)
+	} else {
+		canClaim, err = r.repo.CheckUserIDClaimNotMatch(req.ID, userID, req.SplitMoneyID)
+	}
 
-	canClaim, err := r.repo.CheckUserIDClaimNotMatch(req.ID, userID, req.SplitMoneyID)
 	if err != nil {
 		logger.Error().
 			Err(err).
 			Str("red_envelope_id", req.ID).
 			Int64("user_id", userID).
-			Msg("Failed to check user id and envelope id")
+			Str("address", userAddress).
+			Msg("Failed to check user/address and envelope id")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToCheckRedEnvelope))
 		return
 	}
@@ -474,7 +514,8 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelope(c *gin.Context) {
 		logger.Error().
 			Str("red_envelope_id", req.ID).
 			Int64("user_id", userID).
-			Msg("User id does not match owner of red envelope")
+			Str("address", userAddress).
+			Msg("User/Address does not match owner of red envelope split")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrUserIDNotMatchRedEnvelopeID))
 		return
 	}
@@ -500,7 +541,7 @@ func ValidateRequest(req *models.CreateRedEnvelopeRequest) error {
 	if req.TotalClaims > constants.MaxPaticipantCount {
 		return fmt.Errorf("totalClaims (%d) must not exceed (%d)", req.TotalClaims, constants.MaxPaticipantCount)
 	}
-	
+
 	if req.IsRandomDistribution {
 		if *req.MinAmount > *req.MaxAmount {
 			return fmt.Errorf("minAmount (%d) don't exceed maxAmount (%d)", *req.MinAmount, *req.MaxAmount)
