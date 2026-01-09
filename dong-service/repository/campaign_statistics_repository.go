@@ -188,13 +188,6 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 		return models.SyncCampaignResponse{TotalAmount: 0, TotalContributors: 0, TotalWithdrawn: 0}, fmt.Errorf("failed to get campaign: %w", err)
 	}
 
-	var currentBalance int64
-	balanceQuery := fmt.Sprintf(`SELECT COALESCE(balance, 0) FROM %s.wallet WHERE address = $1`, r.indexerSchema)
-	err = r.db.QueryRowContext(ctx, balanceQuery, campaign.DonationWallet).Scan(&currentBalance)
-	if err != nil {
-		currentBalance = 0
-	}
-
 	// If statistics are already newer than the latest finalized transaction for this wallet, skip sync
 	earlyCheckQuery := fmt.Sprintf(`
 		SELECT MAX(transaction_timestamp) AS last_ts
@@ -211,6 +204,12 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 	}
 
 	if lastTS.IsZero() || campaign.UpdatedAt.After(lastTS) {
+		var currentBalance int64
+		balanceQuery := fmt.Sprintf(`SELECT COALESCE(balance, 0) FROM %s.wallet WHERE address = $1`, r.indexerSchema)
+		err = r.db.QueryRowContext(ctx, balanceQuery, campaign.DonationWallet).Scan(&currentBalance)
+		if err != nil {
+			currentBalance = 0
+		}
 		logger.Info().Int64("campaign_id", campaignID).Time("updated_at", campaign.UpdatedAt).Time("last_ts", lastTS).Msg("Campaign statistics are already up to date")
 		totalWithdrawn := campaign.TotalAmount - currentBalance
 
