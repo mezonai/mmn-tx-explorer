@@ -205,12 +205,12 @@ func (r *RedEnvelopeRepository) GetStatsByUser(userID int64) (map[string]interfa
 	totalSentQuery := fmt.Sprintf(`
 		SELECT 
 			COALESCE(SUM(resm.amount), 0) AS total_sent,
-			COALESCE(COUNT(resm.claimed_user_id), 0) AS total_recipients 
+			COALESCE(COUNT(resm.claimed_user_id), 0) AS total_recipients
 		FROM %s.red_envelope re
 		JOIN %s.red_envelope_split_money resm ON resm.red_envelope_id = re.id
 		WHERE re.creator = $1 AND re.status = ANY($2) AND resm.status = $3;
 	`, r.dongSchema, r.dongSchema)
-
+	
 	listStatus := []string{
 		constants.RedEnvelopeStatusPublished,
 		constants.RedEnvelopeStatusExpired,
@@ -219,6 +219,7 @@ func (r *RedEnvelopeRepository) GetStatsByUser(userID int64) (map[string]interfa
 	var stats struct {
 		TotalSend             int64
 		TotalRecipients       int64
+		TotalEnvelopes        int64
 		TotalClaimed          int64
 		CountClaimedEnvelopes int64
 		TotalActiveEnvelopes  int64
@@ -231,6 +232,23 @@ func (r *RedEnvelopeRepository) GetStatsByUser(userID int64) (map[string]interfa
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get stats: %w", err)
+	}
+
+	envelopeCountsQuery := fmt.Sprintf(`
+		SELECT 
+			COUNT(CASE WHEN claimed_count > 0 THEN 1 END) AS total_envelopes,
+			COUNT(CASE WHEN status = 'PUBLISHED' THEN 1 END) AS total_active_envelopes
+		FROM %s.red_envelope
+		WHERE creator = $1 AND status = ANY($2);
+	`, r.dongSchema)
+
+	err = r.db.QueryRow(envelopeCountsQuery, userID, pq.Array(listStatus)).Scan(
+		&stats.TotalEnvelopes,
+		&stats.TotalActiveEnvelopes,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get envelope counts: %w", err)
 	}
 
 	totalClaimedQuery := fmt.Sprintf(`
@@ -247,25 +265,13 @@ func (r *RedEnvelopeRepository) GetStatsByUser(userID int64) (map[string]interfa
 	)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to get stats: %w", err)
-	}
-
-	totalActiveEnvelopesByUserQuery := fmt.Sprintf(`
-		SELECT COALESCE(count(id), 0) AS count_envelopes FROM %s.red_envelope
-		WHERE creator = $1 AND status = 'PUBLISHED';
-	`, r.dongSchema)
-
-	err = r.db.QueryRow(totalActiveEnvelopesByUserQuery, userID).Scan(
-		&stats.TotalActiveEnvelopes,
-	)
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to get stats: %w", err)
+		return nil, fmt.Errorf("failed to get claimed stats: %w", err)
 	}
 
 	result := map[string]interface{}{
 		"total_sent":              stats.TotalSend,
 		"total_recipients":        stats.TotalRecipients,
+		"total_envelopes":         stats.TotalEnvelopes,
 		"total_claimed":           stats.TotalClaimed,
 		"count_claimed_envelopes": stats.CountClaimedEnvelopes,
 		"total_active_envelopes":  stats.TotalActiveEnvelopes,

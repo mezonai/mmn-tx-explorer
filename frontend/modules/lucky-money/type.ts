@@ -33,6 +33,7 @@ export interface RedEnvelope {
 export interface RedEnvelopeStatsByUser {
   total_sent: number;
   total_recipients: number;
+  total_envelopes: number;
   total_claimed: number;
   count_claimed_envelopes: number;
   total_active_envelopes: number;
@@ -94,7 +95,7 @@ export interface UpdateStatusRedEnvelopeRequest {
 
 export interface ClaimEnvelopeRequest {
   id: UUID;
-  split_money_id: number;     
+  split_money_id: number;
 }
 
 export interface RedEnvelopeClaim {

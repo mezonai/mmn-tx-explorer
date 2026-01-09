@@ -24,7 +24,7 @@ export const RedEnvelopeStats = () => {
       title: 'TOTAL SENT',
       value: stats.total_sent.toLocaleString('en-US'),
       unit: ` ${APP_CONFIG.CHAIN_SYMBOL}`,
-      subValue: 'From ' + stats.total_recipients + ' claims',
+      subValue: 'Across ' + stats.total_envelopes + ' envelopes',
       titleIcon: SendIcon,
       topRightIcon: ExternalLinkIcon,
     },
