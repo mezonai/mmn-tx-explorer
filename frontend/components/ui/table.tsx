@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, TableHTMLAttributes, useRef } from 'react';
+import { ReactNode, TableHTMLAttributes, useCallback, useMemo, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
 import { PAGINATION } from '@/constant';
@@ -41,7 +41,7 @@ export const Table = <T,>({
   ...props
 }: TableProps<T>) => {
   // Validate columns to prevent runtime errors
-  const validColumns = columns.filter(Boolean);
+  const validColumns = useMemo(() => columns.filter(Boolean), [columns]);
 
   // Determine loading state - either explicitly set or when rows is undefined
   const shouldShowSkeleton = isLoading || !rows;
@@ -52,14 +52,10 @@ export const Table = <T,>({
   // Scroll container ref for virtualization
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // Configure virtualizer (always initialize; use only when virtualized)
-  const rowVirtualizer = useVirtualizer({
-    count: rows?.length ?? 0,
-    getScrollElement: () => scrollContainerRef.current,
-    estimateSize: () => estimateRowHeight, // approximate row height in px
-    overscan: overscan,
-    // Stable keys for measurement cache
-    getItemKey: (index) => {
+  const getEstimateSize = useCallback(() => estimateRowHeight, [estimateRowHeight]);
+
+  const getItemKeyCallback = useCallback(
+    (index: number) => {
       if (rows && getRowKey) {
         try {
           return String(getRowKey(rows[index] as T, index));
@@ -69,6 +65,15 @@ export const Table = <T,>({
       }
       return index;
     },
+    [rows, getRowKey]
+  );
+
+  const rowVirtualizer = useVirtualizer({
+    count: rows?.length ?? 0,
+    getScrollElement: () => scrollContainerRef.current,
+    estimateSize: getEstimateSize,
+    overscan: overscan,
+    getItemKey: getItemKeyCallback,
   });
 
   // Validate that we have columns
@@ -249,7 +254,7 @@ export const Table = <T,>({
         className={cn(
           'text-card-foreground w-full rounded-lg text-center text-sm font-normal [&_thead]:top-[96px]',
           className,
-          isVirtualized && '[&_thead]:top-[0px]'
+          isVirtualized && '[&_thead]:top-0'
         )}
         role="table"
         {...props}

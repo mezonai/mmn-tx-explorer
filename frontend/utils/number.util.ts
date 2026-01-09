@@ -35,6 +35,7 @@ export class NumberUtil {
     const scaled = num / scale;
     return scaled.toLocaleString('en-US');
   }
+
   static formatWithCommasAndScaleShort(value: number | string, scale: number = 1_000_000): string {
     if (!value) return '0';
 
@@ -47,11 +48,11 @@ export class NumberUtil {
       return (n / divisor).toFixed(1) + suffix;
     };
 
-    if (scale >= 1_000_000_000) return format(scaled, 1_000_000_000, 'B');
-    if (scale >= 1_000_000) return format(scaled, 1_000_000, 'M');
-    if (scale >= 1_000) return format(scaled, 1_000, 'K');
-
-    return scaled.toLocaleString('en-US');
+    if (scaled >= 1_000_000) {
+      if (scaled >= 1_000_000_000) return format(scaled, 1_000_000_000, 'B');
+      return format(scaled, 1_000_000, 'M');
+    }
+    return scaled.toLocaleString('en-US', { maximumFractionDigits: 2 });
   }
 
   static scaleDown(value: number, scale: number = 1_000_000): number {

@@ -28,4 +28,3 @@ COMMENT ON COLUMN intermediary_wallet.type IS 'Wallet type';
 COMMENT ON COLUMN intermediary_wallet.status IS 'Status: READY=Available for use, IN_USE=Currently assigned, PREPARE_REPLACE=Scheduled for replacement, DISABLED=No longer usable';
 COMMENT ON COLUMN intermediary_wallet.created_at IS 'Wallet creation timestamp';
 COMMENT ON COLUMN intermediary_wallet.updated_at IS 'Wallet last update timestamp';
-
