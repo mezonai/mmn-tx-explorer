@@ -14,6 +14,7 @@ import { useUser } from '@/providers';
 import { CancelConfirmDialog } from './cancel-confirm-dialog';
 import { OFFERS_STATUS } from '../../constants';
 import { TriangleAlert } from 'lucide-react';
+import { formatCurrency } from '../../util';
 
 interface P2POffersTableProps {
   offers: P2POffer[] | undefined;
@@ -34,11 +35,11 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
     },
     {
       headerContent: 'RATE',
-      renderCell: (order) => (
+      renderCell: (offer) => (
         <div>
           <div className="mt-1 text-sm text-gray-400">
             <span className="text-brand-primary font-semibold">
-              1 {APP_CONFIG.CHAIN_SYMBOL} = {order.price_rate.toLocaleString('vi-VN')} VND
+              1 {APP_CONFIG.CHAIN_SYMBOL} = {formatCurrency(offer.price_rate)} VND
             </span>
           </div>
         </div>
@@ -53,14 +54,13 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
           <span>
             <span className="text-gray-500 dark:text-gray-500">Available:</span>{' '}
             <span className="text-primary font-medium dark:text-white">
-              {offer.amount.toLocaleString('en-US')} {APP_CONFIG.CHAIN_SYMBOL}
+              {formatCurrency(offer.amount)} {APP_CONFIG.CHAIN_SYMBOL}
             </span>
           </span>
           <span>
             <span className="text-gray-500 dark:text-gray-500">Limit:</span>{' '}
             <span className="text-primary font-medium dark:text-white">
-              {offer.limit.min.toLocaleString('en-US')} - {offer.limit.max.toLocaleString('en-US')}{' '}
-              {APP_CONFIG.CHAIN_SYMBOL}
+              {formatCurrency(offer.limit.min)} - {formatCurrency(offer.limit.max)} {APP_CONFIG.CHAIN_SYMBOL}
             </span>
           </span>
         </div>
