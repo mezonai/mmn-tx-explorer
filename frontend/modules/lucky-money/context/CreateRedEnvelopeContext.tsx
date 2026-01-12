@@ -9,7 +9,7 @@ import { mmnClient } from '@/modules/auth';
 import { useTransfer } from '@/modules/transfer/hooks/useTransfer';
 import { toast } from 'sonner';
 import { RedEnvelopeService } from '../api';
-import { ETransactionStatus, TransactionService } from '@/modules/transaction';
+import { ETransactionStatus, TransactionService, ETransferType } from '@/modules/transaction';
 import { useCreateRedEnvelope } from '../hooks/useCreateRedEnvelope';
 import { useRouter } from 'next/navigation';
 
@@ -106,7 +106,7 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
           amount: data.totalAmount.toString(),
           note: data.message,
         },
-        'lucky-money'
+        ETransferType.LuckyMoney
       );
 
       if (result.success) {

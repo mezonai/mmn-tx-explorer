@@ -15,15 +15,17 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	mmnClient "github.com/mezonai/mmn-sdk/go-sdk/client"
 )
 
 type DonationCampaignFeedHandler struct {
-	repo *repository.DonationCampaignFeedRepository
-	cfg  *config.Config
+	repo         *repository.DonationCampaignFeedRepository
+	campaignRepo *repository.DonationCampaignRepository
+	cfg          *config.Config
 }
 
-func NewDonationCampaignFeedHandler(repo *repository.DonationCampaignFeedRepository, cfg *config.Config) *DonationCampaignFeedHandler {
-	return &DonationCampaignFeedHandler{repo: repo, cfg: cfg}
+func NewDonationCampaignFeedHandler(repo *repository.DonationCampaignFeedRepository, campaignRepo *repository.DonationCampaignRepository, cfg *config.Config) *DonationCampaignFeedHandler {
+	return &DonationCampaignFeedHandler{repo: repo, campaignRepo: campaignRepo, cfg: cfg}
 }
 
 // ListCampaignFeedsByAddress godoc
@@ -32,6 +34,7 @@ func NewDonationCampaignFeedHandler(repo *repository.DonationCampaignFeedReposit
 // @Tags campaign_feed
 // @Produce json
 // @Param campaign_address path string true "Campaign address"
+// @Param isOwner query bool false "Filter feeds by campaign owner (default true). If true: only owner's feeds; if false: non-owner feeds"
 // @Success 200 {object} models.Response{data=[]models.DonationCampaignFeed}
 // @Failure 400 {object} models.Response
 // @Failure 404 {object} models.Response
@@ -46,6 +49,14 @@ func (h *DonationCampaignFeedHandler) ListCampaignFeedsByAddress(c *gin.Context)
 	}
 
 	userAddress, _ := utils.GetAddressFromContext(c)
+
+	defaultOwner := true
+	isOwner := &defaultOwner
+	if v := c.Query("isOwner"); v != "" {
+		if b, err := strconv.ParseBool(v); err == nil {
+			isOwner = &b
+		}
+	}
 
 	// Query param
 	limitStr := c.DefaultQuery("limit", "10")
@@ -73,7 +84,15 @@ func (h *DonationCampaignFeedHandler) ListCampaignFeedsByAddress(c *gin.Context)
 		}
 	}
 
-	feeds, err := h.repo.ListCampaignFeedsByAddress(campaignAddr, limit, timestampLt, userAddress)
+	creatorID, err := h.campaignRepo.GetCreatorByDonationWallet(campaignAddr)
+	if err != nil {
+		logger.Error().Err(err).Str("campaign_address", campaignAddr).Msg("Failed to resolve campaign creator")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Internal server error"))
+		return
+	}
+	ownerAddr := mmnClient.GenerateAddress(strconv.FormatInt(creatorID, 10))
+
+	feeds, err := h.repo.ListCampaignFeedsByAddress(campaignAddr, limit, timestampLt, userAddress, &ownerAddr, isOwner)
 	if err != nil {
 		logger.Error().Err(err).Str("campaign_address", campaignAddr).Msg("Failed to list campaign feeds")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Internal server error"))
