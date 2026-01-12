@@ -125,6 +125,13 @@ type TimeRangeConfig struct {
 	MaxLookbackYears int `mapstructure:"maxLookbackYears"`
 }
 
+type CORSConfig struct {
+	AllowedOrigins []string `mapstructure:"allow_origins"`
+	AllowMethods   []string `mapstructure:"allow_methods"`
+	AllowHeaders   []string `mapstructure:"allow_headers"`
+	AllowCreds     bool     `mapstructure:"allow_credentials"`
+}
+
 type APIConfig struct {
 	Host                string                   `mapstructure:"host"`
 	BasicAuth           BasicAuthConfig          `mapstructure:"basicAuth"`
@@ -189,6 +196,7 @@ type StatsWorkerConfig struct {
 type Config struct {
 	RPC              RPCConfig              `mapstructure:"rpc"`
 	Log              LogConfig              `mapstructure:"log"`
+	CORS             CORSConfig             `mapstructure:"cors"`
 	Poller           PollerConfig           `mapstructure:"poller"`
 	Committer        CommitterConfig        `mapstructure:"committer"`
 	FailureRecoverer FailureRecovererConfig `mapstructure:"failureRecoverer"`
