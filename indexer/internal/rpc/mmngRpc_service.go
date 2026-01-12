@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	vtgrpc "github.com/planetscale/vtprotobuf/codec/grpc"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -65,11 +66,12 @@ func (mmn *MMNGrpcService) connect() error {
 		creds = insecure.NewCredentials()
 	}
 
-	// Add MaxCallRecvMsgSize and MaxCallSendMsgSize
+	// Add MaxCallRecvMsgSize, MaxCallSendMsgSize and vtprotobuf codec for faster serialization
+	grpcCallOptions := append(common.GetGRPCCallOptions(), grpc.ForceCodec(vtgrpc.Codec{}))
 	conn, err := grpc.NewClient(
 		mmn.url,
 		grpc.WithTransportCredentials(creds),
-		grpc.WithDefaultCallOptions(common.GetGRPCCallOptions()...),
+		grpc.WithDefaultCallOptions(grpcCallOptions...),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to connect to %s: %w", mmn.url, err)

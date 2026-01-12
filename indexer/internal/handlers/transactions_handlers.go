@@ -233,15 +233,6 @@ func handleTransactionsInfiniteRequest(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	queryResult := api.QueryResponse{
-		Meta: api.Meta{
-			ChainID: chainId.Uint64(),
-			Page:    0,
-			Limit:   queryParams.Limit,
-		},
-		Data: nil,
-	}
-
 	var transactions []common.Transaction
 
 	if walletAddress != "" {
@@ -293,22 +284,63 @@ func handleTransactionsInfiniteRequest(c *gin.Context) {
 		transactions = transactions[:queryParams.Limit]
 	}
 
-	var nextTimestamp time.Time
+	var nextTimestamp int64
 	var nextHash string
 	if len(transactions) > 0 {
 		lastTx := transactions[len(transactions)-1]
-		nextTimestamp = lastTx.TransactionTimestamp
+		nextTimestamp = lastTx.TransactionTimestamp.Unix()
 		nextHash = lastTx.Hash
 	}
 
-	var data interface{} = serializeTransactions(transactions)
-	queryResult.Data = &data
+	// Convert to protobuf TransactionItem
+	protoTxs := make([]*pb.TransactionItem, len(transactions))
+	for i, tx := range transactions {
+		var status *uint64
+		if tx.Status != nil {
+			status = tx.Status
+		}
+		protoTxs[i] = &pb.TransactionItem{
+			ChainId:                  tx.ChainID.String(),
+			Hash:                     tx.Hash,
+			Nonce:                    tx.Nonce,
+			BlockHash:                tx.BlockHash,
+			BlockNumber:              tx.BlockNumber.String(),
+			FromAddress:              tx.FromAddress,
+			ToAddress:                tx.ToAddress,
+			TransactionTimestamp:     uint64(tx.TransactionTimestamp.Unix()),
+			Value:                    tx.Value,
+			TransactionType:          tx.TransactionType,
+			Status:                   status,
+			TextData:                 tx.TextData,
+			ExtraInfo:                tx.ExtraInfo,
+			TransactionExtraInfoType: tx.TransactionExtraInfoType.String(),
+		}
+	}
 
-	queryResult.Meta.HasMore = hasMore
-	queryResult.Meta.NextTimestamp = &nextTimestamp
-	queryResult.Meta.NextHash = nextHash
+	// Build protobuf response
+	protoResponse := &pb.TransactionInfiniteResponse{
+		Meta: &pb.TransactionInfiniteMeta{
+			ChainId:       chainId.String(),
+			Page:          int32(0),
+			Limit:         int32(queryParams.Limit),
+			HasMore:       hasMore,
+			NextTimestamp: uint64(nextTimestamp),
+			NextHash:      nextHash,
+		},
+		Data: protoTxs,
+	}
 
-	c.JSON(http.StatusOK, queryResult)
+	// Marshal to binary using vtprotobuf
+	data, err := protoResponse.MarshalVT()
+	if err != nil {
+		log.Error().Err(err).Msg("Error marshaling protobuf response")
+		api.InternalErrorHandler(c)
+		return
+	}
+
+	// Return binary protobuf
+	c.Header("Content-Type", "application/x-protobuf")
+	c.Data(http.StatusOK, "application/x-protobuf", data)
 }
 
 func serializeTransactions(transactions []common.Transaction) []common.BaseTransactionModel {

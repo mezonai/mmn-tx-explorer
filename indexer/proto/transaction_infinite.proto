@@ -1,0 +1,36 @@
+syntax = "proto3";
+package mmn;
+
+option go_package = "github.com/mezonai/mmn/proto;proto";
+
+message TransactionInfiniteResponse {
+  TransactionInfiniteMeta meta = 1;
+  repeated TransactionItem data = 2;
+}
+
+message TransactionInfiniteMeta {
+  string chain_id = 1;
+  int32 page = 2;
+  int32 limit = 3;
+  bool has_more = 4;
+  uint64 next_timestamp = 5;
+  string next_hash = 6;
+}
+
+message TransactionItem {
+  string chain_id = 1;
+  string hash = 2;
+  uint64 nonce = 3;
+  string block_hash = 4;
+  string block_number = 5;
+  string from_address = 6;
+  string to_address = 7;
+  uint64 transaction_timestamp = 8;
+  string value = 9;                   
+  int32 transaction_type = 10;
+  optional uint64 status = 11;
+  string text_data = 12;
+  string extra_info = 13;
+  string transaction_extra_info_type = 14;
+}
+
