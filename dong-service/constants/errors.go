@@ -14,7 +14,7 @@ const (
 	ErrInvalidOrExpiredRefreshToken   = "Invalid or expired refresh token!"
 	ErrPermissionDenied               = "You don't have permission to perform this action"
 	ErrCampaignNotFoundOrNoPermission = "Donation campaign not found or you don't have permission"
-	ErrOfferNotFoundNoPermission	  = "Offer not found or you don't have permission"
+	ErrOfferNotFoundNoPermission      = "Offer not found or you don't have permission"
 )
 
 // Validation Errors
@@ -56,11 +56,10 @@ const (
 	ErrFailedToClaimAmount             = "Failed to claim amount"
 	ErrFailedToClaim                   = "Failed to claim red envelope"
 	ErrOfferNotFound                   = "Offer not found"
-	ErrFailedToGetOffer				   = "Failed to get offer"
+	ErrFailedToGetOffer                = "Failed to get offer"
 	ErrFailedToCancelOffer             = "Failed to cancel offer"
 	ErrFailedToCancelOfferWithOrder    = "Failed to cancel offer with active orders"
 	ErrFailedToRefundOfferAmount       = "Failed to refund offer amount"
-
 )
 
 // Business Logic Errors
@@ -112,4 +111,5 @@ var (
 	ErrInsufficientAccountBalance = errors.New("insufficient account balance")
 	ErrOfferHasActiveOrders       = errors.New("offer already has active pending orders")
 	ErrTxHashAlreadyUsed          = errors.New("transaction hash already used")
+	ErrOfferLimitExceeded         = errors.New("you have reached the maximum limit of active offers")
 )

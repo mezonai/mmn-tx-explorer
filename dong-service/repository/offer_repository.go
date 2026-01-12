@@ -530,3 +530,18 @@ func (r *OfferRepository) ExistsByTxHash(ctx context.Context, txHash string) (bo
 	}
 	return true, nil
 }
+
+func (r *OfferRepository) CountActiveOffersByUser(ctx context.Context, sellerUserID string) (int64, error) {
+	query := fmt.Sprintf(`
+		SELECT COUNT(*)
+		FROM %s.offers
+		WHERE seller_user_id = $1 AND status IN ('OPEN', 'PENDING', 'CONFIRMED')
+	`, r.dongSchema)
+
+	var count int64
+	err := r.db.QueryRowContext(ctx, query, sellerUserID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count active offers by user: %w", err)
+	}
+	return count, nil
+}

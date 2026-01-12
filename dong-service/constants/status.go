@@ -99,7 +99,7 @@ const (
 )
 
 const (
-	TradingOpen     = "OPEN"
+	TradingOpen      = "OPEN"
 	TradingPending   = "PENDING"
 	TradingConfirmed = "CONFIRMED"
 	TradingCanceled  = "CANCELED"
@@ -134,4 +134,5 @@ const (
 	MaxLengthSymbol           int     = 64
 	MaxTotalBankInfoSize      int     = 1024
 	MaxIndividualBankInfoSize int     = 128
+	MaxActiveOffersPerUser    int64   = 10
 )
