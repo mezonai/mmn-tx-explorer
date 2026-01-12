@@ -165,7 +165,7 @@ export const ChatSidebar = ({ sellerId }: ChatSidebarProps) => {
 
       <div
         className={cn(
-          'fixed inset-0 z-50 flex flex-col bg-white transition-transform duration-300 md:relative md:inset-auto md:z-0 md:flex md:h-full md:w-87.5 md:translate-y-0 md:border-l md:border-gray-200 lg:w-125 dark:bg-black dark:md:border-gray-800',
+          'fixed inset-0 z-50 flex h-full flex-col bg-white transition-transform duration-300 md:sticky md:top-24 md:z-0 md:flex md:h-[calc(100vh-140px)] md:w-87.5 md:translate-y-0 lg:w-125 dark:bg-black dark:md:border-gray-800',
           isMobileOpen ? 'translate-y-0' : 'translate-y-full md:translate-y-0'
         )}
       >
