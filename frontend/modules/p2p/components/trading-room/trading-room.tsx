@@ -145,7 +145,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
 
     return (
       <div className="bg-background relative flex flex-col">
-        {/* Header - Fixed height */}
+
         <div className="border-border flex h-14 shrink-0 items-center justify-between border-b px-6">
           <div className="flex items-center">
             <Button
@@ -177,9 +177,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
           </div>
         </div>
 
-        {/* Content area - Takes remaining height */}
         <div className="flex flex-1 flex-col md:flex-row gap-6">
-          {/* Left content - Scrollable */}
           <div className="border-border w-full p-6 md:w-7/12 lg:w-8/12">
             <ProgressSteps order={displayOrder} />
             {offer.has_active_order && (
@@ -208,7 +206,6 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
             />
           </div>
 
-          {/* Right sidebar - Full height, internally scrollable */}
           <ChatSidebar sellerId={offer.seller_user_id} />
         </div>
       </div>
@@ -233,12 +230,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
 
   return (
     <div className="bg-background relative flex flex-col">
-      {/* Header - Fixed height */}
       <TradingRoomHeader order={effectiveOrder} userRole={userRole} />
-
-      {/* Content area - Takes remaining height after header */}
       <div className="flex flex-1 flex-col md:flex-row gap-6">
-        {/* Left content - Scrollable */}
         <div className="border-border w-full p-4 md:w-8/12 lg:w-10/12 ">
           <ProgressSteps order={effectiveOrder} />
 
@@ -289,8 +282,6 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
             </div>
           </div>
         </div>
-
-        {/* Right sidebar - Full height */}
         <ChatSidebar sellerId={userRole === 'buyer' ? order.seller_user_id : order.buyer_user_id} />
       </div>
     </div>
