@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import React from 'react';
 import { CancelConfirmDialog } from '../cancel-confirm-dialog';
 import { TriangleAlert } from 'lucide-react';
+import { formatCurrency } from '@/modules/p2p/util';
 interface OfferMobileCardProps {
   offer: P2POffer;
 }
@@ -26,7 +27,7 @@ const OfferMobileCard = ({ offer }: OfferMobileCardProps) => {
         <div className="text-right">
           <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">Rate</span>
           <p className="text-brand-primary text-sm font-bold">
-            {offer.price_rate.toLocaleString('vi-VN')} VND/{APP_CONFIG.CHAIN_SYMBOL}
+            {formatCurrency(offer.price_rate)} VND/{APP_CONFIG.CHAIN_SYMBOL}
           </p>
         </div>
       </div>
@@ -35,15 +36,14 @@ const OfferMobileCard = ({ offer }: OfferMobileCardProps) => {
         <div className="flex items-center justify-between">
           <span className="text-xs text-gray-500 dark:text-gray-400">Available</span>
           <span className="text-primary text-sm font-semibold dark:text-white">
-            {offer.amount.toLocaleString('en-US')} {APP_CONFIG.CHAIN_SYMBOL}
+            {formatCurrency(offer.amount)} {APP_CONFIG.CHAIN_SYMBOL}
           </span>
         </div>
 
         <div className="border-border/50 flex items-center justify-between border-t pt-2">
           <span className="text-xs text-gray-500 dark:text-gray-400">Limit</span>
           <span className="text-primary text-right text-sm font-medium dark:text-white">
-            {offer.limit.min.toLocaleString('en-US')} - {offer.limit.max.toLocaleString('en-US')}{' '}
-            {APP_CONFIG.CHAIN_SYMBOL}
+            {formatCurrency(offer.limit.min)} - {formatCurrency(offer.limit.max)} {APP_CONFIG.CHAIN_SYMBOL}
           </span>
         </div>
       </div>
