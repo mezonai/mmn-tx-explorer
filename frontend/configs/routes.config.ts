@@ -1,4 +1,4 @@
-import { UUID } from "crypto";
+import { UUID } from 'crypto';
 
 export const ROUTES = {
   BLOCK: (number: number, queryParams?: string) => `/blocks/${number}${queryParams ? `?${queryParams}` : ''}`,
@@ -16,7 +16,9 @@ export const ROUTES = {
   MEZON_GAME: '/mezon-game',
   PENDING_TRANSACTION: (hash: string) => `/transactions/pending/${hash}`,
   PROFILE: '/profile',
-  STAKE: '/stake',
+  P2P: '/p2p',
+  P2P_TRADING_ROOM: (orderId: string, type?: 'offer') =>
+    `/p2p/trading-room/${orderId}${type === 'offer' ? '?type=offer' : ''}`,
   SWAP: '/swap',
   TRANSACTION: (hash: string, queryParams?: string) => `/transactions/${hash}${queryParams ? `?${queryParams}` : ''}`,
   TRANSACTIONS: '/transactions',
@@ -26,4 +28,5 @@ export const ROUTES = {
   EXPORT_CSV: '/export-transactions-csv',
 
   CREATE_DONATION_UPDATE: (slug: string) => `/donation-campaign/${slug}/create-update`,
+  EDIT_DONATION_UPDATE: (slug: string, id: string) => `/donation-campaign/${slug}/edit-update/${id}`,
 } as const;

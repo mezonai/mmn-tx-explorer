@@ -13,6 +13,7 @@ import { TRANSACTIONS_QUERY_KEY } from '@/modules/transaction';
 import { useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/modules/donation-campaign/constants';
 import { TransactionComplete, TransactionType } from '@/modules/donation-campaign/components/transaction-complete';
+import { ETransferType } from '@/modules/transaction';
 
 export function DonateDialog({ walletAddress, campaignId }: { walletAddress: string; campaignId: string }) {
   const { transfer, loading, user } = useTransfer();
@@ -68,7 +69,7 @@ export function DonateDialog({ walletAddress, campaignId }: { walletAddress: str
           amount: form.amount,
           note: form.note.trim(),
         },
-        'donation-campaign'
+        ETransferType.DonationCampaign
       );
       if (result.success) {
         toast.success('Donation success!');

@@ -9,6 +9,8 @@ import { APP_CONFIG } from '@/configs/app.config';
 import { useTheme } from '@/providers/ThemeProvider';
 import { ROUTES } from '@/configs/routes.config';
 import { STORAGE_KEYS } from '@/constant';
+import { ChevronDown, Globe, Megaphone, Moon, Sun, LogOut } from 'lucide-react';
+import { Wallet02, ChevronRight } from '@/assets/icons';
 
 export const NavBarAuthPanel: React.FC = () => {
   const { user } = useUser();
@@ -51,18 +53,16 @@ export const NavBarAuthPanel: React.FC = () => {
   }, [open]);
 
   return user ? (
-    <div className="relative hidden items-center md:flex" ref={panelRef}>
-      <button className={classname} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+    <div className="relative hidden items-center lg:flex" ref={panelRef}>
+      <Button className={classname} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
         <img
           src={user.avatar}
           alt="User Avatar"
           className="h-8 w-8 rounded-full border border-gray-300 object-cover dark:border-gray-600"
         />
         <span className="text-sm font-medium text-gray-900 dark:text-white">{user.username}</span>
-        <i
-          className={cn('fa-solid fa-chevron-down text-xs text-gray-400 transition-transform', open && 'rotate-180')}
-        ></i>
-      </button>
+        <ChevronDown className={cn('ml-1 h-4 w-4 text-gray-600 dark:text-gray-300', open && 'rotate-180')} />
+      </Button>
       {renderPanel && (
         <div
           role="menu"
@@ -104,7 +104,7 @@ export const NavBarAuthPanel: React.FC = () => {
             <div className="flex items-center justify-between">
               <span className="text-gray-600 dark:text-gray-400">Network</span>
               <span className="flex items-center space-x-1 text-gray-900 dark:text-gray-200">
-                <i className="fa-solid fa-globe text-xs"></i>
+                <Globe className="h-4 w-4" />
                 <span>{APP_CONFIG.CHAIN_NAME}</span>
               </span>
             </div>
@@ -124,10 +124,10 @@ export const NavBarAuthPanel: React.FC = () => {
               className="group flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-gray-900 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800"
             >
               <span className="flex items-center space-x-2">
-                <i className="fa-solid fa-wallet w-4 text-center text-[var(--color-brand-primary)]"></i>
-                <span className="transition-colors">Account Overview</span>
+                <Wallet02 className="text-brand-primary h-4 w-4" />
+                <span className="font-medium transition-colors">Account Overview</span>
               </span>
-              <i className="fa-solid fa-chevron-right text-xs text-gray-500 transition-all group-hover:translate-x-0.5"></i>
+              <ChevronRight className="h-4 w-4 text-gray-500 transition-all group-hover:translate-x-0.5" />
             </a>
             <a
               href={ROUTES.DONATION_CAMPAIGN}
@@ -139,40 +139,41 @@ export const NavBarAuthPanel: React.FC = () => {
               className="group flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-gray-900 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800"
             >
               <span className="flex items-center space-x-2">
-                <i className="fa-solid fa-bullhorn w-4 text-center text-[var(--color-brand-primary)]"></i>
-                <span className="transition-colors">My Campaigns</span>
+                <Megaphone className="text-brand-primary h-4 w-4" />
+                <span className="font-medium transition-colors">My Campaigns</span>
               </span>
-              <i className="fa-solid fa-chevron-right text-xs text-gray-500 transition-all group-hover:translate-x-0.5"></i>
+              <ChevronRight className="h-4 w-4 text-gray-500 transition-all group-hover:translate-x-0.5" />
             </a>
-            <button
+            <Button
+              variant="ghost"
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               className="group flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-gray-900 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800"
             >
               <span className="flex items-center space-x-2">
-                <i
-                  className={cn(
-                    'w-4 text-center text-[var(--color-brand-primary)]',
-                    theme === 'dark' ? 'fa-solid fa-moon' : 'fa-solid fa-sun'
-                  )}
-                ></i>
+                {theme === 'dark' ? (
+                  <Sun className="text-brand-primary h-4 w-4" />
+                ) : (
+                  <Moon className="text-brand-primary h-4 w-4" />
+                )}
                 <span className="transition-colors">Toggle {theme === 'dark' ? 'Light' : 'Dark'} Mode</span>
               </span>
-              <i className="fa-solid fa-chevron-right text-xs text-gray-500 transition-all group-hover:translate-x-0.5"></i>
-            </button>
+              <ChevronRight className="h-4 w-4 text-gray-500 transition-all group-hover:translate-x-0.5" />
+            </Button>
           </div>
 
           <div className="border-t border-gray-300 dark:border-gray-700"></div>
-          <button
+          <Button
             onClick={logout}
             className="w-full cursor-pointer rounded-lg border border-red-500/40 bg-transparent py-2 text-sm font-semibold text-red-400 transition hover:bg-red-500/20"
           >
-            <i className="fa-solid fa-right-from-bracket mr-2"></i> Logout
-          </button>
+            <LogOut className="mr-2 inline-block h-4 w-4" />
+            Logout
+          </Button>
         </div>
       )}
     </div>
   ) : (
-    <Button onClick={login} className={'bg-brand-primary hidden rounded-lg font-semibold text-white shadow-xs md:flex'}>
+    <Button onClick={login} className="bg-brand-primary hidden rounded-lg font-semibold text-white shadow-xs lg:flex">
       <>
         <span>Login with Mezon</span>
         <ArrowRightToLine />
