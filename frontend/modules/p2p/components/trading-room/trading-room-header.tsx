@@ -100,13 +100,15 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
           <span className="text-[12px] text-red-400 mt-0.5 font-medium">This order can no longer be processed</span>
         </div>
       )}
-      <div className={`flex items-center gap-2 rounded-full px-3 py-1 text-sm font-bold ${isExpired
-        ? 'bg-red-500/10 text-red-500'
-        : 'bg-yellow-500/10 text-yellow-500'
-        }`}>
-        <Clock className="h-4 w-4" />
-        {remainingTime.minutes}:{remainingTime.seconds.toString().padStart(2, '0')}
-      </div>
+      {order.status !== OrderStatus.COMPLETED && (
+        <div
+          className={`flex items-center gap-2 rounded-full px-3 py-1 text-sm font-bold ${isExpired ? 'bg-red-500/10 text-red-500' : 'bg-yellow-500/10 text-yellow-500'
+            }`}
+        >
+          <Clock className="h-4 w-4" />
+          {remainingTime.minutes}:{remainingTime.seconds.toString().padStart(2, '0')}
+        </div>
+      )}
     </header>
   );
 };
