@@ -139,10 +139,10 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		orders.GET("/me", orderHandler.GetMyOrders)
 		orders.GET("/:id", orderHandler.GetOrderDetail)
 
-		// ZK QR Claims
-		zkClaims := v1.Group("/red-envelopes/qr")
-		zkClaims.Use(middleware.ZKAuthentication())
-		zkClaims.POST("/claim-amount", redEnvelopeHandler.ClaimAmountRedEnvelope)
-		zkClaims.POST("/:id/claim", redEnvelopeHandler.ClaimRedEnvelope)
+		// Red Envelope QR routes (ZK authentication)
+		redEnvelopeQR := v1.Group("/red-envelopes/qr")
+		redEnvelopeQR.Use(middleware.ZKAuthentication())
+		redEnvelopeQR.POST("/claim-amount", redEnvelopeHandler.ClaimAmountRedEnvelopeQR)
+		redEnvelopeQR.POST("/:id/claim", redEnvelopeHandler.ClaimRedEnvelopeQR)
 	}
 }
