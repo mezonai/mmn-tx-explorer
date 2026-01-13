@@ -15,7 +15,6 @@ import { CreateOfferFormValues, createOfferSchema } from './validation-schema';
 import { TradeTypeSection } from './trade-type-section';
 import { AmountSection } from './amount-section';
 import { PaymentSection } from './payment-section';
-import { useUpdateOfferStatus } from '@/modules/p2p/hooks/useUpdateOfferStatus';
 import { APP_CONFIG } from '@/configs/app.config';
 import { useUser } from '@/providers';
 import { mmnClient } from '@/modules/auth';
@@ -26,7 +25,6 @@ export const CreateOfferModal = () => {
   const [open, setOpen] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [pendingData, setPendingData] = useState<CreateOfferFormValues | null>(null);
-  const { mutate: updateOfferStatus } = useUpdateOfferStatus();
   const { mutateAsync: createOfferAsync, isPending } = useCreateOffer();
   const { transfer } = useTransfer();
   const { user } = useUser();
@@ -117,30 +115,17 @@ export const CreateOfferModal = () => {
           recipientAddress: resultData.intermediary_wallet_address,
           amount: payload.amount.toString(),
           note: 'p2p-trading',
+          offerId: resultData.offer.offer_id,
         },
         ETransferType.P2PTrading
       );
 
       if (transferResult.success) {
-        setTimeout(() => {
-          updateOfferStatus({
-            offer_id: Number(resultData.offer.offer_id),
-            tx_hash: transferResult.txHash!,
-            status: 'CONFIRMED',
-          });
-        }, 2000);
-        toast.success('Create offer success!');
+        toast.success('Create offer success! Status will be updated automatically.');
         setShowConfirm(false);
         setOpen(false);
       } else {
         toast.error(JSON.parse(transferResult.error || '').message || 'Create offer fail. Please try again.');
-        setTimeout(() => {
-          updateOfferStatus({
-            offer_id: Number(resultData.offer.offer_id),
-            tx_hash: ' ',
-            status: 'FAILED',
-          });
-        }, 2000);
         console.error(transferResult.error);
         setShowConfirm(false);
       }

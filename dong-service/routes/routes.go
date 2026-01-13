@@ -122,7 +122,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		orderHandler := handlers.NewOrderHandler(orderService, offerService)
 
 		offersPrivate.POST("", offerHandler.CreateOffer)
-		offersPrivate.POST("/update-status", offerHandler.UpdateOfferStatus)
 		offersPrivate.GET("/me", offerHandler.GetMyOffers)
 		offersPrivate.GET("/:id", offerHandler.GetOfferDetail)
 		offersPrivate.GET("/:id/orders", orderHandler.ListOrdersForOffer)

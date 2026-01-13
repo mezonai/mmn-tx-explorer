@@ -82,6 +82,7 @@ type BlockchainConfig struct {
 
 type SchedulerConfig struct {
 	SyncContributorsInterval    int `mapstructure:"sync_contributors_interval"`     // in seconds
+	SyncOffersInterval          int `mapstructure:"sync_offers_interval"`           // in seconds
 	ExpiredRedEnvelopesInterval int `mapstructure:"expired_red_envelopes_interval"` // in seconds
 	RecentStatsWindowDays       int `mapstructure:"recent_stats_window_days"`
 	ExpiredOrdersInterval       int `mapstructure:"expired_orders_interval"` // in seconds
