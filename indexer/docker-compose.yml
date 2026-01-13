@@ -11,13 +11,25 @@ services:
 
   # PostgreSQL database
   postgres:
-    image: postgres:16
+    build:
+      context: ./postgres
+    image: indexer-postgres:16-partman-cron
     ports:
       - "5432:5432"
     environment:
       POSTGRES_DB: indexer
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_preload_libraries=pg_partman_bgw"
+      - "-c"
+      - "pg_partman_bgw.interval=3600"
+      - "-c"
+      - "pg_partman_bgw.role=admin"
+      - "-c"
+      - "pg_partman_bgw.dbname=indexer"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 

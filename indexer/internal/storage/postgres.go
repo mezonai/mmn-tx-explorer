@@ -823,18 +823,28 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 // insertBlockTx inserts or upsert a single block within a provided transaction and context,
 // and updates the total_blocks stat if the block has transactions.
 func (p *PostgresConnector) insertBlockTx(ctx context.Context, tx *sql.Tx, block *common.Block) error {
-	const blockInsert = `INSERT INTO blocks (chain_id, block_number, block_timestamp, hash, parent_hash, transaction_count)
+	const blockInsert = `
+		WITH inserted AS (
+			INSERT INTO blocks (chain_id, block_number, block_timestamp, hash, parent_hash, transaction_count)
 			VALUES ($1, $2, $3, $4, $5, $6)
-			ON CONFLICT (chain_id, block_number)
-			DO UPDATE SET 
-				block_timestamp = EXCLUDED.block_timestamp,
-				hash = EXCLUDED.hash,
-				parent_hash = EXCLUDED.parent_hash,
-				transaction_count = EXCLUDED.transaction_count,
+			ON CONFLICT (chain_id, block_number, block_timestamp) DO NOTHING
+			RETURNING 1
+		),
+		updated AS (
+			UPDATE blocks
+			SET
+				hash = $4,
+				parent_hash = $5,
+				transaction_count = $6,
 				updated_at = NOW()
-			RETURNING (xmax = 0) AS inserted`
+			WHERE chain_id = $1 AND block_number = $2 AND block_timestamp = $3
+				AND NOT EXISTS (SELECT 1 FROM inserted)
+			RETURNING 1
+		)
+		SELECT 
+			(SELECT COUNT(*) FROM inserted) AS inserted_count`
 
-	var inserted bool
+	var insertedCount int
 	if err := tx.QueryRowContext(ctx, blockInsert,
 		bigIntToString(block.ChainID),
 		bigIntToString(block.Number),
@@ -842,11 +852,11 @@ func (p *PostgresConnector) insertBlockTx(ctx context.Context, tx *sql.Tx, block
 		block.Hash,
 		block.ParentHash,
 		block.TransactionCount,
-	).Scan(&inserted); err != nil {
+	).Scan(&insertedCount); err != nil {
 		return fmt.Errorf("failed to insert block: %w", err)
 	}
 
-	if inserted && block.TransactionCount > 0 {
+	if insertedCount > 0 && block.TransactionCount > 0 {
 		if _, err := tx.ExecContext(ctx, `
 			INSERT INTO stats(key, value) VALUES ('total_blocks', $1)
 				ON CONFLICT (key) 
@@ -1596,31 +1606,39 @@ func (p *PostgresConnector) insertTransactionsTx(
 				value, transaction_type, status, text_data, extra_info, transaction_extra_info_type
 			)
 			VALUES %s
-			ON CONFLICT (chain_id, block_number, hash)
-			DO UPDATE SET
-				nonce = EXCLUDED.nonce,
-				block_hash = EXCLUDED.block_hash,
-				from_address = EXCLUDED.from_address,
-				to_address = EXCLUDED.to_address,
-				transaction_timestamp = EXCLUDED.transaction_timestamp,
-				value = EXCLUDED.value,
-				transaction_type = EXCLUDED.transaction_type,
-				status = EXCLUDED.status,
-				text_data = EXCLUDED.text_data,
-				extra_info = EXCLUDED.extra_info,
-				transaction_extra_info_type = EXCLUDED.transaction_extra_info_type,
+			ON CONFLICT (chain_id, block_number, hash, transaction_timestamp) DO NOTHING
+			RETURNING transaction_extra_info_type, status
+		),
+		updated AS (
+			UPDATE transactions t
+			SET
+				nonce = v.nonce,
+				block_hash = v.block_hash,
+				from_address = v.from_address,
+				to_address = v.to_address,
+				value = v.value,
+				transaction_type = v.transaction_type,
+				status = v.status,
+				text_data = v.text_data,
+				extra_info = v.extra_info,
+				transaction_extra_info_type = v.transaction_extra_info_type,
 				updated_at = NOW()
-			RETURNING 
-				(xmax = 0) AS is_new,
-				transaction_extra_info_type,
-				status,
-				extra_info
+			FROM (VALUES %s) AS v(
+				chain_id, hash, nonce, block_hash, block_number,
+				from_address, to_address, transaction_timestamp,
+				value, transaction_type, status, text_data, extra_info, transaction_extra_info_type
+			)
+			WHERE t.chain_id = v.chain_id 
+				AND t.block_number = v.block_number 
+				AND t.hash = v.hash
+				AND t.transaction_timestamp = v.transaction_timestamp
+				AND NOT EXISTS (SELECT 1 FROM inserted WHERE inserted.transaction_extra_info_type = t.transaction_extra_info_type)
+			RETURNING t.transaction_extra_info_type, t.status
 		)
 		SELECT
-			COUNT(*) FILTER (WHERE is_new) AS inserted_count,
-			COUNT(*) FILTER (WHERE is_new AND transaction_extra_info_type IN ($%d, $%d) AND status = $%d) AS new_give_coffee
-		FROM inserted;
-	`, strings.Join(valueStrings, ","), nextIndex, nextIndex+1, nextIndex+2)
+			(SELECT COUNT(*) FROM inserted) AS inserted_count,
+			(SELECT COUNT(*) FILTER (WHERE transaction_extra_info_type IN ($%d, $%d) AND status = $%d) FROM inserted) AS new_give_coffee
+	`, strings.Join(valueStrings, ","), strings.Join(valueStrings, ","), nextIndex, nextIndex+1, nextIndex+2)
 
 	var insertedCount, newGiveCoffeeCount int
 
