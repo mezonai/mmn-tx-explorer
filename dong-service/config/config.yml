@@ -93,4 +93,4 @@ event:
 
 # Zero-Knowledge Proof Configuration
 zk:
-  verification_key_path: "./verifying_key.b64"
+  verification_key_path: "./config/verifying_key.b64"
