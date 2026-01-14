@@ -45,7 +45,7 @@ func (j *CancelExpiredOrdersJob) Run(ctx context.Context) error {
 	if count > 0 {
 		logger.Info().Int64("count", count).Msg("Cancelled expired orders")
 
-		go services.SendSocketEvent("", constants.OFFER_LIST_REFRESH, map[string]any{
+		go services.SendSocketEvent(constants.ALL_RECEIVER, constants.OFFER_LIST_REFRESH, map[string]any{
 			"action": "expired p2p orders",
 		})
 
