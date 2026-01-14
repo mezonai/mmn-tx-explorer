@@ -162,7 +162,10 @@ export function AppProvider({ children }: AppProviderProps) {
         if (userInfo.access_token) {
           wsManager.connect(userInfo.access_token);
         }
-        router.replace(pathname);
+        const currentParams = new URLSearchParams(searchParams.toString());
+        currentParams.delete('authCode');
+        const newUrl = currentParams.toString() ? `${pathname}?${currentParams.toString()}` : pathname;
+        router.replace(newUrl);
         toast.success('Login successful!');
       } catch {
         resetSession();
