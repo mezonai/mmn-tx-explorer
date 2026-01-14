@@ -515,19 +515,7 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelopeQR(c *gin.Context) {
 		return
 	}
 
-	var req models.ClaimAmountRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		logger.Error().Err(err).Msg("Invalid claim amount request")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+err.Error()))
-		return
-	}
-
 	id := c.Query("id")
-
-	if req.UserID == "" {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Missing user_id"))
-		return
-	}
 
 	userID, err := utils.GetZKUserIDFromContext(c)
 	if err != nil {

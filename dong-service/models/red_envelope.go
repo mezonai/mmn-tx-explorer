@@ -102,10 +102,6 @@ type ClaimAmount struct {
 	Description string
 }
 
-type ClaimAmountRequest struct {
-	UserID string `json:"user_id,omitempty"`
-}
-
 type RedEnvelopeSplitMoney struct {
 	ID             int64   `json:"id" db:"id"`
 	RedEnvelopeID  string  `json:"red_envelope_id" db:"red_envelope_id"`
@@ -121,5 +117,4 @@ type RedEnvelopeSplitMoney struct {
 type ClaimRedEnvelopeRequest struct {
 	ID           string `json:"id" binding:"required"`
 	SplitMoneyID int64  `json:"split_money_id" binding:"required"`
-	UserID       string `json:"user_id,omitempty"`
 }
