@@ -2256,21 +2256,12 @@ func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
 
 	var totalP2POfferAvailable float64
 	err = p.db.QueryRowContext(ctx, `
-		SELECT COALESCE(
-			SUM(CASE 
-				WHEN transaction_extra_info_type = $1 AND status = $2 AND extra_info::jsonb ? 'UserSenderId' THEN value::numeric
-				WHEN transaction_extra_info_type = $1 AND status = $2 AND NOT (extra_info::jsonb ? 'UserSenderId') THEN -value::numeric
-				ELSE 0
-			END), 
-			0
-		) FROM transactions
-		WHERE transaction_extra_info_type = $1 AND status = $2
-	`, common.TransactionExtraInfoP2PTrading.String(), pb.TransactionStatus_FINALIZED).Scan(&totalP2POfferAvailable)
+		SELECT COALESCE(SUM(amount), 0)
+		FROM dong_schema.offers
+		WHERE status = 'CONFIRMED' AND amount > 0
+	`).Scan(&totalP2POfferAvailable)
 	if err != nil {
 		return fmt.Errorf("failed to calculate total_p2p_offer_available: %w", err)
-	}
-	if totalP2POfferAvailable < 0 {
-		totalP2POfferAvailable = 0
 	}
 
 	statsUpdates := []struct {
