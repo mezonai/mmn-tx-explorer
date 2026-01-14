@@ -28,7 +28,7 @@ export const OrderInfoCard = ({ order }: OrderInfoCardProps) => {
         <div className="flex items-center justify-between">
           <span className="text-xs text-muted-foreground">Exchange rate</span>
           <span className="text-brand-primary text-sm font-semibold">
-            1 {APP_CONFIG.CHAIN_SYMBOL} = {order.price_rate.toLocaleString('vi-VN')} VND
+            1 {APP_CONFIG.CHAIN_SYMBOL} = {formatCurrency(order.price_rate)} VND
           </span>
         </div>
 

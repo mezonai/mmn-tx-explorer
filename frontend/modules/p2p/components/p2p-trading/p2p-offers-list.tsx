@@ -15,6 +15,7 @@ import { CancelConfirmDialog } from './cancel-confirm-dialog';
 import { OFFERS_STATUS } from '../../constants';
 import { ShareOfferModal } from './share-offer-modal';
 import { TriangleAlert } from 'lucide-react';
+import { NumberUtil } from '@/utils';
 
 interface P2POffersTableProps {
   offers: P2POffer[] | undefined;
@@ -35,11 +36,11 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
     },
     {
       headerContent: 'RATE',
-      renderCell: (order) => (
+      renderCell: (offer) => (
         <div>
           <div className="mt-1 text-sm text-gray-400">
             <span className="text-brand-primary font-semibold">
-              1 {APP_CONFIG.CHAIN_SYMBOL} = {order.price_rate.toLocaleString('vi-VN')} VND
+              1 {APP_CONFIG.CHAIN_SYMBOL} = {NumberUtil.formatWithCommas(offer.price_rate)} VND
             </span>
           </div>
         </div>
@@ -59,10 +60,11 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
           <div className="flex flex-col gap-2 text-left">
             <div className="flex flex-col gap-0.5 text-gray-300 dark:text-gray-300">
               <span className="text-primary font-bold dark:text-white">
-                {available.toLocaleString('en-US')} / {total.toLocaleString('en-US')} {APP_CONFIG.CHAIN_SYMBOL}
+                {NumberUtil.formatWithCommas(available)} / {NumberUtil.formatWithCommas(total)}{' '}
+                {APP_CONFIG.CHAIN_SYMBOL}
               </span>
               <span className="text-brand-primary text-[10px] font-bold tracking-wider uppercase">
-                {sold.toLocaleString()} {APP_CONFIG.CHAIN_SYMBOL} Sold
+                {NumberUtil.formatWithCommas(sold)} {APP_CONFIG.CHAIN_SYMBOL} Sold
               </span>
             </div>
             <div className="w-50 space-y-1.5">
@@ -93,7 +95,7 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
             <div className="mt-1 flex items-baseline gap-1.5">
               <span className="text-brand-primary w-6 text-[10px] font-bold tracking-wider uppercase">Min</span>
               <span className="text-sm font-bold dark:text-white">
-                {offer.limit.min.toLocaleString('en-US')}{' '}
+                {NumberUtil.formatWithCommas(offer.limit.min)}{' '}
                 <span className="text-xs font-normal text-gray-400">{APP_CONFIG.CHAIN_SYMBOL}</span>
               </span>
             </div>
@@ -101,7 +103,7 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
             <div className="mt-1 flex items-baseline gap-1.5">
               <span className="text-brand-primary w-6 text-[10px] font-bold tracking-wider uppercase">Max</span>
               <span className="text-sm font-bold dark:text-white">
-                {offer.limit.max.toLocaleString('en-US')}{' '}
+                {NumberUtil.formatWithCommas(offer.limit.max)}{' '}
                 <span className="text-xs font-normal text-gray-400">{APP_CONFIG.CHAIN_SYMBOL}</span>
               </span>
             </div>

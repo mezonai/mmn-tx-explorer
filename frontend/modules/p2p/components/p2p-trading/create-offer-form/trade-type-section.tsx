@@ -12,7 +12,6 @@ interface TradeTypeSectionProps {
   trigger: UseFormTrigger<CreateOfferFormValues>;
 }
 
-
 const getRawValue = (val: string): number => {
   return parseFloat(val.replace(/\./g, '').replace(/,/g, '')) || 0;
 };
@@ -89,9 +88,12 @@ export const TradeTypeSection = ({ control, trigger }: TradeTypeSectionProps) =>
                       placeholder="0.8"
                       autoComplete="off"
                       onChange={(e) => {
-                        const val = e.target.value;
+                        let val = e.target.value;
                         if (!/^\d*\.?\d*$/.test(val)) {
                           return;
+                        }
+                        if (val.startsWith('.')) {
+                          val = '0' + val;
                         }
                         const cleanVal = val.replace(/^0+(?=\d)/, '');
                         if (cleanVal !== '' && parseFloat(cleanVal) >= MAX_AMOUNT) {

@@ -10,6 +10,7 @@ import { AddressDisplay, Chip } from '@/components/shared';
 import { ROUTES } from '@/configs/routes.config';
 import { Button } from '@/components/ui/button';
 import { Countdown } from '../shared/count-down';
+import { NumberUtil } from '@/utils';
 import { getOrderStatusInfo } from '../../util';
 
 interface P2POrdersListProps {
@@ -58,7 +59,7 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
         <div>
           <div className="mt-1 text-sm text-gray-400">
             <span className="text-brand-primary font-semibold">
-              1 {APP_CONFIG.CHAIN_SYMBOL} = {order.price_rate.toLocaleString('vi-VN')} VND
+              1 {APP_CONFIG.CHAIN_SYMBOL} = {NumberUtil.formatWithCommas(order.price_rate)} VND
             </span>
           </div>
         </div>

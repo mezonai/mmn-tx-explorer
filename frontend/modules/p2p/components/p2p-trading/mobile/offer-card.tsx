@@ -11,6 +11,7 @@ import { TriangleAlert } from 'lucide-react';
 import { P2POffer } from '@/modules/p2p/types';
 import { CancelConfirmDialog } from '../cancel-confirm-dialog';
 import { OFFERS_STATUS } from '@/modules/p2p/constants';
+import { NumberUtil } from '@/utils';
 
 interface OfferMobileCardProps {
   offer: P2POffer;
@@ -36,7 +37,7 @@ const OfferMobileCard = ({ offer }: OfferMobileCardProps) => {
         <div className="text-right">
           <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">Rate</span>
           <p className="text-brand-primary text-sm font-bold">
-            {offer.price_rate.toLocaleString('vi-VN')} VND
+            {NumberUtil.formatWithCommas(offer.price_rate)} VND
             <span className="text-xs font-normal text-gray-500">/{APP_CONFIG.CHAIN_SYMBOL}</span>
           </p>
         </div>
@@ -47,15 +48,15 @@ const OfferMobileCard = ({ offer }: OfferMobileCardProps) => {
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Available</span>
             <span className="text-brand-primary text-[10px] font-bold tracking-wider uppercase">
-              {sold.toLocaleString()} {APP_CONFIG.CHAIN_SYMBOL} Sold
+              {NumberUtil.formatWithCommas(sold)} {APP_CONFIG.CHAIN_SYMBOL} Sold
             </span>
           </div>
 
           <div className="flex items-end justify-between gap-2">
             <span className="text-primary text-sm font-bold dark:text-white">
-              {available.toLocaleString('en-US')}{' '}
+              {NumberUtil.formatWithCommas(available)}{' '}
               <span className="text-muted-foreground text-xs font-normal">
-                / {total.toLocaleString('en-US')} {APP_CONFIG.CHAIN_SYMBOL}
+                / {NumberUtil.formatWithCommas(total)} {APP_CONFIG.CHAIN_SYMBOL}
               </span>
             </span>
           </div>
@@ -75,14 +76,14 @@ const OfferMobileCard = ({ offer }: OfferMobileCardProps) => {
             <div className="flex flex-col gap-1">
               <span className="text-brand-primary text-[10px] font-bold tracking-wider uppercase">Min Limit</span>
               <span className="text-sm font-bold dark:text-white">
-                {offer.limit.min.toLocaleString('en-US')}
+                {NumberUtil.formatWithCommas(offer.limit.min)}
                 <span className="ml-1 text-[10px] font-normal text-gray-400">{APP_CONFIG.CHAIN_SYMBOL}</span>
               </span>
             </div>
             <div className="flex flex-col gap-1 text-right">
               <span className="text-brand-primary text-[10px] font-bold tracking-wider uppercase">Max Limit</span>
               <span className="text-sm font-bold dark:text-white">
-                {offer.limit.max.toLocaleString('en-US')}
+                {NumberUtil.formatWithCommas(offer.limit.max)}
                 <span className="ml-1 text-[10px] font-normal text-gray-400">{APP_CONFIG.CHAIN_SYMBOL}</span>
               </span>
             </div>
