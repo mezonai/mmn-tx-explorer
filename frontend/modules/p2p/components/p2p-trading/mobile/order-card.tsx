@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { APP_CONFIG } from '@/configs/app.config';
 import { ROUTES } from '@/configs/routes.config';
 import { Countdown } from '../../shared/count-down';
-import { getOrderStatusInfo } from '@/modules/p2p/util';
+import { formatCurrency, getOrderStatusInfo } from '@/modules/p2p/util';
 import { P2POrder } from '@/modules/p2p/types';
 import { useRouter } from 'next/navigation';
 interface OrderMobileCardProps {
@@ -64,7 +64,7 @@ export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
             <div className="text-right">
               <p className="text-muted-foreground mb-1 text-[10px] leading-none font-bold uppercase">Rate</p>
               <p className="text-brand-primary text-xs font-semibold">
-                1 {APP_CONFIG.CHAIN_SYMBOL} = {order.price_rate.toLocaleString('vi-VN')} VND
+                1 {APP_CONFIG.CHAIN_SYMBOL} = {formatCurrency(order.price_rate)} VND
               </p>
             </div>
           </div>
