@@ -86,8 +86,22 @@ export class WebSocketManager {
         let parsedData: unknown;
         try {
           parsedData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-        } catch {
+        } catch (parseError) {
+          console.error('[WebSocket] Failed to parse message:', parseError);
           parsedData = event.data;
+        }
+
+        if (
+          parsedData &&
+          typeof parsedData === 'object' &&
+          'payload' in parsedData &&
+          typeof parsedData.payload === 'string'
+        ) {
+          try {
+            (parsedData as WebSocketEvent).payload = JSON.parse(parsedData.payload);
+          } catch {
+            // Keep original payload if parsing fails
+          }
         }
 
         this.handleEvent(parsedData ?? event.data);

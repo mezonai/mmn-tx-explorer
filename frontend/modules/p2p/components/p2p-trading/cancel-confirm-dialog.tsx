@@ -24,7 +24,6 @@ export const CancelConfirmDialog = ({ offer }: CancelConfirmDialogProps) => {
         await cancelOfferAsync(offer.offer_id);
         toast.success('Offer cancelled successfully');
         setOpen(false);
-        window.location.reload();
       } catch {
         toast.error('Failed to cancel offer');
       }
