@@ -1,0 +1,1 @@
+ALTER TYPE transaction_extra_info_type_enum ADD VALUE IF NOT EXISTS 'p2p-trading';
