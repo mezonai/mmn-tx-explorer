@@ -12,6 +12,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	mmnClient "github.com/mezonai/mmn-sdk/go-sdk/client"
 )
 
 type RedEnvelopeHandler struct {
@@ -508,21 +509,16 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelope(c *gin.Context) {
 // @Failure 500 {object} models.Response
 // @Router /api/v1/red-envelopes/qr/claim-amount [post]
 func (r *RedEnvelopeHandler) ClaimAmountRedEnvelopeQR(c *gin.Context) {
-	userAddress, ok := utils.GetAddressFromContext(c)
-	if !ok {
-		logger.Error().Msg("ZK address not found in context")
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
-		return
-	}
-
-	id := c.Query("id")
-
 	userID, err := utils.GetZKUserIDFromContext(c)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to get user ID from context")
 		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
 		return
 	}
+
+	userAddress := mmnClient.GenerateAddress(strconv.FormatInt(userID, 10))
+
+	id := c.Query("id")
 
 	claimStatus, err := r.queueService.AttemptClaimByAddress(id, userAddress)
 	if err != nil {
@@ -584,12 +580,14 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelopeQR(c *gin.Context) {
 
 	req.ID = c.Param("id")
 
-	userAddress, ok := utils.GetAddressFromContext(c)
-	if !ok {
-		logger.Error().Msg("ZK address not found in context")
+	userID, err := utils.GetZKUserIDFromContext(c)
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to get user ID from context")
 		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
 		return
 	}
+
+	userAddress := utils.GenerateAddress(strconv.FormatInt(userID, 10))
 
 	canClaim, err := r.repo.CheckUserAddressClaimNotMatch(req.ID, userAddress, req.SplitMoneyID)
 	if err != nil {
@@ -607,13 +605,6 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelopeQR(c *gin.Context) {
 			Str("address", userAddress).
 			Msg("Address does not match owner of red envelope split")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrUserIDNotMatchRedEnvelopeID))
-		return
-	}
-
-	userID, err := utils.GetZKUserIDFromContext(c)
-	if err != nil {
-		logger.Error().Err(err).Msg("Failed to get user ID from context")
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
 		return
 	}
 

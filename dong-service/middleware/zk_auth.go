@@ -5,11 +5,9 @@ import (
 	"dong-service/constants"
 	"dong-service/logger"
 	"dong-service/models"
-	"dong-service/utils"
 	"encoding/json"
 	"io"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mezonai/mmn-sdk/go-sdk/zkverify"
@@ -27,7 +25,6 @@ func InitZKVerifier(keyPath string) error {
 }
 
 type ZKRequestBody struct {
-	Sender    string `json:"sender"`
 	PublicKey string `json:"publickey"`
 	ProofB64  string `json:"proof_b64"`
 	PublicB64 string `json:"public_b64"`
@@ -58,38 +55,20 @@ func ZKAuthentication() gin.HandlerFunc {
 			return
 		}
 
-		if zkData.ProofB64 == "" || zkData.PublicB64 == "" || zkData.Sender == "" || zkData.PublicKey == "" {
+		if zkData.ProofB64 == "" || zkData.PublicB64 == "" || zkData.PublicKey == "" || zkData.UserID == "" {
 			logger.Error().Msg("Missing required ZK fields in body")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
 			return
 		}
 
-		isValid := zkVerifier.Verify(zkData.Sender, zkData.PublicKey, zkData.ProofB64, zkData.PublicB64)
+		isValid := zkVerifier.Verify(zkData.PublicKey, zkData.ProofB64, zkData.PublicB64)
 		if !isValid {
 			logger.Error().Msg("ZK Proof is invalid")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
 			return
 		}
 
-		if zkData.UserID == "" {
-			c.AbortWithStatusJSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Missing user_id"))
-			return
-		}
-
-		generatedAddress := utils.GenerateAddress(zkData.UserID)
-		if generatedAddress != zkData.Sender {
-			logger.Warn().Str("input_user_id", zkData.UserID).Str("zk_address", zkData.Sender).Msg("UserID mismatch with ZK Address")
-			c.AbortWithStatusJSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "User ID does not match wallet address"))
-			return
-		}
-
-		var userID int64 = 0
-		if parsedID, err := strconv.ParseInt(zkData.UserID, 10, 64); err == nil {
-			userID = parsedID
-		}
-
-		c.Set("address", zkData.Sender)
-		c.Set("user_id", strconv.FormatInt(userID, 10))
+		c.Set("user_id", zkData.UserID)
 
 		c.Next()
 	}
