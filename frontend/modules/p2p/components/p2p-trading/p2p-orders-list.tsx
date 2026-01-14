@@ -96,7 +96,7 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
     },
     {
       headerContent: 'TIME REMAINING',
-      renderCell: (order) => <Countdown expiresAt={order.expires_at} />,
+      renderCell: (order) => (order.status === 'COMPLETED' ? null : <Countdown expiresAt={order.expires_at} />),
       skeletonContent: <Skeleton className="h-3 w-24" />,
       align: 'center',
     },
