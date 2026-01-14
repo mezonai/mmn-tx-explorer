@@ -5,9 +5,11 @@ import (
 	"dong-service/constants"
 	"dong-service/logger"
 	"dong-service/models"
+	"dong-service/utils"
 	"encoding/json"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mezonai/mmn-sdk/go-sdk/zkverify"
@@ -29,6 +31,7 @@ type ZKRequestBody struct {
 	PublicKey string `json:"publickey"`
 	ProofB64  string `json:"proof_b64"`
 	PublicB64 string `json:"public_b64"`
+	UserID    string `json:"user_id"`
 }
 
 func ZKAuthentication() gin.HandlerFunc {
@@ -68,10 +71,25 @@ func ZKAuthentication() gin.HandlerFunc {
 			return
 		}
 
+		if zkData.UserID == "" {
+			c.AbortWithStatusJSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Missing user_id"))
+			return
+		}
+
+		generatedAddress := utils.GenerateAddress(zkData.UserID)
+		if generatedAddress != zkData.Sender {
+			logger.Warn().Str("input_user_id", zkData.UserID).Str("zk_address", zkData.Sender).Msg("UserID mismatch with ZK Address")
+			c.AbortWithStatusJSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "User ID does not match wallet address"))
+			return
+		}
+
+		var userID int64 = 0
+		if parsedID, err := strconv.ParseInt(zkData.UserID, 10, 64); err == nil {
+			userID = parsedID
+		}
+
 		c.Set("address", zkData.Sender)
-		c.Set("user", map[string]interface{}{
-			"user_id": int64(0),
-		})
+		c.Set("user_id", strconv.FormatInt(userID, 10))
 
 		c.Next()
 	}

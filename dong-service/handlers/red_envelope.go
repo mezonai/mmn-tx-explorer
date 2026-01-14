@@ -529,15 +529,11 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelopeQR(c *gin.Context) {
 		return
 	}
 
-	var finalUserID int64 = 0
-	generatedAddress := utils.GenerateAddress(req.UserID)
-	if generatedAddress != userAddress {
-		logger.Warn().Str("input_user_id", req.UserID).Str("zk_address", userAddress).Msg("UserID mismatch with ZK Address")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "User ID does not match wallet address"))
+	userID, err := utils.GetZKUserIDFromContext(c)
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to get user ID from context")
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
 		return
-	}
-	if parsedID, err := strconv.ParseInt(req.UserID, 10, 64); err == nil {
-		finalUserID = parsedID
 	}
 
 	claimStatus, err := r.queueService.AttemptClaimByAddress(id, userAddress)
@@ -552,7 +548,7 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelopeQR(c *gin.Context) {
 		return
 	}
 
-	splitMoney, err := r.repo.GetClaimAmount(id, userAddress, claimStatus, finalUserID)
+	splitMoney, err := r.repo.GetClaimAmount(id, userAddress, claimStatus, userID)
 	if err != nil {
 		if errors.Is(err, constants.ErrAlreadyClaimed) {
 			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, err.Error()))
@@ -626,23 +622,14 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelopeQR(c *gin.Context) {
 		return
 	}
 
-	if req.UserID == "" {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Missing user_id"))
+	userID, err := utils.GetZKUserIDFromContext(c)
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to get user ID from context")
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
 		return
 	}
 
-	var finalUserID int64 = 0
-	generatedAddress := utils.GenerateAddress(req.UserID)
-	if generatedAddress != userAddress {
-		logger.Warn().Str("input_user_id", req.UserID).Str("zk_address", userAddress).Msg("UserID mismatch with ZK Address")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "User ID does not match wallet address"))
-		return
-	}
-	if parsedID, err := strconv.ParseInt(req.UserID, 10, 64); err == nil {
-		finalUserID = parsedID
-	}
-
-	err = r.repo.ExecuteClaim(req.ID, userAddress, finalUserID, req.SplitMoneyID)
+	err = r.repo.ExecuteClaim(req.ID, userAddress, userID, req.SplitMoneyID)
 	if err != nil {
 		logger.Error().Err(err).Str("envelope_id", req.ID).Msg("Failed to execute claim")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToClaim))
