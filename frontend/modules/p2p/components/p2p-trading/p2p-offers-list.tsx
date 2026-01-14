@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import { useUser } from '@/providers';
 import { CancelConfirmDialog } from './cancel-confirm-dialog';
 import { OFFERS_STATUS } from '../../constants';
+import { ShareOfferModal } from './share-offer-modal';
 import { TriangleAlert } from 'lucide-react';
 
 interface P2POffersTableProps {
@@ -143,7 +144,14 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
               Buy Mezon đồng
             </Button>
           ) : (
-            offer.status !== OFFERS_STATUS.CANCELED && <CancelConfirmDialog offer={offer} />
+            offer.status !== OFFERS_STATUS.CANCELED && (
+              <div className="flex w-full items-center gap-2">
+                <div className="flex-1">
+                  <CancelConfirmDialog offer={offer} />
+                </div>
+                <ShareOfferModal offer={offer} />
+              </div>
+            )
           )}
         </div>
       ),
