@@ -318,21 +318,3 @@ func (r *CampaignStatisticsRepository) GetStats() (*models.CampaignStatsResponse
 
 	return &stats, nil
 }
-
-func (r *CampaignStatisticsRepository) UpdateTotalP2POfferStat(ctx context.Context) (int64, error) {
-	var total int64
-	err := r.db.QueryRowContext(ctx, `
-		SELECT COALESCE(SUM(amount), 0)
-		FROM dong_schema.offers
-		WHERE status = 'CONFIRMED' AND amount > 0
-	`).Scan(&total)
-	if err != nil {
-		return 0, err
-	}
-	_, err = r.db.ExecContext(ctx, `
-		INSERT INTO public.stats(key, value)
-		VALUES ('total_p2p_offer_available', $1)
-		ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
-	`, total)
-	return total, err
-}

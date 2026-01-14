@@ -1615,19 +1615,49 @@ func (p *PostgresConnector) insertTransactionsTx(
 				(xmax = 0) AS is_new,
 				transaction_extra_info_type,
 				status,
-				extra_info
+				extra_info,
+				value
 		)
 		SELECT
 			COUNT(*) FILTER (WHERE is_new) AS inserted_count,
-			COUNT(*) FILTER (WHERE is_new AND transaction_extra_info_type IN ($%d, $%d) AND status = $%d) AS new_give_coffee
+			COUNT(*) FILTER (WHERE is_new AND transaction_extra_info_type IN ($%d, $%d) AND status = $%d) AS new_give_coffee,
+			COALESCE(SUM(CASE 
+				WHEN is_new
+					AND transaction_extra_info_type = $%d 
+					AND status = $%d 
+					AND extra_info::jsonb ? 'UserSenderId'
+				THEN value::numeric 
+				ELSE 0 
+			END), 0) AS p2p_offer_add,
+			COALESCE(SUM(CASE 
+				WHEN is_new
+					AND transaction_extra_info_type = $%d 
+					AND status = $%d 
+					AND NOT (extra_info::jsonb ? 'UserSenderId')
+				THEN value::numeric 
+				ELSE 0 
+			END), 0) AS p2p_offer_subtract
 		FROM inserted;
-	`, strings.Join(valueStrings, ","), nextIndex, nextIndex+1, nextIndex+2)
+	`, strings.Join(valueStrings, ","), nextIndex, nextIndex+1, nextIndex+2, nextIndex+3, nextIndex+4, nextIndex+5, nextIndex+6)
 
 	var insertedCount, newGiveCoffeeCount int
+	var p2pOfferAdd, p2pOfferSubtract float64
 
-	if err := tx.QueryRowContext(ctx, insertQuery, append(valueArgs, common.TransactionExtraInfoGiveCoffee.String(), common.TransactionExtraInfoDongGiveCoffee.String(), pb.TransactionStatus_FINALIZED)...).Scan(
+	queryParams := append(valueArgs,
+		common.TransactionExtraInfoGiveCoffee.String(),
+		common.TransactionExtraInfoDongGiveCoffee.String(),
+		pb.TransactionStatus_FINALIZED,
+		common.TransactionExtraInfoP2PTrading.String(),
+		pb.TransactionStatus_FINALIZED,
+		common.TransactionExtraInfoP2PTrading.String(),
+		pb.TransactionStatus_FINALIZED,
+	)
+
+	if err := tx.QueryRowContext(ctx, insertQuery, queryParams...).Scan(
 		&insertedCount,
 		&newGiveCoffeeCount,
+		&p2pOfferAdd,
+		&p2pOfferSubtract,
 	); err != nil {
 		return nil, fmt.Errorf("failed insert tx: %w", err)
 	}
@@ -1651,6 +1681,18 @@ func (p *PostgresConnector) insertTransactionsTx(
 		`, newGiveCoffeeCount)
 		if err != nil {
 			return nil, fmt.Errorf("failed update total_give_coffee: %w", err)
+		}
+	}
+
+	if p2pOfferAdd > 0 || p2pOfferSubtract > 0 {
+		netChange := p2pOfferAdd - p2pOfferSubtract
+		_, err := tx.ExecContext(ctx, `
+			INSERT INTO stats(key, value)
+			VALUES ('total_p2p_offer_available', $1)
+			ON CONFLICT (key) DO UPDATE SET value = GREATEST(0, stats.value + $1)
+		`, netChange)
+		if err != nil {
+			return nil, fmt.Errorf("failed update total_p2p_offer_available: %w", err)
 		}
 	}
 
@@ -2212,15 +2254,35 @@ func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
 		return fmt.Errorf("failed to count give_coffee transactions: %w", err)
 	}
 
+	var totalP2POfferAvailable float64
+	err = p.db.QueryRowContext(ctx, `
+		SELECT COALESCE(
+			SUM(CASE 
+				WHEN transaction_extra_info_type = $1 AND status = $2 AND extra_info::jsonb ? 'UserSenderId' THEN value::numeric
+				WHEN transaction_extra_info_type = $1 AND status = $2 AND NOT (extra_info::jsonb ? 'UserSenderId') THEN -value::numeric
+				ELSE 0
+			END), 
+			0
+		) FROM transactions
+		WHERE transaction_extra_info_type = $1 AND status = $2
+	`, common.TransactionExtraInfoP2PTrading.String(), pb.TransactionStatus_FINALIZED).Scan(&totalP2POfferAvailable)
+	if err != nil {
+		return fmt.Errorf("failed to calculate total_p2p_offer_available: %w", err)
+	}
+	if totalP2POfferAvailable < 0 {
+		totalP2POfferAvailable = 0
+	}
+
 	statsUpdates := []struct {
 		key   string
-		value int64
+		value interface{}
 	}{
 		{"total_blocks", totalBlocks},
 		{"total_transactions", totalTransactions},
 		{"total_wallets", totalWallets},
 		{"average_block", averageBlockMs},
 		{"total_give_coffee", totalGiveCoffee},
+		{"total_p2p_offer_available", totalP2POfferAvailable},
 	}
 
 	for _, stat := range statsUpdates {
