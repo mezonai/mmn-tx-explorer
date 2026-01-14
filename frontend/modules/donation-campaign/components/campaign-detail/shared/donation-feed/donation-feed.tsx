@@ -10,11 +10,22 @@ import { useUser } from '@/providers';
 import { useDonationFeed } from '@/modules/donation-campaign/hooks';
 import { useEffect, useRef } from 'react';
 
-export const DonationFeed = ({ campaign }: { campaign: DonationCampaign }) => {
+interface DonationFeedProps {
+  campaign: DonationCampaign;
+  isOwner: boolean;
+  feedTitle: string;
+  feedDescription: string;
+}
+
+export const DonationFeed = ({ campaign, isOwner = true, feedTitle, feedDescription }: DonationFeedProps) => {
   const { user } = useUser();
   const { donationFeed, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useDonationFeed(
-    campaign.donation_wallet
+    campaign.donation_wallet,
+    { isOwner }
   );
+  const isCampaignOwner = user?.id === campaign.creator;
+  const canShowAddUpdate = !isOwner || (isOwner && isCampaignOwner);
+
   const observerTarget = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -42,11 +53,11 @@ export const DonationFeed = ({ campaign }: { campaign: DonationCampaign }) => {
     <div className="w-full space-y-6">
       <div className="flex w-full flex-row justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Updates</h2>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Follow the full journey of this campaign.</p>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{feedTitle}</h2>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{feedDescription}</p>
         </div>
         <div>
-          {user?.id === campaign.creator && (
+          {canShowAddUpdate && (
             <Link href={ROUTES.CREATE_DONATION_UPDATE(campaign.slug)} passHref>
               <Button variant="default" className="bg-brand-primary hover:bg-brand-primary/80 text-white">
                 + Add Update

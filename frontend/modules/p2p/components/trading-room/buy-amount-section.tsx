@@ -29,11 +29,13 @@ export const BuyAmountSection = ({
   const [amountMZD, setAmountMZD] = useState<number>(0);
   const [displayValue, setDisplayValue] = useState<string>('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [selectionType, setSelectionType] = useState<'min' | 'max' | 'none'>('none');
 
   const amountVND = amountMZD > 0 && offer.price_rate > 0 ? amountMZD * offer.price_rate : 0;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = getRawValue(e.target.value);
+    setSelectionType('none');
     if (rawValue === 0) {
       setDisplayValue('');
       setAmountMZD(0);
@@ -91,6 +93,39 @@ export const BuyAmountSection = ({
         </div>
         <div className="text-muted-foreground mt-1 text-xs">
           Available: {formatCurrency(available)} {APP_CONFIG.CHAIN_SYMBOL}
+        </div>
+        <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+          <div>Available: {formatCurrency(available)} {APP_CONFIG.CHAIN_SYMBOL}</div>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => {
+                setAmountMZD(initialMin);
+                setDisplayValue(formatCurrency(initialMin));
+                setSelectionType('min');
+              }}
+              disabled={isDisabled}
+              className={`h-[30px] rounded border text-[10px] font-bold uppercase tracking-wider transition-all disabled:cursor-not-allowed disabled:opacity-30 ${selectionType === 'min'
+                ? 'border-brand-primary/50 bg-brand-primary/10 text-brand-primary'
+                : 'border-border bg-muted/30 text-muted-foreground hover:border-brand-primary/50 hover:bg-brand-primary/10 hover:text-brand-primary'
+                }`}
+            >
+              Buy Min
+            </Button>
+            <Button
+              onClick={() => {
+                setAmountMZD(effectiveMax);
+                setDisplayValue(formatCurrency(effectiveMax));
+                setSelectionType('max');
+              }}
+              disabled={isDisabled}
+              className={`h-[30px] rounded border text-[10px] font-bold uppercase tracking-wider transition-all disabled:cursor-not-allowed disabled:opacity-30 ${selectionType === 'max'
+                ? 'border-brand-primary/50 bg-brand-primary/10 text-brand-primary'
+                : 'border-border bg-muted/30 text-muted-foreground hover:border-brand-primary/50 hover:bg-brand-primary/10 hover:text-brand-primary'
+                }`}
+            >
+              Buy Max
+            </Button>
+          </div>
         </div>
       </div>
 

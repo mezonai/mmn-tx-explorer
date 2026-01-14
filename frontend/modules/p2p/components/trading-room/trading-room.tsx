@@ -112,7 +112,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
 
   if ((isOfferMode && offerLoading) || (!isOfferMode && (orderLoading || !order))) {
     return (
-      <div className="flex h-screen flex-col">
+      <div className="relative flex flex-col">
         <div className="bg-card border-border h-14 border-b" />
         <div className="flex-1 p-6">
           <Skeleton className="mb-6 h-20 w-full" />
@@ -144,7 +144,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
     };
 
     return (
-      <div className="bg-background flex h-screen flex-col">
+      <div className="bg-background relative flex flex-col">
+
         <div className="border-border flex h-14 shrink-0 items-center justify-between border-b px-6">
           <div className="flex items-center">
             <Button
@@ -176,8 +177,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
-          <div className="border-border w-full overflow-y-auto border-b p-6 md:w-7/12 md:border-r md:border-b-0 lg:w-8/12">
+        <div className="flex flex-1 flex-col md:flex-row gap-6">
+          <div className="border-border w-full p-6 md:w-7/12 lg:w-8/12">
             <ProgressSteps order={displayOrder} />
             {offer.has_active_order && (
               <div className="mb-6 rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-4 text-yellow-600 dark:text-yellow-500">
@@ -204,6 +205,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
               extraDisabled={offer.has_active_order}
             />
           </div>
+
           <ChatSidebar sellerId={offer.seller_user_id} />
         </div>
       </div>
@@ -212,7 +214,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
 
   if (!order) {
     return (
-      <div className="flex h-screen flex-col">
+      <div className="relative flex flex-col">
         <div className="bg-card border-border h-14 border-b" />
         <div className="flex flex-1 items-center justify-center p-6">
           <div className="text-center">
@@ -227,11 +229,10 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   const effectiveOrder: P2POrder = localStatus ? { ...order, status: localStatus } : order;
 
   return (
-    <div className="bg-background flex h-screen flex-col">
+    <div className="bg-background relative flex flex-col">
       <TradingRoomHeader order={effectiveOrder} userRole={userRole} />
-
-      <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
-        <div className="border-border w-full overflow-y-auto border-b p-4 md:w-8/12 md:border-r md:border-b-0 lg:w-10/12">
+      <div className="flex flex-1 flex-col md:flex-row gap-6">
+        <div className="border-border w-full p-4 md:w-8/12 lg:w-10/12 ">
           <ProgressSteps order={effectiveOrder} />
 
           {userRole === 'buyer' && effectiveOrder.status === 'PENDING' && (
