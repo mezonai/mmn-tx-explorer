@@ -48,28 +48,66 @@ apiDongClient.interceptors.request.use((config) => {
   return config;
 });
 
-let retry = 0;
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (value?: unknown) => void; reject: (reason?: unknown) => void }> = [];
+
+const processQueue = (error: unknown = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve();
+    }
+  });
+  failedQueue = [];
+};
+
 // Handle token refresh on 401 errors
 apiDongClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401 && error.response.config.url !== AUTHENTICATION_ENDPOINT.REFRESH) {
-      if (retry < 1) {
-        retry++;
-        try {
-          const localToken = safeJsonParse(localStorage.getItem(STORAGE_KEYS.TOKEN));
-          await AuthenticationService.refreshLogin(localToken?.refresh_token);
-          error.response.data.retry = true;
-          retry = 0;
-        } catch (error) {
-          console.error('Failed to refresh token', error);
-          // Clear auth data on unauthorized
-          if (typeof window !== 'undefined') {
-            clearAuthStorage();
-          }
+    const originalRequest = error.config;
+
+    if (
+      error.response?.status === 401 &&
+      originalRequest.url !== AUTHENTICATION_ENDPOINT.REFRESH &&
+      !originalRequest._retry
+    ) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(() => {
+            return apiDongClient(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const localToken = safeJsonParse(localStorage.getItem(STORAGE_KEYS.TOKEN));
+        await AuthenticationService.refreshLogin(localToken?.refresh_token);
+
+        processQueue(null);
+        isRefreshing = false;
+
+        return apiDongClient(originalRequest);
+      } catch (refreshError) {
+        console.error('Failed to refresh token', refreshError);
+        processQueue(refreshError);
+        isRefreshing = false;
+
+        if (typeof window !== 'undefined') {
+          clearAuthStorage();
         }
+        return Promise.reject(refreshError);
       }
     }
+
     return Promise.reject(error);
   }
 );
