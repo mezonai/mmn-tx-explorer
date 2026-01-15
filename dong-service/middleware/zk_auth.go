@@ -17,11 +17,11 @@ import (
 var zkVerifier *zkverify.ZkVerify
 
 func InitZKVerifier(keyPath string) error {
-	verifier, err := zkverify.NewZkVerify(keyPath)
+	var err error
+	zkVerifier, err = zkverify.NewZkVerify(keyPath)
 	if err != nil {
 		return err
 	}
-	zkVerifier = verifier
 	return nil
 }
 
