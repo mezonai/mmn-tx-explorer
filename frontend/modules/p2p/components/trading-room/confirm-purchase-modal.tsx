@@ -60,7 +60,7 @@ export const ConfirmPurchaseModal = ({
                     <div className="flex items-center justify-between pt-1">
                         <span className="text-xs text-muted-foreground">Exchange Rate</span>
                         <span className="text-brand-primary font-semibold">
-                            {priceRate.toLocaleString('vi-VN')} VND/{APP_CONFIG.CHAIN_SYMBOL}
+                            {formatCurrency(priceRate)} VND/{APP_CONFIG.CHAIN_SYMBOL}
                         </span>
                     </div>
                 </div>

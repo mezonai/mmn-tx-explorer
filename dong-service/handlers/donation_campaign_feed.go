@@ -260,3 +260,37 @@ func (h *DonationCampaignFeedHandler) UploadImage(c *gin.Context) {
 	logger.Info().Str("folder_cid", folderCID).Interface("files", results).Msg("Images uploaded to IPFS successfully")
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Upload images successfully", resp))
 }
+
+// GetPostDetailByHash godoc
+// @Summary Get Donation Post detail by feed hash
+// @Description Retrieve detailed information of a donation feed post using its hash
+// @Tags campaign_feed
+// @Produce json
+// @Param feed_hash path string true "Feed hash"
+// @Success 200 {object} models.Response{data=models.DonationCampaignFeed}
+// @Failure 400 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Router /api/v1/campaigns/feed_detail/{feed_hash} [get]
+func (h *DonationCampaignFeedHandler) GetFeedDetailByHash(c *gin.Context) {
+	feedHash := c.Param("feed_hash")
+	if feedHash == "" {
+		logger.Error().Msg("Missing feed_hash parameter")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Missing feed_hash"))
+		return
+	}
+	
+	post, err := h.repo.FindCampaignFeedByHash(feedHash)
+	if err != nil {
+		logger.Error().Err(err).Str("feed_hash", feedHash).Msg("Failed to find post")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Internal server error"))
+		return
+	}
+	if post == nil {
+		c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, "Donation feed post not found"))
+		return
+	}
+
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Donation feed post retrieved", post))
+}
+
+	

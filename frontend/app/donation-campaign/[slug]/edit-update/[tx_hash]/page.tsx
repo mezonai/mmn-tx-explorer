@@ -1,7 +1,7 @@
 import { EditUpdate } from '@/modules/donation-campaign/components/campaign-updates';
 import type { Metadata } from 'next';
 import { ProtectedRoute } from '@/modules/auth/components/ProtectedRoute';
-import { DonationCampaignService, IDonationFeed } from '@/modules/donation-campaign';
+import { DonationCampaignService } from '@/modules/donation-campaign';
 import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
@@ -11,33 +11,28 @@ export const metadata: Metadata = {
 interface EditCampaignUpdatePageProps {
   params: Promise<{
     slug: string;
-    id: string;
+    tx_hash: string;
   }>;
 }
 
 export default async function EditCampaignUpdatePage({ params }: EditCampaignUpdatePageProps) {
-  const { slug, id } = await params;
-  const postId = Number(id);
+  const { slug, tx_hash } = await params;
 
-  if (!postId) {
+  if (!tx_hash) {
     notFound();
   }
 
   try {
-    const campaign = await DonationCampaignService.getCampaignBySlug(slug);
-    const feedResponse = await DonationCampaignService.getDonationFeed({
-      address: campaign.donation_wallet,
-    });
+    const feedPost = DonationCampaignService.getDonationFeedPostDetail(tx_hash);
+    const currentCampaign = DonationCampaignService.getCampaignBySlug(slug);
+    const [feedPostResult, currentCampaignResult] = await Promise.all([feedPost, currentCampaign]);
 
-    const updatePost = feedResponse.data.find((post: IDonationFeed) => post.id === postId);
-
-    if (!updatePost) {
+    if (!feedPost || !currentCampaign) {
       notFound();
     }
-
     return (
       <ProtectedRoute>
-        <EditUpdate campaign={campaign} updatePost={updatePost} />
+        <EditUpdate campaign={currentCampaignResult} updatePost={feedPostResult} />
       </ProtectedRoute>
     );
   } catch (error) {
