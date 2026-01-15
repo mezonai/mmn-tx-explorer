@@ -1324,7 +1324,7 @@ func (p *PostgresConnector) GetCount(ctx context.Context, table string, qf *Quer
 	return count, err
 }
 
-func (p *PostgresConnector) GetDashboardStats(ctx context.Context, qf *QueryFilter) (totalBlocks, totalTransactions, totalWallets uint64, averageBlockTime float64, totalGiveCoffee uint64, totalP2POfferAvailable float64, err error) {
+func (p *PostgresConnector) GetDashboardStats(ctx context.Context, qf *QueryFilter) (totalBlocks, totalTransactions, totalWallets uint64, averageBlockTime float64, totalGiveCoffee uint64, totalP2POfferAvailable float64, totalOffers uint64, err error) {
 	query := `
         SELECT 
             COALESCE(MAX(CASE WHEN key = 'total_blocks' THEN value::bigint END), 0) as blocks,
@@ -1332,16 +1332,17 @@ func (p *PostgresConnector) GetDashboardStats(ctx context.Context, qf *QueryFilt
             COALESCE(MAX(CASE WHEN key = 'total_wallets' THEN value::bigint END), 0) as wallets,
 			COALESCE(MAX(CASE WHEN key = 'average_block' THEN value::float END) / 1000.0, 0.0) as avg_block_time,
 			COALESCE(MAX(CASE WHEN key = 'total_give_coffee' THEN value::bigint END), 0) as total_give_coffee,
-			COALESCE(MAX(CASE WHEN key = 'total_p2p_offer_available' THEN value::float END), 0.0) as total_p2p_offer_available
+			COALESCE(MAX(CASE WHEN key = 'total_p2p_offer_available' THEN value::float END), 0.0) as total_p2p_offer_available,
+			COALESCE(MAX(CASE WHEN key = 'total_offers' THEN value::bigint END), 0) as total_offers
         FROM stats
     `
 
-	err = p.db.QueryRowContext(ctx, query).Scan(&totalBlocks, &totalTransactions, &totalWallets, &averageBlockTime, &totalGiveCoffee, &totalP2POfferAvailable)
+	err = p.db.QueryRowContext(ctx, query).Scan(&totalBlocks, &totalTransactions, &totalWallets, &averageBlockTime, &totalGiveCoffee, &totalP2POfferAvailable, &totalOffers)
 	if err != nil {
-		return 0, 0, 0, 0, 0, 0, fmt.Errorf("failed to get dashboard stats: %w", err)
+		return 0, 0, 0, 0, 0, 0, 0, fmt.Errorf("failed to get dashboard stats: %w", err)
 	}
 
-	return totalBlocks, totalTransactions, totalWallets, averageBlockTime, totalGiveCoffee, totalP2POfferAvailable, nil
+	return totalBlocks, totalTransactions, totalWallets, averageBlockTime, totalGiveCoffee, totalP2POfferAvailable, totalOffers, nil
 }
 
 func (p *PostgresConnector) GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error) {
@@ -1555,6 +1556,9 @@ func (p *PostgresConnector) insertTransactionsTx(
 	for i := range transactions {
 		t := &transactions[i]
 		t.TransactionExtraInfoType = detectTransactionType(t.ExtraInfo)
+		if t.TransactionExtraInfoType == common.TransactionExtraInfoP2PTrading && t.ExtraInfo != "" {
+			p.updateOfferStatus(ctx, tx, t)
+		}
 	}
 
 	valueStrings := make([]string, len(transactions))
@@ -2357,60 +2361,66 @@ func getNewArgumentKeyByBaseArgumentKey(baseKey string, args map[string]interfac
 	}
 }
 
-func (p *PostgresConnector) GetAllTransactionsByWallet(
-	ctx context.Context,
-	walletAddress string,
-	startTime, endTime int64,
-	sortBy, sortOrder string,
-) ([]common.Transaction, error) {
-
-	columns := p.buildSelectFields([]string{}, defaultExportTransactionFields)
-
-	if !p.validateSortByColumn("transactions", sortBy) {
-		sortBy = "transaction_timestamp"
+// updateOfferStatus performs business checks and updates offer status for p2p-trading
+func (p *PostgresConnector) updateOfferStatus(ctx context.Context, tx *sql.Tx, t *common.Transaction) {
+	var extra struct {
+		Type      string  `json:"type"`
+		OfferID   *int64  `json:"offer_id"`
+		Status    *string `json:"status"`
+		Sender    *string `json:"sender"`
+		Recipient *string `json:"recipient"`
+		Amount    *int64  `json:"amount"`
 	}
-
-	switch strings.ToUpper(sortOrder) {
-	case "ASC":
-		sortOrder = "ASC"
-	default:
-		sortOrder = "DESC"
+	if err := json.Unmarshal([]byte(t.ExtraInfo), &extra); err != nil || extra.OfferID == nil {
+		return
 	}
-
-	query := fmt.Sprintf(`
-		(
-			SELECT %s
-			FROM transactions
-			WHERE from_address = $1
-				AND transaction_timestamp >= to_timestamp($2)
-				AND transaction_timestamp <= to_timestamp($3)
-		)
-		UNION ALL
-		(
-			SELECT %s
-			FROM transactions
-			WHERE to_address = $1
-				AND transaction_timestamp >= to_timestamp($2)
-				AND transaction_timestamp <= to_timestamp($3)
-		)
-		ORDER BY %s %s;
-	`, columns, columns, sortBy, sortOrder)
-
-	rows, err := p.db.QueryContext(ctx, query, walletAddress, startTime, endTime)
+	var offerID = *extra.OfferID
+	var txHash = t.Hash
+	var status = "CONFIRMED"
+	if extra.Status != nil {
+		status = *extra.Status
+	}
+	// 1. Check txhash uniqueness
+	var exists int
+	err := tx.QueryRowContext(ctx, `SELECT 1 FROM offers WHERE transaction_hash = $1`, txHash).Scan(&exists)
+	if err == nil {
+		log.Error().Int64("offer_id", offerID).Str("tx_hash", txHash).Msg("Transaction hash already used for offer update")
+		return
+	}
+	// 2. Get offer info
+	var offerSeller, offerStatus string
+	var offerIntermediary *string
+	var offerAmount int64
+	err = tx.QueryRowContext(ctx, `SELECT seller_wallet_address, status, intermediary_wallet_address, amount FROM offers WHERE offer_id = $1`, offerID).Scan(&offerSeller, &offerStatus, &offerIntermediary, &offerAmount)
 	if err != nil {
-		return nil, err
+		log.Error().Int64("offer_id", offerID).Msg("Failed to get offer for status update")
+		return
 	}
-
-	defer func() {
-		if err := rows.Close(); err != nil {
-			log.Error().Err(err).Msg("Failed to close rows in GetAllTransactionsByWallet")
-		}
-	}()
-
-	transactions, err := p.scanRowsToTransactions(rows, true)
+	// 3. Only update if current status is OPEN or PENDING
+	if offerStatus != "OPEN" && offerStatus != "PENDING" {
+		log.Error().Int64("offer_id", offerID).Str("current_status", offerStatus).Msg("Offer status invalid for confirmation")
+		return
+	}
+	// 4. Check sender
+	if extra.Sender != nil && *extra.Sender != offerSeller {
+		log.Error().Int64("offer_id", offerID).Str("expected_sender", offerSeller).Str("actual_sender", *extra.Sender).Msg("Transaction sender mismatch for offer update")
+		return
+	}
+	// 5. Check recipient
+	if offerIntermediary != nil && extra.Recipient != nil && *extra.Recipient != *offerIntermediary {
+		log.Error().Int64("offer_id", offerID).Str("expected_recipient", *offerIntermediary).Str("actual_recipient", *extra.Recipient).Msg("Transaction recipient mismatch for offer update")
+		return
+	}
+	// 6. Check amount
+	if extra.Amount != nil && *extra.Amount != offerAmount {
+		log.Error().Int64("offer_id", offerID).Int64("expected_amount", offerAmount).Int64("actual_amount", *extra.Amount).Msg("Transaction amount mismatch for offer update")
+		return
+	}
+	// Passed all checks, update offer status
+	_, err = tx.ExecContext(ctx, `UPDATE offers SET status = $1, transaction_hash = $2, updated_at = NOW() WHERE offer_id = $3 AND status IN ('OPEN', 'PENDING')`, status, txHash, offerID)
 	if err != nil {
-		return nil, err
+		log.Error().Err(err).Int64("offer_id", offerID).Str("status", status).Str("tx_hash", txHash).Msg("Failed to update offer status from p2p-trading tx")
+	} else {
+		log.Info().Int64("offer_id", offerID).Str("status", status).Str("tx_hash", txHash).Msg("Updated offer status from p2p-trading tx")
 	}
-
-	return transactions, rows.Err()
 }
