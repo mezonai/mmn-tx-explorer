@@ -119,36 +119,6 @@ func (s *RedEnvelopeQueueService) AttemptClaim(redEnvelopeID string, userID int6
 	}
 }
 
-func (s *RedEnvelopeQueueService) AttemptClaimByAddress(redEnvelopeID string, address string) (int, error) {
-	if s.redisClient == nil {
-		return 0, fmt.Errorf("redis client is not initialized")
-	}
-
-	keys := []string{
-		s.getClaimedUsersKey(redEnvelopeID),
-		s.getQueueCountKey(redEnvelopeID),
-		s.getTotalClaimsKey(redEnvelopeID),
-	}
-
-	result, err := attemptClaimScript.Run(s.ctx, s.redisClient, keys, address).Result()
-	if err != nil {
-		logger.Error().Err(err).Str("envelope_id", redEnvelopeID).Msg("Failed to run attempt claim script")
-		return constants.ClaimStatusError, fmt.Errorf("redis script failed: %w", err)
-	}
-	switch resultStr := result.(string); resultStr {
-	case constants.RedEnvelopeStatusOk:
-		return constants.ClaimStatusSuccess, nil
-	case constants.RedEnvelopeQueueStatusUserAlreadyInQueue:
-		return constants.ClaimStatusAlreadyQueued, nil
-	case constants.RedEnvelopeQueueStatusLimitReached:
-		return constants.ClaimStatusError, constants.ErrLimitReached
-	case constants.RedEnvelopeQueueStatusNotInitialize:
-		return constants.ClaimStatusError, constants.ErrQueueNotInit
-	default:
-		return constants.ClaimStatusError, fmt.Errorf("unknown script result: %s", resultStr)
-	}
-}
-
 func (s *RedEnvelopeQueueService) RollbackClaim(redEnvelopeID string, userID int64) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -163,22 +133,5 @@ func (s *RedEnvelopeQueueService) RollbackClaim(redEnvelopeID string, userID int
 			Str("envelope_id", redEnvelopeID).
 			Int64("user_id", userID).
 			Msg("CRITICAL: Failed to rollback redis claim")
-	}
-}
-
-func (s *RedEnvelopeQueueService) RollbackClaimByAddress(redEnvelopeID string, address string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	pipe := s.redisClient.Pipeline()
-	pipe.SRem(ctx, s.getClaimedUsersKey(redEnvelopeID), address)
-	pipe.Decr(ctx, s.getQueueCountKey(redEnvelopeID))
-
-	_, err := pipe.Exec(ctx)
-	if err != nil {
-		logger.Error().Err(err).
-			Str("envelope_id", redEnvelopeID).
-			Str("address", address).
-			Msg("CRITICAL: Failed to rollback redis claim by address")
 	}
 }

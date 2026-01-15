@@ -524,7 +524,7 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelopeQR(c *gin.Context) {
 
 	id := c.Query("id")
 
-	claimStatus, err := r.queueService.AttemptClaimByAddress(id, userAddress)
+	claimStatus, err := r.queueService.AttemptClaim(id, userID)
 	if err != nil {
 		logger.Error().Err(err).Str("envelope_id", id).Msg("Error during queue check")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, err.Error()))
@@ -543,7 +543,7 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelopeQR(c *gin.Context) {
 			return
 		}
 		logger.Error().Err(err).Str("envelope_id", id).Msg("Failed to get claim amount")
-		r.queueService.RollbackClaimByAddress(id, userAddress)
+		r.queueService.RollbackClaim(id, userID)
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
@@ -593,7 +593,7 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelopeQR(c *gin.Context) {
 
 	userAddress := utils.GenerateAddress(strconv.FormatInt(userID, 10))
 
-	canClaim, err := r.repo.CheckUserAddressClaimNotMatch(req.ID, userAddress, req.SplitMoneyID)
+	canClaim, err := r.repo.CheckUserIDClaimNotMatch(req.ID, userID, req.SplitMoneyID)
 	if err != nil {
 		logger.Error().
 			Err(err).
