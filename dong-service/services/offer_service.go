@@ -378,7 +378,7 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 			offer.SellerWalletAddress,
 			offer.Amount,
 			constants.TextDataP2PTrading,
-			constants.ExtraInfoP2PTrading,
+			constants.ExtraInfoP2PTradingOfferCanceled,
 		)
 		if err != nil {
 			logger.Error().Err(err).Int64("offer_id", offerId).Msg(constants.ErrFailedToRefundOfferAmount)

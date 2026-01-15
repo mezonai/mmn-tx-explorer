@@ -1553,14 +1553,6 @@ func (p *PostgresConnector) insertTransactionsTx(
 		return nil, nil
 	}
 
-	for i := range transactions {
-		t := &transactions[i]
-		t.TransactionExtraInfoType = detectTransactionType(t.ExtraInfo)
-		if t.TransactionExtraInfoType == common.TransactionExtraInfoP2PTrading && t.ExtraInfo != "" {
-			p.updateOfferStatus(ctx, tx, t)
-		}
-	}
-
 	valueStrings := make([]string, len(transactions))
 	valueArgs := make([]interface{}, 0, len(transactions)*14)
 
@@ -1615,7 +1607,7 @@ func (p *PostgresConnector) insertTransactionsTx(
 				extra_info = EXCLUDED.extra_info,
 				transaction_extra_info_type = EXCLUDED.transaction_extra_info_type,
 				updated_at = NOW()
-			RETURNING 
+			RETURNING
 				(xmax = 0) AS is_new,
 				transaction_extra_info_type,
 				status,
@@ -1627,25 +1619,40 @@ func (p *PostgresConnector) insertTransactionsTx(
 			COUNT(*) FILTER (WHERE is_new AND transaction_extra_info_type IN ($%d, $%d) AND status = $%d) AS new_give_coffee,
 			COALESCE(SUM(CASE 
 				WHEN is_new
-					AND transaction_extra_info_type = $%d 
-					AND status = $%d 
+					AND transaction_extra_info_type = $%d
+					AND status = $%d
 					AND extra_info::jsonb ? 'UserSenderId'
-				THEN value::numeric 
-				ELSE 0 
+				THEN value::numeric
+				ELSE 0
 			END), 0) AS p2p_offer_add,
 			COALESCE(SUM(CASE 
 				WHEN is_new
-					AND transaction_extra_info_type = $%d 
-					AND status = $%d 
+					AND transaction_extra_info_type = $%d
+					AND status = $%d
 					AND NOT (extra_info::jsonb ? 'UserSenderId')
-				THEN value::numeric 
-				ELSE 0 
-			END), 0) AS p2p_offer_subtract
-		FROM inserted;
-	`, strings.Join(valueStrings, ","), nextIndex, nextIndex+1, nextIndex+2, nextIndex+3, nextIndex+4, nextIndex+5, nextIndex+6)
+				THEN value::numeric
+				ELSE 0
+			END), 0) AS p2p_offer_subtract,
 
-	var insertedCount, newGiveCoffeeCount int
-	var p2pOfferAdd, p2pOfferSubtract float64
+			COALESCE(SUM(
+				CASE
+					WHEN is_new
+						AND transaction_extra_info_type = $%d
+						AND status = $%d
+						AND extra_info::jsonb ? 'UserSenderId'
+					THEN 1
+
+					WHEN is_new
+						AND extra_info::jsonb ? 'action'
+						AND extra_info::jsonb ->> 'action' = 'offer-canceled'
+					THEN -1
+
+					ELSE 0
+				END
+			), 0) AS total_offers_delta
+		FROM inserted;
+	`, strings.Join(valueStrings, ","), nextIndex, nextIndex+1, nextIndex+2, nextIndex+3, nextIndex+4, nextIndex+5, nextIndex+6, nextIndex+7, nextIndex+8
+	)
 
 	queryParams := append(valueArgs,
 		common.TransactionExtraInfoGiveCoffee.String(),
@@ -1655,6 +1662,16 @@ func (p *PostgresConnector) insertTransactionsTx(
 		pb.TransactionStatus_FINALIZED,
 		common.TransactionExtraInfoP2PTrading.String(),
 		pb.TransactionStatus_FINALIZED,
+		common.TransactionExtraInfoP2PTrading.String(), 
+		pb.TransactionStatus_FINALIZED,
+	)
+
+	var (
+		insertedCount      int
+		newGiveCoffeeCount int
+		p2pOfferAdd        float64
+		p2pOfferSubtract   float64
+		totalOffersDelta   int
 	)
 
 	if err := tx.QueryRowContext(ctx, insertQuery, queryParams...).Scan(
@@ -1662,6 +1679,7 @@ func (p *PostgresConnector) insertTransactionsTx(
 		&newGiveCoffeeCount,
 		&p2pOfferAdd,
 		&p2pOfferSubtract,
+		&totalOffersDelta,
 	); err != nil {
 		return nil, fmt.Errorf("failed insert tx: %w", err)
 	}
@@ -1671,8 +1689,7 @@ func (p *PostgresConnector) insertTransactionsTx(
 			INSERT INTO stats(key, value)
 			VALUES ('total_transactions', $1)
 			ON CONFLICT (key) DO UPDATE SET value = stats.value + $1
-		`, insertedCount)
-		if err != nil {
+		`, insertedCount); err != nil {
 			return nil, fmt.Errorf("failed update total_transactions: %w", err)
 		}
 	}
@@ -1682,8 +1699,7 @@ func (p *PostgresConnector) insertTransactionsTx(
 			INSERT INTO stats(key, value)
 			VALUES ('total_give_coffee', $1)
 			ON CONFLICT (key) DO UPDATE SET value = stats.value + $1
-		`, newGiveCoffeeCount)
-		if err != nil {
+		`, newGiveCoffeeCount); err != nil {
 			return nil, fmt.Errorf("failed update total_give_coffee: %w", err)
 		}
 	}
@@ -1693,13 +1709,25 @@ func (p *PostgresConnector) insertTransactionsTx(
 		_, err := tx.ExecContext(ctx, `
 			INSERT INTO stats(key, value)
 			VALUES ('total_p2p_offer_available', $1)
-			ON CONFLICT (key) DO UPDATE SET value = GREATEST(0, stats.value + $1)
-		`, netChange)
-		if err != nil {
+			ON CONFLICT (key)
+			DO UPDATE SET value = GREATEST(0, stats.value + $1)
+		`, netChange); err != nil {
 			return nil, fmt.Errorf("failed update total_p2p_offer_available: %w", err)
 		}
 	}
 
+	if totalOffersDelta != 0 {
+		_, err := tx.ExecContext(ctx, `
+			INSERT INTO stats(key, value)
+			VALUES ('total_offers', $1)
+			ON CONFLICT (key)
+			DO UPDATE SET value = GREATEST(0, stats.value + $1)
+		`, totalOffersDelta); err != nil {
+			return nil, fmt.Errorf("failed update total_offers: %w", err)
+		}
+	}
+
+	// wallet stats
 	walletStats := make(map[string]WalletStats)
 
 	for _, txObj := range transactions {
@@ -2358,69 +2386,5 @@ func getNewArgumentKeyByBaseArgumentKey(baseKey string, args map[string]interfac
 		}
 		newKey = fmt.Sprintf("%s_%d", baseKey, index)
 		index++
-	}
-}
-
-// updateOfferStatus performs business checks and updates offer status for p2p-trading
-func (p *PostgresConnector) updateOfferStatus(ctx context.Context, tx *sql.Tx, t *common.Transaction) {
-	var extra struct {
-		Type      string  `json:"type"`
-		OfferID   *int64  `json:"offer_id"`
-		Status    *string `json:"status"`
-		Sender    *string `json:"sender"`
-		Recipient *string `json:"recipient"`
-		Amount    *int64  `json:"amount"`
-	}
-	if err := json.Unmarshal([]byte(t.ExtraInfo), &extra); err != nil || extra.OfferID == nil {
-		return
-	}
-	var offerID = *extra.OfferID
-	var txHash = t.Hash
-	var status = "CONFIRMED"
-	if extra.Status != nil {
-		status = *extra.Status
-	}
-	// 1. Check txhash uniqueness
-	var exists int
-	err := tx.QueryRowContext(ctx, `SELECT 1 FROM offers WHERE transaction_hash = $1`, txHash).Scan(&exists)
-	if err == nil {
-		log.Error().Int64("offer_id", offerID).Str("tx_hash", txHash).Msg("Transaction hash already used for offer update")
-		return
-	}
-	// 2. Get offer info
-	var offerSeller, offerStatus string
-	var offerIntermediary *string
-	var offerAmount int64
-	err = tx.QueryRowContext(ctx, `SELECT seller_wallet_address, status, intermediary_wallet_address, amount FROM offers WHERE offer_id = $1`, offerID).Scan(&offerSeller, &offerStatus, &offerIntermediary, &offerAmount)
-	if err != nil {
-		log.Error().Int64("offer_id", offerID).Msg("Failed to get offer for status update")
-		return
-	}
-	// 3. Only update if current status is OPEN or PENDING
-	if offerStatus != "OPEN" && offerStatus != "PENDING" {
-		log.Error().Int64("offer_id", offerID).Str("current_status", offerStatus).Msg("Offer status invalid for confirmation")
-		return
-	}
-	// 4. Check sender
-	if extra.Sender != nil && *extra.Sender != offerSeller {
-		log.Error().Int64("offer_id", offerID).Str("expected_sender", offerSeller).Str("actual_sender", *extra.Sender).Msg("Transaction sender mismatch for offer update")
-		return
-	}
-	// 5. Check recipient
-	if offerIntermediary != nil && extra.Recipient != nil && *extra.Recipient != *offerIntermediary {
-		log.Error().Int64("offer_id", offerID).Str("expected_recipient", *offerIntermediary).Str("actual_recipient", *extra.Recipient).Msg("Transaction recipient mismatch for offer update")
-		return
-	}
-	// 6. Check amount
-	if extra.Amount != nil && *extra.Amount != offerAmount {
-		log.Error().Int64("offer_id", offerID).Int64("expected_amount", offerAmount).Int64("actual_amount", *extra.Amount).Msg("Transaction amount mismatch for offer update")
-		return
-	}
-	// Passed all checks, update offer status
-	_, err = tx.ExecContext(ctx, `UPDATE offers SET status = $1, transaction_hash = $2, updated_at = NOW() WHERE offer_id = $3 AND status IN ('OPEN', 'PENDING')`, status, txHash, offerID)
-	if err != nil {
-		log.Error().Err(err).Int64("offer_id", offerID).Str("status", status).Str("tx_hash", txHash).Msg("Failed to update offer status from p2p-trading tx")
-	} else {
-		log.Info().Int64("offer_id", offerID).Str("status", status).Str("tx_hash", txHash).Msg("Updated offer status from p2p-trading tx")
 	}
 }
