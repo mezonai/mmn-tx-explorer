@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"socket-service/config"
+	"socket-service/constant"
 	"socket-service/logger"
 	"socket-service/models"
 	"socket-service/repository"
@@ -33,7 +34,7 @@ func (h *HTTPHandler) SaveEvent(c *gin.Context) {
 	sentToOnline := false
 
 	// Broadcast to all users if receive_address is empty
-	if event.ReceiveAddress == "" {
+	if event.ReceiveAddress == constant.ALL_RECEIVER {
 		allConns := h.wsSvc.GetAllConnections()
 		for _, conn := range allConns {
 			conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
