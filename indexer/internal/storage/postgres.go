@@ -464,6 +464,7 @@ func (p *PostgresConnector) InsertStagingData(data []common.BlockData) error {
 	for i := range data {
 		blockData := &data[i]
 		blockDataJSON, err := json.Marshal(blockData)
+		err = nil
 		if err != nil {
 			return err
 		}
@@ -1554,6 +1555,9 @@ func (p *PostgresConnector) insertTransactionsTx(
 	for i := range transactions {
 		t := &transactions[i]
 		t.TransactionExtraInfoType = detectTransactionType(t.ExtraInfo)
+		if t.TransactionExtraInfoType == common.TransactionExtraInfoP2PTrading && t.ExtraInfo != "" {
+			p.updateOfferStatus(ctx, tx, t)
+		}
 	}
 
 	valueStrings := make([]string, len(transactions))
@@ -2359,4 +2363,48 @@ func (p *PostgresConnector) GetAllTransactionsByWallet(
 	}
 
 	return transactions, rows.Err()
+}
+
+func (p *PostgresConnector) updateOfferStatus(ctx context.Context, tx *sql.Tx, t *common.Transaction) {
+	var extra struct {
+		Type         string  `json:"type"`
+		OfferID      *int64  `json:"offer_id"`
+		UserSenderId *string `json:"UserSenderId"`
+	}
+	if err := json.Unmarshal([]byte(t.ExtraInfo), &extra); err != nil || extra.OfferID == nil {
+		return
+	}
+	var offerID = *extra.OfferID
+	var txHash = t.Hash
+	var status = "CONFIRMED"
+	var exists int
+	err := tx.QueryRowContext(ctx, `SELECT 1 FROM offers WHERE transaction_hash = $1`, txHash).Scan(&exists)
+	if err == nil {
+		log.Error().Int64("offer_id", offerID).Str("tx_hash", txHash).Msg("Transaction hash already used for offer update")
+		return
+	}
+	var offerSeller, offerStatus, offerSellerUserId string
+	var offerIntermediary *string
+	var offerAmount int64
+	err = tx.QueryRowContext(ctx, `SELECT seller_wallet_address, status, intermediary_wallet_address, amount, seller_user_id FROM offers WHERE offer_id = $1`, offerID).Scan(&offerSeller, &offerStatus, &offerIntermediary, &offerAmount, &offerSellerUserId)
+	if err != nil {
+		log.Error().Int64("offer_id", offerID).Msg("Failed to get offer for status update")
+		return
+	}
+	if offerStatus != "OPEN" && offerStatus != "PENDING" {
+		log.Error().Int64("offer_id", offerID).Str("current_status", offerStatus).Msg("Offer status invalid for confirmation")
+		return
+	}
+	// Compare UserSenderId with seller_user_id
+	if extra.UserSenderId != nil && offerSellerUserId != "" && *extra.UserSenderId != offerSellerUserId {
+		log.Error().Int64("offer_id", offerID).Str("expected_user_id", offerSellerUserId).Str("actual_user_id", *extra.UserSenderId).Msg("Transaction user id mismatch for offer update")
+		return
+	}
+
+	_, err = tx.ExecContext(ctx, `UPDATE offers SET status = $1, transaction_hash = $2, updated_at = NOW() WHERE offer_id = $3 AND status IN ('OPEN', 'PENDING')`, status, txHash, offerID)
+	if err != nil {
+		log.Error().Err(err).Int64("offer_id", offerID).Str("status", status).Str("tx_hash", txHash).Msg("Failed to update offer status from p2p-trading tx")
+	} else {
+		log.Info().Int64("offer_id", offerID).Str("status", status).Str("tx_hash", txHash).Msg("Updated offer status from p2p-trading tx")
+	}
 }

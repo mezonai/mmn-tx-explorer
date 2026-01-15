@@ -139,11 +139,6 @@ func main() {
 	syncTask := scheduler.CreateSyncContributorsTask(syncInterval, cfg.Indexer.Schema, cfg.Database.Schema, cfg.Scheduler.RecentStatsWindowDays)
 	schedulerInstance.AddTask(syncTask)
 
-	// Add sync offers task (P2P trading transaction sync)
-	syncOffersInterval := time.Duration(cfg.Scheduler.SyncOffersInterval) * time.Second
-	syncOffersTask := scheduler.CreateSyncOffersTask(syncOffersInterval, cfg.Indexer.Schema, cfg.Database.Schema)
-	schedulerInstance.AddTask(syncOffersTask)
-
 	expiryCheckInterval := time.Duration(cfg.Scheduler.ExpiredRedEnvelopesInterval) * time.Second
 	expiryRedEnvelopeTask := scheduler.CreateRedEnvelopeExpiryTask(expiryCheckInterval, cfg.Database.Schema, blockchainService)
 	schedulerInstance.AddTask(expiryRedEnvelopeTask)
