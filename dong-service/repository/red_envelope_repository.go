@@ -805,7 +805,7 @@ func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUs
 	ctx := context.Background()
 	walletInfo, err := r.walletRepo.GetWalletByAddress(ctx, envelope.RedEnvelopeWallet)
 	if err != nil {
-		_ = r.updateClaimStatusInTx(tx, claimID, constants.RedEnvelopeClaimStatusFailed)
+		_ = r.updateClaimStatusInTx(tx, claimID, constants.RedEnvelopeClaimStatusFailed, nil)
 		logger.Error().Err(err).Msg("Failed to get wallet info")
 		return fmt.Errorf("failed to get wallet info")
 	}
@@ -813,7 +813,7 @@ func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUs
 	var txHash string
 	txHash, err = r.blockchainService.TransferMoney(walletInfo.EncryptedPrivateKey, envelope.RedEnvelopeWallet, claimerWallet, amount, constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
 	if err != nil {
-		_ = r.updateClaimStatusInTx(tx, claimID, constants.RedEnvelopeClaimStatusFailed)
+		_ = r.updateClaimStatusInTx(tx, claimID, constants.RedEnvelopeClaimStatusFailed, nil)
 		logger.Error().Err(err).
 			Str("from", envelope.RedEnvelopeWallet).
 			Str("to", claimerWallet).
@@ -822,20 +822,7 @@ func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUs
 		return fmt.Errorf("failed to transfer money")
 	}
 
-	updateClaimQuery := fmt.Sprintf(`
-		UPDATE %s.red_envelope_claim
-		SET status = $1,
-		    transaction_hash = $2
-		WHERE id = $3
-	`, r.dongSchema)
-
-	_, err = tx.Exec(
-		updateClaimQuery,
-		constants.RedEnvelopeClaimStatusSuccess,
-		txHash,
-		claimID,
-	)
-
+	err = r.updateClaimStatusInTx(tx, claimID, constants.RedEnvelopeClaimStatusSuccess, &txHash)
 	if err != nil {
 		logger.Error().Err(err).
 			Int64("claim_id", claimID).
@@ -864,14 +851,15 @@ func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUs
 	return nil
 }
 
-func (r *RedEnvelopeRepository) updateClaimStatusInTx(tx *sql.Tx, claimID int64, status string) error {
+func (r *RedEnvelopeRepository) updateClaimStatusInTx(tx *sql.Tx, claimID int64, status string, txHash *string) error {
 	query := fmt.Sprintf(`
 		UPDATE %s.red_envelope_claim
-		SET status = $1
-		WHERE id = $2
+		SET status = $1,
+		    transaction_hash = $2
+		WHERE id = $3
 	`, r.dongSchema)
 
-	_, err := tx.Exec(query, status, claimID)
+	_, err := tx.Exec(query, status, txHash, claimID)
 	if err != nil {
 		logger.Error().Err(err).
 			Int64("claim_id", claimID).
