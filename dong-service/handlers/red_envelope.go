@@ -451,6 +451,8 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelope(c *gin.Context) {
 		return
 	}
 
+	envelopeID := c.Param("id")
+
 	userID, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		logger.Error().Err(err).Msg("Unauthorized claim amount attempt")
@@ -460,11 +462,11 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelope(c *gin.Context) {
 
 	userAddress := utils.GenerateAddress(strconv.FormatInt(userID, 10))
 
-	canClaim, err := r.repo.CheckUserIDClaimNotMatch(req.ID, userID, req.SplitMoneyID)
+	canClaim, err := r.repo.CheckUserIDClaimNotMatch(envelopeID, userID, req.SplitMoneyID)
 	if err != nil {
 		logger.Error().
 			Err(err).
-			Str("red_envelope_id", req.ID).
+			Str("red_envelope_id", envelopeID).
 			Int64("user_id", userID).
 			Msg("Failed to check user id and envelope id")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToCheckRedEnvelope))
@@ -472,23 +474,23 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelope(c *gin.Context) {
 	}
 	if !canClaim {
 		logger.Error().
-			Str("red_envelope_id", req.ID).
+			Str("red_envelope_id", envelopeID).
 			Int64("user_id", userID).
 			Msg("User id does not match owner of red envelope")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrUserIDNotMatchRedEnvelopeID))
 		return
 	}
 
-	err = r.repo.ExecuteClaim(req.ID, userAddress, userID, req.SplitMoneyID)
+	err = r.repo.ExecuteClaim(envelopeID, userAddress, userID, req.SplitMoneyID)
 
 	if err != nil {
-		logger.Error().Err(err).Str("envelope_id", req.ID).Msg("Failed to execute claim")
+		logger.Error().Err(err).Str("envelope_id", envelopeID).Msg("Failed to execute claim")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToClaim))
 		return
 	}
 
 	logger.Info().
-		Str("envelope_id", req.ID).
+		Str("envelope_id", envelopeID).
 		Str("wallet", userAddress).
 		Int64("user_id", userID).
 		Msg("Red envelope claimed successfully")
@@ -582,7 +584,7 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelopeQR(c *gin.Context) {
 		return
 	}
 
-	req.ID = c.Param("id")
+	envelopeID := c.Param("id")
 
 	userID, err := utils.GetZKUserIDFromContext(c)
 	if err != nil {
@@ -593,11 +595,11 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelopeQR(c *gin.Context) {
 
 	userAddress := utils.GenerateAddress(strconv.FormatInt(userID, 10))
 
-	canClaim, err := r.repo.CheckUserIDClaimNotMatch(req.ID, userID, req.SplitMoneyID)
+	canClaim, err := r.repo.CheckUserIDClaimNotMatch(envelopeID, userID, req.SplitMoneyID)
 	if err != nil {
 		logger.Error().
 			Err(err).
-			Str("red_envelope_id", req.ID).
+			Str("red_envelope_id", envelopeID).
 			Str("address", userAddress).
 			Msg("Failed to check address and envelope id")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToCheckRedEnvelope))
@@ -605,22 +607,22 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelopeQR(c *gin.Context) {
 	}
 	if !canClaim {
 		logger.Error().
-			Str("red_envelope_id", req.ID).
+			Str("red_envelope_id", envelopeID).
 			Str("address", userAddress).
 			Msg("Address does not match owner of red envelope split")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrUserIDNotMatchRedEnvelopeID))
 		return
 	}
 
-	err = r.repo.ExecuteClaim(req.ID, userAddress, userID, req.SplitMoneyID)
+	err = r.repo.ExecuteClaim(envelopeID, userAddress, userID, req.SplitMoneyID)
 	if err != nil {
-		logger.Error().Err(err).Str("envelope_id", req.ID).Msg("Failed to execute claim")
+		logger.Error().Err(err).Str("envelope_id", envelopeID).Msg("Failed to execute claim")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToClaim))
 		return
 	}
 
 	logger.Info().
-		Str("envelope_id", req.ID).
+		Str("envelope_id", envelopeID).
 		Str("wallet", userAddress).
 		Msg("Red envelope claimed successfully via QR")
 

@@ -18,12 +18,7 @@ func GetUserIDFromContext(c *gin.Context) (int64, error) {
 		return 0, jwt.ErrTokenInvalidClaims
 	}
 
-	claims, ok := user.(jwt.MapClaims)
-	if !ok {
-		return 0, jwt.ErrTokenInvalidClaims
-	}
-
-	userIDStr, ok := claims["user_id"].(string)
+	userIDStr, ok := user.(jwt.MapClaims)["user_id"].(string)
 	if !ok {
 		return 0, jwt.ErrTokenInvalidClaims
 	}
