@@ -40,13 +40,11 @@ export const useMyOrders = (params: IP2POfferListParams, enabled: boolean = true
     wsManager.on(P2P_EVENT_TYPES.ORDER_CREATED, handleOrderRefresh);
     wsManager.on(P2P_EVENT_TYPES.ORDER_CONFIRMED, handleOrderRefresh);
     wsManager.on(P2P_EVENT_TYPES.ORDER_COMPLETED, handleOrderRefresh);
-    wsManager.on(P2P_EVENT_TYPES.ORDER_STATUS_UPDATED, handleOrderRefresh);
 
     return () => {
       wsManager.off(P2P_EVENT_TYPES.ORDER_CREATED, handleOrderRefresh);
       wsManager.off(P2P_EVENT_TYPES.ORDER_CONFIRMED, handleOrderRefresh);
       wsManager.off(P2P_EVENT_TYPES.ORDER_COMPLETED, handleOrderRefresh);
-      wsManager.off(P2P_EVENT_TYPES.ORDER_STATUS_UPDATED, handleOrderRefresh);
 
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);

@@ -91,27 +91,16 @@ export const useP2POrder = (orderId: string) => {
       if (!payloadOrderIdStr || payloadOrderIdStr !== orderIdStr) {
         return;
       }
-      if (event.type === P2P_EVENT_TYPES.ORDER_STATUS_UPDATED) {
-        const statusRaw = payload?.['status'];
-        const status = typeof statusRaw === 'string' ? statusRaw : undefined;
-        if (!status) return;
-
-        setOrder((current) => (current ? { ...current, status: status as OrderStatus } : current));
-        return;
-      }
-
       if (event.type === P2P_EVENT_TYPES.ORDER_CONFIRMED || event.type === P2P_EVENT_TYPES.ORDER_COMPLETED) {
         refreshOrder();
         return;
       }
     };
 
-    wsManager.on(P2P_EVENT_TYPES.ORDER_STATUS_UPDATED, handleStatusUpdate);
     wsManager.on(P2P_EVENT_TYPES.ORDER_CONFIRMED, handleStatusUpdate);
     wsManager.on(P2P_EVENT_TYPES.ORDER_COMPLETED, handleStatusUpdate);
 
     return () => {
-      wsManager.off(P2P_EVENT_TYPES.ORDER_STATUS_UPDATED, handleStatusUpdate);
       wsManager.off(P2P_EVENT_TYPES.ORDER_CONFIRMED, handleStatusUpdate);
       wsManager.off(P2P_EVENT_TYPES.ORDER_COMPLETED, handleStatusUpdate);
     };
