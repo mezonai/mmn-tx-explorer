@@ -53,7 +53,6 @@ export const useP2POrder = (orderId: string) => {
 
     const prevOrder = order;
     try {
-
       const optimisticUpdate: Partial<P2POrder> = { status: status as OrderStatus };
       if (transferCode) {
         optimisticUpdate.transfer_code = transferCode;

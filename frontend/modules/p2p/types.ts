@@ -124,3 +124,9 @@ export const PROGRESS_STEPS: ProgressStep[] = [
   { id: 2, label: 'Pending confirmation', status: OrderStatus.PENDING },
   { id: 3, label: 'Completed', status: OrderStatus.COMPLETED },
 ];
+
+export interface LinkLocation {
+  url: string;
+  start: number;
+  end: number;
+}

@@ -23,6 +23,7 @@ import { APP_CONFIG } from '@/configs/app.config';
 import { AddressDisplay } from '@/components/shared/address-display';
 import { ROUTES } from '@/configs/routes.config';
 import { ChatSidebar } from './chat-sidebar';
+import { STORAGE_KEYS } from '@/constant';
 
 interface TradingRoomProps {
   orderId: string;
@@ -42,6 +43,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   const offerIdParam = isOfferMode ? orderId : order ? String(order.offer_id) : null;
   const { offer, isLoading: offerLoading } = useP2POffer(offerIdParam);
   const { createOrder, isLoading: isCreatingOrder } = useCreateOrder();
+
+  const [pendingOrderGreeting, setPendingOrderGreeting] = useState<P2POrder | null>(null);
 
   useEffect(() => {
     if (!order || isOfferMode) return;
@@ -71,10 +74,27 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   }, [user?.walletAddress, order, isOfferMode, offer]);
 
   useEffect(() => {
+    if (!order || userRole !== 'buyer') return;
+
+    const shouldSendGreeting = sessionStorage.getItem(STORAGE_KEYS.P2P_PENDING_GREETING(order.order_id));
+
+    if (shouldSendGreeting === 'true') {
+      setPendingOrderGreeting(order);
+    }
+  }, [order, userRole]);
+
+  useEffect(() => {
     if (order?.status) {
       setLocalStatus(null);
     }
   }, [order?.status]);
+
+  const handleAutoMessageSent = () => {
+    if (order) {
+      sessionStorage.removeItem(STORAGE_KEYS.P2P_PENDING_GREETING(order.order_id));
+      setPendingOrderGreeting(null);
+    }
+  };
 
   const handleConfirmBuy = async (amountMZD: number, amountVND: number) => {
     if (!offer || !user?.walletAddress) {
@@ -87,9 +107,10 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       const newOrder = await createOrder(offer, amountMZD, amountVND);
 
       if (newOrder) {
+        sessionStorage.setItem(STORAGE_KEYS.P2P_PENDING_GREETING(newOrder.order_id), 'true');
         router.push(ROUTES.P2P_TRADING_ROOM(newOrder.order_id));
       }
-    } catch (err) {
+    } catch {
       setError('Something went wrong while creating the order. Please try again.');
     }
   };
@@ -145,7 +166,6 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
 
     return (
       <div className="bg-background relative flex flex-col">
-
         <div className="border-border flex h-14 shrink-0 items-center justify-between border-b px-6">
           <div className="flex items-center">
             <Button
@@ -157,7 +177,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-sm flex items-center gap-1 font-bold text-muted-foreground">
+              <h1 className="text-muted-foreground flex items-center gap-1 text-sm font-bold">
                 Buy {APP_CONFIG.CHAIN_SYMBOL} from{' '}
                 <AddressDisplay
                   addressClassName="text-brand-primary"
@@ -165,7 +185,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
                   href={ROUTES.WALLET(offer?.seller_wallet_address)}
                 />
               </h1>
-              <div className="text-xs flex items-center gap-1 text-muted-foreground">
+              <div className="text-muted-foreground flex items-center gap-1 text-xs">
                 Trading with{' '}
                 <AddressDisplay
                   addressClassName="text-brand-primary"
@@ -177,17 +197,17 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col md:flex-row gap-6">
+        <div className="flex flex-1 flex-col gap-6 md:flex-row">
           <div className="border-border w-full p-6 md:w-7/12 lg:w-8/12">
             <ProgressSteps order={displayOrder} />
             {offer.has_active_order && (
               <div className="mb-6 rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-4 text-yellow-600 dark:text-yellow-500">
-                <p className="font-bold flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
+                <p className="flex items-center gap-2 font-bold">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-yellow-500" />
                   Offer Temporarily Locked
                 </p>
-                <span className="text-sm mt-1">
-                  This offer is locked because a transaction is in progress. Please try again after it's completed.
+                <span className="mt-1 text-sm">
+                  This offer is locked because a transaction is in progress. Please try again after it&apos;s completed.
                 </span>
               </div>
             )}
@@ -231,8 +251,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   return (
     <div className="bg-background relative flex flex-col">
       <TradingRoomHeader order={effectiveOrder} userRole={userRole} />
-      <div className="flex flex-1 flex-col md:flex-row gap-6">
-        <div className="border-border w-full p-4 md:w-8/12 lg:w-10/12 ">
+      <div className="flex flex-1 flex-col gap-6 md:flex-row">
+        <div className="border-border w-full p-4 md:w-8/12 lg:w-10/12">
           <ProgressSteps order={effectiveOrder} />
 
           {userRole === 'buyer' && effectiveOrder.status === 'PENDING' && (
@@ -270,7 +290,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
               </div>
             </div>
 
-            <div className="lg:col-span-4 ">
+            <div className="lg:col-span-4">
               {order && order.bank_info && (
                 <QrCodeCard
                   bank_info={order.bank_info}
@@ -281,7 +301,11 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
             </div>
           </div>
         </div>
-        <ChatSidebar sellerId={userRole === 'buyer' ? order.seller_user_id : order.buyer_user_id} />
+        <ChatSidebar
+          sellerId={userRole === 'buyer' ? order.seller_user_id : order.buyer_user_id}
+          initialOrder={pendingOrderGreeting} // Pass the order object
+          onInitialMessageSent={handleAutoMessageSent}
+        />
       </div>
     </div>
   );
