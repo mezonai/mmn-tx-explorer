@@ -129,9 +129,9 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       offer_id: offer?.offer_id || '',
       buyer_wallet_address: user?.walletAddress || '',
       seller_wallet_address: offer?.seller_wallet_address || '',
-      amount: 0,
+      amount: '0',
       price: 0,
-      payable_amount: 0,
+      payable_amount: '0',
       status: OrderStatus.OPEN,
       transfer_code: null,
       expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
@@ -252,7 +252,6 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
                 <BankInfoCard
                   bank_info={order.bank_info}
                   transfer_code={order.transfer_code}
-                  amount={order.payable_amount || order.price}
                 />
               )}
 
@@ -276,7 +275,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
                 <QrCodeCard
                   bank_info={order.bank_info}
                   transfer_code={order.transfer_code}
-                  amount={order.payable_amount || order.price}
+                  amount={Number(order.payable_amount) || order.price}
                 />
               )}
             </div>

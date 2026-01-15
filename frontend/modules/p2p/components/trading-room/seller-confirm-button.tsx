@@ -8,6 +8,7 @@ import { APP_CONFIG } from '@/configs/app.config';
 import { OrderStatus } from '../../types';
 import { SellerConfirmReleaseModal } from './seller-confirm-release-modal';
 import { toast } from 'sonner';
+import BigNumber from 'bignumber.js';
 
 interface SellerConfirmButtonProps {
   order: P2POrder;
@@ -60,14 +61,22 @@ export const SellerConfirmButton = ({ order, onConfirm, disabled = false }: Sell
         Only click the button after you have received the transfer from the buyer.
       </div>
 
-      <SellerConfirmReleaseModal
-        open={showConfirmModal}
-        onOpenChange={setShowConfirmModal}
-        amountToRelease={order.amount}
-        amountReceived={order.amount * order.price_rate}
-        onConfirm={handleFinalConfirm}
-        isLoading={isSubmitting}
-      />
+      {
+        (() => {
+          const amount = new BigNumber(order.amount);
+          const amountReceived = amount.multipliedBy(order.price_rate);
+          return (
+            <SellerConfirmReleaseModal
+              open={showConfirmModal}
+              onOpenChange={setShowConfirmModal}
+              amountToRelease={order.amount}
+              amountReceived={amountReceived.toString()}
+              onConfirm={handleFinalConfirm}
+              isLoading={isSubmitting}
+            />
+          );
+        })()
+      }
     </div>
   );
 };

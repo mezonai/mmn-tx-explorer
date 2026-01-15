@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Countdown } from '../shared/count-down';
 import { NumberUtil } from '@/utils';
 import { getOrderStatusInfo } from '../../util';
+import BigNumber from 'bignumber.js';
 
 interface P2POrdersListProps {
   orders: P2POrder[] | undefined;
@@ -69,16 +70,20 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
     },
     {
       headerContent: 'AMOUNT/TOTAL AMOUNT',
-      renderCell: (order) => (
-        <div className="text-sm">
-          <p className="text-utility-success-600 text-left font-bold">
-            {new Intl.NumberFormat('en-US').format(Number(order.amount))} {APP_CONFIG.CHAIN_SYMBOL}
-          </p>
-          <p className="text-muted-foreground text-left text-xs">
-            {new Intl.NumberFormat('en-US').format(Number(order.amount * order.price_rate))} VND
-          </p>
-        </div>
-      ),
+      renderCell: (order) => {
+        const amount = new BigNumber(order.amount);
+        const totalVND = amount.multipliedBy(order.price_rate);
+        return (
+          <div className="text-sm">
+            <p className="text-utility-success-600 text-left font-bold">
+              {amount.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}
+            </p>
+            <p className="text-muted-foreground text-left text-xs">
+              {totalVND.toFormat()} VND
+            </p>
+          </div>
+        );
+      },
       skeletonContent: <Skeleton className="h-3 w-24" />,
       align: 'left',
     },
