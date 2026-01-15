@@ -2296,6 +2296,14 @@ func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
 		return fmt.Errorf("failed to calculate total_p2p_offer_available: %w", err)
 	}
 
+	var totalOffers int64
+	err = p.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM dong_schema.offers WHERE status = 'CONFIRMED'
+	`).Scan(&totalOffers)
+	if err != nil {
+		return fmt.Errorf("failed to count total_offers: %w", err)
+	}
+
 	statsUpdates := []struct {
 		key   string
 		value interface{}
@@ -2306,6 +2314,7 @@ func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
 		{"average_block", averageBlockMs},
 		{"total_give_coffee", totalGiveCoffee},
 		{"total_p2p_offer_available", totalP2POfferAvailable},
+		{"total_offers", totalOffers},
 	}
 
 	for _, stat := range statsUpdates {
