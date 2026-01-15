@@ -37,8 +37,6 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
 
   const isMobileOpenRef = useRef(isMobileOpen);
 
-  // --- OPTIMIZATION REFS ---
-  // Sử dụng Refs để lưu props, giúp truy cập giá trị mới nhất trong effect mà không cần re-run effect
   const initialOrderRef = useRef(initialOrder);
   const onInitialMessageSentRef = useRef(onInitialMessageSent);
   const hasSentAutoMessageRef = useRef(false);
@@ -48,7 +46,6 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
 
   const [showLimitWarning, setShowLimitWarning] = useState(false);
 
-  // Sync props to refs
   useEffect(() => {
     initialOrderRef.current = initialOrder;
     onInitialMessageSentRef.current = onInitialMessageSent;
@@ -61,7 +58,6 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
     }
   }, [isMobileOpen]);
 
-  // --- MAIN INIT LOGIC (Optimized) ---
   useEffect(() => {
     if (!lightClient) return;
     let isMounted = true;
@@ -90,7 +86,6 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
           if (!isValidSender) return;
 
           const isMe = msg.sender_id === user?.id;
-          console.log('new message', msg);
           setMessages((prev) => {
             if (prev.find((m) => m.message_id === msg.message_id)) return prev;
             return [...prev, msg];
@@ -102,7 +97,6 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
         });
 
         if (initialOrderRef.current && !hasSentAutoMessageRef.current && channelIdRef.current) {
-          console.log('Sending optimized order embed...');
           try {
             hasSentAutoMessageRef.current = true;
 
