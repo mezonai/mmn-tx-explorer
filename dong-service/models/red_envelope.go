@@ -55,6 +55,7 @@ type RedEnvelopeClaim struct {
 	ClaimerWallet   string    `json:"claimer_wallet" db:"claimer_wallet"`
 	ClaimerUserID   *int64    `json:"claimer_user_id,omitempty" db:"claimer_user_id"`
 	Amount          int64     `json:"amount" db:"amount"`
+	Status          string    `json:"status" db:"status"`
 	ClaimedAt       time.Time `json:"claimed_at" db:"claimed_at"`
 	TransactionHash *string   `json:"transaction_hash,omitempty" db:"transaction_hash"`
 }

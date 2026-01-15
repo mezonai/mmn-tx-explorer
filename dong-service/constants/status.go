@@ -43,6 +43,13 @@ const (
 	RedEnvelopeStatusFailed    = "FAILED"    // Transaction failed after retries
 )
 
+// Red Envelope Claim Status Constants
+const (
+	RedEnvelopeClaimStatusPending = "PENDING" // Waiting for blockchain confirmation
+	RedEnvelopeClaimStatusSuccess = "SUCCESS" // Claim completed successfully
+	RedEnvelopeClaimStatusFailed  = "FAILED"  // Blockchain transfer failed
+)
+
 // Red Envelope Wallet Status Constants
 const (
 	RedEnvelopeWalletStatusReady          = "READY"           // Available for use
