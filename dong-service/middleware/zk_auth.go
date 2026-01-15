@@ -10,6 +10,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	mmnClient "github.com/mezonai/mmn-sdk/go-sdk/client"
 	"github.com/mezonai/mmn-sdk/go-sdk/zkverify"
 )
 
@@ -61,7 +62,9 @@ func ZKAuthentication() gin.HandlerFunc {
 			return
 		}
 
-		isValid := zkVerifier.Verify(zkData.PublicKey, zkData.ProofB64, zkData.PublicB64)
+		userAddress := mmnClient.GenerateAddress(zkData.UserID)
+
+		isValid := zkVerifier.Verify(userAddress, zkData.PublicKey, zkData.ProofB64, zkData.PublicB64)
 		if !isValid {
 			logger.Error().Msg("ZK Proof is invalid")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
@@ -69,6 +72,7 @@ func ZKAuthentication() gin.HandlerFunc {
 		}
 
 		c.Set("user_id", zkData.UserID)
+		c.Set("address", userAddress)
 
 		c.Next()
 	}

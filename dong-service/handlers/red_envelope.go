@@ -12,7 +12,6 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	mmnClient "github.com/mezonai/mmn-sdk/go-sdk/client"
 )
 
 type RedEnvelopeHandler struct {
@@ -516,7 +515,12 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelopeQR(c *gin.Context) {
 		return
 	}
 
-	userAddress := mmnClient.GenerateAddress(strconv.FormatInt(userID, 10))
+	userAddress, ok := utils.GetAddressFromContext(c)
+	if !ok {
+		logger.Error().Msg("Address not found in context")
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
+		return
+	}
 
 	id := c.Query("id")
 
