@@ -23,6 +23,7 @@ import { APP_CONFIG } from '@/configs/app.config';
 import { AddressDisplay } from '@/components/shared/address-display';
 import { ROUTES } from '@/configs/routes.config';
 import { ChatSidebar } from './chat-sidebar';
+import { STORAGE_KEYS } from '@/constant';
 
 interface TradingRoomProps {
   orderId: string;
@@ -75,8 +76,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   useEffect(() => {
     if (!order || userRole !== 'buyer') return;
 
-    const storageKey = `p2p_pending_greeting_${order.order_id}`;
-    const shouldSendGreeting = sessionStorage.getItem(storageKey);
+    const shouldSendGreeting = sessionStorage.getItem(STORAGE_KEYS.P2P_PENDING_GREETING(order.order_id));
 
     if (shouldSendGreeting === 'true') {
       setPendingOrderGreeting(order);
@@ -91,7 +91,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
 
   const handleAutoMessageSent = () => {
     if (order) {
-      sessionStorage.removeItem(`p2p_pending_greeting_${order.order_id}`);
+      sessionStorage.removeItem(STORAGE_KEYS.P2P_PENDING_GREETING(order.order_id));
       setPendingOrderGreeting(null);
     }
   };
@@ -107,7 +107,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       const newOrder = await createOrder(offer, amountMZD, amountVND);
 
       if (newOrder) {
-        sessionStorage.setItem(`p2p_pending_greeting_${newOrder.order_id}`, 'true');
+        sessionStorage.setItem(STORAGE_KEYS.P2P_PENDING_GREETING(newOrder.order_id), 'true');
         router.push(ROUTES.P2P_TRADING_ROOM(newOrder.order_id));
       }
     } catch {
