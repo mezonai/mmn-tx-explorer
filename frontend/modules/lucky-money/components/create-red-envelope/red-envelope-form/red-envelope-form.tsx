@@ -8,6 +8,7 @@ import { ExpirySettings } from './expiry-setting';
 import { RedEnvelopeConfirmDialog } from '../confirm-transfer-dialog';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/configs/routes.config';
+import { CreateRedEnvelopeForm } from '@/modules/lucky-money/type';
 
 export function RedEnvelopeForm() {
   const router = useRouter();
@@ -27,7 +28,7 @@ export function RedEnvelopeForm() {
     formState: { isValid, isSubmitting },
   } = methods;
 
-  const onSubmit = (data: any) => {
+  const onSubmit = (data: CreateRedEnvelopeForm) => {
     initiateCreation(data);
   };
 
@@ -49,7 +50,7 @@ export function RedEnvelopeForm() {
         <Card className="bg-card border-border dark:border-white/10 dark:bg-white/5">
           <CardHeader>
             <div className="flex flex-col gap-2 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
-              <CardTitle className="text-foreground text-sm leading-tight font-bold sm:text-base md:text-lg dark:text-white">
+              <CardTitle className="text-foreground text-sm leading-tight font-bold sm:text-base md:text-lg">
                 Create new Lucky Money session
               </CardTitle>
             </div>

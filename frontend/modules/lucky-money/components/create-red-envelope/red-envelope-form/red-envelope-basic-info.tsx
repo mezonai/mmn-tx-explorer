@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { NumberUtil } from '@/utils';
-import { useFormContext, Controller, ControllerProps, FieldValues, Path } from 'react-hook-form';
+import { useFormContext, Controller, ControllerProps, FieldValues } from 'react-hook-form';
 import { CreateRedEnvelopeForm } from '@/modules/lucky-money/type';
 import { MAX_PARTICIPANT_COUNT } from '@/modules/lucky-money/constants';
 import { cn } from '@/lib/utils';
@@ -100,8 +100,8 @@ export function BasicInfo() {
         placeholder="100"
         disabled={isSuccess}
         rules={{
-          required: 'Total amount is required',
-          min: { value: 1, message: 'Min total amount: 1 dồng' },
+          required: 'Please enter the total amount.',
+          min: { value: 1, message: 'The amount must be at least 1.' },
           validate: (value) => {
             value = Number(value);
 
@@ -117,13 +117,16 @@ export function BasicInfo() {
               const max = getNum('amountMax');
 
               if (count > 0 && min > 0 && value < min * count) {
-                return `Total amount is insufficient`;
+                const required = NumberUtil.formatWithCommas(min * count);
+                return `Not enough money! To give everyone at least ${min}, you need a total of ${required}.`;
               }
+
               if (count > 0 && max > 0 && value > max * count) {
-                return `Total amount exceeds the limit`;
+                const maxPossible = NumberUtil.formatWithCommas(max * count);
+                return `Too much money! Even if everyone gets the max (${max}), you only need ${maxPossible}. You have extra left over.`;
               }
             } else {
-              if (count > 0 && value < count) return 'Amount too low for participants';
+              if (count > 0 && value < count) return 'The total amount is too small to share with this many people!';
             }
             return true;
           },
@@ -192,7 +195,7 @@ export function BasicInfo() {
             disabled={isSuccess}
             rules={{
               required: 'Required',
-              min: { value: 1, message: 'Min Amount 1' },
+              min: { value: 1, message: 'Must be at least 1.' },
               validate: (value) => {
                 value = Number(value);
                 const max = getNum('amountMax');
@@ -201,8 +204,9 @@ export function BasicInfo() {
                 const totalAmount = getNum('totalAmount');
                 const count = getNum('participantCount');
 
+                // Case: Min is too high
                 if (count > 0 && totalAmount > 0 && totalAmount < value * count) {
-                  return `Total amount is insufficient. `;
+                  return `This minimum is too high! With ${count} people, your total budget isn't enough to give everyone ${value}.`;
                 }
                 return true;
               },
@@ -217,7 +221,7 @@ export function BasicInfo() {
             disabled={isSuccess}
             rules={{
               required: 'Required',
-              min: { value: 1, message: 'Min Amount 1' },
+              min: { value: 1, message: 'Must be at least 1.' },
               validate: (value) => {
                 value = Number(value);
                 const min = getNum('amountMin');
@@ -226,8 +230,9 @@ export function BasicInfo() {
                 const totalAmount = getNum('totalAmount');
                 const count = getNum('participantCount');
 
+                // Case: Max is too low
                 if (count > 0 && totalAmount > 0 && totalAmount > value * count) {
-                  return `Total amount exceeds the limit.`;
+                  return `This maximum is too low! Even if everyone gets ${value}, you will still have money left over in the total pot.`;
                 }
                 return true;
               },

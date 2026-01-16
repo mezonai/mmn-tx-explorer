@@ -109,7 +109,7 @@ export const RedEnvelopeDetail = () => {
               </h3>
             </div>
           </div>
-          <div className="flex flex-shrink-0 items-center gap-2 sm:gap-4">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-4">
             <span
               className={cn(
                 'rounded-full border px-2 py-1 text-xs font-bold whitespace-nowrap md:px-3 md:text-sm',
@@ -121,7 +121,7 @@ export const RedEnvelopeDetail = () => {
             <button
               onClick={onOpenCloseSessionModal}
               disabled={!isClosable || isClosing}
-              className="flex w-auto cursor-pointer items-center justify-center gap-2 rounded-lg border border-red-300 px-3 py-2 text-sm font-semibold whitespace-nowrap text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent md:px-4 md:text-base dark:border-[rgb(239_68_68_/_0.6)] dark:text-red-400 dark:hover:bg-[rgb(239_68_68_/_0.1)]"
+              className="dark:border-destructive dark:hover:bg-destructive/10 flex w-auto cursor-pointer items-center justify-center gap-2 rounded-lg border border-red-300 px-3 py-2 text-sm font-semibold whitespace-nowrap text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent md:px-4 md:text-base dark:text-red-400"
             >
               {isClosing ? 'Closing...' : 'Close Session'}
             </button>
@@ -167,34 +167,14 @@ export const RedEnvelopeDetail = () => {
             Share Lucky Money
           </h2>
           <div className="flex flex-col items-center gap-4 md:flex-row md:items-stretch md:gap-6">
-            <div className="relative w-auto max-w-[220px] flex-shrink-0 rounded-lg bg-white p-2 md:p-3 dark:bg-white">
-              <QRCode
-                value={qrCodeValue}
-                size={qrSize}
-                style={{ width: '100%', height: 'auto' }}
-                level="H" 
-              />
+            <div className="relative w-auto max-w-[220px] shrink-0 rounded-lg bg-white p-2 md:p-3 dark:bg-white">
+              <QRCode value={qrCodeValue} size={qrSize} style={{ width: '100%', height: 'auto' }} level="H" />
 
-              <div
-                className="absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-lg bg-white"
-                style={{
-                  width: '28%', 
-                  height: '28%',
-                  padding: 2,
-                }}
-              >
-                <img
-                  src={iconSvgBase64}
-                  alt="icon"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'contain',
-                  }}
-                />
+              <div className="absolute top-1/2 left-1/2 flex h-[28%] w-[28%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-lg bg-white p-0.5">
+                <img src={iconSvgBase64} alt="icon" className="h-full w-full object-contain" />
               </div>
             </div>
-            <div className="flex w-full flex-grow flex-col gap-4">
+            <div className="flex w-full grow flex-col gap-4">
               <div>
                 <div className="relative w-full">
                   <div className="bg-background border-border text-foreground w-full truncate rounded-lg border p-2 pr-10 font-mono text-xs md:p-3 md:pr-12 md:text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200">

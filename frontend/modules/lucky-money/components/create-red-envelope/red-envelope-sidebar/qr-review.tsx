@@ -6,30 +6,14 @@ import { useCreateRedEnvelopeContext } from '@/modules/lucky-money/context/Creat
 import { toast } from 'sonner';
 import QRCode from 'react-qr-code';
 import { useState, useEffect } from 'react';
-
-const RED_ENVELOPE_SVG_STRING = `
-<svg width="100" height="120" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="5" y="5" width="90" height="110" rx="10" fill="black" />
-  <rect x="10" y="10" width="80" height="100" rx="8" fill="#DC2626" />
-  <path d="M10 10 L50 45 L90 10" stroke="#991B1B" stroke-width="2" fill="none" />
-  <path d="M10 10 L50 45 L90 10 Z" fill="#B91C1C" opacity="0.5" />
-  <circle cx="50" cy="50" r="12" fill="#FBBF24" />
-  <circle cx="50" cy="50" r="8" fill="#F59E0B" />
-</svg>
-`;
-const iconSvgBase64 = `data:image/svg+xml;base64,${btoa(RED_ENVELOPE_SVG_STRING)}`;
+import { ROUTES } from '@/configs/routes.config';
+import { RedEnvelopeIcon } from '@/assets/icons/red-evelop';
+import { renderToStaticMarkup } from 'react-dom/server';
 
 export function QrPreview() {
   const { generatedEnvelope, isSuccess } = useCreateRedEnvelopeContext();
   const [qrSize, setQrSize] = useState(176);
   const pathName = process.env.NEXT_BASE_FE || window.location.origin;
-
-  const CONFIG = {
-    brandColor: '#d9534f',
-    labelColor: '#6d28d9',
-    bgColor: '#FFFFFF',
-    fontFamily: 'Inter, sans-serif',
-  };
 
   useEffect(() => {
     const updateQrSize = () => {
@@ -43,10 +27,34 @@ export function QrPreview() {
   }, []);
 
   const qrCodeValue = JSON.stringify({ type: 'lucky-money', lucky_money_id: generatedEnvelope?.id });
-  const claimLink = generatedEnvelope ? `${pathName}/lucky-money/${generatedEnvelope.id}/claim` : '';
+  const claimLink = generatedEnvelope ? `${pathName}${ROUTES.LUCKY_MONEY_CLAIM(generatedEnvelope.id)}` : '';
   const shouldShowQr = generatedEnvelope && claimLink && isSuccess;
 
   const getQrImage = (callback: (blob: Blob | null) => void) => {
+    const getThemeColor = (variableName: string, fallbackValue: string) => {
+      if (typeof window !== 'undefined') {
+        const styles = window.getComputedStyle(document.body);
+        const value = styles.getPropertyValue(variableName).trim();
+        return value && value !== '' ? value : fallbackValue;
+      }
+      return fallbackValue;
+    };
+
+    const labelColor = getThemeColor('--brand-primary', '#6d28d9');
+
+    const titleColor = getThemeColor('--foreground', '#111827');
+
+    const footerColor = getThemeColor('--muted-foreground', '#9CA3AF');
+
+    const bgColor = '#FFFFFF';
+
+    // Lấy Font chữ
+    let appFontFamily = 'Inter, sans-serif';
+    if (typeof window !== 'undefined') {
+      const styles = window.getComputedStyle(document.body);
+      if (styles.fontFamily) appFontFamily = styles.fontFamily;
+    }
+
     const svg = document.getElementById('lucky-money-qr');
     if (!svg) {
       callback(null);
@@ -57,8 +65,8 @@ export function QrPreview() {
     const svg64 = btoa(xml);
     const qrImage64 = 'data:image/svg+xml;base64,' + svg64;
 
-    const iconBlob = new Blob([RED_ENVELOPE_SVG_STRING], { type: 'image/svg+xml;charset=utf-8' });
-    const iconUrl = URL.createObjectURL(iconBlob);
+    const iconString = renderToStaticMarkup(<RedEnvelopeIcon width="100" height="120" />);
+    const iconBase64 = 'data:image/svg+xml;base64,' + btoa(iconString);
 
     const qrImg = new Image();
     const iconImg = new Image();
@@ -74,34 +82,31 @@ export function QrPreview() {
 
       if (!ctx) return;
 
-      ctx.fillStyle = CONFIG.bgColor;
+      ctx.fillStyle = bgColor;
       ctx.fillRect(0, 0, width, height);
 
       ctx.textAlign = 'center';
 
-      ctx.fillStyle = CONFIG.labelColor;
-      ctx.font = `600 24px ${CONFIG.fontFamily}`;
+      ctx.fillStyle = labelColor;
+      ctx.font = `600 24px ${appFontFamily}`;
       ctx.fillText('Scan to receive', width / 2, 80);
 
-      ctx.fillStyle = '#111827';
-      ctx.font = `bold 40px ${CONFIG.fontFamily}`;
+      ctx.fillStyle = titleColor;
+      ctx.font = `bold 40px ${appFontFamily}`;
       ctx.fillText('MEZON LUCKY MONEY', width / 2, 140);
 
       const qrDrawSize = 400;
       const qrX = (width - qrDrawSize) / 2;
       const qrY = 180;
-
       ctx.drawImage(qrImg, qrX, qrY, qrDrawSize, qrDrawSize);
 
       const centerX = width / 2;
       const centerY = qrY + qrDrawSize / 2;
-
       const boxSize = qrDrawSize * 0.22;
-
-      ctx.fillStyle = '#FFFFFF';
       const boxX = centerX - boxSize / 2;
       const boxY = centerY - boxSize / 2;
 
+      ctx.fillStyle = bgColor;
       if (ctx.roundRect) {
         ctx.beginPath();
         ctx.roundRect(boxX, boxY, boxSize, boxSize, 12);
@@ -112,18 +117,15 @@ export function QrPreview() {
 
       const padding = 5;
       const availableSize = boxSize - padding * 2;
-
       const drawHeight = availableSize;
       const drawWidth = drawHeight * (100 / 120);
-
       ctx.drawImage(iconImg, centerX - drawWidth / 2, centerY - drawHeight / 2, drawWidth, drawHeight);
 
-      ctx.font = `18px ${CONFIG.fontFamily}`;
-      ctx.fillStyle = '#9CA3AF';
+      ctx.font = `18px ${appFontFamily}`;
+      ctx.fillStyle = footerColor;
       ctx.fillText('Powered by Mezon', width / 2, height - 40);
 
       canvas.toBlob((blob) => {
-        URL.revokeObjectURL(iconUrl);
         callback(blob);
       }, 'image/png');
     };
@@ -138,7 +140,7 @@ export function QrPreview() {
     qrImg.src = qrImage64;
 
     iconImg.onload = checkLoad;
-    iconImg.src = iconUrl;
+    iconImg.src = iconBase64;
   };
 
   const handleDownloadQr = () => {
@@ -171,9 +173,9 @@ export function QrPreview() {
   };
 
   return (
-    <Card className="border-brand-primary/30 bg-brand-primary/5 text-brand-primary dark:border-[rgb(255_59_99_/_0.4)] dark:bg-[rgb(255_59_99_/_0.1)] dark:text-[rgb(246_199_68)]">
+    <Card className="border-brand-primary/30 bg-brand-primary/5 text-brand-primary dark:border-destructive/25 dark:bg-midnight-violet dark:text-amber-400">
       <CardHeader>
-        <CardTitle className="text-brand-primary text-sm sm:text-base md:text-lg dark:text-[rgb(246_199_68)]">
+        <CardTitle className="text-brand-primary text-sm sm:text-base md:text-lg dark:text-amber-400">
           QR preview
         </CardTitle>
       </CardHeader>
@@ -197,15 +199,7 @@ export function QrPreview() {
                     padding: 2,
                   }}
                 >
-                  <img
-                    src={iconSvgBase64}
-                    alt="icon"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'contain',
-                    }}
-                  />
+                  <RedEnvelopeIcon className="h-full w-full object-contain" />
                 </div>
               </>
             ) : (
@@ -213,13 +207,13 @@ export function QrPreview() {
             )}
           </div>
         </div>
-        <p className="text-muted-foreground mt-4 text-xs leading-relaxed sm:mt-5 dark:text-yellow-300/80">
+        <p className="text-muted-foreground mt-4 text-xs leading-relaxed sm:mt-5 dark:text-amber-400">
           Share this QR offline or generate a link for digital distribution.
         </p>
         <div className="mt-3 space-y-2 sm:mt-4 sm:space-y-3">
           <Button
             variant="outline"
-            className="w-full border-yellow-400/40 py-1.5 text-xs hover:bg-yellow-400/10 sm:py-2 sm:text-sm dark:text-[rgb(246_199_68)]"
+            className="w-full border-yellow-400/40 py-1.5 text-xs hover:bg-yellow-400/10 sm:py-2 sm:text-sm dark:text-amber-400"
             onClick={handleCopyLink}
             disabled={!isSuccess}
           >
@@ -227,7 +221,7 @@ export function QrPreview() {
           </Button>
           <Button
             variant="outline"
-            className="w-full border-yellow-400/40 py-1.5 text-xs hover:bg-yellow-400/10 sm:py-2 sm:text-sm dark:text-[rgb(246_199_68)]"
+            className="w-full border-yellow-400/40 py-1.5 text-xs hover:bg-yellow-400/10 sm:py-2 sm:text-sm dark:text-amber-400"
             onClick={handleDownloadQr}
             disabled={!isSuccess}
           >
