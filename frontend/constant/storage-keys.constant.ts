@@ -9,6 +9,7 @@ const STORAGE_KEYS = {
   ZK_PROOF: 'zkProof',
   SHOW_MINE_CAMPAIGNS: 'show_mine_campaigns',
   LIGHT_CLIENT: 'light_client',
+  P2P_PENDING_GREETING: (orderId: string) => `p2p_pending_greeting_${orderId}`,
 } as const;
 
 export { STORAGE_KEYS };

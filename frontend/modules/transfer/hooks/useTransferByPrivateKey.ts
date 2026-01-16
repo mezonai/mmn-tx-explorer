@@ -15,7 +15,7 @@ export const useTransferByPrivateKey = () => {
         if (!input.privateKey) throw new Error('Missing private key.');
         if (!input.recipientAddress) throw new Error('Missing recipient address.');
 
-        const nonceResponse = await mmnClient.getCurrentNonce(senderAddress);
+        const nonceResponse = await mmnClient.getCurrentNonceByAddress(senderAddress);
         const scaledAmount = mmnClient.scaleAmountToDecimals(input.amount);
 
         const TransferResponse = await mmnClient.sendTransactionByPrivateKey({

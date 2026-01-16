@@ -34,7 +34,7 @@
     "heic2any": "^0.0.4",
     "lucide-react": "^0.539.0",
     "mezon-light-sdk": "^1.0.2",
-    "mmn-client-js": "^1.0.14",
+    "mmn-client-js": "^1.0.15",
     "next": "15.4.10",
     "rc-progress": "^4.0.0",
     "react": "19.2.3",
