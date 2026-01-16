@@ -123,7 +123,7 @@ export function BasicInfo() {
 
               if (count > 0 && max > 0 && value > max * count) {
                 const maxPossible = NumberUtil.formatWithCommas(max * count);
-                return `Too much money! Even if everyone gets the max (${max}), you only need ${maxPossible}. You have extra left over.`;
+                return `The system requires all money to be distributed. Even if everyone gets the maximum (${max}), you only use ${maxPossible}. You have extra money left over`;
               }
             } else {
               if (count > 0 && value < count) return 'The total amount is too small to share with this many people!';
@@ -232,7 +232,7 @@ export function BasicInfo() {
 
                 // Case: Max is too low
                 if (count > 0 && totalAmount > 0 && totalAmount > value * count) {
-                  return `This maximum is too low! Even if everyone gets ${value}, you will still have money left over in the total pot.`;
+                  return `This maximum is too low! The system requires all money to be distributed. Even if everyone gets ${value}, there will still be money left over.`;
                 }
                 return true;
               },
