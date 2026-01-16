@@ -2417,7 +2417,7 @@ func (p *PostgresConnector) updateOfferStatus(
         COALESCE(intermediary_wallet_address, ''),
         amount,
         status
-    FROM offers
+    FROM dong_schema.offers
     WHERE offer_id = ANY($1::bigint[])
       AND status = 'OPEN'
     FOR UPDATE
