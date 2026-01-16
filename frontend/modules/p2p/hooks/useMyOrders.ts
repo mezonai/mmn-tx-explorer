@@ -2,10 +2,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 import { useWebSocket } from '@/lib/websocket';
 import { P2PService } from '../api';
-import { P2P_QUERY_KEYS, P2P_EVENT_TYPES } from '../constants';
+import { P2P_QUERY_KEYS, P2P_EVENT_TYPES, WS_INVALIDATE_DELAY } from '../constants';
 import { IP2POfferListParams } from '../types';
-
-const WS_INVALIDATE_DELAY = 1000;
 
 export const useMyOrders = (params: IP2POfferListParams, enabled: boolean = true) => {
   const wsManager = useWebSocket();
