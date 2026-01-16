@@ -41,6 +41,7 @@ type IOfferService interface {
 	GetOfferByID(ctx context.Context, id int64) (*models.Offer, error)
 	GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, int64, error)
 	CancelOffer(ctx context.Context, offerId int64, offer *models.Offer) error
+	SumOfferAmounts(ctx context.Context) (int64, error)
 }
 
 func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string, sellerUserID string) (*models.Offer, error) {
