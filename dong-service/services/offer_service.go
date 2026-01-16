@@ -345,3 +345,7 @@ func (s *OfferService) ReleaseIntermediaryWalletIfOfferComplete(ctx context.Cont
 		}
 	}
 }
+
+func (s *OfferService) SumOfferAmounts(ctx context.Context) (int64, error) {
+	return s.repo.SumOfferAmounts(ctx)
+}

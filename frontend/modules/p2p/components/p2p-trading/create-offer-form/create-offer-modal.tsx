@@ -121,7 +121,7 @@ export const CreateOfferModal = () => {
       );
 
       if (transferResult.success) {
-        toast.success('Create offer success! Status will be updated automatically.');
+        toast.success('Your offer is being processed. Please wait a moment.');
         setShowConfirm(false);
         setOpen(false);
       } else {

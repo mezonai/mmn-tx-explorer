@@ -806,6 +806,30 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 		if err != nil {
 			return err
 		}
+
+		var offerList []common.OfferList
+		for i := range blockData.Transactions {
+			tx := &blockData.Transactions[i]
+			tx.TransactionExtraInfoType = detectTransactionType(tx.ExtraInfo)
+			if tx.TransactionExtraInfoType == common.TransactionExtraInfoP2PTrading && tx.ExtraInfo != "" {
+				var offer common.OfferList
+				err := json.Unmarshal([]byte(tx.ExtraInfo), &offer)
+				if err != nil {
+					continue
+				}
+				offer.TransactionHash = tx.Hash
+				offer.SellerAddress = tx.FromAddress
+				offer.Intermediary = tx.ToAddress
+				offer.CreatedAt = tx.TransactionTimestamp
+
+				offerList = append(offerList, offer)
+			}
+		}
+		err = p.updateOfferStatus(ctx, tx, offerList)
+		if err != nil {
+			return err
+		}
+
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -1555,9 +1579,6 @@ func (p *PostgresConnector) insertTransactionsTx(
 	for i := range transactions {
 		t := &transactions[i]
 		t.TransactionExtraInfoType = detectTransactionType(t.ExtraInfo)
-		if t.TransactionExtraInfoType == common.TransactionExtraInfoP2PTrading && t.ExtraInfo != "" {
-			p.updateOfferStatus(ctx, tx, t)
-		}
 	}
 
 	valueStrings := make([]string, len(transactions))
@@ -2365,46 +2386,182 @@ func (p *PostgresConnector) GetAllTransactionsByWallet(
 	return transactions, rows.Err()
 }
 
-func (p *PostgresConnector) updateOfferStatus(ctx context.Context, tx *sql.Tx, t *common.Transaction) {
-	var extra struct {
-		Type         string  `json:"type"`
-		OfferID      *int64  `json:"offer_id"`
-		UserSenderId *string `json:"UserSenderId"`
-	}
-	if err := json.Unmarshal([]byte(t.ExtraInfo), &extra); err != nil || extra.OfferID == nil {
-		return
-	}
-	var offerID = *extra.OfferID
-	var txHash = t.Hash
-	var status = "CONFIRMED"
-	var exists int
-	err := tx.QueryRowContext(ctx, `SELECT 1 FROM offers WHERE transaction_hash = $1`, txHash).Scan(&exists)
-	if err == nil {
-		log.Error().Int64("offer_id", offerID).Str("tx_hash", txHash).Msg("Transaction hash already used for offer update")
-		return
-	}
-	var offerSeller, offerStatus, offerSellerUserId string
-	var offerIntermediary *string
-	var offerAmount int64
-	err = tx.QueryRowContext(ctx, `SELECT seller_wallet_address, status, intermediary_wallet_address, amount, seller_user_id FROM offers WHERE offer_id = $1`, offerID).Scan(&offerSeller, &offerStatus, &offerIntermediary, &offerAmount, &offerSellerUserId)
-	if err != nil {
-		log.Error().Int64("offer_id", offerID).Msg("Failed to get offer for status update")
-		return
-	}
-	if offerStatus != "OPEN" && offerStatus != "PENDING" {
-		log.Error().Int64("offer_id", offerID).Str("current_status", offerStatus).Msg("Offer status invalid for confirmation")
-		return
-	}
-	// Compare UserSenderId with seller_user_id
-	if extra.UserSenderId != nil && offerSellerUserId != "" && *extra.UserSenderId != offerSellerUserId {
-		log.Error().Int64("offer_id", offerID).Str("expected_user_id", offerSellerUserId).Str("actual_user_id", *extra.UserSenderId).Msg("Transaction user id mismatch for offer update")
-		return
+func (p *PostgresConnector) updateOfferStatus(ctx context.Context, tx *sql.Tx, offers []common.OfferList) error {
+	offerIDs := make([]int64, 0, len(offers))
+	offerTxMap := make(map[int64]string)
+
+	for _, offerItem := range offers {
+		offerID := offerItem.OfferID
+		txHash := strings.TrimSpace(offerItem.TransactionHash)
+
+		if txHash == "" {
+			log.Error().Int64("offer_id", offerID).Msg("Missing transaction_hash; skipping")
+			continue
+		}
+
+		var exists int
+		if err := tx.QueryRowContext(ctx,
+			`SELECT 1 FROM offers WHERE transaction_hash = $1`, txHash).Scan(&exists); err == nil {
+			log.Error().Int64("offer_id", offerID).Str("tx_hash", txHash).Msg("Transaction hash already used; skipping")
+			continue
+		} else if err != sql.ErrNoRows {
+			return fmt.Errorf("failed checking transaction_hash: %w", err)
+		}
+		offerIDs = append(offerIDs, offerID)
+		offerTxMap[offerID] = txHash
 	}
 
-	_, err = tx.ExecContext(ctx, `UPDATE offers SET status = $1, transaction_hash = $2, updated_at = NOW() WHERE offer_id = $3 AND status IN ('OPEN', 'PENDING')`, status, txHash, offerID)
-	if err != nil {
-		log.Error().Err(err).Int64("offer_id", offerID).Str("status", status).Str("tx_hash", txHash).Msg("Failed to update offer status from p2p-trading tx")
-	} else {
-		log.Info().Int64("offer_id", offerID).Str("status", status).Str("tx_hash", txHash).Msg("Updated offer status from p2p-trading tx")
+	if len(offerIDs) == 0 {
+		return nil
 	}
+
+	log.Debug().Int("offers_count", len(offerIDs)).Interface("offer_tx_map", offerTxMap).Msg("Processing offer updates")
+
+	rows, err := tx.QueryContext(ctx, `
+		SELECT
+			offer_id,
+			seller_wallet_address,
+			status,
+			intermediary_wallet_address,
+			amount
+		FROM offers
+		WHERE offer_id = ANY($1)
+		FOR UPDATE
+	`, pq.Array(offerIDs))
+	if err != nil {
+		return fmt.Errorf("failed to query offers: %w", err)
+	}
+	defer rows.Close()
+
+	type dbOffer struct {
+		seller       string
+		status       string
+		intermediary string
+		amount       int64
+	}
+
+	fetched := make(map[int64]dbOffer)
+
+	for rows.Next() {
+		var (
+			oid          int64
+			seller       string
+			status       string
+			intermediary string
+			amount       int64
+		)
+
+		if err := rows.Scan(&oid, &seller, &status, &intermediary, &amount); err != nil {
+			return fmt.Errorf("failed to scan offer row: %w", err)
+		}
+
+		fetched[oid] = dbOffer{
+			seller:       seller,
+			status:       status,
+			intermediary: intermediary,
+			amount:       amount,
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("rows iteration error: %w", err)
+	}
+
+	for _, oid := range offerIDs {
+		dbO, ok := fetched[oid]
+		if !ok {
+			log.Error().Int64("offer_id", oid).Msg("Offer not found; skipping")
+			continue
+		}
+
+		txHash := offerTxMap[oid]
+
+		var (
+			dbFrom   sql.NullString
+			dbTo     sql.NullString
+			dbValue  sql.NullString
+			dbStatus sql.NullInt64
+		)
+
+		if err := tx.QueryRowContext(ctx, `
+			SELECT from_address, to_address, value, status
+			FROM transactions
+			WHERE hash = $1
+		`, txHash).Scan(&dbFrom, &dbTo, &dbValue, &dbStatus); err != nil {
+
+			if err == sql.ErrNoRows {
+				log.Debug().Int64("offer_id", oid).Str("tx_hash", txHash).Str("skip_reason", "tx_not_found").Msg("Transaction not found; skipping")
+			} else {
+				log.Error().Err(err).Int64("offer_id", oid).Str("tx_hash", txHash).Str("skip_reason", "tx_query_error").Msg("Failed to query transaction; skipping")
+			}
+			continue
+		}
+
+		if !dbStatus.Valid || (dbStatus.Int64 != int64(pb.TransactionStatus_CONFIRMED) && dbStatus.Int64 != int64(pb.TransactionStatus_FINALIZED)) {
+			log.Debug().Int64("offer_id", oid).Int64("tx_status", dbStatus.Int64).Str("skip_reason", "tx_status_invalid").Msg("Transaction status not acceptable; skipping")
+			continue
+		}
+
+		if !dbFrom.Valid || dbFrom.String != dbO.seller {
+			log.Debug().Int64("offer_id", oid).Str("expected_seller", dbO.seller).Str("actual_sender", func() string {
+				if dbFrom.Valid {
+					return dbFrom.String
+				}
+				return ""
+			}()).Str("skip_reason", "sender_mismatch").Msg("Sender mismatch; skipping")
+			continue
+		}
+
+		if !dbTo.Valid || dbTo.String != dbO.intermediary {
+			log.Debug().Int64("offer_id", oid).Str("expected_intermediary", dbO.intermediary).Str("actual_recipient", func() string {
+				if dbTo.Valid {
+					return dbTo.String
+				}
+				return ""
+			}()).Str("skip_reason", "recipient_mismatch").Msg("Recipient mismatch; skipping")
+			continue
+		}
+
+		if !dbValue.Valid {
+			log.Error().Int64("offer_id", oid).Str("skip_reason", "tx_value_null").Msg("Transaction value invalid; skipping")
+			continue
+		}
+
+		val := new(big.Int)
+		if _, ok := val.SetString(strings.TrimSpace(dbValue.String), 10); !ok {
+			log.Error().Int64("offer_id", oid).Str("value", dbValue.String).Str("skip_reason", "tx_value_parse_error").Msg("Invalid transaction value; skipping")
+			continue
+		}
+
+		expected := big.NewInt(dbO.amount)
+		scaled := new(big.Int).Mul(expected, big.NewInt(1000000))
+
+		if val.Cmp(expected) != 0 && val.Cmp(scaled) != 0 {
+			log.Debug().Int64("offer_id", oid).Int64("expected_amount", dbO.amount).
+				Str("expected_amount_scaled", scaled.String()).Str("actual_amount", dbValue.String).
+				Str("skip_reason", "amount_mismatch").Msg("Amount mismatch; skipping")
+			continue
+		}
+
+		if dbO.status != "OPEN" {
+			log.Debug().Int64("offer_id", oid).Str("current_status", dbO.status).
+				Str("skip_reason", "offer_not_open").Msg("Offer not OPEN; skipping")
+			continue
+		}
+
+		if _, err := tx.ExecContext(ctx, `
+			UPDATE offers
+			SET status = $1,
+			    transaction_hash = $2,
+			    updated_at = NOW()
+			WHERE offer_id = $3
+			  AND status = 'OPEN'
+		`, "CONFIRMED", txHash, oid); err != nil {
+			return fmt.Errorf("failed to update offer %d: %w", oid, err)
+		}
+
+		log.Info().Int64("offer_id", oid).Str("status", "CONFIRMED").Str("tx_hash", txHash).Msg("Offer confirmed successfully")
+	}
+
+	return nil
 }
