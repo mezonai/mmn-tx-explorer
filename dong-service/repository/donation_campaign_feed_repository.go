@@ -127,7 +127,7 @@ func (r *DonationCampaignFeedRepository) FindCampaignFeedByHash(feedHash string)
 		SELECT 
 			id, tx_hash, creator_address, related_address,
 			title, description, image_cids, parent_hash,
-			root_hash, visible, created_at
+			root_hash, reference_tx_hashes, visible, created_at
 		FROM %s.user_content
 		WHERE tx_hash = $1;
 	`, r.dongSchema)
@@ -143,6 +143,7 @@ func (r *DonationCampaignFeedRepository) FindCampaignFeedByHash(feedHash string)
 		pq.Array(&feed.ImageCIDs),
 		&feed.ParentHash,
 		&feed.RootHash,
+		pq.Array(&feed.ReferenceTxHashes),
 		&feed.Visible,
 		&feed.CreatedAt,
 	)

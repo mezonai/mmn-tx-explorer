@@ -42,6 +42,12 @@ export const CampaignDetail = async ({ campaign }: CampaignDetailProps) => {
                 Updates
               </TabsTrigger>
               <TabsTrigger
+                value={'community'}
+                className="text-muted-foreground data-[state=active]:border-brand-primary data-[state=active]:text-foreground mr-5 rounded-none border-0 px-0 data-[state=active]:border-b"
+              >
+                Community
+              </TabsTrigger>
+              <TabsTrigger
                 value={'activity'}
                 className="text-muted-foreground data-[state=active]:border-brand-primary data-[state=active]:text-foreground mr-5 rounded-none border-0 px-0 data-[state=active]:border-b"
               >
@@ -54,7 +60,20 @@ export const CampaignDetail = async ({ campaign }: CampaignDetailProps) => {
               <CampaignActivity campaign={campaign} walletAddress={campaign.donation_wallet} />
             </TabsContent>
             <TabsContent value="update">
-              <DonationFeed campaign={campaign} />
+              <DonationFeed
+                campaign={campaign}
+                isOwner={true}
+                feedTitle="Updates"
+                feedDescription="Follow the full journey of this campaign."
+              />
+            </TabsContent>
+            <TabsContent value="community">
+              <DonationFeed
+                campaign={campaign}
+                isOwner={false}
+                feedTitle="Community"
+                feedDescription="Join the conversation. Share your thoughts and support for this campaign."
+              />
             </TabsContent>
           </Tabs>
         </div>

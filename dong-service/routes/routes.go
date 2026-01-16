@@ -78,6 +78,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		campaignsPublic.GET("/list-feed/:campaign_address", middleware.ParseTokenAndAddToContext(cfg.JWT.Secret), campaignFeedHandler.ListCampaignFeedsByAddress)
 		campaignsPublic.GET("/list-history-feed/:root_feed_hash", campaignFeedHandler.ListHistoryFeedsByRootHash)
 		campaignsPublic.PATCH("/update-visible-feed/:root_feed_hash", middleware.Authentication(cfg.JWT.Secret), campaignFeedHandler.UpdateVisibleFeed)
+		campaignsPublic.GET("/feed_detail/:feed_hash", campaignFeedHandler.GetFeedDetailByHash)
 
 		// Statistics routes (public)
 		statsPublic := v1.Group("/stats")
