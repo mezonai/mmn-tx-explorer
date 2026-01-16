@@ -122,15 +122,11 @@ const OfferMobileCard = ({ offer }: OfferMobileCardProps) => {
           <Chip variant="success" className="w-full justify-center py-2 rounded-lg">
             COMPLETED
           </Chip>
-        ) : offer.status === OFFERS_STATUS.CONFIRMED ? (
-          <Chip variant="warning" className="w-full justify-center py-2 rounded-lg">
-            CONFIRMED
-          </Chip>
         ) : offer.status === OFFERS_STATUS.FAILED ? (
           <Chip variant="error" className="w-full justify-center py-2 rounded-lg">
             FAILED
           </Chip>
-        ) : offer.status === OFFERS_STATUS.OPEN ? (
+        ) : offer.status === OFFERS_STATUS.OPEN || offer.status === OFFERS_STATUS.CONFIRMED ? (
           <div className="w-full">
             <CancelConfirmDialog offer={offer} />
           </div>
