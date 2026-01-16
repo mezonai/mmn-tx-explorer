@@ -39,6 +39,8 @@ on:
         required: true
       EVENT_API_KEY:
         required: true
+      VERIFYING_KEY_B64:
+        required: true
 
 jobs:
   build:
@@ -123,6 +125,7 @@ jobs:
           BLOCKCHAIN_USE_TLS: ${{vars.MMN_GRPC_USE_TLS}}
           EVENT_API_URL: ${{ vars.EVENT_API_URL}}
           EVENT_API_KEY: ${{ secrets.EVENT_API_KEY }}
+          VERIFYING_KEY_B64: ${{ secrets.VERIFYING_KEY_B64 }}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
@@ -131,6 +134,10 @@ jobs:
           SHA="$1"
           echo "==> Preparing deployment directories and configs..."
           sudo mkdir -p /opt/dong-service/bin /opt/dong-service/config /opt/dong-service/migrations /opt/dong-service/logs
+          
+          echo "==> Writing ZK verification key..."
+          printf '%s' "${VERIFYING_KEY_B64}" | sudo tee /opt/dong-service/config/verifying_key.b64 > /dev/null
+          sudo chmod 600 /opt/dong-service/config/verifying_key.b64
           
           echo "==> Writing environment configs..."
           sudo tee /opt/dong-service/config/dong-service.env > /dev/null <<EON
@@ -194,6 +201,7 @@ jobs:
           printf "export BLOCKCHAIN_USE_TLS=%q\n" "$BLOCKCHAIN_USE_TLS" >> remote_env.sh
           printf "export EVENT_API_URL=%q\n" "$EVENT_API_URL" >> remote_env.sh
           printf "export EVENT_API_KEY=%q\n" "$EVENT_API_KEY" >> remote_env.sh
+          printf "export VERIFYING_KEY_B64=%q\n" "$VERIFYING_KEY_B64" >> remote_env.sh
 
       - name: Prepare and deploy to target server
         run: |
