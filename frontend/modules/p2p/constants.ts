@@ -24,7 +24,7 @@ export const OFFERS_STATUS = {
   CONFIRMED: 'CONFIRMED',
   CANCELED: 'CANCELED',
   FAILED: 'FAILED',
-  COMPLETE: 'COMPLETE',
+  COMPLETED: 'COMPLETED',
 } as const;
 export const P2P_TAB = {
   OFFERS: 'offers',

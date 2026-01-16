@@ -1,6 +1,6 @@
 'use client';
 
-import { AddressDisplay } from '@/components/shared';
+import { AddressDisplay, Chip } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { APP_CONFIG } from '@/configs/app.config';
 import { ROUTES } from '@/configs/routes.config';
@@ -114,12 +114,18 @@ const OfferMobileCard = ({ offer }: OfferMobileCardProps) => {
           >
             Buy Mezon đồng
           </Button>
+        ) : offer.status === OFFERS_STATUS.CANCELED ? (
+          <Chip variant="error" className="w-full justify-center py-3 rounded-lg">
+            CANCELED
+          </Chip>
+        ) : offer.status === OFFERS_STATUS.COMPLETED ? (
+          <Chip variant="success" className="w-full justify-center py-3 rounded-lg">
+            COMPLETED
+          </Chip>
         ) : (
-          offer.status !== OFFERS_STATUS.CANCELED && (
-            <div className="w-full">
-              <CancelConfirmDialog offer={offer} />
-            </div>
-          )
+          <div className="w-full">
+            <CancelConfirmDialog offer={offer} />
+          </div>
         )}
       </div>
     </div>

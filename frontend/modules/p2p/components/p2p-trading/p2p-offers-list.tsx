@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { TTableColumn } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ROUTES } from '@/configs/routes.config';
-import { AddressDisplay } from '@/components/shared';
+import { AddressDisplay, Chip } from '@/components/shared';
 import { P2POffer } from '../../types';
 import { APP_CONFIG } from '@/configs/app.config';
 import { useRouter } from 'next/navigation';
@@ -121,7 +121,7 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
     {
       headerContent: 'ACTION',
       renderCell: (offer) => (
-        <div className="w-[50%]">
+        <div className="w-[60%]">
           {offer.has_active_order ? (
             <div className="group relative mx-auto w-full overflow-hidden rounded-lg border border-amber-500/50 bg-amber-500/10 px-1 shadow-[0_0_10px_-3px_rgba(245,158,11,0.2)] backdrop-blur-sm">
               <div className="absolute inset-0 animate-pulse bg-[linear-gradient(45deg,transparent_25%,rgba(245,158,11,0.5)_25%,rgba(245,158,11,0.5)_50%,transparent_50%,transparent_75%,rgba(245,158,11,0.5)_75%,rgba(245,158,11,0.5)_100%)] bg-size-[12px_12px] opacity-20 dark:opacity-10" />
@@ -145,15 +145,21 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
             >
               Buy Mezon đồng
             </Button>
+          ) : offer.status === OFFERS_STATUS.CANCELED ? (
+            <Chip variant="error" className="w-full rounded-lg justify-center py-3">
+              CANCELED
+            </Chip>
+          ) : offer.status === OFFERS_STATUS.COMPLETED ? (
+            <Chip variant="success" className="w-full rounded-lg justify-center py-3">
+              COMPLETED
+            </Chip>
           ) : (
-            offer.status !== OFFERS_STATUS.CANCELED && (
-              <div className="flex w-full items-center gap-2">
-                <div className="flex-1">
-                  <CancelConfirmDialog offer={offer} />
-                </div>
-                <ShareOfferModal offer={offer} />
+            <div className="flex w-full items-center gap-2">
+              <div className="flex-1">
+                <CancelConfirmDialog offer={offer} />
               </div>
-            )
+              <ShareOfferModal offer={offer} />
+            </div>
           )}
         </div>
       ),
