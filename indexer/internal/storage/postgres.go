@@ -827,6 +827,7 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 
 		err = p.updateOfferStatus(ctx, tx, txMap, offerIDMap)
 		if err != nil {
+			log.Error().Err(err).Msg("Failed to update offer status after inserting transactions")
 			return err
 		}
 
@@ -2394,6 +2395,7 @@ func (p *PostgresConnector) updateOfferStatus(
 ) error {
 	log.Info().Int("offers_to_validate", len(txMap)).Msg("starting offer status update")
 	if len(txMap) == 0 {
+		log.Info().Msg("no offers to validate")
 		return nil
 	}
 
@@ -2448,6 +2450,7 @@ func (p *PostgresConnector) updateOfferStatus(
 			&o.Amount,
 			&o.Status,
 		); err != nil {
+			log.Error().Err(err).Msg("failed to scan offer row")
 			return err
 		}
 		offerMap[o.OfferID] = o
