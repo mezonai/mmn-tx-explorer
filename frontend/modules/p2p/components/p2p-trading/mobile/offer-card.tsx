@@ -10,6 +10,7 @@ import React from 'react';
 import { TriangleAlert } from 'lucide-react';
 import { P2POffer } from '@/modules/p2p/types';
 import { CancelConfirmDialog } from '../cancel-confirm-dialog';
+import { ShareOfferModal } from '../share-offer-modal';
 import { OFFERS_STATUS } from '@/modules/p2p/constants';
 import { NumberUtil } from '@/utils';
 
@@ -127,8 +128,11 @@ const OfferMobileCard = ({ offer }: OfferMobileCardProps) => {
             FAILED
           </Chip>
         ) : offer.status === OFFERS_STATUS.OPEN || offer.status === OFFERS_STATUS.CONFIRMED ? (
-          <div className="w-full">
-            <CancelConfirmDialog offer={offer} />
+          <div className="flex w-full items-center gap-2">
+            <div className="flex-1">
+              <CancelConfirmDialog offer={offer} />
+            </div>
+            <ShareOfferModal offer={offer} />
           </div>
         ) : (
           <Chip variant="default" className="w-full justify-center py-2 rounded-lg">
