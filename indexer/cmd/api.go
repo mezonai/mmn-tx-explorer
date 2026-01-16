@@ -81,36 +81,42 @@ func RunAPI(cmd *cobra.Command, args []string) {
 		c.String(http.StatusOK, doc)
 	})
 
-	root := r.Group("/:chainId")
-
-	root.Use(middleware.Authorization)
-	root.Use(middleware.Cors)
+	// v1 API routes - json responses
+	v1 := r.Group("/:chainId")
+	v1.Use(middleware.Authorization)
+	v1.Use(middleware.Cors)
 
 	// wildcard queries
-	root.GET("/transactions", handlers.GetTransactions)
-	root.GET("/pending-transactions", handlers.GetPendingTransactions)
-	root.GET("/pending-tx/:transaction_hash/detail", handlers.GetPendingTransactionDetail)
-	root.GET("/transactions/infinite", handlers.GetTransactionsInfinite)
-	root.GET("/export-transactions-csv", handlers.ExportTransactionsCSV)
+	v1.GET("/transactions", handlers.GetTransactions)
+	v1.GET("/pending-transactions", handlers.GetPendingTransactions)
+	v1.GET("/pending-tx/:transaction_hash/detail", handlers.GetPendingTransactionDetail)
+	v1.GET("/transactions/infinite", handlers.GetTransactionsInfiniteJSON)
+	v1.GET("/export-transactions-csv", handlers.ExportTransactionsCSV)
 
 	// wallet queries
-	root.GET("/wallets", handlers.GetWallets)
-	root.GET("/wallets/:address/detail", handlers.GetWalletDetail)
+	v1.GET("/wallets", handlers.GetWallets)
+	v1.GET("/wallets/:address/detail", handlers.GetWalletDetail)
 
 	// blocks table queries
-	root.GET("/blocks", handlers.GetBlocks)
-	root.GET("/blocks/:blockNumber/detail", handlers.GetBlockDetail)
+	v1.GET("/blocks", handlers.GetBlocks)
+	v1.GET("/blocks/:blockNumber/detail", handlers.GetBlockDetail)
 
-	root.GET("/tx/:txHash/detail", handlers.GetTransactionDetail)
+	v1.GET("/tx/:txHash/detail", handlers.GetTransactionDetail)
 	// internal endpoint (without extra_info field)
-	root.GET("/internal/tx/:txHash/detail", handlers.GetInternalTransactionDetail)
+	v1.GET("/internal/tx/:txHash/detail", handlers.GetInternalTransactionDetail)
 
 	// stats queries
-	root.GET("/stats/dashboard", handlers.GetDashboardStats)
-	root.GET("/stats/transactions", handlers.GetTransactionStats)
+	v1.GET("/stats/dashboard", handlers.GetDashboardStats)
+	v1.GET("/stats/transactions", handlers.GetTransactionStats)
 
 	// search
-	root.GET("/search/:input", handlers.Search)
+	v1.GET("/search/:input", handlers.Search)
+
+	// v2 API routes - protobuf binary responses
+	v2 := r.Group("/v2/:chainId")
+	v2.Use(middleware.Authorization)
+	v2.Use(middleware.Cors)
+	v2.GET("/transactions/infinite", handlers.GetTransactionsInfiniteProto)
 
 	r.GET("/health", handlers.Health)
 
