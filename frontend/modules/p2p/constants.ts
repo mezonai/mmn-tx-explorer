@@ -20,7 +20,6 @@ export const P2P_QUERY_KEYS = {
 } as const;
 export const OFFERS_STATUS = {
   OPEN: 'OPEN',
-  PENDING: 'PENDING',
   CONFIRMED: 'CONFIRMED',
   CANCELED: 'CANCELED',
   FAILED: 'FAILED',

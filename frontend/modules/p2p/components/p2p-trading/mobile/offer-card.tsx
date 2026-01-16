@@ -115,17 +115,29 @@ const OfferMobileCard = ({ offer }: OfferMobileCardProps) => {
             Buy Mezon đồng
           </Button>
         ) : offer.status === OFFERS_STATUS.CANCELED ? (
-          <Chip variant="error" className="w-full justify-center py-3 rounded-lg">
+          <Chip variant="error" className="w-full justify-center py-2 rounded-lg">
             CANCELED
           </Chip>
         ) : offer.status === OFFERS_STATUS.COMPLETED ? (
-          <Chip variant="success" className="w-full justify-center py-3 rounded-lg">
+          <Chip variant="success" className="w-full justify-center py-2 rounded-lg">
             COMPLETED
           </Chip>
-        ) : (
+        ) : offer.status === OFFERS_STATUS.CONFIRMED ? (
+          <Chip variant="warning" className="w-full justify-center py-2 rounded-lg">
+            CONFIRMED
+          </Chip>
+        ) : offer.status === OFFERS_STATUS.FAILED ? (
+          <Chip variant="error" className="w-full justify-center py-2 rounded-lg">
+            FAILED
+          </Chip>
+        ) : offer.status === OFFERS_STATUS.OPEN ? (
           <div className="w-full">
             <CancelConfirmDialog offer={offer} />
           </div>
+        ) : (
+          <Chip variant="default" className="w-full justify-center py-2 rounded-lg">
+            {offer.status}
+          </Chip>
         )}
       </div>
     </div>
