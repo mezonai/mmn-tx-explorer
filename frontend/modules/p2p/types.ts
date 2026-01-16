@@ -130,3 +130,35 @@ export interface LinkLocation {
   start: number;
   end: number;
 }
+
+export interface AutoMessagePayload {
+  text: string;
+  embed?: IEmbedProps[];
+}
+export interface IEmbedProps {
+  color?: string;
+  title?: string;
+  url?: string;
+  author?: {
+    name: string;
+    icon_url?: string;
+    url?: string;
+  };
+  description?: string;
+  thumbnail?: {
+    url: string;
+  };
+  fields?: Array<{
+    name: string;
+    value: string;
+    inline?: boolean;
+  }>;
+  image?: {
+    url: string;
+  };
+  timestamp?: string;
+  footer?: {
+    text: string;
+    icon_url?: string;
+  };
+}

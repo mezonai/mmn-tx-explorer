@@ -9,47 +9,33 @@ import { STORAGE_KEYS } from '@/constant';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { formatChatTime, generateMarkdownPayload, isSameDay } from '../../util';
-import { P2POrder } from '../../types';
-import { APP_CONFIG } from '@/configs/app.config';
-import { ROUTES } from '@/configs/routes.config';
-import { NumberUtil } from '@/utils';
+import { AutoMessagePayload } from '../../types';
 
 interface ChatSidebarProps {
   sellerId: string;
-  initialOrder?: P2POrder | null;
-  onInitialMessageSent?: () => void;
+  autoMessage?: AutoMessagePayload | null;
+  onAutoMessageSent?: () => void;
 }
 
 const MAX_CHAR_LIMIT = 5000;
 
-export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: ChatSidebarProps) => {
+export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSidebarProps) => {
   const [messages, setMessages] = useState<ChannelMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isConnected, setIsConnected] = useState(false);
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showLimitWarning, setShowLimitWarning] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<LightSocket | null>(null);
   const channelIdRef = useRef<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
   const isMobileOpenRef = useRef(isMobileOpen);
-
-  const initialOrderRef = useRef(initialOrder);
-  const onInitialMessageSentRef = useRef(onInitialMessageSent);
-  const hasSentAutoMessageRef = useRef(false);
 
   const { lightClient } = useLightClient();
   const { user } = useUser();
-
-  const [showLimitWarning, setShowLimitWarning] = useState(false);
-
-  useEffect(() => {
-    initialOrderRef.current = initialOrder;
-    onInitialMessageSentRef.current = onInitialMessageSent;
-  }, [initialOrder, onInitialMessageSent]);
 
   useEffect(() => {
     isMobileOpenRef.current = isMobileOpen;
@@ -96,63 +82,6 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
           }
         });
 
-        if (initialOrderRef.current && !hasSentAutoMessageRef.current && channelIdRef.current) {
-          try {
-            hasSentAutoMessageRef.current = true;
-
-            const order = initialOrderRef.current;
-            const mzdAmount = NumberUtil.formatWithCommas(order.amount);
-            const vndAmount = NumberUtil.formatWithCommas(order.amount * order.price_rate);
-            const fullUrl = process.env.NEXT_PUBLIC_CHAT_APP_ZK_API_URL || window.location.origin;
-            const domain = new URL(fullUrl).origin;
-            const orderLink = `${domain}${ROUTES.P2P_TRADING_ROOM(order.order_id)}`;
-
-            const textContent = `Hello, I would like to buy your offer. Please check the order details below.`;
-            const mk = generateMarkdownPayload(textContent);
-
-            const embedElement = {
-              color: '#6366f1',
-              title: `Click here to view Order #${order.order_id}`,
-              url: orderLink,
-              description: 'New P2P Order',
-              fields: [
-                {
-                  name: 'Buy Amount',
-                  value: `${mzdAmount} ${APP_CONFIG.CHAIN_SYMBOL}`,
-                  inline: true,
-                },
-                {
-                  name: 'Total Price',
-                  value: `${vndAmount} VND`,
-                  inline: true,
-                },
-                {
-                  name: 'Exchange Rate',
-                  value: `${NumberUtil.formatWithCommas(order.price_rate)}  VND/${APP_CONFIG.CHAIN_SYMBOL}`,
-                  inline: true,
-                },
-              ],
-              timestamp: new Date().toISOString(),
-              footer: {
-                text: 'Mezon Dong P2P Trading',
-              },
-            };
-
-            await socket.sendDM(channelIdRef.current, {
-              mk: mk,
-              t: textContent,
-              embed: [embedElement],
-            });
-
-            if (onInitialMessageSentRef.current) {
-              onInitialMessageSentRef.current();
-            }
-          } catch (err) {
-            console.error('Failed to send auto message:', err);
-            hasSentAutoMessageRef.current = false;
-          }
-        }
-
         if (isMounted) {
           setIsConnected(true);
         }
@@ -168,6 +97,30 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
   }, [lightClient, sellerId, user?.id]);
 
   useEffect(() => {
+    if (autoMessage && isConnected && socketRef.current && channelIdRef.current) {
+      const sendMessage = async () => {
+        try {
+          const mk = generateMarkdownPayload(autoMessage.text);
+
+          await socketRef.current?.sendDM(channelIdRef.current!, {
+            t: autoMessage.text,
+            mk: mk,
+            embed: autoMessage.embed,
+          });
+
+          if (onAutoMessageSent) {
+            onAutoMessageSent();
+          }
+        } catch (err) {
+          console.error('Failed to send auto message:', err);
+        }
+      };
+
+      sendMessage();
+    }
+  }, [autoMessage, isConnected, onAutoMessageSent]);
+
+  useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
@@ -181,7 +134,6 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
     setShowLimitWarning(false);
     try {
       const mk = generateMarkdownPayload(content);
-
       await socketRef.current.sendDM(channelIdRef.current, {
         t: content,
         mk: mk,
@@ -194,14 +146,12 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const target = e.target;
     let newValue = target.value;
-
     if (newValue.length > MAX_CHAR_LIMIT) {
       newValue = newValue.slice(0, MAX_CHAR_LIMIT);
       setShowLimitWarning(true);
     } else {
       setShowLimitWarning(false);
     }
-
     setInputValue(newValue);
     target.style.height = 'auto';
     target.style.height = `${Math.min(target.scrollHeight, 150)}px`;
@@ -364,7 +314,7 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
                     )}
                     <div
                       className={cn(
-                        'overflow-wrap-anywhere w-fit max-w-full rounded-2xl px-3 py-2 text-sm break-all whitespace-pre-wrap shadow-sm transition-colors',
+                        'overflow-wrap-anywhere w-fit max-w-full rounded-2xl px-3 py-2 text-sm wrap-break-word whitespace-pre-wrap shadow-sm transition-colors',
                         isMe
                           ? 'bg-brand-primary text-white'
                           : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
