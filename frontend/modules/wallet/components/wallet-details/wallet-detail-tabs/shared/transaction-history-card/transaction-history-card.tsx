@@ -3,7 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Pagination } from '@/components/ui/pagination';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useBreakpoint, usePaginationQueryParam } from '@/hooks';
 import { EBreakpoint, ESortOrder } from '@/enums';
 import { WalletTransactionsTable, WalletTransactionsCards } from '@/modules/transaction/components';
@@ -34,6 +34,9 @@ const getDefaultTimeRangeByMonth = (monthRange: number) => {
 };
 
 export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCardProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParamsHook = useSearchParams();
   const [showExportModal, setShowExportModal] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportFromDate, setExportFromDate] = useState<Date | null>(null);
@@ -82,7 +85,17 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
   const transactions = transactionsResponse?.data;
   const pagination = transactionsResponse?.meta;
   const isEmptyTransactions = transactions && transactions.length === 0;
+  useEffect(() => {
+    if (!isLoadingTransactions && pagination) {
+      const totalPages = pagination.total_pages;
 
+      if (totalPages > 0 && page > totalPages) {
+        const currentParams = new URLSearchParams(searchParamsHook.toString());
+        currentParams.set('page', totalPages.toString());
+        router.replace(`${pathname}?${currentParams.toString()}`);
+      }
+    }
+  }, [pagination, page, isLoadingTransactions, router, pathname, searchParamsHook]);
   const handleExportWithRange = async (fromDate: Date | null, toDate: Date | null, filename?: string) => {
     if (isExporting) return;
     setIsExporting(true);
