@@ -190,15 +190,22 @@ func (h *OfferHandler) ListOffers(c *gin.Context) {
 		totalPage = 0
 	}
 
+	totalAvailable, err := h.offerService.SumOfferAmounts(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to calculate total available: "+err.Error()))
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "Offers retrieved",
 		"data":    offers,
 		"meta": gin.H{
-			"page":        pg.Page + 1,
-			"limit":       pg.Limit,
-			"total_items": total,
-			"total_pages": totalPage,
+			"page":            pg.Page + 1,
+			"limit":           pg.Limit,
+			"total_items":     total,
+			"total_pages":     totalPage,
+			"total_available": totalAvailable,
 		},
 	})
 }
@@ -288,58 +295,6 @@ func (h *OfferHandler) GetMyOffers(c *gin.Context) {
 			"total_items": total,
 			"total_pages": totalPage,
 		},
-	})
-}
-
-// UpdateOfferStatus godoc
-// @Summary Update offer status
-// @Description Update offer status with transaction hash verification
-// @Tags offers
-// @Accept json
-// @Produce json
-// @Param request body models.UpdateOfferStatusRequest true "Update Offer Status"
-// @Success 200 {object} models.Response
-// @Failure 400 {object} models.Response
-// @Failure 500 {object} models.Response
-// @Security BearerAuth
-// @Router /api/v1/offers/update-status [post]
-func (h *OfferHandler) UpdateOfferStatus(c *gin.Context) {
-	var req models.UpdateOfferStatusRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid request: "+err.Error()))
-		return
-	}
-
-	// Validate request
-	userAddress, _ := utils.GetAddressFromContext(c)
-	var offer, err = h.offerService.GetOfferByID(c.Request.Context(), req.OfferID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, "Offer not found"))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to get offer: "+err.Error()))
-		return
-	}
-
-	if offer.SellerWalletAddress != userAddress {
-		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, "You are not the creator of this offer"))
-		return
-	}
-
-	if err := h.offerService.UpdateOfferStatus(c.Request.Context(), &req); err != nil {
-		if errors.Is(err, constants.ErrTxHashAlreadyUsed) {
-			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Failed to update offer status: "+err.Error()))
-			return
-		}
-
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to update offer status: "+err.Error()))
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "Offer status updated successfully",
 	})
 }
 
