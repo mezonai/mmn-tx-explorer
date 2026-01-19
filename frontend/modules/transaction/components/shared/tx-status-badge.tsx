@@ -56,5 +56,5 @@ export const TxStatusSkeleton = ({ className }: TypeBadgesSkeletonProps) => {
       <Skeleton className="h-5.5 w-24" />
       <Skeleton className="h-5.5 w-24" />
     </div>
-  )
+  );
 };

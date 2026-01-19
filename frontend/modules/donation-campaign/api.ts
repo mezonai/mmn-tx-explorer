@@ -138,6 +138,14 @@ export class DonationCampaignService {
     return data;
   }
 
+  static async getDonationFeedPostDetail(tx_hash: string): Promise<IDonationFeed> {
+    const { data } = await apiDongClient.get<{ data: IDonationFeed }>(
+      DONATION_ENDPOINTS.DONATION_FEED_POST_DETAIL(tx_hash),
+      { meta: { authOptional: true } } as InternalAxiosRequestConfig
+    );
+    return data.data;
+  }
+
   static async toggleHideDonationFeed(root_hash: string, visible: boolean): Promise<any> {
     const { data } = await apiDongClient.patch(DONATION_ENDPOINTS.TOGGLE_HIDE_DONATION_FEED(root_hash), {
       visible,

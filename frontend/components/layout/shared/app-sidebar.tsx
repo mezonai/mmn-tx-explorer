@@ -23,7 +23,7 @@ import { SidebarAuthPanel } from '@/modules/auth/components';
 
 export function AppSidebar() {
   return (
-    <Sidebar collapsible="icon" className="md:hidden">
+    <Sidebar collapsible="icon" className="lg:hidden">
       <SidebarHeader className="relative px-4">
         <SidebarMenu>
           <SidebarMenuItem>

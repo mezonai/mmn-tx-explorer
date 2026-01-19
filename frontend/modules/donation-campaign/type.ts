@@ -1,3 +1,5 @@
+import { ETransferType } from '@/modules/transaction';
+
 export enum ECampaignStatus {
   Active = 1,
   Draft = 0,
@@ -113,6 +115,7 @@ export interface Transaction {
   status: number;
   transaction_timestamp: number;
   text_data?: string;
+  transaction_extra_info_type: ETransferType;
 }
 export interface TopContributor {
   sender_wallet: string;
@@ -136,6 +139,7 @@ export interface IDonationFeed {
   campaign_address: string;
   title: string;
   description: string;
+  reference_tx_hashes: string[];
   image_cids: string[];
   parent_hash: string;
   root_hash: string;
@@ -147,6 +151,7 @@ export interface IDonationFeed {
 export interface DonationFeedParams {
   limit?: number;
   timestamp_lt?: string;
+  isOwner?: boolean;
 }
 
 export interface UploadImageRequest {
@@ -166,6 +171,7 @@ export interface UploadImageResponse {
 export interface DonationUpdateForm {
   title: string;
   description: string;
+  reference_tx_hashes: string[];
   images: string[];
   existingImageCids?: string[];
 

@@ -48,7 +48,7 @@ func (r *WalletRepository) GetByAddress(address string) (*models.Wallet, error) 
 	)
 
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("wallet not found")
+		return nil, fmt.Errorf("wallet not found: %w", sql.ErrNoRows)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get wallet: %w", err)

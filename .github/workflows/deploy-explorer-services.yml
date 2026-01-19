@@ -103,7 +103,8 @@ jobs:
       OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
       REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
       AES_SECRET_KEY: ${{ secrets.AES_SECRET_KEY }}
-
+      EVENT_API_KEY: ${{ secrets.EVENT_API_KEY }}
+ 
   deploy-frontend:
     if: inputs.deploy_frontend == true
     uses: ./.github/workflows/deploy-frontend-service.yml
@@ -113,3 +114,17 @@ jobs:
     secrets:
       NEXT_PUBLIC_COBAR_API_KEY: ${{ secrets.NEXT_PUBLIC_COBAR_API_KEY }}
       NEXT_PUBLIC_MEZON_SERVER_KEY: ${{ secrets.NEXT_PUBLIC_MEZON_SERVER_KEY }}
+
+  deploy-socket:
+    needs: prepare-source
+    uses: ./.github/workflows/deploy-socket-service.yml
+    with:
+      env: ${{ inputs.env }}
+      ref: ${{ inputs.ref }}
+      git_sha: ${{ needs.prepare-source.outputs.git_sha }}
+      source_artifact: source-code
+    secrets:
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      EVENT_API_KEY: ${{ secrets.EVENT_API_KEY }}
+      REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
