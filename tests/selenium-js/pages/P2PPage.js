@@ -191,62 +191,71 @@ class P2PPage extends BasePage {
     
     console.log('  ? Filling amount...');
     await this.executeScript(`
-      // Find amount input by label text "Amount to Sell"
+      // Find amount input by label text or nearby container
       let amountInput = null;
-      
-      // Method 1: Find by label
       const labels = Array.from(document.querySelectorAll('label'));
-      const amountLabel = labels.find(label => 
-        label.textContent.includes('Amount to Sell') || 
-        label.textContent.includes('Amount to Buy')
-      );
+      const amountLabel = labels.find(label => /amount to (sell|buy)/i.test(label.textContent));
+
       if (amountLabel) {
         const forAttr = amountLabel.getAttribute('for');
         if (forAttr) {
           amountInput = document.getElementById(forAttr);
-        } else {
-          amountInput = amountLabel.querySelector('input');
+        }
+        if (!amountInput) {
+          amountInput = amountLabel.querySelector('input[type="text"]') || amountLabel.querySelector('input');
+        }
+        if (!amountInput) {
+          const parent = amountLabel.closest('div');
+          if (parent) {
+            amountInput = parent.querySelector('input[type="text"]') || parent.querySelector('input');
+          }
+        }
+        if (!amountInput) {
+          let el = amountLabel.nextElementSibling;
+          while (el && !amountInput) {
+            if (el.querySelector) {
+              amountInput = el.querySelector('input[type="text"]') || el.querySelector('input');
+            }
+            el = el.nextElementSibling;
+          }
         }
       }
-      
-      // Method 2: Find by placeholder if label method failed
+
+      // Fallback: find input with placeholder '0' or aria-label contains 'amount'
       if (!amountInput) {
         const inputs = Array.from(document.querySelectorAll('input[type="text"]'));
-        amountInput = inputs.find(inp => 
-          (inp.placeholder || '').includes('5,000,000') ||
-          (inp.placeholder || '').includes('Ex:')
-        );
+        amountInput = inputs.find(inp => (inp.placeholder || '').trim() === '0' || (inp.getAttribute('aria-label') || '').toLowerCase().includes('amount'));
       }
-      
+
       if (amountInput) {
         amountInput.click();
         amountInput.focus();
-        
+
         const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-        
+
         // Clear the field first
         nativeInputValueSetter.call(amountInput, '');
         amountInput.dispatchEvent(new Event('input', { bubbles: true }));
         amountInput.dispatchEvent(new Event('change', { bubbles: true }));
-        
+
         // Wait a bit to ensure field is cleared
         await new Promise(resolve => setTimeout(resolve, 100));
-        
+
         // Set the exact value: 1 (not formatted)
         nativeInputValueSetter.call(amountInput, '${offerData.amount}');
         amountInput.dispatchEvent(new Event('input', { bubbles: true }));
         amountInput.dispatchEvent(new Event('change', { bubbles: true }));
-        
+
         // Wait before blur to let React process the value
         await new Promise(resolve => setTimeout(resolve, 100));
-        
+
         amountInput.dispatchEvent(new Event('blur', { bubbles: true }));
-        
+
         // Wait for formatting to complete
         await new Promise(resolve => setTimeout(resolve, 200));
-        
+
         console.log('✅ Amount field after fill:', amountInput.value, '(expected: 1)');
-        if (amountInput.value !== '1' && amountInput.value !== '${offerData.amount}') {
+        if (amountInput.value !== '1' && amountInput.value !== '${offerData.amount}' && amountInput.value !== '1.00') {
           console.warn('⚠️  Amount field has unexpected value:', amountInput.value);
         }
       } else {
@@ -323,16 +332,45 @@ class P2PPage extends BasePage {
         totalReceivedValue = totalContainer?.textContent || 'CONTAINER NOT FOUND';
       }
       
-      return {
-        rate: inputs.find(inp => inp.placeholder === '0.8')?.value || 'NOT FOUND',
-        min: inputs.find(inp => inp.placeholder === '100')?.value || 'NOT FOUND',
-        max: inputs.find(inp => inp.placeholder.includes('5,000') && !inp.placeholder.includes('5,000,000'))?.value || 'NOT FOUND',
-        amount: inputs.find(inp => (inp.placeholder || '').includes('5,000,000') || (inp.placeholder || '').includes('Ex:'))?.value || 'NOT FOUND',
-        accountNumber: inputs.find(inp => (inp.placeholder || '').toLowerCase().includes('account number'))?.value || 'NOT FOUND',
-        accountName: inputs.find(inp => (inp.placeholder || '').toLowerCase().includes('account owner') || (inp.placeholder || '').toLowerCase().includes('owner name'))?.value || 'NOT FOUND',
-        totalReceivedVND: totalReceivedValue,
-        calculatedTotal: '${offerData.amount} × ${offerData.price_rate} = ${parseFloat(offerData.amount) * parseFloat(offerData.price_rate)}'
-      };
+      return (function() {
+        const findInputByPlaceholder = (ph) => inputs.find(inp => inp.placeholder === ph)?.value || 'NOT FOUND';
+        // Determine amount input robustly
+        let amountVal = 'NOT FOUND';
+        const labels = Array.from(document.querySelectorAll('label'));
+        const amountLabel = labels.find(label => /amount to (sell|buy)/i.test(label.textContent));
+        let amountInput = null;
+        if (amountLabel) {
+          const forAttr = amountLabel.getAttribute('for');
+          if (forAttr) amountInput = document.getElementById(forAttr);
+          if (!amountInput) amountInput = amountLabel.querySelector('input[type="text"]') || amountLabel.querySelector('input');
+          if (!amountInput) {
+            const parent = amountLabel.closest('div');
+            if (parent) amountInput = parent.querySelector('input[type="text"]') || parent.querySelector('input');
+          }
+          if (!amountInput) {
+            let el = amountLabel.nextElementSibling;
+            while (el && !amountInput) {
+              if (el.querySelector) amountInput = el.querySelector('input[type="text"]') || el.querySelector('input');
+              el = el.nextElementSibling;
+            }
+          }
+        }
+        if (!amountInput) {
+          amountInput = inputs.find(inp => (inp.placeholder || '').trim() === '0' || (inp.getAttribute('aria-label') || '').toLowerCase().includes('amount'));
+        }
+        if (amountInput) amountVal = amountInput.value || 'NOT FOUND';
+
+        return {
+          rate: findInputByPlaceholder('0.8'),
+          min: findInputByPlaceholder('100'),
+          max: inputs.find(inp => inp.placeholder.includes('5,000') && !inp.placeholder.includes('5,000,000'))?.value || 'NOT FOUND',
+          amount: amountVal,
+          accountNumber: inputs.find(inp => (inp.placeholder || '').toLowerCase().includes('account number'))?.value || 'NOT FOUND',
+          accountName: inputs.find(inp => (inp.placeholder || '').toLowerCase().includes('account owner') || (inp.placeholder || '').toLowerCase().includes('owner name'))?.value || 'NOT FOUND',
+          totalReceivedVND: totalReceivedValue,
+          calculatedTotal: '${offerData.amount} × ${offerData.price_rate} = ${parseFloat(offerData.amount) * parseFloat(offerData.price_rate)}'
+        };
+      })();
     `);
     console.log('  ?? Field verification:', JSON.stringify(verification, null, 2));
     
@@ -348,38 +386,70 @@ class P2PPage extends BasePage {
   async clickCreateOffer() {
     console.log('  ?? Clicking Create Offer button...');
     try {
-      await this.click(this.locators.createOfferButton);
-      console.log('  ? Clicked Create Offer button');
+      // Try normal click first
+      try {
+        await this.click(this.locators.createOfferButton);
+        console.log('  ? Clicked Create Offer button (via locator)');
+      } catch (err) {
+        console.warn('  ! Locator click failed, falling back to JS click');
+        // Fallback: find and click button by text via JS
+        const clicked = await this.executeScript(`
+          const texts = ['Create Offer', 'Create offer', 'Create'];
+          const buttons = Array.from(document.querySelectorAll('button, [role="button"], input[type="submit"]'));
+          for (const btn of buttons) {
+            const txt = (btn.textContent || btn.value || '').trim();
+            if (texts.some(t => txt.includes(t))) {
+              btn.scrollIntoView({ block: 'center' });
+              btn.click();
+              return true;
+            }
+          }
+          return false;
+        `);
+        if (clicked) {
+          console.log('  ? Clicked Create Offer button (via JS)');
+        } else {
+          console.error('  ? Could not find Create Offer button to click');
+          await this.takeScreenshot('./screenshots/create_offer_not_found.png');
+          throw new Error('Create Offer button not found');
+        }
+      }
+
       await this.sleep(2000);
-      
+
       // Check if confirmation dialog appeared
       const confirmButton = await this.executeScript(`
         const buttons = Array.from(document.querySelectorAll('button'));
         const confirmBtn = buttons.find(btn => 
-          btn.textContent.includes('Confirm & Transfer') || 
-          btn.textContent.includes('Confirm')
+          (btn.textContent || '').includes('Confirm & Transfer') || 
+          (btn.textContent || '').includes('Confirm')
         );
         return confirmBtn ? true : false;
       `);
-      
+
       if (confirmButton) {
         console.log('  ?? Confirmation dialog appeared, clicking Confirm & Transfer...');
         await this.executeScript(`
           const buttons = Array.from(document.querySelectorAll('button'));
           const confirmBtn = buttons.find(btn => 
-            btn.textContent.includes('Confirm & Transfer') || 
-            btn.textContent.includes('Confirm')
+            (btn.textContent || '').includes('Confirm & Transfer') || 
+            (btn.textContent || '').includes('Confirm')
           );
           if (confirmBtn) {
             confirmBtn.click();
             console.log('? Clicked Confirm & Transfer button');
+            return true;
           }
+          return false;
         `);
         await this.sleep(2000);
+      } else {
+        console.log('  ? No confirmation dialog detected');
       }
-      
+
     } catch (error) {
       console.error(`  ? Failed to click: ${error.message}`);
+      await this.takeScreenshot('./screenshots/create_offer_click_error.png');
       throw error;
     }
   }
