@@ -112,3 +112,4 @@ jobs:
       ref: ${{ inputs.ref }}
     secrets:
       NEXT_PUBLIC_COBAR_API_KEY: ${{ secrets.NEXT_PUBLIC_COBAR_API_KEY }}
+      NEXT_PUBLIC_MEZON_SERVER_KEY: ${{ secrets.NEXT_PUBLIC_MEZON_SERVER_KEY }}

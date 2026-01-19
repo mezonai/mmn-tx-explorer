@@ -24,6 +24,8 @@ on:
     secrets:
       NEXT_PUBLIC_COBAR_API_KEY:
         required: true
+      NEXT_PUBLIC_MEZON_SERVER_KEY:
+        required: true
 
 jobs:
   build:
