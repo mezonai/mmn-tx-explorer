@@ -824,7 +824,6 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 				}
 			}
 		}
-
 		err = p.updateOfferStatus(ctx, tx, txMap, offerIDMap)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to update offer status after inserting transactions")
@@ -2504,7 +2503,7 @@ func (p *PostgresConnector) updateOfferStatus(
 	}
 
 	queryUpdate := `
-    UPDATE offers o
+    UPDATE dong_schema.offers o
     SET
         status = 'CONFIRMED',
         transaction_hash = v.tx_hash,
