@@ -87,7 +87,7 @@ export class WebSocketManager {
         try {
           parsedData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
         } catch (parseError) {
-          console.warn('[WebSocket] Failed to parse message:', parseError);
+          console.error('[WebSocket] Failed to parse message:', parseError);
           parsedData = event.data;
         }
 
@@ -168,18 +168,6 @@ export class WebSocketManager {
     if (listeners) {
       listeners.delete(callback);
     }
-  }
-
-  sendRaw(data: string): boolean {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      try {
-        this.ws.send(data);
-        return true;
-      } catch {
-        return false;
-      }
-    }
-    return false;
   }
 
   disconnect() {
