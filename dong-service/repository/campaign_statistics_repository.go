@@ -192,28 +192,26 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 	earlyCheckQuery := fmt.Sprintf(`
 		SELECT MAX(transaction_timestamp) AS last_ts
 		FROM %s.transactions
-		WHERE to_address = $1
+		WHERE (to_address = $1 OR from_address = $1)
 			AND status = $2
-			AND value > 0
+			AND transaction_timestamp > $3
 	`, r.indexerSchema)
 
-	var lastTS time.Time
-	err = r.db.QueryRowContext(ctx, earlyCheckQuery, campaign.DonationWallet, constants.TransactionStatusFINALIZED).Scan(&lastTS)
+	var lastTS sql.NullTime
+	err = r.db.QueryRowContext(ctx, earlyCheckQuery, campaign.DonationWallet, constants.TransactionStatusFINALIZED, campaign.UpdatedAt).Scan(&lastTS)
 	if err != nil {
 		return models.SyncCampaignResponse{TotalAmount: 0, TotalContributors: 0, TotalWithdrawn: 0}, fmt.Errorf("failed to check latest transaction vs stats: %w", err)
 	}
 
-	if lastTS.IsZero() || campaign.UpdatedAt.After(lastTS) {
+	if !lastTS.Valid || lastTS.Time.IsZero() {
 		var currentBalance int64
 		balanceQuery := fmt.Sprintf(`SELECT COALESCE(balance, 0) FROM %s.wallet WHERE address = $1`, r.indexerSchema)
 		err = r.db.QueryRowContext(ctx, balanceQuery, campaign.DonationWallet).Scan(&currentBalance)
 		if err != nil {
 			currentBalance = 0
 		}
-		logger.Info().Int64("campaign_id", campaignID).Time("updated_at", campaign.UpdatedAt).Time("last_ts", lastTS).Msg("Campaign statistics are already up to date")
-		totalWithdrawn := campaign.TotalAmount - currentBalance
-
-		return models.SyncCampaignResponse{TotalAmount: campaign.TotalAmount, TotalContributors: campaign.TotalContributor, CurrentBalance: currentBalance, TotalWithdrawn: totalWithdrawn}, nil
+		logger.Info().Int64("campaign_id", campaignID).Time("updated_at", campaign.UpdatedAt).Time("last_ts", lastTS.Time).Msg("Campaign statistics are already up to date")
+		return models.SyncCampaignResponse{TotalAmount: campaign.TotalAmount, TotalContributors: campaign.TotalContributor, CurrentBalance: currentBalance, TotalWithdrawn: campaign.TotalWithdrawn}, nil
 	}
 
 	// Sync contributors for this campaign
@@ -269,12 +267,12 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 				campaign_wallet,
 				SUM(total_donate)::BIGINT as total_amount,
 				COUNT(DISTINCT sender_wallet) as contributor_count,
-				COALESCE(MAX(w.balance), 0) as current_balance,
-				SUM(total_donate) - COALESCE(MAX(w.balance), 0) AS total_withdrawn
+				COALESCE(w.balance, 0) as current_balance,
+				SUM(total_donate) - COALESCE(w.balance, 0) AS total_withdrawn
 			FROM %s.campaign_contributor cc
 			LEFT JOIN %s.wallet w ON w.address = cc.campaign_wallet
 			WHERE cc.campaign_wallet = $1
-			GROUP BY cc.campaign_wallet
+			GROUP BY cc.campaign_wallet, w.balance
 		) cc_stats ON dc.donation_wallet = cc_stats.campaign_wallet
 		WHERE cs.campaign_wallet = dc.donation_wallet
 		AND dc.id = $2
