@@ -200,5 +200,10 @@ jobs:
 
       - name: Health check after deployment
         run: |
-          echo "==> Checking Socket Service systemd status..."
-          ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "systemctl is-active socket-service"
+          ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} '
+            for i in {1..15}; do
+              systemctl is-active socket-service | grep -q active && exit 0
+              sleep 2
+            done
+            exit 1
+          '
