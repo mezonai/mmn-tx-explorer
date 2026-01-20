@@ -34,6 +34,7 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
   const currentBank = watch('bank_info.bank');
   const currentAccountNumber = watch('bank_info.account_number');
   const currentAccountName = watch('bank_info.account_name');
+  const currentIsPrimary = watch('bank_info.is_primary');
 
   // Find saved info for the currently selected bank mapping to BankOption labels
   const matchedSavedInfo = useMemo(() => {
@@ -45,12 +46,14 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
   const hasChanges = useMemo(() => {
     if (!matchedSavedInfo) {
       // If no saved info for this bank, and inputs are not empty, we consider it "unsaved"
-      return !!(currentAccountNumber || currentAccountName);
+      return !!(currentAccountNumber || currentAccountName || currentIsPrimary);
     }
     return (
-      currentAccountNumber !== matchedSavedInfo.account_number || currentAccountName !== matchedSavedInfo.account_name
+      currentAccountNumber !== matchedSavedInfo.account_number ||
+      currentAccountName !== matchedSavedInfo.account_name ||
+      currentIsPrimary !== matchedSavedInfo.is_primary
     );
-  }, [matchedSavedInfo, currentAccountNumber, currentAccountName]);
+  }, [matchedSavedInfo, currentAccountNumber, currentAccountName, currentIsPrimary]);
 
   useEffect(() => {
     onUnsavedChangesChange(hasChanges);
@@ -65,6 +68,7 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
         setValue('bank_info.bank', bankOpt.value);
         setValue('bank_info.account_number', primary.account_number);
         setValue('bank_info.account_name', primary.account_name);
+        setValue('bank_info.is_primary', primary.is_primary);
         setIsInitialized(true);
       }
     }
@@ -77,9 +81,11 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
     if (saved) {
       setValue('bank_info.account_number', saved.account_number);
       setValue('bank_info.account_name', saved.account_name);
+      setValue('bank_info.is_primary', saved.is_primary);
     } else {
       setValue('bank_info.account_number', '');
       setValue('bank_info.account_name', '');
+      setValue('bank_info.is_primary', false);
     }
   };
 
@@ -90,6 +96,7 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
         bank_name: bankLabel,
         account_number: currentAccountNumber,
         account_name: currentAccountName,
+        is_primary: currentIsPrimary,
       },
       {
         onSuccess: () => {
@@ -106,9 +113,11 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
     if (matchedSavedInfo) {
       setValue('bank_info.account_number', matchedSavedInfo.account_number);
       setValue('bank_info.account_name', matchedSavedInfo.account_name);
+      setValue('bank_info.is_primary', matchedSavedInfo.is_primary);
     } else {
       setValue('bank_info.account_number', '');
       setValue('bank_info.account_name', '');
+      setValue('bank_info.is_primary', false);
     }
   };
 
@@ -227,6 +236,29 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
             )}
           />
         </div>
+      </div>
+
+      {/* Primary Switch */}
+      <div className="flex items-center justify-between pt-1">
+        <label className="text-foreground cursor-pointer select-none text-sm font-medium" htmlFor="set-primary-p2p">
+          Set as primary bank account
+        </label>
+        <Controller
+          control={control}
+          name="bank_info.is_primary"
+          render={({ field }) => (
+            <label className="relative inline-flex cursor-pointer items-center">
+              <input
+                type="checkbox"
+                id="set-primary-p2p"
+                className="sr-only peer"
+                checked={field.value || false}
+                onChange={(e) => field.onChange(e.target.checked)}
+              />
+              <div className="bg-muted peer-focus:ring-brand-primary/50 dark:bg-muted/50 peer-checked:bg-brand-primary after:content-[''] after:bg-white after:border-gray-300 after:rounded-full after:transition-all peer-focus:outline-none peer-focus:ring-2 peer-checked:after:translate-x-full peer-checked:after:border-white after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:border dark:border-border h-6 w-11 rounded-full peer"></div>
+            </label>
+          )}
+        />
       </div>
 
       <div className="border-brand-primary bg-card mt-2 rounded border p-3">

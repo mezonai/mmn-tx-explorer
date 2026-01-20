@@ -26,6 +26,7 @@ export const createOfferSchema = z
         .string()
         .min(2, 'Account name must be between 2 and 50 characters')
         .max(50, 'Account name must be between 2 and 50 characters'),
+      is_primary: z.boolean().optional(),
     }),
     symbol: z.string(),
   })
