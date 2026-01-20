@@ -735,7 +735,7 @@ func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUs
 
 	envelopeQuery := fmt.Sprintf(`
 		SELECT id, name, description, total_amount, total_claims, claimed_count, 
-			   red_envelope_wallet, status
+		       red_envelope_wallet, status
 		FROM %s.red_envelope
 		WHERE id = $1
 		FOR UPDATE
@@ -778,9 +778,34 @@ func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUs
 		return err
 	}
 
+	claimQuery := fmt.Sprintf(`
+		INSERT INTO %s.red_envelope_claim (
+			red_envelope_id, claimer_wallet, claimer_user_id, 
+			amount, status, transaction_hash
+		)
+		VALUES ($1, $2, $3, $4, $5, NULL)
+		RETURNING id
+	`, r.dongSchema)
+
+	var claimID int64
+	err = tx.QueryRow(
+		claimQuery,
+		id,
+		claimerWallet,
+		claimerUserID,
+		amount,
+		constants.RedEnvelopeClaimStatusPending,
+	).Scan(&claimID)
+
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to create pending claim")
+		return fmt.Errorf("failed to create claim")
+	}
+
 	ctx := context.Background()
 	walletInfo, err := r.walletRepo.GetWalletByAddress(ctx, envelope.RedEnvelopeWallet)
 	if err != nil {
+		_ = r.updateClaimStatusInTx(tx, claimID, constants.RedEnvelopeClaimStatusFailed, nil)
 		logger.Error().Err(err).Msg("Failed to get wallet info")
 		return fmt.Errorf("failed to get wallet info")
 	}
@@ -788,42 +813,22 @@ func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUs
 	var txHash string
 	txHash, err = r.blockchainService.TransferMoney(walletInfo.EncryptedPrivateKey, envelope.RedEnvelopeWallet, claimerWallet, amount, constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
 	if err != nil {
+		_ = r.updateClaimStatusInTx(tx, claimID, constants.RedEnvelopeClaimStatusFailed, nil)
 		logger.Error().Err(err).
 			Str("from", envelope.RedEnvelopeWallet).
 			Str("to", claimerWallet).
+			Int64("claim_id", claimID).
 			Msg("Blockchain transfer failed")
 		return fmt.Errorf("failed to transfer money")
 	}
 
-	claimQuery := fmt.Sprintf(`
-		INSERT INTO %s.red_envelope_claim (
-			red_envelope_id, claimer_wallet, claimer_user_id, amount, transaction_hash
-		)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id, red_envelope_id, claimer_wallet, claimer_user_id, amount, claimed_at, transaction_hash
-	`, r.dongSchema)
-
-	var claim models.RedEnvelopeClaim
-	err = tx.QueryRow(
-		claimQuery,
-		id,
-		claimerWallet,
-		claimerUserID,
-		amount,
-		txHash,
-	).Scan(
-		&claim.ID,
-		&claim.RedEnvelopeID,
-		&claim.ClaimerWallet,
-		&claim.ClaimerUserID,
-		&claim.Amount,
-		&claim.ClaimedAt,
-		&claim.TransactionHash,
-	)
-
+	err = r.updateClaimStatusInTx(tx, claimID, constants.RedEnvelopeClaimStatusSuccess, &txHash)
 	if err != nil {
-		logger.Error().Err(err).Str("txHash", txHash).Msg("failed to create claim")
-		return fmt.Errorf("failed to create claim")
+		logger.Error().Err(err).
+			Int64("claim_id", claimID).
+			Str("tx_hash", txHash).
+			Msg("Failed to update claim status to SUCCESS")
+		return fmt.Errorf("failed to update claim")
 	}
 
 	updateQuery := fmt.Sprintf(`
@@ -844,6 +849,24 @@ func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUs
 	}
 
 	return nil
+}
+
+func (r *RedEnvelopeRepository) updateClaimStatusInTx(tx *sql.Tx, claimID int64, status string, txHash *string) error {
+	query := fmt.Sprintf(`
+		UPDATE %s.red_envelope_claim
+		SET status = $1,
+		    transaction_hash = $2
+		WHERE id = $3
+	`, r.dongSchema)
+
+	_, err := tx.Exec(query, status, txHash, claimID)
+	if err != nil {
+		logger.Error().Err(err).
+			Int64("claim_id", claimID).
+			Str("status", status).
+			Msg("Failed to update claim status")
+	}
+	return err
 }
 
 func (r *RedEnvelopeRepository) HasUserClaimed(redEnvelopeID string, userID int64) (bool, error) {
