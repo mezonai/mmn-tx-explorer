@@ -8,6 +8,12 @@ export const P2P_ENDPOINTS = {
   CREATE_ORDER: (offerId: string) => `/api/v1/offers/${offerId}/orders`,
   ORDER_BY_ID: (id: string) => `/api/v1/orders/${id}`,
   ORDER_STATUS: (id: string) => `/api/v1/orders/${id}/confirm`,
+<<<<<<< Updated upstream
+=======
+  USER_PAYMENTS: '/api/v1/user-payments',
+  USER_PAYMENTS_ME: '/api/v1/user-payments/me',
+  DELETE_USER_PAYMENT: (id: string) => `/api/v1/user-payments/${id}`,
+>>>>>>> Stashed changes
 } as const;
 
 export const P2P_QUERY_KEYS = {
