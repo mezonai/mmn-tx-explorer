@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 	"socket-service/config"
 	"socket-service/constant"
@@ -54,7 +53,7 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 		conn.WriteMessage(websocket.TextMessage, []byte("Failed to get events: "+err.Error()))
 		return
 	}
-
+	
 	if len(events) > 0 {
 		for _, event := range events {
 			conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
@@ -111,37 +110,12 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 			onceClose.Do(func() { close(done) })
 			return
 		}
-		if messageType == websocket.TextMessage {
-			// Heartbeat
-			if string(message) == constant.HeartbeatCheck {
-				logger.Info().Msgf("Heartbeat check received from user %s", userAddress)
-				conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
-				conn.WriteMessage(websocket.TextMessage, []byte(constant.HeartbeatAck))
-				logger.Info().Msgf("Heartbeat ack sent to user %s", userAddress)
-				continue
-			}
-			// Handle join_room/leave_room
-			type RoomMsg struct {
-				Type string `json:"type"`
-				Room string `json:"room"`
-			}
-			var rm RoomMsg
-			if err := json.Unmarshal(message, &rm); err == nil {
-				if rm.Type == "join_room" {
-					logger.Info().Msgf("[BE] FE %s join_room %s", userAddress, rm.Room)
-					h.wsSvc.AddConnectionToRoom(rm.Room, conn)
-					conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
-					_ = conn.WriteMessage(websocket.TextMessage, []byte("joined_room:"+rm.Room))
-					continue
-				}
-				if rm.Type == "leave_room" {
-					logger.Info().Msgf("[BE] FE %s leave_room %s", userAddress, rm.Room)
-					h.wsSvc.RemoveConnectionFromRoom(rm.Room, conn)
-					conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
-					_ = conn.WriteMessage(websocket.TextMessage, []byte("left_room:"+rm.Room))
-					continue
-				}
-			}
+		if messageType == websocket.TextMessage && string(message) == constant.HeartbeatCheck {
+			logger.Info().Msgf("Heartbeat check received from user %s", userAddress)
+			conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
+			conn.WriteMessage(websocket.TextMessage, []byte(constant.HeartbeatAck))
+			logger.Info().Msgf("Heartbeat ack sent to user %s", userAddress)
+			continue
 		}
 	}
 }
