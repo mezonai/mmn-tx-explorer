@@ -8,7 +8,7 @@ on:
         required: true
         default: "dev"
       ref:
-        description: "Release tag (ex: v1.5.4)"
+        description: "Git ref (branch / commit for dev, tag for prod)"
         required: true
 
   workflow_call:
@@ -34,12 +34,32 @@ jobs:
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
 
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
     steps:
-      - name: Checkout by tag
+      - name: Checkout source
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
           clean: false
+
+      - name: Resolve deploy version
+        id: version
+        run: |
+          if [[ "${{ inputs.env }}" == "prod" ]]; then
+            if [[ ! "${{ inputs.ref }}" =~ ^v[0-9]+ ]]; then
+              echo "Prod must be deployed by tag"
+              exit 1
+            fi
+            VERSION="${{ inputs.ref }}"
+          else
+            SHORT_SHA=$(git rev-parse --short HEAD)
+            VERSION="dev-${SHORT_SHA}"
+          fi
+
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Resolved version: ${VERSION}"
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -123,7 +143,7 @@ jobs:
         run: |
           set -e
           echo "==> Copying binaries to target server..."
-          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} build/socket-service ${{ vars.HOST_ALIAS }}:/tmp/
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} build/socket-service ${{ vars.HOST_ALIAS }}:/tmp/socket-service
           
           echo "==> Copying migrations to target server..."
           scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} -r socket-service/migrations ${{ vars.HOST_ALIAS }}:/tmp/postgres-socket-service/
@@ -137,15 +157,15 @@ jobs:
       - name: Atomic swap + restart services
         env:
           LOGLEVEL: ${{ inputs.env == 'prod' && 'warn' || 'info' }}
-          VERSION: ${{ inputs.ref }}
+          VERSION: ${{ needs.build.outputs.version }}
         run: |
           ssh -i ${{vars.SSH_PRIVATE_KEY_PATH}} ${{vars.HOST_ALIAS}} <<EOF
           #!/usr/bin/env bash
           set -euo pipefail
           
-          bash /tmp/remote_setup.sh "${{ inputs.ref }}"
+          echo "Deploying version: ${VERSION}"
+          bash /tmp/remote_setup.sh "${VERSION}"
 
-          echo "==> Generating final config files on target server..."
           sudo mkdir -p /etc/mezon
 
           echo "Log level set to: $LOGLEVEL"
