@@ -20,12 +20,6 @@ on:
       ref:
         type: string
         required: true
-      git_sha:
-        type: string
-        required: false
-      source_artifact:
-        type: string
-        required: false
     secrets:
       POSTGRES_PASSWORD:
         required: true
@@ -44,18 +38,10 @@ jobs:
       git_sha: ${{ steps.get_sha.outputs.git_sha }}
     steps:
       - name: Checkout
-        if: inputs.source_artifact == ''
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
           clean: false
-
-      - name: Download source (from Artifact)
-        if: inputs.source_artifact != ''
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ inputs.source_artifact }}
-          path: .
 
       - name: Setup Go
         uses: actions/setup-go@v5
