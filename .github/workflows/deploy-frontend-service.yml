@@ -21,6 +21,12 @@ on:
         description: "Git ref (branch, tag, or commit)"
         type: string
         required: true
+      target_tag:
+        type: string
+        required: true
+      skip_build:
+        type: string
+        required: true
     secrets:
       NEXT_PUBLIC_COBAR_API_KEY:
         required: true
@@ -29,6 +35,7 @@ on:
 
 jobs:
   build:
+    if: inputs.skip_build == true 
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
     steps:

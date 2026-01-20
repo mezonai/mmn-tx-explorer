@@ -8,9 +8,8 @@ on:
         required: true
         default: "dev"
       ref:
-        description: "Git ref (branch, tag, or commit)"
+        description: "Release tag (ex: v1.5.4)"
         required: true
-        default: "main"
 
   workflow_call:
     inputs:
@@ -34,10 +33,9 @@ jobs:
   build:
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
-    outputs:
-      git_sha: ${{ steps.get_sha.outputs.git_sha }}
+
     steps:
-      - name: Checkout
+      - name: Checkout by tag
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
@@ -64,22 +62,10 @@ jobs:
           cd socket-service
           GOOS=linux GOARCH=amd64 go build -o ../build/socket-service .
 
-      - name: Get short SHA
-        id: get_sha
-        run: |
-          if [ -n "${{ inputs.git_sha }}" ]; then
-            echo "git_sha=${{ inputs.git_sha }}" >> $GITHUB_OUTPUT
-          else
-            echo "git_sha=$(git rev-parse --short=8 HEAD)" >> $GITHUB_OUTPUT
-          fi
-
   deploy:
     needs: build
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
-    env:
-      TARGET_HOST: ${{ inputs.env == 'prod' && 'prod-indexer' || 'dev-indexer' }}
-      GIT_SHA: ${{ needs.build.outputs.git_sha }}
 
     steps:
       - name: Generate remote setup script
@@ -95,16 +81,14 @@ jobs:
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
           REDIS_DB: ${{ vars.REDIS_DB }}
           SERVER_GIN_MODE: release
-          LOGGING_OUTPUT: "file"
-          LOG_LEVEL: ${{ inputs.env == 'prod' && 'info' || 'debug' }}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
           set -euo pipefail
 
-          SHA="$1"
+          VERSION="$1"
           echo "==> Preparing deployment directories and configs..."
-          sudo mkdir -p /opt/socket-service/bin /opt/socket-service/config /opt/socket-service/migrations /opt/socket-service/logs
+          sudo mkdir -p /opt/socket-service/{bin,config,migrations,logs}
 
           echo "==> Writing environment configs..."
           sudo tee /opt/socket-service/config/socket-service.env > /dev/null <<EON
@@ -125,7 +109,7 @@ jobs:
           sudo chmod 600 /opt/socket-service/config/socket-service.env
 
           echo "==> Deploying new socket-service binary to staging path..."
-          sudo install -m 0755 /tmp/socket-service /opt/socket-service/bin/socket-service-${SHA}
+          sudo install -m 0755 /tmp/socket-service /opt/socket-service/bin/socket-service-${VERSION}
 
           echo "==> Deploying migrations for socket-service..."
           sudo rm -rf /opt/socket-service/migrations
@@ -135,25 +119,7 @@ jobs:
           EOF
           chmod +x remote_setup.sh
 
-          echo "# Remote env generated at $(date)" > remote_env.sh
-          printf "export POSTGRES_DB=%q\n" "$POSTGRES_DB" >> remote_env.sh
-          printf "export POSTGRES_USER=%q\n" "$POSTGRES_USER" >> remote_env.sh
-          printf "export POSTGRES_PASSWORD=%q\n" "$POSTGRES_PASSWORD" >> remote_env.sh
-          printf "export POSTGRES_HOST=%q\n" "$POSTGRES_HOST" >> remote_env.sh
-          printf "export POSTGRES_PORT=%q\n" "$POSTGRES_PORT" >> remote_env.sh
-          printf "export DATABASE_HOST=%q\n" "$POSTGRES_HOST" >> remote_env.sh
-          printf "export DATABASE_PORT=%q\n" "$POSTGRES_PORT" >> remote_env.sh
-          printf "export DATABASE_USER=%q\n" "$POSTGRES_USER" >> remote_env.sh
-          printf "export DATABASE_PASSWORD=%q\n" "$POSTGRES_PASSWORD" >> remote_env.sh
-          printf "export DATABASE_NAME=%q\n" "$POSTGRES_DB" >> remote_env.sh
-          printf "export JWT_SECRET=%q\n" "$JWT_SECRET" >> remote_env.sh
-          printf "export EVENT_API_KEY=%q\n" "$EVENT_API_KEY" >> remote_env.sh
-          printf "export REDIS_ADDRESS=%q\n" "$REDIS_ADDRESS" >> remote_env.sh
-          printf "export REDIS_PASSWORD=%q\n" "$REDIS_PASSWORD" >> remote_env.sh
-          printf "export REDIS_DB=%q\n" "$REDIS_DB" >> remote_env.sh
-          printf "export SERVER_GIN_MODE=%q\n" "$SERVER_GIN_MODE" >> remote_env.sh
-
-      - name: Prepare and deploy to target server
+      - name: Copy artifacts & prepare remote
         run: |
           set -e
           echo "==> Copying binaries to target server..."
@@ -168,21 +134,13 @@ jobs:
           echo "==> Copying setup scripts to target server..."
           scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} remote_setup.sh remote_env.sh ${{ vars.HOST_ALIAS }}:/tmp/
 
-          echo "==> Running remote setup script..."
-          ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "
-            set -e
-            source /tmp/remote_env.sh
-            bash /tmp/remote_setup.sh \"$GIT_SHA\"
-            
-            echo '==> Cleaning up temp files...'
-            rm -f /tmp/socket-service
-            rm -f /tmp/remote_setup.sh /tmp/remote_env.sh
-            rm -rf /tmp/postgres-socket-service
-          "
+          ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "bash /tmp/remote_setup.sh '$VERSION'"
+
           
       - name: Atomic swap + restart services
         env:
           LOGLEVEL: ${{ inputs.env == 'prod' && 'warn' || 'info' }}
+          VERSION: ${{ inputs.ref }}
         run: |
           ssh -i ${{vars.SSH_PRIVATE_KEY_PATH}} ${{vars.HOST_ALIAS}} <<EOF
           #!/usr/bin/env bash
@@ -203,7 +161,7 @@ jobs:
           sudo systemctl stop socket-service || true
 
           echo "==> Atomically swapping to new binary..."
-          sudo ln -sfn socket-service-${GIT_SHA} /opt/socket-service/bin/socket-service
+          sudo ln -sfn socket-service-${VERSION} /opt/socket-service/bin/socket-service
 
           echo "==> Reloading and starting services..."
           sudo systemctl daemon-reload
