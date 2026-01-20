@@ -194,6 +194,7 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 		FROM %s.transactions
 		WHERE (to_address = $1 OR from_address = $1)
 			AND status = $2
+			AND value > 0
 			AND transaction_timestamp > $3
 	`, r.indexerSchema)
 
