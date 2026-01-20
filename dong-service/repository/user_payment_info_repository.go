@@ -17,16 +17,30 @@ func NewUserPaymentInfoRepository(db *sql.DB, dongSchema string) *UserPaymentInf
 }
 
 func (r *UserPaymentInfoRepository) UpsertPaymentInfo(ctx context.Context, info *models.UserPaymentInfo) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
 	// Check if user has any records to determine if this should be primary
 	var exists bool
 	checkQuery := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM %s.user_payment_info WHERE user_id = $1)", r.dongSchema)
-	err := r.db.QueryRowContext(ctx, checkQuery, info.UserID).Scan(&exists)
+	err = tx.QueryRowContext(ctx, checkQuery, info.UserID).Scan(&exists)
 	if err != nil {
 		return err
 	}
 
 	if !exists {
 		info.IsPrimary = true
+	}
+
+	if info.IsPrimary {
+		// Reset all primary flags for user
+		resetQuery := fmt.Sprintf("UPDATE %s.user_payment_info SET is_primary = false, updated_at = NOW() WHERE user_id = $1", r.dongSchema)
+		if _, err := tx.ExecContext(ctx, resetQuery, info.UserID); err != nil {
+			return err
+		}
 	}
 
 	query := fmt.Sprintf(`
@@ -36,11 +50,12 @@ func (r *UserPaymentInfoRepository) UpsertPaymentInfo(ctx context.Context, info 
 		ON CONFLICT (user_id, bank_name) DO UPDATE SET
 			account_number = EXCLUDED.account_number,
 			account_name = EXCLUDED.account_name,
+			is_primary = EXCLUDED.is_primary,
 			updated_at = NOW()
 		RETURNING id, is_primary, created_at, updated_at
 	`, r.dongSchema)
 
-	return r.db.QueryRowContext(
+	err = tx.QueryRowContext(
 		ctx,
 		query,
 		info.UserID,
@@ -49,6 +64,11 @@ func (r *UserPaymentInfoRepository) UpsertPaymentInfo(ctx context.Context, info 
 		info.AccountName,
 		info.IsPrimary,
 	).Scan(&info.ID, &info.IsPrimary, &info.CreatedAt, &info.UpdatedAt)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func (r *UserPaymentInfoRepository) GetPrimaryByUserID(ctx context.Context, userID string) (*models.UserPaymentInfo, error) {

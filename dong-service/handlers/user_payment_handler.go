@@ -102,28 +102,3 @@ func (h *UserPaymentHandler) DeletePaymentInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("payment info deleted successfully", nil))
 }
 
-// SetPrimaryPaymentInfo godoc
-// @Summary Set primary payment info
-// @Description Set a specific payment record as the primary one
-// @Tags user-payment
-// @Security BearerAuth
-// @Param id path int true "Payment Info ID"
-// @Success 200 {object} models.Response
-// @Router /api/v1/user-payments/{id}/primary [patch]
-func (h *UserPaymentHandler) SetPrimaryPaymentInfo(c *gin.Context) {
-	idStr := c.Param("id")
-	userID := c.GetString("user_id")
-
-	var id int64
-	if _, err := fmt.Sscanf(idStr, "%d", &id); err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "invalid ID format"))
-		return
-	}
-
-	if err := h.service.SetPrimary(c.Request.Context(), id, userID); err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to set primary: "+err.Error()))
-		return
-	}
-
-	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("primary payment info updated successfully", nil))
-}
