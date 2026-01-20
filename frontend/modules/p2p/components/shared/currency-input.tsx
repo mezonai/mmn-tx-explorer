@@ -11,47 +11,38 @@ interface CurrencyInputProps {
 }
 const MAX_AMOUNT = 1000000000000;
 
-const parseRawValue = (val: string): string => {
-  return val.replace(/,/g, '');
-};
-
 export const CurrencyInput = ({ value, onChange, error }: CurrencyInputProps) => {
+  const formatValue = (val: number) => {
+    if (val === 0) return '0';
+    return formatCurrency(val);
+  };
+
   const [displayValue, setDisplayValue] = useState('');
 
   useEffect(() => {
-    const parsedDisplay = parseFloat(parseRawValue(displayValue));
-    if (value !== parsedDisplay) {
-      if (value === 0 && displayValue === '') return;
-      setDisplayValue(formatCurrency(value));
+    const currentNumericValue = parseFloat(displayValue.replace(/,/g, '') || '0');
+
+    if (value !== currentNumericValue) {
+      setDisplayValue(formatValue(value));
     }
   }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawInput = e.target.value;
+    const numericString = rawInput.replace(/[^0-9]/g, '');
 
-    if (!/^[0-9,]*$/.test(rawInput)) return;
+    if (numericString === '') {
+      setDisplayValue('');
+      onChange(0);
+      return;
+    }
 
-    setDisplayValue(rawInput);
-
-    const numericString = parseRawValue(rawInput);
     const numericValue = parseFloat(numericString);
 
     if (numericValue > MAX_AMOUNT) return;
 
-    if (isNaN(numericValue)) {
-      onChange(0);
-    } else {
-      onChange(numericValue);
-    }
-  };
-
-  const handleBlur = () => {
-    const numericValue = parseFloat(parseRawValue(displayValue));
-    if (!isNaN(numericValue)) {
-      setDisplayValue(formatCurrency(numericValue));
-    } else {
-      setDisplayValue('');
-    }
+    setDisplayValue(formatValue(numericValue));
+    onChange(numericValue);
   };
 
   return (
@@ -59,9 +50,8 @@ export const CurrencyInput = ({ value, onChange, error }: CurrencyInputProps) =>
       <Input
         value={displayValue}
         onChange={handleChange}
-        onBlur={handleBlur}
         type="text"
-        placeholder="Ex: 5,000,000"
+        placeholder="0"
         className={cn(
           'bg-input/30 w-full rounded-md border px-3 py-2.5 text-lg font-bold transition-colors focus:outline-none',
           error
