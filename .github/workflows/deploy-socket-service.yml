@@ -132,10 +132,7 @@ jobs:
           scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} socket-service/config/config.yml ${{ vars.HOST_ALIAS }}:/tmp/socket-service-config.yml
 
           echo "==> Copying setup scripts to target server..."
-          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} remote_setup.sh remote_env.sh ${{ vars.HOST_ALIAS }}:/tmp/
-
-          ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "bash /tmp/remote_setup.sh '$VERSION'"
-
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} remote_setup.sh ${{ vars.HOST_ALIAS }}:/tmp/
           
       - name: Atomic swap + restart services
         env:
@@ -145,6 +142,8 @@ jobs:
           ssh -i ${{vars.SSH_PRIVATE_KEY_PATH}} ${{vars.HOST_ALIAS}} <<EOF
           #!/usr/bin/env bash
           set -euo pipefail
+          
+          bash /tmp/remote_setup.sh "${{ inputs.ref }}"
 
           echo "==> Generating final config files on target server..."
           sudo mkdir -p /etc/mezon
@@ -170,6 +169,12 @@ jobs:
           echo "==> Reloading Nginx..."
           sudo nginx -t && sudo systemctl reload nginx
 
+          echo "==> Cleaning up temporary files..."
+          rm -f /tmp/socket-service
+          rm -f /tmp/socket-service-config.yml
+          rm -f /tmp/remote_setup.sh
+          rm -rf /tmp/postgres-socket-service
+          
           echo "==> Activation complete!"
           EOF
 
