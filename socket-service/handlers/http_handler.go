@@ -34,7 +34,6 @@ func (h *HTTPHandler) SaveEvent(c *gin.Context) {
 
 	sentToOnline := false
 
-	// 1️⃣ Broadcast to ALL users
 	if event.ReceiveAddress == constant.ALL_RECEIVER {
 		conns := h.wsSvc.GetAllConnections()
 		for _, conn := range conns {
@@ -54,10 +53,8 @@ func (h *HTTPHandler) SaveEvent(c *gin.Context) {
 		return
 	}
 
-	// dùng map để tránh gửi trùng cùng 1 connection
 	sentMap := make(map[*websocket.Conn]struct{})
 
-	// 2️⃣ Send to specific USER (receive_address = userAddress)
 	if conns, ok := h.wsSvc.GetConnections(event.ReceiveAddress); ok {
 		for _, conn := range conns {
 			if _, sent := sentMap[conn]; sent {
@@ -73,7 +70,6 @@ func (h *HTTPHandler) SaveEvent(c *gin.Context) {
 		}
 	}
 
-	// 3️⃣ Send to ROOM (receive_address = room name)
 	if roomConns, ok := h.wsSvc.GetRoomConnections(event.ReceiveAddress); ok {
 		for _, conn := range roomConns {
 			if _, sent := sentMap[conn]; sent {
@@ -89,7 +85,6 @@ func (h *HTTPHandler) SaveEvent(c *gin.Context) {
 		}
 	}
 
-	// 4️⃣ If nobody online → save event
 	if !sentToOnline {
 		if err := h.repo.SaveEvent(&event); err != nil {
 			logger.Error().Err(err).Msg("Failed to save event")

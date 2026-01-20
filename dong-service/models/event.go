@@ -10,7 +10,7 @@ import (
 type Event struct {
 	ID             uuid.UUID       `json:"id"`
 	Type           string          `json:"type"`
-	Status         string          `json:"status"` // ✅ BẮT BUỘC
+	Status         string          `json:"status"`
 	Payload        json.RawMessage `json:"payload"`
 	ReceiveAddress string          `json:"receive_address"`
 	CreateAt       time.Time       `json:"create_at"`
