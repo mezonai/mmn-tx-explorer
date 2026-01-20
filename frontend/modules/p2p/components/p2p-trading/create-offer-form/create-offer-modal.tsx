@@ -135,6 +135,8 @@ export const CreateOfferModal = () => {
     }
   };
 
+  const [hasUnsavedPayment, setHasUnsavedPayment] = useState(false);
+
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -159,7 +161,12 @@ export const CreateOfferModal = () => {
                 userBalance={balance}
                 setValue={form.setValue}
               />
-              <PaymentSection control={form.control} />
+              <PaymentSection
+                control={form.control}
+                setValue={form.setValue}
+                watch={form.watch}
+                onUnsavedChangesChange={setHasUnsavedPayment}
+              />
             </div>
 
             <DialogFooter className="border-t-border -mx-6 -mb-6 flex justify-end gap-3 border-t px-4 py-4">
@@ -174,6 +181,7 @@ export const CreateOfferModal = () => {
               </Button>
               <Button
                 type="submit"
+                disabled={isPending || hasUnsavedPayment}
                 className="bg-brand-primary flex items-center gap-2 px-8 py-2 text-sm font-bold text-white shadow-lg transition disabled:opacity-70"
               >
                 <Send className="h-3 w-3" />

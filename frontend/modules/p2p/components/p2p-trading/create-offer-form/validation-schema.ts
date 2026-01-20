@@ -19,9 +19,13 @@ export const createOfferSchema = z
 
       account_number: z
         .string()
-        .min(1, 'Please enter the account number')
+        .min(5, 'Account number must be between 5 and 20 characters')
+        .max(20, 'Account number must be between 5 and 20 characters')
         .regex(/^\d+$/, 'Account number must contain only digits'),
-      account_name: z.string().min(1, 'Please enter the account name'),
+      account_name: z
+        .string()
+        .min(2, 'Account name must be between 2 and 50 characters')
+        .max(50, 'Account name must be between 2 and 50 characters'),
     }),
     symbol: z.string(),
   })
