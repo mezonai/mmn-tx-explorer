@@ -42,6 +42,7 @@ export const useTransfer = () => {
             UserSenderId: userId,
             UserSenderUsername: userName,
             type: transaction_type,
+            ...(input.offerId && { offer_id: input.offerId }),
           },
         });
 

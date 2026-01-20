@@ -15,7 +15,6 @@ import { CreateOfferFormValues, createOfferSchema } from './validation-schema';
 import { TradeTypeSection } from './trade-type-section';
 import { AmountSection } from './amount-section';
 import { PaymentSection } from './payment-section';
-import { useUpdateOfferStatus } from '@/modules/p2p/hooks/useUpdateOfferStatus';
 import { APP_CONFIG } from '@/configs/app.config';
 import { useUser } from '@/providers';
 import { mmnClient } from '@/modules/auth';
@@ -26,7 +25,6 @@ export const CreateOfferModal = () => {
   const [open, setOpen] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [pendingData, setPendingData] = useState<CreateOfferFormValues | null>(null);
-  const { mutate: updateOfferStatus } = useUpdateOfferStatus();
   const { mutateAsync: createOfferAsync, isPending } = useCreateOffer();
   const { transfer } = useTransfer();
   const { user } = useUser();
@@ -117,30 +115,17 @@ export const CreateOfferModal = () => {
           recipientAddress: resultData.intermediary_wallet_address,
           amount: payload.amount.toString(),
           note: 'p2p-trading',
+          offerId: resultData.offer.offer_id,
         },
         ETransferType.P2PTrading
       );
 
       if (transferResult.success) {
-        setTimeout(() => {
-          updateOfferStatus({
-            offer_id: Number(resultData.offer.offer_id),
-            tx_hash: transferResult.txHash!,
-            status: 'CONFIRMED',
-          });
-        }, 2000);
-        toast.success('Create offer success!');
+        toast.success('Your offer is being processed. Please wait a moment.');
         setShowConfirm(false);
         setOpen(false);
       } else {
         toast.error(JSON.parse(transferResult.error || '').message || 'Create offer fail. Please try again.');
-        setTimeout(() => {
-          updateOfferStatus({
-            offer_id: Number(resultData.offer.offer_id),
-            tx_hash: ' ',
-            status: 'FAILED',
-          });
-        }, 2000);
         console.error(transferResult.error);
         setShowConfirm(false);
       }
@@ -149,6 +134,8 @@ export const CreateOfferModal = () => {
       setShowConfirm(false);
     }
   };
+
+  const [hasUnsavedPayment, setHasUnsavedPayment] = useState(false);
 
   return (
     <>
@@ -174,7 +161,12 @@ export const CreateOfferModal = () => {
                 userBalance={balance}
                 setValue={form.setValue}
               />
-              <PaymentSection control={form.control} />
+              <PaymentSection
+                control={form.control}
+                setValue={form.setValue}
+                watch={form.watch}
+                onUnsavedChangesChange={setHasUnsavedPayment}
+              />
             </div>
 
             <DialogFooter className="border-t-border -mx-6 -mb-6 flex justify-end gap-3 border-t px-4 py-4">
@@ -189,6 +181,7 @@ export const CreateOfferModal = () => {
               </Button>
               <Button
                 type="submit"
+                disabled={isPending || hasUnsavedPayment}
                 className="bg-brand-primary flex items-center gap-2 px-8 py-2 text-sm font-bold text-white shadow-lg transition disabled:opacity-70"
               >
                 <Send className="h-3 w-3" />
