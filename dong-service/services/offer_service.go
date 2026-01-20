@@ -40,7 +40,6 @@ type IOfferService interface {
 	CountOffers(ctx context.Context, walletAddress *string, minPrice *string, maxPrice *string, statuses []string, symbol *string, rate *string, fromAmount *string, toAmount *string) (int64, error)
 	GetOfferByID(ctx context.Context, id int64) (*models.Offer, error)
 	GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, int64, error)
-	UpdateOfferStatus(ctx context.Context, req *models.UpdateOfferStatusRequest) error
 	CancelOffer(ctx context.Context, offerId int64, offer *models.Offer) error
 	SumOfferAmounts(ctx context.Context) (int64, error)
 }
