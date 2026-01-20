@@ -58,7 +58,7 @@ export const UpdatePostHeader = ({
                       <Button
                         variant="ghost"
                         className="h-8 justify-start text-sm font-normal"
-                        onClick={() => router.push(ROUTES.EDIT_DONATION_UPDATE(campaign.slug, String(update.id)))}
+                        onClick={() => router.push(ROUTES.EDIT_DONATION_UPDATE(campaign.slug, update.tx_hash))}
                       >
                         <Pencil className="text-primary mr-2 h-4 w-4" />
                         Edit

@@ -976,6 +976,39 @@ paths:
       summary: Get top contributors for a campaign
       tags:
       - campaigns
+  /api/v1/campaigns/feed_detail/{feed_hash}:
+    get:
+      description: Retrieve detailed information of a donation feed post using its
+        hash
+      parameters:
+      - description: Feed hash
+        in: path
+        name: feed_hash
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.DonationCampaignFeed'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Get Donation Post detail by feed hash
+      tags:
+      - campaign_feed
   /api/v1/campaigns/list-feed/{campaign_address}:
     get:
       description: List all donation campaign feeds by campaign address
