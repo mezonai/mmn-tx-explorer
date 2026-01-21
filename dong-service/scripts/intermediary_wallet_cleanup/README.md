@@ -24,7 +24,7 @@ AES_SECRET_KEY = "aes_secret_key"
 
 ### 1. Dry-Run Mode (Preview Only)
 ```bash
-go run scripts/intermediary_wallet_cleanup/main.go --dry-run
+go run ./scripts/intermediary_wallet_cleanup --dry-run
 ```
 - **Safe mode** - no changes to database
 - Shows what records would be affected
@@ -32,7 +32,7 @@ go run scripts/intermediary_wallet_cleanup/main.go --dry-run
 
 ### 2. Smart Delete Mode (Default)
 ```bash
-go run scripts/intermediary_wallet_cleanup/main.go
+go run ./scripts/intermediary_wallet_cleanup
 ```
 - **Recommended mode** for production use
 - **READY wallets**: Hard deleted (no related records exist)
@@ -44,7 +44,7 @@ go run scripts/intermediary_wallet_cleanup/main.go
 
 ### 3. Force Delete Mode (Cascade)
 ```bash
-go run scripts/intermediary_wallet_cleanup/main.go --force
+go run ./scripts/intermediary_wallet_cleanup --force
 ```
 - **Destructive mode** - use with caution
 - Hard deletes all corrupted wallets and **cascades to all related records**:
