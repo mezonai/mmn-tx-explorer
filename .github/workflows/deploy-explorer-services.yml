@@ -120,6 +120,7 @@ jobs:
       NEXT_PUBLIC_MEZON_SERVER_KEY: ${{ secrets.NEXT_PUBLIC_MEZON_SERVER_KEY }}
 
   deploy-socket:
+    if: inputs.deploy_socket == true
     uses: ./.github/workflows/deploy-socket-service.yml
     with:
       env: ${{ inputs.env }}
