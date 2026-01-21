@@ -198,12 +198,24 @@ jobs:
           echo "==> Activation complete!"
           EOF
 
-      - name: Health check after deployment
+      - name: Health check (PID based)
         run: |
           ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} '
-            for i in {1..15}; do
-              systemctl is-active socket-service | grep -q active && exit 0
-              sleep 2
+            set -e
+            
+            for i in {1..30}; do
+              PID=$(systemctl show socket-service -p MainPID --value || true)
+
+              if [ "$PID" != "0" ] && kill -0 "$PID" 2>/dev/null; then
+                echo "socket-service running with PID $PID"
+                exit 0
+              fi
+
+              echo "Waiting for process PID..."
+              sleep 3
             done
+
+            echo "socket-service did not start"
+            systemctl status socket-service --no-pager
             exit 1
           '
