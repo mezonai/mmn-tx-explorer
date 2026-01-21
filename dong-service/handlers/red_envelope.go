@@ -428,7 +428,7 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelope(c *gin.Context) {
 // @Failure 400 {object} models.Response
 // @Failure 404 {object} models.Response
 // @Failure 500 {object} models.Response
-// @Router /api/v1/red_envelopes/claim [post]
+// @Router /api/v1/red_envelopes/:id/claim [post]
 func (r *RedEnvelopeHandler) ClaimRedEnvelope(c *gin.Context) {
 	var req models.ClaimRedEnvelopeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -446,11 +446,11 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelope(c *gin.Context) {
 		return
 	}
 
-	if validateClaimRedEnvelope := r.validateClaimRedEnvelope(c, req.ID, userID); !validateClaimRedEnvelope {
+	if validateClaimRedEnvelope := r.validateClaimRedEnvelope(c, envelopeID, userID); !validateClaimRedEnvelope {
 		return
 	}
 
-	amount, err := r.queueService.VerifyReservation(c, req.ID, userID)
+	amount, err := r.queueService.VerifyReservation(c, envelopeID, userID)
 	if err != nil {
 		logger.Error().Err(err).Msg("Reservation verification failed")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Users are not allowed to receive lucky money."))
@@ -458,7 +458,7 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelope(c *gin.Context) {
 	}
 
 	userAddress := utils.GenerateAddress(strconv.FormatInt(userID, 10))
-	err = r.repo.ExecuteClaim(req.ID, userAddress, userID, int64(amount))
+	err = r.repo.ExecuteClaim(envelopeID, userAddress, userID, int64(amount))
 
 	if err != nil {
 		logger.Error().Err(err).Str("envelope_id", envelopeID).Msg("Failed to execute claim")
@@ -485,7 +485,7 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelope(c *gin.Context) {
 // @Failure 400 {object} models.Response
 // @Failure 401 {object} models.Response
 // @Failure 500 {object} models.Response
-// @Router /api/v1/red-envelopes/qr/claim-amount [post]
+// @Router /api/v1/red-envelopes/qr/:id/claim-amount [post]
 func (r *RedEnvelopeHandler) ClaimAmountRedEnvelopeQR(c *gin.Context) {
 	userID, err := utils.GetZKUserIDFromContext(c)
 	if err != nil {
@@ -494,48 +494,34 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelopeQR(c *gin.Context) {
 		return
 	}
 
-	userAddress, ok := utils.GetAddressFromContext(c)
-	if !ok {
-		logger.Error().Msg("Address not found in context")
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
+	id := c.Query("id")
+	if validateClaimRedEnvelope := r.validateClaimRedEnvelope(c, id, userID); !validateClaimRedEnvelope {
 		return
 	}
 
-	id := c.Query("id")
-
-	claimStatus, err := r.queueService.AttemptClaim(id, userID)
+	amount, err := r.queueService.AttemptClaim(id, userID)
 	if err != nil {
 		logger.Error().Err(err).Str("envelope_id", id).Msg("Error during queue check")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
 
-	if claimStatus == constants.ClaimStatusError {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToClaimAmount))
-		return
-	}
-
-	splitMoney, err := r.repo.GetClaimAmount(id, userAddress, claimStatus, userID)
+	var description string
+	description, err = r.repo.GetRedEnvelopeDescriptionByID(id)
 	if err != nil {
-		if errors.Is(err, constants.ErrAlreadyClaimed) {
-			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, err.Error()))
-			return
-		}
-		logger.Error().Err(err).Str("envelope_id", id).Msg("Failed to get claim amount")
-		r.queueService.RollbackClaim(id, userID)
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, err.Error()))
+		logger.Error().Err(err).Str("envelope_id", id).Msg("Failed to get red envelope description")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToGetRedEnvelope))
 		return
 	}
 
 	logger.Info().
 		Str("envelope_id", id).
-		Str("wallet", userAddress).
+		Int64("user_id", userID).
 		Msg("User entered queue and received claim token via QR")
 
 	result := map[string]interface{}{
-		"split_money_id": splitMoney.ID,
-		"amount":         splitMoney.Amount,
-		"description":    splitMoney.Description,
+		"amount":      amount,
+		"description": description,
 	}
 
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeAmountClaimed, result))
@@ -570,28 +556,20 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelopeQR(c *gin.Context) {
 		return
 	}
 
-	userAddress := utils.GenerateAddress(strconv.FormatInt(userID, 10))
+	if validateClaimRedEnvelope := r.validateClaimRedEnvelope(c, envelopeID, userID); !validateClaimRedEnvelope {
+		return
+	}
 
-	canClaim, err := r.repo.CheckUserIDClaimNotMatch(envelopeID, userID, req.SplitMoneyID)
+	amount, err := r.queueService.VerifyReservation(c, envelopeID, userID)
 	if err != nil {
-		logger.Error().
-			Err(err).
-			Str("red_envelope_id", envelopeID).
-			Str("address", userAddress).
-			Msg("Failed to check address and envelope id")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToCheckRedEnvelope))
-		return
-	}
-	if !canClaim {
-		logger.Error().
-			Str("red_envelope_id", envelopeID).
-			Str("address", userAddress).
-			Msg("Address does not match owner of red envelope split")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrUserIDNotMatchRedEnvelopeID))
+		logger.Error().Err(err).Msg("Reservation verification failed")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Users are not allowed to receive lucky money."))
 		return
 	}
 
-	err = r.repo.ExecuteClaim(envelopeID, userAddress, userID, req.SplitMoneyID)
+	userAddress := utils.GenerateAddress(strconv.FormatInt(userID, 10))
+	err = r.repo.ExecuteClaim(envelopeID, userAddress, userID, int64(amount))
+
 	if err != nil {
 		logger.Error().Err(err).Str("envelope_id", envelopeID).Msg("Failed to execute claim")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToClaim))
@@ -601,6 +579,7 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelopeQR(c *gin.Context) {
 	logger.Info().
 		Str("envelope_id", envelopeID).
 		Str("wallet", userAddress).
+		Int64("user_id", userID).
 		Msg("Red envelope claimed successfully via QR")
 
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeClaimed, nil))
