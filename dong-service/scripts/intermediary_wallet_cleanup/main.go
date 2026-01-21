@@ -319,7 +319,7 @@ func countRedEnvelopeRecordsBatch(db *sql.DB, schema string, addresses []string)
 func countOfferRecordsBatch(db *sql.DB, schema string, addresses []string) (offers, orders int, err error) {
 	// Count offers
 	err = db.QueryRow(fmt.Sprintf(`
-		SELECT COUNT(*) FROM %s.offers 
+		SELECT COUNT(*) FROM %s.p2p_offers 
 		WHERE intermediary_wallet_address = ANY($1)
 	`, schema), pq.Array(addresses)).Scan(&offers)
 	if err != nil {
@@ -328,9 +328,9 @@ func countOfferRecordsBatch(db *sql.DB, schema string, addresses []string) (offe
 
 	// Count orders
 	err = db.QueryRow(fmt.Sprintf(`
-		SELECT COUNT(*) FROM %s.orders 
+		SELECT COUNT(*) FROM %s.p2p_orders 
 		WHERE offer_id IN (
-			SELECT offer_id FROM %s.offers WHERE intermediary_wallet_address = ANY($1)
+			SELECT offer_id FROM %s.p2p_offers WHERE intermediary_wallet_address = ANY($1)
 		)
 	`, schema, schema), pq.Array(addresses)).Scan(&orders)
 
@@ -447,7 +447,7 @@ func batchDeleteRedEnvelopeRecords(tx *sql.Tx, schema string, addresses []string
 func batchDeleteOfferRecords(tx *sql.Tx, schema string, addresses []string) (orders, offers int, err error) {
 	// Get all offer IDs first
 	rows, err := tx.Query(fmt.Sprintf(`
-		SELECT offer_id FROM %s.offers WHERE intermediary_wallet_address = ANY($1)
+		SELECT offer_id FROM %s.p2p_offers WHERE intermediary_wallet_address = ANY($1)
 	`, schema), pq.Array(addresses))
 	if err != nil {
 		return
@@ -469,7 +469,7 @@ func batchDeleteOfferRecords(tx *sql.Tx, schema string, addresses []string) (ord
 
 	// Delete orders in batch
 	result, err := tx.Exec(fmt.Sprintf(`
-		DELETE FROM %s.orders WHERE offer_id = ANY($1)
+		DELETE FROM %s.p2p_orders WHERE offer_id = ANY($1)
 	`, schema), pq.Array(offerIDs))
 	if err != nil {
 		return
@@ -479,7 +479,7 @@ func batchDeleteOfferRecords(tx *sql.Tx, schema string, addresses []string) (ord
 
 	// Delete offers in batch
 	result, err = tx.Exec(fmt.Sprintf(`
-		DELETE FROM %s.offers WHERE offer_id = ANY($1)
+		DELETE FROM %s.p2p_offers WHERE offer_id = ANY($1)
 	`, schema), pq.Array(offerIDs))
 	if err != nil {
 		return
@@ -546,7 +546,7 @@ func batchSmartDelete(db *sql.DB, schema string, readyWallets, inUseWallets []In
 		if len(inUseOffer) > 0 {
 			addresses := extractAddresses(inUseOffer)
 			result, err := tx.Exec(fmt.Sprintf(`
-				UPDATE %s.offers SET status = 'CANCELED', updated_at = NOW() 
+				UPDATE %s.p2p_offers SET status = 'CANCELED', updated_at = NOW() 
 				WHERE intermediary_wallet_address = ANY($1) AND status NOT IN ('CANCELED', 'FAILED', 'COMPLETED')
 			`, schema), pq.Array(addresses))
 			if err != nil {
