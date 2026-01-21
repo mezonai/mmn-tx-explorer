@@ -464,6 +464,7 @@ func (p *PostgresConnector) InsertStagingData(data []common.BlockData) error {
 	for i := range data {
 		blockData := &data[i]
 		blockDataJSON, err := json.Marshal(blockData)
+		err = nil
 		if err != nil {
 			return err
 		}
@@ -805,6 +806,30 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 		if err != nil {
 			return err
 		}
+
+		txMap := make(map[string]common.Transaction)
+		offerIDMap := make(map[string]int64)
+		type P2PExtraInfo struct {
+			OfferID int64 `json:"offer_id"`
+		}
+		for i := range blockData.Transactions {
+			t := blockData.Transactions[i]
+			t.TransactionExtraInfoType = detectTransactionType(t.ExtraInfo)
+			if t.TransactionExtraInfoType == common.TransactionExtraInfoP2PTrading && t.ExtraInfo != "" &&
+				(*t.Status == (uint64)(pb.TransactionStatus_CONFIRMED) || *t.Status == (uint64)(pb.TransactionStatus_FINALIZED)) {
+				txMap[t.Hash] = t
+				var extra P2PExtraInfo
+				if err := json.Unmarshal([]byte(t.ExtraInfo), &extra); err == nil && extra.OfferID != 0 {
+					offerIDMap[t.Hash] = extra.OfferID
+				}
+			}
+		}
+		err = p.updateOfferStatus(ctx, tx, txMap, offerIDMap)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to update offer status after inserting transactions")
+			return err
+		}
+
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -2359,4 +2384,150 @@ func (p *PostgresConnector) GetAllTransactionsByWallet(
 	}
 
 	return transactions, rows.Err()
+}
+
+func (p *PostgresConnector) updateOfferStatus(
+	ctx context.Context,
+	tx *sql.Tx,
+	txMap map[string]common.Transaction,
+	offerIDMap map[string]int64,
+) error {
+	log.Info().Int("offers_to_validate", len(txMap)).Msg("starting offer status update")
+	if len(txMap) == 0 {
+		log.Info().Msg("no offers to validate")
+		return nil
+	}
+
+	offerIDs := make([]int64, 0, len(txMap))
+	for hash := range txMap {
+		offerID := offerIDMap[hash]
+		if offerID != 0 {
+			offerIDs = append(offerIDs, offerID)
+		}
+	}
+
+	if len(offerIDs) == 0 {
+		log.Info().Msg("no valid offers to update")
+		return nil
+	}
+
+	querySelect := `
+    SELECT
+        offer_id,
+        seller_wallet_address,
+        COALESCE(intermediary_wallet_address, ''),
+        amount,
+        status
+    FROM dong_schema.offers
+    WHERE offer_id = ANY($1::bigint[])
+      AND status = 'OPEN'
+    FOR UPDATE
+    `
+
+	rows, err := tx.QueryContext(ctx, querySelect, pq.Array(offerIDs))
+	if err != nil {
+		return fmt.Errorf("select offers for validation failed: %w", err)
+	}
+	defer rows.Close()
+
+	type offerRow struct {
+		OfferID            int64
+		SellerWallet       string
+		IntermediaryWallet string
+		Amount             int64
+		Status             string
+	}
+
+	offerMap := make(map[int64]offerRow)
+
+	for rows.Next() {
+		var o offerRow
+		if err := rows.Scan(
+			&o.OfferID,
+			&o.SellerWallet,
+			&o.IntermediaryWallet,
+			&o.Amount,
+			&o.Status,
+		); err != nil {
+			log.Error().Err(err).Msg("failed to scan offer row")
+			return err
+		}
+		offerMap[o.OfferID] = o
+	}
+
+	validOfferIDs := make([]int64, 0)
+	validTxHashes := make([]string, 0)
+
+	for hash, t := range txMap {
+		offerID := offerIDMap[hash]
+		o, ok := offerMap[offerID]
+		if !ok {
+			log.Error().
+				Int64("offer_id", offerID).
+				Str("tx_hash", t.Hash).
+				Msg("offer validation failed: offer not found or not OPEN")
+			continue
+		}
+
+		if o.SellerWallet != t.FromAddress {
+			log.Error().
+				Int64("offer_id", offerID).
+				Str("tx_hash", t.Hash).
+				Msg("offer validation failed: seller wallet mismatch")
+			continue
+		}
+
+		if o.IntermediaryWallet != "" && o.IntermediaryWallet != t.ToAddress {
+			log.Error().
+				Int64("offer_id", offerID).
+				Str("tx_hash", t.Hash).
+				Msg("offer validation failed: intermediary wallet mismatch")
+			continue
+		}
+
+		valueInt, err := strconv.ParseInt(t.Value, 10, 64)
+		if err != nil || valueInt != o.Amount*1000000 {
+			log.Error().
+				Int64("offer_id", offerID).
+				Str("tx_hash", t.Hash).
+				Msg("offer validation failed: amount mismatch")
+			continue
+		}
+		validOfferIDs = append(validOfferIDs, offerID)
+		validTxHashes = append(validTxHashes, t.Hash)
+	}
+
+	if len(validOfferIDs) == 0 {
+		log.Info().Msg("no valid offers to update")
+		return nil
+	}
+
+	queryUpdate := `
+    UPDATE dong_schema.offers o
+    SET
+        status = 'CONFIRMED',
+        transaction_hash = v.tx_hash,
+        updated_at = NOW()
+    FROM (
+        SELECT
+            unnest($1::bigint[]) AS offer_id,
+            unnest($2::text[])   AS tx_hash
+    ) v
+    WHERE o.offer_id = v.offer_id
+      AND o.status = 'OPEN'
+    `
+
+	_, err = tx.ExecContext(
+		ctx,
+		queryUpdate,
+		pq.Array(validOfferIDs),
+		pq.Array(validTxHashes),
+	)
+	if err != nil {
+		return fmt.Errorf("batch update offers failed: %w", err)
+	}
+
+	log.Info().Int("offers_updated", len(validOfferIDs)).Msg("batch update offer status completed")
+
+	return nil
 }
