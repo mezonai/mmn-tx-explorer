@@ -180,7 +180,10 @@ jobs:
           sudo systemctl stop socket-service || true
 
           echo "==> Atomically swapping to new binary..."
-          sudo ln -sfn socket-service-${VERSION} /opt/socket-service/bin/socket-service
+          sudo ln -sfn /opt/socket-service/bin/socket-service-${VERSION} /opt/socket-service/bin/socket-service
+          
+          sudo chmod +x /opt/socket-service/bin/socket-service-${VERSION}
+          systemctl cat socket-service
 
           echo "==> Reloading and starting services..."
           sudo systemctl daemon-reload
@@ -202,7 +205,7 @@ jobs:
         run: |
           ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} '
             set -e
-            
+
             for i in {1..30}; do
               PID=$(systemctl show socket-service -p MainPID --value || true)
 
