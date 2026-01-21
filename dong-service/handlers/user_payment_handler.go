@@ -3,6 +3,7 @@ package handlers
 import (
 	"dong-service/models"
 	"dong-service/services"
+	"dong-service/utils"
 	"fmt"
 	"net/http"
 
@@ -36,8 +37,8 @@ func (h *UserPaymentHandler) UpdatePaymentInfo(c *gin.Context) {
 		return
 	}
 
-	userID := c.GetString("user_id")
-	if userID == "" {
+	userID, err := utils.GetUserIDStringFromContext(c)
+	if err != nil {
 		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "user not authenticated"))
 		return
 	}
@@ -61,8 +62,8 @@ func (h *UserPaymentHandler) UpdatePaymentInfo(c *gin.Context) {
 // @Failure 500 {object} models.Response
 // @Router /api/v1/user-payments/me [get]
 func (h *UserPaymentHandler) GetMyPaymentInfos(c *gin.Context) {
-	userID := c.GetString("user_id")
-	if userID == "" {
+	userID, err := utils.GetUserIDStringFromContext(c)
+	if err != nil {
 		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "user not authenticated"))
 		return
 	}
@@ -86,7 +87,11 @@ func (h *UserPaymentHandler) GetMyPaymentInfos(c *gin.Context) {
 // @Router /api/v1/user-payments/{id} [delete]
 func (h *UserPaymentHandler) DeletePaymentInfo(c *gin.Context) {
 	idStr := c.Param("id")
-	userID := c.GetString("user_id")
+	userID, err := utils.GetUserIDStringFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "user not authenticated"))
+		return
+	}
 
 	var id int64
 	if _, err := fmt.Sscanf(idStr, "%d", &id); err != nil {
