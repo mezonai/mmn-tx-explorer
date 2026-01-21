@@ -6,6 +6,7 @@ import { Plus, Edit2, Trash2, Info, Landmark, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BankPaymentAccountsModal } from './bank-payment-accounts-modal';
+import { ConfirmDeleteBankModal } from './confirm-delete-bank-modal';
 import { UserPaymentInfo } from '@/modules/p2p/types';
 import { toast } from 'sonner';
 
@@ -16,6 +17,8 @@ export const BankPaymentAccountsTab = () => {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedPayment, setSelectedPayment] = useState<UserPaymentInfo | null>(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [paymentToDelete, setPaymentToDelete] = useState<UserPaymentInfo | null>(null);
 
     const handleAdd = () => {
         setSelectedPayment(null);
@@ -27,13 +30,21 @@ export const BankPaymentAccountsTab = () => {
         setIsModalOpen(true);
     };
 
-    const handleDelete = (id: number) => {
-        if (confirm('Are you sure you want to delete this bank account?')) {
-            deletePayment(id, {
-                onSuccess: () => toast.success('Account deleted'),
-                onError: () => toast.error('Failed to delete account')
-            });
-        }
+    const handleDeleteClick = (payment: UserPaymentInfo) => {
+        setPaymentToDelete(payment);
+        setIsDeleteModalOpen(true);
+    };
+
+    const confirmDelete = () => {
+        if (!paymentToDelete) return;
+        deletePayment(paymentToDelete.id, {
+            onSuccess: () => {
+                toast.success('Account deleted');
+                setIsDeleteModalOpen(false);
+                setPaymentToDelete(null);
+            },
+            onError: () => toast.error('Failed to delete account')
+        });
     };
 
     const handleSetPrimary = (payment: UserPaymentInfo) => {
@@ -106,7 +117,7 @@ export const BankPaymentAccountsTab = () => {
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            onClick={() => handleDelete(payment.id)}
+                                            onClick={() => handleDeleteClick(payment)}
                                             className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors"
                                             title="Delete"
                                         >
@@ -146,6 +157,12 @@ export const BankPaymentAccountsTab = () => {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 paymentInfo={selectedPayment}
+            />
+            <ConfirmDeleteBankModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={confirmDelete}
+                paymentInfo={paymentToDelete}
             />
         </div>
     );
