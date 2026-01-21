@@ -11,10 +11,9 @@ import {
 } from './types';
 import { apiDongClient } from '@/service';
 import { P2P_ENDPOINTS } from './constants';
+import { UserPaymentInfo } from './types';
 
 export class P2PService {
-<<<<<<< Updated upstream
-=======
   static async getMyPaymentInfos(): Promise<UserPaymentInfo[]> {
     const { data } = await apiDongClient.get<{ data: UserPaymentInfo[] }>(P2P_ENDPOINTS.USER_PAYMENTS_ME);
     return data.data;
@@ -28,7 +27,6 @@ export class P2PService {
     await apiDongClient.delete(P2P_ENDPOINTS.DELETE_USER_PAYMENT(String(id)));
   }
 
->>>>>>> Stashed changes
   static async getOffers(params: IP2POfferListParams): Promise<IPaginatedResponse<P2POffer[]>> {
     const { data } = await apiDongClient.get<IPaginatedResponse<P2POffer[]>>(P2P_ENDPOINTS.OFFERS, { params });
     return data;

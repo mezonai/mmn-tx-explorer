@@ -11,6 +11,7 @@ import { useUpdatePaymentInfo, useUserPaymentInfos } from '@/modules/p2p/hooks/u
 import { useUser } from '@/providers';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { BANK_OPTIONS } from '@/modules/p2p/constants';
 
 interface BankPaymentAccountsModalProps {
     isOpen: boolean;
@@ -18,14 +19,6 @@ interface BankPaymentAccountsModalProps {
     paymentInfo?: UserPaymentInfo | null;
 }
 
-const bankOptions: { value: BankOption; label: string }[] = [
-    { value: 'MB', label: 'MB Bank' },
-    { value: 'VCB', label: 'Vietcombank' },
-    { value: 'TCB', label: 'Techcombank' },
-    { value: 'ACB', label: 'ACB' },
-    { value: 'TPBANK', label: 'TPBank' },
-    { value: 'VIETCOMBANK', label: 'Vietcombank' },
-];
 
 export const BankPaymentAccountsModal = ({ isOpen, onClose, paymentInfo }: BankPaymentAccountsModalProps) => {
     const { user } = useUser();
@@ -38,30 +31,44 @@ export const BankPaymentAccountsModal = ({ isOpen, onClose, paymentInfo }: BankP
     const [isPrimary, setIsPrimary] = useState(false);
 
     useEffect(() => {
+        if (!isOpen) return;
+
         if (paymentInfo) {
-            const bankOpt = bankOptions.find((opt) => opt.label === paymentInfo.bank_name);
+            const bankOpt = BANK_OPTIONS.find((opt) => opt.label === paymentInfo.bank_name);
             if (bankOpt) setBank(bankOpt.value);
             setAccountNumber(paymentInfo.account_number);
             setAccountName(paymentInfo.account_name);
             setIsPrimary(paymentInfo.is_primary);
         } else {
-            setBank('MB');
-            setAccountNumber('');
-            setAccountName('');
-            setIsPrimary(false);
+            // For "Add New", default to MB and try to auto-fill if MB account already exists
+            const defaultBank: BankOption = 'MB';
+            setBank(defaultBank);
+            const mbLabel = BANK_OPTIONS.find((opt) => opt.value === defaultBank)?.label;
+            const matched = savedPayments?.find((p) => p.bank_name === mbLabel);
+            if (matched) {
+                setAccountNumber(matched.account_number);
+                setAccountName(matched.account_name);
+                setIsPrimary(matched.is_primary);
+            } else {
+                setAccountNumber('');
+                setAccountName('');
+                setIsPrimary(false);
+            }
         }
-    }, [paymentInfo, isOpen]);
+    }, [paymentInfo, isOpen, savedPayments]);
 
     const handleBankChange = (value: BankOption) => {
         setBank(value);
         if (!paymentInfo && savedPayments) {
-            const bankLabel = bankOptions.find((opt) => opt.value === value)?.label;
+            const bankLabel = BANK_OPTIONS.find((opt) => opt.value === value)?.label;
             const matched = savedPayments.find((p) => p.bank_name === bankLabel);
             if (matched) {
                 setAccountNumber(matched.account_number);
+                setAccountName(matched.account_name);
                 setIsPrimary(matched.is_primary);
             } else {
                 setAccountNumber('');
+                setAccountName('');
                 setIsPrimary(false);
             }
         }
@@ -74,7 +81,7 @@ export const BankPaymentAccountsModal = ({ isOpen, onClose, paymentInfo }: BankP
             return;
         }
 
-        const bankLabel = bankOptions.find((b) => b.value === bank)?.label || bank;
+        const bankLabel = BANK_OPTIONS.find((b) => b.value === bank)?.label || bank;
 
         updatePayment({
             id: paymentInfo?.id,
@@ -111,7 +118,7 @@ export const BankPaymentAccountsModal = ({ isOpen, onClose, paymentInfo }: BankP
                                 <SelectValue placeholder="Select bank" />
                             </SelectTrigger>
                             <SelectContent>
-                                {bankOptions.map((option) => (
+                                {BANK_OPTIONS.map((option) => (
                                     <SelectItem key={option.value} value={option.value}>
                                         {option.label}
                                     </SelectItem>
@@ -144,7 +151,7 @@ export const BankPaymentAccountsModal = ({ isOpen, onClose, paymentInfo }: BankP
                         <div className="relative">
                             <Input
                                 value={accountName}
-                                onChange={(e) => setAccountName(e.target.value)}
+                                onChange={(e) => setAccountName(e.target.value.toUpperCase())}
                                 type="text"
                                 placeholder="Enter account owner name"
                                 className="bg-input/30 text-foreground w-full rounded-md border border-border px-3 py-2.5 text-sm focus:outline-none"

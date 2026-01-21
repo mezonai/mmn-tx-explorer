@@ -11,7 +11,7 @@ interface ProfileTabsProps {
 
 const tabs: { id: ProfileTabType; label: string }[] = [
     { id: 'info', label: 'Personal Information' },
-    { id: 'payment', label: 'Payment Methods' },
+    { id: 'payment', label: 'Bank Accounts' },
     { id: 'security', label: 'Security' },
     { id: 'notifications', label: 'Notifications' },
     { id: 'history', label: 'Login History' },

@@ -124,12 +124,6 @@ export const BankPaymentAccountsTab = () => {
                                         {payment.account_name}
                                     </span>
                                 </div>
-
-                                {payment.is_primary && (
-                                    <div className="absolute top-0 right-0 p-1 opacity-10 pointer-events-none">
-                                        <CheckCircle2 className="w-12 h-12 text-green-500 -mr-3 -mt-3" />
-                                    </div>
-                                )}
                             </div>
                         ))
                     ) : (
