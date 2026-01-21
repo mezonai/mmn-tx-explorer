@@ -31,6 +31,10 @@ on:
         description: "Deploy Frontend Service"
         type: boolean
         default: true
+      deploy_socket:
+        description: "Deploy WebSocket Service"
+        type: boolean
+        default: true
 
 jobs:
   determine_tags:
