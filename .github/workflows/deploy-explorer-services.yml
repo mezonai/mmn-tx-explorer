@@ -104,6 +104,7 @@ jobs:
       REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
       AES_SECRET_KEY: ${{ secrets.AES_SECRET_KEY }}
       EVENT_API_KEY: ${{ secrets.EVENT_API_KEY }}
+      VERIFYING_KEY_B64: ${{ secrets.VERIFYING_KEY_B64 }}
  
   deploy-frontend:
     if: inputs.deploy_frontend == true
