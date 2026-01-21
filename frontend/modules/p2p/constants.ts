@@ -41,3 +41,12 @@ export const P2P_EVENT_TYPES = {
   ORDER_COMPLETED: 'ORDER_COMPLETED',
   OFFER_LIST_REFRESH: 'OFFER_LIST_REFRESH',
 } as const;
+
+export const BANK_OPTIONS = [
+  { value: 'MB', label: 'MB Bank' },
+  { value: 'VCB', label: 'Vietcombank' },
+  { value: 'TCB', label: 'Techcombank' },
+  { value: 'ACB', label: 'ACB' },
+  { value: 'TPBANK', label: 'TPBank' },
+  { value: 'VIETCOMBANK', label: 'Vietcombank' },
+] as const;

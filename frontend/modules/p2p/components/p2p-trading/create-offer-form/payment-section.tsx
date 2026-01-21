@@ -9,6 +9,7 @@ import { CreateOfferFormValues } from './validation-schema';
 import { cn } from '@/lib/utils';
 import { useUserPaymentInfos, useUpdatePaymentInfo } from '@/modules/p2p/hooks/usePaymentInfo';
 import { toast } from 'sonner';
+import { BANK_OPTIONS } from '@/modules/p2p/constants';
 
 interface PaymentSectionProps {
   control: Control<CreateOfferFormValues>;
@@ -17,19 +18,10 @@ interface PaymentSectionProps {
   onUnsavedChangesChange: (hasUnsavedChanges: boolean) => void;
 }
 
-const bankOptions: { value: BankOption; label: string }[] = [
-  { value: 'MB', label: 'MB Bank' },
-  { value: 'VCB', label: 'Vietcombank' },
-  { value: 'TCB', label: 'Techcombank' },
-  { value: 'ACB', label: 'ACB' },
-  { value: 'TPBANK', label: 'TPBank' },
-  { value: 'VIETCOMBANK', label: 'Vietcombank' },
-];
 
 export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChange }: PaymentSectionProps) => {
   const { data: savedPayments, isLoading } = useUserPaymentInfos();
   const { mutate: updatePayment, isPending: isUpdating } = useUpdatePaymentInfo();
-  const [isInitialized, setIsInitialized] = useState(false);
 
   const currentBank = watch('bank_info.bank');
   const currentAccountNumber = watch('bank_info.account_number');
@@ -39,7 +31,7 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
   // Find saved info for the currently selected bank mapping to BankOption labels
   const matchedSavedInfo = useMemo(() => {
     if (!savedPayments) return null;
-    const currentBankLabel = bankOptions.find((b) => b.value === currentBank)?.label;
+    const currentBankLabel = BANK_OPTIONS.find((b) => b.value === currentBank)?.label;
     return savedPayments.find((p) => p.bank_name === currentBankLabel) || null;
   }, [savedPayments, currentBank]);
 
@@ -59,24 +51,10 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
     onUnsavedChangesChange(hasChanges);
   }, [hasChanges, onUnsavedChangesChange]);
 
-  // Initial fill: find primary or first bank info
-  useEffect(() => {
-    if (!isInitialized && savedPayments && savedPayments.length > 0) {
-      const primary = savedPayments.find((p) => p.is_primary) || savedPayments[0];
-      const bankOpt = bankOptions.find((opt) => opt.label === primary.bank_name);
-      if (bankOpt) {
-        setValue('bank_info.bank', bankOpt.value);
-        setValue('bank_info.account_number', primary.account_number);
-        setValue('bank_info.account_name', primary.account_name);
-        setValue('bank_info.is_primary', primary.is_primary);
-        setIsInitialized(true);
-      }
-    }
-  }, [savedPayments, setValue, isInitialized]);
 
   const handleBankChange = (value: BankOption) => {
     setValue('bank_info.bank', value);
-    const bankLabel = bankOptions.find((opt) => opt.value === value)?.label;
+    const bankLabel = BANK_OPTIONS.find((opt) => opt.value === value)?.label;
     const saved = savedPayments?.find((p) => p.bank_name === bankLabel);
     if (saved) {
       setValue('bank_info.account_number', saved.account_number);
@@ -90,7 +68,7 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
   };
 
   const handleSaveChanges = () => {
-    const bankLabel = bankOptions.find((b) => b.value === currentBank)?.label || currentBank;
+    const bankLabel = BANK_OPTIONS.find((b) => b.value === currentBank)?.label || currentBank;
     updatePayment(
       {
         bank_name: bankLabel,
@@ -168,7 +146,7 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
                 <SelectValue placeholder="Select bank" />
               </SelectTrigger>
               <SelectContent>
-                {bankOptions.map((option) => (
+                {BANK_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
@@ -255,7 +233,7 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
                 checked={field.value || false}
                 onChange={(e) => field.onChange(e.target.checked)}
               />
-              <div className="bg-muted peer-focus:ring-brand-primary/50 dark:bg-muted/50 peer-checked:bg-brand-primary after:content-[''] after:bg-white after:border-gray-300 after:rounded-full after:transition-all peer-focus:outline-none peer-focus:ring-2 peer-checked:after:translate-x-full peer-checked:after:border-white after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:border dark:border-border h-6 w-11 rounded-full peer"></div>
+              <div className="bg-muted peer-focus:ring-brand-primary/50 dark:bg-muted/50 peer-checked:bg-brand-primary dark:peer-checked:bg-brand-primary after:content-[''] after:bg-white after:border-gray-300 after:rounded-full after:transition-all peer-focus:outline-none peer-focus:ring-2 peer-checked:after:translate-x-full peer-checked:after:border-white after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:border dark:border-border h-6 w-11 rounded-full peer"></div>
             </label>
           )}
         />

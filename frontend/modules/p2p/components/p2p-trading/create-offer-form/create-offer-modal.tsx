@@ -15,6 +15,8 @@ import { CreateOfferFormValues, createOfferSchema } from './validation-schema';
 import { TradeTypeSection } from './trade-type-section';
 import { AmountSection } from './amount-section';
 import { PaymentSection } from './payment-section';
+import { useUserPaymentInfos } from '@/modules/p2p/hooks/usePaymentInfo';
+import { BANK_OPTIONS } from '@/modules/p2p/constants';
 import { APP_CONFIG } from '@/configs/app.config';
 import { useUser } from '@/providers';
 import { mmnClient } from '@/modules/auth';
@@ -29,6 +31,7 @@ export const CreateOfferModal = () => {
   const { transfer } = useTransfer();
   const { user } = useUser();
   const [balance, setBalance] = useState<string>('0');
+  const { data: savedPayments } = useUserPaymentInfos();
   const formSchema = useMemo(() => {
     return createOfferSchema.superRefine((data, ctx) => {
       if (data.side === TradeTypes.SELL) {
@@ -55,6 +58,8 @@ export const CreateOfferModal = () => {
     mode: 'onChange',
   });
 
+  const [isPaymentInitialized, setIsPaymentInitialized] = useState(false);
+
   useEffect(() => {
     if (open) {
       form.reset({
@@ -62,13 +67,28 @@ export const CreateOfferModal = () => {
         amount: 0,
         price_rate: '0',
         limit: { min: 0, max: 0 },
-        bank_info: { bank: 'MB', account_name: '', account_number: '' },
+        bank_info: { bank: 'MB' as const, account_name: '', account_number: '' },
         symbol: 'MZD',
       });
       setShowConfirm(false);
       setPendingData(null);
+      setIsPaymentInitialized(false);
     }
   }, [open, form]);
+
+  useEffect(() => {
+    if (open && !isPaymentInitialized && savedPayments && savedPayments.length > 0) {
+      const primary = savedPayments.find((p) => p.is_primary) || savedPayments[0];
+      const bankOpt = BANK_OPTIONS.find((opt) => opt.label === primary.bank_name);
+      if (bankOpt) {
+        form.setValue('bank_info.bank', bankOpt.value);
+        form.setValue('bank_info.account_number', primary.account_number);
+        form.setValue('bank_info.account_name', primary.account_name);
+        form.setValue('bank_info.is_primary', primary.is_primary);
+        setIsPaymentInitialized(true);
+      }
+    }
+  }, [open, savedPayments, isPaymentInitialized, form]);
 
   useEffect(() => {
     let mounted = true;
