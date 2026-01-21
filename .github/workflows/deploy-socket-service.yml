@@ -208,9 +208,23 @@ jobs:
           EOF
           chmod +x remote_setup.sh
           
-          # Environment variables for the remote shell execution (if needed separately)
-          echo "# Remote env generated at $(date)" > remote_env.sh
+           echo "# Remote env generated at $(date)" > remote_env.sh
           printf "export POSTGRES_DB=%q\n" "$POSTGRES_DB" >> remote_env.sh
+          printf "export POSTGRES_USER=%q\n" "$POSTGRES_USER" >> remote_env.sh
+          printf "export POSTGRES_PASSWORD=%q\n" "$POSTGRES_PASSWORD" >> remote_env.sh
+          printf "export POSTGRES_HOST=%q\n" "$POSTGRES_HOST" >> remote_env.sh
+          printf "export POSTGRES_PORT=%q\n" "$POSTGRES_PORT" >> remote_env.sh
+          printf "export DATABASE_HOST=%q\n" "$POSTGRES_HOST" >> remote_env.sh
+          printf "export DATABASE_PORT=%q\n" "$POSTGRES_PORT" >> remote_env.sh
+          printf "export DATABASE_USER=%q\n" "$POSTGRES_USER" >> remote_env.sh
+          printf "export DATABASE_PASSWORD=%q\n" "$POSTGRES_PASSWORD" >> remote_env.sh
+          printf "export DATABASE_NAME=%q\n" "$POSTGRES_DB" >> remote_env.sh
+          printf "export JWT_SECRET=%q\n" "$JWT_SECRET" >> remote_env.sh
+          printf "export EVENT_API_KEY=%q\n" "$EVENT_API_KEY" >> remote_env.sh
+          printf "export REDIS_ADDRESS=%q\n" "$REDIS_ADDRESS" >> remote_env.sh
+          printf "export REDIS_PASSWORD=%q\n" "$REDIS_PASSWORD" >> remote_env.sh
+          printf "export REDIS_DB=%q\n" "$REDIS_DB" >> remote_env.sh
+          printf "export SERVER_GIN_MODE=%q\n" "$SERVER_GIN_MODE" >> remote_env.sh
 
       - name: Prepare and deploy to target server
         env:
