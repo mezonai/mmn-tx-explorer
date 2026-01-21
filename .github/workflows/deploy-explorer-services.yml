@@ -120,11 +120,14 @@ jobs:
       NEXT_PUBLIC_MEZON_SERVER_KEY: ${{ secrets.NEXT_PUBLIC_MEZON_SERVER_KEY }}
 
   deploy-socket:
+    needs: [determine_tags]
     if: inputs.deploy_socket == true
     uses: ./.github/workflows/deploy-socket-service.yml
     with:
       env: ${{ inputs.env }}
       ref: ${{ inputs.ref }}
+      target_tag: ${{ needs.determine_tags.outputs.target_tag }} 
+      skip_build: ${{ needs.determine_tags.outputs.skip_build }}
     secrets:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
