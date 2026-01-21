@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useWebSocket } from '@/lib/websocket/useWebSocket';
 import { P2PHeader } from './p2p-header';
 import { P2PFiltersComponent } from './p2p-filters';
@@ -14,7 +14,7 @@ import { P2POrdersList } from './p2p-orders-list';
 import { OrderMobileCard } from './mobile/order-card';
 import OfferMobileCard from './mobile/offer-card';
 import { useQueryParam } from '@/hooks';
-import { P2PTabType } from '../../types';
+import { P2PTabType, P2POffer } from '../../types';
 import { P2P_TAB } from '../../constants';
 import { useUpdateQueryParams } from '@/hooks/useUpdateQueryParams';
 import { SOCKET_MESSAGE } from '@/lib/websocket/constants';
@@ -30,6 +30,11 @@ export const P2P = () => {
   const joinedRef = useRef(false);
   const joiningRef = useRef(false);
   const intervalRef = useRef<number | null>(null);
+  const [cancelingOfferId, setCancelingOfferId] = useState<string | null>(null);
+
+  const handleCancelStart = useCallback((offerId: string) => {
+    setCancelingOfferId(offerId);
+  }, []);
 
   useEffect(() => {
     const clearJoinInterval = () => {
@@ -164,9 +169,10 @@ export const P2P = () => {
     order: sort?.includes('desc') ? 'desc' : 'asc',
   };
 
-  const { data: offers, isLoading } = useP2POffers(apiParams, tab === P2P_TAB.OFFERS);
+  const { data: offers, isLoading, isWsRefreshing } = useP2POffers(apiParams, tab === P2P_TAB.OFFERS);
   const { data: myOffers, isLoading: isMyOffersLoading } = useP2PMyOffers(apiParams, tab === P2P_TAB.MY_OFFERS);
   const { data: myTrading, isLoading: isMyTradingLoading } = useMyOrders(apiParams, tab === P2P_TAB.MY_TRADING);
+
   const handleTabChange = (value: string) => {
     setTab(value as P2PTabType);
   };
@@ -201,12 +207,12 @@ export const P2P = () => {
           />
 
           <div className="block lg:hidden">
-            {(offers?.data ?? []).map((offer) => (
+            {(offers?.data ?? []).map((offer: P2POffer) => (
               <OfferMobileCard key={offer.offer_id} offer={offer} />
             ))}
           </div>
           <div className="hidden lg:block">
-            <P2POffersTabs offers={offers?.data ?? []} isLoading={isLoading} />
+            <P2POffersTabs offers={offers?.data ?? []} isLoading={isLoading} isRefreshing={isWsRefreshing} />
           </div>
         </TabsContent>
 
@@ -249,7 +255,11 @@ export const P2P = () => {
             ))}
           </div>
           <div className="hidden lg:block">
-            <P2POffersTabs offers={myOffers?.data ?? []} isLoading={isMyOffersLoading} />
+            <P2POffersTabs
+              offers={myOffers?.data ?? []}
+              isLoading={isMyOffersLoading}
+              onCancelStart={handleCancelStart}
+            />
           </div>
         </TabsContent>
       </Tabs>

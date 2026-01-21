@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { TTableColumn } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useEffect, useRef, useState } from 'react';
 import { ROUTES } from '@/configs/routes.config';
 import { AddressDisplay } from '@/components/shared';
 import { P2POffer } from '../../types';
@@ -16,15 +17,37 @@ import { OFFERS_STATUS } from '../../constants';
 import { ShareOfferModal } from './share-offer-modal';
 import { TriangleAlert } from 'lucide-react';
 import { NumberUtil } from '@/utils';
+import { cn } from '@/lib/utils';
 
 interface P2POffersTableProps {
   offers: P2POffer[] | undefined;
   isLoading?: boolean;
+  isRefreshing?: boolean;
+  onCancelStart?: (offerId: string) => void;
 }
 
-export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps) => {
+export const P2POffersTabs = ({
+  offers,
+  isLoading = false,
+  isRefreshing = false,
+  onCancelStart,
+}: P2POffersTableProps) => {
   const router = useRouter();
   const { user } = useUser();
+
+  const [showOverlay, setShowOverlay] = useState(false);
+
+  useEffect(() => {
+    if (isRefreshing) {
+      setShowOverlay(true);
+    } else {
+      // delay hide for animation
+      setTimeout(() => setShowOverlay(false), 300);
+    }
+  }, [isRefreshing]);
+
+  const rows = offers ?? [];
+
   const rawColumns: (TTableColumn<P2POffer> | null)[] = [
     {
       headerContent: 'SELLER',
@@ -164,12 +187,24 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
   const columns = rawColumns.filter((col): col is TTableColumn<P2POffer> => col !== null);
 
   return (
-    <Card className="bg-card overflow-hidden border-gray-300 dark:border-gray-800">
+    <Card className="bg-card relative overflow-hidden border-gray-300 dark:border-gray-800">
+      {/* Refresh overlay */}
+      {isRefreshing && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex items-center justify-center p-0 md:right-auto md:left-6 md:justify-start">
+          <div className="flex items-center gap-2 rounded-md bg-white/85 px-3 py-1 shadow-lg backdrop-blur-sm dark:bg-black/70">
+            <div className="h-3 w-3 animate-pulse rounded-full bg-emerald-500" />
+            <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Refreshing offers</div>
+          </div>
+        </div>
+      )}
+
       <div className="overflow-x-auto">
         <Table<P2POffer>
           columns={columns}
-          rows={offers}
+          rows={rows}
+          getRowKey={(r) => r.offer_id}
           isLoading={isLoading}
+          isRefreshing={isRefreshing}
           classNameLayout="rounded-xl"
           nullDataContext="No offers match your filters"
         />

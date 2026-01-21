@@ -69,6 +69,7 @@ export class WebSocketManager {
     this.ws = new WebSocket(url);
 
     this.ws.onopen = () => {
+      console.log('[WebSocket] Connected');
       this.isConnecting = false;
       this.shouldReconnect = true;
       this.reconnectAttempts = 0;
@@ -77,6 +78,7 @@ export class WebSocketManager {
     };
 
     this.ws.onmessage = (event) => {
+      console.log('[WebSocket] Message received:', event.data);
       try {
         if (event.data === HEARTBEAT_ACK) {
           this.connectionDeadline = Date.now() + HEARTBEAT_TIMEOUT_MS;
@@ -170,14 +172,10 @@ export class WebSocketManager {
     }
   }
 
-  sendRaw(data: string): boolean {
+  sendRaw(data: string) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      try {
-        this.ws.send(data);
-        return true;
-      } catch {
-        return false;
-      }
+      this.ws.send(data);
+      return true;
     }
     return false;
   }
@@ -275,3 +273,6 @@ export const getWebSocketManager = (): WebSocketManager => {
   }
   return wsManagerInstance;
 };
+
+// Convenience singleton instance for ease of use
+export const wsManager = getWebSocketManager();
