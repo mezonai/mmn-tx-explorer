@@ -2,6 +2,7 @@ import { Chip } from '@/components/shared';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { ETransferType, getTransactionTypeLabel } from '@/modules/transaction';
+import { Transaction, Award04, Wallet02, Cube01 } from '@/assets/icons';
 
 interface TypeBadgesProps {
   type: ETransferType;
@@ -33,11 +34,31 @@ const getTransactionTypeInfo = (type: ETransferType) => {
   }
 };
 
+const getTransactionTypeIcon = (type: ETransferType) => {
+  switch (type) {
+    case ETransferType.DonationCampaign:
+      return { icon: Award04, iconColor: 'text-green-600' };
+    case ETransferType.WithdrawCampaign:
+      return { icon: Wallet02, iconColor: 'text-blue-600' };
+    case ETransferType.GiveCoffee:
+    case ETransferType.DongGiveCoffee:
+      return { icon: Cube01, iconColor: 'text-orange-600' };
+    case ETransferType.P2PTrading:
+      return { icon: Transaction, iconColor: 'text-teal-600' };
+    case ETransferType.TokenTransfer:
+    default:
+      return { icon: Transaction, iconColor: 'text-yellow-600' };
+  }
+};
+
 export const TypeBadges = ({ className, type }: TypeBadgesProps) => {
-  // Debug: log the incoming type and its label so we can trace unexpected values
+  const info = getTransactionTypeIcon(type);
+  const TypeIcon = info.icon;
+
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      <Chip variant="default" className={cn(getTransactionTypeInfo(type), 'gap-1.5 rounded-md')}>
+      <Chip variant="default" className={cn(getTransactionTypeInfo(type), 'gap-2 rounded-md')}>
+        <TypeIcon className={cn('size-3', info.iconColor)} strokeWidth={1.5} />
         <span>{getTransactionTypeLabel(type)}</span>
       </Chip>
     </div>

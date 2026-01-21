@@ -119,6 +119,24 @@ export const Table = <T,>({
         }
       };
 
+      // Support full-width rows: if the row declares `fullRow` we render a single td with colSpan
+      if ((row as any).fullRow) {
+        return (
+          <tr
+            key={rowKey}
+            className={cn('border-b', hasClickHandler && 'hover:bg-muted/100 cursor-pointer transition-colors')}
+            onClick={hasClickHandler ? handleRowClick : undefined}
+            role={hasClickHandler ? 'button' : undefined}
+            tabIndex={hasClickHandler ? 0 : undefined}
+            onKeyDown={hasClickHandler ? handleKeyDown : undefined}
+          >
+            <td colSpan={validColumns.length} className="p-4">
+              <div className="w-full">{(row as any).__fullWidthContent}</div>
+            </td>
+          </tr>
+        );
+      }
+
       return (
         <tr
           key={rowKey}
@@ -134,7 +152,7 @@ export const Table = <T,>({
             return (
               <td key={columnIndex} className="p-4">
                 <div
-                  className={cn('flex', {
+                  className={cn('flex items-start', {
                     'justify-center': align === 'center',
                     'justify-end': align === 'right',
                     'justify-start': align === 'left' || !align,
@@ -189,6 +207,26 @@ export const Table = <T,>({
             }
           };
 
+          // Support full-width rows in virtualized table as well
+          if ((row as any).fullRow) {
+            return (
+              <tr
+                key={rowKey}
+                className={cn('border-b', hasClickHandler && 'hover:bg-muted/50 cursor-pointer transition-colors')}
+                onClick={hasClickHandler ? handleRowClick : undefined}
+                role={hasClickHandler ? 'button' : undefined}
+                tabIndex={hasClickHandler ? 0 : undefined}
+                onKeyDown={hasClickHandler ? handleKeyDown : undefined}
+                ref={rowVirtualizer.measureElement}
+                data-index={index}
+              >
+                <td colSpan={validColumns.length} className="p-4">
+                  <div className="w-full">{(row as any).__fullWidthContent}</div>
+                </td>
+              </tr>
+            );
+          }
+
           return (
             <tr
               key={rowKey}
@@ -206,7 +244,7 @@ export const Table = <T,>({
                 return (
                   <td key={columnIndex} className="p-4">
                     <div
-                      className={cn('flex', {
+                      className={cn('flex items-start', {
                         'justify-center': align === 'center',
                         'justify-end': align === 'right',
                         'justify-start': align === 'left' || !align,
