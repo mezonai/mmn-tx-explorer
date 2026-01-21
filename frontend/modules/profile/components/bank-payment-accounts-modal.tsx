@@ -175,8 +175,7 @@ export const BankPaymentAccountsModal = ({ isOpen, onClose, paymentInfo }: BankP
                                 checked={isPrimary}
                                 onChange={(e) => setIsPrimary(e.target.checked)}
                             />
-                            <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-brand-primary/50 rounded-full peer dark:bg-muted/50 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-border peer-checked:bg-brand-primary"></div>
-                        </label>
+                            <div className="bg-muted peer-focus:ring-brand-primary/50 dark:bg-muted/50 peer-checked:bg-brand-primary dark:peer-checked:bg-brand-primary after:content-[''] after:bg-white after:border-gray-300 after:rounded-full after:transition-all peer-focus:outline-none peer-focus:ring-2 peer-checked:after:translate-x-full peer-checked:after:border-white after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:border dark:border-border h-6 w-11 rounded-full peer"></div>                        </label>
                     </div>
 
                     {/* Note Box - Reuse PaymentSection style */}
