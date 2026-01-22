@@ -152,7 +152,6 @@ export function AppProvider({ children }: AppProviderProps) {
         const currentParams = new URLSearchParams(searchParams.toString());
         currentParams.delete('authCode');
         const newUrl = currentParams.toString() ? `${pathname}?${currentParams.toString()}` : pathname;
-        console.log(newUrl);
         router.replace(newUrl);
         toast.success('Login successful!');
       } catch {
