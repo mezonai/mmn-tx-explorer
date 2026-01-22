@@ -71,21 +71,6 @@ export function AppProvider({ children }: AppProviderProps) {
     const localTokenStr = localStorage.getItem(STORAGE_KEYS.TOKEN);
     const localToken = localTokenStr ? safeJsonParse(localTokenStr) : null;
 
-    if (localToken) {
-      (async () => {
-        try {
-          await AuthenticationService.refreshLogin(localToken.refresh_token);
-          const refreshedToken = safeJsonParse<{ access_token?: string }>(localStorage.getItem(STORAGE_KEYS.TOKEN));
-          if (refreshedToken?.access_token) {
-            wsManager.connect(refreshedToken.access_token);
-          }
-        } catch {
-          resetSession();
-          toast.error('Session expired, please log in again.');
-        }
-      })();
-    }
-
     const lightClientStr = localStorage.getItem(STORAGE_KEYS.LIGHT_CLIENT);
     const lightClient = lightClientStr ? safeJsonParse(lightClientStr) : null;
 
@@ -108,7 +93,11 @@ export function AppProvider({ children }: AppProviderProps) {
     }
 
     const userStored = localStorage.getItem(STORAGE_KEYS.USER_INFO);
-    if (userStored) {
+    if (userStored && localToken) {
+      const tokenData = safeJsonParse<{ access_token?: string }>(localStorage.getItem(STORAGE_KEYS.TOKEN));
+      if (tokenData?.access_token) {
+        wsManager.connect(tokenData.access_token);
+      }
       const u = safeJsonParse(userStored);
       setUser(u);
       setIsAuthenticated(true);
@@ -118,10 +107,6 @@ export function AppProvider({ children }: AppProviderProps) {
       const kpStr = localStorage.getItem(STORAGE_KEYS.KEY_PAIR);
       if (kpStr) setKeypair(safeJsonParse(kpStr));
 
-      const tokenData = safeJsonParse<{ access_token?: string }>(localStorage.getItem(STORAGE_KEYS.TOKEN));
-      if (tokenData?.access_token) {
-        wsManager.connect(tokenData.access_token);
-      }
       return;
     }
     const code = searchParams.get('authCode');
