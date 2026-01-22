@@ -80,9 +80,16 @@ jobs:
           NEXT_PUBLIC_WEBSOCKET_URL: ${{ vars.NEXT_PUBLIC_WEBSOCKET_URL }}
           NEXT_PUBLIC_MEZON_SERVER_KEY: ${{ secrets.NEXT_PUBLIC_MEZON_SERVER_KEY }}
         run: |
+          mkdir -p deploy_tmp
+
           cd frontend
           npm ci
           npm run build
+
+          cp -r .next/standalone/* ../deploy_tmp/
+          mkdir -p ../deploy_tmp/public ../deploy_tmp/.next/static
+          cp -r public/* ../deploy_tmp/public/
+          cp -r .next/static/* ../deploy_tmp/.next/static/
 
           TAG_NAME="${{ inputs.target_tag }}"
           if [ -z "$TAG_NAME" ]; then TAG_NAME="v0.0.0"; fi
@@ -176,10 +183,10 @@ jobs:
           scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} frontend.env ${{ vars.HOST_ALIAS }}:/tmp/frontend_tmp.env 
 
           echo "==> Syncing Frontend build to target..."          
-          rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" deploy_tmp/.next/standalone/ ${{ vars.HOST_ALIAS }}:/opt/frontend/.next/standalone/
-          rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" deploy_tmp/public/ ${{ vars.HOST_ALIAS }}:/opt/frontend/.next/standalone/public/
-          rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" deploy_tmp/.next/static/ ${{ vars.HOST_ALIAS }}:/opt/frontend/.next/standalone/.next/static/
-    
+          rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" deploy_tmp/.next/standalone/ ${{ vars.HOST_ALIAS }}:/opt/frontend/
+          rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" deploy_tmp/public/ ${{ vars.HOST_ALIAS }}:/opt/frontend/public/
+          rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" deploy_tmp/.next/static/ ${{ vars.HOST_ALIAS }}:/opt/frontend/.next/static/
+
           echo "==> Applying configuration on server..."
           ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS}} "
             set -e 
