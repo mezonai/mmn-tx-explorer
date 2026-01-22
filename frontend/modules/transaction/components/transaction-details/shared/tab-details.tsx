@@ -9,6 +9,11 @@ import {
   TypeBadges,
   TypeBadgesSkeleton,
 } from '@/modules/transaction/components/transaction-list/list/shared/type-badges';
+import {
+  FromToAddresses,
+  FromToAddressesSkeleton,
+} from '@/modules/transaction/components/transaction-list/list/shared/from-to-addresses';
+import { ETransactionOrientation } from '@/modules/transaction/enums';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -41,12 +46,6 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
       skeletonContent: <Skeleton className="h-5 w-full md:w-150" />,
     },
     {
-      headerContent: 'Status',
-      dataKey: 'status',
-      renderCell: (tx) => <TxStatusBadge status={tx.status} />,
-      skeletonContent: <Skeleton className="h-5 w-20" />,
-    },
-    {
       headerContent: 'Block',
       dataKey: 'block_number',
       renderCell: (tx) => (
@@ -58,6 +57,18 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
         </Button>
       ),
       skeletonContent: <Skeleton className="h-5 w-15" />,
+    },
+    {
+      headerContent: 'Status',
+      dataKey: 'status',
+      renderCell: (tx) => <TxStatusBadge status={tx.status} />,
+      skeletonContent: <Skeleton className="h-5 w-20" />,
+    },
+    {
+      headerContent: 'Transaction Type',
+      dataKey: 'transaction_extra_info_type' as keyof ITransaction,
+      renderCell: (tx) => <TypeBadges type={tx.transaction_extra_info_type} />,
+      skeletonContent: <TypeBadgesSkeleton />,
     },
     {
       headerContent: 'Timestamp',
@@ -77,32 +88,16 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
       skeletonContent: <Skeleton className="h-5 w-1/2" />,
     },
     {
-      headerContent: 'From',
-      dataKey: 'from_address',
+      headerContent: 'From / To',
+      dataKey: 'from_to' as keyof ITransaction,
       renderCell: (tx) => (
-        <div className="flex items-center gap-2">
-          <div className="flex-grow md:flex-grow-0">
-            <Truncate className="text-xs md:hidden">{tx.from_address}</Truncate>
-            <span className="hidden text-xs md:block">{tx.from_address}</span>
-          </div>
-          <CopyButton textToCopy={tx.from_address} className="text-muted-foreground size-fit flex-shrink-0" />
-        </div>
+        <FromToAddresses
+          fromAddress={tx.from_address}
+          toAddress={tx.to_address}
+          orientation={ETransactionOrientation.Horizontal}
+        />
       ),
-      skeletonContent: <Skeleton className="h-5 w-full md:w-150" />,
-    },
-    {
-      headerContent: 'To',
-      dataKey: 'to_address',
-      renderCell: (tx) => (
-        <div className="flex items-center gap-2">
-          <div className="flex-grow md:flex-grow-0">
-            <Truncate className="text-xs md:hidden">{tx.to_address}</Truncate>
-            <span className="hidden text-xs md:block">{tx.to_address}</span>
-          </div>
-          <CopyButton textToCopy={tx.to_address} className="text-muted-foreground size-fit flex-shrink-0" />
-        </div>
-      ),
-      skeletonContent: <Skeleton className="h-5 w-full md:w-150" />,
+      skeletonContent: <FromToAddressesSkeleton orientation={ETransactionOrientation.Horizontal} />,
     },
     {
       headerContent: 'Value',
@@ -116,12 +111,7 @@ export const TabDetails = ({ transaction }: TabDetailsProps) => {
       ),
       skeletonContent: <Skeleton className="h-5 w-20" />,
     },
-    {
-      headerContent: 'Transaction Type',
-      dataKey: 'transaction_extra_info_type' as keyof ITransaction,
-      renderCell: (tx) => <TypeBadges type={tx.transaction_extra_info_type} />,
-      skeletonContent: <TypeBadgesSkeleton />,
-    },
+
     ...(transaction?.text_data
       ? [
           {
