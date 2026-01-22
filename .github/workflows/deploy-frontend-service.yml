@@ -1,5 +1,7 @@
 name: Deploy Frontend Service
-
+permissions:
+  contents: write
+  
 on: 
   workflow_dispatch:
     inputs:
@@ -11,14 +13,22 @@ on:
         description: "Git ref (branch, tag, or commit)"
         required: true
         default: "main"
+      existing_tag_to_deploy:
+        description: "(Optional) Existing tag to deploy"
+        required: false
+
   workflow_call:
     inputs:
       env:
-        description: "Environment (dev|prod)"
         type: string
         required: true
       ref:
-        description: "Git ref (branch, tag, or commit)"
+        type: string
+        required: true
+      target_tag:
+        type: string
+        required: true
+      skip_build:
         type: string
         required: true
     secrets:
@@ -31,6 +41,8 @@ jobs:
   build:
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
+    outputs:
+      tag_name: ${{ steps.build_frontend.outputs.tag_name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,12 +52,16 @@ jobs:
           fetch-depth: 1
 
       - name: Setup Node.js
+        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
         uses: actions/setup-node@v3
         with:
           node-version: "20"
-          cache: ''
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Build Frontend
+        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
+        id: build_frontend
         env: 
           NEXT_PUBLIC_APP_API_URL: ${{ vars.NEXT_PUBLIC_APP_API_URL }}
           APP_API_URL_INTERNAL: ${{ vars.APP_API_URL_INTERNAL }}
@@ -65,19 +81,73 @@ jobs:
           NEXT_PUBLIC_MEZON_SERVER_KEY: ${{ secrets.NEXT_PUBLIC_MEZON_SERVER_KEY }}
         run: |
           cd frontend
-          npm install
-          rm -rf .next
+          npm ci
           npm run build
-          cd ..
+
+          TAG_NAME="${{ inputs.target_tag }}"
+          if [ -z "$TAG_NAME" ]; then TAG_NAME="v0.0.0"; fi
+          tar -czf ../frontend-build-${{ inputs.env }}.tar.gz .next/standalone .next/static public
+
+          echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
+        
+      - name: Create Release and Upload Bundle
+        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.build_frontend.outputs.tag_name }}
+          name: "FE Release ${{ steps.build_frontend.outputs.tag_name }}"
+          files: frontend-build-${{ inputs.env }}.tar.gz
 
   deploy:
     needs: build
+    if: always()
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
-    env:
-      TARGET_HOST: ${{ inputs.env == 'prod' && 'prod-indexer' || 'dev-indexer' }}
 
     steps:
+      - name: Determine Frontend Tag
+        id: determine_tag
+        run: |
+          TAG_INPUT=""
+          if [ -n "${{ inputs.target_tag }}" ]; then
+            TAG_INPUT="${{ inputs.target_tag }}"
+          elif [ -n "${{ inputs.existing_tag_to_deploy }}" ]; then 
+            TAG_INPUT="${{ inputs.existing_tag_to_deploy }}"
+          elif [ "${{ needs.build.result }}" == "success" ]; then
+            TAG_INPUT="${{ needs.build.outputs.tag_name }}"
+          else
+            echo "::error::Cannot proceed. No existing tag was provided and the build job did not succeed."
+            exit 1
+          fi
+
+          if [[ ! "$TAG_INPUT" == v* ]]; then
+            TAG_TO_DEPLOY="v$TAG_INPUT"
+            echo "==> Prefix 'v' was missing. Standardizing to: $TAG_TO_DEPLOY"
+          else
+            TAG_TO_DEPLOY="$TAG_INPUT"
+          fi
+
+          echo "tag_name=$TAG_TO_DEPLOY" >> $GITHUB_OUTPUT
+
+      - name: Download Frontend Release Bundle
+        if: inputs.existing_tag_to_deploy != ''
+        run: | 
+          set -e 
+          OWNER=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f1)
+          REPO=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f2)
+          TAG_NAME="${{ steps.determine_tag.outputs.tag_name }}"
+          FILENAME="frontend-build-${{ inputs.env }}.tar.gz"
+
+          DOWNLOAD_URL="https://github.com/${OWNER}/${REPO}/releases/download/${TAG_NAME}/${FILENAME}"
+
+          echo "==> Downloading Frontend Bundle from: $DOWNLOAD_URL"
+          mkdir -p deploy_tmp
+          
+          curl -sSL --fail -L -o bundle.tar.gz "$DOWNLOAD_URL"
+          
+          tar -xzf bundle.tar.gz -C deploy_tmp
+          echo "==> Untar successfully deploy_tmp"
+
       - name: Generate FE env file locally
         env:
           NEXT_PUBLIC_APP_API_URL: ${{ vars.NEXT_PUBLIC_APP_API_URL }}
@@ -103,20 +173,20 @@ jobs:
         run: |
           set -e
           echo "==> Copying env file to target server..."
-          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} frontend.env ${{ vars.HOST_ALIAS }}:/tmp/frontend_tmp.env
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} frontend.env ${{ vars.HOST_ALIAS }}:/tmp/frontend_tmp.env 
 
-          echo "==> Syncing Frontend build to target..."
-          rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" frontend/.next/standalone/ ${{ vars.HOST_ALIAS }}:/opt/frontend/.next/standalone/
-          rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" frontend/public/ ${{ vars.HOST_ALIAS }}:/opt/frontend/.next/standalone/public/
-          rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" frontend/.next/static/ ${{ vars.HOST_ALIAS }}:/opt/frontend/.next/standalone/.next/static/
-
+          echo "==> Syncing Frontend build to target..."          
+          rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" deploy_tmp/.next/standalone/ ${{ vars.HOST_ALIAS }}:/opt/frontend/.next/standalone/
+          rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" deploy_tmp/public/ ${{ vars.HOST_ALIAS }}:/opt/frontend/.next/standalone/public/
+          rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" deploy_tmp/.next/static/ ${{ vars.HOST_ALIAS }}:/opt/frontend/.next/standalone/.next/static/
+    
           echo "==> Applying configuration on server..."
-          ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "
-            set -e
-            
+          ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS}} "
+            set -e 
             echo '==> Updating /opt/frontend/frontend.env...'
+
             sudo mv /tmp/frontend_tmp.env /opt/frontend/frontend.env
-            sudo chown mmn:mmn /opt/frontend/frontend.env
+            sudo chown mmn:mmn /opt/frontend/frontend.env 
             sudo chmod 644 /opt/frontend/frontend.env
             
             rm -f /tmp/frontend_tmp.env
@@ -141,7 +211,7 @@ jobs:
           echo "==> Activation complete!"
           EOF
 
-      - name: Health check after deployment
+      - name: Health check after deployment 
         run: |
           echo "==> Checking Frontend status..."
           ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "systemctl is-active frontend-explorer"
