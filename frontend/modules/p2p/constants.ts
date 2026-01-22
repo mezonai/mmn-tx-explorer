@@ -38,3 +38,11 @@ export const P2P_EVENT_TYPES = {
   ORDER_COMPLETED: 'ORDER_COMPLETED',
   OFFER_LIST_REFRESH: 'OFFER_LIST_REFRESH',
 } as const;
+export const EMBED_MESSAGE_THEME = {
+  INDIGO: '#6366f1',
+  EMERAL: '10b981',
+};
+export const P2P_TRADING_ROLE = {
+  BUYER: 'buyer',
+  SELLER: 'seller',
+};

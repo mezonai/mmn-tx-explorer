@@ -1,4 +1,4 @@
-import { OFFERS_STATUS, P2P_TAB } from './constants';
+import { OFFERS_STATUS, P2P_TAB, P2P_TRADING_ROLE } from './constants';
 
 export type BankOption = 'MB' | 'VCB' | 'TCB' | 'ACB' | 'TPBANK' | 'VIETCOMBANK';
 
@@ -130,7 +130,7 @@ export interface LinkLocation {
   start: number;
   end: number;
 }
-
+export type P2PTradingRoleType = (typeof P2P_TRADING_ROLE)[keyof typeof P2P_TRADING_ROLE];
 export interface AutoMessagePayload {
   text: string;
   embed?: IEmbedProps[];
