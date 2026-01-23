@@ -34,9 +34,6 @@ interface UpdateFormProps {
   onSubmit: () => void;
   isEdit?: boolean;
   setExistingSize?: (size: number) => void;
-  unit?: string;
-  maxSize?: number;
-  maxImagesAllowed?: number;
 }
 
 const getImagesize = async (imageCid: string): Promise<number> => {
@@ -64,9 +61,6 @@ export const UpdateForm = ({
   onSubmit,
   isEdit = false,
   setExistingSize,
-  unit = 'MB',
-  maxSize = 20,
-  maxImagesAllowed = 50,
 }: UpdateFormProps) => {
   const [existingImagesSize, setExistingImagesSize] = useState(0);
   const [isFetchingLocalSizes, setIsFetchingLocalSizes] = useState(false);
@@ -91,7 +85,6 @@ export const UpdateForm = ({
 
   const newImagesSize = images.reduce((sum, img) => sum + img.size, 0);
   const totalSize = isEdit ? existingImagesSize + newImagesSize : newImagesSize;
-  const maxTotalSize = maxSize * 1024 * 1024;
 
   const totalImagesCount = isEdit ? ((form as any).existingImageCids?.length || 0) + images.length : images.length;
 
@@ -111,9 +104,6 @@ export const UpdateForm = ({
           totalSize={totalSize}
           totalImagesCount={totalImagesCount}
           isFetchingLocalSizes={isFetchingLocalSizes}
-          unit={unit}
-          maxSize={maxSize}
-          maxImagesAllowed={maxImagesAllowed}
         />
         <Separator className="my-4 w-full" />
         <FormSubmit
@@ -122,7 +112,6 @@ export const UpdateForm = ({
           onSubmit={onSubmit}
           isEdit={isEdit}
           totalSize={totalSize}
-          maxTotalSize={maxTotalSize}
         />
       </CardContent>
     </Card>

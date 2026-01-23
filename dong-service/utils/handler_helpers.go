@@ -125,3 +125,16 @@ func GetUserIDStringFromContext(c *gin.Context) (string, error) {
 	fmt.Println("userID", userID)
 	return userID, nil
 }
+
+func GetZKUserIDFromContext(c *gin.Context) (int64, error) {
+	val, ok := c.Get("user_id")
+	if !ok {
+		return 0, jwt.ErrTokenInvalidClaims
+	}
+
+	if idStr, ok := val.(string); ok {
+		return strconv.ParseInt(idStr, 10, 64)
+	}
+
+	return 0, jwt.ErrTokenInvalidClaims
+}
