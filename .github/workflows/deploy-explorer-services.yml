@@ -42,7 +42,6 @@ jobs:
     outputs:
       target_tag: ${{ steps.get_tag.outputs.target_tag }}
       skip_build: ${{ steps.get_tag.outputs.skip_build}}
-      frontend_tag: ${{ steps.get_tag.outputs.frontend_tag }}
     steps:
       - name: Checkout for git history
         uses: actions/checkout@v4
@@ -59,12 +58,10 @@ jobs:
             echo "==> Mode: Deploy Existing Tag"
             echo "target_tag=${{ inputs.existing_tag_to_deploy }}" >> $GITHUB_OUTPUT
             echo "skip_build=true" >> $GITHUB_OUTPUT
-            echo "frontend_tag=${{ inputs.existing_tag_to_deploy }}-${ENV_SUFFIX}" >> $GITHUB_OUTPUT
           elif [ -n "${{ inputs.new_tag_to_build }}" ]; then
             echo "==> Mode: Build New Tag (Manual)"
             echo "target_tag=${{ inputs.new_tag_to_build }}" >> $GITHUB_OUTPUT
             echo "skip_build=false" >> $GITHUB_OUTPUT
-            echo "frontend_tag=${{ inputs.new_tag_to_build }}-${ENV_SUFFIX}" >> $GITHUB_OUTPUT
           else 
             LATEST_TAG=$(git tag -l --sort=-v:refname | head -n 1)
             if [ -z "$LATEST_TAG" ]; then
@@ -82,7 +79,6 @@ jobs:
             fi
             echo "target_tag=${NEW_TAG}" >> $GITHUB_OUTPUT
             echo "skip_build=false" >> $GITHUB_OUTPUT
-            echo "frontend_tag=${NEW_TAG}-${ENV_SUFFIX}" >> $GITHUB_OUTPUT
           fi
 
   deploy-indexer:
@@ -121,7 +117,7 @@ jobs:
     with:
       env: ${{ inputs.env }}
       ref: ${{ inputs.ref }}
-      target_tag: ${{ needs.determine_tags.outputs.frontend_tag }} 
+      target_tag: ${{ needs.determine_tags.outputs.target_tag }} 
       skip_build: ${{ needs.determine_tags.outputs.skip_build }}
     secrets:
       NEXT_PUBLIC_COBAR_API_KEY: ${{ secrets.NEXT_PUBLIC_COBAR_API_KEY }}
