@@ -51,7 +51,11 @@ func (s *EventService) SendEvent(event *models.Event) error {
 }
 
 func SendSocketEvent(receiveAddr string, eventType string, payload map[string]any) {
-	p, _ := json.Marshal(payload)
+	p, err := json.Marshal(payload)
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to marshal socket event payload")
+		return
+	}
 
 	event := &models.Event{
 		ID:             uuid.New(),
@@ -62,6 +66,7 @@ func SendSocketEvent(receiveAddr string, eventType string, payload map[string]an
 	}
 
 	if Event == nil {
+		logger.Error().Msg("Event service not initialized")
 		return
 	}
 
