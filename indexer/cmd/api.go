@@ -16,7 +16,6 @@ import (
 
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/handlers"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/middleware"
-	"github.com/mezonai/mmn-tx-explorer/indexer/internal/services"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/worker"
 
@@ -62,13 +61,6 @@ func RunAPI(cmd *cobra.Command, args []string) {
 		log.Info().Int("intervalMinutes", config.Cfg.StatsWorker.IntervalMinutes).Int("timeoutMinutes", config.Cfg.StatsWorker.TimeoutMinutes).Msg("Starting stats recalculation worker")
 		statsWorker := worker.NewStatsRecalculationWorker(mainStorage, config.Cfg.StatsWorker.IntervalMinutes, config.Cfg.StatsWorker.TimeoutMinutes)
 		statsWorker.Start()
-	}
-
-	// Initialize Event Service if configured so SendSocketEventAsync can be used
-	if config.Cfg.Event.APIURL != "" {
-		if err := services.InitEventService(config.Cfg.Event.APIURL, config.Cfg.Event.APIKey); err != nil {
-			log.Error().Err(err).Msg("Failed to initialize Event Service")
-		}
 	}
 
 	r := gin.New()
