@@ -121,7 +121,7 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
     {
       headerContent: 'ACTION',
       renderCell: (offer) => (
-        <div className="w-[60%]">
+        <div className="mx-auto w-[60%]">
           {offer.has_active_order ? (
             <div className="group relative mx-auto w-full overflow-hidden rounded-lg border border-amber-500/50 bg-amber-500/10 px-1 shadow-[0_0_10px_-3px_rgba(245,158,11,0.2)] backdrop-blur-sm">
               <div className="absolute inset-0 animate-pulse bg-[linear-gradient(45deg,transparent_25%,rgba(245,158,11,0.5)_25%,rgba(245,158,11,0.5)_50%,transparent_50%,transparent_75%,rgba(245,158,11,0.5)_75%,rgba(245,158,11,0.5)_100%)] bg-size-[12px_12px] opacity-20 dark:opacity-10" />
@@ -141,7 +141,7 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
               onClick={() => {
                 router.push(ROUTES.P2P_TRADING_ROOM(offer.offer_id, 'offer'));
               }}
-              className="w-full rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600"
+              className="w-full rounded-lg bg-emerald-500 px-6 py-2 text-white transition hover:bg-emerald-600"
             >
               Buy Mezon đồng
             </Button>
@@ -162,11 +162,11 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
               OPEN
             </Chip>
           ) : offer.status === OFFERS_STATUS.CONFIRMED ? (
-            <div className="flex w-full items-center gap-2">
-              <div className="flex-1">
-                <CancelConfirmDialog offer={offer} />
+            <div className="relative flex items-center justify-center">
+              <CancelConfirmDialog offer={offer} />
+              <div className="absolute left-full ml-2">
+                <ShareOfferModal offer={offer} />
               </div>
-              <ShareOfferModal offer={offer} />
             </div>
           ) : (
             <Chip variant="default" className="w-full rounded-lg justify-center py-2">
