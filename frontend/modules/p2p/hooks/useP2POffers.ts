@@ -29,7 +29,6 @@ export const useP2POffers = (
     if (!wsManager || !enabled) return;
 
     const handleOfferListRefresh = () => {
-      console.log('[WebSocket] Received offer list refresh event');
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }

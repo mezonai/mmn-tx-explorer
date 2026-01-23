@@ -69,7 +69,6 @@ export class WebSocketManager {
     this.ws = new WebSocket(url);
 
     this.ws.onopen = () => {
-      console.log('[WebSocket] Connected');
       this.isConnecting = false;
       this.shouldReconnect = true;
       this.reconnectAttempts = 0;
@@ -78,7 +77,6 @@ export class WebSocketManager {
     };
 
     this.ws.onmessage = (event) => {
-      console.log('[WebSocket] Message received:', event.data);
       try {
         if (event.data === HEARTBEAT_ACK) {
           this.connectionDeadline = Date.now() + HEARTBEAT_TIMEOUT_MS;
