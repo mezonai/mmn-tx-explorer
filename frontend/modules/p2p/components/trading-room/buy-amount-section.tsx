@@ -14,6 +14,7 @@ interface BuyAmountSectionProps {
   onConfirmBuy: (amountMZD: number, amountVND: number) => void;
   isLoading?: boolean;
   extraDisabled?: boolean;
+  isSeller?: boolean;
 }
 
 const getRawValue = (val: string): number => {
@@ -25,6 +26,7 @@ export const BuyAmountSection = ({
   onConfirmBuy,
   isLoading = false,
   extraDisabled = false,
+  isSeller = false,
 }: BuyAmountSectionProps) => {
   const [amountMZD, setAmountMZD] = useState<number>(0);
   const [displayValue, setDisplayValue] = useState<string>('');
@@ -53,7 +55,9 @@ export const BuyAmountSection = ({
   let placeholder = `Minimum: ${formatCurrency(initialMin)} - Maximum: ${formatCurrency(effectiveMax)}`;
   let isDisabled = extraDisabled;
 
-  if (available === 0) {
+  if (isSeller) {
+    isDisabled = true;
+  } else if (available === 0) {
     placeholder = 'Minimum: 0 - Maximum: 0';
     isDisabled = true;
   } else if (available < initialMin) {
