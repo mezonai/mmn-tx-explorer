@@ -155,9 +155,6 @@ jobs:
 
           curl -sSL --fail -L -o "$FRONTEND_PATH" "$DOWNLOAD_URL"
 
-          echo "==> Contents of build_frontend after untar:"
-          ls -lh build_frontend
-
 
       - name: Generate remote setup script
         env:
@@ -192,18 +189,11 @@ jobs:
           echo "==> Applying configuration on server..."
           ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS}} "
             set -e 
-            echo '==> /opt/frontend content:'
-            ls -lh /opt/frontend
-
+            echo '==> Extracting frontend bundle
             sudo rm -rf /opt/frontend/*
             sudo tar -xzf /tmp/frontend.tar.gz -C /opt/frontend
 
-            echo '==> frontend check:'
-            ls -lh /opt/frontend
-            ls -lh /opt/frontend/.next || echo '.next not found'
-            
             echo '==> Updating /opt/frontend/frontend.env...'
-
             sudo mv /tmp/frontend_tmp.env /opt/frontend/frontend.env
             sudo chown mmn:mmn /opt/frontend
             sudo chmod 644 /opt/frontend/frontend.env
