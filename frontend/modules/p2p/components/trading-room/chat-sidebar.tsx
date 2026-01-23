@@ -8,15 +8,21 @@ import { ChannelMessage, LightSocket } from 'mezon-light-sdk';
 import { STORAGE_KEYS } from '@/constant';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { formatChatTime, isSameDay } from '../../util';
+import { formatChatTime, generateMarkdownPayload, isSameDay } from '../../util';
+import { P2POrder } from '../../types';
+import { APP_CONFIG } from '@/configs/app.config';
+import { ROUTES } from '@/configs/routes.config';
+import { NumberUtil } from '@/utils';
 
 interface ChatSidebarProps {
   sellerId: string;
+  initialOrder?: P2POrder | null;
+  onInitialMessageSent?: () => void;
 }
 
 const MAX_CHAR_LIMIT = 5000;
 
-export const ChatSidebar = ({ sellerId }: ChatSidebarProps) => {
+export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: ChatSidebarProps) => {
   const [messages, setMessages] = useState<ChannelMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isConnected, setIsConnected] = useState(false);
@@ -31,10 +37,19 @@ export const ChatSidebar = ({ sellerId }: ChatSidebarProps) => {
 
   const isMobileOpenRef = useRef(isMobileOpen);
 
+  const initialOrderRef = useRef(initialOrder);
+  const onInitialMessageSentRef = useRef(onInitialMessageSent);
+  const hasSentAutoMessageRef = useRef(false);
+
   const { lightClient } = useLightClient();
   const { user } = useUser();
 
   const [showLimitWarning, setShowLimitWarning] = useState(false);
+
+  useEffect(() => {
+    initialOrderRef.current = initialOrder;
+    onInitialMessageSentRef.current = onInitialMessageSent;
+  }, [initialOrder, onInitialMessageSent]);
 
   useEffect(() => {
     isMobileOpenRef.current = isMobileOpen;
@@ -71,7 +86,6 @@ export const ChatSidebar = ({ sellerId }: ChatSidebarProps) => {
           if (!isValidSender) return;
 
           const isMe = msg.sender_id === user?.id;
-
           setMessages((prev) => {
             if (prev.find((m) => m.message_id === msg.message_id)) return prev;
             return [...prev, msg];
@@ -82,7 +96,66 @@ export const ChatSidebar = ({ sellerId }: ChatSidebarProps) => {
           }
         });
 
-        setIsConnected(true);
+        if (initialOrderRef.current && !hasSentAutoMessageRef.current && channelIdRef.current) {
+          try {
+            hasSentAutoMessageRef.current = true;
+
+            const order = initialOrderRef.current;
+            const mzdAmount = NumberUtil.formatWithCommas(order.amount);
+            const vndAmount = NumberUtil.formatWithCommas(order.amount * order.price_rate);
+            const fullUrl = process.env.NEXT_PUBLIC_CHAT_APP_ZK_API_URL || window.location.origin;
+            const domain = new URL(fullUrl).origin;
+            const orderLink = `${domain}${ROUTES.P2P_TRADING_ROOM(order.order_id)}`;
+
+            const textContent = `Hello, I would like to buy your offer. Please check the order details below.`;
+            const mk = generateMarkdownPayload(textContent);
+
+            const embedElement = {
+              color: '#6366f1',
+              title: `Click here to view Order #${order.order_id}`,
+              url: orderLink,
+              description: 'New P2P Order',
+              fields: [
+                {
+                  name: 'Buy Amount',
+                  value: `${mzdAmount} ${APP_CONFIG.CHAIN_SYMBOL}`,
+                  inline: true,
+                },
+                {
+                  name: 'Total Price',
+                  value: `${vndAmount} VND`,
+                  inline: true,
+                },
+                {
+                  name: 'Exchange Rate',
+                  value: `${NumberUtil.formatWithCommas(order.price_rate)}  VND/${APP_CONFIG.CHAIN_SYMBOL}`,
+                  inline: true,
+                },
+              ],
+              timestamp: new Date().toISOString(),
+              footer: {
+                text: 'Mezon Dong P2P Trading',
+              },
+            };
+
+            await socket.sendDM(channelIdRef.current, {
+              mk: mk,
+              t: textContent,
+              embed: [embedElement],
+            });
+
+            if (onInitialMessageSentRef.current) {
+              onInitialMessageSentRef.current();
+            }
+          } catch (err) {
+            console.error('Failed to send auto message:', err);
+            hasSentAutoMessageRef.current = false;
+          }
+        }
+
+        if (isMounted) {
+          setIsConnected(true);
+        }
       } catch (err) {
         console.error('Failed to initialize chat:', err);
       }
@@ -107,7 +180,12 @@ export const ChatSidebar = ({ sellerId }: ChatSidebarProps) => {
     setInputValue('');
     setShowLimitWarning(false);
     try {
-      await socketRef.current.sendDM(channelIdRef.current, { t: content });
+      const mk = generateMarkdownPayload(content);
+
+      await socketRef.current.sendDM(channelIdRef.current, {
+        t: content,
+        mk: mk,
+      });
     } catch (err) {
       console.error('Send DM failed:', err);
     }
@@ -125,8 +203,6 @@ export const ChatSidebar = ({ sellerId }: ChatSidebarProps) => {
     }
 
     setInputValue(newValue);
-
-    // Resize logic
     target.style.height = 'auto';
     target.style.height = `${Math.min(target.scrollHeight, 150)}px`;
   };
@@ -165,7 +241,7 @@ export const ChatSidebar = ({ sellerId }: ChatSidebarProps) => {
 
       <div
         className={cn(
-          'fixed inset-0 z-50 flex flex-col bg-white transition-transform duration-300 md:relative md:inset-auto md:z-0 md:flex md:h-full md:w-87.5 md:translate-y-0 md:border-l md:border-gray-200 lg:w-125 dark:bg-black dark:md:border-gray-800',
+          'fixed inset-0 z-50 flex h-full flex-col bg-white transition-transform duration-300 md:sticky md:top-24 md:z-0 md:flex md:h-[calc(100vh-140px)] md:w-87.5 md:translate-y-0 lg:w-125 dark:bg-black dark:md:border-gray-800',
           isMobileOpen ? 'translate-y-0' : 'translate-y-full md:translate-y-0'
         )}
       >
@@ -229,19 +305,19 @@ export const ChatSidebar = ({ sellerId }: ChatSidebarProps) => {
             const isMe = msg.sender_id === user?.id || msg.sender_id === 'me';
             const prevMsg = messages[idx - 1];
             const nextMsg = messages[idx + 1];
-            const showDateDivider = !prevMsg || !isSameDay(msg.create_time, prevMsg.create_time);
+            const showDateDivider = !prevMsg || !isSameDay(msg.create_time_seconds, prevMsg.create_time_seconds);
             const isFirstInGroup = !prevMsg || prevMsg.sender_id !== msg.sender_id || showDateDivider;
             const isLastInGroup =
               !nextMsg ||
               nextMsg.sender_id !== msg.sender_id ||
-              (nextMsg && !isSameDay(msg.create_time, nextMsg.create_time));
+              (nextMsg && !isSameDay(msg.create_time_seconds, nextMsg.create_time_seconds));
 
             return (
               <div key={msg.message_id}>
                 {showDateDivider && (
                   <div className="my-6 flex items-center justify-center">
                     <span className="rounded-full border border-gray-200 bg-gray-100 px-3 py-1 text-[10px] font-bold text-gray-500 uppercase dark:border-gray-800 dark:bg-gray-900">
-                      {new Date(Number(msg.create_time)).toLocaleDateString([], {
+                      {new Date(Number(msg.create_time_seconds) * 1000).toLocaleDateString([], {
                         month: 'short',
                         day: 'numeric',
                         year: 'numeric',
@@ -295,12 +371,31 @@ export const ChatSidebar = ({ sellerId }: ChatSidebarProps) => {
                         isMe ? (isFirstInGroup ? 'rounded-tr-none' : '') : isFirstInGroup ? 'rounded-tl-none' : ''
                       )}
                     >
-                      {msg.content.t}
+                      {msg.content.embed && msg.content.embed.length > 0 ? (
+                        <div className="flex flex-col gap-2">
+                          {msg.content.t && <p>{msg.content.t}</p>}
+
+                          <div className="flex flex-col rounded-md border border-black/5 bg-black/5 p-3 dark:border-white/10 dark:bg-white/5">
+                            {msg.content.embed[0].fields && (
+                              <div className="grid grid-cols-1 gap-1 text-xs opacity-90">
+                                {msg.content.embed[0].fields.map((field: any, i: number) => (
+                                  <div key={i} className="flex gap-1">
+                                    <span className="opacity-70">{field.name}:</span>
+                                    <span className="font-medium">{field.value}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        msg.content.t
+                      )}
                     </div>
                   </div>
                   {isLastInGroup && (
                     <div className={cn('mt-1 px-1 text-[9px] font-bold text-gray-400 uppercase', !isMe && 'ml-10')}>
-                      {formatChatTime(msg.update_time)}
+                      {formatChatTime(msg.create_time_seconds)}
                     </div>
                   )}
                 </div>

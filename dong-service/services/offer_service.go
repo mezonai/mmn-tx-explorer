@@ -40,7 +40,6 @@ type IOfferService interface {
 	CountOffers(ctx context.Context, walletAddress *string, minPrice *string, maxPrice *string, statuses []string, symbol *string, rate *string, fromAmount *string, toAmount *string) (int64, error)
 	GetOfferByID(ctx context.Context, id int64) (*models.Offer, error)
 	GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, int64, error)
-	UpdateOfferStatus(ctx context.Context, req *models.UpdateOfferStatusRequest) error
 	CancelOffer(ctx context.Context, offerId int64, offer *models.Offer) error
 }
 
@@ -243,80 +242,6 @@ func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddre
 	return offers, count, nil
 }
 
-func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.UpdateOfferStatusRequest) error {
-	exists, err := s.repo.ExistsByTxHash(ctx, req.TxHash)
-	if err != nil {
-		return fmt.Errorf("failed to check existing tx hash: %w", err)
-	}
-	if exists {
-		return constants.ErrTxHashAlreadyUsed
-	}
-
-	offer, err := s.repo.GetOfferByID(ctx, req.OfferID)
-	if err != nil {
-		return fmt.Errorf("failed to get offer: %w", err)
-	}
-
-	// Verify transaction exists in blockchain
-	if s.blockchain != nil && req.Status == constants.TradingConfirmed {
-		if offer.Status != constants.TradingOpen {
-			return fmt.Errorf("offer status invalid for confirmation: %s", offer.Status)
-		}
-		txInfo, err := s.blockchain.GetTransaction(req.TxHash)
-		if err != nil {
-			return fmt.Errorf("failed to verify transaction: %w", err)
-		}
-		if txInfo == nil {
-			return fmt.Errorf("transaction not found in blockchain")
-		}
-
-		if txInfo.Status != constants.TxStatusConfirmed && txInfo.Status != constants.TxStatusFinalized {
-			return fmt.Errorf("transaction not confirmed: status=%d", txInfo.Status)
-		}
-
-		if txInfo.Sender != offer.SellerWalletAddress {
-			return fmt.Errorf("transaction sender mismatch: expected %s, got %s", offer.SellerWalletAddress, txInfo.Sender)
-		}
-
-		if offer.IntermediaryWalletAddress != nil && txInfo.Recipient != *offer.IntermediaryWalletAddress {
-			return fmt.Errorf("transaction recipient mismatch: expected %s, got %s", *offer.IntermediaryWalletAddress, txInfo.Recipient)
-		}
-
-		actualAmount := int64(txInfo.Amount.Uint64() / 1000000)
-		if actualAmount != offer.Amount {
-			return fmt.Errorf("transaction amount mismatch: expected %d, got %d", offer.Amount, actualAmount)
-		}
-	}
-
-	db := database.GetDB()
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-		}
-	}()
-
-	if err = s.repo.UpdateOfferStatus(ctx, req.OfferID, req.Status, tx, &req.TxHash); err != nil {
-		return err
-	}
-
-	if err = tx.Commit(); err != nil {
-		return err
-	}
-
-	if req.Status == constants.TradingFailed {
-		offer, err := s.repo.GetOfferByID(ctx, req.OfferID)
-		if err == nil && offer != nil && offer.IntermediaryWalletAddress != nil && *offer.IntermediaryWalletAddress != "" {
-			s.releaseIntermediaryWallet(ctx, *offer.IntermediaryWalletAddress)
-		}
-	}
-
-	return nil
-}
-
 func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *models.Offer) error {
 	if offer.Status != constants.TradingOpen && offer.Status != constants.TradingConfirmed {
 		return fmt.Errorf("cannot cancel offer with status: %s", offer.Status)
@@ -365,7 +290,7 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 			offer.SellerWalletAddress,
 			offer.Amount,
 			constants.TextDataP2PTrading,
-			constants.ExtraInfoP2PTrading,
+			constants.ExtraInfoP2PTradingOfferCanceled,
 		)
 		if err != nil {
 			logger.Error().Err(err).Int64("offer_id", offerId).Msg(constants.ErrFailedToRefundOfferAmount)

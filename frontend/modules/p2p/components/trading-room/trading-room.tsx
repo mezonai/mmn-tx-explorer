@@ -23,6 +23,7 @@ import { APP_CONFIG } from '@/configs/app.config';
 import { AddressDisplay } from '@/components/shared/address-display';
 import { ROUTES } from '@/configs/routes.config';
 import { ChatSidebar } from './chat-sidebar';
+import { STORAGE_KEYS } from '@/constant';
 
 interface TradingRoomProps {
   orderId: string;
@@ -42,6 +43,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   const offerIdParam = isOfferMode ? orderId : order ? String(order.offer_id) : null;
   const { offer, isLoading: offerLoading } = useP2POffer(offerIdParam);
   const { createOrder, isLoading: isCreatingOrder } = useCreateOrder();
+
+  const [pendingOrderGreeting, setPendingOrderGreeting] = useState<P2POrder | null>(null);
 
   useEffect(() => {
     if (!order || isOfferMode) return;
@@ -71,10 +74,27 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   }, [user?.walletAddress, order, isOfferMode, offer]);
 
   useEffect(() => {
+    if (!order || userRole !== 'buyer') return;
+
+    const shouldSendGreeting = sessionStorage.getItem(STORAGE_KEYS.P2P_PENDING_GREETING(order.order_id));
+
+    if (shouldSendGreeting === 'true') {
+      setPendingOrderGreeting(order);
+    }
+  }, [order, userRole]);
+
+  useEffect(() => {
     if (order?.status) {
       setLocalStatus(null);
     }
   }, [order?.status]);
+
+  const handleAutoMessageSent = () => {
+    if (order) {
+      sessionStorage.removeItem(STORAGE_KEYS.P2P_PENDING_GREETING(order.order_id));
+      setPendingOrderGreeting(null);
+    }
+  };
 
   const handleConfirmBuy = async (amountMZD: number, amountVND: number) => {
     if (!offer || !user?.walletAddress) {
@@ -87,6 +107,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       const newOrder = await createOrder(offer, amountMZD, amountVND);
 
       if (newOrder) {
+        sessionStorage.setItem(STORAGE_KEYS.P2P_PENDING_GREETING(newOrder.order_id), 'true');
         router.push(ROUTES.P2P_TRADING_ROOM(newOrder.order_id));
       }
     } catch (err: any) {
@@ -113,7 +134,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
 
   if ((isOfferMode && offerLoading) || (!isOfferMode && (orderLoading || !order))) {
     return (
-      <div className="flex h-screen flex-col">
+      <div className="relative flex flex-col">
         <div className="bg-card border-border h-14 border-b" />
         <div className="flex-1 p-6">
           <Skeleton className="mb-6 h-20 w-full" />
@@ -144,8 +165,10 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       seller_user_id: '',
     };
 
+    const isSellerOfOffer = user?.walletAddress === offer?.seller_wallet_address;
+
     return (
-      <div className="bg-background flex h-screen flex-col">
+      <div className="bg-background relative flex flex-col">
         <div className="border-border flex h-14 shrink-0 items-center justify-between border-b px-6">
           <div className="flex items-center">
             <Button
@@ -157,7 +180,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-sm flex items-center gap-1 font-bold text-muted-foreground">
+              <h1 className="text-muted-foreground flex items-center gap-1 text-sm font-bold">
                 Buy {APP_CONFIG.CHAIN_SYMBOL} from{' '}
                 <AddressDisplay
                   addressClassName="text-brand-primary"
@@ -165,7 +188,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
                   href={ROUTES.WALLET(offer?.seller_wallet_address)}
                 />
               </h1>
-              <div className="text-xs flex items-center gap-1 text-muted-foreground">
+              <div className="text-muted-foreground flex items-center gap-1 text-xs">
                 Trading with{' '}
                 <AddressDisplay
                   addressClassName="text-brand-primary"
@@ -177,8 +200,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
-          <div className="border-border w-full overflow-y-auto border-b p-6 md:w-7/12 md:border-r md:border-b-0 lg:w-8/12">
+        <div className="flex flex-1 flex-col gap-6 md:flex-row">
+          <div className="border-border w-full p-6 md:w-7/12 lg:w-8/12">
             <ProgressSteps order={displayOrder} />
             {error && (
               <div className="border-destructive/20 bg-destructive/10 text-destructive mb-4 rounded-lg border p-3 text-sm">
@@ -192,6 +215,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
               isLoading={isCreatingOrder}
             />
           </div>
+
           <ChatSidebar sellerId={offer.seller_user_id} />
         </div>
       </div>
@@ -200,7 +224,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
 
   if (!order) {
     return (
-      <div className="flex h-screen flex-col">
+      <div className="relative flex flex-col">
         <div className="bg-card border-border h-14 border-b" />
         <div className="flex flex-1 items-center justify-center p-6">
           <div className="text-center">
@@ -215,11 +239,10 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   const effectiveOrder: P2POrder = localStatus ? { ...order, status: localStatus } : order;
 
   return (
-    <div className="bg-background flex h-screen flex-col">
+    <div className="bg-background relative flex flex-col">
       <TradingRoomHeader order={effectiveOrder} userRole={userRole} />
-
-      <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
-        <div className="border-border w-full overflow-y-auto border-b p-4 md:w-8/12 md:border-r md:border-b-0 lg:w-10/12">
+      <div className="flex flex-1 flex-col gap-6 md:flex-row">
+        <div className="border-border w-full p-4 md:w-8/12 lg:w-10/12">
           <ProgressSteps order={effectiveOrder} />
 
           {userRole === 'buyer' && effectiveOrder.status === 'PENDING' && (
@@ -258,7 +281,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
               </div>
             </div>
 
-            <div className="lg:col-span-4 ">
+            <div className="lg:col-span-4">
               {order && order.bank_info && (
                 <QrCodeCard
                   bank_info={order.bank_info}
@@ -269,7 +292,11 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
             </div>
           </div>
         </div>
-        <ChatSidebar sellerId={userRole === 'buyer' ? order.seller_user_id : order.buyer_user_id} />
+        <ChatSidebar
+          sellerId={userRole === 'buyer' ? order.seller_user_id : order.buyer_user_id}
+          initialOrder={pendingOrderGreeting} // Pass the order object
+          onInitialMessageSent={handleAutoMessageSent}
+        />
       </div>
     </div>
   );

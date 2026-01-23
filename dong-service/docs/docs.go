@@ -570,6 +570,59 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/campaigns/feed_detail/{feed_hash}": {
+            "get": {
+                "description": "Retrieve detailed information of a donation feed post using its hash",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "campaign_feed"
+                ],
+                "summary": "Get Donation Post detail by feed hash",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Feed hash",
+                        "name": "feed_hash",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.DonationCampaignFeed"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/campaigns/list-feed/{campaign_address}": {
             "get": {
                 "description": "List all donation campaign feeds by campaign address",
