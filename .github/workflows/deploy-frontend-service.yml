@@ -154,13 +154,9 @@ jobs:
           mkdir -p build_frontend
 
           curl -sSL --fail -L -o "$FRONTEND_PATH" "$DOWNLOAD_URL"
-          tar -xzf "$FRONTEND_PATH" -C build_frontend
-          echo "==> Untar successfully build_frontend"
 
           echo "==> Contents of build_frontend after untar:"
           ls -lh build_frontend
-          echo "==> .next check:"
-          ls -lh build_frontend/.next || echo "⚠️ .next not found"
 
 
       - name: Generate remote setup script
@@ -190,26 +186,31 @@ jobs:
           echo "==> Copying env file to target server..."
           scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} frontend.env ${{ vars.HOST_ALIAS }}:/tmp/frontend_tmp.env 
 
-          echo "==> Syncing Frontend build to target..."          
-          rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" build_frontend/ ${{ vars.HOST_ALIAS }}:/opt/frontend/
-          
+          echo "==> Copying frontend bundle..."
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} build_frontend/frontend-build-${{ steps.determine_tag.outputs.tag_name }}.tar.gz ${{ vars.HOST_ALIAS }}:/tmp/frontend.tar.gz
+
           echo "==> Applying configuration on server..."
           ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS}} "
             set -e 
             echo '==> /opt/frontend content:'
             ls -lh /opt/frontend
 
-            echo '==> /opt/frontend/.next check:'
+            sudo rm -rf /opt/frontend/*
+            sudo tar -xzf /tmp/frontend.tar.gz -C /opt/frontend
+
+            echo '==> frontend check:'
+            ls -lh /opt/frontend
             ls -lh /opt/frontend/.next || echo '.next not found'
             
             echo '==> Updating /opt/frontend/frontend.env...'
 
             sudo mv /tmp/frontend_tmp.env /opt/frontend/frontend.env
-            sudo chown mmn:mmn /opt/frontend/frontend.env 
+            sudo chown mmn:mmn /opt/frontend
             sudo chmod 644 /opt/frontend/frontend.env
             
             rm -f /tmp/frontend_tmp.env
-          "
+            rm -f /tmp/frontend.tar.gz
+            "
 
       - name: Atomic swap + restart services
         run: |
