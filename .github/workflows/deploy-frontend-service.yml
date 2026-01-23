@@ -79,20 +79,15 @@ jobs:
           NEXT_PUBLIC_WEBSOCKET_URL: ${{ vars.NEXT_PUBLIC_WEBSOCKET_URL }}
           NEXT_PUBLIC_MEZON_SERVER_KEY: ${{ secrets.NEXT_PUBLIC_MEZON_SERVER_KEY }}
         run: |
-          mkdir -p deploy_tmp
+          mkdir -p build_frontend
 
           cd frontend
           npm ci
           npm run build
 
-          cp -r .next/standalone/* ../deploy_tmp/
-          mkdir -p ../deploy_tmp/public ../deploy_tmp/.next/static
-          cp -r public/* ../deploy_tmp/public/
-          cp -r .next/static/* ../deploy_tmp/.next/static/
-
           TAG_NAME="${{ inputs.target_tag }}"
           if [ -z "$TAG_NAME" ]; then TAG_NAME="v0.0.0"; fi
-          tar -czf ../frontend-build-${{ inputs.env }}.tar.gz .next/standalone .next/static public
+          tar -czf ../build_frontend/frontend-build-${TAG_NAME}.tar.gz .next/standalone .next/static public
 
           echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
         
@@ -102,7 +97,7 @@ jobs:
         with:
           tag_name: ${{ steps.build_frontend.outputs.tag_name }}
           name: "FE Release ${{ steps.build_frontend.outputs.tag_name }}"
-          files: frontend-build-${{ inputs.env }}.tar.gz
+          files: build_frontend/frontend-build-${{ steps.build_frontend.outputs.tag_name }}.tar.gz
 
   deploy:
     needs: build
@@ -134,6 +129,8 @@ jobs:
           fi
 
           echo "tag_name=$TAG_TO_DEPLOY" >> $GITHUB_OUTPUT
+          echo "frontend_path=build_frontend/frontend-build-$TAG_TO_DEPLOY" >> $GITHUB_OUTPUT
+
 
       - name: Download Frontend Release Bundle
         if: inputs.existing_tag_to_deploy != ''
@@ -142,17 +139,19 @@ jobs:
           OWNER=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f1)
           REPO=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f2)
           TAG_NAME="${{ steps.determine_tag.outputs.tag_name }}"
-          FILENAME="frontend-build-${{ inputs.env }}.tar.gz"
+          FILENAME="frontend-build-${{ steps.determine_tag.outputs.tag_name }}.tar.gz"
 
           DOWNLOAD_URL="https://github.com/${OWNER}/${REPO}/releases/download/${TAG_NAME}/${FILENAME}"
 
+
           echo "==> Downloading Frontend Bundle from: $DOWNLOAD_URL"
-          mkdir -p deploy_tmp
           
-          curl -sSL --fail -L -o bundle.tar.gz "$DOWNLOAD_URL"
+          mkdir -p build_frontend
+
+          curl -sSL --fail -L -o "$FILENAME" "$DOWNLOAD_URL"
           
-          tar -xzf bundle.tar.gz -C deploy_tmp
-          echo "==> Untar successfully deploy_tmp"
+          tar -xzf "$FILENAME" -C build_frontend --strip-components=1
+          echo "==> Untar successfully build_frontend"
 
       - name: Generate FE env file locally
         env:
@@ -182,10 +181,8 @@ jobs:
           scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} frontend.env ${{ vars.HOST_ALIAS }}:/tmp/frontend_tmp.env 
 
           echo "==> Syncing Frontend build to target..."          
-          rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" deploy_tmp/.next/standalone/ ${{ vars.HOST_ALIAS }}:/opt/frontend/
-          rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" deploy_tmp/public/ ${{ vars.HOST_ALIAS }}:/opt/frontend/public/
-          rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" deploy_tmp/.next/static/ ${{ vars.HOST_ALIAS }}:/opt/frontend/.next/static/
-
+          rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" build_frontend/ ${{ vars.HOST_ALIAS }}:/opt/frontend/
+          
           echo "==> Applying configuration on server..."
           ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS}} "
             set -e 
