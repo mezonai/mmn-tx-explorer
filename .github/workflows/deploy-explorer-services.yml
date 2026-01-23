@@ -1,5 +1,6 @@
-﻿# Tên file: deploy-explorer-services.yml
-name: Deploy Transaction Explorer Services
+﻿name: Deploy Transaction Explorer Services
+permissions:
+  contents: write
 
 on:
   workflow_dispatch:
@@ -12,49 +13,90 @@ on:
         description: "Git ref (branch, tag, or commit)"
         required: true
         default: "main"
+      new_tag_to_build:
+        description: "(Optional) New tag "
+        required: false
+      existing_tag_to_deploy:
+        description: "(Optional) Existing tag"
+        required: false
+      deploy_indexer:
+        description: "Deploy Indexer Service"
+        type: boolean
+        default: true
+      deploy_dong:
+        description: "Deploy Dong Service"
+        type: boolean
+        default: true
+      deploy_frontend:
+        description: "Deploy Frontend Service"
+        type: boolean
+        default: true
 
 jobs:
-  prepare-source:
+  determine_tags:
     runs-on: [self-hosted, Linux, mezon-runner]
+    if: ${{ inputs.deploy_indexer == true || inputs.deploy_dong == true }}
     outputs:
-      git_sha: ${{ steps.get_sha.outputs.git_sha }}
+      target_tag: ${{ steps.get_tag.outputs.target_tag }}
+      skip_build: ${{ steps.get_tag.outputs.skip_build}}
     steps:
-      - name: Checkout
+      - name: Checkout for git history
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref }}
-          clean: false
+          ref: ${{ inputs.ref }} 
+          fetch-depth: 0
 
-      - name: Get short SHA
-        id: get_sha
-        run: echo "git_sha=$(git rev-parse --short=8 HEAD)" >> $GITHUB_OUTPUT
-
-      - name: Upload source code artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: source-code
-          path: .
-          retention-days: 1
+      - name: Calculate new tags
+        id: get_tag
+        run: |
+          if [ -n "${{ inputs.existing_tag_to_deploy }}" ]; then
+            echo "==> Mode: Deploy Existing Tag"
+            echo "target_tag=${{ inputs.existing_tag_to_deploy }}" >> $GITHUB_OUTPUT
+            echo "skip_build=true" >> $GITHUB_OUTPUT
+          elif [ -n "${{ inputs.new_tag_to_build }}" ]; then
+            echo "==> Mode: Build New Tag (Manual)"
+            echo "target_tag=${{ inputs.new_tag_to_build }}" >> $GITHUB_OUTPUT
+            echo "skip_build=false" >> $GITHUB_OUTPUT
+          else 
+            LATEST_TAG=$(git tag -l --sort=-v:refname | head -n 1)
+            if [ -z "$LATEST_TAG" ]; then
+              NEW_TAG="v0.1.0"
+              echo "==> No existing tags found. Starting with initial tag: $NEW_TAG"
+            else
+              echo "==> Latest tag is: $LATEST_TAG"
+              VERSION=$(echo $LATEST_TAG | sed 's/^v//')
+              MAJOR=$(echo $VERSION | cut -d. -f1)
+              MINOR=$(echo $VERSION | cut -d. -f2)
+              PATCH=$(echo $VERSION | cut -d. -f3)
+              NEXT_PATCH=$((PATCH + 1))
+              NEW_TAG="v${MAJOR}.${MINOR}.${NEXT_PATCH}"
+              echo "==> Calculated next tag: $NEW_TAG"
+            fi
+            echo "target_tag=${NEW_TAG}" >> $GITHUB_OUTPUT
+            echo "skip_build=false" >> $GITHUB_OUTPUT
+          fi
 
   deploy-indexer:
-    needs: prepare-source
+    needs: [determine_tags]
+    if: inputs.deploy_indexer == true
     uses: ./.github/workflows/deploy-indexer-service.yml
     with:
       env: ${{ inputs.env }}
       ref: ${{ inputs.ref }}
-      git_sha: ${{ needs.prepare-source.outputs.git_sha }}
-      source_artifact: source-code
+      target_tag: ${{ needs.determine_tags.outputs.target_tag }} 
+      skip_build: ${{ needs.determine_tags.outputs.skip_build }}
     secrets:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
 
   deploy-dong:
-    needs: prepare-source
+    needs: [determine_tags]
+    if: inputs.deploy_dong == true
     uses: ./.github/workflows/deploy-dong-service.yml
     with:
       env: ${{ inputs.env }}
       ref: ${{ inputs.ref }}
-      git_sha: ${{ needs.prepare-source.outputs.git_sha }}
-      source_artifact: source-code
+      target_tag: ${{ needs.determine_tags.outputs.target_tag }} 
+      skip_build: ${{ needs.determine_tags.outputs.skip_build }}
     secrets:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
@@ -62,27 +104,23 @@ jobs:
       REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
       AES_SECRET_KEY: ${{ secrets.AES_SECRET_KEY }}
       EVENT_API_KEY: ${{ secrets.EVENT_API_KEY }}
+      VERIFYING_KEY_B64: ${{ secrets.VERIFYING_KEY_B64 }}
  
   deploy-frontend:
-    needs: prepare-source
+    if: inputs.deploy_frontend == true
     uses: ./.github/workflows/deploy-frontend-service.yml
     with:
       env: ${{ inputs.env }}
       ref: ${{ inputs.ref }}
-      git_sha: ${{ needs.prepare-source.outputs.git_sha }}
-      source_artifact: source-code
     secrets:
-      OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
       NEXT_PUBLIC_COBAR_API_KEY: ${{ secrets.NEXT_PUBLIC_COBAR_API_KEY }}
+      NEXT_PUBLIC_MEZON_SERVER_KEY: ${{ secrets.NEXT_PUBLIC_MEZON_SERVER_KEY }}
 
   deploy-socket:
-    needs: prepare-source
     uses: ./.github/workflows/deploy-socket-service.yml
     with:
       env: ${{ inputs.env }}
       ref: ${{ inputs.ref }}
-      git_sha: ${{ needs.prepare-source.outputs.git_sha }}
-      source_artifact: source-code
     secrets:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}

@@ -14,6 +14,7 @@ interface BuyAmountSectionProps {
   onConfirmBuy: (amountMZD: number, amountVND: number) => void;
   isLoading?: boolean;
   extraDisabled?: boolean;
+  isSeller?: boolean;
 }
 
 const getRawValue = (val: string): number => {
@@ -25,6 +26,7 @@ export const BuyAmountSection = ({
   onConfirmBuy,
   isLoading = false,
   extraDisabled = false,
+  isSeller = false,
 }: BuyAmountSectionProps) => {
   const [amountMZD, setAmountMZD] = useState<number>(0);
   const [displayValue, setDisplayValue] = useState<string>('');
@@ -53,7 +55,9 @@ export const BuyAmountSection = ({
   let placeholder = `Minimum: ${formatCurrency(initialMin)} - Maximum: ${formatCurrency(effectiveMax)}`;
   let isDisabled = extraDisabled;
 
-  if (available === 0) {
+  if (isSeller) {
+    isDisabled = true;
+  } else if (available === 0) {
     placeholder = 'Minimum: 0 - Maximum: 0';
     isDisabled = true;
   } else if (available < initialMin) {
@@ -90,9 +94,6 @@ export const BuyAmountSection = ({
           <span className="text-muted-foreground absolute top-3.5 right-3 text-xs font-bold">
             {APP_CONFIG.CHAIN_SYMBOL}
           </span>
-        </div>
-        <div className="text-muted-foreground mt-1 text-xs">
-          Available: {formatCurrency(available)} {APP_CONFIG.CHAIN_SYMBOL}
         </div>
         <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
           <div>Available: {formatCurrency(available)} {APP_CONFIG.CHAIN_SYMBOL}</div>
