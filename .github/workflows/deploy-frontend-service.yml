@@ -97,11 +97,13 @@ jobs:
           echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
         
       - name: Create Release and Upload Bundle
-        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
+        if: inputs.skip_build == 'false'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.build_frontend.outputs.tag_name }}
-          name: "FE Release ${{ steps.build_frontend.outputs.tag_name }}"
+          name: "Release ${{ steps.build_frontend.outputs.tag_name }}"
+          target_commitish: ${{ inputs.ref }}
+          fail_on_unmatched_files: true
           files: build_frontend/frontend-build-${{ steps.build_frontend.outputs.tag_name }}.tar.gz
 
   deploy:
