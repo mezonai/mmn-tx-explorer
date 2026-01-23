@@ -29,9 +29,6 @@ export const CreateUpdateContent = () => {
     handleRemoveImage,
     handleRemoveAll,
     onSubmit,
-    unit,
-    maxSize,
-    maxImagesAllowed
   } = useUpdateForm();
 
   return (
@@ -55,9 +52,6 @@ export const CreateUpdateContent = () => {
           handleRemoveImage={handleRemoveImage}
           handleRemoveAll={handleRemoveAll}
           onSubmit={onSubmit}
-          unit={unit}
-          maxSize={maxSize}
-          maxImagesAllowed={maxImagesAllowed}
         />
       </div>
     </div>
