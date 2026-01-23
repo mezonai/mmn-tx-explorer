@@ -189,7 +189,7 @@ jobs:
           echo "==> Applying configuration on server..."
           ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS}} "
             set -e 
-            echo '==> Extracting frontend bundle
+            echo '==> Extracting frontend bundle'
             sudo rm -rf /opt/frontend/*
             sudo tar -xzf /tmp/frontend.tar.gz -C /opt/frontend
 
