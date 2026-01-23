@@ -115,6 +115,5 @@ type RedEnvelopeSplitMoney struct {
 }
 
 type ClaimRedEnvelopeRequest struct {
-	ID           string `json:"id" binding:"required"`
-	SplitMoneyID int64  `json:"split_money_id" binding:"required"`
+	SplitMoneyID int64 `json:"split_money_id" binding:"required"`
 }

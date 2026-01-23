@@ -164,6 +164,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       seller_user_id: '',
     };
 
+    const isSellerOfOffer = user?.walletAddress === offer?.seller_wallet_address;
+
     return (
       <div className="bg-background relative flex flex-col">
         <div className="border-border flex h-14 shrink-0 items-center justify-between border-b px-6">
@@ -222,7 +224,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
               offer={offer}
               onConfirmBuy={handleConfirmBuy}
               isLoading={isCreatingOrder}
-              extraDisabled={offer.has_active_order}
+              extraDisabled={offer.has_active_order || isSellerOfOffer}
+              isSeller={isSellerOfOffer}
             />
           </div>
 

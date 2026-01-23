@@ -88,7 +88,7 @@ export const EcosystemHighlights = ({ giveCoffeeStats }: EcosystemHighlightsProp
           title="Lucky Money"
           route={ROUTES.LUCKY_MONEY}
           icon={<Gift className="text-brand-primary h-6 w-6 dark:text-red-400" />}
-          description={`${redEnvelopeStats.stats.total_active_envelopes} envelopes active • ${redEnvelopeStats.stats.total_claimed.toLocaleString('en-US')} ${APP_CONFIG.CHAIN_SYMBOL} total`}
+          description={`${redEnvelopeStats.stats.total_claimed.toLocaleString('en-US')} ${APP_CONFIG.CHAIN_SYMBOL} sent across ${redEnvelopeStats.stats.total_envelopes} envelopes`}
         />
         <EcoCard
           title="P2P Trading"
