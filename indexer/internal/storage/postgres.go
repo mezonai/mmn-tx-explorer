@@ -1577,6 +1577,11 @@ func (p *PostgresConnector) insertTransactionsTx(
 		return nil, nil
 	}
 
+	for i := range transactions {
+		t := &transactions[i]
+		t.TransactionExtraInfoType = detectTransactionType(t.ExtraInfo)
+	}
+
 	valueStrings := make([]string, len(transactions))
 	valueArgs := make([]interface{}, 0, len(transactions)*14)
 
