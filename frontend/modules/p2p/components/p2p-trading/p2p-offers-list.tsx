@@ -119,20 +119,21 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
       align: 'left',
     },
     {
-      headerContent: 'ACTION',
-      renderCell: (offer) => (
-        <div className="flex items-center justify-center">
-          {offer.has_active_order ? (
-            <div className="group relative w-[160px] overflow-hidden rounded-lg border border-amber-500/50 bg-amber-500/10 px-1 shadow-[0_0_10px_-3px_rgba(245,158,11,0.2)] backdrop-blur-sm">
-              <div className="absolute inset-0 animate-pulse bg-[linear-gradient(45deg,transparent_25%,rgba(245,158,11,0.5)_25%,rgba(245,158,11,0.5)_50%,transparent_50%,transparent_75%,rgba(245,158,11,0.5)_75%,rgba(245,158,11,0.5)_100%)] bg-size-[12px_12px] opacity-20 dark:opacity-10" />
+      headerContent: 'Action',
+      renderCell: (offer) => {
+        const isUserSeller = user && offer.seller_user_id === user?.id;
+        const isUserBuyer = user && offer.seller_user_id !== user?.id;
 
-              <div className="absolute inset-0 -translate-x-full animate-[shimmer_2.5s_infinite] bg-linear-to-r from-transparent via-amber-500/10 to-transparent" />
+        return (
+          <div className="w-[50%]">
+            {isUserSeller && offer.has_active_order ? (
+              <div className="group relative mx-auto w-full overflow-hidden rounded-lg border border-amber-500/50 bg-amber-500/10 px-1 shadow-[0_0_10px_-3px_rgba(245,158,11,0.2)] backdrop-blur-sm">
+                <div className="absolute inset-0 animate-pulse bg-[linear-gradient(45deg,transparent_25%,rgba(245,158,11,0.5)_25%,rgba(245,158,11,0.5)_50%,transparent_50%,transparent_75%,rgba(245,158,11,0.5)_75%,rgba(245,158,11,0.5)_100%)] bg-size-[12px_12px] opacity-20 dark:opacity-10" />
 
-              <div className="relative z-10 flex items-center justify-center gap-2 py-2.5 text-amber-700 dark:text-amber-300">
-                <TriangleAlert className="h-4 stroke-2" />
-                <span className="text-xs font-bold tracking-wider whitespace-nowrap uppercase">
-                  Trading in Progress
-                </span>
+                <div className="absolute inset-0 -translate-x-full animate-[shimmer_2.5s_infinite] bg-linear-to-r from-transparent via-amber-500/10 to-transparent" />
+
+                <div className="relative z-10 flex items-center justify-center gap-2 py-2.5 text-amber-700 dark:text-amber-300">
+                  <TriangleAlert className="h-4 w-4 stroke-2" />
 
               </div>
             </div>
