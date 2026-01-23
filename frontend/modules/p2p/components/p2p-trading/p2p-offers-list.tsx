@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { TTableColumn } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ROUTES } from '@/configs/routes.config';
-import { AddressDisplay } from '@/components/shared';
+import { AddressDisplay, Chip } from '@/components/shared';
 import { P2POffer } from '../../types';
 import { APP_CONFIG } from '@/configs/app.config';
 import { useRouter } from 'next/navigation';
@@ -94,7 +94,7 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
           <div className="relative border-l-2 border-gray-200 py-0.5 pl-3 dark:border-gray-700">
             <div className="mt-1 flex items-baseline gap-1.5">
               <span className="text-brand-primary w-6 text-[10px] font-bold tracking-wider uppercase">Min</span>
-              <span className="text-sm font-bold dark:text-white">
+              <span className="text-sm font-bold dark:text-white whitespace-nowrap">
                 {NumberUtil.formatWithCommas(offer.limit.min)}{' '}
                 <span className="text-xs font-normal text-gray-400">{APP_CONFIG.CHAIN_SYMBOL}</span>
               </span>
@@ -102,7 +102,7 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
 
             <div className="mt-1 flex items-baseline gap-1.5">
               <span className="text-brand-primary w-6 text-[10px] font-bold tracking-wider uppercase">Max</span>
-              <span className="text-sm font-bold dark:text-white">
+              <span className="text-sm font-bold dark:text-white whitespace-nowrap">
                 {NumberUtil.formatWithCommas(offer.limit.max)}{' '}
                 <span className="text-xs font-normal text-gray-400">{APP_CONFIG.CHAIN_SYMBOL}</span>
               </span>
@@ -135,26 +135,48 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
                 <div className="relative z-10 flex items-center justify-center gap-2 py-2.5 text-amber-700 dark:text-amber-300">
                   <TriangleAlert className="h-4 w-4 stroke-2" />
 
-                  <span className="text-xs font-bold tracking-wider whitespace-nowrap uppercase">
-                    Trading in Progress
-                  </span>
-                </div>
               </div>
-            ) : isUserBuyer ? (
-              <Button
-                onClick={() => {
-                  router.push(ROUTES.P2P_TRADING_ROOM(offer.offer_id, 'offer'));
-                }}
-                className="w-full rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600"
-              >
-                Buy Mezon đồng
-              </Button>
-            ) : (
-              isUserSeller && offer.status !== OFFERS_STATUS.CANCELED && <CancelConfirmDialog offer={offer} />
-            )}
-          </div>
-        );
-      },
+            </div>
+          ) : user && offer.seller_user_id !== user?.id ? (
+            <Button
+              onClick={() => {
+                router.push(ROUTES.P2P_TRADING_ROOM(offer.offer_id, 'offer'));
+              }}
+              className="w-[160px] rounded-lg bg-emerald-500 px-6 py-2 text-white transition hover:bg-emerald-600 whitespace-nowrap"
+            >
+              Buy Mezon đồng
+            </Button>
+          ) : offer.status === OFFERS_STATUS.CANCELED ? (
+            <Chip variant="error" className="w-[160px] rounded-lg justify-center py-2">
+              CANCELED
+            </Chip>
+          ) : offer.status === OFFERS_STATUS.COMPLETED ? (
+            <Chip variant="success" className="w-[160px] rounded-lg justify-center py-2">
+              COMPLETED
+            </Chip>
+          ) : offer.status === OFFERS_STATUS.FAILED ? (
+            <Chip variant="error" className="w-[160px] rounded-lg justify-center py-2">
+              FAILED
+            </Chip>
+          ) : offer.status === OFFERS_STATUS.OPEN ? (
+            <Chip variant="warning" className="w-[160px] rounded-lg justify-center py-2">
+              OPEN
+            </Chip>
+          ) : offer.status === OFFERS_STATUS.CONFIRMED ? (
+            <div className="flex items-center gap-2">
+              <div className="w-9 opacity-0 pointer-events-none" aria-hidden="true" />
+              <div className="w-[160px]">
+                <CancelConfirmDialog offer={offer} />
+              </div>
+              <ShareOfferModal offer={offer} />
+            </div>
+          ) : (
+            <Chip variant="default" className="w-[160px] rounded-lg justify-center py-2">
+              {offer.status}
+            </Chip>
+          )}
+        </div>
+      ),
       skeletonContent: <Skeleton className="h-9 w-24 rounded-lg" />,
       align: 'center',
     },
