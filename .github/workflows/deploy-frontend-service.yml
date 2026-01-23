@@ -82,11 +82,16 @@ jobs:
           mkdir -p build_frontend
 
           cd frontend
+          npm install
+          rm -rf .next
           npm ci
           npm run build
 
-          TAG_NAME="${{ inputs.target_tag }}"
-          if [ -z "$TAG_NAME" ]; then TAG_NAME="v0.0.0"; fi
+          RAW_NAME="${{ inputs.target_tag }}"
+          if [ -z "$RAW_NAME" ]; then RAW_NAME="v0.0.0"; fi
+          
+          TAG_NAME="$RAW_NAME-${{ inputs.env }}"
+
           tar -czf ../build_frontend/frontend-build-${TAG_NAME}.tar.gz .next/standalone .next/static public
 
           echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
@@ -110,8 +115,8 @@ jobs:
         id: determine_tag
         run: |
           TAG_INPUT=""
-          if [ -n "${{ inputs.target_tag }}" ]; then
-            TAG_INPUT="${{ inputs.target_tag }}"
+          if [ -n "${{ needs.build.outputs.tag_name }}" ]; then
+            TAG_INPUT="${{ needs.build.outputs.tag_name }}"
           elif [ -n "${{ inputs.existing_tag_to_deploy }}" ]; then 
             TAG_INPUT="${{ inputs.existing_tag_to_deploy }}"
           elif [ "${{ needs.build.result }}" == "success" ]; then
@@ -129,8 +134,8 @@ jobs:
           fi
 
           echo "tag_name=$TAG_TO_DEPLOY" >> $GITHUB_OUTPUT
-          echo "frontend_path=build_frontend/frontend-build-$TAG_TO_DEPLOY" >> $GITHUB_OUTPUT
-
+          echo "frontend_name=frontend-build-$TAG_TO_DEPLOY.tar.gz" >> $GITHUB_OUTPUT
+          echo "frontend_path=build_frontend/frontend-build-$TAG_TO_DEPLOY.tar.gz" >> $GITHUB_OUTPUT
 
       - name: Download Frontend Release Bundle
         if: inputs.existing_tag_to_deploy != ''
@@ -139,20 +144,26 @@ jobs:
           OWNER=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f1)
           REPO=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f2)
           TAG_NAME="${{ steps.determine_tag.outputs.tag_name }}"
-          FILENAME="frontend-build-${{ steps.determine_tag.outputs.tag_name }}.tar.gz"
+          FRONTEND_NAME="${{ steps.determine_tag.outputs.frontend_name }}"
+          FRONTEND_PATH="${{ steps.determine_tag.outputs.frontend_path }}"
 
-          DOWNLOAD_URL="https://github.com/${OWNER}/${REPO}/releases/download/${TAG_NAME}/${FILENAME}"
-
+          DOWNLOAD_URL="https://github.com/${OWNER}/${REPO}/releases/download/${TAG_NAME}/${FRONTEND_NAME}"
 
           echo "==> Downloading Frontend Bundle from: $DOWNLOAD_URL"
           
           mkdir -p build_frontend
 
-          curl -sSL --fail -L -o "$FILENAME" "$DOWNLOAD_URL"
-          tar -xzf "$FILENAME" -C build_frontend
+          curl -sSL --fail -L -o "$FRONTEND_PATH" "$DOWNLOAD_URL"
+          tar -xzf "$FRONTEND_PATH" -C build_frontend
           echo "==> Untar successfully build_frontend"
 
-      - name: Generate FE env file locally
+          echo "==> Contents of build_frontend after untar:"
+          ls -lh build_frontend
+          echo "==> .next check:"
+          ls -lh build_frontend/.next || echo "⚠️ .next not found"
+
+
+      - name: Generate remote setup script
         env:
           NEXT_PUBLIC_APP_API_URL: ${{ vars.NEXT_PUBLIC_APP_API_URL }}
           APP_API_URL_INTERNAL: ${{ vars.APP_API_URL_INTERNAL }}
@@ -185,6 +196,12 @@ jobs:
           echo "==> Applying configuration on server..."
           ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS}} "
             set -e 
+            echo '==> /opt/frontend content:'
+            ls -lh /opt/frontend
+
+            echo '==> /opt/frontend/.next check:'
+            ls -lh /opt/frontend/.next || echo '.next not found'
+            
             echo '==> Updating /opt/frontend/frontend.env...'
 
             sudo mv /tmp/frontend_tmp.env /opt/frontend/frontend.env
