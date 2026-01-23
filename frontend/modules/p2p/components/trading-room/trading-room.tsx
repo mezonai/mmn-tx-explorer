@@ -213,6 +213,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
               offer={offer}
               onConfirmBuy={handleConfirmBuy}
               isLoading={isCreatingOrder}
+              extraDisabled={offer.has_active_order || isSellerOfOffer}
+              isSeller={isSellerOfOffer}
             />
           </div>
 
