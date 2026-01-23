@@ -78,6 +78,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		campaignsPublic.GET("/list-feed/:campaign_address", middleware.ParseTokenAndAddToContext(cfg.JWT.Secret), campaignFeedHandler.ListCampaignFeedsByAddress)
 		campaignsPublic.GET("/list-history-feed/:root_feed_hash", campaignFeedHandler.ListHistoryFeedsByRootHash)
 		campaignsPublic.PATCH("/update-visible-feed/:root_feed_hash", middleware.Authentication(cfg.JWT.Secret), campaignFeedHandler.UpdateVisibleFeed)
+		campaignsPublic.GET("/feed_detail/:feed_hash", campaignFeedHandler.GetFeedDetailByHash)
 
 		// Statistics routes (public)
 		statsPublic := v1.Group("/stats")
@@ -122,7 +123,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		orderHandler := handlers.NewOrderHandler(orderService, offerService)
 
 		offersPrivate.POST("", offerHandler.CreateOffer)
-		offersPrivate.POST("/update-status", offerHandler.UpdateOfferStatus)
 		offersPrivate.GET("/me", offerHandler.GetMyOffers)
 		offersPrivate.GET("/:id", offerHandler.GetOfferDetail)
 		offersPrivate.GET("/:id/orders", orderHandler.ListOrdersForOffer)
@@ -138,5 +138,11 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		orders.POST("/:id/confirm", orderHandler.ConfirmOrder)
 		orders.GET("/me", orderHandler.GetMyOrders)
 		orders.GET("/:id", orderHandler.GetOrderDetail)
+
+		// ZK QR Claims
+		zkClaims := v1.Group("/red-envelopes/qr")
+		zkClaims.Use(middleware.ZKAuthentication())
+		zkClaims.POST("/claim-amount", redEnvelopeHandler.ClaimAmountRedEnvelopeQR)
+		zkClaims.POST("/:id/claim", redEnvelopeHandler.ClaimRedEnvelopeQR)
 	}
 }

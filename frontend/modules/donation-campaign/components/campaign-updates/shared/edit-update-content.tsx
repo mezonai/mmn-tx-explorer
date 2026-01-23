@@ -35,8 +35,6 @@ export const EditUpdateContent = ({ updatePost }: EditUpdateContentProps) => {
     handleRemoveAll,
     onSubmit,
     setExistingSize,
-    unit,
-    maxSize,
   } = useUpdateForm({ updatePost });
 
   return (
@@ -62,8 +60,6 @@ export const EditUpdateContent = ({ updatePost }: EditUpdateContentProps) => {
           onSubmit={onSubmit}
           isEdit={true}
           setExistingSize={setExistingSize}
-          unit={unit}
-          maxSize={maxSize}
         />
       </div>
     </div>

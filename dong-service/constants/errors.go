@@ -109,7 +109,7 @@ var (
 	ErrLimitReached               = errors.New("red envelope claims limit reached")
 	ErrQueueNotInit               = errors.New("queue not initialized or expired")
 	ErrInsufficientAccountBalance = errors.New("insufficient account balance")
-	ErrOfferHasActiveOrders       = errors.New("offer already has active pending orders")
 	ErrTxHashAlreadyUsed          = errors.New("transaction hash already used")
 	ErrOfferLimitExceeded         = errors.New("you have reached the maximum limit of active offers")
+	ErrUserOrderLimitExceeded     = errors.New("user has reached the maximum limit of 10 active orders")
 )
