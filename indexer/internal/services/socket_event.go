@@ -118,6 +118,10 @@ func SendSocketEventSync(receiveAddr, eventType string, payload interface{}) err
 // SendSocketEventDirect sends an event directly to the socket-service using the provided apiURL and apiKey.
 // This does not require calling InitEventService and does not rely on the package-global Event.
 func SendSocketEventDirect(receiveAddr, eventType string, payload interface{}) error {
+	if Event == nil {
+		return fmt.Errorf("event service not initialized")
+	}
+
 	var payloadBytes []byte
 	switch v := payload.(type) {
 	case nil:

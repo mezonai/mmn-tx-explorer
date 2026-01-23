@@ -4,7 +4,7 @@ import { RedEnvelopeService } from "../api";
 import { RedEnvelopeStats, RedEnvelopeStatsByUser } from "../type";
 
 export function useRedEnvelopeStatsByUser() {
-  const {data, isLoading} = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: [QUERY_KEYS.RED_ENVELOPE_STATS_BY_USER],
     queryFn: () => RedEnvelopeService.getEnvelopeStatsByUser(),
   });
@@ -24,14 +24,14 @@ export function useRedEnvelopeStatsByUser() {
 }
 
 export function useRedEnvelopeStats() {
-  const {data} = useQuery({
+  const { data } = useQuery({
     queryKey: [QUERY_KEYS.RED_ENVELOPE_STATS],
     queryFn: () => RedEnvelopeService.getEnvelopeStats(),
   });
 
   const fallback: RedEnvelopeStats = {
     total_claimed: 0,
-    total_active_envelopes: 0,
+    total_envelopes: 0,
   };
 
   return {

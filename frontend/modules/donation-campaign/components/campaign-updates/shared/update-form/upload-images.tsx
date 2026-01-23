@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Folder, Loader2, X } from 'lucide-react';
 import { ChangeEvent } from 'react';
 import { formatFileSize } from '@/utils';
+import { IMAGE_CONSTRAINTS } from '@/modules/donation-campaign/constants';
 
 interface UploadImagesProps {
   previews: string[];
@@ -13,9 +14,6 @@ interface UploadImagesProps {
   totalSize: number;
   totalImagesCount: number;
   isFetchingLocalSizes: boolean;
-  unit: string;
-  maxSize: number;
-  maxImagesAllowed: number;
 }
 
 export const UploadImages = ({
@@ -27,11 +25,8 @@ export const UploadImages = ({
   totalSize,
   totalImagesCount,
   isFetchingLocalSizes,
-  unit,
-  maxSize,
-  maxImagesAllowed,
 }: UploadImagesProps) => {
-  const maxTotalSize = maxSize * 1024 * 1024;
+  const maxTotalSize = IMAGE_CONSTRAINTS.MAX_IMAGES_SIZE * 1024 * 1024;
   return (
     <div>
       {previews.length > 0 && (
@@ -54,7 +49,7 @@ export const UploadImages = ({
                 </Button>
               </div>
             ))}
-            {totalSize < maxTotalSize && totalImagesCount < maxImagesAllowed && (
+            {totalSize < maxTotalSize && totalImagesCount < IMAGE_CONSTRAINTS.MAX_IMAGES_ALLOWED && (
               <label className="hover:border-brand-primary flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded border-2 border-dashed border-gray-300 transition-colors">
                 <span className="text-2xl text-gray-400">+</span>
                 <span className="text-xs text-gray-400">Add More</span>
@@ -78,11 +73,11 @@ export const UploadImages = ({
                   <span className="text-brand-primary font-semibold">{formatFileSize(totalSize)}</span>
                   <span className="text-muted-foreground">
                     {' '}
-                    / {maxSize} {unit}
+                    / {IMAGE_CONSTRAINTS.MAX_IMAGES_SIZE} {IMAGE_CONSTRAINTS.UNIT}
                   </span>
                   <span className="mx-2 text-gray-400">•</span>
                   <span className="text-brand-primary font-semibold">{totalImagesCount}</span>
-                  <span className="text-muted-foreground"> / {maxImagesAllowed} images</span>
+                  <span className="text-muted-foreground"> / {IMAGE_CONSTRAINTS.MAX_IMAGES_ALLOWED} images</span>
                 </>
               )}
             </p>
@@ -121,9 +116,9 @@ export const UploadImages = ({
             />
           </label>
           <p className="mt-1 text-xs text-gray-500">
-            Supported: JPG, PNG, HEIC Total size limit: {maxSize} {unit} for all images (auto-compressed)
+            Supported: JPG, PNG, HEIC Total size limit: {IMAGE_CONSTRAINTS.MAX_IMAGES_SIZE} {IMAGE_CONSTRAINTS.UNIT} for all images (auto-compressed)
           </p>
-          <p className="mt-1 text-xs text-gray-500">Maximum images allowed: {maxImagesAllowed} images</p>
+          <p className="mt-1 text-xs text-gray-500">Maximum images allowed: {IMAGE_CONSTRAINTS.MAX_IMAGES_ALLOWED} images</p>
         </div>
       )}
     </div>

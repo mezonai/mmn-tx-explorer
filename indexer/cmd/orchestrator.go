@@ -46,9 +46,10 @@ func RunOrchestrator(cmd *cobra.Command, args []string) {
 		}
 	}()
 
-	err = services.InitEventService(config.Cfg.Event.APIURL, config.Cfg.Event.APIKey)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to initialize EventService")
+	if config.Cfg.Event.APIURL != "" {
+		if err := services.InitEventService(config.Cfg.Event.APIURL, config.Cfg.Event.APIKey); err != nil {
+			log.Error().Err(err).Msg("Failed to initialize Event Service")
+		}
 	}
 
 	orchestratorService.Start()
