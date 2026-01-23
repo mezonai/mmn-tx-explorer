@@ -7,7 +7,8 @@ import { useTopRaisedRatioCampaign } from '@/modules/donation-campaign/hooks/use
 import { APP_CONFIG } from '@/configs/app.config';
 import { useRedEnvelopeStats } from '@/modules/lucky-money/hooks';
 import { useGames } from '@/modules/mezon-game/hooks/useGames';
-import { HandHeart, Gift, Sprout, Store, Gamepad2, Coffee } from 'lucide-react';
+import { useP2PStats } from '@/modules/p2p/hooks';
+import { HandHeart, Gift, Sprout, Store, Gamepad2, Coffee, TrendingUp } from 'lucide-react';
 import { Transaction } from '@/assets/icons';
 import { EcoCard } from './eco-card';
 
@@ -23,6 +24,7 @@ export const EcosystemHighlights = ({ giveCoffeeStats }: EcosystemHighlightsProp
     sortOrder: 'DESC',
   });
   const redEnvelopeStats = useRedEnvelopeStats();
+  const p2pStats = useP2PStats();
 
   const donationRef = useRef<HTMLAnchorElement | null>(null);
   const [refHeight, setRefHeight] = useState<number | null>(null);
@@ -92,8 +94,9 @@ export const EcosystemHighlights = ({ giveCoffeeStats }: EcosystemHighlightsProp
         />
         <EcoCard
           title="P2P Trading"
-          icon={<Sprout className="text-brand-primary h-6 w-6 dark:text-green-400" />}
+          icon={<TrendingUp className="text-brand-primary h-6 w-6 dark:text-green-400" />}
           route={ROUTES.P2P}
+          description={`${p2pStats.stats.totalOffers} active offers • ${p2pStats.stats.totalAvailableAmount.toLocaleString('en-US')} ${APP_CONFIG.CHAIN_SYMBOL} available`}
         />
         <EcoCard
           title="Swap"
