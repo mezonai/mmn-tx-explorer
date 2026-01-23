@@ -531,14 +531,17 @@ func (r *OfferRepository) ExistsByTxHash(ctx context.Context, txHash string) (bo
 	return true, nil
 }
 
-func (r *OfferRepository) SumOfferAmounts(ctx context.Context) (int64, error) {
+func (r *OfferRepository) CountActiveOffersByUser(ctx context.Context, sellerUserID string) (int64, error) {
 	query := fmt.Sprintf(`
-        SELECT COALESCE(SUM(amount), 0)
-        FROM %s.offers
-        WHERE status = 'CONFIRMED' AND amount > 0
-    `, r.dongSchema)
+		SELECT COUNT(*)
+		FROM %s.offers
+		WHERE seller_user_id = $1 AND status IN ('OPEN', 'PENDING', 'CONFIRMED')
+	`, r.dongSchema)
 
-	var total int64
-	err := r.db.QueryRowContext(ctx, query).Scan(&total)
-	return total, err
+	var count int64
+	err := r.db.QueryRowContext(ctx, query, sellerUserID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count active offers by user: %w", err)
+	}
+	return count, nil
 }
