@@ -18,6 +18,7 @@ import { ShareOfferModal } from './share-offer-modal';
 import { TriangleAlert } from 'lucide-react';
 import { NumberUtil } from '@/utils';
 import { cn } from '@/lib/utils';
+import { clear } from 'node:console';
 
 interface P2POffersTableProps {
   offers: P2POffer[] | undefined;
@@ -38,12 +39,21 @@ export const P2POffersTabs = ({
   const [showOverlay, setShowOverlay] = useState(false);
 
   useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
     if (isRefreshing) {
       setShowOverlay(true);
     } else {
-      // delay hide for animation
-      setTimeout(() => setShowOverlay(false), 300);
+      timeoutId = setTimeout(() => {
+        setShowOverlay(false);
+      }, 300);
     }
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, [isRefreshing]);
 
   const rows = offers ?? [];
