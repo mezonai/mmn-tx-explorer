@@ -116,6 +116,11 @@ func (h *OfferHandler) CreateOffer(c *gin.Context) {
 			return
 		}
 
+		if errors.Is(err, constants.ErrOfferLimitExceeded) {
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, err.Error()))
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to create offer: "+err.Error()))
 		return
 	}

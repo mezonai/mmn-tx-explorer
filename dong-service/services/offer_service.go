@@ -44,6 +44,14 @@ type IOfferService interface {
 }
 
 func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string, sellerUserID string) (*models.Offer, error) {
+	activeOfferCount, err := s.repo.CountActiveOffersByUser(ctx, sellerUserID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check active offer count: %w", err)
+	}
+	if activeOfferCount >= constants.MaxActiveOffersPerUser {
+		return nil, constants.ErrOfferLimitExceeded
+	}
+
 	amountInt := req.Amount
 
 	if s.userWalletRepo != nil {
