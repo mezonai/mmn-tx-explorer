@@ -25,6 +25,11 @@ type Config struct {
 	RateLimit    RateLimitConfig    `mapstructure:"rate_limit"`
 	FilterImage  FilterImageConfig  `mapstructure:"filter_image"`
 	Event        EventConfig        `mapstructure:"event"`
+	ZK           ZKConfig           `mapstructure:"zk"`
+}
+
+type ZKConfig struct {
+	VerificationKeyPath string `mapstructure:"verification_key_path"`
 }
 
 type ServerConfig struct {
