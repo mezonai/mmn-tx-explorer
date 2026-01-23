@@ -34,8 +34,12 @@ func (h *HTTPHandler) SaveEvent(c *gin.Context) {
 
 	sentToOnline := false
 
-	if event.ReceiveAddress == constant.ALL_RECEIVER {
-		conns := h.wsSvc.GetAllConnections()
+	if event.ReceiveAddress == constant.OFFER_ROOM {
+		conns, ok := h.wsSvc.GetRoomConnections(constant.OFFER_ROOM)
+		if !ok || len(conns) == 0 {
+			c.JSON(http.StatusOK, "No active connections")
+			return
+		}
 		for _, conn := range conns {
 			conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
 			if err := conn.WriteJSON(event); err != nil {

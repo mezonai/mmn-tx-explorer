@@ -16,13 +16,13 @@ type SocketEvent struct {
 	ID             uuid.UUID       `json:"id"`
 	Type           string          `json:"type"`
 	Payload        json.RawMessage `json:"payload"`
+	Status         string          `json:"status,omitempty"`
 	ReceiveAddress string          `json:"receive_address"`
 	CreateAt       time.Time       `json:"create_at"`
 }
 
 const (
 	OFFER_LIST_REFRESH = "OFFER_LIST_REFRESH"
-	RECEIVER_ALL       = "*"
 )
 
 type EventService struct {
@@ -138,6 +138,7 @@ func SendSocketEventDirect(receiveAddr, eventType string, payload interface{}) e
 		ID:             uuid.New(),
 		Type:           eventType,
 		Payload:        json.RawMessage(payloadBytes),
+		Status:         "PENDING",
 		ReceiveAddress: receiveAddr,
 		CreateAt:       time.Now().UTC(),
 	}

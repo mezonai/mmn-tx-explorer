@@ -7,5 +7,4 @@ const (
 
 	OFFER_LIST_REFRESH = "OFFER_LIST_REFRESH"
 	OFFER_ROOM         = "offer_updates"
-	ALL_RECEIVER       = "*"
 )

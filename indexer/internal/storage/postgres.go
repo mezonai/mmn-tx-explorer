@@ -2530,7 +2530,7 @@ func (p *PostgresConnector) updateOfferStatus(
 
 	log.Info().Int("offers_updated", len(validOfferIDs)).Msg("batch update offer status completed")
 
-	services.SendSocketEventDirect(services.RECEIVER_ALL, services.OFFER_LIST_REFRESH, map[string]any{
+	services.SendSocketEventDirect(services.OFFER_ROOM, services.OFFER_LIST_REFRESH, map[string]any{
 		"action": "updated p2p offer status",
 	})
 
