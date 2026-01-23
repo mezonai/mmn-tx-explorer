@@ -78,7 +78,7 @@ export const useP2POrder = (orderId: string) => {
         const updatedOrder = await P2PService.getOrderById(orderIdStr);
         setOrder(updatedOrder);
       } catch (error) {
-        console.warn('Error refreshing order:', error);
+        console.error('Error refreshing order:', error);
       }
     };
 
