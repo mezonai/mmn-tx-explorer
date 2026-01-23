@@ -149,8 +149,7 @@ jobs:
           mkdir -p build_frontend
 
           curl -sSL --fail -L -o "$FILENAME" "$DOWNLOAD_URL"
-          
-          tar -xzf "$FILENAME" -C build_frontend --strip-components=1
+          tar -xzf "$FILENAME" -C build_frontend
           echo "==> Untar successfully build_frontend"
 
       - name: Generate FE env file locally
