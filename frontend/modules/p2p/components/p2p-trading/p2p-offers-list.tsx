@@ -13,7 +13,9 @@ import { useRouter } from 'next/navigation';
 import { useUser } from '@/providers';
 import { CancelConfirmDialog } from './cancel-confirm-dialog';
 import { OFFERS_STATUS } from '../../constants';
+import { ShareOfferModal } from './share-offer-modal';
 import { TriangleAlert } from 'lucide-react';
+import { NumberUtil } from '@/utils';
 
 interface P2POffersTableProps {
   offers: P2POffer[] | undefined;
@@ -25,7 +27,7 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
   const { user } = useUser();
   const rawColumns: (TTableColumn<P2POffer> | null)[] = [
     {
-      headerContent: 'Seller',
+      headerContent: 'SELLER',
       renderCell: (offer) => (
         <AddressDisplay address={offer.seller_wallet_address} href={ROUTES.WALLET(offer.seller_wallet_address)} />
       ),
@@ -34,11 +36,11 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
     },
     {
       headerContent: 'RATE',
-      renderCell: (order) => (
+      renderCell: (offer) => (
         <div>
           <div className="mt-1 text-sm text-gray-400">
             <span className="text-brand-primary font-semibold">
-              1 {APP_CONFIG.CHAIN_SYMBOL} = {order.price_rate.toLocaleString('vi-VN')} VND
+              1 {APP_CONFIG.CHAIN_SYMBOL} = {NumberUtil.formatWithCommas(offer.price_rate)} VND
             </span>
           </div>
         </div>
@@ -47,36 +49,79 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
       align: 'left',
     },
     {
-      headerContent: 'Available / Limit',
-      renderCell: (offer) => (
-        <div className="flex flex-col gap-1 text-left text-gray-300 dark:text-gray-300">
-          <span>
-            <span className="text-gray-500 dark:text-gray-500">Available:</span>{' '}
-            <span className="text-primary font-medium dark:text-white">
-              {offer.amount.toLocaleString('en-US')} {APP_CONFIG.CHAIN_SYMBOL}
-            </span>
-          </span>
-          <span>
-            <span className="text-gray-500 dark:text-gray-500">Limit:</span>{' '}
-            <span className="text-primary font-medium dark:text-white">
-              {offer.limit.min.toLocaleString('en-US')} - {offer.limit.max.toLocaleString('en-US')}{' '}
-              {APP_CONFIG.CHAIN_SYMBOL}
-            </span>
-          </span>
-        </div>
-      ),
+      headerContent: 'AVAILABLE',
+      renderCell: (offer) => {
+        const total = offer.total_amount;
+        const available = offer.amount;
+        const sold = total - available;
+        const soldPercentage = total > 0 ? Math.min((sold / total) * 100, 100) : 0;
+
+        return (
+          <div className="flex flex-col gap-2 text-left">
+            <div className="flex flex-col gap-0.5 text-gray-300 dark:text-gray-300">
+              <span className="text-primary font-bold dark:text-white">
+                {NumberUtil.formatWithCommas(available)} / {NumberUtil.formatWithCommas(total)}{' '}
+                {APP_CONFIG.CHAIN_SYMBOL}
+              </span>
+              <span className="text-brand-primary text-[10px] font-bold tracking-wider uppercase">
+                {NumberUtil.formatWithCommas(sold)} {APP_CONFIG.CHAIN_SYMBOL} Sold
+              </span>
+            </div>
+            <div className="w-50 space-y-1.5">
+              <div className="bg-brand-primary/10 relative h-2 w-full overflow-hidden rounded-full">
+                <div
+                  className="bg-brand-primary h-full rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${soldPercentage}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        );
+      },
       skeletonContent: (
         <div className="space-y-2">
           <Skeleton className="h-4 w-40" />
           <Skeleton className="h-4 w-48" />
+          <Skeleton className="h-2 w-32 rounded-full" />
         </div>
       ),
       align: 'left',
     },
     {
-      headerContent: 'Action',
+      headerContent: 'LIMITS',
+      renderCell: (offer) => {
+        return (
+          <div className="relative border-l-2 border-gray-200 py-0.5 pl-3 dark:border-gray-700">
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="text-brand-primary w-6 text-[10px] font-bold tracking-wider uppercase">Min</span>
+              <span className="text-sm font-bold dark:text-white">
+                {NumberUtil.formatWithCommas(offer.limit.min)}{' '}
+                <span className="text-xs font-normal text-gray-400">{APP_CONFIG.CHAIN_SYMBOL}</span>
+              </span>
+            </div>
+
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="text-brand-primary w-6 text-[10px] font-bold tracking-wider uppercase">Max</span>
+              <span className="text-sm font-bold dark:text-white">
+                {NumberUtil.formatWithCommas(offer.limit.max)}{' '}
+                <span className="text-xs font-normal text-gray-400">{APP_CONFIG.CHAIN_SYMBOL}</span>
+              </span>
+            </div>
+          </div>
+        );
+      },
+      skeletonContent: (
+        <div className="space-y-2 border-l-2 border-gray-200 pl-3">
+          <Skeleton className="h-3 w-16" />
+          <Skeleton className="h-3 w-24" />
+        </div>
+      ),
+      align: 'left',
+    },
+    {
+      headerContent: 'ACTION',
       renderCell: (offer) => (
-        <div className="w-[50%]">
+        <div className="w-[60%]">
           {offer.has_active_order ? (
             <div className="group relative mx-auto w-full overflow-hidden rounded-lg border border-amber-500/50 bg-amber-500/10 px-1 shadow-[0_0_10px_-3px_rgba(245,158,11,0.2)] backdrop-blur-sm">
               <div className="absolute inset-0 animate-pulse bg-[linear-gradient(45deg,transparent_25%,rgba(245,158,11,0.5)_25%,rgba(245,158,11,0.5)_50%,transparent_50%,transparent_75%,rgba(245,158,11,0.5)_75%,rgba(245,158,11,0.5)_100%)] bg-size-[12px_12px] opacity-20 dark:opacity-10" />
@@ -84,11 +129,11 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
               <div className="absolute inset-0 -translate-x-full animate-[shimmer_2.5s_infinite] bg-linear-to-r from-transparent via-amber-500/10 to-transparent" />
 
               <div className="relative z-10 flex items-center justify-center gap-2 py-2.5 text-amber-700 dark:text-amber-300">
-                <TriangleAlert className="h-4 w-4 stroke-2" />
-
+                <TriangleAlert className="h-4 stroke-2" />
                 <span className="text-xs font-bold tracking-wider whitespace-nowrap uppercase">
                   Trading in Progress
                 </span>
+
               </div>
             </div>
           ) : user && offer.seller_user_id !== user?.id ? (
@@ -101,7 +146,14 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
               Buy Mezon đồng
             </Button>
           ) : (
-            offer.status !== OFFERS_STATUS.CANCELED && <CancelConfirmDialog offer={offer} />
+            offer.status !== OFFERS_STATUS.CANCELED && (
+              <div className="flex w-full items-center gap-2">
+                <div className="flex-1">
+                  <CancelConfirmDialog offer={offer} />
+                </div>
+                <ShareOfferModal offer={offer} />
+              </div>
+            )
           )}
         </div>
       ),

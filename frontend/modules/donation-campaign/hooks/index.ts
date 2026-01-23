@@ -10,5 +10,6 @@ export * from './useDeleteCampaign';
 export * from './useUploadDonationImages';
 export * from './useDonationFeed';
 export * from './useUpdateForm';
-export * from './useDonationFeedHistory'
+export * from './useDonationFeedHistory';
 export * from './useToggleHideDonationFeed';
+export * from './useDonationFeedPostDetail';

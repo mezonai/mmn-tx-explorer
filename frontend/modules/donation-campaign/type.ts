@@ -151,6 +151,7 @@ export interface IDonationFeed {
 export interface DonationFeedParams {
   limit?: number;
   timestamp_lt?: string;
+  isOwner?: boolean;
 }
 
 export interface UploadImageRequest {
