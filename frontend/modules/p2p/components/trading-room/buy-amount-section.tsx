@@ -13,13 +13,14 @@ interface BuyAmountSectionProps {
   offer: P2POffer;
   onConfirmBuy: (amountMZD: number, amountVND: number) => void;
   isLoading?: boolean;
+  isSeller?: boolean;
 }
 
 const getRawValue = (val: string): number => {
   return parseFloat(val.replace(/\./g, '').replace(/,/g, '')) || 0;
 };
 
-export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false }: BuyAmountSectionProps) => {
+export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false, isSeller = false }: BuyAmountSectionProps) => {
   const [amountMZD, setAmountMZD] = useState<number>(0);
   const [displayValue, setDisplayValue] = useState<string>('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
