@@ -328,6 +328,11 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 	if err = tx.Commit(); err != nil {
 		return err
 	}
+
+	go SendSocketEvent(constants.ALL_RECEIVER, constants.OFFER_LIST_REFRESH, map[string]any{
+		"action": "cancelled p2p offer",
+	})
+
 	return nil
 }
 
