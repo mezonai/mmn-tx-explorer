@@ -114,23 +114,39 @@ class P2PPage extends BasePage {
     
     console.log('  ? Filling rate...');
     await this.executeScript(`
-      const inputs = Array.from(document.querySelectorAll('input[type="text"]'));
-      const rateInput = inputs.find(inp => inp.placeholder === '0.8');
+      const rateLabel = Array.from(document.querySelectorAll('label')).find(label => label.textContent.includes('Rate'));
+      let rateInput = null;
+      if (rateLabel) {
+        const forAttr = rateLabel.getAttribute('for');
+        if (forAttr) {
+          rateInput = document.getElementById(forAttr);
+        }
+        if (!rateInput) {
+          rateInput = rateLabel.querySelector('input[type="text"]') || rateLabel.querySelector('input');
+        }
+        if (!rateInput) {
+          const parent = rateLabel.closest('div');
+          if (parent) {
+            rateInput = parent.querySelector('input[type="text"]') || parent.querySelector('input');
+          }
+        }
+      }
+
       if (rateInput) {
         rateInput.click();
         rateInput.focus();
-        
+
         // Clear the field
         const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
         nativeInputValueSetter.call(rateInput, '');
         rateInput.dispatchEvent(new Event('input', { bubbles: true }));
-        
+
         // Set new value
         nativeInputValueSetter.call(rateInput, '${offerData.price_rate}');
         rateInput.dispatchEvent(new Event('input', { bubbles: true }));
         rateInput.dispatchEvent(new Event('change', { bubbles: true }));
         rateInput.dispatchEvent(new Event('blur', { bubbles: true }));
-        
+
         console.log('? Filled rate:', rateInput.value);
       } else {
         console.log('? Rate input not found');
@@ -140,21 +156,37 @@ class P2PPage extends BasePage {
     
     console.log('  ? Filling min limit...');
     await this.executeScript(`
-      const inputs = Array.from(document.querySelectorAll('input[type="text"]'));
-      const minInput = inputs.find(inp => inp.placeholder === '100');
+      const minLabel = Array.from(document.querySelectorAll('label')).find(label => label.textContent.includes('Min'));
+      let minInput = null;
+      if (minLabel) {
+        const forAttr = minLabel.getAttribute('for');
+        if (forAttr) {
+          minInput = document.getElementById(forAttr);
+        }
+        if (!minInput) {
+          minInput = minLabel.querySelector('input[type="text"]') || minLabel.querySelector('input');
+        }
+        if (!minInput) {
+          const parent = minLabel.closest('div');
+          if (parent) {
+            minInput = parent.querySelector('input[type="text"]') || parent.querySelector('input');
+          }
+        }
+      }
+
       if (minInput) {
         minInput.click();
         minInput.focus();
-        
+
         const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
         nativeInputValueSetter.call(minInput, '');
         minInput.dispatchEvent(new Event('input', { bubbles: true }));
-        
+
         nativeInputValueSetter.call(minInput, '${offerData.limit.min}');
         minInput.dispatchEvent(new Event('input', { bubbles: true }));
         minInput.dispatchEvent(new Event('change', { bubbles: true }));
         minInput.dispatchEvent(new Event('blur', { bubbles: true }));
-        
+
         console.log('? Filled min:', minInput.value);
       } else {
         console.log('? Min input not found');
@@ -164,24 +196,37 @@ class P2PPage extends BasePage {
     
     console.log('  ? Filling max limit...');
     await this.executeScript(`
-      const inputs = Array.from(document.querySelectorAll('input[type="text"]'));
-      const maxInput = inputs.find(inp => 
-        inp.placeholder === '5,000' || 
-        (inp.placeholder.includes(',') && inp.placeholder !== '100')
-      );
+      const maxLabel = Array.from(document.querySelectorAll('label')).find(label => label.textContent.includes('Max'));
+      let maxInput = null;
+      if (maxLabel) {
+        const forAttr = maxLabel.getAttribute('for');
+        if (forAttr) {
+          maxInput = document.getElementById(forAttr);
+        }
+        if (!maxInput) {
+          maxInput = maxLabel.querySelector('input[type="text"]') || maxLabel.querySelector('input');
+        }
+        if (!maxInput) {
+          const parent = maxLabel.closest('div');
+          if (parent) {
+            maxInput = parent.querySelector('input[type="text"]') || parent.querySelector('input');
+          }
+        }
+      }
+
       if (maxInput) {
         maxInput.click();
         maxInput.focus();
-        
+
         const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
         nativeInputValueSetter.call(maxInput, '');
         maxInput.dispatchEvent(new Event('input', { bubbles: true }));
-        
+
         nativeInputValueSetter.call(maxInput, '${offerData.limit.max}');
         maxInput.dispatchEvent(new Event('input', { bubbles: true }));
         maxInput.dispatchEvent(new Event('change', { bubbles: true }));
         maxInput.dispatchEvent(new Event('blur', { bubbles: true }));
-        
+
         console.log('? Filled max:', maxInput.value);
       } else {
         console.log('? Max input not found');
@@ -266,14 +311,28 @@ class P2PPage extends BasePage {
     
     console.log('  ? Filling account number...');
     await this.executeScript(`
-      const inputs = Array.from(document.querySelectorAll('input[type="text"]'));
-      const accNumInput = inputs.find(inp => 
-        (inp.placeholder || '').toLowerCase().includes('account number')
-      );
+      const accNumLabel = Array.from(document.querySelectorAll('label')).find(label => label.textContent.includes('Account Number'));
+      let accNumInput = null;
+      if (accNumLabel) {
+        const forAttr = accNumLabel.getAttribute('for');
+        if (forAttr) {
+          accNumInput = document.getElementById(forAttr);
+        }
+        if (!accNumInput) {
+          accNumInput = accNumLabel.querySelector('input[type="text"]') || accNumLabel.querySelector('input');
+        }
+        if (!accNumInput) {
+          const parent = accNumLabel.closest('div');
+          if (parent) {
+            accNumInput = parent.querySelector('input[type="text"]') || parent.querySelector('input');
+          }
+        }
+      }
+
       if (accNumInput) {
         accNumInput.click();
         accNumInput.focus();
-        
+
         const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
         nativeInputValueSetter.call(accNumInput, '');
         accNumInput.dispatchEvent(new Event('input', { bubbles: true }));
@@ -292,15 +351,28 @@ class P2PPage extends BasePage {
     
     console.log('  ? Filling account name...');
     await this.executeScript(`
-      const inputs = Array.from(document.querySelectorAll('input[type="text"]'));
-      const accNameInput = inputs.find(inp => 
-        (inp.placeholder || '').toLowerCase().includes('account owner') ||
-        (inp.placeholder || '').toLowerCase().includes('owner name')
-      );
+      const accNameLabel = Array.from(document.querySelectorAll('label')).find(label => label.textContent.includes('Account Name'));
+      let accNameInput = null;
+      if (accNameLabel) {
+        const forAttr = accNameLabel.getAttribute('for');
+        if (forAttr) {
+          accNameInput = document.getElementById(forAttr);
+        }
+        if (!accNameInput) {
+          accNameInput = accNameLabel.querySelector('input[type="text"]') || accNameLabel.querySelector('input');
+        }
+        if (!accNameInput) {
+          const parent = accNameLabel.closest('div');
+          if (parent) {
+            accNameInput = parent.querySelector('input[type="text"]') || parent.querySelector('input');
+          }
+        }
+      }
+
       if (accNameInput) {
         accNameInput.click();
         accNameInput.focus();
-        
+
         const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
         nativeInputValueSetter.call(accNameInput, '');
         accNameInput.dispatchEvent(new Event('input', { bubbles: true }));
@@ -334,6 +406,22 @@ class P2PPage extends BasePage {
       
       return (function() {
         const findInputByPlaceholder = (ph) => inputs.find(inp => inp.placeholder === ph)?.value || 'NOT FOUND';
+        const findInputByLabel = (labelText) => {
+          const label = Array.from(document.querySelectorAll('label')).find(lbl => lbl.textContent.includes(labelText));
+          if (label) {
+            const forAttr = label.getAttribute('for');
+            if (forAttr) {
+              return document.getElementById(forAttr)?.value || 'NOT FOUND';
+            } else {
+              const parent = label.closest('div');
+              if (parent) {
+                return parent.querySelector('input[type="text"]')?.value || parent.querySelector('input')?.value || 'NOT FOUND';
+              }
+            }
+          }
+          return 'NOT FOUND';
+        };
+
         // Determine amount input robustly
         let amountVal = 'NOT FOUND';
         const labels = Array.from(document.querySelectorAll('label'));
@@ -361,12 +449,12 @@ class P2PPage extends BasePage {
         if (amountInput) amountVal = amountInput.value || 'NOT FOUND';
 
         return {
-          rate: findInputByPlaceholder('0.8'),
-          min: findInputByPlaceholder('100'),
-          max: inputs.find(inp => inp.placeholder.includes('5,000') && !inp.placeholder.includes('5,000,000'))?.value || 'NOT FOUND',
+          rate: findInputByLabel('Rate'),
+          min: findInputByLabel('Min'),
+          max: findInputByLabel('Max'),
           amount: amountVal,
-          accountNumber: inputs.find(inp => (inp.placeholder || '').toLowerCase().includes('account number'))?.value || 'NOT FOUND',
-          accountName: inputs.find(inp => (inp.placeholder || '').toLowerCase().includes('account owner') || (inp.placeholder || '').toLowerCase().includes('owner name'))?.value || 'NOT FOUND',
+          accountNumber: findInputByLabel('Account Number')?.value || 'NOT FOUND',
+          accountName: findInputByLabel('Account Name')?.value || 'NOT FOUND',
           totalReceivedVND: totalReceivedValue,
           calculatedTotal: '${offerData.amount} × ${offerData.price_rate} = ${parseFloat(offerData.amount) * parseFloat(offerData.price_rate)}'
         };
@@ -520,14 +608,14 @@ class P2PPage extends BasePage {
       console.log(`     - Modal closed: ${!modalStillOpen}`);
       
       // Success if toast found OR modal closed
-      const isSuccess = hasSuccessToast || !modalStillOpen;
+      const hasError = await this.isErrorToastVisible();
+      
+      const isSuccess = hasSuccessToast || (!modalStillOpen && !hasError);
       
       if (isSuccess) {
         console.log('  ✅ Offer created successfully!');
         return true;
       }
-      
-      const hasError = await this.isErrorToastVisible();
       
       if (hasError) {
         console.log('  ❌ Error detected!');
