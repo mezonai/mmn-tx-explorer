@@ -4,15 +4,17 @@ import { useState, useEffect, useRef } from 'react';
 import { Send, AlertTriangle, Loader2, MessageCircle, X, Info, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLightClient, useUser } from '@/providers';
-import { ChannelMessage, LightSocket } from 'mezon-light-sdk';
+import { LightSocket } from 'mezon-light-sdk';
 import { STORAGE_KEYS } from '@/constant';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { formatChatTime, generateMarkdownPayload, isSameDay } from '../../util';
-import { P2POrder } from '../../types';
+import { MessageWithParsedContent, P2POrder, ParsedMessageContent } from '../../types';
 import { APP_CONFIG } from '@/configs/app.config';
 import { ROUTES } from '@/configs/routes.config';
 import { NumberUtil } from '@/utils';
+import { safeJsonParse } from '@/utils/json-parse.utils';
+import { ChannelMessage } from 'mezon-light-sdk/dist/api.gen';
 
 interface ChatSidebarProps {
   sellerId: string;
@@ -23,7 +25,7 @@ interface ChatSidebarProps {
 const MAX_CHAR_LIMIT = 5000;
 
 export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: ChatSidebarProps) => {
-  const [messages, setMessages] = useState<ChannelMessage[]>([]);
+  const [messages, setMessages] = useState<MessageWithParsedContent[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isConnected, setIsConnected] = useState(false);
 
@@ -72,23 +74,42 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
         if (!isMounted) return;
 
         const sdk = lightClient;
-        const socket = new LightSocket(sdk.getClient(), sdk.getSession());
+        const socket = new LightSocket(sdk, sdk.getSession());
         await socket.connect();
         socketRef.current = socket;
 
         const channel = await sdk.createDM(sellerId);
-        await socket.joinDMChannel(channel.channel_id);
-        channelIdRef.current = channel.channel_id;
+        await socket.joinDMChannel(channel.channel_id!);
+        channelIdRef.current = channel.channel_id!;
 
         socket.setChannelMessageHandler((msg: ChannelMessage) => {
-          if (!msg.content || !msg.content.t || msg.content.t.trim() === '') return;
+          let parsedContent: ParsedMessageContent = { t: '' };
+          if (typeof msg.content === 'string') {
+            const parsed = safeJsonParse<ParsedMessageContent>(msg.content);
+            if (parsed) {
+              parsedContent = parsed;
+            } else {
+              parsedContent = { t: msg.content };
+            }
+          } else if (msg.content && typeof msg.content === 'object') {
+            parsedContent = msg.content as ParsedMessageContent;
+          }
+
+          if (!parsedContent || !parsedContent.t || parsedContent.t.trim() === '') return;
+
           const isValidSender = msg.sender_id === user?.id || msg.sender_id === sellerId;
           if (!isValidSender) return;
 
           const isMe = msg.sender_id === user?.id;
+
+          const normalizedMessage: MessageWithParsedContent = {
+            ...msg,
+            content: parsedContent,
+          };
+
           setMessages((prev) => {
-            if (prev.find((m) => m.message_id === msg.message_id)) return prev;
-            return [...prev, msg];
+            if (prev.find((m) => m.message_id === normalizedMessage.message_id)) return prev;
+            return [...prev, normalizedMessage];
           });
 
           if (!isMe && !isMobileOpenRef.current) {
@@ -138,10 +159,13 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
               },
             };
 
-            await socket.sendDM(channelIdRef.current, {
-              mk: mk,
-              t: textContent,
-              embed: [embedElement],
+            await socket.sendDM({
+              channelId: channelIdRef.current,
+              content: {
+                mk: mk,
+                t: textContent,
+                embed: [embedElement],
+              },
             });
 
             if (onInitialMessageSentRef.current) {
@@ -182,9 +206,12 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
     try {
       const mk = generateMarkdownPayload(content);
 
-      await socketRef.current.sendDM(channelIdRef.current, {
-        t: content,
-        mk: mk,
+      await socketRef.current.sendDM({
+        channelId: channelIdRef.current,
+        content: {
+          mk: mk,
+          t: content,
+        },
       });
     } catch (err) {
       console.error('Send DM failed:', err);
@@ -305,19 +332,20 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
             const isMe = msg.sender_id === user?.id || msg.sender_id === 'me';
             const prevMsg = messages[idx - 1];
             const nextMsg = messages[idx + 1];
-            const showDateDivider = !prevMsg || !isSameDay(msg.create_time_seconds, prevMsg.create_time_seconds);
+            const msgTimestamp = msg.create_time_seconds ?? Math.floor(Date.now() / 1000);
+            const prevTimestamp = prevMsg?.create_time_seconds ?? Math.floor(Date.now() / 1000);
+            const nextTimestamp = nextMsg?.create_time_seconds ?? Math.floor(Date.now() / 1000);
+            const showDateDivider = !prevMsg || !isSameDay(msgTimestamp, prevTimestamp);
             const isFirstInGroup = !prevMsg || prevMsg.sender_id !== msg.sender_id || showDateDivider;
             const isLastInGroup =
-              !nextMsg ||
-              nextMsg.sender_id !== msg.sender_id ||
-              (nextMsg && !isSameDay(msg.create_time_seconds, nextMsg.create_time_seconds));
+              !nextMsg || nextMsg.sender_id !== msg.sender_id || (nextMsg && !isSameDay(msgTimestamp, nextTimestamp));
 
             return (
               <div key={msg.message_id}>
                 {showDateDivider && (
                   <div className="my-6 flex items-center justify-center">
                     <span className="rounded-full border border-gray-200 bg-gray-100 px-3 py-1 text-[10px] font-bold text-gray-500 uppercase dark:border-gray-800 dark:bg-gray-900">
-                      {new Date(Number(msg.create_time_seconds) * 1000).toLocaleDateString([], {
+                      {new Date(msgTimestamp * 1000).toLocaleDateString([], {
                         month: 'short',
                         day: 'numeric',
                         year: 'numeric',
@@ -364,7 +392,7 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
                     )}
                     <div
                       className={cn(
-                        'overflow-wrap-anywhere w-fit max-w-full rounded-2xl px-3 py-2 text-sm break-all whitespace-pre-wrap shadow-sm transition-colors',
+                        'overflow-wrap-anywhere w-fit max-w-full rounded-2xl px-3 py-2 text-sm wrap-break-word whitespace-pre-wrap shadow-sm transition-colors',
                         isMe
                           ? 'bg-brand-primary text-white'
                           : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
@@ -378,7 +406,7 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
                           <div className="flex flex-col rounded-md border border-black/5 bg-black/5 p-3 dark:border-white/10 dark:bg-white/5">
                             {msg.content.embed[0].fields && (
                               <div className="grid grid-cols-1 gap-1 text-xs opacity-90">
-                                {msg.content.embed[0].fields.map((field: any, i: number) => (
+                                {msg.content.embed[0].fields.map((field, i: number) => (
                                   <div key={i} className="flex gap-1">
                                     <span className="opacity-70">{field.name}:</span>
                                     <span className="font-medium">{field.value}</span>
@@ -395,7 +423,7 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
                   </div>
                   {isLastInGroup && (
                     <div className={cn('mt-1 px-1 text-[9px] font-bold text-gray-400 uppercase', !isMe && 'ml-10')}>
-                      {formatChatTime(msg.create_time_seconds)}
+                      {formatChatTime(msgTimestamp)}
                     </div>
                   )}
                 </div>
