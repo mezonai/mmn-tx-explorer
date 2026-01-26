@@ -12,7 +12,7 @@ import { formatChatTime, generateMarkdownPayload, isSameDay } from '../../util';
 import { MessageWithParsedContent, P2POrder, ParsedMessageContent } from '../../types';
 import { APP_CONFIG } from '@/configs/app.config';
 import { ROUTES } from '@/configs/routes.config';
-import { NumberUtil } from '@/utils';
+import { DateTimeUtil, NumberUtil } from '@/utils';
 import { safeJsonParse } from '@/utils/json-parse.utils';
 import { ChannelMessage } from 'mezon-light-sdk/dist/api.gen';
 
@@ -85,12 +85,7 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
         socket.setChannelMessageHandler((msg: ChannelMessage) => {
           let parsedContent: ParsedMessageContent = { t: '' };
           if (typeof msg.content === 'string') {
-            const parsed = safeJsonParse<ParsedMessageContent>(msg.content);
-            if (parsed) {
-              parsedContent = parsed;
-            } else {
-              parsedContent = { t: msg.content };
-            }
+            parsedContent = safeJsonParse(msg.content) ?? { t: msg.content };
           } else if (msg.content && typeof msg.content === 'object') {
             parsedContent = msg.content as ParsedMessageContent;
           }
@@ -345,11 +340,7 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
                 {showDateDivider && (
                   <div className="my-6 flex items-center justify-center">
                     <span className="rounded-full border border-gray-200 bg-gray-100 px-3 py-1 text-[10px] font-bold text-gray-500 uppercase dark:border-gray-800 dark:bg-gray-900">
-                      {new Date(msgTimestamp * 1000).toLocaleDateString([], {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
+                      {DateTimeUtil.formatShortDate(msgTimestamp)}
                     </span>
                   </div>
                 )}
@@ -404,7 +395,7 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
                           {msg.content.t && <p>{msg.content.t}</p>}
 
                           <div className="flex flex-col rounded-md border border-black/5 bg-black/5 p-3 dark:border-white/10 dark:bg-white/5">
-                            {msg.content.embed[0].fields && (
+                            {msg.content?.embed?.[0]?.fields && (
                               <div className="grid grid-cols-1 gap-1 text-xs opacity-90">
                                 {msg.content.embed[0].fields.map((field, i: number) => (
                                   <div key={i} className="flex gap-1">
