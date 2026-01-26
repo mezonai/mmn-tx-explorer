@@ -112,7 +112,7 @@ export const P2P = () => {
       markLeft();
     };
 
-    wsManager?.on('*', serverHandler);
+    wsManager?.on(SOCKET_MESSAGE.ROOM_OFFER_UPDATES, serverHandler);
 
     if (tab === P2P_TAB.OFFERS) {
       doJoin();
@@ -125,7 +125,7 @@ export const P2P = () => {
     return () => {
       clearJoinInterval();
       doLeave();
-      wsManager?.off('*', serverHandler);
+      wsManager?.off(SOCKET_MESSAGE.ROOM_OFFER_UPDATES, serverHandler);
     };
   }, [wsManager, tab]);
 

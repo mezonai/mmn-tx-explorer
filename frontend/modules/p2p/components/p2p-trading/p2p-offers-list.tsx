@@ -18,7 +18,6 @@ import { ShareOfferModal } from './share-offer-modal';
 import { TriangleAlert } from 'lucide-react';
 import { NumberUtil } from '@/utils';
 import { cn } from '@/lib/utils';
-import { clear } from 'node:console';
 
 interface P2POffersTableProps {
   offers: P2POffer[] | undefined;
@@ -37,24 +36,61 @@ export const P2POffersTabs = ({
   const { user } = useUser();
 
   const [showOverlay, setShowOverlay] = useState(false);
+  const hideTimeoutRef = useRef<number | null>(null);
 
+  // Show overlay when refreshing (shared timeout ref)
   useEffect(() => {
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-
     if (isRefreshing) {
       setShowOverlay(true);
+      if (hideTimeoutRef.current !== null) {
+        clearTimeout(hideTimeoutRef.current);
+        hideTimeoutRef.current = null;
+      }
     } else {
-      timeoutId = setTimeout(() => {
+      hideTimeoutRef.current = window.setTimeout(() => {
         setShowOverlay(false);
+        hideTimeoutRef.current = null;
       }, 300);
     }
 
     return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
+      if (hideTimeoutRef.current !== null) {
+        clearTimeout(hideTimeoutRef.current);
+        hideTimeoutRef.current = null;
       }
     };
   }, [isRefreshing]);
+
+  // Show overlay briefly when new offers arrive
+  const prevOfferIdsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!offers) {
+      prevOfferIdsRef.current = new Set();
+      return;
+    }
+
+    const prevIds = prevOfferIdsRef.current;
+    const currIds = new Set(offers.map((o) => o.offer_id));
+
+    let added = false;
+    currIds.forEach((id) => {
+      if (!prevIds.has(id)) added = true;
+    });
+
+    prevOfferIdsRef.current = currIds;
+
+    // If new offers added and not already refreshing, show overlay briefly
+    if (added && !isRefreshing) {
+      setShowOverlay(true);
+      if (hideTimeoutRef.current !== null) {
+        clearTimeout(hideTimeoutRef.current);
+      }
+      hideTimeoutRef.current = window.setTimeout(() => {
+        setShowOverlay(false);
+        hideTimeoutRef.current = null;
+      }, 800);
+    }
+  }, [offers, isRefreshing]);
 
   const rows = offers ?? [];
 
@@ -182,7 +218,7 @@ export const P2POffersTabs = ({
             offer.status !== OFFERS_STATUS.CANCELED && (
               <div className="flex w-full items-center gap-2">
                 <div className="flex-1">
-                  <CancelConfirmDialog offer={offer} />
+                  <CancelConfirmDialog offer={offer} onCancelStart={onCancelStart} />
                 </div>
                 <ShareOfferModal offer={offer} />
               </div>
@@ -199,8 +235,8 @@ export const P2POffersTabs = ({
   return (
     <Card className="bg-card relative overflow-hidden border-gray-300 dark:border-gray-800">
       {/* Refresh overlay */}
-      {isRefreshing && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex items-center justify-center p-0 md:right-auto md:left-6 md:justify-start">
+      {showOverlay && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-6 z-50 flex items-center justify-center p-0 md:right-auto md:left-6 md:justify-start">
           <div className="flex items-center gap-2 rounded-md bg-white/85 px-3 py-1 shadow-lg backdrop-blur-sm dark:bg-black/70">
             <div className="h-3 w-3 animate-pulse rounded-full bg-emerald-500" />
             <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Refreshing offers</div>
