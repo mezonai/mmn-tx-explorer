@@ -36,7 +36,6 @@ const getDefaultTimeRangeByMonth = (monthRange: number) => {
 export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCardProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParamsHook = useSearchParams();
   const [showExportModal, setShowExportModal] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportFromDate, setExportFromDate] = useState<Date | null>(null);
@@ -90,12 +89,12 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
       const totalPages = pagination.total_pages;
 
       if (totalPages > 0 && page > totalPages) {
-        const currentParams = new URLSearchParams(searchParamsHook.toString());
+        const currentParams = new URLSearchParams(urlSearchParams.toString());
         currentParams.set('page', totalPages.toString());
         router.replace(`${pathname}?${currentParams.toString()}`);
       }
     }
-  }, [pagination, page, isLoadingTransactions, router, pathname, searchParamsHook]);
+  }, [pagination, page, isLoadingTransactions, router, pathname, urlSearchParams]);
   const handleExportWithRange = async (fromDate: Date | null, toDate: Date | null, filename?: string) => {
     if (isExporting) return;
     setIsExporting(true);
