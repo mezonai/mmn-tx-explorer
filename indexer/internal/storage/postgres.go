@@ -1728,6 +1728,8 @@ func (p *PostgresConnector) insertTransactionsTx(
 		}
 	}
 
+	p2pOfferAdd /= 1000000
+	p2pOfferSubtract /= 1000000
 	if p2pOfferAdd > 0 || p2pOfferSubtract > 0 {
 		netChange := p2pOfferAdd - p2pOfferSubtract
 		_, err := tx.ExecContext(ctx, `
