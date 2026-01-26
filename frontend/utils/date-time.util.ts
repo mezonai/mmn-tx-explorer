@@ -1,6 +1,7 @@
 import { formatDistanceToNow, formatDistanceToNowStrict } from 'date-fns';
 
 export class DateTimeUtil {
+  private static readonly MS_PER_SECOND = 1000;
   static formatRelativeTime(timeString: Date | string | number): string {
     const diff = formatDistanceToNowStrict(timeString, { addSuffix: false });
 
@@ -42,5 +43,13 @@ export class DateTimeUtil {
     const offset = date.getTimezoneOffset();
     const localDate = new Date(date.getTime() - offset * 60 * 1000);
     return localDate.toISOString().split('T')[0];
+  }
+
+  static formatShortDate(timestampSec: number): string {
+    return new Date(timestampSec * this.MS_PER_SECOND).toLocaleDateString([], {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
   }
 }

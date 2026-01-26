@@ -78,14 +78,15 @@ export function AppProvider({ children }: AppProviderProps) {
       (async () => {
         try {
           const light_client = LightClient.initClient({
-            token: lightClient.session.token,
-            refresh_token: lightClient.session.refresh_token,
-            api_url: lightClient.session.api_url,
-            user_id: lightClient.user_id,
+            token: lightClient._session.token,
+            refresh_token: lightClient._session.refresh_token,
+            api_url: lightClient._session.api_url,
+            user_id: lightClient._userId,
             serverkey,
           });
           setLightClient(light_client);
-        } catch {
+        } catch (err) {
+          console.error(err);
           resetSession();
           toast.error('Session expired, please log in again.');
         }
