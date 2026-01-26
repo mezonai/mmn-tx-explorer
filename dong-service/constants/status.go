@@ -135,4 +135,6 @@ const (
 	MaxLengthSymbol           int     = 64
 	MaxTotalBankInfoSize      int     = 1024
 	MaxIndividualBankInfoSize int     = 128
+	MaxActiveOffersPerUser    int64   = 10
+	MaxActiveOrdersPerUser    int     = 10
 )
