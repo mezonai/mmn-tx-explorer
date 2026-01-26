@@ -13,7 +13,7 @@ const DEFAULT_PARAMS: CampaignListParams = {
   page: 1,
   limit: 1,
   verified: true,
-  status: ECampaignStatus.Active,
+  status: String(ECampaignStatus.Active),
   order: ESortOrder.DESC,
   order_by: 'total_amount',
 };

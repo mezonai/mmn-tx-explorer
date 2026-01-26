@@ -60,7 +60,7 @@ export interface DonationResponse {
 export interface CampaignListParams {
   page: number;
   limit: number;
-  status?: string | number;
+  status?: string;
   verified?: boolean;
   order?: 'asc' | 'desc';
   order_by?: 'total_amount' | 'created_at' | 'end_date' | 'recent_amount';
