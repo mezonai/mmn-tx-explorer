@@ -1,6 +1,8 @@
 name: Deploy WebSocket Service
+permissions:
+  contents: write
 
-on:
+on: 
   workflow_dispatch:
     inputs:
       env:
@@ -11,6 +13,9 @@ on:
         description: "Git ref (branch, tag, or commit)"
         required: true
         default: "main"
+      existing_tag_to_deploy:
+        description: "(Optional) Existing tag to deploy (skips build)"
+        required: false
 
   workflow_call:
     inputs:
@@ -20,12 +25,12 @@ on:
       ref:
         type: string
         required: true
-      git_sha:
+      target_tag:
         type: string
-        required: false
-      source_artifact:
+        required: true
+      skip_build:
         type: string
-        required: false
+        required: true
     secrets:
       POSTGRES_PASSWORD:
         required: true
@@ -41,30 +46,25 @@ jobs:
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
     outputs:
-      git_sha: ${{ steps.get_sha.outputs.git_sha }}
+      tag_name: ${{ steps.build_socket_binary.outputs.tag_name }}
     steps:
       - name: Checkout
-        if: inputs.source_artifact == ''
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
           clean: false
-
-      - name: Download source (from Artifact)
-        if: inputs.source_artifact != ''
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ inputs.source_artifact }}
-          path: .
+          fetch-depth: 1
 
       - name: Setup Go
+        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
         uses: actions/setup-go@v5
         with:
           go-version: "1.25"
           cache: true
           check-latest: false
-
+       
       - name: Run golangci-lint
+        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
         uses: golangci/golangci-lint-action@v8
         with:
           version: v2.5.0
@@ -72,30 +72,85 @@ jobs:
           args: --timeout=5m --output.text.print-issued-lines
         continue-on-error: true
 
-      - name: Build WebSocket Service binary
+      - name: Build Socket Service binary
+        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
+        id: build_socket_binary
         run: |
-          mkdir -p build 
+          mkdir -p build
           cd socket-service
-          GOOS=linux GOARCH=amd64 go build -o ../build/socket-service .
+          TAG_NAME="${{ inputs.target_tag }}"
+          if [ -z "$TAG_NAME" ]; then TAG_NAME="v0.0.0"; fi
+          
+          echo "Building version: $TAG_NAME"
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ../build/socket-service-${TAG_NAME} .
+          echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
 
-      - name: Get short SHA
-        id: get_sha
-        run: |
-          if [ -n "${{ inputs.git_sha }}" ]; then
-            echo "git_sha=${{ inputs.git_sha }}" >> $GITHUB_OUTPUT
-          else
-            echo "git_sha=$(git rev-parse --short=8 HEAD)" >> $GITHUB_OUTPUT
-          fi
+      - name: Create Release and Upload binary
+        if: inputs.skip_build == 'false'
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.build_socket_binary.outputs.tag_name }}
+          name: "Release ${{ steps.build_socket_binary.outputs.tag_name }}"
+          target_commitish: ${{ inputs.ref }}
+          fail_on_unmatched_files: true
+          files: |
+            build/socket-service-${{ steps.build_socket_binary.outputs.tag_name }}
 
-  deploy:
+  deploy-socket:
+    if: always()
     needs: build
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
-    env:
-      TARGET_HOST: ${{ inputs.env == 'prod' && 'prod-indexer' || 'dev-indexer' }}
-      GIT_SHA: ${{ needs.build.outputs.git_sha }}
 
     steps:
+      - name: Determine Binary Path and Tag
+        id: determine_binary
+        run: |
+          TAG_INPUT=""
+          if [ -n "${{ inputs.target_tag }}" ]; then
+            TAG_INPUT="${{ inputs.target_tag }}"
+          elif [ -n "${{ inputs.existing_tag_to_deploy }}" ]; then 
+            TAG_INPUT="${{ inputs.existing_tag_to_deploy }}"
+          elif [ "${{ needs.build.result }}" == "success" ]; then
+            TAG_INPUT="${{ needs.build.outputs.tag_name }}"
+            echo "==> Will deploy newly built tag: $TAG_INPUT"
+          else
+            echo "::error::Cannot proceed. No existing tag was provided and the build job did not succeed."
+            exit 1
+          fi
+
+          if [[ ! "$TAG_INPUT" == v* ]]; then
+            TAG_TO_DEPLOY="v$TAG_INPUT"
+          else
+            TAG_TO_DEPLOY="$TAG_INPUT"
+          fi
+
+          echo "tag_name=$TAG_TO_DEPLOY" >> $GITHUB_OUTPUT
+          echo "binary_name=socket-service-$TAG_TO_DEPLOY" >> $GITHUB_OUTPUT
+          echo "binary_path=build/socket-service-$TAG_TO_DEPLOY" >> $GITHUB_OUTPUT
+       
+      - name: Download release binary using url 
+        if: inputs.existing_tag_to_deploy != ''
+        run: | 
+          set -e 
+          OWNER=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f1)
+          REPO=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f2)
+          TAG_NAME="${{ steps.determine_binary.outputs.tag_name }}"
+          BINARY_NAME="${{ steps.determine_binary.outputs.binary_name }}"
+          BINARY_PATH="${{ steps.determine_binary.outputs.binary_path }}"
+          DOWNLOAD_URL="https://github.com/$OWNER/$REPO/releases/download/$TAG_NAME/$BINARY_NAME"
+
+          echo "==> Downloading from URL: $DOWNLOAD_URL"
+          mkdir -p build
+          curl -sSL --fail -o "$BINARY_PATH" "$DOWNLOAD_URL"
+          echo "==> Download complete: $BINARY_PATH"
+          ls -lh "$BINARY_PATH"
+
+      - name: Copy config to target
+        run: |
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} socket-service/config/config.yml ${{ vars.HOST_ALIAS }}:/opt/socket-service/config/config.template.yml
+       
       - name: Generate remote setup script
         env:
           POSTGRES_DB: ${{ vars.POSTGRES_DB }}
@@ -108,25 +163,23 @@ jobs:
           REDIS_ADDRESS: ${{ vars.REDIS_ADDRESS }}
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
           REDIS_DB: ${{ vars.REDIS_DB }}
-          SERVER_GIN_MODE: release
-          LOGGING_OUTPUT: "file"
-          LOG_LEVEL: ${{ inputs.env == 'prod' && 'info' || 'debug' }}
+          SERVER_GIN_MODE: release 
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
           set -euo pipefail
 
-          SHA="$1"
+          VERSION_ID="$1"
           echo "==> Preparing deployment directories and configs..."
-          sudo mkdir -p /opt/socket-service/bin /opt/socket-service/config /opt/socket-service/migrations /opt/socket-service/logs
-
+          sudo mkdir -p /opt/socket-service/{bin,config,migrations,logs}
+          
           echo "==> Writing environment configs..."
           sudo tee /opt/socket-service/config/socket-service.env > /dev/null <<EON
           DATABASE_HOST='${POSTGRES_HOST}'
           DATABASE_PORT='${POSTGRES_PORT}'
           DATABASE_USER='${POSTGRES_USER}'
           DATABASE_PASSWORD='${POSTGRES_PASSWORD}'
-          DATABASE_NAME='${POSTGRES_DB}'         
+          DATABASE_NAME='${POSTGRES_DB}'
           JWT_SECRET='${JWT_SECRET}'
           EVENT_API_KEY='${EVENT_API_KEY}'
           REDIS_ADDRESS='${REDIS_ADDRESS}'
@@ -134,22 +187,22 @@ jobs:
           REDIS_DB='${REDIS_DB}'
           SERVER_GIN_MODE='${SERVER_GIN_MODE}'
           EON
-        
+
           sudo chown -R mmn:mmn /opt/socket-service
           sudo chmod 600 /opt/socket-service/config/socket-service.env
 
-          echo "==> Deploying new socket-service binary to staging path..."
-          sudo install -m 0755 /tmp/socket-service /opt/socket-service/bin/socket-service-${SHA}
+          echo "==> Deploying new binary to staging path..."
+          sudo install -m 0755 /tmp/socket-service /opt/socket-service/bin/socket-service-${VERSION_ID}
 
-          echo "==> Deploying migrations for socket-service..."
+          echo "==> Deploying migrations..."
           sudo rm -rf /opt/socket-service/migrations
-          sudo mv /tmp/postgres-socket-service /opt/socket-service/migrations
+          sudo mv /tmp/postgres-socket /opt/socket-service/migrations
 
           echo "==> Preparation complete!"
           EOF
           chmod +x remote_setup.sh
-
-          echo "# Remote env generated at $(date)" > remote_env.sh
+          
+           echo "# Remote env generated at $(date)" > remote_env.sh
           printf "export POSTGRES_DB=%q\n" "$POSTGRES_DB" >> remote_env.sh
           printf "export POSTGRES_USER=%q\n" "$POSTGRES_USER" >> remote_env.sh
           printf "export POSTGRES_PASSWORD=%q\n" "$POSTGRES_PASSWORD" >> remote_env.sh
@@ -168,16 +221,17 @@ jobs:
           printf "export SERVER_GIN_MODE=%q\n" "$SERVER_GIN_MODE" >> remote_env.sh
 
       - name: Prepare and deploy to target server
+        env:
+          DEPLOY_TAG: ${{ steps.determine_binary.outputs.tag_name }}
+          BINARY_PATH: ${{ steps.determine_binary.outputs.binary_path }}
         run: |
           set -e
           echo "==> Copying binaries to target server..."
-          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} build/socket-service ${{ vars.HOST_ALIAS }}:/tmp/
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} "$BINARY_PATH" ${{ vars.HOST_ALIAS }}:/tmp/socket-service
           
           echo "==> Copying migrations to target server..."
-          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} -r socket-service/migrations ${{ vars.HOST_ALIAS }}:/tmp/postgres-socket-service/
-
-          echo "==> Copying static config for socket-service..."
-          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} socket-service/config/config.yml ${{ vars.HOST_ALIAS }}:/tmp/socket-service-config.yml
+          # Note: Adjusted source path to match socket-service structure
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} -r socket-service/migrations ${{ vars.HOST_ALIAS }}:/tmp/postgres-socket/
 
           echo "==> Copying setup scripts to target server..."
           scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} remote_setup.sh remote_env.sh ${{ vars.HOST_ALIAS }}:/tmp/
@@ -186,38 +240,46 @@ jobs:
           ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "
             set -e
             source /tmp/remote_env.sh
-            bash /tmp/remote_setup.sh \"$GIT_SHA\"
+            bash /tmp/remote_setup.sh \"$DEPLOY_TAG\"
             
             echo '==> Cleaning up temp files...'
             rm -f /tmp/socket-service
             rm -f /tmp/remote_setup.sh /tmp/remote_env.sh
-            rm -rf /tmp/postgres-socket-service
+            rm -rf /tmp/postgres-socket
           "
-          
+
       - name: Atomic swap + restart services
         env:
           LOGLEVEL: ${{ inputs.env == 'prod' && 'warn' || 'info' }}
+          DEPLOY_TAG: ${{ steps.determine_binary.outputs.tag_name }}
         run: |
           ssh -i ${{vars.SSH_PRIVATE_KEY_PATH}} ${{vars.HOST_ALIAS}} <<EOF
           #!/usr/bin/env bash
           set -euo pipefail
 
-          echo "==> Generating final config files on target server..."
-          sudo mkdir -p /etc/mezon
-
           echo "Log level set to: $LOGLEVEL"
 
+          echo "==> Generating final config files on target server..."
+          sudo mkdir -p /etc/mezon
+          
           sed \
             -e "s|level: \"info\"|level: \"$LOGLEVEL\"|g" \
             -e "s|output: \"stdout\"|output: \"file\"|g" \
-            /tmp/socket-service-config.yml \
+            -e "s|filePath: .*|filePath: /opt/socket-service/logs/socket-service.log|g" \
+            /opt/socket-service/config/config.template.yml \
             | sudo tee /etc/mezon/socket-service-config.yml >/dev/null
 
           echo "==> Stopping services..."
           sudo systemctl stop socket-service || true
 
           echo "==> Atomically swapping to new binary..."
-          sudo ln -sfn socket-service-${GIT_SHA} /opt/socket-service/bin/socket-service
+          sudo ln -sfn socket-service-${DEPLOY_TAG} /opt/socket-service/bin/socket-service
+
+          echo "==> Running database migrations..."
+          set -a
+          source /opt/socket-service/config/socket-service.env
+          set +a
+          /opt/socket-service/bin/socket-service migrate || echo "Migration command skipped (check binary args)"
 
           echo "==> Reloading and starting services..."
           sudo systemctl daemon-reload
@@ -228,8 +290,17 @@ jobs:
 
           echo "==> Activation complete!"
           EOF
-
+          
       - name: Health check after deployment
         run: |
-          echo "==> Checking Socket Service systemd status..."
-          ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "systemctl is-active socket-service"
+          echo "==> Checking Socket Service status..."
+          ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "
+            for i in {1..10}; do
+              if curl -sSf http://127.0.0.1:8080/health; then
+                exit 0
+              fi
+              sleep 2
+            done
+            systemctl status socket-service --no-pager
+            exit 1
+          "

@@ -197,8 +197,9 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
         sessionStorage.setItem(STORAGE_KEYS.P2P_PENDING_GREETING(newOrder.order_id), 'true');
         router.push(ROUTES.P2P_TRADING_ROOM(newOrder.order_id));
       }
-    } catch {
-      setError('Something went wrong while creating the order. Please try again.');
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.message || 'Something went wrong while creating the order. Please try again.';
+      setError(errorMessage);
     }
   };
 
@@ -234,6 +235,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       buyer_user_id: '',
       seller_user_id: '',
     };
+
+    const isSellerOfOffer = user?.walletAddress === offer?.seller_wallet_address;
 
     return (
       <div className="bg-background relative flex flex-col">
@@ -271,18 +274,6 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
         <div className="flex flex-1 flex-col gap-6 md:flex-row">
           <div className="border-border w-full p-6 md:w-7/12 lg:w-8/12">
             <ProgressSteps order={displayOrder} />
-            {offer.has_active_order && (
-              <div className="mb-6 rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-4 text-yellow-600 dark:text-yellow-500">
-                <p className="flex items-center gap-2 font-bold">
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-yellow-500" />
-                  Offer Temporarily Locked
-                </p>
-                <span className="mt-1 text-sm">
-                  This offer is locked because a transaction is in progress. Please try again after it&apos;s completed.
-                </span>
-              </div>
-            )}
-
             {error && (
               <div className="border-destructive/20 bg-destructive/10 text-destructive mb-4 rounded-lg border p-3 text-sm">
                 {error}
@@ -293,7 +284,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
               offer={offer}
               onConfirmBuy={handleConfirmBuy}
               isLoading={isCreatingOrder}
-              extraDisabled={offer.has_active_order}
+              extraDisabled={offer.has_active_order || isSellerOfOffer}
+              isSeller={isSellerOfOffer}
             />
           </div>
 

@@ -1,4 +1,5 @@
 import { OFFERS_STATUS, P2P_TAB, P2P_TRADING_ROLE } from './constants';
+import { ChannelMessage as ApiChannelMessage } from 'mezon-light-sdk/dist/api.gen';
 
 export type BankOption = 'MB' | 'VCB' | 'TCB' | 'ACB' | 'TPBANK' | 'VIETCOMBANK';
 
@@ -129,6 +130,28 @@ export interface LinkLocation {
   url: string;
   start: number;
   end: number;
+}
+export interface ParsedMessageContent {
+  t?: string;
+  embed?: Array<{
+    color?: string;
+    title?: string;
+    url?: string;
+    description?: string;
+    fields?: Array<{
+      name?: string;
+      value?: string;
+      inline?: boolean;
+    }>;
+    timestamp?: string;
+    footer?: {
+      text?: string;
+    };
+  }>;
+  mk?: string;
+}
+export interface MessageWithParsedContent extends Omit<ApiChannelMessage, 'content'> {
+  content: ParsedMessageContent;
 }
 export type P2PTradingRoleType = (typeof P2P_TRADING_ROLE)[keyof typeof P2P_TRADING_ROLE];
 export interface AutoMessagePayload {

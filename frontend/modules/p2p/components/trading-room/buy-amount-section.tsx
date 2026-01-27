@@ -14,18 +14,14 @@ interface BuyAmountSectionProps {
   onConfirmBuy: (amountMZD: number, amountVND: number) => void;
   isLoading?: boolean;
   extraDisabled?: boolean;
+  isSeller?: boolean;
 }
 
 const getRawValue = (val: string): number => {
   return parseFloat(val.replace(/\./g, '').replace(/,/g, '')) || 0;
 };
 
-export const BuyAmountSection = ({
-  offer,
-  onConfirmBuy,
-  isLoading = false,
-  extraDisabled = false,
-}: BuyAmountSectionProps) => {
+export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false, extraDisabled = false, isSeller = false }: BuyAmountSectionProps) => {
   const [amountMZD, setAmountMZD] = useState<number>(0);
   const [displayValue, setDisplayValue] = useState<string>('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -51,9 +47,11 @@ export const BuyAmountSection = ({
   const effectiveMax = Math.min(offer.limit.max, available);
 
   let placeholder = `Minimum: ${formatCurrency(initialMin)} - Maximum: ${formatCurrency(effectiveMax)}`;
-  let isDisabled = extraDisabled;
+  let isDisabled = false;
 
-  if (available === 0) {
+  if (isSeller) {
+    isDisabled = true;
+  } else if (available === 0) {
     placeholder = 'Minimum: 0 - Maximum: 0';
     isDisabled = true;
   } else if (available < initialMin) {
@@ -62,7 +60,7 @@ export const BuyAmountSection = ({
   }
 
   const handleConfirm = () => {
-    if (amountMZD >= initialMin && amountMZD <= effectiveMax && !extraDisabled) {
+    if (amountMZD >= initialMin && amountMZD <= effectiveMax) {
       setShowConfirmModal(true);
     }
   };
@@ -148,15 +146,15 @@ export const BuyAmountSection = ({
       <div className="mt-4 flex justify-center">
         <Button
           onClick={handleConfirm}
-          disabled={!isValidAmount || isLoading || extraDisabled}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-500 px-5 py-6 text-base font-semibold text-white shadow-lg transition hover:bg-emerald-600"
+          disabled={!isValidAmount || isLoading}
+          className="w-full bg-emerald-500 hover:bg-emerald-600 inline-flex items-center justify-center rounded-lg px-5 py-6 text-base font-semibold text-white shadow-lg transition gap-2"
         >
           <CheckCircle2 className="h-5 w-5" />
           {isLoading ? 'Processing...' : 'Confirm purchase'}
         </Button>
       </div>
 
-      {!isValidAmount && amountMZD > 0 && !extraDisabled && (
+      {!isValidAmount && amountMZD > 0 && (
         <p className="text-center text-xs text-red-500">
           Amount must be between {formatCurrency(initialMin)} and {formatCurrency(effectiveMax)}{' '}
           {APP_CONFIG.CHAIN_SYMBOL}

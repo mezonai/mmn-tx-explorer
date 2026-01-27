@@ -47,7 +47,6 @@ export function ClaimRedEnvelopeProvider({ children }: { children: ReactNode }) 
     }
 
     const requestData: ClaimEnvelopeRequest = {
-      id: redEnvelopeId,
       split_money_id: amountData.split_money_id,
     };
 
