@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Folder, Loader2, X, UploadCloud } from 'lucide-react';
 import React, { ChangeEvent, useState, useRef } from 'react';
 import { formatFileSize } from '@/utils';
+import { IMAGE_CONSTRAINTS } from '@/modules/donation-campaign/constants';
 
 interface UploadImagesProps {
   previews: string[];
@@ -13,9 +14,6 @@ interface UploadImagesProps {
   totalSize: number;
   totalImagesCount: number;
   isFetchingLocalSizes: boolean;
-  unit: string;
-  maxSize: number;
-  maxImagesAllowed: number;
 }
 
 export const UploadImages = ({
@@ -27,13 +25,12 @@ export const UploadImages = ({
   totalSize,
   totalImagesCount,
   isFetchingLocalSizes,
-  unit,
-  maxSize,
-  maxImagesAllowed,
 }: UploadImagesProps) => {
+  const maxTotalSize = IMAGE_CONSTRAINTS.MAX_IMAGES_SIZE * 1024 * 1024;
+  const maxImagesAllowed = IMAGE_CONSTRAINTS.MAX_IMAGES_ALLOWED;
+  const maxSize = IMAGE_CONSTRAINTS.MAX_IMAGES_SIZE;
+  const unit = IMAGE_CONSTRAINTS.UNIT;
   const [isDragging, setIsDragging] = useState(false);
-  const maxTotalSize = maxSize * 1024 * 1024;
-
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const allowedTypes = ['image/jpeg', 'image/png', 'image/heic', 'image/heif'];
