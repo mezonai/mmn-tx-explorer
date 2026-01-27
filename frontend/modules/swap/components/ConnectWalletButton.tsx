@@ -54,7 +54,7 @@ export const ConnectWalletButton = ({ onConnectClick }: ConnectWalletButtonProps
                   <button
                     onClick={openChainModal}
                     type="button"
-                    className="rounded-md border border-input bg-background px-3 py-2 text-sm hover:bg-accent"
+                    className="border-input bg-background hover:bg-accent rounded-md border px-3 py-2 text-sm"
                   >
                     {chain.name}
                   </button>
@@ -62,7 +62,7 @@ export const ConnectWalletButton = ({ onConnectClick }: ConnectWalletButtonProps
                   <button
                     onClick={openAccountModal}
                     type="button"
-                    className="rounded-md border border-input bg-background px-3 py-2 font-mono text-sm hover:bg-accent"
+                    className="border-input bg-background hover:bg-accent rounded-md border px-3 py-2 font-mono text-sm"
                   >
                     {account.displayName}
                   </button>

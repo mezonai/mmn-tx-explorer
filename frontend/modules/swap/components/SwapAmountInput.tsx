@@ -2,11 +2,12 @@
 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { TokenSymbol } from '@/constant/token.constant';
 
 interface SwapAmountInputProps {
   amount: string;
   balance: string;
-  tokenSymbol?: string;
+  tokenSymbol?: TokenSymbol;
   onAmountChange: (value: string) => void;
   onMaxClick: () => void;
   disabled?: boolean;
@@ -27,23 +28,23 @@ const formatNumberWithCommas = (value: string | number): string => {
 export const SwapAmountInput = ({
   amount,
   balance,
-  tokenSymbol = 'WMezon',
+  tokenSymbol = TokenSymbol.WMezon,
   onAmountChange,
   onMaxClick,
   disabled = false,
 }: SwapAmountInputProps) => {
   return (
-    <div className="space-y-4 mb-6">
+    <div className="mb-6 space-y-4">
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <label className="text-sm md:text-base font-medium text-foreground">Amount</label>
+          <label className="text-foreground text-sm font-medium md:text-base">Amount</label>
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={onMaxClick}
             disabled={disabled}
-            className="h-auto px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-medium text-brand-primary hover:text-white hover:bg-brand-primary/90"
+            className="text-brand-primary hover:bg-brand-primary/90 h-auto px-3 py-1.5 text-xs font-medium hover:text-white md:px-4 md:py-2 md:text-sm"
           >
             Max
           </Button>
@@ -59,11 +60,11 @@ export const SwapAmountInput = ({
             }
           }}
           disabled={disabled}
-          className="text-base md:text-lg h-14 md:h-16"
+          className="h-14 text-base md:h-16 md:text-lg"
         />
       </div>
 
-      <div className="flex items-center text-xs md:text-sm text-muted-foreground">
+      <div className="text-muted-foreground flex items-center text-xs md:text-sm">
         <span>
           Available: {formatNumberWithCommas(balance)} {tokenSymbol}
         </span>

@@ -8,11 +8,12 @@ import { formatDistanceToNow } from 'date-fns';
 import { BSC_SCAN_URL } from '@/constant/contracts';
 import { useState } from 'react';
 import { PAGINATION, SWAP_HISTORY_LIMITS } from '@/constant';
+import { TokenSymbol } from '@/constant/token.constant';
 
 export const SwapHistory = () => {
   const [page, setPage] = useState<number>(PAGINATION.DEFAULT_PAGE);
   const [limit, setLimit] = useState<number>(PAGINATION.SWAP_HISTORY_LIMITS);
-  
+
   const { data, isLoading, error } = useRecentTransactions(page - 1, limit);
 
   const formatTxHash = (hash: string) => {
@@ -32,9 +33,9 @@ export const SwapHistory = () => {
     const num = parseFloat(amount);
     if (isNaN(num)) return '0';
     if (num > 0 && num < 0.0001) {
-      return num.toLocaleString('en-US', { 
+      return num.toLocaleString('en-US', {
         minimumFractionDigits: 2,
-        maximumFractionDigits: 8 
+        maximumFractionDigits: 8,
       });
     }
     return num.toLocaleString('en-US', { maximumFractionDigits: 4 });
@@ -51,18 +52,16 @@ export const SwapHistory = () => {
 
   return (
     <Card className="mt-6">
-      <CardHeader className="px-4 md:px-6 py-4">
+      <CardHeader className="px-4 py-4 md:px-6">
         <CardTitle className="text-base md:text-lg">Recent Swaps</CardTitle>
       </CardHeader>
       <CardContent className="px-4 md:px-6">
         {isLoading ? (
-          <div className="flex justify-center items-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
           </div>
         ) : error || !data?.success || !data?.data || data.data.length === 0 ? (
-          <div className="text-center text-muted-foreground py-8">
-            No swap history yet
-          </div>
+          <div className="text-muted-foreground py-8 text-center">No swap history yet</div>
         ) : (
           <>
             <div className="space-y-3">
@@ -72,26 +71,34 @@ export const SwapHistory = () => {
                   href={`${BSC_SCAN_URL}/tx/${item.TxHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex flex-col gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer md:flex-row md:justify-between md:items-center md:gap-4 md:p-5"
+                  className="bg-card hover:bg-muted/50 flex cursor-pointer flex-col gap-3 rounded-lg border p-4 transition-colors md:flex-row md:items-center md:justify-between md:gap-4 md:p-5"
                 >
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <ArrowRightLeft className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground flex-shrink-0" />
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <ArrowRightLeft className="text-muted-foreground h-4 w-4 flex-shrink-0 md:h-5 md:w-5" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-foreground text-sm md:text-base font-medium">
-                        {item.Type === 'TRANSFER_BSC' ? 'WMezon → Mezon' : 'Mezon → WMezon'}
+                      <p className="text-foreground text-sm font-medium md:text-base">
+                        {item.Type === 'TRANSFER_BSC' ? (
+                          <>
+                            {TokenSymbol.WMezon} → {TokenSymbol.Mezon}
+                          </>
+                        ) : (
+                          <>
+                            {TokenSymbol.Mezon} → {TokenSymbol.WMezon}
+                          </>
+                        )}
                       </p>
-                      <p className="text-xs md:text-sm text-muted-foreground font-mono truncate">
+                      <p className="text-muted-foreground truncate font-mono text-xs md:text-sm">
                         {formatTxHash(item.TxHash)} • {formatTimeAgo(item.CreatedAt)}
                       </p>
                     </div>
                   </div>
-                  <p className="font-mono text-base md:text-lg font-semibold text-brand-primary whitespace-nowrap self-end md:self-auto">
-                    +{formatAmount(item.Amount)} WMezon
+                  <p className="text-brand-primary self-end font-mono text-base font-semibold whitespace-nowrap md:self-auto md:text-lg">
+                    +{formatAmount(item.Amount)} {TokenSymbol.WMezon}
                   </p>
                 </a>
               ))}
             </div>
-            
+
             {data.meta && data.meta.total_pages > 1 && (
               <Pagination
                 page={page}

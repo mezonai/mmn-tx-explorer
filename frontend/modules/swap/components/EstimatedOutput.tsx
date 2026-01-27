@@ -1,26 +1,24 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { TokenSymbol } from '@/constant/token.constant';
 
 interface EstimatedOutputProps {
   amount: string;
-  tokenSymbol?: string;
+  tokenSymbol?: TokenSymbol;
 }
 
 const formatNumberWithCommas = (value: number): string => {
-  return value.toLocaleString('en-US', { 
+  return value.toLocaleString('en-US', {
     minimumFractionDigits: 4,
-    maximumFractionDigits: 4 
+    maximumFractionDigits: 4,
   });
 };
 
-export const EstimatedOutput = ({ 
-  amount, 
-  tokenSymbol = 'WMezon'
-}: EstimatedOutputProps) => {
+export const EstimatedOutput = ({ amount, tokenSymbol = TokenSymbol.WMezon }: EstimatedOutputProps) => {
   const calculateOutput = () => {
     if (!amount || isNaN(parseFloat(amount))) return '0.0000';
-    
+
     const inputAmount = parseFloat(amount);
     return formatNumberWithCommas(inputAmount);
   };
@@ -28,11 +26,15 @@ export const EstimatedOutput = ({
   return (
     <Card className="mb-6">
       <CardContent className="p-5 md:p-6">
-        <div className="flex flex-col gap-2 md:flex-row md:justify-between md:items-center">
-          <span className="text-sm md:text-base text-muted-foreground">You'll receive</span>
-          <span className="text-foreground font-semibold font-mono text-lg md:text-xl">{calculateOutput()} {tokenSymbol}</span>
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <span className="text-muted-foreground text-sm md:text-base">You will receive</span>
+          <span className="text-foreground font-mono text-lg font-semibold md:text-xl">
+            {calculateOutput()} {tokenSymbol}
+          </span>
         </div>
-        <p className="text-xs md:text-sm text-muted-foreground mt-3">After bridge confirmation (gas fee paid separately)</p>
+        <p className="text-muted-foreground mt-3 text-xs md:text-sm">
+          After bridge confirmation (gas fee paid separately)
+        </p>
       </CardContent>
     </Card>
   );

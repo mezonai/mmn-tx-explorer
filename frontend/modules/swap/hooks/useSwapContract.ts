@@ -1,5 +1,5 @@
 import { useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
-import { parseUnits, encodePacked, keccak256, toHex } from 'viem';
+import { parseUnits } from 'viem';
 import { WMEZON_CONTRACT_ADDRESS, HOT_WALLET_ADDRESS, WMEZON_ABI } from '@/constant/contracts';
 
 interface SwapMemoData {
@@ -12,14 +12,15 @@ function parseErrorMessage(error: Error | null): string | null {
 
   const errorMessage = error.message.toLowerCase();
 
-  if (errorMessage.includes('user rejected') || 
-      errorMessage.includes('user denied') ||
-      errorMessage.includes('user cancelled')) {
+  if (
+    errorMessage.includes('user rejected') ||
+    errorMessage.includes('user denied') ||
+    errorMessage.includes('user cancelled')
+  ) {
     return 'Transaction cancelled by user';
   }
 
-  if (errorMessage.includes('insufficient funds') ||
-      errorMessage.includes('insufficient balance')) {
+  if (errorMessage.includes('insufficient funds') || errorMessage.includes('insufficient balance')) {
     return 'Insufficient balance to complete transaction';
   }
 
@@ -35,9 +36,7 @@ function parseErrorMessage(error: Error | null): string | null {
     return 'Transaction failed. Please check your balance and allowance';
   }
 
-  return error.message.length > 100 
-    ? error.message.substring(0, 100) + '...' 
-    : error.message;
+  return error.message.length > 100 ? error.message.substring(0, 100) + '...' : error.message;
 }
 
 function generateSwapMemo(fromAddress: string): `0x${string}` {
@@ -71,12 +70,6 @@ export function useSwapContract() {
     try {
       const amountInWei = parseUnits(amount, 18);
       const memo = generateSwapMemo(userAddress);
-
-      console.log('Executing swap:', {
-        to: HOT_WALLET_ADDRESS,
-        amount: amountInWei.toString(),
-        memo,
-      });
 
       writeContract({
         address: WMEZON_CONTRACT_ADDRESS as `0x${string}`,
