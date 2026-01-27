@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -17,6 +18,7 @@ import (
 
 const DateFormat = "2006-01-02"
 
+// GetTransactions godoc
 // @Summary Get all transactions
 // @Description Retrieve all transactions across all contracts
 // @Tags transactions
@@ -35,13 +37,35 @@ const DateFormat = "2006-01-02"
 // @Param end_time query string false "End date in YYYY-MM-DD format (defaults to current date)"
 // @Param aggregate query []string false "List of aggregate functions to apply"
 // @Param force_consistent_data query bool false "Force consistent data at the expense of query speed"
-// @Success 200 {object} api.QueryResponse{data=[]common.TransactionModel}
+// @Success 200 {object} api.QueryResponse{data=[]common.BaseTransactionModel}
 // @Failure 400 {object} api.Error
 // @Failure 401 {object} api.Error
 // @Failure 500 {object} api.Error
 // @Router /{chainId}/transactions [get]
 func GetTransactions(c *gin.Context) {
 	handleTransactionsRequest(c)
+}
+
+// @Summary Get transactions for infinite scroll
+// @Description Retrieve transactions with cursor-based pagination for infinite scroll
+// @Tags transactions
+// @Accept json
+// @Produce json
+// @Security BasicAuth
+// @Param chainId path string true "Chain ID"
+// @Param timestamp_lt query string false "Timestamp less than (from last page) in ISO 8601 format (e.g., 2025-10-11T11:00:21.203Z)" format(date-time)
+// @Param last_hash query string false "Last transaction hash (for pagination)"
+// @Param limit query int false "Number of items per page" default(20)
+// @Param wallet_address query string false "Wallet address to filter transactions"
+// @Param filter_from_address query string false "From address to filter transactions"
+// @Param filter_to_address query string false "To address to filter transactions"
+// @Success 200 {object} api.QueryResponse{data=[]common.TransactionModel}
+// @Failure 400 {object} api.Error
+// @Failure 401 {object} api.Error
+// @Failure 500 {object} api.Error
+// @Router /{chainId}/transactions/infinite [get]
+func GetTransactionsInfinite(c *gin.Context) {
+	handleTransactionsInfiniteRequest(c)
 }
 
 func handleTransactionsRequest(c *gin.Context) {
@@ -57,8 +81,8 @@ func handleTransactionsRequest(c *gin.Context) {
 	}
 
 	// Validate GroupBy and SortBy fields
-	if err := api.ValidateGroupByAndSortBy("transactions", queryParams.GroupBy, queryParams.SortBy, queryParams.Aggregates); err != nil {
-		api.BadRequestErrorHandler(c, err)
+	if validateErr := api.ValidateGroupByAndSortBy("transactions", queryParams.GroupBy, queryParams.SortBy, queryParams.Aggregates); validateErr != nil {
+		api.BadRequestErrorHandler(c, validateErr)
 		return
 	}
 
@@ -73,7 +97,7 @@ func handleTransactionsRequest(c *gin.Context) {
 	// Initialize the QueryResult
 	queryResult := api.QueryResponse{
 		Meta: api.Meta{
-			ChainId:    1337,
+			ChainID:    1337,
 			Page:       queryParams.Page,
 			Limit:      queryParams.Limit,
 			TotalItems: 0,
@@ -82,30 +106,30 @@ func handleTransactionsRequest(c *gin.Context) {
 		Data:         nil,
 		Aggregations: nil,
 	}
-	if walletAddress != "" {
-		// Get start and end time for filtering
-		startTime, endTime := getTimeRangeFromParams(queryParams.FilterParams, queryParams)
 
-		totalItems, err := mainStorage.GetTransactionsByWalletCount(ctx, walletAddress, startTime, endTime)
-		if err != nil {
-			log.Error().Err(err).Msg("Error getting transactions count")
+	// Get start and end time for filtering
+	startTime, endTime := getTimeRangeFromParams(&queryParams)
+
+	if walletAddress != "" {
+		totalItems, storeErr := mainStorage.GetTransactionsByWalletCount(ctx, walletAddress, startTime, endTime)
+		if storeErr != nil {
+			log.Error().Err(storeErr).Msg("Error getting transactions count")
 			api.InternalErrorHandler(c)
 			return
 		}
 
 		offset := queryParams.Page * queryParams.Limit
-		transactions, err := mainStorage.GetTransactionsByWalletPaginated(
+		transactions, queryErr := mainStorage.GetTransactionsByWalletPaginated(
 			ctx,
 			walletAddress,
 			queryParams.Limit,
 			offset,
-			queryParams.SortBy,
 			queryParams.SortOrder,
 			startTime,
 			endTime,
 		)
-		if err != nil {
-			log.Error().Err(err).Msg("Error querying transactions")
+		if queryErr != nil {
+			log.Error().Err(queryErr).Msg("Error querying transactions")
 			api.InternalErrorHandler(c)
 			return
 		}
@@ -118,8 +142,12 @@ func handleTransactionsRequest(c *gin.Context) {
 		return
 	}
 
+	// Add time range filter
+	queryParams.FilterParams["transaction_timestamp_gte"] = strconv.FormatInt(startTime, 10)
+	queryParams.FilterParams["transaction_timestamp_lte"] = strconv.FormatInt(endTime, 10)
+
 	// Prepare the QueryFilter
-	qf := storage.QueryFilter{
+	qf := &storage.QueryFilter{
 		FilterParams:        queryParams.FilterParams,
 		SortBy:              queryParams.SortBy,
 		SortOrder:           queryParams.SortOrder,
@@ -129,7 +157,7 @@ func handleTransactionsRequest(c *gin.Context) {
 	}
 
 	// Prepare the QueryFilter for count
-	countQf := storage.QueryFilter{
+	countQf := &storage.QueryFilter{
 		FilterParams:        queryParams.FilterParams,
 		ForceConsistentData: queryParams.ForceConsistentData,
 	}
@@ -158,26 +186,145 @@ func handleTransactionsRequest(c *gin.Context) {
 	var data interface{} = serializeTransactions(transactionsResult.Data)
 	queryResult.Data = &data
 	queryResult.Meta.TotalItems = int(totalItems)
-	maxItemsDisplayed := min(totalItems, storage.DATA_ROWS_DISPLAY_LIMIT)
+	maxItemsDisplayed := min(totalItems, storage.DataRowsDisplayLimit)
 	queryResult.Meta.TotalPages = int(math.Ceil(float64(maxItemsDisplayed) / float64(queryParams.Limit)))
 
 	c.JSON(http.StatusOK, queryResult)
 }
 
-func serializeTransactions(transactions []common.Transaction) []common.TransactionModel {
-	if len(transactions) == 0 {
-		return []common.TransactionModel{}
+func handleTransactionsInfiniteRequest(c *gin.Context) {
+	queryParams, err := api.ParseQueryParams(c.Request)
+	if err != nil {
+		api.BadRequestErrorHandler(c, err)
+		return
 	}
-	transactionModels := make([]common.TransactionModel, 0, len(transactions))
-	for _, transaction := range transactions {
-		transactionModels = append(transactionModels, transaction.Serialize())
+
+	walletAddress := queryParams.WalletAddress
+	var fromAddress, toAddress string
+
+	if filterParams, ok := queryParams.FilterParams["from_address"]; ok {
+		fromAddress = filterParams
+	}
+
+	if filterParams, ok := queryParams.FilterParams["to_address"]; ok {
+		toAddress = filterParams
+	}
+
+	if walletAddress == "" && fromAddress == "" && toAddress == "" {
+		api.BadRequestErrorHandler(c, fmt.Errorf("at least one of wallet_address, filter_from_address, or filter_to_address is required"))
+		return
+	}
+
+	timestampLt := queryParams.TimestampLt
+	lastHash := queryParams.LastHash
+
+	chainId, err := api.GetChainID(c)
+	if err != nil {
+		api.BadRequestErrorHandler(c, err)
+		return
+	}
+
+	mainStorage, err := storage.GetMainStorage()
+	if err != nil {
+		log.Error().Err(err).Msg("Error creating storage connector")
+		api.InternalErrorHandler(c)
+		return
+	}
+
+	ctx := c.Request.Context()
+
+	queryResult := api.QueryResponse{
+		Meta: api.Meta{
+			ChainID: chainId.Uint64(),
+			Page:    0,
+			Limit:   queryParams.Limit,
+		},
+		Data: nil,
+	}
+
+	var transactions []common.Transaction
+
+	if walletAddress != "" {
+		txs, err := mainStorage.GetTransactionsByWalletWithTimestamp(
+			ctx,
+			walletAddress,
+			queryParams.Limit+1,
+			timestampLt,
+			lastHash,
+		)
+		if err != nil {
+			log.Error().Err(err).Msg("Error querying transactions by wallet")
+			api.InternalErrorHandler(c)
+			return
+		}
+		transactions = txs
+	} else if fromAddress != "" {
+		txs, err := mainStorage.GetTransactionsByFromAddressWithTimestamp(
+			ctx,
+			fromAddress,
+			queryParams.Limit+1,
+			timestampLt,
+			lastHash,
+		)
+		if err != nil {
+			log.Error().Err(err).Msg("Error querying transactions by from_address")
+			api.InternalErrorHandler(c)
+			return
+		}
+		transactions = txs
+	} else {
+		txs, err := mainStorage.GetTransactionsByToAddressWithTimestamp(
+			ctx,
+			toAddress,
+			queryParams.Limit+1,
+			timestampLt,
+			lastHash,
+		)
+		if err != nil {
+			log.Error().Err(err).Msg("Error querying transactions by to_address")
+			api.InternalErrorHandler(c)
+			return
+		}
+		transactions = txs
+	}
+
+	hasMore := len(transactions) > queryParams.Limit
+	if hasMore {
+		transactions = transactions[:queryParams.Limit]
+	}
+
+	var nextTimestamp time.Time
+	var nextHash string
+	if len(transactions) > 0 {
+		lastTx := transactions[len(transactions)-1]
+		nextTimestamp = lastTx.TransactionTimestamp
+		nextHash = lastTx.Hash
+	}
+
+	var data interface{} = serializeTransactions(transactions)
+	queryResult.Data = &data
+
+	queryResult.Meta.HasMore = hasMore
+	queryResult.Meta.NextTimestamp = &nextTimestamp
+	queryResult.Meta.NextHash = nextHash
+
+	c.JSON(http.StatusOK, queryResult)
+}
+
+func serializeTransactions(transactions []common.Transaction) []common.BaseTransactionModel {
+	if len(transactions) == 0 {
+		return []common.BaseTransactionModel{}
+	}
+	transactionModels := make([]common.BaseTransactionModel, 0, len(transactions))
+	for i := range transactions {
+		transactionModels = append(transactionModels, transactions[i].SerializeInternal())
 	}
 	return transactionModels
 }
 
 // getTimeRangeFromParams parses start and end times in YYYY-MM-DD format.
 // Defaults to last 7 days if not provided, with configurable max lookback.
-func getTimeRangeFromParams(filterParams map[string]string, queryParams api.QueryParams) (int64, int64) {
+func getTimeRangeFromParams(queryParams *api.QueryParams) (start, end int64) {
 	now := time.Now()
 	defaultStartTime := now.AddDate(0, 0, -7).Unix() // 7 days ago
 
@@ -223,6 +370,7 @@ type PendingTransactionModel struct {
 	TransactionType uint64 `json:"transaction_type"`
 }
 
+// GetPendingTransactions godoc
 // @Summary Get pending transactions
 // @Description Retrieve all pending transactions from mempool
 // @Tags transactions
@@ -236,7 +384,7 @@ type PendingTransactionModel struct {
 // @Failure 500 {object} api.Error
 // @Router /{chainId}/pending-transactions [get]
 func GetPendingTransactions(c *gin.Context) {
-	chainId, err := api.GetChainId(c)
+	chainID, err := api.GetChainID(c)
 	if err != nil {
 		api.BadRequestErrorHandler(c, err)
 		return
@@ -301,7 +449,7 @@ func GetPendingTransactions(c *gin.Context) {
 	// Prepare response with pagination meta
 	queryResult := api.QueryResponse{
 		Meta: api.Meta{
-			ChainId:    chainId.Uint64(),
+			ChainID:    chainID.Uint64(),
 			Page:       page,
 			Limit:      limit,
 			TotalItems: totalItems,

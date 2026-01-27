@@ -40,6 +40,9 @@ export const GlobalSearch = ({ className }: GlobalSearchProps) => {
   const handleClearQuery = () => {
     setQuery('');
   };
+  const handleItemSelect = () => {
+    handleSheetOpenChange(false);
+  };
 
   useEffect(() => {
     let isCancelled = false;
@@ -107,6 +110,7 @@ export const GlobalSearch = ({ className }: GlobalSearchProps) => {
         onClearQuery={handleClearQuery}
         isLoading={isLoading}
         searchResults={searchResults}
+        onItemSelect={handleItemSelect}
       />
     </>
   );

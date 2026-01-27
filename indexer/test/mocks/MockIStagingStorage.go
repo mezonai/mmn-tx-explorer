@@ -238,7 +238,7 @@ func (_c *MockIStagingStorage_GetLastStagedBlockNumber_Call) RunAndReturn(run fu
 }
 
 // GetStagingData provides a mock function with given fields: qf
-func (_m *MockIStagingStorage) GetStagingData(qf storage.QueryFilter) ([]common.BlockData, error) {
+func (_m *MockIStagingStorage) GetStagingData(qf *storage.QueryFilter) ([]common.BlockData, error) {
 	ret := _m.Called(qf)
 
 	if len(ret) == 0 {
@@ -247,10 +247,10 @@ func (_m *MockIStagingStorage) GetStagingData(qf storage.QueryFilter) ([]common.
 
 	var r0 []common.BlockData
 	var r1 error
-	if rf, ok := ret.Get(0).(func(storage.QueryFilter) ([]common.BlockData, error)); ok {
+	if rf, ok := ret.Get(0).(func(*storage.QueryFilter) ([]common.BlockData, error)); ok {
 		return rf(qf)
 	}
-	if rf, ok := ret.Get(0).(func(storage.QueryFilter) []common.BlockData); ok {
+	if rf, ok := ret.Get(0).(func(*storage.QueryFilter) []common.BlockData); ok {
 		r0 = rf(qf)
 	} else {
 		if ret.Get(0) != nil {
@@ -258,7 +258,7 @@ func (_m *MockIStagingStorage) GetStagingData(qf storage.QueryFilter) ([]common.
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(storage.QueryFilter) error); ok {
+	if rf, ok := ret.Get(1).(func(*storage.QueryFilter) error); ok {
 		r1 = rf(qf)
 	} else {
 		r1 = ret.Error(1)

@@ -4,8 +4,9 @@ import { CampaignActivity, CampaignHeader, DonationSidebar } from './shared';
 import { ROUTES } from '@/configs/routes.config';
 import { CampaignDetailProvider } from './provider/campaignProvider';
 import { DonationCampaign } from '../../type';
-import { APP_CONFIG } from '@/configs/app.config';
 import { Separator } from '@/components/ui/separator';
+import { DonationFeed } from './shared';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface CampaignDetailProps {
   campaign: DonationCampaign;
@@ -31,16 +32,51 @@ export const CampaignDetail = async ({ campaign }: CampaignDetailProps) => {
           </div>
         </div>
 
-        <Separator className="my-16 bg-gray-200/70 dark:bg-gray-800" />
+        <div className="z-10 flex flex-col items-center justify-between lg:flex-row">
+          <Tabs defaultValue="update" className="w-full gap-0">
+            <TabsList className="w-full bg-transparent px-0 pb-0 lg:w-fit dark:bg-transparent">
+              <TabsTrigger
+                value={'update'}
+                className="text-muted-foreground data-[state=active]:border-brand-primary data-[state=active]:text-foreground mr-5 rounded-none border-0 px-0 data-[state=active]:border-b"
+              >
+                Updates
+              </TabsTrigger>
+              <TabsTrigger
+                value={'community'}
+                className="text-muted-foreground data-[state=active]:border-brand-primary data-[state=active]:text-foreground mr-5 rounded-none border-0 px-0 data-[state=active]:border-b"
+              >
+                Community
+              </TabsTrigger>
+              <TabsTrigger
+                value={'activity'}
+                className="text-muted-foreground data-[state=active]:border-brand-primary data-[state=active]:text-foreground mr-5 rounded-none border-0 px-0 data-[state=active]:border-b"
+              >
+                Fundraising Activity
+              </TabsTrigger>
+            </TabsList>
+            <Separator className="mb-5 bg-gray-200/70 dark:bg-gray-800" />
 
-        <div className="mb-10">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Fundraising activity</h2>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            Live events streaming directly from the {APP_CONFIG.CHAIN_SYMBOL} chain with full transparency.
-          </p>
+            <TabsContent value="activity">
+              <CampaignActivity campaign={campaign} walletAddress={campaign.donation_wallet} />
+            </TabsContent>
+            <TabsContent value="update">
+              <DonationFeed
+                campaign={campaign}
+                isOwner={true}
+                feedTitle="Updates"
+                feedDescription="Follow the full journey of this campaign."
+              />
+            </TabsContent>
+            <TabsContent value="community">
+              <DonationFeed
+                campaign={campaign}
+                isOwner={false}
+                feedTitle="Community"
+                feedDescription="Join the conversation. Share your thoughts and support for this campaign."
+              />
+            </TabsContent>
+          </Tabs>
         </div>
-
-        <CampaignActivity campaignId={campaign.id} walletAddress={campaign.donation_wallet} />
       </CampaignDetailProvider>
     </div>
   );

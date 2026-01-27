@@ -23,13 +23,14 @@ var (
 
 // DonationCampaignRepository handles database operations for donation campaigns
 type DonationCampaignRepository struct {
-	db         *sql.DB
-	dongSchema string
+	db            *sql.DB
+	dongSchema    string
+	indexerSchema string
 }
 
 // NewDonationCampaignRepository creates a new donation campaign repository
-func NewDonationCampaignRepository(db *sql.DB, dongSchema string) *DonationCampaignRepository {
-	return &DonationCampaignRepository{db: db, dongSchema: dongSchema}
+func NewDonationCampaignRepository(db *sql.DB, dongSchema, indexerSchema string) *DonationCampaignRepository {
+	return &DonationCampaignRepository{db: db, dongSchema: dongSchema, indexerSchema: indexerSchema}
 }
 
 // Create creates a new donation campaign
@@ -48,15 +49,15 @@ func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampa
 	}()
 
 	baseSlug := utils.GenerateSlug(campaign.Name)
-	uniqueSlug, slugErr := r.GenerateUniqueSlug(baseSlug)
-	if slugErr != nil {
-		return nil, slugErr
+	uniqueSlug, err := r.GenerateUniqueSlug(baseSlug)
+	if err != nil {
+		return nil, err
 	}
 
 	campaignQuery := fmt.Sprintf(`
-        INSERT INTO %s.donation_campaign (name, slug, description, goal, url, end_date, donation_wallet, creator, owner, status)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        RETURNING id, name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status, created_at, updated_at
+	INSERT INTO %s.donation_campaign (name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+    RETURNING id, name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status, created_at, updated_at
     `, r.dongSchema)
 
 	var result models.DonationCampaign
@@ -71,6 +72,7 @@ func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampa
 		campaign.DonationWallet,
 		creator,
 		campaign.Owner,
+		false,
 		constants.CampaignStatusDraft,
 	).Scan(
 		&result.ID,
@@ -95,11 +97,11 @@ func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampa
 
 	// Insert campaign statistics
 	statsQuery := fmt.Sprintf(`
-		INSERT INTO %s.campaign_statistics (campaign_id, campaign_wallet, total_amount, total_contributor)
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO %s.campaign_statistics (campaign_id, campaign_wallet, total_amount, total_contributor, total_withdrawn)
+		VALUES ($1, $2, $3, $4, $5)
 	`, r.dongSchema)
 
-	_, err = tx.Exec(statsQuery, result.ID, result.DonationWallet, 0, 0)
+	_, err = tx.Exec(statsQuery, result.ID, result.DonationWallet, 0, 0, 0)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create campaign statistics: %w", err)
 	}
@@ -127,15 +129,15 @@ func (r *DonationCampaignRepository) CreateAndActive(campaign *models.CreateDona
 	}()
 
 	baseSlug := utils.GenerateSlug(campaign.Name)
-	uniqueSlug, slugErr := r.GenerateUniqueSlug(baseSlug)
-
-	if slugErr != nil {
-		return nil, slugErr
+	uniqueSlug, err := r.GenerateUniqueSlug(baseSlug)
+	if err != nil {
+		return nil, err
 	}
 
 	campaignQuery := fmt.Sprintf(`
-        INSERT INTO %s.donation_campaign (name, slug, description, goal, url, end_date, donation_wallet, creator, owner, status)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		-- explicitly set verified FALSE during creation+activation; verification is a separate step
+		INSERT INTO %s.donation_campaign (name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         RETURNING id, name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status, created_at, updated_at
     `, r.dongSchema)
 
@@ -152,6 +154,7 @@ func (r *DonationCampaignRepository) CreateAndActive(campaign *models.CreateDona
 		campaign.DonationWallet,
 		creator,
 		campaign.Owner,
+		false,
 		constants.CampaignStatusActive, // Set status to Active instead of Draft
 	).Scan(
 		&result.ID,
@@ -176,11 +179,11 @@ func (r *DonationCampaignRepository) CreateAndActive(campaign *models.CreateDona
 
 	// Insert campaign statistics
 	statsQuery := fmt.Sprintf(`
-		INSERT INTO %s.campaign_statistics (campaign_id, campaign_wallet, total_amount, total_contributor)
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO %s.campaign_statistics (campaign_id, campaign_wallet, total_amount, total_contributor, total_withdrawn)
+		VALUES ($1, $2, $3, $4, $5)
 	`, r.dongSchema)
 
-	_, err = tx.Exec(statsQuery, result.ID, result.DonationWallet, 0, 0)
+	_, err = tx.Exec(statsQuery, result.ID, result.DonationWallet, 0, 0, 0)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create campaign statistics: %w", err)
 	}
@@ -197,11 +200,14 @@ func (r *DonationCampaignRepository) GetByID(id int64) (*models.DonationCampaign
 	query := fmt.Sprintf(`
 		SELECT 
             dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
-			cs.total_amount, cs.total_contributor
+			cs.total_amount, cs.total_contributor,
+			COALESCE(w.balance, '0') as current_balance,
+			cs.total_withdrawn
 		FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
+		LEFT JOIN %s.wallet w ON w.address = dc.donation_wallet
 		WHERE dc.id = $1
-	`, r.dongSchema, r.dongSchema)
+	`, r.dongSchema, r.dongSchema, r.indexerSchema)
 
 	var campaign models.DonationCampaign
 	err := r.db.QueryRow(query, id).Scan(
@@ -221,6 +227,8 @@ func (r *DonationCampaignRepository) GetByID(id int64) (*models.DonationCampaign
 		&campaign.UpdatedAt,
 		&campaign.TotalAmount,
 		&campaign.TotalContributors,
+		&campaign.CurrentBalance,
+		&campaign.TotalWithdrawn,
 	)
 
 	if err == sql.ErrNoRows {
@@ -234,15 +242,18 @@ func (r *DonationCampaignRepository) GetByID(id int64) (*models.DonationCampaign
 }
 
 // GetByIDAndCreator retrieves a donation campaign by ID and creator
-func (r *DonationCampaignRepository) GetByIDAndCreator(id int64, creator int64) (*models.DonationCampaign, error) {
+func (r *DonationCampaignRepository) GetByIDAndCreator(id, creator int64) (*models.DonationCampaign, error) {
 	query := fmt.Sprintf(`
 		SELECT 
             dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
-			cs.total_amount, cs.total_contributor
+			cs.total_amount, cs.total_contributor,
+			COALESCE(w.balance, '0') as current_balance,
+			cs.total_withdrawn
 		FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
+		LEFT JOIN %s.wallet w ON w.address = dc.donation_wallet
 		WHERE dc.id = $1 AND dc.creator = $2
-	`, r.dongSchema, r.dongSchema)
+	`, r.dongSchema, r.dongSchema, r.indexerSchema)
 
 	var campaign models.DonationCampaign
 	err := r.db.QueryRow(query, id, creator).Scan(
@@ -262,6 +273,8 @@ func (r *DonationCampaignRepository) GetByIDAndCreator(id int64, creator int64) 
 		&campaign.UpdatedAt,
 		&campaign.TotalAmount,
 		&campaign.TotalContributors,
+		&campaign.CurrentBalance,
+		&campaign.TotalWithdrawn,
 	)
 
 	if err == sql.ErrNoRows {
@@ -275,7 +288,7 @@ func (r *DonationCampaignRepository) GetByIDAndCreator(id int64, creator int64) 
 }
 
 // GetAll retrieves all donation campaigns with pagination
-func (r *DonationCampaignRepository) GetAll(status *int16, pagination utils.PaginationParams) ([]models.DonationCampaign, error) {
+func (r *DonationCampaignRepository) GetAll(status *int16, verified *bool, q *string, pagination utils.PaginationParams, creator *string) ([]models.DonationCampaign, error) {
 	base := fmt.Sprintf(`
         SELECT 
             dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
@@ -296,6 +309,31 @@ func (r *DonationCampaignRepository) GetAll(status *int16, pagination utils.Pagi
 		argCount++
 	}
 
+	if verified != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("dc.verified = $%d", argCount))
+		args = append(args, *verified)
+		argCount++
+	}
+
+	// filter by creator if provided
+	if creator != nil && strings.TrimSpace(*creator) != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("dc.creator::text = $%d", argCount))
+		args = append(args, strings.TrimSpace(*creator))
+		argCount++
+	}
+
+	if q != nil && strings.TrimSpace(*q) != "" {
+		whereClauses = append(
+			whereClauses,
+			fmt.Sprintf(
+				"dc.body_search @@ plainto_tsquery('simple', unaccent($%d))",
+				argCount,
+			),
+		)
+		args = append(args, strings.TrimSpace(*q))
+		argCount++
+	}
+
 	if len(whereClauses) > 0 {
 		base += "\nWHERE " + strings.Join(whereClauses, " AND ")
 	}
@@ -309,9 +347,13 @@ func (r *DonationCampaignRepository) GetAll(status *int16, pagination utils.Pagi
 	var orderByExpr string
 	switch strings.ToLower(pagination.OrderBy) {
 	case "created_at":
-		orderByExpr = "dc.created_at"
+		orderByExpr = "dc.created_at" //nolint:goconst // literal used intentionally for SQL whitelist
 	case "total_amount":
 		orderByExpr = "cs.total_amount"
+	case "end_date":
+		orderByExpr = "dc.end_date"
+	case "recent_amount":
+		orderByExpr = "cs.recent_amount"
 	default:
 		orderByExpr = "dc.created_at"
 	}
@@ -323,6 +365,7 @@ func (r *DonationCampaignRepository) GetAll(status *int16, pagination utils.Pagi
 	if err != nil {
 		return nil, fmt.Errorf("failed to get donation campaigns: %w", err)
 	}
+
 	defer func() {
 		if err != nil {
 			errClose := rows.Close()
@@ -363,7 +406,7 @@ func (r *DonationCampaignRepository) GetAll(status *int16, pagination utils.Pagi
 }
 
 // Update updates a donation campaign
-func (r *DonationCampaignRepository) Update(id int64, creator int64, req *models.UpdateDonationCampaignRequest) (*models.DonationCampaign, error) {
+func (r *DonationCampaignRepository) Update(id, creator int64, req *models.UpdateDonationCampaignRequest) (*models.DonationCampaign, error) {
 	// Build dynamic update query
 	var setClauses []string
 	var args []any
@@ -442,7 +485,7 @@ func (r *DonationCampaignRepository) Update(id int64, creator int64, req *models
 }
 
 // Activate sets a campaign status to Active
-func (r *DonationCampaignRepository) Activate(id int64, creator int64) (*models.DonationCampaign, error) {
+func (r *DonationCampaignRepository) Activate(id, creator int64) (*models.DonationCampaign, error) {
 	query := fmt.Sprintf(`
         UPDATE %s.donation_campaign
         SET status = $1, updated_at = $2
@@ -485,7 +528,7 @@ func (r *DonationCampaignRepository) Activate(id int64, creator int64) (*models.
 }
 
 // Close sets a campaign status to Closed
-func (r *DonationCampaignRepository) Close(id int64, creator int64) (*models.DonationCampaign, error) {
+func (r *DonationCampaignRepository) Close(id, creator int64) (*models.DonationCampaign, error) {
 	query := fmt.Sprintf(`
 		UPDATE %s.donation_campaign
 		SET status = $1, updated_at = $2
@@ -528,16 +571,46 @@ func (r *DonationCampaignRepository) Close(id int64, creator int64) (*models.Don
 }
 
 // Count returns the total number of campaigns
-func (r *DonationCampaignRepository) Count(status *int16) (int64, error) {
-	query := fmt.Sprintf(`SELECT COUNT(*) FROM %s.donation_campaign`, r.dongSchema)
+func (r *DonationCampaignRepository) Count(status *int16, verified *bool, q *string, creator *string) (int64, error) {
+	query := fmt.Sprintf(`SELECT COUNT(*) FROM %s.donation_campaign dc`, r.dongSchema)
 	var (
 		whereClauses []string
 		args         []any
+		argCount     = 1
 	)
 
 	if status != nil {
-		whereClauses = append(whereClauses, "status = $1")
+		whereClauses = append(whereClauses, fmt.Sprintf("dc.status = $%d", argCount))
 		args = append(args, *status)
+		argCount++
+	}
+
+	if verified != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("dc.verified = $%d", argCount))
+		args = append(args, *verified)
+		argCount++
+	}
+
+	if q != nil && strings.TrimSpace(*q) != "" {
+		whereClauses = append(
+			whereClauses,
+			fmt.Sprintf(
+				"dc.body_search @@ plainto_tsquery('simple', unaccent($%d))",
+				argCount,
+			),
+		)
+		args = append(args, strings.TrimSpace(*q))
+		argCount++
+	}
+
+	// filter by creator if present
+	if creator != nil && strings.TrimSpace(*creator) != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("dc.creator::text = $%d", argCount))
+		args = append(args, strings.TrimSpace(*creator))
+		argCount++
+	}
+
+	if len(whereClauses) > 0 {
 		query += " WHERE " + strings.Join(whereClauses, " AND ")
 	}
 
@@ -546,7 +619,6 @@ func (r *DonationCampaignRepository) Count(status *int16) (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("failed to count campaigns: %w", err)
 	}
-
 	return count, nil
 }
 
@@ -586,9 +658,9 @@ func (r *DonationCampaignRepository) GetTopContributors(campaignID int64, limit 
 	for rows.Next() {
 		var contributor models.TopContributor
 
-		err := rows.Scan(&contributor.SenderWallet, &contributor.TotalDonate, &campaignTotalAmount)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan contributor: %w", err)
+		scanErr := rows.Scan(&contributor.SenderWallet, &contributor.TotalDonate, &campaignTotalAmount)
+		if scanErr != nil {
+			return nil, fmt.Errorf("failed to scan contributor: %w", scanErr)
 		}
 
 		// Calculate percentage of total campaign amount
@@ -620,8 +692,8 @@ func (r *DonationCampaignRepository) GetTopContributors(campaignID int64, limit 
 	}, nil
 }
 
-// Delete removes a drafted donation campaign by ID if the requester is the creator
-func (r *DonationCampaignRepository) DeleteDraft(id int64, creator int64) error {
+// DeleteDraft : Delete removes a drafted donation campaign by ID if the requester is the creator
+func (r *DonationCampaignRepository) DeleteDraft(id, creator int64) error {
 	query := fmt.Sprintf(`
 		DELETE FROM %s.donation_campaign
 		WHERE id = $1 AND creator = $2
@@ -675,7 +747,10 @@ func (r *DonationCampaignRepository) GenerateUniqueSlug(baseSlug string) (string
 	if err != nil {
 		return "", fmt.Errorf("failed to query existing slugs: %w", err)
 	}
-	defer rows.Close()
+
+	defer func() {
+		_ = rows.Close()
+	}()
 
 	maxIndex := 0
 
@@ -706,11 +781,14 @@ func (r *DonationCampaignRepository) GetBySlug(slug string) (*models.DonationCam
 	query := fmt.Sprintf(`
 		SELECT 
             dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
-			cs.total_amount, cs.total_contributor
+			cs.total_amount, cs.total_contributor,
+			COALESCE(w.balance, '0') as current_balance,
+			cs.total_withdrawn
 		FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
+		LEFT JOIN %s.wallet w ON w.address = dc.donation_wallet
 		WHERE dc.slug = $1
-	`, r.dongSchema, r.dongSchema)
+	`, r.dongSchema, r.dongSchema, r.indexerSchema)
 
 	var campaign models.DonationCampaign
 	err := r.db.QueryRow(query, slug).Scan(
@@ -730,6 +808,8 @@ func (r *DonationCampaignRepository) GetBySlug(slug string) (*models.DonationCam
 		&campaign.UpdatedAt,
 		&campaign.TotalAmount,
 		&campaign.TotalContributors,
+		&campaign.CurrentBalance,
+		&campaign.TotalWithdrawn,
 	)
 
 	if err == sql.ErrNoRows {
@@ -740,4 +820,42 @@ func (r *DonationCampaignRepository) GetBySlug(slug string) (*models.DonationCam
 	}
 
 	return &campaign, nil
+}
+
+// IsCampaignWallet checks if a wallet address is associated with any campaign
+func (r *DonationCampaignRepository) IsCampaignWallet(address string) (bool, error) {
+	query := fmt.Sprintf(`
+		SELECT EXISTS(
+			SELECT 1 FROM %s.donation_campaign 
+			WHERE donation_wallet = $1
+		)
+	`, r.dongSchema)
+
+	var exists bool
+	err := r.db.QueryRow(query, address).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("failed to check if wallet is campaign wallet: %w", err)
+	}
+
+	return exists, nil
+}
+
+func (r *DonationCampaignRepository) GetCreatorByDonationWallet(donationWallet string) (int64, error) {
+	query := fmt.Sprintf(`
+		SELECT creator
+		FROM %s.donation_campaign
+		WHERE donation_wallet = $1
+		LIMIT 1
+	`, r.dongSchema)
+
+	var creator int64
+	err := r.db.QueryRow(query, donationWallet).Scan(&creator)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, ErrNotFound
+		}
+		return 0, fmt.Errorf("failed to get campaign creator by donation wallet: %w", err)
+	}
+
+	return creator, nil
 }

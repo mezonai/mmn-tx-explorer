@@ -23,15 +23,15 @@ type Orchestrator struct {
 	cancel                  context.CancelFunc
 }
 
-func NewOrchestrator(rpc rpc.IRPCClient) (*Orchestrator, error) {
-	storage, err := storage.NewStorageConnector(&config.Cfg.Storage)
+func NewOrchestrator(rpcClient rpc.IRPCClient) (*Orchestrator, error) {
+	store, err := storage.NewStorageConnector(&config.Cfg.Storage)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Orchestrator{
-		rpc:                     rpc,
-		storage:                 storage,
+		rpc:                     rpcClient,
+		storage:                 store,
 		pollerEnabled:           config.Cfg.Poller.Enabled,
 		failureRecovererEnabled: config.Cfg.FailureRecoverer.Enabled,
 		committerEnabled:        config.Cfg.Committer.Enabled,

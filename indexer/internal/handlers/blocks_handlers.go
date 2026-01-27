@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// GetBlocks godoc
 // @Summary Get all blocks
 // @Description Retrieve all blocks
 // @Tags blocks
@@ -35,7 +36,7 @@ func GetBlocks(c *gin.Context) {
 }
 
 func handleBlocksRequest(c *gin.Context) {
-	chainId, err := api.GetChainId(c)
+	chainID, err := api.GetChainID(c)
 	if err != nil {
 		api.BadRequestErrorHandler(c, err)
 		return
@@ -48,8 +49,8 @@ func handleBlocksRequest(c *gin.Context) {
 	}
 
 	// Validate GroupBy and SortBy fields
-	if err := api.ValidateGroupByAndSortBy("blocks", queryParams.GroupBy, queryParams.SortBy, queryParams.Aggregates); err != nil {
-		api.BadRequestErrorHandler(c, err)
+	if validateErr := api.ValidateGroupByAndSortBy("blocks", queryParams.GroupBy, queryParams.SortBy, queryParams.Aggregates); validateErr != nil {
+		api.BadRequestErrorHandler(c, validateErr)
 		return
 	}
 
@@ -68,9 +69,9 @@ func handleBlocksRequest(c *gin.Context) {
 	queryParams.FilterParams["transaction_count_gt"] = "0"
 
 	// Prepare the QueryFilter
-	qf := storage.QueryFilter{
+	qf := &storage.QueryFilter{
 		FilterParams:        queryParams.FilterParams,
-		ChainId:             chainId,
+		ChainID:             chainID,
 		SortBy:              queryParams.SortBy,
 		SortOrder:           queryParams.SortOrder,
 		Page:                queryParams.Page,
@@ -79,9 +80,9 @@ func handleBlocksRequest(c *gin.Context) {
 	}
 
 	// Prepare the QueryFilter for count
-	countQf := storage.QueryFilter{
+	countQf := &storage.QueryFilter{
 		FilterParams:        queryParams.FilterParams,
-		ChainId:             chainId,
+		ChainID:             chainID,
 		ForceConsistentData: queryParams.ForceConsistentData,
 	}
 
@@ -92,7 +93,7 @@ func handleBlocksRequest(c *gin.Context) {
 	if len(countQf.FilterParams) > 1 {
 		totalItems, err = mainStorage.GetCount(ctx, "blocks", countQf)
 	} else {
-		totalItems, _, _, _, err = mainStorage.GetDashboardStats(ctx, countQf)
+		totalItems, _, _, _, _, _, _, err = mainStorage.GetDashboardStats(ctx, countQf)
 	}
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting count")
@@ -103,7 +104,7 @@ func handleBlocksRequest(c *gin.Context) {
 	// Initialize the QueryResult
 	queryResult := api.QueryResponse{
 		Meta: api.Meta{
-			ChainId:    chainId.Uint64(),
+			ChainID:    chainID.Uint64(),
 			Page:       queryParams.Page,
 			Limit:      queryParams.Limit,
 			TotalItems: 0,

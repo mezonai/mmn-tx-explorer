@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/shared/page-header';
 import { APP_CONFIG } from '@/configs/app.config';
+import { ETransferType } from './../../transaction/enums';
 
 const safeValidateAddress = (address: string): boolean => {
   try {
@@ -73,7 +74,7 @@ export const Transfer = () => {
           amount: amount,
           note: note.trim(),
         },
-        'dong-give-coffee'
+        ETransferType.DongGiveCoffee
       );
 
       if (result.success) {

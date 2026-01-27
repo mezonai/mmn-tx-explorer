@@ -11,7 +11,7 @@ interface BlockCardProps {
 
 export const BlockCard = ({ block }: BlockCardProps) => {
   return (
-    <div className="flex flex-col justify-between rounded-lg bg-gray-200/60 p-3 dark:bg-gray-800/40">
+    <div className="flex min-h-[81px] flex-col justify-between rounded-lg p-3 dark:bg-gray-800/40">
       {block ? (
         <>
           <div>

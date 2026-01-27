@@ -86,14 +86,45 @@ func (rpc *Client) GetFullBlocks(ctx context.Context, blockNumbers []*big.Int) [
 
 	res, err := rpc.mmnService.GetBlockByNumber(ctx, nums)
 	if err != nil {
+		log.Error().
+			Int("requested_blocks", len(blockNumbers)).
+			Interface("requested_block_numbers", blockNumbers).
+			Err(err).
+			Msg("GetFullBlocks: MMN service error - failed to get blocks")
 		return []GetFullBlockResult{{
 			Error: fmt.Errorf("failed to get full block: %v", err),
 		}}
 	}
 
+	// Log MMN service response details
+	log.Info().
+		Int("requested_blocks", len(blockNumbers)).
+		Int("response_blocks_count", len(res.Blocks)).
+		Msg("GetFullBlocks: MMN service response received")
+
+	// Log first and last requested block numbers for easier tracking
+	if len(blockNumbers) > 0 {
+		log.Debug().
+			Str("first_requested_block", blockNumbers[0].String()).
+			Str("last_requested_block", blockNumbers[len(blockNumbers)-1].String()).
+			Msg("GetFullBlocks: requested block range")
+	}
+
 	rawBlocks := make([]RPCFetchBatchResult[*big.Int, common.RawBlock], len(blockNumbers))
 
+	successfulBlocks := 0
+	failedBlocks := 0
+
 	for i, blk := range res.Blocks {
+		if i >= len(blockNumbers) {
+			log.Warn().
+				Int("index", i).
+				Int("response_blocks_length", len(res.Blocks)).
+				Int("requested_blocks_length", len(blockNumbers)).
+				Msg("GetFullBlocks: response has more blocks than requested - index out of range")
+			break
+		}
+
 		if blk != nil {
 			rawBlock := convertPBBlockToRawBlock(blk)
 			rawBlocks[i] = RPCFetchBatchResult[*big.Int, common.RawBlock]{
@@ -101,11 +132,19 @@ func (rpc *Client) GetFullBlocks(ctx context.Context, blockNumbers []*big.Int) [
 				Result: rawBlock,
 				Error:  nil,
 			}
+			successfulBlocks++
+			log.Debug().
+				Int("index", i).
+				Str("block_number", blockNumbers[i].String()).
+				Msg("GetFullBlocks: successfully processed block")
 		} else {
+			failedBlocks++
 			log.Warn().
 				Int("index", i).
 				Str("requestedBlock", blockNumbers[i].String()).
-				Msg("GetFullBlocks: received nil block from MMN service")
+				Int("response_blocks_length", len(res.Blocks)).
+				Int("requested_blocks_length", len(blockNumbers)).
+				Msg("GetFullBlocks: received nil block from MMN service - block may not exist")
 			rawBlocks[i] = RPCFetchBatchResult[*big.Int, common.RawBlock]{
 				Key:    blockNumbers[i],
 				Result: nil,
@@ -114,24 +153,91 @@ func (rpc *Client) GetFullBlocks(ctx context.Context, blockNumbers []*big.Int) [
 		}
 	}
 
+	// Handle case where response has fewer blocks than requested
+	if len(res.Blocks) < len(blockNumbers) {
+		log.Warn().
+			Int("response_blocks_count", len(res.Blocks)).
+			Int("requested_blocks_count", len(blockNumbers)).
+			Int("missing_blocks", len(blockNumbers)-len(res.Blocks)).
+			Msg("GetFullBlocks: MMN service returned fewer blocks than requested")
+
+		// Mark missing blocks as failed
+		for i := len(res.Blocks); i < len(blockNumbers); i++ {
+			failedBlocks++
+			rawBlocks[i] = RPCFetchBatchResult[*big.Int, common.RawBlock]{
+				Key:    blockNumbers[i],
+				Result: nil,
+				Error:  fmt.Errorf("block not returned by MMN service"),
+			}
+			log.Warn().
+				Int("index", i).
+				Str("block_number", blockNumbers[i].String()).
+				Msg("GetFullBlocks: block missing from MMN response")
+		}
+	}
+
+	log.Info().
+		Int("requested_blocks", len(blockNumbers)).
+		Int("response_blocks", len(res.Blocks)).
+		Int("successful_blocks", successfulBlocks).
+		Int("failed_blocks", failedBlocks).
+		Msg("GetFullBlocks: block processing summary")
+
 	results := SerializeFullBlocks(rpc.chainID, rawBlocks, nil, nil, nil)
 
-	// Diagnostics: log entries that are missing BlockNumber or have errors
-	for idx, r := range results {
+	// Final summary: count successful vs failed results
+	unknown := "unknown"
+	finalSuccessfulCount := 0
+	finalFailedCount := 0
+	var failedBlockNumbers []string
+
+	for idx := range results {
+		r := &results[idx]
 		if r.Error != nil {
+			finalFailedCount++
+			if idx < len(rawBlocks) {
+				failedBlockNumbers = append(failedBlockNumbers, rawBlocks[idx].Key.String())
+			}
 			log.Warn().
 				Int("idx", idx).
-				Str("requestedBlock", rawBlocks[idx].Key.String()).
+				Str("requestedBlock", func() string {
+					if idx < len(rawBlocks) {
+						return rawBlocks[idx].Key.String()
+					}
+					return unknown
+				}()).
 				Err(r.Error).
 				Msg("GetFullBlocks: result has error")
+		} else if r.BlockNumber != nil {
+			finalSuccessfulCount++
 		}
+
 		if r.BlockNumber == nil {
 			log.Warn().
 				Int("idx", idx).
-				Str("requestedBlock", rawBlocks[idx].Key.String()).
+				Str("requestedBlock", func() string {
+					if idx < len(rawBlocks) {
+						return rawBlocks[idx].Key.String()
+					}
+					return unknown
+				}()).
 				Msg("GetFullBlocks: result has nil BlockNumber")
 		}
 	}
+
+	// Final summary log
+	log.Info().
+		Int("requested_blocks", len(blockNumbers)).
+		Int("results_count", len(results)).
+		Int("successful", finalSuccessfulCount).
+		Int("failed", finalFailedCount).
+		Interface("failed_block_numbers", func() interface{} {
+			if len(failedBlockNumbers) > 10 {
+				return append(failedBlockNumbers[:10], fmt.Sprintf("... and %d more", len(failedBlockNumbers)-10))
+			}
+			return failedBlockNumbers
+		}()).
+		Msg("GetFullBlocks: final results summary")
 
 	return results
 }
@@ -191,7 +297,8 @@ func (rpc *Client) GetBlocks(ctx context.Context, blockNumbers []*big.Int) []Get
 	fullBlocks := rpc.GetFullBlocks(ctx, blockNumbers)
 
 	results := make([]GetBlocksResult, len(fullBlocks))
-	for i, fullBlock := range fullBlocks {
+	for i := range fullBlocks {
+		fullBlock := &fullBlocks[i]
 		results[i] = GetBlocksResult{
 			BlockNumber: fullBlock.BlockNumber,
 			Error:       fullBlock.Error,
@@ -256,7 +363,7 @@ func convertPBBlockToRawBlock(pbBlock *pb.Block) common.RawBlock {
 	rawBlock["difficulty"] = "0x0"
 	rawBlock["totalDifficulty"] = "0x0"
 	rawBlock["size"] = "0x0"
-	rawBlock["extraData"] = "0x"
+	rawBlock["extraData"] = "0x" //nolint:goconst // protocol literal
 	rawBlock["gasLimit"] = "0x0"
 	rawBlock["gasUsed"] = "0x0"
 	rawBlock["baseFeePerGas"] = "0x0"
@@ -266,7 +373,7 @@ func convertPBBlockToRawBlock(pbBlock *pb.Block) common.RawBlock {
 }
 
 // convertPBTransactionDataToRawTransaction converts a protobuf TransactionData to common.RawTransaction format
-func convertPBTransactionDataToRawTransaction(pbTransactionData *pb.TransactionData, blockHash string, blockNumber uint64, txIndex uint64) map[string]interface{} {
+func convertPBTransactionDataToRawTransaction(pbTransactionData *pb.TransactionData, blockHash string, blockNumber, txIndex uint64) map[string]interface{} {
 	rawTransaction := make(map[string]interface{})
 	// Convert transaction hash
 	rawTransaction["hash"] = pbTransactionData.TxHash
@@ -286,6 +393,8 @@ func convertPBTransactionDataToRawTransaction(pbTransactionData *pb.TransactionD
 	rawTransaction["textData"] = pbTransactionData.TextData
 
 	rawTransaction["extra_info"] = pbTransactionData.ExtraInfo
+
+	rawTransaction["transaction_type"] = fmt.Sprintf("%x", pbTransactionData.TransactionType)
 	// Block information
 	rawTransaction["blockHash"] = blockHash
 	rawTransaction["blockNumber"] = fmt.Sprintf("%x", blockNumber)

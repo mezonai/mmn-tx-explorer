@@ -2,8 +2,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ETransactionStatus, ITransaction } from '@/modules/transaction';
 import { DateTimeUtil, NumberUtil } from '@/utils';
 import { APP_CONFIG } from '@/configs/app.config';
-import { TxnHashLink, TypeBadges, TypeBadgesSkeleton } from '../../shared';
+import { TypeBadges, TypeBadgesSkeleton } from '../../shared';
+import { TxnHashLinkDashboard } from '../../shared/txn-hash-link';
 import { WalletAddressDisplay } from '@/modules/wallet/components/wallet-list/list/shared';
+import { CheckCircle, XCircle } from '@/assets/icons';
 
 interface TransactionCardProps {
   transaction?: ITransaction;
@@ -12,10 +14,10 @@ interface TransactionCardProps {
 export const TransactionCard = ({ transaction }: TransactionCardProps) => {
   const getStatusIcon = (status?: ETransactionStatus) => {
     if (status === ETransactionStatus.Confirmed || status === ETransactionStatus.Passed) {
-      return <i className="fa-solid fa-circle-check"></i>;
+      return <CheckCircle />;
     }
     if (status === ETransactionStatus.Failed) {
-      return <i className="fa-solid fa-circle-xmark"></i>;
+      return <XCircle />;
     }
     return null;
   };
@@ -34,28 +36,37 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
   };
 
   return (
-    <div className="space-y-2 rounded-lg bg-gray-100 p-4 dark:bg-gray-800/40">
+    <div className="space-y-2 rounded-lg p-4 dark:bg-gray-800/40 dark:shadow-sm">
       {transaction ? (
         <>
           <div className="flex items-center justify-between">
-            <TypeBadges type={transaction.transaction_type} />
-            <div className="flex items-center space-x-2">
-              <span className={`${getStatusColor(transaction.status)} flex items-center gap-1 text-xs`}>
-                {getStatusIcon(transaction.status)} {getStatusText(transaction.status)}
-              </span>
+            <TypeBadges type={transaction.transaction_extra_info_type} />
+            <span className={`${getStatusColor(transaction.status)} flex items-center gap-1 text-xs`}>
+              {getStatusIcon(transaction.status)} {getStatusText(transaction.status)}
+            </span>
+          </div>
+
+          <div className="flex w-full items-center gap-2">
+            <span className="text-sm whitespace-nowrap text-gray-600 dark:text-gray-400">Hash:</span>
+            <div className="flex min-w-0 items-center gap-1">
+              {transaction?.hash && (
+                <TxnHashLinkDashboard
+                  hash={transaction.hash}
+                  isPending={transaction.status === ETransactionStatus.Pending}
+                />
+              )}
             </div>
           </div>
-          <div className="flex w-40">
-            <p className="flex font-mono text-sm text-gray-600 dark:text-gray-400">Hash:</p>
-            <TxnHashLink hash={transaction.hash} isPending={false} className="w-40" />
-          </div>
-          <div className="flex w-full">
-            <div className="flex items-center">
-              <span className="w-12 shrink-0 text-sm text-gray-600 dark:text-gray-400">From: </span>
+
+          <div className="flex w-full flex-col sm:flex-row sm:items-center sm:space-x-6">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="text-sm whitespace-nowrap text-gray-600 dark:text-gray-400">From:</span>
               <WalletAddressDisplay address={transaction.from_address} className="w-24" />
             </div>
-            <div className="ml-5 flex items-center">
-              <span className="w-12 shrink-0 text-sm text-gray-600 dark:text-gray-400">→ To: </span>
+            <span className="hidden text-gray-400 sm:inline">→</span>
+            <span className="text-gray-400 sm:hidden">↓</span>
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="text-sm whitespace-nowrap text-gray-600 dark:text-gray-400">To:</span>
               <WalletAddressDisplay address={transaction.to_address} className="w-24" />
             </div>
           </div>

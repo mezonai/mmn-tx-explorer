@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS campaign_statistics (
     campaign_wallet VARCHAR(255) NOT NULL,
     total_amount BIGINT NOT NULL DEFAULT 0,
     total_contributor INTEGER NOT NULL DEFAULT 0,
+    recent_amount BIGINT NOT NULL DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     
@@ -27,3 +28,4 @@ COMMENT ON COLUMN campaign_statistics.campaign_id IS 'Reference to donation_camp
 COMMENT ON COLUMN campaign_statistics.campaign_wallet IS 'Campaign wallet address';
 COMMENT ON COLUMN campaign_statistics.total_amount IS 'Total amount of donations received';
 COMMENT ON COLUMN campaign_statistics.total_contributor IS 'Total number of contributors';
+COMMENT ON COLUMN campaign_statistics.recent_amount IS 'Aggregated donations in a recent lookback window (e.g. last 7 days)';
