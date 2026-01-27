@@ -53,101 +53,142 @@ export default async function Image({ params }: { params: Promise<{ slug: string
     }
   };
 
+  const PRIMARY = '#6941c6';
+  const PRIMARY_LIGHT = '#8b5cf6';
+  const DARK = '#0B1533';
+  const DARK_LIGHT = '#1e293b';
+  const NEON = '#00f5ff';
+
   let qrCodeData = '';
   if (hasWallet) {
     const qrObject = { type: 'transfer_wallet', wallet_address: walletAddress };
     qrCodeData = await QRCode.toDataURL(JSON.stringify(qrObject), {
       width: 400,
       margin: 1,
-      color: { dark: '#000000', light: '#FFFFFF' },
+      color: { dark: '#ffffff', light: DARK_LIGHT },
     });
   }
 
-  const BRAND_COLOR = '#7D24C9';
-  const BRAND_LIGHT_BG = '#F5E6FF';
-
   return new ImageResponse(
-    <div tw="flex flex-col w-full h-full bg-gray-200 relative">
+    <div tw="flex flex-col w-full h-full relative text-white" style={{ backgroundColor: DARK }}>
+      {/* Ambient Background Glows */}
       <div
-        tw="absolute inset-0"
-        style={{
-          backgroundImage: 'radial-gradient(circle at 2px 2px, #CBD5E1 2px, transparent 0)',
-          backgroundSize: '32px 32px',
-        }}
+        tw="absolute -top-40 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full opacity-30"
+        style={{ background: `radial-gradient(circle, ${PRIMARY} 0%, transparent 70%)` }}
+      />
+      <div
+        tw="absolute -bottom-20 -left-20 w-[400px] h-[400px] rounded-full opacity-10"
+        style={{ background: `radial-gradient(circle, ${NEON} 0%, transparent 70%)` }}
       />
 
-      <div tw="flex flex-col w-full h-full p-12 justify-center items-center">
-        <div tw="flex flex-row w-full h-full bg-white border-[4px] border-black rounded-[32px] overflow-hidden relative shadow-[16px_16px_0px_#000000]">
-          <div tw="flex flex-col flex-1 p-10 justify-between border-r-[4px] border-black bg-white">
-            <div tw="flex justify-between items-start">
-              <div tw="flex items-center px-4 py-2 rounded-full" style={{ backgroundColor: BRAND_COLOR }}>
-                <span tw="text-white font-bold tracking-widest text-sm uppercase">Mezon Dong</span>
+      <div tw="flex flex-row w-full h-full p-16 items-center z-10">
+        {/* Left Content Section */}
+        <div tw="flex flex-col flex-1 h-full justify-between pr-12">
+          <div tw="flex flex-col">
+            <div tw="flex items-center mb-6">
+              <span tw="font-bold tracking-[0.3em] text-sm uppercase" style={{ color: PRIMARY_LIGHT }}>
+                Mezon Dong Campaign
+              </span>
+            </div>
+
+            <h1 tw="text-[68px] font-bold leading-[1.1] m-0 mb-6 tracking-tight">{name}</h1>
+
+            {endDate && (
+              <div tw="flex items-center">
+                <div tw="h-1.5 w-1.5 rounded-full mr-3" style={{ backgroundColor: NEON }} />
+                <span tw="text-gray-400 text-xl font-medium">Campaign ends {formatDate(endDate)}</span>
               </div>
-              {endDate && (
-                <div tw="flex items-center px-2 py-1 bg-yellow-100 border-2 border-black rounded-lg transform rotate-[-2deg]">
-                  <span tw="text-gray-600 font-medium mr-2 text-sm">ENDS:</span>
-                  <span tw="text-black font-bold">{formatDate(endDate)}</span>
-                </div>
-              )}
+            )}
+          </div>
+
+          <div tw="flex flex-col mt-auto">
+            <div tw="flex flex-col mb-6">
+              <div tw="flex items-baseline">
+                <span tw="text-7xl font-bold mr-4" style={{ color: 'white' }}>
+                  {NumberUtil.formatWithCommasAndScale(current)}
+                </span>
+                <span tw="text-2xl text-gray-400 font-medium uppercase tracking-wider">
+                  {APP_CONFIG.CHAIN_SYMBOL} RAISED
+                </span>
+              </div>
             </div>
 
-            <div tw="flex flex-col mt-6">
-              <h1 tw="text-[56px] font-bold text-black leading-[1.1] m-0 line-clamp-2">{name}</h1>
-            </div>
-
-            <div tw="flex flex-col mt-auto pt-6">
-              <div tw="flex flex-col mb-1">
-                <span tw="text-lg text-gray-500 font-bold uppercase tracking-wider mb-2">Raised so far</span>
-                <div tw="flex items-baseline">
-                  <span tw="text-[80px] font-medium leading-none mr-3 tracking-tighter">
-                    {NumberUtil.formatWithCommasAndScale(current)}
+            <div tw="flex flex-col w-full">
+              <div tw="flex justify-between mb-4 items-end">
+                <span tw="text-gray-400 text-xl">
+                  Target:{' '}
+                  <span tw="text-white font-bold">
+                    {NumberUtil.formatWithCommas(goal)} {APP_CONFIG.CHAIN_SYMBOL}
                   </span>
-                  <span tw="text-4xl text-black font-bold">{APP_CONFIG.CHAIN_SYMBOL}</span>
-                </div>
+                </span>
+                <span tw="text-2xl font-bold" style={{ color: PRIMARY_LIGHT }}>
+                  {Math.round(percentage)}% Funded
+                </span>
               </div>
 
-              <div tw="flex flex-col w-full mt-6">
-                <div tw="flex justify-between mb-2 items-end">
-                  <div tw="flex items-center">
-                    <span tw="text-gray-500 font-medium mr-2">Target Goal:</span>
-                    <span tw="text-xl font-bold text-black">
-                      {NumberUtil.formatWithCommas(goal)} {APP_CONFIG.CHAIN_SYMBOL}
-                    </span>
-                  </div>
-                  <span tw="text-2xl font-black text-black">{Math.round(percentage)}%</span>
-                </div>
-
-                <div tw="flex w-full h-8 border-[3px] border-black rounded-full bg-white relative overflow-hidden">
-                  <div
-                    tw="flex h-full border-r-[3px] border-black"
-                    style={{ width: `${progress}%`, backgroundColor: BRAND_COLOR }}
-                  />
-                </div>
+              {/* Progress Bar */}
+              <div tw="flex w-full h-5 rounded-full relative overflow-hidden bg-white/5 border border-white/10">
+                <div
+                  tw="flex h-full rounded-full"
+                  style={{
+                    width: `${progress}%`,
+                    background: `linear-gradient(to right, ${PRIMARY}, ${PRIMARY_LIGHT})`,
+                    boxShadow: `0 0 20px ${PRIMARY}44`,
+                  }}
+                />
               </div>
             </div>
           </div>
+        </div>
 
-          {hasWallet && (
+        {/* Right QR Section - Made more vibrant */}
+        {hasWallet && (
+          <div
+            tw="flex flex-col w-[380px] h-full relative items-center justify-center"
+            style={{ backgroundColor: PRIMARY }}
+          >
             <div
-              tw="flex flex-col w-[380px] relative shrink-0 items-center justify-center p-8"
-              style={{ backgroundColor: BRAND_LIGHT_BG }}
+              tw="flex flex-col w-full bg-white/5 border border-white/10 rounded-[40px] p-10 items-center justify-center relative"
+              style={{ backgroundColor: `${DARK_LIGHT}CC` }}
             >
-              <div tw="flex flex-col items-center justify-center w-full z-10">
-                <div
-                  tw="flex p-4 bg-white border-[3px] border-black rounded-xl"
-                  style={{ boxShadow: `8px 8px 0px ${BRAND_COLOR}` }}
-                >
-                  <img src={qrCodeData} width="220" height="220" alt="QR Code" style={{ display: 'block' }} />
-                </div>
+              <div
+                tw="flex p-5 rounded-3xl border shadow-2xl relative"
+                style={{ backgroundColor: DARK_LIGHT, borderColor: `${PRIMARY}66` }}
+              >
+                {/* QR Code Container */}
+                <img src={qrCodeData} width="220" height="220" alt="QR Code" style={{ display: 'block' }} />
 
-                <div tw="flex flex-col items-center mt-8 text-center">
-                  <span tw="text-3xl font-black text-black uppercase mb-2">Scan Now</span>
-                  <span tw="text-gray-600 text-lg leading-tight px-2">To support this campaign directly</span>
+                {/* Decorative corners */}
+                <div
+                  tw="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 rounded-tl-lg"
+                  style={{ borderColor: PRIMARY_LIGHT }}
+                />
+                <div
+                  tw="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 rounded-br-lg"
+                  style={{ borderColor: PRIMARY_LIGHT }}
+                />
+              </div>
+
+              <div tw="flex flex-col items-center mt-10 text-center">
+                <div
+                  tw="flex px-4 py-1.5 rounded-full mb-4 border"
+                  style={{ backgroundColor: `${PRIMARY}22`, borderColor: `${PRIMARY}44` }}
+                >
+                  <span tw="text-xs font-bold uppercase tracking-widest" style={{ color: PRIMARY_LIGHT }}>
+                    Mezon Network
+                  </span>
                 </div>
+                <span tw="text-2xl font-bold text-white mb-2">Scan to Support</span>
+                <span tw="text-gray-400 text-sm">Transfer direct to campaign wallet</span>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+      </div>
+
+      {/* Footer Branding */}
+      <div tw="absolute bottom-10 left-16 flex items-center">
+        <span tw="text-gray-500 font-medium text-base tracking-wide">Mezon Dong · Donation Campaign</span>
       </div>
     </div>,
     {
