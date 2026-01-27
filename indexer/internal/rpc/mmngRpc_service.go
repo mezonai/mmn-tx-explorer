@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
 	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
 )
 
@@ -27,13 +28,13 @@ type MMNGrpcService struct {
 }
 
 const (
-	MMN_GRPC_RATE_LIMIT = 100
+	mmnGrpcRateLimit = 100
 )
 
 // NewMMNGrpcService creates a new MMNGrpcService with connection to MMN gRPC
 func NewMMNGrpcService(url string, useTLS bool) (*MMNGrpcService, error) {
-	rateLimit := MMN_GRPC_RATE_LIMIT * 80 / 100 // 80% of the rpc rate limit
-	burst := MMN_GRPC_RATE_LIMIT * 15 / 100     // 15% of the rpc rate limit
+	rateLimit := mmnGrpcRateLimit * 80 / 100 // 80% of the rpc rate limit
+	burst := mmnGrpcRateLimit * 15 / 100     // 15% of the rpc rate limit
 	service := &MMNGrpcService{
 		url:     url,
 		useTLS:  useTLS,
@@ -63,9 +64,12 @@ func (mmn *MMNGrpcService) connect() error {
 	} else {
 		creds = insecure.NewCredentials()
 	}
+
+	// Add MaxCallRecvMsgSize and MaxCallSendMsgSize
 	conn, err := grpc.NewClient(
 		mmn.url,
 		grpc.WithTransportCredentials(creds),
+		grpc.WithDefaultCallOptions(common.GetGRPCCallOptions()...),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to connect to %s: %w", mmn.url, err)
@@ -134,7 +138,7 @@ func (mmn *MMNGrpcService) GetBlockNumber(ctx context.Context) (*pb.GetBlockNumb
 	return mmn.blockClient.GetBlockNumber(ctx, &pb.EmptyParams{})
 }
 
-// GetAccountByAddress retrieves an account by address
+// GetAccount - retrieves an account by address
 func (mmn *MMNGrpcService) GetAccount(ctx context.Context, address string) (*pb.GetAccountResponse, error) {
 	if err := mmn.ensureConnection(); err != nil {
 		return nil, fmt.Errorf("connection error: %w", err)

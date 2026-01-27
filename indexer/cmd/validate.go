@@ -22,11 +22,9 @@ var (
 	}
 )
 
-/**
- * Validates a range of blocks (end and start are inclusive) for a given chain
- * First argument is the start block number
- * Second argument (optional) is the end block number
- */
+// RunValidate validates a range of blocks (start and end are inclusive) for a given chain.
+// First argument is the start block number.
+// Second argument (optional) is the end block number.
 func RunValidate(cmd *cobra.Command, args []string) {
 	if len(args) < 1 {
 		log.Fatal().Msg("Start block number is required")
@@ -67,7 +65,8 @@ func RunValidate(cmd *cobra.Command, args []string) {
 
 	if len(invalidBlocks) > 0 {
 		log.Info().Msgf("Found %d invalid blocks", len(invalidBlocks))
-		for _, block := range invalidBlocks {
+		for i := range invalidBlocks {
+			block := &invalidBlocks[i]
 			log.Info().Msgf("Invalid block: %s", block.Block.Number)
 		}
 	} else {

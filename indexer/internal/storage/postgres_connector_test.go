@@ -38,14 +38,14 @@ func TestPostgresConnector_BlockFailures(t *testing.T) {
 	// Test StoreBlockFailures
 	failures := []common.BlockFailure{
 		{
-			ChainId:       big.NewInt(1),
+			ChainID:       big.NewInt(1),
 			BlockNumber:   big.NewInt(12345),
 			FailureTime:   time.Now(),
 			FailureReason: "test error",
 			FailureCount:  1,
 		},
 		{
-			ChainId:       big.NewInt(1),
+			ChainID:       big.NewInt(1),
 			BlockNumber:   big.NewInt(12346),
 			FailureTime:   time.Now(),
 			FailureReason: "another test error",
@@ -57,8 +57,8 @@ func TestPostgresConnector_BlockFailures(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Test GetBlockFailures
-	qf := QueryFilter{
-		ChainId: big.NewInt(1),
+	qf := &QueryFilter{
+		ChainID: big.NewInt(1),
 		Limit:   10,
 	}
 
@@ -150,7 +150,7 @@ func TestPostgresConnector_StagingData(t *testing.T) {
 	blockData := []common.BlockData{
 		{
 			Block: common.Block{
-				ChainId: big.NewInt(1),
+				ChainID: big.NewInt(1),
 				Number:  big.NewInt(100),
 				Hash:    "0xabc123",
 			},
@@ -159,7 +159,7 @@ func TestPostgresConnector_StagingData(t *testing.T) {
 		},
 		{
 			Block: common.Block{
-				ChainId: big.NewInt(1),
+				ChainID: big.NewInt(1),
 				Number:  big.NewInt(101),
 				Hash:    "0xdef456",
 			},
@@ -173,8 +173,8 @@ func TestPostgresConnector_StagingData(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Test GetStagingData
-	qf := QueryFilter{
-		ChainId:      big.NewInt(1),
+	qf := &QueryFilter{
+		ChainID:      big.NewInt(1),
 		BlockNumbers: []*big.Int{big.NewInt(100), big.NewInt(101)},
 	}
 
@@ -183,8 +183,8 @@ func TestPostgresConnector_StagingData(t *testing.T) {
 	assert.Len(t, retrievedData, 2)
 
 	// Test GetStagingData with StartBlock and EndBlock
-	rangeQf := QueryFilter{
-		ChainId:    big.NewInt(1),
+	rangeQf := &QueryFilter{
+		ChainID:    big.NewInt(1),
 		StartBlock: big.NewInt(100),
 		EndBlock:   big.NewInt(101),
 	}

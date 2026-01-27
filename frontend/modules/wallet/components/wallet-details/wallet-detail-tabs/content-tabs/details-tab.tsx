@@ -16,6 +16,8 @@ export const DetailsTab = ({ walletAddress }: TabDetailsProps) => {
   const { user } = useUser();
   const { data: walletDetailsResponse, refetch, isLoading } = useWallet(walletAddress);
   const walletDetails = walletDetailsResponse?.data;
+  const hasBalance = walletDetails?.balance;
+
   return (
     <Card className="dark:border-primary/20">
       <CardContent>
@@ -24,7 +26,7 @@ export const DetailsTab = ({ walletAddress }: TabDetailsProps) => {
           <div className="flex items-end justify-end">
             <p className="text-card-foreground rounded-lg p-1 text-xs break-words">
               Last updated block •
-              <Button variant="link" className="text-brand-primary size-fit p-0 text-sm font-normal" asChild>
+              <Button variant="link" className="text-brand-primary ml-0.5 size-fit p-0 text-sm font-normal" asChild>
                 <Link href={ROUTES.BLOCK(Number(walletDetails?.last_balance_update ?? 0))}>
                   {walletDetails?.last_balance_update ?? 0}
                 </Link>
@@ -40,8 +42,8 @@ export const DetailsTab = ({ walletAddress }: TabDetailsProps) => {
                 <CardTitle className="mb-1 text-xs uppercase">Balance</CardTitle>
               </CardHeader>
               <p className="dark:text-primary text-lg font-semibold">
-                {user?.walletAddress === walletDetails?.address
-                  ? `${NumberUtil.formatWithCommasAndScale(walletDetails?.balance ?? 0)} ${APP_CONFIG.CHAIN_SYMBOL}`
+                {hasBalance
+                  ? `${NumberUtil.formatWithCommasAndScale(hasBalance)} ${APP_CONFIG.CHAIN_SYMBOL}`
                   : '••••••••••'}
               </p>
             </CardContent>

@@ -1,37 +1,28 @@
 'use client';
 
 import { StatCard } from './stat-card';
-import { useStats } from '../../hooks/useStas';
+import { StatTitle } from './stat-titles';
+import { Cube01, Transaction, Clock, Wallet02 } from '@/assets/icons';
 
-const FA_ICONS: Record<string, string> = {
-  'Total Blocks': 'fa-solid fa-cube',
-  'Total Transactions': 'fa-solid fa-right-left',
-  'Average Block Time': 'fa-solid fa-clock',
-  'Total Wallet': 'fa-solid fa-wallet',
-  'Total Give Coffee': 'fa-solid fa-mug-saucer',
-};
+interface StatsProps {
+  blockStats?: number;
+  totalTxStats?: number;
+  avgBlockTimeStats?: number;
+  totalWalletsStats?: number;
+}
 
-export const Stats = () => {
-  const stats = useStats();
-
+export const Stats = ({ blockStats = 0, totalTxStats = 0, avgBlockTimeStats = 0, totalWalletsStats = 0 }: StatsProps) => {
   const statCards = [
-    { title: 'Total Blocks', value: stats?.total_blocks },
-    { title: 'Total Transactions', value: stats?.total_transactions },
-    { title: 'Average Block Time', value: stats?.average_block_time, subValue: '(s)' },
-    { title: 'Total Wallet', value: stats?.total_wallets },
-    { title: 'Total Give Coffee', value: stats?.total_give_coffee ?? 0 },
+    { title: StatTitle.TotalBlocks, value: blockStats, icon: Cube01 },
+    { title: StatTitle.TotalTransactions, value: totalTxStats, icon: Transaction },
+    { title: StatTitle.AverageBlockTime, value: avgBlockTimeStats, subValue: '(s)', icon: Clock },
+    { title: StatTitle.TotalWallet, value: totalWalletsStats, icon: Wallet02 },
   ];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {statCards.map((item) => (
-        <StatCard
-          key={item.title}
-          faIconClass={FA_ICONS[item.title]}
-          title={item.title}
-          value={item.value}
-          subValue={item.subValue}
-        />
+        <StatCard key={item.title} icon={item.icon} title={item.title} value={item.value} subValue={item.subValue} />
       ))}
     </div>
   );

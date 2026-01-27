@@ -21,9 +21,19 @@ definitions:
       chain_id:
         description: '@Description Chain ID of the blockchain'
         type: integer
+      has_more:
+        description: '@Description Flag indicating if there are more items to load'
+        type: boolean
       limit:
         description: '@Description Number of items per page'
         type: integer
+      next_hash:
+        description: '@Description Hash to use for the next request when timestamps
+          are identical'
+        type: string
+      next_timestamp:
+        description: '@Description Timestamp to use for the next request'
+        type: string
       page:
         description: '@Description Current page number'
         type: integer
@@ -67,6 +77,33 @@ definitions:
         type: string
       transaction_count:
         type: integer
+    type: object
+  common.BaseTransactionModel:
+    properties:
+      block_hash:
+        type: string
+      block_number:
+        type: integer
+      chain_id:
+        type: string
+      from_address:
+        type: string
+      hash:
+        type: string
+      nonce:
+        type: integer
+      status:
+        type: integer
+      text_data:
+        type: string
+      to_address:
+        type: string
+      transaction_timestamp:
+        type: integer
+      transaction_type:
+        type: integer
+      value:
+        type: string
     type: object
   common.LogModel:
     properties:
@@ -139,6 +176,14 @@ definitions:
       time:
         type: string
     type: object
+  handlers.InternalTransactionDetailResponse:
+    properties:
+      data:
+        properties:
+          transaction:
+            $ref: '#/definitions/common.BaseTransactionModel'
+        type: object
+    type: object
   handlers.PendingTransactionModel:
     properties:
       from_address:
@@ -170,7 +215,7 @@ definitions:
         type: array
       transactions:
         items:
-          $ref: '#/definitions/common.TransactionModel'
+          $ref: '#/definitions/common.BaseTransactionModel'
         type: array
       type:
         $ref: '#/definitions/handlers.SearchResultType'
@@ -212,6 +257,7 @@ definitions:
         additionalProperties: true
         type: object
     type: object
+info:
 host: localhost:8080
 info:
   contact:
@@ -346,6 +392,51 @@ paths:
       security:
       - BasicAuth: []
       summary: Get block detail
+      tags:
+      - detail
+  /{chainId}/internal/tx/{txHash}/detail:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve detailed information about a specific transaction without
+        extra_info field (for internal use)
+      parameters:
+      - description: Chain ID
+        in: path
+        name: chainId
+        required: true
+        type: string
+      - description: Transaction hash
+        in: path
+        name: txHash
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.InternalTransactionDetailResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - BasicAuth: []
+      summary: Get internal transaction detail
       tags:
       - detail
   /{chainId}/pending-transactions:
@@ -505,7 +596,7 @@ paths:
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/common.TransactionModel'
+                    $ref: '#/definitions/common.BaseTransactionModel'
                   type: array
               type: object
         "400":
@@ -523,6 +614,76 @@ paths:
       security:
       - BasicAuth: []
       summary: Get all transactions
+      tags:
+      - transactions
+  /{chainId}/transactions/infinite:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve transactions with cursor-based pagination for infinite
+        scroll
+      parameters:
+      - description: Chain ID
+        in: path
+        name: chainId
+        required: true
+        type: string
+      - description: Timestamp less than (from last page) in ISO 8601 format (e.g.,
+          2025-10-11T11:00:21.203Z)
+        format: date-time
+        in: query
+        name: timestamp_lt
+        type: string
+      - description: Last transaction hash (for pagination)
+        in: query
+        name: last_hash
+        type: string
+      - default: 20
+        description: Number of items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Wallet address to filter transactions
+        in: query
+        name: wallet_address
+        type: string
+      - description: From address to filter transactions
+        in: query
+        name: filter_from_address
+        type: string
+      - description: To address to filter transactions
+        in: query
+        name: filter_to_address
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.QueryResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/common.TransactionModel'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - BasicAuth: []
+      summary: Get transactions for infinite scroll
       tags:
       - transactions
   /{chainId}/tx/{txHash}/detail:

@@ -10,17 +10,17 @@ import (
 	"time"
 )
 
-const TransactionStatus_FINALIZED = 2
-
 // SyncContributorsJob syncs transactions from indexer schema to campaign_contributor table
 type SyncContributorsJob struct {
-	statsRepo *repository.CampaignStatisticsRepository
+	statsRepo        *repository.CampaignStatisticsRepository
+	recentWindowDays int
 }
 
 // NewSyncContributorsJob creates a new sync contributors job
-func NewSyncContributorsJob(db *sql.DB, indexerSchema, dongSchema string) *SyncContributorsJob {
+func NewSyncContributorsJob(db *sql.DB, indexerSchema, dongSchema string, recentWindowDays int) *SyncContributorsJob {
 	return &SyncContributorsJob{
-		statsRepo: repository.NewCampaignStatisticsRepository(db, indexerSchema, dongSchema),
+		statsRepo:        repository.NewCampaignStatisticsRepository(db, indexerSchema, dongSchema, recentWindowDays),
+		recentWindowDays: recentWindowDays,
 	}
 }
 
@@ -51,10 +51,10 @@ func (j *SyncContributorsJob) Run(ctx context.Context) error {
 	var statsRowsAffected int64
 
 	for _, campaign := range campaigns {
-		processed, inserted, updated, err := j.statsRepo.SyncCampaignTransactions(ctx, campaign)
-		if err != nil {
+		processed, inserted, updated, syncErr := j.statsRepo.SyncCampaignTransactions(ctx, campaign)
+		if syncErr != nil {
 			logger.Error().
-				Err(err).
+				Err(syncErr).
 				Int64("campaign_id", campaign.ID).
 				Str("donation_wallet", campaign.DonationWallet).
 				Msg("Failed to sync campaign transactions")
@@ -75,7 +75,7 @@ func (j *SyncContributorsJob) Run(ctx context.Context) error {
 	}
 
 	// Update campaign statistics (separate table to avoid locking)
-	statsRowsAffected, err = j.statsRepo.UpdateCampaignStatistics(ctx)
+	statsRowsAffected, err = j.statsRepo.UpdateCampaignStatistics(ctx, j.recentWindowDays)
 	if err != nil {
 		logger.Error().
 			Err(err).
@@ -99,8 +99,8 @@ func (j *SyncContributorsJob) Run(ctx context.Context) error {
 }
 
 // CreateSyncContributorsTask creates a new sync contributors task
-func CreateSyncContributorsTask(interval time.Duration, indexerSchema, dongSchema string) Task {
-	job := NewSyncContributorsJob(database.GetDB(), indexerSchema, dongSchema)
+func CreateSyncContributorsTask(interval time.Duration, indexerSchema, dongSchema string, recentWindowDays int) Task {
+	job := NewSyncContributorsJob(database.GetDB(), indexerSchema, dongSchema, recentWindowDays)
 
 	return Task{
 		Name:     "sync_contributors",

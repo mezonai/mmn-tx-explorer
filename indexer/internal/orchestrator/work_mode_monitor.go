@@ -16,10 +16,10 @@ import (
 type WorkMode string
 
 const (
-	DEFAULT_WORK_MODE_CHECK_INTERVAL          = 10
-	DEFAULT_LIVE_MODE_THRESHOLD               = 500
-	WorkModeLive                     WorkMode = "live"
-	WorkModeBackfill                 WorkMode = "backfill"
+	defaultWorkModeCheckInterval          = 10
+	defaultLiveModeThreshold              = 500
+	WorkModeLive                 WorkMode = "live"
+	WorkModeBackfill             WorkMode = "backfill"
 )
 
 type WorkModeMonitor struct {
@@ -32,19 +32,19 @@ type WorkModeMonitor struct {
 	liveModeThreshold *big.Int
 }
 
-func NewWorkModeMonitor(rpc rpc.IRPCClient, storage storage.IStorage) *WorkModeMonitor {
+func NewWorkModeMonitor(rpcClient rpc.IRPCClient, store storage.IStorage) *WorkModeMonitor {
 	checkInterval := config.Cfg.WorkMode.CheckIntervalMinutes
 	if checkInterval < 1 {
-		checkInterval = DEFAULT_WORK_MODE_CHECK_INTERVAL
+		checkInterval = defaultWorkModeCheckInterval
 	}
 	liveModeThreshold := config.Cfg.WorkMode.LiveModeThreshold
 	if liveModeThreshold < 1 {
-		liveModeThreshold = DEFAULT_LIVE_MODE_THRESHOLD
+		liveModeThreshold = defaultLiveModeThreshold
 	}
 	log.Info().Msgf("Work mode monitor initialized with check interval %d and live mode threshold %d", checkInterval, liveModeThreshold)
 	return &WorkModeMonitor{
-		rpc:               rpc,
-		storage:           storage,
+		rpc:               rpcClient,
+		storage:           store,
 		workModeChannels:  make(map[chan WorkMode]struct{}),
 		currentMode:       "",
 		checkInterval:     time.Duration(checkInterval) * time.Minute,

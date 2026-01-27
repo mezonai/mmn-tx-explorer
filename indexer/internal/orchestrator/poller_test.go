@@ -564,8 +564,8 @@ func TestNewBoundlessPoller_DefaultValues(t *testing.T) {
 	// Verify default configuration
 	assert.Equal(t, mockRPC, poller.rpc)
 	assert.Equal(t, mockStorage, poller.storage)
-	assert.Equal(t, int64(DEFAULT_BLOCKS_PER_POLL), poller.blocksPerPoll)
-	assert.Equal(t, int64(DEFAULT_TRIGGER_INTERVAL), poller.triggerIntervalMs)
+	assert.Equal(t, int64(DefaultBlocksPerPoll), poller.blocksPerPoll)
+	assert.Equal(t, int64(DefaultTriggerInterval), poller.triggerIntervalMs)
 	assert.Equal(t, 0, poller.parallelPollers)
 
 	mockRPC.AssertExpectations(t)

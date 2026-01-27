@@ -24,7 +24,7 @@ func handleTransactionStats(c *gin.Context) {
 	}
 
 	time24hAgo := time.Now().Add(-24 * time.Hour)
-	timeBasedQf24h := storage.QueryFilter{
+	timeBasedQf24h := &storage.QueryFilter{
 		ForceConsistentData: true,
 		FilterParams: map[string]string{
 			"transaction_timestamp_gte": strconv.FormatInt(time24hAgo.Unix(), 10),
@@ -77,10 +77,13 @@ func handleTransactionStats(c *gin.Context) {
 // DashboardStatsResponse represents the dashboard-only stats payload
 type DashboardStatsResponse struct {
 	Data struct {
-		TotalBlocks       uint64  `json:"total_blocks"`
-		TotalTransactions uint64  `json:"total_transactions"`
-		AverageBlockTime  float64 `json:"average_block_time"`
-		TotalWallets      uint64  `json:"total_wallets"`
+		TotalBlocks            uint64  `json:"total_blocks"`
+		TotalTransactions      uint64  `json:"total_transactions"`
+		AverageBlockTime       float64 `json:"average_block_time"`
+		TotalWallets           uint64  `json:"total_wallets"`
+		TotalGiveCoffee        uint64  `json:"total_give_coffee"`
+		TotalP2POfferAvailable float64 `json:"total_p2p_offer_available"`
+		TotalOffers            uint64  `json:"total_offers"`
 	} `json:"data"`
 }
 
@@ -113,14 +116,17 @@ func handleDashboardStats(c *gin.Context) {
 	}
 
 	// Build only the fields needed for dashboard
-	countQf := storage.QueryFilter{ForceConsistentData: true}
+	countQf := &storage.QueryFilter{ForceConsistentData: true}
 	var (
 		totalBlocks, totalTransactions, totalWallets uint64
 		averageBlockTime                             float64
+		totalGiveCoffee                              uint64
+		totalP2POfferAvailable                       float64
+		totalOffers                                  uint64
 		err1                                         error
 	)
 
-	totalBlocks, totalTransactions, totalWallets, averageBlockTime, err1 = mainStorage.GetDashboardStats(ctx, countQf)
+	totalBlocks, totalTransactions, totalWallets, averageBlockTime, totalGiveCoffee, totalP2POfferAvailable, totalOffers, err1 = mainStorage.GetDashboardStats(ctx, countQf)
 	if err1 != nil {
 		log.Error().Err(err1).Msg("Error getting dashboard stats")
 		api.InternalErrorHandler(c)
@@ -132,7 +138,9 @@ func handleDashboardStats(c *gin.Context) {
 	resp.Data.TotalTransactions = totalTransactions
 	resp.Data.AverageBlockTime = averageBlockTime
 	resp.Data.TotalWallets = totalWallets
-
+	resp.Data.TotalGiveCoffee = totalGiveCoffee
+	resp.Data.TotalP2POfferAvailable = totalP2POfferAvailable
+	resp.Data.TotalOffers = totalOffers
 	c.JSON(http.StatusOK, resp)
 }
 
