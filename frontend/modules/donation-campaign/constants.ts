@@ -20,6 +20,7 @@ export const DONATION_ENDPOINTS = {
   PUBLISH_CAMPAIGN: (id: string) => `/api/v1/campaigns/${id}/activate`,
   TOP_CONTRIBUTOR: (id: string) => `/api/v1/campaigns/${id}/top-contributors`,
   REFRESH_CAMPAIGN_RAISED: (id: string) => `/api/v1/campaigns/${id}/sync`,
+  IMAGE_COMPRESSION: '/api/image-compression',
 } as const;
 export const QUERY_KEYS = {
   CAMPAIGNS: 'campaigns',
@@ -32,3 +33,18 @@ export const QUERY_KEYS = {
   DONATION_FEED_HISTORY: 'donation-feed-history',
   DONATION_FEED_POST_DETAIL: 'donation-feed-post-detail',
 } as const;
+
+export const IMAGE_CONSTRAINTS = {
+  UNIT: 'MB',
+  MAX_IMAGES_SIZE: 20,
+  ALLOWED_IMAGE_TYPES: [
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/heic',
+    'image/heif',
+    'image/heic-sequence',
+    'image/heif-sequence',
+  ],
+  MAX_IMAGES_ALLOWED: 50,
+};

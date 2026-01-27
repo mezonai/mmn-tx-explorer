@@ -55,12 +55,13 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		return nil, nil, fmt.Errorf("failed to fetch offer: %w", err)
 	}
 
-	hasActive, err := s.repo.HasActiveOrders(ctx, offerID, tx)
+	// Check if user has reached the limit of 10 active orders
+	activeOrderCount, err := s.repo.CountActiveOrdersByUser(ctx, buyerUserID, tx)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to check active orders: %w", err)
+		return nil, nil, fmt.Errorf("failed to check user active orders: %w", err)
 	}
-	if hasActive {
-		return nil, nil, constants.ErrOfferHasActiveOrders
+	if activeOrderCount >= constants.MaxActiveOrdersPerUser {
+		return nil, nil, constants.ErrUserOrderLimitExceeded
 	}
 
 	var orderAmount types.BigIntString

@@ -42,10 +42,17 @@ type IOfferService interface {
 	GetOfferByID(ctx context.Context, id int64) (*models.Offer, error)
 	GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, int64, error)
 	CancelOffer(ctx context.Context, offerId int64, offer *models.Offer) error
-	SumOfferAmounts(ctx context.Context) (int64, error)
 }
 
 func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string, sellerUserID string) (*models.Offer, error) {
+	activeOfferCount, err := s.repo.CountActiveOffersByUser(ctx, sellerUserID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check active offer count: %w", err)
+	}
+	if activeOfferCount >= constants.MaxActiveOffersPerUser {
+		return nil, constants.ErrOfferLimitExceeded
+	}
+
 	amountInt := req.Amount
 
 	if s.userWalletRepo != nil {
@@ -292,7 +299,7 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 			offer.SellerWalletAddress,
 			offer.AvailableAmount.Int64(),
 			constants.TextDataP2PTrading,
-			constants.ExtraInfoP2PTrading,
+			constants.ExtraInfoP2PTradingOfferCanceled,
 		)
 		if err != nil {
 			logger.Error().Err(err).Int64("offer_id", offerId).Msg(constants.ErrFailedToRefundOfferAmount)
@@ -346,8 +353,4 @@ func (s *OfferService) ReleaseIntermediaryWalletIfOfferComplete(ctx context.Cont
 			s.releaseIntermediaryWallet(ctx, *updatedOffer.IntermediaryWalletAddress)
 		}
 	}
-}
-
-func (s *OfferService) SumOfferAmounts(ctx context.Context) (int64, error) {
-	return s.repo.SumOfferAmounts(ctx)
 }

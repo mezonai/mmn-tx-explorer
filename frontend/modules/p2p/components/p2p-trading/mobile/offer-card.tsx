@@ -1,6 +1,6 @@
 'use client';
 
-import { AddressDisplay } from '@/components/shared';
+import { AddressDisplay, Chip } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { APP_CONFIG } from '@/configs/app.config';
 import { ROUTES } from '@/configs/routes.config';
@@ -10,6 +10,7 @@ import React from 'react';
 import { TriangleAlert } from 'lucide-react';
 import { P2POffer } from '@/modules/p2p/types';
 import { CancelConfirmDialog } from '../cancel-confirm-dialog';
+import { ShareOfferModal } from '../share-offer-modal';
 import { OFFERS_STATUS } from '@/modules/p2p/constants';
 import { NumberUtil } from '@/utils';
 import BigNumber from 'bignumber.js';
@@ -115,12 +116,33 @@ const OfferMobileCard = ({ offer }: OfferMobileCardProps) => {
           >
             Buy Mezon đồng
           </Button>
-        ) : (
-          offer.status !== OFFERS_STATUS.CANCELED && (
-            <div className="w-full">
+        ) : offer.status === OFFERS_STATUS.CANCELED ? (
+          <Chip variant="error" className="w-full justify-center py-2 rounded-lg">
+            CANCELED
+          </Chip>
+        ) : offer.status === OFFERS_STATUS.COMPLETED ? (
+          <Chip variant="success" className="w-full justify-center py-2 rounded-lg">
+            COMPLETED
+          </Chip>
+        ) : offer.status === OFFERS_STATUS.FAILED ? (
+          <Chip variant="error" className="w-full justify-center py-2 rounded-lg">
+            FAILED
+          </Chip>
+        ) : offer.status === OFFERS_STATUS.OPEN ? (
+          <Chip variant="warning" className="w-full justify-center py-2 rounded-lg">
+            OPEN
+          </Chip>
+        ) : offer.status === OFFERS_STATUS.CONFIRMED ? (
+          <div className="flex w-full items-center gap-2">
+            <div className="flex-1">
               <CancelConfirmDialog offer={offer} />
             </div>
-          )
+            <ShareOfferModal offer={offer} />
+          </div>
+        ) : (
+          <Chip variant="default" className="w-full justify-center py-2 rounded-lg">
+            {offer.status}
+          </Chip>
         )}
       </div>
     </div>
