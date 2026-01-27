@@ -165,7 +165,7 @@ jobs:
           REDIS_DB: ${{ vars.REDIS_DB }}
           SERVER_GIN_MODE: release 
         run: |
-          cat > remote_setup.sh <<EOF
+          cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
           set -euo pipefail
 
