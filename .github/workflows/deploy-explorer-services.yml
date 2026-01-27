@@ -52,8 +52,6 @@ jobs:
       - name: Calculate new tags
         id: get_tag
         run: |
-          ENV_SUFFIX="${{ inputs.env }}"  
-
           if [ -n "${{ inputs.existing_tag_to_deploy }}" ]; then
             echo "==> Mode: Deploy Existing Tag"
             echo "target_tag=${{ inputs.existing_tag_to_deploy }}" >> $GITHUB_OUTPUT
