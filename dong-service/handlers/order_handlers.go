@@ -98,7 +98,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to create order")
 
-		if errors.Is(err, constants.ErrOfferHasActiveOrders) {
+		if errors.Is(err, constants.ErrUserOrderLimitExceeded) {
 			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Failed to create order: "+err.Error()))
 			return
 		}
