@@ -251,17 +251,17 @@ func (r *RedEnvelopeRepository) GetStats() (map[string]interface{}, error) {
 	query := fmt.Sprintf(`
 		SELECT 
 			(SELECT COALESCE(SUM(rec.amount), 0) FROM %s.red_envelope_claim rec) AS total_claimed,
-			(SELECT COALESCE(COUNT(id), 0) FROM %s.red_envelope WHERE status = $1) AS count_active_envelopes
+			(SELECT COALESCE(COUNT(id), 0) FROM %s.red_envelope WHERE claimed_count > 0) AS total_envelopes
 	`, r.dongSchema, r.dongSchema)
 
 	var stats struct {
-		TotalClaimed         int64
-		TotalActiveEnvelopes int64
+		TotalClaimed   int64
+		TotalEnvelopes int64
 	}
 
-	err := r.db.QueryRow(query, constants.RedEnvelopeStatusPublished).Scan(
+	err := r.db.QueryRow(query).Scan(
 		&stats.TotalClaimed,
-		&stats.TotalActiveEnvelopes,
+		&stats.TotalEnvelopes,
 	)
 
 	if err != nil {
@@ -269,8 +269,8 @@ func (r *RedEnvelopeRepository) GetStats() (map[string]interface{}, error) {
 	}
 
 	result := map[string]interface{}{
-		"total_claimed":          stats.TotalClaimed,
-		"total_active_envelopes": stats.TotalActiveEnvelopes,
+		"total_claimed":   stats.TotalClaimed,
+		"total_envelopes": stats.TotalEnvelopes,
 	}
 
 	return result, nil

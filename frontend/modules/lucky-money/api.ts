@@ -43,9 +43,9 @@ export class RedEnvelopeService {
     return data.data
   }
 
-  static async claimRedEnvelope(id: UUID, request: ClaimEnvelopeRequest): Promise<RedEnvelopeClaim> {
+  static async claimRedEnvelope(request: ClaimEnvelopeRequest): Promise<RedEnvelopeClaim> {
     const { data } = await apiDongClient.post<{ data: RedEnvelopeClaim }>(
-      RED_ENVELOPE_ENDPOINTS.CLAIM(), request
+      RED_ENVELOPE_ENDPOINTS.CLAIM(id), request
     )
     return data.data
   }

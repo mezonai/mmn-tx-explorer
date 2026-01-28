@@ -88,8 +88,9 @@ const (
 )
 
 const (
-	ExtraInfoLuckyMoney = `{"type":"lucky-money"}`
-	ExtraInfoP2PTrading = `{"type":"p2p-trading"}`
+	ExtraInfoLuckyMoney              = `{"type":"lucky-money"}`
+	ExtraInfoP2PTrading              = `{"type":"p2p-trading"}`
+	ExtraInfoP2PTradingOfferCanceled = `{"type":"p2p-trading","action":"offer-canceled"}`
 )
 
 const (
@@ -98,7 +99,7 @@ const (
 )
 
 const (
-	TradingOpen     = "OPEN"
+	TradingOpen      = "OPEN"
 	TradingPending   = "PENDING"
 	TradingConfirmed = "CONFIRMED"
 	TradingCanceled  = "CANCELED"
@@ -133,4 +134,6 @@ const (
 	MaxLengthSymbol           int     = 64
 	MaxTotalBankInfoSize      int     = 1024
 	MaxIndividualBankInfoSize int     = 128
+	MaxActiveOffersPerUser    int64   = 10
+	MaxActiveOrdersPerUser    int     = 10
 )
