@@ -23,10 +23,6 @@ interface ChatSidebarProps {
 const MAX_CHAR_LIMIT = 5000;
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
-
-
-
-
 export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSidebarProps) => {
   const [messages, setMessages] = useState<MessageWithParsedContent[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -62,6 +58,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
   useEffect(() => {
     if (!lightClient) return;
     let isMounted = true;
+    const unsubs: (() => void)[] = [];
 
     const initChat = async () => {
       try {
@@ -73,7 +70,6 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
         if (!isMounted) return;
 
         const sdk = lightClient;
-        // Use client.session property as per README
         const socket = new LightSocket(sdk, sdk.session);
 
         await socket.connect({
@@ -87,8 +83,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
         await socket.joinDMChannel(channel.channel_id!);
         channelIdRef.current = channel.channel_id!;
 
-        // Use onChannelMessage as per README
-        socket.onChannelMessage((msg: ChannelMessage) => {
+        const unsubscribe = socket.onChannelMessage((msg: ChannelMessage) => {
           let parsedContent: ParsedMessageContent = { t: '' };
           if (typeof msg.content === 'string') {
             parsedContent = safeJsonParse(msg.content) ?? { t: msg.content };
@@ -119,6 +114,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
             setUnreadCount((prev) => prev + 1);
           }
         });
+        unsubs.push(unsubscribe);
 
         if (isMounted) {
           setIsConnected(true);
@@ -131,6 +127,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
     initChat();
     return () => {
       isMounted = false;
+      unsubs.forEach(unsub => unsub());
       if (socketRef.current) {
         socketRef.current.disconnect();
       }
@@ -213,7 +210,6 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
               const uniqueName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}_${file.name}`;
               console.log(`[Chat] Uploading (${retryCount + 1}/${maxRetries}): ${uniqueName}`);
 
-              // Renamed from getPresignedUrl to uploadAttachment as per README
               const response = await lightClient.uploadAttachment({
                 filename: uniqueName,
                 filetype: file.type || 'application/octet-stream',
