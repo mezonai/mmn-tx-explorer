@@ -1578,6 +1578,11 @@ func (p *PostgresConnector) insertTransactionsTx(
 		return nil, nil
 	}
 
+	for i := range transactions {
+		t := &transactions[i]
+		t.TransactionExtraInfoType = detectTransactionType(t.ExtraInfo)
+	}
+
 	valueStrings := make([]string, len(transactions))
 	valueArgs := make([]interface{}, 0, len(transactions)*14)
 
@@ -1687,7 +1692,7 @@ func (p *PostgresConnector) insertTransactionsTx(
 		pb.TransactionStatus_FINALIZED,
 		common.TransactionExtraInfoP2PTrading.String(),
 		pb.TransactionStatus_FINALIZED,
-		common.TransactionExtraInfoP2PTrading.String(), 
+		common.TransactionExtraInfoP2PTrading.String(),
 		pb.TransactionStatus_FINALIZED,
 	)
 
@@ -1710,7 +1715,7 @@ func (p *PostgresConnector) insertTransactionsTx(
 	}
 
 	if insertedCount > 0 {
-		_, err := tx.ExecContext(ctx, `
+		if _, err := tx.ExecContext(ctx, `
 			INSERT INTO stats(key, value)
 			VALUES ('total_transactions', $1)
 			ON CONFLICT (key) DO UPDATE SET value = stats.value + $1
@@ -1720,7 +1725,7 @@ func (p *PostgresConnector) insertTransactionsTx(
 	}
 
 	if newGiveCoffeeCount > 0 {
-		_, err := tx.ExecContext(ctx, `
+		if _, err := tx.ExecContext(ctx, `
 			INSERT INTO stats(key, value)
 			VALUES ('total_give_coffee', $1)
 			ON CONFLICT (key) DO UPDATE SET value = stats.value + $1
@@ -1731,7 +1736,7 @@ func (p *PostgresConnector) insertTransactionsTx(
 
 	if p2pOfferAdd > 0 || p2pOfferSubtract > 0 {
 		netChange := p2pOfferAdd - p2pOfferSubtract
-		_, err := tx.ExecContext(ctx, `
+		if _, err := tx.ExecContext(ctx, `
 			INSERT INTO stats(key, value)
 			VALUES ('total_p2p_offer_available', $1)
 			ON CONFLICT (key)
@@ -1742,7 +1747,7 @@ func (p *PostgresConnector) insertTransactionsTx(
 	}
 
 	if totalOffersDelta != 0 {
-		_, err := tx.ExecContext(ctx, `
+		if _, err := tx.ExecContext(ctx, `
 			INSERT INTO stats(key, value)
 			VALUES ('total_offers', $1)
 			ON CONFLICT (key)
@@ -1756,20 +1761,8 @@ func (p *PostgresConnector) insertTransactionsTx(
 	walletStats := make(map[string]WalletStats)
 
 	for _, txObj := range transactions {
-		apply := func(addr string) {
-			if addr == "" {
-				return
-			}
-			stat := walletStats[addr]
-			stat.Address = addr
-			stat.TransactionCount++
-			if stat.MaxBlock == nil || txObj.BlockNumber.Cmp(stat.MaxBlock) > 0 {
-				stat.MaxBlock = new(big.Int).Set(txObj.BlockNumber)
-			}
-			walletStats[addr] = stat
-		}
-		apply(txObj.FromAddress)
-		apply(txObj.ToAddress)
+		updateWalletStat(walletStats, txObj.FromAddress, txObj.BlockNumber)
+		updateWalletStat(walletStats, txObj.ToAddress, txObj.BlockNumber)
 	}
 
 	return walletStats, nil
@@ -2421,6 +2414,19 @@ func getNewArgumentKeyByBaseArgumentKey(baseKey string, args map[string]interfac
 		newKey = fmt.Sprintf("%s_%d", baseKey, index)
 		index++
 	}
+}
+
+func updateWalletStat(walletStats map[string]WalletStats, addr string, blockNum *big.Int) {
+	if addr == "" {
+		return
+	}
+	stat := walletStats[addr]
+	stat.Address = addr
+	stat.TransactionCount++
+	if stat.MaxBlock == nil || blockNum.Cmp(stat.MaxBlock) > 0 {
+		stat.MaxBlock = new(big.Int).Set(blockNum)
+	}
+	walletStats[addr] = stat
 }
 
 func (p *PostgresConnector) GetAllTransactionsByWallet(
