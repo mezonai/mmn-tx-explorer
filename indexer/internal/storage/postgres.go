@@ -22,6 +22,7 @@ import (
 const (
 	DataRowsDisplayLimit   = 500000
 	InsertBlockDataTimeout = 10 * time.Minute
+	P2PMultiplier          = 1000000
 )
 
 type PostgresConnector struct {
@@ -805,6 +806,30 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 		if err != nil {
 			return err
 		}
+
+		txMap := make(map[string]common.Transaction)
+		offerIDMap := make(map[string]int64)
+		type P2PExtraInfo struct {
+			OfferID int64 `json:"offer_id"`
+		}
+		for i := range blockData.Transactions {
+			t := blockData.Transactions[i]
+			t.TransactionExtraInfoType = detectTransactionType(t.ExtraInfo)
+			if t.TransactionExtraInfoType == common.TransactionExtraInfoP2PTrading && t.ExtraInfo != "" &&
+				(*t.Status == (uint64)(pb.TransactionStatus_CONFIRMED) || *t.Status == (uint64)(pb.TransactionStatus_FINALIZED)) {
+				txMap[t.Hash] = t
+				var extra P2PExtraInfo
+				if err := json.Unmarshal([]byte(t.ExtraInfo), &extra); err == nil && extra.OfferID != 0 {
+					offerIDMap[t.Hash] = extra.OfferID
+				}
+			}
+		}
+		err = p.updateOfferStatus(ctx, tx, txMap, offerIDMap)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to update offer status after inserting transactions")
+			return err
+		}
+
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -1324,23 +1349,25 @@ func (p *PostgresConnector) GetCount(ctx context.Context, table string, qf *Quer
 	return count, err
 }
 
-func (p *PostgresConnector) GetDashboardStats(ctx context.Context, qf *QueryFilter) (totalBlocks, totalTransactions, totalWallets uint64, averageBlockTime float64, totalGiveCoffee uint64, err error) {
+func (p *PostgresConnector) GetDashboardStats(ctx context.Context, qf *QueryFilter) (totalBlocks, totalTransactions, totalWallets uint64, averageBlockTime float64, totalGiveCoffee uint64, totalP2POfferAvailable float64, totalOffers uint64, err error) {
 	query := `
         SELECT 
             COALESCE(MAX(CASE WHEN key = 'total_blocks' THEN value::bigint END), 0) as blocks,
             COALESCE(MAX(CASE WHEN key = 'total_transactions' THEN value::bigint END), 0) as transactions,
             COALESCE(MAX(CASE WHEN key = 'total_wallets' THEN value::bigint END), 0) as wallets,
 			COALESCE(MAX(CASE WHEN key = 'average_block' THEN value::float END) / 1000.0, 0.0) as avg_block_time,
-			COALESCE(MAX(CASE WHEN key = 'total_give_coffee' THEN value::bigint END), 0) as total_give_coffee
+			COALESCE(MAX(CASE WHEN key = 'total_give_coffee' THEN value::bigint END), 0) as total_give_coffee,
+			COALESCE(MAX(CASE WHEN key = 'total_p2p_offer_available' THEN value::float END), 0.0) as total_p2p_offer_available,
+			COALESCE(MAX(CASE WHEN key = 'total_offers' THEN value::bigint END), 0) as total_offers
         FROM stats
     `
 
-	err = p.db.QueryRowContext(ctx, query).Scan(&totalBlocks, &totalTransactions, &totalWallets, &averageBlockTime, &totalGiveCoffee)
+	err = p.db.QueryRowContext(ctx, query).Scan(&totalBlocks, &totalTransactions, &totalWallets, &averageBlockTime, &totalGiveCoffee, &totalP2POfferAvailable, &totalOffers)
 	if err != nil {
-		return 0, 0, 0, 0, 0, fmt.Errorf("failed to get dashboard stats: %w", err)
+		return 0, 0, 0, 0, 0, 0, 0, fmt.Errorf("failed to get dashboard stats: %w", err)
 	}
 
-	return totalBlocks, totalTransactions, totalWallets, averageBlockTime, totalGiveCoffee, nil
+	return totalBlocks, totalTransactions, totalWallets, averageBlockTime, totalGiveCoffee, totalP2POfferAvailable, totalOffers, nil
 }
 
 func (p *PostgresConnector) GetPendingTransactions(ctx context.Context) (*pb.GetPendingTransactionsResponse, error) {
@@ -1610,66 +1637,134 @@ func (p *PostgresConnector) insertTransactionsTx(
 				extra_info = EXCLUDED.extra_info,
 				transaction_extra_info_type = EXCLUDED.transaction_extra_info_type,
 				updated_at = NOW()
-			RETURNING 
+			RETURNING
 				(xmax = 0) AS is_new,
 				transaction_extra_info_type,
 				status,
-				extra_info
+				extra_info,
+				value
 		)
 		SELECT
 			COUNT(*) FILTER (WHERE is_new) AS inserted_count,
-			COUNT(*) FILTER (WHERE is_new AND transaction_extra_info_type IN ($%d, $%d) AND status = $%d) AS new_give_coffee
+			COUNT(*) FILTER (WHERE is_new AND transaction_extra_info_type IN ($%d, $%d) AND status = $%d) AS new_give_coffee,
+			COALESCE(SUM(CASE 
+				WHEN is_new
+					AND transaction_extra_info_type = $%d
+					AND status = $%d
+					AND extra_info::jsonb ? 'UserSenderId'
+				THEN value::numeric
+				ELSE 0
+			END), 0) AS p2p_offer_add,
+			COALESCE(SUM(CASE 
+				WHEN is_new
+					AND transaction_extra_info_type = $%d
+					AND status = $%d
+					AND NOT (extra_info::jsonb ? 'UserSenderId')
+				THEN value::numeric
+				ELSE 0
+			END), 0) AS p2p_offer_subtract,
+
+			COALESCE(SUM(
+				CASE
+					WHEN is_new
+						AND transaction_extra_info_type = $%d
+						AND status = $%d
+						AND extra_info::jsonb ? 'UserSenderId'
+					THEN 1
+
+					WHEN is_new
+						AND extra_info::jsonb ? 'action'
+						AND extra_info::jsonb ->> 'action' = 'offer-canceled'
+					THEN -1
+
+					ELSE 0
+				END
+			), 0) AS total_offers_delta
 		FROM inserted;
-	`, strings.Join(valueStrings, ","), nextIndex, nextIndex+1, nextIndex+2)
+	`, strings.Join(valueStrings, ","), nextIndex, nextIndex+1, nextIndex+2, nextIndex+3, nextIndex+4, nextIndex+5, nextIndex+6, nextIndex+7, nextIndex+8,
+	)
 
-	var insertedCount, newGiveCoffeeCount int
+	queryParams := append(valueArgs,
+		common.TransactionExtraInfoGiveCoffee.String(),
+		common.TransactionExtraInfoDongGiveCoffee.String(),
+		pb.TransactionStatus_FINALIZED,
+		common.TransactionExtraInfoP2PTrading.String(),
+		pb.TransactionStatus_FINALIZED,
+		common.TransactionExtraInfoP2PTrading.String(),
+		pb.TransactionStatus_FINALIZED,
+		common.TransactionExtraInfoP2PTrading.String(),
+		pb.TransactionStatus_FINALIZED,
+	)
 
-	if err := tx.QueryRowContext(ctx, insertQuery, append(valueArgs, common.TransactionExtraInfoGiveCoffee.String(), common.TransactionExtraInfoDongGiveCoffee.String(), pb.TransactionStatus_FINALIZED)...).Scan(
+	var (
+		insertedCount      int
+		newGiveCoffeeCount int
+		p2pOfferAdd        float64
+		p2pOfferSubtract   float64
+		totalOffersDelta   int
+	)
+
+	if err := tx.QueryRowContext(ctx, insertQuery, queryParams...).Scan(
 		&insertedCount,
 		&newGiveCoffeeCount,
+		&p2pOfferAdd,
+		&p2pOfferSubtract,
+		&totalOffersDelta,
 	); err != nil {
 		return nil, fmt.Errorf("failed insert tx: %w", err)
 	}
 
 	if insertedCount > 0 {
-		_, err := tx.ExecContext(ctx, `
+		if _, err := tx.ExecContext(ctx, `
 			INSERT INTO stats(key, value)
 			VALUES ('total_transactions', $1)
 			ON CONFLICT (key) DO UPDATE SET value = stats.value + $1
-		`, insertedCount)
-		if err != nil {
+		`, insertedCount); err != nil {
 			return nil, fmt.Errorf("failed update total_transactions: %w", err)
 		}
 	}
 
 	if newGiveCoffeeCount > 0 {
-		_, err := tx.ExecContext(ctx, `
+		if _, err := tx.ExecContext(ctx, `
 			INSERT INTO stats(key, value)
 			VALUES ('total_give_coffee', $1)
 			ON CONFLICT (key) DO UPDATE SET value = stats.value + $1
-		`, newGiveCoffeeCount)
-		if err != nil {
+		`, newGiveCoffeeCount); err != nil {
 			return nil, fmt.Errorf("failed update total_give_coffee: %w", err)
 		}
 	}
 
+	p2pOfferAdd /= P2PMultiplier
+	p2pOfferSubtract /= P2PMultiplier
+	if p2pOfferAdd > 0 || p2pOfferSubtract > 0 {
+		netChange := p2pOfferAdd - p2pOfferSubtract
+		if _, err := tx.ExecContext(ctx, `
+			INSERT INTO stats(key, value)
+			VALUES ('total_p2p_offer_available', $1)
+			ON CONFLICT (key)
+			DO UPDATE SET value = GREATEST(0, stats.value + $1)
+		`, netChange); err != nil {
+			return nil, fmt.Errorf("failed update total_p2p_offer_available: %w", err)
+		}
+	}
+
+	if totalOffersDelta != 0 {
+		if _, err := tx.ExecContext(ctx, `
+			INSERT INTO stats(key, value)
+			VALUES ('total_offers', $1)
+			ON CONFLICT (key)
+			DO UPDATE SET value = GREATEST(0, stats.value + $1)
+		`, totalOffersDelta); err != nil {
+			return nil, fmt.Errorf("failed update total_offers: %w", err)
+		}
+	}
+
+	// wallet stats
 	walletStats := make(map[string]WalletStats)
 
 	for _, txObj := range transactions {
-		apply := func(addr string) {
-			if addr == "" {
-				return
-			}
-			stat := walletStats[addr]
-			stat.Address = addr
-			stat.TransactionCount++
-			if stat.MaxBlock == nil || txObj.BlockNumber.Cmp(stat.MaxBlock) > 0 {
-				stat.MaxBlock = new(big.Int).Set(txObj.BlockNumber)
-			}
-			walletStats[addr] = stat
-		}
-		apply(txObj.FromAddress)
-		apply(txObj.ToAddress)
+		updateWalletStat(walletStats, txObj.FromAddress, txObj.BlockNumber)
+		updateWalletStat(walletStats, txObj.ToAddress, txObj.BlockNumber)
 	}
 
 	return walletStats, nil
@@ -2211,15 +2306,35 @@ func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
 		return fmt.Errorf("failed to count give_coffee transactions: %w", err)
 	}
 
+	var totalP2POfferAvailable float64
+	err = p.db.QueryRowContext(ctx, `
+		SELECT COALESCE(SUM(amount), 0)
+		FROM dong_schema.offers
+		WHERE status = 'CONFIRMED' AND amount > 0
+	`).Scan(&totalP2POfferAvailable)
+	if err != nil {
+		return fmt.Errorf("failed to calculate total_p2p_offer_available: %w", err)
+	}
+
+	var totalOffers int64
+	err = p.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM dong_schema.offers WHERE status = 'CONFIRMED'
+	`).Scan(&totalOffers)
+	if err != nil {
+		return fmt.Errorf("failed to count total_offers: %w", err)
+	}
+
 	statsUpdates := []struct {
 		key   string
-		value int64
+		value interface{}
 	}{
 		{"total_blocks", totalBlocks},
 		{"total_transactions", totalTransactions},
 		{"total_wallets", totalWallets},
 		{"average_block", averageBlockMs},
 		{"total_give_coffee", totalGiveCoffee},
+		{"total_p2p_offer_available", totalP2POfferAvailable},
+		{"total_offers", totalOffers},
 	}
 
 	for _, stat := range statsUpdates {
@@ -2303,6 +2418,19 @@ func getNewArgumentKeyByBaseArgumentKey(baseKey string, args map[string]interfac
 	}
 }
 
+func updateWalletStat(walletStats map[string]WalletStats, addr string, blockNum *big.Int) {
+	if addr == "" {
+		return
+	}
+	stat := walletStats[addr]
+	stat.Address = addr
+	stat.TransactionCount++
+	if stat.MaxBlock == nil || blockNum.Cmp(stat.MaxBlock) > 0 {
+		stat.MaxBlock = new(big.Int).Set(blockNum)
+	}
+	walletStats[addr] = stat
+}
+
 func (p *PostgresConnector) GetAllTransactionsByWallet(
 	ctx context.Context,
 	walletAddress string,
@@ -2359,4 +2487,150 @@ func (p *PostgresConnector) GetAllTransactionsByWallet(
 	}
 
 	return transactions, rows.Err()
+}
+
+func (p *PostgresConnector) updateOfferStatus(
+	ctx context.Context,
+	tx *sql.Tx,
+	txMap map[string]common.Transaction,
+	offerIDMap map[string]int64,
+) error {
+	log.Info().Int("offers_to_validate", len(txMap)).Msg("starting offer status update")
+	if len(txMap) == 0 {
+		log.Info().Msg("no offers to validate")
+		return nil
+	}
+
+	offerIDs := make([]int64, 0, len(txMap))
+	for hash := range txMap {
+		offerID := offerIDMap[hash]
+		if offerID != 0 {
+			offerIDs = append(offerIDs, offerID)
+		}
+	}
+
+	if len(offerIDs) == 0 {
+		log.Info().Msg("no valid offers to update")
+		return nil
+	}
+
+	querySelect := `
+    SELECT
+        offer_id,
+        seller_wallet_address,
+        COALESCE(intermediary_wallet_address, ''),
+        amount,
+        status
+    FROM dong_schema.offers
+    WHERE offer_id = ANY($1::bigint[])
+      AND status = 'OPEN'
+    FOR UPDATE
+    `
+
+	rows, err := tx.QueryContext(ctx, querySelect, pq.Array(offerIDs))
+	if err != nil {
+		return fmt.Errorf("select offers for validation failed: %w", err)
+	}
+	defer rows.Close()
+
+	type offerRow struct {
+		OfferID            int64
+		SellerWallet       string
+		IntermediaryWallet string
+		Amount             int64
+		Status             string
+	}
+
+	offerMap := make(map[int64]offerRow)
+
+	for rows.Next() {
+		var o offerRow
+		if err := rows.Scan(
+			&o.OfferID,
+			&o.SellerWallet,
+			&o.IntermediaryWallet,
+			&o.Amount,
+			&o.Status,
+		); err != nil {
+			log.Error().Err(err).Msg("failed to scan offer row")
+			return err
+		}
+		offerMap[o.OfferID] = o
+	}
+
+	validOfferIDs := make([]int64, 0)
+	validTxHashes := make([]string, 0)
+
+	for hash, t := range txMap {
+		offerID := offerIDMap[hash]
+		o, ok := offerMap[offerID]
+		if !ok {
+			log.Error().
+				Int64("offer_id", offerID).
+				Str("tx_hash", t.Hash).
+				Msg("offer validation failed: offer not found or not OPEN")
+			continue
+		}
+
+		if o.SellerWallet != t.FromAddress {
+			log.Error().
+				Int64("offer_id", offerID).
+				Str("tx_hash", t.Hash).
+				Msg("offer validation failed: seller wallet mismatch")
+			continue
+		}
+
+		if o.IntermediaryWallet != "" && o.IntermediaryWallet != t.ToAddress {
+			log.Error().
+				Int64("offer_id", offerID).
+				Str("tx_hash", t.Hash).
+				Msg("offer validation failed: intermediary wallet mismatch")
+			continue
+		}
+
+		valueInt, err := strconv.ParseInt(t.Value, 10, 64)
+		if err != nil || valueInt != o.Amount*P2PMultiplier {
+			log.Error().
+				Int64("offer_id", offerID).
+				Str("tx_hash", t.Hash).
+				Msg("offer validation failed: amount mismatch")
+			continue
+		}
+		validOfferIDs = append(validOfferIDs, offerID)
+		validTxHashes = append(validTxHashes, t.Hash)
+	}
+
+	if len(validOfferIDs) == 0 {
+		log.Info().Msg("no valid offers to update")
+		return nil
+	}
+
+	queryUpdate := `
+    UPDATE dong_schema.offers o
+    SET
+        status = 'CONFIRMED',
+        transaction_hash = v.tx_hash,
+        updated_at = NOW()
+    FROM (
+        SELECT
+            unnest($1::bigint[]) AS offer_id,
+            unnest($2::text[])   AS tx_hash
+    ) v
+    WHERE o.offer_id = v.offer_id
+      AND o.status = 'OPEN'
+    `
+
+	_, err = tx.ExecContext(
+		ctx,
+		queryUpdate,
+		pq.Array(validOfferIDs),
+		pq.Array(validTxHashes),
+	)
+	if err != nil {
+		return fmt.Errorf("batch update offers failed: %w", err)
+	}
+
+	log.Info().Int("offers_updated", len(validOfferIDs)).Msg("batch update offer status completed")
+
+	return nil
 }

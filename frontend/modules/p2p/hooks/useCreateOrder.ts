@@ -19,9 +19,10 @@ export const useCreateOrder = () => {
         amount: amountMZD,
       });
       return order;
-    } catch (error) {
-      toast.error('Failed to create order', {
-        description: 'Please try again later',
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || 'Failed to create order. Please try again later';
+      toast.error('Order Creation Failed', {
+        description: errorMessage,
       });
       throw error;
     } finally {
