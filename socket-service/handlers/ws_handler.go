@@ -135,20 +135,43 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 			var rm RoomMsg
 			if err := json.Unmarshal(message, &rm); err == nil {
 				if rm.Type == joinRoom {
-					logger.Info().Msgf("[BE] FE %s %s %s", userAddress, joinRoom, rm.Room)
-					h.wsSvc.AddConnectionToRoom(rm.Room, conn)
-					conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
-					_ = conn.WriteMessage(websocket.TextMessage, []byte(joinedRoom+rm.Room))
+					if h.ValidateRoom(rm.Room) {
+						logger.Info().Msgf("[BE] FE %s %s %s", userAddress, joinRoom, rm.Room)
+						h.wsSvc.AddConnectionToRoom(rm.Room, conn)
+						conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
+						_ = conn.WriteMessage(websocket.TextMessage, []byte(joinedRoom+rm.Room))
+					} else {
+						conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
+						_ = conn.WriteMessage(websocket.TextMessage, []byte("Invalid room: "+rm.Room))
+					}
 					continue
 				}
 				if rm.Type == leaveRoom {
-					logger.Info().Msgf("[BE] FE %s %s %s", userAddress, leaveRoom, rm.Room)
-					h.wsSvc.RemoveConnectionFromRoom(rm.Room, conn)
-					conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
-					_ = conn.WriteMessage(websocket.TextMessage, []byte(leftRoom+rm.Room))
+					if h.ValidateRoom(rm.Room) {
+						logger.Info().Msgf("[BE] FE %s %s %s", userAddress, leaveRoom, rm.Room)
+						h.wsSvc.RemoveConnectionFromRoom(rm.Room, conn)
+						conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
+						_ = conn.WriteMessage(websocket.TextMessage, []byte(leftRoom+rm.Room))
+					} else {
+						conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
+						_ = conn.WriteMessage(websocket.TextMessage, []byte("Invalid room: "+rm.Room))
+					}
 					continue
 				}
 			}
 		}
 	}
+}
+
+func (h *WSHandler) ValidateRoom(room string) bool {
+	allowedRooms := map[string]bool{
+		constant.OFFER_ROOM: true,
+	}
+
+	if _, ok := allowedRooms[room]; ok {
+		return true
+	}
+
+	logger.Warn().Msgf("Invalid room: %s", room)
+	return false
 }
