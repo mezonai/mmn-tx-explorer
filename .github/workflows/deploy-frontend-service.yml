@@ -188,7 +188,7 @@ jobs:
           scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} frontend.env ${{ vars.HOST_ALIAS }}:/tmp/frontend_tmp.env 
 
           echo "==> Copying frontend bundle..."
-          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} build_frontend/frontend-build-${{ steps.determine_tag.outputs.tag_name }}.tar.gz ${{ vars.HOST_ALIAS }}:/tmp/frontend.tar.gz
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} build_frontend/frontend-build-${{ steps.determine_tag.outputs.frontend_path }}.tar.gz ${{ vars.HOST_ALIAS }}:/tmp/frontend.tar.gz
 
           echo "==> Applying configuration on server..."
           ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS}} "
@@ -197,6 +197,12 @@ jobs:
             sudo rm -rf /opt/frontend/*
             sudo tar -xzf /tmp/frontend.tar.gz -C /opt/frontend
 
+            echo '==> Cleaning unnecessary .next artifacts'
+            sudo rm -rf /opt/frontend/.next/cache
+            sudo rm -rf /opt/frontend/.next/server
+            sudo rm -rf /opt/frontend/.next/types
+            sudo rm -rf /opt/frontend/.next/trace
+            
             echo '==> Updating /opt/frontend/frontend.env...'
             sudo mv /tmp/frontend_tmp.env /opt/frontend/frontend.env
             sudo chown mmn:mmn /opt/frontend
