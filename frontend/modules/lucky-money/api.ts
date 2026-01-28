@@ -1,5 +1,5 @@
 import { apiDongClient } from "@/service";
-import { ClaimedEnvelopes, ClaimEnvelopeRequest, CreatedEnvelopes, CreateRedEnvelopeRequest, EnvelopeListParams, RedEnvelope, RedEnvelopeClaim, RedEnvelopeDetailRecipient, CloseSessionRequest, RedEnvelopeDetailStats, UpdateStatusRedEnvelopeRequest, RedEnvelopeStatsByUser, RedEnvelopeStats } from "./type";
+import { ClaimedEnvelopes, CreatedEnvelopes, CreateRedEnvelopeRequest, EnvelopeListParams, RedEnvelope, RedEnvelopeClaim, RedEnvelopeDetailRecipient, CloseSessionRequest, RedEnvelopeDetailStats, UpdateStatusRedEnvelopeRequest, RedEnvelopeStatsByUser, RedEnvelopeStats } from "./type";
 import { RED_ENVELOPE_ENDPOINTS } from "./constants";
 import { IPaginatedResponse } from "@/types";
 import { UUID } from "crypto";
@@ -43,9 +43,9 @@ export class RedEnvelopeService {
     return data.data
   }
 
-  static async claimRedEnvelope(request: ClaimEnvelopeRequest): Promise<RedEnvelopeClaim> {
+  static async claimRedEnvelope(id: UUID): Promise<RedEnvelopeClaim> {
     const { data } = await apiDongClient.post<{ data: RedEnvelopeClaim }>(
-      RED_ENVELOPE_ENDPOINTS.CLAIM(id), request
+      RED_ENVELOPE_ENDPOINTS.CLAIM(id)
     )
     return data.data
   }

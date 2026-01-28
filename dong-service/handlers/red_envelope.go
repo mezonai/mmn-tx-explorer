@@ -423,20 +423,13 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelope(c *gin.Context) {
 // @Description User claims a red envelope and receives money
 // @Tags red_envelopes
 // @Produce json
-// @Param claim body models.ClaimRedEnvelopeRequest true "ClaimRedEnvelopeRequest"
+// @Param id path string true "Red Envelope ID"
 // @Success 200 {object} models.Response{data=object}
 // @Failure 400 {object} models.Response
 // @Failure 404 {object} models.Response
 // @Failure 500 {object} models.Response
-// @Router /api/v1/red_envelopes/:id/claim [post]
+// @Router /api/v1/red-envelopes/:id/claim [post]
 func (r *RedEnvelopeHandler) ClaimRedEnvelope(c *gin.Context) {
-	var req models.ClaimRedEnvelopeRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		logger.Error().Err(err).Msg("Invalid claim request")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+err.Error()))
-		return
-	}
-
 	envelopeID := c.Param("id")
 
 	userID, err := utils.GetUserIDFromContext(c)
@@ -533,20 +526,13 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelopeQR(c *gin.Context) {
 // @Tags red_envelopes
 // @Produce json
 // @Param id path string true "Red Envelope ID"
-// @Param claim body models.ClaimRedEnvelopeRequest true "ClaimRedEnvelopeRequest"
+// @Param id path string true "Red Envelope ID"
 // @Success 200 {object} models.Response{data=object}
 // @Failure 400 {object} models.Response
 // @Failure 401 {object} models.Response
 // @Failure 500 {object} models.Response
 // @Router /api/v1/red-envelopes/qr/{id}/claim [post]
 func (r *RedEnvelopeHandler) ClaimRedEnvelopeQR(c *gin.Context) {
-	var req models.ClaimRedEnvelopeRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		logger.Error().Err(err).Msg("Invalid claim request")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+err.Error()))
-		return
-	}
-
 	envelopeID := c.Param("id")
 
 	userID, err := utils.GetZKUserIDFromContext(c)

@@ -102,7 +102,3 @@ type ClaimAmount struct {
 	Amount      int64
 	Description string
 }
-
-type ClaimRedEnvelopeRequest struct {
-	ID string `json:"id" binding:"required"`
-}

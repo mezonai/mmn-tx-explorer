@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ClaimEnvelopeRequest } from "../type";
+
 import { RedEnvelopeService } from "../api";
 import { QUERY_KEYS } from "../constants";
 import { toast } from "sonner";
@@ -9,8 +9,8 @@ export function useClaimRedEnvelope() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ data }: { data: ClaimEnvelopeRequest }) =>
-      RedEnvelopeService.claimRedEnvelope(data),
+    mutationFn: ({ id }: { id: UUID }) =>
+      RedEnvelopeService.claimRedEnvelope(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RED_ENVELOPES] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RED_ENVELOPE_STATS_BY_USER] });
