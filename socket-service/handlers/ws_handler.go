@@ -32,6 +32,13 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+const (
+	joinRoom   = "join_room"
+	joinedRoom = "joined_room:"
+	leaveRoom  = "leave_room"
+	leftRoom   = "left_room:"
+)
+
 func (h *WSHandler) HandleWS(c *gin.Context) {
 
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
@@ -127,18 +134,18 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 			}
 			var rm RoomMsg
 			if err := json.Unmarshal(message, &rm); err == nil {
-				if rm.Type == "join_room" {
-					logger.Info().Msgf("[BE] FE %s join_room %s", userAddress, rm.Room)
+				if rm.Type == joinRoom {
+					logger.Info().Msgf("[BE] FE %s %s %s", userAddress, joinRoom, rm.Room)
 					h.wsSvc.AddConnectionToRoom(rm.Room, conn)
 					conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
-					_ = conn.WriteMessage(websocket.TextMessage, []byte("joined_room:"+rm.Room))
+					_ = conn.WriteMessage(websocket.TextMessage, []byte(joinedRoom+rm.Room))
 					continue
 				}
-				if rm.Type == "leave_room" {
-					logger.Info().Msgf("[BE] FE %s leave_room %s", userAddress, rm.Room)
+				if rm.Type == leaveRoom {
+					logger.Info().Msgf("[BE] FE %s %s %s", userAddress, leaveRoom, rm.Room)
 					h.wsSvc.RemoveConnectionFromRoom(rm.Room, conn)
 					conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
-					_ = conn.WriteMessage(websocket.TextMessage, []byte("left_room:"+rm.Room))
+					_ = conn.WriteMessage(websocket.TextMessage, []byte(leftRoom+rm.Room))
 					continue
 				}
 			}

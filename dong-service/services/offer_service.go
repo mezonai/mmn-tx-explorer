@@ -197,8 +197,6 @@ func (s *OfferService) ListOffers(ctx context.Context, fromAmount *string, toAmo
 		offers[i].HasActiveOrder = &hasActive
 	}
 
-	go SendSocketEvent(constants.OFFER_ROOM, constants.OFFER_ROOM, map[string]any{})
-
 	return offers, nil
 }
 

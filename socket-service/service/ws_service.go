@@ -62,16 +62,6 @@ func (s *WSService) GetConnections(userAddress string) ([]*websocket.Conn, bool)
 	return conns, ok
 }
 
-func (s *WSService) GetAllConnections() []*websocket.Conn {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	allConns := make([]*websocket.Conn, 0)
-	for _, conns := range s.connections {
-		allConns = append(allConns, conns...)
-	}
-	return allConns
-}
-
 // Room management
 func (s *WSService) AddConnectionToRoom(room string, conn *websocket.Conn) {
 	s.mu.Lock()
@@ -104,14 +94,4 @@ func (s *WSService) GetRoomConnections(room string) ([]*websocket.Conn, bool) {
 		return res, true
 	}
 	return nil, false
-}
-
-func (s *WSService) BroadcastToRoom(room string, payload any) {
-	conns, ok := s.GetRoomConnections(room)
-	if !ok {
-		return
-	}
-	for _, conn := range conns {
-		_ = conn.WriteJSON(payload)
-	}
 }

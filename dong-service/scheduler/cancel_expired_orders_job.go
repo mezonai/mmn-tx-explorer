@@ -2,11 +2,9 @@ package scheduler
 
 import (
 	"context"
-	"dong-service/constants"
 	"dong-service/database"
 	"dong-service/logger"
 	"dong-service/repository"
-	"dong-service/services"
 	"time"
 )
 
@@ -44,10 +42,6 @@ func (j *CancelExpiredOrdersJob) Run(ctx context.Context) error {
 
 	if count > 0 {
 		logger.Info().Int64("count", count).Msg("Cancelled expired orders")
-
-		go services.SendSocketEvent(constants.OFFER_ROOM, constants.OFFER_LIST_REFRESH, map[string]any{
-			"action": "expired p2p orders",
-		})
 
 	} else {
 		logger.Debug().Msg("No expired orders to cancel")
