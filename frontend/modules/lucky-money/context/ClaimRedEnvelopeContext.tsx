@@ -3,7 +3,7 @@
 import { createContext, ReactNode, useContext } from 'react';
 import { useParams } from 'next/navigation';
 import { useUser } from '@/providers';
-import { ClaimEnvelopeRequest, RedEnvelopeClaim } from '../type';
+import { RedEnvelopeClaim } from '../type';
 import { UUID } from 'crypto';
 import { useClaimAmount, useClaimRedEnvelope } from '../hooks/useClaimRedEnvelope';
 
@@ -46,12 +46,8 @@ export function ClaimRedEnvelopeProvider({ children }: { children: ReactNode }) 
       return;
     }
 
-    const requestData: ClaimEnvelopeRequest = {
-      split_money_id: amountData.split_money_id,
-    };
-
     try {
-      await claimEnvelopeMutation.mutateAsync({ data: requestData });
+      await claimEnvelopeMutation.mutateAsync({ id: redEnvelopeId });
     } catch (error) {
       console.error('Claim failed:', error);
     }
