@@ -13,6 +13,7 @@ export const ROUTES = {
   LUCKY_MONEY: '/lucky-money',
   CREATE_LUCKY_MONEY: '/lucky-money/create',
   LUCKY_MONEY_DETAIL: (id: UUID) => `/lucky-money/${id}`,
+  LUCKY_MONEY_CLAIM: (id: UUID) => `/lucky-money/${id}/claim`,
   MEZON_GAME: '/mezon-game',
   PENDING_TRANSACTION: (hash: string) => `/transactions/pending/${hash}`,
   PROFILE: '/profile',

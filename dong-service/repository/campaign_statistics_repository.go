@@ -192,28 +192,26 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 	earlyCheckQuery := fmt.Sprintf(`
 		SELECT MAX(transaction_timestamp) AS last_ts
 		FROM %s.transactions
-		WHERE to_address = $1
+		WHERE (to_address = $1 OR from_address = $1)
 			AND status = $2
 			AND value > 0
+			AND transaction_timestamp > $3
 	`, r.indexerSchema)
 
-	var lastTS time.Time
-	err = r.db.QueryRowContext(ctx, earlyCheckQuery, campaign.DonationWallet, constants.TransactionStatusFINALIZED).Scan(&lastTS)
+	var lastTS sql.NullTime
+	err = r.db.QueryRowContext(ctx, earlyCheckQuery, campaign.DonationWallet, constants.TransactionStatusFINALIZED, campaign.UpdatedAt).Scan(&lastTS)
 	if err != nil {
 		return models.SyncCampaignResponse{TotalAmount: 0, TotalContributors: 0, TotalWithdrawn: 0}, fmt.Errorf("failed to check latest transaction vs stats: %w", err)
 	}
 
-	if lastTS.IsZero() || campaign.UpdatedAt.After(lastTS) {
-		logger.Info().Int64("campaign_id", campaignID).Time("updated_at", campaign.UpdatedAt).Time("last_ts", lastTS).Msg("Campaign statistics are already up to date")
-
-		// Get current balance from wallet for the response
+	if !lastTS.Valid || lastTS.Time.IsZero() {
 		var currentBalance int64
 		balanceQuery := fmt.Sprintf(`SELECT COALESCE(balance, 0) FROM %s.wallet WHERE address = $1`, r.indexerSchema)
 		err = r.db.QueryRowContext(ctx, balanceQuery, campaign.DonationWallet).Scan(&currentBalance)
 		if err != nil {
 			currentBalance = 0
 		}
-
+		logger.Info().Int64("campaign_id", campaignID).Time("updated_at", campaign.UpdatedAt).Time("last_ts", lastTS.Time).Msg("Campaign statistics are already up to date")
 		return models.SyncCampaignResponse{TotalAmount: campaign.TotalAmount, TotalContributors: campaign.TotalContributor, CurrentBalance: currentBalance, TotalWithdrawn: campaign.TotalWithdrawn}, nil
 	}
 
