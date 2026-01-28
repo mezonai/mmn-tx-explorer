@@ -40,6 +40,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<{ url: string; file: File }[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
 
   const isMobileOpenRef = useRef(isMobileOpen);
   const isMessageSendingRef = useRef(false);
@@ -350,9 +351,10 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
     }
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLTextAreaElement>) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
+    setIsDragging(false);
 
     const files = getFilesFromDragEvent(e);
     if (files.length === 0) return;
@@ -375,9 +377,31 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
     setPreviews(prev => [...prev, ...newPreviews]);
   };
 
-  const handleDragOver = (e: React.DragEvent<HTMLTextAreaElement>) => {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!isDragging) setIsDragging(true);
+  };
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (
+      e.clientX <= rect.left ||
+      e.clientX >= rect.right ||
+      e.clientY <= rect.top ||
+      e.clientY >= rect.bottom
+    ) {
+      setIsDragging(false);
+    }
   };
 
   return (
@@ -400,11 +424,24 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
       </Button>
 
       <div
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
         className={cn(
           'fixed inset-0 z-50 flex h-full flex-col bg-white transition-transform duration-300 md:sticky md:top-24 md:z-0 md:flex md:h-[calc(100vh-140px)] md:w-87.5 md:translate-y-0 lg:w-125 dark:bg-black dark:md:border-gray-800',
           isMobileOpen ? 'translate-y-0' : 'translate-y-full md:translate-y-0'
         )}
       >
+        {isDragging && (
+          <div className="absolute inset-0 z-[60] flex flex-col items-center justify-center gap-4 bg-brand-primary/10 backdrop-blur-[2px] border-2 border-dashed border-brand-primary m-2 rounded-xl transition-all animate-in fade-in zoom-in duration-200">
+            <div className="flex flex-col items-center gap-2 text-brand-primary">
+              <Paperclip className="h-12 w-12 animate-bounce" />
+              <p className="text-lg font-bold">Drop files here</p>
+              <p className="text-xs opacity-70">max {MAX_FILE_SIZE / 1024 / 1024} MB</p>
+            </div>
+          </div>
+        )}
         <div className="flex shrink-0 items-center justify-between border-b border-gray-200 p-4 dark:border-gray-800">
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
@@ -669,8 +706,6 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
               onChange={handleTextareaChange}
               onKeyDown={handleKeyDown}
               onPaste={handlePaste}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
               placeholder="Type a message, paste or drag files..."
               className={cn(
                 'max-h-50 min-h-10.5 w-full resize-none shadow-none',
