@@ -195,21 +195,24 @@ jobs:
             set -e 
             echo '==> Extracting frontend bundle'
             sudo rm -rf /opt/frontend/*
-            sudo tar -xzf /tmp/frontend.tar.gz -C /opt/frontend
+            sudo chown -R mmn:mmn /opt/frontend
 
-            echo '==> Cleaning unnecessary .next artifacts'
-            sudo rm -rf /opt/frontend/.next/cache
-            sudo rm -rf /opt/frontend/.next/server
-            sudo rm -rf /opt/frontend/.next/types
-            sudo rm -rf /opt/frontend/.next/trace
+            sudo mkdir -p /tmp/frontend_extracted
+            sudo tar -xzf /tmp/frontend.tar.gz -C /tmp/frontend_extracted
 
-            echo '==> Updating /opt/frontend/frontend.env...'
+            echo '==> Updating /opt/frontend/...'
             sudo mv /tmp/frontend_tmp.env /opt/frontend/frontend.env
-            sudo chown mmn:mmn /opt/frontend
-            sudo chmod 644 /opt/frontend/frontend.env
-            
-            rm -f /tmp/frontend_tmp.env
-            rm -f /tmp/frontend.tar.gz
+
+            sudo mv /tmp/frontend_extracted/.next/standalone /opt/frontend/.next/standalone/
+            sudo mv /tmp/frontend_extracted/.next/static /opt/frontend/.next/standalone/.next/static
+            sudo mv /tmp/frontend_extracted/public /opt/frontend/.next/standalone/public
+
+            sudo chown mmn:mmn /opt/frontend/frontend.env
+            sudo chmod 600 /opt/frontend/frontend.env
+
+            sudo rm -f /tmp/frontend_tmp.env
+            sudo rm -f /tmp/frontend.tar.gz
+            sudo rm -rf /tmp/frontend_extracted
             "
 
       - name: Atomic swap + restart services
