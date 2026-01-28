@@ -133,31 +133,43 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 				Room string `json:"room"`
 			}
 			var rm RoomMsg
-			if err := json.Unmarshal(message, &rm); err == nil {
-				if rm.Type == joinRoom {
-					if h.ValidateRoom(rm.Room) {
-						logger.Info().Msgf("[BE] FE %s %s %s", userAddress, joinRoom, rm.Room)
-						h.wsSvc.AddConnectionToRoom(rm.Room, conn)
-						conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
-						_ = conn.WriteMessage(websocket.TextMessage, []byte(joinedRoom+rm.Room))
-					} else {
-						conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
-						_ = conn.WriteMessage(websocket.TextMessage, []byte("Invalid room: "+rm.Room))
-					}
-					continue
-				}
-				if rm.Type == leaveRoom {
-					if h.ValidateRoom(rm.Room) {
-						logger.Info().Msgf("[BE] FE %s %s %s", userAddress, leaveRoom, rm.Room)
-						h.wsSvc.RemoveConnectionFromRoom(rm.Room, conn)
-						conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
-						_ = conn.WriteMessage(websocket.TextMessage, []byte(leftRoom+rm.Room))
-					} else {
-						conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
-						_ = conn.WriteMessage(websocket.TextMessage, []byte("Invalid room: "+rm.Room))
-					}
-					continue
-				}
+			if err := json.Unmarshal(message, &rm); err != nil {
+				logger.Error().Err(err).Msg("Failed to unmarshal room message")
+				return
+			}
+
+			if rm.Type != joinRoom && rm.Type != leaveRoom {
+				logger.Error().Msgf("Invalid room message type: %s", rm.Type)
+				return
+			}
+
+			if !h.ValidateRoom(rm.Room) {
+				conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
+				_ = conn.WriteMessage(
+					websocket.TextMessage,
+					[]byte("Invalid room: "+rm.Room),
+				)
+				continue
+			}
+
+			conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
+
+			switch rm.Type {
+			case joinRoom:
+				logger.Info().Msgf("[BE] FE %s %s %s", userAddress, joinRoom, rm.Room)
+				h.wsSvc.AddConnectionToRoom(rm.Room, conn)
+				_ = conn.WriteMessage(
+					websocket.TextMessage,
+					[]byte(joinedRoom+rm.Room),
+				)
+
+			case leaveRoom:
+				logger.Info().Msgf("[BE] FE %s %s %s", userAddress, leaveRoom, rm.Room)
+				h.wsSvc.RemoveConnectionFromRoom(rm.Room, conn)
+				_ = conn.WriteMessage(
+					websocket.TextMessage,
+					[]byte(leftRoom+rm.Room),
+				)
 			}
 		}
 	}
