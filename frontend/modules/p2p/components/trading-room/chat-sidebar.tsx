@@ -180,72 +180,68 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
     isMessageSendingRef.current = true;
     setIsUploading(true);
 
+    // Save current state for recovery if needed
     const filesToUpload = [...selectedFiles];
+    const currentPreviews = [...previews];
+
+    // Optimistically clear UI
     setInputValue('');
-    previews.forEach(p => {
-      if (p.url && p.url.startsWith('blob:')) URL.revokeObjectURL(p.url);
-    });
     setPreviews([]);
     setSelectedFiles([]);
     setShowLimitWarning(false);
 
     try {
-      const finalAttachments: any[] = [];
+      // Parallel upload for all files
+      const uploadPromises = filesToUpload.map(async (file) => {
+        if (file.size > MAX_FILE_SIZE) return null;
 
-      if (hasAttachments && lightClient) {
-        for (let i = 0; i < filesToUpload.length; i++) {
-          const file = filesToUpload[i];
-          if (file.size > MAX_FILE_SIZE) continue;
+        let retryCount = 0;
+        const maxRetries = 3;
 
-          if (i > 0) {
-            await new Promise(resolve => setTimeout(resolve, 1500));
-          }
+        while (retryCount < maxRetries) {
+          try {
+            const uniqueName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}_${file.name}`;
+            const response = await lightClient?.uploadAttachment({
+              filename: uniqueName,
+              filetype: file.type || 'application/octet-stream',
+              size: file.size,
+            });
 
-          let uploadSuccess = false;
-          let retryCount = 0;
-          const maxRetries = 3;
-
-          while (!uploadSuccess && retryCount < maxRetries) {
-            try {
-              const uniqueName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}_${file.name}`;
-              const response = await lightClient.uploadAttachment({
-                filename: uniqueName,
-                filetype: file.type || 'application/octet-stream',
-                size: file.size,
+            if (response?.url) {
+              const uploadRes = await fetch(response.url, {
+                method: 'PUT',
+                headers: { 'Content-Type': file.type || 'application/octet-stream' },
+                body: file,
               });
 
-              if (response?.url) {
-                const uploadRes = await fetch(response.url, {
-                  method: 'PUT',
-                  headers: { 'Content-Type': file.type || 'application/octet-stream' },
-                  body: file,
-                });
+              if (uploadRes.ok) {
+                const urlObj = new URL(response.url);
+                const cdnUrl = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}`;
 
-                if (uploadRes.ok) {
-                  const urlObj = new URL(response.url);
-                  const cdnUrl = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}`;
-
-                  finalAttachments.push({
-                    filename: file.name,
-                    url: cdnUrl,
-                    size: file.size,
-                    filetype: file.type || 'application/octet-stream',
-                  });
-                  uploadSuccess = true;
-                } else {
-                  throw new Error(`PUT Error: ${uploadRes.status}`);
-                }
+                return {
+                  filename: file.name,
+                  url: cdnUrl,
+                  size: file.size,
+                  filetype: file.type || 'application/octet-stream',
+                };
+              } else {
+                throw new Error(`PUT Error: ${uploadRes.status}`);
               }
-            } catch (err: any) {
-              retryCount++;
-              console.warn(`[Chat] Attempt ${retryCount} failed for ${file.name}:`, err.message);
-              if (retryCount < maxRetries) {
-                await new Promise(resolve => setTimeout(resolve, retryCount * 2000));
-              }
+            }
+          } catch (err: any) {
+            retryCount++;
+            console.warn(`[Chat] Attempt ${retryCount} failed for ${file.name}:`, err.message);
+            if (retryCount < maxRetries) {
+              // Wait a bit before retrying (exponential backoff)
+              await new Promise(resolve => setTimeout(resolve, retryCount * 1000));
             }
           }
         }
-      }
+        return null; // Skip if all retries failed
+      });
+
+      const results = await Promise.all(uploadPromises);
+      const finalAttachments = results.filter((attr): attr is any => attr !== null);
 
       const mk = generateMarkdownPayload(content);
       await socketRef.current.sendDM({
@@ -256,8 +252,18 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
         },
         attachments: finalAttachments
       });
+
+      // Revoke blobs only after successful message delivery
+      currentPreviews.forEach(p => {
+        if (p.url && p.url.startsWith('blob:')) URL.revokeObjectURL(p.url);
+      });
+
     } catch (err) {
       console.error('[Chat] Send error:', err);
+      // Recovery: Restore input and selected files so user doesn't lose data
+      setInputValue(content);
+      setPreviews(currentPreviews);
+      setSelectedFiles(filesToUpload);
     } finally {
       setIsUploading(false);
       isMessageSendingRef.current = false;
