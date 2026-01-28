@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { formatChatTime, generateMarkdownPayload, isSameDay } from '../../util';
 import { AutoMessagePayload, MessageWithParsedContent, ParsedMessageContent } from '../../types';
-import { DateTimeUtil } from '@/utils';
+import { DateTimeUtil, formatFileSize, getFileIcon, getFilesFromClipboard, getFilesFromDragEvent } from '@/utils';
 import { safeJsonParse } from '@/utils/json-parse.utils';
 import { ChannelMessage } from 'mezon-light-sdk/dist/api.gen';
 
@@ -23,20 +23,9 @@ interface ChatSidebarProps {
 const MAX_CHAR_LIMIT = 5000;
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
-const formatFileSize = (bytes: number): string => {
-  if (bytes < 1024) return `${bytes} bytes`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} kB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-};
 
-const getFileIcon = (filename: string, filetype?: string) => {
-  const ext = filename.split('.').pop()?.toLowerCase();
-  if (filetype?.startsWith('image/')) return null;
-  if (ext === 'pdf') return <FileText className="h-5 w-5 text-red-500" />;
-  if (['doc', 'docx'].includes(ext || '')) return <FileText className="h-5 w-5 text-blue-500" />;
-  if (['json', 'html', 'js', 'ts', 'jsx', 'tsx'].includes(ext || '')) return <FileText className="h-5 w-5 text-purple-500" />;
-  return <File className="h-5 w-5 text-gray-500" />;
-};
+
+
 
 export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSidebarProps) => {
   const [messages, setMessages] = useState<MessageWithParsedContent[]>([]);
@@ -79,20 +68,27 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
         const isExpired = await lightClient.isSessionExpired();
         if (isExpired) {
           await lightClient.refreshSession();
-          localStorage.setItem(STORAGE_KEYS.LIGHT_CLIENT, JSON.stringify(lightClient));
+          localStorage.setItem(STORAGE_KEYS.LIGHT_CLIENT, JSON.stringify(lightClient.exportSession()));
         }
         if (!isMounted) return;
 
         const sdk = lightClient;
-        const socket = new LightSocket(sdk, sdk.getSession());
-        await socket.connect();
+        // Use client.session property as per README
+        const socket = new LightSocket(sdk, sdk.session);
+
+        await socket.connect({
+          onError: (error) => console.error('[Chat] Socket error:', error),
+          verbose: false
+        });
+
         socketRef.current = socket;
 
         const channel = await sdk.createDM(sellerId);
         await socket.joinDMChannel(channel.channel_id!);
         channelIdRef.current = channel.channel_id!;
 
-        socket.setChannelMessageHandler((msg: ChannelMessage) => {
+        // Use onChannelMessage as per README
+        socket.onChannelMessage((msg: ChannelMessage) => {
           let parsedContent: ParsedMessageContent = { t: '' };
           if (typeof msg.content === 'string') {
             parsedContent = safeJsonParse(msg.content) ?? { t: msg.content };
@@ -135,12 +131,15 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
     initChat();
     return () => {
       isMounted = false;
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
     };
   }, [lightClient, sellerId, user?.id]);
 
   useEffect(() => {
     if (autoMessage && isConnected && socketRef.current && channelIdRef.current) {
-      const sendMessage = async () => {
+      const sendAuto = async () => {
         try {
           const mk = generateMarkdownPayload(autoMessage.text);
 
@@ -161,7 +160,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
         }
       };
 
-      sendMessage();
+      sendAuto();
     }
   }, [autoMessage, isConnected, onAutoMessageSent]);
 
@@ -214,7 +213,8 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
               const uniqueName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}_${file.name}`;
               console.log(`[Chat] Uploading (${retryCount + 1}/${maxRetries}): ${uniqueName}`);
 
-              const response = await lightClient.getPresignedUrl({
+              // Renamed from getPresignedUrl to uploadAttachment as per README
+              const response = await lightClient.uploadAttachment({
                 filename: uniqueName,
                 filetype: file.type || 'application/octet-stream',
                 size: file.size,
@@ -223,18 +223,19 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
               if (response?.url) {
                 const uploadRes = await fetch(response.url, {
                   method: 'PUT',
+                  headers: { 'Content-Type': file.type || 'application/octet-stream' },
                   body: file,
                 });
 
                 if (uploadRes.ok) {
                   const urlObj = new URL(response.url);
-                  const cdnUrl = `https://cdn.mezon.ai${urlObj.pathname}`;
+                  const cdnUrl = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}`;
+
                   finalAttachments.push({
                     filename: file.name,
                     url: cdnUrl,
                     size: file.size,
                     filetype: file.type || 'application/octet-stream',
-                    file_type: file.type || 'application/octet-stream',
                   });
                   uploadSuccess = true;
                   console.log(`[Chat] Success: ${uniqueName}`);
@@ -319,6 +320,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
     target.style.height = `${Math.min(target.scrollHeight, 150)}px`;
   };
 
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !inputValue.trim() && selectedFiles.length === 0) {
       e.preventDefault();
@@ -332,32 +334,10 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
   };
 
   const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    const items = e.clipboardData?.items;
-    if (!items) return;
+    const files = getFilesFromClipboard(e);
+    if (files.length === 0) return;
+    e.preventDefault();
 
-    const files: File[] = [];
-
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-
-      // Handle image paste
-      if (item.type.startsWith('image/')) {
-        e.preventDefault();
-        const file = item.getAsFile();
-        if (file) {
-          files.push(file);
-        }
-      }
-
-      // Handle file paste (from file explorer)
-      if (item.kind === 'file') {
-        const file = item.getAsFile();
-        if (file && !file.type.startsWith('image/')) {
-          e.preventDefault();
-          files.push(file);
-        }
-      }
-    }
 
     if (files.length > 0) {
       const validFiles: File[] = [];
@@ -382,8 +362,9 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
     e.preventDefault();
     e.stopPropagation();
 
-    const files = Array.from(e.dataTransfer.files);
+    const files = getFilesFromDragEvent(e);
     if (files.length === 0) return;
+
 
     const validFiles: File[] = [];
     const newPreviews: { url: string; file: File }[] = [];
@@ -561,7 +542,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
                         </div>
                       )}
 
-                      {/* Attachments - Separated like Mezon */}
+                      {/* Attachments rendering */}
                       {msg.attachments && msg.attachments.length > 0 && (
                         <div className="flex flex-col gap-2">
                           {msg.attachments.map((at: any, i: number) => {
