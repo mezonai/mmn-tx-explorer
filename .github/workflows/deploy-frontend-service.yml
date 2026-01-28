@@ -98,7 +98,8 @@ jobs:
           if [ -z "$TAG_NAME" ]; then TAG_NAME="v0.0.0"; fi
           
           ARTIFACT_NAME="$TAG_NAME-${{ inputs.env }}"
-
+          
+          mkdir -p ../../build_frontend
           tar -czf ../../build_frontend/frontend-build-${ARTIFACT_NAME}.tar.gz .
 
           echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
