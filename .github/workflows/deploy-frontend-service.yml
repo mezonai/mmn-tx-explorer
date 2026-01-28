@@ -79,19 +79,27 @@ jobs:
           NEXT_PUBLIC_WEBSOCKET_URL: ${{ vars.NEXT_PUBLIC_WEBSOCKET_URL }}
           NEXT_PUBLIC_MEZON_SERVER_KEY: ${{ secrets.NEXT_PUBLIC_MEZON_SERVER_KEY }}
         run: |
-          mkdir -p build_frontend
-
           cd frontend
+
           rm -rf .next node_modules
           npm install
           npm run build
+
+          mkdir -p .deploy
+
+          cp -r .next/standalone/* .deploy/
+          mkdir -p .deploy/.next
+          cp -r .next/static .deploy/.next/
+          cp -r public .deploy/
+
+          cd .deploy
 
           TAG_NAME="${{ inputs.target_tag }}"
           if [ -z "$TAG_NAME" ]; then TAG_NAME="v0.0.0"; fi
           
           ARTIFACT_NAME="$TAG_NAME-${{ inputs.env }}"
 
-          tar -czf ../build_frontend/frontend-build-${ARTIFACT_NAME}.tar.gz .next/standalone .next/static public
+          tar -czf ../../build_frontend/frontend-build-${ARTIFACT_NAME}.tar.gz .
 
           echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
           echo "artifact_name=${ARTIFACT_NAME}" >> $GITHUB_OUTPUT
@@ -194,25 +202,18 @@ jobs:
           ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS}} "
             set -e 
             echo '==> Extracting frontend bundle'
-            sudo rm -rf /opt/frontend/*
-            sudo chown -R mmn:mmn /opt/frontend
+            sudo rm -rf /opt/frontend/.next/standalone/*
+            sudo mkdir -p /opt/frontend/.next/standalone
 
-            sudo mkdir -p /tmp/frontend_extracted
-            sudo tar -xzf /tmp/frontend.tar.gz -C /tmp/frontend_extracted
+            sudo tar -xzf /tmp/frontend.tar.gz -C /opt/frontend/.next/standalone
 
             echo '==> Updating /opt/frontend/...'
             sudo mv /tmp/frontend_tmp.env /opt/frontend/frontend.env
-
-            sudo mv /tmp/frontend_extracted/.next/standalone /opt/frontend/.next/standalone/
-            sudo mv /tmp/frontend_extracted/.next/static /opt/frontend/.next/standalone/.next/static
-            sudo mv /tmp/frontend_extracted/public /opt/frontend/.next/standalone/public
-
             sudo chown mmn:mmn /opt/frontend/frontend.env
             sudo chmod 600 /opt/frontend/frontend.env
 
             sudo rm -f /tmp/frontend_tmp.env
             sudo rm -f /tmp/frontend.tar.gz
-            sudo rm -rf /tmp/frontend_extracted
             "
 
       - name: Atomic swap + restart services
