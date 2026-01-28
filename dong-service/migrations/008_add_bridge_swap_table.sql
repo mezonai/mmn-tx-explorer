@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS bridge_transactions (
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     out_tx_hash VARCHAR(66),
-    error_message TEXT
+    error_message TEXT,
+    blocknumber BIGINT
 );
 
 CREATE INDEX idx_bridge_tx_hash ON bridge_transactions (tx_hash);
