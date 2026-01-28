@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, AlertTriangle, Loader2, MessageCircle, X, Info, AlertCircle, Paperclip, FileText, File } from 'lucide-react';
+import { Send, AlertTriangle, Loader2, MessageCircle, X, Info, AlertCircle, Paperclip } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLightClient, useUser } from '@/providers';
 import { LightSocket } from 'mezon-light-sdk';
@@ -207,8 +207,6 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
           while (!uploadSuccess && retryCount < maxRetries) {
             try {
               const uniqueName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}_${file.name}`;
-              console.log(`[Chat] Uploading (${retryCount + 1}/${maxRetries}): ${uniqueName}`);
-
               const response = await lightClient.uploadAttachment({
                 filename: uniqueName,
                 filetype: file.type || 'application/octet-stream',
@@ -233,7 +231,6 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
                     filetype: file.type || 'application/octet-stream',
                   });
                   uploadSuccess = true;
-                  console.log(`[Chat] Success: ${uniqueName}`);
                 } else {
                   throw new Error(`PUT Error: ${uploadRes.status}`);
                 }
@@ -683,10 +680,15 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
                 'focus:border-brand-primary focus:ring-0 focus-visible:ring-0',
                 'text-sm text-gray-900 dark:text-white',
                 'py-2.5 pr-24 pl-4',
-                'overflow-y-auto break-words whitespace-pre-wrap'
+                'overflow-y-auto break-words whitespace-pre-wrap',
+                '[&::-webkit-scrollbar]:w-1.5',
+                '[&::-webkit-scrollbar-track]:bg-transparent',
+                '[&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-gray-800',
+                'hover:[&::-webkit-scrollbar-thumb]:bg-gray-400 dark:hover:[&::-webkit-scrollbar-thumb]:bg-gray-700',
+                '[&::-webkit-scrollbar-thumb]:rounded-full'
               )}
             />
-            <div className="absolute right-2 bottom-1.5 flex items-center gap-1">
+            <div className="absolute right-5 bottom-1.5 z-10 flex items-center gap-1">
               <Button
                 type="button"
                 disabled={isUploading}
