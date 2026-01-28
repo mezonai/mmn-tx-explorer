@@ -83,7 +83,7 @@ jobs:
 
           cd frontend
           rm -rf .next node_modules
-          npm ci
+          npm install
           npm run build
 
           TAG_NAME="${{ inputs.target_tag }}"
