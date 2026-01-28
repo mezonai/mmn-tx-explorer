@@ -9,10 +9,9 @@ import { STORAGE_KEYS } from '@/constant';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { formatChatTime, generateMarkdownPayload, isSameDay } from '../../util';
-import { AutoMessagePayload, MessageWithParsedContent, ParsedMessageContent } from '../../types';
+import { AutoMessagePayload, MessageWithParsedContent, ParsedMessageContent, ChannelMessage } from '../../types';
 import { DateTimeUtil, formatFileSize, getFileIcon, getFilesFromClipboard, getFilesFromDragEvent } from '@/utils';
 import { safeJsonParse } from '@/utils/json-parse.utils';
-import { ChannelMessage } from 'mezon-light-sdk/dist/api.gen';
 
 interface ChatSidebarProps {
   sellerId: string;
