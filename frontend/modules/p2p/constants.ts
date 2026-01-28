@@ -41,3 +41,11 @@ export const P2P_EVENT_TYPES = {
 export const P2P_STATS_STALE_TIME = 30000;
 export const P2P_STATS_REFETCH_INTERVAL = 60000;
 
+export const EMBED_MESSAGE_THEME = {
+  INDIGO: '#6366f1',
+  EMERAL: '10b981',
+};
+export const P2P_TRADING_ROLE = {
+  BUYER: 'buyer',
+  SELLER: 'seller',
+};
