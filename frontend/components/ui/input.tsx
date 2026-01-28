@@ -28,7 +28,7 @@ function Input({ className, type, label, suffix, ...props }: InputProps) {
           {...props}
         />
         {suffix ? (
-          <div className="pointer-events-none absolute inset-y-0 top-[10%] right-0 flex items-center pr-3">
+          <div className="pointer-events-none absolute inset-y-0 top-[6%] right-0 flex items-center pr-3">
             <span aria-hidden="true" className="mx-3 h-9 w-px bg-gray-300" />
             <span className="text-base font-semibold text-gray-500">{suffix}</span>
           </div>

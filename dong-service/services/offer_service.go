@@ -16,6 +16,8 @@ import (
 	"strconv"
 )
 
+const OfferMultiplier = 1000000
+
 type OfferService struct {
 	repo           *repository.OfferRepository
 	walletRepo     *repository.IntermediaryWalletRepository
@@ -68,7 +70,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 				return nil, fmt.Errorf("invalid wallet balance format: %w", parseErr)
 			}
 
-			requiredBalance := amountInt * 1000000
+			requiredBalance := amountInt * OfferMultiplier
 			if balanceInt < requiredBalance {
 				return nil, constants.ErrInsufficientAccountBalance
 			}
