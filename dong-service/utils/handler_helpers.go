@@ -1,12 +1,14 @@
 package utils
 
 import (
+	"crypto/sha256"
 	"dong-service/constants"
 	"fmt"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/mr-tron/base58/base58"
 )
 
 // GetUserIDFromContext extracts and parses the user ID from the gin context
@@ -60,7 +62,6 @@ func GetPaginationParams(c *gin.Context) PaginationParams {
 	}
 
 	offset := page * limit
-
 	return PaginationParams{
 		Page:    page,
 		Limit:   limit,
@@ -86,4 +87,54 @@ func ValidateStatus(status int16) bool {
 	return status == constants.CampaignStatusDraft ||
 		status == constants.CampaignStatusActive ||
 		status == constants.CampaignStatusClosed
+}
+
+// GenerateAddress : generates a wallet address from user ID
+// TODO: consider using mmn go-sdk later
+func GenerateAddress(input string) string {
+	sum := sha256.Sum256([]byte(input))
+	return base58.Encode(sum[:])
+}
+
+// GetAddressFromContext extracts the address from the gin context (set by middleware)
+func GetAddressFromContext(c *gin.Context) (string, bool) {
+	address, ok := c.Get("address")
+	if !ok {
+		return "", false
+	}
+
+	addressStr, ok := address.(string)
+	if !ok {
+		return "", false
+	}
+
+	return addressStr, true
+}
+
+func GetUserIDStringFromContext(c *gin.Context) (string, error) {
+	user, ok := c.Get("user")
+	if !ok {
+		return "", jwt.ErrTokenInvalidClaims
+	}
+
+	userID, ok := user.(jwt.MapClaims)["user_id"].(string)
+	if !ok {
+		return "", jwt.ErrTokenInvalidClaims
+	}
+
+	fmt.Println("userID", userID)
+	return userID, nil
+}
+
+func GetZKUserIDFromContext(c *gin.Context) (int64, error) {
+	val, ok := c.Get("user_id")
+	if !ok {
+		return 0, jwt.ErrTokenInvalidClaims
+	}
+
+	if idStr, ok := val.(string); ok {
+		return strconv.ParseInt(idStr, 10, 64)
+	}
+
+	return 0, jwt.ErrTokenInvalidClaims
 }

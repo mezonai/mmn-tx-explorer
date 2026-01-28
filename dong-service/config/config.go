@@ -11,16 +11,27 @@ import (
 
 // Config represents the application configuration
 type Config struct {
-	Server    ServerConfig     `mapstructure:"server"`
-	Database  DatabaseConfig   `mapstructure:"database"`
-	Indexer   IndexerConfig    `mapstructure:"indexer"`
-	CORS      CORSConfig       `mapstructure:"cors"`
-	JWT       JWTConfig        `mapstructure:"jwt"`
-	Oauth     OauthConfig      `mapstructure:"oauth"`
-	Redis     RedisConfig      `mapstructure:"redis"`
-	Logging   logger.LogConfig `mapstructure:"logging"`
-	Scheduler SchedulerConfig  `mapstructure:"scheduler"`
-	Bridge    BridgeConfig     `mapstructure:"bridge"`
+	Server       ServerConfig       `mapstructure:"server"`
+	Database     DatabaseConfig     `mapstructure:"database"`
+	Indexer      IndexerConfig      `mapstructure:"indexer"`
+	Blockchain   BlockchainConfig   `mapstructure:"blockchain"`
+	CORS         CORSConfig         `mapstructure:"cors"`
+	JWT          JWTConfig          `mapstructure:"jwt"`
+	Oauth        OauthConfig        `mapstructure:"oauth"`
+	Redis        RedisConfig        `mapstructure:"redis"`
+	Logging      logger.LogConfig   `mapstructure:"logging"`
+	Scheduler    SchedulerConfig    `mapstructure:"scheduler"`
+	Lock         LockConfig         `mapstructure:"lock"`
+	CacheRequest CacheRequestConfig `mapstructure:"cache_request"`
+	RateLimit    RateLimitConfig    `mapstructure:"rate_limit"`
+	FilterImage  FilterImageConfig  `mapstructure:"filter_image"`
+	Event        EventConfig        `mapstructure:"event"`
+	ZK           ZKConfig           `mapstructure:"zk"`
+	Bridge       BridgeConfig       `mapstructure:"bridge"`
+}
+
+type ZKConfig struct {
+	VerificationKeyPath string `mapstructure:"verification_key_path"`
 }
 
 type ServerConfig struct {
@@ -29,9 +40,9 @@ type ServerConfig struct {
 	GinMode string `mapstructure:"gin_mode"` // debug, release, test
 }
 type JWTConfig struct {
-	Secret      string `mapstructure:"secret"`
-	Refresh_Exp int    `mapstructure:"refresh_exp"`
-	Access_Exp  int    `mapstructure:"access_exp"`
+	Secret     string `mapstructure:"secret"`
+	RefreshExp int    `mapstructure:"refresh_exp"`
+	AccessExp  int    `mapstructure:"access_exp"`
 }
 
 type RedisConfig struct {
@@ -71,8 +82,44 @@ type IndexerConfig struct {
 	Schema string `mapstructure:"schema"`
 }
 
+type BlockchainConfig struct {
+	RPCURL string `mapstructure:"rpc_url"`
+	UseTLS bool   `mapstructure:"use_tls"`
+}
+
 type SchedulerConfig struct {
-	SyncContributorsInterval int `mapstructure:"sync_contributors_interval"` // in seconds
+	SyncContributorsInterval    int `mapstructure:"sync_contributors_interval"`     // in seconds
+	ExpiredRedEnvelopesInterval int `mapstructure:"expired_red_envelopes_interval"` // in seconds
+	RecentStatsWindowDays       int `mapstructure:"recent_stats_window_days"`
+	ExpiredOrdersInterval       int `mapstructure:"expired_orders_interval"` // in seconds
+}
+
+type LockConfig struct {
+	LockExp    int `mapstructure:"lock_exp"` // in seconds
+	CntRetry   int `mapstructure:"cnt_retry"`
+	RetryDelay int `mapstructure:"retry_delay"` // in milliseconds
+}
+
+type CacheRequestConfig struct {
+	CacheExp int `mapstructure:"cache_exp"` // in seconds
+}
+
+type RateLimitConfig struct {
+	IPRateLimitPerSec int `mapstructure:"ip_rate_limit_per_sec"`
+	IPRateLimitBurst  int `mapstructure:"ip_rate_limit_burst"`
+}
+
+type FilterImageConfig struct {
+	MaxSizeUpload   int      `mapstructure:"max_size_upload"`
+	EnableVirusScan bool     `mapstructure:"enable_virus_scan"`
+	BlockMimeTypes  []string `mapstructure:"block_mime_types"`
+	VirusScanURL    string   `mapstructure:"virus_scan_url"`
+	IPFSURL         string   `mapstructure:"ipfs_url"`
+}
+
+type EventConfig struct {
+	APIURL string `mapstructure:"api_url"`
+	APIKey string `mapstructure:"api_key"`
 }
 
 type BridgeConfig struct {

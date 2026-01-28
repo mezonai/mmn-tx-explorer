@@ -90,7 +90,7 @@ func RunValidateAndFix(cmd *cobra.Command, args []string) {
 /**
  * Validates a range of blocks (end and start are inclusive) for a given chain and fixes any problems it finds
  */
-func validateAndFixRange(rpcClient rpc.IRPCClient, s storage.IStorage, startBlock *big.Int, endBlock *big.Int, fixBatchSize int) error {
+func validateAndFixRange(rpcClient rpc.IRPCClient, s storage.IStorage, startBlock, endBlock *big.Int, fixBatchSize int) error {
 	validator := orchestrator.NewValidator(rpcClient, s)
 
 	err := validator.FindAndFixGaps(startBlock, endBlock)
@@ -104,7 +104,8 @@ func validateAndFixRange(rpcClient rpc.IRPCClient, s storage.IStorage, startBloc
 	}
 
 	invalidBlockNumbers := make([]*big.Int, 0)
-	for _, blockData := range invalidBlocks {
+	for i := range invalidBlocks {
+		blockData := &invalidBlocks[i]
 		invalidBlockNumbers = append(invalidBlockNumbers, blockData.Block.Number)
 	}
 

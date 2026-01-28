@@ -7,7 +7,7 @@ export const useTransferByPrivateKey = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<TransferResult | null>(null);
   const { zkProof } = useZkProof();
-  
+
   const transfer = useCallback(
     async (input: TransferByPrivateKeyInput, transaction_type: string, senderAddress: string) => {
       setLoading(true);
@@ -15,11 +15,11 @@ export const useTransferByPrivateKey = () => {
         if (!input.privateKey) throw new Error('Missing private key.');
         if (!input.recipientAddress) throw new Error('Missing recipient address.');
 
-        const nonceResponse = await mmnClient.getCurrentNonce(senderAddress);
+        const nonceResponse = await mmnClient.getCurrentNonceByAddress(senderAddress);
         const scaledAmount = mmnClient.scaleAmountToDecimals(input.amount);
-        
+
         const TransferResponse = await mmnClient.sendTransactionByPrivateKey({
-          sender: senderAddress, 
+          sender: senderAddress,
           recipient: input.recipientAddress,
           amount: scaledAmount,
           nonce: nonceResponse.nonce + 1,
@@ -35,7 +35,6 @@ export const useTransferByPrivateKey = () => {
           : { success: false, error: TransferResponse.error || 'Transaction failed' };
         setResult(txResult);
         return txResult;
-
       } catch (error: any) {
         const errResult: TransferResult = { success: false, error: error?.message || 'An error occurred' };
         console.error('Error during transfer:', errResult.error);

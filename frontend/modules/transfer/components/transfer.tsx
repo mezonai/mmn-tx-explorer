@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/shared/page-header';
 import { APP_CONFIG } from '@/configs/app.config';
+import { ETransferType } from './../../transaction/enums';
 
 const safeValidateAddress = (address: string): boolean => {
   try {
@@ -29,6 +30,9 @@ export const Transfer = () => {
   const scaleDownBalance = NumberUtil.formatWithCommasAndScale(senderBalance);
   const userId = useMemo(() => user?.id || '', [user]);
 
+  const [isAddressError, setIsAddressError] = useState(false);
+  const [isAmountError, setIsAmountError] = useState(false);
+
   const refreshBalance = useCallback(async () => {
     if (!userId) return;
     try {
@@ -47,6 +51,9 @@ export const Transfer = () => {
     (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const value = e.target.value;
 
+      if (field === 'address' && isAddressError) setIsAddressError(false);
+      if (field === 'amount' && isAmountError) setIsAmountError(false);
+
       if (field === 'amount') {
         let numeric = value.replace(/[^0-9]/g, '');
         if (numeric.length > 1 && numeric.startsWith('0')) {
@@ -62,25 +69,49 @@ export const Transfer = () => {
       }
     };
 
-  const resetForm = () => setForm({ address: '', note: '', amount: '' });
+  const resetForm = () => {
+    setForm({ address: '', note: '', amount: '' });
+    setIsAddressError(false);
+    setIsAmountError(false);
+  };
 
   const handleTransfer = useCallback(async () => {
     const { address, amount, note } = form;
+    let hasError = false;
+
+    const cleanAddress = address.trim();
+    if (!cleanAddress || !safeValidateAddress(cleanAddress)) {
+      setIsAddressError(true);
+      hasError = true;
+    }
+
+    if (!amount || Number(amount) <= 0) {
+      setIsAmountError(true);
+      hasError = true;
+    }
+
+    if (hasError) return;
+
+    const isValidBalance = mmnClient.validateAmount(senderBalance, mmnClient.scaleAmountToDecimals(amount));
+    if (!isValidBalance) {
+      toast.error('Insufficient balance to proceed.');
+      return;
+    }
+
     try {
       const result = await transfer(
         {
-          recipientAddress: address.trim(),
+          recipientAddress: cleanAddress,
           amount: amount,
           note: note.trim(),
         },
-        'dong-give-coffee'
+        ETransferType.DongGiveCoffee
       );
 
       if (result.success) {
         toast.success('Transfer successful!');
         resetForm();
 
-        //Check timeout
         setTimeout(() => {
           refreshBalance();
         }, 1000);
@@ -91,7 +122,7 @@ export const Transfer = () => {
       console.error('Transfer error:', error);
       toast.error(error?.message || 'Unexpected error occurred during transfer.');
     }
-  }, [form, transfer, refreshBalance]);
+  }, [form, transfer, refreshBalance, senderBalance]);
 
   return (
     <div className="h-full w-full px-4 sm:px-6 lg:px-8">
@@ -109,10 +140,10 @@ export const Transfer = () => {
             <p className="text-brand-primary/90 mt-2 px-2 text-left text-sm">Transfer funds wallet-to-wallet</p>
           </div>
           <div className="hidden rounded-2xl px-2 py-2 text-left">
-            <div className="text-gray hover:border-primary/40 px-2 text-left text-lg text-sm font-semibold transition hover:text-white">
+            <div className="text-gray hover:border-primary/40 px-2 text-left text-sm font-semibold transition hover:text-white">
               Buy give via Stripe
             </div>
-            <p className="text-grey mt-2 px-2 text-left text-sm text-xs">Purchased curated packs in USD</p>
+            <p className="text-grey mt-2 px-2 text-left text-xs">Purchased curated packs in USD</p>
           </div>
         </div>
 
@@ -125,23 +156,35 @@ export const Transfer = () => {
             <div className="mt-6 flex-1 space-y-5 text-sm text-gray-200">
               <div>
                 <Input
-                  placeholder="Recipent's Address"
+                  placeholder="Recipient's Address"
                   label="Recipient"
-                  className="dark:focus:border-brand-primary mt-2 border-transparent"
+                  className={`mt-2 border-transparent ${
+                    isAddressError
+                      ? 'border-red-500 focus:border-red-500 focus:ring-0'
+                      : 'dark:focus:ring-brand-primary'
+                  }`}
                   type="text"
                   value={form.address}
                   onChange={handleInputChange('address')}
                 />
+                {isAddressError && (
+                  <p className="mt-1 text-xs text-red-500">Invalid wallet address. Please check and try again.</p>
+                )}
               </div>
               <div>
                 <Input
                   label="Amount"
-                  className="dark:focus:border-brand-primary mt-2 border-transparent"
+                  className={`mt-2 border-transparent ${
+                    isAmountError
+                      ? 'border-red-500 focus:border-red-500 focus:ring-0' // Lỗi: Đỏ + tắt ring
+                      : 'dark:focus:ring-brand-primary'
+                  }`}
                   type="text"
                   value={NumberUtil.formatWithCommas(form.amount)}
                   suffix={APP_CONFIG.CHAIN_SYMBOL}
                   onChange={handleInputChange('amount')}
                 />
+                {isAmountError && <p className="mt-1 text-xs text-red-500">Amount must be greater than 0.</p>}
               </div>
 
               <div className="flex justify-end">
@@ -161,13 +204,7 @@ export const Transfer = () => {
               </div>
               <Button
                 onClick={handleTransfer}
-                disabled={
-                  loading ||
-                  !form.address.trim() ||
-                  !form.amount ||
-                  !safeValidateAddress(form.address) ||
-                  !mmnClient.validateAmount(senderBalance, mmnClient.scaleAmountToDecimals(form.amount))
-                }
+                disabled={loading}
                 type="submit"
                 className="bg-brand-primary shadow-brand-primary/30 hover:bg-brand-primary/80 w-full rounded-xl py-3 text-sm font-semibold text-white shadow-lg transition"
               >

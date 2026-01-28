@@ -1,3 +1,5 @@
+import { ETransferType } from '@/modules/transaction';
+
 export enum ECampaignStatus {
   Active = 1,
   Draft = 0,
@@ -19,8 +21,11 @@ export interface DonationCampaign {
   updated_at: string;
   total_amount: number;
   total_contributors: number;
+  recent_amount?: number;
   owner: string;
   verified: boolean;
+  current_balance: number;
+  total_withdrawn: number;
 }
 
 export interface CreateCampaignRequest {
@@ -56,8 +61,10 @@ export interface CampaignListParams {
   page: number;
   limit: number;
   status?: string;
+  verified?: boolean;
   order?: 'asc' | 'desc';
-  order_by?: 'total_amount' | 'created_at';
+  order_by?: 'total_amount' | 'created_at' | 'end_date' | 'recent_amount';
+  search?: string;
 }
 
 export interface CampaignStats {
@@ -65,6 +72,11 @@ export interface CampaignStats {
   total_amount: number;
   total_contributors: number;
 }
+
+// Response returned when syncing/refreshing campaign raised totals
+// NOTE: refresh/sync endpoints return a small payload with updated totals.
+// Those fields already exist on `DonationCampaign` (total_amount/total_contributors/recent_amount)
+// so we reuse that type (Partial<DonationCampaign>) where needed instead of creating a new type.
 
 export interface CreateCampaignForm {
   name: string;
@@ -102,6 +114,8 @@ export interface Transaction {
   transaction_type: number;
   status: number;
   transaction_timestamp: number;
+  text_data?: string;
+  transaction_extra_info_type: ETransferType;
 }
 export interface TopContributor {
   sender_wallet: string;
@@ -116,4 +130,51 @@ export interface TopContributorsResponse {
     campaign_id: number;
     contributors: TopContributor[];
   };
+}
+
+export interface IDonationFeed {
+  id: number;
+  tx_hash: string;
+  creator_address: string;
+  campaign_address: string;
+  title: string;
+  description: string;
+  reference_tx_hashes: string[];
+  image_cids: string[];
+  parent_hash: string;
+  root_hash: string;
+  visible: boolean;
+  created_at: string;
+  root_created_at: string;
+}
+
+export interface DonationFeedParams {
+  limit?: number;
+  timestamp_lt?: string;
+  isOwner?: boolean;
+}
+
+export interface UploadImageRequest {
+  files: File[];
+}
+
+export interface FileItem {
+  file_name: string;
+  file_cid: string;
+}
+
+export interface UploadImageResponse {
+  folder_cid: string;
+  files: FileItem[];
+}
+
+export interface DonationUpdateForm {
+  title: string;
+  description: string;
+  reference_tx_hashes: string[];
+  images: string[];
+  existingImageCids?: string[];
+
+  parent_hash?: string;
+  root_hash?: string;
 }

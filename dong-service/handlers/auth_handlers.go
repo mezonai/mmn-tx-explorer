@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"crypto/sha256"
 	"dong-service/config"
 	"dong-service/constants"
 	"dong-service/database"
 	"dong-service/logger"
 	"dong-service/models"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -17,6 +19,11 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	refreshType = "refresh"
+	accessType  = "access"
+)
+
 type AuthHandler struct {
 	cfg *config.Config
 }
@@ -24,6 +31,32 @@ type AuthHandler struct {
 // NewAuthHandler creates a new auth handler
 func NewAuthHandler(cfg *config.Config) *AuthHandler {
 	return &AuthHandler{cfg: cfg}
+}
+
+// acquireLock tries to acquire a  lock with retries
+func acquireLock(lockKey string, maxRetry int, lockExp, retryDelay time.Duration) (bool, error) {
+	for i := 0; i < maxRetry; i++ {
+		ok, err := database.SetLockKey(lockKey, "1", lockExp)
+		if err != nil {
+			logger.Error().Err(err).Str("lockKey", lockKey).Msg("Lock Key is being held!")
+		}
+		if ok {
+			logger.Info().Str("lockKey", lockKey).Msg("Lock acquired")
+			return true, nil
+		}
+		time.Sleep(retryDelay)
+	}
+	logger.Error().Str("lockKey", lockKey).Msg("Could not acquire lock after retries")
+	return false, fmt.Errorf("could not acquire lock after %d retries", maxRetry)
+}
+
+// releaseLock tries to release a distributed lock and logs the result
+func releaseLock(lockKey string) {
+	if err := database.DeleteLockKey(lockKey); err != nil {
+		logger.Error().Err(err).Str("lockKey", lockKey).Msg("Failed to release lock")
+	} else {
+		logger.Info().Str("lockKey", lockKey).Msg("Lock released")
+	}
 }
 
 // LogoutHandler godoc
@@ -84,7 +117,7 @@ func (h *AuthHandler) LogoutHandler(c *gin.Context) {
 		return
 	}
 
-	if t, _ := claims["type"].(string); t != "refresh" {
+	if t, _ := claims["type"].(string); t != refreshType {
 		c.JSON(http.StatusOK, models.Response{
 			Code:    http.StatusOK,
 			Message: constants.MsgLogoutSuccessButTokenInvalidNotRefreshToken,
@@ -144,17 +177,17 @@ func (h *AuthHandler) OauthHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing code"})
 		return
 	}
-	config := h.cfg
+	authCfg := h.cfg
 	form := url.Values{}
 	form.Set("grant_type", "authorization_code")
 	form.Set("code", req.Code)
-	form.Set("client_id", config.Oauth.ClientID)
-	form.Set("client_secret", config.Oauth.ClientSecret)
+	form.Set("client_id", authCfg.Oauth.ClientID)
+	form.Set("client_secret", authCfg.Oauth.ClientSecret)
 	form.Set("redirect_uri", req.RedirectURI)
 
-	tokenResp, err := http.PostForm(config.Oauth.TokenURL, form)
+	tokenResp, err := http.PostForm(authCfg.Oauth.TokenURL, form)
 	if err != nil {
-		logger.Error().Err(err).Str("token_url", config.Oauth.TokenURL).Msg("Failed to exchange OAuth code")
+		logger.Error().Err(err).Str("token_url", authCfg.Oauth.TokenURL).Msg("Failed to exchange OAuth code")
 		c.JSON(http.StatusBadGateway, models.ErrorResponse(http.StatusBadGateway, "Failed to exchange code: "+err.Error()))
 		return
 	}
@@ -168,44 +201,30 @@ func (h *AuthHandler) OauthHandler(c *gin.Context) {
 	}()
 	body, _ := io.ReadAll(tokenResp.Body)
 
-	var tokenData struct {
-		AccessToken string `json:"access_token"`
-		ExpiresIn   int    `json:"expires_in"`
-		TokenType   string `json:"token_type"`
-	}
-
-	if err := json.Unmarshal(body, &tokenData); err != nil || tokenData.AccessToken == "" {
-		c.JSON(http.StatusBadGateway, models.ErrorResponse(http.StatusBadGateway, "Invalid token response when exchanging code"))
+	var tokenData models.TokenData
+	if parseErr := json.Unmarshal(body, &tokenData); parseErr != nil || tokenData.IDToken == "" {
+		c.JSON(http.StatusBadGateway, models.ErrorResponse(http.StatusBadGateway, "Invalid token response when exchanging code: "+parseErr.Error()))
 		return
 	}
 
-	userForm := url.Values{}
-	userForm.Set("access_token", tokenData.AccessToken)
-	userInfoResp, err := http.PostForm(config.Oauth.UserInfoURL, userForm)
+	var claims jwt.MapClaims
+	_, _, err = new(jwt.Parser).ParseUnverified(tokenData.IDToken, &claims)
 	if err != nil {
-		c.JSON(http.StatusBadGateway, models.ErrorResponse(http.StatusBadGateway, "Failed to get user info: "+err.Error()))
+		c.JSON(http.StatusBadGateway, models.ErrorResponse(http.StatusBadGateway, "Failed to parse ID token claims: "+err.Error()))
 		return
 	}
-	defer func() {
-		if err != nil {
-			errClose := userInfoResp.Body.Close()
-			if errClose != nil {
-				logger.Error().Err(errClose).Msg("Failed to close user info response body")
-			}
-		}
-	}()
-	userBody, _ := io.ReadAll(userInfoResp.Body)
+	claimsJSON, err := json.Marshal(claims)
+	if err != nil {
+		c.JSON(http.StatusBadGateway, models.ErrorResponse(http.StatusBadGateway, "Failed to marshal claims: "+err.Error()))
+		return
+	}
 	var userInfo models.OauthUserInfo
-	if err := json.Unmarshal(userBody, &userInfo); err != nil {
-		c.JSON(http.StatusBadGateway, gin.H{
-			"error":           "User info not matching with expected format",
-			"raw":             string(userBody),
-			"unmarshal_error": err.Error(),
-		})
+	if parseErr := json.Unmarshal(claimsJSON, &userInfo); parseErr != nil {
+		c.JSON(http.StatusBadGateway, models.ErrorResponse(http.StatusBadGateway, "User info not matching with expected format: "+parseErr.Error()))
 		return
 	}
 
-	jwtSecret := config.JWT.Secret
+	jwtSecret := authCfg.JWT.Secret
 	if jwtSecret == "" {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "jwt secret not configured"))
 		return
@@ -217,7 +236,7 @@ func (h *AuthHandler) OauthHandler(c *gin.Context) {
 		"token_id": tokenID,
 		"user_id":  userInfo.UserID,
 		"type":     "access",
-		"exp":      time.Now().Add(time.Duration(config.JWT.Access_Exp) * time.Second).Unix(),
+		"exp":      time.Now().Add(time.Duration(authCfg.JWT.AccessExp) * time.Second).Unix(),
 	}
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
 	signedAccess, err := accessToken.SignedString([]byte(jwtSecret))
@@ -229,8 +248,8 @@ func (h *AuthHandler) OauthHandler(c *gin.Context) {
 	refreshClaims := jwt.MapClaims{
 		"token_id": tokenID,
 		"user_id":  userInfo.UserID,
-		"type":     "refresh",
-		"exp":      time.Now().Add(time.Duration(config.JWT.Refresh_Exp) * time.Second).Unix(),
+		"type":     refreshType,
+		"exp":      time.Now().Add(time.Duration(authCfg.JWT.RefreshExp) * time.Second).Unix(),
 	}
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
 	signedRefresh, err := refreshToken.SignedString([]byte(jwtSecret))
@@ -239,7 +258,7 @@ func (h *AuthHandler) OauthHandler(c *gin.Context) {
 		return
 	}
 
-	tokenTTL := time.Duration(config.JWT.Refresh_Exp) * time.Second
+	tokenTTL := time.Duration(authCfg.JWT.RefreshExp) * time.Second
 
 	if err := database.Set(tokenID, userInfo.UserID, tokenTTL); err != nil {
 		logger.Error().Err(err).Str("token_id", tokenID).Str("user_id", userInfo.UserID).Msg("Failed to store token in Redis")
@@ -256,7 +275,7 @@ func (h *AuthHandler) OauthHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, models.OauthResponse{
 		AccessToken:  signedAccess,
 		RefreshToken: signedRefresh,
-		AuthToken:    tokenData.AccessToken,
+		AuthToken:    tokenData.IDToken,
 		User:         userInfo,
 	})
 }
@@ -282,9 +301,32 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "missing refresh_token"))
 		return
 	}
+	authCfg := h.cfg
 
-	config := h.cfg
-	secret := config.JWT.Secret
+	reqData, _ := json.Marshal(req)
+	hashRequest := fmt.Sprintf("refresh_req:%x", sha256.Sum256(reqData))
+	hashLockKey := fmt.Sprintf("refresh_lock:%x", sha256.Sum256(reqData))
+
+	lockKey := hashLockKey
+	maxRetry := authCfg.Lock.CntRetry
+	lockExp := time.Duration(authCfg.Lock.LockExp) * time.Second
+	retryDelay := time.Duration(authCfg.Lock.RetryDelay) * time.Millisecond
+	lockAcquired, _ := acquireLock(lockKey, maxRetry, lockExp, retryDelay)
+
+	if !lockAcquired {
+		c.JSON(http.StatusTooManyRequests, models.ErrorResponse(http.StatusTooManyRequests, "Server busy, please retry"))
+		return
+	}
+
+	defer releaseLock(hashLockKey)
+
+	if ok, cachedResp, err := database.GetCacheRequest(hashRequest); err == nil && ok {
+		logger.Info().Str("hash_request", hashRequest).Msg("Cache request exists, returning cached response")
+		c.Data(http.StatusOK, "application/json", []byte(cachedResp))
+		return
+	}
+
+	secret := authCfg.JWT.Secret
 	if secret == "" {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "jwt secret not configured"))
 		return
@@ -307,7 +349,7 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 		return
 	}
 
-	if t, _ := claims["type"].(string); t != "refresh" {
+	if t, _ := claims["type"].(string); t != refreshType {
 		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "token is not a refresh token"))
 		return
 	}
@@ -336,12 +378,11 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 		"token_id": newTokenID,
 		"user_id":  userID,
 		"type":     "access",
-		"exp":      time.Now().Add(time.Duration(config.JWT.Access_Exp) * time.Second).Unix(),
+		"exp":      time.Now().Add(time.Duration(authCfg.JWT.AccessExp) * time.Second).Unix(),
 	}
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
 	signedAccess, err := accessToken.SignedString([]byte(secret))
 	if err != nil {
-		logger.Error().Err(err).Str("oldTokenID", oldTokenID).Msg("Failed to sign new access token")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to sign access token"))
 		return
 	}
@@ -349,21 +390,20 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	refreshClaims := jwt.MapClaims{
 		"token_id": newTokenID,
 		"user_id":  userID,
-		"type":     "refresh",
-		"exp":      time.Now().Add(time.Duration(config.JWT.Refresh_Exp) * time.Second).Unix(),
+		"type":     refreshType,
+		"exp":      time.Now().Add(time.Duration(authCfg.JWT.RefreshExp) * time.Second).Unix(),
 	}
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
 	signedRefresh, err := refreshToken.SignedString([]byte(secret))
 	if err != nil {
-		logger.Error().Err(err).Str("oldTokenID", oldTokenID).Msg("Failed to sign new refresh token")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to sign refresh token"))
 		return
 	}
 
-	tokenTTL := time.Duration(config.JWT.Refresh_Exp) * time.Second
+	tokenTTL := time.Duration(authCfg.JWT.RefreshExp) * time.Second
 
 	if err := database.Set(newTokenID, userID, tokenTTL); err != nil {
-		logger.Error().Err(err).Str("oldTokenID", oldTokenID).Str("token_id", newTokenID).Str("user_id", userID).Msg("Failed to store new refresh token")
+		logger.Error().Err(err).Str("token_id", newTokenID).Str("user_id", userID).Msg("Failed to store new refresh token")
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to store new refresh token"))
 		return
 	}
@@ -374,15 +414,24 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 		return
 	}
 
+	resp := models.RefreshResponse{
+		AccessToken:  signedAccess,
+		RefreshToken: signedRefresh,
+		UserID:       userID,
+	}
+
+	respData, _ := json.Marshal(resp)
+	if err := database.SetCacheRequest(hashRequest, string(respData), time.Duration(authCfg.CacheRequest.CacheExp)*time.Second); err != nil {
+		logger.Error().Err(err).Str("hash_request", hashRequest).Msg("Failed to cache refresh response")
+	} else {
+		logger.Info().Str("hash_request", hashRequest).Msg("Refresh response cache saved successfully")
+	}
+
 	logger.Info().
 		Str("user_id", userID).
 		Str("old_token_id", oldTokenID).
 		Str("new_token_id", newTokenID).
 		Msg("Token refreshed successfully")
 
-	c.JSON(http.StatusOK, models.RefreshResponse{
-		AccessToken:  signedAccess,
-		RefreshToken: signedRefresh,
-		UserID:       userID,
-	})
+	c.JSON(http.StatusOK, resp)
 }

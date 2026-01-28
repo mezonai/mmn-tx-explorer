@@ -13,8 +13,6 @@ import (
 var DB *sql.DB
 
 func InitDatabase(cfg *config.DatabaseConfig) error {
-	var err error
-
 	logger.Info().
 		Str("host", cfg.Host).
 		Str("port", cfg.Port).
@@ -27,11 +25,12 @@ func InitDatabase(cfg *config.DatabaseConfig) error {
 		return fmt.Errorf("failed to create schema: %w", err)
 	}
 
+	var dbErr error
 	dsn := cfg.GetDSN()
-	DB, err = sql.Open("postgres", dsn)
-	if err != nil {
-		logger.Error().Err(err).Msg("Failed to open database connection")
-		return fmt.Errorf("failed to open database: %w", err)
+	DB, dbErr = sql.Open("postgres", dsn)
+	if dbErr != nil {
+		logger.Error().Err(dbErr).Msg("Failed to open database connection")
+		return fmt.Errorf("failed to open database: %w", dbErr)
 	}
 
 	// Test connection
@@ -74,9 +73,9 @@ func CreateSchema(cfg *config.DatabaseConfig) error {
 	}
 
 	// Test connection
-	if err := db.Ping(); err != nil {
-		logger.Error().Err(err).Msg("Failed to ping database")
-		return fmt.Errorf("failed to connect to database: %w", err)
+	if connectErr := db.Ping(); connectErr != nil {
+		logger.Error().Err(connectErr).Msg("Failed to ping database")
+		return fmt.Errorf("failed to connect to database: %w", connectErr)
 	}
 
 	// Create schema

@@ -6,7 +6,6 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -17,37 +16,39 @@ import (
 
 const ed25519SeedSize = 32
 
+var (
+	encryptionKey []byte
+)
+
 func zeroBytes(b []byte) {
 	for i := range b {
 		b[i] = 0
 	}
 }
 
-func GetEncryptionKey() ([]byte, error) {
+func InitEncryptionKey() error {
 	keyStr := os.Getenv("AES_SECRET_KEY")
 	if keyStr == "" {
-		return nil, errors.New("AES_SECRET_KEY environment variable not set")
+		return errors.New("AES_SECRET_KEY environment variable not set")
 	}
 
 	key, err := base64.StdEncoding.DecodeString(keyStr)
 	if err != nil {
-		return nil, errors.New("invalid encryption key format")
+		return errors.New("invalid encryption key format")
 	}
 
 	if len(key) != 32 {
-		return nil, errors.New("encryption key must be 32 bytes for AES-256")
+		return errors.New("encryption key must be 32 bytes for AES-256")
 	}
 
-	return key, nil
+	encryptionKey = make([]byte, len(key))
+	copy(encryptionKey, key)
+
+	return nil
 }
 
 func EncryptPrivateKey(privateKey string) (string, error) {
-	key, err := GetEncryptionKey()
-	if err != nil {
-		return "", err
-	}
-
-	block, err := aes.NewCipher(key)
+	block, err := aes.NewCipher(encryptionKey)
 	if err != nil {
 		return "", err
 	}
@@ -67,17 +68,12 @@ func EncryptPrivateKey(privateKey string) (string, error) {
 }
 
 func DecryptPrivateKey(encryptedPrivateKey string) (string, error) {
-	key, err := GetEncryptionKey()
-	if err != nil {
-		return "", err
-	}
-
 	ciphertext, err := base64.StdEncoding.DecodeString(encryptedPrivateKey)
 	if err != nil {
 		return "", err
 	}
 
-	block, err := aes.NewCipher(key)
+	block, err := aes.NewCipher(encryptionKey)
 	if err != nil {
 		return "", err
 	}
@@ -102,11 +98,11 @@ func DecryptPrivateKey(encryptedPrivateKey string) (string, error) {
 	return string(plaintext), nil
 }
 
-func GenerateEphemeralKeyPair() (string, string, error) {
+func GenerateEphemeralKeyPair() (publicKeyBs58, privateKeyBs58 string, err error) {
 	seed := make([]byte, ed25519SeedSize)
 	defer zeroBytes(seed)
 
-	_, err := rand.Read(seed)
+	_, err = rand.Read(seed)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to generate random seed: %w", err)
 	}
@@ -119,9 +115,9 @@ func GenerateEphemeralKeyPair() (string, string, error) {
 		return "", "", fmt.Errorf("failed to cast public key from private key")
 	}
 
-	privateKeyHex := hex.EncodeToString(privateKey)
+	privateKeyBs58 = base58.Encode(seed)
 
-	publicKeyBs58 := base58.Encode(publicKey)
+	publicKeyBs58 = base58.Encode(publicKey)
 
-	return publicKeyBs58, privateKeyHex, nil
+	return publicKeyBs58, privateKeyBs58, nil
 }

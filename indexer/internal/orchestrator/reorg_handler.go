@@ -28,36 +28,36 @@ type ReorgHandler struct {
 	publisher        *publisher.Publisher
 }
 
-const DEFAULT_REORG_HANDLER_INTERVAL = 1000
-const DEFAULT_REORG_HANDLER_BLOCKS_PER_SCAN = 100
+const defaultReorgHandlerInterval = 1000
+const defaultReorgHandlerBlocksPerScan = 100
 
-func NewReorgHandler(rpc rpc.IRPCClient, storage storage.IStorage) *ReorgHandler {
+func NewReorgHandler(rpcClient rpc.IRPCClient, store storage.IStorage) *ReorgHandler {
 	triggerInterval := config.Cfg.ReorgHandler.Interval
 	if triggerInterval == 0 {
-		triggerInterval = DEFAULT_REORG_HANDLER_INTERVAL
+		triggerInterval = defaultReorgHandlerInterval
 	}
 	blocksPerScan := config.Cfg.ReorgHandler.BlocksPerScan
 	if blocksPerScan == 0 {
-		blocksPerScan = DEFAULT_REORG_HANDLER_BLOCKS_PER_SCAN
+		blocksPerScan = defaultReorgHandlerBlocksPerScan
 	}
 	return &ReorgHandler{
-		rpc:              rpc,
-		storage:          storage,
-		worker:           worker.NewWorker(rpc),
+		rpc:              rpcClient,
+		storage:          store,
+		worker:           worker.NewWorker(rpcClient),
 		triggerInterval:  triggerInterval,
 		blocksPerScan:    blocksPerScan,
-		lastCheckedBlock: getInitialCheckedBlockNumber(storage, rpc.GetChainID()),
+		lastCheckedBlock: getInitialCheckedBlockNumber(store, rpcClient.GetChainID()),
 		publisher:        publisher.GetInstance(),
 	}
 }
 
-func getInitialCheckedBlockNumber(storage storage.IStorage, chainId *big.Int) *big.Int {
+func getInitialCheckedBlockNumber(store storage.IStorage, chainID *big.Int) *big.Int {
 	configuredBn := big.NewInt(int64(config.Cfg.ReorgHandler.FromBlock))
 	if config.Cfg.ReorgHandler.ForceFromBlock {
 		log.Debug().Msgf("Force from block reorg check flag set, using configured: %s", configuredBn)
 		return configuredBn
 	}
-	storedBn, err := storage.OrchestratorStorage.GetLastReorgCheckedBlockNumber(chainId)
+	storedBn, err := store.OrchestratorStorage.GetLastReorgCheckedBlockNumber(chainID)
 	if err != nil {
 		log.Debug().Err(err).Msgf("Error getting last reorg checked block number, using configured: %s", configuredBn)
 		return configuredBn
@@ -154,7 +154,7 @@ func (rh *ReorgHandler) RunFromBlock(ctx context.Context, latestCheckedBlock *bi
 	return mostRecentBlockHeader.Number, nil
 }
 
-func (rh *ReorgHandler) getReorgCheckRange(latestCheckedBlock *big.Int) (*big.Int, *big.Int, error) {
+func (rh *ReorgHandler) getReorgCheckRange(latestCheckedBlock *big.Int) (fromBlock, toBlock *big.Int, err error) {
 	latestCommittedBlock, err := rh.storage.MainStorage.GetMaxBlockNumber(rh.rpc.GetChainID())
 	if err != nil {
 		return nil, nil, fmt.Errorf("error getting latest committed block: %w", err)
@@ -276,7 +276,8 @@ func (rh *ReorgHandler) handleReorg(ctx context.Context, reorgedBlockNumbers []*
 	results := rh.worker.Run(ctx, reorgedBlockNumbers)
 	data := make([]common.BlockData, 0, len(results))
 	blocksToDelete := make([]*big.Int, 0, len(results))
-	for _, result := range results {
+	for i := range results {
+		result := &results[i]
 		if result.Error != nil {
 			return fmt.Errorf("cannot fix reorg: failed block %s: %w", result.BlockNumber.String(), result.Error)
 		}

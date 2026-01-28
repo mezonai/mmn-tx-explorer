@@ -2,9 +2,9 @@
 
 import { STORAGE_KEYS } from '@/constant';
 import {
-  AUTHENTICATION_CONSTANTS,
   AUTHENTICATION_ENDPOINT,
   AuthenticationService,
+  createLightClient,
   fetchAndStoreZkProof,
   generateAndStoreKeyPair,
   generateCsrfToken,
@@ -19,7 +19,9 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { IZkProof, IEphemeralKeyPair } from 'mmn-client-js';
 import { safeJsonParse, clearAuthStorage } from '@/utils';
-
+import { useWebSocket } from '@/lib/websocket/useWebSocket';
+import { LightClient } from 'mezon-light-sdk';
+import { serverkey } from '../service/index';
 interface AppContextType {
   isAuthenticated: boolean;
   setIsAuthenticated: (value: boolean) => void;
@@ -29,6 +31,8 @@ interface AppContextType {
   setZkProof: (zk: IZkProof | null) => void;
   keypair: IEphemeralKeyPair | null;
   setKeypair: (keypair: IEphemeralKeyPair | null) => void;
+  lightClient: LightClient | null;
+  setLightClient: (lc: LightClient | null) => void;
 }
 
 interface User {
@@ -50,36 +54,62 @@ export function AppProvider({ children }: AppProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [zkProof, setZkProof] = useState<IZkProof | null>(null);
   const [keypair, setKeypair] = useState<IEphemeralKeyPair | null>(null);
+  const [lightClient, setLightClient] = useState<LightClient | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const wsManager = useWebSocket();
+  const resetSession = () => {
+    clearAuthStorage();
+    setUser(null);
+    setZkProof(null);
+    setKeypair(null);
+    setLightClient(null);
+    setIsAuthenticated(false);
+  };
   useEffect(() => {
     const localTokenStr = localStorage.getItem(STORAGE_KEYS.TOKEN);
     const localToken = localTokenStr ? safeJsonParse(localTokenStr) : null;
-    if (localToken) {
+
+    const lightClientStr = localStorage.getItem(STORAGE_KEYS.LIGHT_CLIENT);
+    const lightClient = lightClientStr ? safeJsonParse(lightClientStr) : null;
+
+    if (lightClient) {
       (async () => {
         try {
-          await AuthenticationService.refreshLogin(localToken.refresh_token);
-        } catch {
-          clearAuthStorage();
-          setUser(null);
-          setZkProof(null);
-          setKeypair(null);
-          setIsAuthenticated(false);
+          const light_client = LightClient.initClient({
+            token: lightClient._session.token,
+            refresh_token: lightClient._session.refresh_token,
+            api_url: lightClient._session.api_url,
+            user_id: lightClient._userId,
+            serverkey,
+          });
+          setLightClient(light_client);
+        } catch (err) {
+          console.error(err);
+          resetSession();
           toast.error('Session expired, please log in again.');
         }
       })();
     }
+
     const userStored = localStorage.getItem(STORAGE_KEYS.USER_INFO);
-    if (userStored) {
+    if (userStored && localToken) {
+      const tokenData = safeJsonParse<{ access_token?: string }>(localStorage.getItem(STORAGE_KEYS.TOKEN));
+      if (tokenData?.access_token) {
+        wsManager.connect(tokenData.access_token);
+      }
+
       const u = safeJsonParse(userStored);
       setUser(u);
       setIsAuthenticated(true);
+
       const zkStr = localStorage.getItem(STORAGE_KEYS.ZK_PROOF);
       if (zkStr) setZkProof(safeJsonParse(zkStr));
 
       const kpStr = localStorage.getItem(STORAGE_KEYS.KEY_PAIR);
       if (kpStr) setKeypair(safeJsonParse(kpStr));
+
       return;
     }
     const code = searchParams.get('authCode');
@@ -98,6 +128,15 @@ export function AppProvider({ children }: AppProviderProps) {
         const senderAddress = mmnClient.getAddressFromUserId(userInfo.user.user_id);
         const userObject = processAndStoreUser(userInfo.user, senderAddress);
         setUser(userObject);
+        const light_client = await createLightClient(
+          userInfo.auth_token,
+          userInfo.user.user_id,
+          userInfo.user.username,
+          serverkey
+        );
+        if (light_client) {
+          setLightClient(light_client);
+        }
         const fetchedZk = await fetchAndStoreZkProof(
           userInfo.user.user_id || userInfo.user.sub,
           keypair.publicKey,
@@ -107,14 +146,17 @@ export function AppProvider({ children }: AppProviderProps) {
         if (fetchedZk) {
           setZkProof(fetchedZk);
         }
-        router.replace(pathname);
+
+        if (userInfo.access_token) {
+          wsManager.connect(userInfo.access_token);
+        }
+        const currentParams = new URLSearchParams(searchParams.toString());
+        currentParams.delete('authCode');
+        const newUrl = currentParams.toString() ? `${pathname}?${currentParams.toString()}` : pathname;
+        router.replace(newUrl);
         toast.success('Login successful!');
       } catch {
-        clearAuthStorage();
-        setUser(null);
-        setZkProof(null);
-        setKeypair(null);
-        setIsAuthenticated(false);
+        resetSession();
         toast.error('Login failed!');
       }
     };
@@ -131,6 +173,8 @@ export function AppProvider({ children }: AppProviderProps) {
     setZkProof,
     keypair,
     setKeypair,
+    lightClient,
+    setLightClient,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
@@ -165,10 +209,12 @@ export function useKeypair() {
   const { keypair, setKeypair } = useApp();
   return { keypair, setKeypair };
 }
-
+export function useLightClient() {
+  const { lightClient, setLightClient } = useApp();
+  return { lightClient, setLightClient };
+}
 export function useAuthActions() {
-  const { setIsAuthenticated, setUser, setZkProof, setKeypair } = useApp();
-  const router = useRouter();
+  const { setIsAuthenticated, setUser, setZkProof, setKeypair, setLightClient } = useApp();
   const login = () => {
     const csrfToken = generateCsrfToken();
     const currentPath = location.pathname + location.search;
@@ -188,6 +234,7 @@ export function useAuthActions() {
     }
     clearAuthStorage();
     setUser(null);
+    setLightClient(null);
     setZkProof(null);
     setKeypair(null);
     setIsAuthenticated(false);
