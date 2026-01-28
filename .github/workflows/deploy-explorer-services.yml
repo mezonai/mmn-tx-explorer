@@ -31,6 +31,10 @@ on:
         description: "Deploy Frontend Service"
         type: boolean
         default: true
+      deploy_socket:
+        description: "Deploy WebSocket Service"
+        type: boolean
+        default: true
 
 jobs:
   determine_tags:
@@ -87,6 +91,7 @@ jobs:
       skip_build: ${{ needs.determine_tags.outputs.skip_build }}
     secrets:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      EVENT_API_KEY: ${{ secrets.EVENT_API_KEY }}
 
   deploy-dong:
     needs: [determine_tags]
@@ -104,6 +109,7 @@ jobs:
       REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
       AES_SECRET_KEY: ${{ secrets.AES_SECRET_KEY }}
       EVENT_API_KEY: ${{ secrets.EVENT_API_KEY }}
+      VERIFYING_KEY_B64: ${{ secrets.VERIFYING_KEY_B64 }}
  
   deploy-frontend:
     if: inputs.deploy_frontend == true
@@ -116,10 +122,14 @@ jobs:
       NEXT_PUBLIC_MEZON_SERVER_KEY: ${{ secrets.NEXT_PUBLIC_MEZON_SERVER_KEY }}
 
   deploy-socket:
+    needs: [determine_tags]
+    if: inputs.deploy_socket == true
     uses: ./.github/workflows/deploy-socket-service.yml
     with:
       env: ${{ inputs.env }}
       ref: ${{ inputs.ref }}
+      target_tag: ${{ needs.determine_tags.outputs.target_tag }} 
+      skip_build: ${{ needs.determine_tags.outputs.skip_build }}
     secrets:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}

@@ -90,3 +90,7 @@ filter_image:
 event:
   api_url: "http://localhost:8899/api/event"
   api_key: "MezonDongServiceEventAPIKey2024!"
+
+# Zero-Knowledge Proof Configuration
+zk:
+  verification_key_path: "./config/verifying_key.b64"

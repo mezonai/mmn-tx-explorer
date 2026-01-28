@@ -20,11 +20,10 @@ export const P2P_QUERY_KEYS = {
 } as const;
 export const OFFERS_STATUS = {
   OPEN: 'OPEN',
-  PENDING: 'PENDING',
   CONFIRMED: 'CONFIRMED',
   CANCELED: 'CANCELED',
   FAILED: 'FAILED',
-  COMPLETE: 'COMPLETE',
+  COMPLETED: 'COMPLETED',
 } as const;
 export const P2P_TAB = {
   OFFERS: 'offers',
@@ -40,3 +39,6 @@ export const P2P_EVENT_TYPES = {
 } as const;
 
 export const WS_INVALIDATE_DELAY = 1000;
+export const P2P_STATS_STALE_TIME = 30000;
+export const P2P_STATS_REFETCH_INTERVAL = 60000;
+
