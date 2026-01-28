@@ -12,18 +12,7 @@ import { BreadcrumbNavigation } from '@/components/shared';
 import { useRedEnvelopeDetail } from '../../hooks/useRedEnvelopeDetail';
 import { RedEnvelopeConfirmDialog } from '../create-red-envelope/confirm-transfer-dialog';
 import React, { useState } from 'react';
-
-const RED_ENVELOPE_SVG_STRING = `
-<svg width="100" height="120" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="5" y="5" width="90" height="110" rx="10" fill="black" />
-  <rect x="10" y="10" width="80" height="100" rx="8" fill="#DC2626" />
-  <path d="M10 10 L50 45 L90 10" stroke="#991B1B" stroke-width="2" fill="none" />
-  <path d="M10 10 L50 45 L90 10 Z" fill="#B91C1C" opacity="0.5" />
-  <circle cx="50" cy="50" r="12" fill="#FBBF24" />
-  <circle cx="50" cy="50" r="8" fill="#F59E0B" />
-</svg>
-`;
-const iconSvgBase64 = `data:image/svg+xml;base64,${btoa(RED_ENVELOPE_SVG_STRING)}`;
+import { RedEnvelopeIcon } from '@/assets/icons/red-evelop';
 
 const breadcrumbs: IBreadcrumb[] = [
   { label: 'Lucky Money', href: ROUTES.LUCKY_MONEY },
@@ -171,7 +160,7 @@ export const RedEnvelopeDetail = () => {
               <QRCode value={qrCodeValue} size={qrSize} style={{ width: '100%', height: 'auto' }} level="H" />
 
               <div className="absolute top-1/2 left-1/2 flex h-[28%] w-[28%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-lg bg-white p-0.5">
-                <img src={iconSvgBase64} alt="icon" className="h-full w-full object-contain" />
+                <RedEnvelopeIcon className="h-full w-full object-contain" />
               </div>
             </div>
             <div className="flex w-full grow flex-col gap-4">
