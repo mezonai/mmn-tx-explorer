@@ -22,6 +22,7 @@ import (
 const (
 	DataRowsDisplayLimit   = 500000
 	InsertBlockDataTimeout = 10 * time.Minute
+	P2PMultiplier          = 1000000
 )
 
 type PostgresConnector struct {
@@ -1733,6 +1734,8 @@ func (p *PostgresConnector) insertTransactionsTx(
 		}
 	}
 
+	p2pOfferAdd /= P2PMultiplier
+	p2pOfferSubtract /= P2PMultiplier
 	if p2pOfferAdd > 0 || p2pOfferSubtract > 0 {
 		netChange := p2pOfferAdd - p2pOfferSubtract
 		if _, err := tx.ExecContext(ctx, `
@@ -2586,7 +2589,7 @@ func (p *PostgresConnector) updateOfferStatus(
 		}
 
 		valueInt, err := strconv.ParseInt(t.Value, 10, 64)
-		if err != nil || valueInt != o.Amount*1000000 {
+		if err != nil || valueInt != o.Amount*P2PMultiplier {
 			log.Error().
 				Int64("offer_id", offerID).
 				Str("tx_hash", t.Hash).

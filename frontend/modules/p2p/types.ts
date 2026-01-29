@@ -1,5 +1,5 @@
-import { OFFERS_STATUS, P2P_TAB } from './constants';
-import { ChannelMessage as ApiChannelMessage } from 'mezon-light-sdk/dist/api.gen';
+import { OFFERS_STATUS, P2P_TAB, P2P_TRADING_ROLE } from './constants';
+import type { ChannelMessageHandler } from 'mezon-light-sdk';
 
 export type BankOption = 'MB' | 'VCB' | 'TCB' | 'ACB' | 'TPBANK' | 'VIETCOMBANK';
 
@@ -150,6 +150,41 @@ export interface ParsedMessageContent {
   }>;
   mk?: string;
 }
-export interface MessageWithParsedContent extends Omit<ApiChannelMessage, 'content'> {
+
+export type ChannelMessage = Parameters<ChannelMessageHandler>[0];
+
+export interface MessageWithParsedContent extends Omit<ChannelMessage, 'content'> {
   content: ParsedMessageContent;
+}
+export type P2PTradingRoleType = (typeof P2P_TRADING_ROLE)[keyof typeof P2P_TRADING_ROLE];
+export interface AutoMessagePayload {
+  text: string;
+  embed?: IEmbedProps[];
+}
+export interface IEmbedProps {
+  color?: string;
+  title?: string;
+  url?: string;
+  author?: {
+    name: string;
+    icon_url?: string;
+    url?: string;
+  };
+  description?: string;
+  thumbnail?: {
+    url: string;
+  };
+  fields?: Array<{
+    name: string;
+    value: string;
+    inline?: boolean;
+  }>;
+  image?: {
+    url: string;
+  };
+  timestamp?: string;
+  footer?: {
+    text: string;
+    icon_url?: string;
+  };
 }
