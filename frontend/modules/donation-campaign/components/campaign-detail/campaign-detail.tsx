@@ -7,6 +7,7 @@ import { DonationCampaign } from '../../type';
 import { Separator } from '@/components/ui/separator';
 import { DonationFeed } from './shared';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CampaignChatWidget } from './shared/campaign-chat-widget';
 
 interface CampaignDetailProps {
   campaign: DonationCampaign;
@@ -31,7 +32,6 @@ export const CampaignDetail = async ({ campaign }: CampaignDetailProps) => {
             <DonationSidebar campaign={campaign} />
           </div>
         </div>
-
         <div className="z-10 flex flex-col items-center justify-between lg:flex-row">
           <Tabs defaultValue="update" className="w-full gap-0">
             <TabsList className="w-full bg-transparent px-0 pb-0 lg:w-fit dark:bg-transparent">
@@ -77,6 +77,7 @@ export const CampaignDetail = async ({ campaign }: CampaignDetailProps) => {
             </TabsContent>
           </Tabs>
         </div>
+        <CampaignChatWidget creatorId={campaign.creator} campaignTitle={campaign.name} />
       </CampaignDetailProvider>
     </div>
   );

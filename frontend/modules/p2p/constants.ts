@@ -49,3 +49,4 @@ export const P2P_TRADING_ROLE = {
   BUYER: 'buyer',
   SELLER: 'seller',
 };
+export const MAX_CHAR_LIMIT = 5000;

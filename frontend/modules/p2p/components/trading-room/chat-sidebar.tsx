@@ -12,14 +12,13 @@ import { formatChatTime, generateMarkdownPayload, isSameDay } from '../../util';
 import { AutoMessagePayload, ChannelMessage, MessageWithParsedContent, ParsedMessageContent } from '../../types';
 import { DateTimeUtil } from '@/utils';
 import { safeJsonParse } from '@/utils/json-parse.utils';
+import { MAX_CHAR_LIMIT } from '../../constants';
 
 interface ChatSidebarProps {
   sellerId: string;
   autoMessage?: AutoMessagePayload | null;
   onAutoMessageSent?: () => void;
 }
-
-const MAX_CHAR_LIMIT = 5000;
 
 export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSidebarProps) => {
   const [messages, setMessages] = useState<MessageWithParsedContent[]>([]);
