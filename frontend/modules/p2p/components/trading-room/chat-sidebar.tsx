@@ -191,7 +191,10 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
     try {
       // Parallel upload for all files
       const uploadPromises = filesToUpload.map(async (file) => {
-        if (file.size > MAX_FILE_SIZE) return null;
+        if (file.size > MAX_FILE_SIZE) {
+          alert(`File ${file.name} is too large and will be skipped. Max is ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+          return null;
+        }
 
         let retryCount = 0;
         const maxRetries = 3;
@@ -281,7 +284,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
 
     files.forEach(file => {
       if (file.size > MAX_FILE_SIZE) {
-        alert(`File ${file.name} is too large. Max is 100MB`);
+        alert(`File ${file.name} is too large. Max is ${MAX_FILE_SIZE / 1024 / 1024}MB`);
         return;
       }
       validFiles.push(file);
@@ -342,7 +345,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
 
       files.forEach(file => {
         if (file.size > MAX_FILE_SIZE) {
-          alert(`File ${file.name} is too large. Max is 100MB`);
+          alert(`File ${file.name} is too large. Max is ${MAX_FILE_SIZE / 1024 / 1024}MB`);
           return;
         }
         validFiles.push(file);
@@ -369,7 +372,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
 
     files.forEach(file => {
       if (file.size > MAX_FILE_SIZE) {
-        alert(`File ${file.name} is too large. Max is 100MB`);
+        alert(`File ${file.name} is too large. Max is ${MAX_FILE_SIZE / 1024 / 1024}MB`);
         return;
       }
       validFiles.push(file);
