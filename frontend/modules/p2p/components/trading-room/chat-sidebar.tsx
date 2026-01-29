@@ -12,15 +12,13 @@ import { formatChatTime, generateMarkdownPayload, isSameDay } from '../../util';
 import { AutoMessagePayload, MessageWithParsedContent, ParsedMessageContent, ChannelMessage } from '../../types';
 import { DateTimeUtil, formatFileSize, getFileIcon, getFilesFromClipboard, getFilesFromDragEvent } from '@/utils';
 import { safeJsonParse } from '@/utils/json-parse.utils';
+import { MAX_CHAR_LIMIT, MAX_FILE_SIZE } from '../../constants';
 
 interface ChatSidebarProps {
   sellerId: string;
   autoMessage?: AutoMessagePayload | null;
   onAutoMessageSent?: () => void;
 }
-
-const MAX_CHAR_LIMIT = 5000;
-const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
 export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSidebarProps) => {
   const [messages, setMessages] = useState<MessageWithParsedContent[]>([]);
