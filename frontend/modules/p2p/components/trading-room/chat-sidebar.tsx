@@ -12,6 +12,7 @@ import { formatChatTime, generateMarkdownPayload, isSameDay } from '../../util';
 import { AutoMessagePayload, MessageWithParsedContent, ParsedMessageContent, ChannelMessage } from '../../types';
 import { DateTimeUtil, formatFileSize, getFileIcon, getFilesFromClipboard, getFilesFromDragEvent } from '@/utils';
 import { safeJsonParse } from '@/utils/json-parse.utils';
+import { toast } from 'sonner';
 import { MAX_CHAR_LIMIT, MAX_FILE_SIZE } from '../../constants';
 
 interface ChatSidebarProps {
@@ -192,7 +193,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
       // Parallel upload for all files
       const uploadPromises = filesToUpload.map(async (file) => {
         if (file.size > MAX_FILE_SIZE) {
-          alert(`File ${file.name} is too large and will be skipped. Max is ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+          toast.error(`File ${file.name} is too large. Max is ${MAX_FILE_SIZE / 1024 / 1024}MB`);
           return null;
         }
 
@@ -254,13 +255,17 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
         attachments: finalAttachments
       });
 
+      if (hasAttachments && finalAttachments.length < filesToUpload.length) {
+        toast.warning(`Some files could not be uploaded (${filesToUpload.length - finalAttachments.length} failed)`);
+      }
+
       // Revoke blobs only after successful message delivery
       currentPreviews.forEach(p => {
         if (p.url && p.url.startsWith('blob:')) URL.revokeObjectURL(p.url);
       });
 
     } catch (err) {
-      console.error('[Chat] Send error:', err);
+      toast.error('Failed to send message. Please check your connection and try again.');
       // Recovery: Restore input and selected files so user doesn't lose data
       setInputValue(content);
       setPreviews(currentPreviews);
@@ -284,7 +289,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
 
     files.forEach(file => {
       if (file.size > MAX_FILE_SIZE) {
-        alert(`File ${file.name} is too large. Max is ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+        toast.error(`File ${file.name} is too large. Max is ${MAX_FILE_SIZE / 1024 / 1024}MB`);
         return;
       }
       validFiles.push(file);
@@ -345,7 +350,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
 
       files.forEach(file => {
         if (file.size > MAX_FILE_SIZE) {
-          alert(`File ${file.name} is too large. Max is ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+          toast.error(`File ${file.name} is too large. Max is ${MAX_FILE_SIZE / 1024 / 1024}MB`);
           return;
         }
         validFiles.push(file);
@@ -372,7 +377,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
 
     files.forEach(file => {
       if (file.size > MAX_FILE_SIZE) {
-        alert(`File ${file.name} is too large. Max is ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+        toast.error(`File ${file.name} is too large. Max is ${MAX_FILE_SIZE / 1024 / 1024}MB`);
         return;
       }
       validFiles.push(file);
