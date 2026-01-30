@@ -5,11 +5,13 @@ import { Button } from '@/components/ui/button';
 import { APP_CONFIG } from '@/configs/app.config';
 import { ROUTES } from '@/configs/routes.config';
 import { Countdown } from '../../shared/count-down';
-import { getOrderStatusInfo } from '@/modules/p2p/util';
-import { P2POrder } from '@/modules/p2p/types';
-import { useRouter } from 'next/navigation';
 import { NumberUtil } from '@/utils';
 import BigNumber from 'bignumber.js';
+import { getOrderStatusInfo } from '@/modules/p2p/util';
+import { BigNumberUtil } from '@/utils/bignumber.util';
+import { P2POrder } from '@/modules/p2p/types';
+import { useRouter } from 'next/navigation';
+
 interface OrderMobileCardProps {
   order: P2POrder;
 }
@@ -58,7 +60,7 @@ export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
             <div>
               {
                 (() => {
-                  const amount = new BigNumber(order.amount);
+                  const amount = BigNumberUtil.scaleDown(new BigNumber(order.amount));
                   const totalVND = amount.multipliedBy(order.price_rate);
                   return (
                     <>

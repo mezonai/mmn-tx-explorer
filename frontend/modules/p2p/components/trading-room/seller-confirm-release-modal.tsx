@@ -44,14 +44,14 @@ export const SellerConfirmReleaseModal = ({
                     <div className="flex items-center justify-between border-b border-border pb-3">
                         <span className="text-xs text-muted-foreground">Amount to Release</span>
                         <span className="text-lg font-bold text-foreground">
-                            {new BigNumber(amountToRelease).toFormat()} <span className="text-sm text-muted-foreground">{APP_CONFIG.CHAIN_SYMBOL}</span>
+                            {BigNumber(amountToRelease).toFormat()} <span className="text-sm text-muted-foreground">{APP_CONFIG.CHAIN_SYMBOL}</span>
                         </span>
                     </div>
 
                     <div className="flex items-center justify-between border-b border-border pb-3">
                         <span className="text-xs text-muted-foreground">Amount You Received</span>
                         <span className="text-lg font-bold text-green-400">
-                            {new BigNumber(amountReceived).toFormat()} <span className="text-sm">VND</span>
+                            {BigNumber(amountReceived).toFormat()} <span className="text-sm">VND</span>
                         </span>
                     </div>
                 </div>

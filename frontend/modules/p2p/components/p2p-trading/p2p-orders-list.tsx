@@ -13,6 +13,7 @@ import { Countdown } from '../shared/count-down';
 import { NumberUtil } from '@/utils';
 import { getOrderStatusInfo } from '../../util';
 import BigNumber from 'bignumber.js';
+import { BigNumberUtil } from '@/utils/bignumber.util';
 
 interface P2POrdersListProps {
   orders: P2POrder[] | undefined;
@@ -71,7 +72,7 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
     {
       headerContent: 'AMOUNT/TOTAL AMOUNT',
       renderCell: (order) => {
-        const amount = new BigNumber(order.amount);
+        const amount = BigNumberUtil.scaleDown(new BigNumber(order.amount));
         const totalVND = amount.multipliedBy(order.price_rate);
         return (
           <div className="text-sm">

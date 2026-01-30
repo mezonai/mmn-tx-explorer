@@ -72,3 +72,17 @@ func (b *BigIntString) Scan(value interface{}) error {
 func (b BigIntString) Value() (driver.Value, error) {
 	return b.String(), nil
 }
+
+func (b BigIntString) Multiply(multiplier BigIntString) BigIntString {
+	var result BigIntString
+	result.Mul(&b.Int, &multiplier.Int)
+	return result
+}
+
+func (b *BigIntString) Big() *big.Int {
+	return &b.Int
+}
+
+func (b BigIntString) Cmp(o BigIntString) int {
+	return b.Int.Cmp(&o.Int)
+}
