@@ -9,8 +9,8 @@ export function useClaimRedEnvelope() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ data }: { data: ClaimEnvelopeRequest }) =>
-      RedEnvelopeService.claimRedEnvelope(data),
+    mutationFn: ({ id, data }: { id: UUID; data: ClaimEnvelopeRequest }) =>
+      RedEnvelopeService.claimRedEnvelope(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RED_ENVELOPES] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RED_ENVELOPE_STATS_BY_USER] });
