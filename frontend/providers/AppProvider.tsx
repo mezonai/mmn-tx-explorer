@@ -99,9 +99,11 @@ export function AppProvider({ children }: AppProviderProps) {
       if (tokenData?.access_token) {
         wsManager.connect(tokenData.access_token);
       }
+
       const u = safeJsonParse(userStored);
       setUser(u);
       setIsAuthenticated(true);
+
       const zkStr = localStorage.getItem(STORAGE_KEYS.ZK_PROOF);
       if (zkStr) setZkProof(safeJsonParse(zkStr));
 
