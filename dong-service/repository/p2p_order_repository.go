@@ -51,7 +51,7 @@ func (r *OrderRepository) HasActiveOrders(ctx context.Context, offerID int64, tx
 }
 
 func (r *OrderRepository) CountActiveOrdersByUser(ctx context.Context, buyerUserID string, tx *sql.Tx) (int, error) {
-	query := fmt.Sprintf("SELECT COUNT(*) FROM %s.orders WHERE buyer_user_id = $1 AND status IN ('PENDING','OPEN')", r.dongSchema)
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s.p2p_orders WHERE buyer_user_id = $1 AND status IN ('PENDING','OPEN')", r.dongSchema)
 	var count int
 	err := tx.QueryRowContext(ctx, query, buyerUserID).Scan(&count)
 	if err != nil {
