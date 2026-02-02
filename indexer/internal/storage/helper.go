@@ -2,7 +2,6 @@ package storage
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 )
 
@@ -113,12 +112,10 @@ func BuildQueryWithNamedArgs(table string, columns string, qf *QueryFilter) (str
 
 	// Pagination
 	if qf.Limit > 0 {
-		query += " LIMIT @limit"
-		args["limit"] = qf.Limit
+		query += fmt.Sprintf(" LIMIT %d", qf.Limit)
 	}
 	if qf.Offset > 0 {
-		query += " OFFSET @offset"
-		args["offset"] = qf.Offset
+		query += fmt.Sprintf(" OFFSET %d", qf.Offset)
 	}
 
 	return query, args
@@ -127,50 +124,38 @@ func BuildQueryWithNamedArgs(table string, columns string, qf *QueryFilter) (str
 // ConvertQueryNamedArgsToPositional converts named params (@param) to positional params ($1, $2 or ?)
 // style: "postgres" ($1, $2...) or "question" (?)
 func ConvertQueryNamedArgsToPositional(query string, args map[string]interface{}, style string) (string, []interface{}) {
-	finalArgs := make([]interface{}, 0, len(args))
-	// We need to replace in order of appearance? No, map is unordered.
-	// Actually, standard sql package doesn't support named args natively in Convert.
-	// We need to find @name in query string and replace it.
+	var finalArgs []interface{}
+	var sb strings.Builder
+	n := len(query)
 
-	// A simple approach: iterate query, find @words, replace with placeholder and append arg.
-	// But simply replacing string is risky if same param used twice.
-
-	// Better approach for this helper:
-	// Find all @param matches in query.
-	// Replace them with appropriate placeholder.
-	// Build ordered args list.
-
-	// Since regex might be overkill/slow, and specific implementation in PostgresConnector seemed simple:
-	// It iterated args map. But map iteration order is random.
-
-	// Wait, the original postgres implementation was:
-	// for key, value := range args { query = replace(query, @key, $n) }
-	// This works if keys are unique and replacements don't conflict.
-
-	counter := 1
-	for key, value := range args {
-		placeholder := "?"
-		if style == "postgres" {
-			placeholder = "$" + strconv.Itoa(counter)
+	for i := 0; i < n; i++ {
+		if query[i] == '@' {
+			// Potential named parameter
+			j := i + 1
+			for j < n && (isAlphaNumeric(query[j]) || query[j] == '_') {
+				j++
+			}
+			if j > i+1 {
+				paramName := query[i+1 : j]
+				if val, ok := args[paramName]; ok {
+					// Found a valid parameter
+					if style == "postgres" {
+						sb.WriteString(fmt.Sprintf("$%d", len(finalArgs)+1))
+					} else {
+						sb.WriteString("?")
+					}
+					finalArgs = append(finalArgs, val)
+					i = j - 1 // Advance i to end of param name
+					continue
+				}
+			}
 		}
-
-		// Use a loop to replace ALL occurrences if any (though usually 1)
-		// But wait, if style is postgres, we need distinct numbers for each arg?
-		// Actually if same arg used twice, we might need same $n?
-		// The original postgres implementation appended to finalArgs for each key.
-		// So if @key appears multiple times, it should be replaced by SAME $n?
-		// Original implementation: strings.Replace(..., 1) -> implies only 1 replacement?
-		// Re-checking original code:
-		// query = strings.Replace(query, "@"+key, "$"+strconv.Itoa(len(finalArgs)), 1)
-		// It replaced only FIRST occurrence. This might be a bug if param used multiple times.
-		// But usually it's used once per clause.
-
-		if strings.Contains(query, "@"+key) {
-			query = strings.ReplaceAll(query, "@"+key, placeholder)
-			finalArgs = append(finalArgs, value)
-			counter++
-		}
+		sb.WriteByte(query[i])
 	}
 
-	return query, finalArgs
+	return sb.String(), finalArgs
+}
+
+func isAlphaNumeric(c byte) bool {
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
 }

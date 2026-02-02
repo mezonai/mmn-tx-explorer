@@ -515,13 +515,40 @@ func (c *ClickHouseConnector) GetBlocks(qf *QueryFilter, fields ...string) (Quer
 	var blocks []common.Block
 	for rows.Next() {
 		var b common.Block
-		var chainIDVal, blockNumberVal uint64
+		var chainIDVal, blockNumberVal interface{}
 		// We use Scan matching expected columns even if fields param varies, assuming strict usage for now.
 		if err := rows.Scan(&chainIDVal, &blockNumberVal, &b.Hash, &b.ParentHash, &b.Timestamp, &b.TransactionCount); err != nil {
 			return QueryResult[common.Block]{}, fmt.Errorf("failed to scan block: %w", err)
 		}
-		b.ChainID = new(big.Int).SetUint64(chainIDVal)
-		b.Number = new(big.Int).SetUint64(blockNumberVal)
+
+		toBigInt := func(val interface{}) *big.Int {
+			switch v := val.(type) {
+			case *big.Int:
+				return v
+			case big.Int:
+				return &v
+			case uint64:
+				return new(big.Int).SetUint64(v)
+			case int64:
+				return new(big.Int).SetInt64(v)
+			case string:
+				n, _ := new(big.Int).SetString(v, 10)
+				return n
+			default:
+				s := fmt.Sprintf("%v", v)
+				n, _ := new(big.Int).SetString(s, 10)
+				return n
+			}
+		}
+
+		b.ChainID = toBigInt(chainIDVal)
+		if b.ChainID == nil {
+			b.ChainID = new(big.Int)
+		}
+		b.Number = toBigInt(blockNumberVal)
+		if b.Number == nil {
+			b.Number = new(big.Int)
+		}
 		blocks = append(blocks, b)
 	}
 
