@@ -26,7 +26,6 @@ import { ChatSidebar } from './chat-sidebar';
 import { STORAGE_KEYS } from '@/constant';
 import { NumberUtil } from '@/utils';
 import { EMBED_MESSAGE_THEME, P2P_TRADING_ROLE } from '../../constants';
-import { BigNumberUtil } from '@/utils/bignumber.util';
 import BigNumber from 'bignumber.js';
 
 interface TradingRoomProps {
@@ -86,7 +85,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   const effectiveOrder: P2POrder = localStatus ? { ...order!, status: localStatus } : order!;
 
   const createOrderEmbed = (currentOrder: P2POrder, customTitle?: string, customColor?: string) => {
-    const displayAmount = BigNumberUtil.scaleDown(new BigNumber(currentOrder.amount));
+    const displayAmount = NumberUtil.scaleDownBigNumber(new BigNumber(currentOrder.amount));
     const mzdAmount = displayAmount.toFormat();
     const vndAmount = displayAmount.multipliedBy(currentOrder.price_rate).toFormat();
 

@@ -14,7 +14,6 @@ import { ShareOfferModal } from '../share-offer-modal';
 import { OFFERS_STATUS } from '@/modules/p2p/constants';
 import { NumberUtil } from '@/utils';
 import BigNumber from 'bignumber.js';
-import { BigNumberUtil } from '@/utils/bignumber.util';
 
 interface OfferMobileCardProps {
   offer: P2POffer;
@@ -24,8 +23,8 @@ const OfferMobileCard = ({ offer }: OfferMobileCardProps) => {
   const router = useRouter();
   const { user } = useUser();
 
-  const total = BigNumberUtil.scaleDown(new BigNumber(offer.total_amount));
-  const available = BigNumberUtil.scaleDown(new BigNumber(offer.amount));
+  const total = NumberUtil.scaleDownBigNumber(new BigNumber(offer.total_amount));
+  const available = NumberUtil.scaleDownBigNumber(new BigNumber(offer.amount));
   const sold = total.minus(available);
   const soldPercentage = total.isGreaterThan(0) ? Math.min(sold.dividedBy(total).multipliedBy(100).toNumber(), 100) : 0;
 
@@ -79,14 +78,14 @@ const OfferMobileCard = ({ offer }: OfferMobileCardProps) => {
             <div className="flex flex-col gap-1">
               <span className="text-brand-primary text-[10px] font-bold tracking-wider uppercase">Min Limit</span>
               <span className="text-sm font-bold dark:text-white">
-                {BigNumberUtil.formatAndScaleDown(new BigNumber(offer.limit.min))}
+                {NumberUtil.formatAndScaleDownBigNumber(new BigNumber(offer.limit.min))}
                 <span className="ml-1 text-[10px] font-normal text-gray-400">{APP_CONFIG.CHAIN_SYMBOL}</span>
               </span>
             </div>
             <div className="flex flex-col gap-1 text-right">
               <span className="text-brand-primary text-[10px] font-bold tracking-wider uppercase">Max Limit</span>
               <span className="text-sm font-bold dark:text-white">
-                {BigNumberUtil.formatAndScaleDown(new BigNumber(offer.limit.max))}
+                {NumberUtil.formatAndScaleDownBigNumber(new BigNumber(offer.limit.max))}
                 <span className="ml-1 text-[10px] font-normal text-gray-400">{APP_CONFIG.CHAIN_SYMBOL}</span>
               </span>
             </div>

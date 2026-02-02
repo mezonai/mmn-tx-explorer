@@ -10,11 +10,11 @@ import (
 	"dong-service/models"
 	"dong-service/repository"
 	"dong-service/types"
+	"dong-service/utils"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
-	"math/big"
 	"strconv"
 )
 
@@ -178,7 +178,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 }
 
 func (s *OfferService) ListOffers(ctx context.Context, fromAmount *string, toAmount *string, pagination map[string]any) ([]models.Offer, error) {
-	offers, err := s.repo.ListOffers(ctx, nil, nil, nil, nil, nil, scaleUpAmount(fromAmount), scaleUpAmount(toAmount), pagination)
+	offers, err := s.repo.ListOffers(ctx, nil, nil, nil, nil, nil, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount), pagination)
 	if err != nil || len(offers) == 0 {
 		return offers, err
 	}
@@ -206,7 +206,7 @@ func (s *OfferService) ListOffers(ctx context.Context, fromAmount *string, toAmo
 }
 
 func (s *OfferService) CountOffers(ctx context.Context, walletAddress *string, minPrice *string, maxPrice *string, statuses []string, symbol *string, rate *string, fromAmount *string, toAmount *string) (int64, error) {
-	return s.repo.CountOffers(ctx, walletAddress, minPrice, maxPrice, statuses, symbol, rate, scaleUpAmount(fromAmount), scaleUpAmount(toAmount))
+	return s.repo.CountOffers(ctx, walletAddress, minPrice, maxPrice, statuses, symbol, rate, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount))
 }
 
 func (s *OfferService) GetOfferByID(ctx context.Context, id int64) (*models.Offer, error) {
@@ -227,11 +227,11 @@ func (s *OfferService) GetOfferByID(ctx context.Context, id int64) (*models.Offe
 }
 
 func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, int64, error) {
-	offers, err := s.repo.GetOffersByWalletAddress(ctx, walletAddress, pagination, scaleUpAmount(fromAmount), scaleUpAmount(toAmount))
+	offers, err := s.repo.GetOffersByWalletAddress(ctx, walletAddress, pagination, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount))
 	if err != nil {
 		return nil, 0, err
 	}
-	count, err := s.repo.CountOffers(ctx, &walletAddress, nil, nil, nil, nil, nil, scaleUpAmount(fromAmount), scaleUpAmount(toAmount))
+	count, err := s.repo.CountOffers(ctx, &walletAddress, nil, nil, nil, nil, nil, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -357,15 +357,4 @@ func (s *OfferService) ReleaseIntermediaryWalletIfOfferComplete(ctx context.Cont
 			s.releaseIntermediaryWallet(ctx, *updatedOffer.IntermediaryWalletAddress)
 		}
 	}
-}
-
-func scaleUpAmount(amount *string) *string {
-	if amount == nil {
-		return nil
-	}
-	amountBigInt := new(big.Int)
-	amountBigInt.SetString(*amount, 10)
-	amountBigInt.Mul(amountBigInt, constants.TokenMultiplierBigInt)
-	result := amountBigInt.String()
-	return &result
 }

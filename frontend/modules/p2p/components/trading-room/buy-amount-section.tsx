@@ -9,7 +9,7 @@ import { APP_CONFIG } from '@/configs/app.config';
 import { ConfirmPurchaseModal } from './confirm-purchase-modal';
 import { formatCurrency } from '@/modules/p2p/util';
 import BigNumber from 'bignumber.js';
-import { BigNumberUtil } from '@/utils/bignumber.util';
+import { NumberUtil } from '@/utils';
 
 interface BuyAmountSectionProps {
   offer: P2POffer;
@@ -44,9 +44,9 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false, extra
     }
   };
 
-  const available = BigNumberUtil.scaleDown(new BigNumber(offer.amount));
-  const initialMin = BigNumberUtil.scaleDown(new BigNumber(offer.limit.min));
-  const limitMax = BigNumberUtil.scaleDown(new BigNumber(offer.limit.max));
+  const available = NumberUtil.scaleDownBigNumber(new BigNumber(offer.amount));
+  const initialMin = NumberUtil.scaleDownBigNumber(new BigNumber(offer.limit.min));
+  const limitMax = NumberUtil.scaleDownBigNumber(new BigNumber(offer.limit.max));
   const effectiveMax = BigNumber.min(limitMax, available);
 
   let placeholder = `Minimum: ${initialMin.toFormat()} - Maximum: ${effectiveMax.toFormat()}`;

@@ -17,7 +17,6 @@ import { ShareOfferModal } from './share-offer-modal';
 import { TriangleAlert } from 'lucide-react';
 import { NumberUtil } from '@/utils';
 import BigNumber from 'bignumber.js';
-import { BigNumberUtil } from '@/utils/bignumber.util';
 
 interface P2POffersTableProps {
   offers: P2POffer[] | undefined;
@@ -53,8 +52,8 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
     {
       headerContent: 'AVAILABLE',
       renderCell: (offer) => {
-        const total = BigNumberUtil.scaleDown(new BigNumber(offer.total_amount));
-        const available = BigNumberUtil.scaleDown(new BigNumber(offer.amount));
+        const total = NumberUtil.scaleDownBigNumber(new BigNumber(offer.total_amount));
+        const available = NumberUtil.scaleDownBigNumber(new BigNumber(offer.amount));
         const sold = total.minus(available);
         const soldPercentage = total.isGreaterThan(0) ? Math.min(sold.dividedBy(total).multipliedBy(100).toNumber(), 100) : 0;
 
@@ -97,7 +96,7 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
             <div className="mt-1 flex items-baseline gap-1.5">
               <span className="text-brand-primary w-6 text-[10px] font-bold tracking-wider uppercase">Min</span>
               <span className="text-sm font-bold dark:text-white whitespace-nowrap">
-                {BigNumberUtil.formatAndScaleDown(new BigNumber(offer.limit.min))}{' '}
+                {NumberUtil.formatAndScaleDownBigNumber(new BigNumber(offer.limit.min))}{' '}
                 <span className="text-xs font-normal text-gray-400">{APP_CONFIG.CHAIN_SYMBOL}</span>
               </span>
             </div>
@@ -105,7 +104,7 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
             <div className="mt-1 flex items-baseline gap-1.5">
               <span className="text-brand-primary w-6 text-[10px] font-bold tracking-wider uppercase">Max</span>
               <span className="text-sm font-bold dark:text-white whitespace-nowrap">
-                {BigNumberUtil.formatAndScaleDown(new BigNumber(offer.limit.max))}{' '}
+                {NumberUtil.formatAndScaleDownBigNumber(new BigNumber(offer.limit.max))}{' '}
                 <span className="text-xs font-normal text-gray-400">{APP_CONFIG.CHAIN_SYMBOL}</span>
               </span>
             </div>

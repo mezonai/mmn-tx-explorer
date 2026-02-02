@@ -6,7 +6,7 @@ import { useP2POffer } from '../../hooks/useP2POffer';
 import { APP_CONFIG } from '@/configs/app.config';
 import { formatCurrency } from '@/modules/p2p/util';
 import BigNumber from 'bignumber.js';
-import { BigNumberUtil } from '@/utils/bignumber.util';
+import { NumberUtil } from '@/utils';
 
 interface OrderInfoCardProps {
   order: P2POrder;
@@ -15,7 +15,7 @@ interface OrderInfoCardProps {
 export const OrderInfoCard = ({ order }: OrderInfoCardProps) => {
   const { offer } = useP2POffer(String(order.offer_id));
   const priceRate = offer?.price_rate || 0;
-  const amount = BigNumberUtil.scaleDown(new BigNumber(order.amount));
+  const amount = NumberUtil.scaleDownBigNumber(new BigNumber(order.amount));
   const amountVND = priceRate > 0 ? amount.multipliedBy(priceRate) : new BigNumber(0);
 
   return (
