@@ -38,6 +38,8 @@ type QueryFilter struct {
 	WalletAddress       string
 	Signature           string
 	ForceConsistentData bool
+	StartTime           int64
+	EndTime             int64
 }
 
 type TransfersQueryFilter struct {
@@ -193,8 +195,31 @@ func NewConnector[T any](cfg *config.StorageConnectionConfig) (T, error) {
 	var conn interface{}
 	var err error
 
-	if cfg.Postgres != nil {
+	// Check if both storages are configured for DualStorage
+	if cfg.Postgres != nil && cfg.ClickHouse != nil {
+		pgConn, err := NewPostgresConnector(cfg.Postgres)
+		if err != nil {
+			return *new(T), fmt.Errorf("failed to create postgres connector for dual storage: %w", err)
+		}
+		chConn, err := NewClickHouseConnector(cfg.ClickHouse)
+		if err != nil {
+			return *new(T), fmt.Errorf("failed to create clickhouse connector for dual storage: %w", err)
+		}
+		
+		// Create DualStorage and cast to T
+		// Note: DualStorage currently only implements IMainStorage
+		dualStorage := NewDualStorage(pgConn, chConn)
+		if conn, ok := interface{}(dualStorage).(T); ok {
+			return conn, nil
+		}
+		// If T is not IMainStorage (e.g. IOrchestratorStorage), fall back to Postgres
+		// or handle error. For now, assuming DualStorage is only for Main.
+		log.Warn().Msg("DualStorage configured but interface is not compatible (likely IMainStorage required). Falling back to Postgres.")
+		conn = pgConn
+	} else if cfg.Postgres != nil {
 		conn, err = NewPostgresConnector(cfg.Postgres)
+	} else if cfg.ClickHouse != nil {
+		conn, err = NewClickHouseConnector(cfg.ClickHouse)
 	} else {
 		return *new(T), fmt.Errorf("no storage driver configured")
 	}
@@ -213,7 +238,11 @@ func NewConnector[T any](cfg *config.StorageConnectionConfig) (T, error) {
 
 func GetMainStorage() (IMainStorage, error) {
 	storageOnce.Do(func() {
-		if config.Cfg.Storage.Main.Postgres != nil {
+		// Verify configuration presence
+		hasPostgres := config.Cfg.Storage.Main.Postgres != nil
+		hasClickHouse := config.Cfg.Storage.Main.ClickHouse != nil
+		
+		if hasPostgres || hasClickHouse {
 			mainStorage, storageErr = NewConnector[IMainStorage](&config.Cfg.Storage.Main)
 			if storageErr != nil {
 				log.Error().Err(storageErr).Msg("Error creating storage connector")

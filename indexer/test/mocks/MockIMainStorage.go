@@ -340,7 +340,7 @@ func (_c *MockIMainStorage_GetCount_Call) RunAndReturn(run func(context.Context,
 }
 
 // GetDashboardStats provides a mock function with given fields: ctx, qf
-func (_m *MockIMainStorage) GetDashboardStats(ctx context.Context, qf *storage.QueryFilter) (uint64, uint64, uint64, float64, uint64, error) {
+func (_m *MockIMainStorage) GetDashboardStats(ctx context.Context, qf *storage.QueryFilter) (uint64, uint64, uint64, float64, uint64, float64, uint64, error) {
 	ret := _m.Called(ctx, qf)
 
 	if len(ret) == 0 {
@@ -352,8 +352,10 @@ func (_m *MockIMainStorage) GetDashboardStats(ctx context.Context, qf *storage.Q
 	var r2 uint64
 	var r3 float64
 	var r4 uint64
-	var r5 error
-	if rf, ok := ret.Get(0).(func(context.Context, *storage.QueryFilter) (uint64, uint64, uint64, float64, uint64, error)); ok {
+	var r5 float64
+	var r6 uint64
+	var r7 error
+	if rf, ok := ret.Get(0).(func(context.Context, *storage.QueryFilter) (uint64, uint64, uint64, float64, uint64, float64, uint64, error)); ok {
 		return rf(ctx, qf)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, *storage.QueryFilter) uint64); ok {
@@ -386,13 +388,25 @@ func (_m *MockIMainStorage) GetDashboardStats(ctx context.Context, qf *storage.Q
 		r4 = ret.Get(4).(uint64)
 	}
 
-	if rf, ok := ret.Get(5).(func(context.Context, *storage.QueryFilter) error); ok {
+	if rf, ok := ret.Get(5).(func(context.Context, *storage.QueryFilter) float64); ok {
 		r5 = rf(ctx, qf)
 	} else {
-		r5 = ret.Error(5)
+		r5 = ret.Get(5).(float64)
 	}
 
-	return r0, r1, r2, r3, r4, r5
+	if rf, ok := ret.Get(6).(func(context.Context, *storage.QueryFilter) uint64); ok {
+		r6 = rf(ctx, qf)
+	} else {
+		r6 = ret.Get(6).(uint64)
+	}
+
+	if rf, ok := ret.Get(7).(func(context.Context, *storage.QueryFilter) error); ok {
+		r7 = rf(ctx, qf)
+	} else {
+		r7 = ret.Error(7)
+	}
+
+	return r0, r1, r2, r3, r4, r5, r6, r7
 }
 
 // MockIMainStorage_GetDashboardStats_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetDashboardStats'
@@ -414,12 +428,12 @@ func (_c *MockIMainStorage_GetDashboardStats_Call) Run(run func(ctx context.Cont
 	return _c
 }
 
-func (_c *MockIMainStorage_GetDashboardStats_Call) Return(totalBlocks uint64, totalTransactions uint64, totalWallets uint64, averageBlockTime float64, totalGiveCoffee uint64, err error) *MockIMainStorage_GetDashboardStats_Call {
-	_c.Call.Return(totalBlocks, totalTransactions, totalWallets, averageBlockTime, totalGiveCoffee, err)
+func (_c *MockIMainStorage_GetDashboardStats_Call) Return(totalBlocks uint64, totalTransactions uint64, totalWallets uint64, averageBlockTime float64, totalGiveCoffee uint64, totalP2POfferAvailable float64, totalOffers uint64, err error) *MockIMainStorage_GetDashboardStats_Call {
+	_c.Call.Return(totalBlocks, totalTransactions, totalWallets, averageBlockTime, totalGiveCoffee, totalP2POfferAvailable, totalOffers, err)
 	return _c
 }
 
-func (_c *MockIMainStorage_GetDashboardStats_Call) RunAndReturn(run func(context.Context, storage.QueryFilter) (uint64, uint64, uint64, float64, uint64, error)) *MockIMainStorage_GetDashboardStats_Call {
+func (_c *MockIMainStorage_GetDashboardStats_Call) RunAndReturn(run func(context.Context, storage.QueryFilter) (uint64, uint64, uint64, float64, uint64, float64, uint64, error)) *MockIMainStorage_GetDashboardStats_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1449,6 +1463,68 @@ func (_c *MockIMainStorage_ReplaceBlockData_Call) RunAndReturn(run func([]common
 	return _c
 }
 
+// GetAllTransactionsByWallet provides a mock function with given fields: ctx, walletAddress, startTime, endTime, sortBy, sortOrder
+func (_m *MockIMainStorage) GetAllTransactionsByWallet(ctx context.Context, walletAddress string, startTime int64, endTime int64, sortBy string, sortOrder string) ([]common.Transaction, error) {
+	ret := _m.Called(ctx, walletAddress, startTime, endTime, sortBy, sortOrder)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetAllTransactionsByWallet")
+	}
+
+	var r0 []common.Transaction
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, int64, int64, string, string) ([]common.Transaction, error)); ok {
+		return rf(ctx, walletAddress, startTime, endTime, sortBy, sortOrder)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, int64, int64, string, string) []common.Transaction); ok {
+		r0 = rf(ctx, walletAddress, startTime, endTime, sortBy, sortOrder)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]common.Transaction)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, int64, int64, string, string) error); ok {
+		r1 = rf(ctx, walletAddress, startTime, endTime, sortBy, sortOrder)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockIMainStorage_GetAllTransactionsByWallet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAllTransactionsByWallet'
+type MockIMainStorage_GetAllTransactionsByWallet_Call struct {
+	*mock.Call
+}
+
+// GetAllTransactionsByWallet is a helper method to define mock.On call
+//   - ctx context.Context
+//   - walletAddress string
+//   - startTime int64
+//   - endTime int64
+//   - sortBy string
+//   - sortOrder string
+func (_e *MockIMainStorage_Expecter) GetAllTransactionsByWallet(ctx interface{}, walletAddress interface{}, startTime interface{}, endTime interface{}, sortBy interface{}, sortOrder interface{}) *MockIMainStorage_GetAllTransactionsByWallet_Call {
+	return &MockIMainStorage_GetAllTransactionsByWallet_Call{Call: _e.mock.On("GetAllTransactionsByWallet", ctx, walletAddress, startTime, endTime, sortBy, sortOrder)}
+}
+
+func (_c *MockIMainStorage_GetAllTransactionsByWallet_Call) Run(run func(ctx context.Context, walletAddress string, startTime int64, endTime int64, sortBy string, sortOrder string)) *MockIMainStorage_GetAllTransactionsByWallet_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(int64), args[3].(int64), args[4].(string), args[5].(string))
+	})
+	return _c
+}
+
+func (_c *MockIMainStorage_GetAllTransactionsByWallet_Call) Return(_a0 []common.Transaction, _a1 error) *MockIMainStorage_GetAllTransactionsByWallet_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockIMainStorage_GetAllTransactionsByWallet_Call) RunAndReturn(run func(context.Context, string, int64, int64, string, string) ([]common.Transaction, error)) *MockIMainStorage_GetAllTransactionsByWallet_Call {
+	_c.Call.Return(run)
+	return _c
+}
 // NewMockIMainStorage creates a new instance of MockIMainStorage. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewMockIMainStorage(t interface {

@@ -889,10 +889,17 @@ func (p *PostgresConnector) ReplaceBlockData(data []common.BlockData) ([]common.
 }
 
 func (p *PostgresConnector) GetBlocks(qf *QueryFilter, fields ...string) (QueryResult[common.Block], error) {
-	columns := p.buildSelectFields(fields, defaultBlockFields)
-	query, args := p.buildQueryWithNamedArgs("blocks", columns, qf)
+	columns := BuildSelectFields(fields, defaultBlockFields)
+
+	// Validate SortBy to prevent SQL injection
+	if qf.SortBy != "" && !p.validateSortByColumn("blocks", qf.SortBy) {
+		log.Warn().Str("sort_by", qf.SortBy).Msg("Invalid sort column for blocks, ignoring")
+		qf.SortBy = ""
+	}
+
+	query, args := BuildQueryWithNamedArgs("blocks", columns, qf)
 	log.Debug().Msgf("GetBlocks query: %s, args: %v", query, args)
-	finalQuery, finalArgs := p.convertQueryNamedArgsToPositional(query, args)
+	finalQuery, finalArgs := ConvertQueryNamedArgsToPositional(query, args, "postgres")
 	log.Debug().Msgf("GetBlocks final query: %s, args: %v", finalQuery, finalArgs)
 
 	rows, err := p.db.Query(finalQuery, finalArgs...)
@@ -920,10 +927,17 @@ func (p *PostgresConnector) GetBlocks(qf *QueryFilter, fields ...string) (QueryR
 }
 
 func (p *PostgresConnector) GetTransactions(ctx context.Context, qf *QueryFilter, fields ...string) (QueryResult[common.Transaction], error) {
-	columns := p.buildSelectFields(fields, defaultTransactionFields)
-	query, args := p.buildQueryWithNamedArgs("transactions", columns, qf)
+	columns := BuildSelectFields(fields, defaultTransactionFields)
+
+	// Validate SortBy to prevent SQL injection
+	if qf.SortBy != "" && !p.validateSortByColumn("transactions", qf.SortBy) {
+		log.Warn().Str("sort_by", qf.SortBy).Msg("Invalid sort column for transactions, ignoring")
+		qf.SortBy = ""
+	}
+
+	query, args := BuildQueryWithNamedArgs("transactions", columns, qf)
 	log.Debug().Msgf("GetTransactions query: %s, args: %v", query, args)
-	finalQuery, finalArgs := p.convertQueryNamedArgsToPositional(query, args)
+	finalQuery, finalArgs := ConvertQueryNamedArgsToPositional(query, args, "postgres")
 	log.Debug().Msgf("GetTransactions final query: %s, args: %v", finalQuery, finalArgs)
 
 	rows, err := p.db.QueryContext(ctx, finalQuery, finalArgs...)
@@ -994,7 +1008,7 @@ func (p *PostgresConnector) GetAggregations(ctx context.Context, table string, q
 		}
 	}
 
-	finalQuery, finalArgs := p.convertQueryNamedArgsToPositional(query, args)
+	finalQuery, finalArgs := ConvertQueryNamedArgsToPositional(query, args, "postgres")
 	log.Debug().Msgf("GetAggregations final query: %s, args: %v", finalQuery, finalArgs)
 	rows, err := p.db.QueryContext(ctx, finalQuery, finalArgs...)
 	if err != nil {
@@ -1341,7 +1355,7 @@ func (p *PostgresConnector) GetCount(ctx context.Context, table string, qf *Quer
 		}
 	}
 	log.Debug().Msgf("GetCount query: %s, args: %v", query, whereArgs)
-	finalQuery, finalArgs := p.convertQueryNamedArgsToPositional(query, args)
+	finalQuery, finalArgs := ConvertQueryNamedArgsToPositional(query, args, "postgres")
 	log.Debug().Msgf("GetCount final query: %s, args: %v", finalQuery, finalArgs)
 	var count uint64
 	err := p.db.QueryRowContext(ctx, finalQuery, finalArgs...).Scan(&count)
@@ -1374,58 +1388,6 @@ func (p *PostgresConnector) GetPendingTransactions(ctx context.Context) (*pb.Get
 		return nil, fmt.Errorf("MMN MMNGrpcService not initialized")
 	}
 	return p.mmnGrpcService.GetPendingTransactions(ctx)
-}
-
-func (p *PostgresConnector) buildSelectFields(fields, defaults []string) string {
-	if len(fields) == 0 {
-		return strings.Join(defaults, ", ")
-	}
-	return strings.Join(fields, ", ")
-}
-
-func (p *PostgresConnector) buildQueryWithNamedArgs(table, columns string, qf *QueryFilter) (query string, args map[string]interface{}) {
-	query = fmt.Sprintf("SELECT %s FROM %s", columns, table)
-	args = make(map[string]interface{})
-
-	whereClause, whereArgs := p.buildWhereClauseWithNamedArgs(qf)
-	if whereClause != "" {
-		query += " WHERE " + whereClause
-		for key, value := range whereArgs {
-			args[key] = value
-		}
-	}
-
-	if qf.SortBy != "" && p.validateSortByColumn(table, qf.SortBy) {
-		query += " ORDER BY " + qf.SortBy
-		switch strings.ToUpper(qf.SortOrder) {
-		case "ASC":
-			query += " ASC"
-		default:
-			query += " DESC"
-		}
-	}
-
-	if qf.Limit > 0 {
-		// Calculate offset based on page or direct offset
-		var offset int
-		if qf.Page >= 0 {
-			offset = qf.Page * qf.Limit
-		} else {
-			offset = qf.Offset
-		}
-
-		// Ensure offset doesn't exceed the display limit
-		maxOffset := DataRowsDisplayLimit - qf.Limit
-		if offset > maxOffset {
-			offset = maxOffset
-		}
-
-		query += " LIMIT @limit OFFSET @offset"
-		args["limit"] = qf.Limit
-		args["offset"] = offset
-	}
-
-	return query, args
 }
 
 func (p *PostgresConnector) buildWhereClauseWithNamedArgs(qf *QueryFilter) (query string, args map[string]interface{}) {
@@ -1990,7 +1952,7 @@ func (p *PostgresConnector) GetTotalTransactions(ctx context.Context) (uint64, e
 
 // GetTransactionsByWalletPaginated retrieves paginated transactions for a wallet with sorting
 func (p *PostgresConnector) GetTransactionsByWalletPaginated(ctx context.Context, walletAddress string, limit, offset int, sortOrder string, startTime, endTime int64) ([]common.Transaction, error) {
-	columns := p.buildSelectFields([]string{}, defaultTransactionFields)
+	columns := BuildSelectFields([]string{}, defaultTransactionFields)
 
 	// Override sort parameters to prevent SQL injection
 	sortBy := "transaction_timestamp"
@@ -2071,7 +2033,7 @@ func (p *PostgresConnector) GetTransactionsByWalletCount(ctx context.Context, wa
 
 // GetTransactionsByWalletWithTimestamp retrieves transactions for a wallet with timestamp-based cursor pagination
 func (p *PostgresConnector) GetTransactionsByWalletWithTimestamp(ctx context.Context, walletAddress string, limit int, timestampLt time.Time, lastHash string) ([]common.Transaction, error) {
-	columns := p.buildSelectFields([]string{}, defaultTransactionFields)
+	columns := BuildSelectFields([]string{}, defaultTransactionFields)
 
 	fromQuery := fmt.Sprintf(
 		"SELECT %s FROM transactions WHERE from_address = $1",
@@ -2127,7 +2089,7 @@ func (p *PostgresConnector) GetTransactionsByWalletWithTimestamp(ctx context.Con
 
 // GetTransactionsByFromAddressWithTimestamp retrieves transactions where the specified address is the sender
 func (p *PostgresConnector) GetTransactionsByFromAddressWithTimestamp(ctx context.Context, fromAddress string, limit int, timestampLt time.Time, lastHash string) ([]common.Transaction, error) {
-	columns := p.buildSelectFields([]string{}, defaultTransactionFields)
+	columns := BuildSelectFields([]string{}, defaultTransactionFields)
 
 	query := fmt.Sprintf(
 		"SELECT %s FROM transactions WHERE from_address = $1",
@@ -2168,7 +2130,7 @@ func (p *PostgresConnector) GetTransactionsByFromAddressWithTimestamp(ctx contex
 
 // GetTransactionsByToAddressWithTimestamp retrieves transactions where the specified address is the receiver
 func (p *PostgresConnector) GetTransactionsByToAddressWithTimestamp(ctx context.Context, toAddress string, limit int, timestampLt time.Time, lastHash string) ([]common.Transaction, error) {
-	columns := p.buildSelectFields([]string{}, defaultTransactionFields)
+	columns := BuildSelectFields([]string{}, defaultTransactionFields)
 
 	query := fmt.Sprintf(
 		"SELECT %s FROM transactions WHERE to_address = $1",
@@ -2382,14 +2344,6 @@ func (p *PostgresConnector) Close() error {
 	return p.db.Close()
 }
 
-func (p *PostgresConnector) convertQueryNamedArgsToPositional(query string, args map[string]interface{}) (finalQuery string, finalArgs []interface{}) {
-	for key, value := range args {
-		finalArgs = append(finalArgs, value)
-		query = strings.Replace(query, "@"+key, "$"+strconv.Itoa(len(finalArgs)), 1)
-	}
-	return query, finalArgs
-}
-
 func (p *PostgresConnector) validateSortByColumn(table, column string) bool {
 	validColumns, exists := validSortByColumns[table]
 	if !exists {
@@ -2435,7 +2389,7 @@ func (p *PostgresConnector) GetAllTransactionsByWallet(
 	sortBy, sortOrder string,
 ) ([]common.Transaction, error) {
 
-	columns := p.buildSelectFields([]string{}, defaultExportTransactionFields)
+	columns := BuildSelectFields([]string{}, defaultExportTransactionFields)
 
 	if !p.validateSortByColumn("transactions", sortBy) {
 		sortBy = "transaction_timestamp"

@@ -21,6 +21,24 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  # ClickHouse database
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    environment:
+      CLICKHOUSE_DB: indexer
+      CLICKHOUSE_USER: admin
+      CLICKHOUSE_PASSWORD: password
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+
   prometheus:
     image: prom/prometheus:latest
     ports:
@@ -77,6 +95,7 @@ services:
 volumes:
   redis_data:
   postgres_data:
+  clickhouse_data:
   grafana_data:
 
 configs:

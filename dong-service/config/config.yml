@@ -94,3 +94,7 @@ event:
 # Zero-Knowledge Proof Configuration
 zk:
   verification_key_path: "./config/verifying_key.b64"
+
+# Internal Service Configuration
+internal:
+  api_key: "MezonDongServiceInternalAPIKey2026!"

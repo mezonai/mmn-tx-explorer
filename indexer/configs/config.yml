@@ -5,7 +5,7 @@ rpc:
   chainId: 1337
 
   # MMN gRPC endpoint for block service
-  mmnGrpcUrl: localhost:9001
+  mmnGrpcUrl: 172.16.100.180:9001
   
   # Block fetching configuration
   blocks:
@@ -117,22 +117,22 @@ statsWorker:
 storage:
   # Main storage configuration - Primary data storage
   main:
-    postgres:
-      host: postgres
-      port: 5432
+    clickhouse:
+      host: localhost
+      port: 9000
       username: admin
       password: password
       database: indexer
       sslMode: disable
-      maxOpenConns: 100
-      maxIdleConns: 50
-      maxConnLifetime: 3600
-      connectTimeout: 30
+      maxOpenConns: 50
+      maxIdleConns: 25
+      maxConnLifetime: 300
+      connectTimeout: 10
   
   # Staging storage configuration - Temporary storage for data processing
   staging:
     postgres:
-      host: postgres
+      host: localhost
       port: 5432
       username: admin
       password: password
@@ -146,7 +146,7 @@ storage:
   # Orchestrator storage configuration - Storage for orchestration metadata
   orchestrator:
     postgres:
-      host: postgres
+      host: localhost
       port: 5432
       username: admin
       password: password
@@ -248,3 +248,8 @@ workMode:
 validation:
   # Validation mode: "disabled" (no validation), "minimal" (basic checks), or "strict" (comprehensive validation)
   mode: strict
+
+# Internal Services - Connectivity for internal service communications
+internalServices:
+  dongServiceUrl: "http://localhost:8888"
+  dongServiceApiKey: "MezonDongServiceInternalAPIKey2026!"

@@ -7,7 +7,10 @@ import (
 	"strconv"
 	"strings"
 
+	"dong-service/logger"
 	"dong-service/models"
+
+	"github.com/lib/pq"
 )
 
 type OfferRepository struct {
@@ -544,4 +547,159 @@ func (r *OfferRepository) CountActiveOffersByUser(ctx context.Context, sellerUse
 		return 0, fmt.Errorf("failed to count active offers by user: %w", err)
 	}
 	return count, nil
+}
+
+func (r *OfferRepository) BatchUpdateOfferStatus(
+	ctx context.Context,
+	txMap map[string]models.InternalTransactionInfo,
+	offerIDMap map[string]int64,
+) error {
+	logger.Info().Int("offers_to_validate", len(txMap)).Msg("starting offer status update")
+	if len(txMap) == 0 {
+		logger.Info().Msg("no offers to validate")
+		return nil
+	}
+
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to start transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	offerIDs := make([]int64, 0, len(txMap))
+	for hash := range txMap {
+		offerID := offerIDMap[hash]
+		if offerID != 0 {
+			offerIDs = append(offerIDs, offerID)
+		}
+	}
+
+	if len(offerIDs) == 0 {
+		logger.Info().Msg("no valid offers to update")
+		return nil
+	}
+
+	querySelect := fmt.Sprintf(`
+    SELECT
+        offer_id,
+        seller_wallet_address,
+        COALESCE(intermediary_wallet_address, ''),
+        amount,
+        status
+    FROM %s.offers
+    WHERE offer_id = ANY($1::bigint[])
+		AND status = 'OPEN'
+    FOR UPDATE
+    `, r.dongSchema)
+
+	rows, err := tx.QueryContext(ctx, querySelect, pq.Array(offerIDs))
+	if err != nil {
+		return fmt.Errorf("select offers for validation failed: %w", err)
+	}
+	defer rows.Close()
+
+	type offerRow struct {
+		OfferID            int64
+		SellerWallet       string
+		IntermediaryWallet string
+		Amount             int64
+		Status             string
+	}
+
+	offerMap := make(map[int64]offerRow)
+
+	for rows.Next() {
+		var o offerRow
+		if err := rows.Scan(
+			&o.OfferID,
+			&o.SellerWallet,
+			&o.IntermediaryWallet,
+			&o.Amount,
+			&o.Status,
+		); err != nil {
+			logger.Error().Err(err).Msg("failed to scan offer row")
+			return err
+		}
+		offerMap[o.OfferID] = o
+	}
+
+	validOfferIDs := make([]int64, 0)
+	validTxHashes := make([]string, 0)
+
+	for hash, t := range txMap {
+		offerID := offerIDMap[hash]
+		o, ok := offerMap[offerID]
+		if !ok {
+			logger.Error().
+				Int64("offer_id", offerID).
+				Str("tx_hash", t.Hash).
+				Msg("offer validation failed: offer not found or not OPEN")
+			continue
+		}
+
+		if o.SellerWallet != t.FromAddress {
+			logger.Error().
+				Int64("offer_id", offerID).
+				Str("tx_hash", t.Hash).
+				Msg("offer validation failed: seller wallet mismatch")
+			continue
+		}
+
+		if o.IntermediaryWallet != "" && o.IntermediaryWallet != t.ToAddress {
+			logger.Error().
+				Int64("offer_id", offerID).
+				Str("tx_hash", t.Hash).
+				Msg("offer validation failed: intermediary wallet mismatch")
+			continue
+		}
+
+		valueInt, err := strconv.ParseInt(t.Value, 10, 64)
+		if err != nil || valueInt != o.Amount*1000000 {
+			logger.Error().
+				Int64("offer_id", offerID).
+				Str("tx_hash", t.Hash).
+				Msg("offer validation failed: amount mismatch")
+			continue
+		}
+		validOfferIDs = append(validOfferIDs, offerID)
+		validTxHashes = append(validTxHashes, t.Hash)
+	}
+
+	if len(validOfferIDs) == 0 {
+		logger.Info().Msg("no valid offers to update")
+		return nil
+	}
+
+	queryUpdate := fmt.Sprintf(`
+    UPDATE %s.offers o
+    SET
+        status = 'CONFIRMED',
+        transaction_hash = v.tx_hash,
+        updated_at = NOW()
+    FROM (
+        SELECT
+            unnest($1::bigint[]) AS offer_id,
+            unnest($2::text[])   AS tx_hash
+    ) v
+    WHERE o.offer_id = v.offer_id
+		AND o.status = 'OPEN'
+    `, r.dongSchema)
+
+	_, err = tx.ExecContext(
+		ctx,
+		queryUpdate,
+		pq.Array(validOfferIDs),
+		pq.Array(validTxHashes),
+	)
+	if err != nil {
+		return fmt.Errorf("batch update offers failed: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	logger.Info().Int("offers_updated", len(validOfferIDs)).Msg("batch update offer status completed")
+
+	return nil
 }

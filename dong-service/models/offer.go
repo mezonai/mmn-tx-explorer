@@ -16,7 +16,7 @@ const (
 
 type Offer struct {
 	OfferID                   int64       `json:"offer_id" db:"offer_id"`
-	SellerUserID              string       `json:"seller_user_id" db:"seller_user_id"`
+	SellerUserID              string      `json:"seller_user_id" db:"seller_user_id"`
 	IntermediaryWalletAddress *string     `json:"intermediary_wallet_address,omitempty" db:"intermediary_wallet_address"`
 	SellerWalletAddress       string      `json:"seller_wallet_address" db:"seller_wallet_address"`
 	Side                      OfferSide   `json:"side" db:"side"` // BUY or SELL
@@ -53,6 +53,18 @@ type UpdateOfferStatusRequest struct {
 	OfferID int64  `json:"offer_id" binding:"required"`
 	Status  string `json:"status" binding:"required"`
 	TxHash  string `json:"tx_hash" binding:"required"`
+}
+
+type InternalTransactionInfo struct {
+	Hash        string `json:"hash"`
+	FromAddress string `json:"from_address"`
+	ToAddress   string `json:"to_address"`
+	Value       string `json:"value"`
+}
+
+type BatchUpdateOfferStatusRequest struct {
+	Transactions map[string]InternalTransactionInfo `json:"transactions"` // hash -> info
+	OfferIDMap   map[string]int64                   `json:"offer_id_map"` // hash -> offer_id
 }
 
 func (o Offer) MarshalJSON() ([]byte, error) {
