@@ -72,16 +72,13 @@ export function AppProvider({ children }: AppProviderProps) {
     const localToken = localTokenStr ? safeJsonParse(localTokenStr) : null;
 
     const lightClientStr = localStorage.getItem(STORAGE_KEYS.LIGHT_CLIENT);
-    const lightClient = lightClientStr ? safeJsonParse(lightClientStr) : null;
+    const lightClientData = lightClientStr ? safeJsonParse(lightClientStr) : null;
 
-    if (lightClient) {
+    if (lightClientData) {
       (async () => {
         try {
           const light_client = LightClient.initClient({
-            token: lightClient._session.token,
-            refresh_token: lightClient._session.refresh_token,
-            api_url: lightClient._session.api_url,
-            user_id: lightClient._userId,
+            ...lightClientData,
             serverkey,
           });
           setLightClient(light_client);
