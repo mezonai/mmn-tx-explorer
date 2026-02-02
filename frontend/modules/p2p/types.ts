@@ -58,7 +58,7 @@ export interface CreateOfferRequest {
     min: number;
     max: number;
   };
-  bank_info: { bank: BankOption; account_number: string; account_name: string };
+  bank_info?: { bank: BankOption; account_number: string; account_name: string };
   symbol?: string;
 }
 
