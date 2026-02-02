@@ -1651,6 +1651,7 @@ func (p *PostgresConnector) insertTransactionsTx(
 				WHEN is_new
 					AND transaction_extra_info_type = $%d
 					AND status = $%d
+					AND extra_info IS JSON
 					AND extra_info::jsonb ? 'UserSenderId'
 				THEN value::numeric
 				ELSE 0
@@ -1659,6 +1660,7 @@ func (p *PostgresConnector) insertTransactionsTx(
 				WHEN is_new
 					AND transaction_extra_info_type = $%d
 					AND status = $%d
+					AND extra_info IS JSON
 					AND NOT (extra_info::jsonb ? 'UserSenderId')
 				THEN value::numeric
 				ELSE 0
@@ -1669,10 +1671,12 @@ func (p *PostgresConnector) insertTransactionsTx(
 					WHEN is_new
 						AND transaction_extra_info_type = $%d
 						AND status = $%d
+						AND extra_info IS JSON
 						AND extra_info::jsonb ? 'UserSenderId'
 					THEN 1
 
 					WHEN is_new
+						AND extra_info IS JSON
 						AND extra_info::jsonb ? 'action'
 						AND extra_info::jsonb ->> 'action' = 'offer-canceled'
 					THEN -1
