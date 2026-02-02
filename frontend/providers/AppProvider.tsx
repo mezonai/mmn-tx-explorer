@@ -73,7 +73,18 @@ export function AppProvider({ children }: AppProviderProps) {
 
     const lightClientStr = localStorage.getItem(STORAGE_KEYS.LIGHT_CLIENT);
     const lightClient = lightClientStr ? safeJsonParse(lightClientStr) : null;
-
+    if (localToken) {
+      (async () => {
+        try {
+          //Check for refresh token expiration and force login
+          await AuthenticationService.refreshLogin(localToken.refresh_token);
+        } catch {
+          clearAuthStorage();
+          resetSession();
+          toast.error('Session expired, please log in again.');
+        }
+      })();
+    }
     if (lightClient) {
       (async () => {
         try {
