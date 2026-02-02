@@ -76,7 +76,6 @@ export const CampaignChatWidget = ({ creatorId, campaignTitle }: CampaignChatWid
         channelIdRef.current = channel.channel_id!;
 
         socket.setChannelMessageHandler((msg: ChannelMessage) => {
-          console.log(msg);
           let parsedContent: ParsedMessageContent = { t: '' };
           if (typeof msg.content === 'string') {
             parsedContent = safeJsonParse(msg.content) ?? { t: msg.content };
