@@ -75,11 +75,11 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		return
 	}
 	if offer.Limit != nil {
-		if amount.Cmp(offer.Limit.Min) < 0 {
+		if amount.Compare(offer.Limit.Min) < 0 {
 			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "order amount is below minimum limit"))
 			return
 		}
-		if amount.Cmp(offer.Limit.Max) > 0 {
+		if amount.Compare(offer.Limit.Max) > 0 {
 			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "order amount exceeds maximum limit"))
 			return
 		}

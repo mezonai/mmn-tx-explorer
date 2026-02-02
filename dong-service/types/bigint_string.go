@@ -79,10 +79,10 @@ func (b BigIntString) Multiply(multiplier BigIntString) BigIntString {
 	return result
 }
 
-func (b *BigIntString) Big() *big.Int {
+func (b *BigIntString) GetBigInt() *big.Int {
 	return &b.Int
 }
 
-func (b BigIntString) Cmp(o BigIntString) int {
+func (b BigIntString) Compare(o BigIntString) int {
 	return b.Int.Cmp(&o.Int)
 }
