@@ -43,11 +43,6 @@ export const useRedEnvelopeDetail = () => {
 
   const isClosable = stats.status.toLocaleLowerCase() === 'published';
 
-  const handleCloseSession = () => {
-    if (!isClosable || isClosing) return;
-    closeSession();
-  };
-
   const statsCards = useMemo(() => [
     {
       title: "TOTAL AMOUNT",
@@ -103,7 +98,7 @@ export const useRedEnvelopeDetail = () => {
     qrCodeValue,
     qrSize,
     truncateChars,
-    handleCloseSession,
+    closeSession,
     isLoading,
     isError,
     refetch,

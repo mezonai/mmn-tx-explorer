@@ -2,7 +2,6 @@ import { AddressDisplay, RefreshButton } from '@/components/shared';
 import { APP_CONFIG } from '@/configs/app.config';
 import { NumberUtil } from '@/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useUser } from '@/providers';
 import Link from 'next/link';
 import { ROUTES } from '@/configs/routes.config';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,6 @@ interface TabDetailsProps {
 }
 
 export const DetailsTab = ({ walletAddress }: TabDetailsProps) => {
-  const { user } = useUser();
   const { data: walletDetailsResponse, refetch, isLoading } = useWallet(walletAddress);
   const walletDetails = walletDetailsResponse?.data;
   const hasBalance = walletDetails?.balance;

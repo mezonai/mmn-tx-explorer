@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { useTopCampaigns } from './useTopCampaigns';
-import type { CampaignListParams, DonationCampaign } from '../type';
+import { ECampaignStatus, type CampaignListParams, type DonationCampaign } from '../type';
 import { NumberUtil } from '@/utils';
+import { ESortOrder } from '@/enums/sort.enum';
 
 export type TopRaisedRatio = {
   campaign: DonationCampaign | null;
@@ -11,8 +12,9 @@ export type TopRaisedRatio = {
 const DEFAULT_PARAMS: CampaignListParams = {
   page: 1,
   limit: 1,
-  status: 'active',
-  order: 'desc',
+  verified: true,
+  status: String(ECampaignStatus.Active),
+  order: ESortOrder.DESC,
   order_by: 'total_amount',
 };
 

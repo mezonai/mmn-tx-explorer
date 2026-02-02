@@ -3,7 +3,7 @@
 import { ArrowLeft, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
-import { P2POrder } from '../../types';
+import { P2POrder, P2PTradingRoleType } from '../../types';
 import { AddressDisplay } from '@/components/shared/address-display';
 import { ROUTES } from '@/configs/routes.config';
 import { useP2POffer } from '../../hooks/useP2POffer';
@@ -14,7 +14,7 @@ import { TriangleAlert } from 'lucide-react';
 
 interface TradingRoomHeaderProps {
   order: P2POrder;
-  userRole?: 'buyer' | 'seller' | null;
+  userRole?: P2PTradingRoleType | null;
 }
 
 export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) => {
