@@ -2,7 +2,6 @@
 
 import { useCallback } from 'react';
 import { P2PHeader } from './p2p-header';
-import { P2PFiltersComponent } from './p2p-filters';
 import { useP2POffers } from '../../hooks/useP2POffers';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { P2POffersTabs } from './p2p-offers-list';
@@ -13,9 +12,14 @@ import { P2POrdersList } from './p2p-orders-list';
 import { OrderMobileCard } from './mobile/order-card';
 import OfferMobileCard from './mobile/offer-card';
 import { useQueryParam } from '@/hooks';
-import { P2PTabType } from '../../types';
+import { P2PTabType, TradeTypes } from '../../types';
 import { P2P_TAB } from '../../constants';
 import { useUpdateQueryParams } from '@/hooks/useUpdateQueryParams';
+import { TradeSideSwitch } from '../shared/trade-side-switch';
+import { CreateOfferModal } from './create-offer-form/create-offer-modal';
+import { Pagination } from '@/components/ui/pagination';
+import { AvailableAmountFilter } from './filters/available-amount-filter';
+import { SortFilter } from './filters/sort-filter';
 export const P2P = () => {
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
   const { updateParams } = useUpdateQueryParams();
@@ -35,6 +39,10 @@ export const P2P = () => {
   const { value: sort, handleChangeValue: setSort } = useQueryParam<string>({
     queryParam: 'sort',
     defaultValue: 'rate_asc',
+  });
+  const { value: side, handleChangeValue: setSide } = useQueryParam<TradeTypes>({
+    queryParam: 'side',
+    defaultValue: TradeTypes.BUY,
   });
   const handleFilterChange = useCallback(
     (newMin: number | undefined, newMax: number | undefined) => {
@@ -62,6 +70,7 @@ export const P2P = () => {
     to_amount: max || undefined,
     order_by: sort?.includes('rate') ? 'price_rate' : undefined,
     order: sort?.includes('desc') ? 'desc' : 'asc',
+    side: tab === P2P_TAB.OFFERS ? side : undefined,
   };
 
   const { data: offers, isLoading } = useP2POffers(apiParams, tab === P2P_TAB.OFFERS);
@@ -70,89 +79,129 @@ export const P2P = () => {
   const handleTabChange = (value: string) => {
     setTab(value as P2PTabType);
   };
+
+  const getPaginationProps = (data: any, isLoading: boolean) => ({
+    page,
+    limit,
+    totalItems: data?.meta.total_items || 0,
+    totalPages: data?.meta.total_pages || 1,
+    isLoading,
+    onChangePage: handleChangePage,
+    onChangeLimit: handleChangeLimit,
+  });
+
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-4 md:space-y-6">
       <P2PHeader />
 
-      <Tabs
-        value={tab}
-        onValueChange={(v) => handleTabChange(v as 'offers' | 'my-trading' | 'my-offers')}
-        className="w-full"
-      >
-        <TabsList>
-          <TabsTrigger value={P2P_TAB.OFFERS}>Offers</TabsTrigger>
-          <TabsTrigger value={P2P_TAB.MY_TRADING}>My Trading</TabsTrigger>
-          <TabsTrigger value={P2P_TAB.MY_OFFERS}>My Offers</TabsTrigger>
-        </TabsList>
+      <div className="flex flex-col gap-4">
+        {/* Row 2 Mobile: Switch + New Offer | Row 1 Desktop Left: Switch */}
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <TradeSideSwitch value={side} onChange={setSide} className="flex-1 md:w-80 md:grow-0" />
+            <div className="md:hidden">
+              <CreateOfferModal />
+            </div>
+          </div>
 
-        <TabsContent value={P2P_TAB.OFFERS} className="space-y-6">
-          <P2PFiltersComponent
-            totalItems={offers?.meta.total_items}
-            totalPages={offers?.meta.total_pages}
-            isLoading={isLoading}
-            page={page}
-            limit={limit}
-            onPageChange={handleChangePage}
-            onLimitChange={handleChangeLimit}
-            onFilterChange={handleFilterChange}
-            showSort={true}
-            sortValue={sort}
-            onSortChange={handleSortChange}
-          />
+          <div className="hidden md:flex items-center gap-3">
+            <AvailableAmountFilter onFilterChange={handleFilterChange} />
+            <SortFilter value={sort} onChange={handleSortChange} />
+          </div>
+        </div>
 
-          <div className="block lg:hidden">
-            {(offers?.data ?? []).map((offer) => (
-              <OfferMobileCard key={offer.offer_id} offer={offer} />
-            ))}
+        {/* Row 3 Mobile: Tabs | Row 2 Desktop Left: New Offer + Tabs */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="hidden md:block">
+              <CreateOfferModal />
+            </div>
+            <Tabs
+              value={tab}
+              onValueChange={(v) => handleTabChange(v as 'offers' | 'my-trading' | 'my-offers')}
+              className="w-full md:w-auto"
+            >
+              <TabsList className="w-full md:w-auto justify-start">
+                <TabsTrigger value={P2P_TAB.OFFERS} className="flex-1 md:flex-none">
+                  Offers
+                </TabsTrigger>
+                <TabsTrigger value={P2P_TAB.MY_TRADING} className="flex-1 md:flex-none">
+                  My Trading
+                </TabsTrigger>
+                <TabsTrigger value={P2P_TAB.MY_OFFERS} className="flex-1 md:flex-none">
+                  My Offers
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
-          <div className="hidden lg:block">
-            <P2POffersTabs offers={offers?.data ?? []} isLoading={isLoading} />
-          </div>
-        </TabsContent>
 
-        <TabsContent value={P2P_TAB.MY_TRADING} className="space-y-6">
-          <P2PFiltersComponent
-            totalItems={myTrading?.meta.total_items}
-            totalPages={myTrading?.meta.total_pages}
-            isLoading={isMyTradingLoading}
-            page={page}
-            limit={limit}
-            onPageChange={handleChangePage}
-            onLimitChange={handleChangeLimit}
-            onFilterChange={handleFilterChange}
-          />
+          <div className="hidden md:block">
+            <Pagination
+              {...getPaginationProps(
+                tab === P2P_TAB.OFFERS ? offers : tab === P2P_TAB.MY_OFFERS ? myOffers : myTrading,
+                tab === P2P_TAB.OFFERS ? isLoading : tab === P2P_TAB.MY_OFFERS ? isMyOffersLoading : isMyTradingLoading
+              )}
+            />
+          </div>
+        </div>
 
-          <div className="block lg:hidden">
-            {(myTrading?.data ?? []).map((td) => (
-              <OrderMobileCard key={td.order_id} order={td} />
-            ))}
+        {/* Row 4, 5, 6 Mobile: Amount, Rate, Pagination (Hidden on desktop) */}
+        <div className="flex flex-col gap-3 md:hidden">
+          <AvailableAmountFilter onFilterChange={handleFilterChange} className="w-full" />
+          <SortFilter value={sort} onChange={handleSortChange} className="w-full" />
+          <div className="flex justify-center pt-2">
+            <div className="scale-90">
+              <Pagination
+                {...getPaginationProps(
+                  tab === P2P_TAB.OFFERS ? offers : tab === P2P_TAB.MY_OFFERS ? myOffers : myTrading,
+                  tab === P2P_TAB.OFFERS ? isLoading : tab === P2P_TAB.MY_OFFERS ? isMyOffersLoading : isMyTradingLoading
+                )}
+              />
+            </div>
           </div>
-          <div className="hidden lg:block">
-            <P2POrdersList orders={myTrading?.data ?? []} isLoading={isMyTradingLoading} />
-          </div>
-        </TabsContent>
+        </div>
+      </div>
 
-        <TabsContent value={P2P_TAB.MY_OFFERS} className="space-y-6">
-          <P2PFiltersComponent
-            totalItems={myOffers?.meta.total_items}
-            totalPages={myOffers?.meta.total_pages}
-            isLoading={isMyOffersLoading}
-            page={page}
-            limit={limit}
-            onPageChange={handleChangePage}
-            onLimitChange={handleChangeLimit}
-            onFilterChange={handleFilterChange}
-          />
-          <div className="block lg:hidden">
-            {(myOffers?.data ?? []).map((offer) => (
-              <OfferMobileCard key={offer.offer_id} offer={offer} />
-            ))}
+      <div className="mt-4">
+        {tab === P2P_TAB.OFFERS && (
+          <div className="space-y-6">
+            <div className="block lg:hidden">
+              {(offers?.data ?? []).map((offer) => (
+                <OfferMobileCard key={offer.offer_id} offer={offer} />
+              ))}
+            </div>
+            <div className="hidden lg:block">
+              <P2POffersTabs offers={offers?.data ?? []} isLoading={isLoading} />
+            </div>
           </div>
-          <div className="hidden lg:block">
-            <P2POffersTabs offers={myOffers?.data ?? []} isLoading={isMyOffersLoading} />
+        )}
+
+        {tab === P2P_TAB.MY_TRADING && (
+          <div className="space-y-6">
+            <div className="block lg:hidden">
+              {(myTrading?.data ?? []).map((td) => (
+                <OrderMobileCard key={td.order_id} order={td} />
+              ))}
+            </div>
+            <div className="hidden lg:block">
+              <P2POrdersList orders={myTrading?.data ?? []} isLoading={isMyTradingLoading} />
+            </div>
           </div>
-        </TabsContent>
-      </Tabs>
+        )}
+
+        {tab === P2P_TAB.MY_OFFERS && (
+          <div className="space-y-6">
+            <div className="block lg:hidden">
+              {(myOffers?.data ?? []).map((offer) => (
+                <OfferMobileCard key={offer.offer_id} offer={offer} />
+              ))}
+            </div>
+            <div className="hidden lg:block">
+              <P2POffersTabs offers={myOffers?.data ?? []} isLoading={isMyOffersLoading} />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
