@@ -56,7 +56,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 
 	amountInt := req.Amount
 
-	if s.userWalletRepo != nil {
+	if s.userWalletRepo != nil && req.Side == models.OfferSideSell {
 		userWallet, err := s.userWalletRepo.GetByAddress(walletAddr)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
@@ -130,6 +130,11 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		limitMaxInt = limitMinInt
 	}
 
+	initialStatus := constants.TradingOpen
+	if req.Side == models.OfferSideBuy {
+		initialStatus = constants.TradingConfirmed
+	}
+
 	offer := &models.Offer{
 		IntermediaryWalletAddress: &intermediaryAddr,
 		SellerWalletAddress:       walletAddr,
@@ -139,7 +144,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		Amount:                    amountInt,
 		TotalAmount:               amountInt,
 		PayableAmount:             priceInt,
-		Status:                    constants.TradingOpen,
+		Status:                    initialStatus,
 		BankInfo:                  bankInfoStr,
 		Limit:                     &models.OfferLimit{Min: limitMinInt, Max: limitMaxInt},
 	}
