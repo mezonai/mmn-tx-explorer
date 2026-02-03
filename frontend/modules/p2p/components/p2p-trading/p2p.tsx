@@ -20,6 +20,7 @@ import { CreateOfferModal } from './create-offer-form/create-offer-modal';
 import { Pagination } from '@/components/ui/pagination';
 import { AvailableAmountFilter } from './filters/available-amount-filter';
 import { SortFilter } from './filters/sort-filter';
+import { P2PMobileFilters } from './filters/p2p-mobile-filters';
 export const P2P = () => {
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
   const { updateParams } = useUpdateQueryParams();
@@ -99,7 +100,7 @@ export const P2P = () => {
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-2 w-full md:w-auto">
             <TradeSideSwitch value={side} onChange={setSide} className="flex-1 md:w-80 md:grow-0" />
-            <div className="md:hidden">
+            <div className="md:hidden flex items-center gap-2">
               <CreateOfferModal />
             </div>
           </div>
@@ -112,20 +113,20 @@ export const P2P = () => {
 
         {/* Row 3 Mobile: Tabs | Row 2 Desktop Left: New Offer + Tabs */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 w-full md:w-auto">
             <div className="hidden md:block">
               <CreateOfferModal />
             </div>
             <Tabs
               value={tab}
               onValueChange={(v) => handleTabChange(v as 'offers' | 'my-trading' | 'my-offers')}
-              className="w-full md:w-auto"
+              className="flex-1 md:w-auto"
             >
               <TabsList className="w-full md:w-auto justify-start">
                 <TabsTrigger value={P2P_TAB.OFFERS} className="flex-1 md:flex-none">
                   Offers
                 </TabsTrigger>
-                <TabsTrigger value={P2P_TAB.MY_TRADING} className="flex-1 md:flex-none">
+                <TabsTrigger value={P2P_TAB.MY_TRADING} className="flex-1 md:flex-none text-xs md:text-sm">
                   My Trading
                 </TabsTrigger>
                 <TabsTrigger value={P2P_TAB.MY_OFFERS} className="flex-1 md:flex-none">
@@ -133,6 +134,9 @@ export const P2P = () => {
                 </TabsTrigger>
               </TabsList>
             </Tabs>
+            <div className="md:hidden">
+              <P2PMobileFilters onFilterChange={handleFilterChange} sortValue={sort} onSortChange={handleSortChange} />
+            </div>
           </div>
 
           <div className="hidden md:block">
@@ -145,10 +149,8 @@ export const P2P = () => {
           </div>
         </div>
 
-        {/* Row 4, 5, 6 Mobile: Amount, Rate, Pagination (Hidden on desktop) */}
+        {/* Row 4 Mobile: Pagination (Hidden on desktop) */}
         <div className="flex flex-col gap-3 md:hidden">
-          <AvailableAmountFilter onFilterChange={handleFilterChange} className="w-full" />
-          <SortFilter value={sort} onChange={handleSortChange} className="w-full" />
           <div className="flex justify-center pt-2">
             <div className="scale-90">
               <Pagination
