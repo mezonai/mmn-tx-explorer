@@ -119,8 +119,6 @@ export const CreateOfferModal = () => {
           : undefined,
     };
 
-    console.log('>>> CREATING OFFER:', payload.side, payload);
-
     try {
       const resultData = await createOfferAsync(payload);
 
