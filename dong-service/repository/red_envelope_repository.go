@@ -69,13 +69,25 @@ func (r *RedEnvelopeRepository) Create(req *models.CreateRedEnvelopeRequest, cre
 		return nil, fmt.Errorf("failed to get or create available wallet: %w", err)
 	}
 
+	// Scale amounts by 1,000,000 for DB storage
+	scaledTotalAmount := types.NewBigIntString(req.TotalAmount).Multiply(constants.TokenMultiplierBigIntString)
+	var scaledMinAmount, scaledMaxAmount *types.BigIntString
+	if req.MinAmount != nil {
+		min := types.NewBigIntString(*req.MinAmount).Multiply(constants.TokenMultiplierBigIntString)
+		scaledMinAmount = &min
+	}
+	if req.MaxAmount != nil {
+		max := types.NewBigIntString(*req.MaxAmount).Multiply(constants.TokenMultiplierBigIntString)
+		scaledMaxAmount = &max
+	}
+
 	err = tx.QueryRow(
 		query,
 		req.Name,
 		req.Description,
-		req.TotalAmount,
-		req.MinAmount,
-		req.MaxAmount,
+		scaledTotalAmount,
+		scaledMinAmount,
+		scaledMaxAmount,
 		req.TotalClaims,
 		redEnvelopeWallet.WalletAddress,
 		req.OwnerWallet,
@@ -114,25 +126,35 @@ func (r *RedEnvelopeRepository) Create(req *models.CreateRedEnvelopeRequest, cre
 		return nil, fmt.Errorf("failed to update red envelope wallet: %w", err)
 	}
 
-	var amounts []int64
+	var amounts []types.BigIntString
 	if req.IsRandomDistribution && req.MinAmount != nil && req.MaxAmount != nil {
-		amounts, err = utils.GenerateRandomAmounts(req.TotalAmount, *req.MinAmount, *req.MaxAmount, int(req.TotalClaims))
+		rawAmounts, err := utils.GenerateRandomAmounts(req.TotalAmount, *req.MinAmount, *req.MaxAmount, int(req.TotalClaims))
 		if err != nil {
 			logger.Error().Err(err).Str("red_envelope_id", result.ID).Msg("Failed to generate random amounts")
 			return nil, fmt.Errorf("failed to generate random amounts: %w", err)
+		}
+
+		// Scale each amount
+		amounts = make([]types.BigIntString, len(rawAmounts))
+		for i, amt := range rawAmounts {
+			amounts[i] = types.NewBigIntString(amt).Multiply(constants.TokenMultiplierBigIntString)
 		}
 	} else {
 		totalClaims := req.TotalClaims
 		baseAmount := req.TotalAmount / totalClaims
 		remainder := req.TotalAmount % totalClaims
 
-		amounts = make([]int64, totalClaims)
+		amounts = make([]types.BigIntString, totalClaims)
 		for i := int64(0); i < totalClaims; i++ {
+			var amt int64
 			if i < remainder {
-				amounts[i] = baseAmount + 1
+				amt = baseAmount + 1
 			} else {
-				amounts[i] = baseAmount
+				amt = baseAmount
 			}
+
+			// Scale each amount
+			amounts[i] = types.NewBigIntString(amt).Multiply(constants.TokenMultiplierBigIntString)
 		}
 	}
 
@@ -186,17 +208,17 @@ func (r *RedEnvelopeRepository) GetRecipientsByRedEnvelopeID(id string) ([]model
 	return claims, nil
 }
 
-func (r *RedEnvelopeRepository) GetTotalClaimedAmount(id string) (int64, error) {
+func (r *RedEnvelopeRepository) GetTotalClaimedAmount(id string) (types.BigIntString, error) {
 	query := fmt.Sprintf(`
 		SELECT COALESCE(SUM(amount), 0)
 		FROM %s.red_envelope_claim
 		WHERE red_envelope_id = $1
 	`, r.dongSchema)
 
-	var totalClaimed int64
+	var totalClaimed types.BigIntString
 	err := r.db.QueryRow(query, id).Scan(&totalClaimed)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get total claimed amount: %w", err)
+		return types.BigIntString{}, fmt.Errorf("failed to get total claimed amount: %w", err)
 	}
 
 	return totalClaimed, nil
@@ -218,9 +240,9 @@ func (r *RedEnvelopeRepository) GetStatsByUser(userID int64) (map[string]interfa
 	}
 
 	var stats struct {
-		TotalSend             int64
+		TotalSend             types.BigIntString
 		TotalRecipients       int64
-		TotalClaimed          int64
+		TotalClaimed          types.BigIntString
 		CountClaimedEnvelopes int64
 		TotalActiveEnvelopes  int64
 	}
@@ -283,7 +305,7 @@ func (r *RedEnvelopeRepository) GetStats() (map[string]interface{}, error) {
 	`, r.dongSchema, r.dongSchema)
 
 	var stats struct {
-		TotalClaimed   int64
+		TotalClaimed   types.BigIntString
 		TotalEnvelopes int64
 	}
 
@@ -315,7 +337,7 @@ func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status str
 	var envelope struct {
 		RedEnvelopeWallet string
 		OwnerWallet       string
-		TotalAmount       int64
+		TotalAmount       types.BigIntString
 		TotalClaims       int64
 		EndDate           *time.Time
 	}
@@ -341,9 +363,7 @@ func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status str
 		if err != nil {
 			logger.Error().Err(err).Msg("Failed to get wallet")
 		} else {
-			// TODO: update pass amount from envelope
-			amount := types.NewBigIntString(envelope.TotalAmount).Multiply(constants.TokenMultiplierBigIntString)
-			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
+			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, envelope.TotalAmount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
 			if err != nil {
 				return fmt.Errorf("failed to transfer money to owner wallet: %w", err)
 			}
@@ -359,7 +379,6 @@ func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status str
 			}
 		}
 
-		logger.Info().Msg("test")
 		err = r.queueService.InitializeRedEnvelope(id, envelope.TotalClaims, ttl)
 		if err != nil {
 			logger.Error().
@@ -452,13 +471,13 @@ func (r *RedEnvelopeRepository) GetRedEnvelopeCreatedByUser(userID int64, page, 
 	`, r.dongSchema, r.dongSchema)
 
 	var creates []struct {
-		ID           string    `json:"id"`
-		Name         string    `json:"name"`
-		TotalAmount  int64     `json:"total_amount"`
-		TotalClaims  int64     `json:"total_claims"`
-		Status       string    `json:"status"`
-		CreatedAt    time.Time `json:"created_at"`
-		ClaimedCount int64     `json:"claimed_count"`
+		ID           string             `json:"id"`
+		Name         string             `json:"name"`
+		TotalAmount  types.BigIntString `json:"total_amount"`
+		TotalClaims  int64              `json:"total_claims"`
+		Status       string             `json:"status"`
+		CreatedAt    time.Time          `json:"created_at"`
+		ClaimedCount int64              `json:"claimed_count"`
 	}
 
 	rows, err := r.db.Query(query, userID, limit, offset)
@@ -473,13 +492,13 @@ func (r *RedEnvelopeRepository) GetRedEnvelopeCreatedByUser(userID int64, page, 
 
 	for rows.Next() {
 		create := struct {
-			ID           string    `json:"id"`
-			Name         string    `json:"name"`
-			TotalAmount  int64     `json:"total_amount"`
-			TotalClaims  int64     `json:"total_claims"`
-			Status       string    `json:"status"`
-			CreatedAt    time.Time `json:"created_at"`
-			ClaimedCount int64     `json:"claimed_count"`
+			ID           string             `json:"id"`
+			Name         string             `json:"name"`
+			TotalAmount  types.BigIntString `json:"total_amount"`
+			TotalClaims  int64              `json:"total_claims"`
+			Status       string             `json:"status"`
+			CreatedAt    time.Time          `json:"created_at"`
+			ClaimedCount int64              `json:"claimed_count"`
 		}{}
 		err = rows.Scan(&create.ID, &create.Name, &create.TotalAmount, &create.TotalClaims, &create.Status, &create.CreatedAt, &create.ClaimedCount)
 		if err != nil {
@@ -509,13 +528,13 @@ func (r *RedEnvelopeRepository) GetRedEnvelopeClaimedByUser(userID int64, page, 
 	`, r.dongSchema, r.dongSchema)
 
 	var claims []struct {
-		ID              string    `json:"id"`
-		RedEnvelopeID   string    `json:"red_envelope_id"`
-		Name            string    `json:"name"`
-		FromWallet      string    `json:"from_wallet"`
-		Amount          int64     `json:"amount"`
-		ClaimedAt       time.Time `json:"claimed_at"`
-		TransactionHash *string   `json:"transaction_hash,omitempty"`
+		ID              string             `json:"id"`
+		RedEnvelopeID   string             `json:"red_envelope_id"`
+		Name            string             `json:"name"`
+		FromWallet      string             `json:"from_wallet"`
+		Amount          types.BigIntString `json:"amount"`
+		ClaimedAt       time.Time          `json:"claimed_at"`
+		TransactionHash *string            `json:"transaction_hash,omitempty"`
 	}
 
 	rows, err := r.db.Query(query, userID, limit, offset)
@@ -530,13 +549,13 @@ func (r *RedEnvelopeRepository) GetRedEnvelopeClaimedByUser(userID int64, page, 
 
 	for rows.Next() {
 		claim := struct {
-			ID              string    `json:"id"`
-			RedEnvelopeID   string    `json:"red_envelope_id"`
-			Name            string    `json:"name"`
-			FromWallet      string    `json:"from_wallet"`
-			Amount          int64     `json:"amount"`
-			ClaimedAt       time.Time `json:"claimed_at"`
-			TransactionHash *string   `json:"transaction_hash,omitempty"`
+			ID              string             `json:"id"`
+			RedEnvelopeID   string             `json:"red_envelope_id"`
+			Name            string             `json:"name"`
+			FromWallet      string             `json:"from_wallet"`
+			Amount          types.BigIntString `json:"amount"`
+			ClaimedAt       time.Time          `json:"claimed_at"`
+			TransactionHash *string            `json:"transaction_hash,omitempty"`
 		}{}
 		err = rows.Scan(&claim.ID, &claim.RedEnvelopeID, &claim.Name, &claim.FromWallet, &claim.Amount, &claim.ClaimedAt, &claim.TransactionHash)
 		if err != nil {
@@ -594,10 +613,10 @@ func (r *RedEnvelopeRepository) GetDetailRedEnvelopeByID(id string) (models.Deta
 		Name               string
 		Status             string
 		RedEnvelopeWallet  string
-		TotalAmount        int64
+		TotalAmount        types.BigIntString
 		TotalClaim         int64
 		ClaimedCount       int64
-		TotalClaimedAmount int64
+		TotalClaimedAmount types.BigIntString
 		EndDate            *time.Time
 	}
 	err := r.db.QueryRow(query, id).
@@ -626,7 +645,7 @@ func (r *RedEnvelopeRepository) GetDetailRedEnvelopeByID(id string) (models.Deta
 	}, nil
 }
 
-func (r *RedEnvelopeRepository) CreateSplitMoneyBatch(tx *sql.Tx, redEnvelopeID string, amounts []int64) error {
+func (r *RedEnvelopeRepository) CreateSplitMoneyBatch(tx *sql.Tx, redEnvelopeID string, amounts []types.BigIntString) error {
 	if len(amounts) == 0 {
 		return nil
 	}
@@ -715,10 +734,10 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 			Msg("Failed to get total claimed amount")
 	}
 
-	if envelope.RemainingAmount > 0 {
+	if envelope.RemainingAmount.Sign() > 0 {
 		logger.Info().
 			Str("red_envelope_id", redEnvelopeID).
-			Int64("remaining_balance", envelope.RemainingAmount).
+			Str("remaining_balance", envelope.RemainingAmount.String()).
 			Str("red_envelope_wallet", envelope.RedEnvelopeWallet).
 			Str("owner_wallet", envelope.OwnerWallet).
 			Msg("Transferring remaining balance back to owner")
@@ -728,9 +747,7 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 		if err != nil {
 			logger.Error().Err(err).Msg("Failed to get wallet")
 		} else {
-			// TODO: update pass amount from envelope
-			amount := types.NewBigIntString(envelope.RemainingAmount).Multiply(constants.TokenMultiplierBigIntString)
-			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
+			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, envelope.RemainingAmount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
 			if err != nil {
 				return err
 			}
@@ -756,7 +773,7 @@ func (r *RedEnvelopeRepository) GetClaimAmount(id, walletAddress string, claimSt
 	`, r.dongSchema)
 
 	var envelope struct {
-		TotalAmount int64
+		TotalAmount types.BigIntString
 		Description string
 		TotalClaims int64
 	}
@@ -872,7 +889,7 @@ func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUs
 		ID                string
 		Name              string
 		Description       *string
-		TotalAmount       int64
+		TotalAmount       types.BigIntString
 		TotalClaims       int64
 		ClaimedCount      int64
 		RedEnvelopeWallet string
@@ -919,9 +936,7 @@ func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUs
 	}
 
 	var txHash string
-	// TODO: update pass amount from envelope
-	amount := types.NewBigIntString(claimAmount).Multiply(constants.TokenMultiplierBigIntString)
-	txHash, err = r.blockchainService.TransferMoney(walletInfo.EncryptedPrivateKey, envelope.RedEnvelopeWallet, claimerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
+	txHash, err = r.blockchainService.TransferMoney(walletInfo.EncryptedPrivateKey, envelope.RedEnvelopeWallet, claimerWallet, claimAmount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
 	if err != nil {
 		logger.Error().Err(err).
 			Str("from", envelope.RedEnvelopeWallet).
@@ -1029,23 +1044,23 @@ func (r *RedEnvelopeRepository) GetNextAvailableSplit(tx *sql.Tx, redEnvelopeID,
 	return &split, nil
 }
 
-func (r *RedEnvelopeRepository) GetAmountBySplitID(splitMoneyID int64) (int64, error) {
+func (r *RedEnvelopeRepository) GetAmountBySplitID(splitMoneyID int64) (types.BigIntString, error) {
 	query := fmt.Sprintf(`
         SELECT amount
         FROM %s.red_envelope_split_money
         WHERE id = $1 AND status = $2
     `, r.dongSchema)
 
-	var amount int64
+	var amount types.BigIntString
 	err := r.db.QueryRow(query, splitMoneyID, constants.RedEnvelopeSplitMoneyStatusReserved).Scan(
 		&amount,
 	)
 
 	if err == sql.ErrNoRows {
-		return 0, fmt.Errorf("no available splits remaining")
+		return types.BigIntString{}, fmt.Errorf("no available splits remaining")
 	}
 	if err != nil {
-		return 0, fmt.Errorf("failed to get next split: %w", err)
+		return types.BigIntString{}, fmt.Errorf("failed to get next split: %w", err)
 	}
 
 	return amount, nil
