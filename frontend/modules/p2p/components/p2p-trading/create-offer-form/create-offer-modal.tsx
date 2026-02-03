@@ -15,6 +15,7 @@ import { CreateOfferFormValues, createOfferSchema } from './validation-schema';
 import { TradeTypeSection } from './trade-type-section';
 import { AmountSection } from './amount-section';
 import { PaymentSection } from './payment-section';
+import { TradeSideSwitch } from '../../shared/trade-side-switch';
 import { APP_CONFIG } from '@/configs/app.config';
 import { useUser } from '@/providers';
 import { mmnClient } from '@/modules/auth';
@@ -167,28 +168,9 @@ export const CreateOfferModal = () => {
 
         <DialogContent className="border-border max-w-6xl overflow-y-auto border">
           <DialogHeader className="border-b--border mx-6 -mt-6 border-b py-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <DialogTitle className="text-brand-primary text-lg font-bold">Create New Offer</DialogTitle>
-              <div className="bg-input/30 dark:bg-input/30 flex w-48 rounded-lg border border-gray-700 p-1">
-                <button
-                  type="button"
-                  onClick={() => form.setValue('side', TradeTypes.SELL)}
-                  className={`flex-1 rounded-md py-1.5 text-xs font-bold transition-all ${side === TradeTypes.SELL
-                      ? 'bg-brand-primary text-white shadow'
-                      : 'text-gray-400 hover:text-white'
-                    }`}
-                >
-                  SELL
-                </button>
-                <button
-                  type="button"
-                  onClick={() => form.setValue('side', TradeTypes.BUY)}
-                  className={`flex-1 rounded-md py-1.5 text-xs font-bold transition-all ${side === TradeTypes.BUY ? 'bg-brand-primary text-white shadow' : 'text-gray-400 hover:text-white'
-                    }`}
-                >
-                  BUY
-                </button>
-              </div>
+              <TradeSideSwitch className="w-full md:w-48" value={side} onChange={(val) => form.setValue('side', val)} />
             </div>
           </DialogHeader>
 
