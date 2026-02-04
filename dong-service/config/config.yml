@@ -65,9 +65,9 @@ scheduler:
 bridge:
   bsc_ws_url: "wss://bsc-testnet.publicnode.com" 
   bsc_rpc_url: "https://bsc-testnet.publicnode.com"
-  wmezon_address_contract: "0x2656eAF95dd8e0c31dAC3fd83A6663c1C6acB4eE"
-  wmezon_address: "0x60ddf9a2c0c234a34dd3a53991e8db293ab15e83"
-  start_block: 74012873
+  wmezon_address_contract: "0x73aa25d73d5cff0243f6777b024904aef2aa1f3e"
+  wmezon_address: "RGGEVxfzBiRD2aNvdCgGhNqtcvQUBNGuNFtAKi9R18i"  # MMN hot wallet address (from database)
+  start_block: 26155146
   polling_interval: 1m 
   confirmation_blocks: 2
 

@@ -3,6 +3,8 @@ package bridge
 import (
 	"context"
 
+	"dong-service/blockchain"
+	"dong-service/constants"
 	"dong-service/contracts"
 	"dong-service/models"
 	"dong-service/repository"
@@ -29,22 +31,32 @@ const (
 )
 
 type BSCBridge struct {
-	config          *models.BridgeConfig
-	wsClient        *ethclient.Client
-	rpcClient       *ethclient.Client
-	contract        *contracts.WMEZON
-	contractAddress common.Address
-	repo            repository.BridgeSwapRepository
-	mu              sync.RWMutex
-	isRunning       bool
-	stopChan        chan struct{}
-	wg              sync.WaitGroup
-	contractABI     abi.ABI
+	config              *models.BridgeConfig
+	wsClient            *ethclient.Client
+	rpcClient           *ethclient.Client
+	contract            *contracts.WMezon
+	contractAddress     common.Address
+	repo                repository.BridgeSwapRepository
+	blockchainService   *blockchain.BlockchainService
+	encryptedPrivateKey string
+	mu                  sync.RWMutex
+	isRunning           bool
+	stopChan            chan struct{}
+	wg                  sync.WaitGroup
+	contractABI         abi.ABI
 }
 
-func NewBSCBridge(cfg *models.BridgeConfig, repo repository.BridgeSwapRepository) (*BSCBridge, error) {
+func NewBSCBridge(cfg *models.BridgeConfig, repo repository.BridgeSwapRepository, blockchainSvc *blockchain.BlockchainService, encryptedPrivateKey string) (*BSCBridge, error) {
 	if cfg.BSCRPCURL == "" || cfg.WMezonAddressContract == "" {
 		return nil, fmt.Errorf("missing required BSC bridge configuration")
+	}
+
+	if blockchainSvc == nil {
+		return nil, fmt.Errorf("blockchain service is required")
+	}
+
+	if encryptedPrivateKey == "" {
+		return nil, fmt.Errorf("encrypted private key is required")
 	}
 
 	rpcClient, err := ethclient.Dial(cfg.BSCRPCURL)
@@ -53,20 +65,22 @@ func NewBSCBridge(cfg *models.BridgeConfig, repo repository.BridgeSwapRepository
 	}
 
 	contractAddress := common.HexToAddress(cfg.WMezonAddressContract)
-	contract, err := contracts.NewWMEZON(contractAddress, rpcClient)
+	contract, err := contracts.NewWMezon(contractAddress, rpcClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to instantiate WMEZON contract: %w", err)
 	}
 
 	bridge := &BSCBridge{
-		config:          cfg,
-		rpcClient:       rpcClient,
-		contract:        contract,
-		contractAddress: contractAddress,
-		repo:            repo,
-		stopChan:        make(chan struct{}),
+		config:              cfg,
+		rpcClient:           rpcClient,
+		contract:            contract,
+		contractAddress:     contractAddress,
+		repo:                repo,
+		blockchainService:   blockchainSvc,
+		encryptedPrivateKey: encryptedPrivateKey,
+		stopChan:            make(chan struct{}),
 	}
-	parsedABI, err := abi.JSON(strings.NewReader(contracts.WMEZONABI))
+	parsedABI, err := abi.JSON(strings.NewReader(contracts.WMezonABI))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse WMEZON contract ABI: %w", err)
 	}
@@ -137,7 +151,6 @@ func (b *BSCBridge) runPolling(ctx context.Context) {
 			return
 		case <-ticker.C:
 			currentBlock, err := b.rpcClient.BlockNumber(ctx)
-			log.Info().Err(err).Msg("Failed to get current block number from BSC RPC")
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to get current block number from BSC RPC")
 				continue
@@ -157,13 +170,25 @@ func (b *BSCBridge) runPolling(ctx context.Context) {
 				toBlock = confirmedBlock
 			}
 
-			log.Debug().
+			log.Info().
 				Uint64("fromBlock", lastBlock+1).
 				Uint64("toBlock", toBlock).
-				Msg("Polling BSC blocks for Bridge events")
+				Msg("🔍 Polling BSC blocks for Bridge events")
 
 			if err := b.processBlocks(ctx, lastBlock+1, toBlock); err != nil {
-				log.Error().Err(err).Msg("Error processing Bridge events")
+				if strings.Contains(err.Error(), "pruned") || strings.Contains(err.Error(), "History has been pruned") {
+					log.Warn().
+						Err(err).
+						Uint64("oldBlock", lastBlock).
+						Uint64("newBlock", confirmedBlock).
+						Msg("Block history pruned, adjusting to current block")
+					lastBlock = confirmedBlock
+					if err := b.repo.SaveLastProcessedBlock(ctx, lastBlock); err != nil {
+						log.Error().Err(err).Msg("❌ Failed to save adjusted block")
+					}
+					continue
+				}
+				log.Error().Err(err).Msg("❌ Error processing Bridge events")
 				continue
 			}
 			lastBlock = toBlock
@@ -277,7 +302,7 @@ func (b *BSCBridge) handleTransferMemoEvent(ctx context.Context, vLog types.Log)
 		return nil
 	}
 
-	event := new(contracts.WMEZONTransferMemo)
+	event := new(contracts.WMezonTransferMemo)
 	if err := contracAbi.UnpackIntoInterface(event, "TransferMemo", vLog.Data); err != nil {
 		return fmt.Errorf("failed to unpack event: %w", err)
 	}
@@ -286,25 +311,22 @@ func (b *BSCBridge) handleTransferMemoEvent(ctx context.Context, vLog types.Log)
 	event.To = common.HexToAddress(vLog.Topics[2].Hex())
 	event.Raw = vLog
 
-	log.Info().
-		Str("from", event.From.Hex()).
-		Str("to", event.To.Hex()).
-		Str("amount", event.Amount.String()).
-		Str("memo", string(event.Memo)).
-		Str("txHash", vLog.TxHash.Hex()).
-		Msg("Bridge TransferMemo event detected")
 	return b.processBridgeTransfer(ctx, event)
 }
 
-func (b *BSCBridge) processBridgeTransfer(ctx context.Context, event *contracts.WMEZONTransferMemo) error {
+func (b *BSCBridge) processBridgeTransfer(ctx context.Context, event *contracts.WMezonTransferMemo) error {
 	memo := string(event.Memo)
-	recipientAddress := event.From.Hex()
-	amount := event.Amount
-	// extraInfo, err := b.verifyMemo(memo)
-	// if err != nil {
-	// 	return fmt.Errorf("invalid memo: %w", err)
-	// }
 
+	var memoData map[string]string
+	recipientAddress := event.From.Hex() // Default to sender if memo parsing fails
+
+	if err := json.Unmarshal([]byte(memo), &memoData); err == nil {
+		if addr, ok := memoData["a"]; ok && addr != "" {
+			recipientAddress = addr
+		}
+	}
+
+	amount := event.Amount
 	txHash := event.Raw.TxHash.Hex()
 	processed, err := b.repo.IsTransactionProcessed(ctx, txHash)
 	if err != nil {
@@ -320,36 +342,34 @@ func (b *BSCBridge) processBridgeTransfer(ctx context.Context, event *contracts.
 	if err != nil {
 		return fmt.Errorf("failed to create pending transaction: %w", err)
 	}
-	// TODO: Wait function transfer of feature lixi
-	// 1. Validate amount
-	// 2. Check daily limit: CheckTransactionLimit(ctx, userID, amount)
-	// 3. If OK -> thực hiện swap transaction
-	// 4. Sau khi swap thành công -> CreateSwapHistory()
-	// 5. Return response với remaining limit
-	// Transfer the tokens to recipientAddress on the destination chain
-	// outTxHash, transferErr = j.blockchainService.Transfer(
-	// 	envelope.RedEnvelopeWallet,
-	// 	envelope.OwnerWallet,
-	// 	remainingBalance,
-	// 	privateKey,
-	// 	extraInfo
-	// )
+	amountInt64 := new(big.Int).Div(amount, big.NewInt(1e18)).Int64()
+	if amountInt64 <= 0 {
+		log.Error().Str("txHash", txHash).Int64("amount", amountInt64).Msg("Amount too small after conversion")
+		updateErr := b.repo.UpdateTransactionStatus(ctx, txHash, constants.BridgeStatusFailed, "", "Amount too small (< 1 token after conversion)")
+		if updateErr != nil {
+			log.Error().Err(updateErr).Msg("Failed to update FAILED status to DB")
+		}
+		return fmt.Errorf("amount too small: %d tokens", amountInt64)
+	}
 
-	outTxHash := ""
-	transferErr := error(nil)
+	outTxHash, transferErr := b.blockchainService.TransferMoney(
+		b.encryptedPrivateKey,
+		b.config.WMezonAddress,
+		recipientAddress,
+		amountInt64,
+		fmt.Sprintf("Swap from BSC tx: %s", txHash),
+		constants.ExtraInfoBridgeTransfer,
+	)
 	if transferErr != nil {
 		log.Error().Err(transferErr).Str("txHash", txHash).Msg("Transfer failed")
-
-		updateErr := b.repo.UpdateTransactionStatus(ctx, txHash, "FAILED", "", transferErr.Error())
+		updateErr := b.repo.UpdateTransactionStatus(ctx, txHash, constants.BridgeStatusFailed, "", transferErr.Error())
 		if updateErr != nil {
 			log.Error().Err(updateErr).Msg("Failed to update FAILED status to DB")
 		}
 		return transferErr
 	}
 
-	log.Info().Str("inTx", txHash).Str("outTx", outTxHash).Msg("Transfer success")
-
-	updateErr := b.repo.UpdateTransactionStatus(ctx, txHash, "COMPLETED", outTxHash, "")
+	updateErr := b.repo.UpdateTransactionStatus(ctx, txHash, constants.BridgeStatusCompleted, outTxHash, "")
 	if updateErr != nil {
 		log.Error().Err(updateErr).Msg("CRITICAL: Money sent but failed to update DB status")
 		return fmt.Errorf("money sent but db update failed: %w", updateErr)

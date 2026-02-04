@@ -43,6 +43,13 @@ const (
 	RedEnvelopeStatusFailed    = "FAILED"    // Transaction failed after retries
 )
 
+// Bridge Transaction Status Constants
+const (
+	BridgeStatusPending   = "PENDING"   // Transaction created, awaiting processing
+	BridgeStatusCompleted = "COMPLETED" // Transfer successful
+	BridgeStatusFailed    = "FAILED"    // Transfer failed
+)
+
 // Red Envelope Wallet Status Constants
 const (
 	RedEnvelopeWalletStatusReady          = "READY"           // Available for use
@@ -92,6 +99,7 @@ const (
 	ExtraInfoLuckyMoney              = `{"type":"lucky-money"}`
 	ExtraInfoP2PTrading              = `{"type":"p2p-trading"}`
 	ExtraInfoP2PTradingOfferCanceled = `{"type":"p2p-trading","action":"offer-canceled"}`
+	ExtraInfoBridgeTransfer          = `{"type":"bridge-transfer"}`
 )
 
 const (

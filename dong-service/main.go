@@ -194,7 +194,14 @@ func main() {
 		ConfirmationBlocks:    cfg.Bridge.ConfirmationBlocks,
 	}
 	bridgeRepo := repository.NewBridgeSwapRepository(database.DB, cfg.Database.Schema)
-	bscBridge, err := bridge.NewBSCBridge(bridgeConfig, *bridgeRepo)
+
+	hotWalletRepo := repository.NewHotWalletSwapRepository(database.DB, cfg.Database.Schema)
+	hotWallet, err := hotWalletRepo.GetHotWalletSwap(ctx)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("Failed to get hot wallet from database for bridge")
+	}
+
+	bscBridge, err := bridge.NewBSCBridge(bridgeConfig, *bridgeRepo, blockchainService, hotWallet.EncryptedPrivateKey)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("Failed to initialize BSC bridge")
 	}

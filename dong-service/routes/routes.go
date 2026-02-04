@@ -94,6 +94,13 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 			bridgeSwap_private.POST("/create-swap-history", bridgeSwapHandler.CreateSwapHistory)
 		}
 
+		// Hot Wallet monitoring routes (private) - automatic transfers via BSC bridge
+		hotWalletPrivate := v1.Group("/hot-wallet")
+		hotWalletPrivate.Use(middleware.Authentication(cfg.JWT.Secret))
+		{
+			hotWalletPrivate.GET("/info", handlers.GetHotWalletInfo(hotWalletRepo, walletRepo))
+		}
+
 		// Red Envelope routes (private)
 		redEnvelopePrivate := v1.Group("/red-envelopes")
 		redEnvelopePrivate.Use(middleware.Authentication(cfg.JWT.Secret))

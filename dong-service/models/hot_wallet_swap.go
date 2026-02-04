@@ -28,3 +28,9 @@ type SwapResponse struct {
 	TxHash string  `json:"tx_hash"`
 	Amount float64 `json:"amount"`
 }
+
+type HotWalletInfo struct {
+	WalletAddress string `json:"wallet_address"`
+	Type          string `json:"type"`
+	Balance       int64  `json:"balance"`
+}
