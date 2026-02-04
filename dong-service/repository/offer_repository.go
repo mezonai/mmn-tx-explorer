@@ -90,7 +90,7 @@ func (r *OfferRepository) UpdateOfferStatus(
 	return err
 }
 
-func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, fromAmount *string, toAmount *string, pagination any) ([]models.Offer, error) {
+func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, fromAmount *string, toAmount *string, side *string, pagination any) ([]models.Offer, error) {
 	base := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, bank_info, created_at, updated_at FROM %s.offers`, r.dongSchema)
 
 	whereClauses := []string{}
@@ -154,6 +154,12 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 	} else if toAmount != nil && strings.TrimSpace(*toAmount) != "" {
 		whereClauses = append(whereClauses, fmt.Sprintf("amount <= $%d", argCount))
 		args = append(args, strings.TrimSpace(*toAmount))
+		argCount++
+	}
+
+	if side != nil && strings.TrimSpace(*side) != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("side = $%d", argCount))
+		args = append(args, strings.TrimSpace(*side))
 		argCount++
 	}
 
@@ -228,7 +234,7 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 	return out, rows.Err()
 }
 
-func (r *OfferRepository) CountOffers(ctx context.Context, walletAddress *string, minPrice *string, maxPrice *string, statuses []string, symbol *string, rate *string, fromAmount *string, toAmount *string) (int64, error) {
+func (r *OfferRepository) CountOffers(ctx context.Context, walletAddress *string, minPrice *string, maxPrice *string, statuses []string, symbol *string, rate *string, fromAmount *string, toAmount *string, side *string) (int64, error) {
 	query := fmt.Sprintf(`SELECT COUNT(*) FROM %s.offers`, r.dongSchema)
 	whereClauses := []string{}
 	args := []any{}
@@ -301,6 +307,12 @@ func (r *OfferRepository) CountOffers(ctx context.Context, walletAddress *string
 	} else if toAmount != nil && strings.TrimSpace(*toAmount) != "" {
 		whereClauses = append(whereClauses, fmt.Sprintf("amount <= $%d", argCount))
 		args = append(args, strings.TrimSpace(*toAmount))
+		argCount++
+	}
+
+	if side != nil && strings.TrimSpace(*side) != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("side = $%d", argCount))
+		args = append(args, strings.TrimSpace(*side))
 		argCount++
 	}
 
@@ -440,7 +452,7 @@ func (r *OfferRepository) CheckAndCompleteIfEmpty(ctx context.Context, offerID i
 	return err
 }
 
-func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, error) {
+func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAddress string, side *string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, error) {
 	whereClauses := []string{"seller_wallet_address = $1"}
 	args := []any{walletAddress}
 	argCount := 2
@@ -454,6 +466,12 @@ func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAd
 	if toAmount != nil && *toAmount != "" {
 		whereClauses = append(whereClauses, fmt.Sprintf("amount <= $%d", argCount))
 		args = append(args, *toAmount)
+		argCount++
+	}
+
+	if side != nil && *side != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("side = $%d", argCount))
+		args = append(args, *side)
 		argCount++
 	}
 

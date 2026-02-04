@@ -157,6 +157,7 @@ func (h *OfferHandler) CreateOffer(c *gin.Context) {
 func (h *OfferHandler) ListOffers(c *gin.Context) {
 	fromAmount := c.Query("from_amount")
 	toAmount := c.Query("to_amount")
+	side := c.Query("side")
 
 	pg := utils.GetPaginationParams(c)
 	pagination := map[string]any{
@@ -175,13 +176,18 @@ func (h *OfferHandler) ListOffers(c *gin.Context) {
 		toP = &toAmount
 	}
 
-	offers, err := h.offerService.ListOffers(c.Request.Context(), fromP, toP, pagination)
+	var sideP *string
+	if side != "" {
+		sideP = &side
+	}
+
+	offers, err := h.offerService.ListOffers(c.Request.Context(), fromP, toP, sideP, pagination)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to list offers: "+err.Error()))
 		return
 	}
 
-	total, err := h.offerService.CountOffers(c.Request.Context(), nil, nil, nil, []string{constants.TradingConfirmed}, nil, nil, fromP, toP)
+	total, err := h.offerService.CountOffers(c.Request.Context(), nil, nil, nil, []string{constants.TradingConfirmed}, nil, nil, fromP, toP, sideP)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to list offers: "+err.Error()))
 		return
@@ -259,6 +265,7 @@ func (h *OfferHandler) GetMyOffers(c *gin.Context) {
 
 	fromAmount := c.Query("from_amount")
 	toAmount := c.Query("to_amount")
+	side := c.Query("side")
 
 	pg := utils.GetPaginationParams(c)
 	pagination := map[string]any{"limit": pg.Limit, "offset": pg.Offset}
@@ -272,7 +279,12 @@ func (h *OfferHandler) GetMyOffers(c *gin.Context) {
 		toP = &toAmount
 	}
 
-	offers, total, err := h.offerService.GetOffersByWalletAddress(c.Request.Context(), walletAddress, pagination, fromP, toP)
+	var sideP *string
+	if side != "" {
+		sideP = &side
+	}
+
+	offers, total, err := h.offerService.GetOffersByWalletAddress(c.Request.Context(), walletAddress, sideP, pagination, fromP, toP)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to list offers: "+err.Error()))
 		return

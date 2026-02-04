@@ -71,12 +71,15 @@ export const P2P = () => {
     to_amount: max || undefined,
     order_by: sort?.includes('rate') ? 'price_rate' : undefined,
     order: sort?.includes('desc') ? 'desc' : 'asc',
-    side: tab === P2P_TAB.OFFERS ? side : undefined,
+    side: side,
   };
 
   const { data: offers, isLoading } = useP2POffers(apiParams, tab === P2P_TAB.OFFERS);
   const { data: myOffers, isLoading: isMyOffersLoading } = useP2PMyOffers(apiParams, tab === P2P_TAB.MY_OFFERS);
-  const { data: myTrading, isLoading: isMyTradingLoading } = useMyOrders(apiParams, tab === P2P_TAB.MY_TRADING);
+  const { data: myTrading, isLoading: isMyTradingLoading } = useMyOrders(
+    { ...apiParams, side: undefined },
+    tab === P2P_TAB.MY_TRADING
+  );
   const handleTabChange = (value: string) => {
     setTab(value as P2PTabType);
   };
