@@ -211,7 +211,7 @@ jobs:
             echo '==> Updating /opt/frontend/...'
             sudo mv /tmp/frontend_tmp.env /opt/frontend/frontend.env
             
-            sudo chown mmn:mmn /opt/frontend
+            sudo chown -R mmn:mmn /opt/frontend
             sudo chmod 600 /opt/frontend/frontend.env
 
             sudo rm -f /tmp/frontend_tmp.env
