@@ -1,6 +1,9 @@
-export const WMEZON_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_WMEZON_CONTRACT_ADDRESS || '0x2656eAF95dd8e0c31dAC3fd83A6663c1C6acB4eE';
-export const HOT_WALLET_ADDRESS = process.env.NEXT_PUBLIC_HOT_WALLET_ADDRESS || '0x60ddf9a2c0c234a34dd3a53991e8db293ab15e83';
+export const WMEZON_CONTRACT_ADDRESS =
+  process.env.NEXT_PUBLIC_WMEZON_CONTRACT_ADDRESS || '0x73aa25d73d5cff0243f6777b024904aef2aa1f3e';
+export const HOT_WALLET_ADDRESS =
+  process.env.NEXT_PUBLIC_HOT_WALLET_ADDRESS || '0x60ddf9a2c0c234a34dd3a53991e8db293ab15e83';
 export const BSC_SCAN_URL = process.env.NEXT_PUBLIC_BSC_SCAN_URL || 'https://testnet.bscscan.com';
+export const CHAIN_ID = 97;
 
 export const WMEZON_ABI = [
   {

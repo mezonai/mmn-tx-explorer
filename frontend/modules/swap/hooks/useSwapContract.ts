@@ -1,11 +1,9 @@
 import { useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
-import { parseUnits } from 'viem';
+import { parseUnits, formatUnits, stringToHex } from 'viem';
 import { WMEZON_CONTRACT_ADDRESS, HOT_WALLET_ADDRESS, WMEZON_ABI } from '@/constant/contracts';
-
-interface SwapMemoData {
-  from_address: string;
-  type: string;
-}
+import { useEffect } from 'react';
+import { usePublicClient } from 'wagmi';
+import { toast } from 'sonner';
 
 function parseErrorMessage(error: Error | null): string | null {
   if (!error) return null;
@@ -40,38 +38,64 @@ function parseErrorMessage(error: Error | null): string | null {
 }
 
 function generateSwapMemo(fromAddress: string): `0x${string}` {
-  const memoData: SwapMemoData = {
-    from_address: fromAddress,
-    type: 'swap-token',
-  };
-
-  const jsonString = JSON.stringify(memoData);
-  const hexString = Buffer.from(jsonString, 'utf-8').toString('hex');
-  return `0x${hexString}`;
+  const compactMemo = `{"a":"${fromAddress.toLowerCase()}"}`;
+  return stringToHex(compactMemo);
 }
 
 export function useSwapContract() {
   const { data: hash, isPending, writeContract, error: writeError } = useWriteContract();
+  const publicClient = usePublicClient();
 
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
     hash,
   });
 
+  useEffect(() => {
+    if (hash && isConfirmed && publicClient) {
+      const fetchTransactionData = async () => {
+        try {
+          const receipt = await publicClient.getTransactionReceipt({ hash });
+          if (receipt.status === 'success') {
+            toast.success('Swap transaction confirmed!');
+          }
+        } catch (error) {
+          console.error('Error fetching transaction data:', error);
+        }
+      };
+
+      fetchTransactionData();
+    }
+  }, [hash, isConfirmed, publicClient]);
+
   /**
    * Execute swap: Transfer WMEZON tokens to hot wallet with memo
    * @param amount - Amount in tokens (e.g., "100" for 100 WMEZON)
    * @param userAddress - User's wallet address (for memo)
+   * @param userBalance - User's current token balance (optional, for validation)
    */
-  const executeSwap = (amount: string, userAddress: string) => {
-    if (!amount || parseFloat(amount) <= 0) {
-      throw new Error('Invalid amount');
-    }
-
+  const executeSwap = async (amount: string, userAddress: string, userBalance?: string) => {
     try {
+      const intAmount = parseFloat(amount);
+      const intUserBalance = userBalance ? parseFloat(formatUnits(BigInt(userBalance), 18)) : 0;
+
+      if (!amount || intAmount <= 0) {
+        throw new Error('Invalid amount');
+      }
+
+      if (userAddress === HOT_WALLET_ADDRESS) {
+        throw new Error('Cannot swap to your own wallet. Please configure a different hot wallet address.');
+      }
+
+      if (userBalance && intAmount > intUserBalance) {
+        throw new Error(
+          `Insufficient balance. You have ${intUserBalance.toFixed(4)} WMEZON but trying to swap ${intAmount.toFixed(4)} WMEZON`
+        );
+      }
+
       const amountInWei = parseUnits(amount, 18);
       const memo = generateSwapMemo(userAddress);
 
-      writeContract({
+      await writeContract({
         address: WMEZON_CONTRACT_ADDRESS as `0x${string}`,
         abi: WMEZON_ABI,
         functionName: 'transferWithMemo',

@@ -44,7 +44,7 @@ export const Swap = () => {
 
   const handleSwap = () => {
     if (!address || !amount) return;
-    executeSwap(amount, address);
+    executeSwap(amount, address, balance);
   };
 
   const handleMaxClick = () => {
