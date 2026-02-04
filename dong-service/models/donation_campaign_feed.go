@@ -6,6 +6,7 @@ import (
 
 type DonationCampaignFeed struct {
 	ID                int64     `json:"id" db:"id"`
+	Type              string    `json:"type" db:"type"`
 	TxHash            string    `json:"tx_hash" db:"tx_hash"`
 	CreatorAddress    string    `json:"creator_address" db:"creator_address"`
 	CampaignAddress   string    `json:"campaign_address" db:"related_address"`

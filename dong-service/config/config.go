@@ -26,10 +26,15 @@ type Config struct {
 	FilterImage  FilterImageConfig  `mapstructure:"filter_image"`
 	Event        EventConfig        `mapstructure:"event"`
 	ZK           ZKConfig           `mapstructure:"zk"`
+	Internal     InternalConfig     `mapstructure:"internal"`
 }
 
 type ZKConfig struct {
 	VerificationKeyPath string `mapstructure:"verification_key_path"`
+}
+
+type InternalConfig struct {
+	APIKey string `mapstructure:"api_key"`
 }
 
 type ServerConfig struct {

@@ -152,9 +152,14 @@ func RunCommonMigrations(
 	}
 
 	if dirty {
-		log.Warn().Uint("version", version).Msg("Database is in dirty state, attempting to force version")
-		if migrateErr := m.Force(int(version)); migrateErr != nil {
-			return fmt.Errorf("failed to force version %d: %w", version, migrateErr)
+		log.Warn().Uint("version", version).Msg("Database is in dirty state, attempting to force previous version to retry")
+		// Force the previous version so we can retry the failed migration
+		prevVersion := int(version) - 1
+		if prevVersion < 0 {
+			prevVersion = 0
+		}
+		if migrateErr := m.Force(prevVersion); migrateErr != nil {
+			return fmt.Errorf("failed to force version %d: %w", prevVersion, migrateErr)
 		}
 	}
 

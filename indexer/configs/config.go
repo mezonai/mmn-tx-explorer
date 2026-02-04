@@ -65,7 +65,8 @@ const (
 )
 
 type StorageConnectionConfig struct {
-	Postgres *PostgresConfig `mapstructure:"postgres"`
+	Postgres   *PostgresConfig   `mapstructure:"postgres"`
+	ClickHouse *ClickHouseConfig `mapstructure:"clickhouse"`
 }
 
 type PostgresConfig struct {
@@ -79,6 +80,19 @@ type PostgresConfig struct {
 	MaxIdleConns    int    `mapstructure:"maxIdleConns"`
 	MaxConnLifetime int    `mapstructure:"maxConnLifetime"`
 	ConnectTimeout  int    `mapstructure:"connectTimeout"`
+}
+
+type ClickHouseConfig struct {
+	Host            string `mapstructure:"host"`
+	Port            int    `mapstructure:"port"`
+	Username        string `mapstructure:"username"`
+	Password        string `mapstructure:"password"`
+	Database        string `mapstructure:"database"`
+	SSLMode         string `mapstructure:"sslMode"`         // "enable" or "disable"
+	MaxOpenConns    int    `mapstructure:"maxOpenConns"`    // Connection pool settings
+	MaxIdleConns    int    `mapstructure:"maxIdleConns"`    // Connection pool settings
+	MaxConnLifetime int    `mapstructure:"maxConnLifetime"` // Connection pool settings (seconds)
+	ConnectTimeout  int    `mapstructure:"connectTimeout"`  // Connection timeout (seconds)
 }
 
 type RPCBatchRequestConfig struct {
@@ -186,6 +200,11 @@ type StatsWorkerConfig struct {
 	TimeoutMinutes  int  `mapstructure:"timeoutMinutes"`
 }
 
+type InternalServicesConfig struct {
+	DongServiceURL    string `mapstructure:"dongServiceUrl"`
+	DongServiceAPIKey string `mapstructure:"dongServiceApiKey"`
+}
+
 type Config struct {
 	RPC              RPCConfig              `mapstructure:"rpc"`
 	Log              LogConfig              `mapstructure:"log"`
@@ -199,6 +218,7 @@ type Config struct {
 	WorkMode         WorkModeConfig         `mapstructure:"workMode"`
 	Validation       ValidationConfig       `mapstructure:"validation"`
 	StatsWorker      StatsWorkerConfig      `mapstructure:"statsWorker"`
+	InternalServices InternalServicesConfig `mapstructure:"internalServices"`
 }
 
 var Cfg Config

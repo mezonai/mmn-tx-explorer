@@ -145,4 +145,15 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		zkClaims.POST("/claim-amount", redEnvelopeHandler.ClaimAmountRedEnvelopeQR)
 		zkClaims.POST("/:id/claim", redEnvelopeHandler.ClaimRedEnvelopeQR)
 	}
+
+	// Internal routes for service-to-service communication
+	internal := router.Group("/internal/v1")
+	internal.Use(middleware.InternalAuth(cfg.Internal.APIKey))
+	{
+		campaignFeedRepo := repository.NewDonationCampaignFeedRepository(database.GetDB(), cfg.Database.Schema)
+		offerRepo := repository.NewOfferRepository(database.GetDB(), cfg.Database.Schema)
+		internalHandler := handlers.NewInternalHandler(campaignFeedRepo, offerRepo)
+		internal.POST("/user-contents", internalHandler.InsertUserContents)
+		internal.POST("/update-offer-status", internalHandler.UpdateOfferStatus)
+	}
 }

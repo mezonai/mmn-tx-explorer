@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"dong-service/models"
 	"fmt"
@@ -215,4 +216,49 @@ func (r *DonationCampaignFeedRepository) ListHistoryFeedsByRootHash(rootFeedHash
 		return nil, fmt.Errorf("rows error: %w", err)
 	}
 	return feeds, nil
+}
+
+func (r *DonationCampaignFeedRepository) InsertUserContents(ctx context.Context, items []models.DonationCampaignFeed) error {
+	if len(items) == 0 {
+		return nil
+	}
+
+	valueStrings := make([]string, 0, len(items))
+	valueArgs := make([]interface{}, 0, len(items)*11)
+
+	for i, f := range items {
+		base := i*11 + 1
+
+		valueStrings = append(valueStrings,
+			fmt.Sprintf("($%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d,$%d)",
+				base, base+1, base+2, base+3, base+4,
+				base+5, base+6, base+7, base+8, base+9, base+10,
+			),
+		)
+
+		valueArgs = append(valueArgs,
+			f.Type,
+			f.TxHash,
+			f.CreatorAddress,
+			f.CampaignAddress,
+			f.Title,
+			f.Description,
+			pq.Array(f.ImageCIDs),
+			f.ParentHash,
+			f.RootHash,
+			pq.Array(f.ReferenceTxHashes),
+			f.CreatedAt,
+		)
+	}
+
+	query := fmt.Sprintf(`
+		INSERT INTO %s.user_content
+		(type, tx_hash, creator_address, related_address, title, description,
+		image_cids, parent_hash, root_hash, reference_tx_hashes, created_at)
+		VALUES %s
+		ON CONFLICT (tx_hash) DO NOTHING`,
+		r.dongSchema, strings.Join(valueStrings, ","))
+
+	_, err := r.db.ExecContext(ctx, query, valueArgs...)
+	return err
 }
