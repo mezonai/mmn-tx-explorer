@@ -7,6 +7,7 @@ import { ErrorBoundary } from '@/components/shared';
 import { AppProvider } from '@/providers/AppProvider';
 import Providers from '@/providers/QueryClientProvider';
 import { ThemeProvider } from '@/providers/ThemeProvider';
+import { WagmiProvider } from '@/providers/WagmiProvider';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -31,13 +32,15 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} antialiased`}>
         <ThemeProvider defaultTheme="dark">
-          <ErrorBoundary>
-            <Suspense fallback={null}>
-              <AppProvider>
-                <Providers>{children}</Providers>
-              </AppProvider>
-            </Suspense>
-          </ErrorBoundary>
+          <WagmiProvider>
+            <ErrorBoundary>
+              <Suspense fallback={null}>
+                <AppProvider>
+                  <Providers>{children}</Providers>
+                </AppProvider>
+              </Suspense>
+            </ErrorBoundary>
+          </WagmiProvider>
         </ThemeProvider>
       </body>
     </html>

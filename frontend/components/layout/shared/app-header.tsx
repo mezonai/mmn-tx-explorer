@@ -6,7 +6,7 @@ import { ROUTES } from '@/configs/routes.config';
 
 export function AppHeader() {
   return (
-    <header className="bg-background flex h-16 shrink-0 items-center justify-between gap-4 border-b p-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:hidden">
+    <header className="bg-background flex h-14 shrink-0 items-center justify-between gap-3 border-b px-3 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:hidden">
       <div>
         <Link href={ROUTES.HOME}>
           <AppLogo />
