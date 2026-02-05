@@ -629,7 +629,7 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelopeQR(c *gin.Context) {
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeClaimed, nil))
 }
 
-// CreateRedEnvelopeMobile godoc
+// CreateRedEnvelopeZKAuth godoc
 // @Summary Create red envelope via QR (ZK authentication)
 // @Description Create red envelope using ZK proof authentication
 // @Tags red_envelopes
@@ -641,7 +641,7 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelopeQR(c *gin.Context) {
 // @Failure 401 {object} models.Response
 // @Failure 500 {object} models.Response
 // @Router /api/v1/red-envelopes/qr/create [post]
-func (r *RedEnvelopeHandler) CreateRedEnvelopeMobile(c *gin.Context) {
+func (r *RedEnvelopeHandler) CreateRedEnvelopeZKAuth(c *gin.Context) {
 	var req models.CreateRedEnvelopeRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -678,7 +678,7 @@ func (r *RedEnvelopeHandler) CreateRedEnvelopeMobile(c *gin.Context) {
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeCreated, redEnvelope))
 }
 
-// UpdateStatusRedEnvelopeMobile godoc
+// UpdateStatusRedEnvelopeZKAuth godoc
 // @Summary Update red envelope status via QR (ZK authentication)
 // @Description Update red envelope status to published or failed using ZK proof authentication
 // @Tags red_envelopes
@@ -691,7 +691,7 @@ func (r *RedEnvelopeHandler) CreateRedEnvelopeMobile(c *gin.Context) {
 // @Failure 404 {object} models.Response
 // @Failure 500 {object} models.Response
 // @Router /api/v1/red-envelopes/qr/update-status-red-envelope [post]
-func (r *RedEnvelopeHandler) UpdateStatusRedEnvelopeMobile(c *gin.Context) {
+func (r *RedEnvelopeHandler) UpdateStatusRedEnvelopeZKAuth(c *gin.Context) {
 	var req struct {
 		ID     string `json:"id" binding:"required"`
 		Status int    `json:"status" binding:"required"`
