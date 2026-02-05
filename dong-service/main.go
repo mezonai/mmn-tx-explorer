@@ -3,10 +3,13 @@ package main
 import (
 	"context"
 	"dong-service/blockchain"
+	"dong-service/bridge"
 	"dong-service/config"
 	"dong-service/database"
 	"dong-service/logger"
 	"dong-service/middleware"
+	"dong-service/models"
+	"dong-service/repository"
 	"dong-service/routes"
 	"dong-service/scheduler"
 	"dong-service/services"
@@ -181,6 +184,41 @@ func main() {
 		}
 	}()
 
+	bridgeConfig := &models.BridgeConfig{
+		BSCWSURL:              cfg.Bridge.BSCWSURL,
+		BSCRPCURL:             cfg.Bridge.BSCRPCURL,
+		WMezonAddressContract: cfg.Bridge.WMezonAddressContract,
+		WMezonAddress:         cfg.Bridge.WMezonAddress,
+		StartBlock:            cfg.Bridge.StartBlock,
+		PollingInterval:       cfg.Bridge.PollingInterval,
+		ConfirmationBlocks:    cfg.Bridge.ConfirmationBlocks,
+	}
+	bridgeRepo := repository.NewBridgeSwapRepository(database.DB, cfg.Database.Schema)
+
+	hotWalletRepo := repository.NewHotWalletSwapRepository(database.DB, cfg.Database.Schema)
+	hotWallet, err := hotWalletRepo.GetHotWalletSwap(ctx)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("Failed to get hot wallet from database for bridge")
+	}
+
+	bscBridge, err := bridge.NewBSCBridge(bridgeConfig, *bridgeRepo, blockchainService, hotWallet.EncryptedPrivateKey)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("Failed to initialize BSC bridge")
+	}
+
+	if err := bscBridge.Start(ctx); err != nil {
+		logger.Fatal().Err(err).Msg("Failed to start BSC bridge")
+	}
+	defer bscBridge.Stop()
+
+	hotWalletService := services.NewHotWalletSwapService(
+		repository.NewHotWalletSwapRepository(database.DB, cfg.Database.Schema),
+	)
+
+	err = hotWalletService.InitializeHotWalletSwap(ctx)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("Failed to initialize hot wallet swap")
+	}
 	registerPprof()
 
 	// Wait for interrupt signal to gracefully shutdown the server

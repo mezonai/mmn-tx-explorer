@@ -62,6 +62,15 @@ scheduler:
   expired_orders_interval: 60  # check expired orders every 60 seconds
   recent_stats_window_days: 7      # lookback window in days used by recent_amount & sync jobs
 
+bridge:
+  bsc_ws_url: "wss://bsc-testnet.publicnode.com" 
+  bsc_rpc_url: "https://bsc-testnet.publicnode.com"
+  wmezon_address_contract: "0x73aa25d73d5cff0243f6777b024904aef2aa1f3e"
+  wmezon_address: "RGGEVxfzBiRD2aNvdCgGhNqtcvQUBNGuNFtAKi9R18i"  # MMN hot wallet address (from database)
+  start_block: 26155146
+  polling_interval: 1m 
+  confirmation_blocks: 2
+
 # Lock Configuration
 lock:
   Lock_Exp: 3          # Lock expiration time in seconds

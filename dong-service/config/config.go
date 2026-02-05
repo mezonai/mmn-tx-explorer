@@ -4,6 +4,7 @@ import (
 	"dong-service/logger"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/spf13/viper"
 )
@@ -26,6 +27,7 @@ type Config struct {
 	FilterImage  FilterImageConfig  `mapstructure:"filter_image"`
 	Event        EventConfig        `mapstructure:"event"`
 	ZK           ZKConfig           `mapstructure:"zk"`
+	Bridge       BridgeConfig       `mapstructure:"bridge"`
 }
 
 type ZKConfig struct {
@@ -118,6 +120,16 @@ type FilterImageConfig struct {
 type EventConfig struct {
 	APIURL string `mapstructure:"api_url"`
 	APIKey string `mapstructure:"api_key"`
+}
+
+type BridgeConfig struct {
+	BSCWSURL              string        `mapstructure:"bsc_ws_url"`
+	BSCRPCURL             string        `mapstructure:"bsc_rpc_url"`
+	WMezonAddressContract string        `mapstructure:"wmezon_address_contract"`
+	WMezonAddress         string        `mapstructure:"wmezon_address"`
+	StartBlock            uint64        `mapstructure:"start_block"`
+	PollingInterval       time.Duration `mapstructure:"polling_interval"`
+	ConfirmationBlocks    uint64        `mapstructure:"confirmation_blocks"`
 }
 
 func LoadConfig(cfgFile string) (*Config, error) {
