@@ -176,19 +176,7 @@ func (b *BSCBridge) runPolling(ctx context.Context) {
 				Msg("🔍 Polling BSC blocks for Bridge events")
 
 			if err := b.processBlocks(ctx, lastBlock+1, toBlock); err != nil {
-				if strings.Contains(err.Error(), "pruned") || strings.Contains(err.Error(), "History has been pruned") {
-					log.Warn().
-						Err(err).
-						Uint64("oldBlock", lastBlock).
-						Uint64("newBlock", confirmedBlock).
-						Msg("Block history pruned, adjusting to current block")
-					lastBlock = confirmedBlock
-					if err := b.repo.SaveLastProcessedBlock(ctx, lastBlock); err != nil {
-						log.Error().Err(err).Msg("❌ Failed to save adjusted block")
-					}
-					continue
-				}
-				log.Error().Err(err).Msg("❌ Error processing Bridge events")
+				log.Error().Err(err).Msg("Error processing Bridge events")
 				continue
 			}
 			lastBlock = toBlock
