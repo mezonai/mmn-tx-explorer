@@ -91,6 +91,7 @@ jobs:
       skip_build: ${{ needs.determine_tags.outputs.skip_build }}
     secrets:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      EVENT_API_KEY: ${{ secrets.EVENT_API_KEY }}
 
   deploy-dong:
     needs: [determine_tags]
