@@ -296,20 +296,20 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 		}
 	}
 
-	isSeller := offer != nil && walletAddress == offer.SellerWalletAddress
-	isBuyer := order.BuyerWalletAddress != nil && walletAddress == *order.BuyerWalletAddress
+	isActualBuyer := order.BuyerWalletAddress != nil && walletAddress == *order.BuyerWalletAddress
+	isActualSeller := order.SellerWalletAddress != nil && walletAddress == *order.SellerWalletAddress
 
-	if !isSeller && !isBuyer {
+	if !isActualBuyer && !isActualSeller {
 		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, "caller is neither buyer nor seller"))
 		return
 	}
 
-	if isBuyer {
+	if isActualBuyer {
 		if err := h.orderService.ConfirmOrderAsBuyer(c.Request.Context(), orderID, order); err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to confirm order: "+err.Error()))
 			return
 		}
-	} else if isSeller {
+	} else if isActualSeller {
 		if err := h.orderService.ConfirmOrderAsSeller(c.Request.Context(), orderID, order, offer); err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to confirm order: "+err.Error()))
 			return

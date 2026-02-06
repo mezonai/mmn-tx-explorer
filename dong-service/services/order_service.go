@@ -79,15 +79,51 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 
 	transferCode := fmt.Sprintf("ORDER %d", offerID)
 	expiresAt := time.Now().UTC().Add(15 * time.Minute)
+
+	var bankInfo *string
+	if offer.Side == models.OfferSideBuy {
+		if req.BankInfo != nil {
+			bi, _ := json.Marshal(req.BankInfo)
+			sbi := string(bi)
+			bankInfo = &sbi
+		}
+	} else {
+		bankInfo = offer.BankInfo
+	}
+
+	// Roles depend on offer side
+	var buyerWallet, sellerWallet *string
+	var buyerID, sellerID string
+
+	if offer.Side == models.OfferSideBuy {
+		// Offer creator is the Buyer
+		buyerWallet = &offer.SellerWalletAddress
+		buyerID = offer.SellerUserID
+		// Order creator is the Seller
+		sellerWallet = walletAddrPtr
+		sellerID = buyerUserID
+	} else {
+		// Offer creator is the Seller
+		sellerWallet = &offer.SellerWalletAddress
+		sellerID = offer.SellerUserID
+		// Order creator is the Buyer
+		buyerWallet = walletAddrPtr
+		buyerID = buyerUserID
+	}
+
 	order := &models.Order{
-		OfferID:            &offerID,
-		BuyerWalletAddress: walletAddrPtr,
-		BuyerUserID:        buyerUserID,
-		Amount:             amount,
-		PayableAmount:      payableAmount,
-		Status:             constants.TradingOpen,
-		TransferCode:       &transferCode,
-		ExpiresAt:          &expiresAt,
+		OfferID:             &offerID,
+		BuyerWalletAddress:  buyerWallet,
+		BuyerUserID:         buyerID,
+		SellerWalletAddress: sellerWallet,
+		SellerUserID:        &sellerID,
+		Amount:              amount,
+		PayableAmount:       payableAmount,
+		Status:              constants.TradingOpen,
+		TransferCode:        &transferCode,
+		ExpiresAt:           &expiresAt,
+		OfferType:           offer.Side,
+		BankInfo:            bankInfo,
 	}
 
 	if err = s.offerRepo.ReserveQuantity(ctx, offerID, amount, tx); err != nil {
@@ -103,9 +139,6 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		return nil, nil, err
 	}
 
-	order.BankInfo = offer.BankInfo
-	order.SellerWalletAddress = &offer.SellerWalletAddress
-	order.SellerUserID = &offer.SellerUserID
 	order.PriceRate = offer.PriceRate
 
 	return order, offer, nil
@@ -120,9 +153,6 @@ func (s *OrderService) ListOrdersByOffer(ctx context.Context, offerID int64, pag
 	of, err := s.offerRepo.GetOfferByID(ctx, offerID)
 	if err == nil && of != nil {
 		for i := range orders {
-			orders[i].BankInfo = of.BankInfo
-			orders[i].SellerWalletAddress = &of.SellerWalletAddress
-			orders[i].SellerUserID = &of.SellerUserID
 			orders[i].PriceRate = of.PriceRate
 		}
 	}
@@ -139,9 +169,6 @@ func (s *OrderService) GetOrderByID(ctx context.Context, id int64) (*models.Orde
 	if o != nil && o.OfferID != nil {
 		of, err := s.offerRepo.GetOfferByID(ctx, *o.OfferID)
 		if err == nil && of != nil {
-			o.BankInfo = of.BankInfo
-			o.SellerWalletAddress = &of.SellerWalletAddress
-			o.SellerUserID = &of.SellerUserID
 			o.PriceRate = of.PriceRate
 		}
 	}
@@ -163,9 +190,6 @@ func (s *OrderService) GetOrdersByWalletAddress(ctx context.Context, walletAddre
 		if orders[i].OfferID != nil {
 			of, err := s.offerRepo.GetOfferByID(ctx, *orders[i].OfferID)
 			if err == nil && of != nil {
-				orders[i].BankInfo = of.BankInfo
-				orders[i].SellerWalletAddress = &of.SellerWalletAddress
-				orders[i].SellerUserID = &of.SellerUserID
 				orders[i].PriceRate = of.PriceRate
 			}
 		}
