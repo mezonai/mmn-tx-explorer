@@ -105,6 +105,10 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 	order.SellerUserID = &offer.SellerUserID
 	order.PriceRate = offer.PriceRate
 
+	go SendSocketEvent(constants.ALL_RECEIVER, constants.OFFER_LIST_REFRESH, map[string]any{
+		"action": "created p2p order",
+	})
+
 	return order, offer, nil
 }
 
