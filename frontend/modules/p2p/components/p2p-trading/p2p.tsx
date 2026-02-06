@@ -74,14 +74,29 @@ export const P2P = () => {
     side: side,
   };
 
-  const { data: offers, isLoading } = useP2POffers(apiParams, tab === P2P_TAB.OFFERS);
-  const { data: myOffers, isLoading: isMyOffersLoading } = useP2PMyOffers(apiParams, tab === P2P_TAB.MY_OFFERS);
+  const offersApiParams = {
+    ...apiParams,
+    side: side === TradeTypes.BUY ? TradeTypes.SELL : TradeTypes.BUY,
+  };
+
+  const { data: offers, isLoading } = useP2POffers(offersApiParams, tab === P2P_TAB.OFFERS);
+  const { data: myOffers, isLoading: isMyOffersLoading } = useP2PMyOffers(
+    { ...apiParams, side: undefined },
+    tab === P2P_TAB.MY_OFFERS
+  );
   const { data: myTrading, isLoading: isMyTradingLoading } = useMyOrders(
     { ...apiParams, side: undefined },
     tab === P2P_TAB.MY_TRADING
   );
   const handleTabChange = (value: string) => {
     setTab(value as P2PTabType);
+  };
+
+  const handleSideChange = (newSide: TradeTypes) => {
+    setSide(newSide);
+    if (tab !== P2P_TAB.OFFERS) {
+      setTab(P2P_TAB.OFFERS);
+    }
   };
 
   const getPaginationProps = (data: any, isLoading: boolean) => ({
@@ -99,13 +114,10 @@ export const P2P = () => {
       <P2PHeader />
 
       <div className="flex flex-col gap-4">
-        {/* Row 2 Mobile: Switch + New Offer | Row 1 Desktop Left: Switch */}
+        {/* Row 2 Mobile: Switch + New Offer | Row 1 Desktop Left: New Offer */}
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-2 w-full md:w-auto">
-            <TradeSideSwitch value={side} onChange={setSide} className="flex-1 md:w-80 md:grow-0" />
-            <div className="md:hidden flex items-center gap-2">
-              <CreateOfferModal />
-            </div>
+            <CreateOfferModal />
           </div>
 
           <div className="hidden md:flex items-center gap-3">
@@ -114,31 +126,28 @@ export const P2P = () => {
           </div>
         </div>
 
-        {/* Row 3 Mobile: Tabs | Row 2 Desktop Left: New Offer + Tabs */}
+        {/* Row 3 Mobile: Tabs | Row 2 Desktop Left: Switch + Tabs */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <div className="hidden md:block">
-              <CreateOfferModal />
-            </div>
-            <Tabs
-              value={tab}
-              onValueChange={(v) => handleTabChange(v as 'offers' | 'my-trading' | 'my-offers')}
-              className="flex-1 md:w-auto"
-            >
-              <TabsList className="w-full md:w-auto justify-start">
-                <TabsTrigger value={P2P_TAB.OFFERS} className="flex-1 md:flex-none">
-                  Offers
-                </TabsTrigger>
-                <TabsTrigger value={P2P_TAB.MY_TRADING} className="flex-1 md:flex-none text-xs md:text-sm">
-                  My Trading
-                </TabsTrigger>
-                <TabsTrigger value={P2P_TAB.MY_OFFERS} className="flex-1 md:flex-none">
-                  My Offers
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-            <div className="md:hidden">
-              <P2PMobileFilters onFilterChange={handleFilterChange} sortValue={sort} onSortChange={handleSortChange} />
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-2 w-full md:w-auto">
+            <TradeSideSwitch value={side} onChange={handleSideChange} className="w-full md:w-60" />
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              <Tabs
+                value={tab}
+                onValueChange={(v) => handleTabChange(v as 'offers' | 'my-trading' | 'my-offers')}
+                className="flex-1 md:w-auto"
+              >
+                <TabsList className="w-full md:w-auto justify-start">
+                  <TabsTrigger value={P2P_TAB.MY_TRADING} className="flex-1 md:flex-none text-xs md:text-sm">
+                    My Trading
+                  </TabsTrigger>
+                  <TabsTrigger value={P2P_TAB.MY_OFFERS} className="flex-1 md:flex-none">
+                    My Offers
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <div className="md:hidden">
+                <P2PMobileFilters onFilterChange={handleFilterChange} sortValue={sort} onSortChange={handleSortChange} />
+              </div>
             </div>
           </div>
 

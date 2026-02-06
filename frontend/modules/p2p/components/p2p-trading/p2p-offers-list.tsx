@@ -7,7 +7,7 @@ import { TTableColumn } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ROUTES } from '@/configs/routes.config';
 import { AddressDisplay, Chip } from '@/components/shared';
-import { P2POffer } from '../../types';
+import { P2POffer, TradeTypes } from '../../types';
 import { APP_CONFIG } from '@/configs/app.config';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/providers';
@@ -146,7 +146,7 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
                 }}
                 className="w-[160px] rounded-lg bg-emerald-500 px-6 py-2 text-white transition hover:bg-emerald-600 whitespace-nowrap"
               >
-                Buy Mezon đồng
+                {offer.side === TradeTypes.SELL ? 'Buy' : 'Sell'} Mezon đồng
               </Button>
             ) : offer.status === OFFERS_STATUS.CANCELED ? (
               <Chip variant="error" className="w-[160px] rounded-lg justify-center py-2">
