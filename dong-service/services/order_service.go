@@ -222,7 +222,7 @@ func (s *OrderService) ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o
 		of, err := s.offerRepo.GetOfferByID(context.Background(), *o.OfferID)
 		if err == nil && of.SellerWalletAddress != "" {
 			payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.Amount}
-			go SendSocketEvent(of.SellerWalletAddress, "ORDER_CONFIRMED", payload)
+			go SendSocketEvent(of.SellerWalletAddress, constants.ORDER_CONFIRMED, payload)
 		}
 	}
 
@@ -291,7 +291,7 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 
 				if o.BuyerWalletAddress != nil && *o.BuyerWalletAddress != "" {
 					payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.Amount, "tx_hash": txHash}
-					go SendSocketEvent(*o.BuyerWalletAddress, "ORDER_COMPLETED", payload)
+					go SendSocketEvent(*o.BuyerWalletAddress, constants.ORDER_COMPLETED, payload)
 				}
 			} else if status == constants.TxStatusPending || status == constants.TxStatusConfirmed || status == constants.TxStatusFailed {
 				// Status 0, 1, 3 = PENDING, CONFIRMED, FAILED

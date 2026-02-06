@@ -4,5 +4,5 @@ const (
 	HeartbeatCheck = "heartbeat_check"
 	HeartbeatAck   = "heartbeat_ack"
 
-	ALL_RECEIVER = "*"
+	OFFER_ROOM = "offer_updates"
 )

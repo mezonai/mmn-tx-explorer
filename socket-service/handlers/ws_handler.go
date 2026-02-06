@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"socket-service/config"
 	"socket-service/constant"
@@ -31,6 +32,13 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+const (
+	joinRoom   = "join_room"
+	joinedRoom = "joined_room:"
+	leaveRoom  = "leave_room"
+	leftRoom   = "left_room:"
+)
+
 func (h *WSHandler) HandleWS(c *gin.Context) {
 
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
@@ -53,7 +61,7 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 		conn.WriteMessage(websocket.TextMessage, []byte("Failed to get events: "+err.Error()))
 		return
 	}
-	
+
 	if len(events) > 0 {
 		for _, event := range events {
 			conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
@@ -110,12 +118,72 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 			onceClose.Do(func() { close(done) })
 			return
 		}
-		if messageType == websocket.TextMessage && string(message) == constant.HeartbeatCheck {
-			logger.Info().Msgf("Heartbeat check received from user %s", userAddress)
+		if messageType == websocket.TextMessage {
+			// Heartbeat
+			if string(message) == constant.HeartbeatCheck {
+				logger.Info().Msgf("Heartbeat check received from user %s", userAddress)
+				conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
+				conn.WriteMessage(websocket.TextMessage, []byte(constant.HeartbeatAck))
+				logger.Info().Msgf("Heartbeat ack sent to user %s", userAddress)
+				continue
+			}
+			// Handle join_room/leave_room
+			type RoomMsg struct {
+				Type string `json:"type"`
+				Room string `json:"room"`
+			}
+			var rm RoomMsg
+			if err := json.Unmarshal(message, &rm); err != nil {
+				logger.Error().Err(err).Msg("Failed to unmarshal room message")
+				return
+			}
+
+			if rm.Type != joinRoom && rm.Type != leaveRoom {
+				logger.Error().Msgf("Invalid room message type: %s", rm.Type)
+				return
+			}
+
+			if !h.ValidateRoom(rm.Room) {
+				conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
+				_ = conn.WriteMessage(
+					websocket.TextMessage,
+					[]byte("Invalid room: "+rm.Room),
+				)
+				continue
+			}
+
 			conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
-			conn.WriteMessage(websocket.TextMessage, []byte(constant.HeartbeatAck))
-			logger.Info().Msgf("Heartbeat ack sent to user %s", userAddress)
-			continue
+
+			switch rm.Type {
+			case joinRoom:
+				logger.Info().Msgf("[BE] FE %s %s %s", userAddress, joinRoom, rm.Room)
+				h.wsSvc.AddConnectionToRoom(rm.Room, conn)
+				_ = conn.WriteMessage(
+					websocket.TextMessage,
+					[]byte(joinedRoom+rm.Room),
+				)
+
+			case leaveRoom:
+				logger.Info().Msgf("[BE] FE %s %s %s", userAddress, leaveRoom, rm.Room)
+				h.wsSvc.RemoveConnectionFromRoom(rm.Room, conn)
+				_ = conn.WriteMessage(
+					websocket.TextMessage,
+					[]byte(leftRoom+rm.Room),
+				)
+			}
 		}
 	}
+}
+
+func (h *WSHandler) ValidateRoom(room string) bool {
+	allowedRooms := map[string]bool{
+		constant.OFFER_ROOM: true,
+	}
+
+	if _, ok := allowedRooms[room]; ok {
+		return true
+	}
+
+	logger.Warn().Msgf("Invalid room: %s", room)
+	return false
 }

@@ -3,7 +3,6 @@ package handlers
 import (
 	"net/http"
 	"socket-service/config"
-	"socket-service/constant"
 	"socket-service/logger"
 	"socket-service/models"
 	"socket-service/repository"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 )
 
 type HTTPHandler struct {
@@ -33,47 +33,47 @@ func (h *HTTPHandler) SaveEvent(c *gin.Context) {
 
 	sentToOnline := false
 
-	// Broadcast to all users if receive_address is empty
-	if event.ReceiveAddress == constant.ALL_RECEIVER {
-		allConns := h.wsSvc.GetAllConnections()
-		for _, conn := range allConns {
-			conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
-			if err := conn.WriteJSON(event); err != nil {
-				logger.Error().Err(err).Msg("Failed to broadcast event")
-			} else {
-				sentToOnline = true
-			}
-		}
-		if sentToOnline {
-			logger.Info().Msgf("Event broadcasted to %d connections", len(allConns))
-			c.JSON(http.StatusOK, "Event broadcasted successfully")
-		} else {
-			c.JSON(http.StatusOK, "No active connections to broadcast")
-		}
-		return
-	}
+	sentMap := make(map[*websocket.Conn]struct{})
 
-	// Send to specific user
 	if conns, ok := h.wsSvc.GetConnections(event.ReceiveAddress); ok {
 		for _, conn := range conns {
+			if _, sent := sentMap[conn]; sent {
+				continue
+			}
 			conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
 			if err := conn.WriteJSON(event); err != nil {
-				logger.Error().Err(err).Msg("Failed to send event to online user")
+				logger.Error().Err(err).Msg("Send to user failed")
 			} else {
-				logger.Info().Msgf("Event sent to online user %s", event.ReceiveAddress)
 				sentToOnline = true
+				sentMap[conn] = struct{}{}
 			}
 		}
 	}
+
+	if roomConns, ok := h.wsSvc.GetRoomConnections(event.ReceiveAddress); ok {
+		for _, conn := range roomConns {
+			if _, sent := sentMap[conn]; sent {
+				continue
+			}
+			conn.SetWriteDeadline(time.Now().Add(time.Duration(h.cfg.WebSocket.WriteWait) * time.Second))
+			if err := conn.WriteJSON(event); err != nil {
+				logger.Error().Err(err).Msg("Send to room failed")
+			} else {
+				sentToOnline = true
+				sentMap[conn] = struct{}{}
+			}
+		}
+	}
+
 	if !sentToOnline {
 		if err := h.repo.SaveEvent(&event); err != nil {
 			logger.Error().Err(err).Msg("Failed to save event")
 			c.JSON(http.StatusInternalServerError, "Failed to save event: "+err.Error())
 			return
 		}
-		c.JSON(http.StatusOK, "Users offline, event saved successfully")
-	} else {
-		c.JSON(http.StatusOK, "Event sent to online user successfully")
+		c.JSON(http.StatusOK, "Users offline, event saved")
+		return
 	}
 
+	c.JSON(http.StatusOK, "Event sent successfully")
 }
