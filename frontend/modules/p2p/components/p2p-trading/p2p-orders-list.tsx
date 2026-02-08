@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Countdown } from '../shared/count-down';
 import { NumberUtil } from '@/utils';
 import { getOrderStatusInfo } from '../../util';
+import { useUser } from '@/providers/AppProvider';
+import { TradeTypes } from '../../types';
 
 interface P2POrdersListProps {
   orders: P2POrder[] | undefined;
@@ -20,6 +22,7 @@ interface P2POrdersListProps {
 
 export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
   const router = useRouter();
+  const { user } = useUser();
   const columns: TTableColumn<P2POrder>[] = [
     {
       headerContent: 'ORDER ID',
@@ -34,60 +37,75 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
       align: 'center',
     },
     {
-      headerContent: 'SELLER',
+      headerContent: 'OFFER TYPE',
       renderCell: (order) => (
-        <AddressDisplay
-          addressClassName="text-brand-primary"
-          address={order.seller_wallet_address}
-          href={ROUTES.WALLET(order.seller_wallet_address)}
-        />
+        <Chip
+          variant={order.offer_type === TradeTypes.BUY ? 'outline-info' : 'outline-success'}
+          className="rounded-sm px-3 uppercase text-[10px] min-w-[60px] justify-center"
+        >
+          {order.offer_type}
+        </Chip>
       ),
+      skeletonContent: <Skeleton className="h-3 w-16" />,
+      align: 'center',
+    },
+    {
+      headerContent: 'YOUR ROLE',
+      renderCell: (order) => {
+        const isBuyer = user?.walletAddress === order.buyer_wallet_address;
+        const role = isBuyer ? 'Buyer' : 'Seller';
+        return (
+          <Chip
+            variant={isBuyer ? 'outline-success' : 'outline-info'}
+            className="rounded-sm px-3 text-[10px] min-w-[60px] justify-center"
+          >
+            {role}
+          </Chip>
+        );
+      },
+      skeletonContent: <Skeleton className="h-3 w-16" />,
+      align: 'center',
+    },
+    {
+      headerContent: 'COUNTERPARTY',
+      renderCell: (order) => {
+        const isBuyer = user?.walletAddress === order.buyer_wallet_address;
+        const counterpartyAddress = isBuyer ? order.seller_wallet_address : order.buyer_wallet_address;
+        return (
+          <AddressDisplay
+            addressClassName="text-brand-primary"
+            address={counterpartyAddress}
+            href={ROUTES.WALLET(counterpartyAddress)}
+          />
+        );
+      },
       skeletonContent: <Skeleton className="h-3 w-24" />,
       align: 'left',
     },
     {
-      headerContent: 'BUYER',
-      renderCell: (order) => (
-        <AddressDisplay address={order.buyer_wallet_address} href={ROUTES.WALLET(order.buyer_wallet_address)} />
-      ),
-      skeletonContent: <Skeleton className="h-3 w-24" />,
-      align: 'left',
-    },
-    {
-      headerContent: 'RATE',
-      renderCell: (order) => (
-        <div>
-          <div className="mt-1 text-sm text-gray-400">
-            <span className="text-brand-primary font-semibold">
-              1 {APP_CONFIG.CHAIN_SYMBOL} = {NumberUtil.formatWithCommas(order.price_rate)} VND
-            </span>
+      headerContent: 'AMOUNT',
+      renderCell: (order) => {
+        const isBuyer = user?.walletAddress === order.buyer_wallet_address;
+        const vndAmount = order.amount * order.price_rate;
+        return (
+          <div className="text-sm">
+            <p className="text-utility-success-600 text-left font-bold">
+              {NumberUtil.formatWithCommas(order.amount)} {APP_CONFIG.CHAIN_SYMBOL}
+            </p>
+            <p className="text-muted-foreground text-left text-[11px]">
+              {isBuyer ? 'You pay' : 'You receive'} {NumberUtil.formatWithCommas(vndAmount)} VND
+            </p>
           </div>
-        </div>
-      ),
-      skeletonContent: <Skeleton className="h-6 w-24" />,
-      align: 'left',
-    },
-    {
-      headerContent: 'AMOUNT/TOTAL AMOUNT',
-      renderCell: (order) => (
-        <div className="text-sm">
-          <p className="text-utility-success-600 text-left font-bold">
-            {new Intl.NumberFormat('en-US').format(Number(order.amount))} {APP_CONFIG.CHAIN_SYMBOL}
-          </p>
-          <p className="text-muted-foreground text-left text-xs">
-            {new Intl.NumberFormat('en-US').format(Number(order.amount * order.price_rate))} VND
-          </p>
-        </div>
-      ),
+        );
+      },
       skeletonContent: <Skeleton className="h-3 w-24" />,
       align: 'left',
     },
-
     {
       headerContent: 'STATUS',
       renderCell: (order) => (
         <div className="flex items-center gap-2">
-          <Chip variant={getOrderStatusInfo(order.status)} className="gap-1.5 rounded-sm">
+          <Chip variant={getOrderStatusInfo(order.status)} className="gap-1.5 rounded-sm px-3 text-[10px] min-w-[80px] justify-center">
             <span>{order.status}</span>
           </Chip>
         </div>

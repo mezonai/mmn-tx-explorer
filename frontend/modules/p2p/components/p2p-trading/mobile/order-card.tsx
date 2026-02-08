@@ -9,21 +9,49 @@ import { getOrderStatusInfo } from '@/modules/p2p/util';
 import { P2POrder } from '@/modules/p2p/types';
 import { useRouter } from 'next/navigation';
 import { NumberUtil } from '@/utils';
+import { useUser } from '@/providers/AppProvider';
+import { TradeTypes } from '@/modules/p2p/types';
 interface OrderMobileCardProps {
   order: P2POrder;
 }
 export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
   const router = useRouter();
+  const { user } = useUser();
+
+  const isBuyer = user?.walletAddress === order.buyer_wallet_address;
+  const role = isBuyer ? 'Buyer' : 'Seller';
+  const counterpartyAddress = isBuyer ? order.seller_wallet_address : order.buyer_wallet_address;
+  const vndAmount = order.amount * order.price_rate;
+
   return (
     <div className="bg-card border-border mb-2 space-y-4 rounded-xl border p-4 shadow-sm">
       <div className="flex items-start justify-between">
-        <div>
-          <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">Order ID</span>
-          <p className="text-sm font-bold">#{order.order_id}</p>
-          <p className="text-muted-foreground text-xs">Offer #{order.offer_id}</p>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">Order ID</span>
+            <p className="text-sm font-bold">#{order.order_id}</p>
+          </div>
+          <p className="text-muted-foreground text-xs leading-none">Offer #{order.offer_id}</p>
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            <Chip
+              variant={order.offer_type === TradeTypes.BUY ? 'outline-info' : 'outline-success'}
+              className="rounded-sm px-2 py-0.5 uppercase text-[9px] font-bold"
+            >
+              {order.offer_type}
+            </Chip>
+            <Chip
+              variant={isBuyer ? 'outline-success' : 'outline-info'}
+              className="rounded-sm px-2 py-0.5 text-[9px] font-bold"
+            >
+              {role}
+            </Chip>
+          </div>
         </div>
-        <div className="flex flex-col items-end gap-2">
-          <Chip variant={getOrderStatusInfo(order.status)} className="gap-1.5 rounded-sm px-2 py-0.5 text-[11px]">
+        <div className="flex flex-col items-end gap-2 text-right">
+          <Chip
+            variant={getOrderStatusInfo(order.status)}
+            className="rounded-sm px-2 py-0.5 text-[10px] font-bold min-w-[70px] justify-center"
+          >
             <span>{order.status}</span>
           </Chip>
           <Countdown expiresAt={order.expires_at} />
@@ -34,38 +62,30 @@ export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
 
       <div className="grid grid-cols-2 gap-x-2 gap-y-4">
         <div className="flex flex-col">
-          <span className="text-muted-foreground text-[10px] font-bold uppercase">Seller</span>
+          <span className="text-muted-foreground text-[10px] font-bold uppercase tracking-tight">Counterparty</span>
           <AddressDisplay
             addressClassName="text-brand-primary text-sm"
-            address={order.seller_wallet_address}
-            href={ROUTES.WALLET(order.seller_wallet_address)}
+            address={counterpartyAddress}
+            href={ROUTES.WALLET(counterpartyAddress)}
           />
         </div>
 
         <div className="flex flex-col">
-          <span className="text-muted-foreground text-[10px] font-bold uppercase">Buyer</span>
-          <AddressDisplay
-            addressClassName="text-sm"
-            address={order.buyer_wallet_address}
-            href={ROUTES.WALLET(order.buyer_wallet_address)}
-          />
+          <span className="text-muted-foreground text-[10px] font-bold uppercase tracking-tight text-right">Rate</span>
+          <p className="text-brand-primary text-right text-xs font-semibold">
+            1 {APP_CONFIG.CHAIN_SYMBOL} = {NumberUtil.formatWithCommas(order.price_rate)} VND
+          </p>
         </div>
 
         <div className="bg-secondary/20 col-span-2 flex flex-col rounded-lg p-3">
-          <span className="text-muted-foreground mb-1 text-[10px] font-bold uppercase">Amount / Total</span>
+          <span className="text-muted-foreground mb-1 text-[10px] font-bold uppercase">Amount</span>
           <div className="flex items-end justify-between">
             <div>
-              <p className="text-utility-success-600 text-base leading-none font-bold">
-                {new Intl.NumberFormat('en-US').format(Number(order.amount))} {APP_CONFIG.CHAIN_SYMBOL}
+              <p className="text-utility-success-600 text-base font-bold leading-none">
+                {NumberUtil.formatWithCommas(order.amount)} {APP_CONFIG.CHAIN_SYMBOL}
               </p>
-              <p className="text-muted-foreground mt-1 text-xs">
-                {new Intl.NumberFormat('en-US').format(Number(order.amount * order.price_rate))} VND
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-muted-foreground mb-1 text-[10px] leading-none font-bold uppercase">Rate</p>
-              <p className="text-brand-primary text-xs font-semibold">
-                1 {APP_CONFIG.CHAIN_SYMBOL} = {NumberUtil.formatWithCommas(order.price_rate)} VND
+              <p className="text-muted-foreground mt-1 text-[11px]">
+                {isBuyer ? 'You pay' : 'You receive'} {NumberUtil.formatWithCommas(vndAmount)} VND
               </p>
             </div>
           </div>

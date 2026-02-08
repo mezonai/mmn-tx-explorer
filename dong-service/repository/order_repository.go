@@ -210,7 +210,7 @@ func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAd
 		LEFT JOIN %s.offers of ON o.offer_id = of.offer_id
 		WHERE o.buyer_wallet_address = $1 OR of.seller_wallet_address = $1
 		ORDER BY o.created_at DESC
-	`, r.dongSchema, r.dongSchema)
+	`, r.dongSchema)
 
 	if pagination != nil {
 		if limit, ok := pagination["limit"].(int); ok && limit > 0 {
@@ -256,9 +256,8 @@ func (r *OrderRepository) CountOrdersByWalletAddress(ctx context.Context, wallet
 	query := fmt.Sprintf(`
 		SELECT COUNT(*) 
 		FROM %s.orders o
-		LEFT JOIN %s.offers of ON o.offer_id = of.offer_id
-		WHERE o.buyer_wallet_address = $1 OR of.seller_wallet_address = $1
-	`, r.dongSchema, r.dongSchema)
+		WHERE o.buyer_wallet_address = $1 OR o.seller_wallet_address = $1
+	`, r.dongSchema)
 
 	var total int64
 	err := r.db.QueryRowContext(ctx, query, walletAddress).Scan(&total)
