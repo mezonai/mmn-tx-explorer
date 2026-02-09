@@ -15,6 +15,7 @@ import (
 	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/services"
 	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
 	"github.com/rs/zerolog/log"
 )
@@ -1651,6 +1652,7 @@ func (p *PostgresConnector) insertTransactionsTx(
 				WHEN is_new
 					AND transaction_extra_info_type = $%d
 					AND status = $%d
+					AND extra_info IS JSON
 					AND extra_info::jsonb ? 'UserSenderId'
 				THEN value::numeric
 				ELSE 0
@@ -1659,6 +1661,7 @@ func (p *PostgresConnector) insertTransactionsTx(
 				WHEN is_new
 					AND transaction_extra_info_type = $%d
 					AND status = $%d
+					AND extra_info IS JSON
 					AND NOT (extra_info::jsonb ? 'UserSenderId')
 				THEN value::numeric
 				ELSE 0
@@ -1669,10 +1672,12 @@ func (p *PostgresConnector) insertTransactionsTx(
 					WHEN is_new
 						AND transaction_extra_info_type = $%d
 						AND status = $%d
+						AND extra_info IS JSON
 						AND extra_info::jsonb ? 'UserSenderId'
 					THEN 1
 
 					WHEN is_new
+						AND extra_info IS JSON
 						AND extra_info::jsonb ? 'action'
 						AND extra_info::jsonb ->> 'action' = 'offer-canceled'
 					THEN -1
@@ -2639,6 +2644,10 @@ func (p *PostgresConnector) updateOfferStatus(
 	}
 
 	log.Info().Int("offers_updated", len(validOfferIDs)).Msg("batch update offer status completed")
+
+	services.SendSocketEventDirect(services.OFFER_ROOM, services.OFFER_LIST_REFRESH, map[string]any{
+		"action": "updated p2p offer status",
+	})
 
 	return nil
 }

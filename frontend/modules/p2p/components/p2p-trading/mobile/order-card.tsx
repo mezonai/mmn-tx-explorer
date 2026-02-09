@@ -10,7 +10,6 @@ import BigNumber from 'bignumber.js';
 import { getOrderStatusInfo } from '@/modules/p2p/util';
 import { P2POrder } from '@/modules/p2p/types';
 import { useRouter } from 'next/navigation';
-
 interface OrderMobileCardProps {
   order: P2POrder;
 }

@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { TTableColumn } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useEffect, useRef, useState } from 'react';
 import { ROUTES } from '@/configs/routes.config';
 import { AddressDisplay, Chip } from '@/components/shared';
 import { P2POffer } from '../../types';
@@ -16,16 +17,84 @@ import { OFFERS_STATUS } from '../../constants';
 import { ShareOfferModal } from './share-offer-modal';
 import { TriangleAlert } from 'lucide-react';
 import { NumberUtil } from '@/utils';
+import { cn } from '@/lib/utils';
 import BigNumber from 'bignumber.js';
 
 interface P2POffersTableProps {
   offers: P2POffer[] | undefined;
   isLoading?: boolean;
+  isRefreshing?: boolean;
+  onCancelStart?: (offerId: string) => void;
 }
 
-export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps) => {
+export const P2POffersTabs = ({
+  offers,
+  isLoading = false,
+  isRefreshing = false,
+  onCancelStart,
+}: P2POffersTableProps) => {
   const router = useRouter();
   const { user } = useUser();
+
+  const [showOverlay, setShowOverlay] = useState(false);
+  const hideTimeoutRef = useRef<number | null>(null);
+
+  // Show overlay when refreshing (shared timeout ref)
+  useEffect(() => {
+    if (isRefreshing) {
+      setShowOverlay(true);
+      if (hideTimeoutRef.current !== null) {
+        clearTimeout(hideTimeoutRef.current);
+        hideTimeoutRef.current = null;
+      }
+    } else {
+      hideTimeoutRef.current = window.setTimeout(() => {
+        setShowOverlay(false);
+        hideTimeoutRef.current = null;
+      }, 300);
+    }
+
+    return () => {
+      if (hideTimeoutRef.current !== null) {
+        clearTimeout(hideTimeoutRef.current);
+        hideTimeoutRef.current = null;
+      }
+    };
+  }, [isRefreshing]);
+
+  // Show overlay briefly when new offers arrive
+  const prevOfferIdsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!offers) {
+      prevOfferIdsRef.current = new Set();
+      return;
+    }
+
+    const prevIds = prevOfferIdsRef.current;
+    const currIds = new Set(offers.map((o) => o.offer_id));
+
+    let added = false;
+    currIds.forEach((id) => {
+      if (!prevIds.has(id)) added = true;
+    });
+
+    prevOfferIdsRef.current = currIds;
+
+    // If new offers added and not already refreshing, show overlay briefly
+    if (added && !isRefreshing) {
+      setShowOverlay(true);
+      if (hideTimeoutRef.current !== null) {
+        clearTimeout(hideTimeoutRef.current);
+      }
+      hideTimeoutRef.current = window.setTimeout(() => {
+        setShowOverlay(false);
+        hideTimeoutRef.current = null;
+      }, 800);
+    }
+  }, [offers, isRefreshing]);
+
+  const rows = offers ?? [];
+
   const rawColumns: (TTableColumn<P2POffer> | null)[] = [
     {
       headerContent: 'SELLER',
@@ -137,7 +206,6 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
                   <span className="text-xs font-bold tracking-wider whitespace-nowrap uppercase">
                     Trading in Progress
                   </span>
-
                 </div>
               </div>
             ) : user && offer.seller_user_id !== user?.id ? (
@@ -145,36 +213,36 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
                 onClick={() => {
                   router.push(ROUTES.P2P_TRADING_ROOM(offer.offer_id, 'offer'));
                 }}
-                className="w-[160px] rounded-lg bg-emerald-500 px-6 py-2 text-white transition hover:bg-emerald-600 whitespace-nowrap"
+                className="w-[160px] rounded-lg bg-emerald-500 px-6 py-2 whitespace-nowrap text-white transition hover:bg-emerald-600"
               >
                 Buy Mezon đồng
               </Button>
             ) : offer.status === OFFERS_STATUS.CANCELED ? (
-              <Chip variant="error" className="w-[160px] rounded-lg justify-center py-2">
+              <Chip variant="error" className="w-[160px] justify-center rounded-lg py-2">
                 CANCELED
               </Chip>
             ) : offer.status === OFFERS_STATUS.COMPLETED ? (
-              <Chip variant="success" className="w-[160px] rounded-lg justify-center py-2">
+              <Chip variant="success" className="w-[160px] justify-center rounded-lg py-2">
                 COMPLETED
               </Chip>
             ) : offer.status === OFFERS_STATUS.FAILED ? (
-              <Chip variant="error" className="w-[160px] rounded-lg justify-center py-2">
+              <Chip variant="error" className="w-[160px] justify-center rounded-lg py-2">
                 FAILED
               </Chip>
             ) : offer.status === OFFERS_STATUS.OPEN ? (
-              <Chip variant="warning" className="w-[160px] rounded-lg justify-center py-2">
+              <Chip variant="warning" className="w-[160px] justify-center rounded-lg py-2">
                 OPEN
               </Chip>
             ) : offer.status === OFFERS_STATUS.CONFIRMED ? (
               <div className="flex items-center gap-2">
-                <div className="w-9 opacity-0 pointer-events-none" aria-hidden="true" />
+                <div className="pointer-events-none w-9 opacity-0" aria-hidden="true" />
                 <div className="w-[160px]">
-                  <CancelConfirmDialog offer={offer} />
+                  <CancelConfirmDialog offer={offer} onCancelStart={onCancelStart} />
                 </div>
                 <ShareOfferModal offer={offer} />
               </div>
             ) : (
-              <Chip variant="default" className="w-[160px] rounded-lg justify-center py-2">
+              <Chip variant="default" className="w-[160px] justify-center rounded-lg py-2">
                 {offer.status}
               </Chip>
             )}
@@ -188,12 +256,24 @@ export const P2POffersTabs = ({ offers, isLoading = false }: P2POffersTableProps
   const columns = rawColumns.filter((col): col is TTableColumn<P2POffer> => col !== null);
 
   return (
-    <Card className="bg-card overflow-hidden border-gray-300 dark:border-gray-800">
+    <Card className="bg-card relative overflow-hidden border-gray-300 dark:border-gray-800">
+      {/* Refresh overlay */}
+      {showOverlay && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-6 z-50 flex items-center justify-center p-0 md:right-auto md:left-6 md:justify-start">
+          <div className="flex items-center gap-2 rounded-md bg-white/85 px-3 py-1 shadow-lg backdrop-blur-sm dark:bg-black/70">
+            <div className="h-3 w-3 animate-pulse rounded-full bg-emerald-500" />
+            <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Refreshing offers</div>
+          </div>
+        </div>
+      )}
+
       <div className="overflow-x-auto">
         <Table<P2POffer>
           columns={columns}
-          rows={offers}
+          rows={rows}
+          getRowKey={(r) => r.offer_id}
           isLoading={isLoading}
+          isRefreshing={isRefreshing}
           classNameLayout="rounded-xl"
           nullDataContext="No offers match your filters"
         />
