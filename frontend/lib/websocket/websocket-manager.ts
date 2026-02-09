@@ -170,6 +170,14 @@ export class WebSocketManager {
     }
   }
 
+  sendRaw(data: string) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(data);
+      return true;
+    }
+    return false;
+  }
+
   disconnect() {
     if (this.ws) {
       this.shouldReconnect = false;
@@ -263,3 +271,6 @@ export const getWebSocketManager = (): WebSocketManager => {
   }
   return wsManagerInstance;
 };
+
+// Convenience singleton instance for ease of use
+export const wsManager = getWebSocketManager();

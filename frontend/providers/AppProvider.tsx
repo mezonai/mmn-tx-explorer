@@ -14,7 +14,7 @@ import {
   processAndStoreUser,
 } from '@/modules/auth';
 import axios from 'axios';
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { IZkProof, IEphemeralKeyPair } from 'mmn-client-js';
@@ -59,21 +59,33 @@ export function AppProvider({ children }: AppProviderProps) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const wsManager = useWebSocket();
-  const resetSession = () => {
+  const resetSession = useCallback(() => {
     clearAuthStorage();
     setUser(null);
     setZkProof(null);
     setKeypair(null);
     setLightClient(null);
     setIsAuthenticated(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    AuthenticationService.onSessionExpired = () => {
+      resetSession();
+      toast.error('Session expired, please log in again.');
+    };
+
+    return () => {
+      AuthenticationService.onSessionExpired = null;
+    };
+  }, [resetSession]);
+
   useEffect(() => {
     const localTokenStr = localStorage.getItem(STORAGE_KEYS.TOKEN);
     const localToken = localTokenStr ? safeJsonParse(localTokenStr) : null;
 
     const lightClientStr = localStorage.getItem(STORAGE_KEYS.LIGHT_CLIENT);
-    const lightClientData = lightClientStr ? safeJsonParse(lightClientStr) : null;
-    if (lightClientData) {
+    const lightClient = lightClientStr ? safeJsonParse(lightClientStr) : null;
+    if (lightClient) {
       (async () => {
         try {
           const light_client = LightClient.initClient({
