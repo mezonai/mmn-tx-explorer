@@ -98,6 +98,8 @@ export function AppProvider({ children }: AppProviderProps) {
           setLightClient(light_client);
         } catch (err) {
           console.error(err);
+          resetSession();
+          toast.error('Session expired, please log in again.');
         }
       })();
     }
