@@ -13,9 +13,15 @@ interface SellerConfirmButtonProps {
   order: P2POrder;
   onConfirm?: () => Promise<void> | void;
   disabled?: boolean;
+  buttonText?: string;
 }
 
-export const SellerConfirmButton = ({ order, onConfirm, disabled = false }: SellerConfirmButtonProps) => {
+export const SellerConfirmButton = ({
+  order,
+  onConfirm,
+  disabled = false,
+  buttonText,
+}: SellerConfirmButtonProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
@@ -53,7 +59,9 @@ export const SellerConfirmButton = ({ order, onConfirm, disabled = false }: Sell
           className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-500 px-5 py-6 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-600 md:text-base"
         >
           <CheckCircle2 className="h-5 w-5" />
-          {isSubmitting ? 'Confirming...' : `Confirm money received, release ${APP_CONFIG.CHAIN_SYMBOL}`}
+          {isSubmitting
+            ? 'Confirming...'
+            : buttonText || `Confirm money received, release ${APP_CONFIG.CHAIN_SYMBOL}`}
         </Button>
       </div>
       <div className="text-muted-foreground mt-2 px-4 text-center text-sm">

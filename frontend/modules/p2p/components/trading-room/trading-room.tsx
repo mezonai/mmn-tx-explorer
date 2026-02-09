@@ -98,21 +98,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
 
     if (!user?.walletAddress || !order) return null;
 
-    const isOrderCreator = order.buyer_wallet_address === user.walletAddress;
-    const isOfferCreator = (order.seller_wallet_address || offer?.seller_wallet_address) === user.walletAddress;
-
-    // determine actual role based on offer_type
-    const offerType = order.offer_type || offer?.side;
-
-    if (offerType === TradeTypes.BUY) {
-      // Creator = Buyer, Responder = Seller
-      if (isOfferCreator) return P2P_TRADING_ROLE.BUYER;
-      if (isOrderCreator) return P2P_TRADING_ROLE.SELLER;
-    } else {
-      // Creator = Seller, Responder = Buyer
-      if (isOfferCreator) return P2P_TRADING_ROLE.SELLER;
-      if (isOrderCreator) return P2P_TRADING_ROLE.BUYER;
-    }
+    if (order.buyer_wallet_address === user.walletAddress) return P2P_TRADING_ROLE.BUYER;
+    if (order.seller_wallet_address === user.walletAddress) return P2P_TRADING_ROLE.SELLER;
 
     return P2P_TRADING_ROLE.SELLER; // fallback
   }, [user?.walletAddress, order, isOfferMode, offer, sideParam]);
@@ -124,6 +111,20 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   }, [order?.status]);
 
   const effectiveOrder: P2POrder = localStatus ? { ...order!, status: localStatus } : order!;
+
+  const buyerButtonText = useMemo(() => {
+    if (effectiveOrder?.offer_type === TradeTypes.BUY) {
+      return 'Tôi xác nhận muốn mua và đã chuyển VND, thông báo đến người bán';
+    }
+    return 'I have transferred, notify the seller';
+  }, [effectiveOrder?.offer_type]);
+
+  const sellerButtonText = useMemo(() => {
+    if (effectiveOrder?.offer_type === TradeTypes.BUY) {
+      return 'Tôi xác nhận đã nhận được VND và release MZD';
+    }
+    return `Confirm money received, release ${APP_CONFIG.CHAIN_SYMBOL}`;
+  }, [effectiveOrder?.offer_type]);
 
   const createOrderEmbed = (currentOrder: P2POrder, customTitle?: string, customColor?: string) => {
     const mzdAmount = NumberUtil.formatWithCommas(currentOrder.amount);
@@ -316,7 +317,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
             </Button>
             <div>
               <h1 className="text-muted-foreground flex items-center gap-1 text-sm font-bold">
-                Buy {APP_CONFIG.CHAIN_SYMBOL} from{' '}
+                {offer?.side === TradeTypes.BUY ? 'Sell' : 'Buy'} {APP_CONFIG.CHAIN_SYMBOL}{' '}
+                {offer?.side === TradeTypes.BUY ? 'to' : 'from'}{' '}
                 <AddressDisplay
                   addressClassName="text-brand-primary"
                   address={offer?.seller_wallet_address}
@@ -383,8 +385,20 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
           <ProgressSteps order={effectiveOrder} />
 
           {userRole === P2P_TRADING_ROLE.BUYER && effectiveOrder.status === OrderStatus.PENDING && (
-            <p className="text-muted-foreground mb-4 text-sm">Waiting for the seller to confirm</p>
+            <p className="text-muted-foreground mb-4 text-sm">
+              {effectiveOrder.offer_type === TradeTypes.BUY
+                ? `Đang đợi Seller xác nhận đã nhận VND và release ${APP_CONFIG.CHAIN_SYMBOL}`
+                : 'Waiting for the seller to confirm'}
+            </p>
           )}
+
+          {userRole === P2P_TRADING_ROLE.SELLER &&
+            effectiveOrder.status === OrderStatus.OPEN &&
+            effectiveOrder.offer_type === TradeTypes.BUY && (
+              <p className="text-muted-foreground mb-4 text-sm font-medium italic">
+                Đang đợi Buyer phản hồi xác nhận thanh toán.
+              </p>
+            )}
 
           {(effectiveOrder.status === OrderStatus.COMPLETED || effectiveOrder.status === OrderStatus.CONFIRMED) && (
             <div className="mb-4 rounded-lg border border-green-500/20 bg-green-500/10 p-4 text-center">
@@ -395,7 +409,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
           <div className="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-12">
             <div className="lg:col-span-8">
               <OrderInfoCard order={effectiveOrder} />
-              {order && order.bank_info && order.transfer_code && (
+              {userRole === P2P_TRADING_ROLE.BUYER && order && order.bank_info && order.transfer_code && (
                 <BankInfoCard
                   bank_info={order.bank_info}
                   transfer_code={order.transfer_code}
@@ -409,17 +423,23 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
                     order={effectiveOrder}
                     nextStatus={OrderStatus.PENDING}
                     onStatusUpdated={handlePaymentStatusUpdated}
+                    buttonText={buyerButtonText}
                     disabled={isExpired}
                   />
                 )}
                 {userRole === P2P_TRADING_ROLE.SELLER && (
-                  <SellerConfirmButton order={effectiveOrder} onConfirm={handleSellerConfirm} disabled={isExpired} />
+                  <SellerConfirmButton
+                    order={effectiveOrder}
+                    onConfirm={handleSellerConfirm}
+                    buttonText={sellerButtonText}
+                    disabled={isExpired}
+                  />
                 )}
               </div>
             </div>
 
             <div className="lg:col-span-4">
-              {order && order.bank_info && (
+              {userRole === P2P_TRADING_ROLE.BUYER && order && order.bank_info && (
                 <QrCodeCard
                   bank_info={order.bank_info}
                   transfer_code={order.transfer_code}
