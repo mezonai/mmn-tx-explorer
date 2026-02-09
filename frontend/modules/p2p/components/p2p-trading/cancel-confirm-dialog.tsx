@@ -10,9 +10,10 @@ import BigNumber from 'bignumber.js';
 
 interface CancelConfirmDialogProps {
   offer: P2POffer;
+  onCancelStart?: (offerId: string) => void;
 }
 
-export const CancelConfirmDialog = ({ offer }: CancelConfirmDialogProps) => {
+export const CancelConfirmDialog = ({ offer, onCancelStart }: CancelConfirmDialogProps) => {
   const [open, setOpen] = useState(false);
   const { mutateAsync: cancelOfferAsync, isPending } = useCancelOffer();
   const router = useRouter();
@@ -22,6 +23,15 @@ export const CancelConfirmDialog = ({ offer }: CancelConfirmDialogProps) => {
   const handleCancel = async () => {
     if (offer) {
       try {
+        // Notify parent that cancel started (useful to show overlay)
+        if (onCancelStart) {
+          try {
+            onCancelStart(offer.offer_id);
+          } catch {
+            // ignore
+          }
+        }
+
         await cancelOfferAsync(offer.offer_id);
         toast.success('Offer cancelled successfully');
         setOpen(false);

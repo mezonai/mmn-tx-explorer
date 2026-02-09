@@ -51,7 +51,7 @@ export function ClaimRedEnvelopeProvider({ children }: { children: ReactNode }) 
     };
 
     try {
-      await claimEnvelopeMutation.mutateAsync({ data: requestData });
+      await claimEnvelopeMutation.mutateAsync({ id: redEnvelopeId, data: requestData });
     } catch (error) {
       console.error('Claim failed:', error);
     }
