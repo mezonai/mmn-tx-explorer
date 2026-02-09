@@ -56,11 +56,7 @@ export function AddressFilterDropdown({
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className={cn(
-            'h-10 gap-2',
-            isActive && 'border-brand-primary text-brand-primary',
-            className
-          )}
+          className={cn('h-10 gap-2', isActive && 'border-brand-primary text-brand-primary', className)}
         >
           <Filter className="h-4 w-4" />
           {label}
