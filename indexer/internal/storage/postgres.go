@@ -2313,9 +2313,9 @@ func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
 
 	var totalP2POfferAvailable float64
 	err = p.db.QueryRowContext(ctx, `
-		SELECT COALESCE(SUM(amount), 0)
-		FROM dong_schema.offers
-		WHERE status = 'CONFIRMED' AND amount > 0
+		SELECT COALESCE(SUM(available_amount), 0)
+		FROM dong_schema.p2p_offers
+		WHERE status = 'CONFIRMED' AND available_amount > 0
 	`).Scan(&totalP2POfferAvailable)
 	if err != nil {
 		return fmt.Errorf("failed to calculate total_p2p_offer_available: %w", err)
@@ -2323,7 +2323,7 @@ func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
 
 	var totalOffers int64
 	err = p.db.QueryRowContext(ctx, `
-		SELECT COUNT(*) FROM dong_schema.offers WHERE status = 'CONFIRMED'
+		SELECT COUNT(*) FROM dong_schema.p2p_offers WHERE status = 'CONFIRMED'
 	`).Scan(&totalOffers)
 	if err != nil {
 		return fmt.Errorf("failed to count total_offers: %w", err)
@@ -2524,9 +2524,9 @@ func (p *PostgresConnector) updateOfferStatus(
         offer_id,
         seller_wallet_address,
         COALESCE(intermediary_wallet_address, ''),
-        amount,
+        available_amount,
         status
-    FROM dong_schema.offers
+    FROM dong_schema.p2p_offers
     WHERE offer_id = ANY($1::bigint[])
       AND status = 'OPEN'
     FOR UPDATE
@@ -2611,7 +2611,7 @@ func (p *PostgresConnector) updateOfferStatus(
 	}
 
 	queryUpdate := `
-    UPDATE dong_schema.offers o
+    UPDATE dong_schema.p2p_offers o
     SET
         status = 'CONFIRMED',
         transaction_hash = v.tx_hash,

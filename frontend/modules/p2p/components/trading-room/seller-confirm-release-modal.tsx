@@ -4,13 +4,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { APP_CONFIG } from '@/configs/app.config';
-import { formatCurrency } from '@/modules/p2p/util';
+import BigNumber from 'bignumber.js';
 
 interface SellerConfirmReleaseModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    amountToRelease: number;
-    amountReceived: number;
+    amountToRelease: string | number;
+    amountReceived: string | number;
     onConfirm: () => void;
     isLoading?: boolean;
 }
@@ -44,14 +44,14 @@ export const SellerConfirmReleaseModal = ({
                     <div className="flex items-center justify-between border-b border-border pb-3">
                         <span className="text-xs text-muted-foreground">Amount to Release</span>
                         <span className="text-lg font-bold text-foreground">
-                            {formatCurrency(amountToRelease)} <span className="text-sm text-muted-foreground">{APP_CONFIG.CHAIN_SYMBOL}</span>
+                            {new BigNumber(amountToRelease).toFormat()} <span className="text-sm text-muted-foreground">{APP_CONFIG.CHAIN_SYMBOL}</span>
                         </span>
                     </div>
 
                     <div className="flex items-center justify-between border-b border-border pb-3">
                         <span className="text-xs text-muted-foreground">Amount You Received</span>
                         <span className="text-lg font-bold text-green-400">
-                            {formatCurrency(amountReceived)} <span className="text-sm">VND</span>
+                            {new BigNumber(amountReceived).toFormat()} <span className="text-sm">VND</span>
                         </span>
                     </div>
                 </div>

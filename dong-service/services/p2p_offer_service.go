@@ -9,6 +9,7 @@ import (
 	"dong-service/logger"
 	"dong-service/models"
 	"dong-service/repository"
+	"dong-service/types"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -136,12 +137,12 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		SellerUserID:              sellerUserID,
 		Side:                      req.Side,
 		Symbol:                    req.Symbol,
-		Amount:                    amountInt,
-		TotalAmount:               amountInt,
-		PayableAmount:             priceInt,
+		AvailableAmount:           types.NewBigIntString(amountInt),
+		TotalAmount:               types.NewBigIntString(amountInt),
+		PayableAmount:             types.NewBigIntString(priceInt),
 		Status:                    constants.TradingOpen,
 		BankInfo:                  bankInfoStr,
-		Limit:                     &models.OfferLimit{Min: limitMinInt, Max: limitMaxInt},
+		Limit:                     &models.OfferLimit{Min: types.NewBigIntString(limitMinInt), Max: types.NewBigIntString(limitMaxInt)},
 	}
 
 	var priceRateFloat *float64
@@ -161,7 +162,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		computed := float64(amountInt) * (*priceRateFloat)
 		priceInt = int64(math.Round(computed))
 	}
-	offer.PayableAmount = priceInt
+	offer.PayableAmount = types.NewBigIntString(priceInt)
 
 	if err = s.repo.CreateOffer(ctx, offer, tx); err != nil {
 		return nil, err
@@ -280,7 +281,7 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 		offer.Status == constants.TradingConfirmed &&
 			offer.IntermediaryWalletAddress != nil &&
 			*offer.IntermediaryWalletAddress != "" &&
-			offer.Amount > 0 &&
+			offer.AvailableAmount.Sign() > 0 &&
 			s.blockchain != nil &&
 			s.walletRepo != nil
 
@@ -298,7 +299,7 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 			intermediaryWallet.EncryptedPrivateKey,
 			*offer.IntermediaryWalletAddress,
 			offer.SellerWalletAddress,
-			offer.Amount,
+			offer.AvailableAmount.Int64(),
 			constants.TextDataP2PTrading,
 			constants.ExtraInfoP2PTradingOfferCanceled,
 		)
@@ -354,7 +355,7 @@ func (s *OfferService) releaseIntermediaryWallet(ctx context.Context, walletAddr
 
 func (s *OfferService) ReleaseIntermediaryWalletIfOfferComplete(ctx context.Context, offerID int64, tx *sql.Tx) {
 	updatedOffer, getErr := s.repo.GetOfferByIDForUpdate(ctx, offerID, tx)
-	if getErr == nil && updatedOffer != nil && updatedOffer.Amount == 0 {
+	if getErr == nil && updatedOffer != nil && updatedOffer.AvailableAmount.Sign() == 0 {
 		if updatedOffer.IntermediaryWalletAddress != nil && *updatedOffer.IntermediaryWalletAddress != "" {
 			s.releaseIntermediaryWallet(ctx, *updatedOffer.IntermediaryWalletAddress)
 		}
