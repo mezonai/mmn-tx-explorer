@@ -9,6 +9,7 @@ import { OrderStatus } from '../../types';
 import { SellerConfirmReleaseModal } from './seller-confirm-release-modal';
 import { toast } from 'sonner';
 import BigNumber from 'bignumber.js';
+import { NumberUtil } from '@/utils';
 
 interface SellerConfirmButtonProps {
   order: P2POrder;
@@ -63,13 +64,13 @@ export const SellerConfirmButton = ({ order, onConfirm, disabled = false }: Sell
 
       {
         (() => {
-          const amount = new BigNumber(order.amount);
+          const amount = NumberUtil.scaleDownBigNumber(new BigNumber(order.amount));
           const amountReceived = amount.multipliedBy(order.price_rate);
           return (
             <SellerConfirmReleaseModal
               open={showConfirmModal}
               onOpenChange={setShowConfirmModal}
-              amountToRelease={order.amount}
+              amountToRelease={amount.toString()}
               amountReceived={amountReceived.toString()}
               onConfirm={handleFinalConfirm}
               isLoading={isSubmitting}

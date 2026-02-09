@@ -2311,15 +2311,20 @@ func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
 		return fmt.Errorf("failed to count give_coffee transactions: %w", err)
 	}
 
-	var totalP2POfferAvailable float64
+	var totalP2POfferAvailableStr string
 	err = p.db.QueryRowContext(ctx, `
 		SELECT COALESCE(SUM(available_amount), 0)
 		FROM dong_schema.p2p_offers
 		WHERE status = 'CONFIRMED' AND available_amount > 0
-	`).Scan(&totalP2POfferAvailable)
+	`).Scan(&totalP2POfferAvailableStr)
 	if err != nil {
 		return fmt.Errorf("failed to calculate total_p2p_offer_available: %w", err)
 	}
+
+	totalP2POfferAvailableBig := new(big.Rat)
+	totalP2POfferAvailableBig.SetString(totalP2POfferAvailableStr)
+	totalP2POfferAvailableBig.Quo(totalP2POfferAvailableBig, big.NewRat(1_000_000, 1))
+	totalP2POfferAvailable := totalP2POfferAvailableBig.FloatString(0)
 
 	var totalOffers int64
 	err = p.db.QueryRowContext(ctx, `
@@ -2542,7 +2547,7 @@ func (p *PostgresConnector) updateOfferStatus(
 		OfferID            int64
 		SellerWallet       string
 		IntermediaryWallet string
-		Amount             int64
+		Amount             string
 		Status             string
 	}
 
@@ -2593,8 +2598,11 @@ func (p *PostgresConnector) updateOfferStatus(
 			continue
 		}
 
-		valueInt, err := strconv.ParseInt(t.Value, 10, 64)
-		if err != nil || valueInt != o.Amount*P2PMultiplier {
+		transactionValueBig := new(big.Int)
+		offerValueBig := new(big.Int)
+		transactionValueBig.SetString(t.Value, 10)
+		offerValueBig.SetString(o.Amount, 10)
+		if transactionValueBig.Cmp(offerValueBig) != 0 {
 			log.Error().
 				Int64("offer_id", offerID).
 				Str("tx_hash", t.Hash).

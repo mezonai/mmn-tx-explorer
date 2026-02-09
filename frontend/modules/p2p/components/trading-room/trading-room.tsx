@@ -26,6 +26,7 @@ import { ChatSidebar } from './chat-sidebar';
 import { STORAGE_KEYS } from '@/constant';
 import { NumberUtil } from '@/utils';
 import { EMBED_MESSAGE_THEME, P2P_TRADING_ROLE } from '../../constants';
+import BigNumber from 'bignumber.js';
 
 interface TradingRoomProps {
   orderId: string;
@@ -84,8 +85,9 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   const effectiveOrder: P2POrder = localStatus ? { ...order!, status: localStatus } : order!;
 
   const createOrderEmbed = (currentOrder: P2POrder, customTitle?: string, customColor?: string) => {
-    const mzdAmount = NumberUtil.formatWithCommas(currentOrder.amount);
-    const vndAmount = NumberUtil.formatWithCommas(currentOrder.amount * currentOrder.price_rate);
+    const displayAmount = NumberUtil.scaleDownBigNumber(new BigNumber(currentOrder.amount));
+    const mzdAmount = displayAmount.toFormat();
+    const vndAmount = displayAmount.multipliedBy(currentOrder.price_rate).toFormat();
 
     const fullUrl = process.env.NEXT_PUBLIC_CHAT_APP_ZK_API_URL || window.location.origin;
     const domain = new URL(fullUrl).origin;

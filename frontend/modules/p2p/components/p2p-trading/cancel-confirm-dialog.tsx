@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { APP_CONFIG } from '@/configs/app.config';
 import BigNumber from 'bignumber.js';
+import { NumberUtil } from '@/utils/number.util';
 
 interface CancelConfirmDialogProps {
   offer: P2POffer;
@@ -17,7 +18,7 @@ export const CancelConfirmDialog = ({ offer, onCancelStart }: CancelConfirmDialo
   const [open, setOpen] = useState(false);
   const { mutateAsync: cancelOfferAsync, isPending } = useCancelOffer();
   const router = useRouter();
-  const amount = new BigNumber(offer.amount);
+  const amount = NumberUtil.scaleDownBigNumber(new BigNumber(offer.amount));
   const totalVND = offer.price_rate > 0 ? amount.multipliedBy(offer.price_rate) : new BigNumber(0);
 
   const handleCancel = async () => {
@@ -101,7 +102,7 @@ export const CancelConfirmDialog = ({ offer, onCancelStart }: CancelConfirmDialo
                   <div>
                     <label className="text-muted-foreground mb-1 block text-[10px] sm:text-xs">Minimum</label>
                     <div className="bg-input/30 text-foreground flex w-full justify-between rounded border px-1.5 py-1 text-xs sm:px-2 sm:py-1.5 sm:text-sm">
-                      {new BigNumber(offer.limit.min).toFormat()}
+                      {NumberUtil.formatAndScaleDownBigNumber(new BigNumber(offer.limit.min))}
                       <span className="pt-0.5 text-[10px] text-gray-500 sm:text-xs">{APP_CONFIG.CHAIN_SYMBOL}</span>
                     </div>
                   </div>
@@ -109,7 +110,7 @@ export const CancelConfirmDialog = ({ offer, onCancelStart }: CancelConfirmDialo
                   <div>
                     <label className="text-muted-foreground mb-1 block text-[10px] sm:text-xs">Maximum</label>
                     <div className="bg-input/30 text-foreground flex w-full justify-between rounded border px-1.5 py-1 text-xs sm:px-2 sm:py-1.5 sm:text-sm">
-                      {new BigNumber(offer.limit.max).toFormat()}
+                      {NumberUtil.formatAndScaleDownBigNumber(new BigNumber(offer.limit.max))}
                       <span className="pt-0.5 text-[10px] text-gray-500 sm:text-xs">{APP_CONFIG.CHAIN_SYMBOL}</span>
                     </div>
                   </div>

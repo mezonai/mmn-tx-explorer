@@ -71,7 +71,7 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
     {
       headerContent: 'AMOUNT/TOTAL AMOUNT',
       renderCell: (order) => {
-        const amount = new BigNumber(order.amount);
+        const amount = NumberUtil.scaleDownBigNumber(new BigNumber(order.amount));
         const totalVND = amount.multipliedBy(order.price_rate);
         return (
           <div className="text-sm">

@@ -10,14 +10,13 @@ import (
 	"dong-service/models"
 	"dong-service/repository"
 	"dong-service/types"
+	"dong-service/utils"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
 	"strconv"
 )
-
-const OfferMultiplier = 1000000
 
 type OfferService struct {
 	repo           *repository.OfferRepository
@@ -71,7 +70,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 				return nil, fmt.Errorf("invalid wallet balance format: %w", parseErr)
 			}
 
-			requiredBalance := amountInt * OfferMultiplier
+			requiredBalance := amountInt * constants.TokenMultiplier
 			if balanceInt < requiredBalance {
 				return nil, constants.ErrInsufficientAccountBalance
 			}
@@ -137,12 +136,15 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		SellerUserID:              sellerUserID,
 		Side:                      req.Side,
 		Symbol:                    req.Symbol,
-		AvailableAmount:           types.NewBigIntString(amountInt),
-		TotalAmount:               types.NewBigIntString(amountInt),
+		AvailableAmount:           types.NewBigIntString(amountInt).Multiply(constants.TokenMultiplierBigIntString),
+		TotalAmount:               types.NewBigIntString(amountInt).Multiply(constants.TokenMultiplierBigIntString),
 		PayableAmount:             types.NewBigIntString(priceInt),
 		Status:                    constants.TradingOpen,
 		BankInfo:                  bankInfoStr,
-		Limit:                     &models.OfferLimit{Min: types.NewBigIntString(limitMinInt), Max: types.NewBigIntString(limitMaxInt)},
+		Limit: &models.OfferLimit{
+			Min: types.NewBigIntString(limitMinInt).Multiply(constants.TokenMultiplierBigIntString),
+			Max: types.NewBigIntString(limitMaxInt).Multiply(constants.TokenMultiplierBigIntString),
+		},
 	}
 
 	var priceRateFloat *float64
@@ -176,7 +178,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 }
 
 func (s *OfferService) ListOffers(ctx context.Context, fromAmount *string, toAmount *string, pagination map[string]any) ([]models.Offer, error) {
-	offers, err := s.repo.ListOffers(ctx, nil, nil, nil, nil, nil, fromAmount, toAmount, pagination)
+	offers, err := s.repo.ListOffers(ctx, nil, nil, nil, nil, nil, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount), pagination)
 	if err != nil || len(offers) == 0 {
 		return offers, err
 	}
@@ -204,7 +206,7 @@ func (s *OfferService) ListOffers(ctx context.Context, fromAmount *string, toAmo
 }
 
 func (s *OfferService) CountOffers(ctx context.Context, walletAddress *string, minPrice *string, maxPrice *string, statuses []string, symbol *string, rate *string, fromAmount *string, toAmount *string) (int64, error) {
-	return s.repo.CountOffers(ctx, walletAddress, minPrice, maxPrice, statuses, symbol, rate, fromAmount, toAmount)
+	return s.repo.CountOffers(ctx, walletAddress, minPrice, maxPrice, statuses, symbol, rate, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount))
 }
 
 func (s *OfferService) GetOfferByID(ctx context.Context, id int64) (*models.Offer, error) {
@@ -225,11 +227,11 @@ func (s *OfferService) GetOfferByID(ctx context.Context, id int64) (*models.Offe
 }
 
 func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, int64, error) {
-	offers, err := s.repo.GetOffersByWalletAddress(ctx, walletAddress, pagination, fromAmount, toAmount)
+	offers, err := s.repo.GetOffersByWalletAddress(ctx, walletAddress, pagination, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount))
 	if err != nil {
 		return nil, 0, err
 	}
-	count, err := s.repo.CountOffers(ctx, &walletAddress, nil, nil, nil, nil, nil, fromAmount, toAmount)
+	count, err := s.repo.CountOffers(ctx, &walletAddress, nil, nil, nil, nil, nil, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -299,7 +301,7 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 			intermediaryWallet.EncryptedPrivateKey,
 			*offer.IntermediaryWalletAddress,
 			offer.SellerWalletAddress,
-			offer.AvailableAmount.Int64(),
+			offer.AvailableAmount.String(),
 			constants.TextDataP2PTrading,
 			constants.ExtraInfoP2PTradingOfferCanceled,
 		)

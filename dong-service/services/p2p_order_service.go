@@ -61,9 +61,8 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		return nil, nil, constants.ErrUserOrderLimitExceeded
 	}
 
-	var orderAmount types.BigIntString
+	orderAmount := types.NewBigIntString(req.Amount).Multiply(constants.TokenMultiplierBigIntString)
 	var payableAmount types.BigIntString
-	orderAmount.SetInt64(req.Amount)
 	if offer.PriceRate != nil {
 		computed := float64(req.Amount) * (*offer.PriceRate)
 		payableAmount.SetInt64(int64(math.Round(computed)))
@@ -258,7 +257,7 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 		}
 
 		if intermediaryWallet != nil && o.OrderAmount.Sign() > 0 {
-			txHash, transferErr := s.blockchain.TransferMoney(intermediaryWallet.EncryptedPrivateKey, *offer.IntermediaryWalletAddress, *o.BuyerWalletAddress, o.OrderAmount.Int64(), constants.TextDataP2PTrading, constants.ExtraInfoP2PTrading)
+			txHash, transferErr := s.blockchain.TransferMoney(intermediaryWallet.EncryptedPrivateKey, *offer.IntermediaryWalletAddress, *o.BuyerWalletAddress, o.OrderAmount.String(), constants.TextDataP2PTrading, constants.ExtraInfoP2PTrading)
 			if transferErr != nil {
 				err = fmt.Errorf("failed to transfer funds to buyer: %w", transferErr)
 				return err
