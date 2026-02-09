@@ -22,7 +22,7 @@ type SocketEvent struct {
 
 const (
 	OFFER_LIST_REFRESH = "OFFER_LIST_REFRESH"
-	RECEIVER_ALL       = "*"
+	OFFER_ROOM         = "offer_updates"
 )
 
 type EventService struct {

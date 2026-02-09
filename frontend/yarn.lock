@@ -2804,10 +2804,10 @@ merge2@^1.3.0:
   resolved "https://registry.yarnpkg.com/merge2/-/merge2-1.4.1.tgz#4368892f885e907455a6fd7dc55c0c9d404990ae"
   integrity sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==
 
-mezon-light-sdk@^1.0.3:
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/mezon-light-sdk/-/mezon-light-sdk-1.0.3.tgz#b1ea8d0b5a760f8ba014f991df3b45bd817f7f03"
-  integrity sha512-kcxoTFJIw7AP+3P+DRYuPSLjwVlOZZwBxwDNparA+6P+QVThFt/b+cYMsEbzACUQjxNnw4VH2EGwe1VulcPv6w==
+mezon-light-sdk@^1.0.5:
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/mezon-light-sdk/-/mezon-light-sdk-1.0.5.tgz#b5114119045768201d0f4d9b1857e8fcf5fc5d38"
+  integrity sha512-CdqJL1G1ivpRGqI/kVfxZvtlkxaHT9g6LXk5Veq9s8aEyIkGRt+usmSxf7aIo20cWX4fFgfg3cK8rIGzeMGxiQ==
   dependencies:
     js-base64 "^3.7.8"
     protobufjs "^8.0.0"
