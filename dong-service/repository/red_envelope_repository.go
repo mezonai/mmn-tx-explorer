@@ -48,9 +48,6 @@ func (r *RedEnvelopeRepository) Create(req *models.CreateRedEnvelopeRequest, cre
 		}
 	}()
 
-	endDate := req.StartDate.Add(1 * time.Minute)
-	req.EndDate = &endDate
-
 	query := fmt.Sprintf(`
 		INSERT INTO %s.red_envelope (
 			name, description, total_amount, min_amount, max_amount, 
