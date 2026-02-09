@@ -48,6 +48,9 @@ func (r *RedEnvelopeRepository) Create(req *models.CreateRedEnvelopeRequest, cre
 		}
 	}()
 
+	endDate := req.StartDate.Add(1 * time.Minute)
+	req.EndDate = &endDate
+
 	query := fmt.Sprintf(`
 		INSERT INTO %s.red_envelope (
 			name, description, total_amount, min_amount, max_amount, 
@@ -188,12 +191,12 @@ func (r *RedEnvelopeRepository) GetRecipientsByRedEnvelopeID(id string) ([]model
 func (r *RedEnvelopeRepository) GetTotalClaimedAmount(id string) (int64, error) {
 	query := fmt.Sprintf(`
 		SELECT COALESCE(SUM(amount), 0)
-		FROM %s.red_envelope_claim
-		WHERE red_envelope_id = $1
+		FROM %s.red_envelope_split_money
+		WHERE red_envelope_id = $1 AND status = $2
 	`, r.dongSchema)
 
 	var totalClaimed int64
-	err := r.db.QueryRow(query, id).Scan(&totalClaimed)
+	err := r.db.QueryRow(query, id, constants.RedEnvelopeSplitMoneyStatusClaimed).Scan(&totalClaimed)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get total claimed amount: %w", err)
 	}
