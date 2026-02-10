@@ -11,6 +11,24 @@ import { formatCurrency } from '@/modules/p2p/util';
 import { PaymentSection } from '../p2p-trading/create-offer-form/payment-section';
 import { useForm } from 'react-hook-form';
 import { BankOption } from '../../types';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const paymentSchema = z.object({
+  bank_info: z.object({
+    bank: z.enum(['MB', 'VCB', 'TCB', 'ACB', 'TPBANK', 'VIETCOMBANK']),
+    account_number: z
+      .string()
+      .min(1, 'Please enter the account number')
+      .regex(/^\d+$/, 'Account number must contain only digits'),
+    account_name: z.string().min(1, 'Please enter the account name'),
+  }),
+  side: z.string().optional(),
+  amount: z.number().optional(),
+  price_rate: z.string().optional(),
+  limit: z.object({ min: z.number(), max: z.number() }).optional(),
+  symbol: z.string().optional(),
+});
 
 interface BuyAmountSectionProps {
   offer: P2POffer;
@@ -46,7 +64,14 @@ export const BuyAmountSection = ({
 
   const isRespondingToBuyOffer = side === 'BUY';
 
-  const { control, getValues, trigger, formState: { errors } } = useForm({
+  const {
+    control,
+    getValues,
+    trigger,
+    formState: { errors, isValid: isFormValid },
+  } = useForm({
+    resolver: zodResolver(paymentSchema),
+    mode: 'onChange',
     defaultValues: {
       bank_info: { bank: 'MB' as BankOption, account_name: '', account_number: '' },
       side: 'BUY',
@@ -54,7 +79,7 @@ export const BuyAmountSection = ({
       price_rate: '0',
       limit: { min: 0, max: 0 },
       symbol: 'MZD',
-    }
+    },
   });
 
   const amountVND = amountMZD > 0 && offer.price_rate > 0 ? amountMZD * offer.price_rate : 0;
@@ -191,11 +216,11 @@ export const BuyAmountSection = ({
         <div className="mt-4 flex justify-center">
           <Button
             onClick={handleConfirm}
-            disabled={!isValidAmount || isLoading}
-            className="w-full bg-emerald-500 hover:bg-emerald-600 inline-flex items-center justify-center rounded-lg px-5 py-6 text-base font-semibold text-white shadow-lg transition gap-2"
+            disabled={!isValidAmount || isLoading || (isRespondingToBuyOffer && !isFormValid)}
+            className="w-full bg-emerald-500 hover:bg-emerald-600 inline-flex items-center justify-center rounded-lg px-5 py-6 text-base font-semibold text-white shadow-lg transition gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <CheckCircle2 className="h-5 w-5" />
-            {isLoading ? 'Processing...' : isRespondingToBuyOffer ? 'Tôi xác nhận bán' : 'Confirm purchase'}
+            {isLoading ? 'Processing...' : isRespondingToBuyOffer ? 'Confirm sell' : 'Confirm purchase'}
           </Button>
         </div>
 
