@@ -8,6 +8,8 @@ import { CheckCircle2 } from 'lucide-react';
 import { APP_CONFIG } from '@/configs/app.config';
 import { ConfirmPurchaseModal } from './confirm-purchase-modal';
 import { formatCurrency } from '@/modules/p2p/util';
+import BigNumber from 'bignumber.js';
+import { NumberUtil } from '@/utils';
 
 interface BuyAmountSectionProps {
   offer: P2POffer;
@@ -42,25 +44,26 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false, extra
     }
   };
 
-  const available = offer.amount;
-  const initialMin = offer.limit.min;
-  const effectiveMax = Math.min(offer.limit.max, available);
+  const available = NumberUtil.scaleDownBigNumber(new BigNumber(offer.amount));
+  const initialMin = NumberUtil.scaleDownBigNumber(new BigNumber(offer.limit.min));
+  const limitMax = NumberUtil.scaleDownBigNumber(new BigNumber(offer.limit.max));
+  const effectiveMax = BigNumber.min(limitMax, available);
 
-  let placeholder = `Minimum: ${formatCurrency(initialMin)} - Maximum: ${formatCurrency(effectiveMax)}`;
+  let placeholder = `Minimum: ${initialMin.toFormat()} - Maximum: ${effectiveMax.toFormat()}`;
   let isDisabled = false;
 
   if (isSeller) {
     isDisabled = true;
-  } else if (available === 0) {
+  } else if (available.isZero()) {
     placeholder = 'Minimum: 0 - Maximum: 0';
     isDisabled = true;
-  } else if (available < initialMin) {
+  } else if (available.isLessThan(initialMin)) {
     placeholder = 'The available amount is below the minimum requirement.';
     isDisabled = true;
   }
 
   const handleConfirm = () => {
-    if (amountMZD >= initialMin && amountMZD <= effectiveMax) {
+    if (amountMZD >= initialMin.toNumber() && amountMZD <= effectiveMax.toNumber()) {
       setShowConfirmModal(true);
     }
   };
@@ -70,7 +73,7 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false, extra
     setShowConfirmModal(false);
   };
 
-  const isValidAmount = amountMZD >= initialMin && amountMZD <= effectiveMax;
+  const isValidAmount = amountMZD >= initialMin.toNumber() && amountMZD <= effectiveMax.toNumber();
 
   return (
     <div className="mb-6 space-y-4">
@@ -89,13 +92,16 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false, extra
             {APP_CONFIG.CHAIN_SYMBOL}
           </span>
         </div>
+        <div className="text-muted-foreground mt-1 text-xs">
+          Available: {available.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}
+        </div>
         <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-          <div>Available: {formatCurrency(available)} {APP_CONFIG.CHAIN_SYMBOL}</div>
+          <div>Available: {available.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}</div>
           <div className="flex gap-2">
             <Button
               onClick={() => {
-                setAmountMZD(initialMin);
-                setDisplayValue(formatCurrency(initialMin));
+                setAmountMZD(initialMin.toNumber());
+                setDisplayValue(initialMin.toFormat());
                 setSelectionType('min');
               }}
               disabled={isDisabled}
@@ -108,8 +114,8 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false, extra
             </Button>
             <Button
               onClick={() => {
-                setAmountMZD(effectiveMax);
-                setDisplayValue(formatCurrency(effectiveMax));
+                setAmountMZD(effectiveMax.toNumber());
+                setDisplayValue(effectiveMax.toFormat());
                 setSelectionType('max');
               }}
               disabled={isDisabled}
@@ -156,7 +162,7 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false, extra
 
       {!isValidAmount && amountMZD > 0 && (
         <p className="text-center text-xs text-red-500">
-          Amount must be between {formatCurrency(initialMin)} and {formatCurrency(effectiveMax)}{' '}
+          Amount must be between {initialMin.toFormat()} and {effectiveMax.toFormat()}{' '}
           {APP_CONFIG.CHAIN_SYMBOL}
         </p>
       )}

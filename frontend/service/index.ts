@@ -86,6 +86,9 @@ apiDongClient.interceptors.response.use(
       } catch (refreshError) {
         clearAuthStorage();
         console.error(`[Interceptor] Refresh failed.`, refreshError);
+        if (AuthenticationService.onSessionExpired) {
+          AuthenticationService.onSessionExpired();
+        }
         return Promise.reject(refreshError);
       }
     }

@@ -8,6 +8,7 @@ import (
 	"dong-service/logger"
 	"dong-service/models"
 	"dong-service/repository"
+	"dong-service/types"
 	"time"
 )
 
@@ -71,7 +72,9 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 				logger.Error().Err(err).Msg("Failed to get wallet")
 				isSuccess = false
 			} else {
-				_, err = j.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, remainingBalance, constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
+				// TODO: update pass amount from envelope
+				amount := types.NewBigIntString(remainingBalance).Multiply(constants.TokenMultiplierBigIntString)
+				_, err = j.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
 				if err != nil {
 					logger.Error().Err(err).Msg("Failed to transfer funds")
 					isSuccess = false
