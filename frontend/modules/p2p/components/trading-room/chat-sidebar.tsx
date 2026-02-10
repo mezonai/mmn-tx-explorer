@@ -14,6 +14,13 @@ import { DateTimeUtil, formatFileSize, getFileIcon, getFilesFromClipboard, getFi
 import { safeJsonParse } from '@/utils/json-parse.utils';
 import { toast } from 'sonner';
 import { MAX_CHAR_LIMIT, MAX_FILE_SIZE } from '../../constants';
+import Bottleneck from 'bottleneck';
+
+// Initialize a limiter for the upload attachment API
+const uploadLimiter = new Bottleneck({
+  minTime: 1100, // Ensuring at least 1.1s between requests (server limit is usually 1s)
+  maxConcurrent: 1, // Process one at a time for safety
+});
 
 interface ChatSidebarProps {
   sellerId: string;
@@ -172,7 +179,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
     const hasContent = content.length > 0;
     const hasAttachments = selectedFiles.length > 0;
 
-    if (isMessageSendingRef.current || (!hasContent && !hasAttachments) || !socketRef.current || !channelIdRef.current) {
+    if (isMessageSendingRef.current || (!hasContent && !hasAttachments) || !socketRef.current || !channelIdRef.current || !lightClient) {
       return;
     }
 
@@ -190,10 +197,8 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
     setShowLimitWarning(false);
 
     try {
-      // Sequential upload with rate limiting (bottleneck)
+      // Sequential upload with rate limiting (using Bottleneck)
       const finalAttachments = [];
-      let lastCallTime = 0;
-      const MIN_INTERVAL = 1100; // 1.1s to be safe (backend is usually 1s)
 
       for (const file of filesToUpload) {
         if (file.size > MAX_FILE_SIZE) {
@@ -207,25 +212,18 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
 
         while (retryCount < maxRetries) {
           try {
-            // Rate limiter: check if we need to wait before the next call
-            const now = Date.now();
-            const timeSinceLastCall = now - lastCallTime;
-            if (timeSinceLastCall < MIN_INTERVAL) {
-              await new Promise(resolve => setTimeout(resolve, MIN_INTERVAL - timeSinceLastCall));
-            }
-
             const safeName = normalizeFilename(file.name);
             const safeType = getSafeFileType(file);
             const uniqueName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}_${safeName}`;
 
-            // Record the time just before calling the API
-            lastCallTime = Date.now();
-
-            const response = await lightClient?.uploadAttachment({
-              filename: uniqueName,
-              filetype: safeType,
-              size: file.size,
-            });
+            // Use the limiter to schedule the uploadAttachment call
+            const response = await uploadLimiter.schedule(() =>
+              lightClient.uploadAttachment({
+                filename: uniqueName,
+                filetype: safeType,
+                size: file.size,
+              })
+            );
 
             if (response?.url) {
               const uploadRes = await fetch(response.url, {

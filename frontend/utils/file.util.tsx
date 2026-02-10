@@ -83,4 +83,3 @@ export const getFilesFromDragEvent = (e: React.DragEvent): File[] => {
     if (!e.dataTransfer) return [];
     return Array.from(e.dataTransfer.files);
 };
-
