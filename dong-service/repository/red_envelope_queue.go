@@ -149,3 +149,28 @@ func (s *RedEnvelopeQueueService) VerifyReservation(ctx context.Context, redEnve
 
 	return amount, nil
 }
+
+func (s *RedEnvelopeQueueService) getClaimedUsersKey(redEnvelopeID string) string {
+	return fmt.Sprintf("red_envelope:claimed_users:%s", redEnvelopeID)
+}
+
+func (s *RedEnvelopeQueueService) getQueueCountKey(redEnvelopeID string) string {
+	return fmt.Sprintf("red_envelope:queue:count:%s", redEnvelopeID)
+}
+
+func (s *RedEnvelopeQueueService) RollbackClaim(redEnvelopeID string, userID int64) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	pipe := s.redisClient.Pipeline()
+	pipe.SRem(ctx, s.getClaimedUsersKey(redEnvelopeID), userID)
+	pipe.Decr(ctx, s.getQueueCountKey(redEnvelopeID))
+
+	_, err := pipe.Exec(ctx)
+	if err != nil {
+		logger.Error().Err(err).
+			Str("envelope_id", redEnvelopeID).
+			Int64("user_id", userID).
+			Msg("CRITICAL: Failed to rollback redis claim")
+	}
+}
