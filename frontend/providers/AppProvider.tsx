@@ -89,7 +89,7 @@ export function AppProvider({ children }: AppProviderProps) {
       (async () => {
         try {
           const light_client = LightClient.initClient({
-            ...lightClientData,
+            ...lightClient,
             serverkey,
           });
           setLightClient(light_client);
