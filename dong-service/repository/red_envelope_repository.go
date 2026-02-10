@@ -10,6 +10,7 @@ import (
 	"dong-service/utils"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/lib/pq"
@@ -112,11 +113,63 @@ func (r *RedEnvelopeRepository) Create(req *models.CreateRedEnvelopeRequest, cre
 		return nil, fmt.Errorf("failed to update red envelope wallet: %w", err)
 	}
 
+	var amounts []int64
+	if req.IsRandomDistribution && req.MinAmount != nil && req.MaxAmount != nil {
+		amounts, err = utils.GenerateRandomAmounts(req.TotalAmount, *req.MinAmount, *req.MaxAmount, int(req.TotalClaims))
+		if err != nil {
+			logger.Error().Err(err).Str("red_envelope_id", result.ID).Msg("Failed to generate random amounts")
+			return nil, fmt.Errorf("failed to generate random amounts: %w", err)
+		}
+	} else {
+		totalClaims := req.TotalClaims
+		baseAmount := req.TotalAmount / totalClaims
+		remainder := req.TotalAmount % totalClaims
+		amounts = make([]int64, totalClaims)
+		for i := int64(0); i < totalClaims; i++ {
+			if i < remainder {
+				amounts[i] = baseAmount + 1
+			} else {
+				amounts[i] = baseAmount
+			}
+		}
+	}
+	if err = r.CreateSplitMoneyBatch(tx, result.ID, amounts); err != nil {
+		return nil, fmt.Errorf("failed to save splits: %w", err)
+	}
+
 	if err = tx.Commit(); err != nil {
 		return nil, fmt.Errorf("failed to commit red envelope: %w", err)
 	}
 
 	return &result, nil
+}
+
+func (r *RedEnvelopeRepository) CreateSplitMoneyBatch(tx *sql.Tx, redEnvelopeID string, amounts []int64) error {
+	if len(amounts) == 0 {
+		return nil
+	}
+
+	args := make([]interface{}, 0, len(amounts)*3)
+	placeholders := make([]string, 0, len(amounts))
+
+	for i, amount := range amounts {
+		n := i * 3
+		placeholders = append(placeholders, fmt.Sprintf("($%d, $%d, $%d)", n+1, n+2, n+3))
+		args = append(args, redEnvelopeID, amount, i+1)
+	}
+
+	query := fmt.Sprintf(
+		"INSERT INTO %s.red_envelope_split_money (red_envelope_id, amount, claim_order) VALUES %s",
+		r.dongSchema,
+		strings.Join(placeholders, ","),
+	)
+
+	_, err := tx.Exec(query, args...)
+	if err != nil {
+		return fmt.Errorf("failed to batch insert split money (count: %d): %w", len(amounts), err)
+	}
+
+	return nil
 }
 
 func (r *RedEnvelopeRepository) GetRecipientsByRedEnvelopeID(id string) ([]models.RedEnvelopeClaim, error) {
