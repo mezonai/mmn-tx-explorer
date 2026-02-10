@@ -7,6 +7,7 @@ import (
 	"dong-service/constants"
 	"dong-service/logger"
 	"dong-service/models"
+	"dong-service/types"
 	"dong-service/utils"
 	"errors"
 	"fmt"
@@ -278,17 +279,17 @@ func (r *RedEnvelopeRepository) GetStats() (map[string]interface{}, error) {
 	query := fmt.Sprintf(`
 		SELECT 
 			(SELECT COALESCE(SUM(rec.amount), 0) FROM %s.red_envelope_claim rec) AS total_claimed,
-			(SELECT COALESCE(COUNT(id), 0) FROM %s.red_envelope WHERE status = $1) AS count_active_envelopes
+			(SELECT COALESCE(COUNT(id), 0) FROM %s.red_envelope WHERE claimed_count > 0) AS total_envelopes
 	`, r.dongSchema, r.dongSchema)
 
 	var stats struct {
-		TotalClaimed         int64
-		TotalActiveEnvelopes int64
+		TotalClaimed   int64
+		TotalEnvelopes int64
 	}
 
-	err := r.db.QueryRow(query, constants.RedEnvelopeStatusPublished).Scan(
+	err := r.db.QueryRow(query).Scan(
 		&stats.TotalClaimed,
-		&stats.TotalActiveEnvelopes,
+		&stats.TotalEnvelopes,
 	)
 
 	if err != nil {
@@ -296,8 +297,8 @@ func (r *RedEnvelopeRepository) GetStats() (map[string]interface{}, error) {
 	}
 
 	result := map[string]interface{}{
-		"total_claimed":          stats.TotalClaimed,
-		"total_active_envelopes": stats.TotalActiveEnvelopes,
+		"total_claimed":   stats.TotalClaimed,
+		"total_envelopes": stats.TotalEnvelopes,
 	}
 
 	return result, nil
@@ -340,7 +341,9 @@ func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status str
 		if err != nil {
 			logger.Error().Err(err).Msg("Failed to get wallet")
 		} else {
-			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, envelope.TotalAmount, constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
+			// TODO: update pass amount from envelope
+			amount := types.NewBigIntString(envelope.TotalAmount).Multiply(constants.TokenMultiplierBigIntString)
+			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
 			if err != nil {
 				return fmt.Errorf("failed to transfer money to owner wallet: %w", err)
 			}
@@ -725,7 +728,9 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 		if err != nil {
 			logger.Error().Err(err).Msg("Failed to get wallet")
 		} else {
-			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, envelope.RemainingAmount, constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
+			// TODO: update pass amount from envelope
+			amount := types.NewBigIntString(envelope.RemainingAmount).Multiply(constants.TokenMultiplierBigIntString)
+			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
 			if err != nil {
 				return err
 			}
@@ -914,7 +919,9 @@ func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUs
 	}
 
 	var txHash string
-	txHash, err = r.blockchainService.TransferMoney(walletInfo.EncryptedPrivateKey, envelope.RedEnvelopeWallet, claimerWallet, claimAmount, constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
+	// TODO: update pass amount from envelope
+	amount := types.NewBigIntString(claimAmount).Multiply(constants.TokenMultiplierBigIntString)
+	txHash, err = r.blockchainService.TransferMoney(walletInfo.EncryptedPrivateKey, envelope.RedEnvelopeWallet, claimerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
 	if err != nil {
 		logger.Error().Err(err).
 			Str("from", envelope.RedEnvelopeWallet).

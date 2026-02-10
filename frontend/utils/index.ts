@@ -2,4 +2,5 @@ export * from './date-time.util';
 export * from './number.util';
 export * from './json-parse.utils';
 export * from './clear-storage.utils';
-export * from './image-compression';
+export * from './format-image-file';
+export * from './file.util';

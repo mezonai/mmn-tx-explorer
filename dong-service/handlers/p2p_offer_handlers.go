@@ -116,6 +116,11 @@ func (h *OfferHandler) CreateOffer(c *gin.Context) {
 			return
 		}
 
+		if errors.Is(err, constants.ErrOfferLimitExceeded) {
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, err.Error()))
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "Failed to create offer: "+err.Error()))
 		return
 	}
@@ -190,22 +195,15 @@ func (h *OfferHandler) ListOffers(c *gin.Context) {
 		totalPage = 0
 	}
 
-	totalAvailable, err := h.offerService.SumOfferAmounts(c.Request.Context())
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to calculate total available: "+err.Error()))
-		return
-	}
-
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "Offers retrieved",
 		"data":    offers,
 		"meta": gin.H{
-			"page":            pg.Page + 1,
-			"limit":           pg.Limit,
-			"total_items":     total,
-			"total_pages":     totalPage,
-			"total_available": totalAvailable,
+			"page":        pg.Page + 1,
+			"limit":       pg.Limit,
+			"total_items": total,
+			"total_pages": totalPage,
 		},
 	})
 }

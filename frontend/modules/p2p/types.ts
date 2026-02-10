@@ -1,4 +1,5 @@
-import { OFFERS_STATUS, P2P_TAB } from './constants';
+import { OFFERS_STATUS, P2P_TAB, P2P_TRADING_ROLE } from './constants';
+import type { ChannelMessageHandler } from 'mezon-light-sdk';
 
 export type BankOption = 'MB' | 'VCB' | 'TCB' | 'ACB' | 'TPBANK' | 'VIETCOMBANK';
 
@@ -6,11 +7,11 @@ export interface P2POffer {
   offer_id: string;
   intermediary_wallet_id: number;
   seller_wallet_address: string;
-  total_amount: number;
-  amount: number;
+  total_amount: string;
+  amount: string;
   limit: {
-    min: number;
-    max: number;
+    min: string;
+    max: string;
   };
   price_rate: number;
   price_type: string;
@@ -87,9 +88,9 @@ export interface P2POrder {
   buyer_user_id: string;
   seller_wallet_address: string;
   seller_user_id: string;
-  amount: number;
+  amount: string;
   price?: number;
-  payable_amount?: number;
+  payable_amount?: string;
   status: OrderStatus;
   bank_info?: {
     bank: string;
@@ -140,4 +141,60 @@ export interface UserPaymentInfo {
   is_primary: boolean;
   created_at: string;
   updated_at: string;
+export interface ParsedMessageContent {
+  t?: string;
+  embed?: Array<{
+    color?: string;
+    title?: string;
+    url?: string;
+    description?: string;
+    fields?: Array<{
+      name?: string;
+      value?: string;
+      inline?: boolean;
+    }>;
+    timestamp?: string;
+    footer?: {
+      text?: string;
+    };
+  }>;
+  mk?: string;
+}
+
+export type ChannelMessage = Parameters<ChannelMessageHandler>[0];
+
+export interface MessageWithParsedContent extends Omit<ChannelMessage, 'content'> {
+  content: ParsedMessageContent;
+}
+export type P2PTradingRoleType = (typeof P2P_TRADING_ROLE)[keyof typeof P2P_TRADING_ROLE];
+export interface AutoMessagePayload {
+  text: string;
+  embed?: IEmbedProps[];
+}
+export interface IEmbedProps {
+  color?: string;
+  title?: string;
+  url?: string;
+  author?: {
+    name: string;
+    icon_url?: string;
+    url?: string;
+  };
+  description?: string;
+  thumbnail?: {
+    url: string;
+  };
+  fields?: Array<{
+    name: string;
+    value: string;
+    inline?: boolean;
+  }>;
+  image?: {
+    url: string;
+  };
+  timestamp?: string;
+  footer?: {
+    text: string;
+    icon_url?: string;
+  };
 }

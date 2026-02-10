@@ -66,6 +66,17 @@ func main() {
 		logger.Fatal().Err(err).Msg("Failed to initialize encryption key (AES_SECRET_KEY)")
 	}
 
+	// Initialize ZK Verifier
+	zkKeyPath := cfg.ZK.VerificationKeyPath
+	if zkKeyPath == "" {
+		zkKeyPath = "./config/verifying_key.b64"
+	}
+	if err = middleware.InitZKVerifier(zkKeyPath); err != nil {
+		logger.Error().Err(err).Msg("Failed to initialize ZK verifier - ZK Auth will not work")
+	} else {
+		logger.Info().Str("key_path", zkKeyPath).Msg("ZK Verifier initialized")
+	}
+
 	logger.Info().
 		Str("config_file", *configFile).
 		Str("gin_mode", cfg.Server.GinMode).

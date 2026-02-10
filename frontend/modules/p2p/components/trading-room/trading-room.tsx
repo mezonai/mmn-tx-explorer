@@ -16,7 +16,7 @@ import { PaymentActionButton } from './payment-action-button';
 import { SellerConfirmButton } from './seller-confirm-button';
 import { BuyAmountSection } from './buy-amount-section';
 import { Skeleton } from '@/components/ui/skeleton';
-import { P2POrder, OrderStatus } from '../../types';
+import { P2POrder, OrderStatus, AutoMessagePayload } from '../../types';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { APP_CONFIG } from '@/configs/app.config';
@@ -24,6 +24,9 @@ import { AddressDisplay } from '@/components/shared/address-display';
 import { ROUTES } from '@/configs/routes.config';
 import { ChatSidebar } from './chat-sidebar';
 import { STORAGE_KEYS } from '@/constant';
+import { NumberUtil } from '@/utils';
+import { EMBED_MESSAGE_THEME, P2P_TRADING_ROLE } from '../../constants';
+import BigNumber from 'bignumber.js';
 
 interface TradingRoomProps {
   orderId: string;
@@ -39,12 +42,12 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   const [localStatus, setLocalStatus] = useState<OrderStatus | null>(null);
   const [isExpired, setIsExpired] = useState<boolean>(false);
 
+  const [autoMessage, setAutoMessage] = useState<AutoMessagePayload | null>(null);
+
   const { order, isLoading: orderLoading, updateOrderStatus } = useP2POrder(isOfferMode ? '' : orderId);
   const offerIdParam = isOfferMode ? orderId : order ? String(order.offer_id) : null;
   const { offer, isLoading: offerLoading } = useP2POffer(offerIdParam);
   const { createOrder, isLoading: isCreatingOrder } = useCreateOrder();
-
-  const [pendingOrderGreeting, setPendingOrderGreeting] = useState<P2POrder | null>(null);
 
   useEffect(() => {
     if (!order || isOfferMode) return;
@@ -62,26 +65,16 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   }, [order, isOfferMode]);
 
   const userRole = useMemo(() => {
-    if (isOfferMode) return 'buyer';
+    if (isOfferMode) return P2P_TRADING_ROLE.BUYER;
     if (!user?.walletAddress || !order) return null;
 
-    if (order.buyer_wallet_address === user.walletAddress) return 'buyer';
+    if (order.buyer_wallet_address === user.walletAddress) return P2P_TRADING_ROLE.BUYER;
 
     const sellerWallet = order.seller_wallet_address || offer?.seller_wallet_address;
-    if (sellerWallet && sellerWallet === user.walletAddress) return 'seller';
+    if (sellerWallet && sellerWallet === user.walletAddress) return P2P_TRADING_ROLE.SELLER;
 
-    return 'seller';
+    return P2P_TRADING_ROLE.SELLER;
   }, [user?.walletAddress, order, isOfferMode, offer]);
-
-  useEffect(() => {
-    if (!order || userRole !== 'buyer') return;
-
-    const shouldSendGreeting = sessionStorage.getItem(STORAGE_KEYS.P2P_PENDING_GREETING(order.order_id));
-
-    if (shouldSendGreeting === 'true') {
-      setPendingOrderGreeting(order);
-    }
-  }, [order, userRole]);
 
   useEffect(() => {
     if (order?.status) {
@@ -89,10 +82,106 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
     }
   }, [order?.status]);
 
-  const handleAutoMessageSent = () => {
-    if (order) {
-      sessionStorage.removeItem(STORAGE_KEYS.P2P_PENDING_GREETING(order.order_id));
-      setPendingOrderGreeting(null);
+  const effectiveOrder: P2POrder = localStatus ? { ...order!, status: localStatus } : order!;
+
+  const createOrderEmbed = (currentOrder: P2POrder, customTitle?: string, customColor?: string) => {
+    const displayAmount = NumberUtil.scaleDownBigNumber(new BigNumber(currentOrder.amount));
+    const mzdAmount = displayAmount.toFormat();
+    const vndAmount = displayAmount.multipliedBy(currentOrder.price_rate).toFormat();
+
+    const fullUrl = process.env.NEXT_PUBLIC_CHAT_APP_ZK_API_URL || window.location.origin;
+    const domain = new URL(fullUrl).origin;
+    const orderLink = `${domain}${ROUTES.P2P_TRADING_ROOM(currentOrder.order_id)}`;
+
+    return {
+      color: customColor || EMBED_MESSAGE_THEME.INDIGO,
+      title: customTitle || `Click here to view Order #${currentOrder.order_id}`,
+      url: orderLink,
+      description: 'Transaction Details',
+      fields: [
+        {
+          name: 'Buy Amount',
+          value: `${mzdAmount} ${APP_CONFIG.CHAIN_SYMBOL}`,
+          inline: true,
+        },
+        {
+          name: 'Total Price',
+          value: `${vndAmount} VND`,
+          inline: true,
+        },
+        {
+          name: 'Exchange Rate',
+          value: `${NumberUtil.formatWithCommas(currentOrder.price_rate)} VND/${APP_CONFIG.CHAIN_SYMBOL}`,
+          inline: true,
+        },
+      ],
+      timestamp: new Date().toISOString(),
+      footer: { text: 'P2P Trading' },
+    };
+  };
+
+  useEffect(() => {
+    if (!order || userRole !== P2P_TRADING_ROLE.BUYER) return;
+
+    const shouldSendGreeting = sessionStorage.getItem(STORAGE_KEYS.P2P_PENDING_GREETING(order.order_id));
+
+    if (shouldSendGreeting === 'true') {
+      const textContent = `Hello, I would like to buy your offer. Please check the order details below.`;
+
+      const embedElement = createOrderEmbed(order);
+
+      setAutoMessage({
+        text: textContent,
+        embed: [embedElement],
+      });
+    }
+  }, [order, userRole]);
+
+  const handlePaymentStatusUpdated = (updatedOrder: P2POrder) => {
+    setLocalStatus(updatedOrder.status);
+
+    const embedElement = createOrderEmbed(updatedOrder, `Payment Sent - Order #${updatedOrder.order_id}`);
+
+    setAutoMessage({
+      text: `I have transferred the payment. Please check your bank account and release ${APP_CONFIG.CHAIN_SYMBOL}.`,
+      embed: [embedElement],
+    });
+  };
+
+  const handleSellerConfirm = async () => {
+    try {
+      await updateOrderStatus(OrderStatus.CONFIRMED);
+      setLocalStatus(OrderStatus.CONFIRMED);
+
+      const embedElement = createOrderEmbed(
+        effectiveOrder,
+        `Order Completed - #${effectiveOrder.order_id}`,
+        EMBED_MESSAGE_THEME.EMERAL
+      );
+
+      setAutoMessage({
+        text: `Payment received. I have released. Thank you for trading!`,
+        embed: [embedElement],
+      });
+    } catch (err: any) {
+      console.error('Error updating order status:', err);
+      if (err?.response?.data?.message) {
+        toast.error(err?.response?.data?.message);
+        setError('Order has expired');
+      } else {
+        setError('Something went wrong while updating status. Please try again.');
+      }
+      throw err;
+    }
+  };
+
+  const handleMessageSent = () => {
+    setAutoMessage(null);
+    if (order && userRole === P2P_TRADING_ROLE.BUYER) {
+      const key = STORAGE_KEYS.P2P_PENDING_GREETING(order.order_id);
+      if (sessionStorage.getItem(key)) {
+        sessionStorage.removeItem(key);
+      }
     }
   };
 
@@ -110,24 +199,9 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
         sessionStorage.setItem(STORAGE_KEYS.P2P_PENDING_GREETING(newOrder.order_id), 'true');
         router.push(ROUTES.P2P_TRADING_ROOM(newOrder.order_id));
       }
-    } catch {
-      setError('Something went wrong while creating the order. Please try again.');
-    }
-  };
-
-  const handleSellerConfirm = async () => {
-    try {
-      await updateOrderStatus('CONFIRMED');
-      setLocalStatus(OrderStatus.CONFIRMED);
     } catch (err: any) {
-      console.error('Error updating order status:', err);
-      if (err?.response?.data?.message === 'order has expired') {
-        toast.error('Order has expired');
-        setError('Order has expired');
-      } else {
-        setError('Something went wrong while updating status. Please try again.');
-      }
-      throw err;
+      const errorMessage = err?.response?.data?.message || 'Something went wrong while creating the order. Please try again.';
+      setError(errorMessage);
     }
   };
 
@@ -150,9 +224,9 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       offer_id: offer?.offer_id || '',
       buyer_wallet_address: user?.walletAddress || '',
       seller_wallet_address: offer?.seller_wallet_address || '',
-      amount: 0,
+      amount: '0',
       price: 0,
-      payable_amount: 0,
+      payable_amount: '0',
       status: OrderStatus.OPEN,
       transfer_code: null,
       expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
@@ -163,6 +237,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       buyer_user_id: '',
       seller_user_id: '',
     };
+
+    const isSellerOfOffer = user?.walletAddress === offer?.seller_wallet_address;
 
     return (
       <div className="bg-background relative flex flex-col">
@@ -200,18 +276,6 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
         <div className="flex flex-1 flex-col gap-6 md:flex-row">
           <div className="border-border w-full p-6 md:w-7/12 lg:w-8/12">
             <ProgressSteps order={displayOrder} />
-            {offer.has_active_order && (
-              <div className="mb-6 rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-4 text-yellow-600 dark:text-yellow-500">
-                <p className="flex items-center gap-2 font-bold">
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-yellow-500" />
-                  Offer Temporarily Locked
-                </p>
-                <span className="mt-1 text-sm">
-                  This offer is locked because a transaction is in progress. Please try again after it&apos;s completed.
-                </span>
-              </div>
-            )}
-
             {error && (
               <div className="border-destructive/20 bg-destructive/10 text-destructive mb-4 rounded-lg border p-3 text-sm">
                 {error}
@@ -222,7 +286,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
               offer={offer}
               onConfirmBuy={handleConfirmBuy}
               isLoading={isCreatingOrder}
-              extraDisabled={offer.has_active_order}
+              extraDisabled={offer.has_active_order || isSellerOfOffer}
+              isSeller={isSellerOfOffer}
             />
           </div>
 
@@ -246,8 +311,6 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
     );
   }
 
-  const effectiveOrder: P2POrder = localStatus ? { ...order, status: localStatus } : order;
-
   return (
     <div className="bg-background relative flex flex-col">
       <TradingRoomHeader order={effectiveOrder} userRole={userRole} />
@@ -255,11 +318,11 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
         <div className="border-border w-full p-4 md:w-8/12 lg:w-10/12">
           <ProgressSteps order={effectiveOrder} />
 
-          {userRole === 'buyer' && effectiveOrder.status === 'PENDING' && (
+          {userRole === P2P_TRADING_ROLE.BUYER && effectiveOrder.status === OrderStatus.PENDING && (
             <p className="text-muted-foreground mb-4 text-sm">Waiting for the seller to confirm</p>
           )}
 
-          {(effectiveOrder.status === 'COMPLETED' || effectiveOrder.status === 'CONFIRMED') && (
+          {(effectiveOrder.status === OrderStatus.COMPLETED || effectiveOrder.status === OrderStatus.CONFIRMED) && (
             <div className="mb-4 rounded-lg border border-green-500/20 bg-green-500/10 p-4 text-center">
               <p className="text-lg font-bold text-green-400">✓ Transaction completed successfully</p>
             </div>
@@ -272,20 +335,19 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
                 <BankInfoCard
                   bank_info={order.bank_info}
                   transfer_code={order.transfer_code}
-                  amount={order.payable_amount || order.price}
                 />
               )}
 
               <div className="space-y-2">
-                {userRole === 'buyer' && (
+                {userRole === P2P_TRADING_ROLE.BUYER && (
                   <PaymentActionButton
                     order={effectiveOrder}
-                    nextStatus="PENDING"
-                    onStatusUpdated={(updated) => setLocalStatus(updated.status)}
+                    nextStatus={OrderStatus.PENDING}
+                    onStatusUpdated={handlePaymentStatusUpdated}
                     disabled={isExpired}
                   />
                 )}
-                {userRole === 'seller' && (
+                {userRole === P2P_TRADING_ROLE.SELLER && (
                   <SellerConfirmButton order={effectiveOrder} onConfirm={handleSellerConfirm} disabled={isExpired} />
                 )}
               </div>
@@ -296,16 +358,16 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
                 <QrCodeCard
                   bank_info={order.bank_info}
                   transfer_code={order.transfer_code}
-                  amount={order.payable_amount || order.price}
+                  amount={Number(order.payable_amount) || order.price}
                 />
               )}
             </div>
           </div>
         </div>
         <ChatSidebar
-          sellerId={userRole === 'buyer' ? order.seller_user_id : order.buyer_user_id}
-          initialOrder={pendingOrderGreeting} // Pass the order object
-          onInitialMessageSent={handleAutoMessageSent}
+          sellerId={userRole === P2P_TRADING_ROLE.BUYER ? order.seller_user_id : order.buyer_user_id}
+          autoMessage={autoMessage}
+          onAutoMessageSent={handleMessageSent}
         />
       </div>
     </div>

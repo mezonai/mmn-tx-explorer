@@ -7,5 +7,6 @@ export interface IDashboardStats {
   transactions_24h: number;
   pending_transactions_30m: number;
   total_give_coffee?: number;
+  total_p2p_offer_available?: number;
+  total_offers?: number;
 }
-

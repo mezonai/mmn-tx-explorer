@@ -6,6 +6,7 @@ import (
 	"dong-service/logger"
 	"dong-service/models"
 	"dong-service/services"
+	"dong-service/types"
 	"dong-service/utils"
 	"errors"
 	"net/http"
@@ -68,17 +69,17 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	}
 
 	// Validate request
-	amount := req.Amount
-	if amount < 0 {
+	amount := types.NewBigIntString(req.Amount).Multiply(constants.TokenMultiplierBigIntString)
+	if amount.Sign() < 0 {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "amount must be non-negative"))
 		return
 	}
 	if offer.Limit != nil {
-		if amount < offer.Limit.Min {
+		if amount.Compare(offer.Limit.Min) < 0 {
 			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "order amount is below minimum limit"))
 			return
 		}
-		if amount > offer.Limit.Max {
+		if amount.Compare(offer.Limit.Max) > 0 {
 			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "order amount exceeds maximum limit"))
 			return
 		}
@@ -98,7 +99,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to create order")
 
-		if errors.Is(err, constants.ErrOfferHasActiveOrders) {
+		if errors.Is(err, constants.ErrUserOrderLimitExceeded) {
 			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Failed to create order: "+err.Error()))
 			return
 		}

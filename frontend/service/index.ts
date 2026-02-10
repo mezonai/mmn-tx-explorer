@@ -1,5 +1,5 @@
 import { STORAGE_KEYS } from '@/constant';
-import { AUTHENTICATION_ENDPOINT, AuthenticationService } from '@/modules/auth';
+import { AuthenticationService } from '@/modules/auth';
 import { clearAuthStorage, safeJsonParse } from '@/utils';
 import axios from 'axios';
 
@@ -36,31 +36,36 @@ const apiGameClient = axios.create({
     'Content-Type': 'application/json',
   },
 });
-// Add interceptor for authentication
-apiDongClient.interceptors.request.use((config) => {
-  if (config?.meta?.authOptional === true) return config;
-  if (typeof window !== 'undefined') {
-    const tokenData = safeJsonParse(localStorage.getItem(STORAGE_KEYS.TOKEN));
-    if (tokenData?.access_token) {
-      config.headers.Authorization = `Bearer ${tokenData.access_token}`;
-    }
-  }
-  return config;
+
+const authClient = axios.create({
+  baseURL: dongServiceURL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
-let isRefreshing = false;
-let failedQueue: Array<{ resolve: (value?: unknown) => void; reject: (reason?: unknown) => void }> = [];
+// Add interceptor for authentication
+apiDongClient.interceptors.request.use(
+  async (config) => {
+    if (config?.meta?.authOptional === true) return config;
 
-const processQueue = (error: unknown = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve();
+    if (AuthenticationService.getIsRefreshing()) {
+      await AuthenticationService.waitRefresh();
     }
-  });
-  failedQueue = [];
-};
+
+    if (typeof window !== 'undefined') {
+      const tokenData = safeJsonParse(localStorage.getItem(STORAGE_KEYS.TOKEN));
+      if (tokenData?.access_token) {
+        config.headers.Authorization = `Bearer ${tokenData.access_token}`;
+      }
+    }
+
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 // Handle token refresh on 401 errors
 apiDongClient.interceptors.response.use(
@@ -68,48 +73,27 @@ apiDongClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (
-      error.response?.status === 401 &&
-      originalRequest.url !== AUTHENTICATION_ENDPOINT.REFRESH &&
-      !originalRequest._retry
-    ) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then(() => {
-            return apiDongClient(originalRequest);
-          })
-          .catch((err) => {
-            return Promise.reject(err);
-          });
-      }
-
+    if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      isRefreshing = true;
 
       try {
         const localToken = safeJsonParse(localStorage.getItem(STORAGE_KEYS.TOKEN));
         await AuthenticationService.refreshLogin(localToken?.refresh_token);
 
-        processQueue(null);
-        isRefreshing = false;
-
+        const newTokenData = safeJsonParse(localStorage.getItem(STORAGE_KEYS.TOKEN));
+        originalRequest.headers.Authorization = `Bearer ${newTokenData.access_token}`;
         return apiDongClient(originalRequest);
       } catch (refreshError) {
-        console.error('Failed to refresh token', refreshError);
-        processQueue(refreshError);
-        isRefreshing = false;
-
-        if (typeof window !== 'undefined') {
-          clearAuthStorage();
+        clearAuthStorage();
+        console.error(`[Interceptor] Refresh failed.`, refreshError);
+        if (AuthenticationService.onSessionExpired) {
+          AuthenticationService.onSessionExpired();
         }
         return Promise.reject(refreshError);
       }
     }
-
     return Promise.reject(error);
   }
 );
 
-export { apiClient, apiDongClient, cobarClient, apiGameClient, ipfsServiceURL, serverkey };
+export { apiClient, apiDongClient, cobarClient, apiGameClient, ipfsServiceURL, serverkey, authClient };

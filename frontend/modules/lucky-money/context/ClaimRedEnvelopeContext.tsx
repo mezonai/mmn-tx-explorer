@@ -1,21 +1,21 @@
-'use client'
+'use client';
 
-import { createContext, ReactNode, useContext } from "react";
+import { createContext, ReactNode, useContext } from 'react';
 import { useParams } from 'next/navigation';
 import { useUser } from '@/providers';
-import { ClaimEnvelopeRequest, RedEnvelopeClaim } from "../type";
-import { UUID } from "crypto";
-import { useClaimAmount, useClaimRedEnvelope } from "../hooks/useClaimRedEnvelope";
+import { ClaimEnvelopeRequest, RedEnvelopeClaim } from '../type';
+import { UUID } from 'crypto';
+import { useClaimAmount, useClaimRedEnvelope } from '../hooks/useClaimRedEnvelope';
 
 type ClaimStatus = 'idle' | 'pending' | 'success' | 'error';
 
 interface ClaimRedEnvelopeContextType {
-  status: ClaimStatus; 
-  claimMutationData?: RedEnvelopeClaim | null; 
-  error: Error | null; 
-  handleClaim: () => void; 
-  handleClaimAmount: () => void; 
-  isLoading: boolean; 
+  status: ClaimStatus;
+  claimMutationData?: RedEnvelopeClaim | null;
+  error: Error | null;
+  handleClaim: () => void;
+  handleClaimAmount: () => void;
+  isLoading: boolean;
   isClaiming: boolean;
   isClaimSuccess: boolean;
   claimError: Error | null;
@@ -27,13 +27,13 @@ const ClaimRedEnvelopeContext = createContext<ClaimRedEnvelopeContextType | unde
 export function ClaimRedEnvelopeProvider({ children }: { children: ReactNode }) {
   const { redEnvelopeId } = useParams<{ redEnvelopeId: UUID }>();
   const { user } = useUser();
-  
-  const getAmountMutation = useClaimAmount(); 
-  const claimEnvelopeMutation = useClaimRedEnvelope(); 
+
+  const getAmountMutation = useClaimAmount();
+  const claimEnvelopeMutation = useClaimRedEnvelope();
 
   const handleClaimAmount = () => {
     if (!user?.walletAddress || !redEnvelopeId) {
-      console.error("Wallet or ID missing.");
+      console.error('Wallet or ID missing.');
       return;
     }
     getAmountMutation.mutate({ id: redEnvelopeId });
@@ -42,21 +42,20 @@ export function ClaimRedEnvelopeProvider({ children }: { children: ReactNode }) 
   const handleClaim = async () => {
     const amountData = getAmountMutation.data;
     if (!amountData || !redEnvelopeId || !user?.walletAddress) {
-      console.error("Data missing for claim.");
+      console.error('Data missing for claim.');
       return;
     }
 
     const requestData: ClaimEnvelopeRequest = {
-      id: redEnvelopeId,
       split_money_id: amountData.split_money_id,
     };
 
     try {
-        await claimEnvelopeMutation.mutateAsync({ id: redEnvelopeId, data: requestData });
+      await claimEnvelopeMutation.mutateAsync({ id: redEnvelopeId, data: requestData });
     } catch (error) {
-        console.error("Claim failed:", error);
+      console.error('Claim failed:', error);
     }
-  }
+  };
 
   const status: ClaimStatus = getAmountMutation.status;
   const error: Error | null = (getAmountMutation.error as Error) || null;
@@ -67,18 +66,14 @@ export function ClaimRedEnvelopeProvider({ children }: { children: ReactNode }) 
     error,
     handleClaim,
     handleClaimAmount,
-    isLoading: getAmountMutation.isPending, 
-    isClaiming: claimEnvelopeMutation.isPending, 
+    isLoading: getAmountMutation.isPending,
+    isClaiming: claimEnvelopeMutation.isPending,
     isClaimSuccess: claimEnvelopeMutation.isSuccess,
     claimError: (claimEnvelopeMutation.error as Error) || null,
     isClaimError: claimEnvelopeMutation.isError,
   };
 
-  return (
-    <ClaimRedEnvelopeContext.Provider value={value}>
-      {children}
-    </ClaimRedEnvelopeContext.Provider>
-  );
+  return <ClaimRedEnvelopeContext.Provider value={value}>{children}</ClaimRedEnvelopeContext.Provider>;
 }
 
 export function useClaimRedEnvelopeContext() {
@@ -88,4 +83,3 @@ export function useClaimRedEnvelopeContext() {
   }
   return context;
 }
-

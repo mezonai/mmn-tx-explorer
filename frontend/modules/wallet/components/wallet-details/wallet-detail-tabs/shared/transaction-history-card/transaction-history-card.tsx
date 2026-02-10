@@ -3,7 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Pagination } from '@/components/ui/pagination';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useBreakpoint, usePaginationQueryParam } from '@/hooks';
 import { EBreakpoint, ESortOrder } from '@/enums';
 import { WalletTransactionsTable, WalletTransactionsCards } from '@/modules/transaction/components';
@@ -16,6 +16,7 @@ import { exportTransactionsToCSV } from '@/utils/export-csv';
 import { toast } from 'sonner';
 import { DateTimeUtil } from '@/utils';
 import { Download } from 'lucide-react';
+import { AddressFilterDropdown } from '@/components/ui/address-filter-dropdown';
 
 interface TransactionHistoryCardProps {
   walletAddress: string;
@@ -34,6 +35,8 @@ const getDefaultTimeRangeByMonth = (monthRange: number) => {
 };
 
 export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCardProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [showExportModal, setShowExportModal] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportFromDate, setExportFromDate] = useState<Date | null>(null);
@@ -43,14 +46,26 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
   const [startDate, setStartDate] = useState<Date>(getDefaultTimeRangeByMonth(1));
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [transactionType, setTransactionType] = useState('All Transaction');
+  const [fromAddressFilter, setFromAddressFilter] = useState('');
+  const [toAddressFilter, setToAddressFilter] = useState('');
   const oneYearAgo = new Date(new Date().setFullYear(new Date().getFullYear() - 1));
   const today = new Date();
   useEffect(() => {
     const typeParam = urlSearchParams.get('type');
+    const fromFilterParam = urlSearchParams.get('from_filter');
+    const toFilterParam = urlSearchParams.get('to_filter');
+
     if (typeParam === 'received') {
       setTransactionType('Received');
     } else if (typeParam === 'sent') {
       setTransactionType('Sent');
+    }
+
+    if (fromFilterParam) {
+      setFromAddressFilter(fromFilterParam);
+    }
+    if (toFilterParam) {
+      setToAddressFilter(toFilterParam);
     }
   }, [urlSearchParams]);
   const getSearchParams = (): ITransactionListParams => {
@@ -65,6 +80,15 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
       start_time: DateTimeUtil.formatLocalDate(startDate),
       end_time: DateTimeUtil.formatLocalDate(endDate),
     };
+
+    // If From/To address filters are set, use them directly (AND logic)
+    if (fromAddressFilter || toAddressFilter) {
+      return {
+        ...baseWithDate,
+        ...(fromAddressFilter && { filter_from_address: fromAddressFilter }),
+        ...(toAddressFilter && { filter_to_address: toAddressFilter }),
+      };
+    }
 
     if (transactionType === 'Sent') {
       return { ...baseWithDate, filter_from_address: walletAddress };
@@ -82,7 +106,17 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
   const transactions = transactionsResponse?.data;
   const pagination = transactionsResponse?.meta;
   const isEmptyTransactions = transactions && transactions.length === 0;
+  useEffect(() => {
+    if (!isLoadingTransactions && pagination) {
+      const totalPages = pagination.total_pages;
 
+      if (totalPages > 0 && page > totalPages) {
+        const currentParams = new URLSearchParams(urlSearchParams.toString());
+        currentParams.set('page', totalPages.toString());
+        router.replace(`${pathname}?${currentParams.toString()}`);
+      }
+    }
+  }, [pagination, page, isLoadingTransactions, router, pathname, urlSearchParams]);
   const handleExportWithRange = async (fromDate: Date | null, toDate: Date | null, filename?: string) => {
     if (isExporting) return;
     setIsExporting(true);
@@ -116,9 +150,8 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
             <Button
               type="button"
               disabled={isExporting}
-              className={`bg-brand-primary hover:bg-brand-primary/80 dark:hover:bg-brand-primary/90 mr-4 inline-flex items-center text-white ${
-                isExporting ? 'cursor-not-allowed opacity-70' : ''
-              }`}
+              className={`bg-brand-primary hover:bg-brand-primary/80 dark:hover:bg-brand-primary/90 mr-4 inline-flex items-center text-white ${isExporting ? 'cursor-not-allowed opacity-70' : ''
+                }`}
               onClick={() => setShowExportModal(true)}
             >
               {isExporting ? (
@@ -169,6 +202,20 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
                 <SelectItem value="Received">Received</SelectItem>
               </SelectContent>
             </Select>
+
+            <AddressFilterDropdown
+              label="From"
+              value={fromAddressFilter}
+              onChange={setFromAddressFilter}
+              placeholder="Enter from address..."
+            />
+
+            <AddressFilterDropdown
+              label="To"
+              value={toAddressFilter}
+              onChange={setToAddressFilter}
+              placeholder="Enter to address..."
+            />
           </div>
 
           <Pagination
