@@ -262,7 +262,6 @@ export const P2POffersTabs = ({
         <div className="pointer-events-none absolute inset-x-0 bottom-6 z-50 flex items-center justify-center p-0 md:right-auto md:left-6 md:justify-start">
           <div className="flex items-center gap-2 rounded-md bg-white/85 px-3 py-1 shadow-lg backdrop-blur-sm dark:bg-black/70">
             <div className="h-3 w-3 animate-pulse rounded-full bg-emerald-500" />
-            <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Refreshing offers</div>
           </div>
         </div>
       )}
