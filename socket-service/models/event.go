@@ -8,9 +8,10 @@ import (
 )
 
 type Event struct {
-	ID        		uuid.UUID       `json:"id"`
-	Type      		string          `json:"type"`
-	Payload   		json.RawMessage `json:"payload"`
-	ReceiveAddress  string          `json:"receive_address"`
-	CreateAt  		time.Time       `json:"create_at"`
+	ID             uuid.UUID       `json:"id"`
+	Type           string          `json:"type"`
+	Payload        json.RawMessage `json:"payload"`
+	Status         string          `json:"status"`
+	ReceiveAddress string          `json:"receive_address"`
+	CreateAt       time.Time       `json:"create_at"`
 }

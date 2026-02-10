@@ -7,7 +7,6 @@ import (
 	"dong-service/logger"
 	"dong-service/utils"
 	"fmt"
-	"math/big"
 	"time"
 
 	"github.com/btcsuite/btcutil/base58"
@@ -41,7 +40,7 @@ func NewBlockchainService(cfg *config.Config) (*BlockchainService, error) {
 	}, nil
 }
 
-func (s *BlockchainService) Transfer(fromAddress, toAddress string, amount int64, privateKeyBs58, textData, extraInfo string) (string, error) {
+func (s *BlockchainService) Transfer(fromAddress, toAddress, amountStr, privateKeyBs58, textData, extraInfo string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -51,17 +50,11 @@ func (s *BlockchainService) Transfer(fromAddress, toAddress string, amount int64
 		return "", fmt.Errorf("failed to get nonce: %w", err)
 	}
 
-	scaleAmount, err := scaleAmountToDecimals(amount)
-	if err != nil {
-		logger.Error().Err(err).Str("from", fromAddress).Msg("Failed to scale amount")
-		return "", fmt.Errorf("failed to scale amount: %w", err)
-	}
-
 	txMsg := &mmnClient.Tx{
 		Type:      int(TypeTx),
 		Sender:    fromAddress,
 		Recipient: toAddress,
-		Amount:    mmnClient.Uint256FromString(scaleAmount),
+		Amount:    mmnClient.Uint256FromString(amountStr),
 		Timestamp: uint64(time.Now().Unix()),
 		TextData:  textData,
 		Nonce:     nonceResp,
@@ -94,7 +87,7 @@ func (s *BlockchainService) Transfer(fromAddress, toAddress string, amount int64
 		Str("tx_hash", resp.TxHash).
 		Str("from", fromAddress).
 		Str("to", toAddress).
-		Int64("amount", amount).
+		Str("amount", amountStr).
 		Msg("Transaction submitted successfully")
 
 	return resp.TxHash, nil
@@ -124,27 +117,7 @@ func (s *BlockchainService) Close() error {
 	return nil
 }
 
-func scaleAmountToDecimals(originalAmount interface{}) (string, error) {
-	scaledAmount := new(big.Int)
-	decimals := DECIMALS
-	switch v := originalAmount.(type) {
-	case string:
-		if _, ok := scaledAmount.SetString(v, 10); !ok {
-			return "", fmt.Errorf("invalid number string: %s", v)
-		}
-	case int:
-		scaledAmount.SetInt64(int64(v))
-	case int64:
-		scaledAmount.SetInt64(v)
-	default:
-		return "", fmt.Errorf("unsupported type: %T", v)
-	}
-	multiplier := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(decimals)), nil)
-	scaledAmount.Mul(scaledAmount, multiplier)
-	return scaledAmount.String(), nil
-}
-
-func (s *BlockchainService) TransferMoney(encryptedPrivateKey, fromAddress, toAddress string, amount int64, textData string, extraInfoType string) (string, error) {
+func (s *BlockchainService) TransferMoney(encryptedPrivateKey, fromAddress, toAddress, amountStr, textData, extraInfoType string) (string, error) {
 	privateKey, err := utils.DecryptPrivateKey(encryptedPrivateKey)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to decrypt private key")
@@ -153,7 +126,7 @@ func (s *BlockchainService) TransferMoney(encryptedPrivateKey, fromAddress, toAd
 		txHash, err := s.Transfer(
 			fromAddress,
 			toAddress,
-			amount,
+			amountStr,
 			privateKey,
 			textData,
 			extraInfoType,
@@ -165,7 +138,7 @@ func (s *BlockchainService) TransferMoney(encryptedPrivateKey, fromAddress, toAd
 			// TODO: use function GetTxByHash to get status
 			logger.Info().
 				Str("tx_hash", txHash).
-				Int64("amount", amount).
+				Str("amount", amountStr).
 				Msg("Successfully transferred remaining balance to owner")
 			return txHash, nil
 		}

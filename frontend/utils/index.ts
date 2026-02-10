@@ -3,3 +3,4 @@ export * from './number.util';
 export * from './json-parse.utils';
 export * from './clear-storage.utils';
 export * from './format-image-file';
+export * from './file.util';

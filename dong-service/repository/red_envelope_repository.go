@@ -375,7 +375,9 @@ func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status str
 		if err != nil {
 			logger.Error().Err(err).Msg("Failed to get wallet")
 		} else {
-			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, envelope.TotalAmount, constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
+			// TODO: update pass amount from envelope
+			amount := types.NewBigIntString(envelope.TotalAmount).Multiply(constants.TokenMultiplierBigIntString)
+			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
 			if err != nil {
 				return fmt.Errorf("failed to transfer money to owner wallet: %w", err)
 			}
@@ -755,7 +757,9 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 		if err != nil {
 			logger.Error().Err(err).Msg("Failed to get wallet")
 		} else {
-			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, envelope.RemainingAmount, constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
+			// TODO: update pass amount from envelope
+			amount := types.NewBigIntString(envelope.RemainingAmount).Multiply(constants.TokenMultiplierBigIntString)
+			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
 			if err != nil {
 				return err
 			}
@@ -963,7 +967,8 @@ func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUs
 	}
 
 	var txHash string
-	txHash, err = r.blockchainService.TransferMoney(walletInfo.EncryptedPrivateKey, envelope.RedEnvelopeWallet, claimerWallet, amount, constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
+	claimAmount := types.NewBigIntString(amount).Multiply(constants.TokenMultiplierBigIntString)
+	txHash, err = r.blockchainService.TransferMoney(walletInfo.EncryptedPrivateKey, envelope.RedEnvelopeWallet, claimerWallet, claimAmount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
 	if err != nil {
 		_ = r.updateClaimStatusInTx(tx, claimID, constants.RedEnvelopeClaimStatusFailed, nil)
 		logger.Error().Err(err).
