@@ -250,9 +250,6 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
           } catch (err: any) {
             retryCount++;
             console.warn(`[Chat] Attempt ${retryCount} failed for ${file.name}:`, err.message);
-            // If it's a rate limit error (403), wait longer before retrying
-            const backoff = err.message?.includes('403') || err.message?.includes('Limit exceeded') ? 2000 : 1000;
-            await new Promise(resolve => setTimeout(resolve, retryCount * backoff));
           }
         }
 
