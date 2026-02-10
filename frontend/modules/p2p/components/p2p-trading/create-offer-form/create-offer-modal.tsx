@@ -176,7 +176,12 @@ export const CreateOfferModal = () => {
             <div className="grid grid-cols-1 gap-8 p-6 lg:grid-cols-3">
               <AmountSection control={form.control} userBalance={balance} setValue={form.setValue} />
               <TradeTypeSection control={form.control} trigger={form.trigger} />
-              <PaymentSection control={form.control} />
+              <PaymentSection
+                control={form.control}
+                setValue={form.setValue}
+                watch={form.watch}
+                onUnsavedChangesChange={setHasUnsavedPayment}
+              />
             </div>
 
             <DialogFooter className="border-t-border -mx-6 -mb-6 flex justify-end gap-3 border-t px-4 py-4">
