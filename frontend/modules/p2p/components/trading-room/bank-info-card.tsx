@@ -8,10 +8,9 @@ import { Bolt } from 'lucide-react';
 interface BankInfoCardProps {
   bank_info?: P2POffer['bank_info'];
   transfer_code?: string | null;
-  amount?: number;
 }
 
-export const BankInfoCard = ({ bank_info, transfer_code, amount }: BankInfoCardProps) => {
+export const BankInfoCard = ({ bank_info, transfer_code }: BankInfoCardProps) => {
   if (!bank_info) {
     return null;
   }

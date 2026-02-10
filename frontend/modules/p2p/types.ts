@@ -7,11 +7,11 @@ export interface P2POffer {
   offer_id: string;
   intermediary_wallet_id: number;
   seller_wallet_address: string;
-  total_amount: number;
-  amount: number;
+  total_amount: string;
+  amount: string;
   limit: {
-    min: number;
-    max: number;
+    min: string;
+    max: string;
   };
   price_rate: number;
   price_type: string;
@@ -81,9 +81,9 @@ export interface P2POrder {
   buyer_user_id: string;
   seller_wallet_address: string;
   seller_user_id: string;
-  amount: number;
+  amount: string;
   price?: number;
-  payable_amount?: number;
+  payable_amount?: string;
   status: OrderStatus;
   bank_info?: {
     bank: string;

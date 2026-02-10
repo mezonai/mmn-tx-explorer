@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"dong-service/models"
+	"dong-service/types"
 )
 
 type OfferRepository struct {
@@ -21,19 +22,19 @@ func NewOfferRepository(db *sql.DB, dongSchema string) *OfferRepository {
 
 func (r *OfferRepository) CreateOffer(ctx context.Context, offer *models.Offer, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
-				INSERT INTO %s.offers (
-								intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, bank_info, created_at, updated_at
+				INSERT INTO %s.p2p_offers (
+								intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, available_amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, bank_info, created_at, updated_at
 		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,NOW(),NOW())
 		RETURNING offer_id, created_at, updated_at
 	`, r.dongSchema)
 
-	minToSave := int64(1)
-	maxToSave := offer.Amount
+	minToSave := types.NewBigIntString(1)
+	maxToSave := offer.AvailableAmount
 	if offer.Limit != nil {
-		if offer.Limit.Min > 0 {
+		if offer.Limit.Min.Sign() > 0 {
 			minToSave = offer.Limit.Min
 		}
-		if offer.Limit.Max > 0 {
+		if offer.Limit.Max.Sign() > 0 {
 			maxToSave = offer.Limit.Max
 		}
 	}
@@ -50,7 +51,7 @@ func (r *OfferRepository) CreateOffer(ctx context.Context, offer *models.Offer, 
 		offer.SellerUserID,
 		offer.Side,
 		offer.Symbol,
-		offer.Amount,
+		offer.AvailableAmount,
 		offer.TotalAmount,
 		minToSave,
 		maxToSave,
@@ -72,14 +73,14 @@ func (r *OfferRepository) UpdateOfferStatus(
 	args := []any{}
 	if txHash == nil {
 		query = fmt.Sprintf(`
-        UPDATE %s.offers
+        UPDATE %s.p2p_offers
         SET status = $1, updated_at = NOW()
         WHERE offer_id = $2
     `, r.dongSchema)
 		args = append(args, status, offerID)
 	} else {
 		query = fmt.Sprintf(`
-        UPDATE %s.offers
+        UPDATE %s.p2p_offers
         SET status = $1, transaction_hash = $2, updated_at = NOW()
         WHERE offer_id = $3
     `, r.dongSchema)
@@ -90,8 +91,8 @@ func (r *OfferRepository) UpdateOfferStatus(
 	return err
 }
 
-func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, fromAmount *string, toAmount *string, side *string, pagination any) ([]models.Offer, error) {
-	base := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, bank_info, created_at, updated_at FROM %s.offers`, r.dongSchema)
+func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, fromAmount *string, toAmount *string, pagination any) ([]models.Offer, error) {
+	base := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, available_amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, bank_info, created_at, updated_at FROM %s.p2p_offers`, r.dongSchema)
 
 	whereClauses := []string{}
 	args := []any{}
@@ -105,7 +106,7 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 		whereClauses = append(whereClauses, "status = 'CONFIRMED'")
 	}
 
-	whereClauses = append(whereClauses, "amount > 0")
+	whereClauses = append(whereClauses, "available_amount > 0")
 
 	if minPrice != nil && *minPrice != "" {
 		whereClauses = append(whereClauses, fmt.Sprintf("payable_amount >= $%d", argCount))
@@ -144,15 +145,15 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 	}
 
 	if fromAmount != nil && strings.TrimSpace(*fromAmount) != "" && toAmount != nil && strings.TrimSpace(*toAmount) != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("amount >= $%d AND amount <= $%d", argCount, argCount+1))
+		whereClauses = append(whereClauses, fmt.Sprintf("available_amount >= $%d AND available_amount <= $%d", argCount, argCount+1))
 		args = append(args, strings.TrimSpace(*fromAmount), strings.TrimSpace(*toAmount))
 		argCount += 2
 	} else if fromAmount != nil && strings.TrimSpace(*fromAmount) != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("amount >= $%d", argCount))
+		whereClauses = append(whereClauses, fmt.Sprintf("available_amount >= $%d", argCount))
 		args = append(args, strings.TrimSpace(*fromAmount))
 		argCount++
 	} else if toAmount != nil && strings.TrimSpace(*toAmount) != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("amount <= $%d", argCount))
+		whereClauses = append(whereClauses, fmt.Sprintf("available_amount <= $%d", argCount))
 		args = append(args, strings.TrimSpace(*toAmount))
 		argCount++
 	}
@@ -175,7 +176,7 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 	if p, ok := pagination.(map[string]any); ok {
 		if v, ok := p["order_by"].(string); ok && v != "" {
 			switch strings.ToLower(v) {
-			case "created_at", "payable_amount", "amount", "symbol", "price_rate":
+			case "created_at", "payable_amount", "available_amount", "symbol", "price_rate":
 				orderBy = v
 			}
 		}
@@ -202,8 +203,8 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 	var out []models.Offer
 	for rows.Next() {
 		var o models.Offer
-		var minAmt sql.NullInt64
-		var maxAmt sql.NullInt64
+		var minAmt sql.NullString
+		var maxAmt sql.NullString
 		var priceRate sql.NullFloat64
 		err := rows.Scan(
 			&o.OfferID,
@@ -212,7 +213,7 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 			&o.SellerUserID,
 			&o.Side,
 			&o.Symbol,
-			&o.Amount,
+			&o.AvailableAmount,
 			&o.TotalAmount,
 			&minAmt,
 			&maxAmt,
@@ -234,8 +235,8 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 	return out, rows.Err()
 }
 
-func (r *OfferRepository) CountOffers(ctx context.Context, walletAddress *string, minPrice *string, maxPrice *string, statuses []string, symbol *string, rate *string, fromAmount *string, toAmount *string, side *string) (int64, error) {
-	query := fmt.Sprintf(`SELECT COUNT(*) FROM %s.offers`, r.dongSchema)
+func (r *OfferRepository) CountOffers(ctx context.Context, walletAddress *string, minPrice *string, maxPrice *string, statuses []string, symbol *string, rate *string, fromAmount *string, toAmount *string) (int64, error) {
+	query := fmt.Sprintf(`SELECT COUNT(*) FROM %s.p2p_offers`, r.dongSchema)
 	whereClauses := []string{}
 	args := []any{}
 	argCount := 1
@@ -249,7 +250,7 @@ func (r *OfferRepository) CountOffers(ctx context.Context, walletAddress *string
 			argCount++
 		}
 		whereClauses = append(whereClauses, fmt.Sprintf("status IN (%s)", strings.Join(placeholders, ", ")))
-		whereClauses = append(whereClauses, "amount > 0")
+		whereClauses = append(whereClauses, "available_amount > 0")
 	}
 
 	if walletAddress != nil && *walletAddress != "" {
@@ -297,15 +298,15 @@ func (r *OfferRepository) CountOffers(ctx context.Context, walletAddress *string
 	}
 
 	if fromAmount != nil && strings.TrimSpace(*fromAmount) != "" && toAmount != nil && strings.TrimSpace(*toAmount) != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("amount >= $%d AND amount <= $%d", argCount, argCount+1))
+		whereClauses = append(whereClauses, fmt.Sprintf("available_amount >= $%d AND available_amount <= $%d", argCount, argCount+1))
 		args = append(args, strings.TrimSpace(*fromAmount), strings.TrimSpace(*toAmount))
 		argCount += 2
 	} else if fromAmount != nil && strings.TrimSpace(*fromAmount) != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("amount >= $%d", argCount))
+		whereClauses = append(whereClauses, fmt.Sprintf("available_amount >= $%d", argCount))
 		args = append(args, strings.TrimSpace(*fromAmount))
 		argCount++
 	} else if toAmount != nil && strings.TrimSpace(*toAmount) != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("amount <= $%d", argCount))
+		whereClauses = append(whereClauses, fmt.Sprintf("available_amount <= $%d", argCount))
 		args = append(args, strings.TrimSpace(*toAmount))
 		argCount++
 	}
@@ -330,14 +331,16 @@ func (r *OfferRepository) CountOffers(ctx context.Context, walletAddress *string
 }
 
 // processOfferNullableFields handles nullable fields and sets defaults for an offer
-func (r *OfferRepository) processOfferNullableFields(o *models.Offer, minAmt, maxAmt sql.NullInt64, priceRate sql.NullFloat64) {
-	minVal := int64(1)
-	maxVal := o.Amount
+func (r *OfferRepository) processOfferNullableFields(o *models.Offer, minAmt, maxAmt sql.NullString, priceRate sql.NullFloat64) {
+	minVal := types.NewBigIntString(1)
+	maxVal := o.AvailableAmount
 	if minAmt.Valid {
-		minVal = minAmt.Int64
+		minVal = types.BigIntString{}
+		minVal.SetString(minAmt.String, 10)
 	}
 	if maxAmt.Valid {
-		maxVal = maxAmt.Int64
+		maxVal = types.BigIntString{}
+		maxVal.SetString(maxAmt.String, 10)
 	}
 	if priceRate.Valid {
 		v := priceRate.Float64
@@ -350,8 +353,8 @@ func (r *OfferRepository) processOfferNullableFields(o *models.Offer, minAmt, ma
 
 func (r *OfferRepository) ScanOfferRow(row *sql.Row) (*models.Offer, error) {
 	var o models.Offer
-	var minAmt sql.NullInt64
-	var maxAmt sql.NullInt64
+	var minAmt sql.NullString
+	var maxAmt sql.NullString
 	var priceRate sql.NullFloat64
 
 	if err := row.Scan(
@@ -361,7 +364,7 @@ func (r *OfferRepository) ScanOfferRow(row *sql.Row) (*models.Offer, error) {
 		&o.SellerUserID,
 		&o.Side,
 		&o.Symbol,
-		&o.Amount,
+		&o.AvailableAmount,
 		&o.TotalAmount,
 		&minAmt,
 		&maxAmt,
@@ -385,9 +388,9 @@ func (r *OfferRepository) ScanOfferRow(row *sql.Row) (*models.Offer, error) {
 func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*models.Offer, error) {
 	query := fmt.Sprintf(`
 		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, 
-		       amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, 
+		       available_amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, 
 		       bank_info, created_at, updated_at 
-		FROM %s.offers 
+		FROM %s.p2p_offers 
 		WHERE offer_id = $1
 	`, r.dongSchema)
 
@@ -398,9 +401,9 @@ func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*mod
 func (r *OfferRepository) GetOfferByIDForUpdate(ctx context.Context, offerID int64, tx *sql.Tx) (*models.Offer, error) {
 	query := fmt.Sprintf(`
 		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, 
-		       amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, 
+		       available_amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, 
 		       bank_info, created_at, updated_at
-		FROM %s.offers
+		FROM %s.p2p_offers
 		WHERE offer_id = $1
 		FOR UPDATE
 	`, r.dongSchema)
@@ -409,11 +412,11 @@ func (r *OfferRepository) GetOfferByIDForUpdate(ctx context.Context, offerID int
 	return r.ScanOfferRow(row)
 }
 
-func (r *OfferRepository) ReserveQuantity(ctx context.Context, offerID int64, qty int64, tx *sql.Tx) error {
+func (r *OfferRepository) ReserveQuantity(ctx context.Context, offerID int64, qty types.BigIntString, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
-		UPDATE %s.offers
-		SET amount = amount - $1, updated_at = NOW()
-		WHERE offer_id = $2 AND amount >= $1
+		UPDATE %s.p2p_offers
+		SET available_amount = available_amount - $1, updated_at = NOW()
+		WHERE offer_id = $2 AND available_amount >= $1
 	`, r.dongSchema)
 
 	res, err := tx.ExecContext(ctx, query, qty, offerID)
@@ -430,10 +433,10 @@ func (r *OfferRepository) ReserveQuantity(ctx context.Context, offerID int64, qt
 	return nil
 }
 
-func (r *OfferRepository) ReleaseQuantity(ctx context.Context, offerID int64, qty int64, tx *sql.Tx) error {
+func (r *OfferRepository) ReleaseQuantity(ctx context.Context, offerID int64, qty types.BigIntString, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
-		UPDATE %s.offers
-		SET amount = amount + $1, updated_at = NOW()
+		UPDATE %s.p2p_offers
+		SET available_amount = available_amount + $1, updated_at = NOW()
 		WHERE offer_id = $2
 	`, r.dongSchema)
 
@@ -443,9 +446,9 @@ func (r *OfferRepository) ReleaseQuantity(ctx context.Context, offerID int64, qt
 
 func (r *OfferRepository) CheckAndCompleteIfEmpty(ctx context.Context, offerID int64, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
-		UPDATE %s.offers
+		UPDATE %s.p2p_offers
 		SET status = 'COMPLETED', updated_at = NOW()
-		WHERE offer_id = $1 AND amount <= 0 AND status != 'COMPLETED'
+		WHERE offer_id = $1 AND available_amount <= 0 AND status != 'COMPLETED'
 	`, r.dongSchema)
 
 	_, err := tx.ExecContext(ctx, query, offerID)
@@ -458,13 +461,13 @@ func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAd
 	argCount := 2
 
 	if fromAmount != nil && *fromAmount != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("amount >= $%d", argCount))
+		whereClauses = append(whereClauses, fmt.Sprintf("available_amount >= $%d", argCount))
 		args = append(args, *fromAmount)
 		argCount++
 	}
 
 	if toAmount != nil && *toAmount != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("amount <= $%d", argCount))
+		whereClauses = append(whereClauses, fmt.Sprintf("available_amount <= $%d", argCount))
 		args = append(args, *toAmount)
 		argCount++
 	}
@@ -476,9 +479,9 @@ func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAd
 	}
 
 	query := fmt.Sprintf(`
-		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, amount, total_amount, 
+		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, available_amount, total_amount, 
 		       min_amount, max_amount, payable_amount, price_rate, status, bank_info, created_at, updated_at
-		FROM %s.offers
+		FROM %s.p2p_offers
 		WHERE %s
 		ORDER BY created_at DESC
 	`, r.dongSchema, strings.Join(whereClauses, " AND "))
@@ -501,7 +504,7 @@ func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAd
 	var offers []models.Offer
 	for rows.Next() {
 		var o models.Offer
-		var minAmount, maxAmount sql.NullInt64
+		var minAmount, maxAmount sql.NullString
 		var priceRate sql.NullFloat64
 		if err := rows.Scan(
 			&o.OfferID,
@@ -510,7 +513,7 @@ func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAd
 			&o.SellerUserID,
 			&o.Side,
 			&o.Symbol,
-			&o.Amount,
+			&o.AvailableAmount,
 			&o.TotalAmount,
 			&minAmount,
 			&maxAmount,
@@ -534,7 +537,7 @@ func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAd
 func (r *OfferRepository) ExistsByTxHash(ctx context.Context, txHash string) (bool, error) {
 	query := fmt.Sprintf(`
         SELECT 1
-        FROM %s.offers
+        FROM %s.p2p_offers
         WHERE transaction_hash = $1
     `, r.dongSchema)
 
@@ -552,7 +555,7 @@ func (r *OfferRepository) ExistsByTxHash(ctx context.Context, txHash string) (bo
 func (r *OfferRepository) CountActiveOffersByUser(ctx context.Context, sellerUserID string) (int64, error) {
 	query := fmt.Sprintf(`
 		SELECT COUNT(*)
-		FROM %s.offers
+		FROM %s.p2p_offers
 		WHERE seller_user_id = $1 AND status IN ('OPEN', 'PENDING', 'CONFIRMED')
 	`, r.dongSchema)
 

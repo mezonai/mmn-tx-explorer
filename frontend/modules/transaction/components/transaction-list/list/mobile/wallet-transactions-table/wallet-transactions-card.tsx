@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { DATE_TIME_FORMAT } from '@/constant';
 import { Chip } from '@/components/shared';
 import { APP_CONFIG } from '@/configs/app.config';
+import { WalletAddressDisplay, WalletAddressDisplaySkeleton } from '@/modules/wallet/components/wallet-list/list/shared';
 
 interface WalletTransactionsCardProps {
   transaction?: ITransaction;
@@ -27,6 +28,14 @@ export const WalletTransactionsCard = ({ transaction, index, walletAddress }: Wa
         <TransactionTimeSkeleton />
         <div className="text-quaternary-500 text-xs">Type</div>
         <div className="bg-muted h-5 w-24 rounded" />
+        <div className="flex items-center justify-between">
+          <div className="text-quaternary-500 text-xs">From</div>
+          <WalletAddressDisplaySkeleton className="w-32" />
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="text-quaternary-500 text-xs">To</div>
+          <WalletAddressDisplaySkeleton className="w-32" />
+        </div>
         <div className="text-quaternary-500 text-xs">Amount</div>
         <div className="bg-muted h-5 w-24 rounded" />
       </div>
@@ -54,6 +63,14 @@ export const WalletTransactionsCard = ({ transaction, index, walletAddress }: Wa
         <Chip variant="warning" className="gap-1.5 rounded-md">
           <span>{getTransactionTypeLabel(transaction.transaction_extra_info_type)}</span>
         </Chip>
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-foreground text-xs">From</div>
+        <WalletAddressDisplay address={transaction.from_address} className="w-32" />
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-foreground text-xs">To</div>
+        <WalletAddressDisplay address={transaction.to_address} className="w-32" />
       </div>
       <div className="flex items-center justify-between gap-2">
         <div className="text-foreground text-xs">Amount</div>
