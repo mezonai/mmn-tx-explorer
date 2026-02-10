@@ -227,3 +227,32 @@ func (s *RedEnvelopeQueueService) AttemptClaimLegacy(redEnvelopeID string, userI
 		return constants.ClaimStatusError, fmt.Errorf("unknown script result: %s", resultStr)
 	}
 }
+
+func (s *RedEnvelopeQueueService) InitializeLegacyQueue(redEnvelopeID string, totalClaims int64, ttl time.Duration) error {
+	if s.redisClient == nil {
+		return fmt.Errorf("redis client is not initialized")
+	}
+
+	totalClaimsKey := s.getTotalClaimsKey(redEnvelopeID)
+	queueCountKey := s.getQueueCountKey(redEnvelopeID)
+
+	pipe := s.redisClient.Pipeline()
+	pipe.Set(s.ctx, totalClaimsKey, totalClaims, ttl)      // KEY[3] for legacy Lua script
+	pipe.SetNX(s.ctx, queueCountKey, 0, ttl)              // optional, but good to have with TTL
+
+	_, err := pipe.Exec(s.ctx)
+	if err != nil {
+		logger.Error().
+			Err(err).
+			Str("red_envelope_id", redEnvelopeID).
+			Msg("Failed to initialize legacy red envelope queue")
+		return fmt.Errorf("failed to initialize legacy queue: %w", err)
+	}
+
+	logger.Info().
+		Str("red_envelope_id", redEnvelopeID).
+		Int64("total_claims", totalClaims).
+		Msg("Legacy red envelope queue initialized successfully")
+
+	return nil
+}

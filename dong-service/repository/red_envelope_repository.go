@@ -393,6 +393,19 @@ func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status str
 			}
 		}
 
+		if err := r.queueService.InitializeLegacyQueue(id, envelope.TotalClaims, ttl); err != nil {
+			logger.Error().
+				Err(err).
+				Str("red_envelope_id", id).
+				Msg("Failed to initialize legacy queue for red envelope")
+		} else {
+			logger.Info().
+				Str("red_envelope_id", id).
+				Int64("total_claims", envelope.TotalClaims).
+				Dur("ttl", ttl).
+				Msg("Initialized legacy queue for red envelope")
+		}
+		
 		var amounts []int64
 		if envelope.IsRandomDistribution && envelope.MinAmount != nil && envelope.MaxAmount != nil {
 			amounts, err = utils.GenerateRandomAmounts(envelope.TotalAmount, *envelope.MinAmount, *envelope.MaxAmount, int(envelope.TotalClaims))
