@@ -174,3 +174,56 @@ func (s *RedEnvelopeQueueService) RollbackClaim(redEnvelopeID string, userID int
 			Msg("CRITICAL: Failed to rollback redis claim")
 	}
 }
+func (s *RedEnvelopeQueueService) getTotalClaimsKey(redEnvelopeID string) string {
+	return fmt.Sprintf("red_envelope:total_claims:%s", redEnvelopeID)
+}
+var attemptClaimScriptLegacy = redis.NewScript(`
+local totalClaims = tonumber(redis.call('GET', KEYS[3]))
+if not totalClaims or totalClaims == 0 then
+		return 'QUEUE_NOT_INITIALIZE'
+end
+
+local isMember = redis.call('SISMEMBER', KEYS[1], ARGV[1])
+if isMember == 1 then
+		return 'ALREADY_QUEUED'
+end
+
+local currentCount = tonumber(redis.call('GET', KEYS[2])) or 0
+if currentCount >= totalClaims then
+		return 'LIMIT_REACHED'
+end
+
+redis.call('SADD', KEYS[1], ARGV[1])
+local newCount = redis.call('INCR', KEYS[2])
+
+return 'OK'
+`)
+func (s *RedEnvelopeQueueService) AttemptClaimLegacy(redEnvelopeID string, userID int64) (int, error) {
+	if s.redisClient == nil {
+		return 0, fmt.Errorf("redis client is not initialized")
+	}
+
+	keys := []string{
+		s.getClaimedUsersKey(redEnvelopeID),
+		s.getQueueCountKey(redEnvelopeID),
+		s.getTotalClaimsKey(redEnvelopeID),
+	}
+
+	result, err := attemptClaimScriptLegacy.Run(s.ctx, s.redisClient, keys, userID).Result()
+	if err != nil {
+		logger.Error().Err(err).Str("envelope_id", redEnvelopeID).Msg("Failed to run attempt claim script")
+		return constants.ClaimStatusError, fmt.Errorf("redis script failed: %w", err)
+	}
+	switch resultStr := result.(string); resultStr {
+	case constants.RedEnvelopeStatusOk:
+		return constants.ClaimStatusSuccess, nil
+	case constants.RedEnvelopeQueueStatusUserAlreadyInQueue:
+		return constants.ClaimStatusAlreadyQueued, nil
+	case constants.RedEnvelopeQueueStatusLimitReached:
+		return constants.ClaimStatusError, constants.ErrLimitReached
+	case constants.RedEnvelopeQueueStatusNotInitialize:
+		return constants.ClaimStatusError, constants.ErrQueueNotInit
+	default:
+		return constants.ClaimStatusError, fmt.Errorf("unknown script result: %s", resultStr)
+	}
+}

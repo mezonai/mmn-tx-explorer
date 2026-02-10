@@ -548,7 +548,7 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelopeQRLegacy(c *gin.Context) {
 
 	id := c.Query("id")
 
-	claimStatus, err := r.queueService.AttemptClaim(id, userID)
+	claimStatus, err := r.queueService.AttemptClaimLegacy(id, userID)
 	if err != nil {
 		logger.Error().Err(err).Str("envelope_id", id).Msg("Error during queue check")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, err.Error()))
@@ -686,7 +686,7 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelopeQRLegacy(c *gin.Context) {
 		return
 	}
 
-	err = r.repo.ExecuteClaim(envelopeID, userAddress, userID, req.SplitMoneyID)
+	err = r.repo.ExecuteClaimLegacy(envelopeID, userAddress, userID, req.SplitMoneyID)
 	if err != nil {
 		logger.Error().Err(err).Str("envelope_id", envelopeID).Msg("Failed to execute claim")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToClaim))
