@@ -28,6 +28,7 @@ export interface P2POffer {
   };
   transfer_code?: string;
   has_active_order?: boolean;
+  order_count?: number;
 }
 
 export interface IP2POfferListParams {

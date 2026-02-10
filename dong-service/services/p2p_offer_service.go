@@ -177,8 +177,8 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 	return offer, nil
 }
 
-func (s *OfferService) ListOffers(ctx context.Context, fromAmount *string, toAmount *string, pagination map[string]any) ([]models.Offer, error) {
-	offers, err := s.repo.ListOffers(ctx, nil, nil, nil, nil, nil, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount), pagination)
+func (s *OfferService) ListOffers(ctx context.Context, fromAmount *string, toAmount *string, side *string, pagination map[string]any) ([]models.Offer, error) {
+	offers, err := s.repo.ListOffers(ctx, nil, nil, nil, nil, nil, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount), side, pagination)
 	if err != nil || len(offers) == 0 {
 		return offers, err
 	}
@@ -196,17 +196,22 @@ func (s *OfferService) ListOffers(ctx context.Context, fromAmount *string, toAmo
 		return offers, nil
 	}
 
-	// Map has_active_order to offers
+	// Map has_active_order and order_count to offers
+	orderCounts, _ := s.orderRepo.CountOrdersByOfferList(ctx, offerIDs)
+
 	for i := range offers {
 		hasActive := activeOrdersMap[offers[i].OfferID]
 		offers[i].HasActiveOrder = &hasActive
+		if orderCounts != nil {
+			offers[i].OrderCount = orderCounts[offers[i].OfferID]
+		}
 	}
 
 	return offers, nil
 }
 
-func (s *OfferService) CountOffers(ctx context.Context, walletAddress *string, minPrice *string, maxPrice *string, statuses []string, symbol *string, rate *string, fromAmount *string, toAmount *string) (int64, error) {
-	return s.repo.CountOffers(ctx, walletAddress, minPrice, maxPrice, statuses, symbol, rate, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount))
+func (s *OfferService) CountOffers(ctx context.Context, walletAddress *string, minPrice *string, maxPrice *string, statuses []string, symbol *string, rate *string, fromAmount *string, toAmount *string, side *string) (int64, error) {
+	return s.repo.CountOffers(ctx, walletAddress, minPrice, maxPrice, statuses, symbol, rate, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount), side)
 }
 
 func (s *OfferService) GetOfferByID(ctx context.Context, id int64) (*models.Offer, error) {
@@ -226,17 +231,17 @@ func (s *OfferService) GetOfferByID(ctx context.Context, id int64) (*models.Offe
 	return offer, nil
 }
 
-func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, int64, error) {
-	offers, err := s.repo.GetOffersByWalletAddress(ctx, walletAddress, pagination, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount))
+func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddress string, side *string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, int64, error) {
+	offers, err := s.repo.GetOffersByWalletAddress(ctx, walletAddress, side, pagination, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount))
 	if err != nil {
 		return nil, 0, err
 	}
-	count, err := s.repo.CountOffers(ctx, &walletAddress, nil, nil, nil, nil, nil, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount))
+	count, err := s.repo.CountOffers(ctx, &walletAddress, nil, nil, nil, nil, nil, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount), side)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	// Add has_active_order field
+	// Add has_active_order and order_count field
 	if len(offers) > 0 {
 		offerIDs := make([]int64, len(offers))
 		for i, offer := range offers {
@@ -244,10 +249,15 @@ func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddre
 		}
 
 		activeOrdersMap, err := s.orderRepo.HasActiveOrdersByOfferList(ctx, offerIDs)
+		orderCounts, _ := s.orderRepo.CountOrdersByOfferList(ctx, offerIDs)
+
 		if err == nil {
 			for i := range offers {
 				hasActive := activeOrdersMap[offers[i].OfferID]
 				offers[i].HasActiveOrder = &hasActive
+				if orderCounts != nil {
+					offers[i].OrderCount = orderCounts[offers[i].OfferID]
+				}
 			}
 		}
 	}

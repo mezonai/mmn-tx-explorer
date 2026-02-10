@@ -14,17 +14,19 @@ import { useRouter } from 'next/navigation';
 import { useUser } from '@/providers';
 import { CancelConfirmDialog } from './cancel-confirm-dialog';
 import { OFFERS_STATUS } from '../../constants';
+import BigNumber from 'bignumber.js';
+import { OfferOrdersModal } from './offer-orders-modal';
 import { ShareOfferModal } from './share-offer-modal';
 import { TriangleAlert } from 'lucide-react';
 import { NumberUtil } from '@/utils';
 import { cn } from '@/lib/utils';
-import BigNumber from 'bignumber.js';
 
 interface P2POffersTableProps {
   offers: P2POffer[] | undefined;
   isLoading?: boolean;
   isRefreshing?: boolean;
   onCancelStart?: (offerId: string) => void;
+  isMyOffer?: boolean;
 }
 
 export const P2POffersTabs = ({
@@ -32,12 +34,21 @@ export const P2POffersTabs = ({
   isLoading = false,
   isRefreshing = false,
   onCancelStart,
+  isMyOffer = false,
 }: P2POffersTableProps) => {
   const router = useRouter();
   const { user } = useUser();
 
   const [showOverlay, setShowOverlay] = useState(false);
   const hideTimeoutRef = useRef<number | null>(null);
+
+  const [selectedOfferForOrders, setSelectedOfferForOrders] = useState<P2POffer | null>(null);
+  const [isOrdersModalOpen, setIsOrdersModalOpen] = useState(false);
+
+  const handleShowOrders = (offer: P2POffer) => {
+    setSelectedOfferForOrders(offer);
+    setIsOrdersModalOpen(true);
+  };
 
   // Show overlay when refreshing (shared timeout ref)
   useEffect(() => {
@@ -104,6 +115,24 @@ export const P2POffersTabs = ({
       skeletonContent: <Skeleton className="h-3 w-24" />,
       align: 'left',
     },
+    isMyOffer ? {
+      headerContent: 'TYPE',
+      renderCell: (offer) => (
+        <Chip
+          variant={offer.side === TradeTypes.SELL ? 'error' : 'success'}
+          className={cn(
+            "w-16 justify-center rounded-full py-0.5 text-[10px] font-bold",
+            offer.side === TradeTypes.SELL
+              ? "bg-red-500/10 text-red-500 border-red-500/20"
+              : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+          )}
+        >
+          {offer.side}
+        </Chip>
+      ),
+      skeletonContent: <Skeleton className="h-5 w-16 rounded-full" />,
+      align: 'left',
+    } : null,
     {
       headerContent: 'RATE',
       renderCell: (offer) => (
@@ -157,6 +186,21 @@ export const P2POffersTabs = ({
       ),
       align: 'left',
     },
+    isMyOffer ? {
+      headerContent: 'ORDERS',
+      renderCell: (offer) => (
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 border-gray-700 bg-gray-800/50 hover:bg-gray-800"
+          onClick={() => handleShowOrders(offer)}
+        >
+          <span className="text-gray-300">{offer.order_count ?? 0} orders</span>
+        </Button>
+      ),
+      skeletonContent: <Skeleton className="h-8 w-20 rounded-md" />,
+      align: 'left',
+    } : null,
     {
       headerContent: 'LIMITS',
       renderCell: (offer) => {
@@ -277,6 +321,12 @@ export const P2POffersTabs = ({
           nullDataContext="No offers match your filters"
         />
       </div>
+
+      <OfferOrdersModal
+        offer={selectedOfferForOrders}
+        open={isOrdersModalOpen}
+        onOpenChange={setIsOrdersModalOpen}
+      />
     </Card>
   );
 };

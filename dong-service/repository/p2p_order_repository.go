@@ -23,8 +23,9 @@ func NewOrderRepository(db *sql.DB, dongSchema string) *OrderRepository {
 func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
 			INSERT INTO %s.p2p_orders (
-				offer_id, buyer_wallet_address, buyer_user_id, order_amount, payable_amount, status, transfer_code, expires_at, created_at, updated_at
-			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW(),NOW())
+				offer_id, buyer_wallet_address, buyer_user_id, order_amount, payable_amount, status, transfer_code, expires_at, created_at, updated_at,
+				offer_type, bank_info, seller_wallet_address, seller_user_id
+			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW(),NOW(),$9,$10,$11,$12)
         RETURNING order_id, created_at, updated_at
     `, r.dongSchema)
 
@@ -37,6 +38,10 @@ func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order, 
 		order.Status,
 		order.TransferCode,
 		order.ExpiresAt,
+		order.OfferType,
+		order.BankInfo,
+		order.SellerWalletAddress,
+		order.SellerUserID,
 	).Scan(&order.OrderID, &order.CreatedAt, &order.UpdatedAt)
 }
 
@@ -119,7 +124,11 @@ func (r *OrderRepository) CancelExpiredOrders(ctx context.Context, cutoff time.T
 }
 
 func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, error) {
-	base := fmt.Sprintf("SELECT order_id, offer_id, buyer_wallet_address, buyer_user_id, order_amount, payable_amount, transaction_hash, status, transfer_code, expires_at, created_at, updated_at FROM %s.p2p_orders WHERE offer_id = $1", r.dongSchema)
+	base := fmt.Sprintf(`
+		SELECT order_id, offer_id, buyer_wallet_address, buyer_user_id, order_amount, payable_amount, transaction_hash, status, transfer_code, expires_at, created_at, updated_at,
+		       offer_type, bank_info, seller_wallet_address, seller_user_id
+		FROM %s.p2p_orders 
+		WHERE offer_id = $1`, r.dongSchema)
 
 	// Default ordering and pagination
 	orderBy := "created_at"
@@ -169,6 +178,10 @@ func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, 
 			&o.ExpiresAt,
 			&o.CreatedAt,
 			&o.UpdatedAt,
+			&o.OfferType,
+			&o.BankInfo,
+			&o.SellerWalletAddress,
+			&o.SellerUserID,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan order: %w", err)
 		}
@@ -179,7 +192,11 @@ func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, 
 }
 
 func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.Order, error) {
-	query := fmt.Sprintf("SELECT order_id, offer_id, buyer_wallet_address, buyer_user_id, order_amount, payable_amount, transaction_hash, status, transfer_code, expires_at, created_at, updated_at FROM %s.p2p_orders WHERE order_id = $1", r.dongSchema)
+	query := fmt.Sprintf(`
+		SELECT order_id, offer_id, buyer_wallet_address, buyer_user_id, order_amount, payable_amount, transaction_hash, status, transfer_code, expires_at, created_at, updated_at,
+		       offer_type, bank_info, seller_wallet_address, seller_user_id
+		FROM %s.p2p_orders 
+		WHERE order_id = $1`, r.dongSchema)
 	var o models.Order
 	row := r.db.QueryRowContext(ctx, query, id)
 	if err := row.Scan(
@@ -195,6 +212,10 @@ func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.O
 		&o.ExpiresAt,
 		&o.CreatedAt,
 		&o.UpdatedAt,
+		&o.OfferType,
+		&o.BankInfo,
+		&o.SellerWalletAddress,
+		&o.SellerUserID,
 	); err != nil {
 		return nil, err
 	}
@@ -205,7 +226,8 @@ func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.O
 func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Order, error) {
 	query := fmt.Sprintf(`
 		SELECT o.order_id, o.offer_id, o.buyer_wallet_address, o.buyer_user_id, o.order_amount, o.payable_amount, 
-		       o.transaction_hash, o.status, o.transfer_code, o.expires_at, o.created_at, o.updated_at 
+		       o.transaction_hash, o.status, o.transfer_code, o.expires_at, o.created_at, o.updated_at,
+		       o.offer_type, o.bank_info, o.seller_wallet_address, o.seller_user_id
 		FROM %s.p2p_orders o
 		LEFT JOIN %s.p2p_offers of ON o.offer_id = of.offer_id
 		WHERE o.buyer_wallet_address = $1 OR of.seller_wallet_address = $1
@@ -243,6 +265,10 @@ func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAd
 			&o.ExpiresAt,
 			&o.CreatedAt,
 			&o.UpdatedAt,
+			&o.OfferType,
+			&o.BankInfo,
+			&o.SellerWalletAddress,
+			&o.SellerUserID,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan order: %w", err)
 		}
@@ -299,3 +325,37 @@ func (r *OrderRepository) HasActiveOrdersByOfferList(ctx context.Context, offerI
 
 	return result, rows.Err()
 }
+
+// CountOrdersByOfferList counts orders for each offer in the provided list.
+// Returns a map where key is offer_id and value is the total count of orders.
+func (r *OrderRepository) CountOrdersByOfferList(ctx context.Context, offerIDs []int64) (map[int64]int64, error) {
+	result := make(map[int64]int64)
+	if len(offerIDs) == 0 {
+		return result, nil
+	}
+
+	query := fmt.Sprintf(`
+		SELECT offer_id, COUNT(*) 
+		FROM %s.p2p_orders 
+		WHERE offer_id = ANY($1)
+		GROUP BY offer_id
+	`, r.dongSchema)
+
+	rows, err := r.db.QueryContext(ctx, query, pq.Array(offerIDs))
+	if err != nil {
+		return nil, fmt.Errorf("failed to count orders for offers: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var offerID int64
+		var count int64
+		if err := rows.Scan(&offerID, &count); err != nil {
+			return nil, fmt.Errorf("failed to scan offer_id and count: %w", err)
+		}
+		result[offerID] = count
+	}
+
+	return result, rows.Err()
+}
+

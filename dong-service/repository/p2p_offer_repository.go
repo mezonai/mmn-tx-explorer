@@ -91,8 +91,8 @@ func (r *OfferRepository) UpdateOfferStatus(
 	return err
 }
 
-func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, fromAmount *string, toAmount *string, pagination any) ([]models.Offer, error) {
-	base := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, available_amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, bank_info, created_at, updated_at FROM %s.p2p_offers`, r.dongSchema)
+func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, fromAmount *string, toAmount *string, side *string, pagination any) ([]models.Offer, error) {
+	base := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, available_amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, transaction_hash, bank_info, created_at, updated_at FROM %s.p2p_offers`, r.dongSchema)
 
 	whereClauses := []string{}
 	args := []any{}
@@ -220,6 +220,7 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 			&o.PayableAmount,
 			&priceRate,
 			&o.Status,
+			&o.TransactionHash,
 			&o.BankInfo,
 			&o.CreatedAt,
 			&o.UpdatedAt,
@@ -235,7 +236,7 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 	return out, rows.Err()
 }
 
-func (r *OfferRepository) CountOffers(ctx context.Context, walletAddress *string, minPrice *string, maxPrice *string, statuses []string, symbol *string, rate *string, fromAmount *string, toAmount *string) (int64, error) {
+func (r *OfferRepository) CountOffers(ctx context.Context, walletAddress *string, minPrice *string, maxPrice *string, statuses []string, symbol *string, rate *string, fromAmount *string, toAmount *string, side *string) (int64, error) {
 	query := fmt.Sprintf(`SELECT COUNT(*) FROM %s.p2p_offers`, r.dongSchema)
 	whereClauses := []string{}
 	args := []any{}
@@ -371,6 +372,7 @@ func (r *OfferRepository) ScanOfferRow(row *sql.Row) (*models.Offer, error) {
 		&o.PayableAmount,
 		&priceRate,
 		&o.Status,
+		&o.TransactionHash,
 		&o.BankInfo,
 		&o.CreatedAt,
 		&o.UpdatedAt,
@@ -389,7 +391,7 @@ func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*mod
 	query := fmt.Sprintf(`
 		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, 
 		       available_amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, 
-		       bank_info, created_at, updated_at 
+		       transaction_hash, bank_info, created_at, updated_at 
 		FROM %s.p2p_offers 
 		WHERE offer_id = $1
 	`, r.dongSchema)
@@ -402,7 +404,7 @@ func (r *OfferRepository) GetOfferByIDForUpdate(ctx context.Context, offerID int
 	query := fmt.Sprintf(`
 		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, 
 		       available_amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, 
-		       bank_info, created_at, updated_at
+		       transaction_hash, bank_info, created_at, updated_at
 		FROM %s.p2p_offers
 		WHERE offer_id = $1
 		FOR UPDATE
@@ -480,7 +482,7 @@ func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAd
 
 	query := fmt.Sprintf(`
 		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, available_amount, total_amount, 
-		       min_amount, max_amount, payable_amount, price_rate, status, bank_info, created_at, updated_at
+		       min_amount, max_amount, payable_amount, price_rate, status, transaction_hash, bank_info, created_at, updated_at
 		FROM %s.p2p_offers
 		WHERE %s
 		ORDER BY created_at DESC
@@ -520,6 +522,7 @@ func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAd
 			&o.PayableAmount,
 			&priceRate,
 			&o.Status,
+			&o.TransactionHash,
 			&o.BankInfo,
 			&o.CreatedAt,
 			&o.UpdatedAt,

@@ -77,15 +77,20 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 
 	transferCode := fmt.Sprintf("ORDER %d", offerID)
 	expiresAt := time.Now().UTC().Add(15 * time.Minute)
+	sideStr := string(offer.Side)
 	order := &models.Order{
-		OfferID:            &offerID,
-		BuyerWalletAddress: walletAddrPtr,
-		BuyerUserID:        buyerUserID,
-		OrderAmount:        orderAmount,
-		PayableAmount:      payableAmount,
-		Status:             constants.TradingOpen,
-		TransferCode:       &transferCode,
-		ExpiresAt:          &expiresAt,
+		OfferID:             &offerID,
+		BuyerWalletAddress:  walletAddrPtr,
+		BuyerUserID:         buyerUserID,
+		OrderAmount:         orderAmount,
+		PayableAmount:       payableAmount,
+		Status:              constants.TradingOpen,
+		TransferCode:        &transferCode,
+		ExpiresAt:           &expiresAt,
+		OfferType:           &sideStr,
+		BankInfo:            offer.BankInfo,
+		SellerWalletAddress: &offer.SellerWalletAddress,
+		SellerUserID:        &offer.SellerUserID,
 	}
 
 	if err = s.offerRepo.ReserveQuantity(ctx, offerID, orderAmount, tx); err != nil {
