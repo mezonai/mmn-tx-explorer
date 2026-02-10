@@ -99,7 +99,7 @@ export const P2POffersTabs = ({
     {
       headerContent: 'SELLER',
       renderCell: (offer) => (
-        <AddressDisplay address={offer.seller_wallet_address} href={ROUTES.WALLET(offer.seller_wallet_address)} />
+        <AddressDisplay address={offer.offer_creator_wallet_address} href={ROUTES.WALLET(offer.offer_creator_wallet_address)} />
       ),
       skeletonContent: <Skeleton className="h-3 w-24" />,
       align: 'left',
@@ -191,7 +191,7 @@ export const P2POffersTabs = ({
     {
       headerContent: 'Action',
       renderCell: (offer) => {
-        const isUserSeller = user && offer.seller_user_id === user?.id;
+        const isUserSeller = user && offer.offer_creator_user_id === user?.id;
 
         return (
           <div className="flex items-center justify-center">
@@ -208,7 +208,7 @@ export const P2POffersTabs = ({
                   </span>
                 </div>
               </div>
-            ) : user && offer.seller_user_id !== user?.id ? (
+            ) : user && offer.offer_creator_user_id !== user?.id ? (
               <Button
                 onClick={() => {
                   router.push(ROUTES.P2P_TRADING_ROOM(offer.offer_id, 'offer'));

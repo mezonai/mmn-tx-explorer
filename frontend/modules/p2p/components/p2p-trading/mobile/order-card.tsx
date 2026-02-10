@@ -38,8 +38,8 @@ export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
           <span className="text-muted-foreground text-[10px] font-bold uppercase">Seller</span>
           <AddressDisplay
             addressClassName="text-brand-primary text-sm"
-            address={order.seller_wallet_address}
-            href={ROUTES.WALLET(order.seller_wallet_address)}
+            address={order.offer_creator_wallet_address}
+            href={ROUTES.WALLET(order.offer_creator_wallet_address)}
           />
         </div>
 
@@ -47,8 +47,8 @@ export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
           <span className="text-muted-foreground text-[10px] font-bold uppercase">Buyer</span>
           <AddressDisplay
             addressClassName="text-sm"
-            address={order.buyer_wallet_address}
-            href={ROUTES.WALLET(order.buyer_wallet_address)}
+            address={order.order_creator_wallet_address}
+            href={ROUTES.WALLET(order.order_creator_wallet_address)}
           />
         </div>
 

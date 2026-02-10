@@ -297,8 +297,8 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 		}
 	}
 
-	isSeller := offer != nil && walletAddress == offer.SellerWalletAddress
-	isBuyer := order.BuyerWalletAddress != nil && walletAddress == *order.BuyerWalletAddress
+	isSeller := offer != nil && walletAddress == offer.OfferCreatorWalletAddress
+	isBuyer := order.OrderCreatorWalletAddress != nil && walletAddress == *order.OrderCreatorWalletAddress
 
 	if !isSeller && !isBuyer {
 		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, "caller is neither buyer nor seller"))
