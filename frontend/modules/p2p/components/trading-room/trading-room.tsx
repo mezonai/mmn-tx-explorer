@@ -407,10 +407,11 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
           )}
 
           {userRole === P2P_TRADING_ROLE.SELLER &&
-            effectiveOrder.status === OrderStatus.OPEN &&
-            effectiveOrder.offer_type === TradeTypes.BUY && (
+            effectiveOrder.status === OrderStatus.OPEN && (
               <p className="text-muted-foreground mb-4 text-sm font-medium italic">
-                Waiting for Buyer to confirm payment.
+                {effectiveOrder.offer_type === TradeTypes.BUY
+                  ? 'Waiting for Buyer to confirm payment.'
+                  : "Waiting for Buyer's confirmation of payment."}
               </p>
             )}
 
@@ -421,38 +422,18 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
           )}
 
           <div className="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-12">
-            <div className="lg:col-span-8">
-              <OrderInfoCard order={effectiveOrder} />
-              {userRole === P2P_TRADING_ROLE.BUYER && order && order.bank_info && order.transfer_code && (
+            <div className="lg:col-span-8 flex flex-col gap-3">
+              <OrderInfoCard order={effectiveOrder} userRole={userRole} />
+              {order && order.bank_info && order.transfer_code && (
                 <BankInfoCard
                   bank_info={order.bank_info}
                   transfer_code={order.transfer_code}
                 />
               )}
-
-              <div className="space-y-2">
-                {userRole === P2P_TRADING_ROLE.BUYER && (
-                  <PaymentActionButton
-                    order={effectiveOrder}
-                    nextStatus={OrderStatus.PENDING}
-                    onStatusUpdated={handlePaymentStatusUpdated}
-                    buttonText={buyerButtonText}
-                    disabled={isExpired}
-                  />
-                )}
-                {userRole === P2P_TRADING_ROLE.SELLER && (
-                  <SellerConfirmButton
-                    order={effectiveOrder}
-                    onConfirm={handleSellerConfirm}
-                    buttonText={sellerButtonText}
-                    disabled={isExpired}
-                  />
-                )}
-              </div>
             </div>
 
             <div className="lg:col-span-4">
-              {userRole === P2P_TRADING_ROLE.BUYER && order && order.bank_info && (
+              {order && order.bank_info && (
                 <QrCodeCard
                   bank_info={order.bank_info}
                   transfer_code={order.transfer_code}
@@ -460,6 +441,26 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
                 />
               )}
             </div>
+          </div>
+
+          <div className="space-y-2 mt-4">
+            {userRole === P2P_TRADING_ROLE.BUYER && (
+              <PaymentActionButton
+                order={effectiveOrder}
+                nextStatus={OrderStatus.PENDING}
+                onStatusUpdated={handlePaymentStatusUpdated}
+                buttonText={buyerButtonText}
+                disabled={isExpired}
+              />
+            )}
+            {userRole === P2P_TRADING_ROLE.SELLER && (
+              <SellerConfirmButton
+                order={effectiveOrder}
+                onConfirm={handleSellerConfirm}
+                buttonText={sellerButtonText}
+                disabled={isExpired}
+              />
+            )}
           </div>
         </div>
         <ChatSidebar

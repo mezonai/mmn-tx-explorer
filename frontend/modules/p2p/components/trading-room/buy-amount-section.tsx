@@ -218,8 +218,16 @@ export const BuyAmountSection = ({
             </div>
           </div>
         )}
+      </div>
 
-        <div className="mt-4 flex justify-center">
+      {isRespondingToBuyOffer && (
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900/50">
+          <PaymentSection control={control as any} />
+        </div>
+      )}
+
+      <div className={`${isRespondingToBuyOffer ? 'lg:col-span-2' : ''} mt-4 space-y-4`}>
+        <div className="flex justify-center">
           <Button
             onClick={handleConfirm}
             disabled={!isValidAmount || isLoading}
@@ -243,12 +251,6 @@ export const BuyAmountSection = ({
           </p>
         )}
       </div>
-
-      {isRespondingToBuyOffer && (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900/50">
-          <PaymentSection control={control as any} />
-        </div>
-      )}
 
       <ConfirmPurchaseModal
         open={showConfirmModal}
