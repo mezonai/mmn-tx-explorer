@@ -2525,12 +2525,12 @@ func (p *PostgresConnector) updateOfferStatus(
 	}
 
 	querySelect := `
-    SELECT
-        offer_id,
-        seller_wallet_address,
-        COALESCE(intermediary_wallet_address, ''),
-        available_amount,
-        status
+	SELECT
+		offer_id,
+		offer_creator_wallet_address,
+		COALESCE(intermediary_wallet_address, ''),
+		available_amount,
+		status
     FROM dong_schema.p2p_offers
     WHERE offer_id = ANY($1::bigint[])
       AND status = 'OPEN'

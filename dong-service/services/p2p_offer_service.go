@@ -132,8 +132,8 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 
 	offer := &models.Offer{
 		IntermediaryWalletAddress: &intermediaryAddr,
-		SellerWalletAddress:       walletAddr,
-		SellerUserID:              sellerUserID,
+		OfferCreatorWalletAddress: walletAddr,
+		OfferCreatorUserID:        sellerUserID,
 		Side:                      req.Side,
 		Symbol:                    req.Symbol,
 		AvailableAmount:           types.NewBigIntString(amountInt).Multiply(constants.TokenMultiplierBigIntString),
@@ -310,7 +310,7 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 		txHash, err := s.blockchain.TransferMoney(
 			intermediaryWallet.EncryptedPrivateKey,
 			*offer.IntermediaryWalletAddress,
-			offer.SellerWalletAddress,
+			offer.OfferCreatorWalletAddress,
 			offer.AvailableAmount.String(),
 			constants.TextDataP2PTrading,
 			constants.ExtraInfoP2PTradingOfferCanceled,

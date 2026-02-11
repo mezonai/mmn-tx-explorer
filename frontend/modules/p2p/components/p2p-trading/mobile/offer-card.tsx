@@ -33,28 +33,38 @@ const OfferMobileCard = ({ offer, isMyOffer = false }: OfferMobileCardProps) => 
   const soldPercentage = total.isGreaterThan(0) ? Math.min(sold.dividedBy(total).multipliedBy(100).toNumber(), 100) : 0;
 
   return (
-    <>
-      <div className="bg-card border-border mb-3 space-y-4 rounded-xl border p-4 shadow-sm">
-        {/* Header: Seller & Rate */}
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">Seller</span>
-              {isMyOffer && (
-                <Chip
-                  variant={offer.side === TradeTypes.SELL ? 'error' : 'success'}
-                  className={cn(
-                    "px-2 py-0 h-4 text-[8px] font-bold rounded-full",
-                    offer.side === TradeTypes.SELL
-                      ? "bg-red-500/10 text-red-500 border-red-500/20"
-                      : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                  )}
-                >
-                  {offer.side}
-                </Chip>
-              )}
-            </div>
-            <AddressDisplay address={offer.seller_wallet_address} href={ROUTES.WALLET(offer.seller_wallet_address)} />
+    <div className="bg-card border-border mb-3 space-y-4 rounded-xl border p-4 shadow-sm">
+      {/* Header: Seller & Rate */}
+      <div className="flex items-start justify-between">
+        <div className="space-y-1">
+          <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">Seller</span>
+          <AddressDisplay address={offer.offer_creator_wallet_address} href={ROUTES.WALLET(offer.offer_creator_wallet_address)} />
+        </div>
+        <div className="text-right">
+          <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">Rate</span>
+          <p className="text-brand-primary text-sm font-bold">
+            {NumberUtil.formatWithCommas(offer.price_rate)} VND
+            <span className="text-xs font-normal text-gray-500">/{APP_CONFIG.CHAIN_SYMBOL}</span>
+          </p>
+        </div>
+      </div>
+
+      <div className="bg-secondary/50 space-y-4 rounded-lg p-3 dark:bg-white/5">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Available</span>
+            <span className="text-brand-primary text-[10px] font-bold tracking-wider uppercase">
+              {sold.toFormat()} {APP_CONFIG.CHAIN_SYMBOL} Sold
+            </span>
+          </div>
+
+          <div className="flex items-end justify-between gap-2">
+            <span className="text-primary text-sm font-bold dark:text-white">
+              {available.toFormat()}{' '}
+              <span className="text-muted-foreground text-xs font-normal">
+                / {total.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}
+              </span>
+            </span>
           </div>
           <div className="text-right">
             <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">Rate</span>
@@ -140,37 +150,36 @@ const OfferMobileCard = ({ offer, isMyOffer = false }: OfferMobileCardProps) => 
                 <span className="text-xs font-bold tracking-wider whitespace-nowrap uppercase">Trading in Progress</span>
               </div>
             </div>
-          ) : user && offer.seller_user_id !== user?.id ? (
-            <Button
-              onClick={() => {
-                router.push(ROUTES.P2P_TRADING_ROOM(offer.offer_id, 'offer'));
-              }}
-              className="w-full rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600"
-            >
-              Buy Mezon đồng
-            </Button>
-          ) : offer.status === OFFERS_STATUS.CANCELED ? (
-            <Chip variant="error" className="w-full justify-center py-2 rounded-lg">
-              CANCELED
-            </Chip>
-          ) : offer.status === OFFERS_STATUS.COMPLETED ? (
-            <Chip variant="success" className="w-full justify-center py-2 rounded-lg">
-              COMPLETED
-            </Chip>
-          ) : offer.status === OFFERS_STATUS.FAILED ? (
-            <Chip variant="error" className="w-full justify-center py-2 rounded-lg">
-              FAILED
-            </Chip>
-          ) : offer.status === OFFERS_STATUS.OPEN ? (
-            <Chip variant="warning" className="w-full justify-center py-2 rounded-lg">
-              OPEN
-            </Chip>
-          ) : offer.status === OFFERS_STATUS.CONFIRMED ? (
-            <div className="flex w-full items-center gap-2">
-              <div className="flex-1">
-                <CancelConfirmDialog offer={offer} />
-              </div>
-              <ShareOfferModal offer={offer} />
+          </div>
+        ) : user && offer.offer_creator_user_id !== user?.id ? (
+          <Button
+            onClick={() => {
+              router.push(ROUTES.P2P_TRADING_ROOM(offer.offer_id, 'offer'));
+            }}
+            className="w-full rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600"
+          >
+            Buy Mezon đồng
+          </Button>
+        ) : offer.status === OFFERS_STATUS.CANCELED ? (
+          <Chip variant="error" className="w-full justify-center py-2 rounded-lg">
+            CANCELED
+          </Chip>
+        ) : offer.status === OFFERS_STATUS.COMPLETED ? (
+          <Chip variant="success" className="w-full justify-center py-2 rounded-lg">
+            COMPLETED
+          </Chip>
+        ) : offer.status === OFFERS_STATUS.FAILED ? (
+          <Chip variant="error" className="w-full justify-center py-2 rounded-lg">
+            FAILED
+          </Chip>
+        ) : offer.status === OFFERS_STATUS.OPEN ? (
+          <Chip variant="warning" className="w-full justify-center py-2 rounded-lg">
+            OPEN
+          </Chip>
+        ) : offer.status === OFFERS_STATUS.CONFIRMED ? (
+          <div className="flex w-full items-center gap-2">
+            <div className="flex-1">
+              <CancelConfirmDialog offer={offer} />
             </div>
           ) : (
             <Chip variant="default" className="w-full justify-center py-2 rounded-lg">
