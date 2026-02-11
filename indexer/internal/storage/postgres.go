@@ -15,6 +15,7 @@ import (
 	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/services"
 	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
 	"github.com/rs/zerolog/log"
 )
@@ -2310,19 +2311,24 @@ func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
 		return fmt.Errorf("failed to count give_coffee transactions: %w", err)
 	}
 
-	var totalP2POfferAvailable float64
+	var totalP2POfferAvailableStr string
 	err = p.db.QueryRowContext(ctx, `
-		SELECT COALESCE(SUM(amount), 0)
-		FROM dong_schema.offers
-		WHERE status = 'CONFIRMED' AND amount > 0
-	`).Scan(&totalP2POfferAvailable)
+		SELECT COALESCE(SUM(available_amount), 0)
+		FROM dong_schema.p2p_offers
+		WHERE status = 'CONFIRMED' AND available_amount > 0
+	`).Scan(&totalP2POfferAvailableStr)
 	if err != nil {
 		return fmt.Errorf("failed to calculate total_p2p_offer_available: %w", err)
 	}
 
+	totalP2POfferAvailableBig := new(big.Rat)
+	totalP2POfferAvailableBig.SetString(totalP2POfferAvailableStr)
+	totalP2POfferAvailableBig.Quo(totalP2POfferAvailableBig, big.NewRat(1_000_000, 1))
+	totalP2POfferAvailable := totalP2POfferAvailableBig.FloatString(0)
+
 	var totalOffers int64
 	err = p.db.QueryRowContext(ctx, `
-		SELECT COUNT(*) FROM dong_schema.offers WHERE status = 'CONFIRMED'
+		SELECT COUNT(*) FROM dong_schema.p2p_offers WHERE status = 'CONFIRMED'
 	`).Scan(&totalOffers)
 	if err != nil {
 		return fmt.Errorf("failed to count total_offers: %w", err)
@@ -2519,13 +2525,13 @@ func (p *PostgresConnector) updateOfferStatus(
 	}
 
 	querySelect := `
-    SELECT
-        offer_id,
-        seller_wallet_address,
-        COALESCE(intermediary_wallet_address, ''),
-        amount,
-        status
-    FROM dong_schema.offers
+	SELECT
+		offer_id,
+		offer_creator_wallet_address,
+		COALESCE(intermediary_wallet_address, ''),
+		available_amount,
+		status
+    FROM dong_schema.p2p_offers
     WHERE offer_id = ANY($1::bigint[])
       AND status = 'OPEN'
     FOR UPDATE
@@ -2541,7 +2547,7 @@ func (p *PostgresConnector) updateOfferStatus(
 		OfferID            int64
 		SellerWallet       string
 		IntermediaryWallet string
-		Amount             int64
+		Amount             string
 		Status             string
 	}
 
@@ -2592,8 +2598,11 @@ func (p *PostgresConnector) updateOfferStatus(
 			continue
 		}
 
-		valueInt, err := strconv.ParseInt(t.Value, 10, 64)
-		if err != nil || valueInt != o.Amount*P2PMultiplier {
+		transactionValueBig := new(big.Int)
+		offerValueBig := new(big.Int)
+		transactionValueBig.SetString(t.Value, 10)
+		offerValueBig.SetString(o.Amount, 10)
+		if transactionValueBig.Cmp(offerValueBig) != 0 {
 			log.Error().
 				Int64("offer_id", offerID).
 				Str("tx_hash", t.Hash).
@@ -2610,7 +2619,7 @@ func (p *PostgresConnector) updateOfferStatus(
 	}
 
 	queryUpdate := `
-    UPDATE dong_schema.offers o
+    UPDATE dong_schema.p2p_offers o
     SET
         status = 'CONFIRMED',
         transaction_hash = v.tx_hash,
@@ -2635,6 +2644,10 @@ func (p *PostgresConnector) updateOfferStatus(
 	}
 
 	log.Info().Int("offers_updated", len(validOfferIDs)).Msg("batch update offer status completed")
+
+	services.SendSocketEventDirect(services.OFFER_ROOM, services.OFFER_LIST_REFRESH, map[string]any{
+		"action": "updated p2p offer status",
+	})
 
 	return nil
 }

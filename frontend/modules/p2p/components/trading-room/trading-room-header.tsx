@@ -49,14 +49,27 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
   const counterpartyAddress = useMemo(() => {
     if (!userRole) return '';
 
-    if (userRole === 'buyer') {
-      // If user is buyer, show seller's address
-      return order.seller_wallet_address || offer?.seller_wallet_address || '';
+    const offerSide = order.offer_type || offer?.side;
+
+    if (offerSide === 'BUY') {
+      if (userRole === 'buyer') {
+        // User is Offer Creator (Buyer), show Responder (Order Creator)
+        return order.order_creator_wallet_address || '';
+      } else {
+        // User is Order Creator (Seller), show Creator (Offer Creator)
+        return order.offer_creator_wallet_address || offer?.offer_creator_wallet_address || '';
+      }
     } else {
-      // If user is seller, show buyer's address
-      return order.buyer_wallet_address || '';
+      // SELL Offer
+      if (userRole === 'buyer') {
+        // User is Order Creator (Buyer), show Creator (Seller)
+        return order.offer_creator_wallet_address || offer?.offer_creator_wallet_address || '';
+      } else {
+        // User is Offer Creator (Seller), show Responder (Buyer)
+        return order.order_creator_wallet_address || '';
+      }
     }
-  }, [userRole, order.seller_wallet_address, order.buyer_wallet_address, offer?.seller_wallet_address]);
+  }, [userRole, order, offer]);
 
   return (
     <header className=" flex h-14 shrink-0 items-center justify-between border-b border-border px-2">

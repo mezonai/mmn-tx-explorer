@@ -1,3 +1,5 @@
+import BigNumber from 'bignumber.js';
+
 export class NumberUtil {
   static roundUp(value: number, decimals: number = 6): string {
     if (!value) return '0';
@@ -71,5 +73,14 @@ export class NumberUtil {
 
     const scaled = num / scale;
     return scaled.toString();
+  }
+
+  static scaleDownBigNumber(value: BigNumber): BigNumber {
+    if (!value || value.isNaN()) return new BigNumber(0);
+    return value.dividedBy(1_000_000);
+  }
+
+  static formatAndScaleDownBigNumber(value: BigNumber): string {
+    return this.scaleDownBigNumber(value).toFormat();
   }
 }

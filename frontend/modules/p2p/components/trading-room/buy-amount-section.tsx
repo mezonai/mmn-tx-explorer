@@ -3,16 +3,17 @@
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { P2POffer } from '../../types';
+import { P2POffer, BankOption } from '../../types';
 import { CheckCircle2 } from 'lucide-react';
 import { APP_CONFIG } from '@/configs/app.config';
 import { ConfirmPurchaseModal } from './confirm-purchase-modal';
 import { formatCurrency } from '@/modules/p2p/util';
 import { PaymentSection } from '../p2p-trading/create-offer-form/payment-section';
 import { useForm } from 'react-hook-form';
-import { BankOption } from '../../types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import BigNumber from 'bignumber.js';
+import { NumberUtil } from '@/utils';
 
 const paymentSchema = z.object({
   bank_info: z.object({
@@ -97,19 +98,20 @@ export const BuyAmountSection = ({
     }
   };
 
-  const available = offer.amount;
-  const initialMin = offer.limit.min;
-  const effectiveMax = Math.min(offer.limit.max, available);
+  const available = NumberUtil.scaleDownBigNumber(new BigNumber(offer.amount));
+  const initialMin = NumberUtil.scaleDownBigNumber(new BigNumber(offer.limit.min));
+  const limitMax = NumberUtil.scaleDownBigNumber(new BigNumber(offer.limit.max));
+  const effectiveMax = BigNumber.min(limitMax, available);
 
-  let placeholder = `Minimum: ${formatCurrency(initialMin)} - Maximum: ${formatCurrency(effectiveMax)}`;
+  let placeholder = `Minimum: ${initialMin.toFormat()} - Maximum: ${effectiveMax.toFormat()}`;
   let isDisabled = false;
 
   if (isSeller) {
     isDisabled = true;
-  } else if (available === 0) {
+  } else if (available.isZero()) {
     placeholder = 'Minimum: 0 - Maximum: 0';
     isDisabled = true;
-  } else if (available < initialMin) {
+  } else if (available.isLessThan(initialMin)) {
     placeholder = 'The available amount is below the minimum requirement.';
     isDisabled = true;
   }
@@ -124,7 +126,7 @@ export const BuyAmountSection = ({
       }
     }
 
-    if (amountMZD >= initialMin && amountMZD <= effectiveMax) {
+    if (amountMZD >= initialMin.toNumber() && amountMZD <= effectiveMax.toNumber()) {
       setShowConfirmModal(true);
     }
   };
@@ -135,7 +137,7 @@ export const BuyAmountSection = ({
     setShowConfirmModal(false);
   };
 
-  const isValidAmount = amountMZD >= initialMin && amountMZD <= effectiveMax && (!isRespondingToBuyOffer || amountMZD <= userBalance);
+  const isValidAmount = amountMZD >= initialMin.toNumber() && amountMZD <= effectiveMax.toNumber() && (!isRespondingToBuyOffer || (amountMZD <= userBalance && isFormValid));
 
   return (
     <div className={`mb-6 ${isRespondingToBuyOffer ? 'grid grid-cols-1 lg:grid-cols-2 gap-8' : 'space-y-4'}`}>
@@ -158,12 +160,12 @@ export const BuyAmountSection = ({
             </span>
           </div>
           <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-            <div>Available: {formatCurrency(available)} {APP_CONFIG.CHAIN_SYMBOL}</div>
+            <div>Available: {available.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}</div>
             <div className="flex gap-2">
               <Button
                 onClick={() => {
-                  setAmountMZD(initialMin);
-                  setDisplayValue(formatCurrency(initialMin));
+                  setAmountMZD(initialMin.toNumber());
+                  setDisplayValue(initialMin.toFormat());
                   setSelectionType('min');
                 }}
                 disabled={isDisabled}
@@ -176,8 +178,8 @@ export const BuyAmountSection = ({
               </Button>
               <Button
                 onClick={() => {
-                  setAmountMZD(effectiveMax);
-                  setDisplayValue(formatCurrency(effectiveMax));
+                  setAmountMZD(effectiveMax.toNumber());
+                  setDisplayValue(effectiveMax.toFormat());
                   setSelectionType('max');
                 }}
                 disabled={isDisabled}
@@ -216,11 +218,11 @@ export const BuyAmountSection = ({
         <div className="mt-4 flex justify-center">
           <Button
             onClick={handleConfirm}
-            disabled={!isValidAmount || isLoading || (isRespondingToBuyOffer && !isFormValid)}
+            disabled={!isValidAmount || isLoading}
             className="w-full bg-emerald-500 hover:bg-emerald-600 inline-flex items-center justify-center rounded-lg px-5 py-6 text-base font-semibold text-white shadow-lg transition gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <CheckCircle2 className="h-5 w-5" />
-            {isLoading ? 'Processing...' : isRespondingToBuyOffer ? 'Confirm sell' : 'Confirm purchase'}
+            {isLoading ? 'Processing...' : isRespondingToBuyOffer ? 'Tôi xác nhận bán' : 'Confirm purchase'}
           </Button>
         </div>
 
@@ -232,7 +234,7 @@ export const BuyAmountSection = ({
 
         {!isValidAmount && amountMZD > 0 && (
           <p className="text-center text-xs text-red-500">
-            Amount must be between {formatCurrency(initialMin)} and {formatCurrency(effectiveMax)}{' '}
+            Amount must be between {initialMin.toFormat()} and {effectiveMax.toFormat()}{' '}
             {APP_CONFIG.CHAIN_SYMBOL}
           </p>
         )}
