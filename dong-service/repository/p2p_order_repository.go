@@ -269,6 +269,22 @@ func (r *OrderRepository) CountOrdersByWalletAddress(ctx context.Context, wallet
 	return total, nil
 }
 
+func (r *OrderRepository) CountOrdersByOffer(ctx context.Context, offerID int64) (int64, error) {
+	query := fmt.Sprintf(`
+		SELECT COUNT(*) 
+		FROM %s.p2p_orders
+		WHERE offer_id = $1
+	`, r.dongSchema)
+
+	var total int64
+	err := r.db.QueryRowContext(ctx, query, offerID).Scan(&total)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count orders by offer: %w", err)
+	}
+
+	return total, nil
+}
+
 // HasActiveOrdersByOfferList checks which offers from the provided list have active orders.
 // Returns a map where key is offer_id and value is true if that offer has active orders (PENDING or OPEN status).
 func (r *OrderRepository) HasActiveOrdersByOfferList(ctx context.Context, offerIDs []int64) (map[int64]bool, error) {

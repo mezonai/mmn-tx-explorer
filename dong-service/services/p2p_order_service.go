@@ -28,7 +28,7 @@ func NewOrderService(repo *repository.OrderRepository, offerRepo *repository.Off
 
 type IOrderService interface {
 	CreateOrder(ctx context.Context, offerID int64, req *models.CreateOrderRequest, walletAddress string, buyerUserID string) (*models.Order, *models.Offer, error)
-	ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, error)
+	ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, int64, error)
 	GetOrderByID(ctx context.Context, id int64) (*models.Order, error)
 	ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o *models.Order) error
 	ConfirmOrderAsSeller(ctx context.Context, orderID int64, o *models.Order, offer *models.Offer) error
@@ -109,10 +109,15 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 	return order, offer, nil
 }
 
-func (s *OrderService) ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, error) {
+func (s *OrderService) ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, int64, error) {
 	orders, err := s.repo.ListOrdersByOffer(ctx, offerID, pagination)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	count, err := s.repo.CountOrdersByOffer(ctx, offerID)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	of, err := s.offerRepo.GetOfferByID(ctx, offerID)
@@ -125,7 +130,7 @@ func (s *OrderService) ListOrdersByOffer(ctx context.Context, offerID int64, pag
 		}
 	}
 
-	return orders, nil
+	return orders, count, nil
 }
 
 func (s *OrderService) GetOrderByID(ctx context.Context, id int64) (*models.Order, error) {
