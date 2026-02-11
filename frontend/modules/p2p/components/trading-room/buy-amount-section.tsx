@@ -137,7 +137,11 @@ export const BuyAmountSection = ({
     setShowConfirmModal(false);
   };
 
-  const isValidAmount = amountMZD >= initialMin.toNumber() && amountMZD <= effectiveMax.toNumber() && (!isRespondingToBuyOffer || (amountMZD <= userBalance && isFormValid));
+  const amountBN = new BigNumber(amountMZD);
+  const isRangeValid = amountBN.isGreaterThanOrEqualTo(initialMin) && amountBN.isLessThanOrEqualTo(effectiveMax);
+  const isBalanceValid = !isRespondingToBuyOffer || amountMZD <= userBalance;
+  const isValidAmount =
+    isRangeValid && isBalanceValid && (!isRespondingToBuyOffer || isFormValid);
 
   return (
     <div className={`mb-6 ${isRespondingToBuyOffer ? 'grid grid-cols-1 lg:grid-cols-2 gap-8' : 'space-y-4'}`}>
@@ -232,7 +236,7 @@ export const BuyAmountSection = ({
           </p>
         )}
 
-        {!isValidAmount && amountMZD > 0 && (
+        {!isRangeValid && amountMZD > 0 && (
           <p className="text-center text-xs text-red-500">
             Amount must be between {initialMin.toFormat()} and {effectiveMax.toFormat()}{' '}
             {APP_CONFIG.CHAIN_SYMBOL}
