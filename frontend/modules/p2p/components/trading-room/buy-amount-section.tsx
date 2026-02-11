@@ -8,24 +8,22 @@ import { CheckCircle2 } from 'lucide-react';
 import { APP_CONFIG } from '@/configs/app.config';
 import { ConfirmPurchaseModal } from './confirm-purchase-modal';
 import { formatCurrency } from '@/modules/p2p/util';
+import BigNumber from 'bignumber.js';
+import { NumberUtil } from '@/utils';
 
 interface BuyAmountSectionProps {
   offer: P2POffer;
   onConfirmBuy: (amountMZD: number, amountVND: number) => void;
   isLoading?: boolean;
   extraDisabled?: boolean;
+  isSeller?: boolean;
 }
 
 const getRawValue = (val: string): number => {
   return parseFloat(val.replace(/\./g, '').replace(/,/g, '')) || 0;
 };
 
-export const BuyAmountSection = ({
-  offer,
-  onConfirmBuy,
-  isLoading = false,
-  extraDisabled = false,
-}: BuyAmountSectionProps) => {
+export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false, extraDisabled = false, isSeller = false }: BuyAmountSectionProps) => {
   const [amountMZD, setAmountMZD] = useState<number>(0);
   const [displayValue, setDisplayValue] = useState<string>('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -46,23 +44,26 @@ export const BuyAmountSection = ({
     }
   };
 
-  const available = offer.amount;
-  const initialMin = offer.limit.min;
-  const effectiveMax = Math.min(offer.limit.max, available);
+  const available = NumberUtil.scaleDownBigNumber(new BigNumber(offer.amount));
+  const initialMin = NumberUtil.scaleDownBigNumber(new BigNumber(offer.limit.min));
+  const limitMax = NumberUtil.scaleDownBigNumber(new BigNumber(offer.limit.max));
+  const effectiveMax = BigNumber.min(limitMax, available);
 
-  let placeholder = `Minimum: ${formatCurrency(initialMin)} - Maximum: ${formatCurrency(effectiveMax)}`;
-  let isDisabled = extraDisabled;
+  let placeholder = `Minimum: ${initialMin.toFormat()} - Maximum: ${effectiveMax.toFormat()}`;
+  let isDisabled = false;
 
-  if (available === 0) {
+  if (isSeller) {
+    isDisabled = true;
+  } else if (available.isZero()) {
     placeholder = 'Minimum: 0 - Maximum: 0';
     isDisabled = true;
-  } else if (available < initialMin) {
+  } else if (available.isLessThan(initialMin)) {
     placeholder = 'The available amount is below the minimum requirement.';
     isDisabled = true;
   }
 
   const handleConfirm = () => {
-    if (amountMZD >= initialMin && amountMZD <= effectiveMax && !extraDisabled) {
+    if (amountMZD >= initialMin.toNumber() && amountMZD <= effectiveMax.toNumber()) {
       setShowConfirmModal(true);
     }
   };
@@ -72,7 +73,7 @@ export const BuyAmountSection = ({
     setShowConfirmModal(false);
   };
 
-  const isValidAmount = amountMZD >= initialMin && amountMZD <= effectiveMax;
+  const isValidAmount = amountMZD >= initialMin.toNumber() && amountMZD <= effectiveMax.toNumber();
 
   return (
     <div className="mb-6 space-y-4">
@@ -91,13 +92,16 @@ export const BuyAmountSection = ({
             {APP_CONFIG.CHAIN_SYMBOL}
           </span>
         </div>
+        <div className="text-muted-foreground mt-1 text-xs">
+          Available: {available.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}
+        </div>
         <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-          <div>Available: {formatCurrency(available)} {APP_CONFIG.CHAIN_SYMBOL}</div>
+          <div>Available: {available.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}</div>
           <div className="flex gap-2">
             <Button
               onClick={() => {
-                setAmountMZD(initialMin);
-                setDisplayValue(formatCurrency(initialMin));
+                setAmountMZD(initialMin.toNumber());
+                setDisplayValue(initialMin.toFormat());
                 setSelectionType('min');
               }}
               disabled={isDisabled}
@@ -110,8 +114,8 @@ export const BuyAmountSection = ({
             </Button>
             <Button
               onClick={() => {
-                setAmountMZD(effectiveMax);
-                setDisplayValue(formatCurrency(effectiveMax));
+                setAmountMZD(effectiveMax.toNumber());
+                setDisplayValue(effectiveMax.toFormat());
                 setSelectionType('max');
               }}
               disabled={isDisabled}
@@ -148,17 +152,17 @@ export const BuyAmountSection = ({
       <div className="mt-4 flex justify-center">
         <Button
           onClick={handleConfirm}
-          disabled={!isValidAmount || isLoading || extraDisabled}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-500 px-5 py-6 text-base font-semibold text-white shadow-lg transition hover:bg-emerald-600"
+          disabled={!isValidAmount || isLoading}
+          className="w-full bg-emerald-500 hover:bg-emerald-600 inline-flex items-center justify-center rounded-lg px-5 py-6 text-base font-semibold text-white shadow-lg transition gap-2"
         >
           <CheckCircle2 className="h-5 w-5" />
           {isLoading ? 'Processing...' : 'Confirm purchase'}
         </Button>
       </div>
 
-      {!isValidAmount && amountMZD > 0 && !extraDisabled && (
+      {!isValidAmount && amountMZD > 0 && (
         <p className="text-center text-xs text-red-500">
-          Amount must be between {formatCurrency(initialMin)} and {formatCurrency(effectiveMax)}{' '}
+          Amount must be between {initialMin.toFormat()} and {effectiveMax.toFormat()}{' '}
           {APP_CONFIG.CHAIN_SYMBOL}
         </p>
       )}

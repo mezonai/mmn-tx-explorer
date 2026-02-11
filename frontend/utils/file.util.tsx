@@ -1,0 +1,48 @@
+import React from 'react';
+import { FileText, File } from 'lucide-react';
+
+/**
+ * Get the appropriate icon for a file based on its name and type
+ * @param filename - Name of the file
+ * @param filetype - MIME type of the file
+ * @returns React element or null for images
+ */
+export const getFileIcon = (filename: string, filetype?: string) => {
+    const ext = filename.split('.').pop()?.toLowerCase();
+    if (filetype?.startsWith('image/')) return null;
+    if (ext === 'pdf') return <FileText className="h-5 w-5 text-red-500" />;
+    if (['doc', 'docx'].includes(ext || '')) return <FileText className="h-5 w-5 text-blue-500" />;
+    if (['json', 'html', 'js', 'ts', 'jsx', 'tsx'].includes(ext || ''))
+        return <FileText className="h-5 w-5 text-purple-500" />;
+    return <File className="h-5 w-5 text-gray-500" />;
+};
+
+/**
+ * Extract files from a clipboard event
+ * @param e - React ClipboardEvent
+ * @returns Array of File objects
+ */
+export const getFilesFromClipboard = (e: React.ClipboardEvent): File[] => {
+    const items = e.clipboardData?.items;
+    if (!items) return [];
+
+    const files: File[] = [];
+    for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.kind === 'file') {
+            const file = item.getAsFile();
+            if (file) files.push(file);
+        }
+    }
+    return files;
+};
+
+/**
+ * Extract files from a drag event
+ * @param e - React DragEvent
+ * @returns Array of File objects
+ */
+export const getFilesFromDragEvent = (e: React.DragEvent): File[] => {
+    if (!e.dataTransfer) return [];
+    return Array.from(e.dataTransfer.files);
+};

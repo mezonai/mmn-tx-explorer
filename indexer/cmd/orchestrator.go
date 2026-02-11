@@ -3,8 +3,10 @@ package cmd
 import (
 	"net/http"
 
+	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/orchestrator"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/services"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -43,6 +45,12 @@ func RunOrchestrator(cmd *cobra.Command, args []string) {
 			return
 		}
 	}()
+
+	if config.Cfg.Event.APIURL != "" {
+		if err := services.InitEventService(config.Cfg.Event.APIURL, config.Cfg.Event.APIKey); err != nil {
+			log.Error().Err(err).Msg("Failed to initialize Event Service")
+		}
+	}
 
 	orchestratorService.Start()
 }

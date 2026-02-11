@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { APP_CONFIG } from '@/configs/app.config';
 import { ROUTES } from '@/configs/routes.config';
 import { Countdown } from '../../shared/count-down';
+import { NumberUtil } from '@/utils';
+import BigNumber from 'bignumber.js';
 import { getOrderStatusInfo } from '@/modules/p2p/util';
 import { P2POrder } from '@/modules/p2p/types';
 import { useRouter } from 'next/navigation';
-import { NumberUtil } from '@/utils';
 interface OrderMobileCardProps {
   order: P2POrder;
 }
@@ -55,12 +56,22 @@ export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
           <span className="text-muted-foreground mb-1 text-[10px] font-bold uppercase">Amount / Total</span>
           <div className="flex items-end justify-between">
             <div>
-              <p className="text-utility-success-600 text-base leading-none font-bold">
-                {new Intl.NumberFormat('en-US').format(Number(order.amount))} {APP_CONFIG.CHAIN_SYMBOL}
-              </p>
-              <p className="text-muted-foreground mt-1 text-xs">
-                {new Intl.NumberFormat('en-US').format(Number(order.amount * order.price_rate))} VND
-              </p>
+              {
+                (() => {
+                  const amount = NumberUtil.scaleDownBigNumber(new BigNumber(order.amount));
+                  const totalVND = amount.multipliedBy(order.price_rate);
+                  return (
+                    <>
+                      <p className="text-utility-success-600 text-base leading-none font-bold">
+                        {amount.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}
+                      </p>
+                      <p className="text-muted-foreground mt-1 text-xs">
+                        {totalVND.toFormat()} VND
+                      </p>
+                    </>
+                  );
+                })()
+              }
             </div>
             <div className="text-right">
               <p className="text-muted-foreground mb-1 text-[10px] leading-none font-bold uppercase">Rate</p>
