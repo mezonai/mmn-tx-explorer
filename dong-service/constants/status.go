@@ -104,6 +104,7 @@ const (
 	TradingPending   = "PENDING"
 	TradingConfirmed = "CONFIRMED"
 	TradingCanceled  = "CANCELED"
+	TradingExpired   = "EXPIRED"
 	TradingFailed    = "FAILED"
 	TradingCompleted = "COMPLETED"
 )

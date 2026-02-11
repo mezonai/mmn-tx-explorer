@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"dong-service/constants"
 	"dong-service/models"
 	"fmt"
 	"strings"
@@ -41,7 +42,7 @@ func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order, 
 }
 
 func (r *OrderRepository) HasActiveOrders(ctx context.Context, offerID int64, tx *sql.Tx) (bool, error) {
-	query := fmt.Sprintf("SELECT 1 FROM %s.p2p_orders WHERE offer_id = $1 AND status IN ('PENDING','OPEN') LIMIT 1 FOR UPDATE", r.dongSchema)
+	query := fmt.Sprintf("SELECT 1 FROM %s.p2p_orders WHERE offer_id = $1 AND status IN ('%s','%s') LIMIT 1 FOR UPDATE", r.dongSchema, constants.TradingPending, constants.TradingOpen)
 	var v int
 	err := tx.QueryRowContext(ctx, query, offerID).Scan(&v)
 	if err == sql.ErrNoRows {
@@ -51,7 +52,7 @@ func (r *OrderRepository) HasActiveOrders(ctx context.Context, offerID int64, tx
 }
 
 func (r *OrderRepository) CountActiveOrdersByUser(ctx context.Context, buyerUserID string, tx *sql.Tx) (int, error) {
-	query := fmt.Sprintf("SELECT COUNT(*) FROM %s.p2p_orders WHERE buyer_user_id = $1 AND status IN ('PENDING','OPEN')", r.dongSchema)
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s.p2p_orders WHERE buyer_user_id = $1 AND status IN ('%s','%s')", r.dongSchema, constants.TradingPending, constants.TradingOpen)
 	var count int
 	err := tx.QueryRowContext(ctx, query, buyerUserID).Scan(&count)
 	if err != nil {
@@ -88,8 +89,8 @@ func (r *OrderRepository) CancelExpiredOrders(ctx context.Context, cutoff time.T
 	query := fmt.Sprintf(`
 		WITH cancelled AS (
 			UPDATE %s.p2p_orders
-			SET status = 'CANCELED', updated_at = NOW()
-			WHERE status IN ('OPEN', 'PENDING') AND expires_at < $1
+			SET status = '%s', updated_at = NOW()
+			WHERE status IN ('%s', '%s') AND expires_at < $1
 			RETURNING order_id, offer_id, order_amount
 		),
 		restored AS (
@@ -100,7 +101,7 @@ func (r *OrderRepository) CancelExpiredOrders(ctx context.Context, cutoff time.T
 			RETURNING c.order_id
 		)
 		SELECT order_id FROM restored
-	`, r.dongSchema, r.dongSchema)
+	`, r.dongSchema, constants.TradingExpired, constants.TradingOpen, constants.TradingPending, r.dongSchema)
 
 	rows, err := tx.QueryContext(ctx, query, cutoff)
 	if err != nil {
@@ -269,6 +270,22 @@ func (r *OrderRepository) CountOrdersByWalletAddress(ctx context.Context, wallet
 	return total, nil
 }
 
+func (r *OrderRepository) CountAllOrdersByOffer(ctx context.Context, offerID int64) (int64, error) {
+	query := fmt.Sprintf(`
+		SELECT COUNT(*) 
+		FROM %s.p2p_orders
+		WHERE offer_id = $1 AND status IN ('%s', '%s', '%s', '%s')
+	`, r.dongSchema, constants.TradingOpen, constants.TradingPending, constants.TradingConfirmed, constants.TradingExpired)
+
+	var total int64
+	err := r.db.QueryRowContext(ctx, query, offerID).Scan(&total)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count orders by offer: %w", err)
+	}
+
+	return total, nil
+}
+
 // HasActiveOrdersByOfferList checks which offers from the provided list have active orders.
 // Returns a map where key is offer_id and value is true if that offer has active orders (PENDING or OPEN status).
 func (r *OrderRepository) HasActiveOrdersByOfferList(ctx context.Context, offerIDs []int64) (map[int64]bool, error) {
@@ -280,8 +297,8 @@ func (r *OrderRepository) HasActiveOrdersByOfferList(ctx context.Context, offerI
 	query := fmt.Sprintf(`
 		SELECT DISTINCT offer_id 
 		FROM %s.p2p_orders 
-		WHERE offer_id = ANY($1) AND status IN ('PENDING', 'OPEN')
-	`, r.dongSchema)
+		WHERE offer_id = ANY($1) AND status IN ('%s', '%s')
+	`, r.dongSchema, constants.TradingPending, constants.TradingOpen)
 
 	rows, err := r.db.QueryContext(ctx, query, pq.Array(offerIDs))
 	if err != nil {

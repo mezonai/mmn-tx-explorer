@@ -271,11 +271,11 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 		}
 	}()
 
-	hasActive, err := s.orderRepo.HasActiveOrders(ctx, offerId, tx)
+	orderCount, err := s.orderRepo.CountAllOrdersByOffer(ctx, offerId)
 	if err != nil {
 		return err
 	}
-	if hasActive {
+	if orderCount > 0 {
 		return fmt.Errorf(constants.ErrFailedToCancelOfferWithOrder)
 	}
 

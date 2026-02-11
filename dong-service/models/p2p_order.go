@@ -13,8 +13,9 @@ const (
 	OrderStatusPending   OrderStatus = "PENDING"
 	OrderStatusConfirmed OrderStatus = "CONFIRMED"
 	OrderStatusOpen      OrderStatus = "OPEN"
-	OrderStatusCanceled  OrderStatus = "CANCELED"
-	OrderStatusFailed    OrderStatus = "FAILED"
+	OrderStatusCanceled  OrderStatus = "CANCELED" // Manual cancellation by user (currently not used)
+	OrderStatusExpired   OrderStatus = "EXPIRED"  // Automatic expiration by cron job
+	OrderStatusFailed    OrderStatus = "FAILED"   // Blockchain transaction failed
 	OrderStatusCompleted OrderStatus = "COMPLETED"
 )
 
