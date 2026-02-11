@@ -86,6 +86,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		Status:                    constants.TradingOpen,
 		TransferCode:              &transferCode,
 		ExpiresAt:                 &expiresAt,
+		BankInfo:                  offer.BankInfo,
 	}
 
 	if err = s.offerRepo.ReserveQuantity(ctx, offerID, orderAmount, tx); err != nil {
