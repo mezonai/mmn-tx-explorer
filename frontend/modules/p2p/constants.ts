@@ -52,3 +52,5 @@ export const P2P_TRADING_ROLE = {
 
 export const MAX_CHAR_LIMIT = 5000;
 export const MAX_FILE_SIZE = 20 * 1024 * 1024;
+
+export const ORDER_EXPIRATION_DURATION_MS = 4 * 60 * 60 * 1000;
