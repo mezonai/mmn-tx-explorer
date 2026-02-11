@@ -325,36 +325,3 @@ func (r *OrderRepository) HasActiveOrdersByOfferList(ctx context.Context, offerI
 
 	return result, rows.Err()
 }
-
-// CountOrdersByOfferList counts orders for each offer in the provided list.
-// Returns a map where key is offer_id and value is the total count of orders.
-func (r *OrderRepository) CountOrdersByOfferList(ctx context.Context, offerIDs []int64) (map[int64]int64, error) {
-	result := make(map[int64]int64)
-	if len(offerIDs) == 0 {
-		return result, nil
-	}
-
-	query := fmt.Sprintf(`
-		SELECT offer_id, COUNT(*) 
-		FROM %s.p2p_orders 
-		WHERE offer_id = ANY($1)
-		GROUP BY offer_id
-	`, r.dongSchema)
-
-	rows, err := r.db.QueryContext(ctx, query, pq.Array(offerIDs))
-	if err != nil {
-		return nil, fmt.Errorf("failed to count orders for offers: %w", err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var offerID int64
-		var count int64
-		if err := rows.Scan(&offerID, &count); err != nil {
-			return nil, fmt.Errorf("failed to scan offer_id and count: %w", err)
-		}
-		result[offerID] = count
-	}
-
-	return result, rows.Err()
-}
