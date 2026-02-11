@@ -130,6 +130,8 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		limitMaxInt = limitMinInt
 	}
 
+	// Sell offers start as OPEN (waiting for escrow deposit),
+	// Buy offers start as CONFIRMED (ready for sellers to fill).
 	initialStatus := constants.TradingOpen
 	if req.Side == models.OfferSideBuy {
 		initialStatus = constants.TradingConfirmed
@@ -144,7 +146,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		AvailableAmount:           types.NewBigIntString(amountInt).Multiply(constants.TokenMultiplierBigIntString),
 		TotalAmount:               types.NewBigIntString(amountInt).Multiply(constants.TokenMultiplierBigIntString),
 		PayableAmount:             types.NewBigIntString(priceInt),
-		Status:                    constants.TradingOpen,
+		Status:                    initialStatus,
 		BankInfo:                  bankInfoStr,
 		Limit: &models.OfferLimit{
 			Min: types.NewBigIntString(limitMinInt).Multiply(constants.TokenMultiplierBigIntString),
