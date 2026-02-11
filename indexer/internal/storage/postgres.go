@@ -831,6 +831,29 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 			return err
 		}
 
+		redEnvelopeTxMap := make(map[string]common.Transaction)
+		redEnvelopeIDMap := make(map[string]string)
+		type LuckyMoneyExtraInfo struct {
+			RedEnvelopeID string `json:"red_envelope_id"`
+		}
+		for i := range blockData.Transactions {
+			t := blockData.Transactions[i]
+			t.TransactionExtraInfoType = detectTransactionType(t.ExtraInfo)
+			if t.TransactionExtraInfoType == common.TransactionExtraInfoLuckyMoney && t.ExtraInfo != "" &&
+				(*t.Status == (uint64)(pb.TransactionStatus_CONFIRMED) || *t.Status == (uint64)(pb.TransactionStatus_FINALIZED)) {
+				redEnvelopeTxMap[t.Hash] = t
+				var extra LuckyMoneyExtraInfo
+				if err := json.Unmarshal([]byte(t.ExtraInfo), &extra); err == nil && extra.RedEnvelopeID != "" {
+					redEnvelopeIDMap[t.Hash] = extra.RedEnvelopeID
+				}
+			}
+		}
+		err = p.updateRedEnvelopeStatus(ctx, tx, redEnvelopeTxMap, redEnvelopeIDMap)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to update red envelope status after inserting transactions")
+			return err
+		}
+
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -2648,6 +2671,172 @@ func (p *PostgresConnector) updateOfferStatus(
 	services.SendSocketEventDirect(services.OFFER_ROOM, services.OFFER_LIST_REFRESH, map[string]any{
 		"action": "updated p2p offer status",
 	})
+
+	return nil
+}
+
+func (p *PostgresConnector) updateRedEnvelopeStatus(
+	ctx context.Context,
+	tx *sql.Tx,
+	txMap map[string]common.Transaction,
+	redEnvelopeIDMap map[string]string,
+) error {
+	log.Info().Int("red_envelopes_to_validate", len(txMap)).Msg("starting red envelope status update")
+	if len(txMap) == 0 {
+		log.Info().Msg("no red envelopes to validate")
+		return nil
+	}
+
+	redEnvelopeIDs := make([]string, 0, len(txMap))
+	for hash := range txMap {
+		redEnvelopeID := redEnvelopeIDMap[hash]
+		if redEnvelopeID != "" {
+			redEnvelopeIDs = append(redEnvelopeIDs, redEnvelopeID)
+		}
+	}
+
+	if len(redEnvelopeIDs) == 0 {
+		log.Info().Msg("no valid red envelopes to update")
+		return nil
+	}
+
+	querySelect := `
+    SELECT
+        id,
+        owner_wallet,
+        red_envelope_wallet,
+        total_amount,
+        status
+    FROM dong_schema.red_envelope
+    WHERE id = ANY($1::uuid[])
+      AND status = 'PENDING'
+    FOR UPDATE
+    `
+
+	rows, err := tx.QueryContext(ctx, querySelect, pq.Array(redEnvelopeIDs))
+	if err != nil {
+		return fmt.Errorf("select red envelopes for validation failed: %w", err)
+	}
+	defer rows.Close()
+
+	type redEnvelopeRow struct {
+		ID                string
+		OwnerWallet       string
+		RedEnvelopeWallet string
+		Amount            string
+		Status            string
+	}
+
+	envelopeMap := make(map[string]redEnvelopeRow)
+
+	for rows.Next() {
+		var e redEnvelopeRow
+		if err := rows.Scan(
+			&e.ID,
+			&e.OwnerWallet,
+			&e.RedEnvelopeWallet,
+			&e.Amount,
+			&e.Status,
+		); err != nil {
+			log.Error().Err(err).Msg("failed to scan red envelope row")
+			return err
+		}
+		envelopeMap[e.ID] = e
+	}
+
+	validRedEnvelopeIDs := make([]string, 0)
+	validTxHashes := make([]string, 0)
+
+	for hash, t := range txMap {
+		redEnvelopeID := redEnvelopeIDMap[hash]
+		e, ok := envelopeMap[redEnvelopeID]
+		if !ok {
+			log.Error().
+				Str("red_envelope_id", redEnvelopeID).
+				Str("tx_hash", t.Hash).
+				Msg("red envelope validation failed: red envelope not found or not PENDING")
+			continue
+		}
+
+		if e.OwnerWallet != t.FromAddress {
+			log.Error().
+				Str("red_envelope_id", redEnvelopeID).
+				Str("tx_hash", t.Hash).
+				Str("expected", e.OwnerWallet).
+				Str("got", t.FromAddress).
+				Msg("red envelope validation failed: owner wallet mismatch")
+			continue
+		}
+
+		if e.RedEnvelopeWallet != t.ToAddress {
+			log.Error().
+				Str("red_envelope_id", redEnvelopeID).
+				Str("tx_hash", t.Hash).
+				Str("expected", e.RedEnvelopeWallet).
+				Str("got", t.ToAddress).
+				Msg("red envelope validation failed: red envelope wallet mismatch")
+			continue
+		}
+
+		transactionValueBig := new(big.Int)
+		envelopeValueBig := new(big.Int)
+		transactionValueBig.SetString(t.Value, 10)
+		envelopeValueBig.SetString(e.Amount, 10)
+		envelopeValueBig.Mul(envelopeValueBig, big.NewInt(P2PMultiplier))
+		if transactionValueBig.Cmp(envelopeValueBig) != 0 {
+			log.Error().
+				Str("red_envelope_id", redEnvelopeID).
+				Str("tx_hash", t.Hash).
+				Str("expected", envelopeValueBig.String()).
+				Str("got", transactionValueBig.String()).
+				Msg("red envelope validation failed: amount mismatch")
+			continue
+		}
+		validRedEnvelopeIDs = append(validRedEnvelopeIDs, redEnvelopeID)
+		validTxHashes = append(validTxHashes, t.Hash)
+	}
+
+	if len(validRedEnvelopeIDs) == 0 {
+		log.Info().Msg("no valid red envelopes to update")
+		return nil
+	}
+
+	queryUpdate := `
+    UPDATE dong_schema.red_envelope re
+    SET
+        status = 'PUBLISHED',
+        transaction_hash = v.tx_hash,
+        updated_at = NOW()
+    FROM (
+        SELECT
+            unnest($1::uuid[]) AS id,
+            unnest($2::text[]) AS tx_hash
+    ) v
+    WHERE re.id = v.id
+      AND re.status = 'PENDING'
+    `
+
+	_, err = tx.ExecContext(
+		ctx,
+		queryUpdate,
+		pq.Array(validRedEnvelopeIDs),
+		pq.Array(validTxHashes),
+	)
+	if err != nil {
+		return fmt.Errorf("batch update red envelopes failed: %w", err)
+	}
+
+	log.Info().Int("red_envelopes_updated", len(validRedEnvelopeIDs)).Msg("batch update red envelope status completed")
+
+	// Send socket event for each updated red envelope
+	for i, redEnvelopeID := range validRedEnvelopeIDs {
+		services.SendSocketEventDirect(services.RED_ENVELOPE_ROOM, services.RED_ENVELOPE_LIST_REFRESH, map[string]any{
+			"action":           "updated red envelope status",
+			"red_envelope_id":  redEnvelopeID,
+			"status":           "PUBLISHED",
+			"transaction_hash": validTxHashes[i],
+		})
+	}
 
 	return nil
 }

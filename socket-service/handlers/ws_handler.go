@@ -177,7 +177,8 @@ func (h *WSHandler) HandleWS(c *gin.Context) {
 
 func (h *WSHandler) ValidateRoom(room string) bool {
 	allowedRooms := map[string]bool{
-		constant.OFFER_ROOM: true,
+		constant.OFFER_ROOM:        true,
+		constant.RED_ENVELOPE_ROOM: true,
 	}
 
 	if _, ok := allowedRooms[room]; ok {
