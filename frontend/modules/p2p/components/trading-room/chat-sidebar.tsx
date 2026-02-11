@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, AlertTriangle, Loader2, MessageCircle, X, Info, AlertCircle, Paperclip } from 'lucide-react';
+import { Send, AlertTriangle, Loader2, MessageCircle, X, Info, AlertCircle, Paperclip, FileText, File as FileIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLightClient, useUser } from '@/providers';
 import { LightSocket } from 'mezon-light-sdk';
@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { formatChatTime, generateMarkdownPayload, isSameDay } from '../../util';
 import { AutoMessagePayload, MessageWithParsedContent, ParsedMessageContent, ChannelMessage } from '../../types';
-import { DateTimeUtil, formatFileSize, getFileIcon, getFilesFromClipboard, getFilesFromDragEvent, normalizeFilename, getSafeFileType } from '@/utils';
+import { DateTimeUtil, formatFileSize, getFilesFromClipboard, getFilesFromDragEvent, uploadAttachmentFile } from '@/utils';
 import { safeJsonParse } from '@/utils/json-parse.utils';
 import { toast } from 'sonner';
 import { MAX_CHAR_LIMIT, MAX_FILE_SIZE } from '../../constants';
@@ -53,6 +53,16 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
 
   const { lightClient } = useLightClient();
   const { user } = useUser();
+
+  const getFileIcon = (filename: string, filetype?: string) => {
+    const ext = filename.split('.').pop()?.toLowerCase();
+    if (filetype?.startsWith('image/')) return null;
+    if (ext === 'pdf') return <FileText className="h-5 w-5 text-red-500" />;
+    if (['doc', 'docx'].includes(ext || '')) return <FileText className="h-5 w-5 text-blue-500" />;
+    if (['json', 'html', 'js', 'ts', 'jsx', 'tsx'].includes(ext || ''))
+      return <FileText className="h-5 w-5 text-purple-500" />;
+    return <FileIcon className="h-5 w-5 text-gray-500" />;
+  };
 
   useEffect(() => {
     isMobileOpenRef.current = isMobileOpen;
@@ -212,40 +222,11 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
 
         while (retryCount < maxRetries) {
           try {
-            const safeName = normalizeFilename(file.name);
-            const safeType = getSafeFileType(file);
-            const uniqueName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}_${safeName}`;
+            const result = await uploadAttachmentFile(lightClient, file, uploadLimiter);
 
-            // Use the limiter to schedule the uploadAttachment call
-            const response = await uploadLimiter.schedule(() =>
-              lightClient.uploadAttachment({
-                filename: uniqueName,
-                filetype: safeType,
-                size: file.size,
-              })
-            );
-
-            if (response?.url) {
-              const uploadRes = await fetch(response.url, {
-                method: 'PUT',
-                headers: { 'Content-Type': safeType },
-                body: file,
-              });
-
-              if (uploadRes.ok) {
-                const urlObj = new URL(response.url);
-                const cdnUrl = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}`;
-
-                uploadedFile = {
-                  filename: file.name,
-                  url: cdnUrl,
-                  size: file.size,
-                  filetype: safeType,
-                };
-                break; // Success
-              } else {
-                throw new Error(`PUT Error: ${uploadRes.status}`);
-              }
+            if (result) {
+              uploadedFile = result;
+              break; // Success
             }
           } catch (err: any) {
             retryCount++;
