@@ -21,6 +21,27 @@ import { AddressFilterDropdown } from '@/components/ui/address-filter-dropdown';
 interface TransactionHistoryCardProps {
   walletAddress: string;
 }
+
+const TRANSACTION_TYPE = {
+  ALL: 'All Transaction',
+  SENT: 'Sent',
+  RECEIVED: 'Received',
+} as const;
+
+const FILTER_TYPE = {
+  FROM: 'from',
+  TO: 'to',
+} as const;
+
+const URL_PARAM = {
+  FROM_FILTER: 'from_filter',
+  TO_FILTER: 'to_filter',
+  TYPE: 'type',
+} as const;
+
+type TransactionTypeValue = (typeof TRANSACTION_TYPE)[keyof typeof TRANSACTION_TYPE];
+type FilterType = (typeof FILTER_TYPE)[keyof typeof FILTER_TYPE];
+
 const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
   page: PAGINATION.DEFAULT_PAGE,
   limit: PAGINATION.DEFAULT_LIMIT,
@@ -45,29 +66,73 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
   const [startDate, setStartDate] = useState<Date>(getDefaultTimeRangeByMonth(1));
   const [endDate, setEndDate] = useState<Date>(new Date());
-  const [transactionType, setTransactionType] = useState('All Transaction');
+  const [transactionType, setTransactionType] = useState<TransactionTypeValue>(TRANSACTION_TYPE.ALL);
   const [fromAddressFilter, setFromAddressFilter] = useState('');
   const [toAddressFilter, setToAddressFilter] = useState('');
   const oneYearAgo = new Date(new Date().setFullYear(new Date().getFullYear() - 1));
   const today = new Date();
+
+  const handleAddressFilterChange = (filterType: FilterType, value: string) => {
+    const isFromFilter = filterType === FILTER_TYPE.FROM;
+    const paramName = isFromFilter ? URL_PARAM.FROM_FILTER : URL_PARAM.TO_FILTER;
+    const otherFilter = isFromFilter ? toAddressFilter : fromAddressFilter;
+
+    if (isFromFilter) {
+      setFromAddressFilter(value);
+    } else {
+      setToAddressFilter(value);
+    }
+
+    const params = new URLSearchParams(urlSearchParams.toString());
+    if (value) {
+      params.set(paramName, value);
+    } else {
+      params.delete(paramName);
+      if (!otherFilter) {
+        setTransactionType(TRANSACTION_TYPE.ALL);
+        params.delete(URL_PARAM.TYPE);
+      }
+    }
+    params.set('page', '1');
+    router.replace(`${pathname}?${params.toString()}`);
+  };
+
   useEffect(() => {
-    const typeParam = urlSearchParams.get('type');
-    const fromFilterParam = urlSearchParams.get('from_filter');
-    const toFilterParam = urlSearchParams.get('to_filter');
+    const typeParam = urlSearchParams.get(URL_PARAM.TYPE);
+    const fromFilterParam = urlSearchParams.get(URL_PARAM.FROM_FILTER);
+    const toFilterParam = urlSearchParams.get(URL_PARAM.TO_FILTER);
 
     if (typeParam === 'received') {
-      setTransactionType('Received');
+      setTransactionType(TRANSACTION_TYPE.RECEIVED);
     } else if (typeParam === 'sent') {
-      setTransactionType('Sent');
+      setTransactionType(TRANSACTION_TYPE.SENT);
+    } else {
+      setTransactionType(TRANSACTION_TYPE.ALL);
     }
 
-    if (fromFilterParam) {
-      setFromAddressFilter(fromFilterParam);
-    }
-    if (toFilterParam) {
-      setToAddressFilter(toFilterParam);
-    }
+    setFromAddressFilter(fromFilterParam || '');
+    setToAddressFilter(toFilterParam || '');
   }, [urlSearchParams]);
+
+  useEffect(() => {
+    const fromFilterParam = urlSearchParams.get(URL_PARAM.FROM_FILTER);
+    const toFilterParam = urlSearchParams.get(URL_PARAM.TO_FILTER);
+
+    const needsCleanup = (!fromAddressFilter && fromFilterParam) || (!toAddressFilter && toFilterParam);
+
+    if (needsCleanup) {
+      const params = new URLSearchParams(urlSearchParams.toString());
+
+      if (!fromAddressFilter && fromFilterParam) {
+        params.delete(URL_PARAM.FROM_FILTER);
+      }
+      if (!toAddressFilter && toFilterParam) {
+        params.delete(URL_PARAM.TO_FILTER);
+      }
+
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }
+  }, [fromAddressFilter, toAddressFilter, urlSearchParams, pathname, router]);
   const getSearchParams = (): ITransactionListParams => {
     const base = {
       ...DEFAULT_VALUE_DATA_SEARCH,
@@ -90,10 +155,10 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
       };
     }
 
-    if (transactionType === 'Sent') {
+    if (transactionType === TRANSACTION_TYPE.SENT) {
       return { ...baseWithDate, filter_from_address: walletAddress };
     }
-    if (transactionType === 'Received') {
+    if (transactionType === TRANSACTION_TYPE.RECEIVED) {
       return { ...baseWithDate, filter_to_address: walletAddress };
     }
     return { ...baseWithDate, wallet_address: walletAddress };
@@ -150,8 +215,9 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
             <Button
               type="button"
               disabled={isExporting}
-              className={`bg-brand-primary hover:bg-brand-primary/80 dark:hover:bg-brand-primary/90 mr-4 inline-flex items-center text-white ${isExporting ? 'cursor-not-allowed opacity-70' : ''
-                }`}
+              className={`bg-brand-primary hover:bg-brand-primary/80 dark:hover:bg-brand-primary/90 mr-4 inline-flex items-center text-white ${
+                isExporting ? 'cursor-not-allowed opacity-70' : ''
+              }`}
               onClick={() => setShowExportModal(true)}
             >
               {isExporting ? (
@@ -192,28 +258,31 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
               placeholder="End date"
             />
 
-            <Select value={transactionType} onValueChange={setTransactionType}>
+            <Select
+              value={transactionType}
+              onValueChange={(value) => setTransactionType(value as TransactionTypeValue)}
+            >
               <SelectTrigger className="h-10 w-full sm:w-[170px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="All Transaction">All Transaction</SelectItem>
-                <SelectItem value="Sent">Sent</SelectItem>
-                <SelectItem value="Received">Received</SelectItem>
+                <SelectItem value={TRANSACTION_TYPE.ALL}>{TRANSACTION_TYPE.ALL}</SelectItem>
+                <SelectItem value={TRANSACTION_TYPE.SENT}>{TRANSACTION_TYPE.SENT}</SelectItem>
+                <SelectItem value={TRANSACTION_TYPE.RECEIVED}>{TRANSACTION_TYPE.RECEIVED}</SelectItem>
               </SelectContent>
             </Select>
 
             <AddressFilterDropdown
               label="From"
               value={fromAddressFilter}
-              onChange={setFromAddressFilter}
+              onChange={(value) => handleAddressFilterChange(FILTER_TYPE.FROM, value)}
               placeholder="Enter from address..."
             />
 
             <AddressFilterDropdown
               label="To"
               value={toAddressFilter}
-              onChange={setToAddressFilter}
+              onChange={(value) => handleAddressFilterChange(FILTER_TYPE.TO, value)}
               placeholder="Enter to address..."
             />
           </div>
