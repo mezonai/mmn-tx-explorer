@@ -313,7 +313,7 @@ export const P2P = () => {
           <div className="space-y-6">
             <div className="block lg:hidden">
               {(myOffers?.data ?? []).map((offer) => (
-                <OfferMobileCard key={offer.offer_id} offer={offer} />
+                <OfferMobileCard key={offer.offer_id} offer={offer} isMyOffer={true} />
               ))}
             </div>
             <div className="hidden lg:block">

@@ -113,9 +113,9 @@ export const OfferOrdersModal = ({ offer, open, onOpenChange }: OfferOrdersModal
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-3xl border-gray-800 bg-[#0B0F1A] text-white p-6 gap-0">
-                <DialogHeader className="mb-6">
+                <DialogHeader className="mb-4 md:mb-6">
                     <div className="flex items-center gap-3">
-                        <DialogTitle className="text-2xl font-bold tracking-tight">Offer #{offer.offer_id}</DialogTitle>
+                        <DialogTitle className="text-lg md:text-2xl font-bold tracking-tight">Offer #{offer.offer_id}</DialogTitle>
                         <Chip
                             variant={offer.side === TradeTypes.SELL ? 'error' : 'success'}
                             className="rounded-full px-3 py-0.5 text-[10px] font-black border-1"
@@ -128,26 +128,28 @@ export const OfferOrdersModal = ({ offer, open, onOpenChange }: OfferOrdersModal
                     </p>
                 </DialogHeader>
 
-                <div className="grid grid-cols-2 gap-4 mb-8">
-                    <div className="bg-gray-900/40 border border-gray-800/50 p-5 rounded-3xl">
-                        <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.1em] mb-2">TOTAL</p>
-                        <p className="text-2xl font-black text-white">{total.toFormat()} đồng</p>
+                <div className="grid grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8">
+                    <div className="bg-gray-900/40 border border-gray-800/50 p-3 md:p-5 rounded-2xl md:rounded-3xl">
+                        <p className="text-[8px] md:text-[10px] text-gray-500 font-black uppercase tracking-[0.1em] mb-1 md:mb-2">TOTAL</p>
+                        <p className="text-lg md:text-2xl font-black text-white">{total.toFormat()} đồng</p>
                     </div>
-                    <div className="bg-gray-900/40 border border-gray-800/50 p-5 rounded-3xl">
-                        <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.1em] mb-2">REMAINING</p>
-                        <p className="text-2xl font-black text-white">{available.toFormat()} đồng</p>
+                    <div className="bg-gray-900/40 border border-gray-800/50 p-3 md:p-5 rounded-2xl md:rounded-3xl">
+                        <p className="text-[8px] md:text-[10px] text-gray-500 font-black uppercase tracking-[0.1em] mb-1 md:mb-2">REMAINING</p>
+                        <p className="text-lg md:text-2xl font-black text-white">{available.toFormat()} đồng</p>
                     </div>
                 </div>
 
-                <div className="relative">
-                    <Table<P2POrder>
-                        columns={columns}
-                        rows={orders}
-                        isLoading={isLoading}
-                        getRowKey={(r) => r.order_id}
-                        classNameLayout="border-none bg-transparent"
-                        nullDataContext="No orders found for this offer"
-                    />
+                <div className="relative overflow-x-auto pb-2 scrollbar-hide">
+                    <div className="min-w-[600px] lg:min-w-full">
+                        <Table<P2POrder>
+                            columns={columns}
+                            rows={orders}
+                            isLoading={isLoading}
+                            getRowKey={(r) => r.order_id}
+                            classNameLayout="border-none bg-transparent"
+                            nullDataContext="No orders found for this offer"
+                        />
+                    </div>
                 </div>
             </DialogContent>
         </Dialog>
