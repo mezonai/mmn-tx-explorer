@@ -91,7 +91,7 @@ func (r *OfferRepository) UpdateOfferStatus(
 	return err
 }
 
-func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, fromAmount *string, toAmount *string, pagination any) ([]models.Offer, error) {
+func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, fromAmount *string, toAmount *string, side *string, pagination any) ([]models.Offer, error) {
 	base := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_address, offer_creator_wallet_address, offer_creator_user_id, side, symbol, available_amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, bank_info, created_at, updated_at FROM %s.p2p_offers`, r.dongSchema)
 
 	whereClauses := []string{}
@@ -457,7 +457,7 @@ func (r *OfferRepository) CheckAndCompleteIfEmpty(ctx context.Context, offerID i
 	return err
 }
 
-func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, error) {
+func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAddress string, side *string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, error) {
 	whereClauses := []string{"offer_creator_wallet_address = $1"}
 	args := []any{walletAddress}
 	argCount := 2

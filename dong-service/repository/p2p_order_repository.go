@@ -38,8 +38,8 @@ func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order, 
 		order.TransferCode,
 		order.ExpiresAt,
 		order.BankInfo,
-		order.SellerWalletAddress,
-		order.SellerUserID,
+		order.OfferCreatorWalletAddress,
+		order.OfferCreatorUserID,
 	).Scan(&order.OrderID, &order.CreatedAt, &order.UpdatedAt)
 }
 
@@ -173,8 +173,8 @@ func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, 
 			&o.CreatedAt,
 			&o.UpdatedAt,
 			&o.BankInfo,
-			&o.SellerWalletAddress,
-			&o.SellerUserID,
+			&o.OfferCreatorWalletAddress,
+			&o.OfferCreatorUserID,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan order: %w", err)
 		}
@@ -202,8 +202,6 @@ func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.O
 		&o.CreatedAt,
 		&o.UpdatedAt,
 		&o.BankInfo,
-		&o.SellerWalletAddress,
-		&o.SellerUserID,
 	); err != nil {
 		return nil, err
 	}
@@ -253,8 +251,8 @@ func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAd
 			&o.CreatedAt,
 			&o.UpdatedAt,
 			&o.BankInfo,
-			&o.SellerWalletAddress,
-			&o.SellerUserID,
+			&o.OfferCreatorWalletAddress,
+			&o.OfferCreatorUserID,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan order: %w", err)
 		}
@@ -360,4 +358,3 @@ func (r *OrderRepository) CountOrdersByOfferList(ctx context.Context, offerIDs [
 
 	return result, rows.Err()
 }
-
