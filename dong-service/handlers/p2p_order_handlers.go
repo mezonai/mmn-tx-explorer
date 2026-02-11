@@ -312,7 +312,7 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 		}
 	}
 
-	isOfferCreator := offer != nil && walletAddress == offer.OfferCreatorWalletAddress
+	isOfferCreator := offer != nil && offer.OfferCreatorWalletAddress != nil && walletAddress == *offer.OfferCreatorWalletAddress
 	isOrderCreator := order.OrderCreatorWalletAddress != nil && walletAddress == *order.OrderCreatorWalletAddress
 
 	if !isOfferCreator && !isOrderCreator {

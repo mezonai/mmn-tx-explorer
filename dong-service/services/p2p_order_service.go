@@ -227,9 +227,9 @@ func (s *OrderService) ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o
 	// Send ORDER_CONFIRMED event to seller
 	if o.OfferID != nil {
 		of, err := s.offerRepo.GetOfferByID(context.Background(), *o.OfferID)
-		if err == nil && of.OfferCreatorWalletAddress != "" {
+		if err == nil && of.OfferCreatorWalletAddress != nil && *of.OfferCreatorWalletAddress != "" {
 			payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.OrderAmount}
-			go SendSocketEvent(of.OfferCreatorWalletAddress, constants.ORDER_CONFIRMED, payload)
+			go SendSocketEvent(*of.OfferCreatorWalletAddress, constants.ORDER_CONFIRMED, payload)
 		}
 	}
 
@@ -266,8 +266,15 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 			return err
 		}
 
+		var isTargetWallet *string
+		if offer.Side == "BUY" {
+			isTargetWallet = offer.OfferCreatorWalletAddress
+		} else {
+			isTargetWallet = o.OrderCreatorWalletAddress
+		}
+
 		if intermediaryWallet != nil && o.OrderAmount.Sign() > 0 {
-			txHash, transferErr := s.blockchain.TransferMoney(intermediaryWallet.EncryptedPrivateKey, *offer.IntermediaryWalletAddress, *o.OrderCreatorWalletAddress, o.OrderAmount.String(), constants.TextDataP2PTrading, constants.ExtraInfoP2PTrading)
+			txHash, transferErr := s.blockchain.TransferMoney(intermediaryWallet.EncryptedPrivateKey, *offer.IntermediaryWalletAddress, *isTargetWallet, o.OrderAmount.String(), constants.TextDataP2PTrading, constants.ExtraInfoP2PTrading)
 			if transferErr != nil {
 				err = fmt.Errorf("failed to transfer funds to buyer: %w", transferErr)
 				return err
