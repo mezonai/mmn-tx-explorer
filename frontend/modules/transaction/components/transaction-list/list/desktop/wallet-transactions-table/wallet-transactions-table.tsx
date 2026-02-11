@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Transaction } from '@/modules/donation-campaign';
 import { TxStatusBadge } from '@/modules/transaction/components/shared';
 import { APP_CONFIG } from '@/configs/app.config';
+import { WalletAddressDisplay, WalletAddressDisplaySkeleton } from '@/modules/wallet/components/wallet-list/list/shared';
 
 interface WalletTransactionsTableProps {
   walletAddress: string;
@@ -42,7 +43,20 @@ export const WalletTransactionsTable = ({
       skeletonContent: <Skeleton className="h-5.5 w-24" />,
       align: 'center',
     },
-
+    {
+      headerContent: 'From',
+      dataKey: 'from_address',
+      renderCell: (tx) => <WalletAddressDisplay address={tx.from_address} className="w-32" />,
+      skeletonContent: <WalletAddressDisplaySkeleton className="w-32" />,
+      align: 'center',
+    },
+    {
+      headerContent: 'To',
+      dataKey: 'to_address',
+      renderCell: (tx) => <WalletAddressDisplay address={tx.to_address} className="w-32" />,
+      skeletonContent: <WalletAddressDisplaySkeleton className="w-32" />,
+      align: 'center',
+    },
     {
       headerContent: 'Status',
       dataKey: 'status',

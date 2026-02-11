@@ -6,6 +6,8 @@ import { authClient } from '@/service';
 export class AuthenticationService {
   private static refreshPromise: Promise<LoginResponse> | null = null;
 
+  static onSessionExpired: (() => void) | null = null;
+
   static async getUserInfo(code: string): Promise<LoginResponse> {
     const response: AxiosResponse<LoginResponse> = await axios.get(AUTHENTICATION_ENDPOINT.USER_INFO, {
       params: { code },
