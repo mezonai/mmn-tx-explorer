@@ -9,14 +9,14 @@ import (
 	"dong-service/logger"
 	"dong-service/models"
 	"dong-service/repository"
+	"dong-service/types"
+	"dong-service/utils"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
 	"strconv"
 )
-
-const OfferMultiplier = 1000000
 
 type OfferService struct {
 	repo           *repository.OfferRepository
@@ -70,7 +70,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 				return nil, fmt.Errorf("invalid wallet balance format: %w", parseErr)
 			}
 
-			requiredBalance := amountInt * OfferMultiplier
+			requiredBalance := amountInt * constants.TokenMultiplier
 			if balanceInt < requiredBalance {
 				return nil, constants.ErrInsufficientAccountBalance
 			}
@@ -141,12 +141,15 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		SellerUserID:              sellerUserID,
 		Side:                      req.Side,
 		Symbol:                    req.Symbol,
-		Amount:                    amountInt,
-		TotalAmount:               amountInt,
-		PayableAmount:             priceInt,
-		Status:                    initialStatus,
+		AvailableAmount:           types.NewBigIntString(amountInt).Multiply(constants.TokenMultiplierBigIntString),
+		TotalAmount:               types.NewBigIntString(amountInt).Multiply(constants.TokenMultiplierBigIntString),
+		PayableAmount:             types.NewBigIntString(priceInt),
+		Status:                    constants.TradingOpen,
 		BankInfo:                  bankInfoStr,
-		Limit:                     &models.OfferLimit{Min: limitMinInt, Max: limitMaxInt},
+		Limit: &models.OfferLimit{
+			Min: types.NewBigIntString(limitMinInt).Multiply(constants.TokenMultiplierBigIntString),
+			Max: types.NewBigIntString(limitMaxInt).Multiply(constants.TokenMultiplierBigIntString),
+		},
 	}
 
 	var priceRateFloat *float64
@@ -166,7 +169,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		computed := float64(amountInt) * (*priceRateFloat)
 		priceInt = int64(math.Round(computed))
 	}
-	offer.PayableAmount = priceInt
+	offer.PayableAmount = types.NewBigIntString(priceInt)
 
 	if err = s.repo.CreateOffer(ctx, offer, tx); err != nil {
 		return nil, err
@@ -180,7 +183,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 }
 
 func (s *OfferService) ListOffers(ctx context.Context, fromAmount *string, toAmount *string, pagination map[string]any) ([]models.Offer, error) {
-	offers, err := s.repo.ListOffers(ctx, nil, nil, nil, nil, nil, fromAmount, toAmount, pagination)
+	offers, err := s.repo.ListOffers(ctx, nil, nil, nil, nil, nil, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount), pagination)
 	if err != nil || len(offers) == 0 {
 		return offers, err
 	}
@@ -208,7 +211,7 @@ func (s *OfferService) ListOffers(ctx context.Context, fromAmount *string, toAmo
 }
 
 func (s *OfferService) CountOffers(ctx context.Context, walletAddress *string, minPrice *string, maxPrice *string, statuses []string, symbol *string, rate *string, fromAmount *string, toAmount *string) (int64, error) {
-	return s.repo.CountOffers(ctx, walletAddress, minPrice, maxPrice, statuses, symbol, rate, fromAmount, toAmount)
+	return s.repo.CountOffers(ctx, walletAddress, minPrice, maxPrice, statuses, symbol, rate, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount))
 }
 
 func (s *OfferService) GetOfferByID(ctx context.Context, id int64) (*models.Offer, error) {
@@ -229,11 +232,11 @@ func (s *OfferService) GetOfferByID(ctx context.Context, id int64) (*models.Offe
 }
 
 func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, int64, error) {
-	offers, err := s.repo.GetOffersByWalletAddress(ctx, walletAddress, pagination, fromAmount, toAmount)
+	offers, err := s.repo.GetOffersByWalletAddress(ctx, walletAddress, pagination, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount))
 	if err != nil {
 		return nil, 0, err
 	}
-	count, err := s.repo.CountOffers(ctx, &walletAddress, nil, nil, nil, nil, nil, fromAmount, toAmount)
+	count, err := s.repo.CountOffers(ctx, &walletAddress, nil, nil, nil, nil, nil, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -285,7 +288,7 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 		offer.Status == constants.TradingConfirmed &&
 			offer.IntermediaryWalletAddress != nil &&
 			*offer.IntermediaryWalletAddress != "" &&
-			offer.Amount > 0 &&
+			offer.AvailableAmount.Sign() > 0 &&
 			s.blockchain != nil &&
 			s.walletRepo != nil
 
@@ -303,7 +306,7 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 			intermediaryWallet.EncryptedPrivateKey,
 			*offer.IntermediaryWalletAddress,
 			offer.SellerWalletAddress,
-			offer.Amount,
+			offer.AvailableAmount.String(),
 			constants.TextDataP2PTrading,
 			constants.ExtraInfoP2PTradingOfferCanceled,
 		)
@@ -338,6 +341,11 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 	if err = tx.Commit(); err != nil {
 		return err
 	}
+
+	go SendSocketEvent(constants.OFFER_ROOM, constants.OFFER_LIST_REFRESH, map[string]any{
+		"action": "cancelled p2p offer",
+	})
+
 	return nil
 }
 
@@ -354,7 +362,7 @@ func (s *OfferService) releaseIntermediaryWallet(ctx context.Context, walletAddr
 
 func (s *OfferService) ReleaseIntermediaryWalletIfOfferComplete(ctx context.Context, offerID int64, tx *sql.Tx) {
 	updatedOffer, getErr := s.repo.GetOfferByIDForUpdate(ctx, offerID, tx)
-	if getErr == nil && updatedOffer != nil && updatedOffer.Amount == 0 {
+	if getErr == nil && updatedOffer != nil && updatedOffer.AvailableAmount.Sign() == 0 {
 		if updatedOffer.IntermediaryWalletAddress != nil && *updatedOffer.IntermediaryWalletAddress != "" {
 			s.releaseIntermediaryWallet(ctx, *updatedOffer.IntermediaryWalletAddress)
 		}

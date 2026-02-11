@@ -38,8 +38,22 @@ func (r *EventRepository) GetListEventByReceiver(receiveAddress string) ([]model
 }
 
 func (r *EventRepository) SaveEvent(event *models.Event) error {
-	query := fmt.Sprintf("INSERT INTO %s.events (id, type, payload, receive_address, create_at) VALUES ($1, $2, $3, $4, $5)", r.eventSchema)
-	_, err := r.db.ExecContext(context.Background(), query, event.ID, event.Type, event.Payload, event.ReceiveAddress, event.CreateAt)
+	query := fmt.Sprintf(`
+		INSERT INTO %s.events 
+			(id, type, status, payload, receive_address, create_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
+	`, r.eventSchema)
+
+	_, err := r.db.ExecContext(
+		context.Background(),
+		query,
+		event.ID,
+		event.Type,
+		event.Status,
+		event.Payload,
+		event.ReceiveAddress,
+		event.CreateAt,
+	)
 	return err
 }
 
