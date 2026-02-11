@@ -9,8 +9,7 @@ import { useRouter } from 'next/navigation';
 import React from 'react';
 import { TriangleAlert } from 'lucide-react';
 import BigNumber from 'bignumber.js';
-import { P2POffer, TradeTypes } from '@/modules/p2p/types';
-import { cn } from '@/lib/utils';
+import { P2POffer } from '@/modules/p2p/types';
 import { OfferOrdersModal } from '../offer-orders-modal';
 import { CancelConfirmDialog } from '../cancel-confirm-dialog';
 import { ShareOfferModal } from '../share-offer-modal';
@@ -38,7 +37,10 @@ const OfferMobileCard = ({ offer, isMyOffer = false }: OfferMobileCardProps) => 
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">Seller</span>
-          <AddressDisplay address={offer.offer_creator_wallet_address} href={ROUTES.WALLET(offer.offer_creator_wallet_address)} />
+          <AddressDisplay
+            address={offer.offer_creator_wallet_address}
+            href={ROUTES.WALLET(offer.offer_creator_wallet_address)}
+          />
         </div>
         <div className="text-right">
           <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">Rate</span>
@@ -121,12 +123,12 @@ const OfferMobileCard = ({ offer, isMyOffer = false }: OfferMobileCardProps) => 
               </div>
             </div>
             {isMyOffer && (
-              <div className="border-border/50 border-t pt-3 flex items-center justify-between">
+              <div className="border-border/50 flex items-center justify-between border-t pt-3">
                 <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">Orders</span>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 border-gray-700 bg-gray-800/50 hover:bg-gray-800 px-3"
+                  className="h-7 border-gray-700 bg-gray-800/50 px-3 hover:bg-gray-800"
                   onClick={() => setIsOrdersModalOpen(true)}
                 >
                   <span className="text-xs text-gray-300">{offer.order_count ?? 0} orders</span>
@@ -147,53 +149,55 @@ const OfferMobileCard = ({ offer, isMyOffer = false }: OfferMobileCardProps) => 
               <div className="relative z-10 flex items-center justify-center gap-2 py-2.5 text-amber-700 dark:text-amber-300">
                 <TriangleAlert className="h-4 w-4 stroke-2" />
 
-                <span className="text-xs font-bold tracking-wider whitespace-nowrap uppercase">Trading in Progress</span>
+                <span className="text-xs font-bold tracking-wider whitespace-nowrap uppercase">
+                  Trading in Progress
+                </span>
               </div>
             </div>
-          </div>
-        ) : user && offer.offer_creator_user_id !== user?.id ? (
-          <Button
-            onClick={() => {
-              router.push(ROUTES.P2P_TRADING_ROOM(offer.offer_id, 'offer'));
-            }}
-            className="w-full rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600"
-          >
-            Buy Mezon đồng
-          </Button>
-        ) : offer.status === OFFERS_STATUS.CANCELED ? (
-          <Chip variant="error" className="w-full justify-center py-2 rounded-lg">
-            CANCELED
-          </Chip>
-        ) : offer.status === OFFERS_STATUS.COMPLETED ? (
-          <Chip variant="success" className="w-full justify-center py-2 rounded-lg">
-            COMPLETED
-          </Chip>
-        ) : offer.status === OFFERS_STATUS.FAILED ? (
-          <Chip variant="error" className="w-full justify-center py-2 rounded-lg">
-            FAILED
-          </Chip>
-        ) : offer.status === OFFERS_STATUS.OPEN ? (
-          <Chip variant="warning" className="w-full justify-center py-2 rounded-lg">
-            OPEN
-          </Chip>
-        ) : offer.status === OFFERS_STATUS.CONFIRMED ? (
-          <div className="flex w-full items-center gap-2">
-            <div className="flex-1">
-              <CancelConfirmDialog offer={offer} />
+          ) : user && offer.offer_creator_user_id !== user?.id ? (
+            <Button
+              onClick={() => {
+                router.push(ROUTES.P2P_TRADING_ROOM(offer.offer_id, 'offer'));
+              }}
+              className="w-full rounded-lg bg-emerald-500 px-6 py-2 font-bold text-white transition hover:bg-emerald-600"
+            >
+              Buy Mezon đồng
+            </Button>
+          ) : offer.status === OFFERS_STATUS.CANCELED ? (
+            <Chip variant="error" className="w-full justify-center rounded-lg py-2">
+              CANCELED
+            </Chip>
+          ) : offer.status === OFFERS_STATUS.COMPLETED ? (
+            <Chip variant="success" className="w-full justify-center rounded-lg py-2">
+              COMPLETED
+            </Chip>
+          ) : offer.status === OFFERS_STATUS.FAILED ? (
+            <Chip variant="error" className="w-full justify-center rounded-lg py-2">
+              FAILED
+            </Chip>
+          ) : offer.status === OFFERS_STATUS.OPEN ? (
+            <Chip variant="warning" className="w-full justify-center rounded-lg py-2">
+              OPEN
+            </Chip>
+          ) : offer.status === OFFERS_STATUS.CONFIRMED ? (
+            <div className="flex w-full items-center gap-2">
+              <div className="flex-1">
+                <CancelConfirmDialog offer={offer} />
+              </div>
+              <div className="flex-1">
+                <ShareOfferModal offer={offer} />
+              </div>
             </div>
           ) : (
-            <Chip variant="default" className="w-full justify-center py-2 rounded-lg">
+            <Chip variant="default" className="w-full justify-center rounded-lg py-2">
               {offer.status}
             </Chip>
           )}
         </div>
       </div>
-      <OfferOrdersModal
-        offer={offer}
-        open={isOrdersModalOpen}
-        onOpenChange={setIsOrdersModalOpen}
-      />
-    </>
+
+      <OfferOrdersModal offer={offer} open={isOrdersModalOpen} onOpenChange={setIsOrdersModalOpen} />
+    </div>
   );
 };
 

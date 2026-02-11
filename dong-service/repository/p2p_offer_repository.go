@@ -92,7 +92,7 @@ func (r *OfferRepository) UpdateOfferStatus(
 }
 
 func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, fromAmount *string, toAmount *string, side *string, pagination any) ([]models.Offer, error) {
-	base := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_address, offer_creator_wallet_address, offer_creator_user_id, side, symbol, available_amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, bank_info, created_at, updated_at FROM %s.p2p_offers`, r.dongSchema)
+	base := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_address, offer_creator_wallet_address, offer_creator_user_id, side, symbol, available_amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, transaction_hash, bank_info, created_at, updated_at FROM %s.p2p_offers`, r.dongSchema)
 
 	whereClauses := []string{}
 	args := []any{}
@@ -482,7 +482,7 @@ func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAd
 
 	query := fmt.Sprintf(`
 		SELECT offer_id, intermediary_wallet_address, offer_creator_wallet_address, offer_creator_user_id, side, symbol, available_amount, total_amount, 
-		       min_amount, max_amount, payable_amount, price_rate, status, bank_info, created_at, updated_at
+		       min_amount, max_amount, payable_amount, price_rate, status, transaction_hash, bank_info, created_at, updated_at
 		FROM %s.p2p_offers
 		WHERE %s
 		ORDER BY created_at DESC

@@ -189,12 +189,6 @@ func (s *OfferService) ListOffers(ctx context.Context, fromAmount *string, toAmo
 		offerIDs[i] = offer.OfferID
 	}
 
-	// Get active orders map
-	activeOrdersMap, err := s.orderRepo.HasActiveOrdersByOfferList(ctx, offerIDs)
-	if err != nil {
-		logger.Error().Err(err).Msg("Failed to check active orders for offers")
-		return offers, nil
-	}
 	return offers, nil
 }
 
