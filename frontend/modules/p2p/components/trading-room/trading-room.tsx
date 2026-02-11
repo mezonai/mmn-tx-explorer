@@ -126,14 +126,14 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
 
   const buyerButtonText = useMemo(() => {
     if (effectiveOrder?.offer_type === TradeTypes.BUY) {
-      return 'Tôi xác nhận muốn mua và đã chuyển VND, thông báo đến người bán';
+      return 'Confirm purchase and payment received. Notify the seller';
     }
     return 'I have transferred, notify the seller';
   }, [effectiveOrder?.offer_type]);
 
   const sellerButtonText = useMemo(() => {
     if (effectiveOrder?.offer_type === TradeTypes.BUY) {
-      return 'Tôi xác nhận đã nhận được VND và release MZD';
+      return 'I confirm that I have received VND and released MZD';
     }
     return `Confirm money received, release ${APP_CONFIG.CHAIN_SYMBOL}`;
   }, [effectiveOrder?.offer_type]);
@@ -401,7 +401,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
           {userRole === P2P_TRADING_ROLE.BUYER && effectiveOrder.status === OrderStatus.PENDING && (
             <p className="text-muted-foreground mb-4 text-sm">
               {effectiveOrder.offer_type === TradeTypes.BUY
-                ? `Đang đợi Seller xác nhận đã nhận VND và release ${APP_CONFIG.CHAIN_SYMBOL}`
+                ? `Waiting for Seller to confirm payment and release  ${APP_CONFIG.CHAIN_SYMBOL}`
                 : 'Waiting for the seller to confirm'}
             </p>
           )}
@@ -410,7 +410,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
             effectiveOrder.status === OrderStatus.OPEN &&
             effectiveOrder.offer_type === TradeTypes.BUY && (
               <p className="text-muted-foreground mb-4 text-sm font-medium italic">
-                Đang đợi Buyer phản hồi xác nhận thanh toán.
+                Waiting for Buyer to confirm payment.
               </p>
             )}
 

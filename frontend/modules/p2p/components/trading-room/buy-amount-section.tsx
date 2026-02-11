@@ -226,7 +226,7 @@ export const BuyAmountSection = ({
             className="w-full bg-emerald-500 hover:bg-emerald-600 inline-flex items-center justify-center rounded-lg px-5 py-6 text-base font-semibold text-white shadow-lg transition gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <CheckCircle2 className="h-5 w-5" />
-            {isLoading ? 'Processing...' : isRespondingToBuyOffer ? 'Tôi xác nhận bán' : 'Confirm purchase'}
+            {isLoading ? 'Processing...' : isRespondingToBuyOffer ? 'Confirm sell' : 'Confirm purchase'}
           </Button>
         </div>
 
