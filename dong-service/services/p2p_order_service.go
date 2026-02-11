@@ -77,7 +77,6 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 
 	transferCode := fmt.Sprintf("ORDER %d", offerID)
 	expiresAt := time.Now().UTC().Add(15 * time.Minute)
-	sideStr := string(offer.Side)
 	order := &models.Order{
 		OfferID:             &offerID,
 		BuyerWalletAddress:  walletAddrPtr,
@@ -87,7 +86,6 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		Status:              constants.TradingOpen,
 		TransferCode:        &transferCode,
 		ExpiresAt:           &expiresAt,
-		OfferType:           &sideStr,
 		BankInfo:            offer.BankInfo,
 		SellerWalletAddress: &offer.SellerWalletAddress,
 		SellerUserID:        &offer.SellerUserID,

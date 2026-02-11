@@ -31,7 +31,6 @@ type Order struct {
 	ExpiresAt           *time.Time         `json:"expires_at,omitempty" db:"expires_at"`
 	CreatedAt           time.Time          `json:"created_at" db:"created_at"`
 	UpdatedAt           time.Time          `json:"updated_at" db:"updated_at"`
-	OfferType           *string            `json:"offer_type,omitempty" db:"offer_type"`
 	BankInfo            *string            `json:"bank_info,omitempty" db:"bank_info"`
 	SellerWalletAddress *string            `json:"seller_wallet_address,omitempty" db:"seller_wallet_address"`
 	SellerUserID        *string            `json:"seller_user_id,omitempty" db:"seller_user_id"`

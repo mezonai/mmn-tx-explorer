@@ -24,8 +24,8 @@ func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order, 
 	query := fmt.Sprintf(`
 			INSERT INTO %s.p2p_orders (
 				offer_id, buyer_wallet_address, buyer_user_id, order_amount, payable_amount, status, transfer_code, expires_at, created_at, updated_at,
-				offer_type, bank_info, seller_wallet_address, seller_user_id
-			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW(),NOW(),$9,$10,$11,$12)
+				bank_info, seller_wallet_address, seller_user_id
+			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW(),NOW(),$9,$10,$11)
         RETURNING order_id, created_at, updated_at
     `, r.dongSchema)
 
@@ -38,7 +38,6 @@ func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order, 
 		order.Status,
 		order.TransferCode,
 		order.ExpiresAt,
-		order.OfferType,
 		order.BankInfo,
 		order.SellerWalletAddress,
 		order.SellerUserID,
@@ -126,7 +125,7 @@ func (r *OrderRepository) CancelExpiredOrders(ctx context.Context, cutoff time.T
 func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, error) {
 	base := fmt.Sprintf(`
 		SELECT order_id, offer_id, buyer_wallet_address, buyer_user_id, order_amount, payable_amount, transaction_hash, status, transfer_code, expires_at, created_at, updated_at,
-		       offer_type, bank_info, seller_wallet_address, seller_user_id
+		       bank_info, seller_wallet_address, seller_user_id
 		FROM %s.p2p_orders 
 		WHERE offer_id = $1`, r.dongSchema)
 
@@ -178,7 +177,6 @@ func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, 
 			&o.ExpiresAt,
 			&o.CreatedAt,
 			&o.UpdatedAt,
-			&o.OfferType,
 			&o.BankInfo,
 			&o.SellerWalletAddress,
 			&o.SellerUserID,
@@ -194,7 +192,7 @@ func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, 
 func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.Order, error) {
 	query := fmt.Sprintf(`
 		SELECT order_id, offer_id, buyer_wallet_address, buyer_user_id, order_amount, payable_amount, transaction_hash, status, transfer_code, expires_at, created_at, updated_at,
-		       offer_type, bank_info, seller_wallet_address, seller_user_id
+		       bank_info, seller_wallet_address, seller_user_id
 		FROM %s.p2p_orders 
 		WHERE order_id = $1`, r.dongSchema)
 	var o models.Order
@@ -212,7 +210,6 @@ func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.O
 		&o.ExpiresAt,
 		&o.CreatedAt,
 		&o.UpdatedAt,
-		&o.OfferType,
 		&o.BankInfo,
 		&o.SellerWalletAddress,
 		&o.SellerUserID,
@@ -227,7 +224,7 @@ func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAd
 	query := fmt.Sprintf(`
 		SELECT o.order_id, o.offer_id, o.buyer_wallet_address, o.buyer_user_id, o.order_amount, o.payable_amount, 
 		       o.transaction_hash, o.status, o.transfer_code, o.expires_at, o.created_at, o.updated_at,
-		       o.offer_type, o.bank_info, o.seller_wallet_address, o.seller_user_id
+		       o.bank_info, o.seller_wallet_address, o.seller_user_id
 		FROM %s.p2p_orders o
 		LEFT JOIN %s.p2p_offers of ON o.offer_id = of.offer_id
 		WHERE o.buyer_wallet_address = $1 OR of.seller_wallet_address = $1
@@ -265,7 +262,6 @@ func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAd
 			&o.ExpiresAt,
 			&o.CreatedAt,
 			&o.UpdatedAt,
-			&o.OfferType,
 			&o.BankInfo,
 			&o.SellerWalletAddress,
 			&o.SellerUserID,
