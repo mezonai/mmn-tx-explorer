@@ -31,6 +31,7 @@ type Offer struct {
 	TransactionHash           *string            `json:"transaction_hash,omitempty" db:"transaction_hash"`
 	BankInfo                  *string            `json:"bank_info,omitempty" db:"bank_info"`
 	HasActiveOrder            *bool              `json:"has_active_order,omitempty" db:"-"` // Not stored in DB, computed on demand
+	OrderCount                int64              `json:"order_count" db:"-"`               // Not stored in DB, computed on demand
 	CreatedAt                 time.Time          `json:"created_at" db:"created_at"`
 	UpdatedAt                 time.Time          `json:"updated_at" db:"updated_at"`
 }

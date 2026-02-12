@@ -196,6 +196,19 @@ func (s *OfferService) ListOffers(ctx context.Context, fromAmount *string, toAmo
 		offerIDs[i] = offer.OfferID
 	}
 
+	// Fetch active orders and order counts in batch
+	activeOrdersMap, _ := s.orderRepo.HasActiveOrdersByOfferList(ctx, offerIDs)
+	orderCountsMap, _ := s.orderRepo.CountOrdersByOfferList(ctx, offerIDs)
+
+	for i := range offers {
+		if hasActive, ok := activeOrdersMap[offers[i].OfferID]; ok {
+			offers[i].HasActiveOrder = &hasActive
+		}
+		if count, ok := orderCountsMap[offers[i].OfferID]; ok {
+			offers[i].OrderCount = count
+		}
+	}
+
 	return offers, nil
 }
 
@@ -214,6 +227,11 @@ func (s *OfferService) GetOfferByID(ctx context.Context, id int64) (*models.Offe
 		hasActive, checkErr := s.orderService.HasActiveOrdersForOffer(ctx, id)
 		if checkErr == nil {
 			offer.HasActiveOrder = &hasActive
+		}
+
+		count, countErr := s.orderRepo.CountOrdersByOffer(ctx, id)
+		if countErr == nil {
+			offer.OrderCount = count
 		}
 	}
 
@@ -235,6 +253,18 @@ func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddre
 		offerIDs := make([]int64, len(offers))
 		for i, offer := range offers {
 			offerIDs[i] = offer.OfferID
+		}
+
+		activeOrdersMap, _ := s.orderRepo.HasActiveOrdersByOfferList(ctx, offerIDs)
+		orderCountsMap, _ := s.orderRepo.CountOrdersByOfferList(ctx, offerIDs)
+
+		for i := range offers {
+			if hasActive, ok := activeOrdersMap[offers[i].OfferID]; ok {
+				offers[i].HasActiveOrder = &hasActive
+			}
+			if count, ok := orderCountsMap[offers[i].OfferID]; ok {
+				offers[i].OrderCount = count
+			}
 		}
 	}
 
