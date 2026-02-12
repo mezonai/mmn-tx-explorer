@@ -4,10 +4,10 @@ import { Pagination } from '@/components/ui/pagination';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useBreakpoint, usePaginationQueryParam } from '@/hooks';
+import { useBreakpoint, usePaginationQueryParam, useQueryParam } from '@/hooks';
 import { EBreakpoint, ESortOrder } from '@/enums';
 import { WalletTransactionsTable, WalletTransactionsCards } from '@/modules/transaction/components';
-import { PAGINATION } from '@/constant';
+import { PAGINATION, TRANSACTION_TYPE, FILTER_TYPE, URL_PARAM, TransactionTypeValue, FilterType } from '@/constant';
 import { ITransactionListParams } from '@/modules/transaction';
 import { useTransactions } from '@/modules/transaction/hooks/useTransactions';
 import { DatePicker } from '@/components/ui/datepicker';
@@ -21,26 +21,6 @@ import { AddressFilterDropdown } from '@/components/ui/address-filter-dropdown';
 interface TransactionHistoryCardProps {
   walletAddress: string;
 }
-
-const TRANSACTION_TYPE = {
-  ALL: 'All Transaction',
-  SENT: 'Sent',
-  RECEIVED: 'Received',
-} as const;
-
-const FILTER_TYPE = {
-  FROM: 'from',
-  TO: 'to',
-} as const;
-
-const URL_PARAM = {
-  FROM_FILTER: 'from_filter',
-  TO_FILTER: 'to_filter',
-  TYPE: 'type',
-} as const;
-
-type TransactionTypeValue = (typeof TRANSACTION_TYPE)[keyof typeof TRANSACTION_TYPE];
-type FilterType = (typeof FILTER_TYPE)[keyof typeof FILTER_TYPE];
 
 const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
   page: PAGINATION.DEFAULT_PAGE,
@@ -66,73 +46,44 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
   const [startDate, setStartDate] = useState<Date>(getDefaultTimeRangeByMonth(1));
   const [endDate, setEndDate] = useState<Date>(new Date());
-  const [transactionType, setTransactionType] = useState<TransactionTypeValue>(TRANSACTION_TYPE.ALL);
-  const [fromAddressFilter, setFromAddressFilter] = useState('');
-  const [toAddressFilter, setToAddressFilter] = useState('');
   const oneYearAgo = new Date(new Date().setFullYear(new Date().getFullYear() - 1));
   const today = new Date();
+
+  // Use useQueryParam hooks for URL parameter management
+  const { value: transactionType, handleChangeValue: setTransactionType } = useQueryParam<TransactionTypeValue>({
+    queryParam: URL_PARAM.TYPE,
+    defaultValue: TRANSACTION_TYPE.ALL,
+  });
+
+  const { value: fromAddressFilter, handleChangeValue: setFromAddressFilter } = useQueryParam<string>({
+    queryParam: URL_PARAM.FROM_FILTER,
+    defaultValue: '',
+  });
+
+  const { value: toAddressFilter, handleChangeValue: setToAddressFilter } = useQueryParam<string>({
+    queryParam: URL_PARAM.TO_FILTER,
+    defaultValue: '',
+  });
 
   const handleAddressFilterChange = (filterType: FilterType, value: string) => {
     const isFromFilter = filterType === FILTER_TYPE.FROM;
     const paramName = isFromFilter ? URL_PARAM.FROM_FILTER : URL_PARAM.TO_FILTER;
     const otherFilter = isFromFilter ? toAddressFilter : fromAddressFilter;
 
-    if (isFromFilter) {
-      setFromAddressFilter(value);
-    } else {
-      setToAddressFilter(value);
-    }
-
     const params = new URLSearchParams(urlSearchParams.toString());
+
     if (value) {
       params.set(paramName, value);
     } else {
       params.delete(paramName);
       if (!otherFilter) {
-        setTransactionType(TRANSACTION_TYPE.ALL);
         params.delete(URL_PARAM.TYPE);
       }
     }
+
     params.set('page', '1');
     router.replace(`${pathname}?${params.toString()}`);
   };
-
-  useEffect(() => {
-    const typeParam = urlSearchParams.get(URL_PARAM.TYPE);
-    const fromFilterParam = urlSearchParams.get(URL_PARAM.FROM_FILTER);
-    const toFilterParam = urlSearchParams.get(URL_PARAM.TO_FILTER);
-
-    if (typeParam === 'received') {
-      setTransactionType(TRANSACTION_TYPE.RECEIVED);
-    } else if (typeParam === 'sent') {
-      setTransactionType(TRANSACTION_TYPE.SENT);
-    } else {
-      setTransactionType(TRANSACTION_TYPE.ALL);
-    }
-
-    setFromAddressFilter(fromFilterParam || '');
-    setToAddressFilter(toFilterParam || '');
-  }, [urlSearchParams]);
-
-  useEffect(() => {
-    const fromFilterParam = urlSearchParams.get(URL_PARAM.FROM_FILTER);
-    const toFilterParam = urlSearchParams.get(URL_PARAM.TO_FILTER);
-
-    const needsCleanup = (!fromAddressFilter && fromFilterParam) || (!toAddressFilter && toFilterParam);
-
-    if (needsCleanup) {
-      const params = new URLSearchParams(urlSearchParams.toString());
-
-      if (!fromAddressFilter && fromFilterParam) {
-        params.delete(URL_PARAM.FROM_FILTER);
-      }
-      if (!toAddressFilter && toFilterParam) {
-        params.delete(URL_PARAM.TO_FILTER);
-      }
-
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-    }
-  }, [fromAddressFilter, toAddressFilter, urlSearchParams, pathname, router]);
   const getSearchParams = (): ITransactionListParams => {
     const base = {
       ...DEFAULT_VALUE_DATA_SEARCH,
