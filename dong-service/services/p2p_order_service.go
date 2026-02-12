@@ -119,6 +119,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 	order.OfferCreatorWalletAddress = &offer.OfferCreatorWalletAddress
 	order.OfferCreatorUserID = offer.OfferCreatorUserID
 	order.PriceRate = offer.PriceRate
+	order.OfferSide = &offer.Side
 
 	return order, offer, nil
 }
@@ -141,6 +142,7 @@ func (s *OrderService) ListOrdersByOffer(ctx context.Context, offerID int64, pag
 			orders[i].OfferCreatorWalletAddress = &of.OfferCreatorWalletAddress
 			orders[i].OfferCreatorUserID = of.OfferCreatorUserID
 			orders[i].PriceRate = of.PriceRate
+			orders[i].OfferSide = &of.Side
 		}
 	}
 
@@ -160,6 +162,7 @@ func (s *OrderService) GetOrderByID(ctx context.Context, id int64) (*models.Orde
 			o.OfferCreatorWalletAddress = &of.OfferCreatorWalletAddress
 			o.OfferCreatorUserID = of.OfferCreatorUserID
 			o.PriceRate = of.PriceRate
+			o.OfferSide = &of.Side
 		}
 	}
 
@@ -184,6 +187,7 @@ func (s *OrderService) GetOrdersByWalletAddress(ctx context.Context, walletAddre
 				orders[i].OfferCreatorWalletAddress = &of.OfferCreatorWalletAddress
 				orders[i].OfferCreatorUserID = of.OfferCreatorUserID
 				orders[i].PriceRate = of.PriceRate
+				orders[i].OfferSide = &of.Side
 			}
 		}
 	}

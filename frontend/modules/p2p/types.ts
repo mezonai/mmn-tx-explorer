@@ -98,6 +98,7 @@ export interface P2POrder {
   updated_at: string;
   price_rate: number;
   offer_type?: TradeTypes;
+  side: TradeTypes;
 }
 export type P2PTabType = (typeof P2P_TAB)[keyof typeof P2P_TAB];
 
