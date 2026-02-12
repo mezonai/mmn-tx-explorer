@@ -332,7 +332,7 @@ func (h *OfferHandler) CancelOffer(c *gin.Context) {
 		return
 	}
 	userAddress, _ := utils.GetAddressFromContext(c)
-	if offer.SellerWalletAddress != userAddress {
+	if offer.OfferCreatorWalletAddress != userAddress {
 		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, constants.ErrOfferNotFoundNoPermission))
 		return
 	}

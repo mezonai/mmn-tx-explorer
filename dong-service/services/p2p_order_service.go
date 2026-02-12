@@ -8,12 +8,10 @@ import (
 	"dong-service/logger"
 	"dong-service/models"
 	"dong-service/repository"
-	"encoding/json"
+	"dong-service/types"
 	"fmt"
 	"math"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type OrderService struct {
@@ -30,7 +28,7 @@ func NewOrderService(repo *repository.OrderRepository, offerRepo *repository.Off
 
 type IOrderService interface {
 	CreateOrder(ctx context.Context, offerID int64, req *models.CreateOrderRequest, walletAddress string, buyerUserID string) (*models.Order, *models.Offer, error)
-	ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, error)
+	ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, int64, error)
 	GetOrderByID(ctx context.Context, id int64) (*models.Order, error)
 	ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o *models.Order) error
 	ConfirmOrderAsSeller(ctx context.Context, orderID int64, o *models.Order, offer *models.Offer) error
@@ -63,13 +61,13 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		return nil, nil, constants.ErrUserOrderLimitExceeded
 	}
 
-	amount := req.Amount
-	var payableAmount int64
+	orderAmount := types.NewBigIntString(req.Amount).Multiply(constants.TokenMultiplierBigIntString)
+	var payableAmount types.BigIntString
 	if offer.PriceRate != nil {
-		computed := float64(amount) * (*offer.PriceRate)
-		payableAmount = int64(math.Round(computed))
+		computed := float64(req.Amount) * (*offer.PriceRate)
+		payableAmount.SetInt64(int64(math.Round(computed)))
 	} else {
-		payableAmount = amount
+		payableAmount.SetInt64(req.Amount)
 	}
 
 	var walletAddrPtr *string
@@ -80,17 +78,17 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 	transferCode := fmt.Sprintf("ORDER %d", offerID)
 	expiresAt := time.Now().UTC().Add(15 * time.Minute)
 	order := &models.Order{
-		OfferID:            &offerID,
-		BuyerWalletAddress: walletAddrPtr,
-		BuyerUserID:        buyerUserID,
-		Amount:             amount,
-		PayableAmount:      payableAmount,
-		Status:             constants.TradingOpen,
-		TransferCode:       &transferCode,
-		ExpiresAt:          &expiresAt,
+		OfferID:                   &offerID,
+		OrderCreatorWalletAddress: walletAddrPtr,
+		OrderCreatorUserID:        buyerUserID,
+		OrderAmount:               orderAmount,
+		PayableAmount:             payableAmount,
+		Status:                    constants.TradingOpen,
+		TransferCode:              &transferCode,
+		ExpiresAt:                 &expiresAt,
 	}
 
-	if err = s.offerRepo.ReserveQuantity(ctx, offerID, amount, tx); err != nil {
+	if err = s.offerRepo.ReserveQuantity(ctx, offerID, orderAmount, tx); err != nil {
 		err = fmt.Errorf("failed to reserve offer quantity: %w", err)
 		return nil, nil, err
 	}
@@ -104,30 +102,37 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 	}
 
 	order.BankInfo = offer.BankInfo
-	order.SellerWalletAddress = &offer.SellerWalletAddress
-	order.SellerUserID = &offer.SellerUserID
+	order.OfferCreatorWalletAddress = &offer.OfferCreatorWalletAddress
+	order.OfferCreatorUserID = &offer.OfferCreatorUserID
 	order.PriceRate = offer.PriceRate
+	order.OfferSide = &offer.Side
 
 	return order, offer, nil
 }
 
-func (s *OrderService) ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, error) {
+func (s *OrderService) ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, int64, error) {
 	orders, err := s.repo.ListOrdersByOffer(ctx, offerID, pagination)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	count, err := s.repo.CountOrdersByOffer(ctx, offerID)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	of, err := s.offerRepo.GetOfferByID(ctx, offerID)
 	if err == nil && of != nil {
 		for i := range orders {
 			orders[i].BankInfo = of.BankInfo
-			orders[i].SellerWalletAddress = &of.SellerWalletAddress
-			orders[i].SellerUserID = &of.SellerUserID
+			orders[i].OfferCreatorWalletAddress = &of.OfferCreatorWalletAddress
+			orders[i].OfferCreatorUserID = &of.OfferCreatorUserID
 			orders[i].PriceRate = of.PriceRate
+			orders[i].OfferSide = &of.Side
 		}
 	}
 
-	return orders, nil
+	return orders, count, nil
 }
 
 func (s *OrderService) GetOrderByID(ctx context.Context, id int64) (*models.Order, error) {
@@ -140,9 +145,10 @@ func (s *OrderService) GetOrderByID(ctx context.Context, id int64) (*models.Orde
 		of, err := s.offerRepo.GetOfferByID(ctx, *o.OfferID)
 		if err == nil && of != nil {
 			o.BankInfo = of.BankInfo
-			o.SellerWalletAddress = &of.SellerWalletAddress
-			o.SellerUserID = &of.SellerUserID
+			o.OfferCreatorWalletAddress = &of.OfferCreatorWalletAddress
+			o.OfferCreatorUserID = &of.OfferCreatorUserID
 			o.PriceRate = of.PriceRate
+			o.OfferSide = &of.Side
 		}
 	}
 
@@ -164,9 +170,10 @@ func (s *OrderService) GetOrdersByWalletAddress(ctx context.Context, walletAddre
 			of, err := s.offerRepo.GetOfferByID(ctx, *orders[i].OfferID)
 			if err == nil && of != nil {
 				orders[i].BankInfo = of.BankInfo
-				orders[i].SellerWalletAddress = &of.SellerWalletAddress
-				orders[i].SellerUserID = &of.SellerUserID
+				orders[i].OfferCreatorWalletAddress = &of.OfferCreatorWalletAddress
+				orders[i].OfferCreatorUserID = &of.OfferCreatorUserID
 				orders[i].PriceRate = of.PriceRate
+				orders[i].OfferSide = &of.Side
 			}
 		}
 	}
@@ -219,9 +226,9 @@ func (s *OrderService) ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o
 	// Send ORDER_CONFIRMED event to seller
 	if o.OfferID != nil {
 		of, err := s.offerRepo.GetOfferByID(context.Background(), *o.OfferID)
-		if err == nil && of.SellerWalletAddress != "" {
-			payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.Amount}
-			go s.sendOrderEvent(of.SellerWalletAddress, "ORDER_CONFIRMED", payload)
+		if err == nil && of.OfferCreatorWalletAddress != "" {
+			payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.OrderAmount}
+			go SendSocketEvent(of.OfferCreatorWalletAddress, constants.ORDER_CONFIRMED, payload)
 		}
 	}
 
@@ -247,7 +254,7 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 
 	// Transfer funds from intermediary wallet to buyer wallet BEFORE updating database
 	var transferTxHash *string
-	if offer != nil && offer.IntermediaryWalletAddress != nil && *offer.IntermediaryWalletAddress != "" && o.BuyerWalletAddress != nil && s.blockchain != nil {
+	if offer != nil && offer.IntermediaryWalletAddress != nil && *offer.IntermediaryWalletAddress != "" && o.OrderCreatorWalletAddress != nil && s.blockchain != nil {
 		intermediaryWallet, walletErr := s.walletRepo.GetWalletByAddress(ctx, *offer.IntermediaryWalletAddress)
 		if walletErr != nil {
 			err = fmt.Errorf("failed to fetch intermediary wallet: %w", walletErr)
@@ -258,8 +265,8 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 			return err
 		}
 
-		if intermediaryWallet != nil && o.Amount > 0 {
-			txHash, transferErr := s.blockchain.TransferMoney(intermediaryWallet.EncryptedPrivateKey, *offer.IntermediaryWalletAddress, *o.BuyerWalletAddress, o.Amount, constants.TextDataP2PTrading, constants.ExtraInfoP2PTrading)
+		if intermediaryWallet != nil && o.OrderAmount.Sign() > 0 {
+			txHash, transferErr := s.blockchain.TransferMoney(intermediaryWallet.EncryptedPrivateKey, *offer.IntermediaryWalletAddress, *o.OrderCreatorWalletAddress, o.OrderAmount.String(), constants.TextDataP2PTrading, constants.ExtraInfoP2PTrading)
 			if transferErr != nil {
 				err = fmt.Errorf("failed to transfer funds to buyer: %w", transferErr)
 				return err
@@ -288,17 +295,17 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 					}
 				}
 
-				if o.BuyerWalletAddress != nil && *o.BuyerWalletAddress != "" {
-					payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.Amount, "tx_hash": txHash}
-					go s.sendOrderEvent(*o.BuyerWalletAddress, "ORDER_COMPLETED", payload)
+				if o.OrderCreatorWalletAddress != nil && *o.OrderCreatorWalletAddress != "" {
+					payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.OrderAmount, "tx_hash": txHash}
+					go SendSocketEvent(*o.OrderCreatorWalletAddress, constants.ORDER_COMPLETED, payload)
 				}
 			} else if status == constants.TxStatusPending || status == constants.TxStatusConfirmed || status == constants.TxStatusFailed {
 				// Status 0, 1, 3 = PENDING, CONFIRMED, FAILED
 				if o.OfferID != nil {
-					if releaseErr := s.offerRepo.ReleaseQuantity(ctx, *o.OfferID, o.Amount, tx); releaseErr != nil {
-						logger.Error().Err(releaseErr).Int64("offer_id", *o.OfferID).Int64("amount", o.Amount).Msg("Failed to release quantity after transaction failure")
+					if releaseErr := s.offerRepo.ReleaseQuantity(ctx, *o.OfferID, o.OrderAmount, tx); releaseErr != nil {
+						logger.Error().Err(releaseErr).Int64("offer_id", *o.OfferID).Int64("order_amount", o.OrderAmount.Int64()).Msg("Failed to release quantity after transaction failure")
 					} else {
-						logger.Info().Int64("offer_id", *o.OfferID).Int64("amount", o.Amount).Msg("Released quantity back to offer after transaction failure")
+						logger.Info().Int64("offer_id", *o.OfferID).Int64("order_amount", o.OrderAmount.Int64()).Msg("Released quantity back to offer after transaction failure")
 					}
 				}
 				if err = s.repo.UpdateOrderStatusWithTxHash(ctx, orderID, string(models.OrderStatusFailed), transferTxHash, tx); err != nil {
@@ -315,27 +322,4 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 	}
 
 	return nil
-}
-
-func (s *OrderService) sendOrderEvent(receiveAddr string, eventType string, payload map[string]any) {
-	if receiveAddr == "" {
-		return
-	}
-	p, _ := json.Marshal(payload)
-
-	event := &models.Event{
-		ID:             uuid.New(),
-		Type:           eventType,
-		Payload:        p,
-		ReceiveAddress: receiveAddr,
-		CreateAt:       time.Now().UTC(),
-	}
-
-	if Event == nil {
-		return
-	}
-
-	if err := Event.SendEvent(event); err != nil {
-		logger.Error().Err(err).Msgf("failed to send %s event", eventType)
-	}
 }

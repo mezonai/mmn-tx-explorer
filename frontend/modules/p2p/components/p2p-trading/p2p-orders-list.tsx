@@ -1,7 +1,7 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
-import { P2POrder } from '../../types';
+import { P2POrder, TradeTypes } from '../../types';
 import { Table } from '@/components/ui/table';
 import { TTableColumn } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,7 +13,6 @@ import { Countdown } from '../shared/count-down';
 import { NumberUtil } from '@/utils';
 import { getOrderStatusInfo } from '../../util';
 import { useUser } from '@/providers/AppProvider';
-import { TradeTypes } from '../../types';
 
 interface P2POrdersListProps {
   orders: P2POrder[] | undefined;
@@ -40,10 +39,10 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
       headerContent: 'OFFER TYPE',
       renderCell: (order) => (
         <Chip
-          variant={order.offer_type === TradeTypes.BUY ? 'outline-info' : 'outline-success'}
+          variant={order.side === TradeTypes.BUY ? 'outline-info' : 'outline-success'}
           className="rounded-sm px-3 uppercase text-[10px] min-w-[60px] justify-center"
         >
-          {order.offer_type}
+          {order.side}
         </Chip>
       ),
       skeletonContent: <Skeleton className="h-3 w-16" />,
@@ -52,11 +51,20 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
     {
       headerContent: 'YOUR ROLE',
       renderCell: (order) => {
-        const isBuyer = user?.walletAddress === order.buyer_wallet_address;
-        const role = isBuyer ? 'Buyer' : 'Seller';
+        const isOrderCreator = user?.walletAddress === order.order_creator_wallet_address;
+        const role = isOrderCreator
+          ? order.side === TradeTypes.BUY
+            ? 'Seller'
+            : 'Buyer'
+          : order.side === TradeTypes.BUY
+            ? 'Buyer'
+            : 'Seller';
+
+        const isActualBuyer = role === 'Buyer';
+
         return (
           <Chip
-            variant={isBuyer ? 'outline-success' : 'outline-info'}
+            variant={isActualBuyer ? 'outline-success' : 'outline-info'}
             className="rounded-sm px-3 text-[10px] min-w-[60px] justify-center"
           >
             {role}
@@ -69,8 +77,8 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
     {
       headerContent: 'COUNTERPARTY',
       renderCell: (order) => {
-        const isBuyer = user?.walletAddress === order.buyer_wallet_address;
-        const counterpartyAddress = isBuyer ? order.seller_wallet_address : order.buyer_wallet_address;
+        const isOrderCreator = user?.walletAddress === order.order_creator_wallet_address;
+        const counterpartyAddress = isOrderCreator ? order.offer_creator_wallet_address : order.order_creator_wallet_address;
         return (
           <AddressDisplay
             addressClassName="text-brand-primary"
@@ -85,15 +93,27 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
     {
       headerContent: 'AMOUNT',
       renderCell: (order) => {
-        const isBuyer = user?.walletAddress === order.buyer_wallet_address;
-        const vndAmount = order.amount * order.price_rate;
+        const isOrderCreator = user?.walletAddress === order.order_creator_wallet_address;
+        const role = isOrderCreator
+          ? order.side === TradeTypes.BUY
+            ? 'Seller'
+            : 'Buyer'
+          : order.side === TradeTypes.BUY
+            ? 'Buyer'
+            : 'Seller';
+
+        const isActualBuyer = role === 'Buyer';
+
+        const amount = NumberUtil.scaleDownBigIntString(order.amount);
+        const vndAmount = amount.multipliedBy(order.price_rate);
+
         return (
           <div className="text-sm">
             <p className="text-utility-success-600 text-left font-bold">
-              {NumberUtil.formatWithCommas(order.amount)} {APP_CONFIG.CHAIN_SYMBOL}
+              {amount.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}
             </p>
             <p className="text-muted-foreground text-left text-[11px]">
-              {isBuyer ? 'You pay' : 'You receive'} {NumberUtil.formatWithCommas(vndAmount)} VND
+              {isActualBuyer ? 'You pay' : 'You receive'} {vndAmount.toFormat()} VND
             </p>
           </div>
         );
@@ -105,7 +125,10 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
       headerContent: 'STATUS',
       renderCell: (order) => (
         <div className="flex items-center gap-2">
-          <Chip variant={getOrderStatusInfo(order.status)} className="gap-1.5 rounded-sm px-3 text-[10px] min-w-[80px] justify-center">
+          <Chip
+            variant={getOrderStatusInfo(order.status)}
+            className="gap-1.5 rounded-sm px-3 text-[10px] min-w-[80px] justify-center"
+          >
             <span>{order.status}</span>
           </Chip>
         </div>

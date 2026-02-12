@@ -6,17 +6,17 @@ export type BankOption = 'MB' | 'VCB' | 'TCB' | 'ACB' | 'TPBANK' | 'VIETCOMBANK'
 export interface P2POffer {
   offer_id: string;
   intermediary_wallet_id: number;
-  seller_wallet_address: string;
-  total_amount: number;
-  amount: number;
+  offer_creator_wallet_address: string;
+  total_amount: string;
+  amount: string;
   limit: {
-    min: number;
-    max: number;
+    min: string;
+    max: string;
   };
   price_rate: number;
   price_type: string;
   side: TradeTypes;
-  seller_user_id: string;
+  offer_creator_user_id: string;
   symbol: string;
   created_at: string;
   update_at: string;
@@ -84,13 +84,13 @@ export enum OrderStatus {
 export interface P2POrder {
   order_id: string;
   offer_id: string;
-  buyer_wallet_address: string;
-  buyer_user_id: string;
-  seller_wallet_address: string;
-  seller_user_id: string;
-  amount: number;
+  order_creator_wallet_address: string;
+  order_creator_user_id: string;
+  offer_creator_wallet_address: string;
+  offer_creator_user_id: string;
+  amount: string;
   price?: number;
-  payable_amount?: number;
+  payable_amount?: string;
   status: OrderStatus;
   bank_info?: {
     bank: string;
@@ -102,6 +102,7 @@ export interface P2POrder {
   created_at: string;
   updated_at: string;
   price_rate: number;
+  side: TradeTypes;
 }
 export type P2PTabType = (typeof P2P_TAB)[keyof typeof P2P_TAB];
 

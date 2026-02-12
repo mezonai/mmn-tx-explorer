@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button';
 import { APP_CONFIG } from '@/configs/app.config';
 import { ROUTES } from '@/configs/routes.config';
 import { Countdown } from '../../shared/count-down';
-import { getOrderStatusInfo } from '@/modules/p2p/util';
-import { P2POrder } from '@/modules/p2p/types';
-import { useRouter } from 'next/navigation';
 import { NumberUtil } from '@/utils';
+import { getOrderStatusInfo } from '@/modules/p2p/util';
+import { P2POrder, TradeTypes } from '@/modules/p2p/types';
+import { useRouter } from 'next/navigation';
 import { useUser } from '@/providers/AppProvider';
-import { TradeTypes } from '@/modules/p2p/types';
+
 interface OrderMobileCardProps {
   order: P2POrder;
 }
@@ -18,10 +18,19 @@ export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
   const router = useRouter();
   const { user } = useUser();
 
-  const isBuyer = user?.walletAddress === order.buyer_wallet_address;
-  const role = isBuyer ? 'Buyer' : 'Seller';
-  const counterpartyAddress = isBuyer ? order.seller_wallet_address : order.buyer_wallet_address;
-  const vndAmount = order.amount * order.price_rate;
+  const isOrderCreator = user?.walletAddress === order.order_creator_wallet_address;
+  const role = isOrderCreator
+    ? order.side === TradeTypes.BUY
+      ? 'Seller'
+      : 'Buyer'
+    : order.side === TradeTypes.BUY
+      ? 'Buyer'
+      : 'Seller';
+
+  const isActualBuyer = role === 'Buyer';
+  const counterpartyAddress = isOrderCreator ? order.offer_creator_wallet_address : order.order_creator_wallet_address;
+  const amount = NumberUtil.scaleDownBigIntString(order.amount);
+  const vndAmount = amount.multipliedBy(order.price_rate);
 
   return (
     <div className="bg-card border-border mb-2 space-y-4 rounded-xl border p-4 shadow-sm">
@@ -34,13 +43,13 @@ export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
           <p className="text-muted-foreground text-xs leading-none">Offer #{order.offer_id}</p>
           <div className="flex flex-wrap gap-1.5 pt-1">
             <Chip
-              variant={order.offer_type === TradeTypes.BUY ? 'outline-info' : 'outline-success'}
+              variant={order.side === TradeTypes.BUY ? 'outline-info' : 'outline-success'}
               className="rounded-sm px-2 py-0.5 uppercase text-[9px] font-bold"
             >
-              {order.offer_type}
+              {order.side}
             </Chip>
             <Chip
-              variant={isBuyer ? 'outline-success' : 'outline-info'}
+              variant={isActualBuyer ? 'outline-success' : 'outline-info'}
               className="rounded-sm px-2 py-0.5 text-[9px] font-bold"
             >
               {role}
@@ -82,10 +91,10 @@ export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
           <div className="flex items-end justify-between">
             <div>
               <p className="text-utility-success-600 text-base font-bold leading-none">
-                {NumberUtil.formatWithCommas(order.amount)} {APP_CONFIG.CHAIN_SYMBOL}
+                {amount.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}
               </p>
               <p className="text-muted-foreground mt-1 text-[11px]">
-                {isBuyer ? 'You pay' : 'You receive'} {NumberUtil.formatWithCommas(vndAmount)} VND
+                {isActualBuyer ? 'You pay' : 'You receive'} {vndAmount.toFormat()} VND
               </p>
             </div>
           </div>

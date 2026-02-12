@@ -51,12 +51,12 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
 
     if (userRole === 'buyer') {
       // If user is buyer, show seller's address
-      return order.seller_wallet_address || offer?.seller_wallet_address || '';
+      return order.offer_creator_wallet_address || offer?.offer_creator_wallet_address || '';
     } else {
       // If user is seller, show buyer's address
-      return order.buyer_wallet_address || '';
+      return order.order_creator_wallet_address || '';
     }
-  }, [userRole, order.seller_wallet_address, order.buyer_wallet_address, offer?.seller_wallet_address]);
+  }, [userRole, order.offer_creator_wallet_address, order.order_creator_wallet_address, offer?.offer_creator_wallet_address]);
 
   return (
     <header className=" flex h-14 shrink-0 items-center justify-between border-b border-border px-2">
