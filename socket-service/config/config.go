@@ -17,6 +17,7 @@ type Config struct {
 	Logging   logger.LogConfig `mapstructure:"logging"`
 	WebSocket WebSocketConfig  `mapstructure:"websocket"`
 	Event     EventConfig      `mapstructure:"event"`
+	Services   ServicesConfig   `mapstructure:"services"`
 }
 
 type ServerConfig struct {
@@ -59,7 +60,9 @@ type WebSocketConfig struct {
 	PongWait   int `mapstructure:"pong_wait"`   // in seconds
 	PingPeriod int `mapstructure:"ping_period"` // in seconds
 }
-
+type ServicesConfig struct {
+    DongServiceURL string `mapstructure:"dong_service_url"`
+}
 func LoadConfig(cfgFile string) (*Config, error) {
 	// Use specific config file if provided
 	viper.SetConfigFile(cfgFile)

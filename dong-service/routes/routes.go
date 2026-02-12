@@ -39,6 +39,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 
 	queueService := repository.NewRedEnvelopeQueueService(database.RedisClient)
 	intermediaryWalletRepo := repository.NewIntermediaryWalletRepository(database.GetDB(), cfg.Database.Schema)
+	eventHandler := handlers.NewEventHandler(cfg, blockchainService, intermediaryWalletRepo, queueService)
 	redEnvelopeRepo := repository.NewRedEnvelopeRepository(database.GetDB(), cfg.Database.Schema, blockchainService, intermediaryWalletRepo, queueService)
 	redEnvelopeHandler := handlers.NewRedEnvelopeHandler(redEnvelopeRepo, queueService, intermediaryWalletRepo)
 
@@ -146,5 +147,8 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		zkClaims.POST("/v2/claim-amount", redEnvelopeHandler.ClaimAmountRedEnvelopeQR)
 		zkClaims.POST("/:id/claim", redEnvelopeHandler.ClaimRedEnvelopeQRLegacy)
 		zkClaims.POST("v2/:id/claim", redEnvelopeHandler.ClaimRedEnvelopeQR)
+		
+		// Event receive endpoint (from Service C)
+		v1.POST("/receive", eventHandler.ReceiveEvent)
 	}
 }

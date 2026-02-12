@@ -26,4 +26,9 @@ func SetupRouters(router *gin.Engine, cfg *config.Config) {
 	http := router.Group("/api")
 	http.Use(apikeyMiddleware)
 	http.POST("/event", httpHandler.SaveEvent)
+	
+	// Internal API for internal-BE-service to send events
+	internal := router.Group("/api/v1/internal")
+	internal.Use(apikeyMiddleware)
+	internal.POST("/event", httpHandler.InternalEvent)
 }

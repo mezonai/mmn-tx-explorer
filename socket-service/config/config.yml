@@ -19,7 +19,8 @@ database:
   
 
 redis:
-  address: "redis:6379"
+  address: ""
+  username: "default"
   password: ""
   db: 0
 
@@ -40,3 +41,6 @@ websocket:
   write_wait: 10          # seconds
   pong_wait: 60           # seconds
   ping_period: 50         # seconds
+
+services:
+  dong_service_url: "http://localhost:8888/api/v1/receive"
