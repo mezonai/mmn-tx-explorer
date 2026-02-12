@@ -90,9 +90,6 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		bankInfo = offer.BankInfo
 	}
 
-	// Roles depend on offer side
-	// (Logic removed as fields were moved to Offer struct)
-
 	order := &models.Order{
 		OfferID:                   &offerID,
 		OrderCreatorWalletAddress: walletAddrPtr,
