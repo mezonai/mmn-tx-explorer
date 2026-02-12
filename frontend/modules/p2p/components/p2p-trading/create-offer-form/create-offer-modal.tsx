@@ -15,6 +15,7 @@ import { CreateOfferFormValues, createOfferSchema } from './validation-schema';
 import { TradeTypeSection } from './trade-type-section';
 import { AmountSection } from './amount-section';
 import { PaymentSection } from './payment-section';
+import { TradeSideSwitch } from '../../shared/trade-side-switch';
 import { APP_CONFIG } from '@/configs/app.config';
 import { useUser } from '@/providers';
 import { mmnClient } from '@/modules/auth';
@@ -90,6 +91,8 @@ export const CreateOfferModal = () => {
     };
   }, [open, user?.id]);
 
+  const side = form.watch('side');
+
   const onPreSubmit = (data: CreateOfferFormValues) => {
     setPendingData(data);
     setShowConfirm(true);
@@ -106,10 +109,26 @@ export const CreateOfferModal = () => {
         min: pendingData.limit.min,
         max: pendingData.limit.max,
       },
+      bank_info:
+        pendingData.side === TradeTypes.SELL
+          ? {
+            bank: pendingData.bank_info.bank,
+            account_number: pendingData.bank_info.account_number || '',
+            account_name: pendingData.bank_info.account_name || '',
+          }
+          : undefined,
     };
 
     try {
       const resultData = await createOfferAsync(payload);
+
+      if (payload.side === TradeTypes.BUY) {
+        toast.success('Your BUY offer has been created successfully.');
+        setShowConfirm(false);
+        setOpen(false);
+        return;
+      }
+
       const transferResult = await transfer(
         {
           recipientAddress: resultData.intermediary_wallet_address,
@@ -147,14 +166,17 @@ export const CreateOfferModal = () => {
 
         <DialogContent className="border-border max-w-6xl overflow-y-auto border">
           <DialogHeader className="border-b--border mx-6 -mt-6 border-b py-4">
-            <DialogTitle className="text-brand-primary text-lg font-bold">Create New Offer</DialogTitle>
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <DialogTitle className="text-brand-primary text-lg font-bold">Create New Offer</DialogTitle>
+              <TradeSideSwitch className="w-full md:w-48" value={side} onChange={(val) => form.setValue('side', val)} />
+            </div>
           </DialogHeader>
 
           <form onSubmit={form.handleSubmit(onPreSubmit)}>
-            <div className="grid grid-cols-1 gap-8 p-6 lg:grid-cols-3">
+            <div className={`grid grid-cols-1 gap-8 p-6 ${side === TradeTypes.SELL ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}>
               <AmountSection control={form.control} userBalance={balance} setValue={form.setValue} />
               <TradeTypeSection control={form.control} trigger={form.trigger} />
-              <PaymentSection control={form.control} />
+              {side === TradeTypes.SELL && <PaymentSection control={form.control} />}
             </div>
 
             <DialogFooter className="border-t-border -mx-6 -mb-6 flex justify-end gap-3 border-t px-4 py-4">
@@ -189,14 +211,25 @@ export const CreateOfferModal = () => {
 
           <div className="flex items-start gap-3 rounded-lg border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
             <Info className="text-brand-primary mt-0.5 h-5 w-5 shrink-0" />
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              To activate this <span className="font-semibold">{pendingData?.side}</span> offer, you need to transfer{' '}
-              <span className="text-brand-primary font-bold">
-                {pendingData?.amount ? Number(pendingData.amount).toLocaleString() : '0'} {APP_CONFIG.CHAIN_SYMBOL}
-              </span>{' '}
-              to the system wallet. Please click the{' '}
-              <span className="text-brand-primary font-bold">Confirm & Transfer</span> button to proceed.
-            </p>
+            <div className="text-muted-foreground text-sm leading-relaxed">
+              {side === TradeTypes.SELL ? (
+                <p>
+                  To activate this <span className="font-semibold">{pendingData?.side}</span> offer, you need to transfer{' '}
+                  <span className="text-brand-primary font-bold">
+                    {pendingData?.amount ? Number(pendingData.amount).toLocaleString() : '0'} {APP_CONFIG.CHAIN_SYMBOL}
+                  </span>{' '}
+                  to the system wallet. Please click the{' '}
+                  <span className="text-brand-primary font-bold">Confirm & Transfer</span> button to proceed.
+                </p>
+              ) : (
+                <p>
+                  Are you sure you want to create this <span className="font-semibold">{pendingData?.side}</span> offer for{' '}
+                  <span className="text-brand-primary font-bold">
+                    {pendingData?.amount ? Number(pendingData.amount).toLocaleString() : '0'} {APP_CONFIG.CHAIN_SYMBOL}
+                  </span>?
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="mt-4 flex flex-col space-y-4">
@@ -209,8 +242,10 @@ export const CreateOfferModal = () => {
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...
                 </>
-              ) : (
+              ) : side === TradeTypes.SELL ? (
                 'Confirm & Transfer'
+              ) : (
+                'Confirm'
               )}
             </Button>
 
