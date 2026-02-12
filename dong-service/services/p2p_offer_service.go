@@ -132,8 +132,8 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 
 	offer := &models.Offer{
 		IntermediaryWalletAddress: &intermediaryAddr,
-		SellerWalletAddress:       walletAddr,
-		SellerUserID:              sellerUserID,
+		OfferCreatorWalletAddress: walletAddr,
+		OfferCreatorUserID:        sellerUserID,
 		Side:                      req.Side,
 		Symbol:                    req.Symbol,
 		AvailableAmount:           types.NewBigIntString(amountInt).Multiply(constants.TokenMultiplierBigIntString),
@@ -189,24 +189,6 @@ func (s *OfferService) ListOffers(ctx context.Context, fromAmount *string, toAmo
 		offerIDs[i] = offer.OfferID
 	}
 
-	// Get active orders map
-	activeOrdersMap, err := s.orderRepo.HasActiveOrdersByOfferList(ctx, offerIDs)
-	if err != nil {
-		logger.Error().Err(err).Msg("Failed to check active orders for offers")
-		return offers, nil
-	}
-
-	// Map has_active_order and order_count to offers
-	orderCounts, _ := s.orderRepo.CountOrdersByOfferList(ctx, offerIDs)
-
-	for i := range offers {
-		hasActive := activeOrdersMap[offers[i].OfferID]
-		offers[i].HasActiveOrder = &hasActive
-		if orderCounts != nil {
-			offers[i].OrderCount = orderCounts[offers[i].OfferID]
-		}
-	}
-
 	return offers, nil
 }
 
@@ -246,19 +228,6 @@ func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddre
 		offerIDs := make([]int64, len(offers))
 		for i, offer := range offers {
 			offerIDs[i] = offer.OfferID
-		}
-
-		activeOrdersMap, err := s.orderRepo.HasActiveOrdersByOfferList(ctx, offerIDs)
-		orderCounts, _ := s.orderRepo.CountOrdersByOfferList(ctx, offerIDs)
-
-		if err == nil {
-			for i := range offers {
-				hasActive := activeOrdersMap[offers[i].OfferID]
-				offers[i].HasActiveOrder = &hasActive
-				if orderCounts != nil {
-					offers[i].OrderCount = orderCounts[offers[i].OfferID]
-				}
-			}
 		}
 	}
 
@@ -310,7 +279,7 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 		txHash, err := s.blockchain.TransferMoney(
 			intermediaryWallet.EncryptedPrivateKey,
 			*offer.IntermediaryWalletAddress,
-			offer.SellerWalletAddress,
+			offer.OfferCreatorWalletAddress,
 			offer.AvailableAmount.String(),
 			constants.TextDataP2PTrading,
 			constants.ExtraInfoP2PTradingOfferCanceled,

@@ -23,7 +23,7 @@ func NewOfferRepository(db *sql.DB, dongSchema string) *OfferRepository {
 func (r *OfferRepository) CreateOffer(ctx context.Context, offer *models.Offer, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
 				INSERT INTO %s.p2p_offers (
-								intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, available_amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, bank_info, created_at, updated_at
+							intermediary_wallet_address, offer_creator_wallet_address, offer_creator_user_id, side, symbol, available_amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, bank_info, created_at, updated_at
 		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,NOW(),NOW())
 		RETURNING offer_id, created_at, updated_at
 	`, r.dongSchema)
@@ -47,8 +47,8 @@ func (r *OfferRepository) CreateOffer(ctx context.Context, offer *models.Offer, 
 		ctx,
 		query,
 		offer.IntermediaryWalletAddress,
-		offer.SellerWalletAddress,
-		offer.SellerUserID,
+		offer.OfferCreatorWalletAddress,
+		offer.OfferCreatorUserID,
 		offer.Side,
 		offer.Symbol,
 		offer.AvailableAmount,
@@ -92,7 +92,7 @@ func (r *OfferRepository) UpdateOfferStatus(
 }
 
 func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, fromAmount *string, toAmount *string, side *string, pagination any) ([]models.Offer, error) {
-	base := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, available_amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, transaction_hash, bank_info, created_at, updated_at FROM %s.p2p_offers`, r.dongSchema)
+	base := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_address, offer_creator_wallet_address, offer_creator_user_id, side, symbol, available_amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, transaction_hash, bank_info, created_at, updated_at FROM %s.p2p_offers`, r.dongSchema)
 
 	whereClauses := []string{}
 	args := []any{}
@@ -209,8 +209,8 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 		err := rows.Scan(
 			&o.OfferID,
 			&o.IntermediaryWalletAddress,
-			&o.SellerWalletAddress,
-			&o.SellerUserID,
+			&o.OfferCreatorWalletAddress,
+			&o.OfferCreatorUserID,
 			&o.Side,
 			&o.Symbol,
 			&o.AvailableAmount,
@@ -255,7 +255,7 @@ func (r *OfferRepository) CountOffers(ctx context.Context, walletAddress *string
 	}
 
 	if walletAddress != nil && *walletAddress != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("seller_wallet_address = $%d", argCount))
+		whereClauses = append(whereClauses, fmt.Sprintf("offer_creator_wallet_address = $%d", argCount))
 		args = append(args, *walletAddress)
 		argCount++
 	}
@@ -361,8 +361,8 @@ func (r *OfferRepository) ScanOfferRow(row *sql.Row) (*models.Offer, error) {
 	if err := row.Scan(
 		&o.OfferID,
 		&o.IntermediaryWalletAddress,
-		&o.SellerWalletAddress,
-		&o.SellerUserID,
+		&o.OfferCreatorWalletAddress,
+		&o.OfferCreatorUserID,
 		&o.Side,
 		&o.Symbol,
 		&o.AvailableAmount,
@@ -389,7 +389,7 @@ func (r *OfferRepository) ScanOfferRow(row *sql.Row) (*models.Offer, error) {
 
 func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*models.Offer, error) {
 	query := fmt.Sprintf(`
-		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, 
+		SELECT offer_id, intermediary_wallet_address, offer_creator_wallet_address, offer_creator_user_id, side, symbol, 
 		       available_amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, 
 		       transaction_hash, bank_info, created_at, updated_at 
 		FROM %s.p2p_offers 
@@ -402,7 +402,7 @@ func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*mod
 
 func (r *OfferRepository) GetOfferByIDForUpdate(ctx context.Context, offerID int64, tx *sql.Tx) (*models.Offer, error) {
 	query := fmt.Sprintf(`
-		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, 
+		SELECT offer_id, intermediary_wallet_address, offer_creator_wallet_address, offer_creator_user_id, side, symbol, 
 		       available_amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, 
 		       transaction_hash, bank_info, created_at, updated_at
 		FROM %s.p2p_offers
@@ -458,7 +458,7 @@ func (r *OfferRepository) CheckAndCompleteIfEmpty(ctx context.Context, offerID i
 }
 
 func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAddress string, side *string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, error) {
-	whereClauses := []string{"seller_wallet_address = $1"}
+	whereClauses := []string{"offer_creator_wallet_address = $1"}
 	args := []any{walletAddress}
 	argCount := 2
 
@@ -481,7 +481,7 @@ func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAd
 	}
 
 	query := fmt.Sprintf(`
-		SELECT offer_id, intermediary_wallet_address, seller_wallet_address, seller_user_id, side, symbol, available_amount, total_amount, 
+		SELECT offer_id, intermediary_wallet_address, offer_creator_wallet_address, offer_creator_user_id, side, symbol, available_amount, total_amount, 
 		       min_amount, max_amount, payable_amount, price_rate, status, transaction_hash, bank_info, created_at, updated_at
 		FROM %s.p2p_offers
 		WHERE %s
@@ -511,8 +511,8 @@ func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAd
 		if err := rows.Scan(
 			&o.OfferID,
 			&o.IntermediaryWalletAddress,
-			&o.SellerWalletAddress,
-			&o.SellerUserID,
+			&o.OfferCreatorWalletAddress,
+			&o.OfferCreatorUserID,
 			&o.Side,
 			&o.Symbol,
 			&o.AvailableAmount,
@@ -559,7 +559,7 @@ func (r *OfferRepository) CountActiveOffersByUser(ctx context.Context, sellerUse
 	query := fmt.Sprintf(`
 		SELECT COUNT(*)
 		FROM %s.p2p_offers
-		WHERE seller_user_id = $1 AND status IN ('OPEN', 'PENDING', 'CONFIRMED')
+		WHERE offer_creator_user_id = $1 AND status IN ('OPEN', 'PENDING', 'CONFIRMED')
 	`, r.dongSchema)
 
 	var count int64

@@ -17,9 +17,9 @@ const (
 
 type Offer struct {
 	OfferID                   int64              `json:"offer_id" db:"offer_id"`
-	SellerUserID              string             `json:"seller_user_id" db:"seller_user_id"`
+	OfferCreatorUserID        string             `json:"offer_creator_user_id" db:"offer_creator_user_id"`
 	IntermediaryWalletAddress *string            `json:"intermediary_wallet_address,omitempty" db:"intermediary_wallet_address"`
-	SellerWalletAddress       string             `json:"seller_wallet_address" db:"seller_wallet_address"`
+	OfferCreatorWalletAddress string             `json:"offer_creator_wallet_address" db:"offer_creator_wallet_address"`
 	Side                      OfferSide          `json:"side" db:"side"` // BUY or SELL
 	Symbol                    string             `json:"symbol" db:"symbol"`
 	AvailableAmount           types.BigIntString `json:"amount" db:"available_amount"` // numeric as string to support big ints
@@ -31,7 +31,6 @@ type Offer struct {
 	TransactionHash           *string            `json:"transaction_hash,omitempty" db:"transaction_hash"`
 	BankInfo                  *string            `json:"bank_info,omitempty" db:"bank_info"`
 	HasActiveOrder            *bool              `json:"has_active_order,omitempty" db:"-"` // Not stored in DB, computed on demand
-	OrderCount                int64              `json:"order_count" db:"-"`
 	CreatedAt                 time.Time          `json:"created_at" db:"created_at"`
 	UpdatedAt                 time.Time          `json:"updated_at" db:"updated_at"`
 }
