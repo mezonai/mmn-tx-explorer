@@ -34,6 +34,7 @@ type Order struct {
 	BankInfo                  *string            `json:"bank_info,omitempty" db:"-"`
 	OfferCreatorWalletAddress *string            `json:"offer_creator_wallet_address,omitempty" db:"offer_creator_wallet_address"`
 	OfferCreatorUserID        string             `json:"offer_creator_user_id,omitempty" db:"offer_creator_user_id"`
+	PriceRate                 *float64           `json:"price_rate,omitempty" db:"-"`
 }
 
 type CreateOrderRequest struct {
