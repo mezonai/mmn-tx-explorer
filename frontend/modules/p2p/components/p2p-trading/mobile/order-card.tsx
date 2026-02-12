@@ -10,6 +10,7 @@ import { getOrderStatusInfo } from '@/modules/p2p/util';
 import { P2POrder, TradeTypes } from '@/modules/p2p/types';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/providers/AppProvider';
+import { P2P_TRADING_ROLE } from '@/modules/p2p/constants';
 
 interface OrderMobileCardProps {
   order: P2POrder;
@@ -21,11 +22,11 @@ export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
   const isOrderCreator = user?.walletAddress === order.order_creator_wallet_address;
   const role = isOrderCreator
     ? order.side === TradeTypes.BUY
-      ? 'Seller'
-      : 'Buyer'
+      ? P2P_TRADING_ROLE.SELLER
+      : P2P_TRADING_ROLE.BUYER
     : order.side === TradeTypes.BUY
-      ? 'Buyer'
-      : 'Seller';
+      ? P2P_TRADING_ROLE.BUYER
+      : P2P_TRADING_ROLE.SELLER;
 
   const isActualBuyer = role === 'Buyer';
   const counterpartyAddress = isOrderCreator ? order.offer_creator_wallet_address : order.order_creator_wallet_address;

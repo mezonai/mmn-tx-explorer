@@ -236,6 +236,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       price_rate: offer.price_rate,
       order_creator_user_id: '',
       offer_creator_user_id: '',
+      side: offer.side,
     };
 
     const isSellerOfOffer = user?.walletAddress === offer?.offer_creator_wallet_address;
