@@ -139,7 +139,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   }, [effectiveOrder?.offer_type]);
 
   const createOrderEmbed = (currentOrder: P2POrder, customTitle?: string, customColor?: string) => {
-    const priceRate = offer?.price_rate || 0;
+    const priceRate = offer?.price_rate || 1;
     const displayAmount = NumberUtil.scaleDownBigNumber(new BigNumber(currentOrder.amount));
     const mzdAmount = displayAmount.toFormat();
     const vndAmount = displayAmount.multipliedBy(priceRate).toFormat();

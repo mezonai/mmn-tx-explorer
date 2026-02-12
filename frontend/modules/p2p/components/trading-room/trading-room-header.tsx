@@ -3,7 +3,7 @@
 import { ArrowLeft, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
-import { P2POrder, P2PTradingRoleType } from '../../types';
+import { P2POrder, P2PTradingRoleType, TradeTypes } from '../../types';
 import { AddressDisplay } from '@/components/shared/address-display';
 import { ROUTES } from '@/configs/routes.config';
 import { useP2POffer } from '../../hooks/useP2POffer';
@@ -50,25 +50,13 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
     if (!userRole) return '';
 
     const offerSide = order.offer_type || offer?.side;
+    const isOfferCreator =
+      (offerSide === TradeTypes.BUY && userRole === 'buyer') ||
+      (offerSide === TradeTypes.SELL && userRole === 'seller');
 
-    if (offerSide === 'BUY') {
-      if (userRole === 'buyer') {
-        // User is Offer Creator (Buyer), show Responder (Order Creator)
-        return order.order_creator_wallet_address || '';
-      } else {
-        // User is Order Creator (Seller), show Creator (Offer Creator)
-        return order.offer_creator_wallet_address || offer?.offer_creator_wallet_address || '';
-      }
-    } else {
-      // SELL Offer
-      if (userRole === 'buyer') {
-        // User is Order Creator (Buyer), show Creator (Seller)
-        return order.offer_creator_wallet_address || offer?.offer_creator_wallet_address || '';
-      } else {
-        // User is Offer Creator (Seller), show Responder (Buyer)
-        return order.order_creator_wallet_address || '';
-      }
-    }
+    return isOfferCreator
+      ? order.order_creator_wallet_address || ''
+      : order.offer_creator_wallet_address || offer?.offer_creator_wallet_address || '';
   }, [userRole, order, offer]);
 
   return (

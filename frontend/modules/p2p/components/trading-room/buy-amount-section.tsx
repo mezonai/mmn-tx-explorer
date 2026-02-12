@@ -14,6 +14,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import BigNumber from 'bignumber.js';
 import { NumberUtil } from '@/utils';
+import { TradeTypes } from '../../types';
 
 const paymentSchema = z.object({
   bank_info: z.object({
@@ -41,7 +42,7 @@ interface BuyAmountSectionProps {
   isLoading?: boolean;
   extraDisabled?: boolean;
   isSeller?: boolean;
-  side?: 'BUY' | 'SELL';
+  side?: TradeTypes.BUY | TradeTypes.SELL;
   userBalance?: number;
 }
 
@@ -55,7 +56,7 @@ export const BuyAmountSection = ({
   isLoading = false,
   extraDisabled = false,
   isSeller = false,
-  side = 'SELL',
+  side = TradeTypes.SELL,
   userBalance = 0,
 }: BuyAmountSectionProps) => {
   const [amountMZD, setAmountMZD] = useState<number>(0);
