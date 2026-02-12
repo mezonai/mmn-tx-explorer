@@ -8,6 +8,7 @@ export const P2P_ENDPOINTS = {
   CREATE_ORDER: (offerId: string) => `/api/v1/offers/${offerId}/orders`,
   ORDER_BY_ID: (id: string) => `/api/v1/orders/${id}`,
   ORDER_STATUS: (id: string) => `/api/v1/orders/${id}/confirm`,
+  REOPEN_ORDER: (id: string) => `/api/v1/orders/${id}/reopen`,
 } as const;
 
 export const P2P_QUERY_KEYS = {

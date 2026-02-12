@@ -138,3 +138,8 @@ const (
 	MaxActiveOffersPerUser    int64   = 10
 	MaxActiveOrdersPerUser    int     = 10
 )
+
+const (
+	OrderExpirationDuration       = 4  // Order expiration duration in hours
+	OrderReopenGracePeriodMinutes = 60 // Grace period to allow reopening expired orders (in minutes)
+)

@@ -6,6 +6,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useP2POrder } from '../../hooks/useP2POrder';
 import { useP2POffer } from '../../hooks/useP2POffer';
 import { useCreateOrder } from '../../hooks/useCreateOrder';
+import { useReopenOrder } from '../../hooks';
 import { useUser } from '@/providers/AppProvider';
 import { TradingRoomHeader } from './trading-room-header';
 import { ProgressSteps } from './progress-steps';
@@ -48,6 +49,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   const offerIdParam = isOfferMode ? orderId : order ? String(order.offer_id) : null;
   const { offer, isLoading: offerLoading } = useP2POffer(offerIdParam);
   const { createOrder, isLoading: isCreatingOrder } = useCreateOrder();
+  const { mutate: reopenOrder, isPending: isReopening } = useReopenOrder();
 
   useEffect(() => {
     if (!order || isOfferMode) return;
@@ -200,7 +202,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
         router.push(ROUTES.P2P_TRADING_ROOM(newOrder.order_id));
       }
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || 'Something went wrong while creating the order. Please try again.';
+      const errorMessage =
+        err?.response?.data?.message || 'Something went wrong while creating the order. Please try again.';
       setError(errorMessage);
     }
   };
@@ -332,14 +335,20 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
             <div className="lg:col-span-8">
               <OrderInfoCard order={effectiveOrder} />
               {order && order.bank_info && order.transfer_code && (
-                <BankInfoCard
-                  bank_info={order.bank_info}
-                  transfer_code={order.transfer_code}
-                />
+                <BankInfoCard bank_info={order.bank_info} transfer_code={order.transfer_code} />
               )}
 
               <div className="space-y-2">
-                {userRole === P2P_TRADING_ROLE.BUYER && (
+                {userRole === P2P_TRADING_ROLE.BUYER && effectiveOrder.status === OrderStatus.EXPIRED && (
+                  <Button
+                    className="bg-utility-warning-600 hover:bg-utility-warning-700 w-full rounded-xl py-3 text-sm font-bold text-white transition"
+                    onClick={() => reopenOrder(effectiveOrder.order_id.toString())}
+                    disabled={isReopening}
+                  >
+                    {isReopening ? 'Reopening Order...' : 'Reopen Order'}
+                  </Button>
+                )}
+                {userRole === P2P_TRADING_ROLE.BUYER && effectiveOrder.status !== OrderStatus.EXPIRED && (
                   <PaymentActionButton
                     order={effectiveOrder}
                     nextStatus={OrderStatus.PENDING}

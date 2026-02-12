@@ -33,6 +33,7 @@ type IOrderService interface {
 	ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o *models.Order) error
 	ConfirmOrderAsSeller(ctx context.Context, orderID int64, o *models.Order, offer *models.Offer) error
 	GetOrdersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Order, int64, error)
+	ReopenOrder(ctx context.Context, orderID int64, order *models.Order) error
 }
 
 func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *models.CreateOrderRequest, walletAddress string, buyerUserID string) (*models.Order, *models.Offer, error) {
@@ -256,8 +257,15 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 			return err
 		}
 
+		var isTargetWallet *string
+		if offer.Side == models.OfferSideSell {
+			isTargetWallet = o.OrderCreatorWalletAddress
+		} else {
+			isTargetWallet = &offer.OfferCreatorWalletAddress
+		}
+
 		if intermediaryWallet != nil && o.OrderAmount.Sign() > 0 {
-			txHash, transferErr := s.blockchain.TransferMoney(intermediaryWallet.EncryptedPrivateKey, *offer.IntermediaryWalletAddress, *o.BuyerWalletAddress, o.OrderAmount.String(), constants.TextDataP2PTrading, constants.ExtraInfoP2PTrading)
+			txHash, transferErr := s.blockchain.TransferMoney(intermediaryWallet.EncryptedPrivateKey, *offer.IntermediaryWalletAddress, *isTargetWallet, o.OrderAmount.String(), constants.TextDataP2PTrading, constants.ExtraInfoP2PTrading)
 			if transferErr != nil {
 				err = fmt.Errorf("failed to transfer funds to buyer: %w", transferErr)
 				return err
@@ -311,6 +319,92 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 	if err = tx.Commit(); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func (s *OrderService) ReopenOrder(ctx context.Context, orderID int64, order *models.Order) error {
+	// Only EXPIRED orders can be reopened
+	if order.Status != constants.TradingExpired {
+		return fmt.Errorf("only expired orders can be reopened; current status=%s", order.Status)
+	}
+
+	// Check if order has an associated offer
+	if order.OfferID == nil {
+		return fmt.Errorf("order has no associated offer")
+	}
+
+	db := database.GetDB()
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	// Lock the order row to prevent concurrent reopen/expiration operations
+	lockedOrder, err := s.repo.GetOrderByID(ctx, orderID)
+	if err != nil {
+		return fmt.Errorf("failed to lock order: %w", err)
+	}
+
+	// Double-check status after acquiring lock (may have changed)
+	if lockedOrder.Status != constants.TradingExpired {
+		return fmt.Errorf("order status changed; current status=%s", lockedOrder.Status)
+	}
+
+	// Get the offer and check if it's still available
+	offer, err := s.offerRepo.GetOfferByIDForUpdate(ctx, *order.OfferID, tx)
+	if err != nil {
+		return fmt.Errorf("failed to fetch offer: %w", err)
+	}
+
+	if offer.Status != constants.TradingConfirmed {
+		return fmt.Errorf("this offer is no longer available (status: %s). Please find another offer", offer.Status)
+	}
+
+	// Check if offer has enough available quantity
+	if offer.AvailableAmount.Compare(order.OrderAmount) < 0 {
+		if offer.AvailableAmount.Sign() == 0 {
+			return fmt.Errorf("this offer has been completely sold out. Please find another offer")
+		}
+		return fmt.Errorf("this offer only has %s available, but your order needs %s. Please create a new order with a smaller amount or find another offer",
+			offer.AvailableAmount.String(), order.OrderAmount.String())
+	}
+
+	// Reserve the quantity again
+	if err = s.offerRepo.ReserveQuantity(ctx, *order.OfferID, order.OrderAmount, tx); err != nil {
+		return fmt.Errorf("failed to reserve offer quantity: %w", err)
+	}
+
+	// Calculate new expiration time
+	newExpiresAt := time.Now().UTC().Add(time.Duration(constants.OrderExpirationDuration) * time.Hour)
+
+	// Restore status to what it was before expiration (OPEN or PENDING)
+	restoredStatus := constants.TradingOpen // default to OPEN
+	if order.PreviousStatus != nil && *order.PreviousStatus != "" {
+		restoredStatus = *order.PreviousStatus
+	}
+
+	// Update order status back to previous status with new expiration time
+	if err = s.repo.UpdateOrderStatusAndExpiration(ctx, orderID, restoredStatus, &newExpiresAt, tx); err != nil {
+		return fmt.Errorf("failed to update order status: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	logger.Info().Int64("order_id", orderID).Msg("Order reopened successfully")
+
+	// Send socket event to notify about order reopen
+	go SendSocketEvent(constants.OFFER_ROOM, constants.OFFER_LIST_REFRESH, map[string]any{
+		"action":   "order_reopened",
+		"order_id": orderID,
+	})
 
 	return nil
 }

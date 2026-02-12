@@ -319,3 +319,52 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Order confirmed", nil))
 }
+
+// ReopenOrder godoc
+// @Summary Reopen an expired order
+// @Description Reopen an expired order, reserve quantity from offer again, and set new expiration time
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Param id path int true "Order ID"
+// @Success 200 {object} models.Response
+// @Failure 400 {object} models.Response
+// @Failure 403 {object} models.Response
+// @Failure 404 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Security BearerAuth
+// @Router /api/v1/orders/{id}/reopen [post]
+func (h *OrderHandler) ReopenOrder(c *gin.Context) {
+	orderID, err := utils.ParseInt64Param(c, "id")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "invalid order id"))
+		return
+	}
+
+	walletAddress, _ := utils.GetAddressFromContext(c)
+
+	order, err := h.orderService.GetOrderByID(c.Request.Context(), orderID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, models.ErrorResponse(http.StatusNotFound, "order not found"))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to fetch order: "+err.Error()))
+		return
+	}
+
+	// Only the buyer can reopen their own order
+	isBuyer := order.BuyerWalletAddress != nil && walletAddress == *order.BuyerWalletAddress
+	if !isBuyer {
+		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, "only the buyer can reopen this order"))
+		return
+	}
+
+	if err := h.orderService.ReopenOrder(c.Request.Context(), orderID, order); err != nil {
+		logger.Error().Err(err).Int64("order_id", orderID).Msg("failed to reopen order")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "failed to reopen order: "+err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Order reopened successfully", nil))
+}

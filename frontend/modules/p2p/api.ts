@@ -68,4 +68,8 @@ export class P2PService {
     const { data } = await apiDongClient.post<{ data: P2POrder }>(P2P_ENDPOINTS.ORDER_STATUS(orderId), updateData);
     return data.data;
   }
+
+  static async reopenOrder(orderId: string): Promise<void> {
+    await apiDongClient.post(P2P_ENDPOINTS.REOPEN_ORDER(orderId));
+  }
 }

@@ -12,6 +12,8 @@ export const getOrderStatusInfo = (type: OrderStatus) => {
       return 'info';
     case OrderStatus.CANCELED:
       return 'brand';
+    case OrderStatus.EXPIRED:
+      return 'brand';
     case OrderStatus.COMPLETED:
       return 'info';
     default:
