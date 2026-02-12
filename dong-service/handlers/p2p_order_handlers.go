@@ -312,20 +312,29 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 		}
 	}
 
-	isSeller := offer != nil && walletAddress == offer.OfferCreatorWalletAddress
-	isBuyer := order.OrderCreatorWalletAddress != nil && walletAddress == *order.OrderCreatorWalletAddress
+	isOfferCreator := offer != nil && offer.OfferCreatorWalletAddress != nil && walletAddress == *offer.OfferCreatorWalletAddress
+	isOrderCreator := order != nil && order.OrderCreatorWalletAddress != nil && walletAddress == *order.OrderCreatorWalletAddress
 
-	if !isSeller && !isBuyer {
+	if !isOfferCreator && !isOrderCreator {
 		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, "caller is neither buyer nor seller"))
 		return
 	}
 
-	if isBuyer {
+	var isBuyerRole bool
+	if offer.Side == models.OfferSideBuy {
+		// BUY Offer: Creator is BUYER, Responder (Order Creator) is SELLER
+		isBuyerRole = isOfferCreator
+	} else {
+		// SELL Offer: Creator is SELLER, Responder (Order Creator) is BUYER
+		isBuyerRole = isOrderCreator
+	}
+
+	if isBuyerRole {
 		if err := h.orderService.ConfirmOrderAsBuyer(c.Request.Context(), orderID, order); err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to confirm order: "+err.Error()))
 			return
 		}
-	} else if isSeller {
+	} else {
 		if err := h.orderService.ConfirmOrderAsSeller(c.Request.Context(), orderID, order, offer); err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to confirm order: "+err.Error()))
 			return

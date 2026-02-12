@@ -211,7 +211,7 @@ export const P2POffersTabs = ({
             ) : user && offer.offer_creator_user_id !== user?.id ? (
               <Button
                 onClick={() => {
-                  router.push(ROUTES.P2P_TRADING_ROOM(offer.offer_id, 'offer'));
+                  router.push(ROUTES.P2P_TRADING_ROOM(offer.offer_id, 'offer', offer.side));
                 }}
                 className="w-[160px] rounded-lg bg-emerald-500 px-6 py-2 whitespace-nowrap text-white transition hover:bg-emerald-600"
               >
