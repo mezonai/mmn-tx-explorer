@@ -18,6 +18,10 @@ export const QUERY_KEYS = {
   RED_ENVELOPE_DETAIL_RECIPIENTS: 'red-envelope-detail-recipients',
 };
 
+export const RED_ENVELOPE_EVENT_TYPES = {
+  RED_ENVELOPE_LIST_REFRESH: 'RED_ENVELOPE_LIST_REFRESH',
+} as const;
+
 export const RED_ENVELOPE_ENDPOINTS = {
   STATS: 'api/v1/red-envelopes/stats',
   STATS_BY_USER: 'api/v1/red-envelopes/stats-by-user',

@@ -43,6 +43,7 @@ export const useTransfer = () => {
             UserSenderUsername: userName,
             type: transaction_type,
             ...(input.offerId && { offer_id: input.offerId }),
+            ...(input.redEnvelopeId && { red_envelope_id: input.redEnvelopeId }),
           },
         });
 
