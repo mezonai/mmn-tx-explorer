@@ -399,7 +399,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
           <ProgressSteps order={effectiveOrder} />
 
           {userRole === P2P_TRADING_ROLE.BUYER && effectiveOrder.status === OrderStatus.PENDING && (
-            <p className="text-muted-foreground mb-4 text-sm">
+            <p className="text-muted-foreground mb-4 text-sm font-medium italic">
               {effectiveOrder.offer_type === TradeTypes.BUY
                 ? `Waiting for Seller to confirm payment and release  ${APP_CONFIG.CHAIN_SYMBOL}`
                 : 'Waiting for the seller to confirm'}
