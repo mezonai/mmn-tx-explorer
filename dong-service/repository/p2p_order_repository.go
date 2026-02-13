@@ -23,8 +23,8 @@ func NewOrderRepository(db *sql.DB, dongSchema string) *OrderRepository {
 func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
 			INSERT INTO %s.p2p_orders (
-				offer_id, order_creator_wallet_address, order_creator_user_id, order_amount, payable_amount, status, transfer_code, expires_at, created_at, updated_at
-			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW(),NOW())
+				offer_id, order_creator_wallet_address, order_creator_user_id, order_amount, payable_amount, status, transfer_code, expires_at, bank_info, created_at, updated_at
+			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW(),NOW())
         RETURNING order_id, created_at, updated_at
     `, r.dongSchema)
 
@@ -38,11 +38,8 @@ func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order, 
 		order.TransferCode,
 		order.ExpiresAt,
 		order.BankInfo,
-		order.OfferCreatorWalletAddress,
-		order.OfferCreatorUserID,
 	).Scan(&order.OrderID, &order.CreatedAt, &order.UpdatedAt)
 }
-
 func (r *OrderRepository) HasActiveOrders(ctx context.Context, offerID int64, tx *sql.Tx) (bool, error) {
 	query := fmt.Sprintf("SELECT 1 FROM %s.p2p_orders WHERE offer_id = $1 AND status IN ('PENDING','OPEN') LIMIT 1 FOR UPDATE", r.dongSchema)
 	var v int
