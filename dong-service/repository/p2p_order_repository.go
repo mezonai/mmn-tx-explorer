@@ -186,7 +186,8 @@ func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, 
 }
 
 func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.Order, error) {
-query := fmt.Sprintf("SELECT order_id, offer_id, order_creator_wallet_address, order_creator_user_id, order_amount, payable_amount, transaction_hash, status, transfer_code, expires_at, bank_info, created_at, updated_at FROM %s.p2p_orders WHERE order_id = $1", r.dongSchema)	var o models.Order
+	query := fmt.Sprintf("SELECT order_id, offer_id, order_creator_wallet_address, order_creator_user_id, order_amount, payable_amount, transaction_hash, status, transfer_code, expires_at, bank_info, created_at, updated_at FROM %s.p2p_orders WHERE order_id = $1", r.dongSchema)
+	var o models.Order
 	row := r.db.QueryRowContext(ctx, query, id)
 	if err := row.Scan(
 		&o.OrderID,
