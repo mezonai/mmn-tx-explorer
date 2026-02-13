@@ -292,7 +292,8 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 			*offer.IntermediaryWalletAddress != "" &&
 			offer.AvailableAmount.Sign() > 0 &&
 			s.blockchain != nil &&
-			s.walletRepo != nil
+			s.walletRepo != nil &&
+			offer.Side == constants.OfferSideSell
 
 	if needsRefund {
 		intermediaryWallet, err := s.walletRepo.GetWalletByAddress(ctx, *offer.IntermediaryWalletAddress)
@@ -336,9 +337,17 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 			return err
 		}
 	} else {
-		err = fmt.Errorf(constants.ErrFailedToCancelOffer)
-		return err
+// No refund needed (either BUY side, or SELL side that is still OPEN/not yet escrowed)
+		if err = s.repo.UpdateOfferStatus(ctx, offerId, constants.TradingCanceled, tx, nil); err != nil {
+			return err
+		}
+
+		if offer.IntermediaryWalletAddress != nil && *offer.IntermediaryWalletAddress != "" && s.walletRepo != nil {
+			logger.Info().Int64("offer_id", offerId).Str("wallet_address", *offer.IntermediaryWalletAddress).Msg("Releasing intermediary wallet for canceled offer")
+			s.releaseIntermediaryWallet(ctx, *offer.IntermediaryWalletAddress)
+		}
 	}
+
 
 	if err = tx.Commit(); err != nil {
 		return err
