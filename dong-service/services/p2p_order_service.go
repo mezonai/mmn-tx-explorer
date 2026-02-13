@@ -145,7 +145,7 @@ func (s *OrderService) GetOrderByID(ctx context.Context, id int64) (*models.Orde
 		if err == nil && of != nil {
 			o.BankInfo = of.BankInfo
 			o.OfferCreatorWalletAddress = &of.OfferCreatorWalletAddress
-			o.OfferCreatorUserID = of.OfferCreatorUserID
+			o.OfferCreatorUserID = &of.OfferCreatorUserID
 			o.PriceRate = of.PriceRate
 		}
 	}
@@ -169,7 +169,7 @@ func (s *OrderService) GetOrdersByWalletAddress(ctx context.Context, walletAddre
 			if err == nil && of != nil {
 				orders[i].BankInfo = of.BankInfo
 				orders[i].OfferCreatorWalletAddress = &of.OfferCreatorWalletAddress
-				orders[i].OfferCreatorUserID = of.OfferCreatorUserID
+				orders[i].OfferCreatorUserID = &of.OfferCreatorUserID
 				orders[i].PriceRate = of.PriceRate
 			}
 		}
