@@ -169,7 +169,7 @@ func (s *OrderService) GetOrdersByWalletAddress(ctx context.Context, walletAddre
 			if err == nil && of != nil {
 				orders[i].BankInfo = of.BankInfo
 				orders[i].OfferCreatorWalletAddress = &of.OfferCreatorWalletAddress
-				orders[i].OfferCreatorUserID = of.OfferCreatorUserID
+				orders[i].OfferCreatorUserID = &of.OfferCreatorUserID
 				orders[i].PriceRate = of.PriceRate
 			}
 		}
