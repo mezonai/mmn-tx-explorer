@@ -117,7 +117,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 
 	order.BankInfo = offer.BankInfo
 	order.OfferCreatorWalletAddress = offer.OfferCreatorWalletAddress
-	order.OfferCreatorUserID = offer.OfferCreatorUserID
+	order.OfferCreatorUserID = &offer.OfferCreatorUserID
 	order.PriceRate = offer.PriceRate
 	order.OfferSide = &offer.Side
 
