@@ -139,7 +139,7 @@ func (s *OrderService) ListOrdersByOffer(ctx context.Context, offerID int64, pag
 	if err == nil && of != nil {
 		for i := range orders {
 			orders[i].BankInfo = of.BankInfo
-			orders[i].OfferCreatorWalletAddress = &of.OfferCreatorWalletAddress
+			orders[i].OfferCreatorWalletAddress = of.OfferCreatorWalletAddress
 			orders[i].OfferCreatorUserID = &of.OfferCreatorUserID
 			orders[i].PriceRate = of.PriceRate
 			orders[i].OfferSide = &of.Side
@@ -184,7 +184,7 @@ func (s *OrderService) GetOrdersByWalletAddress(ctx context.Context, walletAddre
 			of, err := s.offerRepo.GetOfferByID(ctx, *orders[i].OfferID)
 			if err == nil && of != nil {
 				orders[i].BankInfo = of.BankInfo
-				orders[i].OfferCreatorWalletAddress = &of.OfferCreatorWalletAddress
+				orders[i].OfferCreatorWalletAddress = of.OfferCreatorWalletAddress
 				orders[i].OfferCreatorUserID = &of.OfferCreatorUserID
 				orders[i].PriceRate = of.PriceRate
 				orders[i].OfferSide = &of.Side
