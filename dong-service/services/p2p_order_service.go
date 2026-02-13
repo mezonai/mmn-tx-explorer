@@ -139,8 +139,8 @@ func (s *OrderService) ListOrdersByOffer(ctx context.Context, offerID int64, pag
 	if err == nil && of != nil {
 		for i := range orders {
 			orders[i].BankInfo = of.BankInfo
-			orders[i].OfferCreatorWalletAddress = of.OfferCreatorWalletAddress
-			orders[i].OfferCreatorUserID = of.OfferCreatorUserID
+			orders[i].OfferCreatorWalletAddress = &of.OfferCreatorWalletAddress
+			orders[i].OfferCreatorUserID = &of.OfferCreatorUserID
 			orders[i].PriceRate = of.PriceRate
 			orders[i].OfferSide = &of.Side
 		}
