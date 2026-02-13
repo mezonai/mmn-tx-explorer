@@ -337,7 +337,7 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 			return err
 		}
 	} else {
-// No refund needed (either BUY side, or SELL side that is still OPEN/not yet escrowed)
+	// No refund needed (either BUY side, or SELL side that is still OPEN/not yet escrowed)
 		if err = s.repo.UpdateOfferStatus(ctx, offerId, constants.TradingCanceled, tx, nil); err != nil {
 			return err
 		}
