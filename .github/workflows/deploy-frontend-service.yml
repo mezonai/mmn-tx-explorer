@@ -25,12 +25,12 @@ on:
       ref:
         type: string
         required: true
-      target_tag:
+      release_tag:
         type: string
-        required: true
-      skip_build:
+        required: false
+      service_tag:
         type: string
-        required: true
+        required: false
     secrets:
       NEXT_PUBLIC_COBAR_API_KEY:
         required: true
@@ -39,10 +39,12 @@ on:
 
 jobs:
   build:
+    if: inputs.existing_tag_to_deploy == ''
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
     outputs:
       tag_name: ${{ steps.build_frontend.outputs.tag_name }}
+      artifact_name: ${{ steps.build_frontend.outputs.artifact_name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -52,14 +54,12 @@ jobs:
           fetch-depth: 1
 
       - name: Setup Node.js
-        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
         uses: actions/setup-node@v3
         with:
           node-version: "20"
           cache: ''
 
       - name: Build Frontend
-        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
         id: build_frontend
         env: 
           NEXT_PUBLIC_APP_API_URL: ${{ vars.NEXT_PUBLIC_APP_API_URL }}
@@ -94,30 +94,27 @@ jobs:
 
           cd .deploy
 
-          TAG_NAME="${{ inputs.target_tag }}"
+          TAG_NAME="${{ inputs.service_tag }}"
           if [ -z "$TAG_NAME" ]; then TAG_NAME="v0.0.0"; fi
           
-          ARTIFACT_NAME="$TAG_NAME-${{ inputs.env }}"
-          
+          CLEAN_TAG=${TAG_NAME#frontend-}
+          ARTIFACT_NAME="${CLEAN_TAG}-${{ inputs.env }}"   
+
           mkdir -p ../../build_frontend
           tar -czf ../../build_frontend/frontend-build-${ARTIFACT_NAME}.tar.gz .
 
           echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
           echo "artifact_name=${ARTIFACT_NAME}" >> $GITHUB_OUTPUT
 
-      - name: Create Release and Upload Bundle
-        if: inputs.skip_build == 'false'
-        uses: softprops/action-gh-release@v2
+      - name: Upload Frontend Artifact
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: ${{ steps.build_frontend.outputs.tag_name }}
-          name: "Release ${{ steps.build_frontend.outputs.tag_name }}"
-          target_commitish: ${{ inputs.ref }}
-          fail_on_unmatched_files: true
-          files: build_frontend/frontend-build-${{ steps.build_frontend.outputs.artifact_name }}.tar.gz
+          name: frontend-assets
+          path: build_frontend/*.tar.gz
 
   deploy:
     needs: build
-    if: always()
+    if: always() && (needs.build.result == 'success' || inputs.existing_tag_to_deploy != '')
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
 
@@ -126,12 +123,18 @@ jobs:
         id: determine_tag
         run: |
           TAG_INPUT=""
+          IS_MANUAL="false"
+
           if [ -n "${{ needs.build.outputs.tag_name }}" ]; then
             TAG_INPUT="${{ needs.build.outputs.tag_name }}"
+            IS_MANUAL="false"
           elif [ -n "${{ inputs.existing_tag_to_deploy }}" ]; then 
             TAG_INPUT="${{ inputs.existing_tag_to_deploy }}"
+            IS_MANUAL="true"
           elif [ "${{ needs.build.result }}" == "success" ]; then
             TAG_INPUT="${{ needs.build.outputs.tag_name }}"
+            echo "==> Will deploy newly built tag: $TAG_INPUT"
+            IS_MANUAL="false"
           else
             echo "::error::Cannot proceed. No existing tag was provided and the build job did not succeed."
             exit 1
@@ -144,11 +147,26 @@ jobs:
             TAG_TO_DEPLOY="$TAG_INPUT"
           fi
 
-          ARTIFACT_NAME="${TAG_TO_DEPLOY}-${{ inputs.env }}"
+          CLEAN_VERSION=${TAG_TO_DEPLOY#frontend-}
+          ARTIFACT_NAME="${CLEAN_VERSION}-${{ inputs.env }}"
+          
+          DOWNLOAD_TAG="${{ inputs.release_tag }}"
+          if [ "$IS_MANUAL" == "true" ] && [ -z "$DOWNLOAD_TAG" ]; then
+            DOWNLOAD_TAG="release-$TAG_TO_DEPLOY"
+          fi
 
           echo "tag_name=$TAG_TO_DEPLOY" >> $GITHUB_OUTPUT
+          echo "download_tag=$DOWNLOAD_TAG" >> $GITHUB_OUTPUT
           echo "frontend_name=frontend-build-$ARTIFACT_NAME.tar.gz" >> $GITHUB_OUTPUT
           echo "frontend_path=build_frontend/frontend-build-$ARTIFACT_NAME.tar.gz" >> $GITHUB_OUTPUT
+          echo "is_manual=$IS_MANUAL" >> $GITHUB_OUTPUT
+
+      - name: Download Artifact from Job Build
+        if: steps.determine_tag.outputs.is_manual == 'false'
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-assets
+          path: build_frontend
 
       - name: Download Frontend Release Bundle
         if: inputs.existing_tag_to_deploy != ''
@@ -156,12 +174,11 @@ jobs:
           set -e 
           OWNER=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f1)
           REPO=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f2)
-          TAG_NAME="${{ steps.determine_tag.outputs.tag_name }}"
+          TAG_RELEASE="${{ steps.determine_tag.outputs.download_tag }}"
           FRONTEND_NAME="${{ steps.determine_tag.outputs.frontend_name }}"
           FRONTEND_PATH="${{ steps.determine_tag.outputs.frontend_path }}"
 
-          DOWNLOAD_URL="https://github.com/${OWNER}/${REPO}/releases/download/${TAG_NAME}/${FRONTEND_NAME}"
-
+          DOWNLOAD_URL="https://github.com/${OWNER}/${REPO}/releases/download/${TAG_RELEASE}/${FRONTEND_NAME}"
           echo "==> Downloading Frontend Bundle from: $DOWNLOAD_URL"
           
           mkdir -p build_frontend

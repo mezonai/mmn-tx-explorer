@@ -16,32 +16,23 @@ on:
       new_tag_to_build:
         description: "(Optional) New tag "
         required: false
-      existing_tag_to_deploy:
-        description: "(Optional) Existing tag"
-        required: false
-      deploy_indexer:
-        description: "Deploy Indexer Service"
-        type: boolean
-        default: true
-      deploy_dong:
-        description: "Deploy Dong Service"
-        type: boolean
-        default: true
-      deploy_frontend:
-        description: "Deploy Frontend Service"
-        type: boolean
-        default: true
-      deploy_socket:
-        description: "Deploy WebSocket Service"
-        type: boolean
-        default: true
 
 jobs:
   determine_tags:
     runs-on: [self-hosted, Linux, mezon-runner]
     outputs:
-      target_tag: ${{ steps.get_tag.outputs.target_tag }}
-      skip_build: ${{ steps.get_tag.outputs.skip_build}}
+      release_tag: ${{ steps.tags.outputs.release_tag }}
+      frontend_tag: ${{ steps.tags.outputs.frontend_tag }}
+      indexer_tag: ${{ steps.tags.outputs.indexer_tag }}
+      socket_tag: ${{ steps.tags.outputs.socket_tag }}
+      dong_tag: ${{ steps.tags.outputs.dong_tag }}
+
+      build_frontend: ${{ steps.detect.outputs.frontend }}
+      build_dong: ${{ steps.detect.outputs.dong }}
+      build_socket: ${{ steps.detect.outputs.socket }}
+      build_indexer: ${{ steps.detect.outputs.indexer }}
+
+      should_release: ${{ steps.tags.outputs.should_release }}
     steps:
       - name: Checkout for git history
         uses: actions/checkout@v4
@@ -49,58 +40,218 @@ jobs:
           ref: ${{ inputs.ref }} 
           fetch-depth: 0
 
-      - name: Calculate new tags
-        id: get_tag
+      - name: Detect changed services
+        id: detect
         run: |
-          if [ -n "${{ inputs.existing_tag_to_deploy }}" ]; then
-            echo "==> Mode: Deploy Existing Tag"
-            echo "target_tag=${{ inputs.existing_tag_to_deploy }}" >> $GITHUB_OUTPUT
-            echo "skip_build=true" >> $GITHUB_OUTPUT
-          elif [ -n "${{ inputs.new_tag_to_build }}" ]; then
-            echo "==> Mode: Build New Tag (Manual)"
-            echo "target_tag=${{ inputs.new_tag_to_build }}" >> $GITHUB_OUTPUT
-            echo "skip_build=false" >> $GITHUB_OUTPUT
-          else 
-            LATEST_TAG=$(git tag -l --sort=-v:refname | head -n 1)
-            if [ -z "$LATEST_TAG" ]; then
-              NEW_TAG="v0.1.0"
-              echo "==> No existing tags found. Starting with initial tag: $NEW_TAG"
-            else
-              echo "==> Latest tag is: $LATEST_TAG"
-              VERSION=$(echo $LATEST_TAG | sed 's/^v//')
-              MAJOR=$(echo $VERSION | cut -d. -f1)
-              MINOR=$(echo $VERSION | cut -d. -f2)
-              PATCH=$(echo $VERSION | cut -d. -f3)
-              NEXT_PATCH=$((PATCH + 1))
-              NEW_TAG="v${MAJOR}.${MINOR}.${NEXT_PATCH}"
-              echo "==> Calculated next tag: $NEW_TAG"
-            fi
-            echo "target_tag=${NEW_TAG}" >> $GITHUB_OUTPUT
-            echo "skip_build=false" >> $GITHUB_OUTPUT
+          set -e
+
+          if [ -n "${{ inputs.new_tag_to_build }}" ]; then
+            echo "frontend=false" >> $GITHUB_OUTPUT
+            echo "dong=false" >> $GITHUB_OUTPUT
+            echo "socket=false" >> $GITHUB_OUTPUT
+            echo "indexer=false" >> $GITHUB_OUTPUT
+            exit 0
           fi
+
+          if [ "${{ inputs.env }}" = "dev" ]; then
+            BASE_BRANCH="origin/develop"
+            git fetch origin develop
+          elif [ "${{ inputs.env }}" = "prod" ]; then
+            BASE_BRANCH="origin/main"
+            git fetch origin main
+          else
+            echo "Invalid env input"
+            exit 1
+          fi
+
+          detect() {
+            local svc=$1
+            if git diff --quiet "$BASE_BRANCH" ..HEAD -- "$svc/"; then
+              echo false
+            else
+              echo true
+            fi
+          }
+
+          echo "frontend=$(detect frontend)" >> $GITHUB_OUTPUT
+          echo "dong=$(detect dong)" >> $GITHUB_OUTPUT
+          echo "socket=$(detect socket)" >> $GITHUB_OUTPUT
+          echo "indexer=$(detect indexer)" >> $GITHUB_OUTPUT
+
+      - name: Calculate tags
+        id: tags
+        run: |
+          set -e
+
+          git fetch --tags --force
+
+          normalize() {
+            [[ "$1" == v* ]] && echo "$1" || echo "v$1"
+          }
+
+          latest() {
+            git tag -l "$1" --sort=-v:refname | head -n1
+          }
+
+          increment() {
+            VERSION=$1
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+            PATCH=$((PATCH+1))
+            echo "${MAJOR}.${MINOR}.${PATCH}"
+          }
+
+          bump_service() {
+            SERVICE=$1
+            LATEST=$(latest "${SERVICE}-v*")
+
+            if [ -z "$LATEST" ]; then
+              echo "${SERVICE}-v0.0.0"
+            else
+              VERSION=${LATEST#${SERVICE}-v}
+              NEW_VERSION=$(increment $VERSION)
+              echo "${SERVICE}-v${NEW_VERSION}"
+            fi
+          }
+
+          bump_release() {
+            LATEST=$(latest "release-v*")
+
+            if [ -z "$LATEST" ]; then
+              echo "release-v0.1.0"
+            else
+              VERSION=${LATEST#release-v}
+              NEW_VERSION=$(increment $VERSION)
+              echo "release-v${NEW_VERSION}"
+            fi
+          }
+
+          BUILT=false
+
+          if [ -n "${{ inputs.new_tag_to_build }}" ]; then
+            RAW=$(normalize "${{ inputs.new_tag_to_build }}")
+            if [[ ! "$RAW" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Invalid tag format. Must be vX.Y.Z"
+              exit 1
+            fi
+
+            RELEASE="release-${RAW}"
+            FRONTEND="frontend-${RAW}"
+            DONG="dong-${RAW}"
+            SOCKET="socket-${RAW}"
+            INDEXER="indexer-${RAW}"
+
+            SHOULD=true
+
+          else
+
+            BUILT=false
+
+            if [ "${{ steps.detect.outputs.frontend }}" = "true" ]; then
+              FRONTEND=$(bump_service frontend)
+              BUILT=true
+            fi
+
+            if [ "${{ steps.detect.outputs.dong }}" = "true" ]; then
+              DONG=$(bump_service dong)
+              BUILT=true
+            fi
+
+            if [ "${{ steps.detect.outputs.socket }}" = "true" ]; then
+              SOCKET=$(bump_service socket)
+              BUILT=true
+            fi
+
+            if [ "${{ steps.detect.outputs.indexer }}" = "true" ]; then
+              INDEXER=$(bump_service indexer)
+              BUILT=true
+            fi
+
+            if [ "$BUILT" = "true" ]; then
+              RELEASE=$(bump_release)
+              SHOULD=true
+            else
+              RELEASE=$(latest "release-v*")
+              SHOULD=false
+            fi
+          fi
+
+          echo "release_tag=$RELEASE" >> $GITHUB_OUTPUT
+          echo "frontend_tag=$FRONTEND" >> $GITHUB_OUTPUT
+          echo "dong_tag=$DONG" >> $GITHUB_OUTPUT
+          echo "socket_tag=$SOCKET" >> $GITHUB_OUTPUT
+          echo "indexer_tag=$INDEXER" >> $GITHUB_OUTPUT
+          echo "should_release=$SHOULD" >> $GITHUB_OUTPUT
+
+  prepare_assets:
+    needs: [determine_tags]
+    if: inputs.new_tag_to_build != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Repackage Assets from Previous Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW_TAG: ${{ inputs.new_tag_to_build }}
+          ENV: ${{ inputs.env }}
+        run: |
+          set -e
+
+          LATEST_RELEASE_TAG=$(git tag -l "release-v*" --sort=-v:refname | head -n1)          echo "Latest release found: $LATEST_RELEASE_TAG"
+
+          mkdir -p temp_assets final_assets          
+          gh release download "$LATEST_RELEASE_TAG" --dir temp_assets
+          
+          cd temp_assets
+          for file in *; do
+            [[ "$file" == "checksums.txt" ]] && continue
+            
+            if [[ "$file" == frontend-build-* ]]; then
+              NEW_FILE="frontend-build-v${NEW_TAG#v}-${ENV}.tar.gz"
+              cp "$file" "../final_assets/$NEW_FILE"
+              
+            elif [[ "$file" == indexer-v* ]]; then
+              NEW_FILE="indexer-v${NEW_TAG#v}"
+              cp "$file" "../final_assets/$NEW_FILE"
+              
+            elif [[ "$file" == dong-v* || "$file" == socket-v* ]]; then
+              PREFIX=$(echo "$file" | cut -d'-' -f1)
+              cp "$file" "../final_assets/${PREFIX}-v${NEW_TAG#v}"
+            fi
+          done
+
+      - name: Upload Repackaged Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: manual-repackaged-assets
+          path: final_assets/*
 
   deploy-indexer:
     needs: [determine_tags]
-    if: inputs.deploy_indexer == true
+    if: needs.determine_tags.outputs.build_indexer == 'true' && inputs.new_tag_to_build == ''
     uses: ./.github/workflows/deploy-indexer-service.yml
     with:
       env: ${{ inputs.env }}
       ref: ${{ inputs.ref }}
-      target_tag: ${{ needs.determine_tags.outputs.target_tag }} 
-      skip_build: ${{ needs.determine_tags.outputs.skip_build }}
+      release_tag: ${{ needs.determine_tags.outputs.release_tag }}
+      service_tag: ${{ needs.determine_tags.outputs.indexer_tag }}
     secrets:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       EVENT_API_KEY: ${{ secrets.EVENT_API_KEY }}
 
   deploy-dong:
     needs: [determine_tags]
-    if: inputs.deploy_dong == true
+    if: needs.determine_tags.outputs.build_dong == 'true' && inputs.new_tag_to_build == ''
     uses: ./.github/workflows/deploy-dong-service.yml
     with:
       env: ${{ inputs.env }}
       ref: ${{ inputs.ref }}
-      target_tag: ${{ needs.determine_tags.outputs.target_tag }} 
-      skip_build: ${{ needs.determine_tags.outputs.skip_build }}
+      release_tag: ${{ needs.determine_tags.outputs.release_tag }} 
+      service_tag: ${{ needs.determine_tags.outputs.dong_tag }}
     secrets:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
@@ -112,28 +263,67 @@ jobs:
  
   deploy-frontend:
     needs: [determine_tags]
-    if: inputs.deploy_frontend == true
+    if: needs.determine_tags.outputs.build_frontend == 'true' && inputs.new_tag_to_build == ''
     uses: ./.github/workflows/deploy-frontend-service.yml
     with:
       env: ${{ inputs.env }}
       ref: ${{ inputs.ref }}
-      target_tag: ${{ needs.determine_tags.outputs.target_tag }} 
-      skip_build: ${{ needs.determine_tags.outputs.skip_build }}
+      release_tag: ${{ needs.determine_tags.outputs.release_tag }} 
+      service_tag: ${{ needs.determine_tags.outputs.frontend_tag }}
     secrets:
       NEXT_PUBLIC_COBAR_API_KEY: ${{ secrets.NEXT_PUBLIC_COBAR_API_KEY }}
       NEXT_PUBLIC_MEZON_SERVER_KEY: ${{ secrets.NEXT_PUBLIC_MEZON_SERVER_KEY }}
 
   deploy-socket:
     needs: [determine_tags]
-    if: inputs.deploy_socket == true
+    if: needs.determine_tags.outputs.build_socket == 'true' && inputs.new_tag_to_build == ''
     uses: ./.github/workflows/deploy-socket-service.yml
     with:
       env: ${{ inputs.env }}
       ref: ${{ inputs.ref }}
-      target_tag: ${{ needs.determine_tags.outputs.target_tag }} 
-      skip_build: ${{ needs.determine_tags.outputs.skip_build }}
+      release_tag: ${{ needs.determine_tags.outputs.release_tag }} 
+      service_tag: ${{ needs.determine_tags.outputs.socket_tag }}
     secrets:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
       EVENT_API_KEY: ${{ secrets.EVENT_API_KEY }}
       REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+
+  create_release:
+    needs: [determine_tags, prepare_assets, deploy-indexer, deploy-dong, deploy-frontend, deploy-socket]
+    runs-on: ubuntu-latest
+    if: |
+        always() && 
+        needs.determine_tags.result == 'success' && 
+        needs.determine_tags.outputs.should_release == 'true'
+    steps:
+      - name: Create Workspace
+        run: mkdir -p release-assets
+
+      - name: Download Build Artifacts
+        if: inputs.new_tag_to_build == ''
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Download Repackaged Artifacts
+        if: inputs.new_tag_to_build != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: manual-repackaged-assets
+          path: release-assets
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.determine_tags.outputs.release_tag }}
+          name: Release ${{ needs.determine_tags.outputs.release_tag }} # Nên thêm name cho chuyên nghiệp
+          body: |
+            Frontend: ${{ needs.determine_tags.outputs.frontend_tag }}
+            Dong: ${{ needs.determine_tags.outputs.dong_tag }}
+            Socket: ${{ needs.determine_tags.outputs.socket_tag }}
+            Indexer: ${{ needs.determine_tags.outputs.indexer_tag }}
+          files: release-assets/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
