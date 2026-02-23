@@ -338,7 +338,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.determine_tags.outputs.release_tag }}
-          name: Release ${{ needs.determine_tags.outputs.release_tag }} # Nên thêm name cho chuyên nghiệp
+          name: Release ${{ needs.determine_tags.outputs.release_tag }}
           body: |
             Frontend: ${{ needs.determine_tags.outputs.frontend_tag }}
             Dong: ${{ needs.determine_tags.outputs.dong_tag }}
