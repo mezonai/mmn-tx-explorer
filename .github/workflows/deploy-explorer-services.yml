@@ -107,24 +107,28 @@ jobs:
           }
 
           increment() {
-            VERSION=$1
-            IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+            local clean_version=${1#v}
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$clean_version"
             PATCH=$((PATCH+1))
             echo "${MAJOR}.${MINOR}.${PATCH}"
           }
 
           bump_service() {
-            SERVICE=$1
-            LATEST=$(latest "${SERVICE}-v*")
-
+            local SERVICE=$1
+            local LATEST=$(latest "$SERVICE")
+          
             echo "DEBUG: Service [$SERVICE] -> Latest Tag from Git: '$LATEST'" >&2
-
+          
             if [ -z "$LATEST" ]; then
-              echo "DEBUG: No tag found for $SERVICE, defaulting to v0.0.0" >&2
-              echo "${SERVICE}-v0.0.0"
+              echo "${SERVICE}-v0.0.1"
             else
-              VERSION=${LATEST#${SERVICE}-v}
-              NEW_VERSION=$(increment $VERSION)
+              if [[ "$LATEST" == "$SERVICE"* ]]; then
+                VERSION_PART=${LATEST#$SERVICE-v}
+              else
+                VERSION_PART=${LATEST#v}
+              fi
+              
+              NEW_VERSION=$(increment "$VERSION_PART")
               echo "${SERVICE}-v${NEW_VERSION}"
               echo "DEBUG: New incremented version: '$NEW_VERSION'" >&2
             fi
@@ -133,6 +137,16 @@ jobs:
           echo "=== START DEBUG CHECK ===" >&2
           FRONTEND_TAG_CHECK=$(bump_service frontend)
           echo "RESULT: Final tag for frontend: $FRONTEND_TAG_CHECK" >&2
+
+          DONG_TAG_CHECK=$(bump_service dong)
+          echo "RESULT: Final tag for dong: $DONG_TAG_CHECK" >&2
+
+          SOCKET_TAG_CHECK=$(bump_service socket)
+          echo "RESULT: Final tag for socket: $SOCKET_TAG_CHECK" >&2
+
+          INDEXER_TAG_CHECK=$(bump_service indexer)
+          echo "RESULT: Final tag for indexer: $INDEXER_TAG_CHECK" >&2
+          
           echo "=== END DEBUG CHECK ===" >&2
 
           bump_release() {
