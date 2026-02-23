@@ -96,13 +96,14 @@ jobs:
           }
 
           latest() {
-            echo "DEBUG: Searching for pattern: $1" >&2 
+            local service_pattern="${1}-v*"
+            local tag=$(git tag -l "$service_pattern" --sort=-v:refname | head -n1)
             
-            ALL_TAGS=$(git tag -l "$1" --sort=-v:refname)
-            echo "DEBUG: All tags found for $1: " >&2
-            echo "$ALL_TAGS" | head -n 3 >&2 # In 3 tag mới nhất ra log
+            if [ -z "$tag" ]; then
+              tag=$(git tag -l "v*" --sort=-v:refname | head -n1)
+            fi
             
-            git tag -l "$1" --sort=-v:refname | head -n1          
+            echo "$tag"
           }
 
           increment() {
