@@ -55,7 +55,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
         const isExpired = await lightClient.isSessionExpired();
         if (isExpired) {
           await lightClient.refreshSession();
-          localStorage.setItem(STORAGE_KEYS.LIGHT_CLIENT, JSON.stringify(lightClient));
+          localStorage.setItem(STORAGE_KEYS.LIGHT_CLIENT, JSON.stringify(lightClient.exportSession()));
         }
         if (!isMounted) return;
 

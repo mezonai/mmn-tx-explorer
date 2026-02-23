@@ -75,7 +75,7 @@ export const createLightClient = async (id_token: string, user_id: string, usern
       username,
       serverkey,
     });
-    localStorage.setItem(STORAGE_KEYS.LIGHT_CLIENT, JSON.stringify(light_client));
+    localStorage.setItem(STORAGE_KEYS.LIGHT_CLIENT, JSON.stringify(light_client.exportSession()));
     return light_client;
   } catch (error) {
     console.error('Error creating light client', error);
