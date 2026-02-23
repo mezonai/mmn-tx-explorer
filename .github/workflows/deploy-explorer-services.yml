@@ -74,8 +74,8 @@ jobs:
           }
 
           echo "frontend=$(detect frontend)" >> $GITHUB_OUTPUT
-          echo "dong=$(detect dong)" >> $GITHUB_OUTPUT
-          echo "socket=$(detect socket)" >> $GITHUB_OUTPUT
+          echo "dong=$(detect dong-service)" >> $GITHUB_OUTPUT
+          echo "socket=$(detect socket-service)" >> $GITHUB_OUTPUT
           echo "indexer=$(detect indexer)" >> $GITHUB_OUTPUT
 
       - name: Calculate tags
@@ -92,7 +92,7 @@ jobs:
             local SERVICE=$1
             git tag -l "${SERVICE}-v*" --sort=-v:refname | head -n1
           }
-          latest_release() {
+          latest_release_tag() {
             git tag -l "release-v*" --sort=-v:refname | head -n1
           }
           latest_global_tag() {
@@ -108,22 +108,22 @@ jobs:
 
           bump_service() {
             local SERVICE=$1
-            local LATEST=$(latest_service_tag "$SERVICE")
+            local SERVICE_TAG=$(latest_service_tag "$SERVICE")
             local BASE_VERSION=""
 
-            if [ -z "$LATEST" ]; then
-              echo "${SERVICE}-v0.0.1"
+            if [ -n "$SERVICE_TAG" ]; then
+              BASE_VERSION=${SERVICE_TAG#${SERVICE}-}
             else
-              local GLOBAL_TAG=$(latest_global_tag)
+              GLOBAL_TAG=$(latest_global_tag)
               if [ -n "$GLOBAL_TAG" ]; then
                 BASE_VERSION=$GLOBAL_TAG
               else
                 BASE_VERSION="v0.0.0"
               fi
-
-              NEW_VERSION=$(increment "$BASE_VERSION")
-              echo "${SERVICE}-${NEW_VERSION}"
             fi
+
+            NEW_VERSION=$(increment "$BASE_VERSION")
+            echo "${SERVICE}-${NEW_VERSION}"
           }
           bump_release() {
             local LATEST=$(latest_release_tag)
@@ -145,37 +145,54 @@ jobs:
 
             RELEASE="release-${RAW}"
             FRONTEND="frontend-${RAW}"
-            DONG="dong-${RAW}"
-            SOCKET="socket-${RAW}"
+            DONG="dong-service-${RAW}"
+            SOCKET="socket-service-${RAW}"
             INDEXER="indexer-${RAW}"
 
             SHOULD=true
           else
             BUILT=false
-            
+
+            resolve_existing() {
+              local SERVICE=$1
+              local SERVICE_TAG=$(latest_service_tag "$SERVICE")
+
+              if [ -n "$SERVICE_TAG" ]; then
+                echo "$SERVICE_TAG"
+                return
+              fi
+
+              GLOBAL_TAG=$(latest_global_tag)
+              if [ -n "$GLOBAL_TAG" ]; then
+                echo "${SERVICE}-${GLOBAL_TAG}"
+              else
+                echo "${SERVICE}-v0.0.0"
+              fi
+            }
+
             if [ "${{ steps.detect.outputs.frontend }}" = "true" ]; then
               FRONTEND=$(bump_service frontend)
               BUILT=true
             else
-              FRONTEND=$(latest_service_tag frontend)
+              FRONTEND=$(resolve_existing frontend)
             fi
             if [ "${{ steps.detect.outputs.dong }}" = "true" ]; then
-              DONG=$(bump_service dong)
+              DONG=$(bump_service dong-service)
               BUILT=true
             else  
-              DONG=$(latest_service_tag dong) 
+              DONG=$(resolve_existing dong-service) 
             fi
             if [ "${{ steps.detect.outputs.socket }}" = "true" ]; then
-              SOCKET=$(bump_service socket)
+              SOCKET=$(bump_service socket-service)
               BUILT=true
             else
-              SOCKET=$(latest_service_tag socket)
+              SOCKET=$(resolve_existing socket-service)
             fi
             if [ "${{ steps.detect.outputs.indexer }}" = "true" ]; then
               INDEXER=$(bump_service indexer)
               BUILT=true
             else
-              INDEXER=$(latest_service_tag indexer)
+              INDEXER=$(resolve_existing indexer)
             fi
 
             if [ "$BUILT" = "true" ]; then
@@ -210,7 +227,7 @@ jobs:
               git tag -f "$TAG_VAL"
             fi
           done
-          
+
           git push origin --tags
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -242,7 +259,8 @@ jobs:
         run: |
           set -e
 
-          LATEST_RELEASE_TAG=$(git tag -l "release-v*" --sort=-v:refname | head -n1)          echo "Latest release found: $LATEST_RELEASE_TAG"
+          LATEST_RELEASE_TAG=$(git tag -l "release-v*" --sort=-v:refname | head -n1)          
+          echo "Latest release found: $LATEST_RELEASE_TAG"
 
           mkdir -p temp_assets final_assets          
           gh release download "$LATEST_RELEASE_TAG" --dir temp_assets
@@ -250,18 +268,16 @@ jobs:
           cd temp_assets
           for file in *; do
             [[ "$file" == "checksums.txt" ]] && continue
-            
+   
+            SERVICE_NAME_PART=$(echo "$file" | sed 's/-v[0-9].*//')
+            CLEAN_VERSION=$(echo "${NEW_TAG}" | sed 's/^v//')
+
             if [[ "$file" == frontend-build-* ]]; then
-              NEW_FILE="frontend-build-v${NEW_TAG#v}-${ENV}.tar.gz"
+              NEW_FILE="frontend-build-v${CLEAN_VERSION}-${ENV}.tar.gz"
               cp "$file" "../final_assets/$NEW_FILE"
-              
-            elif [[ "$file" == indexer-v* ]]; then
-              NEW_FILE="indexer-v${NEW_TAG#v}"
+            else
+              NEW_FILE="${SERVICE_NAME_PART}-v${CLEAN_VERSION}"
               cp "$file" "../final_assets/$NEW_FILE"
-              
-            elif [[ "$file" == dong-v* || "$file" == socket-v* ]]; then
-              PREFIX=$(echo "$file" | cut -d'-' -f1)
-              cp "$file" "../final_assets/${PREFIX}-v${NEW_TAG#v}"
             fi
           done
 
