@@ -83,7 +83,13 @@ jobs:
         run: |
           set -e
 
-          git fetch --tags --prune --unshallow || git fetch --tags --force
+          if [ -f "$(git rev-parse --git-dir)/shallow" ]; then
+            echo "DEBUG: Shallow repository detected, unshallowing..." >&2
+            git fetch --tags --prune --unshallow || git fetch --tags --force
+          else
+            echo "DEBUG: Full repository detected, fetching tags only..." >&2
+            git fetch --tags --force
+          fi
           
           normalize() {
             [[ "$1" == v* ]] && echo "$1" || echo "v$1"
@@ -126,7 +132,7 @@ jobs:
           FRONTEND_TAG_CHECK=$(bump_service frontend)
           echo "RESULT: Final tag for frontend: $FRONTEND_TAG_CHECK" >&2
           echo "=== END DEBUG CHECK ===" >&2
-          
+
           bump_release() {
             LATEST=$(latest "release-v*")
 
