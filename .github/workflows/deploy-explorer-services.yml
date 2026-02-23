@@ -90,7 +90,7 @@ jobs:
             echo "DEBUG: Full repository detected, fetching tags only..." >&2
             git fetch --tags --force
           fi
-          
+
           normalize() {
             [[ "$1" == v* ]] && echo "$1" || echo "v$1"
           }
@@ -102,7 +102,8 @@ jobs:
             echo "DEBUG: All tags found for $1: " >&2
             echo "$ALL_TAGS" | head -n 3 >&2 # In 3 tag mới nhất ra log
             
-            git tag -l "$1" --sort=-v:refname | head -n1          }
+            git tag -l "$1" --sort=-v:refname | head -n1          
+          }
 
           increment() {
             VERSION=$1
@@ -161,7 +162,6 @@ jobs:
             INDEXER="indexer-${RAW}"
 
             SHOULD=true
-
           else
 
             BUILT=false
