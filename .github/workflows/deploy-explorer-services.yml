@@ -134,21 +134,6 @@ jobs:
             fi
           }
 
-          echo "=== START DEBUG CHECK ===" >&2
-          FRONTEND_TAG_CHECK=$(bump_service frontend)
-          echo "RESULT: Final tag for frontend: $FRONTEND_TAG_CHECK" >&2
-
-          DONG_TAG_CHECK=$(bump_service dong)
-          echo "RESULT: Final tag for dong: $DONG_TAG_CHECK" >&2
-
-          SOCKET_TAG_CHECK=$(bump_service socket)
-          echo "RESULT: Final tag for socket: $SOCKET_TAG_CHECK" >&2
-
-          INDEXER_TAG_CHECK=$(bump_service indexer)
-          echo "RESULT: Final tag for indexer: $INDEXER_TAG_CHECK" >&2
-          
-          echo "=== END DEBUG CHECK ===" >&2
-
           bump_release() {
             LATEST=$(latest "release-v*")
 
