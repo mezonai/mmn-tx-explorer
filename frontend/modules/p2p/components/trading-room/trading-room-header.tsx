@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Chip } from '@/components/shared';
 import { OrderStatus } from '../../types';
 import { TriangleAlert } from 'lucide-react';
+import { P2P_TRADING_ROLE } from '../../constants';
 
 interface TradingRoomHeaderProps {
   order: P2POrder;
@@ -51,8 +52,8 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
 
     const offerSide = order.offer_type || offer?.side;
     const isOfferCreator =
-      (offerSide === TradeTypes.BUY && userRole === 'buyer') ||
-      (offerSide === TradeTypes.SELL && userRole === 'seller');
+      (offerSide === TradeTypes.BUY && userRole === P2P_TRADING_ROLE.BUYER) ||
+      (offerSide === TradeTypes.SELL && userRole === P2P_TRADING_ROLE.SELLER);
 
     return isOfferCreator
       ? order.order_creator_wallet_address || ''
