@@ -127,7 +127,7 @@ func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, 
 		       o.transaction_hash, o.status, o.transfer_code, o.expires_at, o.created_at, o.updated_at,
 		       of.offer_creator_wallet_address, of.offer_creator_user_id
 		FROM %s.p2p_orders o
-		LEFT JOIN %s.p2p_offers of ON o.offer_id = of.offer_id
+		INNER JOIN %s.p2p_offers of ON o.offer_id = of.offer_id
 		WHERE o.offer_id = $1`, r.dongSchema, r.dongSchema)
 
 	// Default ordering and pagination
@@ -219,7 +219,7 @@ func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAd
 		       o.transaction_hash, o.status, o.transfer_code, o.expires_at, o.created_at, o.updated_at,
 		       of.offer_creator_wallet_address, of.offer_creator_user_id
 		FROM %s.p2p_orders o
-		LEFT JOIN %s.p2p_offers of ON o.offer_id = of.offer_id
+		INNER JOIN %s.p2p_offers of ON o.offer_id = of.offer_id
 		WHERE o.order_creator_wallet_address = $1 OR of.offer_creator_wallet_address = $1
 		ORDER BY o.created_at DESC
 	`, r.dongSchema, r.dongSchema)
@@ -270,7 +270,7 @@ func (r *OrderRepository) CountOrdersByWalletAddress(ctx context.Context, wallet
 	query := fmt.Sprintf(`
 		SELECT COUNT(*) 
 		FROM %s.p2p_orders o
-		LEFT JOIN %s.p2p_offers of ON o.offer_id = of.offer_id
+		INNER JOIN %s.p2p_offers of ON o.offer_id = of.offer_id
 		WHERE o.order_creator_wallet_address = $1 OR of.offer_creator_wallet_address = $1
 	`, r.dongSchema, r.dongSchema)
 
