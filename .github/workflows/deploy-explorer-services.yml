@@ -83,13 +83,7 @@ jobs:
         run: |
           set -e
 
-          if [ -f "$(git rev-parse --git-dir)/shallow" ]; then
-            echo "DEBUG: Shallow repository detected, unshallowing..." >&2
-            git fetch --tags --prune --unshallow || git fetch --tags --force
-          else
-            echo "DEBUG: Full repository detected, fetching tags only..." >&2
-            git fetch --tags --force
-          fi
+          git fetch --tags --force
 
           normalize() {
             [[ "$1" == v* ]] && echo "$1" || echo "v$1"
@@ -117,7 +111,7 @@ jobs:
             local SERVICE=$1
             local LATEST=$(latest "$SERVICE")
           
-            echo "DEBUG: Service [$SERVICE] -> Latest Tag from Git: '$LATEST'" >&2
+            echo "Service [$SERVICE] -> Latest Tag from Git: '$LATEST'" >&2
           
             if [ -z "$LATEST" ]; then
               echo "${SERVICE}-v0.0.1"
@@ -130,7 +124,7 @@ jobs:
               
               NEW_VERSION=$(increment "$VERSION_PART")
               echo "${SERVICE}-v${NEW_VERSION}"
-              echo "DEBUG: New incremented version: '$NEW_VERSION'" >&2
+              echo "New incremented version: '$NEW_VERSION'" >&2
             fi
           }
 
@@ -169,21 +163,29 @@ jobs:
             if [ "${{ steps.detect.outputs.frontend }}" = "true" ]; then
               FRONTEND=$(bump_service frontend)
               BUILT=true
+            else
+              FRONTEND=$(latest frontend)
             fi
 
             if [ "${{ steps.detect.outputs.dong }}" = "true" ]; then
               DONG=$(bump_service dong)
               BUILT=true
+            else  
+              DONG=$(latest dong) 
             fi
 
             if [ "${{ steps.detect.outputs.socket }}" = "true" ]; then
               SOCKET=$(bump_service socket)
               BUILT=true
+            else
+              SOCKET=$(latest socket)
             fi
 
             if [ "${{ steps.detect.outputs.indexer }}" = "true" ]; then
               INDEXER=$(bump_service indexer)
               BUILT=true
+            else
+              INDEXER=$(latest indexer)
             fi
 
             if [ "$BUILT" = "true" ]; then
@@ -201,6 +203,35 @@ jobs:
           echo "socket_tag=$SOCKET" >> $GITHUB_OUTPUT
           echo "indexer_tag=$INDEXER" >> $GITHUB_OUTPUT
           echo "should_release=$SHOULD" >> $GITHUB_OUTPUT
+    
+      - name: Push Service Tags for Tracking
+        if: steps.tags.outputs.should_release == 'true'
+        run: |    
+          SERVICES=("frontend" "dong" "socket" "indexer")
+          for svc in "${SERVICES[@]}"; do
+            VAR_NAME=$(echo "${svc}_TAG" | tr '[:lower:]' '[:upper:]')
+            TAG_VAL="${!VAR_NAME}"
+            
+            IS_CHANGED_VAR=$(echo "${svc}_CHANGED" | tr '[:lower:]' '[:upper:]')
+            IS_CHANGED="${!IS_CHANGED_VAR}"
+            
+            if [ "$IS_CHANGED" = "true" ] && [ -n "$TAG_VAL" ]; then
+              echo "Creating tracking tag for $svc: $TAG_VAL"
+              git tag -f "$TAG_VAL"
+            fi
+          done
+          
+          git push origin --tags
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FRONTEND_TAG: ${{ steps.tags.outputs.frontend_tag }}
+          DONG_TAG: ${{ steps.tags.outputs.dong_tag }}
+          SOCKET_TAG: ${{ steps.tags.outputs.socket_tag }}
+          INDEXER_TAG: ${{ steps.tags.outputs.indexer_tag }}
+          FRONTEND_CHANGED: ${{ steps.detect.outputs.frontend }}
+          DONG_CHANGED: ${{ steps.detect.outputs.dong }}
+          SOCKET_CHANGED: ${{ steps.detect.outputs.socket }}
+          INDEXER_CHANGED: ${{ steps.detect.outputs.indexer }}
 
   prepare_assets:
     needs: [determine_tags]
@@ -249,7 +280,7 @@ jobs:
         with:
           name: manual-repackaged-assets
           path: final_assets/*
-
+        
   deploy-indexer:
     needs: [determine_tags]
     if: needs.determine_tags.outputs.build_indexer == 'true' && inputs.new_tag_to_build == ''
