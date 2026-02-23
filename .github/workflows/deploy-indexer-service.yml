@@ -120,20 +120,13 @@ jobs:
             exit 1
           fi
 
-          if [[ ! "$TAG_INPUT" == v* ]]; then
-            TAG_TO_DEPLOY="v$TAG_INPUT"
-            echo "==> Prefix 'v' was missing. Standardizing to: $TAG_TO_DEPLOY"
-          else
-            TAG_TO_DEPLOY="$TAG_INPUT"
-          fi
-
-          CLEAN_VERSION=${TAG_TO_DEPLOY#indexer-}
+          CLEAN_VERSION=${TAG_INPUT#indexer-}
           BINARY_FILE="indexer-${CLEAN_VERSION}"
 
           DOWNLOAD_TAG="${{ inputs.release_tag }}"
-          [ -z "$DOWNLOAD_TAG" ] && DOWNLOAD_TAG="release-$TAG_TO_DEPLOY"
+          [ -z "$DOWNLOAD_TAG" ] && DOWNLOAD_TAG="release-$TAG_INPUT"
 
-          echo "tag_name=$TAG_TO_DEPLOY" >> $GITHUB_OUTPUT
+          echo "tag_name=$TAG_INPUT" >> $GITHUB_OUTPUT
           echo "download_tag=$DOWNLOAD_TAG" >> $GITHUB_OUTPUT
           echo "binary_name=$BINARY_FILE" >> $GITHUB_OUTPUT
           echo "binary_path=build/$BINARY_FILE" >> $GITHUB_OUTPUT

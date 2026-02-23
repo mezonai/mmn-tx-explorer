@@ -66,7 +66,7 @@ jobs:
 
           detect() {
             local svc=$1
-            if git diff --quiet "$BASE_BRANCH" ..HEAD -- "$svc/"; then
+              if git diff --quiet "$BASE_BRANCH..HEAD" -- "$svc/"; then
               echo false
             else
               echo true
@@ -83,15 +83,20 @@ jobs:
         run: |
           set -e
 
-          git fetch --tags --force
-
+          git fetch --tags --prune --unshallow || git fetch --tags --force
+          
           normalize() {
             [[ "$1" == v* ]] && echo "$1" || echo "v$1"
           }
 
           latest() {
-            git tag -l "$1" --sort=-v:refname | head -n1
-          }
+            echo "DEBUG: Searching for pattern: $1" >&2 
+            
+            ALL_TAGS=$(git tag -l "$1" --sort=-v:refname)
+            echo "DEBUG: All tags found for $1: " >&2
+            echo "$ALL_TAGS" | head -n 3 >&2 # In 3 tag mới nhất ra log
+            
+            git tag -l "$1" --sort=-v:refname | head -n1          }
 
           increment() {
             VERSION=$1
@@ -104,15 +109,24 @@ jobs:
             SERVICE=$1
             LATEST=$(latest "${SERVICE}-v*")
 
+            echo "DEBUG: Service [$SERVICE] -> Latest Tag from Git: '$LATEST'" >&2
+
             if [ -z "$LATEST" ]; then
+              echo "DEBUG: No tag found for $SERVICE, defaulting to v0.0.0" >&2
               echo "${SERVICE}-v0.0.0"
             else
               VERSION=${LATEST#${SERVICE}-v}
               NEW_VERSION=$(increment $VERSION)
               echo "${SERVICE}-v${NEW_VERSION}"
+              echo "DEBUG: New incremented version: '$NEW_VERSION'" >&2
             fi
           }
 
+          echo "=== START DEBUG CHECK ===" >&2
+          FRONTEND_TAG_CHECK=$(bump_service frontend)
+          echo "RESULT: Final tag for frontend: $FRONTEND_TAG_CHECK" >&2
+          echo "=== END DEBUG CHECK ===" >&2
+          
           bump_release() {
             LATEST=$(latest "release-v*")
 

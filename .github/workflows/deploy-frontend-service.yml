@@ -140,22 +140,15 @@ jobs:
             exit 1
           fi
 
-          if [[ ! "$TAG_INPUT" == v* ]]; then
-            TAG_TO_DEPLOY="v$TAG_INPUT"
-            echo "==> Prefix 'v' was missing. Standardizing to: $TAG_TO_DEPLOY"
-          else
-            TAG_TO_DEPLOY="$TAG_INPUT"
-          fi
-
-          CLEAN_VERSION=${TAG_TO_DEPLOY#frontend-}
+          CLEAN_VERSION=${TAG_INPUT#frontend-}
           ARTIFACT_NAME="${CLEAN_VERSION}-${{ inputs.env }}"
           
           DOWNLOAD_TAG="${{ inputs.release_tag }}"
           if [ "$IS_MANUAL" == "true" ] && [ -z "$DOWNLOAD_TAG" ]; then
-            DOWNLOAD_TAG="release-$TAG_TO_DEPLOY"
+            DOWNLOAD_TAG="release-$TAG_INPUT"
           fi
 
-          echo "tag_name=$TAG_TO_DEPLOY" >> $GITHUB_OUTPUT
+          echo "tag_name=$TAG_INPUT" >> $GITHUB_OUTPUT
           echo "download_tag=$DOWNLOAD_TAG" >> $GITHUB_OUTPUT
           echo "frontend_name=frontend-build-$ARTIFACT_NAME.tar.gz" >> $GITHUB_OUTPUT
           echo "frontend_path=build_frontend/frontend-build-$ARTIFACT_NAME.tar.gz" >> $GITHUB_OUTPUT

@@ -124,19 +124,13 @@ jobs:
             exit 1
           fi
 
-          if [[ ! "$TAG_INPUT" == v* ]]; then
-            TAG_TO_DEPLOY="v$TAG_INPUT"
-          else
-            TAG_TO_DEPLOY="$TAG_INPUT"
-          fi
-
-          CLEAN_VER=${TAG_TO_DEPLOY#socket-}
+          CLEAN_VER=${TAG_INPUT#socket-}
           BINARY_FILE="socket-service-${CLEAN_VER}"
 
           DOWNLOAD_TAG="${{ inputs.release_tag }}"
-          [ -z "$DOWNLOAD_TAG" ] && DOWNLOAD_TAG="release-$TAG_TO_DEPLOY"
+          [ -z "$DOWNLOAD_TAG" ] && DOWNLOAD_TAG="release-$TAG_INPUT"
           
-          echo "tag_name=$TAG_TO_DEPLOY" >> $GITHUB_OUTPUT
+          echo "tag_name=$TAG_INPUT" >> $GITHUB_OUTPUT
           echo "download_tag=$DOWNLOAD_TAG" >> $GITHUB_OUTPUT
           echo "binary_name=$BINARY_FILE" >> $GITHUB_OUTPUT
           echo "binary_path=build/$BINARY_FILE" >> $GITHUB_OUTPUT
