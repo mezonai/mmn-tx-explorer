@@ -75,7 +75,7 @@ export const OfferOrdersModal = ({ offer, open, onOpenChange }: OfferOrdersModal
           <div className="flex flex-col">
             <div className="flex items-center gap-1 font-bold text-white">
               <span>{amount.toFormat()} đồng</span>
-              <span className="text-xs font-normal text-gray-500">→ {payable.toFormat()}</span>
+              <span className="text-xs font-normal text-gray-500">→ {payable.multipliedBy(1000000).toFormat()}</span>
             </div>
             <span className="text-[10px] font-bold text-gray-500 uppercase">VND</span>
           </div>
