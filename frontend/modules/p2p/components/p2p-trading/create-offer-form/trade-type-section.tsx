@@ -122,12 +122,12 @@ export const TradeTypeSection = ({ control, trigger }: TradeTypeSectionProps) =>
                         <div>
                           <Input
                             type="text"
-                            placeholder={amountMZD > 0 ? formatCurrency(amountMZD) : '5,000'}
+                            placeholder="0"
                             value={formatCurrency(field.value)}
                             onChange={(e) => {
                               if (getRawValue(e.target.value) > LIMIT_MAX_AMOUNT) return;
                               field.onChange(getRawValue(e.target.value));
-                              trigger(['amount', 'price_rate']);
+                              trigger(['amount']);
                             }}
                             className={cn(
                               'bg-input/30 w-full rounded-md border px-3 py-2.5 text-lg font-bold transition-colors focus:outline-none',
