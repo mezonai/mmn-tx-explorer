@@ -154,5 +154,3 @@ func Panic() *zerolog.Event {
 func With() zerolog.Context {
 	return Logger.With()
 }
-
-
