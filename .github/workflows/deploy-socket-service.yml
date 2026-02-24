@@ -221,7 +221,7 @@ jobs:
           printf "export REDIS_PASSWORD=%q\n" "$REDIS_PASSWORD" >> remote_env.sh
           printf "export REDIS_DB=%q\n" "$REDIS_DB" >> remote_env.sh
           printf "export SERVER_GIN_MODE=%q\n" "$SERVER_GIN_MODE" >> remote_env.sh
-          printf "export SERVICES_DONG_SERVICE_URL=%q\n" "$DONG_SERVICE_URL" >> remote_env.sh
+          printf "export DONG_SERVICE_URL=%q\n" "$DONG_SERVICE_URL" >> remote_env.sh
 
       - name: Prepare and deploy to target server
         env:
