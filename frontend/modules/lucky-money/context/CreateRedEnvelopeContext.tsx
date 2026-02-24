@@ -46,6 +46,19 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
   const [totalAmount, setTotalAmount] = useState<number>(0);
   const [userBalance, setUserBalance] = useState<number>(0);
   const [pendingEnvelopeId, setPendingEnvelopeId] = useState<string | null>(null);
+  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
+
+  const clearPendingTimeout = useCallback(() => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      setTimeoutId(null);
+    }
+  }, [timeoutId]);
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => clearPendingTimeout();
+  }, [clearPendingTimeout]);
 
   const fetchUserBalance = useCallback(async () => {
     if (!user || !user.id) return;
@@ -108,14 +121,20 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
       );
 
       if (result.success) {
-        toast.success('Transfer money successfully!');
+        toast.success('Transfer money successfully, waiting for confirmation...');
         if (!result.txHash) throw new Error('Transaction hash not found.');
 
-        // Set pending envelope ID to listen for socket event
         setPendingEnvelopeId(envelope.id);
         setGeneratedEnvelope(envelope);
-        // Keep loading state - will be cleared when socket event is received
-        // Don't set isProcessing to false here, wait for socket event
+        
+        // Start a fallback timer in case the websocket event never arrives
+        const newTimeoutId = setTimeout(() => {
+          setIsProcessing(false);
+          setPendingEnvelopeId(null);
+          toast.error('Server is taking longer than expected. Please refresh or check your history.');
+        }, 15000); // 15 seconds timeout
+        
+        setTimeoutId(newTimeoutId);
       } else {
         toast.error('Transfer failed.');
         await RedEnvelopeService.updateRedEnvelopeStatus({ id: envelope.id, status: ETransactionStatus.Failed });
@@ -135,6 +154,7 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
     (redEnvelopeId: string) => {
       // Check if this is the envelope we're waiting for
       if (pendingEnvelopeId === redEnvelopeId && isProcessing) {
+        clearPendingTimeout();
         setIsProcessing(false);
         setIsSuccess(true);
         toast.success('Create Lucky Money successfully');
@@ -142,7 +162,7 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
         setPendingEnvelopeId(null);
       }
     },
-    [pendingEnvelopeId, isProcessing, fetchUserBalance]
+    [pendingEnvelopeId, isProcessing, fetchUserBalance, clearPendingTimeout]
   );
 
   return (
