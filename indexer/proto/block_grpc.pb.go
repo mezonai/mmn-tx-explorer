@@ -195,3 +195,4 @@ var BlockService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "block.proto",
 }
+
