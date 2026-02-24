@@ -316,4 +316,3 @@ func (r *CampaignStatisticsRepository) GetStats() (*models.CampaignStatsResponse
 
 	return &stats, nil
 }
-
