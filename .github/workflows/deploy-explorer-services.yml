@@ -8,11 +8,24 @@ on:
       env:
         description: "Environment (dev|prod)"
         required: true
+        type: choice
+        options:
+          - dev
+          - prod
         default: "dev"
       ref:
         description: "Git ref (branch, tag, or commit)"
         required: true
         default: "main"
+      build_all:
+        description: "Force build ALL services"
+        required: false
+        type: boolean
+        default: false
+      rebuild_existing_tag:
+        description: "Existing tag to rebuild (e.g., release-v1.8.14)"
+        required: false
+        type: string
       new_tag_to_build:
         description: "(Optional) New tag "
         required: false
@@ -44,6 +57,14 @@ jobs:
         id: detect
         run: |
           set -e
+
+          if [ -n "${{ inputs.rebuild_existing_tag }}" ] || [ "${{ inputs.build_all }}" = "true" ]; then
+            echo "frontend=true" >> $GITHUB_OUTPUT
+            echo "dong=true" >> $GITHUB_OUTPUT
+            echo "socket=true" >> $GITHUB_OUTPUT
+            echo "indexer=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
 
           if [ -n "${{ inputs.new_tag_to_build }}" ]; then
             echo "frontend=false" >> $GITHUB_OUTPUT
@@ -148,6 +169,16 @@ jobs:
             DONG="dong-service-${RAW}"
             SOCKET="socket-service-${RAW}"
             INDEXER="indexer-${RAW}"
+
+            SHOULD=true
+          elif [ -n "${{ inputs.rebuild_existing_tag }}" ]; then
+            RELEASE="${{ inputs.rebuild_existing_tag }}"
+            VER_PART=${RELEASE#release-}
+
+            FRONTEND="frontend-$VER_PART"
+            DONG="dong-service-$VER_PART"
+            SOCKET="socket-service-$VER_PART"
+            INDEXER="indexer-$VER_PART"
 
             SHOULD=true
           else
@@ -376,6 +407,7 @@ jobs:
         with:
           tag_name: ${{ needs.determine_tags.outputs.release_tag }}
           name: Release ${{ needs.determine_tags.outputs.release_tag }}
+          overwrite: true
           body: |
             Frontend: ${{ needs.determine_tags.outputs.frontend_tag }}
             Dong: ${{ needs.determine_tags.outputs.dong_tag }}

@@ -5,4 +5,3 @@ export enum EBreakpoint {
   XL = 1280,
   '2XL' = 1536,
 }
-
