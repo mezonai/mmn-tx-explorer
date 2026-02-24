@@ -15,6 +15,7 @@ import { z } from 'zod';
 import BigNumber from 'bignumber.js';
 import { NumberUtil } from '@/utils';
 import { TradeTypes } from '../../types';
+import { P2P_ACTION_TYPE } from '../../constants';
 
 const paymentSchema = z.object({
   bank_info: z.object({
@@ -261,7 +262,7 @@ export const BuyAmountSection = ({
         priceRate={offer.price_rate}
         onConfirm={handleFinalConfirm}
         isLoading={isLoading}
-        actionType={isRespondingToBuyOffer ? 'SELL' : 'BUY'}
+        actionType={isRespondingToBuyOffer ? P2P_ACTION_TYPE.SELL : P2P_ACTION_TYPE.BUY}
       />
     </div>
   );

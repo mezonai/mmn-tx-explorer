@@ -280,7 +280,7 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 		}
 
 		var isTargetWallet *string
-		if offer.Side == "BUY" {
+		if offer.Side == models.OfferSideBuy {
 			isTargetWallet = offer.OfferCreatorWalletAddress
 		} else {
 			isTargetWallet = o.OrderCreatorWalletAddress
