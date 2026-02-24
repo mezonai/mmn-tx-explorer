@@ -55,6 +55,8 @@ jobs:
         id: detect
         run: |
           set -e
+          git fetch --tags --force
+          LATEST_RELEASE_TAG=$(git tag -l "release-v*" --sort=-v:refname | head -n1)
 
           if [ "${{ inputs.build_all }}" = "true" ]; then
             echo "frontend=true" >> $GITHUB_OUTPUT
@@ -72,20 +74,17 @@ jobs:
             exit 0
           fi
 
-          if [ "${{ inputs.env }}" = "dev" ]; then
-            BASE_BRANCH="origin/develop"
-            git fetch origin develop
-          elif [ "${{ inputs.env }}" = "prod" ]; then
-            BASE_BRANCH="origin/main"
-            git fetch origin main
+          if [ -z "$LATEST_RELEASE_TAG" ]; then
+            echo "No previous release found. Build all services."
+            BASE_REF=$(git rev-list --max-parents=0 HEAD)
           else
-            echo "Invalid env input"
-            exit 1
+            echo "Last release: $LATEST_RELEASE_TAG"
+            BASE_REF=$LATEST_RELEASE_TAG
           fi
 
           detect() {
             local service=$1
-              if git diff --quiet "$BASE_BRANCH..HEAD" -- "$service/"; then
+            if git diff --quiet "$BASE_REF..HEAD" -- "$service/"; then
               echo false
             else
               echo true
@@ -393,7 +392,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        
+
       - name: Create Workspace
         run: mkdir -p release-assets
 
@@ -417,14 +416,24 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
-          LATEST_RELEASE_ON_GH=$(gh release list --limit 1 --exclude-drafts | awk '{print $3}')
-          echo "Syncing missing assets from: $LATEST_RELEASE_ON_GH"
+          CURRENT_TAG="${{ needs.determine_tags.outputs.release_tag }}"
+          LATEST_RELEASE_ON_GH=$(git tag -l "release-v*" --sort=-v:refname | grep -A 1 "$CURRENT_TAG" | sed -n '2p')
+          if [ -z "$LATEST_RELEASE_ON_GH" ]; then
+            LATEST_RELEASE_ON_GH=$(git tag -l "release-v*" --sort=-v:refname | grep -v "$CURRENT_TAG" | head -n1)
+          fi
+          echo "Current build: $CURRENT_TAG"
+          echo "Source for backfill: $LATEST_RELEASE_ON_GH"
 
           SERVICES=("frontend" "dong-service" "socket-service" "indexer")
           for service in "${SERVICES[@]}"; do
             if ! ls release-assets/$service-* 1> /dev/null 2>&1; then
-              echo "$service was not built. Downloading from $LATEST_RELEASE_ON_GH..."
-              gh release download "$LATEST_RELEASE_ON_GH" --pattern "$service-*" --dir release-assets/ || echo "Warning: No old asset found for $service"
+              echo "Target: $service is missing. Downloading from $LATEST_RELEASE_ON_GH..."
+              
+              gh release download "$LATEST_RELEASE_ON_GH" \
+                --pattern "${service}*" \
+                --dir release-assets/ || echo "Warning: Could not find $service in $LATEST_RELEASE_ON_GH"
+            else
+              echo "Target: $service already exists. Skipping download."
             fi
           done
 
