@@ -32,6 +32,9 @@ type Order struct {
 	CreatedAt                 time.Time          `json:"created_at" db:"created_at"`
 	UpdatedAt                 time.Time          `json:"updated_at" db:"updated_at"`
 	BankInfo                  *string            `json:"bank_info,omitempty" db:"-"`
+	OfferCreatorWalletAddress *string            `json:"offer_creator_wallet_address,omitempty" db:"-"`
+	OfferCreatorUserID        *string            `json:"offer_creator_user_id,omitempty" db:"-"`
+	PriceRate                 *float64           `json:"price_rate,omitempty" db:"-"`
 }
 
 type CreateOrderRequest struct {
