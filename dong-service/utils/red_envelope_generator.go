@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"math/rand"
 )
 
@@ -53,20 +54,35 @@ func internalGenerate(totalAmount, minAmount, maxAmount int64, totalClaims int) 
 }
 
 func GenerateRandomAmounts(totalAmount, minAmount, maxAmount int64, totalClaims int) ([]int64, error) {
+	if totalClaims <= 0 || minAmount > maxAmount ||
+		totalAmount < minAmount*int64(totalClaims) ||
+		totalAmount > maxAmount*int64(totalClaims) {
+		return nil, errors.New("invalid parameters: totalAmount is out of range for the given constraints")
+	}
+
+	if minAmount == maxAmount {
+		amounts := make([]int64, totalClaims)
+		for i := range amounts {
+			amounts[i] = minAmount
+		}
+		return amounts, nil
+	}
+
 	const roundingUnit int64 = 1000
 	const threshold int64 = 100000
 
-	if totalAmount < threshold {
-		amounts := internalGenerate(totalAmount, minAmount, maxAmount, totalClaims)
+	scaledMin := (minAmount + roundingUnit - 1) / roundingUnit
+	scaledMax := maxAmount / roundingUnit
 
+	if totalAmount < threshold || scaledMin >= scaledMax {
+		amounts := internalGenerate(totalAmount, minAmount, maxAmount, totalClaims)
 		rand.Shuffle(len(amounts), func(i, j int) {
 			amounts[i], amounts[j] = amounts[j], amounts[i]
 		})
 		return amounts, nil
 	}
+
 	scaledTotal := totalAmount / roundingUnit
-	scaledMin := (minAmount + roundingUnit - 1) / roundingUnit
-	scaledMax := maxAmount / roundingUnit
 	remainder := totalAmount % roundingUnit
 
 	scaledAmounts := internalGenerate(scaledTotal, scaledMin, scaledMax, totalClaims)
@@ -75,7 +91,6 @@ func GenerateRandomAmounts(totalAmount, minAmount, maxAmount int64, totalClaims 
 	for i, sa := range scaledAmounts {
 		amounts[i] = sa * roundingUnit
 	}
-
 	amounts[totalClaims-1] += remainder
 
 	rand.Shuffle(len(amounts), func(i, j int) {
