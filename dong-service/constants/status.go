@@ -106,6 +106,7 @@ const (
 	TradingCanceled  = "CANCELED"
 	TradingFailed    = "FAILED"
 	TradingCompleted = "COMPLETED"
+	TradingExpired   = "EXPIRED"
 )
 
 // GetStatusName returns the human-readable name for a status code

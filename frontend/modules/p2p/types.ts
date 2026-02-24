@@ -79,6 +79,7 @@ export enum OrderStatus {
   CANCELED = 'CANCELED',
   FAILED = 'FAILED',
   COMPLETED = 'COMPLETED',
+  EXPIRED = 'EXPIRED',
 }
 
 export interface P2POrder {

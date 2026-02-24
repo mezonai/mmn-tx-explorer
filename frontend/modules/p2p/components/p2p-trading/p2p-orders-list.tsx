@@ -113,7 +113,7 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
         <div className="flex gap-2">
           {order.status === OrderStatus.EXPIRED ? (
             <Button
-              className="bg-utility-warning-600 hover:bg-utility-warning-700 inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-white transition"
+              className="bg-utility-warning-600 hover:bg-utility-warning-700 inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-white transition min-w-[100px]"
               onClick={() => reopenOrder(order.order_id.toString())}
               disabled={isReopening}
             >
@@ -121,7 +121,7 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
             </Button>
           ) : (
             <Button
-              className="bg-primary/10 text-brand-primary dark:hover:bg-brand-primary dark:bg-brand-primary/10 dark:border-brand-primary dark:text-primary-light inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition hover:text-white dark:border dark:hover:text-white"
+              className="bg-primary/10 text-brand-primary dark:hover:bg-brand-primary dark:bg-brand-primary/10 dark:border-brand-primary dark:text-primary-light inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition hover:text-white dark:border dark:hover:text-white min-w-[100px]"
               onClick={() => router.push(ROUTES.P2P_TRADING_ROOM(order.order_id.toString()))}
             >
               View
