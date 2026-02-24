@@ -138,16 +138,16 @@ jobs:
             echo "${SERVICE}-${NEW_VERSION}"
           }
           bump_release() {
-            local LATEST_GLOBAL=$(git tag -l "*v*" --sort=-v:refname | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -n1)
-            
-            if [ -z "$LATEST_GLOBAL" ]; then
+            local LATEST=$(latest_release_tag)
+            if [ -z "$LATEST" ]; then
               echo "release-v0.1.0"
             else
-              NEW_VERSION=$(increment "$LATEST_GLOBAL")
+              VERSION=${LATEST#release-}
+              NEW_VERSION=$(increment "$VERSION")
               echo "release-${NEW_VERSION}"
             fi
           }
-
+            
           if [ -n "${{ inputs.new_tag_to_build }}" ]; then
             RAW=$(normalize "${{ inputs.new_tag_to_build }}")
             if [[ ! "$RAW" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
