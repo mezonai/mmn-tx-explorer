@@ -164,6 +164,7 @@ jobs:
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
           REDIS_DB: ${{ vars.REDIS_DB }}
           SERVER_GIN_MODE: release 
+          DONG_SERVICE_URL: ${{ vars.DONG_SERVICE_URL }}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
@@ -186,6 +187,7 @@ jobs:
           REDIS_PASSWORD='${REDIS_PASSWORD}'
           REDIS_DB='${REDIS_DB}'
           SERVER_GIN_MODE='${SERVER_GIN_MODE}'
+          SERVICES_DONG_SERVICE_URL='${DONG_SERVICE_URL}'
           EON
 
           sudo chown -R mmn:mmn /opt/socket-service
@@ -219,6 +221,7 @@ jobs:
           printf "export REDIS_PASSWORD=%q\n" "$REDIS_PASSWORD" >> remote_env.sh
           printf "export REDIS_DB=%q\n" "$REDIS_DB" >> remote_env.sh
           printf "export SERVER_GIN_MODE=%q\n" "$SERVER_GIN_MODE" >> remote_env.sh
+          printf "export SERVICES_DONG_SERVICE_URL=%q\n" "$DONG_SERVICE_URL" >> remote_env.sh
 
       - name: Prepare and deploy to target server
         env:
