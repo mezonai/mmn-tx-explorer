@@ -3,7 +3,7 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import { useForm, FormProvider, UseFormReturn } from 'react-hook-form';
 import { CreateRedEnvelopeForm, CreateRedEnvelopeRequest, RedEnvelope } from '../type';
-import { DEFAULT_FORM_VALUES } from '../constants';
+import { DEFAULT_FORM_VALUES, TIMEOUT_MS } from '../constants';
 import { useUser } from '@/providers';
 import { mmnClient } from '@/modules/auth';
 import { useTransfer } from '@/modules/transfer/hooks/useTransfer';
@@ -126,14 +126,14 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
 
         setPendingEnvelopeId(envelope.id);
         setGeneratedEnvelope(envelope);
-        
+
         // Start a fallback timer in case the websocket event never arrives
         const newTimeoutId = setTimeout(() => {
           setIsProcessing(false);
           setPendingEnvelopeId(null);
           toast.error('Server is taking longer than expected. Please refresh or check your history.');
-        }, 15000); // 15 seconds timeout
-        
+        }, TIMEOUT_MS);
+
         setTimeoutId(newTimeoutId);
       } else {
         toast.error('Transfer failed.');

@@ -48,3 +48,4 @@ export const DEFAULT_FORM_VALUES: CreateRedEnvelopeForm = {
 };
 
 export const MAX_PARTICIPANT_COUNT = 500;
+export const TIMEOUT_MS = 15000;
