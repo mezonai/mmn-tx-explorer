@@ -9,21 +9,19 @@ on:
         description: "Environment (dev|prod)"
         required: true
         type: choice
-        options:
-          - dev
-          - prod
+        options: [dev, prod]
         default: "dev"
       ref:
         description: "Git ref (branch, tag, or commit)"
         required: true
         default: "main"
       build_all:
-        description: "Force build ALL services"
+        description: "Force build all"
         required: false
         type: boolean
         default: false
       rebuild_existing_tag:
-        description: "Existing tag to rebuild (e.g., release-v1.8.14)"
+        description: "(Optional) Existing tag to rebuild"
         required: false
         type: string
       new_tag_to_build:
@@ -58,7 +56,7 @@ jobs:
         run: |
           set -e
 
-          if [ -n "${{ inputs.rebuild_existing_tag }}" ] || [ "${{ inputs.build_all }}" = "true" ]; then
+          if [ "${{ inputs.build_all }}" = "true" ]; then
             echo "frontend=true" >> $GITHUB_OUTPUT
             echo "dong=true" >> $GITHUB_OUTPUT
             echo "socket=true" >> $GITHUB_OUTPUT
@@ -66,7 +64,7 @@ jobs:
             exit 0
           fi
 
-          if [ -n "${{ inputs.new_tag_to_build }}" ]; then
+          if [ -n "${{ inputs.rebuild_existing_tag }}" ] || [ -n "${{ inputs.new_tag_to_build }}" ]; then
             echo "frontend=false" >> $GITHUB_OUTPUT
             echo "dong=false" >> $GITHUB_OUTPUT
             echo "socket=false" >> $GITHUB_OUTPUT
@@ -108,7 +106,6 @@ jobs:
           normalize() {
             [[ "$1" == v* ]] && echo "$1" || echo "v$1"
           }
-
           latest_service_tag() {
             local SERVICE=$1
             git tag -l "${SERVICE}-v*" --sort=-v:refname | head -n1
@@ -130,17 +127,20 @@ jobs:
           bump_service() {
             local SERVICE=$1
             local SERVICE_TAG=$(latest_service_tag "$SERVICE")
+            local RELEASE_TAG=$(latest_release_tag)
             local BASE_VERSION=""
 
+            if [ -z "$BASE_VERSION" ]; then
+                BASE_VERSION="v0.0.0"
+            fi
             if [ -n "$SERVICE_TAG" ]; then
               BASE_VERSION=${SERVICE_TAG#${SERVICE}-}
-            else
-              GLOBAL_TAG=$(latest_global_tag)
-              if [ -n "$GLOBAL_TAG" ]; then
-                BASE_VERSION=$GLOBAL_TAG
-              else
-                BASE_VERSION="v0.0.0"
-              fi
+            fi 
+
+            if [ -n "$RELEASE_TAG" ]; then
+              REL_VER=${RELEASE_TAG#release-}
+              HIGHER=$(echo -e "${BASE_VERSION#v}\n${REL_VER#v}" | sort -V | tail -n1)
+              BASE_VERSION="v$HIGHER"
             fi
 
             NEW_VERSION=$(increment "$BASE_VERSION")
@@ -172,14 +172,16 @@ jobs:
 
             SHOULD=true
           elif [ -n "${{ inputs.rebuild_existing_tag }}" ]; then
-            RELEASE="${{ inputs.rebuild_existing_tag }}"
-            VER_PART=${RELEASE#release-}
+            RELEASE=$(normalize "${{ inputs.rebuild_existing_tag }}")
+            [[ "$RELEASE" != release-* ]] && RELEASE="release-$RELEASE"
 
-            FRONTEND="frontend-$VER_PART"
-            DONG="dong-service-$VER_PART"
-            SOCKET="socket-service-$VER_PART"
-            INDEXER="indexer-$VER_PART"
-
+            BODY=$(gh release view "$RELEASE" --json body -q '.body' || echo "")
+            FRONTEND=$(echo "$BODY" | grep "Frontend:" | awk '{print $2}' | xargs)
+            DONG=$(echo "$BODY" | grep "Dong:" | awk '{print $2}' | xargs)
+            SOCKET=$(echo "$BODY" | grep "Socket:" | awk '{print $2}' | xargs)
+            INDEXER=$(echo "$BODY" | grep "Indexer:" | awk '{print $2}' | xargs)
+            
+            echo "mode=redeploy" >> $GITHUB_OUTPUT
             SHOULD=true
           else
             BUILT=false
@@ -245,6 +247,8 @@ jobs:
       - name: Push Service Tags for Tracking
         if: steps.tags.outputs.should_release == 'true'
         run: |    
+          git tag -f "${{ steps.tags.outputs.release_tag }}"
+          
           SERVICES=("frontend" "dong" "socket" "indexer")
           for svc in "${SERVICES[@]}"; do
             VAR_NAME=$(echo "${svc}_TAG" | tr '[:lower:]' '[:upper:]')
@@ -252,8 +256,11 @@ jobs:
             
             IS_CHANGED_VAR=$(echo "${svc}_CHANGED" | tr '[:lower:]' '[:upper:]')
             IS_CHANGED="${!IS_CHANGED_VAR}"
-            
-            if [ "$IS_CHANGED" = "true" ] && [ -n "$TAG_VAL" ]; then
+
+            if [ -n "${{ inputs.new_tag_to_build }}" ] || \
+               [ -n "${{ inputs.rebuild_existing_tag }}" ] || \
+               [ "${{ inputs.build_all }}" = "true" ] || \
+               [ "$IS_CHANGED" = "true" ]; then
               echo "Creating tracking tag for $svc: $TAG_VAL"
               git tag -f "$TAG_VAL"
             fi
@@ -266,6 +273,7 @@ jobs:
           DONG_TAG: ${{ steps.tags.outputs.dong_tag }}
           SOCKET_TAG: ${{ steps.tags.outputs.socket_tag }}
           INDEXER_TAG: ${{ steps.tags.outputs.indexer_tag }}
+
           FRONTEND_CHANGED: ${{ steps.detect.outputs.frontend }}
           DONG_CHANGED: ${{ steps.detect.outputs.dong }}
           SOCKET_CHANGED: ${{ steps.detect.outputs.socket }}
@@ -394,6 +402,7 @@ jobs:
         with:
           path: release-assets
           merge-multiple: true
+        continue-on-error: true
 
       - name: Download Repackaged Artifacts
         if: inputs.new_tag_to_build != ''
@@ -401,6 +410,22 @@ jobs:
         with:
           name: manual-repackaged-assets
           path: release-assets
+
+      - name: Backfill Missing Assets from Previous Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          LATEST_RELEASE_ON_GH=$(gh release list --limit 1 --exclude-drafts | awk '{print $3}')
+          echo "Syncing missing assets from: $LATEST_RELEASE_ON_GH"
+
+          SERVICES=("frontend" "dong-service" "socket-service" "indexer")
+          for service in "${SERVICES[@]}"; do
+            if ! ls release-assets/$service-* 1> /dev/null 2>&1; then
+              echo "$service was not built. Downloading from $LATEST_RELEASE_ON_GH..."
+              gh release download "$LATEST_RELEASE_ON_GH" --pattern "$service-*" --dir release-assets/ || echo "Warning: No old asset found for $service"
+            fi
+          done
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
