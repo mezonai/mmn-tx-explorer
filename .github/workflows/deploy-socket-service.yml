@@ -83,7 +83,7 @@ jobs:
           TAG_NAME="${{ inputs.service_tag }}"
           if [ -z "$TAG_NAME" ]; then TAG_NAME="v0.0.0"; fi
 
-          CLEAN_TAG=${TAG_NAME#socket-}
+          CLEAN_TAG=${TAG_NAME#socket-service-}
           BINARY_NAME="socket-service-${CLEAN_TAG}"
 
           echo "Building version: $CLEAN_TAG"
@@ -124,7 +124,7 @@ jobs:
             exit 1
           fi
 
-          CLEAN_VER=${TAG_INPUT#socket-}
+          CLEAN_VER=${TAG_INPUT#socket-service-}
           BINARY_FILE="socket-service-${CLEAN_VER}"
 
           DOWNLOAD_TAG="${{ inputs.release_tag }}"

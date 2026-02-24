@@ -116,7 +116,6 @@ jobs:
           latest_global_tag() {
             git tag -l "v*" --sort=-v:refname | head -n1
           }
-
           increment() {
             local VERSION=${1#v}
             IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
@@ -136,7 +135,6 @@ jobs:
             if [ -n "$SERVICE_TAG" ]; then
               BASE_VERSION=${SERVICE_TAG#${SERVICE}-}
             fi 
-
             if [ -n "$RELEASE_TAG" ]; then
               REL_VER=${RELEASE_TAG#release-}
               HIGHER=$(echo -e "${BASE_VERSION#v}\n${REL_VER#v}" | sort -V | tail -n1)
@@ -393,6 +391,9 @@ jobs:
         needs.determine_tags.result == 'success' && 
         needs.determine_tags.outputs.should_release == 'true'
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
       - name: Create Workspace
         run: mkdir -p release-assets
 
