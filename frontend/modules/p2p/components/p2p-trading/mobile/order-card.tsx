@@ -21,7 +21,7 @@ export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
 
   const isOrderCreator = user?.walletAddress === order.order_creator_wallet_address;
   const role = isOrderCreator
-    ? order.side === TradeTypes.BUY
+    ? order.side === TradeTypes.SELL
       ? P2P_TRADING_ROLE.SELLER
       : P2P_TRADING_ROLE.BUYER
     : order.side === TradeTypes.BUY
