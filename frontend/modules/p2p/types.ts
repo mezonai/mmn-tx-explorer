@@ -131,6 +131,7 @@ export interface LinkLocation {
   start: number;
   end: number;
 }
+
 export interface UserPaymentInfo {
   id: number;
   user_id: string;
@@ -141,6 +142,7 @@ export interface UserPaymentInfo {
   created_at: string;
   updated_at: string;
 }
+
 export interface ParsedMessageContent {
   t?: string;
   embed?: Array<{
