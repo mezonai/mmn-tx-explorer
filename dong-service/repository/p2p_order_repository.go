@@ -124,7 +124,7 @@ func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, 
 		       o.transaction_hash, o.status, o.transfer_code, o.expires_at, o.bank_info, o.created_at, o.updated_at,
 		       of.offer_creator_wallet_address, of.offer_creator_user_id
 		FROM %s.p2p_orders o
-		LEFT JOIN %s.p2p_offers of ON o.offer_id = of.offer_id
+		INNER JOIN %s.p2p_offers of ON o.offer_id = of.offer_id
 		WHERE o.offer_id = $1`, r.dongSchema, r.dongSchema)
 
 	// Default ordering and pagination
