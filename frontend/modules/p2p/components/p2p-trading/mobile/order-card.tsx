@@ -21,14 +21,14 @@ export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
 
   const isOrderCreator = user?.walletAddress === order.order_creator_wallet_address;
   const role = isOrderCreator
-    ? order.side === TradeTypes.BUY
+    ? order.side === TradeTypes.SELL
       ? P2P_TRADING_ROLE.SELLER
       : P2P_TRADING_ROLE.BUYER
     : order.side === TradeTypes.BUY
       ? P2P_TRADING_ROLE.BUYER
       : P2P_TRADING_ROLE.SELLER;
 
-  const isActualBuyer = role === 'Buyer';
+  const isActualBuyer = role === P2P_TRADING_ROLE.BUYER;
   const counterpartyAddress = isOrderCreator ? order.offer_creator_wallet_address : order.order_creator_wallet_address;
   const amount = NumberUtil.scaleDownBigIntString(order.amount);
   const vndAmount = amount.multipliedBy(order.price_rate);

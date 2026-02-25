@@ -53,7 +53,7 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
       renderCell: (order) => {
         const isOrderCreator = user?.walletAddress === order.order_creator_wallet_address;
         const role = isOrderCreator
-          ? order.side === TradeTypes.BUY
+          ? order.side === TradeTypes.SELL
             ? 'Seller'
             : 'Buyer'
           : order.side === TradeTypes.BUY
@@ -95,7 +95,7 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
       renderCell: (order) => {
         const isOrderCreator = user?.walletAddress === order.order_creator_wallet_address;
         const role = isOrderCreator
-          ? order.side === TradeTypes.BUY
+          ? order.side === TradeTypes.SELL
             ? 'Seller'
             : 'Buyer'
           : order.side === TradeTypes.BUY
