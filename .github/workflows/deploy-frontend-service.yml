@@ -130,11 +130,8 @@ jobs:
         run: |
           TAG_INPUT=""
 
-          echo "RELEASE_TAG input: ${{ inputs.release_tag }}"
-          echo "SERVICE_TAG input: ${{ inputs.service_tag }}"
-
-          if [ -n "${{ needs.build.outputs.tag_name }}" ]; then
-            TAG_INPUT="${{ needs.build.outputs.tag_name }}"
+          if [ -n "${{ inputs.service_tag }}" ]; then
+            TAG_INPUT="${{ inputs.service_tag }}"
           elif [ -n "${{ inputs.existing_tag_to_deploy }}" ]; then 
             TAG_INPUT="${{ inputs.existing_tag_to_deploy }}"
           elif [ "${{ needs.build.result }}" == "success" ]; then
