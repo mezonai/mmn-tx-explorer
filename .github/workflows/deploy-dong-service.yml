@@ -67,7 +67,7 @@ jobs:
           fetch-depth: 1
 
       - name: Setup Go
-        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == false
+        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == 'false'
         uses: actions/setup-go@v5
         with:
           go-version: "1.25"
@@ -75,7 +75,7 @@ jobs:
           check-latest: false
       
       - name: Run golangci-lint
-        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == false
+        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == 'false'
         uses: golangci/golangci-lint-action@v8
         with:
           version: v2.5.0
@@ -84,7 +84,7 @@ jobs:
         continue-on-error: true
 
       - name: Build Dong Service binary
-        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == false
+        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == 'false'
         id: build_dong_binary
         run: |
           mkdir -p build
@@ -101,7 +101,7 @@ jobs:
           echo "binary_name=${BINARY_NAME}" >> $GITHUB_OUTPUT
 
       - name: Upload Artifact
-        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == false
+        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == 'false'
         uses: actions/upload-artifact@v4
         with:
           name: dong-assets
@@ -120,13 +120,11 @@ jobs:
         id: determine_binary
         run: |
           TAG_INPUT=""
-          IS_MANUAL="false"
 
           if [ -n "${{ inputs.service_tag }}" ]; then
             TAG_INPUT="${{ inputs.service_tag }}"
           elif [ -n "${{ inputs.existing_tag_to_deploy }}" ]; then 
             TAG_INPUT="${{ inputs.existing_tag_to_deploy }}"
-            IS_MANUAL="true"
           elif [ "${{ needs.build.result }}" == "success" ]; then
             TAG_INPUT="${{ needs.build.outputs.tag_name }}"
           else
@@ -144,17 +142,16 @@ jobs:
           echo "download_tag=$DOWNLOAD_TAG" >> $GITHUB_OUTPUT
           echo "binary_name=$BINARY_FILE" >> $GITHUB_OUTPUT
           echo "binary_path=build/$BINARY_FILE" >> $GITHUB_OUTPUT
-          echo "is_manual=$IS_MANUAL" >> $GITHUB_OUTPUT
 
       - name: Download Artifact from Build Job
-        if: steps.determine_binary.outputs.is_manual == 'false'
+        if: inputs.skip_build != 'true'
         uses: actions/download-artifact@v4
         with:
           name: dong-assets
           path: build
 
       - name: Download release binary using url 
-        if: steps.determine_binary.outputs.is_manual == 'true'
+        if: inputs.skip_build == 'true'
         run: | 
           set -e 
           OWNER=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f1)
