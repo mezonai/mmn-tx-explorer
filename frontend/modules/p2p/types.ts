@@ -142,6 +142,7 @@ export interface UserPaymentInfo {
   created_at: string;
   updated_at: string;
 }
+
 export interface ParsedMessageContent {
   t?: string;
   embed?: Array<{

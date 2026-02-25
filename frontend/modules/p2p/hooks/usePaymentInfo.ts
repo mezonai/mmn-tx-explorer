@@ -19,3 +19,14 @@ export const useUpdatePaymentInfo = () => {
         },
     });
 };
+
+export const useDeletePaymentInfo = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string | number) => P2PService.deletePaymentInfo(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [P2P_QUERY_KEYS.USER_PAYMENTS] });
+        },
+    });
+};
+

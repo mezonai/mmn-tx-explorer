@@ -10,6 +10,7 @@ export const P2P_ENDPOINTS = {
   ORDER_STATUS: (id: string) => `/api/v1/orders/${id}/confirm`,
   USER_PAYMENTS: '/api/v1/user-payments',
   USER_PAYMENTS_ME: '/api/v1/user-payments/me',
+  DELETE_USER_PAYMENT: (id: string) => `/api/v1/user-payments/${id}`,
 } as const;
 
 export const P2P_QUERY_KEYS = {
