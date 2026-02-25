@@ -112,10 +112,10 @@ export const CreateOfferModal = () => {
       bank_info:
         pendingData.side === TradeTypes.SELL
           ? {
-            bank: pendingData.bank_info.bank,
-            account_number: pendingData.bank_info.account_number || '',
-            account_name: pendingData.bank_info.account_name || '',
-          }
+              bank: pendingData.bank_info.bank,
+              account_number: pendingData.bank_info.account_number || '',
+              account_name: pendingData.bank_info.account_name || '',
+            }
           : undefined,
     };
 
@@ -173,7 +173,9 @@ export const CreateOfferModal = () => {
           </DialogHeader>
 
           <form onSubmit={form.handleSubmit(onPreSubmit)}>
-            <div className={`grid grid-cols-1 gap-8 p-6 ${side === TradeTypes.SELL ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}>
+            <div
+              className={`grid grid-cols-1 gap-8 p-6 ${side === TradeTypes.SELL ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}
+            >
               <AmountSection control={form.control} userBalance={balance} setValue={form.setValue} />
               <TradeTypeSection control={form.control} trigger={form.trigger} />
               {side === TradeTypes.SELL && <PaymentSection control={form.control} />}
@@ -214,7 +216,8 @@ export const CreateOfferModal = () => {
             <div className="text-muted-foreground text-sm leading-relaxed">
               {side === TradeTypes.SELL ? (
                 <p>
-                  To activate this <span className="font-semibold">{pendingData?.side}</span> offer, you need to transfer{' '}
+                  To activate this <span className="font-semibold">{pendingData?.side}</span> offer, you need to
+                  transfer{' '}
                   <span className="text-brand-primary font-bold">
                     {pendingData?.amount ? Number(pendingData.amount).toLocaleString() : '0'} {APP_CONFIG.CHAIN_SYMBOL}
                   </span>{' '}
@@ -223,10 +226,12 @@ export const CreateOfferModal = () => {
                 </p>
               ) : (
                 <p>
-                  Are you sure you want to create this <span className="font-semibold">{pendingData?.side}</span> offer for{' '}
+                  Are you sure you want to create this <span className="font-semibold">{pendingData?.side}</span> offer
+                  for{' '}
                   <span className="text-brand-primary font-bold">
                     {pendingData?.amount ? Number(pendingData.amount).toLocaleString() : '0'} {APP_CONFIG.CHAIN_SYMBOL}
-                  </span>?
+                  </span>
+                  ?
                 </p>
               )}
             </div>

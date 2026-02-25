@@ -21,7 +21,7 @@ export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
 
   const isOrderCreator = user?.walletAddress === order.order_creator_wallet_address;
   const role = isOrderCreator
-    ? order.side === TradeTypes.SELL
+    ? order.side === TradeTypes.BUY
       ? P2P_TRADING_ROLE.SELLER
       : P2P_TRADING_ROLE.BUYER
     : order.side === TradeTypes.BUY
@@ -45,7 +45,7 @@ export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
           <div className="flex flex-wrap gap-1.5 pt-1">
             <Chip
               variant={order.side === TradeTypes.BUY ? 'outline-info' : 'outline-success'}
-              className="rounded-sm px-2 py-0.5 uppercase text-[9px] font-bold"
+              className="rounded-sm px-2 py-0.5 text-[9px] font-bold uppercase"
             >
               {order.side}
             </Chip>
@@ -60,7 +60,7 @@ export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
         <div className="flex flex-col items-end gap-2 text-right">
           <Chip
             variant={getOrderStatusInfo(order.status)}
-            className="rounded-sm px-2 py-0.5 text-[10px] font-bold min-w-[70px] justify-center"
+            className="min-w-[70px] justify-center rounded-sm px-2 py-0.5 text-[10px] font-bold"
           >
             <span>{order.status}</span>
           </Chip>
@@ -72,7 +72,7 @@ export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
 
       <div className="grid grid-cols-2 gap-x-2 gap-y-4">
         <div className="flex flex-col">
-          <span className="text-muted-foreground text-[10px] font-bold uppercase tracking-tight">Counterparty</span>
+          <span className="text-muted-foreground text-[10px] font-bold tracking-tight uppercase">Counterparty</span>
           <AddressDisplay
             addressClassName="text-brand-primary text-sm"
             address={counterpartyAddress}
@@ -81,7 +81,7 @@ export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
         </div>
 
         <div className="flex flex-col">
-          <span className="text-muted-foreground text-[10px] font-bold uppercase tracking-tight text-right">Rate</span>
+          <span className="text-muted-foreground text-right text-[10px] font-bold tracking-tight uppercase">Rate</span>
           <p className="text-brand-primary text-right text-xs font-semibold">
             1 {APP_CONFIG.CHAIN_SYMBOL} = {NumberUtil.formatWithCommas(order.price_rate)} VND
           </p>
@@ -91,7 +91,7 @@ export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
           <span className="text-muted-foreground mb-1 text-[10px] font-bold uppercase">Amount</span>
           <div className="flex items-end justify-between">
             <div>
-              <p className="text-utility-success-600 text-base font-bold leading-none">
+              <p className="text-utility-success-600 text-base leading-none font-bold">
                 {amount.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}
               </p>
               <p className="text-muted-foreground mt-1 text-[11px]">

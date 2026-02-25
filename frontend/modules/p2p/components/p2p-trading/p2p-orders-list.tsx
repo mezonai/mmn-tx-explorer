@@ -40,7 +40,7 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
       renderCell: (order) => (
         <Chip
           variant={order.side === TradeTypes.BUY ? 'outline-info' : 'outline-success'}
-          className="rounded-sm px-3 uppercase text-[10px] min-w-[60px] justify-center"
+          className="min-w-[60px] justify-center rounded-sm px-3 text-[10px] uppercase"
         >
           {order.side}
         </Chip>
@@ -53,7 +53,7 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
       renderCell: (order) => {
         const isOrderCreator = user?.walletAddress === order.order_creator_wallet_address;
         const role = isOrderCreator
-          ? order.side === TradeTypes.SELL
+          ? order.side === TradeTypes.BUY
             ? 'Seller'
             : 'Buyer'
           : order.side === TradeTypes.BUY
@@ -65,7 +65,7 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
         return (
           <Chip
             variant={isActualBuyer ? 'outline-success' : 'outline-info'}
-            className="rounded-sm px-3 text-[10px] min-w-[60px] justify-center"
+            className="min-w-[60px] justify-center rounded-sm px-3 text-[10px]"
           >
             {role}
           </Chip>
@@ -78,7 +78,9 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
       headerContent: 'COUNTERPARTY',
       renderCell: (order) => {
         const isOrderCreator = user?.walletAddress === order.order_creator_wallet_address;
-        const counterpartyAddress = isOrderCreator ? order.offer_creator_wallet_address : order.order_creator_wallet_address;
+        const counterpartyAddress = isOrderCreator
+          ? order.offer_creator_wallet_address
+          : order.order_creator_wallet_address;
         return (
           <AddressDisplay
             addressClassName="text-brand-primary"
@@ -95,7 +97,7 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
       renderCell: (order) => {
         const isOrderCreator = user?.walletAddress === order.order_creator_wallet_address;
         const role = isOrderCreator
-          ? order.side === TradeTypes.SELL
+          ? order.side === TradeTypes.BUY
             ? 'Seller'
             : 'Buyer'
           : order.side === TradeTypes.BUY
@@ -127,7 +129,7 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
         <div className="flex items-center gap-2">
           <Chip
             variant={getOrderStatusInfo(order.status)}
-            className="gap-1.5 rounded-sm px-3 text-[10px] min-w-[80px] justify-center"
+            className="min-w-[80px] justify-center gap-1.5 rounded-sm px-3 text-[10px]"
           >
             <span>{order.status}</span>
           </Chip>
