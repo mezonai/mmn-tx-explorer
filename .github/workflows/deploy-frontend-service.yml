@@ -130,6 +130,9 @@ jobs:
         run: |
           TAG_INPUT=""
 
+          echo "RELEASE_TAG input: ${{ inputs.release_tag }}"
+          echo "SERVICE_TAG input: ${{ inputs.service_tag }}"
+
           if [ -n "${{ needs.build.outputs.tag_name }}" ]; then
             TAG_INPUT="${{ needs.build.outputs.tag_name }}"
           elif [ -n "${{ inputs.existing_tag_to_deploy }}" ]; then 
@@ -142,6 +145,7 @@ jobs:
             exit 1
           fi
 
+          echo "Determined tag to deploy: $TAG_INPUT"
           CLEAN_VERSION=${TAG_INPUT#frontend-}
           ARTIFACT_NAME="${CLEAN_VERSION}-${{ inputs.env }}"
           
