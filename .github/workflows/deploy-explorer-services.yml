@@ -183,6 +183,7 @@ jobs:
               echo "Release $RELEASE not found"
               exit 1
             fi         
+
             BODY=$(echo "$RESPONSE" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("body",""))')
 
             if [ -z "$BODY" ] || [ "$BODY" == "null" ]; then
@@ -356,7 +357,7 @@ jobs:
         
   deploy-indexer:
     needs: [determine_tags]
-    if: needs.determine_tags.outputs.build_indexer == 'true' && inputs.new_tag_to_build == ''
+    if: needs.determine_tags.outputs.build_indexer == 'true' || inputs.new_tag_to_build == ''
     uses: ./.github/workflows/deploy-indexer-service.yml
     with:
       env: ${{ inputs.env }}
@@ -370,7 +371,7 @@ jobs:
 
   deploy-dong:
     needs: [determine_tags]
-    if: needs.determine_tags.outputs.build_dong == 'true' && inputs.new_tag_to_build == ''
+    if: needs.determine_tags.outputs.build_dong == 'true' || inputs.new_tag_to_build == ''
     uses: ./.github/workflows/deploy-dong-service.yml
     with:
       env: ${{ inputs.env }}
@@ -389,7 +390,7 @@ jobs:
  
   deploy-frontend:
     needs: [determine_tags]
-    if: needs.determine_tags.outputs.build_frontend == 'true' && inputs.new_tag_to_build == ''
+    if: needs.determine_tags.outputs.build_frontend == 'true' || inputs.new_tag_to_build == ''
     uses: ./.github/workflows/deploy-frontend-service.yml
     with:
       env: ${{ inputs.env }}
@@ -403,7 +404,7 @@ jobs:
 
   deploy-socket:
     needs: [determine_tags]
-    if: needs.determine_tags.outputs.build_socket == 'true' && inputs.new_tag_to_build == ''
+    if: needs.determine_tags.outputs.build_socket == 'true' || inputs.new_tag_to_build == ''
     uses: ./.github/workflows/deploy-socket-service.yml
     with:
       env: ${{ inputs.env }}
