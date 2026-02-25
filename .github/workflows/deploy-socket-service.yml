@@ -107,7 +107,6 @@ jobs:
     needs: build
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
-
     steps:
       - name: Determine Binary Path and Tag
         id: determine_binary

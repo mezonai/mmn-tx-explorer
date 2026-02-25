@@ -112,9 +112,6 @@ jobs:
     needs: build
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
-    env:
-      TARGET_HOST: ${{ inputs.env == 'prod' && 'prod-indexer' || 'dev-indexer' }}
-
     steps:
       - name: Determine Binary Path and Tag
         id: determine_binary

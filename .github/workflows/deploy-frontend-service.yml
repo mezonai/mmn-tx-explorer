@@ -146,9 +146,7 @@ jobs:
           ARTIFACT_NAME="${CLEAN_VERSION}-${{ inputs.env }}"
           
           DOWNLOAD_TAG="${{ inputs.release_tag }}"
-          if [ "$IS_MANUAL" == "true" ] && [ -z "$DOWNLOAD_TAG" ]; then
-            DOWNLOAD_TAG="release-$TAG_INPUT"
-          fi
+          [ -z "$DOWNLOAD_TAG" ] && DOWNLOAD_TAG="release-$TAG_INPUT"
 
           echo "tag_name=$TAG_INPUT" >> $GITHUB_OUTPUT
           echo "download_tag=$DOWNLOAD_TAG" >> $GITHUB_OUTPUT

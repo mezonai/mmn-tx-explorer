@@ -101,16 +101,18 @@ jobs:
     needs: build
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
-    env:
-      TARGET_HOST: ${{ inputs.env == 'prod' && 'prod-indexer' || 'dev-indexer' }}
     steps:
       - name: Determine Binary Path and Tag
         id: determine_binary
         run: |
           TAG_INPUT=""
 
+          echo "RELEASE_TAG: ${{ inputs.release_tag }}"
+          echo "SERVICE_TAG: ${{ inputs.service_tag }}"
+
           if [ -n "${{ inputs.service_tag }}" ]; then
             TAG_INPUT="${{ inputs.service_tag }}"
+            
           elif [ -n "${{ inputs.existing_tag_to_deploy }}" ]; then 
             TAG_INPUT="${{ inputs.existing_tag_to_deploy }}"
           elif [ "${{ needs.build.result }}" == "success" ]; then
@@ -121,6 +123,7 @@ jobs:
             exit 1
           fi
 
+          echo "Determined tag to deploy: $TAG_INPUT"
           CLEAN_VERSION=${TAG_INPUT#indexer-}
           BINARY_FILE="indexer-${CLEAN_VERSION}"
 
