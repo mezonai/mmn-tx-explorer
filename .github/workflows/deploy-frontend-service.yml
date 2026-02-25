@@ -43,7 +43,6 @@ on:
 
 jobs:
   build:
-    if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == false
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
     outputs:
@@ -58,14 +57,14 @@ jobs:
           fetch-depth: 1
 
       - name: Setup Node.js
-        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == false
+        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == 'false'
         uses: actions/setup-node@v3
         with:
           node-version: "20"
           cache: ''
 
       - name: Build Frontend
-        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == false
+        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == 'false'
         id: build_frontend
         env: 
           NEXT_PUBLIC_APP_API_URL: ${{ vars.NEXT_PUBLIC_APP_API_URL }}
@@ -113,7 +112,7 @@ jobs:
           echo "artifact_name=${ARTIFACT_NAME}" >> $GITHUB_OUTPUT
 
       - name: Upload Frontend Artifact
-        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == false
+        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == 'false'
         uses: actions/upload-artifact@v4
         with:
           name: frontend-assets
@@ -130,18 +129,14 @@ jobs:
         id: determine_tag
         run: |
           TAG_INPUT=""
-          IS_MANUAL="false"
 
           if [ -n "${{ needs.build.outputs.tag_name }}" ]; then
             TAG_INPUT="${{ needs.build.outputs.tag_name }}"
-            IS_MANUAL="false"
           elif [ -n "${{ inputs.existing_tag_to_deploy }}" ]; then 
             TAG_INPUT="${{ inputs.existing_tag_to_deploy }}"
-            IS_MANUAL="true"
           elif [ "${{ needs.build.result }}" == "success" ]; then
             TAG_INPUT="${{ needs.build.outputs.tag_name }}"
             echo "==> Will deploy newly built tag: $TAG_INPUT"
-            IS_MANUAL="false"
           else
             echo "::error::Cannot proceed. No existing tag was provided and the build job did not succeed."
             exit 1
@@ -159,17 +154,16 @@ jobs:
           echo "download_tag=$DOWNLOAD_TAG" >> $GITHUB_OUTPUT
           echo "frontend_name=frontend-build-$ARTIFACT_NAME.tar.gz" >> $GITHUB_OUTPUT
           echo "frontend_path=build_frontend/frontend-build-$ARTIFACT_NAME.tar.gz" >> $GITHUB_OUTPUT
-          echo "is_manual=$IS_MANUAL" >> $GITHUB_OUTPUT
 
       - name: Download Artifact from Job Build
-        if: steps.determine_tag.outputs.is_manual == 'false'
+        if: inputs.skip_build != 'true'
         uses: actions/download-artifact@v4
         with:
           name: frontend-assets
           path: build_frontend
 
       - name: Download Frontend Release Bundle
-        if: inputs.existing_tag_to_deploy != ''
+        if: inputs.skip_build == 'true'
         run: | 
           set -e 
           OWNER=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f1)
@@ -184,7 +178,6 @@ jobs:
           mkdir -p build_frontend
 
           curl -sSL --fail -L -o "$FRONTEND_PATH" "$DOWNLOAD_URL"
-
 
       - name: Generate remote setup script
         env:

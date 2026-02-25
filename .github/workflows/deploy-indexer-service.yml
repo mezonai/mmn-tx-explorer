@@ -57,7 +57,7 @@ jobs:
           fetch-depth: 1
 
       - name: Setup Go
-        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == false
+        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == 'false'
         uses: actions/setup-go@v5
         with:
           go-version: "1.23"
@@ -65,7 +65,7 @@ jobs:
           check-latest: false
           
       - name: Run golangci-lint
-        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == false
+        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == 'false'
         uses: golangci/golangci-lint-action@v8
         with:
           version: v2.5.0
@@ -74,7 +74,7 @@ jobs:
         continue-on-error: true
 
       - name: Build Indexer binary
-        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == false
+        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == 'false'
         id: build_indexer_binary
         run: |
           mkdir -p build
@@ -90,7 +90,7 @@ jobs:
           echo "binary_name=${BINARY_NAME}" >> $GITHUB_OUTPUT
 
       - name: Upload Indexer Artifact
-        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == false
+        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == 'false'
         uses: actions/upload-artifact@v4
         with:
           name: indexer-assets
@@ -108,16 +108,13 @@ jobs:
         id: determine_binary
         run: |
           TAG_INPUT=""
-          IS_MANUAL="false"
 
           if [ -n "${{ inputs.service_tag }}" ]; then
             TAG_INPUT="${{ inputs.service_tag }}"
           elif [ -n "${{ inputs.existing_tag_to_deploy }}" ]; then 
             TAG_INPUT="${{ inputs.existing_tag_to_deploy }}"
-            IS_MANUAL="true"
           elif [ "${{ needs.build.result }}" == "success" ]; then
             TAG_INPUT="${{ needs.build.outputs.tag_name }}"
-            IS_MANUAL="false"
             echo "==> Will deploy newly built tag: $TAG_INPUT"
           else
             echo "::error::Cannot proceed. No existing tag was provided and the build job did not succeed."
@@ -134,17 +131,16 @@ jobs:
           echo "download_tag=$DOWNLOAD_TAG" >> $GITHUB_OUTPUT
           echo "binary_name=$BINARY_FILE" >> $GITHUB_OUTPUT
           echo "binary_path=build/$BINARY_FILE" >> $GITHUB_OUTPUT
-          echo "is_manual=$IS_MANUAL" >> $GITHUB_OUTPUT
 
       - name: Download Artifact from Job Build
-        if: steps.determine_binary.outputs.is_manual == 'false'
+        if: inputs.skip_build != 'true'
         uses: actions/download-artifact@v4
         with:
           name: indexer-assets
           path: build
 
       - name: Download release binary using url 
-        if: steps.determine_binary.outputs.is_manual == 'true'
+        if: inputs.skip_build == 'true'
         run: | 
           set -e 
           OWNER=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f1)
