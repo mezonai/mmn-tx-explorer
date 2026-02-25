@@ -44,6 +44,7 @@ jobs:
       build_indexer: ${{ steps.detect.outputs.indexer }}
 
       should_release: ${{ steps.tags.outputs.should_release }}
+      skip_build: ${{ steps.tags.outputs.skip_build }}
     steps:
       - name: Checkout for git history
         uses: actions/checkout@v4
@@ -58,7 +59,7 @@ jobs:
           git fetch --tags --force
           LATEST_RELEASE_TAG=$(git tag -l "release-v*" --sort=-v:refname | head -n1)
 
-          if [ "${{ inputs.build_all }}" = "true" ]; then
+          if [ -n "${{ inputs.rebuild_existing_tag }}" ] ||[ "${{ inputs.build_all }}" = "true" ]; then
             echo "frontend=true" >> $GITHUB_OUTPUT
             echo "dong=true" >> $GITHUB_OUTPUT
             echo "socket=true" >> $GITHUB_OUTPUT
@@ -66,7 +67,7 @@ jobs:
             exit 0
           fi
 
-          if [ -n "${{ inputs.rebuild_existing_tag }}" ] || [ -n "${{ inputs.new_tag_to_build }}" ]; then
+          if [ -n "${{ inputs.new_tag_to_build }}" ]; then
             echo "frontend=false" >> $GITHUB_OUTPUT
             echo "dong=false" >> $GITHUB_OUTPUT
             echo "socket=false" >> $GITHUB_OUTPUT
@@ -98,6 +99,8 @@ jobs:
 
       - name: Calculate tags
         id: tags
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
           git fetch --tags --force
@@ -161,19 +164,28 @@ jobs:
             SOCKET="socket-service-${RAW}"
             INDEXER="indexer-${RAW}"
 
+            echo "skip_build=false" >> $GITHUB_OUTPUT
             SHOULD=true
           elif [ -n "${{ inputs.rebuild_existing_tag }}" ]; then
             RELEASE=$(normalize "${{ inputs.rebuild_existing_tag }}")
             [[ "$RELEASE" != release-* ]] && RELEASE="release-$RELEASE"
 
-            BODY=$(gh release view "$RELEASE" --json body -q '.body' || echo "")
+            API_URL="https://api.github.com/repos/${{ github.repository }}/releases/tags/${RELEASE}"
+            RESPONSE=$(curl -sSL -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "$API_URL")
+            BODY=$(echo "$RESPONSE" | python3 -c "import sys, json; print(json.load(sys.stdin).get('body', ''))")
+
+            if [ -z "$BODY" ] || [ "$BODY" == "None" ]; then
+              echo "Error: Could not find release body for $RELEASE"
+              exit 1
+            fi
+
             FRONTEND=$(echo "$BODY" | grep "Frontend:" | awk '{print $2}' | xargs)
             DONG=$(echo "$BODY" | grep "Dong:" | awk '{print $2}' | xargs)
             SOCKET=$(echo "$BODY" | grep "Socket:" | awk '{print $2}' | xargs)
             INDEXER=$(echo "$BODY" | grep "Indexer:" | awk '{print $2}' | xargs)
             
-            echo "mode=redeploy" >> $GITHUB_OUTPUT
-            SHOULD=true
+            echo "skip_build=true" >> $GITHUB_OUTPUT
+            SHOULD=false
           else
             BUILT=false
 
@@ -257,7 +269,7 @@ jobs:
             fi
           done
 
-          git push origin --tags
+          git push origin --tags --force
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FRONTEND_TAG: ${{ steps.tags.outputs.frontend_tag }}
@@ -326,6 +338,7 @@ jobs:
       ref: ${{ inputs.ref }}
       release_tag: ${{ needs.determine_tags.outputs.release_tag }}
       service_tag: ${{ needs.determine_tags.outputs.indexer_tag }}
+      skip_build: ${{ needs.determine_tags.outputs.skip_build }}
     secrets:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       EVENT_API_KEY: ${{ secrets.EVENT_API_KEY }}
@@ -339,6 +352,7 @@ jobs:
       ref: ${{ inputs.ref }}
       release_tag: ${{ needs.determine_tags.outputs.release_tag }} 
       service_tag: ${{ needs.determine_tags.outputs.dong_tag }}
+      skip_build: ${{ needs.determine_tags.outputs.skip_build }}
     secrets:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
@@ -357,6 +371,7 @@ jobs:
       ref: ${{ inputs.ref }}
       release_tag: ${{ needs.determine_tags.outputs.release_tag }} 
       service_tag: ${{ needs.determine_tags.outputs.frontend_tag }}
+      skip_build: ${{ needs.determine_tags.outputs.skip_build }}
     secrets:
       NEXT_PUBLIC_COBAR_API_KEY: ${{ secrets.NEXT_PUBLIC_COBAR_API_KEY }}
       NEXT_PUBLIC_MEZON_SERVER_KEY: ${{ secrets.NEXT_PUBLIC_MEZON_SERVER_KEY }}
@@ -370,6 +385,7 @@ jobs:
       ref: ${{ inputs.ref }}
       release_tag: ${{ needs.determine_tags.outputs.release_tag }} 
       service_tag: ${{ needs.determine_tags.outputs.socket_tag }}
+      skip_build: ${{ needs.determine_tags.outputs.skip_build }}
     secrets:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}

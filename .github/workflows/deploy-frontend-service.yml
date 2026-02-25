@@ -31,6 +31,10 @@ on:
       service_tag:
         type: string
         required: false
+      skip_build:
+        type: boolean
+        required: false
+        default: false
     secrets:
       NEXT_PUBLIC_COBAR_API_KEY:
         required: true
@@ -39,7 +43,7 @@ on:
 
 jobs:
   build:
-    if: inputs.existing_tag_to_deploy == ''
+    if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == false
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
     outputs:
@@ -54,12 +58,14 @@ jobs:
           fetch-depth: 1
 
       - name: Setup Node.js
+        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == false
         uses: actions/setup-node@v3
         with:
           node-version: "20"
           cache: ''
 
       - name: Build Frontend
+        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == false
         id: build_frontend
         env: 
           NEXT_PUBLIC_APP_API_URL: ${{ vars.NEXT_PUBLIC_APP_API_URL }}
@@ -107,6 +113,7 @@ jobs:
           echo "artifact_name=${ARTIFACT_NAME}" >> $GITHUB_OUTPUT
 
       - name: Upload Frontend Artifact
+        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == false
         uses: actions/upload-artifact@v4
         with:
           name: frontend-assets
@@ -114,7 +121,7 @@ jobs:
 
   deploy:
     needs: build
-    if: always() && (needs.build.result == 'success' || inputs.existing_tag_to_deploy != '')
+    if: always()
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
 
