@@ -261,10 +261,11 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
             {
               recipientAddress: offer.intermediary_wallet_address || '',
               amount: amountMZD.toString(),
-              note: 'p2p-trading',
+              note: 'p2p-trading-buy-offer',
               offerId: offer.offer_id,
+              orderId: newOrder.order_id,
             },
-            ETransferType.P2PTrading
+            ETransferType.P2PTradingBuyOffer
           );
 
           if (!transferResult.success) {
@@ -277,7 +278,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
         router.push(ROUTES.P2P_TRADING_ROOM(newOrder.order_id));
       }
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || 'Something went wrong while creating the order. Please try again.';
+      const errorMessage =
+        err?.response?.data?.message || 'Something went wrong while creating the order. Please try again.';
       setError(errorMessage);
     }
   };
@@ -406,14 +408,13 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
             </p>
           )}
 
-          {userRole === P2P_TRADING_ROLE.SELLER &&
-            effectiveOrder.status === OrderStatus.OPEN && (
-              <p className="text-muted-foreground mb-4 text-sm font-medium italic">
-                {effectiveOrder.offer_type === TradeTypes.BUY
-                  ? 'Waiting for Buyer to confirm payment.'
-                  : "Waiting for Buyer's confirmation of payment."}
-              </p>
-            )}
+          {userRole === P2P_TRADING_ROLE.SELLER && effectiveOrder.status === OrderStatus.OPEN && (
+            <p className="text-muted-foreground mb-4 text-sm font-medium italic">
+              {effectiveOrder.offer_type === TradeTypes.BUY
+                ? 'Waiting for Buyer to confirm payment.'
+                : "Waiting for Buyer's confirmation of payment."}
+            </p>
+          )}
 
           {(effectiveOrder.status === OrderStatus.COMPLETED || effectiveOrder.status === OrderStatus.CONFIRMED) && (
             <div className="mb-4 rounded-lg border border-green-500/20 bg-green-500/10 p-4 text-center">
@@ -422,13 +423,10 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
           )}
 
           <div className="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-12">
-            <div className="lg:col-span-8 flex flex-col gap-3">
+            <div className="flex flex-col gap-3 lg:col-span-8">
               <OrderInfoCard order={effectiveOrder} userRole={userRole} />
               {order && order.bank_info && order.transfer_code && (
-                <BankInfoCard
-                  bank_info={order.bank_info}
-                  transfer_code={order.transfer_code}
-                />
+                <BankInfoCard bank_info={order.bank_info} transfer_code={order.transfer_code} />
               )}
             </div>
 
@@ -443,7 +441,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
             </div>
           </div>
 
-          <div className="space-y-2 mt-4">
+          <div className="mt-4 space-y-2">
             {userRole === P2P_TRADING_ROLE.BUYER && (
               <PaymentActionButton
                 order={effectiveOrder}

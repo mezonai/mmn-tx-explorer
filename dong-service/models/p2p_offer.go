@@ -19,7 +19,7 @@ type Offer struct {
 	OfferID                   int64              `json:"offer_id" db:"offer_id"`
 	OfferCreatorUserID        string             `json:"offer_creator_user_id" db:"offer_creator_user_id"`
 	IntermediaryWalletAddress *string            `json:"intermediary_wallet_address,omitempty" db:"intermediary_wallet_address"`
-	OfferCreatorWalletAddress *string             `json:"offer_creator_wallet_address" db:"offer_creator_wallet_address"`
+	OfferCreatorWalletAddress string             `json:"offer_creator_wallet_address" db:"offer_creator_wallet_address"`
 	Side                      OfferSide          `json:"side" db:"side"` // BUY or SELL
 	Symbol                    string             `json:"symbol" db:"symbol"`
 	AvailableAmount           types.BigIntString `json:"amount" db:"available_amount"` // numeric as string to support big ints
