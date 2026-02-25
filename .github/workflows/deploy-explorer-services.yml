@@ -183,11 +183,7 @@ jobs:
               echo "Release $RELEASE not found"
               exit 1
             fi         
-            BODY=$(echo "$RESPONSE" | python3 -c '
-            import sys, json
-            data = json.load(sys.stdin)
-            print(data.get("body", ""))
-            ')
+            BODY=$(echo "$RESPONSE" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("body",""))')
 
             if [ -z "$BODY" ] || [ "$BODY" == "null" ]; then
               echo "Error: Could not find release body for $RELEASE"
