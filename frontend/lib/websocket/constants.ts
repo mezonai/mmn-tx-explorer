@@ -12,4 +12,5 @@ export const SOCKET_MESSAGE = {
   SERVER_LEFT_ROOM_PREFIX: 'left_room',
   ROOM_OFFER_UPDATES: 'offer_updates',
   ROOM_RED_ENVELOPE_UPDATES: 'red_envelope_updates',
+  DONATION_RECEIVED: 'DONATION_RECEIVED',
 } as const;

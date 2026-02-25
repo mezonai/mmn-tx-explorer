@@ -13,10 +13,40 @@ import { useState } from 'react';
 import { BadgeCheck } from 'lucide-react';
 import { useUser } from '@/providers';
 import { DescriptionDisplay } from '@/components/shared';
+import { useJoinRoom } from '@/lib/websocket';
+import { SOCKET_MESSAGE } from '@/lib/websocket/constants';
+import { WebSocketEvent } from '@/lib/websocket/websocket-manager';
+import { toast } from 'sonner';
+import { useRefreshCampaignRaised } from '@/modules/donation-campaign/hooks/useRefreshCampaignRaised';
+import { useEffect } from 'react';
 
 export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
   const [currentCampaign, setCurrentCampaign] = useState(campaign);
   const { user } = useUser();
+  const { mutate: refreshRaised } = useRefreshCampaignRaised({
+    onSuccess: (data) => {
+      handleRefreshData(data.total_amount, data.current_balance, data.total_withdrawn);
+    },
+  });
+
+  const { wsManager } = useJoinRoom(campaign.donation_wallet, true);
+
+  useEffect(() => {
+    const handleDonationReceived = () => {
+      toast.success(`Campaign has a new donation`, {
+        duration: 5000,
+      });
+
+      // Trigger manual refresh to sync all stats
+      refreshRaised(campaign.id);
+    };
+
+    wsManager?.on(SOCKET_MESSAGE.DONATION_RECEIVED, handleDonationReceived);
+
+    return () => {
+      wsManager?.off(SOCKET_MESSAGE.DONATION_RECEIVED, handleDonationReceived);
+    };
+  }, [wsManager, campaign.id, refreshRaised]);
 
   const handleRefreshData = (newRaisedAmount?: number, newCurrentBalance?: number, newTotalWithdrawn?: number) => {
     if (newRaisedAmount !== undefined) {
