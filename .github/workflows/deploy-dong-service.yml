@@ -32,9 +32,9 @@ on:
         type: string
         required: false
       skip_build:
-        type: boolean
+        type: string
         required: false
-        default: false
+        default: "false"
     secrets:
       POSTGRES_PASSWORD:
         required: true

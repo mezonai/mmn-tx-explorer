@@ -59,43 +59,44 @@ jobs:
           git fetch --tags --force
           LATEST_RELEASE_TAG=$(git tag -l "release-v*" --sort=-v:refname | head -n1)
 
+          FE=false; DONG=false; SOCKET=false; INDEXER=false
           if [ -n "${{ inputs.rebuild_existing_tag }}" ] ||[ "${{ inputs.build_all }}" = "true" ]; then
             echo "frontend=true" >> $GITHUB_OUTPUT
             echo "dong=true" >> $GITHUB_OUTPUT
             echo "socket=true" >> $GITHUB_OUTPUT
             echo "indexer=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          if [ -n "${{ inputs.new_tag_to_build }}" ]; then
+          elif [ -n "${{ inputs.new_tag_to_build }}" ]; then
             echo "frontend=false" >> $GITHUB_OUTPUT
             echo "dong=false" >> $GITHUB_OUTPUT
             echo "socket=false" >> $GITHUB_OUTPUT
             echo "indexer=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          if [ -z "$LATEST_RELEASE_TAG" ]; then
-            echo "No previous release found. Build all services."
-            BASE_REF=$(git rev-list --max-parents=0 HEAD)
           else
-            echo "Last release: $LATEST_RELEASE_TAG"
-            BASE_REF=$LATEST_RELEASE_TAG
-          fi
-
-          detect() {
-            local service=$1
-            if git diff --quiet "$BASE_REF..HEAD" -- "$service/"; then
-              echo false
+            if [ -z "$LATEST_RELEASE_TAG" ]; then
+              echo "No previous release found. Build all services."
+              BASE_REF=$(git rev-list --max-parents=0 HEAD)
             else
-              echo true
+              echo "Last release: $LATEST_RELEASE_TAG"
+              BASE_REF=$LATEST_RELEASE_TAG
             fi
-          }
 
-          echo "frontend=$(detect frontend)" >> $GITHUB_OUTPUT
-          echo "dong=$(detect dong-service)" >> $GITHUB_OUTPUT
-          echo "socket=$(detect socket-service)" >> $GITHUB_OUTPUT
-          echo "indexer=$(detect indexer)" >> $GITHUB_OUTPUT
+            detect() {
+              local service=$1
+              if git diff --quiet "$BASE_REF..HEAD" -- "$service/"; then
+                echo false
+              else
+                echo true
+              fi
+            }
+            FE=$(detect frontend)
+            DONG=$(detect dong-service)
+            SOCKET=$(detect socket-service)
+            INDEXER=$(detect indexer)
+          fi
+          
+          echo "frontend=$FE" >> $GITHUB_OUTPUT
+          echo "dong=$DONG" >> $GITHUB_OUTPUT
+          echo "socket=$SOCKET" >> $GITHUB_OUTPUT
+          echo "indexer=$INDEXER" >> $GITHUB_OUTPUT
 
       - name: Calculate tags
         id: tags
@@ -179,11 +180,10 @@ jobs:
               exit 1
             fi
 
-            FRONTEND=$(echo "$BODY" | grep "Frontend:" | awk '{print $2}' | xargs)
-            DONG=$(echo "$BODY" | grep "Dong:" | awk '{print $2}' | xargs)
-            SOCKET=$(echo "$BODY" | grep "Socket:" | awk '{print $2}' | xargs)
-            INDEXER=$(echo "$BODY" | grep "Indexer:" | awk '{print $2}' | xargs)
-            
+            FRONTEND=$(echo "$BODY" | grep "Frontend:" | sed 's/Frontend:[[:space:]]*//' | awk '{print $1}')
+            DONG=$(echo "$BODY" | grep "Dong:" | sed 's/Dong:[[:space:]]*//' | awk '{print $1}')
+            SOCKET=$(echo "$BODY" | grep "Socket:" | sed 's/Socket:[[:space:]]*//' | awk '{print $1}')
+            INDEXER=$(echo "$BODY" | grep "Indexer:" | sed 's/Indexer:[[:space:]]*//' | awk '{print $1}')
             echo "skip_build=true" >> $GITHUB_OUTPUT
             SHOULD=false
           else
