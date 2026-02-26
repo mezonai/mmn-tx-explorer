@@ -86,6 +86,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		Status:                    constants.TradingOpen,
 		TransferCode:              &transferCode,
 		ExpiresAt:                 &expiresAt,
+		BankInfo:                  offer.BankInfo,
 	}
 
 	if err = s.offerRepo.ReserveQuantity(ctx, offerID, orderAmount, tx); err != nil {
@@ -103,7 +104,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 
 	order.BankInfo = offer.BankInfo
 	order.OfferCreatorWalletAddress = &offer.OfferCreatorWalletAddress
-	order.OfferCreatorUserID = &offer.OfferCreatorUserID
+	order.OfferCreatorUserID = offer.OfferCreatorUserID
 	order.PriceRate = offer.PriceRate
 
 	return order, offer, nil
@@ -143,7 +144,7 @@ func (s *OrderService) GetOrderByID(ctx context.Context, id int64) (*models.Orde
 		of, err := s.offerRepo.GetOfferByID(ctx, *o.OfferID)
 		if err == nil && of != nil {
 			o.BankInfo = of.BankInfo
-			o.OfferCreatorWalletAddress = &of.OfferCreatorWalletAddress
+			o.OfferCreatorWalletAddress = of.OfferCreatorWalletAddress
 			o.OfferCreatorUserID = &of.OfferCreatorUserID
 			o.PriceRate = of.PriceRate
 		}
