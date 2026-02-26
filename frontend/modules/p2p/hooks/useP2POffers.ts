@@ -5,7 +5,6 @@ import { P2P_QUERY_KEYS, P2P_EVENT_TYPES, WS_INVALIDATE_DELAY } from '../constan
 import { IP2POfferListParams } from '../types';
 import { useWebSocket } from '@/lib/websocket';
 
-const WS_INVALIDATE_DELAY = 1000;
 const WS_REFRESH_ANIM_MS = 1200;
 
 export const useP2POffers = (
