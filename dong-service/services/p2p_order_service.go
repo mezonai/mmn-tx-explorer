@@ -90,13 +90,20 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		bankInfo = offer.BankInfo
 	}
 
+	var status string
+	if offer.Side == models.OfferSideBuy {
+		status = constants.TradingWaiting
+	} else {
+		status = constants.TradingOpen
+	}
+
 	order := &models.Order{
 		OfferID:                   &offerID,
 		OrderCreatorWalletAddress: walletAddrPtr,
 		OrderCreatorUserID:        buyerUserID,
 		OrderAmount:               orderAmount,
 		PayableAmount:             payableAmount,
-		Status:                    constants.TradingOpen,
+		Status:                    status,
 		TransferCode:              &transferCode,
 		ExpiresAt:                 &expiresAt,
 		BankInfo:                  bankInfo,

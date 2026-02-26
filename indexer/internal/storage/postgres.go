@@ -2738,7 +2738,7 @@ func (p *PostgresConnector) updateOrderStatus(
 				intermediary_wallet_address
 		FROM dong_schema.p2p_orders
 		WHERE order_id = ANY($1::bigint[])
-			AND status = 'OPEN'
+			AND status = 'WAITING_TRANSFER'
 		FOR UPDATE
 		`
 
@@ -2839,7 +2839,7 @@ func (p *PostgresConnector) updateOrderStatus(
 	queryUpdate := `
 	UPDATE dong_schema.p2p_orders o
 	SET
-		status = 'PENDING',
+		status = 'OPEN',
 		transaction_hash = v.tx_hash,
 		updated_at = NOW()
 	FROM (
@@ -2848,7 +2848,7 @@ func (p *PostgresConnector) updateOrderStatus(
 			unnest($2::text[])   AS tx_hash
 	) v
 	WHERE o.order_id = v.order_id
-	  AND o.status = 'OPEN'
+	  AND o.status = 'WAITING_TRANSFER'
 	`
 
 	_, err = tx.ExecContext(ctx, queryUpdate, pq.Array(validOrderIDs), pq.Array(validTxHashes))
@@ -2886,7 +2886,7 @@ func (p *PostgresConnector) failOrderStatus(
 	SELECT order_id, offer_id, order_amount, status
 	FROM dong_schema.p2p_orders
 	WHERE order_id = ANY($1::bigint[])
-	  AND status = 'OPEN'
+	  AND status = 'WAITING_TRANSFER'
 	FOR UPDATE
 	`
 	rows, err := tx.QueryContext(ctx, querySelect, pq.Array(orderIDs))
@@ -2925,7 +2925,7 @@ func (p *PostgresConnector) failOrderStatus(
 		o, ok := orderMap[extraInfo.OrderID]
 		if !ok {
 			log.Error().Int64("order_id", extraInfo.OrderID).Str("tx_hash", t.Hash).
-				Msg("failed order: order not found or not OPEN")
+				Msg("failed order: order not found or not WAITING_TRANSFER")
 			continue
 		}
 		if o.OfferID != extraInfo.OfferID {
@@ -2961,7 +2961,7 @@ func (p *PostgresConnector) failOrderStatus(
 	FROM (
 		SELECT unnest($1::bigint[]) AS order_id, unnest($2::text[]) AS tx_hash
 	) v
-	WHERE o.order_id = v.order_id AND o.status = 'OPEN'
+	WHERE o.order_id = v.order_id AND o.status = 'WAITING_TRANSFER'
 	`
 	if _, err = tx.ExecContext(ctx, queryFailOrders, pq.Array(failOrderIDs), pq.Array(failTxHashes)); err != nil {
 		return fmt.Errorf("batch fail orders failed: %w", err)
