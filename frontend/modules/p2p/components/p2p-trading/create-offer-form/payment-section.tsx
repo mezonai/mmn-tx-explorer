@@ -4,8 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { CreditCard, Info, User, Loader2 } from 'lucide-react';
-import { BankOption, UserPaymentInfo } from '@/modules/p2p/types';
-import { CreateOfferFormValues } from './validation-schema';
+import { BankOption } from '@/modules/p2p/types';
 import { cn } from '@/lib/utils';
 import { useUserPaymentInfos, useUpdatePaymentInfo } from '@/modules/p2p/hooks/usePaymentInfo';
 import { toast } from 'sonner';
@@ -18,9 +17,8 @@ interface PaymentSectionProps {
   onUnsavedChangesChange?: (hasUnsavedChanges: boolean) => void;
 }
 
-
 export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChange }: PaymentSectionProps) => {
-  const { data: savedPayments, isLoading } = useUserPaymentInfos();
+  const { data: savedPayments } = useUserPaymentInfos();
   const { mutate: updatePayment, isPending: isUpdating } = useUpdatePaymentInfo();
 
   const currentBank = watch('bank_info.bank');
@@ -38,7 +36,7 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
   const hasChanges = useMemo(() => {
     if (!matchedSavedInfo) {
       // If no saved info for this bank, and inputs are not empty, we consider it "unsaved"
-      return !!((currentAccountNumber || '') || (currentAccountName || '') || currentIsPrimary);
+      return !!(currentAccountNumber || '' || currentAccountName || '' || currentIsPrimary);
     }
     return (
       (currentAccountNumber || '') !== matchedSavedInfo.account_number ||
@@ -70,7 +68,6 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
       }
     }
   }, [savedPayments, setValue, hasLoadedInitial]);
-
 
   const handleBankChange = (value: BankOption) => {
     setValue('bank_info.bank', value);
@@ -238,7 +235,7 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
 
       {/* Primary Switch */}
       <div className="flex items-center justify-between pt-1">
-        <label className="text-foreground cursor-pointer select-none text-sm font-medium" htmlFor="set-primary-p2p">
+        <label className="text-foreground cursor-pointer text-sm font-medium select-none" htmlFor="set-primary-p2p">
           Set as primary bank account
         </label>
         <Controller
@@ -249,11 +246,11 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
               <input
                 type="checkbox"
                 id="set-primary-p2p"
-                className="sr-only peer"
+                className="peer sr-only"
                 checked={field.value || false}
                 onChange={(e) => field.onChange(e.target.checked)}
               />
-              <div className="bg-muted peer-focus:ring-brand-primary/50 dark:bg-muted/50 peer-checked:bg-brand-primary dark:peer-checked:bg-brand-primary after:content-[''] after:bg-white after:border-gray-300 after:rounded-full after:transition-all peer-focus:outline-none peer-focus:ring-2 peer-checked:after:translate-x-full peer-checked:after:border-white after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:border dark:border-border h-6 w-11 rounded-full peer"></div>
+              <div className="bg-muted peer-focus:ring-brand-primary/50 dark:bg-muted/50 peer-checked:bg-brand-primary dark:peer-checked:bg-brand-primary dark:border-border peer h-6 w-11 rounded-full peer-focus:ring-2 peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
             </label>
           )}
         />
