@@ -169,6 +169,8 @@ func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, 
 			&o.ExpiresAt,
 			&o.CreatedAt,
 			&o.UpdatedAt,
+			&o.OfferCreatorWalletAddress,
+			&o.OfferCreatorUserID,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan order: %w", err)
 		}
@@ -205,9 +207,10 @@ func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.O
 func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Order, error) {
 	query := fmt.Sprintf(`
 		SELECT o.order_id, o.offer_id, o.order_creator_wallet_address, o.order_creator_user_id, o.order_amount, o.payable_amount, 
-		       o.transaction_hash, o.status, o.transfer_code, o.expires_at, o.created_at, o.updated_at 
+		       o.transaction_hash, o.status, o.transfer_code, o.expires_at, o.created_at, o.updated_at,
+		       of.offer_creator_wallet_address, of.offer_creator_user_id
 		FROM %s.p2p_orders o
-		LEFT JOIN %s.p2p_offers of ON o.offer_id = of.offer_id
+		INNER JOIN %s.p2p_offers of ON o.offer_id = of.offer_id
 		WHERE o.order_creator_wallet_address = $1 OR of.offer_creator_wallet_address = $1
 		ORDER BY o.created_at DESC
 	`, r.dongSchema, r.dongSchema)
@@ -243,6 +246,8 @@ func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAd
 			&o.ExpiresAt,
 			&o.CreatedAt,
 			&o.UpdatedAt,
+			&o.OfferCreatorWalletAddress,
+			&o.OfferCreatorUserID,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan order: %w", err)
 		}
@@ -256,7 +261,7 @@ func (r *OrderRepository) CountOrdersByWalletAddress(ctx context.Context, wallet
 	query := fmt.Sprintf(`
 		SELECT COUNT(*) 
 		FROM %s.p2p_orders o
-		LEFT JOIN %s.p2p_offers of ON o.offer_id = of.offer_id
+		INNER JOIN %s.p2p_offers of ON o.offer_id = of.offer_id
 		WHERE o.order_creator_wallet_address = $1 OR of.offer_creator_wallet_address = $1
 	`, r.dongSchema, r.dongSchema)
 
@@ -273,7 +278,7 @@ func (r *OrderRepository) CountOrdersByOffer(ctx context.Context, offerID int64)
 	query := fmt.Sprintf(`
 		SELECT COUNT(*) 
 		FROM %s.p2p_orders
-		WHERE offer_id = $1 AND status IN ('PENDING', 'OPEN', 'CONFIRMED')
+		WHERE offer_id = $1
 	`, r.dongSchema)
 
 	var total int64
@@ -311,6 +316,37 @@ func (r *OrderRepository) HasActiveOrdersByOfferList(ctx context.Context, offerI
 			return nil, fmt.Errorf("failed to scan offer_id: %w", err)
 		}
 		result[offerID] = true
+	}
+
+	return result, rows.Err()
+}
+
+func (r *OrderRepository) CountOrdersByOfferList(ctx context.Context, offerIDs []int64) (map[int64]int64, error) {
+	result := make(map[int64]int64)
+	if len(offerIDs) == 0 {
+		return result, nil
+	}
+
+	query := fmt.Sprintf(`
+		SELECT offer_id, COUNT(*) 
+		FROM %s.p2p_orders 
+		WHERE offer_id = ANY($1)
+		GROUP BY offer_id
+	`, r.dongSchema)
+
+	rows, err := r.db.QueryContext(ctx, query, pq.Array(offerIDs))
+	if err != nil {
+		return nil, fmt.Errorf("failed to count orders for offers: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var offerID int64
+		var count int64
+		if err := rows.Scan(&offerID, &count); err != nil {
+			return nil, fmt.Errorf("failed to scan offer_id and count: %w", err)
+		}
+		result[offerID] = count
 	}
 
 	return result, rows.Err()

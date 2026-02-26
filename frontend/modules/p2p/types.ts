@@ -29,6 +29,7 @@ export interface P2POffer {
   };
   transfer_code?: string;
   has_active_order?: boolean;
+  order_count?: number;
 }
 
 export interface IP2POfferListParams {
@@ -38,14 +39,7 @@ export interface IP2POfferListParams {
   from_amount?: number;
   to_amount?: number;
   order?: string;
-}
-
-export interface IP2POfferListParams {
-  page: number;
-  limit: number;
-  rate?: number;
-  from_amount?: number;
-  to_amount?: number;
+  side?: TradeTypes;
 }
 export enum TradeTypes {
   SELL = 'SELL',
@@ -59,7 +53,7 @@ export interface CreateOfferRequest {
     min: number;
     max: number;
   };
-  bank_info: { bank: BankOption; account_number: string; account_name: string };
+  bank_info?: { bank: BankOption; account_number: string; account_name: string };
   symbol?: string;
 }
 
