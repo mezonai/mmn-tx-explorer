@@ -19,16 +19,31 @@ import (
 )
 
 type OfferService struct {
-	repo           *repository.OfferRepository
-	walletRepo     *repository.IntermediaryWalletRepository
-	userWalletRepo *repository.WalletRepository
-	orderRepo      *repository.OrderRepository
-	blockchain     *blockchain.BlockchainService
-	orderService   *OrderService
+	repo            *repository.OfferRepository
+	walletRepo      *repository.IntermediaryWalletRepository
+	userWalletRepo  *repository.WalletRepository
+	orderRepo       *repository.OrderRepository
+	blockchain      *blockchain.BlockchainService
+	orderService    *OrderService
+	userPaymentRepo *repository.UserPaymentInfoRepository
 }
 
-func NewOfferService(repo *repository.OfferRepository, walletRepo *repository.IntermediaryWalletRepository, userWalletRepo *repository.WalletRepository, orderRepo *repository.OrderRepository, blockchain *blockchain.BlockchainService) *OfferService {
-	return &OfferService{repo: repo, walletRepo: walletRepo, userWalletRepo: userWalletRepo, orderRepo: orderRepo, blockchain: blockchain}
+func NewOfferService(
+	repo *repository.OfferRepository,
+	walletRepo *repository.IntermediaryWalletRepository,
+	userWalletRepo *repository.WalletRepository,
+	orderRepo *repository.OrderRepository,
+	blockchain *blockchain.BlockchainService,
+	userPaymentRepo *repository.UserPaymentInfoRepository,
+) *OfferService {
+	return &OfferService{
+		repo:            repo,
+		walletRepo:      walletRepo,
+		userWalletRepo:  userWalletRepo,
+		orderRepo:       orderRepo,
+		blockchain:      blockchain,
+		userPaymentRepo: userPaymentRepo,
+	}
 }
 
 // SetOrderService sets the order service dependency (to avoid circular dependency)
@@ -106,7 +121,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 	var priceInt int64 = 0
 
 	var bankInfoStr *string
-	if req.BankInfo != nil {
+	if req.BankInfo != nil && len(req.BankInfo) > 0 {
 		b, marshalErr := json.Marshal(req.BankInfo)
 		if marshalErr != nil {
 			err = fmt.Errorf("invalid bank info: %w", marshalErr)
@@ -114,6 +129,21 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		}
 		ms := string(b)
 		bankInfoStr = &ms
+	} else if s.userPaymentRepo != nil {
+		// Fallback to primary bank info from profile
+		primaryBank, err := s.userPaymentRepo.GetPrimaryByUserID(ctx, sellerUserID)
+		if err == nil && primaryBank != nil {
+			bankMap := map[string]interface{}{
+				"bank_name":      primaryBank.BankName,
+				"account_number": primaryBank.AccountNumber,
+				"account_name":   primaryBank.AccountName,
+			}
+			b, marshalErr := json.Marshal(bankMap)
+			if marshalErr == nil {
+				ms := string(b)
+				bankInfoStr = &ms
+			}
+		}
 	}
 
 	var limitMinInt int64 = 1
@@ -132,8 +162,8 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 
 	offer := &models.Offer{
 		IntermediaryWalletAddress: &intermediaryAddr,
-		SellerWalletAddress:       walletAddr,
-		SellerUserID:              sellerUserID,
+		OfferCreatorWalletAddress: walletAddr,
+		OfferCreatorUserID:        sellerUserID,
 		Side:                      req.Side,
 		Symbol:                    req.Symbol,
 		AvailableAmount:           types.NewBigIntString(amountInt).Multiply(constants.TokenMultiplierBigIntString),
@@ -300,7 +330,7 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 		txHash, err := s.blockchain.TransferMoney(
 			intermediaryWallet.EncryptedPrivateKey,
 			*offer.IntermediaryWalletAddress,
-			offer.SellerWalletAddress,
+			offer.OfferCreatorWalletAddress,
 			offer.AvailableAmount.String(),
 			constants.TextDataP2PTrading,
 			constants.ExtraInfoP2PTradingOfferCanceled,
