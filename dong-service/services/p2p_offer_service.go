@@ -71,7 +71,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 
 	amountInt := req.Amount
 
-	if s.userWalletRepo != nil {
+	if s.userWalletRepo != nil && req.Side == models.OfferSideSell {
 		userWallet, err := s.userWalletRepo.GetByAddress(walletAddr)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
@@ -160,6 +160,13 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		limitMaxInt = limitMinInt
 	}
 
+	// Sell offers start as OPEN (waiting for escrow deposit),
+	// Buy offers start as CONFIRMED (ready for sellers to fill).
+	initialStatus := constants.TradingOpen
+	if req.Side == models.OfferSideBuy {
+		initialStatus = constants.TradingConfirmed
+	}
+
 	offer := &models.Offer{
 		IntermediaryWalletAddress: &intermediaryAddr,
 		OfferCreatorWalletAddress: walletAddr,
@@ -169,7 +176,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		AvailableAmount:           types.NewBigIntString(amountInt).Multiply(constants.TokenMultiplierBigIntString),
 		TotalAmount:               types.NewBigIntString(amountInt).Multiply(constants.TokenMultiplierBigIntString),
 		PayableAmount:             types.NewBigIntString(priceInt),
-		Status:                    constants.TradingOpen,
+		Status:                    initialStatus,
 		BankInfo:                  bankInfoStr,
 		Limit: &models.OfferLimit{
 			Min: types.NewBigIntString(limitMinInt).Multiply(constants.TokenMultiplierBigIntString),
@@ -324,7 +331,8 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 			*offer.IntermediaryWalletAddress != "" &&
 			offer.AvailableAmount.Sign() > 0 &&
 			s.blockchain != nil &&
-			s.walletRepo != nil
+			s.walletRepo != nil &&
+			offer.Side == constants.OfferSideSell
 
 	if needsRefund {
 		intermediaryWallet, err := s.walletRepo.GetWalletByAddress(ctx, *offer.IntermediaryWalletAddress)
@@ -368,9 +376,17 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 			return err
 		}
 	} else {
-		err = fmt.Errorf(constants.ErrFailedToCancelOffer)
-		return err
+	// No refund needed (either BUY side, or SELL side that is still OPEN/not yet escrowed)
+		if err = s.repo.UpdateOfferStatus(ctx, offerId, constants.TradingCanceled, tx, nil); err != nil {
+			return err
+		}
+
+		if offer.IntermediaryWalletAddress != nil && *offer.IntermediaryWalletAddress != "" && s.walletRepo != nil {
+			logger.Info().Int64("offer_id", offerId).Str("wallet_address", *offer.IntermediaryWalletAddress).Msg("Releasing intermediary wallet for canceled offer")
+			s.releaseIntermediaryWallet(ctx, *offer.IntermediaryWalletAddress)
+		}
 	}
+
 
 	if err = tx.Commit(); err != nil {
 		return err
