@@ -77,7 +77,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 	}
 
 	transferCode := fmt.Sprintf("ORDER %d", offerID)
-	expiresAt := time.Now().UTC().Add(15 * time.Minute)
+	expiresAt := time.Now().UTC().Add(constants.OrderExpirationDuration * time.Hour)
 
 	var bankInfo *string
 	if offer.Side == models.OfferSideBuy {
@@ -159,7 +159,7 @@ func (s *OrderService) GetOrderByID(ctx context.Context, id int64) (*models.Orde
 		of, err := s.offerRepo.GetOfferByID(ctx, *o.OfferID)
 		if err == nil && of != nil {
 			o.BankInfo = of.BankInfo
-			o.OfferCreatorWalletAddress = &of.OfferCreatorWalletAddress
+			o.OfferCreatorWalletAddress = of.OfferCreatorWalletAddress
 			o.OfferCreatorUserID = &of.OfferCreatorUserID
 			o.PriceRate = of.PriceRate
 			o.OfferSide = &of.Side
