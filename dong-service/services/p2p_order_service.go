@@ -123,9 +123,10 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 	}
 
 	order.BankInfo = offer.BankInfo
-	order.OfferCreatorWalletAddress = &offer.OfferCreatorWalletAddress
+	order.OfferCreatorWalletAddress = offer.OfferCreatorWalletAddress
 	order.OfferCreatorUserID = offer.OfferCreatorUserID
 	order.PriceRate = offer.PriceRate
+	order.OfferSide = &offer.Side
 
 	return order, offer, nil
 }
@@ -145,9 +146,10 @@ func (s *OrderService) ListOrdersByOffer(ctx context.Context, offerID int64, pag
 	if err == nil && of != nil {
 		for i := range orders {
 			orders[i].BankInfo = of.BankInfo
-			orders[i].OfferCreatorWalletAddress = &of.OfferCreatorWalletAddress
-			orders[i].OfferCreatorUserID = &of.OfferCreatorUserID
+			orders[i].OfferCreatorWalletAddress = of.OfferCreatorWalletAddress
+			orders[i].OfferCreatorUserID = of.OfferCreatorUserID
 			orders[i].PriceRate = of.PriceRate
+			orders[i].OfferSide = &of.Side
 		}
 	}
 
@@ -165,8 +167,9 @@ func (s *OrderService) GetOrderByID(ctx context.Context, id int64) (*models.Orde
 		if err == nil && of != nil {
 			o.BankInfo = of.BankInfo
 			o.OfferCreatorWalletAddress = of.OfferCreatorWalletAddress
-			o.OfferCreatorUserID = &of.OfferCreatorUserID
+			o.OfferCreatorUserID = of.OfferCreatorUserID
 			o.PriceRate = of.PriceRate
+			o.OfferSide = &of.Side
 		}
 	}
 
@@ -188,9 +191,10 @@ func (s *OrderService) GetOrdersByWalletAddress(ctx context.Context, walletAddre
 			of, err := s.offerRepo.GetOfferByID(ctx, *orders[i].OfferID)
 			if err == nil && of != nil {
 				orders[i].BankInfo = of.BankInfo
-				orders[i].OfferCreatorWalletAddress = &of.OfferCreatorWalletAddress
-				orders[i].OfferCreatorUserID = &of.OfferCreatorUserID
+				orders[i].OfferCreatorWalletAddress = of.OfferCreatorWalletAddress
+				orders[i].OfferCreatorUserID = of.OfferCreatorUserID
 				orders[i].PriceRate = of.PriceRate
+				orders[i].OfferSide = &of.Side
 			}
 		}
 	}
@@ -243,9 +247,9 @@ func (s *OrderService) ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o
 	// Send ORDER_CONFIRMED event to seller
 	if o.OfferID != nil {
 		of, err := s.offerRepo.GetOfferByID(context.Background(), *o.OfferID)
-		if err == nil && of != nil && of.OfferCreatorWalletAddress != "" {
+		if err == nil && of != nil && *of.OfferCreatorWalletAddress != "" {
 			payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.OrderAmount}
-			go SendSocketEvent(of.OfferCreatorWalletAddress, constants.ORDER_CONFIRMED, payload)
+			go SendSocketEvent(*of.OfferCreatorWalletAddress, constants.ORDER_CONFIRMED, payload)
 		}
 	}
 
@@ -284,7 +288,7 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 
 		var targetWallet *string
 		if offer.Side == models.OfferSideBuy {
-			targetWallet = &offer.OfferCreatorWalletAddress
+			targetWallet = offer.OfferCreatorWalletAddress
 		} else {
 			targetWallet = o.OrderCreatorWalletAddress
 		}

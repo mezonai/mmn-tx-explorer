@@ -15,7 +15,6 @@ import { z } from 'zod';
 import BigNumber from 'bignumber.js';
 import { NumberUtil } from '@/utils';
 import { TradeTypes } from '../../types';
-import { P2P_ACTION_TYPE } from '../../constants';
 
 const paymentSchema = z.object({
   bank_info: z.object({
@@ -25,6 +24,7 @@ const paymentSchema = z.object({
       .min(1, 'Please enter the account number')
       .regex(/^\d+$/, 'Account number must contain only digits'),
     account_name: z.string().min(1, 'Please enter the account name'),
+    is_primary: z.boolean().optional(),
   }),
   side: z.string().optional(),
   amount: z.number().optional(),
@@ -71,12 +71,14 @@ export const BuyAmountSection = ({
     control,
     getValues,
     trigger,
+    setValue,
+    watch,
     formState: { errors, isValid: isFormValid },
   } = useForm({
     resolver: zodResolver(paymentSchema),
     mode: 'onChange',
     defaultValues: {
-      bank_info: { bank: 'MB' as BankOption, account_name: '', account_number: '' },
+      bank_info: { bank: 'MB' as BankOption, account_name: '', account_number: '', is_primary: false },
       side: 'BUY',
       amount: 0,
       price_rate: '0',
@@ -142,11 +144,10 @@ export const BuyAmountSection = ({
   const amountBN = new BigNumber(amountMZD);
   const isRangeValid = amountBN.isGreaterThanOrEqualTo(initialMin) && amountBN.isLessThanOrEqualTo(effectiveMax);
   const isBalanceValid = !isRespondingToBuyOffer || amountMZD <= userBalance;
-  const isValidAmount =
-    isRangeValid && isBalanceValid && (!isRespondingToBuyOffer || isFormValid);
+  const isValidAmount = isRangeValid && isBalanceValid && (!isRespondingToBuyOffer || isFormValid);
 
   return (
-    <div className={`mb-6 ${isRespondingToBuyOffer ? 'grid grid-cols-1 lg:grid-cols-2 gap-8' : 'space-y-4'}`}>
+    <div className={`mb-6 ${isRespondingToBuyOffer ? 'grid grid-cols-1 gap-8 lg:grid-cols-2' : 'space-y-4'}`}>
       <div className="space-y-4">
         <div>
           <label className="text-muted-foreground mb-2 block text-sm font-medium">
@@ -165,8 +166,10 @@ export const BuyAmountSection = ({
               {APP_CONFIG.CHAIN_SYMBOL}
             </span>
           </div>
-          <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-            <div>Available: {available.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}</div>
+          <div className="text-muted-foreground mt-2 flex items-center justify-between text-xs">
+            <div>
+              Available: {available.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}
+            </div>
             <div className="flex gap-2">
               <Button
                 onClick={() => {
@@ -175,9 +178,9 @@ export const BuyAmountSection = ({
                   setSelectionType('min');
                 }}
                 disabled={isDisabled}
-                className={`h-[30px] rounded border text-[10px] font-bold uppercase tracking-wider transition-all disabled:cursor-not-allowed disabled:opacity-30 ${selectionType === 'min'
-                  ? 'border-brand-primary/50 bg-brand-primary/10 text-brand-primary'
-                  : 'border-border bg-muted/30 text-muted-foreground hover:border-brand-primary/50 hover:bg-brand-primary/10 hover:text-brand-primary'
+                className={`h-[30px] rounded border text-[10px] font-bold tracking-wider uppercase transition-all disabled:cursor-not-allowed disabled:opacity-30 ${selectionType === 'min'
+                    ? 'border-brand-primary/50 bg-brand-primary/10 text-brand-primary'
+                    : 'border-border bg-muted/30 text-muted-foreground hover:border-brand-primary/50 hover:bg-brand-primary/10 hover:text-brand-primary'
                   }`}
               >
                 {isRespondingToBuyOffer ? 'Sell Min' : 'Buy Min'}
@@ -189,9 +192,9 @@ export const BuyAmountSection = ({
                   setSelectionType('max');
                 }}
                 disabled={isDisabled}
-                className={`h-[30px] rounded border text-[10px] font-bold uppercase tracking-wider transition-all disabled:cursor-not-allowed disabled:opacity-30 ${selectionType === 'max'
-                  ? 'border-brand-primary/50 bg-brand-primary/10 text-brand-primary'
-                  : 'border-border bg-muted/30 text-muted-foreground hover:border-brand-primary/50 hover:bg-brand-primary/10 hover:text-brand-primary'
+                className={`h-[30px] rounded border text-[10px] font-bold tracking-wider uppercase transition-all disabled:cursor-not-allowed disabled:opacity-30 ${selectionType === 'max'
+                    ? 'border-brand-primary/50 bg-brand-primary/10 text-brand-primary'
+                    : 'border-border bg-muted/30 text-muted-foreground hover:border-brand-primary/50 hover:bg-brand-primary/10 hover:text-brand-primary'
                   }`}
               >
                 {isRespondingToBuyOffer ? 'Sell Max' : 'Buy Max'}
@@ -224,7 +227,12 @@ export const BuyAmountSection = ({
 
       {isRespondingToBuyOffer && (
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900/50">
-          <PaymentSection control={control as any} />
+          <PaymentSection
+            control={control as any}
+            setValue={setValue as any}
+            watch={watch as any}
+            onUnsavedChangesChange={() => { }}
+          />
         </div>
       )}
 
@@ -233,7 +241,7 @@ export const BuyAmountSection = ({
           <Button
             onClick={handleConfirm}
             disabled={!isValidAmount || isLoading}
-            className="w-full bg-emerald-500 hover:bg-emerald-600 inline-flex items-center justify-center rounded-lg px-5 py-6 text-base font-semibold text-white shadow-lg transition gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-500 px-5 py-6 text-base font-semibold text-white shadow-lg transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <CheckCircle2 className="h-5 w-5" />
             {isLoading ? 'Processing...' : isRespondingToBuyOffer ? 'Confirm sell' : 'Confirm purchase'}
@@ -241,15 +249,14 @@ export const BuyAmountSection = ({
         </div>
 
         {isRespondingToBuyOffer && amountMZD > userBalance && (
-          <p className="text-center text-xs text-red-500 font-bold">
+          <p className="text-center text-xs font-bold text-red-500">
             Insufficient balance. You have {formatCurrency(userBalance)} {APP_CONFIG.CHAIN_SYMBOL}
           </p>
         )}
 
         {!isRangeValid && amountMZD > 0 && (
           <p className="text-center text-xs text-red-500">
-            Amount must be between {initialMin.toFormat()} and {effectiveMax.toFormat()}{' '}
-            {APP_CONFIG.CHAIN_SYMBOL}
+            Amount must be between {initialMin.toFormat()} and {effectiveMax.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}
           </p>
         )}
       </div>
@@ -262,7 +269,7 @@ export const BuyAmountSection = ({
         priceRate={offer.price_rate}
         onConfirm={handleFinalConfirm}
         isLoading={isLoading}
-        actionType={isRespondingToBuyOffer ? P2P_ACTION_TYPE.SELL : P2P_ACTION_TYPE.BUY}
+        actionType={isRespondingToBuyOffer ? 'SELL' : 'BUY'}
       />
     </div>
   );

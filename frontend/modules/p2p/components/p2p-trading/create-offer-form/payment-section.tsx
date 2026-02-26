@@ -12,10 +12,10 @@ import { toast } from 'sonner';
 import { BANK_OPTIONS } from '@/modules/p2p/constants';
 
 interface PaymentSectionProps {
-  control: Control<CreateOfferFormValues>;
-  setValue: UseFormSetValue<CreateOfferFormValues>;
-  watch: UseFormWatch<CreateOfferFormValues>;
-  onUnsavedChangesChange: (hasUnsavedChanges: boolean) => void;
+  control: Control<any>;
+  setValue: UseFormSetValue<any>;
+  watch: UseFormWatch<any>;
+  onUnsavedChangesChange?: (hasUnsavedChanges: boolean) => void;
 }
 
 
@@ -38,18 +38,38 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
   const hasChanges = useMemo(() => {
     if (!matchedSavedInfo) {
       // If no saved info for this bank, and inputs are not empty, we consider it "unsaved"
-      return !!(currentAccountNumber || currentAccountName || currentIsPrimary);
+      return !!((currentAccountNumber || '') || (currentAccountName || '') || currentIsPrimary);
     }
     return (
-      currentAccountNumber !== matchedSavedInfo.account_number ||
-      currentAccountName !== matchedSavedInfo.account_name ||
-      currentIsPrimary !== matchedSavedInfo.is_primary
+      (currentAccountNumber || '') !== matchedSavedInfo.account_number ||
+      (currentAccountName || '') !== matchedSavedInfo.account_name ||
+      (currentIsPrimary || false) !== matchedSavedInfo.is_primary
     );
   }, [matchedSavedInfo, currentAccountNumber, currentAccountName, currentIsPrimary]);
 
   useEffect(() => {
-    onUnsavedChangesChange(hasChanges);
+    onUnsavedChangesChange?.(hasChanges);
   }, [hasChanges, onUnsavedChangesChange]);
+
+  const [hasLoadedInitial, setHasLoadedInitial] = useState(false);
+
+  // Handle initial load - set primary account
+  useEffect(() => {
+    if (savedPayments && savedPayments.length > 0 && !hasLoadedInitial) {
+      const primaryAccount = savedPayments.find((p) => p.is_primary) || savedPayments[0];
+      if (primaryAccount) {
+        // Find the bank value from label
+        const bankValue = BANK_OPTIONS.find((opt) => opt.label === primaryAccount.bank_name)?.value as BankOption;
+        if (bankValue) {
+          setValue('bank_info.bank', bankValue);
+          setValue('bank_info.account_number', primaryAccount.account_number);
+          setValue('bank_info.account_name', primaryAccount.account_name);
+          setValue('bank_info.is_primary', primaryAccount.is_primary);
+          setHasLoadedInitial(true);
+        }
+      }
+    }
+  }, [savedPayments, setValue, hasLoadedInitial]);
 
 
   const handleBankChange = (value: BankOption) => {
@@ -68,7 +88,7 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
   };
 
   const handleSaveChanges = () => {
-    const bankLabel = BANK_OPTIONS.find((b) => b.value === currentBank)?.label || currentBank;
+    const bankLabel = BANK_OPTIONS.find((b) => b.value === currentBank)?.label || currentBank || '';
     updatePayment(
       {
         bank_name: bankLabel,

@@ -261,11 +261,10 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
             {
               recipientAddress: offer.intermediary_wallet_address || '',
               amount: amountMZD.toString(),
-              note: 'p2p-trading-buy-offer',
+              note: 'p2p-trading',
               offerId: offer.offer_id,
-              orderId: newOrder.order_id,
             },
-            ETransferType.P2PTradingBuyOffer
+            ETransferType.P2PTrading
           );
 
           if (!transferResult.success) {
@@ -315,6 +314,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       price_rate: offer.price_rate,
       order_creator_user_id: '',
       offer_creator_user_id: '',
+      side: offer.side,
     };
 
     const isSellerOfOffer = user?.walletAddress === offer?.offer_creator_wallet_address;

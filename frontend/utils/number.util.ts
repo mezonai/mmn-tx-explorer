@@ -83,4 +83,9 @@ export class NumberUtil {
   static formatAndScaleDownBigNumber(value: BigNumber): string {
     return this.scaleDownBigNumber(value).toFormat();
   }
+
+  static scaleDownBigIntString(value: string): BigNumber {
+    if (!value) return new BigNumber(0);
+    return new BigNumber(value).dividedBy(1_000_000);
+  }
 }
