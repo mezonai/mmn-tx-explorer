@@ -25,7 +25,7 @@ import { ROUTES } from '@/configs/routes.config';
 import { ChatSidebar } from './chat-sidebar';
 import { STORAGE_KEYS } from '@/constant';
 import { NumberUtil } from '@/utils';
-import { EMBED_MESSAGE_THEME, P2P_TRADING_ROLE } from '../../constants';
+import { EMBED_MESSAGE_THEME, P2P_TRADING_ROLE, ORDER_EXPIRATION_DURATION_MS } from '../../constants';
 import BigNumber from 'bignumber.js';
 
 interface TradingRoomProps {
@@ -200,7 +200,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
         router.push(ROUTES.P2P_TRADING_ROOM(newOrder.order_id));
       }
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || 'Something went wrong while creating the order. Please try again.';
+      const errorMessage =
+        err?.response?.data?.message || 'Something went wrong while creating the order. Please try again.';
       setError(errorMessage);
     }
   };
@@ -229,7 +230,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       payable_amount: '0',
       status: OrderStatus.OPEN,
       transfer_code: null,
-      expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+      expires_at: new Date(Date.now() + ORDER_EXPIRATION_DURATION_MS).toISOString(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       bank_info: offer.bank_info,
@@ -332,10 +333,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
             <div className="lg:col-span-8">
               <OrderInfoCard order={effectiveOrder} />
               {order && order.bank_info && order.transfer_code && (
-                <BankInfoCard
-                  bank_info={order.bank_info}
-                  transfer_code={order.transfer_code}
-                />
+                <BankInfoCard bank_info={order.bank_info} transfer_code={order.transfer_code} />
               )}
 
               <div className="space-y-2">
