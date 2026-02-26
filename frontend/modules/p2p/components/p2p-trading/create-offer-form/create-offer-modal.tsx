@@ -15,6 +15,8 @@ import { CreateOfferFormValues, createOfferSchema } from './validation-schema';
 import { TradeTypeSection } from './trade-type-section';
 import { AmountSection } from './amount-section';
 import { PaymentSection } from './payment-section';
+import { useUserPaymentInfos } from '@/modules/p2p/hooks/usePaymentInfo';
+import { BANK_OPTIONS } from '@/modules/p2p/constants';
 import { APP_CONFIG } from '@/configs/app.config';
 import { useUser } from '@/providers';
 import { mmnClient } from '@/modules/auth';
@@ -29,6 +31,7 @@ export const CreateOfferModal = () => {
   const { transfer } = useTransfer();
   const { user } = useUser();
   const [balance, setBalance] = useState<string>('0');
+  const { data: savedPayments } = useUserPaymentInfos();
   const formSchema = useMemo(() => {
     return createOfferSchema.superRefine((data, ctx) => {
       if (data.side === TradeTypes.SELL) {
@@ -55,6 +58,8 @@ export const CreateOfferModal = () => {
     mode: 'onChange',
   });
 
+  const [isPaymentInitialized, setIsPaymentInitialized] = useState(false);
+
   useEffect(() => {
     if (open) {
       form.reset({
@@ -62,13 +67,28 @@ export const CreateOfferModal = () => {
         amount: 0,
         price_rate: '0',
         limit: { min: 0, max: 0 },
-        bank_info: { bank: 'MB', account_name: '', account_number: '' },
+        bank_info: { bank: 'MB' as const, account_name: '', account_number: '' },
         symbol: 'MZD',
       });
       setShowConfirm(false);
       setPendingData(null);
+      setIsPaymentInitialized(false);
     }
   }, [open, form]);
+
+  useEffect(() => {
+    if (open && !isPaymentInitialized && savedPayments && savedPayments.length > 0) {
+      const primary = savedPayments.find((p) => p.is_primary) || savedPayments[0];
+      const bankOpt = BANK_OPTIONS.find((opt) => opt.label === primary.bank_name);
+      if (bankOpt) {
+        form.setValue('bank_info.bank', bankOpt.value);
+        form.setValue('bank_info.account_number', primary.account_number);
+        form.setValue('bank_info.account_name', primary.account_name);
+        form.setValue('bank_info.is_primary', primary.is_primary);
+        setIsPaymentInitialized(true);
+      }
+    }
+  }, [open, savedPayments, isPaymentInitialized, form]);
 
   useEffect(() => {
     let mounted = true;
@@ -135,6 +155,8 @@ export const CreateOfferModal = () => {
     }
   };
 
+  const [hasUnsavedPayment, setHasUnsavedPayment] = useState(false);
+
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -152,14 +174,14 @@ export const CreateOfferModal = () => {
 
           <form onSubmit={form.handleSubmit(onPreSubmit)}>
             <div className="grid grid-cols-1 gap-8 p-6 lg:grid-cols-3">
+              <AmountSection control={form.control} userBalance={balance} setValue={form.setValue} />
               <TradeTypeSection control={form.control} trigger={form.trigger} />
-              <AmountSection
+              <PaymentSection
                 control={form.control}
-                trigger={form.trigger}
-                userBalance={balance}
                 setValue={form.setValue}
+                watch={form.watch}
+                onUnsavedChangesChange={setHasUnsavedPayment}
               />
-              <PaymentSection control={form.control} />
             </div>
 
             <DialogFooter className="border-t-border -mx-6 -mb-6 flex justify-end gap-3 border-t px-4 py-4">
@@ -174,6 +196,7 @@ export const CreateOfferModal = () => {
               </Button>
               <Button
                 type="submit"
+                disabled={isPending || hasUnsavedPayment}
                 className="bg-brand-primary flex items-center gap-2 px-8 py-2 text-sm font-bold text-white shadow-lg transition disabled:opacity-70"
               >
                 <Send className="h-3 w-3" />

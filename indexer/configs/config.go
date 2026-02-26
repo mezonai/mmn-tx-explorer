@@ -186,6 +186,11 @@ type StatsWorkerConfig struct {
 	TimeoutMinutes  int  `mapstructure:"timeoutMinutes"`
 }
 
+type EventConfig struct {
+	APIURL string `mapstructure:"api_url"`
+	APIKey string `mapstructure:"api_key"`
+}
+
 type Config struct {
 	RPC              RPCConfig              `mapstructure:"rpc"`
 	Log              LogConfig              `mapstructure:"log"`
@@ -198,6 +203,7 @@ type Config struct {
 	Publisher        PublisherConfig        `mapstructure:"publisher"`
 	WorkMode         WorkModeConfig         `mapstructure:"workMode"`
 	Validation       ValidationConfig       `mapstructure:"validation"`
+	Event            EventConfig            `mapstructure:"event"`
 	StatsWorker      StatsWorkerConfig      `mapstructure:"statsWorker"`
 }
 

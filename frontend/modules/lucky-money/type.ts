@@ -1,10 +1,10 @@
-import { UUID } from "crypto";
+import { UUID } from 'crypto';
 
 export enum EnvelopeStatus {
   Active = 'ACTIVE',
   Expiry = 'EXPIRY',
   Pending = 'PENDING',
-  Claim = 'CLAIM'
+  Claim = 'CLAIM',
 }
 
 export interface RedEnvelope {
@@ -29,7 +29,6 @@ export interface RedEnvelope {
   creator: string;
 }
 
-
 export interface RedEnvelopeStatsByUser {
   total_sent: number;
   total_recipients: number;
@@ -41,7 +40,7 @@ export interface RedEnvelopeStatsByUser {
 export type EnvelopeListParams = {
   page: number;
   limit: number;
-}
+};
 
 export interface CreatedEnvelopes {
   id: UUID;
@@ -93,7 +92,7 @@ export interface UpdateStatusRedEnvelopeRequest {
 }
 
 export interface ClaimEnvelopeRequest {
-  split_money_id: number;     
+  split_money_id: number;
 }
 
 export interface RedEnvelopeClaim {
