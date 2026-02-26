@@ -144,7 +144,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		zkClaims.Use(middleware.ZKAuthentication())
 		zkClaims.POST("/create", redEnvelopeHandler.CreateRedEnvelopeZKAuth)
 		zkClaims.POST("/claim-amount", redEnvelopeHandler.ClaimAmountRedEnvelopeQR)
-		zkClaims.POST("/update-status-red-envelope", redEnvelopeHandler.UpdateStatusRedEnvelopeZKAuth)
 		zkClaims.POST("/:id/claim", redEnvelopeHandler.ClaimRedEnvelopeQR)
 	}
 }
