@@ -2,6 +2,7 @@
 
 import { Control, Controller, UseFormSetValue, useFormState, useWatch } from 'react-hook-form';
 import { CreateOfferFormValues } from './validation-schema';
+import { TradeTypes } from '@/modules/p2p/types';
 import { APP_CONFIG } from '@/configs/app.config';
 import { CurrencyInput } from '../../shared/currency-input';
 import { cn } from '@/lib/utils';
@@ -19,6 +20,7 @@ const MAX_AMOUNT = 1000000;
 export const AmountSection = ({ control, setValue, userBalance }: AmountSectionProps) => {
   const exchangeRate = useWatch({ control, name: 'price_rate' });
   const currentAmount = useWatch({ control, name: 'amount' });
+  const tradeType = useWatch({ control, name: 'side' });
   const { errors } = useFormState({ control });
   const maxBalance = useMemo(() => {
     if (!userBalance) return 0;
@@ -72,7 +74,7 @@ export const AmountSection = ({ control, setValue, userBalance }: AmountSectionP
 
       <div>
         <label className="text-muted-foreground mb-2 block text-xs font-medium">
-          Amount to Sell ({APP_CONFIG.CHAIN_SYMBOL})
+          Amount to {tradeType === TradeTypes.SELL ? 'Sell' : 'Buy'} ({APP_CONFIG.CHAIN_SYMBOL})
         </label>
         <div className="group relative">
           <Controller
@@ -118,7 +120,7 @@ export const AmountSection = ({ control, setValue, userBalance }: AmountSectionP
 
       <div className="border-brand-primary bg-card rounded-lg border p-3">
         <label className="text-brand-primary mb-2 block text-xs font-medium">
-          Sell Rate (VND/{APP_CONFIG.CHAIN_SYMBOL})
+          {tradeType === TradeTypes.SELL ? 'Sell Rate' : 'Buy Rate'} (VND/{APP_CONFIG.CHAIN_SYMBOL})
         </label>
         <div className="flex items-center gap-2">
           <Controller
