@@ -14,7 +14,7 @@ const (
 	TransactionExtraInfoLuckyMoney           TransactionExtraInfoType = "lucky-money"
 	TransactionExtraInfoTokenTransfer        TransactionExtraInfoType = "token-transfer"
 	TransactionExtraInfoDonationCampaignFeed TransactionExtraInfoType = "donation-campaign-feed"
-	TransactionExtraInfoP2PTradingSellOffer  TransactionExtraInfoType = "p2p-trading-sell-offer"
+	TransactionExtraInfoP2PTrading           TransactionExtraInfoType = "p2p-trading"
 	TransactionExtraInfoP2PTradingBuyOffer   TransactionExtraInfoType = "p2p-trading-buy-offer"
 )
 
@@ -30,7 +30,7 @@ var strToType = map[string]TransactionExtraInfoType{
 	"lucky-money":            TransactionExtraInfoLuckyMoney,
 	"token-transfer":         TransactionExtraInfoTokenTransfer,
 	"donation-campaign-feed": TransactionExtraInfoDonationCampaignFeed,
-	"p2p-trading-sell-offer": TransactionExtraInfoP2PTradingSellOffer,
+	"p2p-trading":            TransactionExtraInfoP2PTrading,
 	"p2p-trading-buy-offer":  TransactionExtraInfoP2PTradingBuyOffer,
 }
 

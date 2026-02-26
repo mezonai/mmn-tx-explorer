@@ -134,10 +134,10 @@ export const CreateOfferModal = () => {
         {
           recipientAddress: resultData.intermediary_wallet_address,
           amount: payload.amount.toString(),
-          note: 'p2p-trading-sell-offer',
+          note: 'p2p-trading',
           offerId: resultData.offer.offer_id,
         },
-        ETransferType.P2PTradingSellOffer
+        ETransferType.P2PTrading
       );
 
       if (transferResult.success) {

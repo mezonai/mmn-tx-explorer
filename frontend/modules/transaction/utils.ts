@@ -13,7 +13,7 @@ export const getTransactionTypeLabel = (type: ETransferType): string => {
       return 'Lucky Money';
     case ETransferType.DonationFeedCampaign:
       return 'Donation Feed';
-    case ETransferType.P2PTradingSellOffer:
+    case ETransferType.P2PTrading:
     case ETransferType.P2PTradingBuyOffer:
       return 'P2P Trading';
     default:
