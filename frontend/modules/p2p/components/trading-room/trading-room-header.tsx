@@ -3,7 +3,7 @@
 import { ArrowLeft, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
-import { P2POrder, P2PTradingRoleType } from '../../types';
+import { P2POrder, P2PTradingRoleType, TradeTypes } from '../../types';
 import { AddressDisplay } from '@/components/shared/address-display';
 import { ROUTES } from '@/configs/routes.config';
 import { useP2POffer } from '../../hooks/useP2POffer';
@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Chip } from '@/components/shared';
 import { OrderStatus } from '../../types';
 import { TriangleAlert } from 'lucide-react';
+import { P2P_TRADING_ROLE } from '../../constants';
 
 interface TradingRoomHeaderProps {
   order: P2POrder;
@@ -49,14 +50,15 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
   const counterpartyAddress = useMemo(() => {
     if (!userRole) return '';
 
-    if (userRole === 'buyer') {
-      // If user is buyer, show seller's address
-      return order.offer_creator_wallet_address || offer?.offer_creator_wallet_address || '';
-    } else {
-      // If user is seller, show buyer's address
-      return order.order_creator_wallet_address || '';
-    }
-  }, [userRole, order.offer_creator_wallet_address, order.order_creator_wallet_address, offer?.offer_creator_wallet_address]);
+    const offerSide = order.offer_type || offer?.side;
+    const isOfferCreator =
+      (offerSide === TradeTypes.BUY && userRole === P2P_TRADING_ROLE.BUYER) ||
+      (offerSide === TradeTypes.SELL && userRole === P2P_TRADING_ROLE.SELLER);
+
+    return isOfferCreator
+      ? order.order_creator_wallet_address || ''
+      : order.offer_creator_wallet_address || offer?.offer_creator_wallet_address || '';
+  }, [userRole, order, offer]);
 
   return (
     <header className=" flex h-14 shrink-0 items-center justify-between border-b border-border px-2">

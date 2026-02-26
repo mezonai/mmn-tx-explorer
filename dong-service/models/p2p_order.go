@@ -38,8 +38,9 @@ type Order struct {
 }
 
 type CreateOrderRequest struct {
-	Amount        int64  `json:"amount" binding:"required"`
-	PayableAmount *int64 `json:"payable_amount,omitempty"`
+	Amount        int64                  `json:"amount" binding:"required"`
+	PayableAmount *int64                 `json:"payable_amount,omitempty"`
+	BankInfo      map[string]interface{} `json:"bank_info,omitempty"`
 }
 
 func (o Order) MarshalJSON() ([]byte, error) {

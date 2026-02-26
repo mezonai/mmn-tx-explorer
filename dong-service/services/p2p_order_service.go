@@ -9,6 +9,7 @@ import (
 	"dong-service/models"
 	"dong-service/repository"
 	"dong-service/types"
+	"encoding/json"
 	"fmt"
 	"math"
 	"time"
@@ -77,16 +78,35 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 
 	transferCode := fmt.Sprintf("ORDER %d", offerID)
 	expiresAt := time.Now().UTC().Add(constants.OrderExpirationDuration * time.Hour)
+
+	var bankInfo *string
+	if offer.Side == models.OfferSideBuy {
+		if req.BankInfo != nil {
+			bi, _ := json.Marshal(req.BankInfo)
+			sbi := string(bi)
+			bankInfo = &sbi
+		}
+	} else {
+		bankInfo = offer.BankInfo
+	}
+
+	var status string
+	if offer.Side == models.OfferSideBuy {
+		status = constants.TradingWaiting
+	} else {
+		status = constants.TradingOpen
+	}
+
 	order := &models.Order{
 		OfferID:                   &offerID,
 		OrderCreatorWalletAddress: walletAddrPtr,
 		OrderCreatorUserID:        buyerUserID,
 		OrderAmount:               orderAmount,
 		PayableAmount:             payableAmount,
-		Status:                    constants.TradingOpen,
+		Status:                    status,
 		TransferCode:              &transferCode,
 		ExpiresAt:                 &expiresAt,
-		BankInfo:                  offer.BankInfo,
+		BankInfo:                  bankInfo,
 	}
 
 	if err = s.offerRepo.ReserveQuantity(ctx, offerID, orderAmount, tx); err != nil {
@@ -223,7 +243,7 @@ func (s *OrderService) ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o
 	// Send ORDER_CONFIRMED event to seller
 	if o.OfferID != nil {
 		of, err := s.offerRepo.GetOfferByID(context.Background(), *o.OfferID)
-		if err == nil && of.OfferCreatorWalletAddress != "" {
+		if err == nil && of != nil && of.OfferCreatorWalletAddress != "" {
 			payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.OrderAmount}
 			go SendSocketEvent(of.OfferCreatorWalletAddress, constants.ORDER_CONFIRMED, payload)
 		}
@@ -262,8 +282,15 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 			return err
 		}
 
+		var targetWallet *string
+		if offer.Side == models.OfferSideBuy {
+			targetWallet = &offer.OfferCreatorWalletAddress
+		} else {
+			targetWallet = o.OrderCreatorWalletAddress
+		}
+
 		if intermediaryWallet != nil && o.OrderAmount.Sign() > 0 {
-			txHash, transferErr := s.blockchain.TransferMoney(intermediaryWallet.EncryptedPrivateKey, *offer.IntermediaryWalletAddress, *o.OrderCreatorWalletAddress, o.OrderAmount.String(), constants.TextDataP2PTrading, constants.ExtraInfoP2PTrading)
+			txHash, transferErr := s.blockchain.TransferMoney(intermediaryWallet.EncryptedPrivateKey, *offer.IntermediaryWalletAddress, *targetWallet, o.OrderAmount.String(), constants.TextDataP2PTrading, constants.ExtraInfoP2PTrading)
 			if transferErr != nil {
 				err = fmt.Errorf("failed to transfer funds to buyer: %w", transferErr)
 				return err

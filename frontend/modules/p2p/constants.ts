@@ -61,7 +61,11 @@ export const EMBED_MESSAGE_THEME = {
 export const P2P_TRADING_ROLE = {
   BUYER: 'buyer',
   SELLER: 'seller',
-};
+} as const;
+export const P2P_ACTION_TYPE = {
+  BUY: 'BUY',
+  SELL: 'SELL',
+} as const;
 
 export const MAX_CHAR_LIMIT = 5000;
 export const MAX_FILE_SIZE = 20 * 1024 * 1024;

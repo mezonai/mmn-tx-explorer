@@ -6,6 +6,7 @@ export type BankOption = 'MB' | 'VCB' | 'TCB' | 'ACB' | 'TPBANK' | 'VIETCOMBANK'
 export interface P2POffer {
   offer_id: string;
   intermediary_wallet_id: number;
+  intermediary_wallet_address?: string;
   offer_creator_wallet_address: string;
   total_amount: string;
   amount: string;
@@ -96,11 +97,13 @@ export interface P2POrder {
   created_at: string;
   updated_at: string;
   price_rate: number;
+  offer_type?: TradeTypes;
 }
 export type P2PTabType = (typeof P2P_TAB)[keyof typeof P2P_TAB];
 
 export interface CreateOrderRequest {
   amount: number;
+  bank_info?: { bank: BankOption; account_number: string; account_name: string };
 }
 
 export interface UpdateOrderStatusRequest {

@@ -100,6 +100,7 @@ const (
 )
 
 const (
+	TradingWaiting   = "WAITING_TRANSFER"
 	TradingOpen      = "OPEN"
 	TradingPending   = "PENDING"
 	TradingConfirmed = "CONFIRMED"

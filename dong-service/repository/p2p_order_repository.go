@@ -23,8 +23,8 @@ func NewOrderRepository(db *sql.DB, dongSchema string) *OrderRepository {
 func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
 			INSERT INTO %s.p2p_orders (
-				offer_id, order_creator_wallet_address, order_creator_user_id, order_amount, payable_amount, status, transfer_code, expires_at, created_at, updated_at
-			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW(),NOW())
+				offer_id, order_creator_wallet_address, order_creator_user_id, order_amount, payable_amount, status, transfer_code, expires_at, bank_info, created_at, updated_at
+			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW(),NOW())
         RETURNING order_id, created_at, updated_at
     `, r.dongSchema)
 
@@ -38,11 +38,8 @@ func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order, 
 		order.TransferCode,
 		order.ExpiresAt,
 		order.BankInfo,
-		order.OfferCreatorWalletAddress,
-		order.OfferCreatorUserID,
 	).Scan(&order.OrderID, &order.CreatedAt, &order.UpdatedAt)
 }
-
 func (r *OrderRepository) HasActiveOrders(ctx context.Context, offerID int64, tx *sql.Tx) (bool, error) {
 	query := fmt.Sprintf("SELECT 1 FROM %s.p2p_orders WHERE offer_id = $1 AND status IN ('PENDING','OPEN') LIMIT 1 FOR UPDATE", r.dongSchema)
 	var v int
@@ -122,13 +119,7 @@ func (r *OrderRepository) CancelExpiredOrders(ctx context.Context, cutoff time.T
 }
 
 func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, error) {
-	base := fmt.Sprintf(`
-		SELECT o.order_id, o.offer_id, o.order_creator_wallet_address, o.order_creator_user_id, o.order_amount, o.payable_amount, 
-		       o.transaction_hash, o.status, o.transfer_code, o.expires_at, o.created_at, o.updated_at,
-		       of.offer_creator_wallet_address, of.offer_creator_user_id
-		FROM %s.p2p_orders o
-		INNER JOIN %s.p2p_offers of ON o.offer_id = of.offer_id
-		WHERE o.offer_id = $1`, r.dongSchema, r.dongSchema)
+	base := fmt.Sprintf("SELECT order_id, offer_id, order_creator_wallet_address, order_creator_user_id, order_amount, payable_amount, transaction_hash, status, transfer_code, expires_at, created_at, updated_at FROM %s.p2p_orders WHERE offer_id = $1", r.dongSchema)
 
 	// Default ordering and pagination
 	orderBy := "created_at"
