@@ -95,7 +95,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
 
     return {
       color: customColor || EMBED_MESSAGE_THEME.INDIGO,
-      title: customTitle || `Click here to view Order #${currentOrder.order_id}`,
+      title: customTitle || `Order #${currentOrder.order_id}`,
       url: orderLink,
       description: 'Transaction Details',
       fields: [
@@ -133,6 +133,26 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       setAutoMessage({
         text: textContent,
         embed: [embedElement],
+        components: [
+          {
+            components: [
+              {
+                id: '',
+                type: 1,
+                component: { label: '🌐 Explore Website', style: 1, url: new URL(embedElement.url).origin },
+              },
+              {
+                id: '',
+                type: 1,
+                component: {
+                  label: '📦 Track My Order',
+                  style: 3,
+                  url: embedElement.url,
+                },
+              },
+            ],
+          },
+        ],
       });
     }
   }, [order, userRole]);
@@ -145,6 +165,26 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
     setAutoMessage({
       text: `I have transferred the payment. Please check your bank account and release ${APP_CONFIG.CHAIN_SYMBOL}.`,
       embed: [embedElement],
+      components: [
+          {
+            components: [
+              {
+                id: '',
+                type: 1,
+                component: { label: '🌐 Explore Website', style: 1, url: new URL(embedElement.url).origin },
+              },
+              {
+                id: '',
+                type: 1,
+                component: {
+                  label: '📦 Track My Order',
+                  style: 3,
+                  url: embedElement.url,
+                },
+              },
+            ],
+          },
+        ],
     });
   };
 
@@ -162,6 +202,26 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       setAutoMessage({
         text: `Payment received. I have released. Thank you for trading!`,
         embed: [embedElement],
+        components: [
+          {
+            components: [
+              {
+                id: '',
+                type: 1,
+                component: { label: '🌐 Explore Website', style: 1, url: new URL(embedElement.url).origin },
+              },
+              {
+                id: '',
+                type: 1,
+                component: {
+                  label: '📦 Track My Order',
+                  style: 3,
+                  url: embedElement.url,
+                },
+              },
+            ],
+          },
+        ],
       });
     } catch (err: any) {
       console.error('Error updating order status:', err);
