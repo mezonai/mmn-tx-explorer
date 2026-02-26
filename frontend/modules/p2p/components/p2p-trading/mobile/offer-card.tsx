@@ -34,7 +34,7 @@ const OfferMobileCard = ({ offer }: OfferMobileCardProps) => {
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">Seller</span>
-          <AddressDisplay address={offer.seller_wallet_address} href={ROUTES.WALLET(offer.seller_wallet_address)} />
+          <AddressDisplay address={offer.offer_creator_wallet_address} href={ROUTES.WALLET(offer.offer_creator_wallet_address)} />
         </div>
         <div className="text-right">
           <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">Rate</span>
@@ -107,7 +107,7 @@ const OfferMobileCard = ({ offer }: OfferMobileCardProps) => {
               <span className="text-xs font-bold tracking-wider whitespace-nowrap uppercase">Trading in Progress</span>
             </div>
           </div>
-        ) : user && offer.seller_user_id !== user?.id ? (
+        ) : user && offer.offer_creator_user_id !== user?.id ? (
           <Button
             onClick={() => {
               router.push(ROUTES.P2P_TRADING_ROOM(offer.offer_id, 'offer'));

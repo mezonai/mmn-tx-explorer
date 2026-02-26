@@ -25,7 +25,7 @@ import { ROUTES } from '@/configs/routes.config';
 import { ChatSidebar } from './chat-sidebar';
 import { STORAGE_KEYS } from '@/constant';
 import { NumberUtil } from '@/utils';
-import { EMBED_MESSAGE_THEME, P2P_TRADING_ROLE } from '../../constants';
+import { EMBED_MESSAGE_THEME, P2P_TRADING_ROLE, ORDER_EXPIRATION_DURATION_MS } from '../../constants';
 import BigNumber from 'bignumber.js';
 
 interface TradingRoomProps {
@@ -68,9 +68,9 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
     if (isOfferMode) return P2P_TRADING_ROLE.BUYER;
     if (!user?.walletAddress || !order) return null;
 
-    if (order.buyer_wallet_address === user.walletAddress) return P2P_TRADING_ROLE.BUYER;
+    if (order.order_creator_wallet_address === user.walletAddress) return P2P_TRADING_ROLE.BUYER;
 
-    const sellerWallet = order.seller_wallet_address || offer?.seller_wallet_address;
+    const sellerWallet = order.offer_creator_wallet_address || offer?.offer_creator_wallet_address;
     if (sellerWallet && sellerWallet === user.walletAddress) return P2P_TRADING_ROLE.SELLER;
 
     return P2P_TRADING_ROLE.SELLER;
@@ -200,7 +200,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
         router.push(ROUTES.P2P_TRADING_ROOM(newOrder.order_id));
       }
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || 'Something went wrong while creating the order. Please try again.';
+      const errorMessage =
+        err?.response?.data?.message || 'Something went wrong while creating the order. Please try again.';
       setError(errorMessage);
     }
   };
@@ -222,23 +223,23 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
     const displayOrder: P2POrder = {
       order_id: '',
       offer_id: offer?.offer_id || '',
-      buyer_wallet_address: user?.walletAddress || '',
-      seller_wallet_address: offer?.seller_wallet_address || '',
+      order_creator_wallet_address: user?.walletAddress || '',
+      offer_creator_wallet_address: offer?.offer_creator_wallet_address || '',
       amount: '0',
       price: 0,
       payable_amount: '0',
       status: OrderStatus.OPEN,
       transfer_code: null,
-      expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+      expires_at: new Date(Date.now() + ORDER_EXPIRATION_DURATION_MS).toISOString(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       bank_info: offer.bank_info,
       price_rate: offer.price_rate,
-      buyer_user_id: '',
-      seller_user_id: '',
+      order_creator_user_id: '',
+      offer_creator_user_id: '',
     };
 
-    const isSellerOfOffer = user?.walletAddress === offer?.seller_wallet_address;
+    const isSellerOfOffer = user?.walletAddress === offer?.offer_creator_wallet_address;
 
     return (
       <div className="bg-background relative flex flex-col">
@@ -257,16 +258,16 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
                 Buy {APP_CONFIG.CHAIN_SYMBOL} from{' '}
                 <AddressDisplay
                   addressClassName="text-brand-primary"
-                  address={offer?.seller_wallet_address}
-                  href={ROUTES.WALLET(offer?.seller_wallet_address)}
+                  address={offer?.offer_creator_wallet_address}
+                  href={ROUTES.WALLET(offer?.offer_creator_wallet_address)}
                 />
               </h1>
               <div className="text-muted-foreground flex items-center gap-1 text-xs">
                 Trading with{' '}
                 <AddressDisplay
                   addressClassName="text-brand-primary"
-                  address={offer?.seller_wallet_address}
-                  href={ROUTES.WALLET(offer?.seller_wallet_address)}
+                  address={offer?.offer_creator_wallet_address}
+                  href={ROUTES.WALLET(offer?.offer_creator_wallet_address)}
                 />
               </div>
             </div>
@@ -291,7 +292,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
             />
           </div>
 
-          <ChatSidebar sellerId={offer.seller_user_id} />
+          <ChatSidebar sellerId={offer.offer_creator_user_id} />
         </div>
       </div>
     );
@@ -332,10 +333,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
             <div className="lg:col-span-8">
               <OrderInfoCard order={effectiveOrder} />
               {order && order.bank_info && order.transfer_code && (
-                <BankInfoCard
-                  bank_info={order.bank_info}
-                  transfer_code={order.transfer_code}
-                />
+                <BankInfoCard bank_info={order.bank_info} transfer_code={order.transfer_code} />
               )}
 
               <div className="space-y-2">
@@ -365,7 +363,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
           </div>
         </div>
         <ChatSidebar
-          sellerId={userRole === P2P_TRADING_ROLE.BUYER ? order.seller_user_id : order.buyer_user_id}
+          sellerId={userRole === P2P_TRADING_ROLE.BUYER ? order.offer_creator_user_id : order.order_creator_user_id}
           autoMessage={autoMessage}
           onAutoMessageSent={handleMessageSent}
         />

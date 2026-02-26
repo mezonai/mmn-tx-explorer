@@ -92,9 +92,6 @@ export const BuyAmountSection = ({ offer, onConfirmBuy, isLoading = false, extra
             {APP_CONFIG.CHAIN_SYMBOL}
           </span>
         </div>
-        <div className="text-muted-foreground mt-1 text-xs">
-          Available: {available.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}
-        </div>
         <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
           <div>Available: {available.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}</div>
           <div className="flex gap-2">
