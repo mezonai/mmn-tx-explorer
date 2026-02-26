@@ -112,10 +112,10 @@ export const CreateOfferModal = () => {
       bank_info:
         pendingData.side === TradeTypes.SELL
           ? {
-              bank: pendingData.bank_info.bank,
-              account_number: pendingData.bank_info.account_number || '',
-              account_name: pendingData.bank_info.account_name || '',
-            }
+            bank: pendingData.bank_info.bank,
+            account_number: pendingData.bank_info.account_number || '',
+            account_name: pendingData.bank_info.account_name || '',
+          }
           : undefined,
     };
 
@@ -178,7 +178,9 @@ export const CreateOfferModal = () => {
             >
               <AmountSection control={form.control} userBalance={balance} setValue={form.setValue} />
               <TradeTypeSection control={form.control} trigger={form.trigger} />
-              {side === TradeTypes.SELL && <PaymentSection control={form.control} />}
+              {side === TradeTypes.SELL && (
+                <PaymentSection control={form.control} setValue={form.setValue} watch={form.watch} />
+              )}
             </div>
 
             <DialogFooter className="border-t-border -mx-6 -mb-6 flex justify-end gap-3 border-t px-4 py-4">

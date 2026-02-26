@@ -24,6 +24,7 @@ const paymentSchema = z.object({
       .min(1, 'Please enter the account number')
       .regex(/^\d+$/, 'Account number must contain only digits'),
     account_name: z.string().min(1, 'Please enter the account name'),
+    is_primary: z.boolean().optional(),
   }),
   side: z.string().optional(),
   amount: z.number().optional(),
@@ -70,12 +71,14 @@ export const BuyAmountSection = ({
     control,
     getValues,
     trigger,
+    setValue,
+    watch,
     formState: { errors, isValid: isFormValid },
   } = useForm({
     resolver: zodResolver(paymentSchema),
     mode: 'onChange',
     defaultValues: {
-      bank_info: { bank: 'MB' as BankOption, account_name: '', account_number: '' },
+      bank_info: { bank: 'MB' as BankOption, account_name: '', account_number: '', is_primary: false },
       side: 'BUY',
       amount: 0,
       price_rate: '0',
@@ -175,11 +178,10 @@ export const BuyAmountSection = ({
                   setSelectionType('min');
                 }}
                 disabled={isDisabled}
-                className={`h-[30px] rounded border text-[10px] font-bold tracking-wider uppercase transition-all disabled:cursor-not-allowed disabled:opacity-30 ${
-                  selectionType === 'min'
+                className={`h-[30px] rounded border text-[10px] font-bold tracking-wider uppercase transition-all disabled:cursor-not-allowed disabled:opacity-30 ${selectionType === 'min'
                     ? 'border-brand-primary/50 bg-brand-primary/10 text-brand-primary'
                     : 'border-border bg-muted/30 text-muted-foreground hover:border-brand-primary/50 hover:bg-brand-primary/10 hover:text-brand-primary'
-                }`}
+                  }`}
               >
                 {isRespondingToBuyOffer ? 'Sell Min' : 'Buy Min'}
               </Button>
@@ -190,11 +192,10 @@ export const BuyAmountSection = ({
                   setSelectionType('max');
                 }}
                 disabled={isDisabled}
-                className={`h-[30px] rounded border text-[10px] font-bold tracking-wider uppercase transition-all disabled:cursor-not-allowed disabled:opacity-30 ${
-                  selectionType === 'max'
+                className={`h-[30px] rounded border text-[10px] font-bold tracking-wider uppercase transition-all disabled:cursor-not-allowed disabled:opacity-30 ${selectionType === 'max'
                     ? 'border-brand-primary/50 bg-brand-primary/10 text-brand-primary'
                     : 'border-border bg-muted/30 text-muted-foreground hover:border-brand-primary/50 hover:bg-brand-primary/10 hover:text-brand-primary'
-                }`}
+                  }`}
               >
                 {isRespondingToBuyOffer ? 'Sell Max' : 'Buy Max'}
               </Button>
@@ -226,7 +227,12 @@ export const BuyAmountSection = ({
 
       {isRespondingToBuyOffer && (
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900/50">
-          <PaymentSection control={control as any} />
+          <PaymentSection
+            control={control as any}
+            setValue={setValue as any}
+            watch={watch as any}
+            onUnsavedChangesChange={() => { }}
+          />
         </div>
       )}
 
