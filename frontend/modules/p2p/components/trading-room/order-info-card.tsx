@@ -7,7 +7,6 @@ import { APP_CONFIG } from '@/configs/app.config';
 import { formatCurrency } from '@/modules/p2p/util';
 import BigNumber from 'bignumber.js';
 import { NumberUtil } from '@/utils';
-import { P2P_TRADING_ROLE } from '../../constants';
 import { useUser } from '@/providers/AppProvider';
 import { TradeTypes } from '../../types';
 
