@@ -245,7 +245,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
         <div className="border-border flex h-14 shrink-0 items-center justify-between border-b px-6">
           <div className="flex items-center">
             <Button
-              onClick={() => router.back()}
+              onClick={() => router.push(ROUTES.P2P)}
               className="text-muted-foreground hover:text-foreground transition"
               aria-label="Go back"
               variant="ghost"

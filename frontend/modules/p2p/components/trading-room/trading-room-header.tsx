@@ -62,7 +62,7 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
     <header className=" flex h-14 shrink-0 items-center justify-between border-b border-border px-2">
       <div className="flex items-center">
         <Button
-          onClick={() => router.back()}
+          onClick={() => router.push(ROUTES.P2P)}
           className="text-muted-foreground transition hover:text-foreground"
           aria-label="Go back"
           variant="ghost"
