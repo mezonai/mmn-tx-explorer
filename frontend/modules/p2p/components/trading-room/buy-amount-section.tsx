@@ -110,7 +110,7 @@ export const BuyAmountSection = ({
   let placeholder = `Minimum: ${initialMin.toFormat()} - Maximum: ${effectiveMax.toFormat()}`;
   let isDisabled = false;
 
-  if (isSeller) {
+  if (isSeller || extraDisabled) {
     isDisabled = true;
   } else if (available.isZero()) {
     placeholder = 'Minimum: 0 - Maximum: 0';
@@ -144,7 +144,8 @@ export const BuyAmountSection = ({
   const amountBN = new BigNumber(amountMZD);
   const isRangeValid = amountBN.isGreaterThanOrEqualTo(initialMin) && amountBN.isLessThanOrEqualTo(effectiveMax);
   const isBalanceValid = !isRespondingToBuyOffer || amountMZD <= userBalance;
-  const isValidAmount = isRangeValid && isBalanceValid && (!isRespondingToBuyOffer || isFormValid);
+  const isValidAmount =
+    isRangeValid && isBalanceValid && (!isRespondingToBuyOffer || isFormValid) && !extraDisabled && !isDisabled;
 
   return (
     <div className={`mb-6 ${isRespondingToBuyOffer ? 'grid grid-cols-1 gap-8 lg:grid-cols-2' : 'space-y-4'}`}>
@@ -178,11 +179,10 @@ export const BuyAmountSection = ({
                   setSelectionType('min');
                 }}
                 disabled={isDisabled}
-                className={`h-[30px] rounded border text-[10px] font-bold tracking-wider uppercase transition-all disabled:cursor-not-allowed disabled:opacity-30 ${
-                  selectionType === 'min'
+                className={`h-[30px] rounded border text-[10px] font-bold tracking-wider uppercase transition-all disabled:cursor-not-allowed disabled:opacity-30 ${selectionType === 'min'
                     ? 'border-brand-primary/50 bg-brand-primary/10 text-brand-primary'
                     : 'border-border bg-muted/30 text-muted-foreground hover:border-brand-primary/50 hover:bg-brand-primary/10 hover:text-brand-primary'
-                }`}
+                  }`}
               >
                 {isRespondingToBuyOffer ? 'Sell Min' : 'Buy Min'}
               </Button>
@@ -193,11 +193,10 @@ export const BuyAmountSection = ({
                   setSelectionType('max');
                 }}
                 disabled={isDisabled}
-                className={`h-[30px] rounded border text-[10px] font-bold tracking-wider uppercase transition-all disabled:cursor-not-allowed disabled:opacity-30 ${
-                  selectionType === 'max'
+                className={`h-[30px] rounded border text-[10px] font-bold tracking-wider uppercase transition-all disabled:cursor-not-allowed disabled:opacity-30 ${selectionType === 'max'
                     ? 'border-brand-primary/50 bg-brand-primary/10 text-brand-primary'
                     : 'border-border bg-muted/30 text-muted-foreground hover:border-brand-primary/50 hover:bg-brand-primary/10 hover:text-brand-primary'
-                }`}
+                  }`}
               >
                 {isRespondingToBuyOffer ? 'Sell Max' : 'Buy Max'}
               </Button>
@@ -233,7 +232,7 @@ export const BuyAmountSection = ({
             control={control as any}
             setValue={setValue as any}
             watch={watch as any}
-            onUnsavedChangesChange={() => {}}
+            onUnsavedChangesChange={() => { }}
           />
         </div>
       )}

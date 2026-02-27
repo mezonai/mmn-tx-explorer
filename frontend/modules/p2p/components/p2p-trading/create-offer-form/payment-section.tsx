@@ -50,18 +50,38 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
     onUnsavedChangesChange?.(hasChanges);
   }, [hasChanges, onUnsavedChangesChange]);
 
+  // Auto-fill primary bank account when data is loaded
+  useEffect(() => {
+    if (savedPayments && savedPayments.length > 0) {
+      // Only auto-fill if the fields are currently empty to avoid overwriting user input
+      const isCurrentlyEmpty = !currentAccountNumber && !currentAccountName;
+
+      if (isCurrentlyEmpty) {
+        const primary = savedPayments.find((p) => p.is_primary) || savedPayments[0];
+        const bankValue = BANK_OPTIONS.find((opt) => opt.label === primary.bank_name)?.value as BankOption;
+
+        if (bankValue) {
+          setValue('bank_info.bank', bankValue, { shouldValidate: true });
+          setValue('bank_info.account_number', primary.account_number, { shouldValidate: true });
+          setValue('bank_info.account_name', primary.account_name, { shouldValidate: true });
+          setValue('bank_info.is_primary', primary.is_primary, { shouldValidate: true });
+        }
+      }
+    }
+  }, [savedPayments, setValue, currentAccountNumber, currentAccountName]);
+
   const handleBankChange = (value: BankOption) => {
-    setValue('bank_info.bank', value);
+    setValue('bank_info.bank', value, { shouldValidate: true });
     const bankLabel = BANK_OPTIONS.find((opt) => opt.value === value)?.label;
     const saved = savedPayments?.find((p) => p.bank_name === bankLabel);
     if (saved) {
-      setValue('bank_info.account_number', saved.account_number);
-      setValue('bank_info.account_name', saved.account_name);
-      setValue('bank_info.is_primary', saved.is_primary);
+      setValue('bank_info.account_number', saved.account_number, { shouldValidate: true });
+      setValue('bank_info.account_name', saved.account_name, { shouldValidate: true });
+      setValue('bank_info.is_primary', saved.is_primary, { shouldValidate: true });
     } else {
-      setValue('bank_info.account_number', '');
-      setValue('bank_info.account_name', '');
-      setValue('bank_info.is_primary', false);
+      setValue('bank_info.account_number', '', { shouldValidate: true });
+      setValue('bank_info.account_name', '', { shouldValidate: true });
+      setValue('bank_info.is_primary', false, { shouldValidate: true });
     }
   };
 
@@ -92,13 +112,13 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
 
   const handleCancel = () => {
     if (matchedSavedInfo) {
-      setValue('bank_info.account_number', matchedSavedInfo.account_number);
-      setValue('bank_info.account_name', matchedSavedInfo.account_name);
-      setValue('bank_info.is_primary', matchedSavedInfo.is_primary);
+      setValue('bank_info.account_number', matchedSavedInfo.account_number, { shouldValidate: true });
+      setValue('bank_info.account_name', matchedSavedInfo.account_name, { shouldValidate: true });
+      setValue('bank_info.is_primary', matchedSavedInfo.is_primary, { shouldValidate: true });
     } else {
-      setValue('bank_info.account_number', '');
-      setValue('bank_info.account_name', '');
-      setValue('bank_info.is_primary', false);
+      setValue('bank_info.account_number', '', { shouldValidate: true });
+      setValue('bank_info.account_name', '', { shouldValidate: true });
+      setValue('bank_info.is_primary', false, { shouldValidate: true });
     }
   };
 
