@@ -164,7 +164,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
               embed: autoMessage.embed,
               components: autoMessage.components,
             },
-            code: 8,
+            code: autoMessage.buzz ? 8 : 0,
           });
 
           if (onAutoMessageSent) {

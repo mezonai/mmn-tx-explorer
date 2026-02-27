@@ -183,6 +183,7 @@ export interface AutoMessagePayload {
       };
     }>;
   }>;
+  buzz?: boolean;
 }
 export interface IEmbedProps {
   color?: string;

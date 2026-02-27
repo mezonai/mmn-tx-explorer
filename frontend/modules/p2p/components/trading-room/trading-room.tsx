@@ -153,6 +153,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
             ],
           },
         ],
+        buzz: true,
       });
     }
   }, [order, userRole]);
