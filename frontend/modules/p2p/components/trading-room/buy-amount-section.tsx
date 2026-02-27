@@ -178,10 +178,11 @@ export const BuyAmountSection = ({
                   setSelectionType('min');
                 }}
                 disabled={isDisabled}
-                className={`h-[30px] rounded border text-[10px] font-bold tracking-wider uppercase transition-all disabled:cursor-not-allowed disabled:opacity-30 ${selectionType === 'min'
+                className={`h-[30px] rounded border text-[10px] font-bold tracking-wider uppercase transition-all disabled:cursor-not-allowed disabled:opacity-30 ${
+                  selectionType === 'min'
                     ? 'border-brand-primary/50 bg-brand-primary/10 text-brand-primary'
                     : 'border-border bg-muted/30 text-muted-foreground hover:border-brand-primary/50 hover:bg-brand-primary/10 hover:text-brand-primary'
-                  }`}
+                }`}
               >
                 {isRespondingToBuyOffer ? 'Sell Min' : 'Buy Min'}
               </Button>
@@ -192,10 +193,11 @@ export const BuyAmountSection = ({
                   setSelectionType('max');
                 }}
                 disabled={isDisabled}
-                className={`h-[30px] rounded border text-[10px] font-bold tracking-wider uppercase transition-all disabled:cursor-not-allowed disabled:opacity-30 ${selectionType === 'max'
+                className={`h-[30px] rounded border text-[10px] font-bold tracking-wider uppercase transition-all disabled:cursor-not-allowed disabled:opacity-30 ${
+                  selectionType === 'max'
                     ? 'border-brand-primary/50 bg-brand-primary/10 text-brand-primary'
                     : 'border-border bg-muted/30 text-muted-foreground hover:border-brand-primary/50 hover:bg-brand-primary/10 hover:text-brand-primary'
-                  }`}
+                }`}
               >
                 {isRespondingToBuyOffer ? 'Sell Max' : 'Buy Max'}
               </Button>
@@ -231,7 +233,7 @@ export const BuyAmountSection = ({
             control={control as any}
             setValue={setValue as any}
             watch={watch as any}
-            onUnsavedChangesChange={() => { }}
+            onUnsavedChangesChange={() => {}}
           />
         </div>
       )}

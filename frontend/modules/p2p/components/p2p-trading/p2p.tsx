@@ -199,9 +199,19 @@ export const P2P = () => {
   };
 
   const handleSideChange = (newSide: TradeTypes) => {
-    setSide(newSide);
+    // Update `side` and `tab` in a single navigation to avoid race between
+    // two consecutive `router.push` calls (which caused the first click to be ignored).
     if (tab !== P2P_TAB.OFFERS) {
-      setTab(P2P_TAB.OFFERS);
+      updateParams({
+        side: newSide,
+        tab: P2P_TAB.OFFERS,
+        page: undefined,
+        min: undefined,
+        max: undefined,
+        sort: undefined,
+      });
+    } else {
+      updateParams({ side: newSide });
     }
   };
 
@@ -222,11 +232,11 @@ export const P2P = () => {
       <div className="flex flex-col gap-4">
         {/* Row 2 Mobile: Switch + New Offer | Row 1 Desktop Left: New Offer */}
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="flex w-full items-center gap-2 md:w-auto">
             <CreateOfferModal />
           </div>
 
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden items-center gap-3 md:flex">
             <AvailableAmountFilter onFilterChange={handleFilterChange} />
             <SortFilter value={sort} onChange={handleSortChange} />
           </div>
@@ -234,16 +244,16 @@ export const P2P = () => {
 
         {/* Row 3 Mobile: Tabs | Row 2 Desktop Left: Switch + Tabs */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-2 w-full md:w-auto">
+          <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center md:gap-2">
             <TradeSideSwitch value={side} onChange={handleSideChange} className="w-full md:w-60" />
-            <div className="flex items-center gap-2 w-full md:w-auto">
+            <div className="flex w-full items-center gap-2 md:w-auto">
               <Tabs
                 value={tab}
                 onValueChange={(v) => handleTabChange(v as 'offers' | 'my-trading' | 'my-offers')}
                 className="flex-1 md:w-auto"
               >
-                <TabsList className="w-full md:w-auto justify-start">
-                  <TabsTrigger value={P2P_TAB.MY_TRADING} className="flex-1 md:flex-none text-xs md:text-sm">
+                <TabsList className="w-full justify-start md:w-auto">
+                  <TabsTrigger value={P2P_TAB.MY_TRADING} className="flex-1 text-xs md:flex-none md:text-sm">
                     My Trading
                   </TabsTrigger>
                   <TabsTrigger value={P2P_TAB.MY_OFFERS} className="flex-1 md:flex-none">
@@ -252,7 +262,11 @@ export const P2P = () => {
                 </TabsList>
               </Tabs>
               <div className="md:hidden">
-                <P2PMobileFilters onFilterChange={handleFilterChange} sortValue={sort} onSortChange={handleSortChange} />
+                <P2PMobileFilters
+                  onFilterChange={handleFilterChange}
+                  sortValue={sort}
+                  onSortChange={handleSortChange}
+                />
               </div>
             </div>
           </div>
@@ -265,22 +279,26 @@ export const P2P = () => {
               )}
             />
           </div>
-        </div >
+        </div>
 
         {/* Row 4 Mobile: Pagination (Hidden on desktop) */}
-        < div className="flex flex-col gap-3 md:hidden" >
+        <div className="flex flex-col gap-3 md:hidden">
           <div className="flex justify-center pt-2">
             <div className="scale-90">
               <Pagination
                 {...getPaginationProps(
                   tab === P2P_TAB.OFFERS ? offers : tab === P2P_TAB.MY_OFFERS ? myOffers : myTrading,
-                  tab === P2P_TAB.OFFERS ? isLoading : tab === P2P_TAB.MY_OFFERS ? isMyOffersLoading : isMyTradingLoading
+                  tab === P2P_TAB.OFFERS
+                    ? isLoading
+                    : tab === P2P_TAB.MY_OFFERS
+                      ? isMyOffersLoading
+                      : isMyTradingLoading
                 )}
               />
             </div>
           </div>
-        </div >
-      </div >
+        </div>
+      </div>
 
       <div className="mt-4">
         {tab === P2P_TAB.OFFERS && (

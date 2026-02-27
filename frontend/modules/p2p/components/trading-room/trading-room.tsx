@@ -431,9 +431,9 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
             </div>
 
             <div className="lg:col-span-4">
-              {order && order.bank_info && (
+              {order && (order.bank_info || offer?.bank_info) && (
                 <QrCodeCard
-                  bank_info={order.bank_info}
+                  bank_info={order.bank_info || offer?.bank_info}
                   transfer_code={order.transfer_code}
                   amount={Number(order.payable_amount) || order.price}
                 />

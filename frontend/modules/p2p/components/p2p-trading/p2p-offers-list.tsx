@@ -17,7 +17,7 @@ import { OFFERS_STATUS } from '../../constants';
 import BigNumber from 'bignumber.js';
 import { OfferOrdersModal } from './offer-orders-modal';
 import { ShareOfferModal } from './share-offer-modal';
-import { TriangleAlert } from 'lucide-react';
+import { TriangleAlert, Loader2 } from 'lucide-react';
 import { NumberUtil } from '@/utils';
 import { cn } from '@/lib/utils';
 
@@ -110,29 +110,34 @@ export const P2POffersTabs = ({
     {
       headerContent: 'SELLER',
       renderCell: (offer) => (
-        <AddressDisplay address={offer.offer_creator_wallet_address} href={ROUTES.WALLET(offer.offer_creator_wallet_address)} />
+        <AddressDisplay
+          address={offer.offer_creator_wallet_address}
+          href={ROUTES.WALLET(offer.offer_creator_wallet_address)}
+        />
       ),
       skeletonContent: <Skeleton className="h-3 w-24" />,
       align: 'left',
     },
-    isMyOffer ? {
-      headerContent: 'TYPE',
-      renderCell: (offer) => (
-        <Chip
-          variant={offer.side === TradeTypes.SELL ? 'error' : 'success'}
-          className={cn(
-            "w-16 justify-center rounded-full py-0.5 text-[10px] font-bold",
-            offer.side === TradeTypes.SELL
-              ? "bg-red-500/10 text-red-500 border-red-500/20"
-              : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-          )}
-        >
-          {offer.side}
-        </Chip>
-      ),
-      skeletonContent: <Skeleton className="h-5 w-16 rounded-full" />,
-      align: 'left',
-    } : null,
+    isMyOffer
+      ? {
+          headerContent: 'TYPE',
+          renderCell: (offer) => (
+            <Chip
+              variant={offer.side === TradeTypes.SELL ? 'error' : 'success'}
+              className={cn(
+                'w-16 justify-center rounded-full py-0.5 text-[10px] font-bold',
+                offer.side === TradeTypes.SELL
+                  ? 'border-red-500/20 bg-red-500/10 text-red-500'
+                  : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-500'
+              )}
+            >
+              {offer.side}
+            </Chip>
+          ),
+          skeletonContent: <Skeleton className="h-5 w-16 rounded-full" />,
+          align: 'left',
+        }
+      : null,
     {
       headerContent: 'RATE',
       renderCell: (offer) => (
@@ -153,14 +158,15 @@ export const P2POffersTabs = ({
         const total = NumberUtil.scaleDownBigNumber(new BigNumber(offer.total_amount));
         const available = NumberUtil.scaleDownBigNumber(new BigNumber(offer.amount));
         const sold = total.minus(available);
-        const soldPercentage = total.isGreaterThan(0) ? Math.min(sold.dividedBy(total).multipliedBy(100).toNumber(), 100) : 0;
+        const soldPercentage = total.isGreaterThan(0)
+          ? Math.min(sold.dividedBy(total).multipliedBy(100).toNumber(), 100)
+          : 0;
 
         return (
           <div className="flex flex-col gap-2 text-left">
             <div className="flex flex-col gap-0.5 text-gray-300 dark:text-gray-300">
               <span className="text-primary font-bold dark:text-white">
-                {available.toFormat()} / {total.toFormat()}{' '}
-                {APP_CONFIG.CHAIN_SYMBOL}
+                {available.toFormat()} / {total.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}
               </span>
               <span className="text-brand-primary text-[10px] font-bold tracking-wider uppercase">
                 {sold.toFormat()} {APP_CONFIG.CHAIN_SYMBOL} Sold
@@ -186,21 +192,23 @@ export const P2POffersTabs = ({
       ),
       align: 'left',
     },
-    isMyOffer ? {
-      headerContent: 'ORDERS',
-      renderCell: (offer) => (
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 border-gray-700 bg-gray-800/50 hover:bg-gray-800"
-          onClick={() => handleShowOrders(offer)}
-        >
-          <span className="text-gray-300">{offer.order_count ?? 0} orders</span>
-        </Button>
-      ),
-      skeletonContent: <Skeleton className="h-8 w-20 rounded-md" />,
-      align: 'left',
-    } : null,
+    isMyOffer
+      ? {
+          headerContent: 'ORDERS',
+          renderCell: (offer) => (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 border-gray-700 bg-gray-800/50 hover:bg-gray-800"
+              onClick={() => handleShowOrders(offer)}
+            >
+              <span className="text-gray-300">{offer.order_count ?? 0} orders</span>
+            </Button>
+          ),
+          skeletonContent: <Skeleton className="h-8 w-20 rounded-md" />,
+          align: 'left',
+        }
+      : null,
     {
       headerContent: 'LIMITS',
       renderCell: (offer) => {
@@ -208,7 +216,7 @@ export const P2POffersTabs = ({
           <div className="relative border-l-2 border-gray-200 py-0.5 pl-3 dark:border-gray-700">
             <div className="mt-1 flex items-baseline gap-1.5">
               <span className="text-brand-primary w-6 text-[10px] font-bold tracking-wider uppercase">Min</span>
-              <span className="text-sm font-bold dark:text-white whitespace-nowrap">
+              <span className="text-sm font-bold whitespace-nowrap dark:text-white">
                 {NumberUtil.formatAndScaleDownBigNumber(new BigNumber(offer.limit.min))}{' '}
                 <span className="text-xs font-normal text-gray-400">{APP_CONFIG.CHAIN_SYMBOL}</span>
               </span>
@@ -216,7 +224,7 @@ export const P2POffersTabs = ({
 
             <div className="mt-1 flex items-baseline gap-1.5">
               <span className="text-brand-primary w-6 text-[10px] font-bold tracking-wider uppercase">Max</span>
-              <span className="text-sm font-bold dark:text-white whitespace-nowrap">
+              <span className="text-sm font-bold whitespace-nowrap dark:text-white">
                 {NumberUtil.formatAndScaleDownBigNumber(new BigNumber(offer.limit.max))}{' '}
                 <span className="text-xs font-normal text-gray-400">{APP_CONFIG.CHAIN_SYMBOL}</span>
               </span>
@@ -301,11 +309,12 @@ export const P2POffersTabs = ({
 
   return (
     <Card className="bg-card relative overflow-hidden border-gray-300 dark:border-gray-800">
-      {/* Refresh overlay */}
+      {/* Refresh overlay (bottom-left) */}
       {showOverlay && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-6 z-50 flex items-center justify-center p-0 md:right-auto md:left-6 md:justify-start">
+        <div className="pointer-events-none fixed bottom-6 left-6 z-50 flex items-center p-0">
           <div className="flex items-center gap-2 rounded-md bg-white/85 px-3 py-1 shadow-lg backdrop-blur-sm dark:bg-black/70">
-            <div className="h-3 w-3 animate-pulse rounded-full bg-emerald-500" />
+            <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Refreshing...</span>
           </div>
         </div>
       )}
@@ -322,11 +331,7 @@ export const P2POffersTabs = ({
         />
       </div>
 
-      <OfferOrdersModal
-        offer={selectedOfferForOrders}
-        open={isOrdersModalOpen}
-        onOpenChange={setIsOrdersModalOpen}
-      />
+      <OfferOrdersModal offer={selectedOfferForOrders} open={isOrdersModalOpen} onOpenChange={setIsOrdersModalOpen} />
     </Card>
   );
 };
