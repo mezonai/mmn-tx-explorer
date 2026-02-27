@@ -77,7 +77,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 	}
 
 	transferCode := fmt.Sprintf("ORDER %d", offerID)
-	expiresAt := time.Now().UTC().Add(15 * time.Minute)
+	expiresAt := time.Now().UTC().Add(constants.OrderExpirationDuration * time.Hour)
 	order := &models.Order{
 		OfferID:            &offerID,
 		BuyerWalletAddress: walletAddrPtr,
