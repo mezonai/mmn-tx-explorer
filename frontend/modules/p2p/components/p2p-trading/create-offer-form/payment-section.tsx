@@ -15,9 +15,10 @@ interface PaymentSectionProps {
   setValue: UseFormSetValue<any>;
   watch: UseFormWatch<any>;
   onUnsavedChangesChange?: (hasUnsavedChanges: boolean) => void;
+  open?: boolean;
 }
 
-export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChange }: PaymentSectionProps) => {
+export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChange, open }: PaymentSectionProps) => {
   const { data: savedPayments } = useUserPaymentInfos();
   const { mutate: updatePayment, isPending: isUpdating } = useUpdatePaymentInfo();
 
@@ -49,26 +50,6 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
     onUnsavedChangesChange?.(hasChanges);
   }, [hasChanges, onUnsavedChangesChange]);
 
-  const [hasLoadedInitial, setHasLoadedInitial] = useState(false);
-
-  // Handle initial load - set primary account
-  useEffect(() => {
-    if (savedPayments && savedPayments.length > 0 && !hasLoadedInitial) {
-      const primaryAccount = savedPayments.find((p) => p.is_primary) || savedPayments[0];
-      if (primaryAccount) {
-        // Find the bank value from label
-        const bankValue = BANK_OPTIONS.find((opt) => opt.label === primaryAccount.bank_name)?.value as BankOption;
-        if (bankValue) {
-          setValue('bank_info.bank', bankValue);
-          setValue('bank_info.account_number', primaryAccount.account_number);
-          setValue('bank_info.account_name', primaryAccount.account_name);
-          setValue('bank_info.is_primary', primaryAccount.is_primary);
-          setHasLoadedInitial(true);
-        }
-      }
-    }
-  }, [savedPayments, setValue, hasLoadedInitial]);
-
   const handleBankChange = (value: BankOption) => {
     setValue('bank_info.bank', value);
     const bankLabel = BANK_OPTIONS.find((opt) => opt.value === value)?.label;
@@ -98,7 +79,12 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
           toast.success('Payment information saved');
         },
         onError: (error: any) => {
-          toast.error(error.response?.data?.message || 'Failed to save payment information');
+          const errorMessage = error.response?.data?.message || error.message || '';
+          if (errorMessage.includes('duplicate key value') || errorMessage.includes('unique constraint')) {
+            toast.error('This bank account already exists in your payment methods.');
+          } else {
+            toast.error(errorMessage || 'Failed to save payment information');
+          }
         },
       }
     );
