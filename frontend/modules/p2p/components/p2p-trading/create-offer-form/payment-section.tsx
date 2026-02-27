@@ -124,7 +124,7 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
 
   return (
     <div className="space-y-5">
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex items-center gap-2 text-sm font-bold">
           <span className="bg-card text-muted-foreground flex h-5 w-5 items-center justify-center rounded-full text-xs">
             3
