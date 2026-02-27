@@ -74,6 +74,7 @@ export enum OrderStatus {
   CANCELED = 'CANCELED',
   FAILED = 'FAILED',
   COMPLETED = 'COMPLETED',
+  WAITING_TRANSFER = 'WAITING_TRANSFER',
 }
 
 export interface P2POrder {

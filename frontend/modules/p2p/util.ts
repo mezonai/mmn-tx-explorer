@@ -9,11 +9,12 @@ export const getOrderStatusInfo = (type: OrderStatus) => {
     case OrderStatus.PENDING:
       return 'warning';
     case OrderStatus.CONFIRMED:
+    case OrderStatus.COMPLETED:
       return 'info';
     case OrderStatus.CANCELED:
       return 'brand';
-    case OrderStatus.COMPLETED:
-      return 'info';
+    case OrderStatus.WAITING_TRANSFER:
+      return 'primary';
     default:
       return 'default';
   }
