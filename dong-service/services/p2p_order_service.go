@@ -122,7 +122,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		return nil, nil, err
 	}
 
-	order.BankInfo = offer.BankInfo
+	order.BankInfo = bankInfo
 	order.OfferCreatorWalletAddress = offer.OfferCreatorWalletAddress
 	order.OfferCreatorUserID = offer.OfferCreatorUserID
 	order.PriceRate = offer.PriceRate
@@ -145,7 +145,12 @@ func (s *OrderService) ListOrdersByOffer(ctx context.Context, offerID int64, pag
 	of, err := s.offerRepo.GetOfferByID(ctx, offerID)
 	if err == nil && of != nil {
 		for i := range orders {
-			orders[i].BankInfo = of.BankInfo
+			if of.Side != models.OfferSideBuy {
+				if orders[i].BankInfo == nil || *orders[i].BankInfo == "" {
+					orders[i].BankInfo = of.BankInfo
+				}
+			}
+
 			orders[i].OfferCreatorWalletAddress = of.OfferCreatorWalletAddress
 			orders[i].OfferCreatorUserID = of.OfferCreatorUserID
 			orders[i].PriceRate = of.PriceRate
@@ -165,7 +170,12 @@ func (s *OrderService) GetOrderByID(ctx context.Context, id int64) (*models.Orde
 	if o != nil && o.OfferID != nil {
 		of, err := s.offerRepo.GetOfferByID(ctx, *o.OfferID)
 		if err == nil && of != nil {
-			o.BankInfo = of.BankInfo
+			// Preserve order's BankInfo when the offer is BUY (buyer-provided bank info should win).
+			if of.Side != models.OfferSideBuy {
+				if o.BankInfo == nil || *o.BankInfo == "" {
+					o.BankInfo = of.BankInfo
+				}
+			}
 			o.OfferCreatorWalletAddress = of.OfferCreatorWalletAddress
 			o.OfferCreatorUserID = of.OfferCreatorUserID
 			o.PriceRate = of.PriceRate
@@ -190,7 +200,12 @@ func (s *OrderService) GetOrdersByWalletAddress(ctx context.Context, walletAddre
 		if orders[i].OfferID != nil {
 			of, err := s.offerRepo.GetOfferByID(ctx, *orders[i].OfferID)
 			if err == nil && of != nil {
-				orders[i].BankInfo = of.BankInfo
+				// For BUY offers, keep per-order BankInfo; for SELL offers fallback when missing.
+				if of.Side != models.OfferSideBuy {
+					if orders[i].BankInfo == nil || *orders[i].BankInfo == "" {
+						orders[i].BankInfo = of.BankInfo
+					}
+				}
 				orders[i].OfferCreatorWalletAddress = of.OfferCreatorWalletAddress
 				orders[i].OfferCreatorUserID = of.OfferCreatorUserID
 				orders[i].PriceRate = of.PriceRate
