@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button';
 import { Countdown } from '../shared/count-down';
 import { NumberUtil } from '@/utils';
 import { getOrderStatusInfo } from '../../util';
-import { useReopenOrder } from '../../hooks';
 import BigNumber from 'bignumber.js';
 
 interface P2POrdersListProps {
@@ -22,7 +21,6 @@ interface P2POrdersListProps {
 
 export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
   const router = useRouter();
-  const { mutate: reopenOrder, isPending: isReopening } = useReopenOrder();
 
   const columns: TTableColumn<P2POrder>[] = [
     {
@@ -111,22 +109,12 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
       headerContent: 'ACTION',
       renderCell: (order) => (
         <div className="flex gap-2">
-          {order.status === OrderStatus.EXPIRED ? (
-            <Button
-              className="bg-utility-warning-600 hover:bg-utility-warning-700 inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-white transition min-w-[100px]"
-              onClick={() => reopenOrder(order.order_id.toString())}
-              disabled={isReopening}
-            >
-              {isReopening ? 'Reopening...' : 'Reopen'}
-            </Button>
-          ) : (
-            <Button
-              className="bg-primary/10 text-brand-primary dark:hover:bg-brand-primary dark:bg-brand-primary/10 dark:border-brand-primary dark:text-primary-light inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition hover:text-white dark:border dark:hover:text-white min-w-[100px]"
-              onClick={() => router.push(ROUTES.P2P_TRADING_ROOM(order.order_id.toString()))}
-            >
-              View
-            </Button>
-          )}
+          <Button
+            className="bg-primary/10 text-brand-primary dark:hover:bg-brand-primary dark:bg-brand-primary/10 dark:border-brand-primary dark:text-primary-light inline-flex min-w-[100px] items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition hover:text-white dark:border dark:hover:text-white"
+            onClick={() => router.push(ROUTES.P2P_TRADING_ROOM(order.order_id.toString()))}
+          >
+            View
+          </Button>
         </div>
       ),
       skeletonContent: <Skeleton className="h-3 w-24" />,
