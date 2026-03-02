@@ -68,30 +68,7 @@ func GenerateRandomAmounts(totalAmount, minAmount, maxAmount int64, totalClaims 
 		return amounts, nil
 	}
 
-	const roundingUnit int64 = 1000
-	const threshold int64 = 100000
-
-	scaledMin := (minAmount + roundingUnit - 1) / roundingUnit
-	scaledMax := maxAmount / roundingUnit
-	scaledTotal := totalAmount / roundingUnit
-	remainder := totalAmount % roundingUnit
-
-	if totalAmount < threshold || scaledMin >= scaledMax || (scaledMax*roundingUnit)+remainder > maxAmount {
-		amounts := internalGenerate(totalAmount, minAmount, maxAmount, totalClaims)
-		rand.Shuffle(len(amounts), func(i, j int) {
-			amounts[i], amounts[j] = amounts[j], amounts[i]
-		})
-		return amounts, nil
-	}
-
-	scaledAmounts := internalGenerate(scaledTotal, scaledMin, scaledMax, totalClaims)
-
-	amounts := make([]int64, totalClaims)
-	for i, sa := range scaledAmounts {
-		amounts[i] = sa * roundingUnit
-	}
-	amounts[totalClaims-1] += remainder
-
+	amounts := internalGenerate(totalAmount, minAmount, maxAmount, totalClaims)
 	rand.Shuffle(len(amounts), func(i, j int) {
 		amounts[i], amounts[j] = amounts[j], amounts[i]
 	})
