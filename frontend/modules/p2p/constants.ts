@@ -8,6 +8,7 @@ export const P2P_ENDPOINTS = {
   CREATE_ORDER: (offerId: string) => `/api/v1/offers/${offerId}/orders`,
   ORDER_BY_ID: (id: string) => `/api/v1/orders/${id}`,
   ORDER_STATUS: (id: string) => `/api/v1/orders/${id}/confirm`,
+  ORDERS_BY_OFFER: (offerId: string) => `/api/v1/offers/${offerId}/orders`,
   USER_PAYMENTS: '/api/v1/user-payments',
   USER_PAYMENTS_ME: '/api/v1/user-payments/me',
   DELETE_USER_PAYMENT: (id: string) => `/api/v1/user-payments/${id}`,
@@ -60,7 +61,11 @@ export const EMBED_MESSAGE_THEME = {
 export const P2P_TRADING_ROLE = {
   BUYER: 'buyer',
   SELLER: 'seller',
-};
+} as const;
+export const P2P_ACTION_TYPE = {
+  BUY: 'BUY',
+  SELL: 'SELL',
+} as const;
 
 export const MAX_CHAR_LIMIT = 5000;
 export const MAX_FILE_SIZE = 20 * 1024 * 1024;

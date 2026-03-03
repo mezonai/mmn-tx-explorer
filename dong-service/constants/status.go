@@ -100,12 +100,18 @@ const (
 )
 
 const (
+	TradingWaiting   = "WAITING_TRANSFER"
 	TradingOpen      = "OPEN"
 	TradingPending   = "PENDING"
 	TradingConfirmed = "CONFIRMED"
 	TradingCanceled  = "CANCELED"
 	TradingFailed    = "FAILED"
 	TradingCompleted = "COMPLETED"
+)
+
+const (
+	OfferSideSell = "SELL"
+	OfferSideBuy = "BUY"
 )
 
 // GetStatusName returns the human-readable name for a status code
