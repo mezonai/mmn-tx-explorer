@@ -194,11 +194,6 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
               {
                 id: '',
                 type: 1,
-                component: { label: '🌐 Explore Website', style: 1, url: new URL(embedElement.url).origin },
-              },
-              {
-                id: '',
-                type: 1,
                 component: {
                   label: '📦 Track My Order',
                   style: 3,
@@ -224,11 +219,6 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       components: [
           {
             components: [
-              {
-                id: '',
-                type: 1,
-                component: { label: '🌐 Explore Website', style: 1, url: new URL(embedElement.url).origin },
-              },
               {
                 id: '',
                 type: 1,
@@ -261,11 +251,6 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
         components: [
           {
             components: [
-              {
-                id: '',
-                type: 1,
-                component: { label: '🌐 Explore Website', style: 1, url: new URL(embedElement.url).origin },
-              },
               {
                 id: '',
                 type: 1,
