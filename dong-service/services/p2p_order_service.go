@@ -9,6 +9,7 @@ import (
 	"dong-service/models"
 	"dong-service/repository"
 	"dong-service/types"
+	"encoding/json"
 	"fmt"
 	"math"
 	"time"
@@ -28,7 +29,7 @@ func NewOrderService(repo *repository.OrderRepository, offerRepo *repository.Off
 
 type IOrderService interface {
 	CreateOrder(ctx context.Context, offerID int64, req *models.CreateOrderRequest, walletAddress string, buyerUserID string) (*models.Order, *models.Offer, error)
-	ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, error)
+	ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, int64, error)
 	GetOrderByID(ctx context.Context, id int64) (*models.Order, error)
 	ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o *models.Order) error
 	ConfirmOrderAsSeller(ctx context.Context, orderID int64, o *models.Order, offer *models.Offer) error
@@ -77,15 +78,35 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 
 	transferCode := fmt.Sprintf("ORDER %d", offerID)
 	expiresAt := time.Now().UTC().Add(constants.OrderExpirationDuration * time.Hour)
+
+	var bankInfo *string
+	if offer.Side == models.OfferSideBuy {
+		if req.BankInfo != nil {
+			bi, _ := json.Marshal(req.BankInfo)
+			sbi := string(bi)
+			bankInfo = &sbi
+		}
+	} else {
+		bankInfo = offer.BankInfo
+	}
+
+	var status string
+	if offer.Side == models.OfferSideBuy {
+		status = constants.TradingWaiting
+	} else {
+		status = constants.TradingOpen
+	}
+
 	order := &models.Order{
-		OfferID:            &offerID,
-		BuyerWalletAddress: walletAddrPtr,
-		BuyerUserID:        buyerUserID,
-		OrderAmount:        orderAmount,
-		PayableAmount:      payableAmount,
-		Status:             constants.TradingOpen,
-		TransferCode:       &transferCode,
-		ExpiresAt:          &expiresAt,
+		OfferID:                   &offerID,
+		OrderCreatorWalletAddress: walletAddrPtr,
+		OrderCreatorUserID:        buyerUserID,
+		OrderAmount:               orderAmount,
+		PayableAmount:             payableAmount,
+		Status:                    status,
+		TransferCode:              &transferCode,
+		ExpiresAt:                 &expiresAt,
+		BankInfo:                  bankInfo,
 	}
 
 	if err = s.offerRepo.ReserveQuantity(ctx, offerID, orderAmount, tx); err != nil {
@@ -101,31 +122,43 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		return nil, nil, err
 	}
 
-	order.BankInfo = offer.BankInfo
-	order.SellerWalletAddress = &offer.SellerWalletAddress
-	order.SellerUserID = &offer.SellerUserID
+	order.BankInfo = bankInfo
+	order.OfferCreatorWalletAddress = offer.OfferCreatorWalletAddress
+	order.OfferCreatorUserID = offer.OfferCreatorUserID
 	order.PriceRate = offer.PriceRate
+	order.OfferSide = &offer.Side
 
 	return order, offer, nil
 }
 
-func (s *OrderService) ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, error) {
+func (s *OrderService) ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, int64, error) {
 	orders, err := s.repo.ListOrdersByOffer(ctx, offerID, pagination)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	count, err := s.repo.CountOrdersByOffer(ctx, offerID)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	of, err := s.offerRepo.GetOfferByID(ctx, offerID)
 	if err == nil && of != nil {
 		for i := range orders {
-			orders[i].BankInfo = of.BankInfo
-			orders[i].SellerWalletAddress = &of.SellerWalletAddress
-			orders[i].SellerUserID = &of.SellerUserID
+			if of.Side != models.OfferSideBuy {
+				if orders[i].BankInfo == nil || *orders[i].BankInfo == "" {
+					orders[i].BankInfo = of.BankInfo
+				}
+			}
+
+			orders[i].OfferCreatorWalletAddress = of.OfferCreatorWalletAddress
+			orders[i].OfferCreatorUserID = of.OfferCreatorUserID
 			orders[i].PriceRate = of.PriceRate
+			orders[i].OfferSide = &of.Side
 		}
 	}
 
-	return orders, nil
+	return orders, count, nil
 }
 
 func (s *OrderService) GetOrderByID(ctx context.Context, id int64) (*models.Order, error) {
@@ -137,10 +170,16 @@ func (s *OrderService) GetOrderByID(ctx context.Context, id int64) (*models.Orde
 	if o != nil && o.OfferID != nil {
 		of, err := s.offerRepo.GetOfferByID(ctx, *o.OfferID)
 		if err == nil && of != nil {
-			o.BankInfo = of.BankInfo
-			o.SellerWalletAddress = &of.SellerWalletAddress
-			o.SellerUserID = &of.SellerUserID
+			// Preserve order's BankInfo when the offer is BUY (buyer-provided bank info should win).
+			if of.Side != models.OfferSideBuy {
+				if o.BankInfo == nil || *o.BankInfo == "" {
+					o.BankInfo = of.BankInfo
+				}
+			}
+			o.OfferCreatorWalletAddress = of.OfferCreatorWalletAddress
+			o.OfferCreatorUserID = of.OfferCreatorUserID
 			o.PriceRate = of.PriceRate
+			o.OfferSide = &of.Side
 		}
 	}
 
@@ -161,10 +200,16 @@ func (s *OrderService) GetOrdersByWalletAddress(ctx context.Context, walletAddre
 		if orders[i].OfferID != nil {
 			of, err := s.offerRepo.GetOfferByID(ctx, *orders[i].OfferID)
 			if err == nil && of != nil {
-				orders[i].BankInfo = of.BankInfo
-				orders[i].SellerWalletAddress = &of.SellerWalletAddress
-				orders[i].SellerUserID = &of.SellerUserID
+				// For BUY offers, keep per-order BankInfo; for SELL offers fallback when missing.
+				if of.Side != models.OfferSideBuy {
+					if orders[i].BankInfo == nil || *orders[i].BankInfo == "" {
+						orders[i].BankInfo = of.BankInfo
+					}
+				}
+				orders[i].OfferCreatorWalletAddress = of.OfferCreatorWalletAddress
+				orders[i].OfferCreatorUserID = of.OfferCreatorUserID
 				orders[i].PriceRate = of.PriceRate
+				orders[i].OfferSide = &of.Side
 			}
 		}
 	}
@@ -217,9 +262,9 @@ func (s *OrderService) ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o
 	// Send ORDER_CONFIRMED event to seller
 	if o.OfferID != nil {
 		of, err := s.offerRepo.GetOfferByID(context.Background(), *o.OfferID)
-		if err == nil && of.SellerWalletAddress != "" {
+		if err == nil && of != nil && *of.OfferCreatorWalletAddress != "" {
 			payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.OrderAmount}
-			go SendSocketEvent(of.SellerWalletAddress, constants.ORDER_CONFIRMED, payload)
+			go SendSocketEvent(*of.OfferCreatorWalletAddress, constants.ORDER_CONFIRMED, payload)
 		}
 	}
 
@@ -245,7 +290,7 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 
 	// Transfer funds from intermediary wallet to buyer wallet BEFORE updating database
 	var transferTxHash *string
-	if offer != nil && offer.IntermediaryWalletAddress != nil && *offer.IntermediaryWalletAddress != "" && o.BuyerWalletAddress != nil && s.blockchain != nil {
+	if offer != nil && offer.IntermediaryWalletAddress != nil && *offer.IntermediaryWalletAddress != "" && o.OrderCreatorWalletAddress != nil && s.blockchain != nil {
 		intermediaryWallet, walletErr := s.walletRepo.GetWalletByAddress(ctx, *offer.IntermediaryWalletAddress)
 		if walletErr != nil {
 			err = fmt.Errorf("failed to fetch intermediary wallet: %w", walletErr)
@@ -256,8 +301,15 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 			return err
 		}
 
+		var targetWallet *string
+		if offer.Side == models.OfferSideBuy {
+			targetWallet = offer.OfferCreatorWalletAddress
+		} else {
+			targetWallet = o.OrderCreatorWalletAddress
+		}
+
 		if intermediaryWallet != nil && o.OrderAmount.Sign() > 0 {
-			txHash, transferErr := s.blockchain.TransferMoney(intermediaryWallet.EncryptedPrivateKey, *offer.IntermediaryWalletAddress, *o.BuyerWalletAddress, o.OrderAmount.String(), fmt.Sprintf("%s Order %d", constants.TextDataP2PTrading, orderID), constants.ExtraInfoP2PTrading)
+			txHash, transferErr := s.blockchain.TransferMoney(intermediaryWallet.EncryptedPrivateKey, *offer.IntermediaryWalletAddress, *targetWallet, o.OrderAmount.String(), fmt.Sprintf("%s Order %d", constants.TextDataP2PTrading, orderID), constants.ExtraInfoP2PTrading)
 			if transferErr != nil {
 				err = fmt.Errorf("failed to transfer funds to buyer: %w", transferErr)
 				return err
@@ -286,9 +338,9 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 					}
 				}
 
-				if o.BuyerWalletAddress != nil && *o.BuyerWalletAddress != "" {
+				if o.OrderCreatorWalletAddress != nil && *o.OrderCreatorWalletAddress != "" {
 					payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.OrderAmount, "tx_hash": txHash}
-					go SendSocketEvent(*o.BuyerWalletAddress, constants.ORDER_COMPLETED, payload)
+					go SendSocketEvent(*o.OrderCreatorWalletAddress, constants.ORDER_COMPLETED, payload)
 				}
 			} else if status == constants.TxStatusPending || status == constants.TxStatusConfirmed || status == constants.TxStatusFailed {
 				// Status 0, 1, 3 = PENDING, CONFIRMED, FAILED
