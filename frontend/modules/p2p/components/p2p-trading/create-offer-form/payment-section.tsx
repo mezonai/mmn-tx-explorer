@@ -1,35 +1,138 @@
-'use client';
-
-import { Control, Controller } from 'react-hook-form';
+import { useEffect, useState, useMemo } from 'react';
+import { Control, Controller, UseFormSetValue, UseFormWatch } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CreditCard, Info, User } from 'lucide-react';
-import { BankOption } from '@/modules/p2p/types';
+import { Button } from '@/components/ui/button';
+import { CreditCard, Info, User, Loader2 } from 'lucide-react';
+import { BankOption, UserPaymentInfo } from '@/modules/p2p/types';
 import { CreateOfferFormValues } from './validation-schema';
 import { cn } from '@/lib/utils';
+import { useUserPaymentInfos, useUpdatePaymentInfo } from '@/modules/p2p/hooks/usePaymentInfo';
+import { toast } from 'sonner';
+import { BANK_OPTIONS } from '@/modules/p2p/constants';
 
 interface PaymentSectionProps {
   control: Control<CreateOfferFormValues>;
+  setValue: UseFormSetValue<CreateOfferFormValues>;
+  watch: UseFormWatch<CreateOfferFormValues>;
+  onUnsavedChangesChange: (hasUnsavedChanges: boolean) => void;
 }
 
-const bankOptions: { value: BankOption; label: string }[] = [
-  { value: 'MB', label: 'MB Bank' },
-  { value: 'VCB', label: 'Vietcombank' },
-  { value: 'TCB', label: 'Techcombank' },
-  { value: 'ACB', label: 'ACB' },
-  { value: 'TPBANK', label: 'TPBank' },
-  { value: 'VIETCOMBANK', label: 'Vietcombank' },
-];
 
-export const PaymentSection = ({ control }: PaymentSectionProps) => {
+export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChange }: PaymentSectionProps) => {
+  const { data: savedPayments, isLoading } = useUserPaymentInfos();
+  const { mutate: updatePayment, isPending: isUpdating } = useUpdatePaymentInfo();
+
+  const currentBank = watch('bank_info.bank');
+  const currentAccountNumber = watch('bank_info.account_number');
+  const currentAccountName = watch('bank_info.account_name');
+  const currentIsPrimary = watch('bank_info.is_primary');
+
+  // Find saved info for the currently selected bank mapping to BankOption labels
+  const matchedSavedInfo = useMemo(() => {
+    if (!savedPayments) return null;
+    const currentBankLabel = BANK_OPTIONS.find((b) => b.value === currentBank)?.label;
+    return savedPayments.find((p) => p.bank_name === currentBankLabel) || null;
+  }, [savedPayments, currentBank]);
+
+  const hasChanges = useMemo(() => {
+    if (!matchedSavedInfo) {
+      // If no saved info for this bank, and inputs are not empty, we consider it "unsaved"
+      return !!(currentAccountNumber || currentAccountName || currentIsPrimary);
+    }
+    return (
+      currentAccountNumber !== matchedSavedInfo.account_number ||
+      currentAccountName !== matchedSavedInfo.account_name ||
+      currentIsPrimary !== matchedSavedInfo.is_primary
+    );
+  }, [matchedSavedInfo, currentAccountNumber, currentAccountName, currentIsPrimary]);
+
+  useEffect(() => {
+    onUnsavedChangesChange(hasChanges);
+  }, [hasChanges, onUnsavedChangesChange]);
+
+
+  const handleBankChange = (value: BankOption) => {
+    setValue('bank_info.bank', value);
+    const bankLabel = BANK_OPTIONS.find((opt) => opt.value === value)?.label;
+    const saved = savedPayments?.find((p) => p.bank_name === bankLabel);
+    if (saved) {
+      setValue('bank_info.account_number', saved.account_number);
+      setValue('bank_info.account_name', saved.account_name);
+      setValue('bank_info.is_primary', saved.is_primary);
+    } else {
+      setValue('bank_info.account_number', '');
+      setValue('bank_info.account_name', '');
+      setValue('bank_info.is_primary', false);
+    }
+  };
+
+  const handleSaveChanges = () => {
+    const bankLabel = BANK_OPTIONS.find((b) => b.value === currentBank)?.label || currentBank;
+    updatePayment(
+      {
+        bank_name: bankLabel,
+        account_number: currentAccountNumber,
+        account_name: currentAccountName,
+        is_primary: currentIsPrimary,
+      },
+      {
+        onSuccess: () => {
+          toast.success('Payment information saved');
+        },
+        onError: (error: any) => {
+          toast.error(error.response?.data?.message || 'Failed to save payment information');
+        },
+      }
+    );
+  };
+
+  const handleCancel = () => {
+    if (matchedSavedInfo) {
+      setValue('bank_info.account_number', matchedSavedInfo.account_number);
+      setValue('bank_info.account_name', matchedSavedInfo.account_name);
+      setValue('bank_info.is_primary', matchedSavedInfo.is_primary);
+    } else {
+      setValue('bank_info.account_number', '');
+      setValue('bank_info.account_name', '');
+      setValue('bank_info.is_primary', false);
+    }
+  };
+
   return (
     <div className="space-y-5">
-      <h3 className="mb-3 flex items-center gap-2 text-sm font-bold">
-        <span className="bg-card text-muted-foreground flex h-5 w-5 items-center justify-center rounded-full text-xs">
-          3
-        </span>
-        <span className="text-foreground">Payment</span>
-      </h3>
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="flex items-center gap-2 text-sm font-bold">
+          <span className="bg-card text-muted-foreground flex h-5 w-5 items-center justify-center rounded-full text-xs">
+            3
+          </span>
+          <span className="text-foreground">Payment</span>
+        </h3>
+
+        {hasChanges && (
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleCancel}
+              disabled={isUpdating}
+              className="text-muted-foreground h-8 text-xs hover:bg-transparent"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSaveChanges}
+              disabled={isUpdating || !currentAccountNumber || !currentAccountName}
+              className="bg-brand-primary h-8 rounded-md px-3 text-xs font-bold text-white shadow-sm"
+            >
+              {isUpdating ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : null}
+              Save Changes
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* Select Bank */}
       <div>
@@ -38,12 +141,12 @@ export const PaymentSection = ({ control }: PaymentSectionProps) => {
           control={control}
           name="bank_info.bank"
           render={({ field }) => (
-            <Select onValueChange={field.onChange} value={field.value}>
+            <Select onValueChange={handleBankChange} value={field.value}>
               <SelectTrigger className="border-border bg-input text-foreground w-full cursor-pointer rounded-md border px-3 py-2.5 text-sm focus:outline-none">
                 <SelectValue placeholder="Select bank" />
               </SelectTrigger>
               <SelectContent>
-                {bankOptions.map((option) => (
+                {BANK_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
@@ -67,6 +170,7 @@ export const PaymentSection = ({ control }: PaymentSectionProps) => {
                   {...field}
                   type="text"
                   placeholder="Enter account number"
+                  maxLength={20}
                   className={cn(
                     'bg-input/30 text-foreground w-full rounded-md border px-3 py-2.5 text-sm focus:outline-none',
                     error ? 'border-utility-error-600' : 'border-border'
@@ -96,6 +200,7 @@ export const PaymentSection = ({ control }: PaymentSectionProps) => {
                   onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                   type="text"
                   placeholder="Enter account owner name"
+                  maxLength={50}
                   className={cn(
                     'bg-input/30 text-foreground w-full rounded-md border px-3 py-2.5 text-sm focus:outline-none',
                     error ? 'border-utility-error-600' : 'border-border'
@@ -109,6 +214,29 @@ export const PaymentSection = ({ control }: PaymentSectionProps) => {
             )}
           />
         </div>
+      </div>
+
+      {/* Primary Switch */}
+      <div className="flex items-center justify-between pt-1">
+        <label className="text-foreground cursor-pointer select-none text-sm font-medium" htmlFor="set-primary-p2p">
+          Set as primary bank account
+        </label>
+        <Controller
+          control={control}
+          name="bank_info.is_primary"
+          render={({ field }) => (
+            <label className="relative inline-flex cursor-pointer items-center">
+              <input
+                type="checkbox"
+                id="set-primary-p2p"
+                className="sr-only peer"
+                checked={field.value || false}
+                onChange={(e) => field.onChange(e.target.checked)}
+              />
+              <div className="bg-muted peer-focus:ring-brand-primary/50 dark:bg-muted/50 peer-checked:bg-brand-primary dark:peer-checked:bg-brand-primary after:content-[''] after:bg-white after:border-gray-300 after:rounded-full after:transition-all peer-focus:outline-none peer-focus:ring-2 peer-checked:after:translate-x-full peer-checked:after:border-white after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:border dark:border-border h-6 w-11 rounded-full peer"></div>
+            </label>
+          )}
+        />
       </div>
 
       <div className="border-brand-primary bg-card mt-2 rounded border p-3">

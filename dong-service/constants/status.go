@@ -139,3 +139,7 @@ const (
 	MaxActiveOffersPerUser    int64   = 10
 	MaxActiveOrdersPerUser    int     = 10
 )
+
+const (
+	OrderExpirationDuration = 4
+)
