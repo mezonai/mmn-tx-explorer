@@ -1244,57 +1244,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/offers/update-status": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Update offer status with transaction hash verification",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "offers"
-                ],
-                "summary": "Update offer status",
-                "parameters": [
-                    {
-                        "description": "Update Offer Status",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.UpdateOfferStatusRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/offers/{id}": {
             "get": {
                 "description": "Get full offer details by id",
@@ -1977,6 +1926,133 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/red-envelopes/qr/claim-amount": {
+            "post": {
+                "description": "Get claim amount for red envelope using ZK proof authentication",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "red_envelopes"
+                ],
+                "summary": "Claim red envelope amount via QR (ZK authentication)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Red Envelope ID",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/red-envelopes/qr/{id}/claim": {
+            "post": {
+                "description": "Claim red envelope and receive money using ZK proof authentication",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "red_envelopes"
+                ],
+                "summary": "Claim red envelope via QR (ZK authentication)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Red Envelope ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "ClaimRedEnvelopeRequest",
+                        "name": "claim",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.ClaimRedEnvelopeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/red-envelopes/stats": {
             "get": {
                 "description": "Get overall statistics for red envelope sessions",
@@ -2421,6 +2497,125 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/user-payments": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update or insert user payment information",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user-payment"
+                ],
+                "summary": "Update user payment info",
+                "parameters": [
+                    {
+                        "description": "Payment Info",
+                        "name": "payment_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UserPaymentInfo"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/user-payments/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get all payment information for the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user-payment"
+                ],
+                "summary": "Get user payment infos",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/user-payments/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a specific payment information record",
+                "tags": [
+                    "user-payment"
+                ],
+                "summary": "Delete user payment info",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Payment Info ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wallets/{address}/detail": {
             "get": {
                 "description": "Get detailed information about a wallet by its address",
@@ -2660,13 +2855,9 @@ const docTemplate = `{
         "models.ClaimRedEnvelopeRequest": {
             "type": "object",
             "required": [
-                "id",
                 "split_money_id"
             ],
             "properties": {
-                "id": {
-                    "type": "string"
-                },
                 "split_money_id": {
                     "type": "integer"
                 }
@@ -3022,6 +3213,10 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "has_active_order": {
+                    "description": "Not stored in DB, computed on demand",
+                    "type": "boolean"
+                },
                 "intermediary_wallet_address": {
                     "type": "string"
                 },
@@ -3362,25 +3557,6 @@ const docTemplate = `{
                 }
             }
         },
-        "models.UpdateOfferStatusRequest": {
-            "type": "object",
-            "required": [
-                "offer_id",
-                "status",
-                "tx_hash"
-            ],
-            "properties": {
-                "offer_id": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "tx_hash": {
-                    "type": "string"
-                }
-            }
-        },
         "models.UploadImageResponse": {
             "type": "object",
             "properties": {
@@ -3402,6 +3578,35 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "file_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UserPaymentInfo": {
+            "type": "object",
+            "properties": {
+                "account_name": {
+                    "type": "string"
+                },
+                "account_number": {
+                    "type": "string"
+                },
+                "bank_name": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_primary": {
+                    "type": "boolean"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
                     "type": "string"
                 }
             }

@@ -18,6 +18,7 @@ import { ShareOfferModal } from './share-offer-modal';
 import { TriangleAlert } from 'lucide-react';
 import { NumberUtil } from '@/utils';
 import { cn } from '@/lib/utils';
+import BigNumber from 'bignumber.js';
 
 interface P2POffersTableProps {
   offers: P2POffer[] | undefined;
@@ -120,20 +121,20 @@ export const P2POffersTabs = ({
     {
       headerContent: 'AVAILABLE',
       renderCell: (offer) => {
-        const total = offer.total_amount;
-        const available = offer.amount;
-        const sold = total - available;
-        const soldPercentage = total > 0 ? Math.min((sold / total) * 100, 100) : 0;
+        const total = NumberUtil.scaleDownBigNumber(new BigNumber(offer.total_amount));
+        const available = NumberUtil.scaleDownBigNumber(new BigNumber(offer.amount));
+        const sold = total.minus(available);
+        const soldPercentage = total.isGreaterThan(0) ? Math.min(sold.dividedBy(total).multipliedBy(100).toNumber(), 100) : 0;
 
         return (
           <div className="flex flex-col gap-2 text-left">
             <div className="flex flex-col gap-0.5 text-gray-300 dark:text-gray-300">
               <span className="text-primary font-bold dark:text-white">
-                {NumberUtil.formatWithCommas(available)} / {NumberUtil.formatWithCommas(total)}{' '}
+                {available.toFormat()} / {total.toFormat()}{' '}
                 {APP_CONFIG.CHAIN_SYMBOL}
               </span>
               <span className="text-brand-primary text-[10px] font-bold tracking-wider uppercase">
-                {NumberUtil.formatWithCommas(sold)} {APP_CONFIG.CHAIN_SYMBOL} Sold
+                {sold.toFormat()} {APP_CONFIG.CHAIN_SYMBOL} Sold
               </span>
             </div>
             <div className="w-50 space-y-1.5">
@@ -163,16 +164,16 @@ export const P2POffersTabs = ({
           <div className="relative border-l-2 border-gray-200 py-0.5 pl-3 dark:border-gray-700">
             <div className="mt-1 flex items-baseline gap-1.5">
               <span className="text-brand-primary w-6 text-[10px] font-bold tracking-wider uppercase">Min</span>
-              <span className="text-sm font-bold whitespace-nowrap dark:text-white">
-                {NumberUtil.formatWithCommas(offer.limit.min)}{' '}
+              <span className="text-sm font-bold dark:text-white whitespace-nowrap">
+                {NumberUtil.formatAndScaleDownBigNumber(new BigNumber(offer.limit.min))}{' '}
                 <span className="text-xs font-normal text-gray-400">{APP_CONFIG.CHAIN_SYMBOL}</span>
               </span>
             </div>
 
             <div className="mt-1 flex items-baseline gap-1.5">
               <span className="text-brand-primary w-6 text-[10px] font-bold tracking-wider uppercase">Max</span>
-              <span className="text-sm font-bold whitespace-nowrap dark:text-white">
-                {NumberUtil.formatWithCommas(offer.limit.max)}{' '}
+              <span className="text-sm font-bold dark:text-white whitespace-nowrap">
+                {NumberUtil.formatAndScaleDownBigNumber(new BigNumber(offer.limit.max))}{' '}
                 <span className="text-xs font-normal text-gray-400">{APP_CONFIG.CHAIN_SYMBOL}</span>
               </span>
             </div>

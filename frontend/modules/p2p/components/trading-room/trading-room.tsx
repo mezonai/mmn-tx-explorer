@@ -25,7 +25,8 @@ import { ROUTES } from '@/configs/routes.config';
 import { ChatSidebar } from './chat-sidebar';
 import { STORAGE_KEYS } from '@/constant';
 import { NumberUtil } from '@/utils';
-import { EMBED_MESSAGE_THEME, P2P_TRADING_ROLE } from '../../constants';
+import { EMBED_MESSAGE_THEME, P2P_TRADING_ROLE, ORDER_EXPIRATION_DURATION_MS } from '../../constants';
+import BigNumber from 'bignumber.js';
 
 interface TradingRoomProps {
   orderId: string;
@@ -84,8 +85,9 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   const effectiveOrder: P2POrder = localStatus ? { ...order!, status: localStatus } : order!;
 
   const createOrderEmbed = (currentOrder: P2POrder, customTitle?: string, customColor?: string) => {
-    const mzdAmount = NumberUtil.formatWithCommas(currentOrder.amount);
-    const vndAmount = NumberUtil.formatWithCommas(currentOrder.amount * currentOrder.price_rate);
+    const displayAmount = NumberUtil.scaleDownBigNumber(new BigNumber(currentOrder.amount));
+    const mzdAmount = displayAmount.toFormat();
+    const vndAmount = displayAmount.multipliedBy(currentOrder.price_rate).toFormat();
 
     const fullUrl = process.env.NEXT_PUBLIC_CHAT_APP_ZK_API_URL || window.location.origin;
     const domain = new URL(fullUrl).origin;
@@ -198,7 +200,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
         router.push(ROUTES.P2P_TRADING_ROOM(newOrder.order_id));
       }
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || 'Something went wrong while creating the order. Please try again.';
+      const errorMessage =
+        err?.response?.data?.message || 'Something went wrong while creating the order. Please try again.';
       setError(errorMessage);
     }
   };
@@ -222,12 +225,12 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       offer_id: offer?.offer_id || '',
       buyer_wallet_address: user?.walletAddress || '',
       seller_wallet_address: offer?.seller_wallet_address || '',
-      amount: 0,
+      amount: '0',
       price: 0,
-      payable_amount: 0,
+      payable_amount: '0',
       status: OrderStatus.OPEN,
       transfer_code: null,
-      expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+      expires_at: new Date(Date.now() + ORDER_EXPIRATION_DURATION_MS).toISOString(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       bank_info: offer.bank_info,
@@ -330,11 +333,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
             <div className="lg:col-span-8">
               <OrderInfoCard order={effectiveOrder} />
               {order && order.bank_info && order.transfer_code && (
-                <BankInfoCard
-                  bank_info={order.bank_info}
-                  transfer_code={order.transfer_code}
-                  amount={order.payable_amount || order.price}
-                />
+                <BankInfoCard bank_info={order.bank_info} transfer_code={order.transfer_code} />
               )}
 
               <div className="space-y-2">
@@ -357,7 +356,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
                 <QrCodeCard
                   bank_info={order.bank_info}
                   transfer_code={order.transfer_code}
-                  amount={order.payable_amount || order.price}
+                  amount={Number(order.payable_amount) || order.price}
                 />
               )}
             </div>
