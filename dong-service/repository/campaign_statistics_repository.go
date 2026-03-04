@@ -298,10 +298,10 @@ func (r *CampaignStatisticsRepository) GetStats() (*models.CampaignStatsResponse
 		SELECT 
 			COUNT(CASE WHEN dc.status = $1 THEN 1 END) as total_campaigns_active,
 			COALESCE(SUM(cs.total_amount), 0) as total_amount,
-			COALESCE(SUM(cs.total_contributor), 0) as total_contributors
+			(SELECT COUNT(DISTINCT sender_wallet) FROM %s.campaign_contributor) as total_contributors
 		FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
-	`, r.dongSchema, r.dongSchema)
+	`, r.dongSchema, r.dongSchema, r.dongSchema)
 
 	var stats models.CampaignStatsResponse
 	err := r.db.QueryRow(query, constants.CampaignStatusActive).Scan(
