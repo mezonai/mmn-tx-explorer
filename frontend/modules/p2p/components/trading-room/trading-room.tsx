@@ -30,6 +30,7 @@ import { useTransfer } from '@/modules/transfer/hooks/useTransfer';
 import { ETransferType } from '@/modules/transaction';
 import { EMBED_MESSAGE_THEME, P2P_TRADING_ROLE, ORDER_EXPIRATION_DURATION_MS } from '../../constants';
 import BigNumber from 'bignumber.js';
+import { createTrackOrderComponents } from '../../util';
 
 interface TradingRoomProps {
   orderId: string;
@@ -175,6 +176,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
     };
   };
 
+  
+
   useEffect(() => {
     if (!order || userRole !== P2P_TRADING_ROLE.BUYER) return;
 
@@ -188,21 +191,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       setAutoMessage({
         text: textContent,
         embed: [embedElement],
-        components: [
-          {
-            components: [
-              {
-                id: '',
-                type: 1,
-                component: {
-                  label: '📦 Track My Order',
-                  style: 3,
-                  url: embedElement.url,
-                },
-              },
-            ],
-          },
-        ],
+        components: createTrackOrderComponents(embedElement.url),
         buzz: true,
       });
     }
@@ -216,21 +205,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
     setAutoMessage({
       text: `I have transferred the payment. Please check your bank account and release ${APP_CONFIG.CHAIN_SYMBOL}.`,
       embed: [embedElement],
-      components: [
-          {
-            components: [
-              {
-                id: '',
-                type: 1,
-                component: {
-                  label: '📦 Track My Order',
-                  style: 3,
-                  url: embedElement.url,
-                },
-              },
-            ],
-          },
-        ],
+      components: createTrackOrderComponents(embedElement.url),
     });
   };
 
@@ -248,21 +223,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       setAutoMessage({
         text: `Payment received. I have released. Thank you for trading!`,
         embed: [embedElement],
-        components: [
-          {
-            components: [
-              {
-                id: '',
-                type: 1,
-                component: {
-                  label: '📦 Track My Order',
-                  style: 3,
-                  url: embedElement.url,
-                },
-              },
-            ],
-          },
-        ],
+        components: createTrackOrderComponents(embedElement.url),
       });
     } catch (err: any) {
       console.error('Error updating order status:', err);
