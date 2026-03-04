@@ -293,6 +293,48 @@ jobs:
           DONG_CHANGED: ${{ steps.detect.outputs.dong }}
           SOCKET_CHANGED: ${{ steps.detect.outputs.socket }}
           INDEXER_CHANGED: ${{ steps.detect.outputs.indexer }}
+      
+  prepare_assets:
+    needs: [determine_tags]
+    if: inputs.new_tag_to_build != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Repackage Assets from Previous Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW_TAG: ${{ inputs.new_tag_to_build }}
+          ENV: ${{ inputs.env }}
+        run: |
+          set -e
+
+          LATEST_RELEASE_TAG=$(git tag -l "release-v*" --sort=-v:refname | head -n1)          
+          echo "Latest release found: $LATEST_RELEASE_TAG"
+
+          mkdir -p temp_assets final_assets          
+          gh release download "$LATEST_RELEASE_TAG" --dir temp_assets
+          
+          cd temp_assets
+          for file in *; do
+            [[ "$file" == "checksums.txt" ]] && continue
+   
+            SERVICE_NAME_PART=$(echo "$file" | sed 's/-v[0-9].*//')
+            CLEAN_VERSION=$(echo "${NEW_TAG}" | sed 's/^v//')
+
+            if [[ "$file" == frontend-build-* ]]; then
+              NEW_FILE="frontend-build-v${CLEAN_VERSION}-${ENV}.tar.gz"
+              cp "$file" "../final_assets/$NEW_FILE"
+            else
+              NEW_FILE="${SERVICE_NAME_PART}-v${CLEAN_VERSION}"
+              cp "$file" "../final_assets/$NEW_FILE"
+            fi
+          done
+
 
       - name: Upload Repackaged Artifacts
         uses: actions/upload-artifact@v4
