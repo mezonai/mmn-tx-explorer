@@ -57,7 +57,7 @@ jobs:
           fetch-depth: 1
 
       - name: Setup Go
-        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == 'false'
+        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
         uses: actions/setup-go@v5
         with:
           go-version: "1.23"
@@ -65,7 +65,7 @@ jobs:
           check-latest: false
           
       - name: Run golangci-lint
-        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == 'false'
+        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
         uses: golangci/golangci-lint-action@v8
         with:
           version: v2.5.0
@@ -74,7 +74,7 @@ jobs:
         continue-on-error: true
 
       - name: Build Indexer binary
-        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == 'false'
+        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
         id: build_indexer_binary
         run: |
           mkdir -p build
@@ -90,7 +90,7 @@ jobs:
           echo "binary_name=${BINARY_NAME}" >> $GITHUB_OUTPUT
 
       - name: Upload Indexer Artifact
-        if: inputs.existing_tag_to_deploy == '' && inputs.skip_build == 'false'
+        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
         uses: actions/upload-artifact@v4
         with:
           name: indexer-assets

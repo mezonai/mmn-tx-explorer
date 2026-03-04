@@ -55,21 +55,16 @@ jobs:
       - name: Detect changed services
         id: detect
         run: |
-          set -e
+          set -euo pipefail
+
           git fetch --tags --force
           LATEST_RELEASE_TAG=$(git tag -l "release-v*" --sort=-v:refname | head -n1)
 
           FE=false; DONG=false; SOCKET=false; INDEXER=false
-          if [ -n "${{ inputs.rebuild_existing_tag }}" ] ||[ "${{ inputs.build_all }}" = "true" ]; then
-            echo "frontend=true" >> $GITHUB_OUTPUT
-            echo "dong=true" >> $GITHUB_OUTPUT
-            echo "socket=true" >> $GITHUB_OUTPUT
-            echo "indexer=true" >> $GITHUB_OUTPUT
-          elif [ -n "${{ inputs.new_tag_to_build }}" ]; then
-            echo "frontend=false" >> $GITHUB_OUTPUT
-            echo "dong=false" >> $GITHUB_OUTPUT
-            echo "socket=false" >> $GITHUB_OUTPUT
-            echo "indexer=false" >> $GITHUB_OUTPUT
+          if [ "${{ inputs.build_all }}" = "true" ] || [ -n "${{ inputs.new_tag_to_build }}" ]; then
+            FE=true; DONG=true; SOCKET=true; INDEXER=true
+          elif [ -n "${{ inputs.rebuild_existing_tag }}" ]; then
+            FE=false; DONG=false; SOCKET=false; INDEXER=false
           else
             if [ -z "$LATEST_RELEASE_TAG" ]; then
               echo "No previous release found. Build all services."
@@ -103,25 +98,25 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -e
+          set -euo pipefail
           git fetch --tags --force
 
           normalize() {
             [[ "$1" == v* ]] && echo "$1" || echo "v$1"
           }
-          latest_service_tag() {
-            local SERVICE=$1
-            git tag -l "${SERVICE}-v*" --sort=-v:refname | head -n1
+
+          latest_tag() {
+            git tag -l "$1" --sort=-v:refname | head -n1
           }
-          latest_release_tag() {
-            git tag -l "release-v*" --sort=-v:refname | head -n1
-          }
-          latest_global_tag() {
-            git tag -l "v*" --sort=-v:refname | head -n1
-          }
+          latest_service_tag() { latest_tag "${1}-v*"; }
+          latest_release_tag()  { latest_tag "release-v*"; }
+          latest_global_tag()   { latest_tag "v*"; }
+          
           increment() {
-            local VERSION=${1#v}
-            IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+            local VERSION=${1}
+            local CLEAN_VERSION="${VERSION#v}"
+            [[ "$CLEAN_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid semver: $VERSION" >&2; exit 1; }
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$CLEAN_VERSION"
             PATCH=$((PATCH+1))
             echo "v${MAJOR}.${MINOR}.${PATCH}"
           }
@@ -131,9 +126,6 @@ jobs:
             local SERVICE_TAG=$(latest_service_tag "$SERVICE")
             local BASE_VERSION="v0.0.0"
 
-            if [ -z "$BASE_VERSION" ]; then
-              BASE_VERSION="v0.0.0"
-            fi
             if [ -n "$SERVICE_TAG" ]; then
               BASE_VERSION=${SERVICE_TAG#${SERVICE}-}
             fi 
@@ -151,6 +143,22 @@ jobs:
               echo "release-${NEW_VERSION}"
             fi
           }
+          resolve_existing() {
+            local SERVICE=$1
+            local SERVICE_TAG=$(latest_service_tag "$SERVICE")
+
+            if [ -n "$SERVICE_TAG" ]; then
+              echo "$SERVICE_TAG"
+              return
+            fi
+
+            GLOBAL_TAG=$(latest_global_tag)
+            if [ -n "$GLOBAL_TAG" ]; then
+              echo "${SERVICE}-${GLOBAL_TAG}"
+            else
+              echo "${SERVICE}-v0.0.0"
+            fi
+          }
             
           if [ -n "${{ inputs.new_tag_to_build }}" ]; then
             RAW=$(normalize "${{ inputs.new_tag_to_build }}")
@@ -165,7 +173,7 @@ jobs:
             SOCKET="socket-service-${RAW}"
             INDEXER="indexer-${RAW}"
 
-            echo "skip_build=false" >> $GITHUB_OUTPUT
+            SKIP_BUILD=false
             SHOULD=true
           elif [ -n "${{ inputs.rebuild_existing_tag }}" ]; then
             RELEASE=$(normalize "${{ inputs.rebuild_existing_tag }}")
@@ -191,16 +199,10 @@ jobs:
               exit 1
             fi
 
-            FRONTEND=$(echo "$BODY" | awk -F': ' '/^Frontend:/ {print $2}')
-            DONG=$(echo "$BODY" | awk -F': ' '/^Dong:/ {print $2}')
-            SOCKET=$(echo "$BODY" | awk -F': ' '/^Socket:/ {print $2}')
-            INDEXER=$(echo "$BODY" | awk -F': ' '/^Indexer:/ {print $2}')
-
-            echo "Parsed values:"
-            echo "FRONTEND=$FRONTEND"
-            echo "DONG=$DONG"
-            echo "SOCKET=$SOCKET"
-            echo "INDEXER=$INDEXER"
+              FRONTEND="$(printf '%s\n' "$BODY" | sed -n 's/^Frontend:[[:space:]]*//p' | head -n1)"
+              DONG="$(printf '%s\n' "$BODY" | sed -n 's/^Dong:[[:space:]]*//p' | head -n1)"
+              SOCKET="$(printf '%s\n' "$BODY" | sed -n 's/^Socket:[[:space:]]*//p' | head -n1)"
+              INDEXER="$(printf '%s\n' "$BODY" | sed -n 's/^Indexer:[[:space:]]*//p' | head -n1)"
 
             if [ -z "$FRONTEND" ] || \
               [ -z "$DONG" ] || \
@@ -209,53 +211,35 @@ jobs:
               echo "Failed to parse service versions from release note"
               exit 1
             fi
-
-            echo "skip_build=true" >> $GITHUB_OUTPUT
+            SKIP_BUILD=true
             SHOULD=false
           else
             BUILT=false
 
-            resolve_existing() {
-              local SERVICE=$1
-              local SERVICE_TAG=$(latest_service_tag "$SERVICE")
+            SERVICES=(
+              "frontend|FRONTEND"
+              "dong-service|DONG"
+              "socket-service|SOCKET"
+              "indexer|INDEXER"
+            )
+            for s in "${SERVICES[@]}"; do
+              svc="${s%|*}"; out="${s#*|}"
+              changed="false"
+              case "$svc" in
+                frontend)       changed="${{ steps.detect.outputs.frontend }}" ;;
+                dong-service)   changed="${{ steps.detect.outputs.dong }}" ;;
+                socket-service) changed="${{ steps.detect.outputs.socket }}" ;;
+                indexer)        changed="${{ steps.detect.outputs.indexer }}" ;;
+              esac
 
-              if [ -n "$SERVICE_TAG" ]; then
-                echo "$SERVICE_TAG"
-                return
-              fi
-
-              GLOBAL_TAG=$(latest_global_tag)
-              if [ -n "$GLOBAL_TAG" ]; then
-                echo "${SERVICE}-${GLOBAL_TAG}"
+              if [[ "$changed" == "true" ]]; then
+                val="$(bump_service "$svc")"
+                BUILT=true
               else
-                echo "${SERVICE}-v0.0.0"
+                val="$(resolve_existing "$svc")"
               fi
-            }
-
-            if [ "${{ steps.detect.outputs.frontend }}" = "true" ]; then
-              FRONTEND=$(bump_service frontend)
-              BUILT=true
-            else
-              FRONTEND=$(resolve_existing frontend)
-            fi
-            if [ "${{ steps.detect.outputs.dong }}" = "true" ]; then
-              DONG=$(bump_service dong-service)
-              BUILT=true
-            else  
-              DONG=$(resolve_existing dong-service) 
-            fi
-            if [ "${{ steps.detect.outputs.socket }}" = "true" ]; then
-              SOCKET=$(bump_service socket-service)
-              BUILT=true
-            else
-              SOCKET=$(resolve_existing socket-service)
-            fi
-            if [ "${{ steps.detect.outputs.indexer }}" = "true" ]; then
-              INDEXER=$(bump_service indexer)
-              BUILT=true
-            else
-              INDEXER=$(resolve_existing indexer)
-            fi
+              printf -v "$out" "%s" "$val"
+            done
 
             if [ "$BUILT" = "true" ]; then
               RELEASE=$(bump_release)
@@ -264,6 +248,7 @@ jobs:
               RELEASE=$(latest_release_tag)
               SHOULD=false
             fi
+            SKIP_BUILD=false
           fi
 
           echo "release_tag=$RELEASE" >> $GITHUB_OUTPUT
@@ -272,10 +257,12 @@ jobs:
           echo "socket_tag=$SOCKET" >> $GITHUB_OUTPUT
           echo "indexer_tag=$INDEXER" >> $GITHUB_OUTPUT
           echo "should_release=$SHOULD" >> $GITHUB_OUTPUT
+          echo "skip_build=$SKIP_BUILD" >> $GITHUB_OUTPUT
     
       - name: Push Service Tags for Tracking
         if: steps.tags.outputs.should_release == 'true'
-        run: |    
+        run: |   
+          set -euo pipefail 
           git tag -f "${{ steps.tags.outputs.release_tag }}"
           
           SERVICES=("frontend" "dong" "socket" "indexer")
@@ -287,7 +274,6 @@ jobs:
             IS_CHANGED="${!IS_CHANGED_VAR}"
 
             if [ -n "${{ inputs.new_tag_to_build }}" ] || \
-               [ -n "${{ inputs.rebuild_existing_tag }}" ] || \
                [ "${{ inputs.build_all }}" = "true" ] || \
                [ "$IS_CHANGED" = "true" ]; then
               echo "Creating tracking tag for $svc: $TAG_VAL"
@@ -308,47 +294,6 @@ jobs:
           SOCKET_CHANGED: ${{ steps.detect.outputs.socket }}
           INDEXER_CHANGED: ${{ steps.detect.outputs.indexer }}
 
-  prepare_assets:
-    needs: [determine_tags]
-    if: inputs.new_tag_to_build != ''
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-          fetch-depth: 0
-
-      - name: Repackage Assets from Previous Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NEW_TAG: ${{ inputs.new_tag_to_build }}
-          ENV: ${{ inputs.env }}
-        run: |
-          set -e
-
-          LATEST_RELEASE_TAG=$(git tag -l "release-v*" --sort=-v:refname | head -n1)          
-          echo "Latest release found: $LATEST_RELEASE_TAG"
-
-          mkdir -p temp_assets final_assets          
-          gh release download "$LATEST_RELEASE_TAG" --dir temp_assets
-          
-          cd temp_assets
-          for file in *; do
-            [[ "$file" == "checksums.txt" ]] && continue
-   
-            SERVICE_NAME_PART=$(echo "$file" | sed 's/-v[0-9].*//')
-            CLEAN_VERSION=$(echo "${NEW_TAG}" | sed 's/^v//')
-
-            if [[ "$file" == frontend-build-* ]]; then
-              NEW_FILE="frontend-build-v${CLEAN_VERSION}-${ENV}.tar.gz"
-              cp "$file" "../final_assets/$NEW_FILE"
-            else
-              NEW_FILE="${SERVICE_NAME_PART}-v${CLEAN_VERSION}"
-              cp "$file" "../final_assets/$NEW_FILE"
-            fi
-          done
-
       - name: Upload Repackaged Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -357,7 +302,7 @@ jobs:
         
   deploy-indexer:
     needs: [determine_tags]
-    if: needs.determine_tags.outputs.build_indexer == 'true' || inputs.new_tag_to_build == ''
+    if: needs.determine_tags.outputs.build_indexer == 'true'
     uses: ./.github/workflows/deploy-indexer-service.yml
     with:
       env: ${{ inputs.env }}
@@ -371,7 +316,7 @@ jobs:
 
   deploy-dong:
     needs: [determine_tags]
-    if: needs.determine_tags.outputs.build_dong == 'true' || inputs.new_tag_to_build == ''
+    if: needs.determine_tags.outputs.build_dong == 'true'
     uses: ./.github/workflows/deploy-dong-service.yml
     with:
       env: ${{ inputs.env }}
@@ -390,7 +335,7 @@ jobs:
  
   deploy-frontend:
     needs: [determine_tags]
-    if: needs.determine_tags.outputs.build_frontend == 'true' || inputs.new_tag_to_build == ''
+    if: needs.determine_tags.outputs.build_frontend == 'true'
     uses: ./.github/workflows/deploy-frontend-service.yml
     with:
       env: ${{ inputs.env }}
@@ -404,7 +349,7 @@ jobs:
 
   deploy-socket:
     needs: [determine_tags]
-    if: needs.determine_tags.outputs.build_socket == 'true' || inputs.new_tag_to_build == ''
+    if: needs.determine_tags.outputs.build_socket == 'true'
     uses: ./.github/workflows/deploy-socket-service.yml
     with:
       env: ${{ inputs.env }}
@@ -419,15 +364,16 @@ jobs:
       REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
 
   create_release:
-    needs: [determine_tags, prepare_assets, deploy-indexer, deploy-dong, deploy-frontend, deploy-socket]
+    needs: [determine_tags, deploy-indexer, deploy-dong, deploy-frontend, deploy-socket]
     runs-on: ubuntu-latest
     if: |
-        always() && 
         needs.determine_tags.result == 'success' && 
         needs.determine_tags.outputs.should_release == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Create Workspace
         run: mkdir -p release-assets
@@ -451,7 +397,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -e
+          set -euo pipefail
           CURRENT_TAG="${{ needs.determine_tags.outputs.release_tag }}"
           LATEST_RELEASE_ON_GH=$(git tag -l "release-v*" --sort=-v:refname | grep -A 1 "$CURRENT_TAG" | sed -n '2p')
           if [ -z "$LATEST_RELEASE_ON_GH" ]; then
