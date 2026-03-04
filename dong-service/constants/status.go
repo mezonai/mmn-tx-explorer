@@ -100,12 +100,18 @@ const (
 )
 
 const (
+	TradingWaiting   = "WAITING_TRANSFER"
 	TradingOpen      = "OPEN"
 	TradingPending   = "PENDING"
 	TradingConfirmed = "CONFIRMED"
 	TradingCanceled  = "CANCELED"
 	TradingFailed    = "FAILED"
 	TradingCompleted = "COMPLETED"
+)
+
+const (
+	OfferSideSell = "SELL"
+	OfferSideBuy = "BUY"
 )
 
 // GetStatusName returns the human-readable name for a status code
@@ -137,4 +143,8 @@ const (
 	MaxIndividualBankInfoSize int     = 128
 	MaxActiveOffersPerUser    int64   = 10
 	MaxActiveOrdersPerUser    int     = 10
+)
+
+const (
+	OrderExpirationDuration = 4
 )

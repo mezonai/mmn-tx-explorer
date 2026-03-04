@@ -4,7 +4,7 @@ import { z } from 'zod';
 export const createOfferSchema = z
   .object({
     side: z.nativeEnum(TradeTypes),
-    amount: z.number({ message: 'Amount is required' }).gt(0, 'Please enter the amount of đồng to sell'),
+    amount: z.number({ message: 'Amount is required' }).gt(0, 'Please enter the amount'),
     price_rate: z
       .string()
       .min(1, 'Rate is required')
@@ -16,17 +16,36 @@ export const createOfferSchema = z
     }),
     bank_info: z.object({
       bank: z.enum(['MB', 'VCB', 'TCB', 'ACB', 'TPBANK', 'VIETCOMBANK']),
-
-      account_number: z
-        .string()
-        .min(1, 'Please enter the account number')
-        .regex(/^\d+$/, 'Account number must contain only digits'),
-      account_name: z.string().min(1, 'Please enter the account name'),
+      account_number: z.string().optional(),
+      account_name: z.string().optional(),
+      is_primary: z.boolean().optional(),
     }),
     symbol: z.string(),
   })
   .superRefine((data, ctx) => {
     if (data.side === TradeTypes.SELL) {
+      if (!data.bank_info.account_number) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Please enter the account number',
+          path: ['bank_info', 'account_number'],
+        });
+      } else if (!/^\d+$/.test(data.bank_info.account_number)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Account number must contain only digits',
+          path: ['bank_info', 'account_number'],
+        });
+      }
+
+      if (!data.bank_info.account_name) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Please enter the account name',
+          path: ['bank_info', 'account_name'],
+        });
+      }
+
       if (parseFloat(data.price_rate) <= 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
