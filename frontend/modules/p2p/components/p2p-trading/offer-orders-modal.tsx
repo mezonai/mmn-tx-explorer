@@ -57,7 +57,7 @@ export const OfferOrdersModal = ({ offer, open, onOpenChange }: OfferOrdersModal
         <AddressDisplay
           address={order.order_creator_wallet_address || ''}
           href={ROUTES.WALLET(order.order_creator_wallet_address || '')}
-          addressClassName="text-emerald-500 font-medium"
+          addressClassName="text-brand-primary font-medium"
         />
       ),
       skeletonContent: <Skeleton className="h-4 w-24" />,
@@ -96,7 +96,7 @@ export const OfferOrdersModal = ({ offer, open, onOpenChange }: OfferOrdersModal
         </Chip>
       ),
       skeletonContent: <Skeleton className="h-5 w-20 rounded-full" />,
-      align: 'right',
+      align: 'center',
     },
     {
       headerContent: 'ACTION',
@@ -109,19 +109,18 @@ export const OfferOrdersModal = ({ offer, open, onOpenChange }: OfferOrdersModal
         </Button>
       ),
       skeletonContent: <Skeleton className="h-8 w-16 rounded-lg" />,
-      align: 'right',
+      align: 'center',
     },
   ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl gap-0 border-gray-800 bg-[#0B0F1A] p-6 text-white">
+      <DialogContent className="max-w-3xl gap-0 border-gray-800 p-6 text-white">
         <DialogHeader className="mb-4 md:mb-6">
           <div className="flex items-center gap-3">
             <DialogTitle className="text-lg font-bold tracking-tight md:text-2xl">Offer #{offer.offer_id}</DialogTitle>
             <Chip
               variant={offer.side === TradeTypes.SELL ? 'error' : 'success'}
-              className="rounded-full border-1 px-3 py-0.5 text-[10px] font-black"
             >
               {offer.side}
             </Chip>
@@ -130,13 +129,13 @@ export const OfferOrdersModal = ({ offer, open, onOpenChange }: OfferOrdersModal
         </DialogHeader>
 
         <div className="mb-6 grid grid-cols-2 gap-3 md:mb-8 md:gap-4">
-          <div className="rounded-2xl border border-gray-800/50 bg-gray-900/40 p-3 md:rounded-3xl md:p-5">
+          <div className="rounded-2xl border border-gray-800/50 bg-card p-3 md:rounded-3xl md:p-5">
             <p className="mb-1 text-[8px] font-black tracking-[0.1em] text-gray-500 uppercase md:mb-2 md:text-[10px]">
               TOTAL
             </p>
             <p className="text-lg font-black text-white md:text-2xl">{total.toFormat()} đồng</p>
           </div>
-          <div className="rounded-2xl border border-gray-800/50 bg-gray-900/40 p-3 md:rounded-3xl md:p-5">
+          <div className="rounded-2xl border border-gray-800/50 bg-card p-3 md:rounded-3xl md:p-5">
             <p className="mb-1 text-[8px] font-black tracking-[0.1em] text-gray-500 uppercase md:mb-2 md:text-[10px]">
               REMAINING
             </p>
