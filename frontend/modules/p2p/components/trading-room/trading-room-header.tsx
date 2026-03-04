@@ -2,7 +2,7 @@
 
 import { ArrowLeft, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { P2POrder, P2PTradingRoleType } from '../../types';
 import { AddressDisplay } from '@/components/shared/address-display';
 import { ROUTES } from '@/configs/routes.config';
@@ -21,11 +21,23 @@ interface TradingRoomHeaderProps {
 export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) => {
   const router = useRouter();
   const { offer } = useP2POffer(String(order.offer_id));
+  const [currentTime, setCurrentTime] = useState(Date.now());
 
+  // Update current time every second for countdown
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Calculate remaining time and check if expired
   const isExpired = useMemo(() => {
+    const now = currentTime;
     const expires = new Date(order.expires_at).getTime();
-    return Date.now() >= expires;
-  }, [order.expires_at]);
+    return now >= expires;
+  }, [order.expires_at, currentTime]);
 
   // Determine counterparty address based on user role
   const counterpartyAddress = useMemo(() => {
