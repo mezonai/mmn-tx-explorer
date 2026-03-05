@@ -182,7 +182,7 @@ export const P2P = () => {
           <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center md:gap-2">
             <TradeSideSwitch value={side} onChange={handleSideChange} className="w-full md:w-60" />
 
-            <Tabs value={tab === P2P_TAB.OFFERS ? P2P_TAB.MY_TRADING : tab} onValueChange={handleTabChange}>
+            <Tabs value={tab} onValueChange={handleTabChange}>
               <TabsList>
                 <TabsTrigger value={P2P_TAB.MY_TRADING}>My Trading</TabsTrigger>
                 <TabsTrigger value={P2P_TAB.MY_OFFERS}>My Offers</TabsTrigger>
