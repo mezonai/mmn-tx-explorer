@@ -259,12 +259,19 @@ func (s *OrderService) ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o
 		return err
 	}
 
-	// Send ORDER_CONFIRMED event to seller
+	// Send ORDER_CONFIRMED event to the seller (the other party)
 	if o.OfferID != nil {
 		of, err := s.offerRepo.GetOfferByID(context.Background(), *o.OfferID)
-		if err == nil && of != nil && *of.OfferCreatorWalletAddress != "" {
-			payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.OrderAmount}
-			go SendSocketEvent(*of.OfferCreatorWalletAddress, constants.ORDER_CONFIRMED, payload)
+		if err == nil && of != nil {
+			receiverAddress := of.OfferCreatorWalletAddress
+			if of.Side == models.OfferSideBuy {
+				receiverAddress = o.OrderCreatorWalletAddress
+			}
+
+			if receiverAddress != nil && *receiverAddress != "" {
+				payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.OrderAmount}
+				go SendSocketEvent(*receiverAddress, constants.ORDER_CONFIRMED, payload)
+			}
 		}
 	}
 
@@ -340,10 +347,17 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 					}
 				}
 
-				if o.OrderCreatorWalletAddress != nil && *o.OrderCreatorWalletAddress != "" {
-					payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.OrderAmount, "tx_hash": txHash}
-					go SendSocketEvent(*o.OrderCreatorWalletAddress, constants.ORDER_COMPLETED, payload)
+				// Send ORDER_COMPLETED event to the buyer (the other party)
+				receiverAddress := o.OrderCreatorWalletAddress
+				if offer.Side == models.OfferSideBuy {
+					receiverAddress = offer.OfferCreatorWalletAddress
 				}
+
+				if receiverAddress != nil && *receiverAddress != "" {
+					payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.OrderAmount, "tx_hash": txHash}
+					go SendSocketEvent(*receiverAddress, constants.ORDER_COMPLETED, payload)
+				}
+
 			} else if status == constants.TxStatusPending || status == constants.TxStatusConfirmed || status == constants.TxStatusFailed {
 				// Status 0, 1, 3 = PENDING, CONFIRMED, FAILED
 				if o.OfferID != nil {
