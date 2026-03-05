@@ -176,12 +176,15 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   };
 
   useEffect(() => {
-    if (!order || userRole !== P2P_TRADING_ROLE.BUYER) return;
+    if (!order || !user?.walletAddress) return;
 
+    const isOrderCreator = order.order_creator_wallet_address === user.walletAddress;
+    if (!isOrderCreator) return;
     const shouldSendGreeting = sessionStorage.getItem(STORAGE_KEYS.P2P_PENDING_GREETING(order.order_id));
 
     if (shouldSendGreeting === 'true') {
-      const textContent = `Hello, I would like to buy your offer. Please check the order details below.`;
+      const isBuying = (order.offer_type || offer?.side) === TradeTypes.SELL;
+      const textContent = `Hello, I would like to ${isBuying ? 'buy from' : 'sell to'} your offer. Please check the order details below.`;
 
       const embedElement = createOrderEmbed(order);
 
@@ -190,7 +193,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
         embed: [embedElement],
       });
     }
-  }, [order, userRole]);
+  }, [order, user?.walletAddress, offer?.side]);
 
   const handlePaymentStatusUpdated = (updatedOrder: P2POrder) => {
     setLocalStatus(updatedOrder.status);
@@ -232,10 +235,13 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
 
   const handleMessageSent = () => {
     setAutoMessage(null);
-    if (order && userRole === P2P_TRADING_ROLE.BUYER) {
-      const key = STORAGE_KEYS.P2P_PENDING_GREETING(order.order_id);
-      if (sessionStorage.getItem(key)) {
-        sessionStorage.removeItem(key);
+    if (order && user?.walletAddress) {
+      const isOrderCreator = order.order_creator_wallet_address === user.walletAddress;
+      if (isOrderCreator) {
+        const key = STORAGE_KEYS.P2P_PENDING_GREETING(order.order_id);
+        if (sessionStorage.getItem(key)) {
+          sessionStorage.removeItem(key);
+        }
       }
     }
   };
@@ -324,7 +330,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
         <div className="border-border flex h-14 shrink-0 items-center justify-between border-b px-6">
           <div className="flex items-center">
             <Button
-              onClick={() => router.back()}
+              onClick={() => router.push(ROUTES.P2P)}
               className="text-muted-foreground hover:text-foreground transition"
               aria-label="Go back"
               variant="ghost"

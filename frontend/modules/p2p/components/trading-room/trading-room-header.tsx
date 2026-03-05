@@ -3,6 +3,7 @@
 import { ArrowLeft, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
+import { Countdown } from '../shared/count-down';
 import { P2POrder, P2PTradingRoleType, TradeTypes } from '../../types';
 import { AddressDisplay } from '@/components/shared/address-display';
 import { ROUTES } from '@/configs/routes.config';
@@ -32,18 +33,11 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
     return () => clearInterval(interval);
   }, []);
 
-  // Calculate remaining time and check if expired
-  const { remainingTime, isExpired } = useMemo(() => {
+  // Check if expired
+  const isExpired = useMemo(() => {
     const now = currentTime;
     const expires = new Date(order.expires_at).getTime();
-    const diff = Math.max(0, expires - now);
-    const minutes = Math.floor(diff / 60000);
-    const seconds = Math.floor((diff % 60000) / 1000);
-    const expired = now >= expires;
-    return {
-      remainingTime: { minutes, seconds },
-      isExpired: expired,
-    };
+    return now >= expires;
   }, [order.expires_at, currentTime]);
 
   // Determine counterparty address based on user role
@@ -64,8 +58,8 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
     <header className="border-border flex h-14 shrink-0 items-center justify-between border-b px-2">
       <div className="flex items-center">
         <Button
-          onClick={() => router.back()}
-          className="text-muted-foreground hover:text-foreground transition"
+          onClick={() => router.push(ROUTES.P2P)}
+          className="text-muted-foreground transition hover:text-foreground"
           aria-label="Go back"
           variant="ghost"
         >
@@ -111,7 +105,7 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
           }`}
         >
           <Clock className="h-4 w-4" />
-          {remainingTime.minutes}:{remainingTime.seconds.toString().padStart(2, '0')}
+          <Countdown expiresAt={order.expires_at} className="m-0" />
         </div>
       )}
     </header>
