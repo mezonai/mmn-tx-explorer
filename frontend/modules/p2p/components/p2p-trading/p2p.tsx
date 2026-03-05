@@ -1,17 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useWebSocket } from '@/lib/websocket/useWebSocket';
+import { useCallback, useEffect, useRef } from 'react';
 import { P2PHeader } from './p2p-header';
 import { useP2POffers } from '../../hooks/useP2POffers';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { P2POffersTabs } from './p2p-offers-list';
 import { usePaginationQueryParam } from '@/hooks/usePaginationQueryParam';
 import { useP2PMyOffers } from '../../hooks/useP2PMyOffers';
 import { useMyOrders } from '../../hooks/useMyOrders';
 import { P2POrdersList } from './p2p-orders-list';
-import { OrderMobileCard } from './mobile/order-card';
-import OfferMobileCard from './mobile/offer-card';
 import { useQueryParam } from '@/hooks';
 import { IPaginatedResponse } from '@/types';
 import { P2PTabType, TradeTypes } from '../../types';
@@ -22,11 +19,8 @@ import { CreateOfferModal } from './create-offer-form/create-offer-modal';
 import { Pagination } from '@/components/ui/pagination';
 import { AvailableAmountFilter } from './filters/available-amount-filter';
 import { SortFilter } from './filters/sort-filter';
-import { P2PMobileFilters } from './filters/p2p-mobile-filters';
-import { SOCKET_MESSAGE } from '@/lib/websocket/constants';
 
 export const P2P = () => {
-  const wsManager = useWebSocket();
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
   const { updateParams } = useUpdateQueryParams();
 
@@ -55,11 +49,6 @@ export const P2P = () => {
     defaultValue: TradeTypes.BUY,
   });
 
-  /**
-   * ==========================================
-   * ✅ SAFE AUTO RESET PAGE WHEN FILTER CHANGE
-   * ==========================================
-   */
   const prevFilterRef = useRef({
     tab,
     side,
@@ -80,12 +69,6 @@ export const P2P = () => {
 
     prevFilterRef.current = { tab, side, min, max, sort };
   }, [tab, side, min, max, sort, page, handleChangePage]);
-
-  /**
-   * ==========================================
-   * FILTER HANDLERS (NO PAGE RESET HERE)
-   * ==========================================
-   */
 
   const handleFilterChange = useCallback(
     (newMin?: number, newMax?: number) => {
