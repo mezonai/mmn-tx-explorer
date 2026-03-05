@@ -10,6 +10,8 @@ import { usePaginationQueryParam } from '@/hooks/usePaginationQueryParam';
 import { useP2PMyOffers } from '../../hooks/useP2PMyOffers';
 import { useMyOrders } from '../../hooks/useMyOrders';
 import { P2POrdersList } from './p2p-orders-list';
+import { OrderMobileCard } from './mobile/order-card';
+import OfferMobileCard from './mobile/offer-card';
 import { useQueryParam } from '@/hooks';
 import { IPaginatedResponse } from '@/types';
 import { P2PTabType, TradeTypes } from '../../types';
@@ -20,6 +22,7 @@ import { CreateOfferModal } from './create-offer-form/create-offer-modal';
 import { Pagination } from '@/components/ui/pagination';
 import { AvailableAmountFilter } from './filters/available-amount-filter';
 import { SortFilter } from './filters/sort-filter';
+import { P2PMobileFilters } from './filters/p2p-mobile-filters';
 import { SOCKET_MESSAGE } from '@/lib/websocket/constants';
 import { useState } from 'react';
 
@@ -270,31 +273,97 @@ export const P2P = () => {
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center md:gap-2">
             <TradeSideSwitch value={side} onChange={handleSideChange} className="w-full md:w-60" />
-
-            <Tabs value={tab} onValueChange={handleTabChange}>
-              <TabsList>
-                <TabsTrigger value={P2P_TAB.MY_TRADING}>My Trading</TabsTrigger>
-                <TabsTrigger value={P2P_TAB.MY_OFFERS}>My Offers</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="flex w-full items-center gap-2 md:w-auto">
+              <Tabs
+                value={tab}
+                onValueChange={(v) => handleTabChange(v as 'offers' | 'my-trading' | 'my-offers')}
+                className="flex-1 md:w-auto"
+              >
+                <TabsList className="w-full justify-start md:w-auto">
+                  <TabsTrigger value={P2P_TAB.MY_TRADING} className="flex-1 text-xs md:flex-none md:text-sm">
+                    My Trading
+                  </TabsTrigger>
+                  <TabsTrigger value={P2P_TAB.MY_OFFERS} className="flex-1 md:flex-none">
+                    My Offers
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <div className="md:hidden">
+                <P2PMobileFilters
+                  onFilterChange={handleFilterChange}
+                  sortValue={sort}
+                  onSortChange={handleSortChange}
+                />
+              </div>
+            </div>
           </div>
 
-          <Pagination
-            {...getPaginationProps(
-              tab === P2P_TAB.OFFERS ? offers : tab === P2P_TAB.MY_OFFERS ? myOffers : myTrading,
-              tab === P2P_TAB.OFFERS ? isLoading : tab === P2P_TAB.MY_OFFERS ? isMyOffersLoading : isMyTradingLoading
-            )}
-          />
+          <div className="hidden md:block">
+            <Pagination
+              {...getPaginationProps(
+                tab === P2P_TAB.OFFERS ? offers : tab === P2P_TAB.MY_OFFERS ? myOffers : myTrading,
+                tab === P2P_TAB.OFFERS ? isLoading : tab === P2P_TAB.MY_OFFERS ? isMyOffersLoading : isMyTradingLoading
+              )}
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3 md:hidden">
+          <div className="flex justify-center pt-2">
+            <div className="scale-90">
+              <Pagination
+                {...getPaginationProps(
+                  tab === P2P_TAB.OFFERS ? offers : tab === P2P_TAB.MY_OFFERS ? myOffers : myTrading,
+                  tab === P2P_TAB.OFFERS
+                    ? isLoading
+                    : tab === P2P_TAB.MY_OFFERS
+                      ? isMyOffersLoading
+                      : isMyTradingLoading
+                )}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="mt-4">
-        {tab === P2P_TAB.OFFERS && <P2POffersTabs offers={offers?.data ?? []} isLoading={isLoading} />}
+        {tab === P2P_TAB.OFFERS && (
+          <div className="space-y-6">
+            <div className="block lg:hidden">
+              {(offers?.data ?? []).map((offer) => (
+                <OfferMobileCard key={offer.offer_id} offer={offer} />
+              ))}
+            </div>
+            <div className="hidden lg:block">
+              <P2POffersTabs offers={offers?.data ?? []} isLoading={isLoading} />
+            </div>
+          </div>
+        )}
 
-        {tab === P2P_TAB.MY_TRADING && <P2POrdersList orders={myTrading?.data ?? []} isLoading={isMyTradingLoading} />}
+        {tab === P2P_TAB.MY_TRADING && (
+          <div className="space-y-6">
+            <div className="block lg:hidden">
+              {(myTrading?.data ?? []).map((td) => (
+                <OrderMobileCard key={td.order_id} order={td} />
+              ))}
+            </div>
+            <div className="hidden lg:block">
+              <P2POrdersList orders={myTrading?.data ?? []} isLoading={isMyTradingLoading} />
+            </div>
+          </div>
+        )}
 
         {tab === P2P_TAB.MY_OFFERS && (
-          <P2POffersTabs offers={myOffers?.data ?? []} isLoading={isMyOffersLoading} isMyOffer />
+          <div className="space-y-6">
+            <div className="block lg:hidden">
+              {(myOffers?.data ?? []).map((offer) => (
+                <OfferMobileCard key={offer.offer_id} offer={offer} isMyOffer={true} />
+              ))}
+            </div>
+            <div className="hidden lg:block">
+              <P2POffersTabs offers={myOffers?.data ?? []} isLoading={isMyOffersLoading} isMyOffer />
+            </div>
+          </div>
         )}
       </div>
     </div>
