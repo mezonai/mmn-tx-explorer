@@ -302,19 +302,21 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 		}
 
 		var targetWallet *string
+		var extraInfo string
 		if offer.Side == models.OfferSideBuy {
 			targetWallet = offer.OfferCreatorWalletAddress
+			extraInfo = constants.ExtraInfoP2PTradingBuyOffer
 		} else {
 			targetWallet = o.OrderCreatorWalletAddress
+			extraInfo = constants.ExtraInfoP2PTrading
 		}
 
 		if intermediaryWallet != nil && o.OrderAmount.Sign() > 0 {
-			txHash, transferErr := s.blockchain.TransferMoney(intermediaryWallet.EncryptedPrivateKey, *offer.IntermediaryWalletAddress, *targetWallet, o.OrderAmount.String(), constants.TextDataP2PTrading, constants.ExtraInfoP2PTrading)
+			txHash, transferErr := s.blockchain.TransferMoney(intermediaryWallet.EncryptedPrivateKey, *offer.IntermediaryWalletAddress, *targetWallet, o.OrderAmount.String(), constants.TextDataP2PTrading, extraInfo)
 			if transferErr != nil {
-				err = fmt.Errorf("failed to transfer funds to buyer: %w", transferErr)
+				err = fmt.Errorf("failed to transfer money: %w", transferErr)
 				return err
 			}
-
 			transferTxHash = &txHash
 
 			// Check transaction status with retry logic

@@ -91,6 +91,7 @@ const (
 const (
 	ExtraInfoLuckyMoney              = `{"type":"lucky-money"}`
 	ExtraInfoP2PTrading              = `{"type":"p2p-trading"}`
+	ExtraInfoP2PTradingBuyOffer      = `{"type":"p2p-trading-buy-offer"}`
 	ExtraInfoP2PTradingOfferCanceled = `{"type":"p2p-trading","action":"offer-canceled"}`
 )
 
@@ -111,7 +112,7 @@ const (
 
 const (
 	OfferSideSell = "SELL"
-	OfferSideBuy = "BUY"
+	OfferSideBuy  = "BUY"
 )
 
 // GetStatusName returns the human-readable name for a status code
