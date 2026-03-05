@@ -19,16 +19,31 @@ import (
 )
 
 type OfferService struct {
-	repo           *repository.OfferRepository
-	walletRepo     *repository.IntermediaryWalletRepository
-	userWalletRepo *repository.WalletRepository
-	orderRepo      *repository.OrderRepository
-	blockchain     *blockchain.BlockchainService
-	orderService   *OrderService
+	repo            *repository.OfferRepository
+	walletRepo      *repository.IntermediaryWalletRepository
+	userWalletRepo  *repository.WalletRepository
+	orderRepo       *repository.OrderRepository
+	blockchain      *blockchain.BlockchainService
+	orderService    *OrderService
+	userPaymentRepo *repository.UserPaymentInfoRepository
 }
 
-func NewOfferService(repo *repository.OfferRepository, walletRepo *repository.IntermediaryWalletRepository, userWalletRepo *repository.WalletRepository, orderRepo *repository.OrderRepository, blockchain *blockchain.BlockchainService) *OfferService {
-	return &OfferService{repo: repo, walletRepo: walletRepo, userWalletRepo: userWalletRepo, orderRepo: orderRepo, blockchain: blockchain}
+func NewOfferService(
+	repo *repository.OfferRepository,
+	walletRepo *repository.IntermediaryWalletRepository,
+	userWalletRepo *repository.WalletRepository,
+	orderRepo *repository.OrderRepository,
+	blockchain *blockchain.BlockchainService,
+	userPaymentRepo *repository.UserPaymentInfoRepository,
+) *OfferService {
+	return &OfferService{
+		repo:            repo,
+		walletRepo:      walletRepo,
+		userWalletRepo:  userWalletRepo,
+		orderRepo:       orderRepo,
+		blockchain:      blockchain,
+		userPaymentRepo: userPaymentRepo,
+	}
 }
 
 // SetOrderService sets the order service dependency (to avoid circular dependency)
@@ -38,10 +53,10 @@ func (s *OfferService) SetOrderService(orderService *OrderService) {
 
 type IOfferService interface {
 	CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string, sellerUserID string) (*models.Offer, error)
-	ListOffers(ctx context.Context, fromAmount *string, toAmount *string, pagination map[string]any) ([]models.Offer, error)
-	CountOffers(ctx context.Context, walletAddress *string, minPrice *string, maxPrice *string, statuses []string, symbol *string, rate *string, fromAmount *string, toAmount *string) (int64, error)
+	ListOffers(ctx context.Context, fromAmount *string, toAmount *string, side *string, pagination map[string]any) ([]models.Offer, error)
+	CountOffers(ctx context.Context, walletAddress *string, minPrice *string, maxPrice *string, statuses []string, symbol *string, rate *string, fromAmount *string, toAmount *string, side *string) (int64, error)
 	GetOfferByID(ctx context.Context, id int64) (*models.Offer, error)
-	GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, int64, error)
+	GetOffersByWalletAddress(ctx context.Context, walletAddress string, side *string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, int64, error)
 	CancelOffer(ctx context.Context, offerId int64, offer *models.Offer) error
 }
 
@@ -56,7 +71,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 
 	amountInt := req.Amount
 
-	if s.userWalletRepo != nil {
+	if s.userWalletRepo != nil && req.Side == models.OfferSideSell {
 		userWallet, err := s.userWalletRepo.GetByAddress(walletAddr)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
@@ -106,7 +121,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 	var priceInt int64 = 0
 
 	var bankInfoStr *string
-	if req.BankInfo != nil {
+	if req.BankInfo != nil && len(req.BankInfo) > 0 {
 		b, marshalErr := json.Marshal(req.BankInfo)
 		if marshalErr != nil {
 			err = fmt.Errorf("invalid bank info: %w", marshalErr)
@@ -114,6 +129,21 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		}
 		ms := string(b)
 		bankInfoStr = &ms
+	} else if s.userPaymentRepo != nil {
+		// Fallback to primary bank info from profile
+		primaryBank, err := s.userPaymentRepo.GetPrimaryByUserID(ctx, sellerUserID)
+		if err == nil && primaryBank != nil {
+			bankMap := map[string]interface{}{
+				"bank_name":      primaryBank.BankName,
+				"account_number": primaryBank.AccountNumber,
+				"account_name":   primaryBank.AccountName,
+			}
+			b, marshalErr := json.Marshal(bankMap)
+			if marshalErr == nil {
+				ms := string(b)
+				bankInfoStr = &ms
+			}
+		}
 	}
 
 	var limitMinInt int64 = 1
@@ -130,16 +160,23 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		limitMaxInt = limitMinInt
 	}
 
+	// Sell offers start as OPEN (waiting for escrow deposit),
+	// Buy offers start as CONFIRMED (ready for sellers to fill).
+	initialStatus := constants.TradingOpen
+	if req.Side == models.OfferSideBuy {
+		initialStatus = constants.TradingConfirmed
+	}
+
 	offer := &models.Offer{
 		IntermediaryWalletAddress: &intermediaryAddr,
-		SellerWalletAddress:       walletAddr,
-		SellerUserID:              sellerUserID,
+		OfferCreatorWalletAddress: &walletAddr,
+		OfferCreatorUserID:        sellerUserID,
 		Side:                      req.Side,
 		Symbol:                    req.Symbol,
 		AvailableAmount:           types.NewBigIntString(amountInt).Multiply(constants.TokenMultiplierBigIntString),
 		TotalAmount:               types.NewBigIntString(amountInt).Multiply(constants.TokenMultiplierBigIntString),
 		PayableAmount:             types.NewBigIntString(priceInt),
-		Status:                    constants.TradingOpen,
+		Status:                    initialStatus,
 		BankInfo:                  bankInfoStr,
 		Limit: &models.OfferLimit{
 			Min: types.NewBigIntString(limitMinInt).Multiply(constants.TokenMultiplierBigIntString),
@@ -177,8 +214,8 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 	return offer, nil
 }
 
-func (s *OfferService) ListOffers(ctx context.Context, fromAmount *string, toAmount *string, pagination map[string]any) ([]models.Offer, error) {
-	offers, err := s.repo.ListOffers(ctx, nil, nil, nil, nil, nil, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount), pagination)
+func (s *OfferService) ListOffers(ctx context.Context, fromAmount *string, toAmount *string, side *string, pagination map[string]any) ([]models.Offer, error) {
+	offers, err := s.repo.ListOffers(ctx, nil, nil, nil, nil, nil, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount), side, pagination)
 	if err != nil || len(offers) == 0 {
 		return offers, err
 	}
@@ -189,24 +226,24 @@ func (s *OfferService) ListOffers(ctx context.Context, fromAmount *string, toAmo
 		offerIDs[i] = offer.OfferID
 	}
 
-	// Get active orders map
-	activeOrdersMap, err := s.orderRepo.HasActiveOrdersByOfferList(ctx, offerIDs)
-	if err != nil {
-		logger.Error().Err(err).Msg("Failed to check active orders for offers")
-		return offers, nil
-	}
+	// Fetch active orders and order counts in batch
+	activeOrdersMap, _ := s.orderRepo.HasActiveOrdersByOfferList(ctx, offerIDs)
+	orderCountsMap, _ := s.orderRepo.CountOrdersByOfferList(ctx, offerIDs)
 
-	// Map has_active_order to offers
 	for i := range offers {
-		hasActive := activeOrdersMap[offers[i].OfferID]
-		offers[i].HasActiveOrder = &hasActive
+		if hasActive, ok := activeOrdersMap[offers[i].OfferID]; ok {
+			offers[i].HasActiveOrder = &hasActive
+		}
+		if count, ok := orderCountsMap[offers[i].OfferID]; ok {
+			offers[i].OrderCount = count
+		}
 	}
 
 	return offers, nil
 }
 
-func (s *OfferService) CountOffers(ctx context.Context, walletAddress *string, minPrice *string, maxPrice *string, statuses []string, symbol *string, rate *string, fromAmount *string, toAmount *string) (int64, error) {
-	return s.repo.CountOffers(ctx, walletAddress, minPrice, maxPrice, statuses, symbol, rate, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount))
+func (s *OfferService) CountOffers(ctx context.Context, walletAddress *string, minPrice *string, maxPrice *string, statuses []string, symbol *string, rate *string, fromAmount *string, toAmount *string, side *string) (int64, error) {
+	return s.repo.CountOffers(ctx, walletAddress, minPrice, maxPrice, statuses, symbol, rate, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount), side)
 }
 
 func (s *OfferService) GetOfferByID(ctx context.Context, id int64) (*models.Offer, error) {
@@ -221,33 +258,42 @@ func (s *OfferService) GetOfferByID(ctx context.Context, id int64) (*models.Offe
 		if checkErr == nil {
 			offer.HasActiveOrder = &hasActive
 		}
+
+		count, countErr := s.orderRepo.CountOrdersByOffer(ctx, id)
+		if countErr == nil {
+			offer.OrderCount = count
+		}
 	}
 
 	return offer, nil
 }
 
-func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, int64, error) {
-	offers, err := s.repo.GetOffersByWalletAddress(ctx, walletAddress, pagination, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount))
+func (s *OfferService) GetOffersByWalletAddress(ctx context.Context, walletAddress string, side *string, pagination map[string]any, fromAmount *string, toAmount *string) ([]models.Offer, int64, error) {
+	offers, err := s.repo.GetOffersByWalletAddress(ctx, walletAddress, side, pagination, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount))
 	if err != nil {
 		return nil, 0, err
 	}
-	count, err := s.repo.CountOffers(ctx, &walletAddress, nil, nil, nil, nil, nil, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount))
+	count, err := s.repo.CountOffers(ctx, &walletAddress, nil, nil, nil, nil, nil, utils.ScaleUpAmount(fromAmount), utils.ScaleUpAmount(toAmount), side)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	// Add has_active_order field
+	// Add has_active_order and order_count field
 	if len(offers) > 0 {
 		offerIDs := make([]int64, len(offers))
 		for i, offer := range offers {
 			offerIDs[i] = offer.OfferID
 		}
 
-		activeOrdersMap, err := s.orderRepo.HasActiveOrdersByOfferList(ctx, offerIDs)
-		if err == nil {
-			for i := range offers {
-				hasActive := activeOrdersMap[offers[i].OfferID]
+		activeOrdersMap, _ := s.orderRepo.HasActiveOrdersByOfferList(ctx, offerIDs)
+		orderCountsMap, _ := s.orderRepo.CountOrdersByOfferList(ctx, offerIDs)
+
+		for i := range offers {
+			if hasActive, ok := activeOrdersMap[offers[i].OfferID]; ok {
 				offers[i].HasActiveOrder = &hasActive
+			}
+			if count, ok := orderCountsMap[offers[i].OfferID]; ok {
+				offers[i].OrderCount = count
 			}
 		}
 	}
@@ -285,7 +331,8 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 			*offer.IntermediaryWalletAddress != "" &&
 			offer.AvailableAmount.Sign() > 0 &&
 			s.blockchain != nil &&
-			s.walletRepo != nil
+			s.walletRepo != nil &&
+			offer.Side == constants.OfferSideSell
 
 	if needsRefund {
 		intermediaryWallet, err := s.walletRepo.GetWalletByAddress(ctx, *offer.IntermediaryWalletAddress)
@@ -300,7 +347,7 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 		txHash, err := s.blockchain.TransferMoney(
 			intermediaryWallet.EncryptedPrivateKey,
 			*offer.IntermediaryWalletAddress,
-			offer.SellerWalletAddress,
+			*offer.OfferCreatorWalletAddress,
 			offer.AvailableAmount.String(),
 			constants.TextDataP2PTrading,
 			constants.ExtraInfoP2PTradingOfferCanceled,
@@ -329,9 +376,17 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 			return err
 		}
 	} else {
-		err = fmt.Errorf(constants.ErrFailedToCancelOffer)
-		return err
+	// No refund needed (either BUY side, or SELL side that is still OPEN/not yet escrowed)
+		if err = s.repo.UpdateOfferStatus(ctx, offerId, constants.TradingCanceled, tx, nil); err != nil {
+			return err
+		}
+
+		if offer.IntermediaryWalletAddress != nil && *offer.IntermediaryWalletAddress != "" && s.walletRepo != nil {
+			logger.Info().Int64("offer_id", offerId).Str("wallet_address", *offer.IntermediaryWalletAddress).Msg("Releasing intermediary wallet for canceled offer")
+			s.releaseIntermediaryWallet(ctx, *offer.IntermediaryWalletAddress)
+		}
 	}
+
 
 	if err = tx.Commit(); err != nil {
 		return err
