@@ -145,7 +145,7 @@ export const P2POffersTabs = ({
         </div>
       ),
       skeletonContent: <Skeleton className="h-6 w-24" />,
-      align: 'center',
+      align: 'left',
     },
     {
       headerContent: 'AVAILABLE',
