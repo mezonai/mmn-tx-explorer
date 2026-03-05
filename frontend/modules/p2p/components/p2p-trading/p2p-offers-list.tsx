@@ -233,7 +233,7 @@ export const P2POffersTabs = ({
           <Skeleton className="h-3 w-24" />
         </div>
       ),
-      align: 'center',
+      align: 'left',
     },
     {
       headerContent: 'ACTION',
