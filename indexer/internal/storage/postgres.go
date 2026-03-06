@@ -883,7 +883,7 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 					defer wg.Done()
 					defer func() { <-sem }()
 
-					if err := services.SendSocketEventDirect(toAddress, "DONATION_RECEIVED", nil); err != nil {
+					if err := services.SendSocketEventDirect(toAddress, services.DONATION_RECEIVED, nil); err != nil {
 						log.Error().Err(err).Str("to_address", toAddress).Msg("Failed to send donation notification socket event")
 					} else {
 						log.Info().Str("to_address", toAddress).Msg("Sent donation notification pulse")

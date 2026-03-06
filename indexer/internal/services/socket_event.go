@@ -25,6 +25,7 @@ const (
 	OFFER_ROOM                = "offer_updates"
 	RED_ENVELOPE_LIST_REFRESH = "RED_ENVELOPE_LIST_REFRESH"
 	RED_ENVELOPE_ROOM         = "red_envelope_updates"
+	DONATION_RECEIVED         = "DONATION_RECEIVED"
 )
 
 type EventService struct {
