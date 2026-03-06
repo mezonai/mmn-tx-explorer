@@ -89,9 +89,10 @@ const (
 )
 
 const (
-	ExtraInfoLuckyMoney              = `{"type":"lucky-money"}`
-	ExtraInfoP2PTrading              = `{"type":"p2p-trading"}`
-	ExtraInfoP2PTradingOfferCanceled = `{"type":"p2p-trading","action":"offer-canceled"}`
+	ExtraInfoLuckyMoney                  = `{"type":"lucky-money"}`
+	ExtraInfoP2PTrading                  = `{"type":"p2p-trading"}`
+	ExtraInfoP2PTradingOfferCanceled     = `{"type":"p2p-trading","action":"offer-canceled"}`
+	ExtraInfoP2PTradingOrderExpired      = `{"type":"p2p-trading","action":"order-expired-refund"}`
 )
 
 const (
