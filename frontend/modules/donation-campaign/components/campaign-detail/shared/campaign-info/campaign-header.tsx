@@ -15,11 +15,11 @@ import { useUser } from '@/providers';
 import { DescriptionDisplay } from '@/components/shared';
 import { useJoinRoom } from '@/lib/websocket';
 import { SOCKET_MESSAGE } from '@/lib/websocket/constants';
-import { WebSocketEvent } from '@/lib/websocket/websocket-manager';
 import { toast } from 'sonner';
 import { useRefreshCampaignRaised } from '@/modules/donation-campaign/hooks/useRefreshCampaignRaised';
 import { useEffect } from 'react';
 
+const TOAST_DURATION = 5000;
 export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
   const [currentCampaign, setCurrentCampaign] = useState(campaign);
   const { user } = useUser();
@@ -34,7 +34,7 @@ export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
   useEffect(() => {
     const handleDonationReceived = () => {
       toast.success(`Campaign has a new donation`, {
-        duration: 5000,
+        duration: TOAST_DURATION,
       });
 
       // Trigger manual refresh to sync all stats
