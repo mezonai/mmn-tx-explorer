@@ -45,6 +45,11 @@ export enum TradeTypes {
   SELL = 'SELL',
   BUY = 'BUY',
 }
+
+export enum MessageCode {
+  NORMAL = 0,
+  BUZZ = 8,
+}
 export interface CreateOfferRequest {
   side: TradeTypes;
   amount: number;
