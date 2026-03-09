@@ -4,6 +4,7 @@ import { useUser } from '@/providers';
 import { UUID } from 'crypto';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import BigNumber from 'bignumber.js';
 
 import { APP_CONFIG } from '@/configs/app.config';
 import { CloseSessionRequest, RedEnvelopeDetailStats } from '../type';
@@ -46,13 +47,13 @@ export const useRedEnvelopeDetail = () => {
   const statsCards = useMemo(() => [
     {
       title: "TOTAL AMOUNT",
-      value: stats.total_amount.toLocaleString('en-US'),
+      value: new BigNumber(stats.total_amount).toFormat(),
       unit: ` ${APP_CONFIG.CHAIN_SYMBOL}`,
       subValue: '',
     },
     {
       title: "CLAIMED",
-      value: stats.total_claimed_amount.toLocaleString('en-US'),
+      value: new BigNumber(stats.total_claimed_amount).toFormat(),
       unit: ` ${APP_CONFIG.CHAIN_SYMBOL}`,
       subValue: "(" + stats.claimed_count + "/" + stats.total_claim + ")",
     },
@@ -113,8 +114,8 @@ export function useGetLuckMoneyDetail(id: UUID) {
 
   const fallback: RedEnvelopeDetailStats = {
     name: '',
-    total_amount: 0,
-    total_claimed_amount: 0,
+    total_amount: '0',
+    total_claimed_amount: '0',
     total_claim: 0,
     claimed_count: 0,
     end_date: '',

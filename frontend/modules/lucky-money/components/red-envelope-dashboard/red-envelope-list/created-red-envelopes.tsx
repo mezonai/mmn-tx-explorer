@@ -7,6 +7,7 @@ import { usePaginationQueryParam } from '@/hooks';
 import { Pagination } from '@/components/ui/pagination';
 import Link from 'next/link';
 import { ROUTES } from '@/configs/routes.config';
+import BigNumber from 'bignumber.js';
 
 export const CreatedEnvelopes = () => {
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
@@ -54,7 +55,7 @@ export const CreatedEnvelopes = () => {
                   </h3>
                 </div>
                 <p className="text-xs break-words text-gray-600 md:text-sm dark:text-gray-400">
-                  {env.total_amount.toLocaleString('en-US')} đồng · {env.total_claims} recipients · {env.claimed_count}{' '}
+                  {new BigNumber(env.total_amount).toFormat()} đồng · {env.total_claims} recipients · {env.claimed_count}{' '}
                   claimed
                 </p>
               </div>
