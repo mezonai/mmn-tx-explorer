@@ -116,7 +116,7 @@ export const P2POffersTabs = ({
         />
       ),
       skeletonContent: <Skeleton className="h-3 w-24" />,
-      align: 'left',
+      align: 'center',
     },
     isMyOffer
       ? {
@@ -124,18 +124,13 @@ export const P2POffersTabs = ({
           renderCell: (offer) => (
             <Chip
               variant={offer.side === TradeTypes.SELL ? 'error' : 'success'}
-              className={cn(
-                'w-16 justify-center rounded-full py-0.5 text-[10px] font-bold',
-                offer.side === TradeTypes.SELL
-                  ? 'border-red-500/20 bg-red-500/10 text-red-500'
-                  : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-500'
-              )}
+              className="min-w-[60px] justify-center rounded-full px-3 py-0.5 text-[10px] font-bold uppercase"
             >
               {offer.side}
             </Chip>
           ),
           skeletonContent: <Skeleton className="h-5 w-16 rounded-full" />,
-          align: 'left',
+          align: 'center',
         }
       : null,
     {
@@ -206,7 +201,7 @@ export const P2POffersTabs = ({
             </Button>
           ),
           skeletonContent: <Skeleton className="h-8 w-20 rounded-md" />,
-          align: 'left',
+          align: 'center',
         }
       : null,
     {
@@ -241,7 +236,7 @@ export const P2POffersTabs = ({
       align: 'left',
     },
     {
-      headerContent: 'Action',
+      headerContent: 'ACTION',
       renderCell: (offer) => {
         const isUserSeller = user && offer.offer_creator_user_id === user?.id;
 
