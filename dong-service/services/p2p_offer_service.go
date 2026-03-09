@@ -11,7 +11,6 @@ import (
 	"dong-service/repository"
 	"dong-service/types"
 	"dong-service/utils"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -61,6 +60,17 @@ type IOfferService interface {
 }
 
 func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string, sellerUserID string) (*models.Offer, error) {
+	// Check if user has at least one payment info record
+	if s.userPaymentRepo != nil {
+		paymentInfos, err := s.userPaymentRepo.GetByUserID(ctx, sellerUserID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check user payment info: %w", err)
+		}
+		if len(paymentInfos) == 0 {
+			return nil, fmt.Errorf("user must have at least one payment info to create offers")
+		}
+	}
+
 	activeOfferCount, err := s.repo.CountActiveOffersByUser(ctx, sellerUserID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check active offer count: %w", err)
@@ -120,32 +130,6 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 
 	var priceInt int64 = 0
 
-	var bankInfoStr *string
-	if req.BankInfo != nil && len(req.BankInfo) > 0 {
-		b, marshalErr := json.Marshal(req.BankInfo)
-		if marshalErr != nil {
-			err = fmt.Errorf("invalid bank info: %w", marshalErr)
-			return nil, err
-		}
-		ms := string(b)
-		bankInfoStr = &ms
-	} else if s.userPaymentRepo != nil {
-		// Fallback to primary bank info from profile
-		primaryBank, err := s.userPaymentRepo.GetPrimaryByUserID(ctx, sellerUserID)
-		if err == nil && primaryBank != nil {
-			bankMap := map[string]interface{}{
-				"bank_name":      primaryBank.BankName,
-				"account_number": primaryBank.AccountNumber,
-				"account_name":   primaryBank.AccountName,
-			}
-			b, marshalErr := json.Marshal(bankMap)
-			if marshalErr == nil {
-				ms := string(b)
-				bankInfoStr = &ms
-			}
-		}
-	}
-
 	var limitMinInt int64 = 1
 	var limitMaxInt int64 = amountInt
 	if req.Limit != nil {
@@ -177,7 +161,6 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		TotalAmount:               types.NewBigIntString(amountInt).Multiply(constants.TokenMultiplierBigIntString),
 		PayableAmount:             types.NewBigIntString(priceInt),
 		Status:                    initialStatus,
-		BankInfo:                  bankInfoStr,
 		Limit: &models.OfferLimit{
 			Min: types.NewBigIntString(limitMinInt).Multiply(constants.TokenMultiplierBigIntString),
 			Max: types.NewBigIntString(limitMaxInt).Multiply(constants.TokenMultiplierBigIntString),
@@ -376,7 +359,7 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 			return err
 		}
 	} else {
-	// No refund needed (either BUY side, or SELL side that is still OPEN/not yet escrowed)
+		// No refund needed (either BUY side, or SELL side that is still OPEN/not yet escrowed)
 		if err = s.repo.UpdateOfferStatus(ctx, offerId, constants.TradingCanceled, tx, nil); err != nil {
 			return err
 		}
@@ -386,7 +369,6 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 			s.releaseIntermediaryWallet(ctx, *offer.IntermediaryWalletAddress)
 		}
 	}
-
 
 	if err = tx.Commit(); err != nil {
 		return err

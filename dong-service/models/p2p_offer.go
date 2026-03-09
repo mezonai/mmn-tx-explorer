@@ -2,8 +2,6 @@ package models
 
 import (
 	"dong-service/types"
-	"dong-service/utils"
-	"encoding/json"
 	"time"
 )
 
@@ -19,7 +17,7 @@ type Offer struct {
 	OfferID                   int64              `json:"offer_id" db:"offer_id"`
 	OfferCreatorUserID        string             `json:"offer_creator_user_id" db:"offer_creator_user_id"`
 	IntermediaryWalletAddress *string            `json:"intermediary_wallet_address,omitempty" db:"intermediary_wallet_address"`
-	OfferCreatorWalletAddress *string             `json:"offer_creator_wallet_address" db:"offer_creator_wallet_address"`
+	OfferCreatorWalletAddress *string            `json:"offer_creator_wallet_address" db:"offer_creator_wallet_address"`
 	Side                      OfferSide          `json:"side" db:"side"` // BUY or SELL
 	Symbol                    string             `json:"symbol" db:"symbol"`
 	AvailableAmount           types.BigIntString `json:"amount" db:"available_amount"` // numeric as string to support big ints
@@ -29,9 +27,9 @@ type Offer struct {
 	PriceRate                 *float64           `json:"price_rate,omitempty" db:"price_rate"`
 	Status                    string             `json:"status" db:"status"`
 	TransactionHash           *string            `json:"transaction_hash,omitempty" db:"transaction_hash"`
-	BankInfo                  *string            `json:"bank_info,omitempty" db:"bank_info"`
+	BankInfo                  *string            `json:"bank_info,omitempty" db:"-"`
 	HasActiveOrder            *bool              `json:"has_active_order,omitempty" db:"-"` // Not stored in DB, computed on demand
-	OrderCount                int64              `json:"order_count" db:"-"`               // Not stored in DB, computed on demand
+	OrderCount                int64              `json:"order_count" db:"-"`                // Not stored in DB, computed on demand
 	CreatedAt                 time.Time          `json:"created_at" db:"created_at"`
 	UpdatedAt                 time.Time          `json:"updated_at" db:"updated_at"`
 }
@@ -49,29 +47,15 @@ type OfferLimitRequest struct {
 
 // CreateOfferRequest is the expected payload for the API request to create an offer
 type CreateOfferRequest struct {
-	Side      OfferSide              `json:"side" binding:"required,oneof=BUY SELL"` // BUY or SELL
-	Symbol    string                 `json:"symbol" binding:"required"`
-	Amount    int64                  `json:"amount" binding:"required"`
-	PriceRate *string                `json:"price_rate,omitempty"`
-	BankInfo  map[string]interface{} `json:"bank_info,omitempty"`
-	Limit     *OfferLimitRequest     `json:"limit,omitempty"`
+	Side      OfferSide          `json:"side" binding:"required,oneof=BUY SELL"` // BUY or SELL
+	Symbol    string             `json:"symbol" binding:"required"`
+	Amount    int64              `json:"amount" binding:"required"`
+	PriceRate *string            `json:"price_rate,omitempty"`
+	Limit     *OfferLimitRequest `json:"limit,omitempty"`
 }
 
 type UpdateOfferStatusRequest struct {
 	OfferID int64  `json:"offer_id" binding:"required"`
 	Status  string `json:"status" binding:"required"`
 	TxHash  string `json:"tx_hash" binding:"required"`
-}
-
-func (o Offer) MarshalJSON() ([]byte, error) {
-	type Alias Offer
-	aux := &struct {
-		BankInfo interface{} `json:"bank_info,omitempty"`
-		*Alias
-	}{
-		Alias:    (*Alias)(&o),
-		BankInfo: utils.ParseBankInfoString(o.BankInfo),
-	}
-
-	return json.Marshal(aux)
 }

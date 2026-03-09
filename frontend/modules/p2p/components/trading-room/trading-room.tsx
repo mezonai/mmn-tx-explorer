@@ -246,11 +246,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
     }
   };
 
-  const handleConfirmBuy = async (
-    amountMZD: number,
-    amountVND: number,
-    bankInfo?: { bank: string; account_number: string; account_name: string }
-  ) => {
+  const handleConfirmBuy = async (amountMZD: number, amountVND: number) => {
     if (!offer || !user?.walletAddress) {
       setError('Please sign in to continue.');
       return;
@@ -258,7 +254,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
 
     try {
       setError(null);
-      const newOrder = await createOrder(offer, amountMZD, amountVND, bankInfo as any);
+      const newOrder = await createOrder(offer, amountMZD);
 
       if (newOrder) {
         // If it's a BUY offer, the responder (Seller) needs to transfer Mezon to escrow

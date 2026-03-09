@@ -23,8 +23,8 @@ func NewOfferRepository(db *sql.DB, dongSchema string) *OfferRepository {
 func (r *OfferRepository) CreateOffer(ctx context.Context, offer *models.Offer, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
 				INSERT INTO %s.p2p_offers (
-							intermediary_wallet_address, offer_creator_wallet_address, offer_creator_user_id, side, symbol, available_amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, bank_info, created_at, updated_at
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,NOW(),NOW())
+								intermediary_wallet_address, offer_creator_wallet_address, offer_creator_user_id, side, symbol, available_amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, created_at, updated_at
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW(),NOW())
 		RETURNING offer_id, created_at, updated_at
 	`, r.dongSchema)
 
@@ -58,7 +58,6 @@ func (r *OfferRepository) CreateOffer(ctx context.Context, offer *models.Offer, 
 		offer.PayableAmount,
 		priceRateArg,
 		offer.Status,
-		offer.BankInfo,
 	).Scan(&offer.OfferID, &offer.CreatedAt, &offer.UpdatedAt)
 }
 
@@ -92,7 +91,10 @@ func (r *OfferRepository) UpdateOfferStatus(
 }
 
 func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxPrice *string, status *string, symbol *string, rate *string, fromAmount *string, toAmount *string, side *string, pagination any) ([]models.Offer, error) {
-	base := fmt.Sprintf(`SELECT offer_id, intermediary_wallet_address, offer_creator_wallet_address, offer_creator_user_id, side, symbol, available_amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, transaction_hash, bank_info, created_at, updated_at FROM %s.p2p_offers`, r.dongSchema)
+	base := fmt.Sprintf(`SELECT o.offer_id, o.intermediary_wallet_address, o.offer_creator_wallet_address, o.offer_creator_user_id, o.side, o.symbol, o.available_amount, o.total_amount, o.min_amount, o.max_amount, o.payable_amount, o.price_rate, o.status, o.transaction_hash, o.created_at, o.updated_at,
+		json_build_object('bank_name', p.bank_name, 'account_number', p.account_number, 'account_name', p.account_name, 'is_primary', p.is_primary) as bank_info
+		FROM %s.p2p_offers o
+		LEFT JOIN %s.user_payment_info p ON o.offer_creator_user_id = p.user_id AND p.is_primary = true`, r.dongSchema, r.dongSchema)
 
 	whereClauses := []string{}
 	args := []any{}
@@ -206,6 +208,7 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 		var minAmt sql.NullString
 		var maxAmt sql.NullString
 		var priceRate sql.NullFloat64
+		var bankInfo sql.NullString
 		err := rows.Scan(
 			&o.OfferID,
 			&o.IntermediaryWalletAddress,
@@ -221,15 +224,19 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 			&priceRate,
 			&o.Status,
 			&o.TransactionHash,
-			&o.BankInfo,
 			&o.CreatedAt,
 			&o.UpdatedAt,
+			&bankInfo,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan offer: %w", err)
 		}
 
 		r.processOfferNullableFields(&o, minAmt, maxAmt, priceRate)
+
+		if bankInfo.Valid {
+			o.BankInfo = &bankInfo.String
+		}
 		out = append(out, o)
 	}
 
@@ -357,6 +364,7 @@ func (r *OfferRepository) ScanOfferRow(row *sql.Row) (*models.Offer, error) {
 	var minAmt sql.NullString
 	var maxAmt sql.NullString
 	var priceRate sql.NullFloat64
+	var bankInfo sql.NullString
 
 	if err := row.Scan(
 		&o.OfferID,
@@ -373,9 +381,9 @@ func (r *OfferRepository) ScanOfferRow(row *sql.Row) (*models.Offer, error) {
 		&priceRate,
 		&o.Status,
 		&o.TransactionHash,
-		&o.BankInfo,
 		&o.CreatedAt,
 		&o.UpdatedAt,
+		&bankInfo,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, err
@@ -384,17 +392,25 @@ func (r *OfferRepository) ScanOfferRow(row *sql.Row) (*models.Offer, error) {
 	}
 
 	r.processOfferNullableFields(&o, minAmt, maxAmt, priceRate)
+
+	// Populate payment info if present
+	if bankInfo.Valid {
+		o.BankInfo = &bankInfo.String
+	}
+
 	return &o, nil
 }
 
 func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*models.Offer, error) {
 	query := fmt.Sprintf(`
-		SELECT offer_id, intermediary_wallet_address, offer_creator_wallet_address, offer_creator_user_id, side, symbol, 
-		       available_amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, 
-		       transaction_hash, bank_info, created_at, updated_at 
-		FROM %s.p2p_offers 
-		WHERE offer_id = $1
-	`, r.dongSchema)
+		SELECT o.offer_id, o.intermediary_wallet_address, o.offer_creator_wallet_address, o.offer_creator_user_id, o.side, o.symbol, 
+		       o.available_amount, o.total_amount, o.min_amount, o.max_amount, o.payable_amount, o.price_rate, o.status, 
+		       o.transaction_hash, o.created_at, o.updated_at,
+		       json_build_object('bank_name', p.bank_name, 'account_number', p.account_number, 'account_name', p.account_name, 'is_primary', p.is_primary) as bank_info
+		FROM %s.p2p_offers o
+		LEFT JOIN %s.user_payment_info p ON o.offer_creator_user_id = p.user_id AND p.is_primary = true
+		WHERE o.offer_id = $1
+	`, r.dongSchema, r.dongSchema)
 
 	row := r.db.QueryRowContext(ctx, query, offerID)
 	return r.ScanOfferRow(row)
@@ -402,13 +418,15 @@ func (r *OfferRepository) GetOfferByID(ctx context.Context, offerID int64) (*mod
 
 func (r *OfferRepository) GetOfferByIDForUpdate(ctx context.Context, offerID int64, tx *sql.Tx) (*models.Offer, error) {
 	query := fmt.Sprintf(`
-		SELECT offer_id, intermediary_wallet_address, offer_creator_wallet_address, offer_creator_user_id, side, symbol, 
-		       available_amount, total_amount, min_amount, max_amount, payable_amount, price_rate, status, 
-		       transaction_hash, bank_info, created_at, updated_at
-		FROM %s.p2p_offers
-		WHERE offer_id = $1
-		FOR UPDATE
-	`, r.dongSchema)
+		SELECT o.offer_id, o.intermediary_wallet_address, o.offer_creator_wallet_address, o.offer_creator_user_id, o.side, o.symbol, 
+		       o.available_amount, o.total_amount, o.min_amount, o.max_amount, o.payable_amount, o.price_rate, o.status, 
+		       o.transaction_hash, o.created_at, o.updated_at,
+		       json_build_object('bank_name', p.bank_name, 'account_number', p.account_number, 'account_name', p.account_name, 'is_primary', p.is_primary) as bank_info
+		FROM %s.p2p_offers o
+		LEFT JOIN %s.user_payment_info p ON o.offer_creator_user_id = p.user_id AND p.is_primary = true
+		WHERE o.offer_id = $1
+		FOR UPDATE OF o
+	`, r.dongSchema, r.dongSchema)
 
 	row := tx.QueryRowContext(ctx, query, offerID)
 	return r.ScanOfferRow(row)
@@ -481,12 +499,14 @@ func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAd
 	}
 
 	query := fmt.Sprintf(`
-		SELECT offer_id, intermediary_wallet_address, offer_creator_wallet_address, offer_creator_user_id, side, symbol, available_amount, total_amount, 
-		       min_amount, max_amount, payable_amount, price_rate, status, transaction_hash, bank_info, created_at, updated_at
-		FROM %s.p2p_offers
+		SELECT o.offer_id, o.intermediary_wallet_address, o.offer_creator_wallet_address, o.offer_creator_user_id, o.side, o.symbol, o.available_amount, o.total_amount, 
+		       o.min_amount, o.max_amount, o.payable_amount, o.price_rate, o.status, o.transaction_hash, o.created_at, o.updated_at,
+		       json_build_object('bank_name', p.bank_name, 'account_number', p.account_number, 'account_name', p.account_name, 'is_primary', p.is_primary) as bank_info
+		FROM %s.p2p_offers o
+		LEFT JOIN %s.user_payment_info p ON o.offer_creator_user_id = p.user_id AND p.is_primary = true
 		WHERE %s
-		ORDER BY created_at DESC
-	`, r.dongSchema, strings.Join(whereClauses, " AND "))
+		ORDER BY o.created_at DESC
+	`, r.dongSchema, r.dongSchema, strings.Join(whereClauses, " AND "))
 
 	if pagination != nil {
 		if limit, ok := pagination["limit"].(int); ok && limit > 0 {
@@ -508,6 +528,7 @@ func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAd
 		var o models.Offer
 		var minAmount, maxAmount sql.NullString
 		var priceRate sql.NullFloat64
+		var bankInfo sql.NullString
 		if err := rows.Scan(
 			&o.OfferID,
 			&o.IntermediaryWalletAddress,
@@ -523,14 +544,18 @@ func (r *OfferRepository) GetOffersByWalletAddress(ctx context.Context, walletAd
 			&priceRate,
 			&o.Status,
 			&o.TransactionHash,
-			&o.BankInfo,
 			&o.CreatedAt,
 			&o.UpdatedAt,
+			&bankInfo,
 		); err != nil {
 			return nil, err
 		}
 
 		r.processOfferNullableFields(&o, minAmount, maxAmount, priceRate)
+
+		if bankInfo.Valid {
+			o.BankInfo = &bankInfo.String
+		}
 		offers = append(offers, o)
 	}
 
