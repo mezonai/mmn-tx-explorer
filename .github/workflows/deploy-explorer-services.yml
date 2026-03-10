@@ -297,7 +297,6 @@ jobs:
         
   deploy-indexer:
     needs: [determine_tags]
-    if: needs.determine_tags.outputs.build_indexer == 'true'
     uses: ./.github/workflows/deploy-indexer-service.yml
     with:
       env: ${{ inputs.env }}
@@ -311,7 +310,6 @@ jobs:
 
   deploy-dong:
     needs: [determine_tags]
-    if: needs.determine_tags.outputs.build_dong == 'true'
     uses: ./.github/workflows/deploy-dong-service.yml
     with:
       env: ${{ inputs.env }}
@@ -330,7 +328,6 @@ jobs:
  
   deploy-frontend:
     needs: [determine_tags]
-    if: needs.determine_tags.outputs.build_frontend == 'true'
     uses: ./.github/workflows/deploy-frontend-service.yml
     with:
       env: ${{ inputs.env }}
@@ -344,7 +341,6 @@ jobs:
 
   deploy-socket:
     needs: [determine_tags]
-    if: needs.determine_tags.outputs.build_socket == 'true'
     uses: ./.github/workflows/deploy-socket-service.yml
     with:
       env: ${{ inputs.env }}
