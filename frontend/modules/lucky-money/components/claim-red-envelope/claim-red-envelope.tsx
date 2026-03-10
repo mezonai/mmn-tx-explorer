@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { Gift } from 'lucide-react';
 import { toast } from 'sonner';
 import { useClaimRedEnvelopeContext } from '../../context/ClaimRedEnvelopeContext';
+import { NumberUtil } from '@/utils';
 
 const RedEnvelopeIcon = () => (
   <svg width="100" height="120" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -52,7 +53,7 @@ const RevealedScreen = ({
   isError,
   isSuccess,
 }: {
-  amount: number;
+  amount: string;
   description?: string;
   onClaim: () => void;
   isLoading: boolean;
@@ -61,7 +62,7 @@ const RevealedScreen = ({
 }) => (
   <div className="flex w-full flex-col items-center text-center">
     <h2 className="my-2 text-xl leading-tight font-bold break-words text-[rgb(246_199_68)] sm:my-3 sm:text-2xl md:my-4 md:text-3xl lg:text-5xl">
-      + {amount.toLocaleString('en-US')} đồng
+      + {NumberUtil.formatWithCommasAndScale(amount)} đồng
     </h2>
     <p className="text-muted-foreground mb-3 text-xs leading-relaxed italic sm:mb-4 sm:text-sm md:mb-6 md:text-base lg:mb-8 lg:text-lg dark:text-gray-400">
       {description || 'Wishing you a happy, healthy, and prosperous New Year!'}

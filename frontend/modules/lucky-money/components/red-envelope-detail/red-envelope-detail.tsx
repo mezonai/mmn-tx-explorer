@@ -13,6 +13,7 @@ import { useRedEnvelopeDetail } from '../../hooks/useRedEnvelopeDetail';
 import { RedEnvelopeConfirmDialog } from '../create-red-envelope/confirm-transfer-dialog';
 import React, { useState } from 'react';
 import { RedEnvelopeIcon } from '@/assets/icons/red-evelop';
+import BigNumber from 'bignumber.js';
 
 const breadcrumbs: IBreadcrumb[] = [
   { label: 'Lucky Money', href: ROUTES.LUCKY_MONEY },
@@ -82,6 +83,8 @@ export const RedEnvelopeDetail = () => {
     closeSession();
   };
 
+  const remainingAmount = new BigNumber(stats.total_amount || 0).minus(stats.total_claimed_amount || 0).toString();
+
   return (
     <div className="text-foreground min-h-screen p-4 font-sans md:p-8 dark:text-white">
       <div className="mx-auto max-w-7xl">
@@ -118,7 +121,7 @@ export const RedEnvelopeDetail = () => {
               open={showConfirmModal}
               onOpenChange={setShowConfirmModal}
               onConfirm={handleConfirmCloseSession}
-              amount={stats.total_amount - stats.total_claimed_amount}
+              amount={remainingAmount}
               isCreate={false}
             />
           </div>
@@ -207,7 +210,7 @@ export const RedEnvelopeDetail = () => {
                       {truncateWalletAddress(item.claimer_wallet)}
                     </td>
                     <td className="text-foreground p-2 font-mono text-xs md:p-4 md:text-sm dark:text-gray-400">
-                      {item.amount.toLocaleString('en-US')}
+                      {new BigNumber(item.amount).toFormat()}
                     </td>
                     <td className="text-foreground p-2 text-xs md:p-4 md:text-sm dark:text-gray-400">
                       {formatClaimDate(item.claimed_at, true)}
