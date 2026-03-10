@@ -120,7 +120,7 @@ jobs:
 
   deploy:
     needs: build
-    if: always()
+    if: always() && (needs.build.result == 'success' || needs.build.result == 'skipped')
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
 

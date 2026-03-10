@@ -97,7 +97,7 @@ jobs:
           path: build/indexer-*
 
   deploy-indexer:
-    if: always()
+    if: always() && (needs.build.result == 'success' || needs.build.result == 'skipped')
     needs: build
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
