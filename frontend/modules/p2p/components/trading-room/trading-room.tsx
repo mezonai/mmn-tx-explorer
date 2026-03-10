@@ -254,7 +254,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
 
     try {
       setError(null);
-      const newOrder = await createOrder(offer, amountMZD);
+      const newOrder = await createOrder(offer, amountMZD, amountVND);
 
       if (newOrder) {
         // If it's a BUY offer, the responder (Seller) needs to transfer Mezon to escrow
@@ -435,7 +435,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
             <div className="lg:col-span-4">
               {order && (order.bank_info || offer?.bank_info) && (
                 <QrCodeCard
-                  bank_info={order.bank_info || offer?.bank_info}
+                  bank_info={JSON.stringify(order.bank_info || offer?.bank_info)}
                   transfer_code={order.transfer_code}
                   amount={Number(order.payable_amount) || order.price}
                 />
