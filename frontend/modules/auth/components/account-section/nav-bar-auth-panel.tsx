@@ -165,7 +165,7 @@ export const NavBarAuthPanel: React.FC = () => {
             >
               <span className="flex items-center space-x-2">
                 <CircleDollarSign className="text-brand-primary h-4 w-4" />
-                <span className="font-medium transition-colors">Give Coffee</span>
+                <span className="font-medium transition-colors">Transfer Fund</span>
               </span>
               <ChevronRight className="h-4 w-4 text-gray-500 transition-all group-hover:translate-x-0.5" />
             </a>
