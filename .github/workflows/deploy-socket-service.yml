@@ -61,7 +61,7 @@ jobs:
           fetch-depth: 1
 
       - name: Setup Go
-        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
+        if: inputs.skip_build == 'false'
         uses: actions/setup-go@v5
         with:
           go-version: "1.25"
@@ -69,7 +69,7 @@ jobs:
           check-latest: false
        
       - name: Run golangci-lint
-        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
+        if: inputs.skip_build == 'false'
         uses: golangci/golangci-lint-action@v8
         with:
           version: v2.5.0
@@ -78,7 +78,7 @@ jobs:
         continue-on-error: true
 
       - name: Build Socket Service binary
-        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
+        if: inputs.skip_build == 'false'
         id: build_socket_binary
         run: |
           mkdir -p build
@@ -96,7 +96,7 @@ jobs:
           echo "binary_name=$BINARY_NAME" >> $GITHUB_OUTPUT
 
       - name: Upload Socket Artifact
-        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
+        if: inputs.skip_build == 'false'
         uses: actions/upload-artifact@v4
         with:
           name: socket-assets

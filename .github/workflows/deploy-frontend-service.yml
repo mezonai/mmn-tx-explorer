@@ -57,14 +57,14 @@ jobs:
           fetch-depth: 1
 
       - name: Setup Node.js
-        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
+        if: inputs.skip_build == 'false'
         uses: actions/setup-node@v3
         with:
           node-version: "20"
           cache: ''
 
       - name: Build Frontend
-        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
+        if: inputs.skip_build == 'false'
         id: build_frontend
         env: 
           NEXT_PUBLIC_APP_API_URL: ${{ vars.NEXT_PUBLIC_APP_API_URL }}
@@ -112,7 +112,7 @@ jobs:
           echo "artifact_name=${ARTIFACT_NAME}" >> $GITHUB_OUTPUT
 
       - name: Upload Frontend Artifact
-        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
+        if: inputs.skip_build == 'false'
         uses: actions/upload-artifact@v4
         with:
           name: frontend-assets
