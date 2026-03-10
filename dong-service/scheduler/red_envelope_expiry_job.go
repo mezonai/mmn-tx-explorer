@@ -8,7 +8,6 @@ import (
 	"dong-service/logger"
 	"dong-service/models"
 	"dong-service/repository"
-	"dong-service/types"
 	"time"
 )
 
@@ -56,12 +55,12 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 			continue
 		}
 
-		remainingBalance := envelope.TotalAmount - totalClaimed
+		remainingBalance := envelope.TotalAmount.Sub(totalClaimed)
 		isSuccess := true
-		if remainingBalance > 0 {
+		if remainingBalance.Sign() > 0 {
 			logger.Info().
 				Str("red_envelope_id", envelope.ID).
-				Int64("remaining_balance", remainingBalance).
+				Str("remaining_balance", remainingBalance.String()).
 				Str("red_envelope_wallet", envelope.RedEnvelopeWallet).
 				Str("owner_wallet", envelope.OwnerWallet).
 				Msg("Transferring remaining balance back to owner")
@@ -72,9 +71,7 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 				logger.Error().Err(err).Msg("Failed to get wallet")
 				isSuccess = false
 			} else {
-				// TODO: update pass amount from envelope
-				amount := types.NewBigIntString(remainingBalance).Multiply(constants.TokenMultiplierBigIntString)
-				_, err = j.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
+				_, err = j.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, remainingBalance.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
 				if err != nil {
 					logger.Error().Err(err).Msg("Failed to transfer funds")
 					isSuccess = false
@@ -135,7 +132,7 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 		logger.Info().
 			Str("red_envelope_id", envelope.ID).
 			Str("name", envelope.Name).
-			Int64("remaining_balance", remainingBalance).
+			Str("remaining_balance", remainingBalance.String()).
 			Msg("Processed expired red envelope")
 	}
 

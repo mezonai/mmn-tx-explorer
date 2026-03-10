@@ -73,6 +73,18 @@ func (b BigIntString) Value() (driver.Value, error) {
 	return b.String(), nil
 }
 
+func (b BigIntString) Add(o BigIntString) BigIntString {
+	var result BigIntString
+	result.Int.Add(&b.Int, &o.Int)
+	return result
+}
+
+func (b BigIntString) Sub(o BigIntString) BigIntString {
+	var result BigIntString
+	result.Int.Sub(&b.Int, &o.Int)
+	return result
+}
+
 func (b BigIntString) Multiply(multiplier BigIntString) BigIntString {
 	var result BigIntString
 	result.Mul(&b.Int, &multiplier.Int)
