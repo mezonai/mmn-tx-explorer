@@ -181,28 +181,14 @@ jobs:
 
             echo "Fetching release: $RELEASE"
 
-            API_URL="https://api.github.com/repos/${{ github.repository }}/releases/tags/${RELEASE}"
-            
-            RESPONSE=$(curl -sSL \
-                -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-                -H "Accept: application/vnd.github+json" \
-                "$API_URL")   
-            if echo "$RESPONSE" | grep -q '"message": "Not Found"'; then
-              echo "Release $RELEASE not found"
-              exit 1
-            fi         
+            BODY="$(gh api "repos/${{ github.repository }}/releases/tags/${RELEASE}" --jq '.body' || true)"
+            [[ -n "$BODY" && "$BODY" != "null" ]] || { echo "Error: Could not find release body for $RELEASE"; exit 1; }
 
-            BODY=$(echo "$RESPONSE" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("body",""))')
 
-            if [ -z "$BODY" ] || [ "$BODY" == "null" ]; then
-              echo "Error: Could not find release body for $RELEASE"
-              exit 1
-            fi
-
-              FRONTEND="$(printf '%s\n' "$BODY" | sed -n 's/^Frontend:[[:space:]]*//p' | head -n1)"
-              DONG="$(printf '%s\n' "$BODY" | sed -n 's/^Dong:[[:space:]]*//p' | head -n1)"
-              SOCKET="$(printf '%s\n' "$BODY" | sed -n 's/^Socket:[[:space:]]*//p' | head -n1)"
-              INDEXER="$(printf '%s\n' "$BODY" | sed -n 's/^Indexer:[[:space:]]*//p' | head -n1)"
+            FRONTEND="$(printf '%s\n' "$BODY" | sed -n 's/^Frontend:[[:space:]]*//p' | head -n1)"
+            DONG="$(printf '%s\n' "$BODY" | sed -n 's/^Dong:[[:space:]]*//p' | head -n1)"
+            SOCKET="$(printf '%s\n' "$BODY" | sed -n 's/^Socket:[[:space:]]*//p' | head -n1)"
+            INDEXER="$(printf '%s\n' "$BODY" | sed -n 's/^Indexer:[[:space:]]*//p' | head -n1)"
 
             if [ -z "$FRONTEND" ] || \
               [ -z "$DONG" ] || \
