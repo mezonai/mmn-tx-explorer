@@ -31,6 +31,7 @@ import { useTransfer } from '@/modules/transfer/hooks/useTransfer';
 import { ETransferType } from '@/modules/transaction';
 import { EMBED_MESSAGE_THEME, P2P_TRADING_ROLE, ORDER_EXPIRATION_DURATION_MS } from '../../constants';
 import BigNumber from 'bignumber.js';
+import { createTrackOrderComponents } from '../../util';
 
 interface TradingRoomProps {
   orderId: string;
@@ -152,7 +153,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
 
     return {
       color: customColor || EMBED_MESSAGE_THEME.INDIGO,
-      title: customTitle || `Click here to view Order #${currentOrder.order_id}`,
+      title: customTitle || `Order #${currentOrder.order_id}`,
       url: orderLink,
       description: 'Transaction Details',
       fields: [
@@ -177,6 +178,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
     };
   };
 
+  
+
   useEffect(() => {
     if (!order || !user?.walletAddress) return;
 
@@ -193,6 +196,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       setAutoMessage({
         text: textContent,
         embed: [embedElement],
+        components: createTrackOrderComponents(embedElement.url),
+        buzz: true,
       });
     }
   }, [order, user?.walletAddress, offer?.side]);
@@ -205,6 +210,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
     setAutoMessage({
       text: `I have transferred the payment. Please check your bank account and release ${APP_CONFIG.CHAIN_SYMBOL}.`,
       embed: [embedElement],
+      components: createTrackOrderComponents(embedElement.url),
     });
   };
 
@@ -222,6 +228,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       setAutoMessage({
         text: `Payment received. I have released. Thank you for trading!`,
         embed: [embedElement],
+        components: createTrackOrderComponents(embedElement.url),
       });
     } catch (err: any) {
       console.error('Error updating order status:', err);
