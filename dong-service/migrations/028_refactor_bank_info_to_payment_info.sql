@@ -35,7 +35,7 @@ BEGIN
         LOOP
             BEGIN
                 -- Extract bank info from JSON
-                bank_name_val := offer_rec.bank_info->>'bank_name';
+                bank_name_val := offer_rec.bank_info->>'bank';
                 account_number_val := offer_rec.bank_info->>'account_number';
                 account_name_val := offer_rec.bank_info->>'account_name';
                 
@@ -104,7 +104,7 @@ BEGIN
         LOOP
             BEGIN
                 -- Extract bank info from JSON
-                bank_name_val := order_rec.bank_info->>'bank_name';
+                bank_name_val := order_rec.bank_info->>'bank';
                 account_number_val := order_rec.bank_info->>'account_number';
                 account_name_val := order_rec.bank_info->>'account_name';
                 
