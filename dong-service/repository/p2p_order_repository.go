@@ -90,7 +90,6 @@ type ExpiredOrderInfo struct {
 	OrderAmount               string
 	Status                    string
 	OrderCreatorWalletAddress string
-	OfferCreatorWalletAddress string
 	IntermediaryWalletAddress string
 	OfferSide                 string
 }
@@ -103,12 +102,11 @@ func (r *OrderRepository) GetExpiredOrdersForRefund(ctx context.Context, cutoff 
 			o.order_amount,
 			o.status,
 			COALESCE(o.order_creator_wallet_address, ''),
-			COALESCE(of.offer_creator_wallet_address, ''),
 			COALESCE(of.intermediary_wallet_address, ''),
 			COALESCE(of.side, '')
 		FROM %s.p2p_orders o
 		INNER JOIN %s.p2p_offers of ON o.offer_id = of.offer_id
-		WHERE o.status IN ('OPEN', 'PENDING') AND o.expires_at < $1
+		WHERE o.status IN ('OPEN', 'PENDING') AND o.expires_at < $1 AND of.side = 'BUY'
 		ORDER BY o.created_at ASC
 	`, r.dongSchema, r.dongSchema)
 
@@ -127,7 +125,6 @@ func (r *OrderRepository) GetExpiredOrdersForRefund(ctx context.Context, cutoff 
 			&info.OrderAmount,
 			&info.Status,
 			&info.OrderCreatorWalletAddress,
-			&info.OfferCreatorWalletAddress,
 			&info.IntermediaryWalletAddress,
 			&info.OfferSide,
 		); err != nil {
@@ -142,7 +139,7 @@ func (r *OrderRepository) CancelExpiredOrders(ctx context.Context, cutoff time.T
 	query := fmt.Sprintf(`
 		WITH cancelled AS (
 			UPDATE %s.p2p_orders
-			SET status = 'EXPIRED', updated_at = NOW()
+			SET status = 'CANCELED', updated_at = NOW()
 			WHERE status IN ('OPEN', 'PENDING') AND expires_at < $1
 			RETURNING order_id, offer_id, order_amount
 		),

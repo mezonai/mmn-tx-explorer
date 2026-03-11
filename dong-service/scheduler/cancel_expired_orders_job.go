@@ -91,14 +91,9 @@ func (j *CancelExpiredOrdersJob) processRefunds(ctx context.Context, expiredOrde
 		}
 
 		var refundRecipient string
-		var recipientRole string
 
 		if orderInfo.OfferSide == constants.OfferSideBuy {
 			refundRecipient = orderInfo.OrderCreatorWalletAddress
-			recipientRole = "order_creator"
-		} else {
-			refundRecipient = orderInfo.OfferCreatorWalletAddress
-			recipientRole = "offer_creator"
 		}
 
 		if refundRecipient == "" {
@@ -115,7 +110,6 @@ func (j *CancelExpiredOrdersJob) processRefunds(ctx context.Context, expiredOrde
 			Str("amount", orderInfo.OrderAmount).
 			Str("status", orderInfo.Status).
 			Str("offer_side", orderInfo.OfferSide).
-			Str("recipient_role", recipientRole).
 			Str("recipient_wallet", refundRecipient).
 			Msg("Processing refund for expired PENDING order")
 
@@ -151,7 +145,6 @@ func (j *CancelExpiredOrdersJob) processRefunds(ctx context.Context, expiredOrde
 				Err(err).
 				Int64("order_id", orderInfo.OrderID).
 				Str("recipient_wallet", refundRecipient).
-				Str("recipient_role", recipientRole).
 				Str("amount", orderInfo.OrderAmount).
 				Msg("Failed to transfer refund for expired order")
 			continue
@@ -172,7 +165,6 @@ func (j *CancelExpiredOrdersJob) processRefunds(ctx context.Context, expiredOrde
 				Int64("order_id", orderInfo.OrderID).
 				Str("tx_hash", txHash).
 				Str("recipient_wallet", refundRecipient).
-				Str("recipient_role", recipientRole).
 				Str("offer_side", orderInfo.OfferSide).
 				Str("amount", orderInfo.OrderAmount).
 				Msg("Successfully refunded expired PENDING order")
