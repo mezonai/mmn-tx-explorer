@@ -39,7 +39,8 @@ export default function Card({
       onKeyDown={
         isClickable
           ? (e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
+              if (e.code === 'Enter' || e.code === 'Space') {
+                e.preventDefault();
                 onClick();
               }
             }
