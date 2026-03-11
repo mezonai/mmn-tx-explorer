@@ -1496,6 +1496,11 @@ bip39@^3.1.0:
   dependencies:
     "@noble/hashes" "^1.2.0"
 
+bottleneck@^2.19.5:
+  version "2.19.5"
+  resolved "https://registry.yarnpkg.com/bottleneck/-/bottleneck-2.19.5.tgz#5df0b90f59fd47656ebe63c78a98419205cadd91"
+  integrity sha512-VHiNCbI1lKdl44tGrhNfU3lup0Tj/ZBMJB5/2ZbNXRCPuRCO7ed2mgcK4r17y+KB2EfuYuRaVlwNbAeaWGSpbw==
+
 brace-expansion@^1.1.7:
   version "1.1.12"
   resolved "https://registry.yarnpkg.com/brace-expansion/-/brace-expansion-1.1.12.tgz#ab9b454466e5a8cc3a187beaad580412a9c5b843"
@@ -2816,10 +2821,10 @@ merge2@^1.3.0:
   resolved "https://registry.yarnpkg.com/merge2/-/merge2-1.4.1.tgz#4368892f885e907455a6fd7dc55c0c9d404990ae"
   integrity sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==
 
-mezon-light-sdk@^1.0.6:
-  version "1.0.6"
-  resolved "https://registry.yarnpkg.com/mezon-light-sdk/-/mezon-light-sdk-1.0.6.tgz#17c2fec01b39dff1240f00d3ecf6ef111f5e8786"
-  integrity sha512-yacxzILi2KAAIvktLB9X91fRAA1GvrlhcJ/ZMaXi3VSGu9FWu81FoiQZbPhdBAcgj4bkePnKuqnTCwBqkhQFZw==
+mezon-light-sdk@^1.0.8:
+  version "1.0.8"
+  resolved "https://registry.yarnpkg.com/mezon-light-sdk/-/mezon-light-sdk-1.0.8.tgz#6f1f38851828abb61ef08d0cab877587d62aa258"
+  integrity sha512-IqxbsPuEESaSPNtdEHWcTtMnt+tgFfY/badNodFUIN/oPTGs1hV2zn+HTARPXTeEEiK0SaoFXEb7nP1IiD5bfg==
   dependencies:
     js-base64 "^3.7.8"
     protobufjs "^8.0.0"

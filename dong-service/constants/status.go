@@ -83,17 +83,7 @@ const (
 	RedEnvelopeStatusOk                      = "OK"
 )
 
-const (
-	ClaimStatusError         = 0
-	ClaimStatusSuccess       = 1
-	ClaimStatusAlreadyQueued = 2
-)
 
-const (
-	RedEnvelopeSplitMoneyStatusAvailable = "AVAILABLE"
-	RedEnvelopeSplitMoneyStatusReserved  = "RESERVED"
-	RedEnvelopeSplitMoneyStatusClaimed   = "CLAIMED"
-)
 
 const (
 	AmountError = 0
@@ -148,4 +138,8 @@ const (
 	MaxIndividualBankInfoSize int     = 128
 	MaxActiveOffersPerUser    int64   = 10
 	MaxActiveOrdersPerUser    int     = 10
+)
+
+const (
+	OrderExpirationDuration = 4
 )

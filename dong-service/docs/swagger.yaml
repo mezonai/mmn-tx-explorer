@@ -247,6 +247,9 @@ definitions:
         type: string
       created_at:
         type: string
+      has_active_order:
+        description: Not stored in DB, computed on demand
+        type: boolean
       intermediary_wallet_address:
         type: string
       limit:
@@ -469,19 +472,6 @@ definitions:
       url:
         type: string
     type: object
-  models.UpdateOfferStatusRequest:
-    properties:
-      offer_id:
-        type: integer
-      status:
-        type: string
-      tx_hash:
-        type: string
-    required:
-    - offer_id
-    - status
-    - tx_hash
-    type: object
   models.UploadImageResponse:
     properties:
       files:
@@ -496,6 +486,25 @@ definitions:
       file_cid:
         type: string
       file_name:
+        type: string
+    type: object
+  models.UserPaymentInfo:
+    properties:
+      account_name:
+        type: string
+      account_number:
+        type: string
+      bank_name:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      is_primary:
+        type: boolean
+      updated_at:
+        type: string
+      user_id:
         type: string
     type: object
   models.WalletDetailResponse:
@@ -1433,38 +1442,6 @@ paths:
       summary: Get my offers
       tags:
       - offers
-  /api/v1/offers/update-status:
-    post:
-      consumes:
-      - application/json
-      description: Update offer status with transaction hash verification
-      parameters:
-      - description: Update Offer Status
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/models.UpdateOfferStatusRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Response'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/models.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/models.Response'
-      security:
-      - BearerAuth: []
-      summary: Update offer status
-      tags:
-      - offers
   /api/v1/orders/{id}:
     get:
       consumes:
@@ -1730,6 +1707,84 @@ paths:
       summary: get detail red envelope by id
       tags:
       - red_envelopes
+  /api/v1/red-envelopes/qr/{id}/claim:
+    post:
+      description: Claim red envelope and receive money using ZK proof authentication
+      parameters:
+      - description: Red Envelope ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: ClaimRedEnvelopeRequest
+        in: body
+        name: claim
+        required: true
+        schema:
+          $ref: '#/definitions/models.ClaimRedEnvelopeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Claim red envelope via QR (ZK authentication)
+      tags:
+      - red_envelopes
+  /api/v1/red-envelopes/qr/claim-amount:
+    post:
+      description: Get claim amount for red envelope using ZK proof authentication
+      parameters:
+      - description: Red Envelope ID
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      summary: Claim red envelope amount via QR (ZK authentication)
+      tags:
+      - red_envelopes
   /api/v1/red-envelopes/stats:
     get:
       consumes:
@@ -1991,6 +2046,80 @@ paths:
       summary: Get donation campaign statistics
       tags:
       - campaigns
+  /api/v1/user-payments:
+    post:
+      consumes:
+      - application/json
+      description: Update or insert user payment information
+      parameters:
+      - description: Payment Info
+        in: body
+        name: payment_info
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserPaymentInfo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - BearerAuth: []
+      summary: Update user payment info
+      tags:
+      - user-payment
+  /api/v1/user-payments/{id}:
+    delete:
+      description: Delete a specific payment information record
+      parameters:
+      - description: Payment Info ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - BearerAuth: []
+      summary: Delete user payment info
+      tags:
+      - user-payment
+  /api/v1/user-payments/me:
+    get:
+      description: Get all payment information for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Response'
+      security:
+      - BearerAuth: []
+      summary: Get user payment infos
+      tags:
+      - user-payment
   /api/v1/wallets/{address}/detail:
     get:
       description: Get detailed information about a wallet by its address
