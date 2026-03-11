@@ -6,54 +6,46 @@ import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { TriangleAlert } from 'lucide-react';
 import { BANK_OPTIONS } from '../../constants';
+import { UserPaymentInfo } from '../../types';
 
 interface QrCodeCardProps {
-  bank_info?: string;
+  payment_info?: UserPaymentInfo;
   transfer_code?: string | null;
   amount?: number;
 }
 
-export const QrCodeCard = ({ bank_info, transfer_code, amount }: QrCodeCardProps) => {
-  const payment_info = useMemo(() => {
-    if (!bank_info) {
-      return null;
-    }
-    try {
-      const parsed = JSON.parse(bank_info);
-      return parsed;
-    } catch (error) {
-      console.error('QrCodeCard: Failed to parse bank_info:', error, 'Raw value:', bank_info);
-      return null;
-    }
-  }, [bank_info]);
+export const QrCodeCard = ({ payment_info, transfer_code, amount }: QrCodeCardProps) => {
+  const paymentData = payment_info;
 
   const qrCodeUrl = useMemo(() => {
-    if (!payment_info) {
+    if (!paymentData) {
       return '';
     }
 
-    const { bank_name, account_number, account_name } = payment_info;
+    const bankName = paymentData.bank_name;
+    const accountNumber = paymentData.account_number;
+    const accountName = paymentData.account_name;
 
-    if (!bank_name || !account_number) {
+    if (!bankName || !accountNumber) {
       return '';
     }
 
-    const bank = BANK_OPTIONS.find((option) => option.label === bank_name || option.value === bank_name);
-    const bankCode = bank?.value || bank_name;
+    const bank = BANK_OPTIONS.find((option) => option.label === bankName || option.value === bankName);
+    const bankCode = bank?.value || bankName;
 
-    let url = `https://img.vietqr.io/image/${bankCode}-${account_number}-print.png`;
+    let url = `https://img.vietqr.io/image/${bankCode}-${accountNumber}-print.png`;
 
     const params: string[] = [];
     if (amount) params.push(`amount=${amount}`);
     if (transfer_code) params.push(`addInfo=${encodeURIComponent(transfer_code)}`);
-    if (account_name) params.push(`accountName=${encodeURIComponent(account_name)}`);
+    if (accountName) params.push(`accountName=${encodeURIComponent(accountName)}`);
 
     if (params.length > 0) {
       url += '?' + params.join('&');
     }
 
     return url;
-  }, [payment_info, transfer_code, amount]);
+  }, [paymentData, transfer_code, amount]);
 
   const handleDownload = async () => {
     if (!qrCodeUrl) return;
@@ -64,7 +56,8 @@ export const QrCodeCard = ({ bank_info, transfer_code, amount }: QrCodeCardProps
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `vietqr-${payment_info?.account_number || 'payment'}.png`;
+      const accountNumber = paymentData?.account_number || 'payment';
+      link.download = `vietqr-${accountNumber}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -74,7 +67,7 @@ export const QrCodeCard = ({ bank_info, transfer_code, amount }: QrCodeCardProps
     }
   };
 
-  if (!payment_info) {
+  if (!paymentData) {
     return null;
   }
 

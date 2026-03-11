@@ -65,6 +65,7 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
           setValue('bank_info.account_number', primary.account_number, { shouldValidate: true });
           setValue('bank_info.account_name', primary.account_name, { shouldValidate: true });
           setValue('bank_info.is_primary', primary.is_primary, { shouldValidate: true });
+          setValue('payment_info_id', primary.id, { shouldValidate: true });
         }
       }
     }
@@ -78,10 +79,12 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
       setValue('bank_info.account_number', saved.account_number, { shouldValidate: true });
       setValue('bank_info.account_name', saved.account_name, { shouldValidate: true });
       setValue('bank_info.is_primary', saved.is_primary, { shouldValidate: true });
+      setValue('payment_info_id', saved.id, { shouldValidate: true });
     } else {
       setValue('bank_info.account_number', '', { shouldValidate: true });
       setValue('bank_info.account_name', '', { shouldValidate: true });
       setValue('bank_info.is_primary', false, { shouldValidate: true });
+      setValue('payment_info_id', undefined, { shouldValidate: true });
     }
   };
 

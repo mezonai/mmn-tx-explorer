@@ -3,8 +3,8 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"dong-service/models"
+	"fmt"
 )
 
 type UserPaymentInfoRepository struct {
@@ -169,4 +169,24 @@ func (r *UserPaymentInfoRepository) SetPrimary(ctx context.Context, id int64, us
 	}
 
 	return tx.Commit()
+}
+
+func (r *UserPaymentInfoRepository) GetByID(ctx context.Context, id int64) (*models.UserPaymentInfo, error) {
+	query := fmt.Sprintf(`
+		SELECT id, user_id, bank_name, account_number, account_name, is_primary, created_at, updated_at
+		FROM %s.user_payment_info
+		WHERE id = $1
+	`, r.dongSchema)
+
+	var info models.UserPaymentInfo
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&info.ID, &info.UserID, &info.BankName, &info.AccountNumber, &info.AccountName, &info.IsPrimary, &info.CreatedAt, &info.UpdatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &info, nil
 }

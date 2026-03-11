@@ -37,17 +37,6 @@ type IOrderService interface {
 }
 
 func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *models.CreateOrderRequest, walletAddress string, buyerUserID string) (*models.Order, *models.Offer, error) {
-	// Check if user has at least one payment info record
-	if s.userPaymentRepo != nil {
-		paymentInfos, err := s.userPaymentRepo.GetByUserID(context.Background(), buyerUserID)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to check user payment info: %w", err)
-		}
-		if len(paymentInfos) == 0 {
-			return nil, nil, fmt.Errorf("user must have at least one payment info to create orders")
-		}
-	}
-
 	db := database.GetDB()
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -62,6 +51,25 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 	offer, err := s.offerRepo.GetOfferByIDForUpdate(ctx, offerID, tx)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to fetch offer: %w", err)
+	}
+
+	// Validate payment_info_id if provided
+	if req.PaymentInfoID != nil && s.userPaymentRepo != nil {
+		paymentInfo, err := s.userPaymentRepo.GetByID(ctx, *req.PaymentInfoID)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to get payment info: %w", err)
+		}
+		if paymentInfo == nil {
+			return nil, nil, fmt.Errorf("payment info with ID %d not found", *req.PaymentInfoID)
+		}
+		if paymentInfo.UserID != buyerUserID {
+			return nil, nil, fmt.Errorf("payment info does not belong to the current user")
+		}
+	}
+
+	// payment_info_id is required for orders on BUY offers (order creator is seller)
+	if offer.Side == models.OfferSideBuy && req.PaymentInfoID == nil {
+		return nil, nil, fmt.Errorf("payment_info_id is required for orders on BUY offers")
 	}
 
 	// Check if user has reached the limit of 10 active orders
@@ -106,6 +114,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		Status:                    status,
 		TransferCode:              &transferCode,
 		ExpiresAt:                 &expiresAt,
+		PaymentInfoID:             req.PaymentInfoID,
 	}
 
 	if err = s.offerRepo.ReserveQuantity(ctx, offerID, orderAmount, tx); err != nil {

@@ -60,15 +60,23 @@ type IOfferService interface {
 }
 
 func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string, sellerUserID string) (*models.Offer, error) {
-	// Check if user has at least one payment info record
-	if s.userPaymentRepo != nil {
-		paymentInfos, err := s.userPaymentRepo.GetByUserID(ctx, sellerUserID)
+	// Validate payment_info_id
+	if req.PaymentInfoID != nil && s.userPaymentRepo != nil {
+		paymentInfo, err := s.userPaymentRepo.GetByID(ctx, *req.PaymentInfoID)
 		if err != nil {
-			return nil, fmt.Errorf("failed to check user payment info: %w", err)
+			return nil, fmt.Errorf("failed to get payment info: %w", err)
 		}
-		if len(paymentInfos) == 0 {
-			return nil, fmt.Errorf("user must have at least one payment info to create offers")
+		if paymentInfo == nil {
+			return nil, fmt.Errorf("payment info with ID %d not found", *req.PaymentInfoID)
 		}
+		if paymentInfo.UserID != sellerUserID {
+			return nil, fmt.Errorf("payment info does not belong to the current user")
+		}
+	}
+
+	// payment_info_id is required for SELL offers
+	if req.Side == models.OfferSideSell && req.PaymentInfoID == nil {
+		return nil, fmt.Errorf("payment_info_id is required for SELL offers")
 	}
 
 	activeOfferCount, err := s.repo.CountActiveOffersByUser(ctx, sellerUserID)
@@ -161,6 +169,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		TotalAmount:               types.NewBigIntString(amountInt).Multiply(constants.TokenMultiplierBigIntString),
 		PayableAmount:             types.NewBigIntString(priceInt),
 		Status:                    initialStatus,
+		PaymentInfoID:             req.PaymentInfoID,
 		Limit: &models.OfferLimit{
 			Min: types.NewBigIntString(limitMinInt).Multiply(constants.TokenMultiplierBigIntString),
 			Max: types.NewBigIntString(limitMaxInt).Multiply(constants.TokenMultiplierBigIntString),
