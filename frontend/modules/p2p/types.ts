@@ -3,6 +3,17 @@ import type { ChannelMessageHandler } from 'mezon-light-sdk';
 
 export type BankOption = 'MB' | 'VCB' | 'TCB' | 'ACB' | 'TPBANK' | 'VIETCOMBANK';
 
+export interface UserPaymentInfo {
+  id: number;
+  user_id: string;
+  bank_name: string;
+  account_number: string;
+  account_name: string;
+  is_primary: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface P2POffer {
   offer_id: string;
   intermediary_wallet_id: number;
@@ -22,11 +33,7 @@ export interface P2POffer {
   created_at: string;
   update_at: string;
   status: string;
-  bank_info?: {
-    bank: string;
-    account_number: string;
-    account_name: string;
-  };
+  payment_info?: UserPaymentInfo;
   transfer_code?: string;
   has_active_order?: boolean;
   order_count?: number;
@@ -58,7 +65,7 @@ export interface CreateOfferRequest {
     min: number;
     max: number;
   };
-  bank_info?: { bank: BankOption; account_number: string; account_name: string };
+  payment_info_id?: number;
   symbol?: string;
 }
 
@@ -80,6 +87,7 @@ export enum OrderStatus {
   FAILED = 'FAILED',
   COMPLETED = 'COMPLETED',
   WAITING_TRANSFER = 'WAITING_TRANSFER',
+  EXPIRED = 'EXPIRED',
 }
 
 export interface P2POrder {
@@ -93,11 +101,7 @@ export interface P2POrder {
   price?: number;
   payable_amount?: string;
   status: OrderStatus;
-  bank_info?: {
-    bank: string;
-    account_number: string;
-    account_name: string;
-  };
+  payment_info?: UserPaymentInfo;
   transfer_code?: string | null;
   expires_at: string;
   created_at: string;
@@ -110,7 +114,7 @@ export type P2PTabType = (typeof P2P_TAB)[keyof typeof P2P_TAB];
 
 export interface CreateOrderRequest {
   amount: number;
-  bank_info?: { bank: BankOption; account_number: string; account_name: string };
+  payment_info_id: number;
 }
 
 export interface UpdateOrderStatusRequest {

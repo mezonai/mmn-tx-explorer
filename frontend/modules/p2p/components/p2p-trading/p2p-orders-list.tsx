@@ -39,13 +39,13 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
       headerContent: 'OFFER TYPE',
       renderCell: (order) => (
         <Chip
-          variant={order.side === TradeTypes.BUY ? 'outline-info' : 'outline-success'}
-          className="min-w-[60px] justify-center rounded-sm px-3 text-[10px] uppercase"
+          variant={order.side === TradeTypes.SELL ? 'error' : 'success'}
+          className="min-w-[60px] justify-center rounded-full px-3 py-0.5 text-[10px] font-bold uppercase"
         >
           {order.side}
         </Chip>
       ),
-      skeletonContent: <Skeleton className="h-3 w-16" />,
+      skeletonContent: <Skeleton className="h-5 w-16 rounded-full" />,
       align: 'center',
     },
     {

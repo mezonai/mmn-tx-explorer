@@ -2,18 +2,22 @@
 
 import { Card } from '@/components/ui/card';
 import { CopyButton } from '@/components/ui/copy-button';
-import { P2POffer } from '../../types';
+import { UserPaymentInfo } from '../../types';
 import { Bolt } from 'lucide-react';
 
 interface BankInfoCardProps {
-  bank_info?: P2POffer['bank_info'];
+  payment_info?: UserPaymentInfo;
   transfer_code?: string | null;
 }
 
-export const BankInfoCard = ({ bank_info, transfer_code }: BankInfoCardProps) => {
-  if (!bank_info) {
+export const BankInfoCard = ({ payment_info, transfer_code }: BankInfoCardProps) => {
+  if (!payment_info) {
     return null;
   }
+
+  const bankName = payment_info.bank_name;
+  const accountNumber = payment_info.account_number;
+  const accountName = payment_info.account_name;
 
   return (
     <Card className="bg-card border-border rounded-lg border">
@@ -32,10 +36,10 @@ export const BankInfoCard = ({ bank_info, transfer_code }: BankInfoCardProps) =>
             <div className="group bg-muted/30 hover:bg-muted/50 border-border/50 flex items-center justify-between rounded border p-2 transition">
               <div className="min-w-0 flex-1">
                 <div className="text-muted-foreground text-[9px] font-bold uppercase">Bank</div>
-                <div className="text-foreground truncate text-xs font-bold">{bank_info.bank}</div>
+                <div className="text-foreground truncate text-xs font-bold">{bankName}</div>
               </div>
               <CopyButton
-                textToCopy={bank_info.bank}
+                textToCopy={bankName}
                 className="text-muted-foreground hover:text-foreground ml-1 h-6 w-6 flex-shrink-0 transition"
               />
             </div>
@@ -43,10 +47,10 @@ export const BankInfoCard = ({ bank_info, transfer_code }: BankInfoCardProps) =>
             <div className="group bg-muted/30 hover:bg-muted/50 border-border/50 flex items-center justify-between rounded border p-2 transition">
               <div className="min-w-0 flex-1">
                 <div className="text-muted-foreground text-[9px] font-bold uppercase">Account number</div>
-                <div className="text-foreground truncate font-mono text-xs font-bold">{bank_info.account_number}</div>
+                <div className="text-foreground truncate font-mono text-xs font-bold">{accountNumber}</div>
               </div>
               <CopyButton
-                textToCopy={bank_info.account_number}
+                textToCopy={accountNumber}
                 className="text-muted-foreground hover:text-foreground ml-1 h-6 w-6 flex-shrink-0 transition"
               />
             </div>
@@ -56,10 +60,10 @@ export const BankInfoCard = ({ bank_info, transfer_code }: BankInfoCardProps) =>
           <div className="group bg-muted/30 hover:bg-muted/50 border-border/50 flex items-center justify-between rounded border p-2 transition">
             <div className="min-w-0 flex-1">
               <div className="text-muted-foreground text-[9px] font-bold uppercase">Account name</div>
-              <div className="text-foreground truncate text-xs font-bold uppercase">{bank_info.account_name}</div>
+              <div className="text-foreground truncate text-xs font-bold uppercase">{accountName}</div>
             </div>
             <CopyButton
-              textToCopy={bank_info.account_name}
+              textToCopy={accountName}
               className="text-muted-foreground hover:text-foreground ml-1 h-6 w-6 flex-shrink-0 transition"
             />
           </div>
