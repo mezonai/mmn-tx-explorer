@@ -6,6 +6,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useP2POrder } from '../../hooks/useP2POrder';
 import { useP2POffer } from '../../hooks/useP2POffer';
 import { useCreateOrder } from '../../hooks/useCreateOrder';
+import { useUserPaymentInfos } from '../../hooks/usePaymentInfo';
 import { useUser } from '@/providers/AppProvider';
 import { TradingRoomHeader } from './trading-room-header';
 import { ProgressSteps } from './progress-steps';
@@ -54,6 +55,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   const offerIdParam = isOfferMode ? orderId : order ? String(order.offer_id) : null;
   const { offer, isLoading: offerLoading } = useP2POffer(offerIdParam);
   const { createOrder, isLoading: isCreatingOrder } = useCreateOrder();
+  const { data: savedPayments } = useUserPaymentInfos();
 
   useEffect(() => {
     if (!order || isOfferMode) return;
@@ -246,11 +248,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
     }
   };
 
-  const handleConfirmBuy = async (
-    amountMZD: number,
-    amountVND: number,
-    bankInfo?: { bank: string; account_number: string; account_name: string }
-  ) => {
+  const handleConfirmBuy = async (amountMZD: number, amountVND: number) => {
     if (!offer || !user?.walletAddress) {
       setError('Please sign in to continue.');
       return;
@@ -258,7 +256,28 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
 
     try {
       setError(null);
-      const newOrder = await createOrder(offer, amountMZD, amountVND, bankInfo as any);
+      // Get primary payment info for BUY offers (seller must provide payment info)
+      const primaryPayment = savedPayments?.find((p) => p.is_primary) || savedPayments?.[0];
+
+      if (offer.side === TradeTypes.BUY && !primaryPayment) {
+        toast.error(
+          'Seller has not set up payment information. Please choose another offer or wait for the seller to set up their payment info.'
+        );
+        setError('Please save your payment information before creating an order.');
+        return;
+      }
+
+      const payment_info_id = offer.side === TradeTypes.BUY ? primaryPayment!.id : primaryPayment?.id;
+
+      if (!payment_info_id) {
+        toast.error(
+          'Seller has not set up payment information. Please choose another offer or wait for the seller to set up their payment info.'
+        );
+        setError('Please save your payment information before creating an order.');
+        return;
+      }
+
+      const newOrder = await createOrder(offer, amountMZD, amountVND, payment_info_id);
 
       if (newOrder) {
         // If it's a BUY offer, the responder (Seller) needs to transfer Mezon to escrow
@@ -316,7 +335,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       expires_at: new Date(Date.now() + ORDER_EXPIRATION_DURATION_MS).toISOString(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      bank_info: offer.bank_info,
+      payment_info: offer.payment_info,
       price_rate: offer.price_rate,
       order_creator_user_id: '',
       offer_creator_user_id: '',
@@ -431,19 +450,38 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
           <div className="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-12">
             <div className="flex flex-col gap-3 lg:col-span-8">
               <OrderInfoCard order={effectiveOrder} userRole={userRole} />
-              {order && order.bank_info && order.transfer_code && (
-                <BankInfoCard bank_info={order.bank_info} transfer_code={order.transfer_code} />
-              )}
+              {order &&
+                order.transfer_code &&
+                (() => {
+                  // Determine seller's payment info: SELL offer = offer creator, BUY offer = order creator
+                  const isSellOffer = (order.offer_type || offer?.side) === TradeTypes.SELL;
+                  const sellerPaymentInfo = isSellOffer ? offer?.payment_info : order.payment_info;
+
+                  return (
+                    sellerPaymentInfo && (
+                      <BankInfoCard payment_info={sellerPaymentInfo} transfer_code={order.transfer_code} />
+                    )
+                  );
+                })()}
             </div>
 
             <div className="lg:col-span-4">
-              {order && (order.bank_info || offer?.bank_info) && (
-                <QrCodeCard
-                  bank_info={order.bank_info || offer?.bank_info}
-                  transfer_code={order.transfer_code}
-                  amount={Number(order.payable_amount) || order.price}
-                />
-              )}
+              {order &&
+                (() => {
+                  // Determine seller's payment info: SELL offer = offer creator, BUY offer = order creator
+                  const isSellOffer = (order.offer_type || offer?.side) === TradeTypes.SELL;
+                  const sellerPaymentInfo = isSellOffer ? offer?.payment_info : order.payment_info;
+
+                  return (
+                    sellerPaymentInfo && (
+                      <QrCodeCard
+                        payment_info={sellerPaymentInfo}
+                        transfer_code={order.transfer_code}
+                        amount={Number(order.payable_amount) || order.price}
+                      />
+                    )
+                  );
+                })()}
             </div>
           </div>
 

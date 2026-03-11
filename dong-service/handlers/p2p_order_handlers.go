@@ -262,7 +262,6 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 	var body struct {
 		ExecutionPrice *string `json:"execution_price,omitempty"`
 		Source         *string `json:"source,omitempty"`
-		BankInfo       *string `json:"bank_info,omitempty"`
 	}
 	_ = c.ShouldBindJSON(&body)
 

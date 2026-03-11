@@ -23,7 +23,7 @@ func NewOrderRepository(db *sql.DB, dongSchema string) *OrderRepository {
 func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
 			INSERT INTO %s.p2p_orders (
-				offer_id, order_creator_wallet_address, order_creator_user_id, order_amount, payable_amount, status, transfer_code, expires_at, bank_info, created_at, updated_at
+				offer_id, order_creator_wallet_address, order_creator_user_id, order_amount, payable_amount, status, transfer_code, expires_at, payment_info_id, created_at, updated_at
 			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW(),NOW())
         RETURNING order_id, created_at, updated_at
     `, r.dongSchema)
@@ -37,7 +37,7 @@ func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order, 
 		order.Status,
 		order.TransferCode,
 		order.ExpiresAt,
-		order.BankInfo,
+		order.PaymentInfoID,
 	).Scan(&order.OrderID, &order.CreatedAt, &order.UpdatedAt)
 }
 func (r *OrderRepository) HasActiveOrders(ctx context.Context, offerID int64, tx *sql.Tx) (bool, error) {
@@ -121,11 +121,13 @@ func (r *OrderRepository) CancelExpiredOrders(ctx context.Context, cutoff time.T
 func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, error) {
 	base := fmt.Sprintf(`
 		SELECT o.order_id, o.offer_id, o.order_creator_wallet_address, o.order_creator_user_id, o.order_amount, o.payable_amount, 
-		       o.transaction_hash, o.status, o.transfer_code, o.expires_at, o.bank_info, o.created_at, o.updated_at,
-		       of.offer_creator_wallet_address, of.offer_creator_user_id
+		       o.transaction_hash, o.status, o.transfer_code, o.expires_at, o.created_at, o.updated_at,
+		       of.offer_creator_wallet_address, of.offer_creator_user_id,
+		       p.id, p.user_id, p.bank_name, p.account_number, p.account_name, p.is_primary, p.created_at, p.updated_at
 		FROM %s.p2p_orders o
 		INNER JOIN %s.p2p_offers of ON o.offer_id = of.offer_id
-		WHERE o.offer_id = $1`, r.dongSchema, r.dongSchema)
+		LEFT JOIN %s.user_payment_info p ON o.payment_info_id = p.id
+		WHERE o.offer_id = $1`, r.dongSchema, r.dongSchema, r.dongSchema)
 
 	// Default ordering and pagination
 	orderBy := "created_at"
@@ -162,6 +164,17 @@ func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, 
 	out := []models.Order{}
 	for rows.Next() {
 		var o models.Order
+
+		// Payment info fields
+		var paymentID sql.NullInt64
+		var paymentUserID sql.NullString
+		var bankName sql.NullString
+		var accountNumber sql.NullString
+		var accountName sql.NullString
+		var isPrimary sql.NullBool
+		var paymentCreatedAt sql.NullTime
+		var paymentUpdatedAt sql.NullTime
+
 		if err := rows.Scan(
 			&o.OrderID,
 			&o.OfferID,
@@ -173,14 +186,36 @@ func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, 
 			&o.Status,
 			&o.TransferCode,
 			&o.ExpiresAt,
-			&o.BankInfo,
 			&o.CreatedAt,
 			&o.UpdatedAt,
 			&o.OfferCreatorWalletAddress,
 			&o.OfferCreatorUserID,
+			&paymentID,
+			&paymentUserID,
+			&bankName,
+			&accountNumber,
+			&accountName,
+			&isPrimary,
+			&paymentCreatedAt,
+			&paymentUpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan order: %w", err)
 		}
+
+		// Build PaymentInfo if data is present
+		if paymentID.Valid && bankName.Valid && accountNumber.Valid && accountName.Valid {
+			o.PaymentInfo = &models.UserPaymentInfo{
+				ID:            paymentID.Int64,
+				UserID:        paymentUserID.String,
+				BankName:      bankName.String,
+				AccountNumber: accountNumber.String,
+				AccountName:   accountName.String,
+				IsPrimary:     isPrimary.Bool,
+				CreatedAt:     paymentCreatedAt.Time,
+				UpdatedAt:     paymentUpdatedAt.Time,
+			}
+		}
+
 		out = append(out, o)
 	}
 
@@ -188,8 +223,23 @@ func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, 
 }
 
 func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.Order, error) {
-	query := fmt.Sprintf("SELECT order_id, offer_id, order_creator_wallet_address, order_creator_user_id, order_amount, payable_amount, transaction_hash, status, transfer_code, expires_at, bank_info, created_at, updated_at FROM %s.p2p_orders WHERE order_id = $1", r.dongSchema)
+	query := fmt.Sprintf(`SELECT o.order_id, o.offer_id, o.order_creator_wallet_address, o.order_creator_user_id, o.order_amount, o.payable_amount, o.transaction_hash, o.status, o.transfer_code, o.expires_at, o.created_at, o.updated_at,
+		p.id, p.user_id, p.bank_name, p.account_number, p.account_name, p.is_primary, p.created_at, p.updated_at
+		FROM %s.p2p_orders o
+		LEFT JOIN %s.user_payment_info p ON o.payment_info_id = p.id
+		WHERE o.order_id = $1`, r.dongSchema, r.dongSchema)
 	var o models.Order
+
+	// Payment info fields
+	var paymentID sql.NullInt64
+	var paymentUserID sql.NullString
+	var bankName sql.NullString
+	var accountNumber sql.NullString
+	var accountName sql.NullString
+	var isPrimary sql.NullBool
+	var paymentCreatedAt sql.NullTime
+	var paymentUpdatedAt sql.NullTime
+
 	row := r.db.QueryRowContext(ctx, query, id)
 	if err := row.Scan(
 		&o.OrderID,
@@ -202,12 +252,34 @@ func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.O
 		&o.Status,
 		&o.TransferCode,
 		&o.ExpiresAt,
-		&o.BankInfo,
 		&o.CreatedAt,
 		&o.UpdatedAt,
+		&paymentID,
+		&paymentUserID,
+		&bankName,
+		&accountNumber,
+		&accountName,
+		&isPrimary,
+		&paymentCreatedAt,
+		&paymentUpdatedAt,
 	); err != nil {
 		return nil, err
 	}
+
+	// Build PaymentInfo if data is present
+	if paymentID.Valid && bankName.Valid && accountNumber.Valid && accountName.Valid {
+		o.PaymentInfo = &models.UserPaymentInfo{
+			ID:            paymentID.Int64,
+			UserID:        paymentUserID.String,
+			BankName:      bankName.String,
+			AccountNumber: accountNumber.String,
+			AccountName:   accountName.String,
+			IsPrimary:     isPrimary.Bool,
+			CreatedAt:     paymentCreatedAt.Time,
+			UpdatedAt:     paymentUpdatedAt.Time,
+		}
+	}
+
 	return &o, nil
 }
 
@@ -215,13 +287,15 @@ func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.O
 func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Order, error) {
 	query := fmt.Sprintf(`
 		SELECT o.order_id, o.offer_id, o.order_creator_wallet_address, o.order_creator_user_id, o.order_amount, o.payable_amount, 
-		       o.transaction_hash, o.status, o.transfer_code, o.expires_at, o.bank_info, o.created_at, o.updated_at,
-		       of.offer_creator_wallet_address, of.offer_creator_user_id
+		       o.transaction_hash, o.status, o.transfer_code, o.expires_at, o.created_at, o.updated_at,
+		       of.offer_creator_wallet_address, of.offer_creator_user_id,
+		       p.id, p.user_id, p.bank_name, p.account_number, p.account_name, p.is_primary, p.created_at, p.updated_at
 		FROM %s.p2p_orders o
 		INNER JOIN %s.p2p_offers of ON o.offer_id = of.offer_id
+		LEFT JOIN %s.user_payment_info p ON o.payment_info_id = p.id
 		WHERE o.order_creator_wallet_address = $1 OR of.offer_creator_wallet_address = $1
 		ORDER BY o.created_at DESC
-	`, r.dongSchema, r.dongSchema)
+	`, r.dongSchema, r.dongSchema, r.dongSchema)
 
 	if pagination != nil {
 		if limit, ok := pagination["limit"].(int); ok && limit > 0 {
@@ -241,6 +315,17 @@ func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAd
 	out := []models.Order{}
 	for rows.Next() {
 		var o models.Order
+
+		// Payment info fields
+		var paymentID sql.NullInt64
+		var paymentUserID sql.NullString
+		var bankName sql.NullString
+		var accountNumber sql.NullString
+		var accountName sql.NullString
+		var isPrimary sql.NullBool
+		var paymentCreatedAt sql.NullTime
+		var paymentUpdatedAt sql.NullTime
+
 		if err := rows.Scan(
 			&o.OrderID,
 			&o.OfferID,
@@ -252,14 +337,36 @@ func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAd
 			&o.Status,
 			&o.TransferCode,
 			&o.ExpiresAt,
-			&o.BankInfo,
 			&o.CreatedAt,
 			&o.UpdatedAt,
 			&o.OfferCreatorWalletAddress,
 			&o.OfferCreatorUserID,
+			&paymentID,
+			&paymentUserID,
+			&bankName,
+			&accountNumber,
+			&accountName,
+			&isPrimary,
+			&paymentCreatedAt,
+			&paymentUpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan order: %w", err)
 		}
+
+		// Build PaymentInfo if data is present
+		if paymentID.Valid && bankName.Valid && accountNumber.Valid && accountName.Valid {
+			o.PaymentInfo = &models.UserPaymentInfo{
+				ID:            paymentID.Int64,
+				UserID:        paymentUserID.String,
+				BankName:      bankName.String,
+				AccountNumber: accountNumber.String,
+				AccountName:   accountName.String,
+				IsPrimary:     isPrimary.Bool,
+				CreatedAt:     paymentCreatedAt.Time,
+				UpdatedAt:     paymentUpdatedAt.Time,
+			}
+		}
+
 		out = append(out, o)
 	}
 
