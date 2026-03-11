@@ -93,6 +93,7 @@ const (
 	ExtraInfoP2PTrading              = `{"type":"p2p-trading"}`
 	ExtraInfoP2PTradingBuyOffer      = `{"type":"p2p-trading-buy-offer"}`
 	ExtraInfoP2PTradingOfferCanceled = `{"type":"p2p-trading","action":"offer-canceled"}`
+	ExtraInfoP2PTradingOrderExpired  = `{"type":"p2p-trading","action":"order-expired-refund"}`
 )
 
 const (
