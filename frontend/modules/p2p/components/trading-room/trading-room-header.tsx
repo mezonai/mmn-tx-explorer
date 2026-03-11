@@ -33,7 +33,8 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
     return () => clearInterval(interval);
   }, []);
 
-  // Check if expired
+
+  // Calculate remaining time and check if expired
   const isExpired = useMemo(() => {
     const now = currentTime;
     const expires = new Date(order.expires_at).getTime();
@@ -100,9 +101,8 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
       )}
       {order.status !== OrderStatus.COMPLETED && (
         <div
-          className={`flex items-center gap-2 rounded-full px-3 py-1 text-sm font-bold ${
-            isExpired ? 'bg-red-500/10 text-red-500' : 'bg-yellow-500/10 text-yellow-500'
-          }`}
+          className={`flex items-center gap-2 rounded-full px-3 py-1 text-sm font-bold ${isExpired ? 'bg-red-500/10 text-red-500' : 'bg-yellow-500/10 text-yellow-500'
+            }`}
         >
           <Clock className="h-4 w-4" />
           <Countdown expiresAt={order.expires_at} className="m-0" />
