@@ -44,18 +44,27 @@ BEGIN
                     CONTINUE;
                 END IF;
                 
-                -- Check if this payment info already exists
                 SELECT id INTO payment_id
                 FROM dong_schema.user_payment_info
                 WHERE user_id = offer_rec.offer_creator_user_id
                 AND bank_name = bank_name_val
-                AND account_number = account_number_val;
+                ORDER BY COALESCE(is_primary, false) DESC, id ASC
+                LIMIT 1;
                 
-                -- If not exists, create new payment info
                 IF payment_id IS NULL THEN
                     INSERT INTO dong_schema.user_payment_info (user_id, bank_name, account_number, account_name, is_primary)
-                    VALUES (offer_rec.offer_creator_user_id, bank_name_val, account_number_val, account_name_val, true)
+                    VALUES (offer_rec.offer_creator_user_id, bank_name_val, account_number_val, account_name_val, false)
+                    ON CONFLICT (user_id, bank_name) DO NOTHING
                     RETURNING id INTO payment_id;
+                    
+                    IF payment_id IS NULL THEN
+                        SELECT id INTO payment_id
+                        FROM dong_schema.user_payment_info
+                        WHERE user_id = offer_rec.offer_creator_user_id
+                        AND bank_name = bank_name_val
+                        ORDER BY COALESCE(is_primary, false) DESC, id ASC
+                        LIMIT 1;
+                    END IF;
                 END IF;
                 
                 -- Update p2p_offers with payment_info_id
