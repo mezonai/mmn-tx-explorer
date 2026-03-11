@@ -45,6 +45,11 @@ export enum TradeTypes {
   SELL = 'SELL',
   BUY = 'BUY',
 }
+
+export enum MessageCode {
+  NORMAL = 0,
+  BUZZ = 8,
+}
 export interface CreateOfferRequest {
   side: TradeTypes;
   amount: number;
@@ -171,6 +176,18 @@ export type P2PTradingRoleType = (typeof P2P_TRADING_ROLE)[keyof typeof P2P_TRAD
 export interface AutoMessagePayload {
   text: string;
   embed?: IEmbedProps[];
+  components?: Array<{
+    components: Array<{
+      id: string;
+      type: number;
+      component: {
+        label: string;
+        style: number;
+        url: string;
+      };
+    }>;
+  }>;
+  buzz?: boolean;
 }
 export interface IEmbedProps {
   color?: string;

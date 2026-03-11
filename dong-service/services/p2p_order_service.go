@@ -309,7 +309,7 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 		}
 
 		if intermediaryWallet != nil && o.OrderAmount.Sign() > 0 {
-			txHash, transferErr := s.blockchain.TransferMoney(intermediaryWallet.EncryptedPrivateKey, *offer.IntermediaryWalletAddress, *targetWallet, o.OrderAmount.String(), constants.TextDataP2PTrading, constants.ExtraInfoP2PTrading)
+			txHash, transferErr := s.blockchain.TransferMoney(intermediaryWallet.EncryptedPrivateKey, *offer.IntermediaryWalletAddress, *targetWallet, o.OrderAmount.String(), fmt.Sprintf("%s Order %d", constants.TextDataP2PTrading, orderID), constants.ExtraInfoP2PTrading)
 			if transferErr != nil {
 				err = fmt.Errorf("failed to transfer funds to buyer: %w", transferErr)
 				return err
