@@ -11,7 +11,7 @@ import { ROUTES } from '@/configs/routes.config';
 import { Button } from '@/components/ui/button';
 import { Countdown } from '../shared/count-down';
 import { NumberUtil } from '@/utils';
-import { getOrderStatusInfo } from '../../util';
+import { getOrderStatusInfo, getOrderStatusLabel } from '../../util';
 import { useUser } from '@/providers/AppProvider';
 
 interface P2POrdersListProps {
@@ -131,7 +131,7 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
             variant={getOrderStatusInfo(order.status)}
             className="min-w-[80px] justify-center gap-1.5 rounded-sm px-3 text-[10px]"
           >
-            <span>{order.status}</span>
+            <span>{getOrderStatusLabel(order.status)}</span>
           </Chip>
         </div>
       ),
