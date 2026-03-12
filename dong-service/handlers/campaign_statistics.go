@@ -43,7 +43,7 @@ func (h *CampaignStatisticsHandler) GetCampaignStats(c *gin.Context) {
 
 	logger.Debug().
 		Int64("total_campaigns_active", stats.TotalCampaignsActive).
-		Int64("total_amount", stats.TotalAmount).
+		Str("total_amount", stats.TotalAmount.String()).
 		Int64("total_contributors", stats.TotalContributors).
 		Msg("Campaign statistics retrieved successfully")
 
@@ -79,6 +79,6 @@ func (h *CampaignStatisticsHandler) SyncCampaign(c *gin.Context) {
 		return
 	}
 
-	logger.Info().Int64("campaign_id", id).Int64("total_amount", syncResponse.TotalAmount).Int64("total_contributors", syncResponse.TotalContributors).Int64("recent_amount", syncResponse.RecentAmount).Msg("Campaign synced successfully")
+	logger.Info().Int64("campaign_id", id).Str("total_amount", syncResponse.TotalAmount.String()).Int64("total_contributors", syncResponse.TotalContributors).Str("recent_amount", syncResponse.RecentAmount.String()).Msg("Campaign synced successfully")
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("Campaign synced successfully", syncResponse))
 }

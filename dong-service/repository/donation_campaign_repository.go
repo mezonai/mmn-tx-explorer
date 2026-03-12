@@ -5,9 +5,11 @@ import (
 	"dong-service/constants"
 	"dong-service/logger"
 	"dong-service/models"
+	"dong-service/types"
 	"dong-service/utils"
 	"errors"
 	"fmt"
+	"math/big"
 	"regexp"
 	"strconv"
 	"strings"
@@ -54,6 +56,12 @@ func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampa
 		return nil, err
 	}
 
+	var goalValue interface{}
+	if campaign.Goal != nil {
+		scaledGoal := campaign.Goal.Multiply(types.NewBigIntString(1000000))
+		goalValue = scaledGoal
+	}
+
 	campaignQuery := fmt.Sprintf(`
 	INSERT INTO %s.donation_campaign (name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status)
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
@@ -66,7 +74,7 @@ func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampa
 		campaign.Name,
 		uniqueSlug,
 		campaign.Description,
-		campaign.Goal,
+		goalValue,
 		campaign.URL,
 		campaign.EndDate,
 		campaign.DonationWallet,
@@ -134,6 +142,12 @@ func (r *DonationCampaignRepository) CreateAndActive(campaign *models.CreateDona
 		return nil, err
 	}
 
+	var goalValue interface{}
+	if campaign.Goal != nil {
+		scaledGoal := campaign.Goal.Multiply(types.NewBigIntString(1000000))
+		goalValue = scaledGoal
+	}
+
 	campaignQuery := fmt.Sprintf(`
 		-- explicitly set verified FALSE during creation+activation; verification is a separate step
 		INSERT INTO %s.donation_campaign (name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status)
@@ -148,7 +162,7 @@ func (r *DonationCampaignRepository) CreateAndActive(campaign *models.CreateDona
 		campaign.Name,
 		uniqueSlug,
 		campaign.Description,
-		campaign.Goal,
+		goalValue,
 		campaign.URL,
 		campaign.EndDate,
 		campaign.DonationWallet,
@@ -418,8 +432,9 @@ func (r *DonationCampaignRepository) Update(id, creator int64, req *models.Updat
 		argCount++
 	}
 	if req.Goal != nil {
+		scaledGoal := req.Goal.Multiply(types.NewBigIntString(1000000))
 		setClauses = append(setClauses, fmt.Sprintf("goal = $%d", argCount))
-		args = append(args, *req.Goal)
+		args = append(args, scaledGoal)
 		argCount++
 	}
 	if req.URL != nil {
@@ -652,7 +667,7 @@ func (r *DonationCampaignRepository) GetTopContributors(campaignID int64, limit 
 	}()
 
 	var contributors []models.TopContributor
-	var campaignTotalAmount int64
+	var campaignTotalAmount types.BigIntString
 	var hasData bool
 
 	for rows.Next() {
@@ -664,8 +679,10 @@ func (r *DonationCampaignRepository) GetTopContributors(campaignID int64, limit 
 		}
 
 		// Calculate percentage of total campaign amount
-		if campaignTotalAmount > 0 {
-			contributor.Percentage = float64(contributor.TotalDonate) / float64(campaignTotalAmount) * 100
+		if campaignTotalAmount.Compare(types.NewBigIntString(0)) > 0 {
+			totalDonateFloat, _ := new(big.Float).SetInt(contributor.TotalDonate.GetBigInt()).Float64()
+			campaignTotalAmountFloat, _ := new(big.Float).SetInt(campaignTotalAmount.GetBigInt()).Float64()
+			contributor.Percentage = totalDonateFloat / campaignTotalAmountFloat * 100
 		} else {
 			contributor.Percentage = 0
 		}
