@@ -20,6 +20,7 @@ export const createOfferSchema = z
       account_name: z.string().optional(),
       is_primary: z.boolean().optional(),
     }),
+    payment_info_id: z.number().optional(),
     symbol: z.string(),
   })
   .superRefine((data, ctx) => {

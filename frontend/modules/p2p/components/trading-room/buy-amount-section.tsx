@@ -15,6 +15,7 @@ import { z } from 'zod';
 import BigNumber from 'bignumber.js';
 import { NumberUtil } from '@/utils';
 import { TradeTypes } from '../../types';
+import { toast } from 'sonner';
 
 const paymentSchema = z.object({
   bank_info: z.object({
@@ -35,11 +36,7 @@ const paymentSchema = z.object({
 
 interface BuyAmountSectionProps {
   offer: P2POffer;
-  onConfirmBuy: (
-    amountMZD: number,
-    amountVND: number,
-    bank_info?: { bank: string; account_number: string; account_name: string }
-  ) => void;
+  onConfirmBuy: (amountMZD: number, amountVND: number) => void;
   isLoading?: boolean;
   extraDisabled?: boolean;
   isSeller?: boolean;
@@ -64,6 +61,7 @@ export const BuyAmountSection = ({
   const [displayValue, setDisplayValue] = useState<string>('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectionType, setSelectionType] = useState<'min' | 'max' | 'none'>('none');
+  const [hasUnsavedPaymentChanges, setHasUnsavedPaymentChanges] = useState(false);
 
   const isRespondingToBuyOffer = side === 'BUY';
 
@@ -128,6 +126,14 @@ export const BuyAmountSection = ({
       if (amountMZD > userBalance) {
         return;
       }
+
+      const bankInfo = getValues('bank_info');
+      if (!bankInfo.account_number || !bankInfo.account_name) {
+        toast.error('Payment information required', {
+          description: 'Please enter and save your bank account information before creating an order',
+        });
+        return;
+      }
     }
 
     if (amountMZD >= initialMin.toNumber() && amountMZD <= effectiveMax.toNumber()) {
@@ -136,8 +142,7 @@ export const BuyAmountSection = ({
   };
 
   const handleFinalConfirm = () => {
-    const bankInfo = isRespondingToBuyOffer ? getValues('bank_info') : undefined;
-    onConfirmBuy(amountMZD, amountVND, bankInfo);
+    onConfirmBuy(amountMZD, amountVND);
     setShowConfirmModal(false);
   };
 
@@ -145,7 +150,11 @@ export const BuyAmountSection = ({
   const isRangeValid = amountBN.isGreaterThanOrEqualTo(initialMin) && amountBN.isLessThanOrEqualTo(effectiveMax);
   const isBalanceValid = !isRespondingToBuyOffer || amountMZD <= userBalance;
   const isValidAmount =
-    isRangeValid && isBalanceValid && (!isRespondingToBuyOffer || isFormValid) && !extraDisabled && !isDisabled;
+    isRangeValid &&
+    isBalanceValid &&
+    (!isRespondingToBuyOffer || (isFormValid && !hasUnsavedPaymentChanges)) &&
+    !extraDisabled &&
+    !isDisabled;
 
   return (
     <div className={`mb-6 ${isRespondingToBuyOffer ? 'grid grid-cols-1 gap-8 lg:grid-cols-2' : 'space-y-4'}`}>
@@ -179,10 +188,11 @@ export const BuyAmountSection = ({
                   setSelectionType('min');
                 }}
                 disabled={isDisabled}
-                className={`h-[30px] rounded border text-[10px] font-bold tracking-wider uppercase transition-all disabled:cursor-not-allowed disabled:opacity-30 ${selectionType === 'min'
+                className={`h-[30px] rounded border text-[10px] font-bold tracking-wider uppercase transition-all disabled:cursor-not-allowed disabled:opacity-30 ${
+                  selectionType === 'min'
                     ? 'border-brand-primary/50 bg-brand-primary/10 text-brand-primary'
                     : 'border-border bg-muted/30 text-muted-foreground hover:border-brand-primary/50 hover:bg-brand-primary/10 hover:text-brand-primary'
-                  }`}
+                }`}
               >
                 {isRespondingToBuyOffer ? 'Sell Min' : 'Buy Min'}
               </Button>
@@ -193,10 +203,11 @@ export const BuyAmountSection = ({
                   setSelectionType('max');
                 }}
                 disabled={isDisabled}
-                className={`h-[30px] rounded border text-[10px] font-bold tracking-wider uppercase transition-all disabled:cursor-not-allowed disabled:opacity-30 ${selectionType === 'max'
+                className={`h-[30px] rounded border text-[10px] font-bold tracking-wider uppercase transition-all disabled:cursor-not-allowed disabled:opacity-30 ${
+                  selectionType === 'max'
                     ? 'border-brand-primary/50 bg-brand-primary/10 text-brand-primary'
                     : 'border-border bg-muted/30 text-muted-foreground hover:border-brand-primary/50 hover:bg-brand-primary/10 hover:text-brand-primary'
-                  }`}
+                }`}
               >
                 {isRespondingToBuyOffer ? 'Sell Max' : 'Buy Max'}
               </Button>
@@ -232,7 +243,7 @@ export const BuyAmountSection = ({
             control={control as any}
             setValue={setValue as any}
             watch={watch as any}
-            onUnsavedChangesChange={() => { }}
+            onUnsavedChangesChange={setHasUnsavedPaymentChanges}
           />
         </div>
       )}

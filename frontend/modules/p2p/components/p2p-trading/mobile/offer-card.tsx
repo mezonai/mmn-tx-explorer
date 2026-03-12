@@ -180,11 +180,11 @@ const OfferMobileCard = ({ offer, isMyOffer = false }: OfferMobileCardProps) => 
               OPEN
             </Chip>
           ) : offer.status === OFFERS_STATUS.CONFIRMED ? (
-            <div className="flex w-full items-center gap-2">
-              <div className="flex-1">
+            <div className="flex w-full items-center justify-center gap-2">
+              <div>
                 <CancelConfirmDialog offer={offer} />
               </div>
-              <div className="flex-1">
+              <div>
                 <ShareOfferModal offer={offer} />
               </div>
             </div>

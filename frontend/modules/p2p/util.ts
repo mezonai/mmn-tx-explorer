@@ -15,6 +15,8 @@ export const getOrderStatusInfo = (type: OrderStatus) => {
       return 'brand';
     case OrderStatus.WAITING_TRANSFER:
       return 'primary';
+    case OrderStatus.EXPIRED:
+      return 'secondary';
     default:
       return 'default';
   }
