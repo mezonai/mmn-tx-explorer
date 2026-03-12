@@ -181,7 +181,7 @@ func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, 
 		WHERE o.offer_id = $1`, r.dongSchema, r.dongSchema, r.dongSchema)
 
 	// Default ordering and pagination
-	orderBy := "created_at"
+	orderBy := "o.created_at"
 	orderDir := "DESC"
 	limit := 20
 	offset := 0
@@ -189,8 +189,12 @@ func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, 
 	if pagination != nil {
 		if v, ok := pagination["order_by"].(string); ok && v != "" {
 			switch strings.ToLower(v) {
-			case "created_at", "payable_amount", "order_amount":
-				orderBy = v
+			case "created_at":
+				orderBy = "o.created_at"
+			case "payable_amount":
+				orderBy = "o.payable_amount"
+			case "order_amount":
+				orderBy = "o.order_amount"
 			}
 		}
 		if od, ok := pagination["order"].(string); ok && (strings.EqualFold(od, "asc") || strings.EqualFold(od, "desc")) {
