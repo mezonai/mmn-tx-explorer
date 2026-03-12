@@ -295,6 +295,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
               amount: amountMZD.toString(),
               note: 'p2p-trading-buy-offer',
               offerId: offer.offer_id,
+              orderId: newOrder.order_id,
             },
             ETransferType.P2PTradingBuyOffer
           );

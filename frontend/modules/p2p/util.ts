@@ -1,5 +1,9 @@
 import { LinkLocation, OrderStatus } from './types';
 
+export const getOrderStatusLabel = (status: OrderStatus): string => {
+  return String(status).replace(/_/g, ' ');
+};
+
 export const getOrderStatusInfo = (type: OrderStatus) => {
   switch (type) {
     case OrderStatus.OPEN:
