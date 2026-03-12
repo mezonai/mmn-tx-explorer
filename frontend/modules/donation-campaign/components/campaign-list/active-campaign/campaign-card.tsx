@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/configs/routes.config';
 import { BadgeCheck } from 'lucide-react';
 import { DescriptionDisplay } from '@/components/shared';
+import BigNumber from 'bignumber.js';
 
 interface CampaignCardProps {
   campaign: DonationCampaign;
@@ -20,7 +21,7 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
     if (status === ECampaignStatus.Draft) {
       return 'Draft';
     }
-    if (!!goal && NumberUtil.scaleDown(total_amount) >= goal) {
+    if (!!goal && Number(total_amount) >= Number(goal)) {
       return 'Goal Achieved';
     }
     if (status === ECampaignStatus.Closed || !end_date) {
@@ -36,14 +37,18 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
     if (!goal) {
       return '';
     }
-    const rawPercentage = (Number(NumberUtil.scaleDown(total_amount)) / goal) * 100;
+    const raisedBN = new BigNumber(total_amount);
+    const goalBN = new BigNumber(goal);
+    const rawPercentage = raisedBN.dividedBy(goalBN).multipliedBy(100).toNumber();
     const formattedPercentage = parseFloat(rawPercentage.toFixed(2));
     return `${formattedPercentage} % funded`;
   }, [status, total_amount, goal]);
 
   const progressPercent = useMemo(() => {
-    if (goal <= 0) return !total_amount ? 0 : 100;
-    return Math.min(Math.max(Math.floor((NumberUtil.scaleDown(total_amount) / goal) * 100), 0), 100);
+    const goalBN = new BigNumber(goal);
+    if (goalBN.isLessThanOrEqualTo(0)) return new BigNumber(total_amount).isGreaterThan(0) ? 100 : 0;
+    const raisedBN = new BigNumber(total_amount);
+    return Math.floor(raisedBN.dividedBy(goalBN).multipliedBy(100).toNumber());
   }, [total_amount, goal]);
 
   const contributorsNumber = useMemo(() => {
@@ -96,13 +101,13 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
           <div className="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
             <span>
               {NumberUtil.formatWithCommasAndScale(total_amount)}
-              {!!goal ? `/ ${NumberUtil.formatWithCommas(goal)} ` : ' '}
+              {!!goal ? `/ ${NumberUtil.formatWithCommasAndScale(goal)} ` : ' '}
               {APP_CONFIG.CHAIN_SYMBOL}
             </span>
             <span>{progress}</span>
           </div>
           <div
-            className="mt-2 h-2 rounded-full bg-gray-100 dark:bg-white/5"
+            className="mt-2 h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-white/5"
             role="progressbar"
             aria-valuemin={0}
             aria-valuemax={100}

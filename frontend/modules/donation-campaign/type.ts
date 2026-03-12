@@ -11,7 +11,7 @@ export interface DonationCampaign {
   name: string;
   slug: string;
   description: string;
-  goal: number;
+  goal: string | number;
   url: string;
   donation_wallet: string;
   creator: string;
@@ -19,19 +19,19 @@ export interface DonationCampaign {
   end_date: string;
   created_at: string;
   updated_at: string;
-  total_amount: number;
+  total_amount: string | number;
   total_contributors: number;
-  recent_amount?: number;
+  recent_amount?: string | number;
   owner: string;
   verified: boolean;
-  current_balance: number;
-  total_withdrawn: number;
+  current_balance: string | number;
+  total_withdrawn: string | number;
 }
 
 export interface CreateCampaignRequest {
   name: string;
   description: string;
-  goal: number;
+  goal: string | number;
   url: string;
   donation_wallet: string;
   end_date: string;
@@ -69,7 +69,7 @@ export interface CampaignListParams {
 
 export interface CampaignStats {
   total_campaigns_active: number;
-  total_amount: number;
+  total_amount: string | number;
   total_contributors: number;
 }
 
@@ -119,7 +119,7 @@ export interface Transaction {
 }
 export interface TopContributor {
   sender_wallet: string;
-  total_donate: number;
+  total_donate: string | number;
   percentage: number;
 }
 
