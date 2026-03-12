@@ -9,11 +9,14 @@ export const getOrderStatusInfo = (type: OrderStatus) => {
     case OrderStatus.PENDING:
       return 'warning';
     case OrderStatus.CONFIRMED:
+    case OrderStatus.COMPLETED:
       return 'info';
     case OrderStatus.CANCELED:
       return 'brand';
-    case OrderStatus.COMPLETED:
-      return 'info';
+    case OrderStatus.WAITING_TRANSFER:
+      return 'primary';
+    case OrderStatus.EXPIRED:
+      return 'secondary';
     default:
       return 'default';
   }
@@ -67,3 +70,19 @@ export const generateMarkdownPayload = (text: string) => {
     type: 'lk',
   }));
 };
+
+export const createTrackOrderComponents = (url: string) => [
+    {
+      components: [
+        {
+          id: '',
+          type: 1,
+          component: {
+            label: '📦 Track My Order',
+            style: 3,
+            url,
+          },
+        },
+      ],
+    },
+  ];
