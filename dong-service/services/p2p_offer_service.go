@@ -60,23 +60,25 @@ type IOfferService interface {
 }
 
 func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string, sellerUserID string) (*models.Offer, error) {
-	// Validate payment_info_id
-	if req.PaymentInfoID != nil && s.userPaymentRepo != nil {
-		paymentInfo, err := s.userPaymentRepo.GetByID(ctx, *req.PaymentInfoID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get payment info: %w", err)
+	// payment_info_id is only required and validated for SELL offers
+	if req.Side == models.OfferSideSell {
+		if req.PaymentInfoID == nil {
+			return nil, fmt.Errorf("payment_info_id is required for SELL offers")
 		}
-		if paymentInfo == nil {
-			return nil, fmt.Errorf("payment info with ID %d not found", *req.PaymentInfoID)
-		}
-		if paymentInfo.UserID != sellerUserID {
-			return nil, fmt.Errorf("payment info does not belong to the current user")
-		}
-	}
 
-	// payment_info_id is required for SELL offers
-	if req.Side == models.OfferSideSell && req.PaymentInfoID == nil {
-		return nil, fmt.Errorf("payment_info_id is required for SELL offers")
+		// Validate payment_info_id
+		if s.userPaymentRepo != nil {
+			paymentInfo, err := s.userPaymentRepo.GetByID(ctx, *req.PaymentInfoID)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get payment info: %w", err)
+			}
+			if paymentInfo == nil {
+				return nil, fmt.Errorf("payment info with ID %d not found", *req.PaymentInfoID)
+			}
+			if paymentInfo.UserID != sellerUserID {
+				return nil, fmt.Errorf("payment info does not belong to the current user")
+			}
+		}
 	}
 
 	activeOfferCount, err := s.repo.CountActiveOffersByUser(ctx, sellerUserID)
@@ -155,8 +157,12 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 	// Sell offers start as OPEN (waiting for escrow deposit),
 	// Buy offers start as CONFIRMED (ready for sellers to fill).
 	initialStatus := constants.TradingOpen
+	var paymentInfoID *int64
 	if req.Side == models.OfferSideBuy {
 		initialStatus = constants.TradingConfirmed
+		paymentInfoID = nil
+	} else {
+		paymentInfoID = req.PaymentInfoID
 	}
 
 	offer := &models.Offer{
@@ -169,7 +175,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		TotalAmount:               types.NewBigIntString(amountInt).Multiply(constants.TokenMultiplierBigIntString),
 		PayableAmount:             types.NewBigIntString(priceInt),
 		Status:                    initialStatus,
-		PaymentInfoID:             req.PaymentInfoID,
+		PaymentInfoID:             paymentInfoID,
 		Limit: &models.OfferLimit{
 			Min: types.NewBigIntString(limitMinInt).Multiply(constants.TokenMultiplierBigIntString),
 			Max: types.NewBigIntString(limitMaxInt).Multiply(constants.TokenMultiplierBigIntString),
