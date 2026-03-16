@@ -3,10 +3,22 @@ import type { ChannelMessageHandler } from 'mezon-light-sdk';
 
 export type BankOption = 'MB' | 'VCB' | 'TCB' | 'ACB' | 'TPBANK' | 'VIETCOMBANK';
 
+export interface UserPaymentInfo {
+  id: number;
+  user_id: string;
+  bank_name: string;
+  account_number: string;
+  account_name: string;
+  is_primary: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface P2POffer {
   offer_id: string;
   intermediary_wallet_id: number;
-  seller_wallet_address: string;
+  intermediary_wallet_address?: string;
+  offer_creator_wallet_address: string;
   total_amount: string;
   amount: string;
   limit: {
@@ -16,18 +28,15 @@ export interface P2POffer {
   price_rate: number;
   price_type: string;
   side: TradeTypes;
-  seller_user_id: string;
+  offer_creator_user_id: string;
   symbol: string;
   created_at: string;
   update_at: string;
   status: string;
-  bank_info?: {
-    bank: string;
-    account_number: string;
-    account_name: string;
-  };
+  payment_info?: UserPaymentInfo;
   transfer_code?: string;
   has_active_order?: boolean;
+  order_count?: number;
 }
 
 export interface IP2POfferListParams {
@@ -37,18 +46,16 @@ export interface IP2POfferListParams {
   from_amount?: number;
   to_amount?: number;
   order?: string;
-}
-
-export interface IP2POfferListParams {
-  page: number;
-  limit: number;
-  rate?: number;
-  from_amount?: number;
-  to_amount?: number;
+  side?: TradeTypes;
 }
 export enum TradeTypes {
   SELL = 'SELL',
   BUY = 'BUY',
+}
+
+export enum MessageCode {
+  NORMAL = 0,
+  BUZZ = 8,
 }
 export interface CreateOfferRequest {
   side: TradeTypes;
@@ -58,7 +65,7 @@ export interface CreateOfferRequest {
     min: number;
     max: number;
   };
-  bank_info: { bank: BankOption; account_number: string; account_name: string };
+  payment_info_id?: number;
   symbol?: string;
 }
 
@@ -79,34 +86,35 @@ export enum OrderStatus {
   CANCELED = 'CANCELED',
   FAILED = 'FAILED',
   COMPLETED = 'COMPLETED',
+  WAITING_TRANSFER = 'WAITING_TRANSFER',
+  EXPIRED = 'EXPIRED',
 }
 
 export interface P2POrder {
   order_id: string;
   offer_id: string;
-  buyer_wallet_address: string;
-  buyer_user_id: string;
-  seller_wallet_address: string;
-  seller_user_id: string;
+  order_creator_wallet_address: string;
+  order_creator_user_id: string;
+  offer_creator_wallet_address: string;
+  offer_creator_user_id: string;
   amount: string;
   price?: number;
   payable_amount?: string;
   status: OrderStatus;
-  bank_info?: {
-    bank: string;
-    account_number: string;
-    account_name: string;
-  };
+  payment_info?: UserPaymentInfo;
   transfer_code?: string | null;
   expires_at: string;
   created_at: string;
   updated_at: string;
   price_rate: number;
+  offer_type?: TradeTypes;
+  side: TradeTypes;
 }
 export type P2PTabType = (typeof P2P_TAB)[keyof typeof P2P_TAB];
 
 export interface CreateOrderRequest {
   amount: number;
+  payment_info_id: number;
 }
 
 export interface UpdateOrderStatusRequest {
@@ -172,6 +180,18 @@ export type P2PTradingRoleType = (typeof P2P_TRADING_ROLE)[keyof typeof P2P_TRAD
 export interface AutoMessagePayload {
   text: string;
   embed?: IEmbedProps[];
+  components?: Array<{
+    components: Array<{
+      id: string;
+      type: number;
+      component: {
+        label: string;
+        style: number;
+        url: string;
+      };
+    }>;
+  }>;
+  buzz?: boolean;
 }
 export interface IEmbedProps {
   color?: string;
