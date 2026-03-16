@@ -355,23 +355,14 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 			return err
 		}
 
-		status, err := s.blockchain.CheckTransactionStatus(txHash)
-
-		if err == nil && status == constants.TxStatusFinalized {
-			logger.Info().Int64("offer_id", offerId).Str("tx_hash", txHash).Msg("Refund transaction finalized for canceled offer")
-			if err = s.repo.UpdateOfferStatus(ctx, offerId, constants.TradingCanceled, tx, nil); err != nil {
-				return err
-			}
-
-			if offer.IntermediaryWalletAddress != nil && *offer.IntermediaryWalletAddress != "" && s.walletRepo != nil {
-				logger.Info().Int64("offer_id", offerId).Str("wallet_address", *offer.IntermediaryWalletAddress).Msg("Releasing intermediary wallet for canceled offer")
-				s.releaseIntermediaryWallet(ctx, *offer.IntermediaryWalletAddress)
-			}
-		} else if status == constants.TxStatusPending || status == constants.TxStatusConfirmed || status == constants.TxStatusFailed {
-			err = fmt.Errorf("refund transaction not finalized yet for canceled offer")
+		logger.Info().Int64("offer_id", offerId).Str("tx_hash", txHash).Msg("Refund transaction finalized for canceled offer")
+		if err = s.repo.UpdateOfferStatus(ctx, offerId, constants.TradingCanceled, tx, nil); err != nil {
 			return err
-		} else if err != nil {
-			return err
+		}
+
+		if offer.IntermediaryWalletAddress != nil && *offer.IntermediaryWalletAddress != "" && s.walletRepo != nil {
+			logger.Info().Int64("offer_id", offerId).Str("wallet_address", *offer.IntermediaryWalletAddress).Msg("Releasing intermediary wallet for canceled offer")
+			s.releaseIntermediaryWallet(ctx, *offer.IntermediaryWalletAddress)
 		}
 	} else {
 		// No refund needed (either BUY side, or SELL side that is still OPEN/not yet escrowed)

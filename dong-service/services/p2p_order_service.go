@@ -312,46 +312,10 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 
 		if intermediaryWallet != nil && o.OrderAmount.Sign() > 0 {
 			txHash, transferErr := s.blockchain.TransferMoney(intermediaryWallet.EncryptedPrivateKey, *offer.IntermediaryWalletAddress, *targetWallet, o.OrderAmount.String(), fmt.Sprintf("%s Order %d", constants.TextDataP2PTrading, orderID), extraInfo)
-			if transferErr != nil {
-				err = fmt.Errorf("failed to transfer money: %w", transferErr)
-				return err
-			}
+			
 			transferTxHash = &txHash
 
-			// Check transaction status with retry logic
-			status, statusErr := s.blockchain.CheckTransactionStatus(txHash)
-
-			// Status 2 = COMPLETED
-			if statusErr == nil && status == constants.TxStatusFinalized {
-				logger.Info().
-					Str("tx_hash", txHash).
-					Msg("Transaction completed successfully")
-				if err = s.repo.UpdateOrderStatusWithTxHash(ctx, orderID, string(models.OrderStatusCompleted), transferTxHash, tx); err != nil {
-					return err
-				}
-
-				if o.OfferID != nil {
-					if s.offerService != nil {
-						s.offerService.ReleaseIntermediaryWalletIfOfferComplete(ctx, *o.OfferID, tx)
-					}
-					if err = s.offerRepo.CheckAndCompleteIfEmpty(ctx, *o.OfferID, tx); err != nil {
-						return err
-					}
-				}
-
-				// Send ORDER_COMPLETED event to the buyer (the other party)
-				receiverAddress := o.OrderCreatorWalletAddress
-				if offer.Side == models.OfferSideBuy {
-					receiverAddress = offer.OfferCreatorWalletAddress
-				}
-
-				if receiverAddress != nil && *receiverAddress != "" {
-					payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.OrderAmount, "tx_hash": txHash}
-					go SendSocketEvent(*receiverAddress, constants.ORDER_COMPLETED, payload)
-				}
-
-			} else if status == constants.TxStatusPending || status == constants.TxStatusConfirmed || status == constants.TxStatusFailed {
-				// Status 0, 1, 3 = PENDING, CONFIRMED, FAILED
+			if transferErr != nil {
 				if o.OfferID != nil {
 					if releaseErr := s.offerRepo.ReleaseQuantity(ctx, *o.OfferID, o.OrderAmount, tx); releaseErr != nil {
 						logger.Error().Err(releaseErr).Int64("offer_id", *o.OfferID).Int64("order_amount", o.OrderAmount.Int64()).Msg("Failed to release quantity after transaction failure")
@@ -359,11 +323,44 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 						logger.Info().Int64("offer_id", *o.OfferID).Int64("order_amount", o.OrderAmount.Int64()).Msg("Released quantity back to offer after transaction failure")
 					}
 				}
-				if err = s.repo.UpdateOrderStatusWithTxHash(ctx, orderID, string(models.OrderStatusFailed), transferTxHash, tx); err != nil {
+				if txHash != "" {
+					if err = s.repo.UpdateOrderStatusWithTxHash(ctx, orderID, string(models.OrderStatusFailed), transferTxHash, tx); err != nil {
+						return err
+					}
+				} else {
+					if err = s.repo.UpdateOrderStatus(ctx, orderID, string(models.OrderStatusFailed), tx); err != nil {
+						return err
+					}
+				}
+				err = fmt.Errorf("failed to transfer money: %w", transferErr)
+				return err
+			}
+
+			logger.Info().
+				Str("tx_hash", txHash).
+				Msg("Transaction completed successfully")
+			if err = s.repo.UpdateOrderStatusWithTxHash(ctx, orderID, string(models.OrderStatusCompleted), transferTxHash, tx); err != nil {
+				return err
+			}
+
+			if o.OfferID != nil {
+				if s.offerService != nil {
+					s.offerService.ReleaseIntermediaryWalletIfOfferComplete(ctx, *o.OfferID, tx)
+				}
+				if err = s.offerRepo.CheckAndCompleteIfEmpty(ctx, *o.OfferID, tx); err != nil {
 					return err
 				}
-				err = fmt.Errorf("transaction failed with status %d", status)
-				return err
+			}
+
+			// Send ORDER_COMPLETED event to the buyer (the other party)
+			receiverAddress := o.OrderCreatorWalletAddress
+			if offer.Side == models.OfferSideBuy {
+				receiverAddress = offer.OfferCreatorWalletAddress
+			}
+
+			if receiverAddress != nil && *receiverAddress != "" {
+				payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.OrderAmount, "tx_hash": txHash}
+				go SendSocketEvent(*receiverAddress, constants.ORDER_COMPLETED, payload)
 			}
 		}
 	}
