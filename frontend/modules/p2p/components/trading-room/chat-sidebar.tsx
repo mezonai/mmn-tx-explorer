@@ -1,7 +1,18 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, AlertTriangle, Loader2, MessageCircle, X, Info, AlertCircle, Paperclip, FileText, File as FileIcon } from 'lucide-react';
+import {
+  Send,
+  AlertTriangle,
+  Loader2,
+  MessageCircle,
+  X,
+  Info,
+  AlertCircle,
+  Paperclip,
+  FileText,
+  File as FileIcon,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLightClient, useUser } from '@/providers';
 import { LightSocket } from 'mezon-light-sdk';
@@ -9,8 +20,21 @@ import { STORAGE_KEYS } from '@/constant';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { formatChatTime, generateMarkdownPayload, isSameDay } from '../../util';
-import { AutoMessagePayload, MessageWithParsedContent, ParsedMessageContent, ChannelMessage, MessageCode } from '../../types';
-import { DateTimeUtil, formatFileSize, getFilesFromClipboard, getFilesFromDragEvent, uploadAttachmentFile, downloadFile } from '@/utils';
+import {
+  AutoMessagePayload,
+  MessageWithParsedContent,
+  ParsedMessageContent,
+  ChannelMessage,
+  MessageCode,
+} from '../../types';
+import {
+  DateTimeUtil,
+  formatFileSize,
+  getFilesFromClipboard,
+  getFilesFromDragEvent,
+  uploadAttachmentFile,
+  downloadFile,
+} from '@/utils';
 import { safeJsonParse } from '@/utils/json-parse.utils';
 import { toast } from 'sonner';
 import { MAX_CHAR_LIMIT, MAX_FILE_SIZE } from '../../constants';
@@ -23,12 +47,22 @@ const uploadLimiter = new Bottleneck({
 });
 
 interface ChatSidebarProps {
-  sellerId: string;
+  receiverId: string;
   autoMessage?: AutoMessagePayload | null;
   onAutoMessageSent?: () => void;
+  title?: string;
+  showSecurityAlert?: boolean;
+  variant?: 'sidebar' | 'widget';
 }
 
-export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSidebarProps) => {
+export const ChatSidebar = ({
+  receiverId,
+  autoMessage,
+  onAutoMessageSent,
+  title = 'Trading Room',
+  showSecurityAlert = true,
+  variant = 'sidebar',
+}: ChatSidebarProps) => {
   const [messages, setMessages] = useState<MessageWithParsedContent[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isConnected, setIsConnected] = useState(false);
@@ -90,12 +124,12 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
 
         await socket.connect({
           onError: (error) => console.error('[Chat] Socket error:', error),
-          verbose: false
+          verbose: false,
         });
 
         socketRef.current = socket;
 
-        const channel = await sdk.createDM(sellerId);
+        const channel = await sdk.createDM(receiverId);
         await socket.joinDMChannel(channel.channel_id!);
         channelIdRef.current = channel.channel_id!;
 
@@ -111,7 +145,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
           const hasAttachments = msg.attachments && msg.attachments.length > 0;
           if (!hasContent && !hasAttachments) return;
 
-          const isValidSender = msg.sender_id === user?.id || msg.sender_id === sellerId;
+          const isValidSender = msg.sender_id === user?.id || msg.sender_id === receiverId;
           if (!isValidSender) return;
 
           const isMe = msg.sender_id === user?.id;
@@ -143,12 +177,12 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
     initChat();
     return () => {
       isMounted = false;
-      unsubs.forEach(unsub => unsub());
+      unsubs.forEach((unsub) => unsub());
       if (socketRef.current) {
         socketRef.current.disconnect();
       }
     };
-  }, [lightClient, sellerId, user?.id]);
+  }, [lightClient, receiverId, user?.id]);
 
   useEffect(() => {
     if (autoMessage && isConnected && socketRef.current && channelIdRef.current) {
@@ -191,7 +225,13 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
     const hasContent = content.length > 0;
     const hasAttachments = selectedFiles.length > 0;
 
-    if (isMessageSendingRef.current || (!hasContent && !hasAttachments) || !socketRef.current || !channelIdRef.current || !lightClient) {
+    if (
+      isMessageSendingRef.current ||
+      (!hasContent && !hasAttachments) ||
+      !socketRef.current ||
+      !channelIdRef.current ||
+      !lightClient
+    ) {
       return;
     }
 
@@ -246,9 +286,9 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
         channelId: channelIdRef.current,
         content: {
           t: content,
-          mk: mk
+          mk: mk,
         },
-        attachments: finalAttachments
+        attachments: finalAttachments,
       });
 
       if (hasAttachments && finalAttachments.length < filesToUpload.length) {
@@ -256,11 +296,10 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
       }
 
       // Revoke blobs only after successful message delivery
-      currentPreviews.forEach(p => {
+      currentPreviews.forEach((p) => {
         if (p.url && p.url.startsWith('blob:')) URL.revokeObjectURL(p.url);
       });
-
-    } catch (err) {
+    } catch {
       toast.error('Failed to send message. Please check your connection and try again.');
       // Recovery: Restore input and selected files so user doesn't lose data
       setInputValue(content);
@@ -283,7 +322,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
     const validFiles: File[] = [];
     const newPreviews: { url: string; file: File }[] = [];
 
-    files.forEach(file => {
+    files.forEach((file) => {
       if (file.size > MAX_FILE_SIZE) {
         toast.error(`File ${file.name} is too large. Max is ${MAX_FILE_SIZE / 1024 / 1024}MB`);
         return;
@@ -293,8 +332,8 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
       newPreviews.push({ url, file });
     });
 
-    setSelectedFiles(prev => [...prev, ...validFiles]);
-    setPreviews(prev => [...prev, ...newPreviews]);
+    setSelectedFiles((prev) => [...prev, ...validFiles]);
+    setPreviews((prev) => [...prev, ...newPreviews]);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -303,8 +342,8 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
     if (removedPreview.url && removedPreview.url.startsWith('blob:')) {
       URL.revokeObjectURL(removedPreview.url);
     }
-    setPreviews(prev => prev.filter((_, i) => i !== index));
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    setPreviews((prev) => prev.filter((_, i) => i !== index));
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -320,7 +359,6 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
     target.style.height = 'auto';
     target.style.height = `${Math.min(target.scrollHeight, 150)}px`;
   };
-
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !inputValue.trim() && selectedFiles.length === 0) {
@@ -339,12 +377,11 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
     if (files.length === 0) return;
     e.preventDefault();
 
-
     if (files.length > 0) {
       const validFiles: File[] = [];
       const newPreviews: { url: string; file: File }[] = [];
 
-      files.forEach(file => {
+      files.forEach((file) => {
         if (file.size > MAX_FILE_SIZE) {
           toast.error(`File ${file.name} is too large. Max is ${MAX_FILE_SIZE / 1024 / 1024}MB`);
           return;
@@ -354,8 +391,8 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
         newPreviews.push({ url, file });
       });
 
-      setSelectedFiles(prev => [...prev, ...validFiles]);
-      setPreviews(prev => [...prev, ...newPreviews]);
+      setSelectedFiles((prev) => [...prev, ...validFiles]);
+      setPreviews((prev) => [...prev, ...newPreviews]);
     }
   };
 
@@ -367,11 +404,10 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
     const files = getFilesFromDragEvent(e);
     if (files.length === 0) return;
 
-
     const validFiles: File[] = [];
     const newPreviews: { url: string; file: File }[] = [];
 
-    files.forEach(file => {
+    files.forEach((file) => {
       if (file.size > MAX_FILE_SIZE) {
         toast.error(`File ${file.name} is too large. Max is ${MAX_FILE_SIZE / 1024 / 1024}MB`);
         return;
@@ -381,8 +417,8 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
       newPreviews.push({ url, file });
     });
 
-    setSelectedFiles(prev => [...prev, ...validFiles]);
-    setPreviews(prev => [...prev, ...newPreviews]);
+    setSelectedFiles((prev) => [...prev, ...validFiles]);
+    setPreviews((prev) => [...prev, ...newPreviews]);
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -402,15 +438,12 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
     e.stopPropagation();
 
     const rect = e.currentTarget.getBoundingClientRect();
-    if (
-      e.clientX <= rect.left ||
-      e.clientX >= rect.right ||
-      e.clientY <= rect.top ||
-      e.clientY >= rect.bottom
-    ) {
+    if (e.clientX <= rect.left || e.clientX >= rect.right || e.clientY <= rect.top || e.clientY >= rect.bottom) {
       setIsDragging(false);
     }
   };
+
+  if (user?.id === receiverId) return null;
 
   return (
     <>
@@ -418,17 +451,21 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
         size="icon"
         onClick={() => setIsMobileOpen(true)}
         className={cn(
-          'bg-brand-primary fixed right-6 bottom-6 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition-all active:scale-95 md:hidden',
+          'bg-brand-primary fixed right-6 bottom-6 z-[60] flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition-all active:scale-95',
           'hover:bg-brand-primary/90',
-          isMobileOpen && 'scale-0 opacity-0'
+          variant === 'sidebar' && 'md:hidden',
+          isMobileOpen &&
+            (variant === 'widget' ? 'md:pointer-events-none md:translate-y-16 md:opacity-0' : 'scale-0 opacity-0')
         )}
       >
-        <MessageCircle className="size-6" />
-        {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-black">
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
-        )}
+        <div className="relative">
+          <MessageCircle className="size-6" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-black">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
+        </div>
       </Button>
 
       <div
@@ -437,29 +474,46 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         className={cn(
-          'fixed inset-0 z-50 flex h-full flex-col bg-white transition-transform duration-300 md:sticky md:top-24 md:z-0 md:flex md:h-[calc(100vh-140px)] md:w-87.5 md:translate-y-0 lg:w-125 dark:bg-black dark:md:border-gray-800',
-          isMobileOpen ? 'translate-y-0' : 'translate-y-full md:translate-y-0'
+          'fixed inset-0 z-50 flex h-full flex-col bg-white transition-transform duration-300 dark:bg-black',
+          variant === 'sidebar' &&
+            'md:sticky md:top-24 md:z-0 md:flex md:h-[calc(100vh-140px)] md:w-87.5 md:translate-y-0 lg:w-125 dark:md:border-gray-800',
+          variant === 'widget' &&
+            'md:inset-auto md:right-10 md:bottom-0 md:h-[550px] md:w-[380px] md:rounded-t-xl md:rounded-b-none md:border-x md:border-t md:border-b-0 md:border-gray-200 md:shadow-2xl dark:md:border-gray-800',
+          isMobileOpen
+            ? 'pointer-events-auto translate-y-0'
+            : 'pointer-events-none translate-y-full md:pointer-events-auto md:translate-y-0',
+          variant === 'widget' &&
+            !isMobileOpen &&
+            'opacity-0 transition-all md:pointer-events-none md:translate-y-full md:opacity-0'
         )}
       >
         {isDragging && (
-          <div className="absolute inset-0 z-[60] flex flex-col items-center justify-center gap-4 bg-brand-primary/10 backdrop-blur-[2px] border-2 border-dashed border-brand-primary m-2 rounded-xl transition-all animate-in fade-in zoom-in duration-200">
-            <div className="flex flex-col items-center gap-2 text-brand-primary">
+          <div className="bg-brand-primary/10 border-brand-primary animate-in fade-in zoom-in absolute inset-0 z-[60] m-2 flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed backdrop-blur-[2px] transition-all duration-200">
+            <div className="text-brand-primary flex flex-col items-center gap-2">
               <Paperclip className="h-12 w-12 animate-bounce" />
               <p className="text-lg font-bold">Drop files here</p>
               <p className="text-xs opacity-70">max {MAX_FILE_SIZE / 1024 / 1024} MB</p>
             </div>
           </div>
         )}
-        <div className="flex shrink-0 items-center justify-between border-b border-gray-200 p-4 dark:border-gray-800">
+        <div
+          className={cn(
+            'flex shrink-0 items-center justify-between border-b border-gray-200 p-4 dark:border-gray-800',
+            variant === 'widget' && 'md:rounded-t-xl'
+          )}
+        >
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
-            <h2 className="text-sm font-bold text-gray-900 dark:text-white">Trading Room</h2>
+            <h2 className="text-sm font-bold text-gray-900 dark:text-white">{title}</h2>
           </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setIsMobileOpen(false)}
-            className="rounded-full p-2 hover:bg-gray-100 md:hidden dark:hover:bg-gray-800"
+            className={cn(
+              'rounded-full p-2 hover:bg-gray-100 dark:hover:bg-gray-800',
+              variant === 'sidebar' && 'md:hidden'
+            )}
           >
             <X className="h-5 w-5 text-gray-500" />
           </Button>
@@ -477,33 +531,34 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
           )}
         >
           {/* Security Alert */}
-          <div className="mb-6 px-1">
-            <div className="relative overflow-hidden rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
-              <div className="mb-3 flex items-center gap-2 text-amber-600 dark:text-amber-500">
-                <AlertTriangle className="h-4 w-4" />
-                <span className="text-[11px] font-bold tracking-wider uppercase">Security Awareness</span>
-              </div>
+          {showSecurityAlert && (
+            <div className="mb-6 px-1">
+              <div className="relative overflow-hidden rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+                <div className="mb-3 flex items-center gap-2 text-amber-600 dark:text-amber-500">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span className="text-[11px] font-bold tracking-wider uppercase">Security Awareness</span>
+                </div>
 
-              <div className="space-y-3 text-[12px] leading-relaxed">
-                <p className="text-gray-600 dark:text-gray-300">
-                  <span className="font-semibold text-amber-700 dark:text-amber-400">Important:</span> Support will{' '}
-                  <span className="italic underline">never</span> ask for your wallet password or private keys. Never
-                  disclose your credentials to anyone.
-                </p>
-
-                <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-black/40">
-                  <div className="mb-1 flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
-                    <Info className="h-3.5 w-3.5" />
-                    <span className="text-[11px] font-semibold uppercase">Chat Guidance</span>
-                  </div>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-500">
-                    To access your permanent chat logs and transaction history, please refer to{' '}
-                    <span className="font-medium text-amber-600 dark:text-amber-500/80">Mezon</span>.
+                <div className="space-y-3 text-[12px] leading-relaxed">
+                  <p className="text-gray-600 dark:text-gray-300">
+                    <span className="font-semibold text-amber-700 dark:text-amber-400">Important:</span> Support will{' '}
+                    <span className="italic underline">never</span> ask for your wallet password or private keys. Never
+                    disclose your credentials to anyone.
                   </p>
+
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-black/40">
+                    <div className="mb-1 flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
+                      <Info className="h-3.5 w-3.5" />
+                      <span className="text-[11px] font-semibold uppercase">Chat Guidance</span>
+                    </div>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-500">
+                      To access your permanent chat logs and transaction history, please refer to{' '}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Messages */}
           {messages.map((msg, idx) => {
@@ -593,36 +648,34 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
                                     className="cursor-pointer overflow-hidden rounded-xl border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
                                     onClick={() => window.open(at.url, '_blank')}
                                   >
-                                    <img
-                                      src={at.url}
-                                      alt={at.filename}
-                                      className="max-h-80 w-auto object-contain"
-                                    />
+                                    <img src={at.url} alt={at.filename} className="max-h-80 w-auto object-contain" />
                                   </div>
                                 ) : (
                                   <div
                                     onClick={() => downloadFile(at.url, at.filename || 'file')}
                                     className={cn(
-                                      "flex items-start gap-3 rounded-xl border p-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer",
+                                      'flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-900',
                                       isMe
-                                        ? "border-white/20 bg-white/10"
-                                        : "border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
+                                        ? 'border-white/20 bg-white/10'
+                                        : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900'
                                     )}
                                   >
-                                    <div className="shrink-0 pt-0.5">
-                                      {getFileIcon(at.filename, filetype)}
-                                    </div>
+                                    <div className="shrink-0 pt-0.5">{getFileIcon(at.filename, filetype)}</div>
                                     <div className="min-w-0 flex-1">
-                                      <div className={cn(
-                                        "break-words text-sm font-medium",
-                                        isMe ? "text-white" : "text-blue-600 dark:text-blue-400"
-                                      )}>
+                                      <div
+                                        className={cn(
+                                          'text-sm font-medium break-words',
+                                          isMe ? 'text-white' : 'text-blue-600 dark:text-blue-400'
+                                        )}
+                                      >
                                         {at.filename}
                                       </div>
-                                      <div className={cn(
-                                        "mt-0.5 text-xs",
-                                        isMe ? "text-white/70" : "text-gray-500 dark:text-gray-400"
-                                      )}>
+                                      <div
+                                        className={cn(
+                                          'mt-0.5 text-xs',
+                                          isMe ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'
+                                        )}
+                                      >
                                         size: {formatFileSize(at.size || 0)}
                                       </div>
                                     </div>
@@ -674,7 +727,10 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
           {previews.length > 0 && (
             <div className="mb-3 flex flex-wrap gap-2 pb-2">
               {previews.map((p, i) => (
-                <div key={i} className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
+                <div
+                  key={i}
+                  className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
+                >
                   {p.file.type.startsWith('image/') ? (
                     <img src={p.url} alt={p.file.name} className="h-full w-full object-cover" />
                   ) : (
@@ -687,7 +743,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
                   )}
                   <button
                     onClick={() => removeFile(i)}
-                    className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-md hover:bg-red-600"
+                    className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-md hover:bg-red-600"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -742,11 +798,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
                   'disabled:opacity-50'
                 )}
               >
-                {isUploading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <Paperclip className="h-5 w-5" />
-                )}
+                {isUploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Paperclip className="h-5 w-5" />}
               </Button>
               <Button
                 type="submit"

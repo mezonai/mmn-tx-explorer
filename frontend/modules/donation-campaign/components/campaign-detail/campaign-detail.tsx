@@ -7,7 +7,7 @@ import { DonationCampaign } from '../../type';
 import { Separator } from '@/components/ui/separator';
 import { DonationFeed } from './shared';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CampaignChatWidget } from './shared/campaign-chat-widget';
+import { ChatSidebar } from '@/modules/p2p/components/trading-room/chat-sidebar';
 
 interface CampaignDetailProps {
   campaign: DonationCampaign;
@@ -77,7 +77,12 @@ export const CampaignDetail = async ({ campaign }: CampaignDetailProps) => {
             </TabsContent>
           </Tabs>
         </div>
-        <CampaignChatWidget creatorId={campaign.creator} campaignTitle={campaign.name} />
+        <ChatSidebar
+          receiverId={campaign.creator}
+          title={campaign.name || 'Campaign Support'}
+          variant="widget"
+          showSecurityAlert={false}
+        />
       </CampaignDetailProvider>
     </div>
   );
