@@ -68,47 +68,45 @@ export const TradeTypeSection = ({ control, trigger }: TradeTypeSectionProps) =>
         </div> */}
       {/* </div> */}
 
-      {tradeType === TradeTypes.SELL && (
-        <>
-          {/* Limits */}
+      {/* Limits */}
+      <div>
+        <div className="grid grid-cols-1 gap-3">
+          {/* Min Limit */}
           <div>
-            <div className="grid grid-cols-1 gap-3">
-              {/* Min Limit */}
-              <div>
-                <label className="text-muted-foreground mb-1 block text-xs">Minimum</label>
-                <div className="relative">
-                  <Controller
-                    control={control}
-                    name="limit.min"
-                    render={({ field }) => (
-                      <>
-                        <Input
-                          type="text"
-                          placeholder="1"
-                          value={formatCurrency(field.value)}
-                          onChange={(e) => {
-                            if (getRawValue(e.target.value) > LIMIT_MAX_AMOUNT) return;
-                            field.onChange(getRawValue(e.target.value));
-                            trigger(['amount', 'price_rate']);
-                          }}
-                          className={cn(
-                            'bg-input/30 w-full rounded-md border px-3 py-2.5 text-lg font-bold transition-colors focus:outline-none',
-                            errors.limit?.min
-                              ? 'border-utility-error-600! !focus:border-utility-error-600 focus:ring-0 focus-visible:ring-0'
-                              : 'border-border'
-                          )}
-                        />
-                        <span className="absolute top-4.5 right-2 text-xs font-bold text-gray-500">
-                          {APP_CONFIG.CHAIN_SYMBOL}
-                        </span>
-                        {errors.limit?.min && (
-                          <p className="text-utility-error-600 mt-1 text-xs">{errors.limit.min.message}</p>
-                        )}
-                      </>
+            <label className="text-muted-foreground mb-1 block text-xs">Minimum</label>
+            <div className="relative">
+              <Controller
+                control={control}
+                name="limit.min"
+                render={({ field }) => (
+                  <>
+                    <Input
+                      type="text"
+                      placeholder="1"
+                      value={formatCurrency(field.value)}
+                      onChange={(e) => {
+                        if (getRawValue(e.target.value) > LIMIT_MAX_AMOUNT) return;
+                        field.onChange(getRawValue(e.target.value));
+                        trigger(['amount', 'price_rate']);
+                      }}
+                      className={cn(
+                        'bg-input/30 w-full rounded-md border px-3 py-2.5 text-lg font-bold transition-colors focus:outline-none',
+                        errors.limit?.min
+                          ? 'border-utility-error-600! !focus:border-utility-error-600 focus:ring-0 focus-visible:ring-0'
+                          : 'border-border'
+                      )}
+                    />
+                    <span className="absolute top-4.5 right-2 text-xs font-bold text-gray-500">
+                      {APP_CONFIG.CHAIN_SYMBOL}
+                    </span>
+                    {errors.limit?.min && (
+                      <p className="text-utility-error-600 mt-1 text-xs">{errors.limit.min.message}</p>
                     )}
-                  />
-                </div>
-              </div>
+                  </>
+                )}
+              />
+            </div>
+          </div>
 
               {/* Max Limit */}
               <div>
@@ -122,12 +120,12 @@ export const TradeTypeSection = ({ control, trigger }: TradeTypeSectionProps) =>
                         <div>
                           <Input
                             type="text"
-                            placeholder={amountMZD > 0 ? formatCurrency(amountMZD) : '5,000'}
+                            placeholder="0"
                             value={formatCurrency(field.value)}
                             onChange={(e) => {
                               if (getRawValue(e.target.value) > LIMIT_MAX_AMOUNT) return;
                               field.onChange(getRawValue(e.target.value));
-                              trigger(['amount', 'price_rate']);
+                              trigger(['amount']);
                             }}
                             className={cn(
                               'bg-input/30 w-full rounded-md border px-3 py-2.5 text-lg font-bold transition-colors focus:outline-none',
@@ -152,15 +150,13 @@ export const TradeTypeSection = ({ control, trigger }: TradeTypeSectionProps) =>
           </div>
           <div className="pt-2">
             <label className="text-muted-foreground mb-2 block text-xs font-medium uppercase">
-              Total Received (VND)
+              {tradeType === TradeTypes.SELL ? 'Total Received (VND)' : 'Total Paid (VND)'}
             </label>
             <div className="border-border bg-card flex h-24 flex-col items-center justify-center rounded-lg border px-4 py-4">
               <span className="text-utility-success-600 text-xl font-bold">{formatCurrency(totalVND)}</span>
               <span className="text-muted-foreground mt-1 text-xs font-bold">VND</span>
             </div>
           </div>
-        </>
-      )}
     </div>
   );
 };
