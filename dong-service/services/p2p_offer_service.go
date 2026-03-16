@@ -337,9 +337,9 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 			return fmt.Errorf("transaction not confirmed or finalized: status=%d", txInfo.Status)
 		}
 
-		if txInfo.Sender != offer.SellerWalletAddress {
-			logger.Error().Str("expected_sender", offer.SellerWalletAddress).Str("actual_sender", txInfo.Sender).Str("tx_hash", req.TxHash).Msg("Transaction sender mismatch")
-			return fmt.Errorf("transaction sender mismatch: expected %s, got %s", offer.SellerWalletAddress, txInfo.Sender)
+		if txInfo.Sender != *offer.OfferCreatorWalletAddress {
+			logger.Error().Str("expected_sender", *offer.OfferCreatorWalletAddress).Str("actual_sender", txInfo.Sender).Str("tx_hash", req.TxHash).Msg("Transaction sender mismatch")
+			return fmt.Errorf("transaction sender mismatch: expected %s, got %s", *offer.OfferCreatorWalletAddress, txInfo.Sender)
 		}
 
 		if offer.IntermediaryWalletAddress != nil && txInfo.Recipient != *offer.IntermediaryWalletAddress {
@@ -347,10 +347,10 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 			return fmt.Errorf("transaction recipient mismatch: expected %s, got %s", *offer.IntermediaryWalletAddress, txInfo.Recipient)
 		}
 
-		actualAmount := int64(txInfo.Amount.Uint64() / 1000000)
-		if actualAmount != offer.Amount {
-			logger.Error().Int64("expected_amount", offer.Amount).Int64("actual_amount", actualAmount).Str("tx_hash", req.TxHash).Msg("Transaction amount mismatch")
-			return fmt.Errorf("transaction amount mismatch: expected %d, got %d", offer.Amount, actualAmount)
+		availableAmount := int64(txInfo.Amount.Uint64())
+		if availableAmount != offer.AvailableAmount.Int64() {
+			logger.Error().Int64("expected_amount", offer.AvailableAmount.Int64()).Int64("available_amount", availableAmount).Str("tx_hash", req.TxHash).Msg("Transaction amount mismatch")
+			return fmt.Errorf("transaction amount mismatch: expected %d, got %d", offer.AvailableAmount.Int64(), availableAmount)
 		}
 	}
 
@@ -383,7 +383,7 @@ func (s *OfferService) UpdateOfferStatus(ctx context.Context, req *models.Update
 		}
 	}
 
-	go SendSocketEvent(constants.ALL_RECEIVER, constants.OFFER_LIST_REFRESH, map[string]any{
+	go SendSocketEvent(constants.OFFER_ROOM, constants.OFFER_LIST_REFRESH, map[string]any{
 		"action": "created p2p offer",
 	})
 

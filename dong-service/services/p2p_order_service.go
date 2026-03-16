@@ -138,13 +138,13 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 	order.PriceRate = offer.PriceRate
 	order.OfferSide = &offer.Side
 
-	go SendSocketEvent(constants.ALL_RECEIVER, constants.OFFER_LIST_REFRESH, map[string]any{
+	go SendSocketEvent(constants.OFFER_ROOM, constants.OFFER_LIST_REFRESH, map[string]any{
 		"action": "created p2p order",
 	})
 
 	// Notify seller about new order
-	if offer.SellerWalletAddress != "" {
-		go SendSocketEvent(offer.SellerWalletAddress, constants.ORDER_CREATED, map[string]any{
+	if *offer.OfferCreatorWalletAddress != "" {
+		go SendSocketEvent(*offer.OfferCreatorWalletAddress, constants.ORDER_CREATED, map[string]any{
 			"order_id": order.OrderID,
 			"action":   "created new order",
 		})
