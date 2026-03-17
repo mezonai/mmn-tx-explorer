@@ -173,3 +173,32 @@ func (s *RedEnvelopeQueueService) VerifyReservation(ctx context.Context, redEnve
 
 	return int64(amount), nil
 }
+func (s *RedEnvelopeQueueService) SetReservation(redEnvelopeID string, userID int64, amount int64, ttl time.Duration) error {
+	if s.redisClient == nil {
+		return fmt.Errorf("redis client is not initialized")
+	}
+
+	reservedKey := s.getReservedKey(redEnvelopeID)
+	err := s.redisClient.HSet(s.ctx, reservedKey, strconv.FormatInt(userID, 10), amount).Err()
+	if err != nil {
+		return fmt.Errorf("failed to set reservation in redis: %w", err)
+	}
+
+	if ttl > 0 {
+		s.redisClient.Expire(s.ctx, reservedKey, ttl)
+	}
+
+	return nil
+}
+
+func (s *RedEnvelopeQueueService) ClearPool(redEnvelopeID string) error {
+	if s.redisClient == nil {
+		return fmt.Errorf("redis client is not initialized")
+	}
+
+	poolKey := s.getPoolKey(redEnvelopeID)
+	reservedKey := s.getReservedKey(redEnvelopeID)
+	descriptionKey := s.getDescriptionKey(redEnvelopeID)
+
+	return s.redisClient.Del(s.ctx, poolKey, reservedKey, descriptionKey).Err()
+}
