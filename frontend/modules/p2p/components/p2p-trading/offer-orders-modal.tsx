@@ -8,7 +8,7 @@ import { NumberUtil } from '@/utils';
 import BigNumber from 'bignumber.js';
 import { AddressDisplay, Chip } from '@/components/shared';
 import { ROUTES } from '@/configs/routes.config';
-import { getOrderStatusInfo } from '../../util';
+import { getOrderStatusInfo, getOrderStatusLabel } from '../../util';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table } from '@/components/ui/table';
 import { TTableColumn } from '@/types';
@@ -92,7 +92,7 @@ export const OfferOrdersModal = ({ offer, open, onOpenChange }: OfferOrdersModal
           variant={getOrderStatusInfo(order.status)}
           className="rounded-full border-1 px-3 py-0.5 text-[10px] font-bold"
         >
-          {order.status}
+          {getOrderStatusLabel(order.status)}
         </Chip>
       ),
       skeletonContent: <Skeleton className="h-5 w-20 rounded-full" />,

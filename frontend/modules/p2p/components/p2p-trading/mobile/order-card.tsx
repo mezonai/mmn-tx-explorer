@@ -6,7 +6,7 @@ import { APP_CONFIG } from '@/configs/app.config';
 import { ROUTES } from '@/configs/routes.config';
 import { Countdown } from '../../shared/count-down';
 import { NumberUtil } from '@/utils';
-import { getOrderStatusInfo } from '@/modules/p2p/util';
+import { getOrderStatusInfo, getOrderStatusLabel } from '@/modules/p2p/util';
 import { P2POrder, TradeTypes } from '@/modules/p2p/types';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/providers/AppProvider';
@@ -62,7 +62,7 @@ export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
             variant={getOrderStatusInfo(order.status)}
             className="min-w-[70px] justify-center rounded-sm px-2 py-0.5 text-[10px] font-bold"
           >
-            <span>{order.status}</span>
+            <span>{getOrderStatusLabel(order.status)}</span>
           </Chip>
           <Countdown expiresAt={order.expires_at} />
         </div>

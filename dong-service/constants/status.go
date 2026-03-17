@@ -141,8 +141,6 @@ func IsValidStatus(status int16) bool {
 const (
 	MaxPriceRateOffer         float64 = 1000000.0
 	MaxLengthSymbol           int     = 64
-	MaxTotalBankInfoSize      int     = 1024
-	MaxIndividualBankInfoSize int     = 128
 	MaxActiveOffersPerUser    int64   = 10
 	MaxActiveOrdersPerUser    int     = 10
 )
