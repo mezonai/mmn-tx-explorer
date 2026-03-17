@@ -41,40 +41,119 @@ docker compose up --build
 ### Indexer
 ```bash
 cd indexer
+
+# Build
 go build -o main -tags=production
+
+# Run
 ./main orchestrator       # Block indexer
 ./main api                # HTTP API
 ./main migrate-postgres   # Run migrations
-go test ./...
+
+# Test
+go test ./... -v                              # All tests
+go test ./internal/orchestrator -v            # Single package
+go test ./internal/orchestrator -run '^TestNewPoller_ForceFromBlockEnabled$' -v  # Single test
+
+# Lint & Format
 golangci-lint run
+gofmt -w .              # Format all files
+gofmt -l .              # Check formatting
 ```
 
 ### Frontend
 ```bash
 cd frontend
+
+# Install & Run
 npm install
 npm run dev
-npm run lint
+
+# Build & Lint
 npm run build
+npm run lint
+npm run lint:fix
+
+# Format
+npm run format         # Format all files
+npm run format:check   # Check formatting
 ```
 
 ### Socket Service
 ```bash
 cd socket-service
+
+# Run
 go run main.go
-go test ./...
+
+# Test
+go test ./... -v
+go test ./handlers -v
+
+# Lint & Format
 golangci-lint run
+gofmt -w .
 ```
 
 ### Dong Service
 ```bash
 cd dong-service
+
+# Build & Run
 make build
 make run
+
+# Test
 make test
-make swagger
+go test ./handlers -v
+
+# Lint & Format
 golangci-lint run
+gofmt -w .
+
+# Swagger
+make swagger
 ```
+
+## Code Style
+
+### Frontend (TypeScript/React)
+- Use TypeScript for all new code; avoid plain JavaScript
+- Respect `strict` mode in `tsconfig.json`
+- Use `@/*` path alias for relative imports
+- Prefer React function components and hooks
+- Add `'use client';` only for client components that need browser APIs or client state
+- Use named exports; follow existing barrel file patterns
+- Avoid `any`; narrow unknown values instead
+
+**Naming:**
+- `PascalCase`: components, classes, interfaces, exported types
+- `camelCase`: variables, functions, hooks, object keys
+- `UPPER_SNAKE_CASE`: constants like `APP_CONFIG`, `ROUTES`
+
+**Imports:**
+- Order: external packages → blank line → `@/` imports → relative imports
+- Use `cn()` from `lib/utils.ts` for Tailwind class composition
+- Single quotes and semicolons; let Prettier handle formatting
+
+**Error Handling:**
+- Throw early for missing invariants (e.g., unauthenticated state)
+- Use `try/catch/finally` in async flows to reset loading state
+- Use `toast.error(...)` for user-visible failures
+- Preserve backend field names (e.g., `payment_info_id`) as API contracts
+
+### Go Services
+- Always run `gofmt` on changed files
+- Use standard Go import grouping
+- Keep package names lowercase
+- Use `PascalCase` for exported, `camelCase` for unexported identifiers
+- Follow existing service/repository/handler/config structure
+
+**Errors & Logging:**
+- Wrap errors: `fmt.Errorf("operation: %w", err)`
+- Check cleanup errors for deferred Close/rollback
+- Use Zerolog-style structured logging where already in use
+- Prefer constants/config over magic numbers
 
 ## Verification Checklist
 

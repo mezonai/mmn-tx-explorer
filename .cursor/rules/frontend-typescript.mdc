@@ -1,0 +1,50 @@
+---
+description: Frontend TypeScript, React, import order, and error handling conventions
+globs: ["frontend/**/*.ts", "frontend/**/*.tsx"]
+alwaysApply: false
+---
+
+# Frontend Conventions
+
+- Use TypeScript for all new code
+- Respect `frontend/tsconfig.json` strict mode
+- Use `@/*` path alias for relative imports when clearer than relative paths
+- Prefer React function components and hooks
+- Add `'use client';` only for client components/hooks that need browser APIs or client state
+- Use named exports; follow existing barrel file patterns (e.g., `components/shared/index.ts`)
+- Avoid `any`; narrow unknown values instead
+
+## Naming
+
+- `PascalCase`: components, exported types, interfaces, enums
+- `camelCase`: variables, functions, hooks, object keys
+- `UPPER_SNAKE_CASE`: constants like `APP_CONFIG`, `ROUTES`, `STORAGE_KEYS`
+- Follow existing type prefixes: `I*`, `T*`, `E*` for interfaces, types, and enums
+
+## Imports
+
+Order: external packages → blank line → `@/` imports → relative imports
+
+```typescript
+import { useState } from 'react';
+import axios from 'axios';
+
+import { useUser } from '@/providers/AppProvider';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+```
+
+Use `cn()` from `lib/utils.ts` for Tailwind class composition.
+
+## Formatting
+
+- Single quotes and semicolons
+- Let ESLint + Prettier handle formatting
+- Run `npm run format` to format
+
+## Error Handling
+
+- Throw early for missing invariants (e.g., unauthenticated state)
+- Use `try/catch/finally` in async flows where loading state must reset
+- Use `toast.error(...)` for user-visible failures when the UX already follows that pattern
+- Preserve backend field names (e.g., `payment_info_id`) as API contracts

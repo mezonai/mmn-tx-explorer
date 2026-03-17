@@ -34,6 +34,15 @@ go mod tidy
 go run main.go
 # or with custom config
 go run main.go -f config/config.yml
+
+# Test
+go test ./... -v              # All tests
+go test ./handlers -v         # Single package
+go test ./handlers -run '^TestName$' -v  # Single test
+
+# Lint & Format
+golangci-lint run
+gofmt -w .    # Format all files
 ```
 
 ## Code Style

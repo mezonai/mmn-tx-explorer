@@ -44,6 +44,16 @@ go build -o main -tags=production
 ./main sync_blocks
 ./main validate
 ./main validate_and_fix
+
+# Test
+go test ./... -v                              # All tests
+go test ./internal/orchestrator -v            # Single package
+go test ./internal/orchestrator -run '^TestNewPoller_ForceFromBlockEnabled$' -v  # Single test
+
+# Lint & Format
+golangci-lint run
+gofmt -w .              # Format all files
+gofmt -l .              # Check formatting
 ```
 
 ## Code Style

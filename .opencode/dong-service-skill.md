@@ -52,6 +52,15 @@ make security-scan
 # Direct
 go build -o main .
 go run main.go
+
+# Test (direct)
+go test ./... -v                    # All tests
+go test ./handlers -v               # Single package
+go test ./handlers -run '^TestName$' -v  # Single test
+
+# Lint & Format
+golangci-lint run
+gofmt -w .          # Format all files
 ```
 
 ## Code Style
