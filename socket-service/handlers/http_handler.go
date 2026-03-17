@@ -3,7 +3,6 @@ package handlers
 import (
 	"net/http"
 	"socket-service/config"
-	"socket-service/constant"
 	"socket-service/logger"
 	"socket-service/models"
 	"socket-service/repository"
