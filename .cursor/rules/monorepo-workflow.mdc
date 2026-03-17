@@ -1,0 +1,36 @@
+---
+description: Monorepo workflow, service scope, and common commands for mmn-tx-explorer
+globs: ["*"]
+alwaysApply: true
+---
+
+# Monorepo Workflow
+
+- This is a monorepo with multiple Go and JavaScript services.
+- Identify the owning service before editing: `frontend/`, `indexer/`, `dong-service/`, `socket-service/`, or `prove-service/`.
+- Prefer small, service-focused changes unless an API contract requires coordination.
+- Do not assume a root-wide test or lint command exists.
+- Run commands from the relevant service directory.
+
+## Common Commands
+
+- **All services**: `docker compose up --build`
+- **Indexer**: `go build -o main .`, `go test ./... -v`, `golangci-lint run`, `gofmt -w .`
+- **Frontend**: `npm run dev`, `npm run build`, `npm run lint`, `npm run format:check`
+- **Dong service**: `make build`, `make run`, `make test`, `make swagger`, `golangci-lint run`
+- **Socket service**: `go run main.go`, `go build ./...`, `go test ./... -v`
+
+## Single-Test Pattern
+
+For Go services:
+```
+go test ./path/to/package -run '^TestExactName$' -v
+```
+Keep regex anchored with `^` and `$` to avoid partial matches.
+
+## Safety Rules
+
+- Never commit secrets or credentials
+- When backend responses change, update frontend types in the same task
+- When schema changes in Go services, include migrations and verify models match
+- Run linting before finishing any change
