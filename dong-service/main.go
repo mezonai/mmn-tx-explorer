@@ -7,7 +7,6 @@ import (
 	"dong-service/database"
 	"dong-service/logger"
 	"dong-service/middleware"
-	"dong-service/repository"
 	"dong-service/routes"
 	"dong-service/scheduler"
 	"dong-service/services"
@@ -109,9 +108,8 @@ func main() {
 		}
 	}
 
-	logger.Info().Msg("Initializing Red Envelope Wallet Pool and Syncing Queues")
-	queueService := repository.NewRedEnvelopeQueueService(database.RedisClient)
-	startupInit := services.NewStartupInitializer(database.GetDB(), cfg.Database.Schema, queueService)
+	logger.Info().Msg("Initializing Red Envelope Wallet Pool")
+	startupInit := services.NewStartupInitializer(cfg.Database.Schema)
 
 	if err = startupInit.Initialize(); err != nil {
 		logger.Error().Err(err).Msg("Failed to initialize wallet pool")
