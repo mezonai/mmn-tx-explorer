@@ -1,0 +1,34 @@
+---
+description: Monorepo workflow and command selection for mmn-tx-explorer
+globs:
+alwaysApply: true
+---
+
+# mmn-tx-explorer Monorepo Workflow
+
+- This repository is a monorepo. Identify the owning service before editing.
+- Most changes belong to one of: `frontend/`, `indexer/`, `dong-service/`, `socket-service/`, `prove-service/`.
+- Prefer the smallest targeted change in the owning service instead of cross-service refactors.
+- Do not assume a root-wide test or lint command exists.
+- Run commands from the relevant service directory.
+
+## Commands
+
+- Root local stack: `docker compose up --build`
+- Frontend: `npm install`, `npm run dev`, `npm run build`, `npm run lint`, `npm run format:check`
+- Indexer: `go mod download`, `go build -o main .`, `go test ./... -v`, `golangci-lint run`, `gofmt -w .`
+- Dong service: `make build`, `make run`, `make test`, `make swagger`, `golangci-lint run`, `gofmt -w .`
+- Socket service: `go run main.go`, `go build ./...`, `go test ./... -v`, `golangci-lint run`, `gofmt -w .`
+- Prove service: `go run main.go`, `go build ./...`, `go test ./... -v`
+
+## Single-Test Guidance
+
+- Prefer `go test ./path/to/package -run '^TestExactName$' -v`.
+- Keep regex anchored with `^` and `$`.
+- If frontend tests are requested, first confirm whether a test runner was added; none is configured by default.
+
+## Safety
+
+- Preserve user changes outside the task scope.
+- Do not fabricate commands, CI coverage, or test runners.
+- If you add a new script, command, or workflow, update `AGENTS.md` too.

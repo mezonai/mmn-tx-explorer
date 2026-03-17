@@ -1,0 +1,38 @@
+---
+description: Frontend TypeScript, React, import, and error-handling conventions
+globs:
+  - frontend/**/*.ts
+  - frontend/**/*.tsx
+alwaysApply: false
+---
+
+# Frontend Conventions
+
+- Use TypeScript for new logic.
+- Respect `frontend/tsconfig.json` strict mode.
+- Use the `@/*` path alias when it improves clarity.
+- Prefer React function components and hooks.
+- Add `'use client';` only for client components/hooks that need browser APIs or client state.
+- Prefer named exports and existing barrel files when a folder already uses them.
+- Avoid `any`; narrow unknown values instead.
+
+## Naming
+
+- `PascalCase`: components, exported types, interfaces, enums.
+- `camelCase`: variables, functions, hooks, object keys.
+- `UPPER_SNAKE_CASE`: constants like `APP_CONFIG`, `ROUTES`, `STORAGE_KEYS`.
+- Follow nearby conventions for prefixes like `I`, `T`, and `E`.
+
+## Imports and Formatting
+
+- Order imports as: framework/external, blank line, `@/` imports, then relative imports.
+- Use single quotes and semicolons.
+- Use `cn(...)` from `frontend/lib/utils.ts` for class composition.
+- Let ESLint/Prettier control formatting.
+
+## Error Handling
+
+- Throw early for missing invariants such as missing authenticated user state.
+- Use `try/catch/finally` in async flows where loading state must reset.
+- Show user-facing failures with `toast.error(...)` where the feature already follows that UX pattern.
+- Preserve backend field names like `payment_info_id` when they are API-contract fields.
