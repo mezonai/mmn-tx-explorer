@@ -63,6 +63,12 @@ go run main.go
 - Config: `config/config.yml`
 - Linting: `.golangci.yaml`
 
+## Verification
+- Run `make test` after changing handlers, repositories, services, schedulers, or models
+- Run `golangci-lint run` when touching production Go code
+- Run `make swagger` when request/response models or route docs change
+- If schema changes are introduced, verify migrations, repository scans, models, and frontend contracts together
+
 ## Key Features
 
 ### 1. Donation Campaigns
@@ -101,3 +107,7 @@ go run main.go
 - Rate limiting middleware
 - API key validation
 - Token whitelist in Redis
+
+## Working Notes
+- Donation campaign, lucky money, and P2P features share service infrastructure but should stay modular in handlers/repository/services
+- Be careful with monetary values and blockchain amounts; preserve precision and avoid narrowing types in API models

@@ -81,3 +81,9 @@ npm run format:check
 - Use React Hook Form + Zod for forms
 - Use URL query params for pagination (see `hooks/usePaginationQueryParam.tsx`)
 - Use path aliases `@/*` for imports
+- Keep feature logic inside `modules/` and shared primitives inside `components/`
+
+## Verification
+- Run `npm run lint` for code changes
+- Run `npm run build` when changing routes, types, configs, or server/client component boundaries
+- If backend payloads change, update matching types in `modules/**/type.ts` and verify formatting helpers still work

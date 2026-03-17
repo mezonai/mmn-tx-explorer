@@ -47,6 +47,11 @@ go run main.go -f config/config.yml
 - Config: `config/config.yml`
 - Linting: `.golangci.yaml`
 
+## Verification
+- Run `go test ./...` after changing handlers, middleware, repository, or service logic
+- Run `golangci-lint run` when touching production Go code
+- Verify auth middleware, Redis whitelist access, and websocket connection flow together when changing event delivery
+
 ## API Endpoints
 - `GET /ws/connect` - WebSocket connection endpoint
 - `POST /api/event` - Save event (push to online users or store if offline)
@@ -63,3 +68,4 @@ go run main.go -f config/config.yml
 - Event broadcasting to rooms
 - Online/offline event handling
 - Heartbeat/ping-pong for connection health
+- Offline persistence fallback in PostgreSQL when receivers are disconnected

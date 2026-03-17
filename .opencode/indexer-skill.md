@@ -59,8 +59,14 @@ go build -o main -tags=production
 - Linting: `.golangci.yaml`
 - Mockery: `.mockery.yaml`
 
+## Verification
+- Run `go test ./...` after changing handlers, workers, orchestrator logic, or storage code
+- Run `golangci-lint run` when touching production Go code
+- If migrations or storage interfaces change, verify scans, mocks, and API responses still match
+
 ## Key Patterns
 - Use interfaces for storage layer
 - Handle reorgs properly in block processing
 - Use context.Context for cancellation
 - Log with structured fields using zerolog
+- Keep CLI commands in `cmd/` thin and push business logic into `internal/`
