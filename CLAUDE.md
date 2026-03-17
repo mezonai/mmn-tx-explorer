@@ -11,7 +11,7 @@ Mezon Mainnet Transaction Explorer - a blockchain transaction indexing and explo
 | Service | Tech Stack | Key Features |
 |---------|------------|--------------|
 | `indexer` | Go, Cobra, PostgreSQL | Block sync, transaction parsing |
-| `frontend` | Next.js 15, TypeScript, React 19 | Block explorer, P2P, lucky money |
+| `frontend` | Next.js 15, TypeScript, React 19, Tailwind CSS 4 | Block explorer, P2P, lucky money |
 | `socket-service` | Go, Gin, WebSocket | Real-time events |
 | `dong-service` | Go 1.25, Gin | Donation, lucky money, P2P trading |
 | `prove-service` | Separate service | Proof verification |
@@ -19,8 +19,7 @@ Mezon Mainnet Transaction Explorer - a blockchain transaction indexing and explo
 
 ## Important Files
 
-- `AGENTS.md` - Canonical repo-wide rules for all AI assistants
-- `agents.md` - Compatibility alias that points to `AGENTS.md`
+- `AGENTS.md` / `agents.md` - Repo-wide rules for all AI assistants (same file on Windows)
 - `.opencode/indexer-skill.md` - Indexer guidance
 - `.opencode/frontend-skill.md` - Frontend guidance
 - `.opencode/socket-service-skill.md` - Socket-service guidance

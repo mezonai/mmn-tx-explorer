@@ -4,7 +4,7 @@ This folder stores project-specific guidance for AI coding agents.
 
 ## Root Guides
 
-- `AGENTS.md` - repo-wide rules, boundaries, commands, and verification checklist
+- `AGENTS.md` / `agents.md` - repo-wide rules, boundaries, commands, and verification checklist
 - `CLAUDE.md` - Claude Code oriented quick reference
 
 ## Service Skills

@@ -23,6 +23,8 @@ dong-service/
 ├── routes/       # API route definitions
 ├── services/     # Business logic
 ├── scheduler/    # Background jobs
+├── constants/    # Constants (errors, event types, status, multipliers)
+├── types/        # Custom types (BigInt string handling)
 ├── utils/        # Helpers (amount, crypto, json, etc.)
 ├── logger/       # Logging (zerolog + lumberjack)
 ├── blockchain/   # Blockchain integration

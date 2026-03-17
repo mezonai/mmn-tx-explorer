@@ -4,8 +4,8 @@
 Next.js 15 frontend for blockchain transaction explorer.
 
 ## Tech Stack
-- Next.js 15 with App Router
-- TypeScript
+- Next.js 15.4 with App Router
+- TypeScript 5
 - React 19
 - Tailwind CSS 4
 - shadcn/ui components
@@ -67,6 +67,8 @@ npm run format:check
 - `dashboard/` - Dashboard
 - `global-search/` - Global search
 - `developer/` - Developer tools
+- `cobar/` - Cobar feature
+- `mezon-game/` - Mezon game integration
 - `profile/` - User profiles
 
 ## Configuration Files

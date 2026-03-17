@@ -4,7 +4,7 @@
 Real-time WebSocket service for broadcasting events to clients.
 
 ## Tech Stack
-- Go with Gin framework
+- Go 1.23 with Gin framework
 - Gorilla WebSocket
 - Redis for token whitelist
 - PostgreSQL for event storage

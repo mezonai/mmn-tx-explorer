@@ -4,7 +4,7 @@
 Blockchain indexer service written in Go. Syncs data from blockchain to PostgreSQL.
 
 ## Tech Stack
-- Go with Cobra CLI
+- Go 1.24 with Cobra CLI
 - PostgreSQL (3 DBs: orchestrator, staging, main)
 - Kafka for events
 - Prometheus for metrics
