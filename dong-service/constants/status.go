@@ -91,7 +91,9 @@ const (
 const (
 	ExtraInfoLuckyMoney              = `{"type":"lucky-money"}`
 	ExtraInfoP2PTrading              = `{"type":"p2p-trading"}`
+	ExtraInfoP2PTradingBuyOffer      = `{"type":"p2p-trading-buy-offer"}`
 	ExtraInfoP2PTradingOfferCanceled = `{"type":"p2p-trading","action":"offer-canceled"}`
+	ExtraInfoP2PTradingOrderExpired  = `{"type":"p2p-trading","action":"order-expired-refund"}`
 )
 
 const (
@@ -100,6 +102,7 @@ const (
 )
 
 const (
+	TradingWaiting   = "WAITING_TRANSFER"
 	TradingOpen      = "OPEN"
 	TradingPending   = "PENDING"
 	TradingConfirmed = "CONFIRMED"
@@ -107,6 +110,11 @@ const (
 	TradingExpired   = "EXPIRED"
 	TradingFailed    = "FAILED"
 	TradingCompleted = "COMPLETED"
+)
+
+const (
+	OfferSideSell = "SELL"
+	OfferSideBuy  = "BUY"
 )
 
 // GetStatusName returns the human-readable name for a status code
@@ -134,8 +142,6 @@ func IsValidStatus(status int16) bool {
 const (
 	MaxPriceRateOffer         float64 = 1000000.0
 	MaxLengthSymbol           int     = 64
-	MaxTotalBankInfoSize      int     = 1024
-	MaxIndividualBankInfoSize int     = 128
 	MaxActiveOffersPerUser    int64   = 10
 	MaxActiveOrdersPerUser    int     = 10
 )

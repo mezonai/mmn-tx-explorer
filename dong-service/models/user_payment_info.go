@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type UserPaymentInfo struct {
 	ID            int64     `json:"id" db:"id"`
@@ -11,4 +14,13 @@ type UserPaymentInfo struct {
 	IsPrimary     bool      `json:"is_primary" db:"is_primary"`
 	CreatedAt     time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at" db:"updated_at"`
+}
+
+// GetUserBankInfo converts UserPaymentInfo to bank_info JSON string
+func (p *UserPaymentInfo) GetUserBankInfo() string {
+	if p == nil {
+		return ""
+	}
+	return fmt.Sprintf(`{"bank_name":"%s","account_number":"%s","account_name":"%s","is_primary":%t}`,
+		p.BankName, p.AccountNumber, p.AccountName, p.IsPrimary)
 }
