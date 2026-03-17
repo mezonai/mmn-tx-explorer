@@ -315,7 +315,16 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 		}
 	}()
 
-	orderCount, err := s.orderRepo.CountAllOrdersByOffer(ctx, offerId)
+	// Block cancellation if any order is in dispute (expired while buyer had already confirmed payment).
+	hasDisputed, err := s.orderRepo.HasDisputedOrders(ctx, offerId)
+	if err != nil {
+		return fmt.Errorf("failed to check disputed orders: %w", err)
+	}
+	if hasDisputed {
+		return fmt.Errorf("cannot cancel offer: one or more orders are in dispute")
+	}
+
+	orderCount, err := s.orderRepo.CountOrdersByOffer(ctx, offerId)
 	if err != nil {
 		return err
 	}

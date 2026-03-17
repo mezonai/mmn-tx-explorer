@@ -24,8 +24,8 @@ func NewOrderRepository(db *sql.DB, dongSchema string) *OrderRepository {
 func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
 			INSERT INTO %s.p2p_orders (
-				offer_id, order_creator_wallet_address, order_creator_user_id, order_amount, payable_amount, status, transfer_code, expires_at, payment_info_id, created_at, updated_at
-			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW(),NOW())
+				offer_id, order_creator_wallet_address, order_creator_user_id, order_amount, payable_amount, status, previous_status, transfer_code, expires_at, payment_info_id, in_dispute, created_at, updated_at
+			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,NOW(),NOW())
         RETURNING order_id, created_at, updated_at
     `, r.dongSchema)
 
@@ -36,13 +36,15 @@ func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order, 
 		order.OrderAmount,
 		order.PayableAmount,
 		order.Status,
+		order.PreviousStatus,
 		order.TransferCode,
 		order.ExpiresAt,
 		order.PaymentInfoID,
+		order.InDispute,
 	).Scan(&order.OrderID, &order.CreatedAt, &order.UpdatedAt)
 }
 func (r *OrderRepository) HasActiveOrders(ctx context.Context, offerID int64, tx *sql.Tx) (bool, error) {
-	query := fmt.Sprintf("SELECT 1 FROM %s.p2p_orders WHERE offer_id = $1 AND status IN ('%s','%s') LIMIT 1 FOR UPDATE", r.dongSchema, constants.TradingPending, constants.TradingOpen)
+	query := fmt.Sprintf("SELECT 1 FROM %s.p2p_orders WHERE offer_id = $1 AND status IN ('%s','%s','%s') LIMIT 1 FOR UPDATE", r.dongSchema, constants.TradingPending, constants.TradingOpen, constants.TradingWaiting)
 	var v int
 	err := tx.QueryRowContext(ctx, query, offerID).Scan(&v)
 	if err == sql.ErrNoRows {
@@ -51,8 +53,18 @@ func (r *OrderRepository) HasActiveOrders(ctx context.Context, offerID int64, tx
 	return err == nil, err
 }
 
+func (r *OrderRepository) HasDisputedOrders(ctx context.Context, offerID int64) (bool, error) {
+	query := fmt.Sprintf("SELECT 1 FROM %s.p2p_orders WHERE offer_id = $1 AND in_dispute = TRUE LIMIT 1", r.dongSchema)
+	var v int
+	err := r.db.QueryRowContext(ctx, query, offerID).Scan(&v)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	return err == nil, err
+}
+
 func (r *OrderRepository) CountActiveOrdersByUser(ctx context.Context, buyerUserID string, tx *sql.Tx) (int, error) {
-	query := fmt.Sprintf("SELECT COUNT(*) FROM %s.p2p_orders WHERE order_creator_user_id = $1 AND status IN ('PENDING','OPEN')", r.dongSchema)
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s.p2p_orders WHERE order_creator_user_id = $1 AND status IN ('PENDING','OPEN','WAITING_TRANSFER')", r.dongSchema)
 	var count int
 	err := tx.QueryRowContext(ctx, query, buyerUserID).Scan(&count)
 	if err != nil {
@@ -64,9 +76,9 @@ func (r *OrderRepository) CountActiveOrdersByUser(ctx context.Context, buyerUser
 func (r *OrderRepository) UpdateOrderStatus(ctx context.Context, orderID int64, status string, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
 		UPDATE %s.p2p_orders
-		SET status = $1, updated_at = NOW()
+		SET status = $1, previous_status = (SELECT status FROM %s.p2p_orders WHERE order_id = $2), updated_at = NOW()
 		WHERE order_id = $2
-	`, r.dongSchema)
+	`, r.dongSchema, r.dongSchema)
 
 	_, err := tx.ExecContext(ctx, query, status, orderID)
 	return err
@@ -76,9 +88,9 @@ func (r *OrderRepository) UpdateOrderStatusWithTxHash(ctx context.Context, order
 	if txHash != nil {
 		query := fmt.Sprintf(`
 			UPDATE %s.p2p_orders
-			SET status = $1, transaction_hash = $2, updated_at = NOW()
+			SET status = $1, transaction_hash = $2, previous_status = (SELECT status FROM %s.p2p_orders WHERE order_id = $3), updated_at = NOW()
 			WHERE order_id = $3
-		`, r.dongSchema)
+		`, r.dongSchema, r.dongSchema)
 		_, err := tx.ExecContext(ctx, query, status, *txHash, orderID)
 		return err
 	}
@@ -90,6 +102,7 @@ type ExpiredOrderInfo struct {
 	OfferID                   int64
 	OrderAmount               string
 	Status                    string
+	PreviousStatus            string
 	OrderCreatorWalletAddress string
 	IntermediaryWalletAddress string
 	OfferSide                 string
@@ -102,12 +115,13 @@ func (r *OrderRepository) GetExpiredOrdersForRefund(ctx context.Context, cutoff 
 			o.offer_id,
 			o.order_amount,
 			o.status,
+			COALESCE(o.previous_status, ''),
 			COALESCE(o.order_creator_wallet_address, ''),
 			COALESCE(of.intermediary_wallet_address, ''),
 			COALESCE(of.side, '')
 		FROM %s.p2p_orders o
 		INNER JOIN %s.p2p_offers of ON o.offer_id = of.offer_id
-		WHERE o.status IN ('OPEN', 'PENDING') AND o.expires_at < $1 AND of.side = 'BUY'
+		WHERE o.status IN ('OPEN', 'PENDING', 'WAITING_TRANSFER') AND o.expires_at < $1
 		ORDER BY o.created_at ASC
 	`, r.dongSchema, r.dongSchema)
 
@@ -125,6 +139,7 @@ func (r *OrderRepository) GetExpiredOrdersForRefund(ctx context.Context, cutoff 
 			&info.OfferID,
 			&info.OrderAmount,
 			&info.Status,
+			&info.PreviousStatus,
 			&info.OrderCreatorWalletAddress,
 			&info.IntermediaryWalletAddress,
 			&info.OfferSide,
@@ -137,11 +152,15 @@ func (r *OrderRepository) GetExpiredOrdersForRefund(ctx context.Context, cutoff 
 }
 
 func (r *OrderRepository) CancelExpiredOrders(ctx context.Context, cutoff time.Time, tx *sql.Tx) (int64, error) {
+	// Orders that expire while PENDING are marked in_dispute=TRUE because the buyer already
+	// confirmed payment but the seller did not confirm receipt in time.
 	query := fmt.Sprintf(`
 		WITH cancelled AS (
 			UPDATE %s.p2p_orders
-			SET status = '%s', updated_at = NOW()
-			WHERE status IN ('%s', '%s') AND expires_at < $1
+			SET status      = '%s',
+			    in_dispute  = CASE WHEN status = '%s' THEN TRUE ELSE FALSE END,
+			    updated_at  = NOW()
+			WHERE status IN ('%s', '%s', '%s') AND expires_at < $1
 			RETURNING order_id, offer_id, order_amount
 		),
 		restored AS (
@@ -152,7 +171,11 @@ func (r *OrderRepository) CancelExpiredOrders(ctx context.Context, cutoff time.T
 			RETURNING c.order_id
 		)
 		SELECT order_id FROM restored
-	`, r.dongSchema, constants.TradingExpired, constants.TradingOpen, constants.TradingPending, r.dongSchema)
+	`, r.dongSchema,
+		constants.TradingExpired,
+		constants.TradingPending,
+		constants.TradingOpen, constants.TradingPending, constants.TradingWaiting,
+		r.dongSchema)
 
 	rows, err := tx.QueryContext(ctx, query, cutoff)
 	if err != nil {

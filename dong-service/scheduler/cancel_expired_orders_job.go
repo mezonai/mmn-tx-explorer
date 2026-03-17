@@ -79,7 +79,15 @@ func (j *CancelExpiredOrdersJob) Run(ctx context.Context) error {
 
 func (j *CancelExpiredOrdersJob) processRefunds(ctx context.Context, expiredOrders []repository.ExpiredOrderInfo) {
 	for _, orderInfo := range expiredOrders {
-		if orderInfo.Status != constants.TradingPending {
+		if orderInfo.PreviousStatus == constants.TradingPending {
+			logger.Info().
+				Int64("order_id", orderInfo.OrderID).
+				Str("previous_status", orderInfo.PreviousStatus).
+				Msg("Skipping refund: order reached PENDING status (payment was confirmed)")
+			continue
+		}
+
+		if orderInfo.Status != constants.TradingPending && orderInfo.Status != constants.TradingWaiting {
 			continue
 		}
 
@@ -109,9 +117,10 @@ func (j *CancelExpiredOrdersJob) processRefunds(ctx context.Context, expiredOrde
 			Int64("offer_id", orderInfo.OfferID).
 			Str("amount", orderInfo.OrderAmount).
 			Str("status", orderInfo.Status).
+			Str("previous_status", orderInfo.PreviousStatus).
 			Str("offer_side", orderInfo.OfferSide).
 			Str("recipient_wallet", refundRecipient).
-			Msg("Processing refund for expired PENDING order")
+			Msg("Processing refund for expired order")
 
 		wallet, err := j.walletRepo.GetWalletByAddress(ctx, orderInfo.IntermediaryWalletAddress)
 		if err != nil {
@@ -167,7 +176,7 @@ func (j *CancelExpiredOrdersJob) processRefunds(ctx context.Context, expiredOrde
 				Str("recipient_wallet", refundRecipient).
 				Str("offer_side", orderInfo.OfferSide).
 				Str("amount", orderInfo.OrderAmount).
-				Msg("Successfully refunded expired PENDING order")
+				Msg("Successfully refunded expired order")
 		} else {
 			logger.Warn().
 				Int64("order_id", orderInfo.OrderID).
