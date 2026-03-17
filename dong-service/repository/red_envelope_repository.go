@@ -284,11 +284,13 @@ func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status str
 		UPDATE %s.red_envelope
 		SET status = $1, updated_at = $2
 		WHERE id = $3
-		RETURNING id, red_envelope_wallet, owner_wallet, total_amount, total_claims, end_date, is_random_distribution, min_amount, max_amount
+		RETURNING id, name, description, red_envelope_wallet, owner_wallet, total_amount, total_claims, end_date, is_random_distribution, min_amount, max_amount
 	`, r.dongSchema)
 
 	var envelope struct {
 		ID                   string
+		Name                 string
+		Description          *string
 		RedEnvelopeWallet    string
 		OwnerWallet          string
 		TotalAmount          int64
@@ -301,6 +303,8 @@ func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status str
 
 	err := r.db.QueryRowContext(ctx, query, status, time.Now(), id).Scan(
 		&envelope.ID,
+		&envelope.Name,
+		&envelope.Description,
 		&envelope.RedEnvelopeWallet,
 		&envelope.OwnerWallet,
 		&envelope.TotalAmount,
@@ -364,7 +368,11 @@ func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status str
 			}
 		}
 
-		err = r.queueService.InitializeRedEnvelope(id, amounts, ttl)
+		var descriptionStr string
+		if envelope.Description != nil {
+			descriptionStr = *envelope.Description
+		}
+		err = r.queueService.InitializeRedEnvelope(id, amounts, descriptionStr, ttl)
 		if err != nil {
 			logger.Error().
 				Err(err).
@@ -728,139 +736,157 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 
 
 func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUserID, amount int64) error {
-	tx, err := r.db.Begin()
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
+	// --- PHASE 1: RESERVATION (Transaction 1) ---
+	// We reserve the slot and record the claim as 'PENDING' before calling Blockchain.
+	// If this succeeds and commits, the user has "taken" a turn.
+	var claimID int64
+	var envelope struct {
+		RedEnvelopeWallet string
 	}
-	defer func() {
+
+	err := func() error {
+		tx, err := r.db.Begin()
 		if err != nil {
-			rollbackErr := tx.Rollback()
-			if rollbackErr != nil {
-				logger.Error().Err(rollbackErr).Msg("Failed to rollback transaction")
-			}
+			return fmt.Errorf("failed to begin reservation transaction: %w", err)
 		}
+		defer func() {
+			if err != nil {
+				_ = tx.Rollback()
+			}
+		}()
+
+		envelopeQuery := fmt.Sprintf(`
+			SELECT red_envelope_wallet, status, total_claims, claimed_count
+			FROM %s.red_envelope
+			WHERE id = $1
+			FOR UPDATE
+		`, r.dongSchema)
+
+		var status string
+		var totalClaims, claimedCount int64
+		err = tx.QueryRow(envelopeQuery, id).Scan(
+			&envelope.RedEnvelopeWallet,
+			&status,
+			&totalClaims,
+			&claimedCount,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to get envelope for reservation: %w", err)
+		}
+
+		if status != constants.RedEnvelopeStatusPublished {
+			return fmt.Errorf("red envelope is not published")
+		}
+
+		if claimedCount >= totalClaims {
+			return fmt.Errorf("red envelope is fully claimed")
+		}
+
+		// Insert claim as PENDING
+		claimQuery := fmt.Sprintf(`
+			INSERT INTO %s.red_envelope_claim (
+				red_envelope_id, claimer_wallet, claimer_user_id, 
+				amount, status
+			)
+			VALUES ($1, $2, $3, $4, $5)
+			RETURNING id
+		`, r.dongSchema)
+
+		err = tx.QueryRow(
+			claimQuery,
+			id,
+			claimerWallet,
+			claimerUserID,
+			amount,
+			constants.RedEnvelopeClaimStatusPending,
+		).Scan(&claimID)
+		if err != nil {
+			return fmt.Errorf("failed to create pending claim record: %w", err)
+		}
+
+		// Increment claimed_count
+		updateQuery := fmt.Sprintf(`
+			UPDATE %s.red_envelope
+			SET claimed_count = claimed_count + 1,
+				updated_at = $1
+			WHERE id = $2
+		`, r.dongSchema)
+
+		_, err = tx.Exec(updateQuery, time.Now(), id)
+		if err != nil {
+			return fmt.Errorf("failed to reserve claim slot: %w", err)
+		}
+
+		return tx.Commit()
 	}()
 
-	envelopeQuery := fmt.Sprintf(`
-		SELECT id, name, description, total_amount, total_claims, claimed_count, 
-		       red_envelope_wallet, status
-		FROM %s.red_envelope
-		WHERE id = $1
-		FOR UPDATE
-	`, r.dongSchema)
-
-	var envelope struct {
-		ID                string
-		Name              string
-		Description       *string
-		TotalAmount       int64
-		TotalClaims       int64
-		ClaimedCount      int64
-		RedEnvelopeWallet string
-		Status            string
-	}
-
-	err = tx.QueryRow(envelopeQuery, id).Scan(
-		&envelope.ID,
-		&envelope.Name,
-		&envelope.Description,
-		&envelope.TotalAmount,
-		&envelope.TotalClaims,
-		&envelope.ClaimedCount,
-		&envelope.RedEnvelopeWallet,
-		&envelope.Status,
-	)
-
 	if err != nil {
-		logger.Error().Err(err).Str("id", id).Msg("Failed to get envelope")
-		return fmt.Errorf("unable to access red envelope information")
-	}
-
-	if envelope.Status != constants.RedEnvelopeStatusPublished {
-		err = fmt.Errorf("red envelope is not published")
+		logger.Error().Err(err).Str("id", id).Int64("user_id", claimerUserID).Msg("Reservation failed")
 		return err
 	}
 
-	if envelope.ClaimedCount >= envelope.TotalClaims {
-		err = fmt.Errorf("red envelope is fully claimed")
-		return err
-	}
-
-	claimQuery := fmt.Sprintf(`
-		INSERT INTO %s.red_envelope_claim (
-			red_envelope_id, claimer_wallet, claimer_user_id, 
-			amount, status, transaction_hash
-		)
-		VALUES ($1, $2, $3, $4, $5, NULL)
-		RETURNING id
-	`, r.dongSchema)
-
-	var claimID int64
-	err = tx.QueryRow(
-		claimQuery,
-		id,
-		claimerWallet,
-		claimerUserID,
-		amount,
-		constants.RedEnvelopeClaimStatusPending,
-	).Scan(&claimID)
-
-	if err != nil {
-		logger.Error().Err(err).Msg("Failed to create pending claim")
-		return fmt.Errorf("failed to create claim")
-	}
-
+	// --- PHASE 2: TRANSFER ---
 	ctx := context.Background()
 	walletInfo, err := r.walletRepo.GetWalletByAddress(ctx, envelope.RedEnvelopeWallet)
 	if err != nil {
-		_ = r.updateClaimStatusInTx(tx, claimID, constants.RedEnvelopeClaimStatusFailed, nil)
-		logger.Error().Err(err).Msg("Failed to get wallet info")
+		logger.Error().Err(err).Msg("Failed to get wallet info for blockchain transfer")
+		_ = r.updateFinalClaimStatus(id, claimID, constants.RedEnvelopeClaimStatusFailed, nil, true)
 		return fmt.Errorf("failed to get wallet info")
 	}
 
-	var txHash string
 	claimAmount := types.NewBigIntString(amount).Multiply(constants.TokenMultiplierBigIntString)
-	txHash, err = r.blockchainService.TransferMoney(walletInfo.EncryptedPrivateKey, envelope.RedEnvelopeWallet, claimerWallet, claimAmount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
+	extraInfo := fmt.Sprintf(`{"type":"lucky-money","claim_id":%d}`, claimID)
+
+	txHash, err := r.blockchainService.TransferMoney(
+		walletInfo.EncryptedPrivateKey,
+		envelope.RedEnvelopeWallet,
+		claimerWallet,
+		claimAmount.String(),
+		constants.TextDataLuckyMoney,
+		extraInfo,
+	)
+
 	if err != nil {
-		_ = r.updateClaimStatusInTx(tx, claimID, constants.RedEnvelopeClaimStatusFailed, nil)
 		logger.Error().Err(err).
 			Str("from", envelope.RedEnvelopeWallet).
 			Str("to", claimerWallet).
 			Int64("claim_id", claimID).
 			Msg("Blockchain transfer failed")
+		
+		// Revert reservation because transfer failed
+		_ = r.updateFinalClaimStatus(id, claimID, constants.RedEnvelopeClaimStatusFailed, nil, true)
 		return fmt.Errorf("failed to transfer money")
 	}
 
-	err = r.updateClaimStatusInTx(tx, claimID, constants.RedEnvelopeClaimStatusSuccess, &txHash)
+	// --- PHASE 3: FINAL STATUS UPDATE ---
+	err = r.updateFinalClaimStatus(id, claimID, constants.RedEnvelopeClaimStatusSuccess, &txHash, false)
 	if err != nil {
+		// CRITICAL: Money IS transferred but DB update failed.
+		// We return nil (Success) to the user because they actually received the money.
+		// The record is already in 'PENDING', so the Indexer/Fallback job will reconcile it.
 		logger.Error().Err(err).
 			Int64("claim_id", claimID).
 			Str("tx_hash", txHash).
-			Msg("Failed to update claim status to SUCCESS")
-		return fmt.Errorf("failed to update claim")
-	}
-
-	updateQuery := fmt.Sprintf(`
-		UPDATE %s.red_envelope
-		SET claimed_count = claimed_count + 1,
-			updated_at = $1
-		WHERE id = $2
-	`, r.dongSchema)
-
-	_, err = tx.Exec(updateQuery, time.Now(), id)
-	if err != nil {
-		logger.Error().Err(err).Msg("Failed to update claimed count")
-		return fmt.Errorf("failed to update claimed count")
-	}
-
-	if err = tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
+			Msg("Money transferred but failed to update claim status to SUCCESS in DB. Reconcile via Indexer.")
+		return nil
 	}
 
 	return nil
 }
 
-func (r *RedEnvelopeRepository) updateClaimStatusInTx(tx *sql.Tx, claimID int64, status string, txHash *string) error {
+// updateFinalClaimStatus updates the claim result and optionally reverts the claimed_count (compensation)
+func (r *RedEnvelopeRepository) updateFinalClaimStatus(envelopeID string, claimID int64, status string, txHash *string, shouldRevertCount bool) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	// Update claim status
 	query := fmt.Sprintf(`
 		UPDATE %s.red_envelope_claim
 		SET status = $1,
@@ -868,15 +894,30 @@ func (r *RedEnvelopeRepository) updateClaimStatusInTx(tx *sql.Tx, claimID int64,
 		WHERE id = $3
 	`, r.dongSchema)
 
-	_, err := tx.Exec(query, status, txHash, claimID)
+	_, err = tx.Exec(query, status, txHash, claimID)
 	if err != nil {
-		logger.Error().Err(err).
-			Int64("claim_id", claimID).
-			Str("status", status).
-			Msg("Failed to update claim status")
+		return err
 	}
-	return err
+
+	// Compensation logic: if transfer failed, return the slot
+	if shouldRevertCount {
+		revertQuery := fmt.Sprintf(`
+			UPDATE %s.red_envelope
+			SET claimed_count = claimed_count - 1,
+				updated_at = $1
+			WHERE id = $2
+		`, r.dongSchema)
+		_, err = tx.Exec(revertQuery, time.Now(), envelopeID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 }
+
+
+
 
 func (r *RedEnvelopeRepository) HasUserClaimed(redEnvelopeID string, userID int64) (bool, error) {
 	query := fmt.Sprintf(`

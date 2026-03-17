@@ -403,11 +403,18 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelope(c *gin.Context) {
 	}
 
 	var description string
-	description, err = r.repo.GetRedEnvelopeDescriptionByID(id)
+	description, err = r.queueService.GetDescription(id)
 	if err != nil {
-		logger.Error().Err(err).Str("envelope_id", id).Msg("Failed to get red envelope description")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToGetRedEnvelope))
-		return
+		logger.Warn().Err(err).Str("envelope_id", id).Msg("Failed to get red envelope description from cache")
+	}
+
+	if description == "" {
+		description, err = r.repo.GetRedEnvelopeDescriptionByID(id)
+		if err != nil {
+			logger.Error().Err(err).Str("envelope_id", id).Msg("Failed to get red envelope description")
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToGetRedEnvelope))
+			return
+		}
 	}
 
 	result := map[string]interface{}{
@@ -500,11 +507,18 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelopeQR(c *gin.Context) {
 	}
 
 	var description string
-	description, err = r.repo.GetRedEnvelopeDescriptionByID(id)
+	description, err = r.queueService.GetDescription(id)
 	if err != nil {
-		logger.Error().Err(err).Str("envelope_id", id).Msg("Failed to get red envelope description")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToGetRedEnvelope))
-		return
+		logger.Warn().Err(err).Str("envelope_id", id).Msg("Failed to get red envelope description from cache")
+	}
+
+	if description == "" {
+		description, err = r.repo.GetRedEnvelopeDescriptionByID(id)
+		if err != nil {
+			logger.Error().Err(err).Str("envelope_id", id).Msg("Failed to get red envelope description")
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToGetRedEnvelope))
+			return
+		}
 	}
 
 	logger.Info().
@@ -551,11 +565,18 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelopeQRLegacy(c *gin.Context) {
 	}
 
 	var description string
-	description, err = r.repo.GetRedEnvelopeDescriptionByID(id)
+	description, err = r.queueService.GetDescription(id)
 	if err != nil {
-		logger.Error().Err(err).Str("envelope_id", id).Msg("Failed to get red envelope description")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToGetRedEnvelope))
-		return
+		logger.Warn().Err(err).Str("envelope_id", id).Msg("Failed to get red envelope description from cache")
+	}
+
+	if description == "" {
+		description, err = r.repo.GetRedEnvelopeDescriptionByID(id)
+		if err != nil {
+			logger.Error().Err(err).Str("envelope_id", id).Msg("Failed to get red envelope description")
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToGetRedEnvelope))
+			return
+		}
 	}
 
 	logger.Info().
@@ -564,7 +585,7 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelopeQRLegacy(c *gin.Context) {
 		Msg("User entered queue and received claim token via QR")
 
 	result := map[string]interface{}{
-		"split_money_id": "3",
+		"split_money_id": 3,
 		"amount":         amount,
 		"description":    description,
 	}

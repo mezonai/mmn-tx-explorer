@@ -820,6 +820,7 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 		failedBuyExtraMap := make(map[string]struct{ OfferID, OrderID int64 })
 		failedSellTxMap := make(map[string]common.Transaction)
 		failedSellOfferIDMap := make(map[string]int64)
+		luckyMoneyTxs := make([]common.Transaction, 0)
 
 		for i := range blockData.Transactions {
 			t := blockData.Transactions[i]
@@ -864,6 +865,8 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 					buyTxMap[t.Hash] = t
 					buyExtraMap[t.Hash] = struct{ OfferID, OrderID int64 }{OfferID: extra.OfferID, OrderID: extra.OrderID}
 				}
+			case common.TransactionExtraInfoLuckyMoney:
+				luckyMoneyTxs = append(luckyMoneyTxs, t)
 			}
 		}
 		if err = p.updateOfferStatus(ctx, tx, sellTxMap, sellOfferIDMap); err != nil {
@@ -880,6 +883,10 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 		}
 		if err = p.failOfferStatus(ctx, tx, failedSellTxMap, failedSellOfferIDMap); err != nil {
 			log.Error().Err(err).Msg("Failed to fail offer status after inserting transactions")
+			return err
+		}
+		if err = p.updateRedEnvelopeClaimStatus(ctx, tx, luckyMoneyTxs); err != nil {
+			log.Error().Err(err).Msg("Failed to update red envelope claim status")
 			return err
 		}
 
@@ -3066,5 +3073,42 @@ func (p *PostgresConnector) failOfferStatus(
 		log.Info().Int("wallets_released", len(walletAddresses)).Msg("released intermediary wallets after failed sell offer")
 	}
 
+	return nil
+}
+func (p *PostgresConnector) updateRedEnvelopeClaimStatus(ctx context.Context, tx *sql.Tx, txs []common.Transaction) error {
+	if len(txs) == 0 {
+		return nil
+	}
+
+	log.Info().Int("claims_to_reconcile", len(txs)).Msg("starting precise red envelope claim reconciliation")
+
+	type Extra struct {
+		ClaimID int64 `json:"claim_id"`
+	}
+
+	for _, t := range txs {
+		var extra Extra
+		if err := json.Unmarshal([]byte(t.ExtraInfo), &extra); err != nil || extra.ClaimID == 0 {
+			// Fallback to wallet/amount matching if claim_id is missing (for legacy or malformed txs)
+			log.Warn().Str("tx_hash", t.Hash).Msg("claim_id missing in extra_info, skipping precise reconciliation")
+			continue
+		}
+
+		query := `
+			UPDATE dong_schema.red_envelope_claim
+			SET status = 'SUCCESS', transaction_hash = $1
+			WHERE id = $2 AND status = 'PENDING'
+		`
+		res, err := tx.ExecContext(ctx, query, t.Hash, extra.ClaimID)
+		if err != nil {
+			log.Error().Err(err).Int64("claim_id", extra.ClaimID).Msg("Failed to reconcile precise red envelope claim")
+			return err
+		}
+
+		rows, _ := res.RowsAffected()
+		if rows > 0 {
+			log.Info().Int64("claim_id", extra.ClaimID).Str("tx_hash", t.Hash).Msg("Successfully reconciled red envelope claim via precise ID mapping")
+		}
+	}
 	return nil
 }

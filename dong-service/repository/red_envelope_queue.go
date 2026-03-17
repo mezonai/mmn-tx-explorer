@@ -32,12 +32,17 @@ func (s *RedEnvelopeQueueService) getReservedKey(redEnvelopeID string) string {
 	return fmt.Sprintf("red_envelope:reserved:%s", redEnvelopeID)
 }
 
-func (s *RedEnvelopeQueueService) InitializeRedEnvelope(redEnvelopeID string, amounts []int64, ttl time.Duration) error {
+func (s *RedEnvelopeQueueService) getDescriptionKey(redEnvelopeID string) string {
+	return fmt.Sprintf("red_envelope:description:%s", redEnvelopeID)
+}
+
+func (s *RedEnvelopeQueueService) InitializeRedEnvelope(redEnvelopeID string, amounts []int64, description string, ttl time.Duration) error {
 	if s.redisClient == nil {
 		return fmt.Errorf("redis client is not initialized")
 	}
 
 	poolKey := s.getPoolKey(redEnvelopeID)
+	descriptionKey := s.getDescriptionKey(redEnvelopeID)
 
 	args := make([]interface{}, len(amounts))
 	for i, v := range amounts {
@@ -46,6 +51,10 @@ func (s *RedEnvelopeQueueService) InitializeRedEnvelope(redEnvelopeID string, am
 	pipe := s.redisClient.Pipeline()
 	pipe.RPush(s.ctx, poolKey, args...)
 	pipe.Expire(s.ctx, poolKey, ttl)
+
+	if description != "" {
+		pipe.Set(s.ctx, descriptionKey, description, ttl)
+	}
 
 	_, err := pipe.Exec(s.ctx)
 	if err != nil {
@@ -59,6 +68,21 @@ func (s *RedEnvelopeQueueService) InitializeRedEnvelope(redEnvelopeID string, am
 		Str("red_envelope_id", redEnvelopeID).
 		Msg("Red envelope queue initialized successfully")
 	return nil
+}
+
+func (s *RedEnvelopeQueueService) GetDescription(redEnvelopeID string) (string, error) {
+	if s.redisClient == nil {
+		return "", fmt.Errorf("redis client is not initialized")
+	}
+
+	descriptionKey := s.getDescriptionKey(redEnvelopeID)
+	val, err := s.redisClient.Get(s.ctx, descriptionKey).Result()
+	if err == redis.Nil {
+		return "", nil // Not found
+	} else if err != nil {
+		return "", err
+	}
+	return val, nil
 }
 
 var attemptClaimScript = redis.NewScript(`
@@ -131,7 +155,7 @@ func (s *RedEnvelopeQueueService) AttemptClaim(redEnvelopeID string, userID int6
 	}
 }
 
-func (s *RedEnvelopeQueueService) VerifyReservation(ctx context.Context, redEnvelopeID string, userID int64) (int, error) {
+func (s *RedEnvelopeQueueService) VerifyReservation(ctx context.Context, redEnvelopeID string, userID int64) (int64, error) {
 	reservedKey := s.getReservedKey(redEnvelopeID)
 	val, err := s.redisClient.HGet(ctx, reservedKey, strconv.FormatInt(userID, 10)).Result()
 
@@ -147,5 +171,5 @@ func (s *RedEnvelopeQueueService) VerifyReservation(ctx context.Context, redEnve
 		return 0, fmt.Errorf("invalid amount data in redis")
 	}
 
-	return amount, nil
+	return int64(amount), nil
 }
