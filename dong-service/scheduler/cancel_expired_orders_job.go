@@ -79,7 +79,7 @@ func (j *CancelExpiredOrdersJob) Run(ctx context.Context) error {
 
 func (j *CancelExpiredOrdersJob) processRefunds(ctx context.Context, expiredOrders []repository.ExpiredOrderInfo) {
 	for _, orderInfo := range expiredOrders {
-		if orderInfo.Status != constants.TradingPending {
+		if orderInfo.Status != constants.TradingExpired {
 			continue
 		}
 
@@ -111,7 +111,7 @@ func (j *CancelExpiredOrdersJob) processRefunds(ctx context.Context, expiredOrde
 			Str("status", orderInfo.Status).
 			Str("offer_side", orderInfo.OfferSide).
 			Str("recipient_wallet", refundRecipient).
-			Msg("Processing refund for expired PENDING order")
+			Msg("Processing refund for expired order")
 
 		wallet, err := j.walletRepo.GetWalletByAddress(ctx, orderInfo.IntermediaryWalletAddress)
 		if err != nil {
@@ -136,8 +136,8 @@ func (j *CancelExpiredOrdersJob) processRefunds(ctx context.Context, expiredOrde
 			orderInfo.IntermediaryWalletAddress,
 			refundRecipient,
 			orderInfo.OrderAmount,
-			constants.TextDataP2PTrading,
-			constants.ExtraInfoP2PTradingOrderExpired,
+			constants.TextDataP2PTradingFund,
+			constants.ExtraInfoP2PTrading,
 		)
 
 		if err != nil {
@@ -167,7 +167,7 @@ func (j *CancelExpiredOrdersJob) processRefunds(ctx context.Context, expiredOrde
 				Str("recipient_wallet", refundRecipient).
 				Str("offer_side", orderInfo.OfferSide).
 				Str("amount", orderInfo.OrderAmount).
-				Msg("Successfully refunded expired PENDING order")
+				Msg("Successfully refunded expired order")
 		} else {
 			logger.Warn().
 				Int64("order_id", orderInfo.OrderID).

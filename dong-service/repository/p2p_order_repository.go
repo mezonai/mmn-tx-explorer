@@ -106,7 +106,7 @@ func (r *OrderRepository) GetExpiredOrdersForRefund(ctx context.Context, cutoff 
 			COALESCE(of.side, '')
 		FROM %s.p2p_orders o
 		INNER JOIN %s.p2p_offers of ON o.offer_id = of.offer_id
-		WHERE o.status IN ('OPEN', 'PENDING') AND o.expires_at < $1 AND of.side = 'BUY'
+		WHERE o.status IN ('EXPIRED') AND o.expires_at < $1 AND of.side = 'BUY'
 		ORDER BY o.created_at ASC
 	`, r.dongSchema, r.dongSchema)
 
@@ -139,7 +139,7 @@ func (r *OrderRepository) CancelExpiredOrders(ctx context.Context, cutoff time.T
 	query := fmt.Sprintf(`
 		WITH cancelled AS (
 			UPDATE %s.p2p_orders
-			SET status = 'CANCELED', updated_at = NOW()
+			SET status = 'EXPIRED', updated_at = NOW()
 			WHERE status IN ('OPEN', 'PENDING') AND expires_at < $1
 			RETURNING order_id, offer_id, order_amount
 		),
