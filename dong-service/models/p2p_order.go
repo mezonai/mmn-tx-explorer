@@ -2,8 +2,6 @@ package models
 
 import (
 	"dong-service/types"
-	"dong-service/utils"
-	"encoding/json"
 	"time"
 )
 
@@ -27,31 +25,21 @@ type Order struct {
 	PayableAmount             types.BigIntString `json:"payable_amount" db:"payable_amount"`
 	TransactionHash           *string            `json:"transaction_hash,omitempty" db:"transaction_hash"`
 	Status                    string             `json:"status" db:"status"`
-	PreviousStatus            *string            `json:"previous_status,omitempty" db:"previous_status"`
 	TransferCode              *string            `json:"transfer_code,omitempty" db:"transfer_code"`
 	ExpiresAt                 *time.Time         `json:"expires_at,omitempty" db:"expires_at"`
+	PaymentInfoID             *int64             `json:"payment_info_id,omitempty" db:"payment_info_id"`
 	CreatedAt                 time.Time          `json:"created_at" db:"created_at"`
 	UpdatedAt                 time.Time          `json:"updated_at" db:"updated_at"`
-	BankInfo                  *string            `json:"bank_info,omitempty" db:"-"`
-	SellerWalletAddress       *string            `json:"seller_wallet_address,omitempty" db:"-"`
-	SellerUserID              *string            `json:"seller_user_id,omitempty" db:"-"`
+	PaymentInfo               *UserPaymentInfo   `json:"payment_info,omitempty" db:"-"`
+	OfferCreatorWalletAddress *string            `json:"offer_creator_wallet_address,omitempty" db:"-"`
+	OfferCreatorUserID        string             `json:"offer_creator_user_id,omitempty" db:"-"`
 	PriceRate                 *float64           `json:"price_rate,omitempty" db:"-"`
+	OfferSide                 *OfferSide         `json:"side,omitempty" db:"-"`
+	PreviousStatus            *string            `json:"previous_status,omitempty" db:"previous_status"`
 }
 
 type CreateOrderRequest struct {
 	Amount        int64  `json:"amount" binding:"required"`
 	PayableAmount *int64 `json:"payable_amount,omitempty"`
-}
-
-func (o Order) MarshalJSON() ([]byte, error) {
-	type Alias Order
-	aux := &struct {
-		BankInfo interface{} `json:"bank_info,omitempty"`
-		*Alias
-	}{
-		Alias:    (*Alias)(&o),
-		BankInfo: utils.ParseBankInfoString(o.BankInfo),
-	}
-
-	return json.Marshal(aux)
+	PaymentInfoID *int64 `json:"payment_info_id,omitempty"`
 }

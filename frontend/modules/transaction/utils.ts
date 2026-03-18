@@ -14,6 +14,7 @@ export const getTransactionTypeLabel = (type: ETransferType): string => {
     case ETransferType.DonationFeedCampaign:
       return 'Donation Feed';
     case ETransferType.P2PTrading:
+    case ETransferType.P2PTradingBuyOffer:
       return 'P2P Trading';
     default:
       return 'Token Transfer';

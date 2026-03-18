@@ -156,7 +156,7 @@ func main() {
 
 	// Add cancel expired orders task
 	ordersExpiryInterval := time.Duration(cfg.Scheduler.ExpiredOrdersInterval) * time.Second
-	cancelExpiredOrdersTask := scheduler.CreateCancelExpiredOrdersTask(ordersExpiryInterval, cfg.Database.Schema)
+	cancelExpiredOrdersTask := scheduler.CreateCancelExpiredOrdersTask(ordersExpiryInterval, cfg.Database.Schema, blockchainService)
 	schedulerInstance.AddTask(cancelExpiredOrdersTask)
 
 	// Start scheduler

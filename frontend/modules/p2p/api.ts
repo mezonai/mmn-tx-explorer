@@ -12,7 +12,6 @@ import {
 } from './types';
 import { apiDongClient } from '@/service';
 import { P2P_ENDPOINTS } from './constants';
-import { UserPaymentInfo } from './types';
 
 export class P2PService {
   static async getMyPaymentInfos(): Promise<UserPaymentInfo[]> {
@@ -24,7 +23,7 @@ export class P2PService {
     const { data } = await apiDongClient.post<{ data: UserPaymentInfo }>(P2P_ENDPOINTS.USER_PAYMENTS, paymentData);
     return data.data;
   }
-  
+
   static async deletePaymentInfo(id: string | number): Promise<void> {
     await apiDongClient.delete(P2P_ENDPOINTS.DELETE_USER_PAYMENT(String(id)));
   }
@@ -71,6 +70,10 @@ export class P2PService {
 
   static async getOrderById(orderId: string): Promise<P2POrder> {
     const { data } = await apiDongClient.get<{ data: P2POrder }>(P2P_ENDPOINTS.ORDER_BY_ID(orderId));
+    return data.data;
+  }
+  static async getOrdersByOffer(offerId: string): Promise<P2POrder[]> {
+    const { data } = await apiDongClient.get<{ data: P2POrder[] }>(P2P_ENDPOINTS.ORDERS_BY_OFFER(offerId));
     return data.data;
   }
 

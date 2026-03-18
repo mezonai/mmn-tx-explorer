@@ -1,7 +1,7 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
-import { P2POrder, OrderStatus } from '../../types';
+import { P2POrder, TradeTypes } from '../../types';
 import { Table } from '@/components/ui/table';
 import { TTableColumn } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,8 +11,8 @@ import { ROUTES } from '@/configs/routes.config';
 import { Button } from '@/components/ui/button';
 import { Countdown } from '../shared/count-down';
 import { NumberUtil } from '@/utils';
-import { getOrderStatusInfo } from '../../util';
-import BigNumber from 'bignumber.js';
+import { getOrderStatusInfo, getOrderStatusLabel } from '../../util';
+import { useUser } from '@/providers/AppProvider';
 
 interface P2POrdersListProps {
   orders: P2POrder[] | undefined;
@@ -22,6 +22,7 @@ interface P2POrdersListProps {
 export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
   const router = useRouter();
 
+  const { user } = useUser();
   const columns: TTableColumn<P2POrder>[] = [
     {
       headerContent: 'ORDER ID',
@@ -36,63 +37,102 @@ export const P2POrdersList = ({ orders, isLoading }: P2POrdersListProps) => {
       align: 'center',
     },
     {
-      headerContent: 'SELLER',
+      headerContent: 'OFFER TYPE',
       renderCell: (order) => (
-        <AddressDisplay
-          addressClassName="text-brand-primary"
-          address={order.seller_wallet_address}
-          href={ROUTES.WALLET(order.seller_wallet_address)}
-        />
+        <Chip
+          variant={order.side === TradeTypes.SELL ? 'error' : 'success'}
+          className="min-w-[60px] justify-center rounded-full px-3 py-0.5 text-[10px] font-bold uppercase"
+        >
+          {order.side}
+        </Chip>
       ),
-      skeletonContent: <Skeleton className="h-3 w-24" />,
-      align: 'left',
+      skeletonContent: <Skeleton className="h-5 w-16 rounded-full" />,
+      align: 'center',
     },
     {
-      headerContent: 'BUYER',
-      renderCell: (order) => (
-        <AddressDisplay address={order.buyer_wallet_address} href={ROUTES.WALLET(order.buyer_wallet_address)} />
-      ),
-      skeletonContent: <Skeleton className="h-3 w-24" />,
-      align: 'left',
-    },
-    {
-      headerContent: 'RATE',
-      renderCell: (order) => (
-        <div>
-          <div className="mt-1 text-sm text-gray-400">
-            <span className="text-brand-primary font-semibold">
-              1 {APP_CONFIG.CHAIN_SYMBOL} = {NumberUtil.formatWithCommas(order.price_rate)} VND
-            </span>
-          </div>
-        </div>
-      ),
-      skeletonContent: <Skeleton className="h-6 w-24" />,
-      align: 'left',
-    },
-    {
-      headerContent: 'AMOUNT/TOTAL AMOUNT',
+      headerContent: 'YOUR ROLE',
       renderCell: (order) => {
-        const amount = NumberUtil.scaleDownBigNumber(new BigNumber(order.amount));
-        const totalVND = amount.multipliedBy(order.price_rate);
+        const isOrderCreator = user?.walletAddress === order.order_creator_wallet_address;
+        const role = isOrderCreator
+          ? order.side === TradeTypes.BUY
+            ? 'Seller'
+            : 'Buyer'
+          : order.side === TradeTypes.BUY
+            ? 'Buyer'
+            : 'Seller';
+
+        const isActualBuyer = role === 'Buyer';
+
+        return (
+          <Chip
+            variant={isActualBuyer ? 'outline-success' : 'outline-info'}
+            className="min-w-[60px] justify-center rounded-sm px-3 text-[10px]"
+          >
+            {role}
+          </Chip>
+        );
+      },
+      skeletonContent: <Skeleton className="h-3 w-16" />,
+      align: 'center',
+    },
+    {
+      headerContent: 'COUNTERPARTY',
+      renderCell: (order) => {
+        const isOrderCreator = user?.walletAddress === order.order_creator_wallet_address;
+        const counterpartyAddress = isOrderCreator
+          ? order.offer_creator_wallet_address
+          : order.order_creator_wallet_address;
+        return (
+          <AddressDisplay
+            addressClassName="text-brand-primary"
+            address={counterpartyAddress}
+            href={ROUTES.WALLET(counterpartyAddress)}
+          />
+        );
+      },
+      skeletonContent: <Skeleton className="h-3 w-24" />,
+      align: 'left',
+    },
+    {
+      headerContent: 'AMOUNT',
+      renderCell: (order) => {
+        const isOrderCreator = user?.walletAddress === order.order_creator_wallet_address;
+        const role = isOrderCreator
+          ? order.side === TradeTypes.BUY
+            ? 'Seller'
+            : 'Buyer'
+          : order.side === TradeTypes.BUY
+            ? 'Buyer'
+            : 'Seller';
+
+        const isActualBuyer = role === 'Buyer';
+
+        const amount = NumberUtil.scaleDownBigIntString(order.amount);
+        const vndAmount = amount.multipliedBy(order.price_rate);
+
         return (
           <div className="text-sm">
             <p className="text-utility-success-600 text-left font-bold">
               {amount.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}
             </p>
-            <p className="text-muted-foreground text-left text-xs">{totalVND.toFormat()} VND</p>
+            <p className="text-muted-foreground text-left text-[11px]">
+              {isActualBuyer ? 'You pay' : 'You receive'} {vndAmount.toFormat()} VND
+            </p>
           </div>
         );
       },
       skeletonContent: <Skeleton className="h-3 w-24" />,
       align: 'left',
     },
-
     {
       headerContent: 'STATUS',
       renderCell: (order) => (
         <div className="flex items-center gap-2">
-          <Chip variant={getOrderStatusInfo(order.status)} className="gap-1.5 rounded-sm">
-            <span>{order.status}</span>
+          <Chip
+            variant={getOrderStatusInfo(order.status)}
+            className="min-w-[80px] justify-center gap-1.5 rounded-sm px-3 text-[10px]"
+          >
+            <span>{getOrderStatusLabel(order.status)}</span>
           </Chip>
         </div>
       ),
