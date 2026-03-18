@@ -2,22 +2,23 @@ package main
 
 import (
 	"context"
-	"socket-service/config"
-	"socket-service/database"
-	"socket-service/logger"
-	"socket-service/middleware"
-	"socket-service/routers"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"socket-service/config"
+	"socket-service/database"
+	"socket-service/logger"
+	"socket-service/middleware"
+	"socket-service/routers"
 	"syscall"
 	"time"
+
+	"github.com/coreos/go-systemd/v22/daemon"
 	"github.com/gin-gonic/gin"
 )
-
 
 func main() {
 
@@ -39,7 +40,6 @@ func main() {
 
 	gin.SetMode(cfg.Server.GinMode)
 
-
 	if err := database.InitDatabase(&cfg.Database); err != nil {
 		logger.Fatal().Err(err).Msg("Failed to initialize database")
 	}
@@ -55,10 +55,8 @@ func main() {
 
 	routers.SetupRouters(r, cfg)
 
-	_ , cancel := context.WithCancel(context.Background())
+	_, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-
 
 	addr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)
 	logger.Info().Str("address", addr).Msg("Starting HTTP server")
@@ -74,6 +72,9 @@ func main() {
 		}
 	}()
 
+	daemon.SdNotify(false, daemon.SdNotifyReady)
+	startSystemdWatchdog()
+
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
@@ -88,4 +89,24 @@ func main() {
 	}
 
 	logger.Info().Msg("Server exited")
+}
+
+func startSystemdWatchdog() {
+	interval, err := daemon.SdWatchdogEnabled(false)
+	if err != nil || interval == 0 {
+		return
+	}
+
+	logger.Info().
+		Dur("interval", interval).
+		Msg("Systemd watchdog enabled")
+
+	go func() {
+		ticker := time.NewTicker(interval / 2)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			daemon.SdNotify(false, daemon.SdNotifyWatchdog)
+		}
+	}()
 }
