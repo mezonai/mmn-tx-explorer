@@ -44,8 +44,10 @@ jobs:
       build_indexer: ${{ steps.detect.outputs.indexer }}
 
       should_release: ${{ steps.tags.outputs.should_release }}
-      skip_build_backend: ${{ steps.tags.outputs.skip_build_backend }}
       skip_build_frontend: ${{ steps.tags.outputs.skip_build_frontend }}
+      skip_build_dong: ${{ steps.tags.outputs.skip_build_dong }}
+      skip_build_socket: ${{ steps.tags.outputs.skip_build_socket }}
+      skip_build_indexer: ${{ steps.tags.outputs.skip_build_indexer }}
     steps:
       - name: Checkout for git history
         uses: actions/checkout@v4
@@ -198,8 +200,10 @@ jobs:
             fi
           }
             
-          SKIP_BUILD_BACKEND=false
           SKIP_BUILD_FRONTEND=false
+          SKIP_BUILD_DONG=false
+          SKIP_BUILD_SOCKET=false
+          SKIP_BUILD_INDEXER=false
           SHOULD=true
 
           if [ -n "${{ steps.normalize.outputs.new_tag_to_build }}" ]; then
@@ -215,9 +219,12 @@ jobs:
             SOCKET="socket-service-${RAW}"
             INDEXER="indexer-${RAW}"
 
-            SKIP_BUILD_BACKEND=false
             SKIP_BUILD_FRONTEND=false
+            SKIP_BUILD_DONG=false
+            SKIP_BUILD_SOCKET=false
+            SKIP_BUILD_INDEXER=false
             SHOULD=true
+
           elif [ -n "${{ steps.normalize.outputs.rebuild_existing_tag }}" ]; then
             RELEASE=$(normalize "${{ steps.normalize.outputs.rebuild_existing_tag }}")
             [[ "$RELEASE" != release-* ]] && RELEASE="release-$RELEASE"
@@ -241,7 +248,9 @@ jobs:
               exit 1
             fi
 
-            SKIP_BUILD_BACKEND=true
+            SKIP_BUILD_DONG=true
+            SKIP_BUILD_SOCKET=true
+            SKIP_BUILD_INDEXER=true
 
             if [ "${{ inputs.env }}" = "prod" ]; then
                 echo "Env is prod, forcing frontend build even for existing tag."
@@ -286,8 +295,10 @@ jobs:
               RELEASE=$(latest_release_tag)
               SHOULD=false
             fi
-            SKIP_BUILD_BACKEND=false
-            SKIP_BUILD_FRONTEND=false
+            SKIP_BUILD_FRONTEND=$([[ "${{ steps.detect.outputs.frontend }}" == "true" ]] && echo false || echo true)
+            SKIP_BUILD_DONG=$([[ "${{ steps.detect.outputs.dong }}" == "true" ]] && echo false || echo true)
+            SKIP_BUILD_SOCKET=$([[ "${{ steps.detect.outputs.socket }}" == "true" ]] && echo false || echo true)
+            SKIP_BUILD_INDEXER=$([[ "${{ steps.detect.outputs.indexer }}" == "true" ]] && echo false || echo true)
           fi
 
           echo "release_tag=$RELEASE" >> $GITHUB_OUTPUT
@@ -296,7 +307,9 @@ jobs:
           echo "socket_tag=$SOCKET" >> $GITHUB_OUTPUT
           echo "indexer_tag=$INDEXER" >> $GITHUB_OUTPUT
           echo "should_release=$SHOULD" >> $GITHUB_OUTPUT
-          echo "skip_build_backend=$SKIP_BUILD_BACKEND" >> $GITHUB_OUTPUT
+          echo "skip_build_dong=$SKIP_BUILD_DONG" >> $GITHUB_OUTPUT
+          echo "skip_build_socket=$SKIP_BUILD_SOCKET" >> $GITHUB_OUTPUT
+          echo "skip_build_indexer=$SKIP_BUILD_INDEXER" >> $GITHUB_OUTPUT
           echo "skip_build_frontend=$SKIP_BUILD_FRONTEND" >> $GITHUB_OUTPUT
     
       - name: Push Service Tags for Tracking
@@ -342,7 +355,7 @@ jobs:
       ref: ${{ inputs.ref }}
       release_tag: ${{ needs.determine_tags.outputs.release_tag }}
       service_tag: ${{ needs.determine_tags.outputs.indexer_tag }}
-      skip_build: ${{ needs.determine_tags.outputs.skip_build_backend }}
+      skip_build: ${{ needs.determine_tags.outputs.skip_build_indexer }}
     secrets:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       EVENT_API_KEY: ${{ secrets.EVENT_API_KEY }}
@@ -355,7 +368,7 @@ jobs:
       ref: ${{ inputs.ref }}
       release_tag: ${{ needs.determine_tags.outputs.release_tag }} 
       service_tag: ${{ needs.determine_tags.outputs.dong_tag }}
-      skip_build: ${{ needs.determine_tags.outputs.skip_build_backend }}
+      skip_build: ${{ needs.determine_tags.outputs.skip_build_dong }}
     secrets:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
@@ -386,7 +399,7 @@ jobs:
       ref: ${{ inputs.ref }}
       release_tag: ${{ needs.determine_tags.outputs.release_tag }} 
       service_tag: ${{ needs.determine_tags.outputs.socket_tag }}
-      skip_build: ${{ needs.determine_tags.outputs.skip_build_backend }}
+      skip_build: ${{ needs.determine_tags.outputs.skip_build_socket }}
     secrets:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
