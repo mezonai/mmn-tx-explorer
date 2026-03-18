@@ -129,20 +129,30 @@ jobs:
           BINARY_FILE="socket-service-${CLEAN_VER}"
 
           if [ "${{ inputs.skip_build }}" == "true" ]; then
-            DOWNLOAD_TAG=$(gh release list --limit 20 --json tagName,body \
-              --jq ".[] | select(.body | contains(\"${TAG_INPUT}\")) | .tagName" \
-              | head -n1)
+            CURRENT_TAG="${{ inputs.release_tag }}"
+
+            DOWNLOAD_TAG=$(git tag -l "release-v*" --sort=-v:refname \
+              | grep -A 1 "$CURRENT_TAG" \
+              | sed -n '2p')
 
             if [ -z "$DOWNLOAD_TAG" ]; then
-              echo "Cannot find release containing $TAG_INPUT"
+              DOWNLOAD_TAG=$(git tag -l "release-v*" --sort=-v:refname \
+                | grep -v "$CURRENT_TAG" \
+                | head -n1)
+            fi
+
+            if [ -z "$DOWNLOAD_TAG" ]; then
+              echo "Cannot determine previous release for fallback"
               exit 1
             fi
+
+            echo "Using fallback release: $DOWNLOAD_TAG"
           else
             echo "==> Using current release_tag"
             DOWNLOAD_TAG="${{ inputs.release_tag }}"
             [ -z "$DOWNLOAD_TAG" ] && DOWNLOAD_TAG="release-$TAG_INPUT"
           fi
-          
+                    
           echo "tag_name=$TAG_INPUT" >> $GITHUB_OUTPUT
           echo "download_tag=$DOWNLOAD_TAG" >> $GITHUB_OUTPUT
           echo "binary_name=$BINARY_FILE" >> $GITHUB_OUTPUT

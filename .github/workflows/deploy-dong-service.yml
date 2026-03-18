@@ -133,14 +133,24 @@ jobs:
           BINARY_FILE="dong-service-${CLEAN_TAG}"
 
           if [ "${{ inputs.skip_build }}" == "true" ]; then
-            DOWNLOAD_TAG=$(gh release list --limit 20 --json tagName,body \
-              --jq ".[] | select(.body | contains(\"${TAG_INPUT}\")) | .tagName" \
-              | head -n1)
+            CURRENT_TAG="${{ inputs.release_tag }}"
+
+            DOWNLOAD_TAG=$(git tag -l "release-v*" --sort=-v:refname \
+              | grep -A 1 "$CURRENT_TAG" \
+              | sed -n '2p')
 
             if [ -z "$DOWNLOAD_TAG" ]; then
-              echo "Cannot find release containing $TAG_INPUT"
+              DOWNLOAD_TAG=$(git tag -l "release-v*" --sort=-v:refname \
+                | grep -v "$CURRENT_TAG" \
+                | head -n1)
+            fi
+
+            if [ -z "$DOWNLOAD_TAG" ]; then
+              echo "Cannot determine previous release for fallback"
               exit 1
             fi
+
+            echo "Using fallback release: $DOWNLOAD_TAG"
           else
             echo "==> Using current release_tag"
             DOWNLOAD_TAG="${{ inputs.release_tag }}"
