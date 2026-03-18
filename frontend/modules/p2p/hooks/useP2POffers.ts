@@ -1,12 +1,11 @@
 import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { P2PService } from '../api';
-import { P2P_QUERY_KEYS, P2P_EVENT_TYPES } from '../constants';
+import { P2P_QUERY_KEYS, P2P_EVENT_TYPES, WS_INVALIDATE_DELAY } from '../constants';
 import { IPaginatedResponse } from '@/types';
 import { IP2POfferListParams, P2POffer } from '../types';
 import { useWebSocket } from '@/lib/websocket';
 
-const WS_INVALIDATE_DELAY = 1000;
 const WS_REFRESH_ANIM_MS = 1200;
 
 export const useP2POffers = (
