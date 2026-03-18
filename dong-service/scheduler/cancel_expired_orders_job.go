@@ -86,8 +86,6 @@ func (j *CancelExpiredOrdersJob) processRefunds(ctx context.Context, expiredOrde
 				Msg("Skipping refund: order not in OPEN status")
 			continue
 		}
-			continue
-		}
 
 		if orderInfo.IntermediaryWalletAddress == "" {
 			logger.Warn().
