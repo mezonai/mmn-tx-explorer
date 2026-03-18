@@ -79,7 +79,7 @@ func (j *CancelExpiredOrdersJob) Run(ctx context.Context) error {
 
 func (j *CancelExpiredOrdersJob) processRefunds(ctx context.Context, expiredOrders []repository.ExpiredOrderInfo) {
 	for _, orderInfo := range expiredOrders {
-		if orderInfo.Status != constants.TradingExpired {
+		if orderInfo.Status != constants.TradingOpen {
 			continue
 		}
 
