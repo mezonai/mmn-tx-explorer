@@ -80,6 +80,12 @@ func (j *CancelExpiredOrdersJob) Run(ctx context.Context) error {
 func (j *CancelExpiredOrdersJob) processRefunds(ctx context.Context, expiredOrders []repository.ExpiredOrderInfo) {
 	for _, orderInfo := range expiredOrders {
 		if orderInfo.Status != constants.TradingOpen {
+			logger.Warn().
+				Int64("order_id", orderInfo.OrderID).
+				Str("status", orderInfo.Status).
+				Msg("Skipping refund: order not in OPEN status")
+			continue
+		}
 			continue
 		}
 
