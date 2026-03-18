@@ -20,6 +20,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/coreos/go-systemd/v22/daemon"
 	"github.com/gin-gonic/gin"
 	"github.com/robfig/cron/v3"
 
@@ -181,6 +182,9 @@ func main() {
 		}
 	}()
 
+	daemon.SdNotify(false, daemon.SdNotifyReady)
+	startSystemdWatchdog()
+
 	registerPprof()
 
 	// Wait for interrupt signal to gracefully shutdown the server
@@ -209,6 +213,26 @@ func registerPprof() {
 	go func() {
 		if err := http.ListenAndServe(":6061", nil); err != nil && err != http.ErrServerClosed {
 			logger.Fatal().Err(err).Msg("pprof server failed")
+		}
+	}()
+}
+
+func startSystemdWatchdog() {
+	interval, err := daemon.SdWatchdogEnabled(false)
+	if err != nil || interval == 0 {
+		return
+	}
+
+	logger.Info().
+		Dur("interval", interval).
+		Msg("Systemd watchdog enabled")
+
+	go func() {
+		ticker := time.NewTicker(interval / 2)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			daemon.SdNotify(false, daemon.SdNotifyWatchdog)
 		}
 	}()
 }
