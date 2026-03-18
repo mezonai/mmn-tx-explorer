@@ -22,7 +22,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/robfig/cron/v3"
-	"github.com/coreos/go-systemd/v22/daemon"
 
 	// Import pprof
 	_ "net/http/pprof"
@@ -181,9 +180,6 @@ func main() {
 			logger.Fatal().Err(err).Str("address", addr).Msg("Failed to start server")
 		}
 	}()
-	
-	daemon.SdNotify(false, daemon.SdNotifyReady)
-	startSystemdWatchdog()
 
 	registerPprof()
 
@@ -213,26 +209,6 @@ func registerPprof() {
 	go func() {
 		if err := http.ListenAndServe(":6061", nil); err != nil && err != http.ErrServerClosed {
 			logger.Fatal().Err(err).Msg("pprof server failed")
-		}
-	}()
-}
-
-func startSystemdWatchdog() {
-	interval, err := daemon.SdWatchdogEnabled(false)
-	if err != nil || interval == 0 {
-		return
-	}
-
-	logger.Info().
-		Dur("interval", interval).
-		Msg("Systemd watchdog enabled")
-
-	go func() {
-		ticker := time.NewTicker(interval / 2)
-		defer ticker.Stop()
-
-		for range ticker.C {
-			daemon.SdNotify(false, daemon.SdNotifyWatchdog)
 		}
 	}()
 }
