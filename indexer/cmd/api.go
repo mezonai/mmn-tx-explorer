@@ -14,6 +14,8 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/swag"
 
+	"github.com/coreos/go-systemd/v22/daemon"
+
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/handlers"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/middleware"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
@@ -129,6 +131,9 @@ func RunAPI(cmd *cobra.Command, args []string) {
 
 	registerPprof()
 
+	daemon.SdNotify(false, daemon.SdNotifyReady)
+	startSystemdWatchdog()
+
 	// Listen for the interrupt signal.
 	<-ctx.Done()
 
@@ -152,6 +157,26 @@ func registerPprof() {
 	go func() {
 		if err := http.ListenAndServe(":6060", nil); err != nil && err != http.ErrServerClosed {
 			log.Fatal().Err(err).Msg("pprof server failed")
+		}
+	}()
+}
+
+func startSystemdWatchdog() {
+	interval, err := daemon.SdWatchdogEnabled(false)
+	if err != nil || interval == 0 {
+		return
+	}
+
+	log.Info().
+		Dur("interval", interval).
+		Msg("Systemd watchdog enabled")
+
+	go func() {
+		ticker := time.NewTicker(interval / 2)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			daemon.SdNotify(false, daemon.SdNotifyWatchdog)
 		}
 	}()
 }

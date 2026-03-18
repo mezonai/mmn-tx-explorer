@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"net/http"
+	"time"
 
+	"github.com/coreos/go-systemd/v22/daemon"
 	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/orchestrator"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc"
@@ -35,6 +37,10 @@ func RunOrchestrator(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to create orchestrator")
 	}
+
+	daemon.SdNotify(false, daemon.SdNotifyReady)
+	startSystemdWatchdog()
+
 	// Start Prometheus metrics server
 	log.Info().Msg("Starting Metrics Server on port 2112")
 	go func() {
@@ -53,4 +59,24 @@ func RunOrchestrator(cmd *cobra.Command, args []string) {
 	}
 
 	orchestratorService.Start()
+}
+
+func startSystemdWatchdog() {
+	interval, err := daemon.SdWatchdogEnabled(false)
+	if err != nil || interval == 0 {
+		return
+	}
+
+	log.Info().
+		Dur("interval", interval).
+		Msg("Systemd watchdog enabled")
+
+	go func() {
+		ticker := time.NewTicker(interval / 2)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			daemon.SdNotify(false, daemon.SdNotifyWatchdog)
+		}
+	}()
 }
