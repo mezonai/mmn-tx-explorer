@@ -128,8 +128,20 @@ jobs:
           CLEAN_VER=${TAG_INPUT#socket-service-}
           BINARY_FILE="socket-service-${CLEAN_VER}"
 
-          DOWNLOAD_TAG="${{ inputs.release_tag }}"
-          [ -z "$DOWNLOAD_TAG" ] && DOWNLOAD_TAG="release-$TAG_INPUT"
+          if [ "${{ inputs.skip_build }}" == "true" ]; then
+            DOWNLOAD_TAG=$(gh release list --limit 20 --json tagName,body \
+              --jq ".[] | select(.body | contains(\"${TAG_INPUT}\")) | .tagName" \
+              | head -n1)
+
+            if [ -z "$DOWNLOAD_TAG" ]; then
+              echo "Cannot find release containing $TAG_INPUT"
+              exit 1
+            fi
+          else
+            echo "==> Using current release_tag"
+            DOWNLOAD_TAG="${{ inputs.release_tag }}"
+            [ -z "$DOWNLOAD_TAG" ] && DOWNLOAD_TAG="release-$TAG_INPUT"
+          fi
           
           echo "tag_name=$TAG_INPUT" >> $GITHUB_OUTPUT
           echo "download_tag=$DOWNLOAD_TAG" >> $GITHUB_OUTPUT
