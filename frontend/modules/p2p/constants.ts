@@ -38,10 +38,10 @@ export const P2P_TAB = {
 } as const;
 
 export const P2P_EVENT_TYPES = {
-  ORDER_STATUS_UPDATED: 'ORDER_STATUS_UPDATED',
   ORDER_CONFIRMED: 'ORDER_CONFIRMED',
   ORDER_COMPLETED: 'ORDER_COMPLETED',
   OFFER_LIST_REFRESH: 'OFFER_LIST_REFRESH',
+  ORDER_CREATED: 'ORDER_CREATED',
 } as const;
 
 export const BANK_OPTIONS = [
@@ -52,6 +52,8 @@ export const BANK_OPTIONS = [
   { value: 'TPBANK', label: 'TPBank' },
   { value: 'VIETCOMBANK', label: 'Vietcombank' },
 ] as const;
+
+export const WS_INVALIDATE_DELAY = 1000;
 export const P2P_STATS_STALE_TIME = 30000;
 export const P2P_STATS_REFETCH_INTERVAL = 60000;
 
