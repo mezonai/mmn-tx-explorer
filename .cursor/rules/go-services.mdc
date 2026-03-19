@@ -1,0 +1,42 @@
+---
+description: Go service conventions for indexer, dong-service, socket-service
+glogs: ["indexer/**/*.go", "dong-service/**/*.go", "socket-service/**/*.go", "prove-service/**/*.go"]
+alwaysApply: false
+---
+
+# Go Service Conventions
+
+- Always run `gofmt` on changed Go files
+- Use standard Go import grouping
+- Keep package names lowercase
+- Use `PascalCase` for exported identifiers, `camelCase` for unexported
+- Prefer small constructors like `NewWSService`, `NewHTTPHandler`, `LoadConfig`
+- Follow existing package layout: `service/`, `repository/`, `handler/`, `config/`, `database/`
+
+## Errors and Logging
+
+- Wrap errors with context: `fmt.Errorf("operation: %w", err)`
+- Check cleanup errors for deferred `Close`, `rollback`, and row iteration paths
+- Use Zerolog-style structured logging where already in use
+- Prefer constants/config over magic numbers
+
+## Tests
+
+- Use the standard `testing` package
+- Follow `TestThing_Scenario` naming style
+- Use `testify/assert` where already in use (e.g., indexer)
+- Single-test: `go test ./path/to/package -run '^TestExactName$' -v`
+
+## Commands
+
+```bash
+# Test
+go test ./... -v
+go test ./handlers -run '^TestName$' -v
+
+# Lint
+golangci-lint run
+
+# Format
+gofmt -w .
+```

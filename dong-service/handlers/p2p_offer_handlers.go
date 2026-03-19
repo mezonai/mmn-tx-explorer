@@ -7,7 +7,6 @@ import (
 	"dong-service/models"
 	"dong-service/services"
 	"dong-service/utils"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"regexp"
@@ -95,12 +94,6 @@ func (h *OfferHandler) CreateOffer(c *gin.Context) {
 		return
 	}
 
-	if err := validateBankInfo(req.BankInfo); err != nil {
-		logger.Error().Msg("invalid create offer request: " + err.Error())
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid request: "+err.Error()))
-		return
-	}
-
 	userID, err := utils.GetUserIDStringFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, "authentication required"))
@@ -157,6 +150,7 @@ func (h *OfferHandler) CreateOffer(c *gin.Context) {
 func (h *OfferHandler) ListOffers(c *gin.Context) {
 	fromAmount := c.Query("from_amount")
 	toAmount := c.Query("to_amount")
+	side := c.Query("side")
 
 	pg := utils.GetPaginationParams(c)
 	pagination := map[string]any{
@@ -175,13 +169,18 @@ func (h *OfferHandler) ListOffers(c *gin.Context) {
 		toP = &toAmount
 	}
 
-	offers, err := h.offerService.ListOffers(c.Request.Context(), fromP, toP, pagination)
+	var sideP *string
+	if side != "" {
+		sideP = &side
+	}
+
+	offers, err := h.offerService.ListOffers(c.Request.Context(), fromP, toP, sideP, pagination)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to list offers: "+err.Error()))
 		return
 	}
 
-	total, err := h.offerService.CountOffers(c.Request.Context(), nil, nil, nil, []string{constants.TradingConfirmed}, nil, nil, fromP, toP)
+	total, err := h.offerService.CountOffers(c.Request.Context(), nil, nil, nil, []string{constants.TradingConfirmed}, nil, nil, fromP, toP, sideP)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to list offers: "+err.Error()))
 		return
@@ -259,6 +258,7 @@ func (h *OfferHandler) GetMyOffers(c *gin.Context) {
 
 	fromAmount := c.Query("from_amount")
 	toAmount := c.Query("to_amount")
+	side := c.Query("side")
 
 	pg := utils.GetPaginationParams(c)
 	pagination := map[string]any{"limit": pg.Limit, "offset": pg.Offset}
@@ -272,7 +272,12 @@ func (h *OfferHandler) GetMyOffers(c *gin.Context) {
 		toP = &toAmount
 	}
 
-	offers, total, err := h.offerService.GetOffersByWalletAddress(c.Request.Context(), walletAddress, pagination, fromP, toP)
+	var sideP *string
+	if side != "" {
+		sideP = &side
+	}
+
+	offers, total, err := h.offerService.GetOffersByWalletAddress(c.Request.Context(), walletAddress, sideP, pagination, fromP, toP)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to list offers: "+err.Error()))
 		return
@@ -332,7 +337,7 @@ func (h *OfferHandler) CancelOffer(c *gin.Context) {
 		return
 	}
 	userAddress, _ := utils.GetAddressFromContext(c)
-	if offer.SellerWalletAddress != userAddress {
+	if offer.OfferCreatorWalletAddress != nil && *offer.OfferCreatorWalletAddress != userAddress {
 		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, constants.ErrOfferNotFoundNoPermission))
 		return
 	}
@@ -345,33 +350,4 @@ func (h *OfferHandler) CancelOffer(c *gin.Context) {
 		"success": true,
 		"message": constants.MsgOfferCancelled,
 	})
-}
-
-func validateBankInfo(bankInfo map[string]interface{}) error {
-	if bankInfo == nil {
-		return nil
-	}
-
-	var totalSize int
-	for key, value := range bankInfo {
-		totalSize += len(key)
-
-		valueBytes, err := json.Marshal(value)
-		if err != nil {
-			return errors.New("invalid bank info value format")
-		}
-		valueSize := len(valueBytes)
-
-		if valueSize > constants.MaxIndividualBankInfoSize {
-			return errors.New("bank info value must not exceed 128 bytes")
-		}
-
-		totalSize += valueSize
-	}
-
-	if totalSize > constants.MaxTotalBankInfoSize {
-		return errors.New("bank info total size must not exceed 1024 bytes")
-	}
-
-	return nil
 }

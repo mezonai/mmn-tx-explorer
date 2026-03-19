@@ -14,6 +14,7 @@ interface ConfirmPurchaseModalProps {
   priceRate: number;
   onConfirm: () => void;
   isLoading?: boolean;
+  actionType?: 'BUY' | 'SELL';
 }
 
 export const ConfirmPurchaseModal = ({
@@ -24,13 +25,16 @@ export const ConfirmPurchaseModal = ({
   priceRate,
   onConfirm,
   isLoading = false,
+  actionType = 'BUY'
 }: ConfirmPurchaseModalProps) => {
+  const isSellAction = actionType === 'SELL';
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="sm:max-w-106.25">
         <DialogHeader>
           <DialogTitle className="text-brand-primary pb-2 text-left text-lg font-semibold">
-            Confirm Purchase
+            {isSellAction ? 'Confirm Sale' : 'Confirm Purchase'}
           </DialogTitle>
         </DialogHeader>
 
@@ -38,14 +42,17 @@ export const ConfirmPurchaseModal = ({
           <div className="bg-brand-primary/5 pointer-events-none absolute inset-0" />
           <Info className="text-brand-primary mt-0.5 h-5 w-5 shrink-0" />
           <p className="text-sm leading-relaxed opacity-90">
-            Please review your purchase details carefully before confirming. A message will be sent to the seller
-            immediately upon confirmation to notify the seller
+            {isSellAction
+              ? `Please review your sale details carefully before confirming. Mezon coins will be transferred to escrow immediately upon confirmation.`
+              : `Please review your purchase details carefully before confirming. A message will be sent to the seller immediately upon confirmation to notify the seller`}
           </p>
         </div>
 
         <div className="border-border bg-muted/30 mt-4 space-y-3 rounded-lg border p-4">
           <div className="border-border flex items-center justify-between border-b pb-3">
-            <span className="text-muted-foreground text-xs">Amount to Buy</span>
+            <span className="text-muted-foreground text-xs">
+              {isSellAction ? 'Amount to Sell' : 'Amount to Buy'}
+            </span>
             <span className="text-foreground text-lg font-bold">
               {formatCurrency(amountToBuy)}{' '}
               <span className="text-muted-foreground text-sm">{APP_CONFIG.CHAIN_SYMBOL}</span>
@@ -53,7 +60,9 @@ export const ConfirmPurchaseModal = ({
           </div>
 
           <div className="border-border flex items-center justify-between border-b pb-3">
-            <span className="text-muted-foreground text-xs">Amount to Pay</span>
+            <span className="text-muted-foreground text-xs">
+              {isSellAction ? 'Amount to Receive' : 'Amount to Pay'}
+            </span>
             <span className="text-lg font-bold text-green-400">
               {formatCurrency(amountToPay)} <span className="text-sm">VND</span>
             </span>

@@ -6,26 +6,63 @@ import { APP_CONFIG } from '@/configs/app.config';
 import { ROUTES } from '@/configs/routes.config';
 import { Countdown } from '../../shared/count-down';
 import { NumberUtil } from '@/utils';
-import BigNumber from 'bignumber.js';
-import { getOrderStatusInfo } from '@/modules/p2p/util';
-import { P2POrder } from '@/modules/p2p/types';
+import { getOrderStatusInfo, getOrderStatusLabel } from '@/modules/p2p/util';
+import { P2POrder, TradeTypes } from '@/modules/p2p/types';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@/providers/AppProvider';
+import { P2P_TRADING_ROLE } from '@/modules/p2p/constants';
+
 interface OrderMobileCardProps {
   order: P2POrder;
 }
 export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
   const router = useRouter();
+  const { user } = useUser();
+
+  const isOrderCreator = user?.walletAddress === order.order_creator_wallet_address;
+  const role = isOrderCreator
+    ? order.side === TradeTypes.BUY
+      ? P2P_TRADING_ROLE.SELLER
+      : P2P_TRADING_ROLE.BUYER
+    : order.side === TradeTypes.BUY
+      ? P2P_TRADING_ROLE.BUYER
+      : P2P_TRADING_ROLE.SELLER;
+
+  const isActualBuyer = role === P2P_TRADING_ROLE.BUYER;
+  const counterpartyAddress = isOrderCreator ? order.offer_creator_wallet_address : order.order_creator_wallet_address;
+  const amount = NumberUtil.scaleDownBigIntString(order.amount);
+  const vndAmount = amount.multipliedBy(order.price_rate);
+
   return (
     <div className="bg-card border-border mb-2 space-y-4 rounded-xl border p-4 shadow-sm">
       <div className="flex items-start justify-between">
-        <div>
-          <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">Order ID</span>
-          <p className="text-sm font-bold">#{order.order_id}</p>
-          <p className="text-muted-foreground text-xs">Offer #{order.offer_id}</p>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">Order ID</span>
+            <p className="text-sm font-bold">#{order.order_id}</p>
+          </div>
+          <p className="text-muted-foreground text-xs leading-none">Offer #{order.offer_id}</p>
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            <Chip
+              variant={order.side === TradeTypes.BUY ? 'outline-info' : 'outline-success'}
+              className="rounded-sm px-2 py-0.5 text-[9px] font-bold uppercase"
+            >
+              {order.side}
+            </Chip>
+            <Chip
+              variant={isActualBuyer ? 'outline-success' : 'outline-info'}
+              className="rounded-sm px-2 py-0.5 text-[9px] font-bold"
+            >
+              {role}
+            </Chip>
+          </div>
         </div>
-        <div className="flex flex-col items-end gap-2">
-          <Chip variant={getOrderStatusInfo(order.status)} className="gap-1.5 rounded-sm px-2 py-0.5 text-[11px]">
-            <span>{order.status}</span>
+        <div className="flex flex-col items-end gap-2 text-right">
+          <Chip
+            variant={getOrderStatusInfo(order.status)}
+            className="min-w-[70px] justify-center rounded-sm px-2 py-0.5 text-[10px] font-bold"
+          >
+            <span>{getOrderStatusLabel(order.status)}</span>
           </Chip>
           <Countdown expiresAt={order.expires_at} />
         </div>
@@ -35,48 +72,30 @@ export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
 
       <div className="grid grid-cols-2 gap-x-2 gap-y-4">
         <div className="flex flex-col">
-          <span className="text-muted-foreground text-[10px] font-bold uppercase">Seller</span>
+          <span className="text-muted-foreground text-[10px] font-bold tracking-tight uppercase">Counterparty</span>
           <AddressDisplay
             addressClassName="text-brand-primary text-sm"
-            address={order.seller_wallet_address}
-            href={ROUTES.WALLET(order.seller_wallet_address)}
+            address={counterpartyAddress}
+            href={ROUTES.WALLET(counterpartyAddress)}
           />
         </div>
 
         <div className="flex flex-col">
-          <span className="text-muted-foreground text-[10px] font-bold uppercase">Buyer</span>
-          <AddressDisplay
-            addressClassName="text-sm"
-            address={order.buyer_wallet_address}
-            href={ROUTES.WALLET(order.buyer_wallet_address)}
-          />
+          <span className="text-muted-foreground text-right text-[10px] font-bold tracking-tight uppercase">Rate</span>
+          <p className="text-brand-primary text-right text-xs font-semibold">
+            1 {APP_CONFIG.CHAIN_SYMBOL} = {NumberUtil.formatWithCommas(order.price_rate)} VND
+          </p>
         </div>
 
         <div className="bg-secondary/20 col-span-2 flex flex-col rounded-lg p-3">
-          <span className="text-muted-foreground mb-1 text-[10px] font-bold uppercase">Amount / Total</span>
+          <span className="text-muted-foreground mb-1 text-[10px] font-bold uppercase">Amount</span>
           <div className="flex items-end justify-between">
             <div>
-              {
-                (() => {
-                  const amount = NumberUtil.scaleDownBigNumber(new BigNumber(order.amount));
-                  const totalVND = amount.multipliedBy(order.price_rate);
-                  return (
-                    <>
-                      <p className="text-utility-success-600 text-base leading-none font-bold">
-                        {amount.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}
-                      </p>
-                      <p className="text-muted-foreground mt-1 text-xs">
-                        {totalVND.toFormat()} VND
-                      </p>
-                    </>
-                  );
-                })()
-              }
-            </div>
-            <div className="text-right">
-              <p className="text-muted-foreground mb-1 text-[10px] leading-none font-bold uppercase">Rate</p>
-              <p className="text-brand-primary text-xs font-semibold">
-                1 {APP_CONFIG.CHAIN_SYMBOL} = {NumberUtil.formatWithCommas(order.price_rate)} VND
+              <p className="text-utility-success-600 text-base leading-none font-bold">
+                {amount.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}
+              </p>
+              <p className="text-muted-foreground mt-1 text-[11px]">
+                {isActualBuyer ? 'You pay' : 'You receive'} {vndAmount.toFormat()} VND
               </p>
             </div>
           </div>
