@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Clock } from 'lucide-react';
+import { ArrowLeft, Clock, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
 import { Countdown } from '../shared/count-down';
@@ -17,9 +17,12 @@ import { P2P_TRADING_ROLE } from '../../constants';
 interface TradingRoomHeaderProps {
   order: P2POrder;
   userRole?: P2PTradingRoleType | null;
+  showReopen?: boolean;
+  isReopening?: boolean;
+  onReopen?: () => void;
 }
 
-export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) => {
+export const TradingRoomHeader = ({ order, userRole, showReopen, isReopening, onReopen }: TradingRoomHeaderProps) => {
   const router = useRouter();
   const { offer } = useP2POffer(String(order.offer_id));
   const [currentTime, setCurrentTime] = useState(Date.now());
@@ -100,12 +103,27 @@ export const TradingRoomHeader = ({ order, userRole }: TradingRoomHeaderProps) =
         </div>
       )}
       {order.status !== OrderStatus.COMPLETED && (
-        <div
-          className={`flex items-center gap-2 rounded-full px-3 py-1 text-sm font-bold ${isExpired ? 'bg-red-500/10 text-red-500' : 'bg-yellow-500/10 text-yellow-500'
-            }`}
-        >
-          <Clock className="h-4 w-4" />
-          <Countdown expiresAt={order.expires_at} className="m-0" />
+        <div className="flex items-center gap-2">
+          {showReopen && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onReopen}
+              disabled={isReopening}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isReopening ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Reopen</span>
+            </Button>
+          )}
+
+          <div
+            className={`flex items-center gap-2 rounded-full px-3 py-1 text-sm font-bold ${isExpired ? 'bg-red-500/10 text-red-500' : 'bg-yellow-500/10 text-yellow-500'
+              }`}
+          >
+            <Clock className="h-4 w-4" />
+            <Countdown expiresAt={order.expires_at} className="m-0" />
+          </div>
         </div>
       )}
     </header>

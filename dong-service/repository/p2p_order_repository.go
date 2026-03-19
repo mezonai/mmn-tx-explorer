@@ -184,7 +184,7 @@ func (r *OrderRepository) CancelExpiredOrders(ctx context.Context, cutoff time.T
 func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, error) {
 	base := fmt.Sprintf(`
 		SELECT o.order_id, o.offer_id, o.order_creator_wallet_address, o.order_creator_user_id, o.order_amount, o.payable_amount, 
-		       o.transaction_hash, o.status, o.transfer_code, o.expires_at, o.created_at, o.updated_at,
+			o.transaction_hash, o.status, o.previous_status, o.transfer_code, o.expires_at, o.created_at, o.updated_at,
 		       of.offer_creator_wallet_address, of.offer_creator_user_id,
 		       p.id, p.user_id, p.bank_name, p.account_number, p.account_name, p.is_primary, p.created_at, p.updated_at
 		FROM %s.p2p_orders o
@@ -291,7 +291,7 @@ func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, 
 }
 
 func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.Order, error) {
-	query := fmt.Sprintf(`SELECT o.order_id, o.offer_id, o.order_creator_wallet_address, o.order_creator_user_id, o.order_amount, o.payable_amount, o.transaction_hash, o.status, o.transfer_code, o.expires_at, o.created_at, o.updated_at,
+	query := fmt.Sprintf(`SELECT o.order_id, o.offer_id, o.order_creator_wallet_address, o.order_creator_user_id, o.order_amount, o.payable_amount, o.transaction_hash, o.status, o.previous_status, o.transfer_code, o.expires_at, o.created_at, o.updated_at,
 		p.id, p.user_id, p.bank_name, p.account_number, p.account_name, p.is_primary, p.created_at, p.updated_at
 		FROM %s.p2p_orders o
 		LEFT JOIN %s.user_payment_info p ON o.payment_info_id = p.id
@@ -356,7 +356,7 @@ func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.O
 func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Order, error) {
 	query := fmt.Sprintf(`
 		SELECT o.order_id, o.offer_id, o.order_creator_wallet_address, o.order_creator_user_id, o.order_amount, o.payable_amount, 
-		       o.transaction_hash, o.status, o.transfer_code, o.expires_at, o.created_at, o.updated_at,
+			   o.transaction_hash, o.status, o.previous_status, o.transfer_code, o.expires_at, o.created_at, o.updated_at,
 		       of.offer_creator_wallet_address, of.offer_creator_user_id,
 		       p.id, p.user_id, p.bank_name, p.account_number, p.account_name, p.is_primary, p.created_at, p.updated_at
 		FROM %s.p2p_orders o

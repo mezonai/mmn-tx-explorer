@@ -377,7 +377,7 @@ func (h *OrderHandler) ReopenOrder(c *gin.Context) {
 	}
 
 	// Only the buyer can reopen their own order
-	isBuyer := order.BuyerWalletAddress != nil && walletAddress == *order.BuyerWalletAddress
+	isBuyer := order.OrderCreatorWalletAddress != nil && walletAddress == *order.OrderCreatorWalletAddress
 	if !isBuyer {
 		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, "only the buyer can reopen this order"))
 		return
