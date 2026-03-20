@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Control, Controller, UseFormSetValue, UseFormWatch } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -27,12 +27,19 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
   const currentAccountName = watch('bank_info.account_name');
   const currentIsPrimary = watch('bank_info.is_primary');
 
-  // Find saved info for the currently selected bank mapping to BankOption labels
+  // Find saved info for the currently selected bank matching strictly bank name, account number, and account name
   const matchedSavedInfo = useMemo(() => {
     if (!savedPayments) return null;
     const currentBankLabel = BANK_OPTIONS.find((b) => b.value === currentBank)?.label;
-    return savedPayments.find((p) => p.bank_name === currentBankLabel) || null;
-  }, [savedPayments, currentBank]);
+    return (
+      savedPayments.find(
+        (p) =>
+          p.bank_name === currentBankLabel &&
+          p.account_number === currentAccountNumber &&
+          p.account_name === currentAccountName
+      ) || null
+    );
+  }, [savedPayments, currentBank, currentAccountNumber, currentAccountName]);
 
   const hasChanges = useMemo(() => {
     if (!matchedSavedInfo) {
@@ -50,26 +57,20 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
     onUnsavedChangesChange?.(hasChanges);
   }, [hasChanges, onUnsavedChangesChange]);
 
-  // Auto-fill primary bank account when data is loaded
+  // Update ID when data is loaded/changed
   useEffect(() => {
-    if (savedPayments && savedPayments.length > 0) {
-      // Only auto-fill if the fields are currently empty to avoid overwriting user input
-      const isCurrentlyEmpty = !currentAccountNumber && !currentAccountName;
-
-      if (isCurrentlyEmpty) {
-        const primary = savedPayments.find((p) => p.is_primary) || savedPayments[0];
-        const bankValue = BANK_OPTIONS.find((opt) => opt.label === primary.bank_name)?.value as BankOption;
-
-        if (bankValue) {
-          setValue('bank_info.bank', bankValue, { shouldValidate: true });
-          setValue('bank_info.account_number', primary.account_number, { shouldValidate: true });
-          setValue('bank_info.account_name', primary.account_name, { shouldValidate: true });
-          setValue('bank_info.is_primary', primary.is_primary, { shouldValidate: true });
-          setValue('payment_info_id', primary.id, { shouldValidate: true });
-        }
+    // Synchronize payment_info_id if we have a strict match but no ID or wrong ID set
+    if (matchedSavedInfo) {
+      if (watch('payment_info_id') !== matchedSavedInfo.id) {
+        setValue('payment_info_id', matchedSavedInfo.id, { shouldValidate: true });
+      }
+    } else {
+      // If no strict match (info differs from saved record), clear the ID
+      if (watch('payment_info_id')) {
+        setValue('payment_info_id', undefined, { shouldValidate: true });
       }
     }
-  }, [savedPayments, setValue, currentAccountNumber, currentAccountName]);
+  }, [savedPayments, setValue, currentAccountNumber, currentAccountName, matchedSavedInfo, watch]);
 
   const handleBankChange = (value: BankOption) => {
     setValue('bank_info.bank', value, { shouldValidate: true });
