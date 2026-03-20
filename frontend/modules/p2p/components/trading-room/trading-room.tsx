@@ -263,7 +263,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
 
     try {
       setError(null);
-      const payment_info_id = offer.side === TradeTypes.BUY ? savedPayments?.[0]?.id : undefined;
+      const primaryPayment = savedPayments?.find((p) => p.is_primary) || savedPayments?.[0];
+      const payment_info_id = offer.side === TradeTypes.BUY ? primaryPayment?.id : undefined;
 
       if (offer.side === TradeTypes.BUY && !payment_info_id) {
         toast.error(
