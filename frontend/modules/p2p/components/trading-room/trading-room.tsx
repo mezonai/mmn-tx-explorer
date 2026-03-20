@@ -263,15 +263,16 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
 
     try {
       setError(null);
-      const primaryPayment = savedPayments?.find((p) => p.is_primary) || savedPayments?.[0];
-      const payment_info_id = offer.side === TradeTypes.BUY ? primaryPayment?.id : undefined;
-
-      if (offer.side === TradeTypes.BUY && !payment_info_id) {
-        toast.error(
-          'Seller has not set up payment information. Please choose another offer or wait for the seller to set up their payment info.'
-        );
-        setError('Please save your payment information before creating an order.');
-        return;
+      let payment_info_id: number | undefined;
+      if (offer.side === TradeTypes.BUY) {
+        payment_info_id = (savedPayments?.find((p) => p.is_primary) || savedPayments?.[0])?.id;
+        if (!payment_info_id) {
+          toast.error(
+            'Seller has not set up payment information. Please choose another offer or wait for the seller to set up their payment info.'
+          );
+          setError('Please save your payment information before creating an order.');
+          return;
+        }
       }
 
       const newOrder = await createOrder(offer, amountMZD, amountVND, payment_info_id);
