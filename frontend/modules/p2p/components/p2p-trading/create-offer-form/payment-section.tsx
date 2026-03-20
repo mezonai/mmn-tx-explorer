@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Control, Controller, UseFormSetValue, UseFormWatch } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -15,13 +15,45 @@ interface PaymentSectionProps {
   setValue: UseFormSetValue<any>;
   watch: UseFormWatch<any>;
   onUnsavedChangesChange?: (hasUnsavedChanges: boolean) => void;
+  shouldAutoFill?: boolean;
   open?: boolean;
 }
 
-export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChange, open }: PaymentSectionProps) => {
+export const PaymentSection = ({
+  control,
+  setValue,
+  watch,
+  onUnsavedChangesChange,
+  shouldAutoFill,
+  open,
+}: PaymentSectionProps) => {
   const { data: savedPayments } = useUserPaymentInfos();
   const { mutate: updatePayment, isPending: isUpdating } = useUpdatePaymentInfo();
+  const [hasAutoFilled, setHasAutoFilled] = useState(false);
 
+  // Handle auto-fill and reset
+  useEffect(() => {
+    // If modal is closed, reset the auto-fill flag so it can run again upon re-opening
+    if (open === false) {
+      setHasAutoFilled(false);
+      return;
+    }
+
+    // Auto-fill if requested, not yet filled, and data is available
+    if (shouldAutoFill && !hasAutoFilled && savedPayments && savedPayments.length > 0) {
+      const primaryAccount = savedPayments.find((p) => p.is_primary) || savedPayments[0];
+      const bankValue = BANK_OPTIONS.find((opt) => opt.label === primaryAccount.bank_name)?.value as BankOption;
+
+      if (bankValue) {
+        setValue('bank_info.bank', bankValue, { shouldValidate: true });
+        setValue('bank_info.account_number', primaryAccount.account_number, { shouldValidate: true });
+        setValue('bank_info.account_name', primaryAccount.account_name, { shouldValidate: true });
+        setValue('bank_info.is_primary', primaryAccount.is_primary, { shouldValidate: true });
+        setValue('payment_info_id', primaryAccount.id, { shouldValidate: true });
+      }
+      setHasAutoFilled(true);
+    }
+  }, [open, shouldAutoFill, hasAutoFilled, savedPayments, setValue]);
   const currentBank = watch('bank_info.bank');
   const currentAccountNumber = watch('bank_info.account_number');
   const currentAccountName = watch('bank_info.account_name');
