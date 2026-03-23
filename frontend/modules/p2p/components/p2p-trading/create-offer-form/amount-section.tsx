@@ -96,30 +96,34 @@ export const AmountSection = ({ control, setValue, userBalance }: AmountSectionP
           />
         </div>
 
-        <div className="text-brand-primary mt-2 flex justify-between text-sm">
-          <span>
-            Balance: {userBalance ? userBalance : '-'} {APP_CONFIG.CHAIN_SYMBOL}
-          </span>
-        </div>
+        {tradeType === TradeTypes.SELL && (
+          <div className="text-brand-primary mt-2 flex justify-between text-sm">
+            <span>
+              Balance: {userBalance ? userBalance : '-'} {APP_CONFIG.CHAIN_SYMBOL}
+            </span>
+          </div>
+        )}
 
         {/* Range Slider */}
-        <div className="mt-4 px-1">
-          <input
-            type="range"
-            min="0"
-            max="100"
-            step="0.01"
-            value={sliderValue}
-            onChange={handleSliderChange}
-            disabled={!maxBalance}
-            className="bg-input/50 accent-brand-primary focus:ring-brand-primary/50 h-2 w-full cursor-pointer appearance-none rounded-lg focus:ring-2 focus:outline-none"
-            style={{
-              backgroundImage: `linear-gradient(to right, var(--brand-primary), var(--brand-primary))`,
-              backgroundSize: `${sliderValue}% 100%`,
-              backgroundRepeat: 'no-repeat',
-            }}
-          />
-        </div>
+        {tradeType === TradeTypes.SELL && (
+          <div className="mt-4 px-1">
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="0.01"
+              value={sliderValue}
+              onChange={handleSliderChange}
+              disabled={!maxBalance}
+              className="bg-input/50 accent-brand-primary focus:ring-brand-primary/50 h-2 w-full cursor-pointer appearance-none rounded-lg focus:ring-2 focus:outline-none"
+              style={{
+                backgroundImage: `linear-gradient(to right, var(--brand-primary), var(--brand-primary))`,
+                backgroundSize: `${sliderValue}% 100%`,
+                backgroundRepeat: 'no-repeat',
+              }}
+            />
+          </div>
+        )}
       </div>
 
       <div className="border-brand-primary bg-card rounded-lg border p-3">
