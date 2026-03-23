@@ -6,6 +6,7 @@ import (
 	"dong-service/utils"
 	"fmt"
 	"net/http"
+	"regexp"
 
 	"github.com/gin-gonic/gin"
 )
@@ -34,6 +35,19 @@ func (h *UserPaymentHandler) UpdatePaymentInfo(c *gin.Context) {
 	var req models.UserPaymentInfo
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, err.Error()))
+		return
+	}
+
+	if req.AccountNumber == "" {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Please enter the account number"))
+		return
+	}
+	if !regexp.MustCompile(`^\d+$`).MatchString(req.AccountNumber) {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Account number must contain only digits"))
+		return
+	}
+	if req.AccountName == "" {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Please enter the account name"))
 		return
 	}
 
