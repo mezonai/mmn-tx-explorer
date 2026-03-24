@@ -265,14 +265,6 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       setError(null);
       let payment_info_id: number | undefined;
       if (offer.side === TradeTypes.BUY) {
-        if (amountMZD > userBalance) {
-          toast.error('Insufficient balance', {
-            description: `You need ${amountMZD} ${APP_CONFIG.CHAIN_SYMBOL} but only have ${userBalance} ${APP_CONFIG.CHAIN_SYMBOL}.`,
-          });
-          setError('Insufficient balance to create this order.');
-          return;
-        }
-
         payment_info_id = (savedPayments?.find((p) => p.is_primary) || savedPayments?.[0])?.id;
         if (!payment_info_id) {
           toast.error(
