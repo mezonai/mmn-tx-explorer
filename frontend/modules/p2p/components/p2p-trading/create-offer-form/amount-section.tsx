@@ -41,12 +41,14 @@ export const AmountSection = ({ control, setValue, userBalance }: AmountSectionP
 
     if (percent === 0) {
       setValue('amount', 0, { shouldValidate: true, shouldDirty: true });
+      setValue('limit.min', 0, { shouldValidate: true, shouldDirty: true });
       setValue('limit.max', 0, { shouldValidate: true, shouldDirty: true });
       return;
     }
 
     if (percent === 100) {
       setValue('amount', maxBalance, { shouldValidate: true, shouldDirty: true });
+      setValue('limit.min', 1, { shouldValidate: true, shouldDirty: true });
       setValue('limit.max', maxBalance, { shouldValidate: true, shouldDirty: true });
       return;
     }
@@ -63,6 +65,7 @@ export const AmountSection = ({ control, setValue, userBalance }: AmountSectionP
     const cleanAmount = Math.floor(rawAmount / step) * step;
 
     setValue('amount', cleanAmount, { shouldValidate: true, shouldDirty: true });
+    setValue('limit.min', 1, { shouldValidate: true, shouldDirty: true });
     setValue('limit.max', cleanAmount, { shouldValidate: true, shouldDirty: true });
   };
 
@@ -88,6 +91,7 @@ export const AmountSection = ({ control, setValue, userBalance }: AmountSectionP
                 value={field.value}
                 onChange={(val) => {
                   field.onChange(val);
+                  setValue('limit.min', 1, { shouldValidate: true, shouldDirty: true });
                   setValue('limit.max', val, { shouldValidate: true, shouldDirty: true });
                 }}
                 error={error?.message}

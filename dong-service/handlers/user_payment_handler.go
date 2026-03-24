@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"dong-service/constants"
 	"dong-service/models"
 	"dong-service/services"
 	"dong-service/utils"
@@ -54,8 +55,8 @@ func (h *UserPaymentHandler) UpdatePaymentInfo(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Please enter the account number"))
 		return
 	}
-	if len(req.AccountNumber) > 14 {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Account number must be 14 digits or less"))
+	if len(req.AccountNumber) > constants.MaxAccountNumberLength {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, fmt.Sprintf("Account number must be %d digits or less", constants.MaxAccountNumberLength)))
 		return
 	}
 	if !regexp.MustCompile(`^\d+$`).MatchString(req.AccountNumber) {
@@ -64,6 +65,10 @@ func (h *UserPaymentHandler) UpdatePaymentInfo(c *gin.Context) {
 	}
 	if req.AccountName == "" {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Please enter the account name"))
+		return
+	}
+	if len(req.AccountName) > constants.MaxAccountNameLength {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, fmt.Sprintf("Account name must be %d characters or less", constants.MaxAccountNameLength)))
 		return
 	}
 

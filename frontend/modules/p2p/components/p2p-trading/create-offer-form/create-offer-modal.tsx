@@ -201,7 +201,14 @@ export const CreateOfferModal = () => {
           <DialogHeader className="border-b--border mx-6 -mt-6 border-b py-4">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <DialogTitle className="text-brand-primary text-lg font-bold">Create New Offer</DialogTitle>
-              <TradeSideSwitch className="w-full md:w-48" value={side} onChange={(val) => form.setValue('side', val)} />
+              <TradeSideSwitch
+                className="w-full md:w-48"
+                value={side}
+                onChange={(val) => {
+                  form.reset();
+                  form.setValue('side', val);
+                }}
+              />
             </div>
           </DialogHeader>
 
