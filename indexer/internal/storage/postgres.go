@@ -2730,16 +2730,17 @@ func (p *PostgresConnector) updateOrderStatus(
 
 	querySelect := `
 		SELECT
-				order_id,
-				offer_id,
-				order_creator_wallet_address,
-				order_amount,
-				status,
-				intermediary_wallet_address
-		FROM dong_schema.p2p_orders
-		WHERE order_id = ANY($1::bigint[])
-			AND status = 'WAITING_TRANSFER'
-		FOR UPDATE
+				o.order_id,
+				o.offer_id,
+				o.order_creator_wallet_address,
+				o.order_amount,
+				o.status,
+				of.intermediary_wallet_address
+		FROM dong_schema.p2p_orders o
+		INNER JOIN dong_schema.p2p_offers of ON o.offer_id = of.offer_id
+		WHERE o.order_id = ANY($1::bigint[])
+			AND o.status = 'WAITING_TRANSFER'
+		FOR UPDATE OF o
 		`
 
 	rows, err := tx.QueryContext(ctx, querySelect, pq.Array(orderIDs))

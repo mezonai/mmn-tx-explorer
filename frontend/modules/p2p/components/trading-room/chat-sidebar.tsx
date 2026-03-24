@@ -9,7 +9,7 @@ import { STORAGE_KEYS } from '@/constant';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { formatChatTime, generateMarkdownPayload, isSameDay } from '../../util';
-import { AutoMessagePayload, MessageWithParsedContent, ParsedMessageContent, ChannelMessage } from '../../types';
+import { AutoMessagePayload, MessageWithParsedContent, ParsedMessageContent, ChannelMessage, MessageCode } from '../../types';
 import { DateTimeUtil, formatFileSize, getFilesFromClipboard, getFilesFromDragEvent, uploadAttachmentFile, downloadFile } from '@/utils';
 import { safeJsonParse } from '@/utils/json-parse.utils';
 import { toast } from 'sonner';
@@ -162,7 +162,9 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
               t: autoMessage.text,
               mk: mk,
               embed: autoMessage.embed,
+              components: autoMessage.components,
             },
+            code: autoMessage.buzz ? MessageCode.BUZZ : MessageCode.NORMAL,
           });
 
           if (onAutoMessageSent) {
