@@ -22,6 +22,7 @@ interface NumberInputProps<T extends FieldValues> extends Omit<ControllerProps<T
   placeholder?: string;
   className?: string;
   disabled?: boolean;
+  onAfterChange?: () => void;
 }
 
 const NumberInputControl = <T extends FieldValues>({
@@ -32,6 +33,7 @@ const NumberInputControl = <T extends FieldValues>({
   placeholder,
   className,
   disabled,
+  onAfterChange,
 }: NumberInputProps<T>) => {
   const {
     formState: { errors },
@@ -56,6 +58,7 @@ const NumberInputControl = <T extends FieldValues>({
               const rawValue = e.target.value.replace(/[^0-9]/g, '');
               const numberValue = rawValue === '' ? 0 : Number(rawValue);
               onChange(numberValue);
+              onAfterChange?.();
             }}
           />
         )}
@@ -70,12 +73,19 @@ export function BasicInfo() {
     register,
     control,
     watch,
+    trigger,
+    getFieldState,
     formState: { errors },
     getValues,
   } = useFormContext<CreateRedEnvelopeForm>();
   const { userBalance, isSuccess } = useCreateRedEnvelopeContext();
   const isRandom = watch('randomDistribution');
   const getNum = (key: keyof CreateRedEnvelopeForm) => Number(getValues(key) || 0);
+
+  const triggerIfDirty = (...fields: (keyof CreateRedEnvelopeForm)[]) => {
+    const dirtyOnes = fields.filter((f) => getFieldState(f).isDirty);
+    if (dirtyOnes.length > 0) trigger(dirtyOnes);
+  };
 
   return (
     <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 sm:gap-4 md:gap-6">
@@ -99,6 +109,7 @@ export function BasicInfo() {
         label="Total Amount"
         placeholder="100"
         disabled={isSuccess}
+        onAfterChange={() => triggerIfDirty('participantCount', 'amountMin', 'amountMax')}
         rules={{
           required: 'Please enter the total amount.',
           min: { value: 1, message: 'The amount must be at least 1.' },
@@ -139,6 +150,7 @@ export function BasicInfo() {
         label="Participant count"
         placeholder="10"
         disabled={isSuccess}
+        onAfterChange={() => triggerIfDirty('totalAmount', 'amountMin', 'amountMax')}
         rules={{
           required: 'Required',
           min: { value: 1, message: 'Min participant 1' },
@@ -193,6 +205,7 @@ export function BasicInfo() {
             label="Amount Min"
             placeholder="10"
             disabled={isSuccess}
+            onAfterChange={() => triggerIfDirty('totalAmount', 'amountMax')}
             rules={{
               required: 'Required',
               min: { value: 1, message: 'Must be at least 1.' },
@@ -219,6 +232,7 @@ export function BasicInfo() {
             label="Amount Max"
             placeholder="20"
             disabled={isSuccess}
+            onAfterChange={() => triggerIfDirty('totalAmount', 'amountMin')}
             rules={{
               required: 'Required',
               min: { value: 1, message: 'Must be at least 1.' },
