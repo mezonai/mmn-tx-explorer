@@ -209,6 +209,13 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		return nil, err
 	}
 
+	if offer.Side == models.OfferSideBuy {
+		logger.Info().Int64("offer_id", offer.OfferID).Int64("amount", amountInt).Str("symbol", offer.Symbol).Msg("Created new BUY offer")
+		go SendSocketEvent(constants.OFFER_ROOM, constants.OFFER_LIST_REFRESH, map[string]any{
+			"action": "create p2p offer",
+		})
+	}
+
 	return offer, nil
 }
 

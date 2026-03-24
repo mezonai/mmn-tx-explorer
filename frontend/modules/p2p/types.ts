@@ -115,7 +115,7 @@ export type P2PTabType = (typeof P2P_TAB)[keyof typeof P2P_TAB];
 
 export interface CreateOrderRequest {
   amount: number;
-  payment_info_id: number;
+  payment_info_id?: number;
 }
 
 export interface UpdateOrderStatusRequest {

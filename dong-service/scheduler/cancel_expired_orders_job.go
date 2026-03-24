@@ -79,15 +79,11 @@ func (j *CancelExpiredOrdersJob) Run(ctx context.Context) error {
 
 func (j *CancelExpiredOrdersJob) processRefunds(ctx context.Context, expiredOrders []repository.ExpiredOrderInfo) {
 	for _, orderInfo := range expiredOrders {
-		if orderInfo.PreviousStatus == constants.TradingPending {
-			logger.Info().
+		if orderInfo.Status != constants.TradingOpen {
+			logger.Warn().
 				Int64("order_id", orderInfo.OrderID).
-				Str("previous_status", orderInfo.PreviousStatus).
-				Msg("Skipping refund: order reached PENDING status (payment was confirmed)")
-			continue
-		}
-
-		if orderInfo.Status != constants.TradingPending && orderInfo.Status != constants.TradingWaiting {
+				Str("status", orderInfo.Status).
+				Msg("Skipping refund: order not in OPEN status")
 			continue
 		}
 
@@ -145,8 +141,8 @@ func (j *CancelExpiredOrdersJob) processRefunds(ctx context.Context, expiredOrde
 			orderInfo.IntermediaryWalletAddress,
 			refundRecipient,
 			orderInfo.OrderAmount,
-			constants.TextDataP2PTrading,
-			constants.ExtraInfoP2PTradingOrderExpired,
+			constants.TextDataP2PTradingFund,
+			constants.ExtraInfoP2PTrading,
 		)
 
 		if err != nil {
