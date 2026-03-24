@@ -78,6 +78,11 @@ export const BankPaymentAccountsModal = ({ isOpen, onClose, paymentInfo }: BankP
       return;
     }
 
+    if (accountNumber.length > 14) {
+      toast.error('Account number must be 14 digits or less');
+      return;
+    }
+
     if (!/^\d+$/.test(accountNumber)) {
       toast.error('Account number must contain only digits');
       return;
@@ -146,7 +151,7 @@ export const BankPaymentAccountsModal = ({ isOpen, onClose, paymentInfo }: BankP
                 onChange={(e) => setAccountNumber(e.target.value)}
                 type="text"
                 placeholder="Enter account number"
-                maxLength={20}
+                maxLength={14}
                 className="bg-input/30 text-foreground border-border w-full rounded-md border px-3 py-2.5 text-sm focus:outline-none"
               />
               <div className="text-muted-foreground absolute top-3.5 right-3">

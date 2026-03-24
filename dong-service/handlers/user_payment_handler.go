@@ -38,8 +38,24 @@ func (h *UserPaymentHandler) UpdatePaymentInfo(c *gin.Context) {
 		return
 	}
 
+	validBanks := map[string]bool{
+		"MB Bank":     true,
+		"Vietcombank": true,
+		"Techcombank": true,
+		"ACB":         true,
+		"TPBank":      true,
+	}
+	if !validBanks[req.BankName] {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid bank name"))
+		return
+	}
+
 	if req.AccountNumber == "" {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Please enter the account number"))
+		return
+	}
+	if len(req.AccountNumber) > 14 {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Account number must be 14 digits or less"))
 		return
 	}
 	if !regexp.MustCompile(`^\d+$`).MatchString(req.AccountNumber) {
