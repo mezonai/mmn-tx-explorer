@@ -47,7 +47,7 @@ export const TradeTypeSection = ({ control, trigger }: TradeTypeSectionProps) =>
                   <>
                     <Input
                       type="text"
-                      placeholder="0"
+                      placeholder="1"
                       value={formatCurrency(field.value)}
                       onChange={(e) => {
                         if (getRawValue(e.target.value) > LIMIT_MAX_AMOUNT) return;
