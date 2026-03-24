@@ -53,23 +53,23 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		return nil, nil, fmt.Errorf("failed to fetch offer: %w", err)
 	}
 
-	// Validate payment_info_id if provided
-	if req.PaymentInfoID != nil && s.userPaymentRepo != nil {
-		paymentInfo, err := s.userPaymentRepo.GetByID(ctx, *req.PaymentInfoID)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to get payment info: %w", err)
+	if offer.Side == models.OfferSideBuy {
+		if req.PaymentInfoID == nil {
+			return nil, nil, fmt.Errorf("payment_info_id is required for orders on BUY offers")
 		}
-		if paymentInfo == nil {
-			return nil, nil, fmt.Errorf("payment info with ID %d not found", *req.PaymentInfoID)
-		}
-		if paymentInfo.UserID != buyerUserID {
-			return nil, nil, fmt.Errorf("payment info does not belong to the current user")
-		}
-	}
 
-	// payment_info_id is required for orders on BUY offers (order creator is seller)
-	if offer.Side == models.OfferSideBuy && req.PaymentInfoID == nil {
-		return nil, nil, fmt.Errorf("payment_info_id is required for orders on BUY offers")
+		if s.userPaymentRepo != nil {
+			paymentInfo, err := s.userPaymentRepo.GetByID(ctx, *req.PaymentInfoID)
+			if err != nil {
+				return nil, nil, fmt.Errorf("failed to get payment info: %w", err)
+			}
+			if paymentInfo == nil {
+				return nil, nil, fmt.Errorf("payment info with ID %d not found", *req.PaymentInfoID)
+			}
+			if paymentInfo.UserID != buyerUserID {
+				return nil, nil, fmt.Errorf("payment info does not belong to the current user")
+			}
+		}
 	}
 
 	// Check if user has reached the limit of 10 active orders
@@ -99,10 +99,13 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 	expiresAt := time.Now().UTC().Add(constants.OrderExpirationDuration * time.Hour)
 
 	var status string
+	var paymentInfoID *int64
 	if offer.Side == models.OfferSideBuy {
 		status = constants.TradingWaiting
+		paymentInfoID = req.PaymentInfoID // Required for BUY offers
 	} else {
 		status = constants.TradingOpen
+		paymentInfoID = nil // Not used for SELL offers
 	}
 
 	order := &models.Order{
@@ -114,7 +117,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		Status:                    status,
 		TransferCode:              &transferCode,
 		ExpiresAt:                 &expiresAt,
-		PaymentInfoID:             req.PaymentInfoID,
+		PaymentInfoID:             paymentInfoID,
 	}
 
 	if err = s.offerRepo.ReserveQuantity(ctx, offerID, orderAmount, tx); err != nil {
@@ -134,6 +137,18 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 	order.OfferCreatorUserID = offer.OfferCreatorUserID
 	order.PriceRate = offer.PriceRate
 	order.OfferSide = &offer.Side
+
+	go SendSocketEvent(constants.OFFER_ROOM, constants.OFFER_LIST_REFRESH, map[string]any{
+		"action": "created p2p order",
+	})
+
+	// Notify seller about new order
+	if *offer.OfferCreatorWalletAddress != "" {
+		go SendSocketEvent(*offer.OfferCreatorWalletAddress, constants.ORDER_CREATED, map[string]any{
+			"order_id": order.OrderID,
+			"action":   "created new order",
+		})
+	}
 
 	return order, offer, nil
 }
