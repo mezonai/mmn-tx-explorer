@@ -905,7 +905,7 @@ func (r *RedEnvelopeRepository) updateFinalClaimStatus(envelopeID string, claimI
 			UPDATE %s.red_envelope
 			SET claimed_count = claimed_count - 1,
 				updated_at = $1
-			WHERE id = $2
+			WHERE id = $2 AND claimed_count > 0
 		`, r.dongSchema)
 		_, err = tx.Exec(revertQuery, time.Now(), envelopeID)
 		if err != nil {
