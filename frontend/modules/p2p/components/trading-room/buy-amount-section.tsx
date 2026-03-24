@@ -179,8 +179,8 @@ export const BuyAmountSection = ({
               {APP_CONFIG.CHAIN_SYMBOL}
             </span>
           </div>
-          <div className="text-muted-foreground mt-2 flex items-start justify-between text-xs">
-            <div className="grid grid-cols-[max-content_auto] gap-x-1 gap-y-0.5">
+          <div className="text-muted-foreground mt-4 flex items-start justify-between text-xs">
+            <div className="grid grid-cols-[max-content_auto] gap-x-6 gap-y-3">
               <span>Available:</span>
               <span>
                 {available.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}
