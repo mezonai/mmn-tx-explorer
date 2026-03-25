@@ -41,7 +41,7 @@ func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order, 
 	).Scan(&order.OrderID, &order.CreatedAt, &order.UpdatedAt)
 }
 func (r *OrderRepository) HasActiveOrders(ctx context.Context, offerID int64, tx *sql.Tx) (bool, error) {
-	query := fmt.Sprintf("SELECT 1 FROM %s.p2p_orders WHERE offer_id = $1 AND status IN ('PENDING','OPEN') LIMIT 1 FOR UPDATE", r.dongSchema)
+	query := fmt.Sprintf("SELECT 1 FROM %s.p2p_orders WHERE offer_id = $1 AND status IN ('PENDING','OPEN','WAITING_TRANSFER') LIMIT 1 FOR UPDATE", r.dongSchema)
 	var v int
 	err := tx.QueryRowContext(ctx, query, offerID).Scan(&v)
 	if err == sql.ErrNoRows {
@@ -51,7 +51,7 @@ func (r *OrderRepository) HasActiveOrders(ctx context.Context, offerID int64, tx
 }
 
 func (r *OrderRepository) CountActiveOrdersByUser(ctx context.Context, buyerUserID string, tx *sql.Tx) (int, error) {
-	query := fmt.Sprintf("SELECT COUNT(*) FROM %s.p2p_orders WHERE order_creator_user_id = $1 AND status IN ('PENDING','OPEN')", r.dongSchema)
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s.p2p_orders WHERE order_creator_user_id = $1 AND status IN ('PENDING','OPEN','WAITING_TRANSFER')", r.dongSchema)
 	var count int
 	err := tx.QueryRowContext(ctx, query, buyerUserID).Scan(&count)
 	if err != nil {
