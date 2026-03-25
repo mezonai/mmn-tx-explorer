@@ -79,7 +79,11 @@ func (j *CancelExpiredOrdersJob) Run(ctx context.Context) error {
 
 func (j *CancelExpiredOrdersJob) processRefunds(ctx context.Context, expiredOrders []repository.ExpiredOrderInfo) {
 	for _, orderInfo := range expiredOrders {
-		if orderInfo.Status != constants.TradingPending {
+		if orderInfo.Status != constants.TradingOpen {
+			logger.Warn().
+				Int64("order_id", orderInfo.OrderID).
+				Str("status", orderInfo.Status).
+				Msg("Skipping refund: order not in OPEN status")
 			continue
 		}
 
@@ -111,7 +115,7 @@ func (j *CancelExpiredOrdersJob) processRefunds(ctx context.Context, expiredOrde
 			Str("status", orderInfo.Status).
 			Str("offer_side", orderInfo.OfferSide).
 			Str("recipient_wallet", refundRecipient).
-			Msg("Processing refund for expired PENDING order")
+			Msg("Processing refund for expired order")
 
 		wallet, err := j.walletRepo.GetWalletByAddress(ctx, orderInfo.IntermediaryWalletAddress)
 		if err != nil {
@@ -136,8 +140,8 @@ func (j *CancelExpiredOrdersJob) processRefunds(ctx context.Context, expiredOrde
 			orderInfo.IntermediaryWalletAddress,
 			refundRecipient,
 			orderInfo.OrderAmount,
-			constants.TextDataP2PTrading,
-			constants.ExtraInfoP2PTradingOrderExpired,
+			constants.TextDataP2PTradingFund,
+			constants.ExtraInfoP2PTrading,
 		)
 
 		if err != nil {
@@ -146,18 +150,35 @@ func (j *CancelExpiredOrdersJob) processRefunds(ctx context.Context, expiredOrde
 				Int64("order_id", orderInfo.OrderID).
 				Str("recipient_wallet", refundRecipient).
 				Str("amount", orderInfo.OrderAmount).
-				Str("tx_hash", txHash).
-				Msg("Failed to transfer refund for expired order or status check failed")
+				Msg("Failed to transfer refund for expired order")
 			continue
 		}
 
-		logger.Info().
-			Int64("order_id", orderInfo.OrderID).
-			Str("tx_hash", txHash).
-			Str("recipient_wallet", refundRecipient).
-			Str("offer_side", orderInfo.OfferSide).
-			Str("amount", orderInfo.OrderAmount).
-			Msg("Successfully refunded expired PENDING order")
+		status, err := j.blockchainSvc.CheckTransactionStatus(txHash)
+		if err != nil {
+			logger.Error().
+				Err(err).
+				Int64("order_id", orderInfo.OrderID).
+				Str("tx_hash", txHash).
+				Msg("Failed to check refund transaction status")
+			continue
+		}
+
+		if status == constants.TxStatusFinalized {
+			logger.Info().
+				Int64("order_id", orderInfo.OrderID).
+				Str("tx_hash", txHash).
+				Str("recipient_wallet", refundRecipient).
+				Str("offer_side", orderInfo.OfferSide).
+				Str("amount", orderInfo.OrderAmount).
+				Msg("Successfully refunded expired order")
+		} else {
+			logger.Warn().
+				Int64("order_id", orderInfo.OrderID).
+				Str("tx_hash", txHash).
+				Int32("status", status).
+				Msg("Refund transaction not yet finalized")
+		}
 	}
 }
 
