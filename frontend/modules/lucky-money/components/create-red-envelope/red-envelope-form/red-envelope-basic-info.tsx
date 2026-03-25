@@ -182,7 +182,10 @@ export function BasicInfo() {
                     <Checkbox
                       className="hover: cursor-pointer"
                       checked={value}
-                      onCheckedChange={onChange}
+                      onCheckedChange={(checked) => {
+                        onChange(checked);
+                        trigger(['totalAmount', 'participantCount', 'amountMin', 'amountMax']);
+                      }}
                       disabled={isSuccess}
                       id="random-mode"
                     />
