@@ -32,11 +32,12 @@ const paymentSchema = z.object({
   price_rate: z.string().optional(),
   limit: z.object({ min: z.number(), max: z.number() }).optional(),
   symbol: z.string().optional(),
+  payment_info_id: z.number().optional(),
 });
 
 interface BuyAmountSectionProps {
   offer: P2POffer;
-  onConfirmBuy: (amountMZD: number, amountVND: number) => void;
+  onConfirmBuy: (amountMZD: number, amountVND: number, paymentInfoId?: number) => void;
   isLoading?: boolean;
   extraDisabled?: boolean;
   isSeller?: boolean;
@@ -71,7 +72,7 @@ export const BuyAmountSection = ({
     trigger,
     setValue,
     watch,
-    formState: { errors, isValid: isFormValid },
+    formState: { isValid: isFormValid },
   } = useForm({
     resolver: zodResolver(paymentSchema),
     mode: 'onChange',
@@ -145,7 +146,8 @@ export const BuyAmountSection = ({
       setShowConfirmModal(false);
       return;
     }
-    onConfirmBuy(amountMZD, amountVND);
+    const paymentInfoId = getValues('payment_info_id');
+    onConfirmBuy(amountMZD, amountVND, paymentInfoId);
     setShowConfirmModal(false);
   };
 
@@ -257,6 +259,7 @@ export const BuyAmountSection = ({
             control={control as any}
             setValue={setValue as any}
             watch={watch as any}
+            shouldAutoFill={isRespondingToBuyOffer}
             onUnsavedChangesChange={setHasUnsavedPaymentChanges}
           />
         </div>
