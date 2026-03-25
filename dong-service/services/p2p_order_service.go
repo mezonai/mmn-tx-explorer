@@ -142,13 +142,10 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 		"action": "created p2p order",
 	})
 
-	// Notify seller about new order
-	if *offer.OfferCreatorWalletAddress != "" {
-		go SendSocketEvent(*offer.OfferCreatorWalletAddress, constants.ORDER_CREATED, map[string]any{
-			"order_id": order.OrderID,
-			"action":   "created new order",
-		})
-	}
+	// Notify both parties about new order
+	payload := map[string]any{"order_id": order.OrderID, "offer_id": offer.OfferID, "action": "created new order"}
+	go SendSocketEvent(*offer.OfferCreatorWalletAddress, constants.ORDER_CREATED, payload)
+	go SendSocketEvent(*order.OrderCreatorWalletAddress, constants.ORDER_CREATED, payload)
 
 	return order, offer, nil
 }
@@ -267,15 +264,9 @@ func (s *OrderService) ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o
 	if o.OfferID != nil {
 		of, err := s.offerRepo.GetOfferByID(context.Background(), *o.OfferID)
 		if err == nil && of != nil {
-			receiverAddress := of.OfferCreatorWalletAddress
-			if of.Side == models.OfferSideBuy {
-				receiverAddress = o.OrderCreatorWalletAddress
-			}
-
-			if receiverAddress != nil && *receiverAddress != "" {
-				payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.OrderAmount}
-				go SendSocketEvent(*receiverAddress, constants.ORDER_CONFIRMED, payload)
-			}
+			confirmPayload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.OrderAmount}
+			go SendSocketEvent(*of.OfferCreatorWalletAddress, constants.ORDER_CONFIRMED, confirmPayload)
+			go SendSocketEvent(*o.OrderCreatorWalletAddress, constants.ORDER_CONFIRMED, confirmPayload)
 		}
 	}
 
@@ -351,16 +342,9 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 					}
 				}
 
-				// Send ORDER_COMPLETED event to the buyer (the other party)
-				receiverAddress := o.OrderCreatorWalletAddress
-				if offer.Side == models.OfferSideBuy {
-					receiverAddress = offer.OfferCreatorWalletAddress
-				}
-
-				if receiverAddress != nil && *receiverAddress != "" {
-					payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.OrderAmount, "tx_hash": txHash}
-					go SendSocketEvent(*receiverAddress, constants.ORDER_COMPLETED, payload)
-				}
+				completePayload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.OrderAmount, "tx_hash": txHash}
+				go SendSocketEvent(*offer.OfferCreatorWalletAddress, constants.ORDER_COMPLETED, completePayload)
+				go SendSocketEvent(*o.OrderCreatorWalletAddress, constants.ORDER_COMPLETED, completePayload)
 
 			} else if status == constants.TxStatusPending || status == constants.TxStatusConfirmed || status == constants.TxStatusFailed {
 				// Status 0, 1, 3 = PENDING, CONFIRMED, FAILED

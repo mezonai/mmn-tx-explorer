@@ -19,7 +19,6 @@ import { OfferOrdersModal } from './offer-orders-modal';
 import { ShareOfferModal } from './share-offer-modal';
 import { TriangleAlert, Loader2 } from 'lucide-react';
 import { NumberUtil } from '@/utils';
-import { cn } from '@/lib/utils';
 
 interface P2POffersTableProps {
   offers: P2POffer[] | undefined;
@@ -164,7 +163,7 @@ export const P2POffersTabs = ({
                 {available.toFormat()} / {total.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}
               </span>
               <span className="text-brand-primary text-[10px] font-bold tracking-wider uppercase">
-                {sold.toFormat()} {APP_CONFIG.CHAIN_SYMBOL} Sold
+                {sold.toFormat()} {APP_CONFIG.CHAIN_SYMBOL} {offer.side === TradeTypes.SELL ? 'Sold' : 'Bought'}
               </span>
             </div>
             <div className="w-50 space-y-1.5">

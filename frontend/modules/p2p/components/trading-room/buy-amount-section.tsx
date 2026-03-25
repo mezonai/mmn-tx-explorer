@@ -103,7 +103,9 @@ export const BuyAmountSection = ({
   const available = NumberUtil.scaleDownBigNumber(new BigNumber(offer.amount));
   const initialMin = NumberUtil.scaleDownBigNumber(new BigNumber(offer.limit.min));
   const limitMax = NumberUtil.scaleDownBigNumber(new BigNumber(offer.limit.max));
-  const effectiveMax = BigNumber.min(limitMax, available);
+  const effectiveMax = isRespondingToBuyOffer
+    ? BigNumber.min(limitMax, available, new BigNumber(userBalance))
+    : BigNumber.min(limitMax, available);
 
   let placeholder = `Minimum: ${initialMin.toFormat()} - Maximum: ${effectiveMax.toFormat()}`;
   let isDisabled = false;
@@ -123,10 +125,6 @@ export const BuyAmountSection = ({
       const isBankInfoValid = await trigger('bank_info');
       if (!isBankInfoValid) return;
 
-      if (amountMZD > userBalance) {
-        return;
-      }
-
       const bankInfo = getValues('bank_info');
       if (!bankInfo.account_number || !bankInfo.account_name) {
         toast.error('Payment information required', {
@@ -136,12 +134,17 @@ export const BuyAmountSection = ({
       }
     }
 
-    if (amountMZD >= initialMin.toNumber() && amountMZD <= effectiveMax.toNumber()) {
-      setShowConfirmModal(true);
-    }
+    setShowConfirmModal(true);
   };
 
   const handleFinalConfirm = () => {
+    if (isRespondingToBuyOffer && amountMZD > userBalance) {
+      toast.error('Insufficient balance', {
+        description: 'Your balance has changed. Please update the amount and try again.',
+      });
+      setShowConfirmModal(false);
+      return;
+    }
     onConfirmBuy(amountMZD, amountVND);
     setShowConfirmModal(false);
   };
@@ -176,9 +179,20 @@ export const BuyAmountSection = ({
               {APP_CONFIG.CHAIN_SYMBOL}
             </span>
           </div>
-          <div className="text-muted-foreground mt-2 flex items-center justify-between text-xs">
-            <div>
-              Available: {available.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}
+          <div className="text-muted-foreground mt-4 flex items-start justify-between text-xs">
+            <div className="grid grid-cols-[max-content_auto] gap-x-6 gap-y-3">
+              <span>Available:</span>
+              <span>
+                {available.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}
+              </span>
+              {isRespondingToBuyOffer && (
+                <>
+                  <span className={amountMZD > userBalance ? 'font-bold text-red-500' : ''}>Your balance:</span>
+                  <span className={amountMZD > userBalance ? 'font-bold text-red-500' : ''}>
+                    {formatCurrency(userBalance)} {APP_CONFIG.CHAIN_SYMBOL}
+                  </span>
+                </>
+              )}
             </div>
             <div className="flex gap-2">
               <Button

@@ -80,7 +80,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       try {
         const account = await mmnClient.getAccountByUserId(user.id);
         if (mounted && account?.balance) {
-          setUserBalance(Number(account.balance));
+          setUserBalance(NumberUtil.scaleDown(Number(account.balance)));
         }
       } catch (error) {
         console.error('Fetch balance error:', error);
