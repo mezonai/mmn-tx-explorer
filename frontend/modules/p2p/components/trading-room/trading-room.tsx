@@ -80,7 +80,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       try {
         const account = await mmnClient.getAccountByUserId(user.id);
         if (mounted && account?.balance) {
-          setUserBalance(Number(account.balance));
+          setUserBalance(NumberUtil.scaleDown(Number(account.balance)));
         }
       } catch (error) {
         console.error('Fetch balance error:', error);
@@ -255,7 +255,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
     }
   };
 
-  const handleConfirmBuy = async (amountMZD: number, amountVND: number) => {
+  const handleConfirmBuy = async (amountMZD: number, amountVND: number, paymentInfoId?: number) => {
     if (!offer || !user?.walletAddress) {
       setError('Please sign in to continue.');
       return;
@@ -263,10 +263,13 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
 
     try {
       setError(null);
-      let payment_info_id: number | undefined;
-      if (offer.side === TradeTypes.BUY) {
-        payment_info_id = (savedPayments?.find((p) => p.is_primary) || savedPayments?.[0])?.id;
-        if (!payment_info_id) {
+
+      // Use the passed paymentInfoId if available, otherwise fallback to primary for BUY offers
+      let finalPaymentId = paymentInfoId;
+      if (offer.side === TradeTypes.BUY && !finalPaymentId) {
+        finalPaymentId = (savedPayments?.find((p) => p.is_primary) || savedPayments?.[0])?.id;
+
+        if (!finalPaymentId) {
           toast.error(
             'Seller has not set up payment information. Please choose another offer or wait for the seller to set up their payment info.'
           );
@@ -275,7 +278,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
         }
       }
 
-      const newOrder = await createOrder(offer, amountMZD, amountVND, payment_info_id);
+      const newOrder = await createOrder(offer, amountMZD, amountVND, finalPaymentId);
 
       if (newOrder) {
         // If it's a BUY offer, the responder (Seller) needs to transfer Mezon to escrow
