@@ -1,0 +1,82 @@
+# Indexer Skill
+
+## Overview
+Blockchain indexer service written in Go. Syncs data from blockchain to PostgreSQL.
+
+## Tech Stack
+- Go 1.24 with Cobra CLI
+- PostgreSQL (3 DBs: orchestrator, staging, main)
+- Kafka for events
+- Prometheus for metrics
+- golangci-lint for linting
+
+## Directory Structure
+```
+indexer/
+├── cmd/           # CLI commands (Cobra-based)
+├── api/           # HTTP API layer
+├── internal/      # Core logic
+│   ├── orchestrator/  # Block sync orchestration
+│   ├── worker/       # Block processing
+│   ├── rpc/          # RPC client
+│   ├── storage/      # PostgreSQL storage
+│   ├── handlers/     # HTTP handlers
+│   ├── publisher/    # Kafka publisher
+│   └── ...
+├── configs/      # Configuration files
+└── tools/        # Migration scripts
+```
+
+## Commands
+```bash
+cd indexer
+docker-compose up -d postgres
+go build -o main -tags=production
+
+# Database migrations
+./main migrate-postgres
+
+# Run services
+./main orchestrator   # Block indexer
+./main api            # HTTP API server
+
+# Other commands
+./main sync_blocks
+./main validate
+./main validate_and_fix
+
+# Test
+go test ./... -v                              # All tests
+go test ./internal/orchestrator -v            # Single package
+go test ./internal/orchestrator -run '^TestNewPoller_ForceFromBlockEnabled$' -v  # Single test
+
+# Lint & Format
+golangci-lint run
+gofmt -w .              # Format all files
+gofmt -l .              # Check formatting
+```
+
+## Code Style
+- Use `go fmt` for formatting
+- Run `golangci-lint` before committing
+- Use zerolog for logging
+- Add error handling for all operations
+- Follow Go naming conventions
+
+## Configuration
+- Config: `configs/config.yml`
+- Secrets: `configs/secrets.yml`
+- Linting: `.golangci.yaml`
+- Mockery: `.mockery.yaml`
+
+## Verification
+- Run `go test ./...` after changing handlers, workers, orchestrator logic, or storage code
+- Run `golangci-lint run` when touching production Go code
+- If migrations or storage interfaces change, verify scans, mocks, and API responses still match
+
+## Key Patterns
+- Use interfaces for storage layer
+- Handle reorgs properly in block processing
+- Use context.Context for cancellation
+- Log with structured fields using zerolog
+- Keep CLI commands in `cmd/` thin and push business logic into `internal/`

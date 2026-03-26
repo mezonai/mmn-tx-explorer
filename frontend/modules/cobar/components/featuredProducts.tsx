@@ -34,6 +34,7 @@ export const FeaturedProducts = () => {
             iconBg="bg-brand-primary/8 text-brand-primary w-12 h-12"
             className="mt-0"
             isLoading={isLoading}
+            onClick={() => window.open(product.product_link, '_blank')}
           />
         ))}
       </div>

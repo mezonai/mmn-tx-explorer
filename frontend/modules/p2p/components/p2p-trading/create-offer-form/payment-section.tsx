@@ -1,74 +1,128 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Control, Controller, UseFormSetValue, UseFormWatch } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { CreditCard, Info, User, Loader2 } from 'lucide-react';
-import { BankOption, UserPaymentInfo } from '@/modules/p2p/types';
-import { CreateOfferFormValues } from './validation-schema';
+import { BankOption } from '@/modules/p2p/types';
 import { cn } from '@/lib/utils';
 import { useUserPaymentInfos, useUpdatePaymentInfo } from '@/modules/p2p/hooks/usePaymentInfo';
 import { toast } from 'sonner';
 import { BANK_OPTIONS } from '@/modules/p2p/constants';
 
 interface PaymentSectionProps {
-  control: Control<CreateOfferFormValues>;
-  setValue: UseFormSetValue<CreateOfferFormValues>;
-  watch: UseFormWatch<CreateOfferFormValues>;
-  onUnsavedChangesChange: (hasUnsavedChanges: boolean) => void;
+  control: Control<any>;
+  setValue: UseFormSetValue<any>;
+  watch: UseFormWatch<any>;
+  onUnsavedChangesChange?: (hasUnsavedChanges: boolean) => void;
+  shouldAutoFill?: boolean;
+  open?: boolean;
 }
 
-
-export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChange }: PaymentSectionProps) => {
-  const { data: savedPayments, isLoading } = useUserPaymentInfos();
+export const PaymentSection = ({
+  control,
+  setValue,
+  watch,
+  onUnsavedChangesChange,
+  shouldAutoFill,
+  open,
+}: PaymentSectionProps) => {
+  const { data: savedPayments } = useUserPaymentInfos();
   const { mutate: updatePayment, isPending: isUpdating } = useUpdatePaymentInfo();
+  const [hasAutoFilled, setHasAutoFilled] = useState(false);
 
+  // Handle auto-fill and reset
+  useEffect(() => {
+    // If modal is closed, reset the auto-fill flag so it can run again upon re-opening
+    if (open === false) {
+      setHasAutoFilled(false);
+      return;
+    }
+
+    // Auto-fill if requested, not yet filled, and data is available
+    if (shouldAutoFill && !hasAutoFilled && savedPayments && savedPayments.length > 0) {
+      const primaryAccount = savedPayments.find((p) => p.is_primary) || savedPayments[0];
+      const bankValue = BANK_OPTIONS.find((opt) => opt.label === primaryAccount.bank_name)?.value as BankOption;
+
+      if (bankValue) {
+        setValue('bank_info.bank', bankValue, { shouldValidate: true });
+        setValue('bank_info.account_number', primaryAccount.account_number, { shouldValidate: true });
+        setValue('bank_info.account_name', primaryAccount.account_name, { shouldValidate: true });
+        setValue('bank_info.is_primary', primaryAccount.is_primary, { shouldValidate: true });
+        setValue('payment_info_id', primaryAccount.id, { shouldValidate: true });
+      }
+      setHasAutoFilled(true);
+    }
+  }, [open, shouldAutoFill, hasAutoFilled, savedPayments, setValue]);
   const currentBank = watch('bank_info.bank');
   const currentAccountNumber = watch('bank_info.account_number');
   const currentAccountName = watch('bank_info.account_name');
   const currentIsPrimary = watch('bank_info.is_primary');
 
-  // Find saved info for the currently selected bank mapping to BankOption labels
+  // Find saved info for the currently selected bank matching strictly bank name, account number, and account name
   const matchedSavedInfo = useMemo(() => {
     if (!savedPayments) return null;
     const currentBankLabel = BANK_OPTIONS.find((b) => b.value === currentBank)?.label;
-    return savedPayments.find((p) => p.bank_name === currentBankLabel) || null;
-  }, [savedPayments, currentBank]);
+    return (
+      savedPayments.find(
+        (p) =>
+          p.bank_name === currentBankLabel &&
+          p.account_number === currentAccountNumber &&
+          p.account_name === currentAccountName
+      ) || null
+    );
+  }, [savedPayments, currentBank, currentAccountNumber, currentAccountName]);
 
   const hasChanges = useMemo(() => {
     if (!matchedSavedInfo) {
       // If no saved info for this bank, and inputs are not empty, we consider it "unsaved"
-      return !!(currentAccountNumber || currentAccountName || currentIsPrimary);
+      return !!(currentAccountNumber || '' || currentAccountName || '' || currentIsPrimary);
     }
     return (
-      currentAccountNumber !== matchedSavedInfo.account_number ||
-      currentAccountName !== matchedSavedInfo.account_name ||
-      currentIsPrimary !== matchedSavedInfo.is_primary
+      (currentAccountNumber || '') !== matchedSavedInfo.account_number ||
+      (currentAccountName || '') !== matchedSavedInfo.account_name ||
+      (currentIsPrimary || false) !== matchedSavedInfo.is_primary
     );
   }, [matchedSavedInfo, currentAccountNumber, currentAccountName, currentIsPrimary]);
 
   useEffect(() => {
-    onUnsavedChangesChange(hasChanges);
+    onUnsavedChangesChange?.(hasChanges);
   }, [hasChanges, onUnsavedChangesChange]);
 
+  // Update ID when data is loaded/changed
+  useEffect(() => {
+    // Synchronize payment_info_id if we have a strict match but no ID or wrong ID set
+    if (matchedSavedInfo) {
+      if (watch('payment_info_id') !== matchedSavedInfo.id) {
+        setValue('payment_info_id', matchedSavedInfo.id, { shouldValidate: true });
+      }
+    } else {
+      // If no strict match (info differs from saved record), clear the ID
+      if (watch('payment_info_id')) {
+        setValue('payment_info_id', undefined, { shouldValidate: true });
+      }
+    }
+  }, [savedPayments, setValue, currentAccountNumber, currentAccountName, matchedSavedInfo, watch]);
 
   const handleBankChange = (value: BankOption) => {
-    setValue('bank_info.bank', value);
+    setValue('bank_info.bank', value, { shouldValidate: true });
     const bankLabel = BANK_OPTIONS.find((opt) => opt.value === value)?.label;
     const saved = savedPayments?.find((p) => p.bank_name === bankLabel);
     if (saved) {
-      setValue('bank_info.account_number', saved.account_number);
-      setValue('bank_info.account_name', saved.account_name);
-      setValue('bank_info.is_primary', saved.is_primary);
+      setValue('bank_info.account_number', saved.account_number, { shouldValidate: true });
+      setValue('bank_info.account_name', saved.account_name, { shouldValidate: true });
+      setValue('bank_info.is_primary', saved.is_primary, { shouldValidate: true });
+      setValue('payment_info_id', saved.id, { shouldValidate: true });
     } else {
-      setValue('bank_info.account_number', '');
-      setValue('bank_info.account_name', '');
-      setValue('bank_info.is_primary', false);
+      setValue('bank_info.account_number', '', { shouldValidate: true });
+      setValue('bank_info.account_name', '', { shouldValidate: true });
+      setValue('bank_info.is_primary', false, { shouldValidate: true });
+      setValue('payment_info_id', undefined, { shouldValidate: true });
     }
   };
 
   const handleSaveChanges = () => {
-    const bankLabel = BANK_OPTIONS.find((b) => b.value === currentBank)?.label || currentBank;
+    const bankLabel = BANK_OPTIONS.find((b) => b.value === currentBank)?.label || currentBank || '';
     updatePayment(
       {
         bank_name: bankLabel,
@@ -81,7 +135,12 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
           toast.success('Payment information saved');
         },
         onError: (error: any) => {
-          toast.error(error.response?.data?.message || 'Failed to save payment information');
+          const errorMessage = error.response?.data?.message || error.message || '';
+          if (errorMessage.includes('duplicate key value') || errorMessage.includes('unique constraint')) {
+            toast.error('This bank account already exists in your payment methods.');
+          } else {
+            toast.error(errorMessage || 'Failed to save payment information');
+          }
         },
       }
     );
@@ -89,19 +148,19 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
 
   const handleCancel = () => {
     if (matchedSavedInfo) {
-      setValue('bank_info.account_number', matchedSavedInfo.account_number);
-      setValue('bank_info.account_name', matchedSavedInfo.account_name);
-      setValue('bank_info.is_primary', matchedSavedInfo.is_primary);
+      setValue('bank_info.account_number', matchedSavedInfo.account_number, { shouldValidate: true });
+      setValue('bank_info.account_name', matchedSavedInfo.account_name, { shouldValidate: true });
+      setValue('bank_info.is_primary', matchedSavedInfo.is_primary, { shouldValidate: true });
     } else {
-      setValue('bank_info.account_number', '');
-      setValue('bank_info.account_name', '');
-      setValue('bank_info.is_primary', false);
+      setValue('bank_info.account_number', '', { shouldValidate: true });
+      setValue('bank_info.account_name', '', { shouldValidate: true });
+      setValue('bank_info.is_primary', false, { shouldValidate: true });
     }
   };
 
   return (
     <div className="space-y-5">
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex items-center gap-2 text-sm font-bold">
           <span className="bg-card text-muted-foreground flex h-5 w-5 items-center justify-center rounded-full text-xs">
             3
@@ -218,7 +277,7 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
 
       {/* Primary Switch */}
       <div className="flex items-center justify-between pt-1">
-        <label className="text-foreground cursor-pointer select-none text-sm font-medium" htmlFor="set-primary-p2p">
+        <label className="text-foreground cursor-pointer text-sm font-medium select-none" htmlFor="set-primary-p2p">
           Set as primary bank account
         </label>
         <Controller
@@ -229,11 +288,11 @@ export const PaymentSection = ({ control, setValue, watch, onUnsavedChangesChang
               <input
                 type="checkbox"
                 id="set-primary-p2p"
-                className="sr-only peer"
+                className="peer sr-only"
                 checked={field.value || false}
                 onChange={(e) => field.onChange(e.target.checked)}
               />
-              <div className="bg-muted peer-focus:ring-brand-primary/50 dark:bg-muted/50 peer-checked:bg-brand-primary dark:peer-checked:bg-brand-primary after:content-[''] after:bg-white after:border-gray-300 after:rounded-full after:transition-all peer-focus:outline-none peer-focus:ring-2 peer-checked:after:translate-x-full peer-checked:after:border-white after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:border dark:border-border h-6 w-11 rounded-full peer"></div>
+              <div className="bg-muted peer-focus:ring-brand-primary/50 dark:bg-muted/50 peer-checked:bg-brand-primary dark:peer-checked:bg-brand-primary dark:border-border peer h-6 w-11 rounded-full peer-focus:ring-2 peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
             </label>
           )}
         />

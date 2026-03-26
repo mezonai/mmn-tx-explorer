@@ -17,7 +17,7 @@ export const TodaysPayment = () => {
   ];
   return (
     <div className="mt-10 w-full">
-      <h2 className="text-xl font-bold">Today's Payments</h2>
+      <h2 className="text-xl font-bold">Platform Overview</h2>
       <div className="mt-4 grid w-full grid-cols-1 gap-4 sm:grid-cols-3">
         {statCards.map((card) => (
           <StatCard key={card.title} title={card.title} value={card.value} subValue={card.subValue} isLoading={isLoading} />
