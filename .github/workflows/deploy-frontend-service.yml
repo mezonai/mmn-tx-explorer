@@ -99,6 +99,8 @@ jobs:
           mkdir -p .deploy/.next
           cp -r .next/static .deploy/.next/
           cp -r public .deploy/
+          
+          cp start.sh .deploy/
 
           cd .deploy
 
@@ -218,6 +220,7 @@ jobs:
             sudo mkdir -p /opt/frontend/.next/standalone
 
             sudo tar -xzf /tmp/frontend.tar.gz --overwrite -C /opt/frontend/.next/standalone
+            sudo mv /opt/frontend/.next/standalone/start.sh /opt/frontend
 
             echo '==> Updating /opt/frontend/...'
             sudo mv /tmp/frontend_tmp.env /opt/frontend/frontend.env
