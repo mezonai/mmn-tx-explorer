@@ -42,8 +42,14 @@ export const UploadDonationImage = ({ onImagesUpdate, initialExistingCids = [] }
       if (!detectedMime) {
         try {
           const typeResult = await fileTypeFromBlob(file);
-          if (typeResult?.mime) detectedMime = typeResult.mime;
-        } catch {}
+          if (typeResult?.mime) {
+            detectedMime = typeResult.mime;
+          } else {
+            toast.error(`Could not detect file type for: ${file.name}`);
+          }
+        } catch (err) {
+          toast.error(`Failed to read file type for: ${file.name}`);
+        }
       }
       const isValidMimeType = IMAGE_CONSTRAINTS.ALLOWED_IMAGE_TYPES.includes(detectedMime);
       if (!isValidMimeType) {
@@ -80,8 +86,14 @@ export const UploadDonationImage = ({ onImagesUpdate, initialExistingCids = [] }
             if (!detectedMime) {
               try {
                 const typeResult = await fileTypeFromBlob(file);
-                if (typeResult?.mime) detectedMime = typeResult.mime;
-              } catch {}
+                if (typeResult?.mime) {
+                  detectedMime = typeResult.mime;
+                } else {
+                  toast.error(`Could not detect file type for: ${file.name}`);
+                }
+              } catch {
+                toast.error(`Failed to read file type for: ${file.name}`);
+              }
             }
             const isHeic = detectedMime === 'image/heic' || detectedMime === 'image/heif';
 
