@@ -35,6 +35,10 @@ on:
         type: string 
         required: false
         default: "false"
+      deploy:
+        type: string
+        required: false 
+        default: "false"
     secrets:
       POSTGRES_PASSWORD:
         required: true
@@ -43,6 +47,7 @@ on:
 
 jobs:
   build:
+    if: inputs.skip_build == 'false'
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
     outputs:
@@ -57,7 +62,6 @@ jobs:
           fetch-depth: 1
 
       - name: Setup Go
-        if: inputs.skip_build == 'false'
         uses: actions/setup-go@v5
         with:
           go-version: "1.23"
@@ -65,7 +69,6 @@ jobs:
           check-latest: false
           
       - name: Run golangci-lint
-        if: inputs.skip_build == 'false'
         uses: golangci/golangci-lint-action@v8
         with:
           version: v2.5.0
@@ -74,7 +77,6 @@ jobs:
         continue-on-error: true
 
       - name: Build Indexer binary
-        if: inputs.skip_build == 'false'
         id: build_indexer_binary
         run: |
           mkdir -p build
@@ -90,14 +92,13 @@ jobs:
           echo "binary_name=${BINARY_NAME}" >> $GITHUB_OUTPUT
 
       - name: Upload Indexer Artifact
-        if: inputs.skip_build == 'false'
         uses: actions/upload-artifact@v4
         with:
           name: indexer-assets
           path: build/indexer-*
 
   deploy-indexer:
-    if: always()
+    if: inputs.deploy == 'true' && (needs.build.result == 'success' || needs.build.result == 'skipped')
     needs: build
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
@@ -127,30 +128,8 @@ jobs:
           CLEAN_VERSION=${TAG_INPUT#indexer-}
           BINARY_FILE="indexer-${CLEAN_VERSION}"
 
-          if [ "${{ inputs.skip_build }}" == "true" ]; then
-            CURRENT_TAG="${{ inputs.release_tag }}"
-
-            DOWNLOAD_TAG=$(git tag -l "release-v*" --sort=-v:refname \
-              | grep -A 1 "$CURRENT_TAG" \
-              | sed -n '2p')
-
-            if [ -z "$DOWNLOAD_TAG" ]; then
-              DOWNLOAD_TAG=$(git tag -l "release-v*" --sort=-v:refname \
-                | grep -v "$CURRENT_TAG" \
-                | head -n1)
-            fi
-
-            if [ -z "$DOWNLOAD_TAG" ]; then
-              echo "Cannot determine previous release for fallback"
-              exit 1
-            fi
-
-            echo "Using fallback release: $DOWNLOAD_TAG"
-          else
-            echo "==> Using current release_tag"
-            DOWNLOAD_TAG="${{ inputs.release_tag }}"
-            [ -z "$DOWNLOAD_TAG" ] && DOWNLOAD_TAG="release-$TAG_INPUT"
-          fi
+          DOWNLOAD_TAG="${{ inputs.release_tag }}"
+          [ -z "$DOWNLOAD_TAG" ] && DOWNLOAD_TAG="release-$TAG_INPUT"
 
           echo "tag_name=$TAG_INPUT" >> $GITHUB_OUTPUT
           echo "download_tag=$DOWNLOAD_TAG" >> $GITHUB_OUTPUT
@@ -158,7 +137,7 @@ jobs:
           echo "binary_path=build/$BINARY_FILE" >> $GITHUB_OUTPUT
 
       - name: Download Artifact from Job Build
-        if: inputs.skip_build != 'true'
+        if: inputs.skip_build != 'true' && needs.build.result == 'success'
         uses: actions/download-artifact@v4
         with:
           name: indexer-assets

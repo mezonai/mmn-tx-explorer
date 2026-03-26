@@ -48,6 +48,11 @@ jobs:
       skip_build_dong: ${{ steps.tags.outputs.skip_build_dong }}
       skip_build_socket: ${{ steps.tags.outputs.skip_build_socket }}
       skip_build_indexer: ${{ steps.tags.outputs.skip_build_indexer }}
+
+      deploy_frontend: ${{ steps.tags.outputs.deploy_frontend }}
+      deploy_dong: ${{ steps.tags.outputs.deploy_dong }}
+      deploy_socket: ${{ steps.tags.outputs.deploy_socket }}
+      deploy_indexer: ${{ steps.tags.outputs.deploy_indexer }}
     steps:
       - name: Checkout for git history
         uses: actions/checkout@v4
@@ -205,6 +210,11 @@ jobs:
           SKIP_BUILD_SOCKET=false
           SKIP_BUILD_INDEXER=false
           SHOULD=true
+          
+          DEPLOY_FRONTEND=false
+          DEPLOY_DONG=false
+          DEPLOY_SOCKET=false
+          DEPLOY_INDEXER=false
 
           if [ -n "${{ steps.normalize.outputs.new_tag_to_build }}" ]; then
             RAW=$(normalize "${{ steps.normalize.outputs.new_tag_to_build }}")
@@ -224,6 +234,11 @@ jobs:
             SKIP_BUILD_SOCKET=false
             SKIP_BUILD_INDEXER=false
             SHOULD=true
+
+            DEPLOY_FRONTEND=true
+            DEPLOY_DONG=true
+            DEPLOY_SOCKET=true
+            DEPLOY_INDEXER=true
 
           elif [ -n "${{ steps.normalize.outputs.rebuild_existing_tag }}" ]; then
             RELEASE=$(normalize "${{ steps.normalize.outputs.rebuild_existing_tag }}")
@@ -247,6 +262,11 @@ jobs:
               echo "Failed to parse service versions from release note"
               exit 1
             fi
+
+            DEPLOY_FRONTEND=true
+            DEPLOY_DONG=true
+            DEPLOY_SOCKET=true
+            DEPLOY_INDEXER=true
 
             SKIP_BUILD_DONG=true
             SKIP_BUILD_SOCKET=true
@@ -299,6 +319,11 @@ jobs:
             SKIP_BUILD_DONG=$([[ "${{ steps.detect.outputs.dong }}" == "true" ]] && echo false || echo true)
             SKIP_BUILD_SOCKET=$([[ "${{ steps.detect.outputs.socket }}" == "true" ]] && echo false || echo true)
             SKIP_BUILD_INDEXER=$([[ "${{ steps.detect.outputs.indexer }}" == "true" ]] && echo false || echo true)
+
+            DEPLOY_FRONTEND=${{ steps.detect.outputs.frontend }}
+            DEPLOY_DONG=${{ steps.detect.outputs.dong }}
+            DEPLOY_SOCKET=${{ steps.detect.outputs.socket }}
+            DEPLOY_INDEXER=${{ steps.detect.outputs.indexer }}
           fi
 
           echo "release_tag=$RELEASE" >> $GITHUB_OUTPUT
@@ -311,7 +336,11 @@ jobs:
           echo "skip_build_socket=$SKIP_BUILD_SOCKET" >> $GITHUB_OUTPUT
           echo "skip_build_indexer=$SKIP_BUILD_INDEXER" >> $GITHUB_OUTPUT
           echo "skip_build_frontend=$SKIP_BUILD_FRONTEND" >> $GITHUB_OUTPUT
-    
+          echo "deploy_frontend=$DEPLOY_FRONTEND" >> $GITHUB_OUTPUT
+          echo "deploy_dong=$DEPLOY_DONG" >> $GITHUB_OUTPUT
+          echo "deploy_socket=$DEPLOY_SOCKET" >> $GITHUB_OUTPUT
+          echo "deploy_indexer=$DEPLOY_INDEXER" >> $GITHUB_OUTPUT
+
       - name: Push Service Tags for Tracking
         if: steps.tags.outputs.should_release == 'true'
         run: |   
@@ -356,6 +385,7 @@ jobs:
       release_tag: ${{ needs.determine_tags.outputs.release_tag }}
       service_tag: ${{ needs.determine_tags.outputs.indexer_tag }}
       skip_build: ${{ needs.determine_tags.outputs.skip_build_indexer }}
+      deploy: ${{ needs.determine_tags.outputs.deploy_indexer }}
     secrets:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       EVENT_API_KEY: ${{ secrets.EVENT_API_KEY }}
@@ -369,6 +399,7 @@ jobs:
       release_tag: ${{ needs.determine_tags.outputs.release_tag }} 
       service_tag: ${{ needs.determine_tags.outputs.dong_tag }}
       skip_build: ${{ needs.determine_tags.outputs.skip_build_dong }}
+      deploy : ${{ needs.determine_tags.outputs.deploy_dong }}
     secrets:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
@@ -387,6 +418,7 @@ jobs:
       release_tag: ${{ needs.determine_tags.outputs.release_tag }} 
       service_tag: ${{ needs.determine_tags.outputs.frontend_tag }}
       skip_build: ${{ needs.determine_tags.outputs.skip_build_frontend }}
+      deploy: ${{ needs.determine_tags.outputs.deploy_frontend }}
     secrets:
       NEXT_PUBLIC_COBAR_API_KEY: ${{ secrets.NEXT_PUBLIC_COBAR_API_KEY }}
       NEXT_PUBLIC_MEZON_SERVER_KEY: ${{ secrets.NEXT_PUBLIC_MEZON_SERVER_KEY }}
@@ -400,6 +432,7 @@ jobs:
       release_tag: ${{ needs.determine_tags.outputs.release_tag }} 
       service_tag: ${{ needs.determine_tags.outputs.socket_tag }}
       skip_build: ${{ needs.determine_tags.outputs.skip_build_socket }}
+      deploy: ${{ needs.determine_tags.outputs.deploy_socket }}
     secrets:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
