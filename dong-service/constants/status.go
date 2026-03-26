@@ -148,3 +148,8 @@ const (
 const (
 	OrderExpirationDuration = 4
 )
+
+const (
+	MaxAccountNumberLength = 14
+	MaxAccountNameLength   = 50
+)
