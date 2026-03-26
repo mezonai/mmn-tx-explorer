@@ -31,4 +31,4 @@ while kill -0 "$APP_PID" 2>/dev/null; do
     exit 1
   fi
   sleep 1
-  done
+done
