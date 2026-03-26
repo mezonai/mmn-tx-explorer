@@ -150,6 +150,8 @@ const (
 )
 
 const (
+	MinAccountNumberLength = 6
 	MaxAccountNumberLength = 14
+	MinAccountNameLength   = 2
 	MaxAccountNameLength   = 50
 )

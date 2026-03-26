@@ -1,7 +1,7 @@
 import { OFFERS_STATUS, P2P_TAB, P2P_TRADING_ROLE } from './constants';
 import type { ChannelMessageHandler } from 'mezon-light-sdk';
 
-export type BankOption = 'MB' | 'VCB' | 'TCB' | 'ACB' | 'TPBANK' | 'VIETCOMBANK';
+export type BankOption = 'MB' | 'TCB' | 'ACB' | 'TPBANK' | 'VIETCOMBANK';
 
 export interface UserPaymentInfo {
   id: number;

@@ -45,7 +45,6 @@ export const P2P_EVENT_TYPES = {
 
 export const BANK_OPTIONS = [
   { value: 'MB', label: 'MB Bank' },
-  { value: 'VCB', label: 'Vietcombank' },
   { value: 'TCB', label: 'Techcombank' },
   { value: 'ACB', label: 'ACB' },
   { value: 'TPBANK', label: 'TPBank' },
