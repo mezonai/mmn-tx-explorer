@@ -23,18 +23,12 @@ for _ in $(seq 1 30); do
   sleep 1
 done
 
-while true; do
-  if ! kill -0 "$APP_PID" 2>/dev/null; then
-    echo "[WATCHDOG] process died"
-    exit 1
-  fi
-
+while kill -0 "$APP_PID" 2>/dev/null; do
   if curl -sf "${HEALTH_URL}" >/dev/null; then
     systemd-notify WATCHDOG=1
   else
     echo "[WATCHDOG] health failed"
     exit 1
   fi
-
   sleep 1
-done
+  done
