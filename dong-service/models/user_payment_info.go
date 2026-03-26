@@ -3,16 +3,9 @@ package models
 import (
 	"dong-service/constants"
 	"fmt"
-	"regexp"
 	"strings"
 	"time"
 )
-
-// accountNumberRe accepts digits only; length is enforced separately via constants.
-var accountNumberRe = regexp.MustCompile(`^\d+$`)
-
-// accountNameRe accepts Latin letters (upper/lower) and spaces; length is enforced separately via constants.
-var accountNameRe = regexp.MustCompile(`^[A-Za-z][A-Za-z ]*$`)
 
 type UserPaymentInfo struct {
 	ID            int64      `json:"id" db:"id"`
@@ -28,21 +21,22 @@ type UserPaymentInfo struct {
 
 // Validate checks business-level constraints beyond Gin's binding tags.
 func (p *UserPaymentInfo) Validate() error {
-	if !constants.IsSupportedBank(p.BankName) {
-		return fmt.Errorf("bank_name %q is not supported; accepted values: %s",
-			p.BankName, constants.SupportedBankNameList())
+	bankLen := len(strings.TrimSpace(p.BankName))
+	if bankLen < constants.MinBankNameLength || bankLen > constants.MaxBankNameLength {
+		return fmt.Errorf("bank_name must be between %d and %d characters",
+			constants.MinBankNameLength, constants.MaxBankNameLength)
 	}
 
 	numLen := len(p.AccountNumber)
-	if !accountNumberRe.MatchString(p.AccountNumber) || numLen < constants.MinAccountNumberLength || numLen > constants.MaxAccountNumberLength {
-		return fmt.Errorf("account_number must contain only digits and be between %d and %d characters",
+	if numLen < constants.MinAccountNumberLength || numLen > constants.MaxAccountNumberLength {
+		return fmt.Errorf("account_number must be between %d and %d characters",
 			constants.MinAccountNumberLength, constants.MaxAccountNumberLength)
 	}
 
 	trimmed := strings.TrimSpace(p.AccountName)
 	nameLen := len(trimmed)
-	if !accountNameRe.MatchString(trimmed) || nameLen < constants.MinAccountNameLength || nameLen > constants.MaxAccountNameLength {
-		return fmt.Errorf("account_name must contain only Latin letters and spaces, between %d and %d characters",
+	if nameLen < constants.MinAccountNameLength || nameLen > constants.MaxAccountNameLength {
+		return fmt.Errorf("account_name must be between %d and %d characters",
 			constants.MinAccountNameLength, constants.MaxAccountNameLength)
 	}
 	p.AccountName = trimmed
