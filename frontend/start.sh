@@ -3,17 +3,38 @@ set -e
 
 echo "Starting frontend (standalone)..."
 
-systemd-notify --ready
+APP_PORT="${PORT:-3000}"
+HEALTH_URL="http://127.0.0.1:${APP_PORT}/api/health"
 
-(
-  while true; do
-    if curl -sf http://localhost:3000/api/health >/dev/null; then
-      systemd-notify WATCHDOG=1
-    else
-      echo "[WATCHDOG] Health check failed"
-    fi
-    sleep 10
-  done
-) &
+/usr/local/bin/node .next/standalone/server.js &
+APP_PID=$!
+for _ in $(seq 1 30); do
+  if curl -fsS --max-time 2 "${HEALTH_URL}" >/dev/null; then
+    systemd-notify --ready
+    echo "[READY] Service is ready"
+    break
+  fi
 
-exec /usr/local/bin/node .next/standalone/server.js
+  if ! kill -0 "${APP_PID}" 2>/dev/null; then
+    wait "${APP_PID}"
+    exit $?
+  fi
+
+  sleep 1
+done
+
+while true; do
+  if ! kill -0 "$APP_PID" 2>/dev/null; then
+    echo "[WATCHDOG] process died"
+    exit 1
+  fi
+
+  if curl -sf "${HEALTH_URL}" >/dev/null; then
+    systemd-notify WATCHDOG=1
+  else
+    echo "[WATCHDOG] health failed"
+    exit 1
+  fi
+
+  sleep 1
+done
