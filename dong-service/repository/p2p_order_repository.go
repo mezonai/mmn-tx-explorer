@@ -151,7 +151,7 @@ func (r *OrderRepository) CancelExpiredOrders(ctx context.Context, cutoff time.T
 	query := fmt.Sprintf(`
 		WITH cancelled AS (
 			UPDATE %s.p2p_orders
-			SET status = '%s',  = status, updated_at = NOW()
+			SET status = '%s', previous_status = status, updated_at = NOW()
 			WHERE status IN ('%s', '%s') AND expires_at < $1
 			RETURNING order_id, offer_id, order_amount
 		),
