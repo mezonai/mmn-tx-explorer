@@ -8,8 +8,9 @@ const baseURL = isServer ? process.env.APP_API_URL_INTERNAL : process.env.NEXT_P
 const dongServiceURL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 const gameServiceURL = process.env.NEXT_PUBLIC_TOP_MEZON_AI + '/api';
 const ipfsServiceURL = process.env.NEXT_PUBLIC_BASE_FE + '/ipfs';
-// const baseURL = 'http://localhost:8080';
 const serverkey = process.env.NEXT_PUBLIC_MEZON_SERVER_KEY!;
+const chatServiceURL = process.env.NEXT_PUBLIC_CHAT_API_URL;
+
 const cobarClient = axios.create({
   baseURL: '/api/cobar',
   headers: {
@@ -39,6 +40,13 @@ const apiGameClient = axios.create({
 
 const authClient = axios.create({
   baseURL: dongServiceURL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+const apiChatClient = axios.create({
+  baseURL: chatServiceURL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -96,4 +104,4 @@ apiDongClient.interceptors.response.use(
   }
 );
 
-export { apiClient, apiDongClient, cobarClient, apiGameClient, ipfsServiceURL, serverkey, authClient };
+export { apiClient, apiDongClient, cobarClient, apiGameClient, apiChatClient, ipfsServiceURL, serverkey, authClient };
