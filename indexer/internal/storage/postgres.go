@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -3086,6 +3087,12 @@ func (p *PostgresConnector) updateRedEnvelopeClaimStatus(ctx context.Context, tx
 		ClaimID int64 `json:"claim_id"`
 	}
 
+	type claimTx struct {
+		ID   int64
+		Hash string
+	}
+	claims := make([]claimTx, 0, len(txs))
+
 	for _, t := range txs {
 		var extra Extra
 		if err := json.Unmarshal([]byte(t.ExtraInfo), &extra); err != nil || extra.ClaimID == 0 {
@@ -3093,22 +3100,50 @@ func (p *PostgresConnector) updateRedEnvelopeClaimStatus(ctx context.Context, tx
 			log.Warn().Str("tx_hash", t.Hash).Msg("claim_id missing in extra_info, skipping precise reconciliation")
 			continue
 		}
-
-		query := `
-			UPDATE dong_schema.red_envelope_claim
-			SET status = 'SUCCESS', transaction_hash = $1
-			WHERE id = $2 AND status = 'PENDING'
-		`
-		res, err := tx.ExecContext(ctx, query, t.Hash, extra.ClaimID)
-		if err != nil {
-			log.Error().Err(err).Int64("claim_id", extra.ClaimID).Msg("Failed to reconcile precise red envelope claim")
-			return err
-		}
-
-		rows, _ := res.RowsAffected()
-		if rows > 0 {
-			log.Info().Int64("claim_id", extra.ClaimID).Str("tx_hash", t.Hash).Msg("Successfully reconciled red envelope claim via precise ID mapping")
-		}
+		claims = append(claims, claimTx{ID: extra.ClaimID, Hash: t.Hash})
 	}
+
+	if len(claims) == 0 {
+		return nil
+	}
+
+	// Sort by ID to prevent database deadlocks on concurrent updates
+	sort.Slice(claims, func(i, j int) bool {
+		return claims[i].ID < claims[j].ID
+	})
+
+	validClaimIDs := make([]int64, len(claims))
+	validTxHashes := make([]string, len(claims))
+	for i, c := range claims {
+		validClaimIDs[i] = c.ID
+		validTxHashes[i] = c.Hash
+	}
+
+	query := `
+		UPDATE dong_schema.red_envelope_claim rec
+		SET status = 'SUCCESS', transaction_hash = v.tx_hash
+		FROM unnest($1::bigint[], $2::text[]) AS v(id, tx_hash)
+		WHERE rec.id = v.id AND rec.status = 'PENDING'
+		RETURNING rec.id
+	`
+	rows, err := tx.QueryContext(ctx, query, pq.Array(validClaimIDs), pq.Array(validTxHashes))
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to batch reconcile red envelope claims")
+		return err
+	}
+	defer rows.Close()
+
+	reconciledCount := 0
+	for rows.Next() {
+		reconciledCount++
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Error().Err(err).Msg("Error occurred while reading reconciled rows")
+		return err
+	}
+
+	log.Info().Int("claims_reconciled", reconciledCount).Msg("Successfully reconciled red envelope claims via precise batch update")
+
 	return nil
 }

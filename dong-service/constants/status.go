@@ -91,6 +91,7 @@ const (
 
 const (
 	ExtraInfoLuckyMoney              = `{"type":"lucky-money"}`
+	ExtraInfoLuckyMoneyClaim         = `{"type":"lucky-money","claim_id":%d}`
 	ExtraInfoP2PTrading              = `{"type":"p2p-trading"}`
 	ExtraInfoP2PTradingBuyOffer      = `{"type":"p2p-trading-buy-offer"}`
 	ExtraInfoP2PTradingOfferCanceled = `{"type":"p2p-trading","action":"offer-canceled"}`

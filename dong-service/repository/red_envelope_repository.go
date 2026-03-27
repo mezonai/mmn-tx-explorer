@@ -835,7 +835,7 @@ func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUs
 	}
 
 	claimAmount := types.NewBigIntString(amount).Multiply(constants.TokenMultiplierBigIntString)
-	extraInfo := fmt.Sprintf(`{"type":"lucky-money","claim_id":%d}`, claimID)
+	extraInfo := fmt.Sprintf(constants.ExtraInfoLuckyMoneyClaim, claimID)
 
 	txHash, err := r.blockchainService.TransferMoney(
 		walletInfo.EncryptedPrivateKey,
