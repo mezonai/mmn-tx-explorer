@@ -4,7 +4,7 @@ import app from "./app.js";
 
 dotenv.config();
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 async function bootstrap() {
   try {
     // Initialize Bot
