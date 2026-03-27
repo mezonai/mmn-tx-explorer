@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { useP2POrder } from '../../hooks/useP2POrder';
@@ -32,7 +32,6 @@ import { ETransferType } from '@/modules/transaction';
 import { EMBED_MESSAGE_THEME, P2P_TRADING_ROLE, ORDER_EXPIRATION_DURATION_MS } from '../../constants';
 import BigNumber from 'bignumber.js';
 import { createTrackOrderComponents } from '../../util';
-import React from 'react'; // Added React import for useCallback
 
 interface TradingRoomProps {
   orderId: string;
@@ -142,7 +141,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
     return `Confirm money received, release ${APP_CONFIG.CHAIN_SYMBOL}`;
   }, [effectiveOrder?.offer_type]);
 
-  const createOrderEmbed = React.useCallback(
+  const createOrderEmbed = useCallback(
     (currentOrder: P2POrder, customTitle?: string, customColor?: string) => {
       const priceRate = offer?.price_rate || 1;
       const displayAmount = NumberUtil.scaleDownBigNumber(new BigNumber(currentOrder.amount));
