@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Send,
   AlertTriangle,
@@ -63,6 +63,28 @@ export const ChatSidebar = ({ orderCreatorId, offerCreatorId, autoMessage, onAut
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showLimitWarning, setShowLimitWarning] = useState(false);
+  const { user } = useUser();
+
+  const userInfoMap = useMemo(() => {
+    const map: Record<string, { display_name?: string; avatar?: string }> = {};
+
+    if (user?.id) {
+      map[user.id] = {
+        display_name: user.username,
+        avatar: user.avatar,
+      };
+    }
+
+    messages.forEach((msg) => {
+      if (msg.sender_id && (msg.display_name || msg.avatar)) {
+        if (!map[msg.sender_id]) map[msg.sender_id] = {};
+        if (msg.display_name) map[msg.sender_id].display_name = msg.display_name;
+        if (msg.avatar) map[msg.sender_id].avatar = msg.avatar;
+      }
+    });
+
+    return map;
+  }, [messages, user]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<LightSocket | null>(null);
@@ -96,7 +118,6 @@ export const ChatSidebar = ({ orderCreatorId, offerCreatorId, autoMessage, onAut
   const isMessageSendingRef = useRef(false);
 
   const { lightClient } = useLightClient();
-  const { user } = useUser();
 
   const getFileIcon = (filename: string, filetype?: string) => {
     const ext = filename.split('.').pop()?.toLowerCase();
@@ -613,22 +634,22 @@ export const ChatSidebar = ({ orderCreatorId, offerCreatorId, autoMessage, onAut
                         !isMe && 'ml-10'
                       )}
                     >
-                      {msg.display_name} {isMe && '(You)'}
+                      {userInfoMap[msg.sender_id]?.display_name || msg.display_name || 'U'} {isMe && '(You)'}
                     </span>
                   )}
                   <div className={cn('flex w-full items-end gap-2', isMe ? 'flex-row-reverse' : 'flex-row')}>
                     {!isMe && (
                       <div className="w-8 shrink-0">
                         {isLastInGroup ? (
-                          msg.avatar ? (
+                          userInfoMap[msg.sender_id]?.avatar || msg.avatar ? (
                             <img
-                              src={msg.avatar}
+                              src={(userInfoMap[msg.sender_id]?.avatar || msg.avatar)!}
                               alt="avatar"
                               className="h-8 w-8 rounded-full border border-gray-100 object-cover"
                             />
                           ) : (
                             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-[10px] font-bold text-gray-600 uppercase">
-                              {(msg.display_name || 'U').charAt(0)}
+                              {(userInfoMap[msg.sender_id]?.display_name || msg.display_name || 'U').charAt(0)}
                             </div>
                           )
                         ) : (
