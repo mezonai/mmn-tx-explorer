@@ -216,10 +216,10 @@ jobs:
           ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS}} "
             set -e 
             echo '==> Extracting frontend bundle'
-            sudo rm -rf /opt/frontend/.next/standalone
+            sudo rm -rf /opt/frontend/.next/standalone/*
             sudo mkdir -p /opt/frontend/.next/standalone
 
-            sudo tar -xzf /tmp/frontend.tar.gz --overwrite -C /opt/frontend/.next/standalone
+            sudo tar -xzf /tmp/frontend.tar.gz -C /opt/frontend/.next/standalone
             sudo mv /opt/frontend/.next/standalone/start.sh /opt/frontend
 
             echo '==> Updating /opt/frontend/...'
