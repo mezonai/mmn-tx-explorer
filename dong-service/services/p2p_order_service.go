@@ -240,9 +240,8 @@ func (s *OrderService) HasActiveOrdersForOffer(ctx context.Context, offerID int6
 }
 
 func (s *OrderService) ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o *models.Order) error {
-	// Buyer confirm: OPEN -> PENDING
-	if o.Status != string(models.OrderStatusOpen) {
-		return fmt.Errorf("buyer can only confirm open orders; current status=%s", o.Status)
+	if o.Status != constants.TradingOpen {
+		return fmt.Errorf("buyer can only confirm open or waiting_transfer orders; current status=%s", o.Status)
 	}
 
 	db := database.GetDB()

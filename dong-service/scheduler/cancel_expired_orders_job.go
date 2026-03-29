@@ -113,6 +113,7 @@ func (j *CancelExpiredOrdersJob) processRefunds(ctx context.Context, expiredOrde
 			Int64("offer_id", orderInfo.OfferID).
 			Str("amount", orderInfo.OrderAmount).
 			Str("status", orderInfo.Status).
+			Str("previous_status", orderInfo.PreviousStatus).
 			Str("offer_side", orderInfo.OfferSide).
 			Str("recipient_wallet", refundRecipient).
 			Msg("Processing refund for expired order")
