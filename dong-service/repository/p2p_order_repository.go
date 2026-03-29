@@ -53,10 +53,13 @@ func (r *OrderRepository) HasActiveOrders(ctx context.Context, offerID int64, tx
 	return err == nil, err
 }
 
-func (r *OrderRepository) HasDisputedOrders(ctx context.Context, offerID int64) (bool, error) {
-	query := fmt.Sprintf("SELECT 1 FROM %s.p2p_orders WHERE offer_id = $1 AND in_dispute = TRUE LIMIT 1", r.dongSchema)
+func (r *OrderRepository) HasDisputedOrders(ctx context.Context, offerID int64, tx *sql.Tx) (bool, error) {
+	if tx == nil {
+		return false, fmt.Errorf("tx is required for HasDisputedOrders")
+	}
+	query := fmt.Sprintf("SELECT 1 FROM %s.p2p_orders WHERE offer_id = $1 AND in_dispute = TRUE LIMIT 1 FOR UPDATE", r.dongSchema)
 	var v int
-	err := r.db.QueryRowContext(ctx, query, offerID).Scan(&v)
+	err := tx.QueryRowContext(ctx, query, offerID).Scan(&v)
 	if err == sql.ErrNoRows {
 		return false, nil
 	}
@@ -76,9 +79,9 @@ func (r *OrderRepository) CountActiveOrdersByUser(ctx context.Context, buyerUser
 func (r *OrderRepository) UpdateOrderStatus(ctx context.Context, orderID int64, status string, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
 		UPDATE %s.p2p_orders
-		SET status = $1, previous_status = (SELECT status FROM %s.p2p_orders WHERE order_id = $2), updated_at = NOW()
+		SET status = $1, previous_status = status, updated_at = NOW()
 		WHERE order_id = $2
-	`, r.dongSchema, r.dongSchema)
+	`, r.dongSchema)
 
 	_, err := tx.ExecContext(ctx, query, status, orderID)
 	return err
@@ -88,9 +91,9 @@ func (r *OrderRepository) UpdateOrderStatusWithTxHash(ctx context.Context, order
 	if txHash != nil {
 		query := fmt.Sprintf(`
 			UPDATE %s.p2p_orders
-			SET status = $1, transaction_hash = $2, previous_status = (SELECT status FROM %s.p2p_orders WHERE order_id = $3), updated_at = NOW()
+			SET status = $1, transaction_hash = $2, previous_status = status, updated_at = NOW()
 			WHERE order_id = $3
-		`, r.dongSchema, r.dongSchema)
+		`, r.dongSchema)
 		_, err := tx.ExecContext(ctx, query, status, *txHash, orderID)
 		return err
 	}

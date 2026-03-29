@@ -323,7 +323,7 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 	}()
 
 	// Block cancellation if any order is in dispute (expired while buyer had already confirmed payment).
-	hasDisputed, err := s.orderRepo.HasDisputedOrders(ctx, offerId)
+	hasDisputed, err := s.orderRepo.HasDisputedOrders(ctx, offerId, tx)
 	if err != nil {
 		return fmt.Errorf("failed to check disputed orders: %w", err)
 	}
