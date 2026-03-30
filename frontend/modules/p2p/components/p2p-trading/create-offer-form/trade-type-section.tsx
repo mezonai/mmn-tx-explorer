@@ -33,41 +33,6 @@ export const TradeTypeSection = ({ control, trigger }: TradeTypeSectionProps) =>
         <h3 className="text-foreground text-sm font-semibold">Trade Limits & Total Amount</h3>
       </div>
 
-      {/* Trade Type & Asset - Grid Layout */}
-      {/* <div className="grid grid-cols-2 gap-3"> */}
-      {/* Trade Type */}
-      {/* <div>
-          <label className="mb-1.5 block text-xs font-medium text-gray-500">Hành động</label>
-          <div className="bg-input/30 dark:bg-input/30 flex rounded border border-gray-700 p-0.5">
-            <button
-              onClick={() => onTradeTypeChange('BUY')}
-              className={`flex-1 rounded py-1.5 text-xs font-bold transition ${
-                tradeType === 'BUY' ? 'bg-brand-primary text-white shadow' : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              MUA
-            </button>
-            <button
-              onClick={() => onTradeTypeChange('SELL')}
-              className={`flex-1 rounded py-1.5 text-xs font-bold transition ${
-                tradeType === 'SELL' ? 'bg-brand-primary text-white shadow' : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              BÁN
-            </button>
-          </div>
-        </div> */}
-
-      {/* Asset */}
-      {/* <div>
-          <label className="mb-1.5 block text-xs font-medium text-gray-500">Tài sản</label>
-          <div className="bg-input/30 dark:bg-input/30 flex h-[34px] items-center justify-between rounded border border-gray-700 px-3 py-1.5">
-            <span className="text-sm font-semibold text-white">MZD</span>
-            <Lock className="h-3 w-3 text-gray-600" />
-          </div>
-        </div> */}
-      {/* </div> */}
-
       {/* Limits */}
       <div>
         <div className="grid grid-cols-1 gap-3">
@@ -120,12 +85,12 @@ export const TradeTypeSection = ({ control, trigger }: TradeTypeSectionProps) =>
                     <div>
                       <Input
                         type="text"
-                        placeholder={amountMZD > 0 ? formatCurrency(amountMZD) : '5,000'}
+                        placeholder="0"
                         value={formatCurrency(field.value)}
                         onChange={(e) => {
                           if (getRawValue(e.target.value) > LIMIT_MAX_AMOUNT) return;
                           field.onChange(getRawValue(e.target.value));
-                          trigger(['amount', 'price_rate']);
+                          trigger(['amount']);
                         }}
                         className={cn(
                           'bg-input/30 w-full rounded-md border px-3 py-2.5 text-lg font-bold transition-colors focus:outline-none',

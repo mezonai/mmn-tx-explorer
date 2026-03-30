@@ -1,9 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { P2PService } from '../api';
-import { P2P_QUERY_KEYS } from '../constants';
-
-const WS_INVALIDATE_DELAY = 1000;
+import { P2P_QUERY_KEYS, WS_INVALIDATE_DELAY } from '../constants';
 
 export const useCancelOffer = () => {
   const queryClient = useQueryClient();

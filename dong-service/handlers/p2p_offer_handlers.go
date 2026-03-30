@@ -7,7 +7,6 @@ import (
 	"dong-service/models"
 	"dong-service/services"
 	"dong-service/utils"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"regexp"
@@ -92,12 +91,6 @@ func (h *OfferHandler) CreateOffer(c *gin.Context) {
 	if len(req.Symbol) > constants.MaxLengthSymbol {
 		logger.Error().Msg("invalid create offer request: symbol length exceeds limit")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid request: symbol length exceeds limit"))
-		return
-	}
-
-	if err := validateBankInfo(req.BankInfo); err != nil {
-		logger.Error().Msg("invalid create offer request: " + err.Error())
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid request: "+err.Error()))
 		return
 	}
 
@@ -357,33 +350,4 @@ func (h *OfferHandler) CancelOffer(c *gin.Context) {
 		"success": true,
 		"message": constants.MsgOfferCancelled,
 	})
-}
-
-func validateBankInfo(bankInfo map[string]interface{}) error {
-	if bankInfo == nil {
-		return nil
-	}
-
-	var totalSize int
-	for key, value := range bankInfo {
-		totalSize += len(key)
-
-		valueBytes, err := json.Marshal(value)
-		if err != nil {
-			return errors.New("invalid bank info value format")
-		}
-		valueSize := len(valueBytes)
-
-		if valueSize > constants.MaxIndividualBankInfoSize {
-			return errors.New("bank info value must not exceed 128 bytes")
-		}
-
-		totalSize += valueSize
-	}
-
-	if totalSize > constants.MaxTotalBankInfoSize {
-		return errors.New("bank info total size must not exceed 1024 bytes")
-	}
-
-	return nil
 }

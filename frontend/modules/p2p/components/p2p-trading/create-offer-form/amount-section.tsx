@@ -41,11 +41,15 @@ export const AmountSection = ({ control, setValue, userBalance }: AmountSectionP
 
     if (percent === 0) {
       setValue('amount', 0, { shouldValidate: true, shouldDirty: true });
+      setValue('limit.min', 0, { shouldValidate: true, shouldDirty: true });
+      setValue('limit.max', 0, { shouldValidate: true, shouldDirty: true });
       return;
     }
 
     if (percent === 100) {
       setValue('amount', maxBalance, { shouldValidate: true, shouldDirty: true });
+      setValue('limit.min', 1, { shouldValidate: true, shouldDirty: true });
+      setValue('limit.max', maxBalance, { shouldValidate: true, shouldDirty: true });
       return;
     }
 
@@ -61,6 +65,8 @@ export const AmountSection = ({ control, setValue, userBalance }: AmountSectionP
     const cleanAmount = Math.floor(rawAmount / step) * step;
 
     setValue('amount', cleanAmount, { shouldValidate: true, shouldDirty: true });
+    setValue('limit.min', 1, { shouldValidate: true, shouldDirty: true });
+    setValue('limit.max', cleanAmount, { shouldValidate: true, shouldDirty: true });
   };
 
   return (
@@ -85,6 +91,8 @@ export const AmountSection = ({ control, setValue, userBalance }: AmountSectionP
                 value={field.value}
                 onChange={(val) => {
                   field.onChange(val);
+                  setValue('limit.min', 1, { shouldValidate: true, shouldDirty: true });
+                  setValue('limit.max', val, { shouldValidate: true, shouldDirty: true });
                 }}
                 error={error?.message}
               />
@@ -92,30 +100,34 @@ export const AmountSection = ({ control, setValue, userBalance }: AmountSectionP
           />
         </div>
 
-        <div className="text-brand-primary mt-2 flex justify-between text-sm">
-          <span>
-            Balance: {userBalance ? userBalance : '-'} {APP_CONFIG.CHAIN_SYMBOL}
-          </span>
-        </div>
+        {tradeType === TradeTypes.SELL && (
+          <div className="text-brand-primary mt-2 flex justify-between text-sm">
+            <span>
+              Balance: {userBalance ? userBalance : '-'} {APP_CONFIG.CHAIN_SYMBOL}
+            </span>
+          </div>
+        )}
 
         {/* Range Slider */}
-        <div className="mt-4 px-1">
-          <input
-            type="range"
-            min="0"
-            max="100"
-            step="0.01"
-            value={sliderValue}
-            onChange={handleSliderChange}
-            disabled={!maxBalance}
-            className="bg-input/50 accent-brand-primary focus:ring-brand-primary/50 h-2 w-full cursor-pointer appearance-none rounded-lg focus:ring-2 focus:outline-none"
-            style={{
-              backgroundImage: `linear-gradient(to right, var(--brand-primary), var(--brand-primary))`,
-              backgroundSize: `${sliderValue}% 100%`,
-              backgroundRepeat: 'no-repeat',
-            }}
-          />
-        </div>
+        {tradeType === TradeTypes.SELL && (
+          <div className="mt-4 px-1">
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="0.01"
+              value={sliderValue}
+              onChange={handleSliderChange}
+              disabled={!maxBalance}
+              className="bg-input/50 accent-brand-primary focus:ring-brand-primary/50 h-2 w-full cursor-pointer appearance-none rounded-lg focus:ring-2 focus:outline-none"
+              style={{
+                backgroundImage: `linear-gradient(to right, var(--brand-primary), var(--brand-primary))`,
+                backgroundSize: `${sliderValue}% 100%`,
+                backgroundRepeat: 'no-repeat',
+              }}
+            />
+          </div>
+        )}
       </div>
 
       <div className="border-brand-primary bg-card rounded-lg border p-3">

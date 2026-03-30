@@ -15,10 +15,8 @@ export const TradeSideSwitch = ({ value, onChange, className, classNameButton }:
         type="button"
         onClick={() => onChange(TradeTypes.BUY)}
         className={cn(
-          'flex-1 rounded-md px-8 py-2 text-sm font-semibold transition-all duration-200',
-          value === TradeTypes.BUY
-            ? 'bg-brand-primary text-white shadow-lg'
-            : 'text-gray-400 hover:bg-white/5 hover:text-white',
+          'flex-1 cursor-pointer rounded-md px-8 py-2 text-sm font-semibold transition-all duration-200',
+          value === TradeTypes.BUY ? 'bg-brand-primary text-white shadow-lg' : 'hover:text-brand-primary text-gray-400',
           classNameButton
         )}
       >
@@ -28,10 +26,10 @@ export const TradeSideSwitch = ({ value, onChange, className, classNameButton }:
         type="button"
         onClick={() => onChange(TradeTypes.SELL)}
         className={cn(
-          'flex-1 rounded-md px-8 py-2 text-sm font-semibold transition-all duration-200',
+          'flex-1 cursor-pointer rounded-md px-8 py-2 text-sm font-semibold transition-all duration-200',
           value === TradeTypes.SELL
             ? 'bg-brand-primary text-white shadow-lg'
-            : 'text-gray-400 hover:bg-white/5 hover:text-white',
+            : 'hover:text-brand-primary text-gray-400',
           classNameButton
         )}
       >

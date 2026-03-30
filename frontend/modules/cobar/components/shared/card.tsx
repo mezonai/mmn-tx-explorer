@@ -10,6 +10,7 @@ interface CardProps {
   children?: ReactNode;
   className?: string;
   isLoading?: boolean;
+  onClick?: () => void;
 }
 
 export default function Card({
@@ -21,13 +22,30 @@ export default function Card({
   children,
   className = '',
   isLoading,
+  onClick,
 }: CardProps) {
+  const isClickable = !!onClick;
+
   return (
     <div
       className={cn(
         'border-line bg-background dark:bg-brand-primary/5 shadow-brand-primary/10 rounded-2xl border shadow-md lg:p-4',
+        isClickable && 'hover:border-brand-primary/50 cursor-pointer transition-colors',
         className
       )}
+      onClick={onClick}
+      role={isClickable ? 'button' : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+      onKeyDown={
+        isClickable
+          ? (e) => {
+              if (e.code === 'Enter' || e.code === 'Space') {
+                e.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
     >
       {isLoading ? (
         <div className="bg-brand-primary/10 h-24 w-full animate-pulse rounded-md"></div>

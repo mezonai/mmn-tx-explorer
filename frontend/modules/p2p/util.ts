@@ -1,5 +1,9 @@
 import { LinkLocation, OrderStatus } from './types';
 
+export const getOrderStatusLabel = (status: OrderStatus): string => {
+  return String(status).replace(/_/g, ' ');
+};
+
 export const getOrderStatusInfo = (type: OrderStatus) => {
   switch (type) {
     case OrderStatus.OPEN:
@@ -15,6 +19,8 @@ export const getOrderStatusInfo = (type: OrderStatus) => {
       return 'brand';
     case OrderStatus.WAITING_TRANSFER:
       return 'primary';
+    case OrderStatus.EXPIRED:
+      return 'secondary';
     default:
       return 'default';
   }
@@ -68,3 +74,19 @@ export const generateMarkdownPayload = (text: string) => {
     type: 'lk',
   }));
 };
+
+export const createTrackOrderComponents = (url: string) => [
+    {
+      components: [
+        {
+          id: '',
+          type: 1,
+          component: {
+            label: '📦 Track My Order',
+            style: 3,
+            url,
+          },
+        },
+      ],
+    },
+  ];

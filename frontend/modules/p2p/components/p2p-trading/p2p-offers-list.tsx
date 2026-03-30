@@ -19,7 +19,6 @@ import { OfferOrdersModal } from './offer-orders-modal';
 import { ShareOfferModal } from './share-offer-modal';
 import { TriangleAlert, Loader2 } from 'lucide-react';
 import { NumberUtil } from '@/utils';
-import { cn } from '@/lib/utils';
 
 interface P2POffersTableProps {
   offers: P2POffer[] | undefined;
@@ -116,7 +115,7 @@ export const P2POffersTabs = ({
         />
       ),
       skeletonContent: <Skeleton className="h-3 w-24" />,
-      align: 'left',
+      align: 'center',
     },
     isMyOffer
       ? {
@@ -124,18 +123,13 @@ export const P2POffersTabs = ({
           renderCell: (offer) => (
             <Chip
               variant={offer.side === TradeTypes.SELL ? 'error' : 'success'}
-              className={cn(
-                'w-16 justify-center rounded-full py-0.5 text-[10px] font-bold',
-                offer.side === TradeTypes.SELL
-                  ? 'border-red-500/20 bg-red-500/10 text-red-500'
-                  : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-500'
-              )}
+              className="min-w-[60px] justify-center rounded-full px-3 py-0.5 text-[10px] font-bold uppercase"
             >
               {offer.side}
             </Chip>
           ),
           skeletonContent: <Skeleton className="h-5 w-16 rounded-full" />,
-          align: 'left',
+          align: 'center',
         }
       : null,
     {
@@ -169,7 +163,7 @@ export const P2POffersTabs = ({
                 {available.toFormat()} / {total.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}
               </span>
               <span className="text-brand-primary text-[10px] font-bold tracking-wider uppercase">
-                {sold.toFormat()} {APP_CONFIG.CHAIN_SYMBOL} Sold
+                {sold.toFormat()} {APP_CONFIG.CHAIN_SYMBOL} {offer.side === TradeTypes.SELL ? 'Sold' : 'Bought'}
               </span>
             </div>
             <div className="w-50 space-y-1.5">
@@ -206,7 +200,7 @@ export const P2POffersTabs = ({
             </Button>
           ),
           skeletonContent: <Skeleton className="h-8 w-20 rounded-md" />,
-          align: 'left',
+          align: 'center',
         }
       : null,
     {
@@ -241,7 +235,7 @@ export const P2POffersTabs = ({
       align: 'left',
     },
     {
-      headerContent: 'Action',
+      headerContent: 'ACTION',
       renderCell: (offer) => {
         const isUserSeller = user && offer.offer_creator_user_id === user?.id;
 

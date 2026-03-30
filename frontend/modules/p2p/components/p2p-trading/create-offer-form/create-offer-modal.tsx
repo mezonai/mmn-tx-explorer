@@ -21,9 +21,6 @@ import { useUser } from '@/providers';
 import { mmnClient } from '@/modules/auth';
 import { NumberUtil } from '@/utils';
 import { ETransferType } from '@/modules/transaction';
-import { useUserPaymentInfos } from '@/modules/p2p/hooks/usePaymentInfo';
-import { BANK_OPTIONS } from '@/modules/p2p/constants';
-import { BankOption } from '@/modules/p2p/types';
 
 export const CreateOfferModal = () => {
   const [open, setOpen] = useState(false);
@@ -54,49 +51,26 @@ export const CreateOfferModal = () => {
       price_rate: '0',
       limit: { min: 0, max: 0 },
       bank_info: { bank: 'MB' as const, account_name: '', account_number: '' },
+      payment_info_id: undefined,
       symbol: 'MZD',
     },
     mode: 'onChange',
   });
 
-  const { data: savedPayments } = useUserPaymentInfos();
-  const [hasInitialized, setHasInitialized] = useState(false);
+  const [hasUnsavedPaymentChanges, setHasUnsavedPaymentChanges] = useState(false);
+  const side = form.watch('side');
 
+  // Reset non-payment fields when modal opens
   useEffect(() => {
-    if (!open) {
-      setHasInitialized(false);
-      return;
-    }
-
-    if (open && !hasInitialized && savedPayments) {
-      const primaryAccount = savedPayments.find((p) => p.is_primary) || savedPayments[0];
-      let initialBankInfo = { bank: 'MB' as const, account_name: '', account_number: '', is_primary: false };
-
-      if (primaryAccount) {
-        const bankValue = BANK_OPTIONS.find((opt) => opt.label === primaryAccount.bank_name)?.value as BankOption;
-        if (bankValue) {
-          initialBankInfo = {
-            bank: bankValue as any,
-            account_number: primaryAccount.account_number,
-            account_name: primaryAccount.account_name,
-            is_primary: primaryAccount.is_primary,
-          };
-        }
-      }
-
-      form.reset({
-        side: TradeTypes.SELL,
-        amount: 0,
-        price_rate: '0',
-        limit: { min: 0, max: 0 },
-        bank_info: initialBankInfo,
-        symbol: 'MZD',
-      });
+    if (open) {
+      form.setValue('amount', 0);
+      form.setValue('price_rate', '0');
+      form.setValue('limit', { min: 0, max: 0 });
+      form.setValue('side', TradeTypes.SELL);
       setShowConfirm(false);
       setPendingData(null);
-      setHasInitialized(true);
     }
-  }, [open, hasInitialized, savedPayments, form]);
+  }, [open, form]);
 
   useEffect(() => {
     let mounted = true;
@@ -118,9 +92,15 @@ export const CreateOfferModal = () => {
     };
   }, [open, user?.id]);
 
-  const side = form.watch('side');
-
   const onPreSubmit = (data: CreateOfferFormValues) => {
+    // For SELL offers, payment_info_id is required
+    if (data.side === TradeTypes.SELL && !data.payment_info_id) {
+      toast.error('Payment information required', {
+        description:
+          'Please set up and save your bank account information in the Payment section before creating a SELL offer',
+      });
+      return;
+    }
     setPendingData(data);
     setShowConfirm(true);
   };
@@ -136,14 +116,7 @@ export const CreateOfferModal = () => {
         min: pendingData.limit.min,
         max: pendingData.limit.max,
       },
-      bank_info:
-        pendingData.side === TradeTypes.SELL
-          ? {
-            bank: pendingData.bank_info.bank,
-            account_number: pendingData.bank_info.account_number || '',
-            account_name: pendingData.bank_info.account_name || '',
-          }
-          : undefined,
+      payment_info_id: pendingData.payment_info_id,
     };
 
     try {
@@ -195,7 +168,14 @@ export const CreateOfferModal = () => {
           <DialogHeader className="border-b--border mx-6 -mt-6 border-b py-4">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <DialogTitle className="text-brand-primary text-lg font-bold">Create New Offer</DialogTitle>
-              <TradeSideSwitch className="w-full md:w-48" value={side} onChange={(val) => form.setValue('side', val)} />
+              <TradeSideSwitch
+                className="w-full md:w-48"
+                value={side}
+                onChange={(val) => {
+                  form.reset();
+                  form.setValue('side', val);
+                }}
+              />
             </div>
           </DialogHeader>
 
@@ -206,7 +186,14 @@ export const CreateOfferModal = () => {
               <AmountSection control={form.control} userBalance={balance} setValue={form.setValue} />
               <TradeTypeSection control={form.control} trigger={form.trigger} />
               {side === TradeTypes.SELL && (
-                <PaymentSection control={form.control} setValue={form.setValue} watch={form.watch} open={open} />
+                <PaymentSection
+                  control={form.control}
+                  setValue={form.setValue}
+                  watch={form.watch}
+                  open={open}
+                  shouldAutoFill={side === TradeTypes.SELL}
+                  onUnsavedChangesChange={setHasUnsavedPaymentChanges}
+                />
               )}
             </div>
 
@@ -222,6 +209,7 @@ export const CreateOfferModal = () => {
               </Button>
               <Button
                 type="submit"
+                disabled={side === TradeTypes.SELL && hasUnsavedPaymentChanges}
                 className="bg-brand-primary flex items-center gap-2 px-8 py-2 text-sm font-bold text-white shadow-lg transition disabled:opacity-70"
               >
                 <Send className="h-3 w-3" />

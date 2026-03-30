@@ -25,14 +25,12 @@ export const Profile = () => {
   };
 
   return (
-    <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
-      <h1 className="text-2xl font-bold text-foreground mb-6">Profile Settings</h1>
+    <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8">
+      <h1 className="text-foreground mb-6 text-2xl font-bold">Profile Settings</h1>
 
       <ProfileTabs activeTab={activeTab} onChange={setActiveTab} />
 
-      <div className="w-full">
-        {renderTabContent()}
-      </div>
+      <div className="w-full">{renderTabContent()}</div>
     </main>
   );
 };

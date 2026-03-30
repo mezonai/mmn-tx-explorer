@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { useUser } from '@/providers/AppProvider';
 import { P2PService } from '../api';
-import { P2POrder, P2POffer, BankOption } from '../types';
+import { P2POrder, P2POffer } from '../types';
 import { toast } from 'sonner';
+
 export const useCreateOrder = () => {
   const { user } = useUser();
   const [isLoading, setIsLoading] = useState(false);
@@ -13,7 +14,7 @@ export const useCreateOrder = () => {
     offer: P2POffer,
     amountMZD: number,
     payableAmount: number,
-    bank_info?: { bank: BankOption; account_number: string; account_name: string }
+    payment_info_id?: number
   ): Promise<P2POrder | null> => {
     if (!user?.walletAddress) {
       throw new Error('User wallet not available');
@@ -22,7 +23,7 @@ export const useCreateOrder = () => {
     try {
       const order = await P2PService.createOrder(offer.offer_id, {
         amount: amountMZD,
-        bank_info: bank_info,
+        ...(payment_info_id !== undefined && { payment_info_id }),
       });
       return order;
     } catch (error: any) {
