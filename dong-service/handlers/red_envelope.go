@@ -330,6 +330,39 @@ func (r *RedEnvelopeHandler) GetDetailRedEnvelopeByID(c *gin.Context) {
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeRetrieved, result))
 }
 
+// GetRedEnvelopeStatus godoc
+// @Summary get red envelope status by id
+// @Description get red envelope status by id
+// @Tags red_envelopes
+// @Accept json
+// @Produce json
+// @Param id path int true "Red Envelope ID"
+// @Success 200 {object} models.Response{data=object}
+// @Failure 400 {object} models.Response
+// @Failure 401 {object} models.Response
+// @Failure 404 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Router /api/v1/red-envelopes/qr/:id/status [get]
+func (r *RedEnvelopeHandler) GetRedEnvelopeStatus(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrMissingRedEnvelopeID))
+		return
+	}
+
+	status, err := r.repo.GetRedEnvelopeStatus(id)
+	if err != nil {
+		logger.Error().Err(err).Str("envelope_id", id).Msg("Failed to get red envelope status")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, models.SuccessResponse(map[string]interface{}{
+		"id":     id,
+		"status": status,
+	}))
+}
+
 // CloseSessionRedEnvelope godoc
 // @Summary close red envelope session
 // @Description close red envelope session
