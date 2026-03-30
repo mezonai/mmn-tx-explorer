@@ -294,24 +294,31 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 
 // GetStats returns campaign statistics
 func (r *CampaignStatisticsRepository) GetStats() (*models.CampaignStatsResponse, error) {
-	query := fmt.Sprintf(`
+	mainQuery := fmt.Sprintf(`
 		SELECT 
 			COUNT(CASE WHEN dc.status = $1 THEN 1 END) as total_campaigns_active,
-			COALESCE(SUM(cs.total_amount), 0) as total_amount,
-			(SELECT COUNT(DISTINCT sender_wallet) FROM %s.campaign_contributor) as total_contributors
+			COALESCE(SUM(cs.total_amount), 0) as total_amount
 		FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
-	`, r.dongSchema, r.dongSchema, r.dongSchema)
+	`, r.dongSchema, r.dongSchema)
 
 	var stats models.CampaignStatsResponse
-	err := r.db.QueryRow(query, constants.CampaignStatusActive).Scan(
+	err := r.db.QueryRow(mainQuery, constants.CampaignStatusActive).Scan(
 		&stats.TotalCampaignsActive,
 		&stats.TotalAmount,
-		&stats.TotalContributors,
 	)
-
 	if err != nil {
-		return nil, fmt.Errorf("failed to get campaign stats: %w", err)
+		return nil, fmt.Errorf("failed to get campaign base stats: %w", err)
+	}
+
+	contributorQuery := fmt.Sprintf(`
+		SELECT COUNT(DISTINCT sender_wallet) 
+		FROM %s.campaign_contributor
+	`, r.dongSchema)
+
+	err = r.db.QueryRow(contributorQuery).Scan(&stats.TotalContributors)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get campaign total contributors: %w", err)
 	}
 
 	return &stats, nil
