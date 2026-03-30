@@ -113,9 +113,13 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 
 		offerRepo := repository.NewOfferRepository(database.GetDB(), cfg.Database.Schema)
 		orderRepo := repository.NewOrderRepository(database.GetDB(), cfg.Database.Schema)
+		userPaymentRepo := repository.NewUserPaymentInfoRepository(database.GetDB(), cfg.Database.Schema)
 
-		offerService := services.NewOfferService(offerRepo, intermediaryWalletRepo, walletRepo, orderRepo, blockchainService)
-		orderService := services.NewOrderService(orderRepo, offerRepo, intermediaryWalletRepo, blockchainService, offerService)
+		userPaymentService := services.NewUserPaymentService(userPaymentRepo)
+		userPaymentHandler := handlers.NewUserPaymentHandler(userPaymentService)
+
+		offerService := services.NewOfferService(offerRepo, intermediaryWalletRepo, walletRepo, orderRepo, blockchainService, userPaymentRepo)
+		orderService := services.NewOrderService(orderRepo, offerRepo, intermediaryWalletRepo, userPaymentRepo, blockchainService, offerService)
 
 		offerService.SetOrderService(orderService)
 
@@ -128,6 +132,13 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		offersPrivate.GET("/:id/orders", orderHandler.ListOrdersForOffer)
 		offersPrivate.POST("/:id/orders", orderHandler.CreateOrder)
 		offersPrivate.PATCH("/:id/cancel", offerHandler.CancelOffer)
+
+		// User Payments (private)
+		userPayments := v1.Group("/user-payments")
+		userPayments.Use(middleware.Authentication(cfg.JWT.Secret))
+		userPayments.POST("", userPaymentHandler.UpdatePaymentInfo)
+		userPayments.GET("/me", userPaymentHandler.GetMyPaymentInfos)
+		userPayments.DELETE("/:id", userPaymentHandler.DeletePaymentInfo)
 
 		// Offers (public)
 		offersPublic := v1.Group("/offers")

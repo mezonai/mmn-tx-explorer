@@ -6,21 +6,33 @@ import { P2POffer } from '../../types';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { APP_CONFIG } from '@/configs/app.config';
-import { formatCurrency } from '@/modules/p2p/util';
+import BigNumber from 'bignumber.js';
+import { NumberUtil } from '@/utils/number.util';
 
 interface CancelConfirmDialogProps {
   offer: P2POffer;
+  onCancelStart?: (offerId: string) => void;
 }
 
-export const CancelConfirmDialog = ({ offer }: CancelConfirmDialogProps) => {
+export const CancelConfirmDialog = ({ offer, onCancelStart }: CancelConfirmDialogProps) => {
   const [open, setOpen] = useState(false);
   const { mutateAsync: cancelOfferAsync, isPending } = useCancelOffer();
   const router = useRouter();
-  const totalVND = offer.price_rate > 0 ? offer.amount * offer.price_rate : 0;
+  const amount = NumberUtil.scaleDownBigNumber(new BigNumber(offer.amount));
+  const totalVND = offer.price_rate > 0 ? amount.multipliedBy(offer.price_rate) : new BigNumber(0);
 
   const handleCancel = async () => {
     if (offer) {
       try {
+        // Notify parent that cancel started (useful to show overlay)
+        if (onCancelStart) {
+          try {
+            onCancelStart(offer.offer_id);
+          } catch {
+            // ignore
+          }
+        }
+
         await cancelOfferAsync(offer.offer_id);
         toast.success('Offer cancelled successfully');
         setOpen(false);
@@ -90,7 +102,7 @@ export const CancelConfirmDialog = ({ offer }: CancelConfirmDialogProps) => {
                   <div>
                     <label className="text-muted-foreground mb-1 block text-[10px] sm:text-xs">Minimum</label>
                     <div className="bg-input/30 text-foreground flex w-full justify-between rounded border px-1.5 py-1 text-xs sm:px-2 sm:py-1.5 sm:text-sm">
-                      {offer.limit.min}
+                      {NumberUtil.formatAndScaleDownBigNumber(new BigNumber(offer.limit.min))}
                       <span className="pt-0.5 text-[10px] text-gray-500 sm:text-xs">{APP_CONFIG.CHAIN_SYMBOL}</span>
                     </div>
                   </div>
@@ -98,7 +110,7 @@ export const CancelConfirmDialog = ({ offer }: CancelConfirmDialogProps) => {
                   <div>
                     <label className="text-muted-foreground mb-1 block text-[10px] sm:text-xs">Maximum</label>
                     <div className="bg-input/30 text-foreground flex w-full justify-between rounded border px-1.5 py-1 text-xs sm:px-2 sm:py-1.5 sm:text-sm">
-                      {offer.limit.max}
+                      {NumberUtil.formatAndScaleDownBigNumber(new BigNumber(offer.limit.max))}
                       <span className="pt-0.5 text-[10px] text-gray-500 sm:text-xs">{APP_CONFIG.CHAIN_SYMBOL}</span>
                     </div>
                   </div>
@@ -119,7 +131,7 @@ export const CancelConfirmDialog = ({ offer }: CancelConfirmDialogProps) => {
                 </label>
                 <div className="group relative">
                   <div className="bg-input/30 border-border w-full rounded-md border px-2 py-2 text-sm font-bold sm:px-3 sm:py-2.5 sm:text-base lg:text-lg">
-                    {formatCurrency(offer.amount)}
+                    {amount.toFormat()}
 
                     <span className="absolute top-2 right-2 text-[10px] font-bold text-gray-500 sm:top-2.5 sm:text-xs lg:top-4.5">
                       {APP_CONFIG.CHAIN_SYMBOL}
@@ -134,7 +146,7 @@ export const CancelConfirmDialog = ({ offer }: CancelConfirmDialogProps) => {
                 </label>
                 <div className="border-border bg-card flex h-20 flex-col items-center justify-center rounded-lg border px-3 py-3 sm:h-24 sm:px-4 sm:py-4">
                   <span className="text-utility-success-600 text-base font-bold sm:text-lg lg:text-xl">
-                    {formatCurrency(totalVND)}
+                    {totalVND.toFormat()}
                   </span>
                   <span className="text-muted-foreground mt-0.5 text-[10px] font-bold sm:mt-1 sm:text-xs">VND</span>
                 </div>

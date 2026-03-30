@@ -1,16 +1,19 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { P2PService } from '../api';
-import { P2P_QUERY_KEYS } from '../constants';
-
-const WS_INVALIDATE_DELAY = 1000;
+import { P2P_QUERY_KEYS, WS_INVALIDATE_DELAY } from '../constants';
 
 export const useCancelOffer = () => {
   const queryClient = useQueryClient();
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [cancelingOfferId, setCancelingOfferId] = useState<string | null>(null);
 
   const mutation = useMutation({
     mutationFn: (offerId: string) => P2PService.cancelOffer(offerId),
+
+    onMutate: (offerId) => {
+      setCancelingOfferId(offerId);
+    },
 
     onSettled: (_data, _error, offerId) => {
       if (!offerId) return;
@@ -29,6 +32,7 @@ export const useCancelOffer = () => {
         queryClient.invalidateQueries({
           queryKey: [P2P_QUERY_KEYS.OFFERS],
         });
+        setCancelingOfferId(null);
       }, WS_INVALIDATE_DELAY);
     },
   });
@@ -41,5 +45,5 @@ export const useCancelOffer = () => {
     };
   }, []);
 
-  return mutation;
+  return { ...mutation, cancelingOfferId };
 };
