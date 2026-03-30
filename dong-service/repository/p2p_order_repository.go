@@ -515,7 +515,7 @@ func (r *OrderRepository) CountOrdersByWalletAddress(ctx context.Context, wallet
 	return total, nil
 }
 
-func (r *OrderRepository) CountOrdersByOffer(ctx context.Context, offerID int64) (int64, error) {
+func (r *OrderRepository) CountOrdersByOffer(ctx context.Context, tx *sql.Tx, offerID int64) (int64, error) {
 	query := fmt.Sprintf(`
 		SELECT COUNT(*) 
 		FROM %s.p2p_orders
@@ -523,11 +523,15 @@ func (r *OrderRepository) CountOrdersByOffer(ctx context.Context, offerID int64)
 	`, r.dongSchema)
 
 	var total int64
-	err := r.db.QueryRowContext(ctx, query, offerID).Scan(&total)
+	var err error
+	if tx != nil {
+		err = tx.QueryRowContext(ctx, query, offerID).Scan(&total)
+	} else {
+		err = r.db.QueryRowContext(ctx, query, offerID).Scan(&total)
+	}
 	if err != nil {
 		return 0, fmt.Errorf("failed to count orders by offer: %w", err)
 	}
-
 	return total, nil
 }
 
