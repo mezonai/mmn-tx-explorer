@@ -3087,58 +3087,146 @@ func (p *PostgresConnector) updateRedEnvelopeClaimStatus(ctx context.Context, tx
 		ClaimID int64 `json:"claim_id"`
 	}
 
-	type claimTx struct {
-		ID   int64
-		Hash string
-	}
-	claims := make([]claimTx, 0, len(txs))
+	claimTxMap := make(map[int64]common.Transaction)
+	claimIDs := make([]int64, 0, len(txs))
 
 	for _, t := range txs {
 		var extra Extra
 		if err := json.Unmarshal([]byte(t.ExtraInfo), &extra); err != nil || extra.ClaimID == 0 {
-			// Fallback to wallet/amount matching if claim_id is missing (for legacy or malformed txs)
 			log.Warn().Str("tx_hash", t.Hash).Msg("claim_id missing in extra_info, skipping precise reconciliation")
 			continue
 		}
-		claims = append(claims, claimTx{ID: extra.ClaimID, Hash: t.Hash})
+		claimTxMap[extra.ClaimID] = t
+		claimIDs = append(claimIDs, extra.ClaimID)
 	}
 
-	if len(claims) == 0 {
+	if len(claimIDs) == 0 {
+		return nil
+	}
+
+	// Fetch expected claim details for validation
+	querySelect := `
+		SELECT 
+			rec.id, 
+			rec.claimer_wallet, 
+			rec.amount, 
+			re.red_envelope_wallet
+		FROM dong_schema.red_envelope_claim rec
+		JOIN dong_schema.red_envelope re ON rec.red_envelope_id = re.id
+		WHERE rec.id = ANY($1::bigint[])
+			AND rec.status = 'PENDING'
+		FOR UPDATE OF rec
+	`
+
+	rows, err := tx.QueryContext(ctx, querySelect, pq.Array(claimIDs))
+	if err != nil {
+		return fmt.Errorf("failed to select red envelope claims for validation: %w", err)
+	}
+	defer rows.Close()
+
+	type claimRow struct {
+		ID                int64
+		ClaimerWallet     string
+		Amount            int64
+		IntermediaryWallet string
+	}
+
+	claimMap := make(map[int64]claimRow)
+	for rows.Next() {
+		var c claimRow
+		if err := rows.Scan(&c.ID, &c.ClaimerWallet, &c.Amount, &c.IntermediaryWallet); err != nil {
+			log.Error().Err(err).Msg("failed to scan red envelope claim row")
+			return err
+		}
+		claimMap[c.ID] = c
+	}
+
+	type validClaim struct {
+		ID   int64
+		Hash string
+	}
+	validClaims := make([]validClaim, 0)
+
+	for id, t := range claimTxMap {
+		c, ok := claimMap[id]
+		if !ok {
+			log.Error().Int64("claim_id", id).Str("tx_hash", t.Hash).
+				Msg("claim validation failed: claim not found or not PENDING")
+			continue
+		}
+
+		// Check that the transaction is from the correct intermediary wallet
+		if t.FromAddress != c.IntermediaryWallet {
+			log.Error().Int64("claim_id", id).Str("tx_hash", t.Hash).
+				Str("expected_wallet", c.IntermediaryWallet).Str("actual_wallet", t.FromAddress).
+				Msg("claim validation failed: intermediary wallet mismatch")
+			continue
+		}
+
+		// Check that the transaction is to the correct claimer wallet
+		if t.ToAddress != c.ClaimerWallet {
+			log.Error().Int64("claim_id", id).Str("tx_hash", t.Hash).
+				Str("expected_wallet", c.ClaimerWallet).Str("actual_wallet", t.ToAddress).
+				Msg("claim validation failed: claimer wallet mismatch")
+			continue
+		}
+
+		// Check that the transaction amount matches the claim amount
+		txValueBig := new(big.Int)
+		if _, ok := txValueBig.SetString(t.Value, 10); !ok {
+			log.Error().Int64("claim_id", id).Str("tx_hash", t.Hash).
+				Str("bad_value", t.Value).
+				Msg("claim validation failed: could not parse tx value as big.Int")
+			continue
+		}
+
+		if txValueBig.Int64() != c.Amount {
+			log.Error().Int64("claim_id", id).Str("tx_hash", t.Hash).
+				Int64("expected_amount", c.Amount).Int64("actual_amount", txValueBig.Int64()).
+				Msg("claim validation failed: amount mismatch")
+			continue
+		}
+
+		validClaims = append(validClaims, validClaim{ID: id, Hash: t.Hash})
+	}
+
+	if len(validClaims) == 0 {
+		log.Info().Msg("no valid claims to update")
 		return nil
 	}
 
 	// Sort by ID to prevent database deadlocks on concurrent updates
-	sort.Slice(claims, func(i, j int) bool {
-		return claims[i].ID < claims[j].ID
+	sort.Slice(validClaims, func(i, j int) bool {
+		return validClaims[i].ID < validClaims[j].ID
 	})
 
-	validClaimIDs := make([]int64, len(claims))
-	validTxHashes := make([]string, len(claims))
-	for i, c := range claims {
-		validClaimIDs[i] = c.ID
-		validTxHashes[i] = c.Hash
+	finalClaimIDs := make([]int64, len(validClaims))
+	finalTxHashes := make([]string, len(validClaims))
+	for i, c := range validClaims {
+		finalClaimIDs[i] = c.ID
+		finalTxHashes[i] = c.Hash
 	}
 
-	query := `
+	queryUpdate := `
 		UPDATE dong_schema.red_envelope_claim rec
 		SET status = 'SUCCESS', transaction_hash = v.tx_hash
 		FROM unnest($1::bigint[], $2::text[]) AS v(id, tx_hash)
 		WHERE rec.id = v.id AND rec.status = 'PENDING'
 		RETURNING rec.id
 	`
-	rows, err := tx.QueryContext(ctx, query, pq.Array(validClaimIDs), pq.Array(validTxHashes))
+	rowsUpdate, err := tx.QueryContext(ctx, queryUpdate, pq.Array(finalClaimIDs), pq.Array(finalTxHashes))
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to batch reconcile red envelope claims")
 		return err
 	}
-	defer rows.Close()
+	defer rowsUpdate.Close()
 
 	reconciledCount := 0
-	for rows.Next() {
+	for rowsUpdate.Next() {
 		reconciledCount++
 	}
 
-	if err := rows.Err(); err != nil {
+	if err := rowsUpdate.Err(); err != nil {
 		log.Error().Err(err).Msg("Error occurred while reading reconciled rows")
 		return err
 	}
