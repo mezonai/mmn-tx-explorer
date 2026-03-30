@@ -156,7 +156,7 @@ func (s *OrderService) ListOrdersByOffer(ctx context.Context, offerID int64, pag
 		return nil, 0, err
 	}
 
-	count, err := s.repo.CountOrdersByOffer(ctx, offerID)
+	count, err := s.repo.CountOrdersByOffer(ctx, nil, offerID)
 	if err != nil {
 		return nil, 0, err
 	}
