@@ -350,7 +350,7 @@ func (r *OrderRepository) GetOrderByIDForUpdate(ctx context.Context, id int64, t
 		p.id, p.user_id, p.bank_name, p.account_number, p.account_name, p.is_primary, p.created_at, p.updated_at
 		FROM %s.p2p_orders o
 		LEFT JOIN %s.user_payment_info p ON o.payment_info_id = p.id
-		WHERE o.order_id = $1 FOR UPDATE`, r.dongSchema, r.dongSchema)
+		WHERE o.order_id = $1 FOR UPDATE OF o`, r.dongSchema, r.dongSchema)
 	var o models.Order
 
 	// Payment info fields
