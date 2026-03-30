@@ -34,7 +34,7 @@ type IOrderService interface {
 	ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o *models.Order) error
 	ConfirmOrderAsSeller(ctx context.Context, orderID int64, o *models.Order, offer *models.Offer) error
 	GetOrdersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Order, int64, error)
-	ReopenOrder(ctx context.Context, orderID int64, order *models.Order) error
+	ReopenOrder(ctx context.Context, orderID int64) error
 }
 
 func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *models.CreateOrderRequest, walletAddress string, buyerUserID string) (*models.Order, *models.Offer, error) {
@@ -387,17 +387,7 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 	return nil
 }
 
-func (s *OrderService) ReopenOrder(ctx context.Context, orderID int64, order *models.Order) error {
-	// Only EXPIRED orders can be reopened
-	if order.Status != constants.TradingExpired {
-		return fmt.Errorf("only expired orders can be reopened; current status=%s", order.Status)
-	}
-
-	// Check if order has an associated offer
-	if order.OfferID == nil {
-		return fmt.Errorf("order has no associated offer")
-	}
-
+func (s *OrderService) ReopenOrder(ctx context.Context, orderID int64) error {
 	db := database.GetDB()
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -410,18 +400,23 @@ func (s *OrderService) ReopenOrder(ctx context.Context, orderID int64, order *mo
 	}()
 
 	// Lock the order row to prevent concurrent reopen/expiration operations
-	lockedOrder, err := s.repo.GetOrderByID(ctx, orderID)
+	lockedOrder, err := s.repo.GetOrderByIDForUpdate(ctx, orderID, tx)
 	if err != nil {
 		return fmt.Errorf("failed to lock order: %w", err)
 	}
 
-	// Double-check status after acquiring lock (may have changed)
+	// Only EXPIRED orders can be reopened
 	if lockedOrder.Status != constants.TradingExpired {
-		return fmt.Errorf("order status changed; current status=%s", lockedOrder.Status)
+		return fmt.Errorf("only expired orders can be reopened; current status=%s", lockedOrder.Status)
+	}
+
+	// Check if order has an associated offer
+	if lockedOrder.OfferID == nil {
+		return fmt.Errorf("order has no associated offer")
 	}
 
 	// Get the offer and check if it's still available
-	offer, err := s.offerRepo.GetOfferByIDForUpdate(ctx, *order.OfferID, tx)
+	offer, err := s.offerRepo.GetOfferByIDForUpdate(ctx, *lockedOrder.OfferID, tx)
 	if err != nil {
 		return fmt.Errorf("failed to fetch offer: %w", err)
 	}
@@ -431,16 +426,16 @@ func (s *OrderService) ReopenOrder(ctx context.Context, orderID int64, order *mo
 	}
 
 	// Check if offer has enough available quantity
-	if offer.AvailableAmount.Compare(order.OrderAmount) < 0 {
+	if offer.AvailableAmount.Compare(lockedOrder.OrderAmount) < 0 {
 		if offer.AvailableAmount.Sign() == 0 {
 			return fmt.Errorf("this offer has been completely sold out. Please find another offer")
 		}
 		return fmt.Errorf("this offer only has %s available, but your order needs %s. Please create a new order with a smaller amount or find another offer",
-			offer.AvailableAmount.String(), order.OrderAmount.String())
+			offer.AvailableAmount.String(), lockedOrder.OrderAmount.String())
 	}
 
 	// Reserve the quantity again
-	if err = s.offerRepo.ReserveQuantity(ctx, *order.OfferID, order.OrderAmount, tx); err != nil {
+	if err = s.offerRepo.ReserveQuantity(ctx, *lockedOrder.OfferID, lockedOrder.OrderAmount, tx); err != nil {
 		return fmt.Errorf("failed to reserve offer quantity: %w", err)
 	}
 
@@ -449,8 +444,8 @@ func (s *OrderService) ReopenOrder(ctx context.Context, orderID int64, order *mo
 
 	// Restore status to what it was before expiration (OPEN or PENDING)
 	restoredStatus := constants.TradingOpen // default to OPEN
-	if order.PreviousStatus != nil && *order.PreviousStatus != "" {
-		restoredStatus = *order.PreviousStatus
+	if lockedOrder.PreviousStatus != nil && *lockedOrder.PreviousStatus != "" {
+		restoredStatus = *lockedOrder.PreviousStatus
 	}
 
 	// Update order status back to previous status with new expiration time

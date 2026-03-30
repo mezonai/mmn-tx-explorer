@@ -38,7 +38,6 @@ type Order struct {
 	OfferCreatorUserID        string             `json:"offer_creator_user_id,omitempty" db:"-"`
 	PriceRate                 *float64           `json:"price_rate,omitempty" db:"-"`
 	OfferSide                 *OfferSide         `json:"side,omitempty" db:"-"`
-	PreviousStatus            *string            `json:"previous_status,omitempty" db:"previous_status"`
 }
 
 type CreateOrderRequest struct {

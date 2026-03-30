@@ -110,7 +110,6 @@ const (
 	TradingExpired   = "EXPIRED"
 	TradingFailed    = "FAILED"
 	TradingCompleted = "COMPLETED"
-	TradingExpired   = "EXPIRED"
 )
 
 const (

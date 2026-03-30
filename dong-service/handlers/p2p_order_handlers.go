@@ -383,7 +383,7 @@ func (h *OrderHandler) ReopenOrder(c *gin.Context) {
 		return
 	}
 
-	if err := h.orderService.ReopenOrder(c.Request.Context(), orderID, order); err != nil {
+	if err := h.orderService.ReopenOrder(c.Request.Context(), orderID); err != nil {
 		logger.Error().Err(err).Int64("order_id", orderID).Msg("failed to reopen order")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "failed to reopen order: "+err.Error()))
 		return
