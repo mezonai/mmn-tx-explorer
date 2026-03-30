@@ -72,6 +72,10 @@ export class P2PService {
     const { data } = await apiDongClient.get<{ data: P2POrder }>(P2P_ENDPOINTS.ORDER_BY_ID(orderId));
     return data.data;
   }
+  static async getOrdersByOffer(offerId: string): Promise<P2POrder[]> {
+    const { data } = await apiDongClient.get<{ data: P2POrder[] }>(P2P_ENDPOINTS.ORDERS_BY_OFFER(offerId));
+    return data.data;
+  }
 
   static async updateOrderStatus(orderId: string, status: string, transferCode?: string): Promise<P2POrder> {
     const updateData: UpdateOrderStatusRequest = {
