@@ -49,7 +49,6 @@ export const BANK_OPTIONS = [
   { value: 'TCB', label: 'Techcombank' },
   { value: 'ACB', label: 'ACB' },
   { value: 'TPBANK', label: 'TPBank' },
-  { value: 'VIETCOMBANK', label: 'Vietcombank' },
 ] as const;
 
 export const WS_INVALIDATE_DELAY = 1000;
