@@ -2,6 +2,7 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { P2POffer, P2POrder, TradeTypes } from '../../types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useEffect, useState } from 'react';
 import { P2PService } from '../../api';
 import { NumberUtil } from '@/utils';
@@ -118,29 +119,35 @@ export const OfferOrdersModal = ({ offer, open, onOpenChange }: OfferOrdersModal
       <DialogContent className="max-w-3xl gap-0 border-gray-800 p-6 text-white">
         <DialogHeader className="mb-4 md:mb-6">
           <div className="flex items-center gap-3">
-            <DialogTitle className="text-lg font-bold tracking-tight md:text-2xl">Offer #{offer.offer_id}</DialogTitle>
-            <Chip
-              variant={offer.side === TradeTypes.SELL ? 'error' : 'success'}
-            >
-              {offer.side}
-            </Chip>
+            <DialogTitle className="text-card-foreground text-lg font-bold tracking-tight md:text-2xl">
+              Offer #{offer.offer_id}
+            </DialogTitle>
+            <Chip variant={offer.side === TradeTypes.SELL ? 'error' : 'success'}>{offer.side}</Chip>
           </div>
           <p className="mt-1 text-sm text-gray-400">Partial fills + cancellations. Use this to diagnose disputes.</p>
         </DialogHeader>
 
         <div className="mb-6 grid grid-cols-2 gap-3 md:mb-8 md:gap-4">
-          <div className="rounded-2xl border border-gray-800/50 bg-card p-3 md:rounded-3xl md:p-5">
-            <p className="mb-1 text-[8px] font-black tracking-[0.1em] text-gray-500 uppercase md:mb-2 md:text-[10px]">
-              TOTAL
-            </p>
-            <p className="text-lg font-black text-white md:text-2xl">{total.toFormat()} đồng</p>
-          </div>
-          <div className="rounded-2xl border border-gray-800/50 bg-card p-3 md:rounded-3xl md:p-5">
-            <p className="mb-1 text-[8px] font-black tracking-[0.1em] text-gray-500 uppercase md:mb-2 md:text-[10px]">
-              REMAINING
-            </p>
-            <p className="text-lg font-black text-white md:text-2xl">{available.toFormat()} đồng</p>
-          </div>
+          <Card className="dark:border-primary/20">
+            <CardContent>
+              <CardHeader className="flex items-center justify-between gap-2 p-0">
+                <CardTitle className="mb-1 text-[10px] font-black tracking-[0.1em] text-gray-500 uppercase">
+                  TOTAL
+                </CardTitle>
+              </CardHeader>
+              <p className="text-card-foreground text-lg font-black md:text-2xl">{total.toFormat()} đồng</p>
+            </CardContent>
+          </Card>
+          <Card className="dark:border-primary/20">
+            <CardContent>
+              <CardHeader className="flex items-center justify-between gap-2 p-0">
+                <CardTitle className="mb-1 text-[10px] font-black tracking-[0.1em] text-gray-500 uppercase">
+                  REMAINING
+                </CardTitle>
+              </CardHeader>
+              <p className="text-card-foreground text-lg font-black md:text-2xl">{available.toFormat()} đồng</p>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="scrollbar-hide relative overflow-x-auto pb-2">
