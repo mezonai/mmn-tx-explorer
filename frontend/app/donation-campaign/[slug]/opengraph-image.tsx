@@ -185,11 +185,6 @@ export default async function Image({ params }: { params: Promise<{ slug: string
           </div>
         )}
       </div>
-
-      {/* Footer Branding */}
-      <div tw="absolute bottom-10 left-16 flex items-center">
-        <span tw="text-gray-500 font-medium text-base tracking-wide">Mezon Dong · Donation Campaign</span>
-      </div>
     </div>,
     {
       ...size,
