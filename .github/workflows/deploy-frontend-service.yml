@@ -116,8 +116,6 @@ jobs:
           rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" frontend/public/ ${{ vars.HOST_ALIAS }}:/opt/frontend/.next/standalone/public/
           rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" frontend/.next/static/ ${{ vars.HOST_ALIAS }}:/opt/frontend/.next/standalone/.next/static/
 
-          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} frontend/start.sh ${{ vars.HOST_ALIAS }}:/opt/frontend/start.sh
-
           echo "==> Applying configuration on server..."
           ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "
             set -e
