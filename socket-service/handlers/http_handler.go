@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"socket-service/config"
+	"socket-service/constant"
 	"socket-service/logger"
 	"socket-service/models"
 	"socket-service/repository"
@@ -83,7 +84,7 @@ func (h *HTTPHandler) SaveEvent(c *gin.Context) {
 		if redEnvelopeID, ok := payloadMap["red_envelope_id"].(string); ok && redEnvelopeID != "" {
 
 			forwardEvent := event
-			forwardEvent.ReceiveAddress = "dong-service"
+			forwardEvent.ReceiveAddress = constant.DongService
 			
 			if err := h.forwardToDongService(&forwardEvent); err != nil {
 				logger.Error().Err(err).Str("event_id", event.ID.String()).Msg("Failed to forward event to Service B")
@@ -156,7 +157,7 @@ func (h *HTTPHandler) InternalEvent(c *gin.Context) {
 		}
 	}
 
-	if event.ReceiveAddress == "dong-service" {
+	if event.ReceiveAddress == constant.DongService {
 		if err := h.forwardToDongService(&event); err != nil {
 			logger.Error().Err(err).Str("event_id", event.ID.String()).Msg("Failed to forward event to Service B")
 			c.JSON(http.StatusInternalServerError, gin.H{
@@ -172,7 +173,7 @@ func (h *HTTPHandler) InternalEvent(c *gin.Context) {
 		"message":      "Event processed successfully",
 		"event_id":     event.ID.String(),
 		"broadcasted":  sentToOnline,
-		"forwarded":    event.ReceiveAddress == "dong-service",
+		"forwarded":    event.ReceiveAddress == constant.DongService,
 	})
 }
 

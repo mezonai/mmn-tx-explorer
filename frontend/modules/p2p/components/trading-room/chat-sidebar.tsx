@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, AlertTriangle, Loader2, MessageCircle, X, Info, AlertCircle, Paperclip } from 'lucide-react';
+import { Send, AlertTriangle, Loader2, MessageCircle, X, Info, AlertCircle, Paperclip, FileText, File as FileIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLightClient, useUser } from '@/providers';
 import { LightSocket } from 'mezon-light-sdk';
@@ -9,11 +9,18 @@ import { STORAGE_KEYS } from '@/constant';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { formatChatTime, generateMarkdownPayload, isSameDay } from '../../util';
-import { AutoMessagePayload, MessageWithParsedContent, ParsedMessageContent, ChannelMessage } from '../../types';
-import { DateTimeUtil, formatFileSize, getFileIcon, getFilesFromClipboard, getFilesFromDragEvent } from '@/utils';
+import { AutoMessagePayload, MessageWithParsedContent, ParsedMessageContent, ChannelMessage, MessageCode } from '../../types';
+import { DateTimeUtil, formatFileSize, getFilesFromClipboard, getFilesFromDragEvent, uploadAttachmentFile, downloadFile } from '@/utils';
 import { safeJsonParse } from '@/utils/json-parse.utils';
 import { toast } from 'sonner';
 import { MAX_CHAR_LIMIT, MAX_FILE_SIZE } from '../../constants';
+import Bottleneck from 'bottleneck';
+
+// Initialize a limiter for the upload attachment API
+const uploadLimiter = new Bottleneck({
+  minTime: 1100, // Ensuring at least 1.1s between requests (server limit is usually 1s)
+  maxConcurrent: 1, // Process one at a time for safety
+});
 
 interface ChatSidebarProps {
   sellerId: string;
@@ -46,6 +53,16 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
 
   const { lightClient } = useLightClient();
   const { user } = useUser();
+
+  const getFileIcon = (filename: string, filetype?: string) => {
+    const ext = filename.split('.').pop()?.toLowerCase();
+    if (filetype?.startsWith('image/')) return null;
+    if (ext === 'pdf') return <FileText className="h-5 w-5 text-red-500" />;
+    if (['doc', 'docx'].includes(ext || '')) return <FileText className="h-5 w-5 text-blue-500" />;
+    if (['json', 'html', 'js', 'ts', 'jsx', 'tsx'].includes(ext || ''))
+      return <FileText className="h-5 w-5 text-purple-500" />;
+    return <FileIcon className="h-5 w-5 text-gray-500" />;
+  };
 
   useEffect(() => {
     isMobileOpenRef.current = isMobileOpen;
@@ -145,7 +162,9 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
               t: autoMessage.text,
               mk: mk,
               embed: autoMessage.embed,
+              components: autoMessage.components,
             },
+            code: autoMessage.buzz ? MessageCode.BUZZ : MessageCode.NORMAL,
           });
 
           if (onAutoMessageSent) {
@@ -172,7 +191,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
     const hasContent = content.length > 0;
     const hasAttachments = selectedFiles.length > 0;
 
-    if (isMessageSendingRef.current || (!hasContent && !hasAttachments) || !socketRef.current || !channelIdRef.current) {
+    if (isMessageSendingRef.current || (!hasContent && !hasAttachments) || !socketRef.current || !channelIdRef.current || !lightClient) {
       return;
     }
 
@@ -190,60 +209,37 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
     setShowLimitWarning(false);
 
     try {
-      // Parallel upload for all files
-      const uploadPromises = filesToUpload.map(async (file) => {
+      // Sequential upload with rate limiting (using Bottleneck)
+      const finalAttachments = [];
+
+      for (const file of filesToUpload) {
         if (file.size > MAX_FILE_SIZE) {
           toast.error(`File ${file.name} is too large. Max is ${MAX_FILE_SIZE / 1024 / 1024}MB`);
-          return null;
+          continue;
         }
 
         let retryCount = 0;
         const maxRetries = 3;
+        let uploadedFile = null;
 
         while (retryCount < maxRetries) {
           try {
-            const uniqueName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}_${file.name}`;
-            const response = await lightClient?.uploadAttachment({
-              filename: uniqueName,
-              filetype: file.type || 'application/octet-stream',
-              size: file.size,
-            });
+            const result = await uploadAttachmentFile(lightClient, file, uploadLimiter);
 
-            if (response?.url) {
-              const uploadRes = await fetch(response.url, {
-                method: 'PUT',
-                headers: { 'Content-Type': file.type || 'application/octet-stream' },
-                body: file,
-              });
-
-              if (uploadRes.ok) {
-                const urlObj = new URL(response.url);
-                const cdnUrl = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}`;
-
-                return {
-                  filename: file.name,
-                  url: cdnUrl,
-                  size: file.size,
-                  filetype: file.type || 'application/octet-stream',
-                };
-              } else {
-                throw new Error(`PUT Error: ${uploadRes.status}`);
-              }
+            if (result) {
+              uploadedFile = result;
+              break; // Success
             }
           } catch (err: any) {
             retryCount++;
             console.warn(`[Chat] Attempt ${retryCount} failed for ${file.name}:`, err.message);
-            if (retryCount < maxRetries) {
-              // Wait a bit before retrying (exponential backoff)
-              await new Promise(resolve => setTimeout(resolve, retryCount * 1000));
-            }
           }
         }
-        return null; // Skip if all retries failed
-      });
 
-      const results = await Promise.all(uploadPromises);
-      const finalAttachments = results.filter((attr): attr is any => attr !== null);
+        if (uploadedFile) {
+          finalAttachments.push(uploadedFile);
+        }
+      }
 
       const mk = generateMarkdownPayload(content);
       await socketRef.current.sendDM({
@@ -604,12 +600,10 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
                                     />
                                   </div>
                                 ) : (
-                                  <a
-                                    href={at.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                  <div
+                                    onClick={() => downloadFile(at.url, at.filename || 'file')}
                                     className={cn(
-                                      "flex items-start gap-3 rounded-xl border p-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-900",
+                                      "flex items-start gap-3 rounded-xl border p-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer",
                                       isMe
                                         ? "border-white/20 bg-white/10"
                                         : "border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
@@ -632,7 +626,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
                                         size: {formatFileSize(at.size || 0)}
                                       </div>
                                     </div>
-                                  </a>
+                                  </div>
                                 )}
                               </div>
                             );

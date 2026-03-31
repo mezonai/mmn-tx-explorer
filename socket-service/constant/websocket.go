@@ -6,4 +6,5 @@ const (
 
 	OFFER_ROOM        = "offer_updates"
 	RED_ENVELOPE_ROOM = "red_envelope_updates"
+	DongService       = "dong-service"
 )

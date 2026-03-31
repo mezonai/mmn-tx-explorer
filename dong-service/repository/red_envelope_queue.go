@@ -32,12 +32,17 @@ func (s *RedEnvelopeQueueService) getReservedKey(redEnvelopeID string) string {
 	return fmt.Sprintf("red_envelope:reserved:%s", redEnvelopeID)
 }
 
-func (s *RedEnvelopeQueueService) InitializeRedEnvelope(redEnvelopeID string, amounts []int64, ttl time.Duration) error {
+func (s *RedEnvelopeQueueService) getDescriptionKey(redEnvelopeID string) string {
+	return fmt.Sprintf("red_envelope:description:%s", redEnvelopeID)
+}
+
+func (s *RedEnvelopeQueueService) InitializeRedEnvelope(redEnvelopeID string, amounts []int64, description string, ttl time.Duration) error {
 	if s.redisClient == nil {
 		return fmt.Errorf("redis client is not initialized")
 	}
 
 	poolKey := s.getPoolKey(redEnvelopeID)
+	descriptionKey := s.getDescriptionKey(redEnvelopeID)
 
 	args := make([]interface{}, len(amounts))
 	for i, v := range amounts {
@@ -46,6 +51,10 @@ func (s *RedEnvelopeQueueService) InitializeRedEnvelope(redEnvelopeID string, am
 	pipe := s.redisClient.Pipeline()
 	pipe.RPush(s.ctx, poolKey, args...)
 	pipe.Expire(s.ctx, poolKey, ttl)
+
+	if description != "" {
+		pipe.Set(s.ctx, descriptionKey, description, ttl)
+	}
 
 	_, err := pipe.Exec(s.ctx)
 	if err != nil {
@@ -59,6 +68,21 @@ func (s *RedEnvelopeQueueService) InitializeRedEnvelope(redEnvelopeID string, am
 		Str("red_envelope_id", redEnvelopeID).
 		Msg("Red envelope queue initialized successfully")
 	return nil
+}
+
+func (s *RedEnvelopeQueueService) GetDescription(redEnvelopeID string) (string, error) {
+	if s.redisClient == nil {
+		return "", fmt.Errorf("redis client is not initialized")
+	}
+
+	descriptionKey := s.getDescriptionKey(redEnvelopeID)
+	val, err := s.redisClient.Get(s.ctx, descriptionKey).Result()
+	if err == redis.Nil {
+		return "", nil // Not found
+	} else if err != nil {
+		return "", err
+	}
+	return val, nil
 }
 
 var attemptClaimScript = redis.NewScript(`
@@ -131,7 +155,7 @@ func (s *RedEnvelopeQueueService) AttemptClaim(redEnvelopeID string, userID int6
 	}
 }
 
-func (s *RedEnvelopeQueueService) VerifyReservation(ctx context.Context, redEnvelopeID string, userID int64) (int, error) {
+func (s *RedEnvelopeQueueService) VerifyReservation(ctx context.Context, redEnvelopeID string, userID int64) (int64, error) {
 	reservedKey := s.getReservedKey(redEnvelopeID)
 	val, err := s.redisClient.HGet(ctx, reservedKey, strconv.FormatInt(userID, 10)).Result()
 
@@ -147,112 +171,5 @@ func (s *RedEnvelopeQueueService) VerifyReservation(ctx context.Context, redEnve
 		return 0, fmt.Errorf("invalid amount data in redis")
 	}
 
-	return amount, nil
-}
-
-func (s *RedEnvelopeQueueService) getClaimedUsersKey(redEnvelopeID string) string {
-	return fmt.Sprintf("red_envelope:claimed_users:%s", redEnvelopeID)
-}
-
-func (s *RedEnvelopeQueueService) getQueueCountKey(redEnvelopeID string) string {
-	return fmt.Sprintf("red_envelope:queue:count:%s", redEnvelopeID)
-}
-
-func (s *RedEnvelopeQueueService) RollbackClaim(redEnvelopeID string, userID int64) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	pipe := s.redisClient.Pipeline()
-	pipe.SRem(ctx, s.getClaimedUsersKey(redEnvelopeID), userID)
-	pipe.Decr(ctx, s.getQueueCountKey(redEnvelopeID))
-
-	_, err := pipe.Exec(ctx)
-	if err != nil {
-		logger.Error().Err(err).
-			Str("envelope_id", redEnvelopeID).
-			Int64("user_id", userID).
-			Msg("CRITICAL: Failed to rollback redis claim")
-	}
-}
-func (s *RedEnvelopeQueueService) getTotalClaimsKey(redEnvelopeID string) string {
-	return fmt.Sprintf("red_envelope:total_claims:%s", redEnvelopeID)
-}
-var attemptClaimScriptLegacy = redis.NewScript(`
-local totalClaims = tonumber(redis.call('GET', KEYS[3]))
-if not totalClaims or totalClaims == 0 then
-		return 'QUEUE_NOT_INITIALIZE'
-end
-
-local isMember = redis.call('SISMEMBER', KEYS[1], ARGV[1])
-if isMember == 1 then
-		return 'ALREADY_QUEUED'
-end
-
-local currentCount = tonumber(redis.call('GET', KEYS[2])) or 0
-if currentCount >= totalClaims then
-		return 'LIMIT_REACHED'
-end
-
-redis.call('SADD', KEYS[1], ARGV[1])
-local newCount = redis.call('INCR', KEYS[2])
-
-return 'OK'
-`)
-func (s *RedEnvelopeQueueService) AttemptClaimLegacy(redEnvelopeID string, userID int64) (int, error) {
-	if s.redisClient == nil {
-		return 0, fmt.Errorf("redis client is not initialized")
-	}
-
-	keys := []string{
-		s.getClaimedUsersKey(redEnvelopeID),
-		s.getQueueCountKey(redEnvelopeID),
-		s.getTotalClaimsKey(redEnvelopeID),
-	}
-
-	result, err := attemptClaimScriptLegacy.Run(s.ctx, s.redisClient, keys, userID).Result()
-	if err != nil {
-		logger.Error().Err(err).Str("envelope_id", redEnvelopeID).Msg("Failed to run attempt claim script")
-		return constants.ClaimStatusError, fmt.Errorf("redis script failed: %w", err)
-	}
-	switch resultStr := result.(string); resultStr {
-	case constants.RedEnvelopeStatusOk:
-		return constants.ClaimStatusSuccess, nil
-	case constants.RedEnvelopeQueueStatusUserAlreadyInQueue:
-		return constants.ClaimStatusAlreadyQueued, nil
-	case constants.RedEnvelopeQueueStatusLimitReached:
-		return constants.ClaimStatusError, constants.ErrLimitReached
-	case constants.RedEnvelopeQueueStatusNotInitialize:
-		return constants.ClaimStatusError, constants.ErrQueueNotInit
-	default:
-		return constants.ClaimStatusError, fmt.Errorf("unknown script result: %s", resultStr)
-	}
-}
-
-func (s *RedEnvelopeQueueService) InitializeLegacyQueue(redEnvelopeID string, totalClaims int64, ttl time.Duration) error {
-	if s.redisClient == nil {
-		return fmt.Errorf("redis client is not initialized")
-	}
-
-	totalClaimsKey := s.getTotalClaimsKey(redEnvelopeID)
-	queueCountKey := s.getQueueCountKey(redEnvelopeID)
-
-	pipe := s.redisClient.Pipeline()
-	pipe.Set(s.ctx, totalClaimsKey, totalClaims, ttl)      // KEY[3] for legacy Lua script
-	pipe.SetNX(s.ctx, queueCountKey, 0, ttl)              // optional, but good to have with TTL
-
-	_, err := pipe.Exec(s.ctx)
-	if err != nil {
-		logger.Error().
-			Err(err).
-			Str("red_envelope_id", redEnvelopeID).
-			Msg("Failed to initialize legacy red envelope queue")
-		return fmt.Errorf("failed to initialize legacy queue: %w", err)
-	}
-
-	logger.Info().
-		Str("red_envelope_id", redEnvelopeID).
-		Int64("total_claims", totalClaims).
-		Msg("Legacy red envelope queue initialized successfully")
-
-	return nil
+	return int64(amount), nil
 }
