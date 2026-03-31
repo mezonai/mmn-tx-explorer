@@ -9,8 +9,8 @@ import { STORAGE_KEYS } from '@/constant';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { formatChatTime, generateMarkdownPayload, isSameDay } from '../../util';
-import { AutoMessagePayload, MessageWithParsedContent, ParsedMessageContent, ChannelMessage } from '../../types';
-import { DateTimeUtil, formatFileSize, getFilesFromClipboard, getFilesFromDragEvent, uploadAttachmentFile } from '@/utils';
+import { AutoMessagePayload, MessageWithParsedContent, ParsedMessageContent, ChannelMessage, MessageCode } from '../../types';
+import { DateTimeUtil, formatFileSize, getFilesFromClipboard, getFilesFromDragEvent, uploadAttachmentFile, downloadFile } from '@/utils';
 import { safeJsonParse } from '@/utils/json-parse.utils';
 import { toast } from 'sonner';
 import { MAX_CHAR_LIMIT, MAX_FILE_SIZE } from '../../constants';
@@ -162,7 +162,9 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
               t: autoMessage.text,
               mk: mk,
               embed: autoMessage.embed,
+              components: autoMessage.components,
             },
+            code: autoMessage.buzz ? MessageCode.BUZZ : MessageCode.NORMAL,
           });
 
           if (onAutoMessageSent) {
@@ -598,12 +600,10 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
                                     />
                                   </div>
                                 ) : (
-                                  <a
-                                    href={at.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                  <div
+                                    onClick={() => downloadFile(at.url, at.filename || 'file')}
                                     className={cn(
-                                      "flex items-start gap-3 rounded-xl border p-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-900",
+                                      "flex items-start gap-3 rounded-xl border p-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer",
                                       isMe
                                         ? "border-white/20 bg-white/10"
                                         : "border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
@@ -626,7 +626,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
                                         size: {formatFileSize(at.size || 0)}
                                       </div>
                                     </div>
-                                  </a>
+                                  </div>
                                 )}
                               </div>
                             );

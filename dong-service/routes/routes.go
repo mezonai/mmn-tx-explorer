@@ -120,7 +120,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		userPaymentHandler := handlers.NewUserPaymentHandler(userPaymentService)
 
 		offerService := services.NewOfferService(offerRepo, intermediaryWalletRepo, walletRepo, orderRepo, blockchainService, userPaymentRepo)
-		orderService := services.NewOrderService(orderRepo, offerRepo, intermediaryWalletRepo, blockchainService, offerService)
+		orderService := services.NewOrderService(orderRepo, offerRepo, intermediaryWalletRepo, userPaymentRepo, blockchainService, offerService)
 
 		offerService.SetOrderService(orderService)
 

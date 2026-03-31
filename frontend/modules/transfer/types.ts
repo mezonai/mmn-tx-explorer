@@ -4,6 +4,7 @@ export interface TransferInput {
   note?: string;
   offerId?: string;
   redEnvelopeId?: string;
+  orderId?: string;
 }
 
 export interface TransferByPrivateKeyInput extends TransferInput {

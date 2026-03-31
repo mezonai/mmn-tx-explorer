@@ -70,10 +70,38 @@ export const getFilesFromDragEvent = (e: DragEvent): File[] => {
 
 export interface UploadResult {
     filename: string;
+    height?: number;
+    width?: number;
     url: string;
     size: number;
     filetype: string;
 }
+
+/**
+ * Get image dimensions (width and height) from a File object
+ * @param file - Image File object
+ * @returns Promise<{ width: number; height: number }> 
+ */
+export const getImageDimensions = (file: File): Promise<{ width: number; height: number } | null> => {
+    return new Promise((resolve) => {
+        if (!file.type.startsWith('image/')) {
+            return resolve(null);
+        }
+
+        const img = new Image();
+        img.onload = () => {
+            resolve({
+                width: img.width,
+                height: img.height,
+            });
+            URL.revokeObjectURL(img.src);
+        };
+        img.onerror = () => {
+            resolve(null);
+        };
+        img.src = URL.createObjectURL(file);
+    });
+};
 
 /**
  * Upload a single file to Mezon CDN/S3 using the provided lightClient and limiter
@@ -112,11 +140,14 @@ export const uploadAttachmentFile = async (
                 const urlObj = new URL(response.url);
                 const cdnUrl = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}`;
 
+                const dimensions = await getImageDimensions(file);
+
                 return {
                     filename: file.name,
                     url: cdnUrl,
                     size: file.size,
                     filetype: safeType,
+                    ...(dimensions || {}),
                 };
             } else {
                 throw new Error(`PUT Error: ${uploadRes.status}`);
@@ -127,4 +158,34 @@ export const uploadAttachmentFile = async (
         throw err; // Let the caller handle retries if needed
     }
     return null;
+};
+
+/**
+ * Downloads a file by fetching it as a blob. 
+ * This approach helps bypass modern browser restrictions when downloading files from different origins.
+ * @param url - The direct file URL
+ * @param filename - The name to save the file as
+ */
+export const downloadFile = async (url: string, filename: string): Promise<void> => {
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Download request failed');
+
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+
+        // Cleanup
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+    } catch (error: any) {
+        console.warn('[Download] fetch failed, falling back to window.open:', error.message);
+        // Fallback to direct opening if fetch fails (e.g. CORS)
+        window.open(url, '_blank');
+    }
 };
