@@ -48,7 +48,7 @@ export const OfferOrdersModal = ({ offer, open, onOpenChange }: OfferOrdersModal
   const columns: TTableColumn<P2POrder>[] = [
     {
       headerContent: 'ORDER',
-      renderCell: (order) => <span className="text-sm font-bold text-gray-300">#{order.order_id}</span>,
+      renderCell: (order) => <span className="text-card-foreground text-sm font-bold">#{order.order_id}</span>,
       skeletonContent: <Skeleton className="h-4 w-12" />,
       align: 'left',
     },
@@ -74,10 +74,10 @@ export const OfferOrdersModal = ({ offer, open, onOpenChange }: OfferOrdersModal
 
         return (
           <div className="flex items-center">
-            <div className="flex items-center gap-1 font-bold whitespace-nowrap text-white">
+            <div className="text-card-foreground flex items-center gap-1 font-bold whitespace-nowrap">
               <span>{amount.toFormat()} đồng</span>
-              <span className="text-xs font-normal text-gray-500">
-                → {payable.toFormat()} <span className="text-[10px] font-bold text-gray-500 uppercase">VND</span>
+              <span className="text-card-foreground font-bold">
+                → {payable.toFormat()} <span className="text-card-foreground font-bold uppercase">VND</span>
               </span>
             </div>
           </div>
@@ -152,14 +152,18 @@ export const OfferOrdersModal = ({ offer, open, onOpenChange }: OfferOrdersModal
 
         <div className="scrollbar-hide relative overflow-x-auto pb-2">
           <div className="min-w-[600px] lg:min-w-full">
-            <Table<P2POrder>
-              columns={columns}
-              rows={orders}
-              isLoading={isLoading}
-              getRowKey={(r) => r.order_id}
-              classNameLayout="border-none bg-transparent"
-              nullDataContext="No orders found for this offer"
-            />
+            <Card className="dark:border-primary/20">
+              <CardContent>
+                <Table<P2POrder>
+                  columns={columns}
+                  rows={orders}
+                  isLoading={isLoading}
+                  getRowKey={(r) => r.order_id}
+                  classNameLayout="border-none bg-transparent"
+                  nullDataContext="No orders found for this offer"
+                />
+              </CardContent>
+            </Card>
           </div>
         </div>
       </DialogContent>
