@@ -17,11 +17,14 @@ type TableProps<T> = {
   classNameLayout?: string;
   skeletonLength?: number;
   getRowKey?: (row: T, index: number) => string | number;
+
   isLoading?: boolean;
   estimateRowHeight?: number;
   overscan?: number;
   maxHeight?: number;
   minRowsForVirtualization?: number;
+  animatingRowKeys?: (string | number)[];
+  isRefreshing?: boolean;
 } & TableHTMLAttributes<HTMLTableElement>;
 export const Table = <T,>({
   rows,
@@ -38,6 +41,8 @@ export const Table = <T,>({
   overscan = 8,
   maxHeight = 600,
   minRowsForVirtualization = 50,
+  animatingRowKeys = [],
+  isRefreshing = false,
   ...props
 }: TableProps<T>) => {
   // Validate columns to prevent runtime errors
@@ -105,7 +110,6 @@ export const Table = <T,>({
     return rows.map((row, index) => {
       const rowKey = getRowKey ? getRowKey(row, index) : index;
       const hasClickHandler = !!onRowClick;
-
       const handleRowClick = () => {
         if (onRowClick) {
           onRowClick(row);
@@ -122,7 +126,14 @@ export const Table = <T,>({
       return (
         <tr
           key={rowKey}
-          className={cn('border-b', hasClickHandler && 'hover:bg-muted/50 cursor-pointer transition-colors')}
+          className={cn(
+            'border-b transition-all duration-700 ease-out',
+            hasClickHandler && 'hover:bg-muted/100 cursor-pointer transition-colors',
+            {
+              'translate-x-4 scale-90 transform bg-red-50 opacity-30 blur-lg dark:bg-red-950/20':
+                animatingRowKeys.includes(rowKey),
+            }
+          )}
           onClick={hasClickHandler ? handleRowClick : undefined}
           role={hasClickHandler ? 'button' : undefined}
           tabIndex={hasClickHandler ? 0 : undefined}
@@ -192,7 +203,14 @@ export const Table = <T,>({
           return (
             <tr
               key={rowKey}
-              className={cn('border-b', hasClickHandler && 'hover:bg-muted/50 cursor-pointer transition-colors')}
+              className={cn(
+                'border-b transition-all duration-700 ease-out',
+                hasClickHandler && 'hover:bg-muted/50 cursor-pointer transition-colors',
+                {
+                  'translate-x-4 scale-90 transform bg-red-50 opacity-30 blur-lg dark:bg-red-950/20':
+                    animatingRowKeys.includes(rowKey),
+                }
+              )}
               onClick={hasClickHandler ? handleRowClick : undefined}
               role={hasClickHandler ? 'button' : undefined}
               tabIndex={hasClickHandler ? 0 : undefined}
@@ -282,7 +300,7 @@ export const Table = <T,>({
             </tr>
           </thead>
         )}
-        <tbody className="bg-card" role="rowgroup">
+        <tbody className={cn('bg-card', { 'animate-pulse': isRefreshing })} role="rowgroup">
           {renderSkeletonRows() || renderVirtualRows() || renderDataRows() || renderEmptyRow()}
         </tbody>
       </table>

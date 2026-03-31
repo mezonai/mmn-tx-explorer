@@ -7,6 +7,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 type EventService struct {
@@ -45,4 +48,29 @@ func (s *EventService) SendEvent(event *models.Event) error {
 		return fmt.Errorf("socket-service trả về mã lỗi: %d", resp.StatusCode)
 	}
 	return nil
+}
+
+func SendSocketEvent(receiveAddr string, eventType string, payload map[string]any) {
+	p, err := json.Marshal(payload)
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to marshal socket event payload")
+		return
+	}
+
+	event := &models.Event{
+		ID:             uuid.New(),
+		Type:           eventType,
+		Payload:        p,
+		ReceiveAddress: receiveAddr,
+		CreateAt:       time.Now().UTC(),
+	}
+
+	if Event == nil {
+		logger.Error().Msg("Event service not initialized")
+		return
+	}
+
+	if err := Event.SendEvent(event); err != nil {
+		logger.Error().Err(err).Msgf("failed to send %s event", eventType)
+	}
 }

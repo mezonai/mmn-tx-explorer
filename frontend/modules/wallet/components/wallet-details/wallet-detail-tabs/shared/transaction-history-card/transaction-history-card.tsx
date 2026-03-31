@@ -3,11 +3,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Pagination } from '@/components/ui/pagination';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { useSearchParams } from 'next/navigation';
-import { useBreakpoint, usePaginationQueryParam } from '@/hooks';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useBreakpoint, usePaginationQueryParam, useQueryParam } from '@/hooks';
 import { EBreakpoint, ESortOrder } from '@/enums';
 import { WalletTransactionsTable, WalletTransactionsCards } from '@/modules/transaction/components';
-import { PAGINATION } from '@/constant';
+import { PAGINATION, TRANSACTION_TYPE, FILTER_TYPE, URL_PARAM, TransactionTypeValue, FilterType } from '@/constant';
 import { ITransactionListParams } from '@/modules/transaction';
 import { useTransactions } from '@/modules/transaction/hooks/useTransactions';
 import { DatePicker } from '@/components/ui/datepicker';
@@ -16,10 +16,12 @@ import { exportTransactionsToCSV } from '@/utils/export-csv';
 import { toast } from 'sonner';
 import { DateTimeUtil } from '@/utils';
 import { Download } from 'lucide-react';
+import { AddressFilterDropdown } from '@/components/ui/address-filter-dropdown';
 
 interface TransactionHistoryCardProps {
   walletAddress: string;
 }
+
 const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
   page: PAGINATION.DEFAULT_PAGE,
   limit: PAGINATION.DEFAULT_LIMIT,
@@ -34,6 +36,8 @@ const getDefaultTimeRangeByMonth = (monthRange: number) => {
 };
 
 export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCardProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [showExportModal, setShowExportModal] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportFromDate, setExportFromDate] = useState<Date | null>(null);
@@ -42,17 +46,44 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
   const [startDate, setStartDate] = useState<Date>(getDefaultTimeRangeByMonth(1));
   const [endDate, setEndDate] = useState<Date>(new Date());
-  const [transactionType, setTransactionType] = useState('All Transaction');
   const oneYearAgo = new Date(new Date().setFullYear(new Date().getFullYear() - 1));
   const today = new Date();
-  useEffect(() => {
-    const typeParam = urlSearchParams.get('type');
-    if (typeParam === 'received') {
-      setTransactionType('Received');
-    } else if (typeParam === 'sent') {
-      setTransactionType('Sent');
+
+  // Use useQueryParam hooks for URL parameter management
+  const { value: transactionType, handleChangeValue: setTransactionType } = useQueryParam<TransactionTypeValue>({
+    queryParam: URL_PARAM.TYPE,
+    defaultValue: TRANSACTION_TYPE.ALL,
+  });
+
+  const { value: fromAddressFilter, handleChangeValue: setFromAddressFilter } = useQueryParam<string>({
+    queryParam: URL_PARAM.FROM_FILTER,
+    defaultValue: '',
+  });
+
+  const { value: toAddressFilter, handleChangeValue: setToAddressFilter } = useQueryParam<string>({
+    queryParam: URL_PARAM.TO_FILTER,
+    defaultValue: '',
+  });
+
+  const handleAddressFilterChange = (filterType: FilterType, value: string) => {
+    const isFromFilter = filterType === FILTER_TYPE.FROM;
+    const paramName = isFromFilter ? URL_PARAM.FROM_FILTER : URL_PARAM.TO_FILTER;
+    const otherFilter = isFromFilter ? toAddressFilter : fromAddressFilter;
+
+    const params = new URLSearchParams(urlSearchParams.toString());
+
+    if (value) {
+      params.set(paramName, value);
+    } else {
+      params.delete(paramName);
+      if (!otherFilter) {
+        params.delete(URL_PARAM.TYPE);
+      }
     }
-  }, [urlSearchParams]);
+
+    params.set('page', '1');
+    router.replace(`${pathname}?${params.toString()}`);
+  };
   const getSearchParams = (): ITransactionListParams => {
     const base = {
       ...DEFAULT_VALUE_DATA_SEARCH,
@@ -66,10 +97,19 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
       end_time: DateTimeUtil.formatLocalDate(endDate),
     };
 
-    if (transactionType === 'Sent') {
+    // If From/To address filters are set, use them directly (AND logic)
+    if (fromAddressFilter || toAddressFilter) {
+      return {
+        ...baseWithDate,
+        ...(fromAddressFilter && { filter_from_address: fromAddressFilter }),
+        ...(toAddressFilter && { filter_to_address: toAddressFilter }),
+      };
+    }
+
+    if (transactionType === TRANSACTION_TYPE.SENT) {
       return { ...baseWithDate, filter_from_address: walletAddress };
     }
-    if (transactionType === 'Received') {
+    if (transactionType === TRANSACTION_TYPE.RECEIVED) {
       return { ...baseWithDate, filter_to_address: walletAddress };
     }
     return { ...baseWithDate, wallet_address: walletAddress };
@@ -82,7 +122,17 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
   const transactions = transactionsResponse?.data;
   const pagination = transactionsResponse?.meta;
   const isEmptyTransactions = transactions && transactions.length === 0;
+  useEffect(() => {
+    if (!isLoadingTransactions && pagination) {
+      const totalPages = pagination.total_pages;
 
+      if (totalPages > 0 && page > totalPages) {
+        const currentParams = new URLSearchParams(urlSearchParams.toString());
+        currentParams.set('page', totalPages.toString());
+        router.replace(`${pathname}?${currentParams.toString()}`);
+      }
+    }
+  }, [pagination, page, isLoadingTransactions, router, pathname, urlSearchParams]);
   const handleExportWithRange = async (fromDate: Date | null, toDate: Date | null, filename?: string) => {
     if (isExporting) return;
     setIsExporting(true);
@@ -159,16 +209,33 @@ export function TransactionHistoryCard({ walletAddress }: TransactionHistoryCard
               placeholder="End date"
             />
 
-            <Select value={transactionType} onValueChange={setTransactionType}>
+            <Select
+              value={transactionType}
+              onValueChange={(value) => setTransactionType(value as TransactionTypeValue)}
+            >
               <SelectTrigger className="h-10 w-full sm:w-[170px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="All Transaction">All Transaction</SelectItem>
-                <SelectItem value="Sent">Sent</SelectItem>
-                <SelectItem value="Received">Received</SelectItem>
+                <SelectItem value={TRANSACTION_TYPE.ALL}>{TRANSACTION_TYPE.ALL}</SelectItem>
+                <SelectItem value={TRANSACTION_TYPE.SENT}>{TRANSACTION_TYPE.SENT}</SelectItem>
+                <SelectItem value={TRANSACTION_TYPE.RECEIVED}>{TRANSACTION_TYPE.RECEIVED}</SelectItem>
               </SelectContent>
             </Select>
+
+            <AddressFilterDropdown
+              label="From"
+              value={fromAddressFilter}
+              onChange={(value) => handleAddressFilterChange(FILTER_TYPE.FROM, value)}
+              placeholder="Enter from address..."
+            />
+
+            <AddressFilterDropdown
+              label="To"
+              value={toAddressFilter}
+              onChange={(value) => handleAddressFilterChange(FILTER_TYPE.TO, value)}
+              placeholder="Enter to address..."
+            />
           </div>
 
           <Pagination

@@ -15,6 +15,7 @@ import (
 	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/services"
 	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
 	"github.com/rs/zerolog/log"
 )
@@ -22,6 +23,7 @@ import (
 const (
 	DataRowsDisplayLimit   = 500000
 	InsertBlockDataTimeout = 10 * time.Minute
+	P2PMultiplier          = 1000000
 )
 
 type PostgresConnector struct {
@@ -806,26 +808,78 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 			return err
 		}
 
-		txMap := make(map[string]common.Transaction)
-		offerIDMap := make(map[string]int64)
 		type P2PExtraInfo struct {
 			OfferID int64 `json:"offer_id"`
+			OrderID int64 `json:"order_id"`
 		}
+		sellTxMap := make(map[string]common.Transaction)
+		sellOfferIDMap := make(map[string]int64)
+		buyTxMap := make(map[string]common.Transaction)
+		buyExtraMap := make(map[string]struct{ OfferID, OrderID int64 })
+		failedBuyTxMap := make(map[string]common.Transaction)
+		failedBuyExtraMap := make(map[string]struct{ OfferID, OrderID int64 })
+		failedSellTxMap := make(map[string]common.Transaction)
+		failedSellOfferIDMap := make(map[string]int64)
+
 		for i := range blockData.Transactions {
 			t := blockData.Transactions[i]
 			t.TransactionExtraInfoType = detectTransactionType(t.ExtraInfo)
-			if t.TransactionExtraInfoType == common.TransactionExtraInfoP2PTrading && t.ExtraInfo != "" &&
-				(*t.Status == (uint64)(pb.TransactionStatus_CONFIRMED) || *t.Status == (uint64)(pb.TransactionStatus_FINALIZED)) {
-				txMap[t.Hash] = t
-				var extra P2PExtraInfo
-				if err := json.Unmarshal([]byte(t.ExtraInfo), &extra); err == nil && extra.OfferID != 0 {
-					offerIDMap[t.Hash] = extra.OfferID
+			if t.ExtraInfo == "" || t.Status == nil {
+				continue
+			}
+
+			isFailed := *t.Status == (uint64)(pb.TransactionStatus_FAILED)
+			isSuccessful := *t.Status == (uint64)(pb.TransactionStatus_CONFIRMED) || *t.Status == (uint64)(pb.TransactionStatus_FINALIZED)
+			if !isFailed && !isSuccessful {
+				continue
+			}
+
+			var extra P2PExtraInfo
+			_ = json.Unmarshal([]byte(t.ExtraInfo), &extra)
+
+			if isFailed {
+				switch t.TransactionExtraInfoType {
+				case common.TransactionExtraInfoP2PTrading:
+					if extra.OfferID != 0 {
+						failedSellTxMap[t.Hash] = t
+						failedSellOfferIDMap[t.Hash] = extra.OfferID
+					}
+				case common.TransactionExtraInfoP2PTradingBuyOffer:
+					if extra.OrderID != 0 && extra.OfferID != 0 {
+						failedBuyTxMap[t.Hash] = t
+						failedBuyExtraMap[t.Hash] = struct{ OfferID, OrderID int64 }{OfferID: extra.OfferID, OrderID: extra.OrderID}
+					}
+				}
+				continue
+			}
+
+			switch t.TransactionExtraInfoType {
+			case common.TransactionExtraInfoP2PTrading:
+				sellTxMap[t.Hash] = t
+				if extra.OfferID != 0 {
+					sellOfferIDMap[t.Hash] = extra.OfferID
+				}
+			case common.TransactionExtraInfoP2PTradingBuyOffer:
+				if extra.OrderID != 0 && extra.OfferID != 0 {
+					buyTxMap[t.Hash] = t
+					buyExtraMap[t.Hash] = struct{ OfferID, OrderID int64 }{OfferID: extra.OfferID, OrderID: extra.OrderID}
 				}
 			}
 		}
-		err = p.updateOfferStatus(ctx, tx, txMap, offerIDMap)
-		if err != nil {
+		if err = p.updateOfferStatus(ctx, tx, sellTxMap, sellOfferIDMap); err != nil {
 			log.Error().Err(err).Msg("Failed to update offer status after inserting transactions")
+			return err
+		}
+		if err = p.updateOrderStatus(ctx, tx, buyTxMap, buyExtraMap); err != nil {
+			log.Error().Err(err).Msg("Failed to update order status after inserting transactions")
+			return err
+		}
+		if err = p.failOrderStatus(ctx, tx, failedBuyTxMap, failedBuyExtraMap); err != nil {
+			log.Error().Err(err).Msg("Failed to fail order status after inserting transactions")
+			return err
+		}
+		if err = p.failOfferStatus(ctx, tx, failedSellTxMap, failedSellOfferIDMap); err != nil {
+			log.Error().Err(err).Msg("Failed to fail offer status after inserting transactions")
 			return err
 		}
 
@@ -1650,6 +1704,7 @@ func (p *PostgresConnector) insertTransactionsTx(
 				WHEN is_new
 					AND transaction_extra_info_type = $%d
 					AND status = $%d
+					AND extra_info IS JSON
 					AND extra_info::jsonb ? 'UserSenderId'
 				THEN value::numeric
 				ELSE 0
@@ -1658,6 +1713,7 @@ func (p *PostgresConnector) insertTransactionsTx(
 				WHEN is_new
 					AND transaction_extra_info_type = $%d
 					AND status = $%d
+					AND extra_info IS JSON
 					AND NOT (extra_info::jsonb ? 'UserSenderId')
 				THEN value::numeric
 				ELSE 0
@@ -1668,10 +1724,12 @@ func (p *PostgresConnector) insertTransactionsTx(
 					WHEN is_new
 						AND transaction_extra_info_type = $%d
 						AND status = $%d
+						AND extra_info IS JSON
 						AND extra_info::jsonb ? 'UserSenderId'
 					THEN 1
 
 					WHEN is_new
+						AND extra_info IS JSON
 						AND extra_info::jsonb ? 'action'
 						AND extra_info::jsonb ->> 'action' = 'offer-canceled'
 					THEN -1
@@ -1733,6 +1791,8 @@ func (p *PostgresConnector) insertTransactionsTx(
 		}
 	}
 
+	p2pOfferAdd /= P2PMultiplier
+	p2pOfferSubtract /= P2PMultiplier
 	if p2pOfferAdd > 0 || p2pOfferSubtract > 0 {
 		netChange := p2pOfferAdd - p2pOfferSubtract
 		if _, err := tx.ExecContext(ctx, `
@@ -2303,19 +2363,24 @@ func (p *PostgresConnector) RecalculateStats(ctx context.Context) error {
 		return fmt.Errorf("failed to count give_coffee transactions: %w", err)
 	}
 
-	var totalP2POfferAvailable float64
+	var totalP2POfferAvailableStr string
 	err = p.db.QueryRowContext(ctx, `
-		SELECT COALESCE(SUM(amount), 0)
-		FROM dong_schema.offers
-		WHERE status = 'CONFIRMED' AND amount > 0
-	`).Scan(&totalP2POfferAvailable)
+		SELECT COALESCE(SUM(available_amount), 0)
+		FROM dong_schema.p2p_offers
+		WHERE status = 'CONFIRMED' AND available_amount > 0
+	`).Scan(&totalP2POfferAvailableStr)
 	if err != nil {
 		return fmt.Errorf("failed to calculate total_p2p_offer_available: %w", err)
 	}
 
+	totalP2POfferAvailableBig := new(big.Rat)
+	totalP2POfferAvailableBig.SetString(totalP2POfferAvailableStr)
+	totalP2POfferAvailableBig.Quo(totalP2POfferAvailableBig, big.NewRat(1_000_000, 1))
+	totalP2POfferAvailable := totalP2POfferAvailableBig.FloatString(0)
+
 	var totalOffers int64
 	err = p.db.QueryRowContext(ctx, `
-		SELECT COUNT(*) FROM dong_schema.offers WHERE status = 'CONFIRMED'
+		SELECT COUNT(*) FROM dong_schema.p2p_offers WHERE status = 'CONFIRMED'
 	`).Scan(&totalOffers)
 	if err != nil {
 		return fmt.Errorf("failed to count total_offers: %w", err)
@@ -2512,13 +2577,13 @@ func (p *PostgresConnector) updateOfferStatus(
 	}
 
 	querySelect := `
-    SELECT
-        offer_id,
-        seller_wallet_address,
-        COALESCE(intermediary_wallet_address, ''),
-        amount,
-        status
-    FROM dong_schema.offers
+	SELECT
+		offer_id,
+		offer_creator_wallet_address,
+		COALESCE(intermediary_wallet_address, ''),
+		available_amount,
+		status
+    FROM dong_schema.p2p_offers
     WHERE offer_id = ANY($1::bigint[])
       AND status = 'OPEN'
     FOR UPDATE
@@ -2534,7 +2599,7 @@ func (p *PostgresConnector) updateOfferStatus(
 		OfferID            int64
 		SellerWallet       string
 		IntermediaryWallet string
-		Amount             int64
+		Amount             string
 		Status             string
 	}
 
@@ -2585,8 +2650,11 @@ func (p *PostgresConnector) updateOfferStatus(
 			continue
 		}
 
-		valueInt, err := strconv.ParseInt(t.Value, 10, 64)
-		if err != nil || valueInt != o.Amount*1000000 {
+		transactionValueBig := new(big.Int)
+		offerValueBig := new(big.Int)
+		transactionValueBig.SetString(t.Value, 10)
+		offerValueBig.SetString(o.Amount, 10)
+		if transactionValueBig.Cmp(offerValueBig) != 0 {
 			log.Error().
 				Int64("offer_id", offerID).
 				Str("tx_hash", t.Hash).
@@ -2603,7 +2671,7 @@ func (p *PostgresConnector) updateOfferStatus(
 	}
 
 	queryUpdate := `
-    UPDATE dong_schema.offers o
+    UPDATE dong_schema.p2p_offers o
     SET
         status = 'CONFIRMED',
         transaction_hash = v.tx_hash,
@@ -2628,6 +2696,375 @@ func (p *PostgresConnector) updateOfferStatus(
 	}
 
 	log.Info().Int("offers_updated", len(validOfferIDs)).Msg("batch update offer status completed")
+
+	services.SendSocketEventDirect(services.OFFER_ROOM, services.OFFER_LIST_REFRESH, map[string]any{
+		"action": "updated p2p offer status",
+	})
+
+	return nil
+}
+
+func (p *PostgresConnector) updateOrderStatus(
+	ctx context.Context,
+	tx *sql.Tx,
+	txMap map[string]common.Transaction,
+	extraMap map[string]struct{ OfferID, OrderID int64 },
+) error {
+	log.Info().Int("orders_to_validate", len(txMap)).Msg("starting order status update")
+	if len(txMap) == 0 {
+		log.Info().Msg("no buy-offer transactions to validate")
+		return nil
+	}
+
+	orderIDs := make([]int64, 0, len(txMap))
+	for _, extraInfo := range extraMap {
+		if extraInfo.OrderID != 0 {
+			orderIDs = append(orderIDs, extraInfo.OrderID)
+		}
+	}
+
+	if len(orderIDs) == 0 {
+		log.Info().Msg("no valid order IDs to update")
+		return nil
+	}
+
+	querySelect := `
+		SELECT
+				o.order_id,
+				o.offer_id,
+				o.order_creator_wallet_address,
+				o.order_amount,
+				o.status,
+				of.intermediary_wallet_address
+		FROM dong_schema.p2p_orders o
+		INNER JOIN dong_schema.p2p_offers of ON o.offer_id = of.offer_id
+		WHERE o.order_id = ANY($1::bigint[])
+			AND o.status = 'WAITING_TRANSFER'
+		FOR UPDATE OF o
+		`
+
+	rows, err := tx.QueryContext(ctx, querySelect, pq.Array(orderIDs))
+	if err != nil {
+		return fmt.Errorf("select orders for validation failed: %w", err)
+	}
+	defer rows.Close()
+
+	type orderRow struct {
+		OrderID            int64
+		OfferID            int64
+		OrderCreatorWallet string
+		Amount             string
+		Status             string
+		IntermediaryWallet string
+	}
+
+	orderMap := make(map[int64]orderRow)
+	for rows.Next() {
+		var o orderRow
+		if err := rows.Scan(&o.OrderID, &o.OfferID, &o.OrderCreatorWallet, &o.Amount, &o.Status, &o.IntermediaryWallet); err != nil {
+			log.Error().Err(err).Msg("failed to scan order row")
+			return err
+		}
+		orderMap[o.OrderID] = o
+	}
+
+	validOrderIDs := make([]int64, 0)
+	validTxHashes := make([]string, 0)
+
+	for hash, t := range txMap {
+		extraInfo, ok := extraMap[hash]
+		if !ok {
+			log.Error().Str("tx_hash", t.Hash).
+				Msg("order validation failed: extraMap missing entry for tx hash")
+			continue
+		}
+		o, ok := orderMap[extraInfo.OrderID]
+		if !ok {
+			log.Error().Int64("order_id", extraInfo.OrderID).Str("tx_hash", t.Hash).
+				Msg("order validation failed: order not found or not OPEN")
+			continue
+		}
+
+		if o.OfferID != extraInfo.OfferID {
+			log.Error().Int64("order_id", extraInfo.OrderID).Int64("expected_offer_id", extraInfo.OfferID).
+				Int64("actual_offer_id", o.OfferID).Str("tx_hash", t.Hash).
+				Msg("order validation failed: offer_id mismatch")
+			continue
+		}
+
+		// Check that the transaction is from the correct wallet
+		if t.FromAddress != o.OrderCreatorWallet {
+			log.Error().Int64("order_id", extraInfo.OrderID).Str("tx_hash", t.Hash).
+				Str("expected_wallet", o.OrderCreatorWallet).Str("actual_wallet", t.FromAddress).
+				Msg("order validation failed: order creator wallet mismatch")
+			continue
+		}
+
+		// Check that the transaction is to the intermediary wallet
+		if t.ToAddress != o.IntermediaryWallet {
+			log.Error().Int64("order_id", extraInfo.OrderID).Str("tx_hash", t.Hash).
+				Str("expected_intermediary_wallet", o.IntermediaryWallet).Str("actual_to_address", t.ToAddress).
+				Msg("order validation failed: intermediary wallet mismatch")
+			continue
+		}
+
+		txValueBig := new(big.Int)
+		if _, ok := txValueBig.SetString(t.Value, 10); !ok {
+			log.Error().Int64("order_id", extraInfo.OrderID).Str("tx_hash", t.Hash).
+				Str("bad_value", t.Value).
+				Msg("order validation failed: could not parse tx value as big.Int")
+			continue
+		}
+		orderAmountBig := new(big.Int)
+		if _, ok := orderAmountBig.SetString(o.Amount, 10); !ok {
+			log.Error().Int64("order_id", extraInfo.OrderID).Str("tx_hash", t.Hash).
+				Str("bad_order_amount", o.Amount).
+				Msg("order validation failed: could not parse order amount as big.Int")
+			continue
+		}
+		if txValueBig.Cmp(orderAmountBig) != 0 {
+			log.Error().Int64("order_id", extraInfo.OrderID).Str("tx_hash", t.Hash).
+				Msg("order validation failed: amount mismatch")
+			continue
+		}
+
+		validOrderIDs = append(validOrderIDs, o.OrderID)
+		validTxHashes = append(validTxHashes, t.Hash)
+	}
+
+	if len(validOrderIDs) == 0 {
+		log.Info().Msg("no valid orders to update")
+		return nil
+	}
+
+	queryUpdate := `
+	UPDATE dong_schema.p2p_orders o
+	SET
+		status = 'OPEN',
+		transaction_hash = v.tx_hash,
+		updated_at = NOW()
+	FROM (
+		SELECT
+			unnest($1::bigint[]) AS order_id,
+			unnest($2::text[])   AS tx_hash
+	) v
+	WHERE o.order_id = v.order_id
+	  AND o.status = 'WAITING_TRANSFER'
+	`
+
+	_, err = tx.ExecContext(ctx, queryUpdate, pq.Array(validOrderIDs), pq.Array(validTxHashes))
+	if err != nil {
+		return fmt.Errorf("batch update orders failed: %w", err)
+	}
+
+	log.Info().Int("orders_updated", len(validOrderIDs)).Msg("batch update order status completed")
+
+	return nil
+}
+
+func (p *PostgresConnector) failOrderStatus(
+	ctx context.Context,
+	tx *sql.Tx,
+	txMap map[string]common.Transaction,
+	extraMap map[string]struct{ OfferID, OrderID int64 },
+) error {
+	log.Info().Int("failed_orders_to_process", len(txMap)).Msg("starting failed order status update")
+	if len(txMap) == 0 {
+		return nil
+	}
+
+	orderIDs := make([]int64, 0, len(txMap))
+	for _, extraInfo := range extraMap {
+		if extraInfo.OrderID != 0 {
+			orderIDs = append(orderIDs, extraInfo.OrderID)
+		}
+	}
+	if len(orderIDs) == 0 {
+		return nil
+	}
+
+	querySelect := `
+	SELECT order_id, offer_id, order_amount, status
+	FROM dong_schema.p2p_orders
+	WHERE order_id = ANY($1::bigint[])
+	  AND status = 'WAITING_TRANSFER'
+	FOR UPDATE
+	`
+	rows, err := tx.QueryContext(ctx, querySelect, pq.Array(orderIDs))
+	if err != nil {
+		return fmt.Errorf("select orders for fail update failed: %w", err)
+	}
+	defer rows.Close()
+
+	type orderRow struct {
+		OrderID int64
+		OfferID int64
+		Amount  string
+		Status  string
+	}
+	orderMap := make(map[int64]orderRow)
+	for rows.Next() {
+		var o orderRow
+		if err := rows.Scan(&o.OrderID, &o.OfferID, &o.Amount, &o.Status); err != nil {
+			log.Error().Err(err).Msg("failed to scan order row for fail update")
+			return err
+		}
+		orderMap[o.OrderID] = o
+	}
+
+	failOrderIDs := make([]int64, 0)
+	failTxHashes := make([]string, 0)
+	releaseByOffer := make(map[int64]*big.Int)
+
+	for hash, t := range txMap {
+		extraInfo, ok := extraMap[hash]
+		if !ok {
+			log.Error().Str("tx_hash", t.Hash).
+				Msg("failOrderStatus: extraMap missing entry for tx hash")
+			continue
+		}
+		o, ok := orderMap[extraInfo.OrderID]
+		if !ok {
+			log.Error().Int64("order_id", extraInfo.OrderID).Str("tx_hash", t.Hash).
+				Msg("failed order: order not found or not WAITING_TRANSFER")
+			continue
+		}
+		if o.OfferID != extraInfo.OfferID {
+			log.Error().Int64("order_id", extraInfo.OrderID).Str("tx_hash", t.Hash).
+				Msg("failed order: offer_id mismatch")
+			continue
+		}
+
+		amountBig := new(big.Int)
+		if _, ok := amountBig.SetString(o.Amount, 10); !ok {
+			log.Error().Int64("order_id", extraInfo.OrderID).
+				Str("bad_order_amount", o.Amount).
+				Msg("failOrderStatus: could not parse order amount as big.Int")
+			continue
+		}
+		failOrderIDs = append(failOrderIDs, extraInfo.OrderID)
+		failTxHashes = append(failTxHashes, t.Hash)
+		if cur, exists := releaseByOffer[o.OfferID]; exists {
+			cur.Add(cur, amountBig)
+		} else {
+			releaseByOffer[o.OfferID] = amountBig
+		}
+	}
+
+	if len(failOrderIDs) == 0 {
+		log.Info().Msg("no valid failed orders to update")
+		return nil
+	}
+
+	queryFailOrders := `
+	UPDATE dong_schema.p2p_orders o
+	SET status = 'FAILED', transaction_hash = v.tx_hash, updated_at = NOW()
+	FROM (
+		SELECT unnest($1::bigint[]) AS order_id, unnest($2::text[]) AS tx_hash
+	) v
+	WHERE o.order_id = v.order_id AND o.status = 'WAITING_TRANSFER'
+	`
+	if _, err = tx.ExecContext(ctx, queryFailOrders, pq.Array(failOrderIDs), pq.Array(failTxHashes)); err != nil {
+		return fmt.Errorf("batch fail orders failed: %w", err)
+	}
+
+	releaseOfferIDs := make([]int64, 0, len(releaseByOffer))
+	releaseAmounts := make([]string, 0, len(releaseByOffer))
+	for offerID, amt := range releaseByOffer {
+		releaseOfferIDs = append(releaseOfferIDs, offerID)
+		releaseAmounts = append(releaseAmounts, amt.String())
+	}
+
+	queryRelease := `
+	UPDATE dong_schema.p2p_offers o
+	SET available_amount = o.available_amount + v.release_amount::numeric, updated_at = NOW()
+	FROM (
+		SELECT unnest($1::bigint[]) AS offer_id, unnest($2::text[]) AS release_amount
+	) v
+	WHERE o.offer_id = v.offer_id
+	`
+	if _, err = tx.ExecContext(ctx, queryRelease, pq.Array(releaseOfferIDs), pq.Array(releaseAmounts)); err != nil {
+		return fmt.Errorf("batch release offer quantities failed: %w", err)
+	}
+
+	log.Info().Int("orders_failed", len(failOrderIDs)).Msg("batch fail order status and release completed")
+
+	return nil
+}
+
+// releaseIntermediaryWallets sets intermediary_wallet.status to READY for the given wallet addresses (if currently IN_USE)
+func (p *PostgresConnector) releaseIntermediaryWallets(ctx context.Context, tx *sql.Tx, walletAddresses []string) error {
+	if len(walletAddresses) == 0 {
+		return nil
+	}
+	query := `
+	   UPDATE dong_schema.intermediary_wallet
+	   SET status = 'READY', updated_at = NOW()
+	   WHERE wallet_address = ANY($1::text[])
+		 AND status = 'IN_USE'
+   `
+	if _, err := tx.ExecContext(ctx, query, pq.Array(walletAddresses)); err != nil {
+		return fmt.Errorf("failed to release intermediary wallets: %w", err)
+	}
+	log.Info().Int("wallets_released", len(walletAddresses)).Msg("released intermediary wallets")
+	return nil
+}
+
+func (p *PostgresConnector) failOfferStatus(
+	ctx context.Context,
+	tx *sql.Tx,
+	txMap map[string]common.Transaction,
+	offerIDMap map[string]int64,
+) error {
+	log.Info().Int("failed_offers_to_process", len(txMap)).Msg("starting failed offer status update")
+	if len(txMap) == 0 {
+		return nil
+	}
+
+	offerIDs := make([]int64, 0, len(txMap))
+	for hash := range txMap {
+		if id := offerIDMap[hash]; id != 0 {
+			offerIDs = append(offerIDs, id)
+		}
+	}
+	if len(offerIDs) == 0 {
+		return nil
+	}
+
+	queryFail := `
+	UPDATE dong_schema.p2p_offers
+	SET status = 'FAILED', updated_at = NOW()
+	WHERE offer_id = ANY($1::bigint[])
+	  AND status = 'OPEN'
+	RETURNING COALESCE(intermediary_wallet_address, '')
+	`
+	rows, err := tx.QueryContext(ctx, queryFail, pq.Array(offerIDs))
+	if err != nil {
+		return fmt.Errorf("batch fail offers failed: %w", err)
+	}
+	defer rows.Close()
+
+	walletAddresses := make([]string, 0)
+	for rows.Next() {
+		var addr string
+		if err := rows.Scan(&addr); err != nil {
+			log.Error().Err(err).Msg("failed to scan intermediary wallet address")
+			continue
+		}
+		if addr != "" {
+			walletAddresses = append(walletAddresses, addr)
+		}
+	}
+
+	log.Info().Int("offers_failed", len(walletAddresses)).Msg("batch fail offer status completed")
+
+	// Release intermediary wallets back to READY — the tx failed so no funds ever arrived
+	if len(walletAddresses) > 0 {
+		if err := p.releaseIntermediaryWallets(ctx, tx, walletAddresses); err != nil {
+			return err
+		}
+		log.Info().Int("wallets_released", len(walletAddresses)).Msg("released intermediary wallets after failed sell offer")
+	}
 
 	return nil
 }

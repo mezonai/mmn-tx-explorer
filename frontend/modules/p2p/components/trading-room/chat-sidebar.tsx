@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { Send, AlertTriangle, Loader2, MessageCircle, X, Info, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Send, AlertTriangle, Loader2, MessageCircle, X, Info, AlertCircle, Paperclip, FileText, File as FileIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLightClient, useUser } from '@/providers';
 import { LightSocket } from 'mezon-light-sdk';
@@ -9,49 +9,60 @@ import { STORAGE_KEYS } from '@/constant';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { formatChatTime, generateMarkdownPayload, isSameDay } from '../../util';
-import { MessageWithParsedContent, P2POrder, ParsedMessageContent } from '../../types';
-import { APP_CONFIG } from '@/configs/app.config';
-import { ROUTES } from '@/configs/routes.config';
-import { DateTimeUtil, NumberUtil } from '@/utils';
+import { AutoMessagePayload, MessageWithParsedContent, ParsedMessageContent, ChannelMessage, MessageCode } from '../../types';
+import { DateTimeUtil, formatFileSize, getFilesFromClipboard, getFilesFromDragEvent, uploadAttachmentFile, downloadFile } from '@/utils';
 import { safeJsonParse } from '@/utils/json-parse.utils';
-import { ChannelMessage } from 'mezon-light-sdk/dist/api.gen';
+import { toast } from 'sonner';
+import { MAX_CHAR_LIMIT, MAX_FILE_SIZE } from '../../constants';
+import Bottleneck from 'bottleneck';
+
+// Initialize a limiter for the upload attachment API
+const uploadLimiter = new Bottleneck({
+  minTime: 1100, // Ensuring at least 1.1s between requests (server limit is usually 1s)
+  maxConcurrent: 1, // Process one at a time for safety
+});
 
 interface ChatSidebarProps {
   sellerId: string;
-  initialOrder?: P2POrder | null;
-  onInitialMessageSent?: () => void;
+  autoMessage?: AutoMessagePayload | null;
+  onAutoMessageSent?: () => void;
 }
 
-const MAX_CHAR_LIMIT = 5000;
-
-export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: ChatSidebarProps) => {
+export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSidebarProps) => {
   const [messages, setMessages] = useState<MessageWithParsedContent[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isConnected, setIsConnected] = useState(false);
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showLimitWarning, setShowLimitWarning] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<LightSocket | null>(null);
   const channelIdRef = useRef<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<{ url: string; file: File }[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
 
   const isMobileOpenRef = useRef(isMobileOpen);
-
-  const initialOrderRef = useRef(initialOrder);
-  const onInitialMessageSentRef = useRef(onInitialMessageSent);
-  const hasSentAutoMessageRef = useRef(false);
+  const isMessageSendingRef = useRef(false);
 
   const { lightClient } = useLightClient();
   const { user } = useUser();
 
-  const [showLimitWarning, setShowLimitWarning] = useState(false);
-
-  useEffect(() => {
-    initialOrderRef.current = initialOrder;
-    onInitialMessageSentRef.current = onInitialMessageSent;
-  }, [initialOrder, onInitialMessageSent]);
+  const getFileIcon = (filename: string, filetype?: string) => {
+    const ext = filename.split('.').pop()?.toLowerCase();
+    if (filetype?.startsWith('image/')) return null;
+    if (ext === 'pdf') return <FileText className="h-5 w-5 text-red-500" />;
+    if (['doc', 'docx'].includes(ext || '')) return <FileText className="h-5 w-5 text-blue-500" />;
+    if (['json', 'html', 'js', 'ts', 'jsx', 'tsx'].includes(ext || ''))
+      return <FileText className="h-5 w-5 text-purple-500" />;
+    return <FileIcon className="h-5 w-5 text-gray-500" />;
+  };
 
   useEffect(() => {
     isMobileOpenRef.current = isMobileOpen;
@@ -63,26 +74,32 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
   useEffect(() => {
     if (!lightClient) return;
     let isMounted = true;
+    const unsubs: (() => void)[] = [];
 
     const initChat = async () => {
       try {
         const isExpired = await lightClient.isSessionExpired();
         if (isExpired) {
           await lightClient.refreshSession();
-          localStorage.setItem(STORAGE_KEYS.LIGHT_CLIENT, JSON.stringify(lightClient));
+          localStorage.setItem(STORAGE_KEYS.LIGHT_CLIENT, JSON.stringify(lightClient.exportSession()));
         }
         if (!isMounted) return;
 
         const sdk = lightClient;
-        const socket = new LightSocket(sdk, sdk.getSession());
-        await socket.connect();
+        const socket = new LightSocket(sdk, sdk.session);
+
+        await socket.connect({
+          onError: (error) => console.error('[Chat] Socket error:', error),
+          verbose: false
+        });
+
         socketRef.current = socket;
 
         const channel = await sdk.createDM(sellerId);
         await socket.joinDMChannel(channel.channel_id!);
         channelIdRef.current = channel.channel_id!;
 
-        socket.setChannelMessageHandler((msg: ChannelMessage) => {
+        const unsubscribe = socket.onChannelMessage((msg: ChannelMessage) => {
           let parsedContent: ParsedMessageContent = { t: '' };
           if (typeof msg.content === 'string') {
             parsedContent = safeJsonParse(msg.content) ?? { t: msg.content };
@@ -90,7 +107,9 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
             parsedContent = msg.content as ParsedMessageContent;
           }
 
-          if (!parsedContent || !parsedContent.t || parsedContent.t.trim() === '') return;
+          const hasContent = parsedContent && parsedContent.t && parsedContent.t.trim() !== '';
+          const hasAttachments = msg.attachments && msg.attachments.length > 0;
+          if (!hasContent && !hasAttachments) return;
 
           const isValidSender = msg.sender_id === user?.id || msg.sender_id === sellerId;
           if (!isValidSender) return;
@@ -111,66 +130,7 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
             setUnreadCount((prev) => prev + 1);
           }
         });
-
-        if (initialOrderRef.current && !hasSentAutoMessageRef.current && channelIdRef.current) {
-          try {
-            hasSentAutoMessageRef.current = true;
-
-            const order = initialOrderRef.current;
-            const mzdAmount = NumberUtil.formatWithCommas(order.amount);
-            const vndAmount = NumberUtil.formatWithCommas(order.amount * order.price_rate);
-            const fullUrl = process.env.NEXT_PUBLIC_CHAT_APP_ZK_API_URL || window.location.origin;
-            const domain = new URL(fullUrl).origin;
-            const orderLink = `${domain}${ROUTES.P2P_TRADING_ROOM(order.order_id)}`;
-
-            const textContent = `Hello, I would like to buy your offer. Please check the order details below.`;
-            const mk = generateMarkdownPayload(textContent);
-
-            const embedElement = {
-              color: '#6366f1',
-              title: `Click here to view Order #${order.order_id}`,
-              url: orderLink,
-              description: 'New P2P Order',
-              fields: [
-                {
-                  name: 'Buy Amount',
-                  value: `${mzdAmount} ${APP_CONFIG.CHAIN_SYMBOL}`,
-                  inline: true,
-                },
-                {
-                  name: 'Total Price',
-                  value: `${vndAmount} VND`,
-                  inline: true,
-                },
-                {
-                  name: 'Exchange Rate',
-                  value: `${NumberUtil.formatWithCommas(order.price_rate)}  VND/${APP_CONFIG.CHAIN_SYMBOL}`,
-                  inline: true,
-                },
-              ],
-              timestamp: new Date().toISOString(),
-              footer: {
-                text: 'Mezon Dong P2P Trading',
-              },
-            };
-
-            await socket.sendDM({
-              channelId: channelIdRef.current,
-              content: {
-                mk: mk,
-                t: textContent,
-                embed: [embedElement],
-              },
-            });
-
-            if (onInitialMessageSentRef.current) {
-              onInitialMessageSentRef.current();
-            }
-          } catch (err) {
-            console.error('Failed to send auto message:', err);
-            hasSentAutoMessageRef.current = false;
-          }
-        }
+        unsubs.push(unsubscribe);
 
         if (isMounted) {
           setIsConnected(true);
@@ -183,8 +143,41 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
     initChat();
     return () => {
       isMounted = false;
+      unsubs.forEach(unsub => unsub());
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
     };
   }, [lightClient, sellerId, user?.id]);
+
+  useEffect(() => {
+    if (autoMessage && isConnected && socketRef.current && channelIdRef.current) {
+      const sendAuto = async () => {
+        try {
+          const mk = generateMarkdownPayload(autoMessage.text);
+
+          await socketRef.current?.sendDM({
+            channelId: channelIdRef.current!,
+            content: {
+              t: autoMessage.text,
+              mk: mk,
+              embed: autoMessage.embed,
+              components: autoMessage.components,
+            },
+            code: autoMessage.buzz ? MessageCode.BUZZ : MessageCode.NORMAL,
+          });
+
+          if (onAutoMessageSent) {
+            onAutoMessageSent();
+          }
+        } catch (err) {
+          console.error('Failed to send auto message:', err);
+        }
+      };
+
+      sendAuto();
+    }
+  }, [autoMessage, isConnected, onAutoMessageSent]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -192,45 +185,145 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
     }
   }, [messages, isMobileOpen]);
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputValue.trim() || !socketRef.current || !channelIdRef.current) return;
-    const content = inputValue;
-    setInputValue('');
-    setShowLimitWarning(false);
-    try {
-      const mk = generateMarkdownPayload(content);
+  const handleSendMessage = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const content = inputValue.trim();
+    const hasContent = content.length > 0;
+    const hasAttachments = selectedFiles.length > 0;
 
+    if (isMessageSendingRef.current || (!hasContent && !hasAttachments) || !socketRef.current || !channelIdRef.current || !lightClient) {
+      return;
+    }
+
+    isMessageSendingRef.current = true;
+    setIsUploading(true);
+
+    // Save current state for recovery if needed
+    const filesToUpload = [...selectedFiles];
+    const currentPreviews = [...previews];
+
+    // Optimistically clear UI
+    setInputValue('');
+    setPreviews([]);
+    setSelectedFiles([]);
+    setShowLimitWarning(false);
+
+    try {
+      // Sequential upload with rate limiting (using Bottleneck)
+      const finalAttachments = [];
+
+      for (const file of filesToUpload) {
+        if (file.size > MAX_FILE_SIZE) {
+          toast.error(`File ${file.name} is too large. Max is ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+          continue;
+        }
+
+        let retryCount = 0;
+        const maxRetries = 3;
+        let uploadedFile = null;
+
+        while (retryCount < maxRetries) {
+          try {
+            const result = await uploadAttachmentFile(lightClient, file, uploadLimiter);
+
+            if (result) {
+              uploadedFile = result;
+              break; // Success
+            }
+          } catch (err: any) {
+            retryCount++;
+            console.warn(`[Chat] Attempt ${retryCount} failed for ${file.name}:`, err.message);
+          }
+        }
+
+        if (uploadedFile) {
+          finalAttachments.push(uploadedFile);
+        }
+      }
+
+      const mk = generateMarkdownPayload(content);
       await socketRef.current.sendDM({
         channelId: channelIdRef.current,
         content: {
-          mk: mk,
           t: content,
+          mk: mk
         },
+        attachments: finalAttachments
       });
+
+      if (hasAttachments && finalAttachments.length < filesToUpload.length) {
+        toast.warning(`Some files could not be uploaded (${filesToUpload.length - finalAttachments.length} failed)`);
+      }
+
+      // Revoke blobs only after successful message delivery
+      currentPreviews.forEach(p => {
+        if (p.url && p.url.startsWith('blob:')) URL.revokeObjectURL(p.url);
+      });
+
     } catch (err) {
-      console.error('Send DM failed:', err);
+      toast.error('Failed to send message. Please check your connection and try again.');
+      // Recovery: Restore input and selected files so user doesn't lose data
+      setInputValue(content);
+      setPreviews(currentPreviews);
+      setSelectedFiles(filesToUpload);
+    } finally {
+      setIsUploading(false);
+      isMessageSendingRef.current = false;
     }
+  };
+
+  const handleFileClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0 || !lightClient || !socketRef.current || !channelIdRef.current) return;
+
+    const validFiles: File[] = [];
+    const newPreviews: { url: string; file: File }[] = [];
+
+    files.forEach(file => {
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(`File ${file.name} is too large. Max is ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+        return;
+      }
+      validFiles.push(file);
+      const url = file.type.startsWith('image/') ? URL.createObjectURL(file) : '';
+      newPreviews.push({ url, file });
+    });
+
+    setSelectedFiles(prev => [...prev, ...validFiles]);
+    setPreviews(prev => [...prev, ...newPreviews]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeFile = (index: number) => {
+    const removedPreview = previews[index];
+    if (removedPreview.url && removedPreview.url.startsWith('blob:')) {
+      URL.revokeObjectURL(removedPreview.url);
+    }
+    setPreviews(prev => prev.filter((_, i) => i !== index));
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const target = e.target;
     let newValue = target.value;
-
     if (newValue.length > MAX_CHAR_LIMIT) {
       newValue = newValue.slice(0, MAX_CHAR_LIMIT);
       setShowLimitWarning(true);
     } else {
       setShowLimitWarning(false);
     }
-
     setInputValue(newValue);
     target.style.height = 'auto';
     target.style.height = `${Math.min(target.scrollHeight, 150)}px`;
   };
 
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !inputValue.trim()) {
+    if (e.key === 'Enter' && !inputValue.trim() && selectedFiles.length === 0) {
       e.preventDefault();
       return;
     }
@@ -238,6 +331,84 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
       e.preventDefault();
       handleSendMessage(e);
       if (textareaRef.current) textareaRef.current.style.height = 'auto';
+    }
+  };
+
+  const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const files = getFilesFromClipboard(e);
+    if (files.length === 0) return;
+    e.preventDefault();
+
+
+    if (files.length > 0) {
+      const validFiles: File[] = [];
+      const newPreviews: { url: string; file: File }[] = [];
+
+      files.forEach(file => {
+        if (file.size > MAX_FILE_SIZE) {
+          toast.error(`File ${file.name} is too large. Max is ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+          return;
+        }
+        validFiles.push(file);
+        const url = file.type.startsWith('image/') ? URL.createObjectURL(file) : '';
+        newPreviews.push({ url, file });
+      });
+
+      setSelectedFiles(prev => [...prev, ...validFiles]);
+      setPreviews(prev => [...prev, ...newPreviews]);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = getFilesFromDragEvent(e);
+    if (files.length === 0) return;
+
+
+    const validFiles: File[] = [];
+    const newPreviews: { url: string; file: File }[] = [];
+
+    files.forEach(file => {
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(`File ${file.name} is too large. Max is ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+        return;
+      }
+      validFiles.push(file);
+      const url = file.type.startsWith('image/') ? URL.createObjectURL(file) : '';
+      newPreviews.push({ url, file });
+    });
+
+    setSelectedFiles(prev => [...prev, ...validFiles]);
+    setPreviews(prev => [...prev, ...newPreviews]);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDragging) setIsDragging(true);
+  };
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (
+      e.clientX <= rect.left ||
+      e.clientX >= rect.right ||
+      e.clientY <= rect.top ||
+      e.clientY >= rect.bottom
+    ) {
+      setIsDragging(false);
     }
   };
 
@@ -253,7 +424,6 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
         )}
       >
         <MessageCircle className="size-6" />
-
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-black">
             {unreadCount > 99 ? '99+' : unreadCount}
@@ -262,11 +432,24 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
       </Button>
 
       <div
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
         className={cn(
           'fixed inset-0 z-50 flex h-full flex-col bg-white transition-transform duration-300 md:sticky md:top-24 md:z-0 md:flex md:h-[calc(100vh-140px)] md:w-87.5 md:translate-y-0 lg:w-125 dark:bg-black dark:md:border-gray-800',
           isMobileOpen ? 'translate-y-0' : 'translate-y-full md:translate-y-0'
         )}
       >
+        {isDragging && (
+          <div className="absolute inset-0 z-[60] flex flex-col items-center justify-center gap-4 bg-brand-primary/10 backdrop-blur-[2px] border-2 border-dashed border-brand-primary m-2 rounded-xl transition-all animate-in fade-in zoom-in duration-200">
+            <div className="flex flex-col items-center gap-2 text-brand-primary">
+              <Paperclip className="h-12 w-12 animate-bounce" />
+              <p className="text-lg font-bold">Drop files here</p>
+              <p className="text-xs opacity-70">max {MAX_FILE_SIZE / 1024 / 1024} MB</p>
+            </div>
+          </div>
+        )}
         <div className="flex shrink-0 items-center justify-between border-b border-gray-200 p-4 dark:border-gray-800">
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
@@ -293,7 +476,7 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
             '[&::-webkit-scrollbar-thumb]:rounded-full'
           )}
         >
-          {/* Security Area */}
+          {/* Security Alert */}
           <div className="mb-6 px-1">
             <div className="relative overflow-hidden rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
               <div className="mb-3 flex items-center gap-2 text-amber-600 dark:text-amber-500">
@@ -322,7 +505,7 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
             </div>
           </div>
 
-          {/* Render Messages */}
+          {/* Messages */}
           {messages.map((msg, idx) => {
             const isMe = msg.sender_id === user?.id || msg.sender_id === 'me';
             const prevMsg = messages[idx - 1];
@@ -381,34 +564,90 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
                         )}
                       </div>
                     )}
-                    <div
-                      className={cn(
-                        'overflow-wrap-anywhere w-fit max-w-full rounded-2xl px-3 py-2 text-sm wrap-break-word whitespace-pre-wrap shadow-sm transition-colors',
-                        isMe
-                          ? 'bg-brand-primary text-white'
-                          : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
-                        isMe ? (isFirstInGroup ? 'rounded-tr-none' : '') : isFirstInGroup ? 'rounded-tl-none' : ''
-                      )}
-                    >
-                      {msg.content.embed && msg.content.embed.length > 0 ? (
-                        <div className="flex flex-col gap-2">
-                          {msg.content.t && <p>{msg.content.t}</p>}
-
-                          <div className="flex flex-col rounded-md border border-black/5 bg-black/5 p-3 dark:border-white/10 dark:bg-white/5">
-                            {msg.content?.embed?.[0]?.fields && (
-                              <div className="grid grid-cols-1 gap-1 text-xs opacity-90">
-                                {msg.content.embed[0].fields.map((field, i: number) => (
-                                  <div key={i} className="flex gap-1">
-                                    <span className="opacity-70">{field.name}:</span>
-                                    <span className="font-medium">{field.value}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
+                    <div className="flex w-fit max-w-full flex-col gap-2">
+                      {msg.content.t && (
+                        <div
+                          className={cn(
+                            'overflow-wrap-anywhere w-fit max-w-full rounded-2xl px-3 py-2 text-sm break-words whitespace-pre-wrap shadow-sm transition-colors',
+                            isMe
+                              ? 'bg-brand-primary text-white'
+                              : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
+                            isMe ? (isFirstInGroup ? 'rounded-tr-none' : '') : isFirstInGroup ? 'rounded-tl-none' : ''
+                          )}
+                        >
+                          {msg.content.t}
                         </div>
-                      ) : (
-                        msg.content.t
+                      )}
+
+                      {/* Attachments rendering */}
+                      {msg.attachments && msg.attachments.length > 0 && (
+                        <div className="flex flex-col gap-2">
+                          {msg.attachments.map((at: any, i: number) => {
+                            const filetype = at.filetype || at.file_type || '';
+                            const isImage = filetype.startsWith('image/');
+
+                            return (
+                              <div key={i}>
+                                {isImage ? (
+                                  <div
+                                    className="cursor-pointer overflow-hidden rounded-xl border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
+                                    onClick={() => window.open(at.url, '_blank')}
+                                  >
+                                    <img
+                                      src={at.url}
+                                      alt={at.filename}
+                                      className="max-h-80 w-auto object-contain"
+                                    />
+                                  </div>
+                                ) : (
+                                  <div
+                                    onClick={() => downloadFile(at.url, at.filename || 'file')}
+                                    className={cn(
+                                      "flex items-start gap-3 rounded-xl border p-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer",
+                                      isMe
+                                        ? "border-white/20 bg-white/10"
+                                        : "border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
+                                    )}
+                                  >
+                                    <div className="shrink-0 pt-0.5">
+                                      {getFileIcon(at.filename, filetype)}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <div className={cn(
+                                        "break-words text-sm font-medium",
+                                        isMe ? "text-white" : "text-blue-600 dark:text-blue-400"
+                                      )}>
+                                        {at.filename}
+                                      </div>
+                                      <div className={cn(
+                                        "mt-0.5 text-xs",
+                                        isMe ? "text-white/70" : "text-gray-500 dark:text-gray-400"
+                                      )}>
+                                        size: {formatFileSize(at.size || 0)}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Embed content */}
+                      {msg.content.embed && msg.content.embed.length > 0 && (
+                        <div className="flex flex-col rounded-md border border-black/5 bg-black/5 p-3 dark:border-white/10 dark:bg-white/5">
+                          {msg.content.embed[0].fields && (
+                            <div className="grid grid-cols-1 gap-1 text-xs opacity-90">
+                              {msg.content.embed[0].fields.map((field: any, i: number) => (
+                                <div key={i} className="flex gap-1">
+                                  <span className="opacity-70">{field.name}:</span>
+                                  <span className="font-medium">{field.value}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -431,14 +670,49 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
               <span>Message limit reached. Maximum {MAX_CHAR_LIMIT} characters allowed.</span>
             </div>
           )}
+
+          {previews.length > 0 && (
+            <div className="mb-3 flex flex-wrap gap-2 pb-2">
+              {previews.map((p, i) => (
+                <div key={i} className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
+                  {p.file.type.startsWith('image/') ? (
+                    <img src={p.url} alt={p.file.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full flex-col items-center justify-center gap-1">
+                      {getFileIcon(p.file.name, p.file.type)}
+                      <span className="text-[9px] font-bold text-gray-600 dark:text-gray-400">
+                        {p.file.name.split('.').pop()?.toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => removeFile(i)}
+                    className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-md hover:bg-red-600"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
           <form onSubmit={handleSendMessage} className="relative w-full">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              className="hidden"
+              multiple
+              accept="image/*,.pdf,.doc,.docx,.json,.txt"
+            />
             <Textarea
               ref={textareaRef}
               rows={1}
               value={inputValue}
               onChange={handleTextareaChange}
               onKeyDown={handleKeyDown}
-              placeholder="Type a message..."
+              onPaste={handlePaste}
+              placeholder="Type a message, paste or drag files..."
               className={cn(
                 'max-h-50 min-h-10.5 w-full resize-none shadow-none',
                 'bg-gray-50 dark:bg-gray-900',
@@ -446,24 +720,48 @@ export const ChatSidebar = ({ sellerId, initialOrder, onInitialMessageSent }: Ch
                 showLimitWarning ? 'border-red-300 focus:border-red-500' : 'focus:border-brand-primary',
                 'focus:border-brand-primary focus:ring-0 focus-visible:ring-0',
                 'text-sm text-gray-900 dark:text-white',
-                'py-2.5 pr-12 pl-4',
-                'overflow-y-auto break-all whitespace-pre-wrap'
+                'py-2.5 pr-24 pl-4',
+                'overflow-y-auto break-words whitespace-pre-wrap',
+                '[&::-webkit-scrollbar]:w-1.5',
+                '[&::-webkit-scrollbar-track]:bg-transparent',
+                '[&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-gray-800',
+                'hover:[&::-webkit-scrollbar-thumb]:bg-gray-400 dark:hover:[&::-webkit-scrollbar-thumb]:bg-gray-700',
+                '[&::-webkit-scrollbar-thumb]:rounded-full'
               )}
             />
-            <Button
-              type="submit"
-              disabled={!inputValue.trim()}
-              variant="ghost"
-              size="icon"
-              className={cn(
-                'absolute right-2 bottom-1.5',
-                'h-auto w-auto p-1.5',
-                'text-brand-primary hover:bg-brand-primary/10',
-                'disabled:text-gray-400 dark:disabled:text-gray-600'
-              )}
-            >
-              {isConnected ? <Send className="h-5 w-5" /> : <Loader2 className="h-5 w-5 animate-spin" />}
-            </Button>
+            <div className="absolute right-5 bottom-1.5 z-10 flex items-center gap-1">
+              <Button
+                type="button"
+                disabled={isUploading}
+                onClick={handleFileClick}
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  'h-auto w-auto p-1.5',
+                  'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800',
+                  'disabled:opacity-50'
+                )}
+              >
+                {isUploading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Paperclip className="h-5 w-5" />
+                )}
+              </Button>
+              <Button
+                type="submit"
+                disabled={!inputValue.trim() && selectedFiles.length === 0}
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  'h-auto w-auto p-1.5',
+                  'text-brand-primary hover:bg-brand-primary/10',
+                  'disabled:text-gray-400 dark:disabled:text-gray-600'
+                )}
+              >
+                {isConnected ? <Send className="h-5 w-5" /> : <Loader2 className="h-5 w-5 animate-spin" />}
+              </Button>
+            </div>
           </form>
         </div>
       </div>

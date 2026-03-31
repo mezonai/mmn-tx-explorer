@@ -2,7 +2,7 @@
 
 import { CopyButton } from '@/components/ui/copy-button';
 import { DonationCampaign, ECampaignStatus } from '@/modules/donation-campaign/type';
-import { useAuth } from '@/providers';
+import { useAuth, useUser } from '@/providers';
 import { DonateDialog } from './donate-dialog';
 import { truncateWalletAddress } from '@/modules/donation-campaign/utils';
 import Link from 'next/link';
@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 
 export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
   const { isAuthenticated } = useAuth();
+  const { user } = useUser();
   const { hidden } = useHidden();
   const qrRef = useRef<HTMLDivElement>(null);
 
@@ -297,7 +298,26 @@ export function DonationSidebar({ campaign }: { campaign: DonationCampaign }) {
         {isAuthenticated && campaign.status == ECampaignStatus.Active && (
           <DonateDialog walletAddress={campaign.donation_wallet} campaignId={String(campaign.id)} />
         )}
-        <p className="text-muted-foreground text-center text-xs">💡 Keep your transaction hash for reconciliation.</p>
+
+        {isAuthenticated && user?.walletAddress && (
+          <Link
+            href={ROUTES.WALLET(
+              campaign.donation_wallet,
+              `from_filter=${user.walletAddress}&to_filter=${campaign.donation_wallet}`
+            )}
+          >
+            <Button
+              variant="outline"
+              size="lg"
+              className="border-brand-primary text-brand-primary hover:bg-brand-primary/10 w-full gap-2 rounded-xl"
+            >
+              <span>👁</span>
+              View My Contributions
+            </Button>
+          </Link>
+        )}
+
+        <p className="text-muted-foreground mt-4 text-center text-xs">💡 Keep your transaction hash for reconciliation.</p>
       </div>
     </aside>
   );

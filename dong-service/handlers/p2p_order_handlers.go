@@ -6,6 +6,7 @@ import (
 	"dong-service/logger"
 	"dong-service/models"
 	"dong-service/services"
+	"dong-service/types"
 	"dong-service/utils"
 	"errors"
 	"net/http"
@@ -68,17 +69,17 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	}
 
 	// Validate request
-	amount := req.Amount
-	if amount < 0 {
+	amount := types.NewBigIntString(req.Amount).Multiply(constants.TokenMultiplierBigIntString)
+	if amount.Sign() < 0 {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "amount must be non-negative"))
 		return
 	}
 	if offer.Limit != nil {
-		if amount < offer.Limit.Min {
+		if amount.Compare(offer.Limit.Min) < 0 {
 			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "order amount is below minimum limit"))
 			return
 		}
-		if amount > offer.Limit.Max {
+		if amount.Compare(offer.Limit.Max) > 0 {
 			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "order amount exceeds maximum limit"))
 			return
 		}
@@ -137,13 +138,28 @@ func (h *OrderHandler) ListOrdersForOffer(c *gin.Context) {
 	pg := utils.GetPaginationParams(c)
 	pagination := map[string]any{"order_by": pg.OrderBy, "order": pg.Order, "limit": pg.Limit, "offset": pg.Offset}
 
-	orders, err := h.orderService.ListOrdersByOffer(c.Request.Context(), id, pagination)
+	orders, total, err := h.orderService.ListOrdersByOffer(c.Request.Context(), id, pagination)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to list orders: "+err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, models.SuccessResponse(orders))
+	var totalPage int64
+	if pg.Limit > 0 {
+		totalPage = (total + int64(pg.Limit)) / int64(pg.Limit)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Orders retrieved",
+		"data":    orders,
+		"meta": gin.H{
+			"page":        pg.Page,
+			"limit":       pg.Limit,
+			"total_items": total,
+			"total_pages": totalPage,
+		},
+	})
 }
 
 // GetOrderDetail godoc
@@ -246,7 +262,6 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 	var body struct {
 		ExecutionPrice *string `json:"execution_price,omitempty"`
 		Source         *string `json:"source,omitempty"`
-		BankInfo       *string `json:"bank_info,omitempty"`
 	}
 	_ = c.ShouldBindJSON(&body)
 
@@ -296,20 +311,29 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 		}
 	}
 
-	isSeller := offer != nil && walletAddress == offer.SellerWalletAddress
-	isBuyer := order.BuyerWalletAddress != nil && walletAddress == *order.BuyerWalletAddress
+	isOfferCreator := offer != nil && walletAddress == *offer.OfferCreatorWalletAddress
+	isOrderCreator := order != nil && walletAddress == *order.OrderCreatorWalletAddress
 
-	if !isSeller && !isBuyer {
+	if !isOfferCreator && !isOrderCreator {
 		c.JSON(http.StatusForbidden, models.ErrorResponse(http.StatusForbidden, "caller is neither buyer nor seller"))
 		return
 	}
 
-	if isBuyer {
+	var isBuyerRole bool
+	if offer.Side == models.OfferSideBuy {
+		// BUY Offer: Creator is BUYER, Responder (Order Creator) is SELLER
+		isBuyerRole = isOfferCreator
+	} else {
+		// SELL Offer: Creator is SELLER, Responder (Order Creator) is BUYER
+		isBuyerRole = isOrderCreator
+	}
+
+	if isBuyerRole {
 		if err := h.orderService.ConfirmOrderAsBuyer(c.Request.Context(), orderID, order); err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to confirm order: "+err.Error()))
 			return
 		}
-	} else if isSeller {
+	} else {
 		if err := h.orderService.ConfirmOrderAsSeller(c.Request.Context(), orderID, order, offer); err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, "failed to confirm order: "+err.Error()))
 			return

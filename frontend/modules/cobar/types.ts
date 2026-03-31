@@ -4,6 +4,7 @@ export interface ProductResponse {
   thumbnail: string;
   total_quantity: number;
   total_revenue: number;
+  product_link: string;
 }
 
 export interface CobarStats {
