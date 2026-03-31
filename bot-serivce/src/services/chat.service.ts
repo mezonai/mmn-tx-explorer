@@ -1,8 +1,8 @@
 import { getMessagesByChannel, findChannelByUsersQuery } from "../database/index.js";
 import type { MessageWithParsedContent, ChatHistoryRow } from "../types.js";
 
-export const getChatHistory = (channelId: string): MessageWithParsedContent[] => {
-  const rows = getMessagesByChannel(channelId);
+export const getChatHistory = (channelId: string, limit?: number, before?: number): MessageWithParsedContent[] => {
+  const rows = getMessagesByChannel(channelId, limit, before);
   return rows.map((row: ChatHistoryRow) => ({
     id: row.id,
     message_id: row.id,

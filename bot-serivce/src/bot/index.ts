@@ -14,6 +14,5 @@ export const initBot = async () => {
 
   registerEvents(client);
 
-  console.log("Bot initialized and logged in!");
   return client;
 };

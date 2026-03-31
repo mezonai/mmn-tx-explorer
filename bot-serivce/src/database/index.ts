@@ -5,14 +5,23 @@ import type { ChatHistoryRow } from "../types.js";
 const dbPath = path.resolve("mezon-cache/mezon-messages-cache.db");
 const db = new Database(dbPath);
 
-export const getMessagesByChannel = (channelId: string): ChatHistoryRow[] => {
-  const query = `
+export const getMessagesByChannel = (channelId: string, limit: number = 50, beforeTime?: number): ChatHistoryRow[] => {
+  let query = `
     SELECT * FROM messages_v2 
     WHERE channel_id = ? 
-    AND clan_id = '0' 
-    ORDER BY create_time_seconds ASC
+    AND clan_id = '0'
   `;
-  return db.prepare(query).all(channelId) as ChatHistoryRow[];
+  const params: any[] = [channelId];
+
+  if (beforeTime) {
+    query += ` AND create_time_seconds < ? `;
+    params.push(beforeTime);
+  }
+
+  query += ` ORDER BY create_time_seconds DESC LIMIT ? `;
+  params.push(limit);
+
+  return db.prepare(query).all(...params) as ChatHistoryRow[];
 };
 
 export const findChannelByUsersQuery = (userIds: string[]): string | null => {

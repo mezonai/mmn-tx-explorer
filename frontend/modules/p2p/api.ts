@@ -20,8 +20,11 @@ export class ChatService {
     return data.channelId;
   }
 
-  static async getHistory(channelId: string): Promise<MessageWithParsedContent[]> {
-    const { data } = await apiChatClient.get<MessageWithParsedContent[]>(CHAT_ENDPOINTS.HISTORY(channelId));
+  static async getHistory(
+    channelId: string,
+    params?: { limit?: number; before?: number }
+  ): Promise<MessageWithParsedContent[]> {
+    const { data } = await apiChatClient.get<MessageWithParsedContent[]>(CHAT_ENDPOINTS.HISTORY(channelId), { params });
     return data;
   }
 }

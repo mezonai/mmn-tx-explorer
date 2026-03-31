@@ -57,13 +57,37 @@ interface ChatSidebarProps {
 const SUPPORT_ID = process.env.NEXT_PUBLIC_BOT_ID || '';
 
 export const ChatSidebar = ({ orderCreatorId, offerCreatorId, autoMessage, onAutoMessageSent }: ChatSidebarProps) => {
-  const [messages, setMessages] = useState<MessageWithParsedContent[]>([]);
+  const [socketMessages, setSocketMessages] = useState<MessageWithParsedContent[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isConnected, setIsConnected] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showLimitWarning, setShowLimitWarning] = useState(false);
   const { user } = useUser();
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const socketRef = useRef<LightSocket | null>(null);
+  const channelIdRef = useRef<string | null>(null);
+  const observerRef = useRef<HTMLDivElement>(null);
+  const lastScrollHeightRef = useRef<number>(0);
+
+  const [activeChannelId, setActiveChannelId] = useState<string | null>(null);
+
+  const { data: discoveredChannelId } = useChatChannel(offerCreatorId, orderCreatorId);
+  const { data: historyData, fetchNextPage, hasNextPage, isFetchingNextPage } = useChatHistory(activeChannelId);
+
+  useEffect(() => {
+    if (discoveredChannelId) {
+      setActiveChannelId(discoveredChannelId);
+    }
+  }, [discoveredChannelId]);
+
+  const allMessages = useMemo(() => {
+    const historical = historyData?.pages.flatMap((page) => page).reverse() || [];
+    const combined = [...historical, ...socketMessages];
+    const unique = Array.from(new Map(combined.map((item) => [item.message_id, item])).values());
+    return unique.sort((a, b) => (a.create_time_seconds || 0) - (b.create_time_seconds || 0));
+  }, [historyData?.pages, socketMessages]);
 
   const userInfoMap = useMemo(() => {
     const map: Record<string, { display_name?: string; avatar?: string }> = {};
@@ -75,7 +99,7 @@ export const ChatSidebar = ({ orderCreatorId, offerCreatorId, autoMessage, onAut
       };
     }
 
-    messages.forEach((msg) => {
+    allMessages.forEach((msg) => {
       if (msg.sender_id && (msg.display_name || msg.avatar)) {
         if (!map[msg.sender_id]) map[msg.sender_id] = {};
         if (msg.display_name) map[msg.sender_id].display_name = msg.display_name;
@@ -84,28 +108,8 @@ export const ChatSidebar = ({ orderCreatorId, offerCreatorId, autoMessage, onAut
     });
 
     return map;
-  }, [messages, user]);
+  }, [allMessages, user]);
 
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const socketRef = useRef<LightSocket | null>(null);
-  const channelIdRef = useRef<string | null>(null);
-
-  const [activeChannelId, setActiveChannelId] = useState<string | null>(null);
-
-  const { data: discoveredChannelId } = useChatChannel(offerCreatorId, orderCreatorId);
-  const { data: historyData } = useChatHistory(activeChannelId);
-
-  useEffect(() => {
-    if (discoveredChannelId) {
-      setActiveChannelId(discoveredChannelId);
-    }
-  }, [discoveredChannelId]);
-
-  useEffect(() => {
-    if (historyData) {
-      setMessages(historyData);
-    }
-  }, [historyData]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -208,7 +212,7 @@ export const ChatSidebar = ({ orderCreatorId, offerCreatorId, autoMessage, onAut
             content: parsedContent,
           };
 
-          setMessages((prev) => {
+          setSocketMessages((prev) => {
             if (prev.find((m) => m.message_id === normalizedMessage.message_id)) return prev;
             return [...prev, normalizedMessage];
           });
@@ -275,11 +279,40 @@ export const ChatSidebar = ({ orderCreatorId, offerCreatorId, autoMessage, onAut
     }
   }, [autoMessage, isConnected, onAutoMessageSent]);
 
+  // Handle scroll trigger for infinite load
   useEffect(() => {
-    if (scrollRef.current) {
+    const node = observerRef.current;
+    if (!node || !hasNextPage || isFetchingNextPage) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          lastScrollHeightRef.current = scrollRef.current?.scrollHeight || 0;
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // Preserve scroll position when older messages are loaded
+  useEffect(() => {
+    if (!isFetchingNextPage && lastScrollHeightRef.current > 0 && scrollRef.current) {
+      const diff = scrollRef.current.scrollHeight - lastScrollHeightRef.current;
+      scrollRef.current.scrollTop = diff;
+      lastScrollHeightRef.current = 0;
+    }
+  }, [allMessages.length, isFetchingNextPage]);
+
+  useEffect(() => {
+    // Only scroll to bottom on initial load or when sending/receiving NEW messages (at the bottom)
+    if (scrollRef.current && lastScrollHeightRef.current === 0) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, isMobileOpen]);
+  }, [allMessages.length, isMobileOpen]);
 
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -569,6 +602,14 @@ export const ChatSidebar = ({ orderCreatorId, offerCreatorId, autoMessage, onAut
             '[&::-webkit-scrollbar-thumb]:rounded-full'
           )}
         >
+          {/* Scroll trigger for infinite scroll */}
+          <div ref={observerRef} className="h-1" />
+          {isFetchingNextPage && (
+            <div className="flex justify-center py-4">
+              <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+            </div>
+          )}
+
           {/* Security Alert */}
           <div className="mb-6 px-1">
             <div className="relative overflow-hidden rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
@@ -599,10 +640,10 @@ export const ChatSidebar = ({ orderCreatorId, offerCreatorId, autoMessage, onAut
           </div>
 
           {/* Messages */}
-          {messages.map((msg, idx) => {
+          {allMessages.map((msg, idx) => {
             const isMe = msg.sender_id === user?.id || msg.sender_id === 'me';
-            const prevMsg = messages[idx - 1];
-            const nextMsg = messages[idx + 1];
+            const prevMsg = allMessages[idx - 1];
+            const nextMsg = allMessages[idx + 1];
             const msgTimestamp = msg.create_time_seconds ?? Math.floor(Date.now() / 1000);
             const prevTimestamp = prevMsg?.create_time_seconds ?? Math.floor(Date.now() / 1000);
             const nextTimestamp = nextMsg?.create_time_seconds ?? Math.floor(Date.now() / 1000);
