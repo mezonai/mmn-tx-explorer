@@ -107,7 +107,7 @@ export const P2POffersTabs = ({
 
   const rawColumns: (TTableColumn<P2POffer> | null)[] = [
     {
-      headerContent: 'SELLER',
+      headerContent: 'CREATOR',
       renderCell: (offer) => (
         <AddressDisplay
           address={offer.offer_creator_wallet_address}
