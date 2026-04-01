@@ -57,7 +57,7 @@ func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampa
 	campaignQuery := fmt.Sprintf(`
 	INSERT INTO %s.donation_campaign (name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status)
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-    RETURNING id, name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status, created_at, updated_at, deleted_at
+    RETURNING id, name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status, created_at, updated_at
     `, r.dongSchema)
 
 	var result models.DonationCampaign
@@ -89,7 +89,6 @@ func (r *DonationCampaignRepository) Create(campaign *models.CreateDonationCampa
 		&result.Status,
 		&result.CreatedAt,
 		&result.UpdatedAt,
-		&result.DeletedAt,
 	)
 
 	if err != nil {
@@ -139,7 +138,7 @@ func (r *DonationCampaignRepository) CreateAndActive(campaign *models.CreateDona
 		-- explicitly set verified FALSE during creation+activation; verification is a separate step
 		INSERT INTO %s.donation_campaign (name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-        RETURNING id, name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status, created_at, updated_at, deleted_at
+        RETURNING id, name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status, created_at, updated_at
     `, r.dongSchema)
 
 	var result models.DonationCampaign
@@ -172,7 +171,6 @@ func (r *DonationCampaignRepository) CreateAndActive(campaign *models.CreateDona
 		&result.Status,
 		&result.CreatedAt,
 		&result.UpdatedAt,
-		&result.DeletedAt,
 	)
 
 	if err != nil {
@@ -201,7 +199,7 @@ func (r *DonationCampaignRepository) CreateAndActive(campaign *models.CreateDona
 func (r *DonationCampaignRepository) GetByID(id int64) (*models.DonationCampaign, error) {
 	query := fmt.Sprintf(`
 		SELECT 
-            dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at, dc.deleted_at,
+            dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
 			cs.total_amount, cs.total_contributor,
 			COALESCE(w.balance, '0') as current_balance,
 			cs.total_withdrawn
@@ -227,7 +225,6 @@ func (r *DonationCampaignRepository) GetByID(id int64) (*models.DonationCampaign
 		&campaign.Status,
 		&campaign.CreatedAt,
 		&campaign.UpdatedAt,
-		&campaign.DeletedAt,
 		&campaign.TotalAmount,
 		&campaign.TotalContributors,
 		&campaign.CurrentBalance,
@@ -248,7 +245,7 @@ func (r *DonationCampaignRepository) GetByID(id int64) (*models.DonationCampaign
 func (r *DonationCampaignRepository) GetByIDAndCreator(id, creator int64) (*models.DonationCampaign, error) {
 	query := fmt.Sprintf(`
 		SELECT 
-            dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at, dc.deleted_at,
+            dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
 			cs.total_amount, cs.total_contributor,
 			COALESCE(w.balance, '0') as current_balance,
 			cs.total_withdrawn
@@ -274,7 +271,6 @@ func (r *DonationCampaignRepository) GetByIDAndCreator(id, creator int64) (*mode
 		&campaign.Status,
 		&campaign.CreatedAt,
 		&campaign.UpdatedAt,
-		&campaign.DeletedAt,
 		&campaign.TotalAmount,
 		&campaign.TotalContributors,
 		&campaign.CurrentBalance,
@@ -295,7 +291,7 @@ func (r *DonationCampaignRepository) GetByIDAndCreator(id, creator int64) (*mode
 func (r *DonationCampaignRepository) GetAll(status *int16, verified *bool, q *string, pagination utils.PaginationParams, creator *string) ([]models.DonationCampaign, error) {
 	base := fmt.Sprintf(`
         SELECT 
-            dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at, dc.deleted_at,
+            dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
 			cs.total_amount, cs.total_contributor
         FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
@@ -399,7 +395,6 @@ func (r *DonationCampaignRepository) GetAll(status *int16, verified *bool, q *st
 			&campaign.Status,
 			&campaign.CreatedAt,
 			&campaign.UpdatedAt,
-			&campaign.DeletedAt,
 			&campaign.TotalAmount,
 			&campaign.TotalContributors,
 		)
@@ -460,7 +455,7 @@ func (r *DonationCampaignRepository) Update(id, creator int64, req *models.Updat
 		UPDATE %s.donation_campaign
 		SET %s
 		WHERE id = $%d AND creator = $%d AND deleted_at IS NULL
-        RETURNING id, name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status, created_at, updated_at, deleted_at
+        RETURNING id, name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status, created_at, updated_at
 	`, r.dongSchema, strings.Join(setClauses, ", "), idArgNum, creatorArgNum)
 
 	var campaign models.DonationCampaign
@@ -479,7 +474,6 @@ func (r *DonationCampaignRepository) Update(id, creator int64, req *models.Updat
 		&campaign.Status,
 		&campaign.CreatedAt,
 		&campaign.UpdatedAt,
-		&campaign.DeletedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -498,7 +492,7 @@ func (r *DonationCampaignRepository) Activate(id, creator int64) (*models.Donati
         UPDATE %s.donation_campaign
         SET status = $1, updated_at = $2
         WHERE id = $3 AND creator = $4 AND deleted_at IS NULL
-        RETURNING id, name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status, created_at, updated_at, deleted_at
+        RETURNING id, name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status, created_at, updated_at
     `, r.dongSchema)
 
 	var campaign models.DonationCampaign
@@ -523,7 +517,6 @@ func (r *DonationCampaignRepository) Activate(id, creator int64) (*models.Donati
 		&campaign.Status,
 		&campaign.CreatedAt,
 		&campaign.UpdatedAt,
-		&campaign.DeletedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -542,7 +535,7 @@ func (r *DonationCampaignRepository) Close(id, creator int64) (*models.DonationC
 		UPDATE %s.donation_campaign
 		SET status = $1, updated_at = $2
 		WHERE id = $3 AND creator = $4 AND deleted_at IS NULL
-        RETURNING id, name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status, created_at, updated_at, deleted_at
+        RETURNING id, name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status, created_at, updated_at
 	`, r.dongSchema)
 
 	var campaign models.DonationCampaign
@@ -567,7 +560,6 @@ func (r *DonationCampaignRepository) Close(id, creator int64) (*models.DonationC
 		&campaign.Status,
 		&campaign.CreatedAt,
 		&campaign.UpdatedAt,
-		&campaign.DeletedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -793,7 +785,7 @@ func (r *DonationCampaignRepository) GenerateUniqueSlug(baseSlug string) (string
 func (r *DonationCampaignRepository) GetBySlug(slug string) (*models.DonationCampaign, error) {
 	query := fmt.Sprintf(`
 		SELECT 
-            dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at, dc.deleted_at,
+            dc.id, dc.name, dc.slug, dc.description, dc.goal, dc.url, dc.end_date, dc.donation_wallet, dc.creator, dc.owner, dc.verified, dc.status, dc.created_at, dc.updated_at,
 			cs.total_amount, cs.total_contributor,
 			COALESCE(w.balance, '0') as current_balance,
 			cs.total_withdrawn
@@ -819,7 +811,6 @@ func (r *DonationCampaignRepository) GetBySlug(slug string) (*models.DonationCam
 		&campaign.Status,
 		&campaign.CreatedAt,
 		&campaign.UpdatedAt,
-		&campaign.DeletedAt,
 		&campaign.TotalAmount,
 		&campaign.TotalContributors,
 		&campaign.CurrentBalance,

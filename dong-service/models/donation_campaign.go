@@ -20,10 +20,9 @@ type DonationCampaign struct {
 	Owner             *string   `json:"owner,omitempty" db:"owner"`
 	Verified          bool      `json:"verified" db:"verified"`
 	Status            int16     `json:"status" db:"status"` // 0=Draft, 1=Active, 2=Closed
-	CreatedAt         time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt         time.Time  `json:"updated_at" db:"updated_at"`
-	DeletedAt         *time.Time `json:"deleted_at,omitempty" db:"deleted_at"`
-	TotalAmount       *int64     `json:"total_amount,omitempty" db:"total_amount"`
+	CreatedAt         time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at" db:"updated_at"`
+	TotalAmount       *int64    `json:"total_amount,omitempty" db:"total_amount"`
 	TotalContributors *int32    `json:"total_contributors,omitempty" db:"total_contributor"`
 	CurrentBalance    *int64    `json:"current_balance,omitempty"`
 	TotalWithdrawn    *int64    `json:"total_withdrawn,omitempty" db:"total_withdrawn"`
