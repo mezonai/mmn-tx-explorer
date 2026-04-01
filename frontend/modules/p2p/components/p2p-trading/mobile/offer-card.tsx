@@ -56,7 +56,7 @@ const OfferMobileCard = ({ offer, isMyOffer = false }: OfferMobileCardProps) => 
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Available</span>
             <span className="text-brand-primary text-[10px] font-bold tracking-wider uppercase">
-              {sold.toFormat()} {APP_CONFIG.CHAIN_SYMBOL} Sold
+              {sold.toFormat()} {APP_CONFIG.CHAIN_SYMBOL} {offer.side === 'SELL' ? 'Sold' : 'Bought'}
             </span>
           </div>
 
@@ -82,7 +82,7 @@ const OfferMobileCard = ({ offer, isMyOffer = false }: OfferMobileCardProps) => 
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Available</span>
               <span className="text-brand-primary text-[10px] font-bold tracking-wider uppercase">
-                {sold.toFormat()} {APP_CONFIG.CHAIN_SYMBOL} Sold
+                {sold.toFormat()} {APP_CONFIG.CHAIN_SYMBOL} {offer.side === 'SELL' ? 'Sold' : 'Bought'}
               </span>
             </div>
 
@@ -180,11 +180,11 @@ const OfferMobileCard = ({ offer, isMyOffer = false }: OfferMobileCardProps) => 
               OPEN
             </Chip>
           ) : offer.status === OFFERS_STATUS.CONFIRMED ? (
-            <div className="flex w-full items-center gap-2">
-              <div className="flex-1">
+            <div className="flex w-full items-center justify-center gap-2">
+              <div>
                 <CancelConfirmDialog offer={offer} />
               </div>
-              <div className="flex-1">
+              <div>
                 <ShareOfferModal offer={offer} />
               </div>
             </div>

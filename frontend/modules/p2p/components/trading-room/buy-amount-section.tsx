@@ -15,6 +15,7 @@ import { z } from 'zod';
 import BigNumber from 'bignumber.js';
 import { NumberUtil } from '@/utils';
 import { TradeTypes } from '../../types';
+import { toast } from 'sonner';
 
 const paymentSchema = z.object({
   bank_info: z.object({
@@ -31,15 +32,12 @@ const paymentSchema = z.object({
   price_rate: z.string().optional(),
   limit: z.object({ min: z.number(), max: z.number() }).optional(),
   symbol: z.string().optional(),
+  payment_info_id: z.number().optional(),
 });
 
 interface BuyAmountSectionProps {
   offer: P2POffer;
-  onConfirmBuy: (
-    amountMZD: number,
-    amountVND: number,
-    bank_info?: { bank: string; account_number: string; account_name: string }
-  ) => void;
+  onConfirmBuy: (amountMZD: number, amountVND: number, paymentInfoId?: number) => void;
   isLoading?: boolean;
   extraDisabled?: boolean;
   isSeller?: boolean;
@@ -64,6 +62,7 @@ export const BuyAmountSection = ({
   const [displayValue, setDisplayValue] = useState<string>('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectionType, setSelectionType] = useState<'min' | 'max' | 'none'>('none');
+  const [hasUnsavedPaymentChanges, setHasUnsavedPaymentChanges] = useState(false);
 
   const isRespondingToBuyOffer = side === 'BUY';
 
@@ -73,7 +72,7 @@ export const BuyAmountSection = ({
     trigger,
     setValue,
     watch,
-    formState: { errors, isValid: isFormValid },
+    formState: { isValid: isFormValid },
   } = useForm({
     resolver: zodResolver(paymentSchema),
     mode: 'onChange',
@@ -105,7 +104,9 @@ export const BuyAmountSection = ({
   const available = NumberUtil.scaleDownBigNumber(new BigNumber(offer.amount));
   const initialMin = NumberUtil.scaleDownBigNumber(new BigNumber(offer.limit.min));
   const limitMax = NumberUtil.scaleDownBigNumber(new BigNumber(offer.limit.max));
-  const effectiveMax = BigNumber.min(limitMax, available);
+  const effectiveMax = isRespondingToBuyOffer
+    ? BigNumber.min(limitMax, available, new BigNumber(userBalance))
+    : BigNumber.min(limitMax, available);
 
   let placeholder = `Minimum: ${initialMin.toFormat()} - Maximum: ${effectiveMax.toFormat()}`;
   let isDisabled = false;
@@ -125,19 +126,28 @@ export const BuyAmountSection = ({
       const isBankInfoValid = await trigger('bank_info');
       if (!isBankInfoValid) return;
 
-      if (amountMZD > userBalance) {
+      const bankInfo = getValues('bank_info');
+      if (!bankInfo.account_number || !bankInfo.account_name) {
+        toast.error('Payment information required', {
+          description: 'Please enter and save your bank account information before creating an order',
+        });
         return;
       }
     }
 
-    if (amountMZD >= initialMin.toNumber() && amountMZD <= effectiveMax.toNumber()) {
-      setShowConfirmModal(true);
-    }
+    setShowConfirmModal(true);
   };
 
   const handleFinalConfirm = () => {
-    const bankInfo = isRespondingToBuyOffer ? getValues('bank_info') : undefined;
-    onConfirmBuy(amountMZD, amountVND, bankInfo);
+    if (isRespondingToBuyOffer && amountMZD > userBalance) {
+      toast.error('Insufficient balance', {
+        description: 'Your balance has changed. Please update the amount and try again.',
+      });
+      setShowConfirmModal(false);
+      return;
+    }
+    const paymentInfoId = getValues('payment_info_id');
+    onConfirmBuy(amountMZD, amountVND, paymentInfoId);
     setShowConfirmModal(false);
   };
 
@@ -145,7 +155,11 @@ export const BuyAmountSection = ({
   const isRangeValid = amountBN.isGreaterThanOrEqualTo(initialMin) && amountBN.isLessThanOrEqualTo(effectiveMax);
   const isBalanceValid = !isRespondingToBuyOffer || amountMZD <= userBalance;
   const isValidAmount =
-    isRangeValid && isBalanceValid && (!isRespondingToBuyOffer || isFormValid) && !extraDisabled && !isDisabled;
+    isRangeValid &&
+    isBalanceValid &&
+    (!isRespondingToBuyOffer || (isFormValid && !hasUnsavedPaymentChanges)) &&
+    !extraDisabled &&
+    !isDisabled;
 
   return (
     <div className={`mb-6 ${isRespondingToBuyOffer ? 'grid grid-cols-1 gap-8 lg:grid-cols-2' : 'space-y-4'}`}>
@@ -167,9 +181,20 @@ export const BuyAmountSection = ({
               {APP_CONFIG.CHAIN_SYMBOL}
             </span>
           </div>
-          <div className="text-muted-foreground mt-2 flex items-center justify-between text-xs">
-            <div>
-              Available: {available.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}
+          <div className="text-muted-foreground mt-4 flex items-start justify-between text-xs">
+            <div className="grid grid-cols-[max-content_auto] gap-x-6 gap-y-3">
+              <span>Available:</span>
+              <span>
+                {available.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}
+              </span>
+              {isRespondingToBuyOffer && (
+                <>
+                  <span className={amountMZD > userBalance ? 'font-bold text-red-500' : ''}>Your balance:</span>
+                  <span className={amountMZD > userBalance ? 'font-bold text-red-500' : ''}>
+                    {formatCurrency(userBalance)} {APP_CONFIG.CHAIN_SYMBOL}
+                  </span>
+                </>
+              )}
             </div>
             <div className="flex gap-2">
               <Button
@@ -179,10 +204,11 @@ export const BuyAmountSection = ({
                   setSelectionType('min');
                 }}
                 disabled={isDisabled}
-                className={`h-[30px] rounded border text-[10px] font-bold tracking-wider uppercase transition-all disabled:cursor-not-allowed disabled:opacity-30 ${selectionType === 'min'
+                className={`h-[30px] rounded border text-[10px] font-bold tracking-wider uppercase transition-all disabled:cursor-not-allowed disabled:opacity-30 ${
+                  selectionType === 'min'
                     ? 'border-brand-primary/50 bg-brand-primary/10 text-brand-primary'
                     : 'border-border bg-muted/30 text-muted-foreground hover:border-brand-primary/50 hover:bg-brand-primary/10 hover:text-brand-primary'
-                  }`}
+                }`}
               >
                 {isRespondingToBuyOffer ? 'Sell Min' : 'Buy Min'}
               </Button>
@@ -193,10 +219,11 @@ export const BuyAmountSection = ({
                   setSelectionType('max');
                 }}
                 disabled={isDisabled}
-                className={`h-[30px] rounded border text-[10px] font-bold tracking-wider uppercase transition-all disabled:cursor-not-allowed disabled:opacity-30 ${selectionType === 'max'
+                className={`h-[30px] rounded border text-[10px] font-bold tracking-wider uppercase transition-all disabled:cursor-not-allowed disabled:opacity-30 ${
+                  selectionType === 'max'
                     ? 'border-brand-primary/50 bg-brand-primary/10 text-brand-primary'
                     : 'border-border bg-muted/30 text-muted-foreground hover:border-brand-primary/50 hover:bg-brand-primary/10 hover:text-brand-primary'
-                  }`}
+                }`}
               >
                 {isRespondingToBuyOffer ? 'Sell Max' : 'Buy Max'}
               </Button>
@@ -232,7 +259,8 @@ export const BuyAmountSection = ({
             control={control as any}
             setValue={setValue as any}
             watch={watch as any}
-            onUnsavedChangesChange={() => { }}
+            shouldAutoFill={isRespondingToBuyOffer}
+            onUnsavedChangesChange={setHasUnsavedPaymentChanges}
           />
         </div>
       )}

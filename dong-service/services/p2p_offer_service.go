@@ -11,7 +11,6 @@ import (
 	"dong-service/repository"
 	"dong-service/types"
 	"dong-service/utils"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -61,6 +60,27 @@ type IOfferService interface {
 }
 
 func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferRequest, walletAddr string, sellerUserID string) (*models.Offer, error) {
+	// payment_info_id is only required and validated for SELL offers
+	if req.Side == models.OfferSideSell {
+		if req.PaymentInfoID == nil {
+			return nil, fmt.Errorf("payment_info_id is required for SELL offers")
+		}
+
+		// Validate payment_info_id
+		if s.userPaymentRepo != nil {
+			paymentInfo, err := s.userPaymentRepo.GetByID(ctx, *req.PaymentInfoID)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get payment info: %w", err)
+			}
+			if paymentInfo == nil {
+				return nil, fmt.Errorf("payment info with ID %d not found", *req.PaymentInfoID)
+			}
+			if paymentInfo.UserID != sellerUserID {
+				return nil, fmt.Errorf("payment info does not belong to the current user")
+			}
+		}
+	}
+
 	activeOfferCount, err := s.repo.CountActiveOffersByUser(ctx, sellerUserID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check active offer count: %w", err)
@@ -120,32 +140,6 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 
 	var priceInt int64 = 0
 
-	var bankInfoStr *string
-	if req.BankInfo != nil && len(req.BankInfo) > 0 {
-		b, marshalErr := json.Marshal(req.BankInfo)
-		if marshalErr != nil {
-			err = fmt.Errorf("invalid bank info: %w", marshalErr)
-			return nil, err
-		}
-		ms := string(b)
-		bankInfoStr = &ms
-	} else if s.userPaymentRepo != nil {
-		// Fallback to primary bank info from profile
-		primaryBank, err := s.userPaymentRepo.GetPrimaryByUserID(ctx, sellerUserID)
-		if err == nil && primaryBank != nil {
-			bankMap := map[string]interface{}{
-				"bank_name":      primaryBank.BankName,
-				"account_number": primaryBank.AccountNumber,
-				"account_name":   primaryBank.AccountName,
-			}
-			b, marshalErr := json.Marshal(bankMap)
-			if marshalErr == nil {
-				ms := string(b)
-				bankInfoStr = &ms
-			}
-		}
-	}
-
 	var limitMinInt int64 = 1
 	var limitMaxInt int64 = amountInt
 	if req.Limit != nil {
@@ -163,8 +157,12 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 	// Sell offers start as OPEN (waiting for escrow deposit),
 	// Buy offers start as CONFIRMED (ready for sellers to fill).
 	initialStatus := constants.TradingOpen
+	var paymentInfoID *int64
 	if req.Side == models.OfferSideBuy {
 		initialStatus = constants.TradingConfirmed
+		paymentInfoID = nil
+	} else {
+		paymentInfoID = req.PaymentInfoID
 	}
 
 	offer := &models.Offer{
@@ -177,7 +175,7 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		TotalAmount:               types.NewBigIntString(amountInt).Multiply(constants.TokenMultiplierBigIntString),
 		PayableAmount:             types.NewBigIntString(priceInt),
 		Status:                    initialStatus,
-		BankInfo:                  bankInfoStr,
+		PaymentInfoID:             paymentInfoID,
 		Limit: &models.OfferLimit{
 			Min: types.NewBigIntString(limitMinInt).Multiply(constants.TokenMultiplierBigIntString),
 			Max: types.NewBigIntString(limitMaxInt).Multiply(constants.TokenMultiplierBigIntString),
@@ -209,6 +207,13 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 
 	if err = tx.Commit(); err != nil {
 		return nil, err
+	}
+
+	if offer.Side == models.OfferSideBuy {
+		logger.Info().Int64("offer_id", offer.OfferID).Int64("amount", amountInt).Str("symbol", offer.Symbol).Msg("Created new BUY offer")
+		go SendSocketEvent(constants.OFFER_ROOM, constants.OFFER_LIST_REFRESH, map[string]any{
+			"action": "create p2p offer",
+		})
 	}
 
 	return offer, nil
@@ -376,7 +381,7 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 			return err
 		}
 	} else {
-	// No refund needed (either BUY side, or SELL side that is still OPEN/not yet escrowed)
+		// No refund needed (either BUY side, or SELL side that is still OPEN/not yet escrowed)
 		if err = s.repo.UpdateOfferStatus(ctx, offerId, constants.TradingCanceled, tx, nil); err != nil {
 			return err
 		}
@@ -386,7 +391,6 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 			s.releaseIntermediaryWallet(ctx, *offer.IntermediaryWalletAddress)
 		}
 	}
-
 
 	if err = tx.Commit(); err != nil {
 		return err

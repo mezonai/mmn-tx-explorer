@@ -20,6 +20,7 @@ export const createOfferSchema = z
       account_name: z.string().optional(),
       is_primary: z.boolean().optional(),
     }),
+    payment_info_id: z.number().optional(),
     symbol: z.string(),
   })
   .superRefine((data, ctx) => {
@@ -45,49 +46,41 @@ export const createOfferSchema = z
           path: ['bank_info', 'account_name'],
         });
       }
+    }
 
-      if (parseFloat(data.price_rate) <= 0) {
+    if (data.amount > 0) {
+      if (data.limit.min <= 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Please enter the selling rate',
-          path: ['price_rate'],
+          message: 'Please enter the minimum limit',
+          path: ['limit', 'min'],
+        });
+      } else if (data.limit.min > data.amount) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Minimum limit cannot exceed the amount',
+          path: ['limit', 'min'],
         });
       }
 
-      if (data.amount > 0) {
-        if (data.limit.min <= 0) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'Please enter the minimum limit',
-            path: ['limit', 'min'],
-          });
-        } else if (data.limit.min > data.amount) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'Minimum limit cannot exceed the sell amount',
-            path: ['limit', 'min'],
-          });
-        }
-
-        if (data.limit.max <= 0) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'Please enter the maximum limit',
-            path: ['limit', 'max'],
-          });
-        } else if (data.limit.max > data.amount) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'Maximum limit cannot exceed the sell amount',
-            path: ['limit', 'max'],
-          });
-        } else if (data.limit.max < data.limit.min) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'Maximum limit must be greater than minimum limit',
-            path: ['limit', 'max'],
-          });
-        }
+      if (data.limit.max <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Please enter the maximum limit',
+          path: ['limit', 'max'],
+        });
+      } else if (data.limit.max > data.amount) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Maximum limit cannot exceed the amount',
+          path: ['limit', 'max'],
+        });
+      } else if (data.limit.max < data.limit.min) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Maximum limit must be greater than minimum limit',
+          path: ['limit', 'max'],
+        });
       }
     }
   });
