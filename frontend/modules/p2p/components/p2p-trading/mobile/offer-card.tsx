@@ -36,7 +36,7 @@ const OfferMobileCard = ({ offer, isMyOffer = false }: OfferMobileCardProps) => 
       {/* Header: Seller & Rate */}
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">Seller</span>
+          <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">Creator</span>
           <AddressDisplay
             address={offer.offer_creator_wallet_address}
             href={ROUTES.WALLET(offer.offer_creator_wallet_address)}
