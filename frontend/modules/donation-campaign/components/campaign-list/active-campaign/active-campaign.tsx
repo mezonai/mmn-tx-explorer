@@ -179,6 +179,23 @@ export const ActiveCampaign = () => {
   }, []);
 
   useEffect(() => {
+    if (!hasMountedRef.current) return;
+
+    handleChangeVerifiedPage(1);
+    handleChangeUnverifiedPage(1);
+    setVerifiedLocalPage(1);
+    setUnverifiedLocalPage(1);
+  }, [
+    debouncedSearch,
+    statusFilter,
+    verifiedFilter,
+    sortBy,
+    showMine,
+    handleChangeVerifiedPage,
+    handleChangeUnverifiedPage,
+  ]);
+
+  useEffect(() => {
     if (!isSearchingRef.current && !isFilteringRef.current) return;
     if (!isLoadingVerified && !isLoadingUnverified) {
       if (isSearchingRef.current && typeof window !== 'undefined' && searchScrollRef.current !== null) {
