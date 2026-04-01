@@ -7,7 +7,7 @@ import { ROUTES } from '@/configs/routes.config';
 import { useUser } from '@/providers';
 import { useRouter } from 'next/navigation';
 import React from 'react';
-import { TriangleAlert } from 'lucide-react';
+import { ClipboardList, TriangleAlert } from 'lucide-react';
 import BigNumber from 'bignumber.js';
 import { P2POffer } from '@/modules/p2p/types';
 import { OfferOrdersModal } from '../offer-orders-modal';
@@ -128,10 +128,15 @@ const OfferMobileCard = ({ offer, isMyOffer = false }: OfferMobileCardProps) => 
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 border-gray-700 bg-gray-800/50 px-3 hover:bg-gray-800"
+                  className="group border-brand-primary/30 bg-brand-primary/5 hover:bg-brand-primary h-8 px-3 transition-all"
                   onClick={() => setIsOrdersModalOpen(true)}
                 >
-                  <span className="text-xs text-gray-300">{offer.order_count ?? 0} orders</span>
+                  <div className="flex items-center gap-2">
+                    <ClipboardList className="text-brand-primary h-3.5 w-3.5 transition-colors group-hover:text-white" />
+                    <span className="text-brand-primary text-[10px] font-extrabold tracking-wider uppercase transition-colors group-hover:text-white">
+                      {offer.order_count ?? 0} orders
+                    </span>
+                  </div>
                 </Button>
               </div>
             )}
