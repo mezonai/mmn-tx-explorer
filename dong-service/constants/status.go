@@ -147,8 +147,7 @@ const (
 )
 
 const (
-	OrderExpirationDuration       = 4  // Order expiration duration in hours
-	OrderReopenGracePeriodMinutes = 60 // Grace period to allow reopening expired orders (in minutes)
+	OrderExpirationDuration = 4 // Order expiration duration in hours
 )
 
 const (
