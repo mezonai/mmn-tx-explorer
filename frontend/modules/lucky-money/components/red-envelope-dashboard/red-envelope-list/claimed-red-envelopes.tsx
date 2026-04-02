@@ -4,6 +4,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { truncateWalletAddress, formatClaimDate } from '@/modules/lucky-money/utils';
 import { CopyButton } from '@/components/ui/copy-button';
 import { useClaimedEnvelopes } from '@/modules/lucky-money/hooks/useRedEnvelopes';
+import BigNumber from 'bignumber.js';
 
 
 const ClaimedBadge = () => (
@@ -68,7 +69,7 @@ export const ClaimedEnvelopes = () => {
                   <CopyButton textToCopy={env.from_wallet} />
                 </div>
                 <p className="text-xs md:text-sm text-muted-foreground dark:text-gray-400 mt-1 break-words">
-                  Received {env.amount.toLocaleString('en-US')} đồng · {formatClaimDate(env.claimed_at)}
+                  Received {new BigNumber(env.amount).toFormat()} đồng · {formatClaimDate(env.claimed_at)}
                 </p>
               </div>
             </div>

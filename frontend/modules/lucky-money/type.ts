@@ -11,17 +11,17 @@ export interface RedEnvelope {
   id: UUID;
   name: string;
   description: string;
-  total_amount: number;
+  total_amount: string;
   total_claims: number;
-  min_amount: number;
-  max_amount: number;
-  amount_per_claim: number;
+  min_amount: string;
+  max_amount: string;
+  amount_per_claim: string;
   is_random_distribution: boolean;
   enable_claim_animation: boolean;
   require_captcha: boolean;
   status: EnvelopeStatus;
   claimed_count: number;
-  remaining_amount: number;
+  remaining_amount: string;
   created_at: string;
   expires_at: string;
   owner_wallet: string;
@@ -30,9 +30,9 @@ export interface RedEnvelope {
 }
 
 export interface RedEnvelopeStatsByUser {
-  total_sent: number;
+  total_sent: string;
   total_recipients: number;
-  total_claimed: number;
+  total_claimed: string;
   count_claimed_envelopes: number;
   total_active_envelopes: number;
 }
@@ -45,7 +45,7 @@ export type EnvelopeListParams = {
 export interface CreatedEnvelopes {
   id: UUID;
   name: string;
-  total_amount: number;
+  total_amount: string;
   total_claims: number;
   status: string;
   created_at: string;
@@ -57,7 +57,7 @@ export interface ClaimedEnvelopes {
   red_envelope_id: number;
   name: string;
   from_wallet: string;
-  amount: number;
+  amount: string;
   claimed_at: string;
   transaction_hash: string | null | undefined;
 }
@@ -97,16 +97,16 @@ export interface ClaimEnvelopeRequest {
 
 export interface RedEnvelopeClaim {
   split_money_id: number;
-  amount: number;
+  amount: string;
   description: string;
 }
 
 export interface RedEnvelopeDetailStats {
   name: string;
-  total_amount: number;
+  total_amount: string;
   total_claim: number;
   claimed_count: number;
-  total_claimed_amount: number;
+  total_claimed_amount: string;
   end_date: string;
   red_envelope_wallet: string;
   status: string;
@@ -118,12 +118,12 @@ export interface CloseSessionRequest {
 
 export interface RedEnvelopeDetailRecipient {
   claimer_wallet: string;
-  amount: number;
+  amount: string;
   claimed_at: string;
   transaction_hash: string;
 }
 
 export interface RedEnvelopeStats {
   total_envelopes: number;
-  total_claimed: number;
+  total_claimed: string;
 }

@@ -1,28 +1,29 @@
 package models
 
 import (
+	"dong-service/types"
 	"time"
 )
 
 type RedEnvelope struct {
-	ID                   string     `json:"id" db:"id"`
-	Name                 string     `json:"name" db:"name"`
-	Description          *string    `json:"description,omitempty" db:"description"`
-	TotalAmount          int64      `json:"total_amount" db:"total_amount"`
-	MinAmount            *int64     `json:"min_amount,omitempty" db:"min_amount"`
-	MaxAmount            *int64     `json:"max_amount,omitempty" db:"max_amount"`
-	TotalClaims          int64      `json:"total_claims" db:"total_claims"`
-	ClaimedCount         int64      `json:"claimed_count" db:"claimed_count"`
-	RedEnvelopeWallet    string     `json:"red_envelope_wallet" db:"red_envelope_wallet"`
-	OwnerWallet          string     `json:"owner_wallet" db:"owner_wallet"`
-	Creator              int64      `json:"creator" db:"creator"`
-	Status               string     `json:"status" db:"status"`
-	TransactionHash      *string    `json:"transaction_hash,omitempty" db:"transaction_hash"`
-	IsRandomDistribution bool       `json:"is_random_distribution" db:"is_random_distribution"`
-	StartDate            time.Time  `json:"start_date" db:"start_date"`
-	EndDate              *time.Time `json:"end_date,omitempty" db:"end_date"`
-	CreatedAt            time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt            time.Time  `json:"updated_at" db:"updated_at"`
+	ID                   string              `json:"id" db:"id"`
+	Name                 string              `json:"name" db:"name"`
+	Description          *string             `json:"description,omitempty" db:"description"`
+	TotalAmount          types.BigIntString  `json:"total_amount" db:"total_amount"`
+	MinAmount            *types.BigIntString `json:"min_amount,omitempty" db:"min_amount"`
+	MaxAmount            *types.BigIntString `json:"max_amount,omitempty" db:"max_amount"`
+	TotalClaims          int64               `json:"total_claims" db:"total_claims"`
+	ClaimedCount         int64               `json:"claimed_count" db:"claimed_count"`
+	RedEnvelopeWallet    string              `json:"red_envelope_wallet" db:"red_envelope_wallet"`
+	OwnerWallet          string              `json:"owner_wallet" db:"owner_wallet"`
+	Creator              int64               `json:"creator" db:"creator"`
+	Status               string              `json:"status" db:"status"`
+	TransactionHash      *string             `json:"transaction_hash,omitempty" db:"transaction_hash"`
+	IsRandomDistribution bool                `json:"is_random_distribution" db:"is_random_distribution"`
+	StartDate            time.Time           `json:"start_date" db:"start_date"`
+	EndDate              *time.Time          `json:"end_date,omitempty" db:"end_date"`
+	CreatedAt            time.Time           `json:"created_at" db:"created_at"`
+	UpdatedAt            time.Time           `json:"updated_at" db:"updated_at"`
 }
 
 type IntermediaryWallet struct {
@@ -49,69 +50,69 @@ type CreateRedEnvelopeRequest struct {
 }
 
 type RedEnvelopeClaim struct {
-	ID              int64     `json:"id" db:"id"`
-	Description     *string   `json:"description,omitempty" db:"description"`
-	RedEnvelopeID   string    `json:"red_envelope_id" db:"red_envelope_id"`
-	ClaimerWallet   string    `json:"claimer_wallet" db:"claimer_wallet"`
-	ClaimerUserID   *int64    `json:"claimer_user_id,omitempty" db:"claimer_user_id"`
-	Amount          int64     `json:"amount" db:"amount"`
-	ClaimedAt       time.Time `json:"claimed_at" db:"claimed_at"`
-	TransactionHash *string   `json:"transaction_hash,omitempty" db:"transaction_hash"`
+	ID              int64              `json:"id" db:"id"`
+	Description     *string            `json:"description,omitempty" db:"description"`
+	RedEnvelopeID   string             `json:"red_envelope_id" db:"red_envelope_id"`
+	ClaimerWallet   string             `json:"claimer_wallet" db:"claimer_wallet"`
+	ClaimerUserID   *int64             `json:"claimer_user_id,omitempty" db:"claimer_user_id"`
+	Amount          types.BigIntString `json:"amount" db:"amount"`
+	ClaimedAt       time.Time          `json:"claimed_at" db:"claimed_at"`
+	TransactionHash *string            `json:"transaction_hash,omitempty" db:"transaction_hash"`
 }
 
 type CreateRedEnvelopeCreateByUser []struct {
-	ID           string    `json:"id"`
-	Name         string    `json:"name"`
-	TotalAmount  int64     `json:"total_amount"`
-	TotalClaims  int64     `json:"total_claims"`
-	Status       string    `json:"status"`
-	CreatedAt    time.Time `json:"created_at"`
-	ClaimedCount int64     `json:"claimed_count"`
+	ID           string             `json:"id"`
+	Name         string             `json:"name"`
+	TotalAmount  types.BigIntString `json:"total_amount"`
+	TotalClaims  int64              `json:"total_claims"`
+	Status       string             `json:"status"`
+	CreatedAt    time.Time          `json:"created_at"`
+	ClaimedCount int64              `json:"claimed_count"`
 }
 
 type ClaimedRedEnvelopeByUser []struct {
-	ID              string    `json:"id"`
-	RedEnvelopeID   string    `json:"red_envelope_id"`
-	Name            string    `json:"name"`
-	FromWallet      string    `json:"from_wallet"`
-	Amount          int64     `json:"amount"`
-	ClaimedAt       time.Time `json:"claimed_at"`
-	TransactionHash *string   `json:"transaction_hash,omitempty"`
+	ID              string             `json:"id"`
+	RedEnvelopeID   string             `json:"red_envelope_id"`
+	Name            string             `json:"name"`
+	FromWallet      string             `json:"from_wallet"`
+	Amount          types.BigIntString `json:"amount"`
+	ClaimedAt       time.Time          `json:"claimed_at"`
+	TransactionHash *string            `json:"transaction_hash,omitempty"`
 }
 
 type DetailRedEnvelope struct {
-	Name               string     `json:"name"`
-	Status             string     `json:"status"`
-	RedEnvelopeWallet  string     `json:"red_envelope_wallet"`
-	TotalAmount        int64      `json:"total_amount"`
-	TotalClaim         int64      `json:"total_claim"`
-	ClaimedCount       int64      `json:"claimed_count"`
-	TotalClaimedAmount int64      `json:"total_claimed_amount"`
-	EndDate            *time.Time `json:"end_date,omitempty"`
+	Name               string             `json:"name"`
+	Status             string             `json:"status"`
+	RedEnvelopeWallet  string             `json:"red_envelope_wallet"`
+	TotalAmount        types.BigIntString `json:"total_amount"`
+	TotalClaim         int64              `json:"total_claim"`
+	ClaimedCount       int64              `json:"claimed_count"`
+	TotalClaimedAmount types.BigIntString `json:"total_claimed_amount"`
+	EndDate            *time.Time         `json:"end_date,omitempty"`
 }
 
 type RedEnvelopeCloseSesssion struct {
-	RemainingAmount   int64
+	RemainingAmount   types.BigIntString
 	RedEnvelopeWallet string
 	OwnerWallet       string
 }
 
 type ClaimAmount struct {
 	ID          int64
-	Amount      int64
+	Amount      types.BigIntString
 	Description string
 }
 
 type RedEnvelopeSplitMoney struct {
-	ID             int64   `json:"id" db:"id"`
-	RedEnvelopeID  string  `json:"red_envelope_id" db:"red_envelope_id"`
-	Amount         int64   `json:"amount" db:"amount"`
-	Status         string  `json:"status" db:"status"`
-	ClaimOrder     int     `json:"claim_order" db:"claim_order"`
-	ClaimedUserID  int64   `json:"claimed_user_id,omitempty" db:"claimed_user_id"`
-	ClaimedAddress *string `json:"claimed_address,omitempty" db:"claimed_address"`
-	ClaimedAt      *string `json:"claimed_at,omitempty" db:"claimed_at"`
-	CreatedAt      string  `json:"created_at" db:"created_at"`
+	ID             int64              `json:"id" db:"id"`
+	RedEnvelopeID  string             `json:"red_envelope_id" db:"red_envelope_id"`
+	Amount         types.BigIntString `json:"amount" db:"amount"`
+	Status         string             `json:"status" db:"status"`
+	ClaimOrder     int                `json:"claim_order" db:"claim_order"`
+	ClaimedUserID  int64              `json:"claimed_user_id,omitempty" db:"claimed_user_id"`
+	ClaimedAddress *string            `json:"claimed_address,omitempty" db:"claimed_address"`
+	ClaimedAt      *string            `json:"claimed_at,omitempty" db:"claimed_at"`
+	CreatedAt      string             `json:"created_at" db:"created_at"`
 }
 
 type ClaimRedEnvelopeRequest struct {

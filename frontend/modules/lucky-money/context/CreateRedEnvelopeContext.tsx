@@ -20,7 +20,7 @@ interface CreateRedEnvelopeContextType {
   showConfirmModal: boolean;
   setShowConfirmModal: (show: boolean) => void;
   generatedEnvelope: RedEnvelope | null;
-  totalAmount: number;
+  totalAmount: string;
   isPending: boolean;
   isSuccess: boolean;
   resetForm: () => void;
@@ -44,7 +44,7 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
   const [isProcessing, setIsProcessing] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [totalAmount, setTotalAmount] = useState<number>(0);
+  const [totalAmount, setTotalAmount] = useState<string>('0');
   const [userBalance, setUserBalance] = useState<number>(0);
 
   const fetchUserBalance = useCallback(async () => {
@@ -71,8 +71,8 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
         name: data.name,
         total_amount: data.totalAmount,
         total_claims: data.participantCount,
-        min_amount: data.amountMin || 0,
-        max_amount: data.amountMax || 0,
+        min_amount: (data.amountMin || 0),
+        max_amount: (data.amountMax || 0),
         description: data.message,
         is_random_distribution: data.randomDistribution,
         start_date: now.toISOString(),
@@ -86,7 +86,7 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
   const initiateCreation = useCallback(
     async (data: CreateRedEnvelopeForm) => {
       setGeneratedEnvelope(null);
-      setTotalAmount(data.totalAmount);
+      setTotalAmount(data.totalAmount.toString());
       setShowConfirmModal(true);
     },
     [user, mmnClient]
