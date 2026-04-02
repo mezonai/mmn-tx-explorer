@@ -48,6 +48,19 @@ export const useP2POrder = (orderId: string) => {
     };
   }, [orderId]);
 
+  // Expose a manual refresh function so callers can re-fetch the order
+  const refresh = async () => {
+    if (!orderId) return null;
+    try {
+      const updated = await P2PService.getOrderById(String(orderId));
+      setOrder(updated);
+      return updated;
+    } catch (err) {
+      console.error('Error refreshing order:', err);
+      return null;
+    }
+  };
+
   const updateOrderStatus = async (status: OrderStatus | string, transferCode?: string) => {
     if (!order) return;
 
@@ -105,5 +118,5 @@ export const useP2POrder = (orderId: string) => {
     };
   }, [orderId, wsManager]);
 
-  return { order, isLoading, error, updateOrderStatus };
+  return { order, isLoading, error, updateOrderStatus, refresh };
 };
