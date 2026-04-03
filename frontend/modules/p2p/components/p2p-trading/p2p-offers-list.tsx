@@ -17,9 +17,8 @@ import { OFFERS_STATUS } from '../../constants';
 import BigNumber from 'bignumber.js';
 import { OfferOrdersModal } from './offer-orders-modal';
 import { ShareOfferModal } from './share-offer-modal';
-import { TriangleAlert, Loader2 } from 'lucide-react';
+import { TriangleAlert, Loader2, ClipboardList } from 'lucide-react';
 import { NumberUtil } from '@/utils';
-import { cn } from '@/lib/utils';
 
 interface P2POffersTableProps {
   offers: P2POffer[] | undefined;
@@ -108,7 +107,7 @@ export const P2POffersTabs = ({
 
   const rawColumns: (TTableColumn<P2POffer> | null)[] = [
     {
-      headerContent: 'SELLER',
+      headerContent: 'CREATOR',
       renderCell: (offer) => (
         <AddressDisplay
           address={offer.offer_creator_wallet_address}
@@ -164,7 +163,7 @@ export const P2POffersTabs = ({
                 {available.toFormat()} / {total.toFormat()} {APP_CONFIG.CHAIN_SYMBOL}
               </span>
               <span className="text-brand-primary text-[10px] font-bold tracking-wider uppercase">
-                {sold.toFormat()} {APP_CONFIG.CHAIN_SYMBOL} Sold
+                {sold.toFormat()} {APP_CONFIG.CHAIN_SYMBOL} {offer.side === TradeTypes.SELL ? 'Sold' : 'Bought'}
               </span>
             </div>
             <div className="w-50 space-y-1.5">
@@ -194,10 +193,15 @@ export const P2POffersTabs = ({
             <Button
               variant="outline"
               size="sm"
-              className="h-8 border-gray-700 bg-gray-800/50 hover:bg-gray-800"
+              className="group border-brand-primary/30 bg-brand-primary/5 hover:bg-brand-primary h-8 px-3 transition-all"
               onClick={() => handleShowOrders(offer)}
             >
-              <span className="text-gray-300">{offer.order_count ?? 0} orders</span>
+              <div className="flex items-center gap-2">
+                <ClipboardList className="text-brand-primary h-3.5 w-3.5 transition-colors group-hover:text-white" />
+                <span className="text-brand-primary text-[10px] font-extrabold tracking-wider uppercase transition-colors group-hover:text-white">
+                  {offer.order_count ?? 0} orders
+                </span>
+              </div>
             </Button>
           ),
           skeletonContent: <Skeleton className="h-8 w-20 rounded-md" />,

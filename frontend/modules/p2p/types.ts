@@ -84,6 +84,7 @@ export enum OrderStatus {
   PENDING = 'PENDING',
   CONFIRMED = 'CONFIRMED',
   CANCELED = 'CANCELED',
+  EXPIRED = 'EXPIRED',
   FAILED = 'FAILED',
   COMPLETED = 'COMPLETED',
   WAITING_TRANSFER = 'WAITING_TRANSFER',
@@ -114,7 +115,7 @@ export type P2PTabType = (typeof P2P_TAB)[keyof typeof P2P_TAB];
 
 export interface CreateOrderRequest {
   amount: number;
-  payment_info_id: number;
+  payment_info_id?: number;
 }
 
 export interface UpdateOrderStatusRequest {
