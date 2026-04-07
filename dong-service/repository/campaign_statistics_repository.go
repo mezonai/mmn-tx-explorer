@@ -46,7 +46,7 @@ func (r *CampaignStatisticsRepository) GetActiveCampaigns(ctx context.Context) (
 	query := fmt.Sprintf(`
 		SELECT id, donation_wallet
 		FROM %s.donation_campaign
-		WHERE status = $1
+		WHERE status = $1 AND deleted_at IS NULL
 	`, r.dongSchema)
 
 	rows, err := r.db.QueryContext(ctx, query, constants.CampaignStatusActive)
@@ -159,7 +159,7 @@ func (r *CampaignStatisticsRepository) UpdateCampaignStatistics(ctx context.Cont
 			GROUP BY to_address
 		) recent_stats ON dc.donation_wallet = recent_stats.campaign_wallet
 		WHERE cs.campaign_wallet = dc.donation_wallet
-		AND dc.status = $1
+		AND dc.status = $1 AND dc.deleted_at IS NULL
 	`, r.dongSchema, r.dongSchema, r.indexerSchema, r.dongSchema, r.indexerSchema, days)
 
 	// Pass campaign status and transaction status as parameters to avoid
@@ -184,7 +184,7 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 		SELECT dc.id, dc.donation_wallet, cs.updated_at, cs.total_amount, cs.total_contributor, cs.total_withdrawn
 		FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
-		WHERE dc.id = $1
+		WHERE dc.id = $1 AND dc.deleted_at IS NULL
 	`, r.dongSchema, r.dongSchema)
 
 	var campaign Campaign
@@ -303,6 +303,7 @@ func (r *CampaignStatisticsRepository) GetStats() (*models.CampaignStatsResponse
 			COALESCE(SUM(cs.total_amount), 0) as total_amount
 		FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
+		WHERE dc.deleted_at IS NULL
 	`, r.dongSchema, r.dongSchema)
 
 	var stats models.CampaignStatsResponse
