@@ -11,3 +11,4 @@ BEGIN
     ) THEN
         ALTER TYPE order_status ADD VALUE 'EXPIRED';
     END IF;
+END $$;
