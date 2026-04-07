@@ -87,6 +87,17 @@ func (r *OrderRepository) UpdateOrderStatus(ctx context.Context, orderID int64, 
 	return err
 }
 
+func (r *OrderRepository) UpdateOrderStatusAndExpiration(ctx context.Context, orderID int64, status string, expiresAt *time.Time, tx *sql.Tx) error {
+	query := fmt.Sprintf(`
+		UPDATE %s.p2p_orders
+		SET status = $1, expires_at = $2, updated_at = NOW()
+		WHERE order_id = $3
+	`, r.dongSchema)
+
+	_, err := tx.ExecContext(ctx, query, status, expiresAt, orderID)
+	return err
+}
+
 func (r *OrderRepository) UpdateOrderStatusWithTxHash(ctx context.Context, orderID int64, status string, txHash *string, tx *sql.Tx) error {
 	if txHash != nil {
 		query := fmt.Sprintf(`
@@ -111,24 +122,34 @@ type ExpiredOrderInfo struct {
 	OfferSide                 string
 }
 
-func (r *OrderRepository) GetExpiredOrdersForRefund(ctx context.Context, cutoff time.Time) ([]ExpiredOrderInfo, error) {
+func (r *OrderRepository) CancelExpiredOrders(ctx context.Context, cutoff time.Time, tx *sql.Tx) ([]ExpiredOrderInfo, error) {
 	query := fmt.Sprintf(`
-		SELECT 
-			o.order_id,
-			o.offer_id,
-			o.order_amount,
-			o.status,
-			COALESCE(o.previous_status, ''),
-			COALESCE(o.order_creator_wallet_address, ''),
-			COALESCE(of.intermediary_wallet_address, ''),
-			COALESCE(of.side, '')
-		FROM %s.p2p_orders o
-		INNER JOIN %s.p2p_offers of ON o.offer_id = of.offer_id
-		WHERE o.status IN ('OPEN', 'PENDING', 'WAITING_TRANSFER') AND o.expires_at < $1
-		ORDER BY o.created_at ASC
-	`, r.dongSchema, r.dongSchema)
+		WITH cancelled AS (
+			UPDATE %s.p2p_orders o
+			SET status = '%s',
+				previous_status = status,
+				in_dispute = CASE WHEN status = '%s' THEN TRUE ELSE FALSE END,
+				updated_at = NOW()
+			WHERE status IN ('%s', '%s', '%s') AND expires_at < $1
+			RETURNING o.order_id, o.offer_id, o.order_amount, COALESCE(o.previous_status, '') AS previous_status, COALESCE(o.order_creator_wallet_address, '') AS order_creator_wallet_address
+		),
+		restored AS (
+			UPDATE %s.p2p_offers of
+			SET available_amount = of.available_amount + c.order_amount, updated_at = NOW()
+			FROM cancelled c
+			WHERE of.offer_id = c.offer_id
+			RETURNING c.order_id, of.intermediary_wallet_address, COALESCE(of.side, '') AS side
+		)
+		SELECT c.order_id, c.offer_id, c.order_amount, c.previous_status, c.order_creator_wallet_address, r.intermediary_wallet_address, r.side
+		FROM restored r
+		JOIN cancelled c ON c.order_id = r.order_id
+	`, r.dongSchema,
+		constants.TradingExpired,
+		constants.TradingPending,
+		constants.TradingOpen, constants.TradingPending, constants.TradingWaiting,
+		r.dongSchema)
 
-	rows, err := r.db.QueryContext(ctx, query, cutoff)
+	rows, err := tx.QueryContext(ctx, query, cutoff)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +162,6 @@ func (r *OrderRepository) GetExpiredOrdersForRefund(ctx context.Context, cutoff 
 			&info.OrderID,
 			&info.OfferID,
 			&info.OrderAmount,
-			&info.Status,
 			&info.PreviousStatus,
 			&info.OrderCreatorWalletAddress,
 			&info.IntermediaryWalletAddress,
@@ -154,52 +174,10 @@ func (r *OrderRepository) GetExpiredOrdersForRefund(ctx context.Context, cutoff 
 	return result, rows.Err()
 }
 
-func (r *OrderRepository) CancelExpiredOrders(ctx context.Context, cutoff time.Time, tx *sql.Tx) (int64, error) {
-	// Orders that expire while PENDING are marked in_dispute=TRUE because the buyer already
-	// confirmed payment but the seller did not confirm receipt in time.
-	query := fmt.Sprintf(`
-		WITH cancelled AS (
-			UPDATE %s.p2p_orders
-			SET status      = '%s',
-			    in_dispute  = CASE WHEN status = '%s' THEN TRUE ELSE FALSE END,
-			    updated_at  = NOW()
-			WHERE status IN ('%s', '%s', '%s') AND expires_at < $1
-			RETURNING order_id, offer_id, order_amount
-		),
-		restored AS (
-			UPDATE %s.p2p_offers o
-			SET available_amount = o.available_amount + c.order_amount, updated_at = NOW()
-			FROM cancelled c
-			WHERE o.offer_id = c.offer_id
-			RETURNING c.order_id
-		)
-		SELECT order_id FROM restored
-	`, r.dongSchema,
-		constants.TradingExpired,
-		constants.TradingPending,
-		constants.TradingOpen, constants.TradingPending, constants.TradingWaiting,
-		r.dongSchema)
-
-	rows, err := tx.QueryContext(ctx, query, cutoff)
-	if err != nil {
-		return 0, err
-	}
-	defer rows.Close()
-
-	var count int64
-	for rows.Next() {
-		var id int64
-		if err := rows.Scan(&id); err == nil {
-			count++
-		}
-	}
-	return count, rows.Err()
-}
-
 func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, pagination map[string]any) ([]models.Order, error) {
 	base := fmt.Sprintf(`
 		SELECT o.order_id, o.offer_id, o.order_creator_wallet_address, o.order_creator_user_id, o.order_amount, o.payable_amount, 
-		       o.transaction_hash, o.status, o.transfer_code, o.expires_at, o.created_at, o.updated_at,
+			o.transaction_hash, o.status, o.previous_status, o.transfer_code, o.expires_at, o.created_at, o.updated_at,
 		       of.offer_creator_wallet_address, of.offer_creator_user_id,
 		       p.id, p.user_id, p.bank_name, p.account_number, p.account_name, p.is_primary, p.created_at, p.updated_at
 		FROM %s.p2p_orders o
@@ -266,6 +244,7 @@ func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, 
 			&o.PayableAmount,
 			&o.TransactionHash,
 			&o.Status,
+			&o.PreviousStatus,
 			&o.TransferCode,
 			&o.ExpiresAt,
 			&o.CreatedAt,
@@ -305,7 +284,7 @@ func (r *OrderRepository) ListOrdersByOffer(ctx context.Context, offerID int64, 
 }
 
 func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.Order, error) {
-	query := fmt.Sprintf(`SELECT o.order_id, o.offer_id, o.order_creator_wallet_address, o.order_creator_user_id, o.order_amount, o.payable_amount, o.transaction_hash, o.status, o.transfer_code, o.expires_at, o.created_at, o.updated_at,
+	query := fmt.Sprintf(`SELECT o.order_id, o.offer_id, o.order_creator_wallet_address, o.order_creator_user_id, o.order_amount, o.payable_amount, o.transaction_hash, o.status, o.previous_status, o.transfer_code, o.expires_at, o.created_at, o.updated_at,
 		p.id, p.user_id, p.bank_name, p.account_number, p.account_name, p.is_primary, p.created_at, p.updated_at
 		FROM %s.p2p_orders o
 		LEFT JOIN %s.user_payment_info p ON o.payment_info_id = p.id
@@ -332,6 +311,69 @@ func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.O
 		&o.PayableAmount,
 		&o.TransactionHash,
 		&o.Status,
+		&o.PreviousStatus,
+		&o.TransferCode,
+		&o.ExpiresAt,
+		&o.CreatedAt,
+		&o.UpdatedAt,
+		&paymentID,
+		&paymentUserID,
+		&bankName,
+		&accountNumber,
+		&accountName,
+		&isPrimary,
+		&paymentCreatedAt,
+		&paymentUpdatedAt,
+	); err != nil {
+		return nil, err
+	}
+
+	// Build PaymentInfo if data is present
+	if paymentID.Valid && bankName.Valid && accountNumber.Valid && accountName.Valid {
+		o.PaymentInfo = &models.UserPaymentInfo{
+			ID:            paymentID.Int64,
+			UserID:        paymentUserID.String,
+			BankName:      bankName.String,
+			AccountNumber: accountNumber.String,
+			AccountName:   accountName.String,
+			IsPrimary:     isPrimary.Bool,
+			CreatedAt:     paymentCreatedAt.Time,
+			UpdatedAt:     paymentUpdatedAt.Time,
+		}
+	}
+
+	return &o, nil
+}
+
+func (r *OrderRepository) GetOrderByIDForUpdate(ctx context.Context, id int64, tx *sql.Tx) (*models.Order, error) {
+	query := fmt.Sprintf(`SELECT o.order_id, o.offer_id, o.order_creator_wallet_address, o.order_creator_user_id, o.order_amount, o.payable_amount, o.transaction_hash, o.status, o.previous_status, o.transfer_code, o.expires_at, o.created_at, o.updated_at,
+		p.id, p.user_id, p.bank_name, p.account_number, p.account_name, p.is_primary, p.created_at, p.updated_at
+		FROM %s.p2p_orders o
+		LEFT JOIN %s.user_payment_info p ON o.payment_info_id = p.id
+		WHERE o.order_id = $1 FOR UPDATE OF o`, r.dongSchema, r.dongSchema)
+	var o models.Order
+
+	// Payment info fields
+	var paymentID sql.NullInt64
+	var paymentUserID sql.NullString
+	var bankName sql.NullString
+	var accountNumber sql.NullString
+	var accountName sql.NullString
+	var isPrimary sql.NullBool
+	var paymentCreatedAt sql.NullTime
+	var paymentUpdatedAt sql.NullTime
+
+	row := tx.QueryRowContext(ctx, query, id)
+	if err := row.Scan(
+		&o.OrderID,
+		&o.OfferID,
+		&o.OrderCreatorWalletAddress,
+		&o.OrderCreatorUserID,
+		&o.OrderAmount,
+		&o.PayableAmount,
+		&o.TransactionHash,
+		&o.Status,
+		&o.PreviousStatus,
 		&o.TransferCode,
 		&o.ExpiresAt,
 		&o.CreatedAt,
@@ -369,7 +411,7 @@ func (r *OrderRepository) GetOrderByID(ctx context.Context, id int64) (*models.O
 func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Order, error) {
 	query := fmt.Sprintf(`
 		SELECT o.order_id, o.offer_id, o.order_creator_wallet_address, o.order_creator_user_id, o.order_amount, o.payable_amount, 
-		       o.transaction_hash, o.status, o.transfer_code, o.expires_at, o.created_at, o.updated_at,
+			   o.transaction_hash, o.status, o.previous_status, o.transfer_code, o.expires_at, o.created_at, o.updated_at,
 		       of.offer_creator_wallet_address, of.offer_creator_user_id,
 		       p.id, p.user_id, p.bank_name, p.account_number, p.account_name, p.is_primary, p.created_at, p.updated_at
 		FROM %s.p2p_orders o
@@ -417,6 +459,7 @@ func (r *OrderRepository) GetOrdersByWalletAddress(ctx context.Context, walletAd
 			&o.PayableAmount,
 			&o.TransactionHash,
 			&o.Status,
+			&o.PreviousStatus,
 			&o.TransferCode,
 			&o.ExpiresAt,
 			&o.CreatedAt,

@@ -147,7 +147,7 @@ const (
 )
 
 const (
-	OrderExpirationDuration = 4
+	OrderExpirationDuration = 4 // Order expiration duration in hours
 )
 
 const (

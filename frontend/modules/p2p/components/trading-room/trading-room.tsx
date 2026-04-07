@@ -31,6 +31,7 @@ import { useTransfer } from '@/modules/transfer/hooks/useTransfer';
 import { ETransferType } from '@/modules/transaction';
 import { EMBED_MESSAGE_THEME, P2P_TRADING_ROLE, ORDER_EXPIRATION_DURATION_MS } from '../../constants';
 import BigNumber from 'bignumber.js';
+import { useReopenOrder } from '@/modules/p2p/hooks';
 import { createTrackOrderComponents } from '../../util';
 
 interface TradingRoomProps {
@@ -52,7 +53,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   const { transfer } = useTransfer();
   const sideParam = searchParams.get('side') as TradeTypes | null;
 
-  const { order, isLoading: orderLoading, updateOrderStatus } = useP2POrder(isOfferMode ? '' : orderId);
+  const { order, isLoading: orderLoading, updateOrderStatus, refresh: refreshOrder } = useP2POrder(isOfferMode ? '' : orderId);
   const offerIdParam = isOfferMode ? orderId : order ? String(order.offer_id) : null;
   const { offer, isLoading: offerLoading } = useP2POffer(offerIdParam);
   const { createOrder, isLoading: isCreatingOrder } = useCreateOrder();
@@ -310,6 +311,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
     }
   };
 
+  const { mutate: reopenOrder, isPending: isReopening } = useReopenOrder();
+
   if ((isOfferMode && offerLoading) || (!isOfferMode && (orderLoading || !order))) {
     return (
       <div className="relative flex flex-col">
@@ -420,9 +423,28 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
     );
   }
 
+  const canReopen =
+    effectiveOrder.status === OrderStatus.EXPIRED &&
+    (order?.order_creator_wallet_address === user?.walletAddress ||
+      offer?.offer_creator_wallet_address === user?.walletAddress);
+
   return (
     <div className="bg-background relative flex flex-col">
-      <TradingRoomHeader order={effectiveOrder} userRole={userRole} />
+      <TradingRoomHeader
+        order={effectiveOrder}
+        userRole={userRole}
+        showReopen={canReopen}
+        isReopening={isReopening}
+        onReopen={() =>
+          reopenOrder(String(order!.order_id), {
+            onSuccess: async () => {
+              // refresh full order from server so expires_at and other fields update
+              await refreshOrder();
+              setLocalStatus(OrderStatus.OPEN);
+            },
+          })
+        }
+      />
       <div className="flex flex-1 flex-col gap-6 md:flex-row">
         <div className="border-border w-full p-4 md:w-8/12 lg:w-10/12">
           <ProgressSteps order={effectiveOrder} />
