@@ -43,18 +43,19 @@ const (
 	RedEnvelopeStatusFailed    = "FAILED"    // Transaction failed after retries
 )
 
+// Red Envelope Claim Status Constants
+const (
+	RedEnvelopeClaimStatusPending = "PENDING" // Waiting for blockchain confirmation
+	RedEnvelopeClaimStatusSuccess = "SUCCESS" // Claim completed successfully
+	RedEnvelopeClaimStatusFailed  = "FAILED"  // Blockchain transfer failed
+)
+
 // Red Envelope Wallet Status Constants
 const (
 	RedEnvelopeWalletStatusReady          = "READY"           // Available for use
 	RedEnvelopeWalletStatusInUse          = "IN_USE"          // Currently assigned to a red envelope
 	RedEnvelopeWalletStatusPrepareReplace = "PREPARE_REPLACE" // Scheduled for replacement (>30 days old)
 	RedEnvelopeWalletStatusDisabled       = "DISABLED"        // No longer usable
-)
-
-const (
-	RedEnvelopeSplitMoneyStatusAvailable = "AVAILABLE"
-	RedEnvelopeSplitMoneyStatusReserved  = "RESERVED"
-	RedEnvelopeSplitMoneyStatusClaimed   = "CLAIMED"
 )
 
 const (
@@ -82,14 +83,15 @@ const (
 	RedEnvelopeStatusOk                      = "OK"
 )
 
+
+
 const (
-	ClaimStatusError         = 0
-	ClaimStatusSuccess       = 1
-	ClaimStatusAlreadyQueued = 2
+	AmountError = 0
 )
 
 const (
 	ExtraInfoLuckyMoney              = `{"type":"lucky-money"}`
+	ExtraInfoLuckyMoneyClaim         = `{"type":"lucky-money","claim_id":%d}`
 	ExtraInfoP2PTrading              = `{"type":"p2p-trading"}`
 	ExtraInfoP2PTradingBuyOffer      = `{"type":"p2p-trading-buy-offer"}`
 	ExtraInfoP2PTradingOfferCanceled = `{"type":"p2p-trading","action":"offer-canceled"}`

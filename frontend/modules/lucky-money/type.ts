@@ -91,9 +91,7 @@ export interface UpdateStatusRedEnvelopeRequest {
   status: number;
 }
 
-export interface ClaimEnvelopeRequest {
-  split_money_id: number;
-}
+
 
 export interface RedEnvelopeClaim {
   split_money_id: number;
