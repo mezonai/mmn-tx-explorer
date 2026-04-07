@@ -32,6 +32,7 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
   const [messages, setMessages] = useState<MessageWithParsedContent[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isConnected, setIsConnected] = useState(false);
+  const autoMessageSentRef = useRef<AutoMessagePayload | null>(null);
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -152,6 +153,8 @@ export const ChatSidebar = ({ sellerId, autoMessage, onAutoMessageSent }: ChatSi
 
   useEffect(() => {
     if (autoMessage && isConnected && socketRef.current && channelIdRef.current) {
+      if (autoMessageSentRef.current === autoMessage) return;
+      autoMessageSentRef.current = autoMessage;
       const sendAuto = async () => {
         try {
           const mk = generateMarkdownPayload(autoMessage.text);
