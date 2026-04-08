@@ -15,6 +15,11 @@ export const P2P_ENDPOINTS = {
   DELETE_USER_PAYMENT: (id: string) => `/api/v1/user-payments/${id}`,
 } as const;
 
+export const CHAT_ENDPOINTS = {
+  FIND_CHANNEL: '/find-channel-by-users',
+  HISTORY: (channelId: string) => `/history/${channelId}`,
+} as const;
+
 export const P2P_QUERY_KEYS = {
   OFFERS: 'p2p-offers',
   OFFER: 'p2p-offer',
@@ -23,6 +28,8 @@ export const P2P_QUERY_KEYS = {
   MY_ORDERS: 'p2p-my-orders',
   MY_OFFERS: 'p2p-my-offers',
   USER_PAYMENTS: 'p2p-user-payments',
+  CHAT_CHANNEL: 'p2p-chat-channel',
+  CHAT_HISTORY: 'p2p-chat-history',
 } as const;
 export const OFFERS_STATUS = {
   OPEN: 'OPEN',

@@ -10,8 +10,24 @@ import {
   UpdateOrderStatusRequest,
   UserPaymentInfo,
 } from './types';
-import { apiDongClient } from '@/service';
-import { P2P_ENDPOINTS } from './constants';
+import { apiDongClient, apiChatClient } from '@/service';
+import { P2P_ENDPOINTS, CHAT_ENDPOINTS } from './constants';
+import { MessageWithParsedContent } from './types';
+
+export class ChatService {
+  static async findChannel(params: { offerCreatorId: string; orderCreatorId: string }): Promise<string | null> {
+    const { data } = await apiChatClient.get<{ channelId: string | null }>(CHAT_ENDPOINTS.FIND_CHANNEL, { params });
+    return data.channelId;
+  }
+
+  static async getHistory(
+    channelId: string,
+    params?: { limit?: number; before?: number }
+  ): Promise<MessageWithParsedContent[]> {
+    const { data } = await apiChatClient.get<MessageWithParsedContent[]>(CHAT_ENDPOINTS.HISTORY(channelId), { params });
+    return data;
+  }
+}
 
 export class P2PService {
   static async getMyPaymentInfos(): Promise<UserPaymentInfo[]> {

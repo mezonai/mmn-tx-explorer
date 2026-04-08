@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { useP2POrder } from '../../hooks/useP2POrder';
@@ -142,44 +142,45 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
     return `Confirm money received, release ${APP_CONFIG.CHAIN_SYMBOL}`;
   }, [effectiveOrder?.offer_type]);
 
-  const createOrderEmbed = (currentOrder: P2POrder, customTitle?: string, customColor?: string) => {
-    const priceRate = offer?.price_rate || 1;
-    const displayAmount = NumberUtil.scaleDownBigNumber(new BigNumber(currentOrder.amount));
-    const mzdAmount = displayAmount.toFormat();
-    const vndAmount = displayAmount.multipliedBy(priceRate).toFormat();
+  const createOrderEmbed = useCallback(
+    (currentOrder: P2POrder, customTitle?: string, customColor?: string) => {
+      const priceRate = offer?.price_rate || 1;
+      const displayAmount = NumberUtil.scaleDownBigNumber(new BigNumber(currentOrder.amount));
+      const mzdAmount = displayAmount.toFormat();
+      const vndAmount = displayAmount.multipliedBy(priceRate).toFormat();
 
-    const fullUrl = process.env.NEXT_PUBLIC_CHAT_APP_ZK_API_URL || window.location.origin;
-    const domain = new URL(fullUrl).origin;
-    const orderLink = `${domain}${ROUTES.P2P_TRADING_ROOM(currentOrder.order_id)}`;
+      const fullUrl = process.env.NEXT_PUBLIC_CHAT_APP_ZK_API_URL || window.location.origin;
+      const domain = new URL(fullUrl).origin;
+      const orderLink = `${domain}${ROUTES.P2P_TRADING_ROOM(currentOrder.order_id)}`;
 
-    return {
-      color: customColor || EMBED_MESSAGE_THEME.INDIGO,
-      title: customTitle || `Order #${currentOrder.order_id}`,
-      url: orderLink,
-      description: 'Transaction Details',
-      fields: [
-        {
-          name: 'Buy Amount',
-          value: `${mzdAmount} ${APP_CONFIG.CHAIN_SYMBOL}`,
-          inline: true,
-        },
-        {
-          name: 'Total Price',
-          value: `${vndAmount} VND`,
-          inline: true,
-        },
-        {
-          name: 'Exchange Rate',
-          value: `${NumberUtil.formatWithCommas(priceRate)} VND/${APP_CONFIG.CHAIN_SYMBOL}`,
-          inline: true,
-        },
-      ],
-      timestamp: new Date().toISOString(),
-      footer: { text: 'P2P Trading' },
-    };
-  };
-
-  
+      return {
+        color: customColor || EMBED_MESSAGE_THEME.INDIGO,
+        title: customTitle || `Order #${currentOrder.order_id}`,
+        url: orderLink,
+        description: 'Transaction Details',
+        fields: [
+          {
+            name: 'Buy Amount',
+            value: `${mzdAmount} ${APP_CONFIG.CHAIN_SYMBOL}`,
+            inline: true,
+          },
+          {
+            name: 'Total Price',
+            value: `${vndAmount} VND`,
+            inline: true,
+          },
+          {
+            name: 'Exchange Rate',
+            value: `${NumberUtil.formatWithCommas(priceRate)} VND/${APP_CONFIG.CHAIN_SYMBOL}`,
+            inline: true,
+          },
+        ],
+        timestamp: new Date().toISOString(),
+        footer: { text: 'P2P Trading' },
+      };
+    },
+    [offer?.price_rate]
+  );
 
   useEffect(() => {
     if (!order || !user?.walletAddress) return;
@@ -403,7 +404,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
             />
           </div>
 
-          <ChatSidebar sellerId={offer?.offer_creator_user_id || ''} />
+          <ChatSidebar orderCreatorId={user?.id || ''} offerCreatorId={offer?.offer_creator_user_id || ''} />
         </div>
       </div>
     );
@@ -530,15 +531,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
           </div>
         </div>
         <ChatSidebar
-          sellerId={
-            ((order.offer_type || offer?.side) === TradeTypes.BUY
-              ? userRole === P2P_TRADING_ROLE.BUYER
-                ? order.order_creator_user_id
-                : offer?.offer_creator_user_id
-              : userRole === P2P_TRADING_ROLE.BUYER
-                ? offer?.offer_creator_user_id
-                : order.order_creator_user_id) || ''
-          }
+          orderCreatorId={order.order_creator_user_id || ''}
+          offerCreatorId={offer?.offer_creator_user_id || ''}
           autoMessage={autoMessage}
           onAutoMessageSent={handleMessageSent}
         />

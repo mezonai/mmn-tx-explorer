@@ -7,5 +7,7 @@ export * from './useMyOrders';
 export * from './useP2POffer';
 export * from './useP2PMyOffers';
 export * from './useUpdateOfferStatus';
+export * from './useChatChannel';
+export * from './useChatHistory';
 export * from './useP2PStats';
 export * from './useReopenOrder';
