@@ -137,7 +137,7 @@ func (h *EventHandler) validateRedEnvelopeInDB(redEnvelopeID string) error {
 	}
 
 	query := fmt.Sprintf(`
-		SELECT id, status, red_envelope_wallet, owner_wallet, total_amount, total_claims, end_date, is_random_distribution, min_amount, max_amount
+		SELECT id, status, red_envelope_wallet, owner_wallet, total_amount, total_claims, end_date, is_random_distribution, min_amount, max_amount, description
 		FROM %s.red_envelope 
 		WHERE id = $1
 	`, h.cfg.Database.Schema)
@@ -153,6 +153,7 @@ func (h *EventHandler) validateRedEnvelopeInDB(redEnvelopeID string) error {
 		IsRandomDistribution bool
 		MinAmount            *int64
 		MaxAmount            *int64
+		Description          *string
 	}
 
 	err = database.GetDB().QueryRow(query, id).Scan(
@@ -166,6 +167,7 @@ func (h *EventHandler) validateRedEnvelopeInDB(redEnvelopeID string) error {
 		&envelope.IsRandomDistribution,
 		&envelope.MinAmount,
 		&envelope.MaxAmount,
+		&envelope.Description,
 	)
 	if err != nil {
 		return fmt.Errorf("red envelope not found in database: %w", err)
@@ -228,19 +230,6 @@ func (h *EventHandler) validateRedEnvelopeInDB(redEnvelopeID string) error {
 			}
 		}
 
-		// Initialize legacy queue
-		if err := h.queueService.InitializeLegacyQueue(redEnvelopeID, envelope.TotalClaims, ttl); err != nil {
-			logger.Error().
-				Err(err).
-				Str("red_envelope_id", redEnvelopeID).
-				Msg("Failed to initialize legacy queue for red envelope")
-		} else {
-			logger.Info().
-				Str("red_envelope_id", redEnvelopeID).
-				Int64("total_claims", envelope.TotalClaims).
-				Dur("ttl", ttl).
-				Msg("Initialized legacy queue for red envelope")
-		}
 
 		// Generate amounts
 		var amounts []int64
@@ -268,7 +257,11 @@ func (h *EventHandler) validateRedEnvelopeInDB(redEnvelopeID string) error {
 		}
 
 		// Initialize red envelope queue
-		err = h.queueService.InitializeRedEnvelope(redEnvelopeID, amounts, ttl)
+		description := ""
+		if envelope.Description != nil {
+			description = *envelope.Description
+		}
+		err = h.queueService.InitializeRedEnvelope(redEnvelopeID, amounts, description, ttl)
 		if err != nil {
 			logger.Error().
 				Err(err).
