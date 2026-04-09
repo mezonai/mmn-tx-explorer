@@ -822,6 +822,7 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 		failedSellTxMap := make(map[string]common.Transaction)
 		failedSellOfferIDMap := make(map[string]int64)
 		luckyMoneyTxs := make([]common.Transaction, 0)
+		failedLuckyMoneyTxs := make([]common.Transaction, 0)
 
 		for i := range blockData.Transactions {
 			t := blockData.Transactions[i]
@@ -851,6 +852,8 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 						failedBuyTxMap[t.Hash] = t
 						failedBuyExtraMap[t.Hash] = struct{ OfferID, OrderID int64 }{OfferID: extra.OfferID, OrderID: extra.OrderID}
 					}
+				case common.TransactionExtraInfoLuckyMoney:
+					failedLuckyMoneyTxs = append(failedLuckyMoneyTxs, t)
 				}
 				continue
 			}
@@ -891,44 +894,12 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 			return err
 		}
 
-		redEnvelopeTxMap := make(map[string]common.Transaction)
-		redEnvelopeIDMap := make(map[string]string)
-		redEnvelopeFailTxMap := make(map[string]common.Transaction)
-		redEnvelopeFailIDMap := make(map[string]string)
-
-		type LuckyMoneyExtraInfo struct {
-			RedEnvelopeID string `json:"red_envelope_id"`
-		}
-
-		for i := range blockData.Transactions {
-			t := blockData.Transactions[i]
-			t.TransactionExtraInfoType = detectTransactionType(t.ExtraInfo)
-
-			if t.TransactionExtraInfoType != common.TransactionExtraInfoLuckyMoney || t.ExtraInfo == "" || t.Status == nil {
-				continue
-			}
-
-			var extra LuckyMoneyExtraInfo
-			if err := json.Unmarshal([]byte(t.ExtraInfo), &extra); err != nil || extra.RedEnvelopeID == "" {
-				continue
-			}
-
-			status := *t.Status
-			if status == (uint64)(pb.TransactionStatus_CONFIRMED) || status == (uint64)(pb.TransactionStatus_FINALIZED) {
-				redEnvelopeTxMap[t.Hash] = t
-				redEnvelopeIDMap[t.Hash] = extra.RedEnvelopeID
-			} else if status == (uint64)(pb.TransactionStatus_FAILED) {
-				redEnvelopeFailTxMap[t.Hash] = t
-				redEnvelopeFailIDMap[t.Hash] = extra.RedEnvelopeID
-			}
-		}
-
-		if err = p.updateRedEnvelopeStatus(ctx, tx, redEnvelopeTxMap, redEnvelopeIDMap); err != nil {
+		if err = p.updateRedEnvelopeStatus(ctx, tx, luckyMoneyTxs); err != nil {
 			log.Error().Err(err).Msg("Failed to update red envelope status after inserting transactions")
 			return err
 		}
 
-		if err = p.failRedEnvelopeStatus(ctx, tx, redEnvelopeFailTxMap, redEnvelopeFailIDMap); err != nil {
+		if err = p.failRedEnvelopeStatus(ctx, tx, failedLuckyMoneyTxs); err != nil {
 			log.Error().Err(err).Msg("Failed to fail red envelope status after inserting transactions")
 			return err
 		}
@@ -3281,21 +3252,29 @@ func (p *PostgresConnector) updateRedEnvelopeClaimStatus(ctx context.Context, tx
 func (p *PostgresConnector) updateRedEnvelopeStatus(
 	ctx context.Context,
 	tx *sql.Tx,
-	txMap map[string]common.Transaction,
-	redEnvelopeIDMap map[string]string,
+	txs []common.Transaction,
 ) error {
-	log.Info().Int("red_envelopes_to_validate", len(txMap)).Msg("starting red envelope status update")
-	if len(txMap) == 0 {
-		log.Info().Msg("no red envelopes to validate")
+	log.Info().Int("transactions_to_validate", len(txs)).Msg("starting red envelope status update")
+	if len(txs) == 0 {
 		return nil
 	}
 
-	redEnvelopeIDs := make([]string, 0, len(txMap))
-	for hash := range txMap {
-		redEnvelopeID := redEnvelopeIDMap[hash]
-		if redEnvelopeID != "" {
-			redEnvelopeIDs = append(redEnvelopeIDs, redEnvelopeID)
+	type Extra struct {
+		RedEnvelopeID string `json:"red_envelope_id"`
+	}
+
+	redEnvelopeIDs := make([]string, 0, len(txs))
+	txMap := make(map[string]common.Transaction)
+	redEnvelopeIDMap := make(map[string]string)
+
+	for _, t := range txs {
+		var extra Extra
+		if err := json.Unmarshal([]byte(t.ExtraInfo), &extra); err != nil || extra.RedEnvelopeID == "" {
+			continue
 		}
+		redEnvelopeIDs = append(redEnvelopeIDs, extra.RedEnvelopeID)
+		txMap[t.Hash] = t
+		redEnvelopeIDMap[t.Hash] = extra.RedEnvelopeID
 	}
 
 	if len(redEnvelopeIDs) == 0 {
@@ -3447,20 +3426,24 @@ func (p *PostgresConnector) updateRedEnvelopeStatus(
 func (p *PostgresConnector) failRedEnvelopeStatus(
 	ctx context.Context,
 	tx *sql.Tx,
-	txMap map[string]common.Transaction,
-	redEnvelopeIDMap map[string]string,
+	txs []common.Transaction,
 ) error {
-	log.Info().Int("red_envelopes_to_fail", len(txMap)).Msg("starting red envelope failure processing")
-	if len(txMap) == 0 {
+	log.Info().Int("transactions_to_fail", len(txs)).Msg("starting red envelope failure processing")
+	if len(txs) == 0 {
 		return nil
 	}
 
-	redEnvelopeIDs := make([]string, 0, len(txMap))
-	for hash := range txMap {
-		redEnvelopeID := redEnvelopeIDMap[hash]
-		if redEnvelopeID != "" {
-			redEnvelopeIDs = append(redEnvelopeIDs, redEnvelopeID)
+	type Extra struct {
+		RedEnvelopeID string `json:"red_envelope_id"`
+	}
+
+	redEnvelopeIDs := make([]string, 0, len(txs))
+	for _, t := range txs {
+		var extra Extra
+		if err := json.Unmarshal([]byte(t.ExtraInfo), &extra); err != nil || extra.RedEnvelopeID == "" {
+			continue
 		}
+		redEnvelopeIDs = append(redEnvelopeIDs, extra.RedEnvelopeID)
 	}
 
 	if len(redEnvelopeIDs) == 0 {
