@@ -148,6 +148,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		orders := v1.Group("/orders")
 		orders.Use(middleware.Authentication(cfg.JWT.Secret))
 		orders.POST("/:id/confirm", orderHandler.ConfirmOrder)
+		orders.POST("/:id/reopen", orderHandler.ReopenOrder)
 		orders.GET("/me", orderHandler.GetMyOrders)
 		orders.GET("/:id", orderHandler.GetOrderDetail)
 
@@ -159,7 +160,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		zkClaims.POST("/:id/claim", redEnvelopeHandler.ClaimRedEnvelopeQRLegacy)
 		zkClaims.POST("v2/:id/claim", redEnvelopeHandler.ClaimRedEnvelopeQR)
 		
-		// Event receive endpoint (from Service C)
+		// Event receive endpoint (from socket-Service )
 		v1.POST("/receive", eventHandler.ReceiveEvent)
 	}
 }

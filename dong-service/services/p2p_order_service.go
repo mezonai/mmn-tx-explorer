@@ -34,6 +34,7 @@ type IOrderService interface {
 	ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o *models.Order) error
 	ConfirmOrderAsSeller(ctx context.Context, orderID int64, o *models.Order, offer *models.Offer) error
 	GetOrdersByWalletAddress(ctx context.Context, walletAddress string, pagination map[string]any) ([]models.Order, int64, error)
+	ReopenOrder(ctx context.Context, orderID int64) error
 }
 
 func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *models.CreateOrderRequest, walletAddress string, buyerUserID string) (*models.Order, *models.Offer, error) {
@@ -138,6 +139,15 @@ func (s *OrderService) CreateOrder(ctx context.Context, offerID int64, req *mode
 	order.PriceRate = offer.PriceRate
 	order.OfferSide = &offer.Side
 
+	go SendSocketEvent(constants.OFFER_ROOM, constants.OFFER_LIST_REFRESH, map[string]any{
+		"action": "created p2p order",
+	})
+
+	// Notify both parties about new order
+	payload := map[string]any{"order_id": order.OrderID, "offer_id": offer.OfferID, "action": "created new order"}
+	go SendSocketEvent(*offer.OfferCreatorWalletAddress, constants.ORDER_CREATED, payload)
+	go SendSocketEvent(*order.OrderCreatorWalletAddress, constants.ORDER_CREATED, payload)
+
 	return order, offer, nil
 }
 
@@ -147,7 +157,7 @@ func (s *OrderService) ListOrdersByOffer(ctx context.Context, offerID int64, pag
 		return nil, 0, err
 	}
 
-	count, err := s.repo.CountOrdersByOffer(ctx, offerID)
+	count, err := s.repo.CountOrdersByOffer(ctx, nil, offerID)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -227,9 +237,8 @@ func (s *OrderService) HasActiveOrdersForOffer(ctx context.Context, offerID int6
 }
 
 func (s *OrderService) ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o *models.Order) error {
-	// Buyer confirm: OPEN -> PENDING
-	if o.Status != string(models.OrderStatusOpen) {
-		return fmt.Errorf("buyer can only confirm open orders; current status=%s", o.Status)
+	if o.Status != constants.TradingOpen {
+		return fmt.Errorf("buyer can only confirm open or waiting_transfer orders; current status=%s", o.Status)
 	}
 
 	db := database.GetDB()
@@ -255,15 +264,9 @@ func (s *OrderService) ConfirmOrderAsBuyer(ctx context.Context, orderID int64, o
 	if o.OfferID != nil {
 		of, err := s.offerRepo.GetOfferByID(context.Background(), *o.OfferID)
 		if err == nil && of != nil {
-			receiverAddress := of.OfferCreatorWalletAddress
-			if of.Side == models.OfferSideBuy {
-				receiverAddress = o.OrderCreatorWalletAddress
-			}
-
-			if receiverAddress != nil && *receiverAddress != "" {
-				payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.OrderAmount}
-				go SendSocketEvent(*receiverAddress, constants.ORDER_CONFIRMED, payload)
-			}
+			confirmPayload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.OrderAmount}
+			go SendSocketEvent(*of.OfferCreatorWalletAddress, constants.ORDER_CONFIRMED, confirmPayload)
+			go SendSocketEvent(*o.OrderCreatorWalletAddress, constants.ORDER_CONFIRMED, confirmPayload)
 		}
 	}
 
@@ -339,16 +342,9 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 					}
 				}
 
-				// Send ORDER_COMPLETED event to the buyer (the other party)
-				receiverAddress := o.OrderCreatorWalletAddress
-				if offer.Side == models.OfferSideBuy {
-					receiverAddress = offer.OfferCreatorWalletAddress
-				}
-
-				if receiverAddress != nil && *receiverAddress != "" {
-					payload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.OrderAmount, "tx_hash": txHash}
-					go SendSocketEvent(*receiverAddress, constants.ORDER_COMPLETED, payload)
-				}
+				completePayload := map[string]any{"order_id": fmt.Sprint(o.OrderID), "amount": o.OrderAmount, "tx_hash": txHash}
+				go SendSocketEvent(*offer.OfferCreatorWalletAddress, constants.ORDER_COMPLETED, completePayload)
+				go SendSocketEvent(*o.OrderCreatorWalletAddress, constants.ORDER_COMPLETED, completePayload)
 
 			} else if status == constants.TxStatusPending || status == constants.TxStatusConfirmed || status == constants.TxStatusFailed {
 				// Status 0, 1, 3 = PENDING, CONFIRMED, FAILED
@@ -371,6 +367,87 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 	if err = tx.Commit(); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func (s *OrderService) ReopenOrder(ctx context.Context, orderID int64) error {
+	db := database.GetDB()
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	// Lock the order row to prevent concurrent reopen/expiration operations
+	lockedOrder, err := s.repo.GetOrderByIDForUpdate(ctx, orderID, tx)
+	if err != nil {
+		return fmt.Errorf("failed to lock order: %w", err)
+	}
+
+	// Only EXPIRED orders can be reopened
+	if lockedOrder.Status != constants.TradingExpired {
+		return fmt.Errorf("only expired orders can be reopened; current status=%s", lockedOrder.Status)
+	}
+
+	// Check if order has an associated offer
+	if lockedOrder.OfferID == nil {
+		return fmt.Errorf("order has no associated offer")
+	}
+
+	// Get the offer and check if it's still available
+	offer, err := s.offerRepo.GetOfferByIDForUpdate(ctx, *lockedOrder.OfferID, tx)
+	if err != nil {
+		return fmt.Errorf("failed to fetch offer: %w", err)
+	}
+
+	if offer.Status != constants.TradingConfirmed {
+		return fmt.Errorf("this offer is no longer available (status: %s). Please find another offer", offer.Status)
+	}
+
+	// Check if offer has enough available quantity
+	if offer.AvailableAmount.Compare(lockedOrder.OrderAmount) < 0 {
+		if offer.AvailableAmount.Sign() == 0 {
+			return fmt.Errorf("this offer has been completely sold out. Please find another offer")
+		}
+		return fmt.Errorf("this offer only has %s available, but your order needs %s. Please create a new order with a smaller amount or find another offer",
+			offer.AvailableAmount.String(), lockedOrder.OrderAmount.String())
+	}
+
+	// Reserve the quantity again
+	if err = s.offerRepo.ReserveQuantity(ctx, *lockedOrder.OfferID, lockedOrder.OrderAmount, tx); err != nil {
+		return fmt.Errorf("failed to reserve offer quantity: %w", err)
+	}
+
+	// Calculate new expiration time
+	newExpiresAt := time.Now().UTC().Add(time.Duration(constants.OrderExpirationDuration) * time.Hour)
+
+	// Restore status to what it was before expiration (OPEN or PENDING)
+	restoredStatus := constants.TradingOpen // default to OPEN
+	if lockedOrder.PreviousStatus != nil && *lockedOrder.PreviousStatus != "" {
+		restoredStatus = *lockedOrder.PreviousStatus
+	}
+
+	// Update order status back to previous status with new expiration time
+	if err = s.repo.UpdateOrderStatusAndExpiration(ctx, orderID, restoredStatus, &newExpiresAt, tx); err != nil {
+		return fmt.Errorf("failed to update order status: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	logger.Info().Int64("order_id", orderID).Msg("Order reopened successfully")
+
+	// Send socket event to notify about order reopen
+	go SendSocketEvent(constants.OFFER_ROOM, constants.OFFER_LIST_REFRESH, map[string]any{
+		"action":   "order_reopened",
+		"order_id": orderID,
+	})
 
 	return nil
 }

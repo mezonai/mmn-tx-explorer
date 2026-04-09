@@ -31,6 +31,7 @@ import { useTransfer } from '@/modules/transfer/hooks/useTransfer';
 import { ETransferType } from '@/modules/transaction';
 import { EMBED_MESSAGE_THEME, P2P_TRADING_ROLE, ORDER_EXPIRATION_DURATION_MS } from '../../constants';
 import BigNumber from 'bignumber.js';
+import { useReopenOrder } from '@/modules/p2p/hooks';
 import { createTrackOrderComponents } from '../../util';
 
 interface TradingRoomProps {
@@ -52,7 +53,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
   const { transfer } = useTransfer();
   const sideParam = searchParams.get('side') as TradeTypes | null;
 
-  const { order, isLoading: orderLoading, updateOrderStatus } = useP2POrder(isOfferMode ? '' : orderId);
+  const { order, isLoading: orderLoading, updateOrderStatus, refresh: refreshOrder } = useP2POrder(isOfferMode ? '' : orderId);
   const offerIdParam = isOfferMode ? orderId : order ? String(order.offer_id) : null;
   const { offer, isLoading: offerLoading } = useP2POffer(offerIdParam);
   const { createOrder, isLoading: isCreatingOrder } = useCreateOrder();
@@ -80,7 +81,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       try {
         const account = await mmnClient.getAccountByUserId(user.id);
         if (mounted && account?.balance) {
-          setUserBalance(Number(account.balance));
+          setUserBalance(NumberUtil.scaleDown(Number(account.balance)));
         }
       } catch (error) {
         console.error('Fetch balance error:', error);
@@ -255,7 +256,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
     }
   };
 
-  const handleConfirmBuy = async (amountMZD: number, amountVND: number) => {
+  const handleConfirmBuy = async (amountMZD: number, amountVND: number, paymentInfoId?: number) => {
     if (!offer || !user?.walletAddress) {
       setError('Please sign in to continue.');
       return;
@@ -263,28 +264,22 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
 
     try {
       setError(null);
-      // Get primary payment info for BUY offers (seller must provide payment info)
-      const primaryPayment = savedPayments?.find((p) => p.is_primary) || savedPayments?.[0];
 
-      if (offer.side === TradeTypes.BUY && !primaryPayment) {
-        toast.error(
-          'Seller has not set up payment information. Please choose another offer or wait for the seller to set up their payment info.'
-        );
-        setError('Please save your payment information before creating an order.');
-        return;
+      // Use the passed paymentInfoId if available, otherwise fallback to primary for BUY offers
+      let finalPaymentId = paymentInfoId;
+      if (offer.side === TradeTypes.BUY && !finalPaymentId) {
+        finalPaymentId = (savedPayments?.find((p) => p.is_primary) || savedPayments?.[0])?.id;
+
+        if (!finalPaymentId) {
+          toast.error(
+            'Seller has not set up payment information. Please choose another offer or wait for the seller to set up their payment info.'
+          );
+          setError('Please save your payment information before creating an order.');
+          return;
+        }
       }
 
-      const payment_info_id = offer.side === TradeTypes.BUY ? primaryPayment!.id : primaryPayment?.id;
-
-      if (!payment_info_id) {
-        toast.error(
-          'Seller has not set up payment information. Please choose another offer or wait for the seller to set up their payment info.'
-        );
-        setError('Please save your payment information before creating an order.');
-        return;
-      }
-
-      const newOrder = await createOrder(offer, amountMZD, amountVND, payment_info_id);
+      const newOrder = await createOrder(offer, amountMZD, amountVND, finalPaymentId);
 
       if (newOrder) {
         // If it's a BUY offer, the responder (Seller) needs to transfer Mezon to escrow
@@ -315,6 +310,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
       setError(errorMessage);
     }
   };
+
+  const { mutate: reopenOrder, isPending: isReopening } = useReopenOrder();
 
   if ((isOfferMode && offerLoading) || (!isOfferMode && (orderLoading || !order))) {
     return (
@@ -426,9 +423,28 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
     );
   }
 
+  const canReopen =
+    effectiveOrder.status === OrderStatus.EXPIRED &&
+    (order?.order_creator_wallet_address === user?.walletAddress ||
+      offer?.offer_creator_wallet_address === user?.walletAddress);
+
   return (
     <div className="bg-background relative flex flex-col">
-      <TradingRoomHeader order={effectiveOrder} userRole={userRole} />
+      <TradingRoomHeader
+        order={effectiveOrder}
+        userRole={userRole}
+        showReopen={canReopen}
+        isReopening={isReopening}
+        onReopen={() =>
+          reopenOrder(String(order!.order_id), {
+            onSuccess: async () => {
+              // refresh full order from server so expires_at and other fields update
+              await refreshOrder();
+              setLocalStatus(OrderStatus.OPEN);
+            },
+          })
+        }
+      />
       <div className="flex flex-1 flex-col gap-6 md:flex-row">
         <div className="border-border w-full p-4 md:w-8/12 lg:w-10/12">
           <ProgressSteps order={effectiveOrder} />

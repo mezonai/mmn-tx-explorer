@@ -21,9 +21,6 @@ import { useUser } from '@/providers';
 import { mmnClient } from '@/modules/auth';
 import { NumberUtil } from '@/utils';
 import { ETransferType } from '@/modules/transaction';
-import { useUserPaymentInfos } from '@/modules/p2p/hooks/usePaymentInfo';
-import { BANK_OPTIONS } from '@/modules/p2p/constants';
-import { BankOption } from '@/modules/p2p/types';
 
 export const CreateOfferModal = () => {
   const [open, setOpen] = useState(false);
@@ -60,48 +57,20 @@ export const CreateOfferModal = () => {
     mode: 'onChange',
   });
 
-  const { data: savedPayments } = useUserPaymentInfos();
-  const [hasInitialized, setHasInitialized] = useState(false);
   const [hasUnsavedPaymentChanges, setHasUnsavedPaymentChanges] = useState(false);
+  const side = form.watch('side');
 
+  // Reset non-payment fields when modal opens
   useEffect(() => {
-    if (!open) {
-      setHasInitialized(false);
-      return;
-    }
-
-    if (open && !hasInitialized && savedPayments) {
-      const primaryAccount = savedPayments.find((p) => p.is_primary) || savedPayments[0];
-      let initialBankInfo = { bank: 'MB' as const, account_name: '', account_number: '', is_primary: false };
-      let paymentInfoId: number | undefined = undefined;
-
-      if (primaryAccount) {
-        const bankValue = BANK_OPTIONS.find((opt) => opt.label === primaryAccount.bank_name)?.value as BankOption;
-        if (bankValue) {
-          initialBankInfo = {
-            bank: bankValue as any,
-            account_number: primaryAccount.account_number,
-            account_name: primaryAccount.account_name,
-            is_primary: primaryAccount.is_primary,
-          };
-          paymentInfoId = primaryAccount.id;
-        }
-      }
-
-      form.reset({
-        side: TradeTypes.SELL,
-        amount: 0,
-        price_rate: '0',
-        limit: { min: 0, max: 0 },
-        bank_info: initialBankInfo,
-        payment_info_id: paymentInfoId,
-        symbol: 'MZD',
-      });
+    if (open) {
+      form.setValue('amount', 0);
+      form.setValue('price_rate', '0');
+      form.setValue('limit', { min: 0, max: 0 });
+      form.setValue('side', TradeTypes.SELL);
       setShowConfirm(false);
       setPendingData(null);
-      setHasInitialized(true);
     }
-  }, [open, hasInitialized, savedPayments, form]);
+  }, [open, form]);
 
   useEffect(() => {
     let mounted = true;
@@ -122,8 +91,6 @@ export const CreateOfferModal = () => {
       mounted = false;
     };
   }, [open, user?.id]);
-
-  const side = form.watch('side');
 
   const onPreSubmit = (data: CreateOfferFormValues) => {
     // For SELL offers, payment_info_id is required
@@ -201,7 +168,14 @@ export const CreateOfferModal = () => {
           <DialogHeader className="border-b--border mx-6 -mt-6 border-b py-4">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <DialogTitle className="text-brand-primary text-lg font-bold">Create New Offer</DialogTitle>
-              <TradeSideSwitch className="w-full md:w-48" value={side} onChange={(val) => form.setValue('side', val)} />
+              <TradeSideSwitch
+                className="w-full md:w-48"
+                value={side}
+                onChange={(val) => {
+                  form.reset();
+                  form.setValue('side', val);
+                }}
+              />
             </div>
           </DialogHeader>
 
@@ -213,10 +187,11 @@ export const CreateOfferModal = () => {
               <TradeTypeSection control={form.control} trigger={form.trigger} />
               {side === TradeTypes.SELL && (
                 <PaymentSection
-                  control={form.control}
-                  setValue={form.setValue}
-                  watch={form.watch}
+                  control={form.control as any}
+                  setValue={form.setValue as any}
+                  watch={form.watch as any}
                   open={open}
+                  shouldAutoFill={side === TradeTypes.SELL}
                   onUnsavedChangesChange={setHasUnsavedPaymentChanges}
                 />
               )}

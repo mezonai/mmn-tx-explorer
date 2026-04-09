@@ -206,7 +206,7 @@ func (r *DonationCampaignRepository) GetByID(id int64) (*models.DonationCampaign
 		FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
 		LEFT JOIN %s.wallet w ON w.address = dc.donation_wallet
-		WHERE dc.id = $1
+		WHERE dc.id = $1 AND dc.deleted_at IS NULL
 	`, r.dongSchema, r.dongSchema, r.indexerSchema)
 
 	var campaign models.DonationCampaign
@@ -252,7 +252,7 @@ func (r *DonationCampaignRepository) GetByIDAndCreator(id, creator int64) (*mode
 		FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
 		LEFT JOIN %s.wallet w ON w.address = dc.donation_wallet
-		WHERE dc.id = $1 AND dc.creator = $2
+		WHERE dc.id = $1 AND dc.creator = $2 AND dc.deleted_at IS NULL
 	`, r.dongSchema, r.dongSchema, r.indexerSchema)
 
 	var campaign models.DonationCampaign
@@ -335,7 +335,9 @@ func (r *DonationCampaignRepository) GetAll(status *int16, verified *bool, q *st
 	}
 
 	if len(whereClauses) > 0 {
-		base += "\nWHERE " + strings.Join(whereClauses, " AND ")
+		base += "\nWHERE " + strings.Join(whereClauses, " AND ") + " AND dc.deleted_at IS NULL"
+	} else {
+		base += "\nWHERE dc.deleted_at IS NULL"
 	}
 
 	orderDir := "DESC"
@@ -452,7 +454,7 @@ func (r *DonationCampaignRepository) Update(id, creator int64, req *models.Updat
 	query := fmt.Sprintf(`
 		UPDATE %s.donation_campaign
 		SET %s
-		WHERE id = $%d AND creator = $%d
+		WHERE id = $%d AND creator = $%d AND deleted_at IS NULL
         RETURNING id, name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status, created_at, updated_at
 	`, r.dongSchema, strings.Join(setClauses, ", "), idArgNum, creatorArgNum)
 
@@ -489,7 +491,7 @@ func (r *DonationCampaignRepository) Activate(id, creator int64) (*models.Donati
 	query := fmt.Sprintf(`
         UPDATE %s.donation_campaign
         SET status = $1, updated_at = $2
-        WHERE id = $3 AND creator = $4
+        WHERE id = $3 AND creator = $4 AND deleted_at IS NULL
         RETURNING id, name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status, created_at, updated_at
     `, r.dongSchema)
 
@@ -532,7 +534,7 @@ func (r *DonationCampaignRepository) Close(id, creator int64) (*models.DonationC
 	query := fmt.Sprintf(`
 		UPDATE %s.donation_campaign
 		SET status = $1, updated_at = $2
-		WHERE id = $3 AND creator = $4
+		WHERE id = $3 AND creator = $4 AND deleted_at IS NULL
         RETURNING id, name, slug, description, goal, url, end_date, donation_wallet, creator, owner, verified, status, created_at, updated_at
 	`, r.dongSchema)
 
@@ -611,7 +613,9 @@ func (r *DonationCampaignRepository) Count(status *int16, verified *bool, q *str
 	}
 
 	if len(whereClauses) > 0 {
-		query += " WHERE " + strings.Join(whereClauses, " AND ")
+		query += " WHERE " + strings.Join(whereClauses, " AND ") + " AND dc.deleted_at IS NULL"
+	} else {
+		query += " WHERE dc.deleted_at IS NULL"
 	}
 
 	var count int64
@@ -695,8 +699,9 @@ func (r *DonationCampaignRepository) GetTopContributors(campaignID int64, limit 
 // DeleteDraft : Delete removes a drafted donation campaign by ID if the requester is the creator
 func (r *DonationCampaignRepository) DeleteDraft(id, creator int64) error {
 	query := fmt.Sprintf(`
-		DELETE FROM %s.donation_campaign
-		WHERE id = $1 AND creator = $2
+		UPDATE %s.donation_campaign
+		SET deleted_at = NOW()
+		WHERE id = $1 AND creator = $2 AND deleted_at IS NULL
 	`, r.dongSchema)
 
 	res, err := r.db.Exec(query, id, creator)
@@ -716,7 +721,7 @@ func (r *DonationCampaignRepository) DeleteDraft(id, creator int64) error {
 }
 func (r *DonationCampaignRepository) CheckSlugExists(slug string) (bool, error) {
 	var count int
-	query := fmt.Sprintf("SELECT COUNT(*) FROM %s.donation_campaign WHERE slug = $1", r.dongSchema)
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s.donation_campaign WHERE slug = $1 AND deleted_at IS NULL", r.dongSchema)
 	err := r.db.QueryRow(query, slug).Scan(&count)
 	if err != nil {
 		return false, fmt.Errorf("failed to check slug existence: %w", err)
@@ -787,7 +792,7 @@ func (r *DonationCampaignRepository) GetBySlug(slug string) (*models.DonationCam
 		FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
 		LEFT JOIN %s.wallet w ON w.address = dc.donation_wallet
-		WHERE dc.slug = $1
+		WHERE dc.slug = $1 AND dc.deleted_at IS NULL
 	`, r.dongSchema, r.dongSchema, r.indexerSchema)
 
 	var campaign models.DonationCampaign
@@ -827,7 +832,7 @@ func (r *DonationCampaignRepository) IsCampaignWallet(address string) (bool, err
 	query := fmt.Sprintf(`
 		SELECT EXISTS(
 			SELECT 1 FROM %s.donation_campaign 
-			WHERE donation_wallet = $1
+			WHERE donation_wallet = $1 AND deleted_at IS NULL
 		)
 	`, r.dongSchema)
 
@@ -844,7 +849,7 @@ func (r *DonationCampaignRepository) GetCreatorByDonationWallet(donationWallet s
 	query := fmt.Sprintf(`
 		SELECT creator
 		FROM %s.donation_campaign
-		WHERE donation_wallet = $1
+		WHERE donation_wallet = $1 AND deleted_at IS NULL
 		LIMIT 1
 	`, r.dongSchema)
 
