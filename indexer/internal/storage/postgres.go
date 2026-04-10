@@ -31,6 +31,10 @@ const (
 	// Red Envelope Statuses for Dong Service API
 	RedEnvelopeStatusPublished = 2
 	RedEnvelopeStatusFailed    = 3
+
+	// Red Envelope validation actions
+	RedEnvelopeActionUpdatePublished = "Red Envelope Update Published"
+	RedEnvelopeActionUpdateFailed    = "Red Envelope Update Failed"
 )
 
 type PostgresConnector struct {
@@ -3260,17 +3264,17 @@ func (p *PostgresConnector) updateRedEnvelopeStatus(
 	tx *sql.Tx,
 	txs []common.Transaction,
 ) error {
-	validated, err := p.validateRedEnvelopeTransactions(ctx, tx, txs, "status update")
+	validatedTxs, err := p.validateRedEnvelopeTransactions(ctx, tx, txs, RedEnvelopeActionUpdatePublished)
 	if err != nil {
 		return err
 	}
 
-	if len(validated) == 0 {
+	if len(validatedTxs) == 0 {
 		return nil
 	}
 
-	updates := make([]DongUpdateEntry, 0, len(validated))
-	for _, v := range validated {
+	updates := make([]DongUpdateEntry, 0, len(validatedTxs))
+	for _, v := range validatedTxs {
 		updates = append(updates, DongUpdateEntry{
 			ID:              v.ID,
 			Status:          RedEnvelopeStatusPublished,
@@ -3282,7 +3286,7 @@ func (p *PostgresConnector) updateRedEnvelopeStatus(
 		return fmt.Errorf("failed to call dong service for red envelope status update: %w", err)
 	}
 
-	log.Info().Int("red_envelopes_updated", len(validated)).Msg("red envelope status update completed via dong service")
+	log.Info().Int("red_envelopes_updated", len(validatedTxs)).Msg("red envelope status update completed via dong service")
 
 	return nil
 }
@@ -3292,7 +3296,7 @@ func (p *PostgresConnector) failRedEnvelopeStatus(
 	tx *sql.Tx,
 	txs []common.Transaction,
 ) error {
-	validated, err := p.validateRedEnvelopeTransactions(ctx, tx, txs, "failure processing")
+	validated, err := p.validateRedEnvelopeTransactions(ctx, tx, txs, RedEnvelopeActionUpdateFailed)
 	if err != nil {
 		return err
 	}
