@@ -40,7 +40,8 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 	queueService := repository.NewRedEnvelopeQueueService(database.RedisClient)
 	intermediaryWalletRepo := repository.NewIntermediaryWalletRepository(database.GetDB(), cfg.Database.Schema)
 	redEnvelopeRepo := repository.NewRedEnvelopeRepository(database.GetDB(), cfg.Database.Schema, blockchainService, intermediaryWalletRepo, queueService)
-	redEnvelopeHandler := handlers.NewRedEnvelopeHandler(redEnvelopeRepo, queueService, intermediaryWalletRepo)
+	redEnvelopeService := services.NewRedEnvelopeService(redEnvelopeRepo)
+	redEnvelopeHandler := handlers.NewRedEnvelopeHandler(redEnvelopeRepo, queueService, intermediaryWalletRepo, redEnvelopeService)
 
 	// API v1 routes
 	v1 := router.Group("/api/v1")
@@ -90,6 +91,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		redEnvelopePrivate.POST("/create", redEnvelopeHandler.CreateRedEnvelope)
 		redEnvelopePrivate.GET("/stats-by-user", redEnvelopeHandler.GetRedEnvelopeStatsByUser)
 		redEnvelopePrivate.GET("/:id/recipients", redEnvelopeHandler.GetRecipientsByRedEnvelopeID)
+		redEnvelopePrivate.POST("/update-status-red-envelope", redEnvelopeHandler.UpdateStatusRedEnvelope)
 		redEnvelopePrivate.GET("/claimed-by-user", redEnvelopeHandler.GetRedEnvelopeClaimedByUser)
 		redEnvelopePrivate.GET("/created-by-user", redEnvelopeHandler.GetRedEnvelopeCreatedByUser)
 		redEnvelopePrivate.GET("/detail/:id", redEnvelopeHandler.GetDetailRedEnvelopeByID)
@@ -162,7 +164,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		internal := v1.Group("/internal")
 		internal.Use(middleware.InternalAuth(cfg.Event.APIKey))
 		{
-			internal.POST("/update-status-red-envelope", redEnvelopeHandler.UpdateStatusRedEnvelope)
+			internal.POST("/update-status-red-envelope", redEnvelopeHandler.InternalUpdateStatusRedEnvelope)
 		}
 	}
 }

@@ -146,7 +146,6 @@ func InternalAuth(expectedKey string) gin.HandlerFunc {
 			return
 		}
 
-		c.Set("is_internal", true)
 		c.Next()
 	}
 }
