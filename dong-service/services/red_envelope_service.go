@@ -28,15 +28,15 @@ func (s *RedEnvelopeService) InternalUpdateStatusBatch(ctx context.Context, upda
 			statusRedEnvelope = constants.RedEnvelopeStatusPublished
 		}
 
-		err := s.repo.UpdateStatusInternal(ctx, req.ID, statusRedEnvelope, req.TransactionHash)
+		ownerWallet, err := s.repo.UpdateStatusInternal(ctx, req.ID, statusRedEnvelope, req.TransactionHash)
 		if err != nil {
 			logger.Error().Err(err).Str("envelope_id", req.ID).Msg("Failed to update red envelope status internally")
 			// We continue for others even if one fails in batch
 			continue
 		}
 
-		// Send socket event for each updated red envelope
-		go SendSocketEvent(constants.RED_ENVELOPE_ROOM, constants.RED_ENVELOPE_LIST_REFRESH, map[string]any{
+		// Send socket event for each updated red envelope to the owner
+		go SendSocketEvent(ownerWallet, constants.RED_ENVELOPE_LIST_REFRESH, map[string]any{
 			"red_envelope_id": req.ID,
 			"status":          statusRedEnvelope,
 			"action":          "updated red envelope status",

@@ -947,7 +947,7 @@ func (r *RedEnvelopeRepository) GetRedEnvelopeDescriptionByID(redEnvelopeID stri
 	return description, nil
 }
 
-func (r *RedEnvelopeRepository) UpdateStatusInternal(ctx context.Context, id, status, txHash string) error {
+func (r *RedEnvelopeRepository) UpdateStatusInternal(ctx context.Context, id, status, txHash string) (string, error) {
 	query := fmt.Sprintf(`
 		UPDATE %s.red_envelope
 		SET status = $1, transaction_hash = $2, updated_at = $3
@@ -985,9 +985,9 @@ func (r *RedEnvelopeRepository) UpdateStatusInternal(ctx context.Context, id, st
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return fmt.Errorf("red envelope not found")
+			return "", fmt.Errorf("red envelope not found")
 		}
-		return fmt.Errorf("failed to update status and fetch envelope: %w", err)
+		return "", fmt.Errorf("failed to update status and fetch envelope: %w", err)
 	}
 
 	if status == constants.RedEnvelopeStatusFailed {
@@ -1008,11 +1008,12 @@ func (r *RedEnvelopeRepository) UpdateStatusInternal(ctx context.Context, id, st
 		}
 
 		var amounts []int64
+		var errGen error
 		if envelope.IsRandomDistribution && envelope.MinAmount != nil && envelope.MaxAmount != nil {
-			amounts, err = utils.GenerateRandomAmounts(envelope.TotalAmount, *envelope.MinAmount, *envelope.MaxAmount, int(envelope.TotalClaims))
-			if err != nil {
-				logger.Error().Err(err).Str("red_envelope_id", envelope.ID).Msg("Failed to generate random amounts")
-				return fmt.Errorf("failed to generate random amounts: %w", err)
+			amounts, errGen = utils.GenerateRandomAmounts(envelope.TotalAmount, *envelope.MinAmount, *envelope.MaxAmount, int(envelope.TotalClaims))
+			if errGen != nil {
+				logger.Error().Err(errGen).Str("red_envelope_id", envelope.ID).Msg("Failed to generate random amounts")
+				return "", fmt.Errorf("failed to generate random amounts: %w", errGen)
 			}
 		} else {
 			totalClaims := envelope.TotalClaims
@@ -1033,10 +1034,10 @@ func (r *RedEnvelopeRepository) UpdateStatusInternal(ctx context.Context, id, st
 		if envelope.Description != nil {
 			descriptionStr = *envelope.Description
 		}
-		err = r.queueService.InitializeRedEnvelope(id, amounts, descriptionStr, ttl)
-		if err != nil {
+		errGen = r.queueService.InitializeRedEnvelope(id, amounts, descriptionStr, ttl)
+		if errGen != nil {
 			logger.Error().
-				Err(err).
+				Err(errGen).
 				Str("red_envelope_id", id).
 				Msg("Failed to initialize queue for red envelope")
 		} else {
@@ -1048,5 +1049,5 @@ func (r *RedEnvelopeRepository) UpdateStatusInternal(ctx context.Context, id, st
 		}
 	}
 
-	return nil
+	return envelope.OwnerWallet, nil
 }
