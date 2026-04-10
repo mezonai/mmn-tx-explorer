@@ -187,8 +187,9 @@ type StatsWorkerConfig struct {
 }
 
 type EventConfig struct {
-	APIURL string `mapstructure:"api_url"`
-	APIKey string `mapstructure:"api_key"`
+	APIURL     string `mapstructure:"api_url"`
+	APIKey     string `mapstructure:"api_key"`
+	DongAPIURL string `mapstructure:"dong_api_url"`
 }
 
 type Config struct {

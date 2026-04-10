@@ -39,7 +39,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 
 	queueService := repository.NewRedEnvelopeQueueService(database.RedisClient)
 	intermediaryWalletRepo := repository.NewIntermediaryWalletRepository(database.GetDB(), cfg.Database.Schema)
-	eventHandler := handlers.NewEventHandler(cfg, blockchainService, intermediaryWalletRepo, queueService)
 	redEnvelopeRepo := repository.NewRedEnvelopeRepository(database.GetDB(), cfg.Database.Schema, blockchainService, intermediaryWalletRepo, queueService)
 	redEnvelopeHandler := handlers.NewRedEnvelopeHandler(redEnvelopeRepo, queueService, intermediaryWalletRepo)
 
@@ -91,7 +90,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		redEnvelopePrivate.POST("/create", redEnvelopeHandler.CreateRedEnvelope)
 		redEnvelopePrivate.GET("/stats-by-user", redEnvelopeHandler.GetRedEnvelopeStatsByUser)
 		redEnvelopePrivate.GET("/:id/recipients", redEnvelopeHandler.GetRecipientsByRedEnvelopeID)
-		redEnvelopePrivate.POST("/update-status-red-envelope", redEnvelopeHandler.UpdateStatusRedEnvelope)
 		redEnvelopePrivate.GET("/claimed-by-user", redEnvelopeHandler.GetRedEnvelopeClaimedByUser)
 		redEnvelopePrivate.GET("/created-by-user", redEnvelopeHandler.GetRedEnvelopeCreatedByUser)
 		redEnvelopePrivate.GET("/detail/:id", redEnvelopeHandler.GetDetailRedEnvelopeByID)
@@ -159,8 +157,12 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		zkClaims.POST("/v2/claim-amount", redEnvelopeHandler.ClaimAmountRedEnvelopeQR)
 		zkClaims.POST("/:id/claim", redEnvelopeHandler.ClaimRedEnvelopeQRLegacy)
 		zkClaims.POST("v2/:id/claim", redEnvelopeHandler.ClaimRedEnvelopeQR)
-		
-		// Event receive endpoint (from socket-Service )
-		v1.POST("/receive", eventHandler.ReceiveEvent)
+
+		// Internal routes (service-to-service)
+		internal := v1.Group("/internal")
+		internal.Use(middleware.InternalAuth(cfg.Event.APIKey))
+		{
+			internal.POST("/update-status-red-envelope", redEnvelopeHandler.UpdateStatusRedEnvelope)
+		}
 	}
 }

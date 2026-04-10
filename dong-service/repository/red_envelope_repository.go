@@ -279,13 +279,28 @@ func (r *RedEnvelopeRepository) GetStats() (map[string]interface{}, error) {
 	return result, nil
 }
 
-func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status string) error {
-	query := fmt.Sprintf(`
-		UPDATE %s.red_envelope
-		SET status = $1, updated_at = $2
-		WHERE id = $3
-		RETURNING id, name, description, red_envelope_wallet, owner_wallet, total_amount, total_claims, end_date, is_random_distribution, min_amount, max_amount
-	`, r.dongSchema)
+func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status, txHash string) error {
+	var query string
+	var err error
+	var result *sql.Row
+
+	if txHash != "" {
+		query = fmt.Sprintf(`
+			UPDATE %s.red_envelope
+			SET status = $1, transaction_hash = $2, updated_at = $3
+			WHERE id = $4
+			RETURNING id, name, description, red_envelope_wallet, owner_wallet, total_amount, total_claims, end_date, is_random_distribution, min_amount, max_amount
+		`, r.dongSchema)
+		result = r.db.QueryRowContext(ctx, query, status, txHash, time.Now(), id)
+	} else {
+		query = fmt.Sprintf(`
+			UPDATE %s.red_envelope
+			SET status = $1, updated_at = $2
+			WHERE id = $3
+			RETURNING id, name, description, red_envelope_wallet, owner_wallet, total_amount, total_claims, end_date, is_random_distribution, min_amount, max_amount
+		`, r.dongSchema)
+		result = r.db.QueryRowContext(ctx, query, status, time.Now(), id)
+	}
 
 	var envelope struct {
 		ID                   string
@@ -301,7 +316,7 @@ func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status str
 		MaxAmount            *int64
 	}
 
-	err := r.db.QueryRowContext(ctx, query, status, time.Now(), id).Scan(
+	err = result.Scan(
 		&envelope.ID,
 		&envelope.Name,
 		&envelope.Description,
@@ -333,6 +348,12 @@ func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status str
 			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
 			if err != nil {
 				return fmt.Errorf("failed to transfer money to owner wallet: %w", err)
+			}
+
+			// Release wallet
+			err = r.walletRepo.ReleaseWallet(ctx, envelope.RedEnvelopeWallet)
+			if err != nil {
+				logger.Error().Err(err).Str("wallet", envelope.RedEnvelopeWallet).Msg("Failed to release intermediary wallet")
 			}
 		}
 	}
@@ -723,7 +744,7 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 		}
 	}
 
-	err = r.UpdateStatus(ctx, redEnvelopeID, constants.RedEnvelopeStatusExpired)
+	err = r.UpdateStatus(ctx, redEnvelopeID, constants.RedEnvelopeStatusExpired, "")
 	if err != nil {
 		logger.Error().
 			Err(err).

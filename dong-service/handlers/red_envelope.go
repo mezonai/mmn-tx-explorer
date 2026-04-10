@@ -5,6 +5,7 @@ import (
 	"dong-service/logger"
 	"dong-service/models"
 	"dong-service/repository"
+	"dong-service/services"
 	"dong-service/utils"
 	"fmt"
 	"net/http"
@@ -246,7 +247,7 @@ func (r *RedEnvelopeHandler) GetRedEnvelopeCreatedByUser(c *gin.Context) {
 // @Tags red_envelopes
 // @Accept json
 // @Produce json
-// @Param request body object{id=int64,status=int} true "Update Status Request"
+// @Param request body models.UpdateRedEnvelopeStatusBatchRequest true "Update Status Batch Request"
 // @Success 200 {object} models.Response{data=object}
 // @Failure 400 {object} models.Response
 // @Failure 401 {object} models.Response
@@ -255,42 +256,52 @@ func (r *RedEnvelopeHandler) GetRedEnvelopeCreatedByUser(c *gin.Context) {
 // @Security BearerAuth
 // @Router /api/v1/red-envelopes/update-status-red-envelope [post]
 func (r *RedEnvelopeHandler) UpdateStatusRedEnvelope(c *gin.Context) {
-	var req struct {
-		ID     string `json:"id" binding:"required"`
-		Status int    `json:"status" binding:"required"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
+	// Bind batch request
+	var batchReq models.UpdateRedEnvelopeStatusBatchRequest
+	if err := c.ShouldBindJSON(&batchReq); err != nil {
 		logger.Error().Err(err).Msg("Invalid update status request")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody))
 		return
 	}
 
-	if ok := r.verifyRedEnvelopeOwner(c, req.ID); !ok {
-		return
+	updates := batchReq.Updates
+
+	isInternal, _ := c.Get("is_internal")
+	isInternalBool, _ := isInternal.(bool)
+
+	for _, req := range updates {
+		if !isInternalBool {
+			if ok := r.verifyRedEnvelopeOwner(c, req.ID); !ok {
+				return
+			}
+		}
+
+		var statusRedEnvelope string
+		switch req.Status {
+		case constants.StatusFailed:
+			statusRedEnvelope = constants.RedEnvelopeStatusFailed
+		case constants.StatusExpired:
+			statusRedEnvelope = constants.RedEnvelopeStatusExpired
+		default:
+			statusRedEnvelope = constants.RedEnvelopeStatusPublished
+		}
+
+		err := r.repo.UpdateStatus(c, req.ID, statusRedEnvelope, req.TransactionHash)
+		if err != nil {
+			logger.Error().Err(err).Str("envelope_id", req.ID).Msg("Failed to update red envelope status")
+			c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToUpdateRedEnvelopeStatus))
+			return
+		}
+		logger.Info().Str("envelope_id", req.ID).Str("new_status", statusRedEnvelope).Msg("Red envelope status updated successfully")
 	}
 
-	var statusRedEnvelope string
-	switch req.Status {
-	case constants.StatusFailed:
-		statusRedEnvelope = constants.RedEnvelopeStatusFailed
-	case constants.StatusExpired:
-		statusRedEnvelope = constants.RedEnvelopeStatusExpired
-	default:
-		statusRedEnvelope = constants.RedEnvelopeStatusPublished
-	}
+	// Send socket event to refresh list
+	go services.SendSocketEvent(constants.OFFER_ROOM, constants.OFFER_LIST_REFRESH, map[string]any{
+		"action": "updated red envelope status",
+	})
 
-	err := r.repo.UpdateStatus(c, req.ID, statusRedEnvelope)
-	if err != nil {
-		logger.Error().Err(err).Str("envelope_id", req.ID).Msg("Failed to update red envelope status")
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToUpdateRedEnvelopeStatus))
-		return
-	}
-
-	logger.Info().Str("envelope_id", req.ID).Str("new_status", statusRedEnvelope).Msg("Red envelope status updated successfully")
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeUpdated, map[string]interface{}{
-		"id":     req.ID,
-		"status": statusRedEnvelope,
+		"count": len(updates),
 	}))
 }
 
