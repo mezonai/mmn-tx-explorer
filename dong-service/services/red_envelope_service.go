@@ -34,14 +34,12 @@ func (s *RedEnvelopeService) InternalUpdateStatusBatch(ctx context.Context, upda
 			// We continue for others even if one fails in batch
 			continue
 		}
-
-		// Send socket event for each updated red envelope
-		go SendSocketEvent(constants.RED_ENVELOPE_ROOM, constants.RED_ENVELOPE_LIST_REFRESH, map[string]any{
-			"red_envelope_id": req.ID,
-			"status":          statusRedEnvelope,
-			"action":          "updated red envelope status",
-		})
 	}
+
+	// Send socket event once after batch
+	go SendSocketEvent(constants.OFFER_ROOM, constants.OFFER_LIST_REFRESH, map[string]any{
+		"action": "updated red envelope status",
+	})
 
 	return len(updates), nil
 }
