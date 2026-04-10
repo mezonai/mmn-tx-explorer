@@ -14,7 +14,7 @@ export const useCreateOrder = () => {
     offer: P2POffer,
     amountMZD: number,
     payableAmount: number,
-    payment_info_id: number
+    payment_info_id?: number
   ): Promise<P2POrder | null> => {
     if (!user?.walletAddress) {
       throw new Error('User wallet not available');
@@ -23,7 +23,7 @@ export const useCreateOrder = () => {
     try {
       const order = await P2PService.createOrder(offer.offer_id, {
         amount: amountMZD,
-        payment_info_id: payment_info_id,
+        ...(payment_info_id !== undefined && { payment_info_id }),
       });
       return order;
     } catch (error: any) {

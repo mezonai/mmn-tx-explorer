@@ -209,6 +209,13 @@ func (s *OfferService) CreateOffer(ctx context.Context, req *models.CreateOfferR
 		return nil, err
 	}
 
+	if offer.Side == models.OfferSideBuy {
+		logger.Info().Int64("offer_id", offer.OfferID).Int64("amount", amountInt).Str("symbol", offer.Symbol).Msg("Created new BUY offer")
+		go SendSocketEvent(constants.OFFER_ROOM, constants.OFFER_LIST_REFRESH, map[string]any{
+			"action": "create p2p offer",
+		})
+	}
+
 	return offer, nil
 }
 
@@ -257,7 +264,7 @@ func (s *OfferService) GetOfferByID(ctx context.Context, id int64) (*models.Offe
 			offer.HasActiveOrder = &hasActive
 		}
 
-		count, countErr := s.orderRepo.CountOrdersByOffer(ctx, id)
+		count, countErr := s.orderRepo.CountOrdersByOffer(ctx, nil, id)
 		if countErr == nil {
 			offer.OrderCount = count
 		}
@@ -315,11 +322,20 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 		}
 	}()
 
-	hasActive, err := s.orderRepo.HasActiveOrders(ctx, offerId, tx)
+	// Block cancellation if any order is in dispute (expired while buyer had already confirmed payment).
+	hasDisputed, err := s.orderRepo.HasDisputedOrders(ctx, offerId, tx)
+	if err != nil {
+		return fmt.Errorf("failed to check disputed orders: %w", err)
+	}
+	if hasDisputed {
+		return fmt.Errorf("cannot cancel offer: one or more orders are in dispute")
+	}
+
+	orderCount, err := s.orderRepo.CountOrdersByOffer(ctx, tx, offerId)
 	if err != nil {
 		return err
 	}
-	if hasActive {
+	if orderCount > 0 {
 		return fmt.Errorf(constants.ErrFailedToCancelOfferWithOrder)
 	}
 
