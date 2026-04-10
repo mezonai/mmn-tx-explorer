@@ -23,7 +23,6 @@ redis:
   password: ""
   db: 0
 
-
 jwt:
   secret: "a75081d475a4cd4e130916f26e3e8d3ebc376fa132e873c057c5a0c5ab26cc06"
 event:

@@ -6,11 +6,10 @@ import { IBreadcrumb } from '@/types';
 import { ROUTES } from '@/configs/routes.config';
 import { RedEnvelopeSidebar } from './red-envelope-sidebar';
 import { CreateRedEnvelopeProvider, useCreateRedEnvelopeContext } from '../../context/CreateRedEnvelopeContext';
-import { useJoinRoom } from '@/lib/websocket';
+import { wsManager } from '@/lib/websocket';
 import type { WebSocketEvent } from '@/lib/websocket/websocket-manager';
-import { SOCKET_MESSAGE } from '@/lib/websocket/constants';
 import { RED_ENVELOPE_EVENT_TYPES } from '../../constants';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
 const breadcrumbs: IBreadcrumb[] = [
   { label: 'Lucky Money', href: ROUTES.LUCKY_MONEY },
@@ -19,7 +18,6 @@ const breadcrumbs: IBreadcrumb[] = [
 
 function CreateRedEnvelopeContent() {
   const { onRedEnvelopeStatusUpdated } = useCreateRedEnvelopeContext();
-  const { wsManager } = useJoinRoom(SOCKET_MESSAGE.ROOM_RED_ENVELOPE_UPDATES, true);
 
   useEffect(() => {
     const handleRedEnvelopeListRefresh = (event: WebSocketEvent) => {
@@ -37,12 +35,12 @@ function CreateRedEnvelopeContent() {
       }
     };
 
-    wsManager?.on(RED_ENVELOPE_EVENT_TYPES.RED_ENVELOPE_LIST_REFRESH, handleRedEnvelopeListRefresh);
+    wsManager.on(RED_ENVELOPE_EVENT_TYPES.RED_ENVELOPE_LIST_REFRESH, handleRedEnvelopeListRefresh);
 
     return () => {
-      wsManager?.off(RED_ENVELOPE_EVENT_TYPES.RED_ENVELOPE_LIST_REFRESH, handleRedEnvelopeListRefresh);
+      wsManager.off(RED_ENVELOPE_EVENT_TYPES.RED_ENVELOPE_LIST_REFRESH, handleRedEnvelopeListRefresh);
     };
-  }, [wsManager, onRedEnvelopeStatusUpdated]);
+  }, [onRedEnvelopeStatusUpdated]);
 
   return (
     <div className="container mx-auto max-w-7xl space-y-8 px-3 pb-8 sm:space-y-12 sm:px-4 sm:pb-12 md:space-y-16">
