@@ -991,17 +991,10 @@ func (r *RedEnvelopeRepository) UpdateStatusInternal(ctx context.Context, id, st
 	}
 
 	if status == constants.RedEnvelopeStatusFailed {
-		var wallet *models.IntermediaryWallet
-		wallet, err = r.walletRepo.GetWalletByAddress(ctx, envelope.RedEnvelopeWallet)
-		if err != nil {
-			logger.Error().Err(err).Msg("Failed to get wallet")
+		if err := r.walletRepo.ReleaseWallet(ctx, envelope.RedEnvelopeWallet); err != nil {
+			logger.Error().Err(err).Str("address", envelope.RedEnvelopeWallet).Msg("Failed to release intermediary wallet")
 		} else {
-			// TODO: update pass amount from envelope
-			amount := types.NewBigIntString(envelope.TotalAmount).Multiply(constants.TokenMultiplierBigIntString)
-			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
-			if err != nil {
-				return fmt.Errorf("failed to transfer money to owner wallet: %w", err)
-			}
+			logger.Info().Str("address", envelope.RedEnvelopeWallet).Msg("Released intermediary wallet")
 		}
 	}
 
