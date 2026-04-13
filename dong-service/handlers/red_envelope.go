@@ -331,6 +331,39 @@ func (r *RedEnvelopeHandler) GetDetailRedEnvelopeByID(c *gin.Context) {
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeRetrieved, result))
 }
 
+// GetRedEnvelopeStatus godoc
+// @Summary get red envelope status by id
+// @Description get red envelope status by id
+// @Tags red_envelopes
+// @Accept json
+// @Produce json
+// @Param id path int true "Red Envelope ID"
+// @Success 200 {object} models.Response{data=object}
+// @Failure 400 {object} models.Response
+// @Failure 401 {object} models.Response
+// @Failure 404 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Router /api/v1/red-envelopes/qr/:id/status [get]
+func (r *RedEnvelopeHandler) GetRedEnvelopeStatus(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrMissingRedEnvelopeID))
+		return
+	}
+
+	status, err := r.repo.GetRedEnvelopeStatus(id)
+	if err != nil {
+		logger.Error().Err(err).Str("envelope_id", id).Msg("Failed to get red envelope status")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, models.SuccessResponse(map[string]interface{}{
+		"id":     id,
+		"status": status,
+	}))
+}
+
 // CloseSessionRedEnvelope godoc
 // @Summary close red envelope session
 // @Description close red envelope session
@@ -700,6 +733,57 @@ func (r *RedEnvelopeHandler) ClaimRedEnvelopeQRLegacy(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeClaimed, nil))
 }
+
+// CreateRedEnvelopeZKAuth godoc
+// @Summary Create red envelope via QR (ZK authentication)
+// @Description Create red envelope using ZK proof authentication
+// @Tags red_envelopes
+// @Accept json
+// @Produce json
+// @Param red_envelope body models.CreateRedEnvelopeRequest true "Red Envelope Creation Request"
+// @Success 200 {object} models.Response{data=object}
+// @Failure 400 {object} models.Response
+// @Failure 401 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Router /api/v1/red-envelopes/qr/create [post]
+func (r *RedEnvelopeHandler) CreateRedEnvelopeZKAuth(c *gin.Context) {
+	var req models.CreateRedEnvelopeRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Error().Err(err).Msg("Invalid create red envelope request")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody+": "+err.Error()))
+		return
+	}
+
+	if err := ValidateRequest(&req); err != nil {
+		logger.Error().Err(err).Msg("Invalid red envelope request validation")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, err.Error()))
+		return
+	}
+
+	userID, err := utils.GetZKUserIDFromContext(c)
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to get user ID from context")
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse(http.StatusUnauthorized, constants.ErrUnauthorized))
+		return
+	}
+
+	redEnvelope, err := r.repo.Create(&req, userID)
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to create red envelope")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToCreatedRedEnvelope))
+		return
+	}
+
+	logger.Info().
+		Str("envelope_id", redEnvelope.ID).
+		Int64("creator_user_id", userID).
+		Msg("Red envelope created successfully via Mobile")
+
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeCreated, redEnvelope))
+}
+
+
 func ValidateRequest(req *models.CreateRedEnvelopeRequest) error {
 	if req.TotalAmount < req.TotalClaims {
 		return fmt.Errorf("totalAmount (%d) must be at least equal to totalClaims (%d)", req.TotalAmount, req.TotalClaims)

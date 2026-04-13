@@ -11,6 +11,7 @@ import (
 	"dong-service/utils"
 	"errors"
 	"fmt"
+
 	"time"
 
 	"github.com/lib/pq"
@@ -636,6 +637,25 @@ func (r *RedEnvelopeRepository) GetDetailRedEnvelopeByID(id string) (models.Deta
 		TotalClaimedAmount: result.TotalClaimedAmount,
 		EndDate:            result.EndDate,
 	}, nil
+}
+
+func (r *RedEnvelopeRepository) GetRedEnvelopeStatus(id string) (string, error) {
+	query := fmt.Sprintf(`
+		SELECT status
+		FROM %s.red_envelope
+		WHERE id = $1
+	`, r.dongSchema)
+
+	var status string
+	err := r.db.QueryRow(query, id).Scan(&status)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", fmt.Errorf("red envelope not found")
+		}
+		return "", fmt.Errorf("failed to get red envelope status: %w", err)
+	}
+
+	return status, nil
 }
 
 func (r *RedEnvelopeRepository) GetRedEnvelopeCloseSesssion(redEnvelopeID string) (models.RedEnvelopeCloseSesssion, error) {
