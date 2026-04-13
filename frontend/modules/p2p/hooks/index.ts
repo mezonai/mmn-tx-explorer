@@ -8,3 +8,4 @@ export * from './useP2POffer';
 export * from './useP2PMyOffers';
 export * from './useUpdateOfferStatus';
 export * from './useP2PStats';
+export * from './useReopenOrder';

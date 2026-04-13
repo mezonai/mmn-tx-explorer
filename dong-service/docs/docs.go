@@ -2278,6 +2278,67 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/red_envelopes/claim": {
+            "post": {
+                "description": "User claims a red envelope and receives money",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "red_envelopes"
+                ],
+                "summary": "Claim red envelope",
+                "parameters": [
+                    {
+                        "description": "ClaimRedEnvelopeRequest",
+                        "name": "claim",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.ClaimRedEnvelopeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/red_envelopes/claim-amount": {
             "get": {
                 "description": "User claims a red envelope and receives money",
@@ -2378,74 +2439,6 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/red_envelopes/{id}/claim": {
-            "post": {
-                "description": "User claims a red envelope and receives money",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "red_envelopes"
-                ],
-                "summary": "Claim red envelope",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Red Envelope ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "ClaimRedEnvelopeRequest",
-                        "name": "claim",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.ClaimRedEnvelopeRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/models.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/models.Response"
                         }
@@ -2852,15 +2845,15 @@ const docTemplate = `{
                 }
             }
         },
-        "models.ClaimRedEnvelopeRequest": {
+         "models.ClaimRedEnvelopeRequest": {
             "type": "object",
             "required": [
-                "split_money_id"
+                "id",
             ],
             "properties": {
-                "split_money_id": {
-                    "type": "integer"
-                }
+                "id": {
+                    "type": "string"
+                },
             }
         },
         "models.CreateDonationCampaignRequest": {

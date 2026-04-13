@@ -46,7 +46,7 @@ func (r *CampaignStatisticsRepository) GetActiveCampaigns(ctx context.Context) (
 	query := fmt.Sprintf(`
 		SELECT id, donation_wallet
 		FROM %s.donation_campaign
-		WHERE status = $1
+		WHERE status = $1 AND deleted_at IS NULL
 	`, r.dongSchema)
 
 	rows, err := r.db.QueryContext(ctx, query, constants.CampaignStatusActive)
@@ -159,7 +159,7 @@ func (r *CampaignStatisticsRepository) UpdateCampaignStatistics(ctx context.Cont
 			GROUP BY to_address
 		) recent_stats ON dc.donation_wallet = recent_stats.campaign_wallet
 		WHERE cs.campaign_wallet = dc.donation_wallet
-		AND dc.status = $1
+		AND dc.status = $1 AND dc.deleted_at IS NULL
 	`, r.dongSchema, r.dongSchema, r.indexerSchema, r.dongSchema, r.indexerSchema, days)
 
 	// Pass campaign status and transaction status as parameters to avoid
@@ -184,7 +184,7 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 		SELECT dc.id, dc.donation_wallet, cs.updated_at, cs.total_amount, cs.total_contributor, cs.total_withdrawn
 		FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
-		WHERE dc.id = $1
+		WHERE dc.id = $1 AND dc.deleted_at IS NULL
 	`, r.dongSchema, r.dongSchema)
 
 	var campaign Campaign
@@ -297,24 +297,32 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 
 // GetStats returns campaign statistics
 func (r *CampaignStatisticsRepository) GetStats() (*models.CampaignStatsResponse, error) {
-	query := fmt.Sprintf(`
+	mainQuery := fmt.Sprintf(`
 		SELECT 
 			COUNT(CASE WHEN dc.status = $1 THEN 1 END) as total_campaigns_active,
-			COALESCE(SUM(cs.total_amount), 0) as total_amount,
-			COALESCE(SUM(cs.total_contributor), 0) as total_contributors
+			COALESCE(SUM(cs.total_amount), 0) as total_amount
 		FROM %s.donation_campaign dc
 		JOIN %s.campaign_statistics cs ON dc.id = cs.campaign_id
+		WHERE dc.deleted_at IS NULL
 	`, r.dongSchema, r.dongSchema)
 
 	var stats models.CampaignStatsResponse
-	err := r.db.QueryRow(query, constants.CampaignStatusActive).Scan(
+	err := r.db.QueryRow(mainQuery, constants.CampaignStatusActive).Scan(
 		&stats.TotalCampaignsActive,
 		&stats.TotalAmount,
-		&stats.TotalContributors,
 	)
-
 	if err != nil {
-		return nil, fmt.Errorf("failed to get campaign stats: %w", err)
+		return nil, fmt.Errorf("failed to get campaign base stats: %w", err)
+	}
+
+	contributorQuery := fmt.Sprintf(`
+		SELECT COUNT(DISTINCT sender_wallet) 
+		FROM %s.campaign_contributor
+	`, r.dongSchema)
+
+	err = r.db.QueryRow(contributorQuery).Scan(&stats.TotalContributors)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get campaign total contributors: %w", err)
 	}
 
 	return &stats, nil

@@ -1,4 +1,5 @@
 import { useState, ChangeEvent } from 'react';
+import { fileTypeFromBlob } from 'file-type';
 import { toast } from 'sonner';
 import { formatFileSize } from '@/utils';
 import { ipfsServiceURL } from '@/service';
@@ -35,12 +36,26 @@ export const UploadDonationImage = ({ onImagesUpdate, initialExistingCids = [] }
     if (!e.target.files) return;
     const files = Array.from(e.target.files);
 
-    // Validate file types - check both MIME type and extension for HEIC
-    const invalidFiles = files.filter((file) => {
-      const isValidMimeType = IMAGE_CONSTRAINTS.ALLOWED_IMAGE_TYPES.includes(file.type);
-      const hasHeicExtension = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
-      return !isValidMimeType && !hasHeicExtension;
-    });
+    const invalidFiles: File[] = [];
+    for (const file of files) {
+      let detectedMime = file.type;
+      if (!detectedMime) {
+        try {
+          const typeResult = await fileTypeFromBlob(file);
+          if (typeResult?.mime) {
+            detectedMime = typeResult.mime;
+          } else {
+            toast.error(`Could not detect file type for: ${file.name}`);
+          }
+        } catch (err) {
+          toast.error(`Failed to read file type for: ${file.name}`);
+        }
+      }
+      const isValidMimeType = IMAGE_CONSTRAINTS.ALLOWED_IMAGE_TYPES.includes(detectedMime);
+      if (!isValidMimeType) {
+        invalidFiles.push(file);
+      }
+    }
 
     if (invalidFiles.length > 0) {
       toast.error(
@@ -66,11 +81,21 @@ export const UploadDonationImage = ({ onImagesUpdate, initialExistingCids = [] }
         files.map(async (file) => {
           try {
             let processedFile = file;
-            const isHeic =
-              file.type === 'image/heic' ||
-              file.type === 'image/heif' ||
-              file.name.toLowerCase().endsWith('.heic') ||
-              file.name.toLowerCase().endsWith('.heif');
+            let detectedMime = file.type;
+
+            if (!detectedMime) {
+              try {
+                const typeResult = await fileTypeFromBlob(file);
+                if (typeResult?.mime) {
+                  detectedMime = typeResult.mime;
+                } else {
+                  toast.error(`Could not detect file type for: ${file.name}`);
+                }
+              } catch {
+                toast.error(`Failed to read file type for: ${file.name}`);
+              }
+            }
+            const isHeic = detectedMime === 'image/heic' || detectedMime === 'image/heif';
 
             if (isHeic) {
               try {

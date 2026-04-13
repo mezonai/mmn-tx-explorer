@@ -58,7 +58,7 @@ const (
 	ErrOfferNotFound                   = "Offer not found"
 	ErrFailedToGetOffer                = "Failed to get offer"
 	ErrFailedToCancelOffer             = "Failed to cancel offer"
-	ErrFailedToCancelOfferWithOrder    = "Failed to cancel offer with active orders"
+	ErrFailedToCancelOfferWithOrder    = "Cannot cancel offer with existing orders (including expired ones)"
 	ErrFailedToRefundOfferAmount       = "Failed to refund offer amount"
 )
 
