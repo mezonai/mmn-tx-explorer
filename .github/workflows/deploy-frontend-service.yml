@@ -25,12 +25,18 @@ on:
       ref:
         type: string
         required: true
+      mode:
+        type: string
+        required: true
       target_tag:
         type: string
-        required: true
-      skip_build:
+        required: false
+      source_tag:
         type: string
-        required: true
+        required: false
+      release_tag:
+        type: string
+        required: false
     secrets:
       NEXT_PUBLIC_COBAR_API_KEY:
         required: true
