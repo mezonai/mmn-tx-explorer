@@ -25,20 +25,12 @@ on:
       ref:
         type: string
         required: true
-      release_tag:
+      target_tag:
         type: string
-        required: false
-      service_tag:
-        type: string
-        required: false
+        required: true
       skip_build:
-        type: string 
-        required: false
-        default: "false"
-      deploy:
         type: string
-        required: false 
-        default: "false"
+        required: true
     secrets:
       POSTGRES_PASSWORD:
         required: true
@@ -47,12 +39,10 @@ on:
 
 jobs:
   build:
-    if: inputs.skip_build == 'false'
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
     outputs:
       tag_name: ${{ steps.build_indexer_binary.outputs.tag_name }}
-      binary_name: ${{ steps.build_indexer_binary.outputs.binary_name}}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -62,6 +52,7 @@ jobs:
           fetch-depth: 1
 
       - name: Setup Go
+        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
         uses: actions/setup-go@v5
         with:
           go-version: "1.23"
@@ -69,6 +60,7 @@ jobs:
           check-latest: false
           
       - name: Run golangci-lint
+        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
         uses: golangci/golangci-lint-action@v8
         with:
           version: v2.5.0
@@ -77,43 +69,42 @@ jobs:
         continue-on-error: true
 
       - name: Build Indexer binary
+        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
         id: build_indexer_binary
         run: |
           mkdir -p build
           cd indexer          
-          TAG_NAME="${{ inputs.service_tag }}"
+          TAG_NAME="${{ inputs.target_tag }}"
           if [ -z "$TAG_NAME" ]; then TAG_NAME="v0.0.0"; fi
-
-          CLEAN_TAG=${TAG_NAME#indexer-}
-          BINARY_NAME="indexer-${CLEAN_TAG}"
-
-          GOOS=linux GOARCH=amd64 go build -o ../build/${BINARY_NAME} .
+          GOOS=linux GOARCH=amd64 go build -o ../build/indexer-${TAG_NAME} .
           echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
-          echo "binary_name=${BINARY_NAME}" >> $GITHUB_OUTPUT
 
-      - name: Upload Indexer Artifact
-        uses: actions/upload-artifact@v4
+      - name: Create Release and Upload binary
+        if: inputs.skip_build == 'false'
+        id: create_release
+        uses: softprops/action-gh-release@v2
         with:
-          name: indexer-assets
-          path: build/indexer-*
+          tag_name: ${{ steps.build_indexer_binary.outputs.tag_name }}
+          name: "Release ${{ steps.build_indexer_binary.outputs.tag_name }}"
+          target_commitish: ${{ inputs.ref }}
+          fail_on_unmatched_files: true
+          files: |
+            build/indexer-${{ steps.build_indexer_binary.outputs.tag_name }}
 
   deploy-indexer:
-    if: inputs.deploy == 'true' && (needs.build.result == 'success' || needs.build.result == 'skipped')
+    if: always()
     needs: build
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
+    env:
+      TARGET_HOST: ${{ inputs.env == 'prod' && 'prod-indexer' || 'dev-indexer' }}
     steps:
       - name: Determine Binary Path and Tag
         id: determine_binary
         run: |
           TAG_INPUT=""
-
-          echo "RELEASE_TAG: ${{ inputs.release_tag }}"
-          echo "SERVICE_TAG: ${{ inputs.service_tag }}"
-
-          if [ -n "${{ inputs.service_tag }}" ]; then
-            TAG_INPUT="${{ inputs.service_tag }}"
-            
+          if [ -n "${{ inputs.target_tag }}" ]; then
+            TAG_INPUT="${{ inputs.target_tag }}"
           elif [ -n "${{ inputs.existing_tag_to_deploy }}" ]; then 
             TAG_INPUT="${{ inputs.existing_tag_to_deploy }}"
           elif [ "${{ needs.build.result }}" == "success" ]; then
@@ -124,36 +115,27 @@ jobs:
             exit 1
           fi
 
-          echo "Determined tag to deploy: $TAG_INPUT"
-          CLEAN_VERSION=${TAG_INPUT#indexer-}
-          BINARY_FILE="indexer-${CLEAN_VERSION}"
+          if [[ ! "$TAG_INPUT" == v* ]]; then
+            TAG_TO_DEPLOY="v$TAG_INPUT"
+            echo "==> Prefix 'v' was missing. Standardizing to: $TAG_TO_DEPLOY"
+          else
+            TAG_TO_DEPLOY="$TAG_INPUT"
+          fi
 
-          DOWNLOAD_TAG="${{ inputs.release_tag }}"
-          [ -z "$DOWNLOAD_TAG" ] && DOWNLOAD_TAG="release-$TAG_INPUT"
-
-          echo "tag_name=$TAG_INPUT" >> $GITHUB_OUTPUT
-          echo "download_tag=$DOWNLOAD_TAG" >> $GITHUB_OUTPUT
-          echo "binary_name=$BINARY_FILE" >> $GITHUB_OUTPUT
-          echo "binary_path=build/$BINARY_FILE" >> $GITHUB_OUTPUT
-
-      - name: Download Artifact from Job Build
-        if: inputs.skip_build != 'true' && needs.build.result == 'success'
-        uses: actions/download-artifact@v4
-        with:
-          name: indexer-assets
-          path: build
-
+          echo "tag_name=$TAG_TO_DEPLOY" >> $GITHUB_OUTPUT
+          echo "binary_name=indexer-$TAG_TO_DEPLOY" >> $GITHUB_OUTPUT
+          echo "binary_path=build/indexer-$TAG_TO_DEPLOY" >> $GITHUB_OUTPUT
+      
       - name: Download release binary using url 
-        if: inputs.skip_build == 'true'
+        if: inputs.existing_tag_to_deploy != ''
         run: | 
           set -e 
           OWNER=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f1)
           REPO=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f2)
-          
-          TAG_RELEASE="${{ steps.determine_binary.outputs.download_tag }}"
+          TAG_NAME="${{ steps.determine_binary.outputs.tag_name }}"
           BINARY_NAME="${{ steps.determine_binary.outputs.binary_name }}"
           BINARY_PATH="${{ steps.determine_binary.outputs.binary_path }}"
-          DOWNLOAD_URL="https://github.com/$OWNER/$REPO/releases/download/$TAG_RELEASE/$BINARY_NAME"
+          DOWNLOAD_URL="https://github.com/$OWNER/$REPO/releases/download/$TAG_NAME/$BINARY_NAME"
 
           echo "==> Downloading from URL: $DOWNLOAD_URL"
           mkdir -p build
@@ -197,15 +179,15 @@ jobs:
           EVENT_API_KEY=${EVENT_API_KEY}
           EON
 
+          sudo chown -R mmn:mmn /opt/indexer
+          sudo chmod 600 /opt/indexer/config/indexer.env
+
           echo "==> Deploying new indexer binary to staging path..."
           sudo install -m 0755 /tmp/indexer /opt/indexer/bin/indexer-${VERSION_ID}
 
           echo "==> Deploying migrations..."
           sudo rm -rf /opt/indexer/migrations/postgres
           sudo mv /tmp/postgres-indexer /opt/indexer/migrations/postgres
-
-          sudo chown -R mmn:mmn /opt/indexer
-          sudo chmod 600 /opt/indexer/config/indexer.env
 
           echo "==> Preparation complete!"
           EOF
