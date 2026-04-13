@@ -25,20 +25,12 @@ on:
       ref:
         type: string
         required: true
-      release_tag:
+      target_tag:
         type: string
-        required: false
-      service_tag:
-        type: string
-        required: false
+        required: true
       skip_build:
         type: string
-        required: false
-        default: "false"
-      deploy:
-        type: string
-        required: false
-        default: "false"
+        required: true
     secrets:
       POSTGRES_PASSWORD:
         required: true
@@ -51,12 +43,10 @@ on:
 
 jobs:
   build:
-    if: inputs.skip_build == 'false'
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
     outputs:
       tag_name: ${{ steps.build_socket_binary.outputs.tag_name }}
-      binary_name: ${{ steps.build_socket_binary.outputs.binary_name}}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -66,6 +56,7 @@ jobs:
           fetch-depth: 1
 
       - name: Setup Go
+        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
         uses: actions/setup-go@v5
         with:
           go-version: "1.25"
@@ -73,6 +64,7 @@ jobs:
           check-latest: false
        
       - name: Run golangci-lint
+        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
         uses: golangci/golangci-lint-action@v8
         with:
           version: v2.5.0
@@ -81,41 +73,43 @@ jobs:
         continue-on-error: true
 
       - name: Build Socket Service binary
+        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
         id: build_socket_binary
         run: |
           mkdir -p build
           cd socket-service
-
-          TAG_NAME="${{ inputs.service_tag }}"
+          TAG_NAME="${{ inputs.target_tag }}"
           if [ -z "$TAG_NAME" ]; then TAG_NAME="v0.0.0"; fi
-
-          CLEAN_TAG=${TAG_NAME#socket-service-}
-          BINARY_NAME="socket-service-${CLEAN_TAG}"
-
-          echo "Building version: $CLEAN_TAG"
-          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ../build/${BINARY_NAME} .
+          
+          echo "Building version: $TAG_NAME"
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ../build/socket-service-${TAG_NAME} .
           echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
-          echo "binary_name=$BINARY_NAME" >> $GITHUB_OUTPUT
 
-      - name: Upload Socket Artifact
-        uses: actions/upload-artifact@v4
+      - name: Create Release and Upload binary
+        if: inputs.skip_build == 'false'
+        id: create_release
+        uses: softprops/action-gh-release@v2
         with:
-          name: socket-assets
-          path: build/socket-service-*
+          tag_name: ${{ steps.build_socket_binary.outputs.tag_name }}
+          name: "Release ${{ steps.build_socket_binary.outputs.tag_name }}"
+          target_commitish: ${{ inputs.ref }}
+          fail_on_unmatched_files: true
+          files: |
+            build/socket-service-${{ steps.build_socket_binary.outputs.tag_name }}
 
   deploy-socket:
-    if: inputs.deploy == 'true' && (needs.build.result == 'success' || needs.build.result == 'skipped')
+    if: always()
     needs: build
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
+
     steps:
       - name: Determine Binary Path and Tag
         id: determine_binary
         run: |
           TAG_INPUT=""
-
-          if [ -n "${{ inputs.service_tag }}" ]; then
-            TAG_INPUT="${{ inputs.service_tag }}"
+          if [ -n "${{ inputs.target_tag }}" ]; then
+            TAG_INPUT="${{ inputs.target_tag }}"
           elif [ -n "${{ inputs.existing_tag_to_deploy }}" ]; then 
             TAG_INPUT="${{ inputs.existing_tag_to_deploy }}"
           elif [ "${{ needs.build.result }}" == "success" ]; then
@@ -126,34 +120,26 @@ jobs:
             exit 1
           fi
 
-          CLEAN_VER=${TAG_INPUT#socket-service-}
-          BINARY_FILE="socket-service-${CLEAN_VER}"
+          if [[ ! "$TAG_INPUT" == v* ]]; then
+            TAG_TO_DEPLOY="v$TAG_INPUT"
+          else
+            TAG_TO_DEPLOY="$TAG_INPUT"
+          fi
 
-          DOWNLOAD_TAG="${{ inputs.release_tag }}"
-          [ -z "$DOWNLOAD_TAG" ] && DOWNLOAD_TAG="release-$TAG_INPUT"
-                    
-          echo "tag_name=$TAG_INPUT" >> $GITHUB_OUTPUT
-          echo "download_tag=$DOWNLOAD_TAG" >> $GITHUB_OUTPUT
-          echo "binary_name=$BINARY_FILE" >> $GITHUB_OUTPUT
-          echo "binary_path=build/$BINARY_FILE" >> $GITHUB_OUTPUT
-
-      - name: Download Artifact from Build Job
-        if: inputs.skip_build != 'true' && needs.build.result == 'success'
-        uses: actions/download-artifact@v4
-        with:
-          name: socket-assets
-          path: build
-
+          echo "tag_name=$TAG_TO_DEPLOY" >> $GITHUB_OUTPUT
+          echo "binary_name=socket-service-$TAG_TO_DEPLOY" >> $GITHUB_OUTPUT
+          echo "binary_path=build/socket-service-$TAG_TO_DEPLOY" >> $GITHUB_OUTPUT
+       
       - name: Download release binary using url 
-        if: inputs.skip_build == 'true' && inputs.deploy == 'true'
+        if: inputs.existing_tag_to_deploy != ''
         run: | 
           set -e 
           OWNER=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f1)
           REPO=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f2)
-          TAG_RELEASE="${{ steps.determine_binary.outputs.download_tag }}"
+          TAG_NAME="${{ steps.determine_binary.outputs.tag_name }}"
           BINARY_NAME="${{ steps.determine_binary.outputs.binary_name }}"
           BINARY_PATH="${{ steps.determine_binary.outputs.binary_path }}"
-          DOWNLOAD_URL="https://github.com/$OWNER/$REPO/releases/download/$TAG_RELEASE/$BINARY_NAME"
+          DOWNLOAD_URL="https://github.com/$OWNER/$REPO/releases/download/$TAG_NAME/$BINARY_NAME"
 
           echo "==> Downloading from URL: $DOWNLOAD_URL"
           mkdir -p build
@@ -202,15 +188,15 @@ jobs:
           SERVER_GIN_MODE='${SERVER_GIN_MODE}'
           EON
 
+          sudo chown -R mmn:mmn /opt/socket-service
+          sudo chmod 600 /opt/socket-service/config/socket-service.env
+
           echo "==> Deploying new binary to staging path..."
           sudo install -m 0755 /tmp/socket-service /opt/socket-service/bin/socket-service-${VERSION_ID}
 
           echo "==> Deploying migrations..."
           sudo rm -rf /opt/socket-service/migrations
           sudo mv /tmp/postgres-socket /opt/socket-service/migrations
-
-          sudo chown -R mmn:mmn /opt/socket-service
-          sudo chmod 600 /opt/socket-service/config/socket-service.env
 
           echo "==> Preparation complete!"
           EOF
