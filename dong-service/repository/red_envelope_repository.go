@@ -11,7 +11,7 @@ import (
 	"dong-service/utils"
 	"errors"
 	"fmt"
-	"strings"
+
 	"time"
 
 	"github.com/lib/pq"
@@ -656,34 +656,6 @@ func (r *RedEnvelopeRepository) GetRedEnvelopeStatus(id string) (string, error) 
 	}
 
 	return status, nil
-}
-
-func (r *RedEnvelopeRepository) CreateSplitMoneyBatch(tx *sql.Tx, redEnvelopeID string, amounts []int64) error {
-	if len(amounts) == 0 {
-		return nil
-	}
-
-	args := make([]interface{}, 0, len(amounts)*3)
-	placeholders := make([]string, 0, len(amounts))
-
-	for i, amount := range amounts {
-		n := i * 3
-		placeholders = append(placeholders, fmt.Sprintf("($%d, $%d, $%d)", n+1, n+2, n+3))
-		args = append(args, redEnvelopeID, amount, i+1)
-	}
-
-	query := fmt.Sprintf(
-		"INSERT INTO %s.red_envelope_split_money (red_envelope_id, amount, claim_order) VALUES %s",
-		r.dongSchema,
-		strings.Join(placeholders, ","),
-	)
-
-	_, err := tx.Exec(query, args...)
-	if err != nil {
-		return fmt.Errorf("failed to batch insert split money (count: %d): %w", len(amounts), err)
-	}
-
-	return nil
 }
 
 func (r *RedEnvelopeRepository) GetRedEnvelopeCloseSesssion(redEnvelopeID string) (models.RedEnvelopeCloseSesssion, error) {
