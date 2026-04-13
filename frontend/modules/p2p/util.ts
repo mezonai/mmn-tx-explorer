@@ -76,17 +76,17 @@ export const generateMarkdownPayload = (text: string) => {
 };
 
 export const createTrackOrderComponents = (url: string) => [
-    {
-      components: [
-        {
-          id: '',
-          type: 1,
-          component: {
-            label: '📦 Track My Order',
-            style: 3,
-            url,
-          },
+  {
+    components: [
+      {
+        id: '',
+        type: 1,
+        component: {
+          label: '📦 Track My Order',
+          style: 3,
+          url,
         },
-      ],
-    },
-  ];
+      },
+    ],
+  },
+];

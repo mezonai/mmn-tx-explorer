@@ -187,9 +187,9 @@ export const CreateOfferModal = () => {
               <TradeTypeSection control={form.control} trigger={form.trigger} />
               {side === TradeTypes.SELL && (
                 <PaymentSection
-                  control={form.control}
-                  setValue={form.setValue}
-                  watch={form.watch}
+                  control={form.control as any}
+                  setValue={form.setValue as any}
+                  watch={form.watch as any}
                   open={open}
                   shouldAutoFill={side === TradeTypes.SELL}
                   onUnsavedChangesChange={setHasUnsavedPaymentChanges}

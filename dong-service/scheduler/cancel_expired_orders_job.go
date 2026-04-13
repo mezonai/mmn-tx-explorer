@@ -34,11 +34,6 @@ func (j *CancelExpiredOrdersJob) Run(ctx context.Context) error {
 
 	cutoff := time.Now().UTC()
 
-	expiredOrdersInfo, err := j.orderRepo.GetExpiredOrdersForRefund(ctx, cutoff)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to get expired orders info")
-	}
-
 	db := database.GetDB()
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -46,7 +41,7 @@ func (j *CancelExpiredOrdersJob) Run(ctx context.Context) error {
 		return err
 	}
 
-	count, err := j.orderRepo.CancelExpiredOrders(ctx, cutoff, tx)
+	expiredOrdersInfo, err := j.orderRepo.CancelExpiredOrders(ctx, cutoff, tx)
 	if err != nil {
 		_ = tx.Rollback()
 		logger.Error().Err(err).Msg("failed cancelling expired orders")
@@ -59,10 +54,10 @@ func (j *CancelExpiredOrdersJob) Run(ctx context.Context) error {
 		return err
 	}
 
-	if count > 0 {
-		logger.Info().Int64("count", count).Msg("Cancelled expired orders")
+	if len(expiredOrdersInfo) > 0 {
+		logger.Info().Int64("count", int64(len(expiredOrdersInfo))).Msg("Cancelled expired orders")
 
-		if len(expiredOrdersInfo) > 0 && j.walletRepo != nil && j.blockchainSvc != nil {
+		if j.walletRepo != nil && j.blockchainSvc != nil {
 			j.processRefunds(ctx, expiredOrdersInfo)
 		}
 
@@ -79,11 +74,12 @@ func (j *CancelExpiredOrdersJob) Run(ctx context.Context) error {
 
 func (j *CancelExpiredOrdersJob) processRefunds(ctx context.Context, expiredOrders []repository.ExpiredOrderInfo) {
 	for _, orderInfo := range expiredOrders {
-		if orderInfo.Status != constants.TradingOpen {
+		// Use previous_status (the status before cancellation) to decide refund eligibility
+		if orderInfo.PreviousStatus != constants.TradingOpen {
 			logger.Warn().
 				Int64("order_id", orderInfo.OrderID).
-				Str("status", orderInfo.Status).
-				Msg("Skipping refund: order not in OPEN status")
+				Str("previous_status", orderInfo.PreviousStatus).
+				Msg("Skipping refund: previous status not OPEN")
 			continue
 		}
 
@@ -112,7 +108,7 @@ func (j *CancelExpiredOrdersJob) processRefunds(ctx context.Context, expiredOrde
 			Int64("order_id", orderInfo.OrderID).
 			Int64("offer_id", orderInfo.OfferID).
 			Str("amount", orderInfo.OrderAmount).
-			Str("status", orderInfo.Status).
+			Str("previous_status", orderInfo.PreviousStatus).
 			Str("offer_side", orderInfo.OfferSide).
 			Str("recipient_wallet", refundRecipient).
 			Msg("Processing refund for expired order")

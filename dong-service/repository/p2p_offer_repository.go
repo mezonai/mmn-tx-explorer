@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"dong-service/constants"
 	"dong-service/models"
 	"dong-service/types"
 )
@@ -106,7 +107,7 @@ func (r *OfferRepository) ListOffers(ctx context.Context, minPrice *string, maxP
 		args = append(args, strings.TrimSpace(*status))
 		argCount++
 	} else {
-		whereClauses = append(whereClauses, "status = 'CONFIRMED'")
+		whereClauses = append(whereClauses, fmt.Sprintf("status = '%s'", constants.TradingConfirmed))
 	}
 
 	whereClauses = append(whereClauses, "available_amount > 0")
@@ -521,9 +522,9 @@ func (r *OfferRepository) ReleaseQuantity(ctx context.Context, offerID int64, qt
 func (r *OfferRepository) CheckAndCompleteIfEmpty(ctx context.Context, offerID int64, tx *sql.Tx) error {
 	query := fmt.Sprintf(`
 		UPDATE %s.p2p_offers
-		SET status = 'COMPLETED', updated_at = NOW()
-		WHERE offer_id = $1 AND available_amount <= 0 AND status != 'COMPLETED'
-	`, r.dongSchema)
+		SET status = '%s', updated_at = NOW()
+		WHERE offer_id = $1 AND available_amount <= 0 AND status != '%s'
+	`, r.dongSchema, constants.TradingCompleted, constants.TradingCompleted)
 
 	_, err := tx.ExecContext(ctx, query, offerID)
 	return err
