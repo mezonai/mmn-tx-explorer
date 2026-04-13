@@ -89,6 +89,7 @@ export interface CreateRedEnvelopeRequest {
 export interface UpdateStatusRedEnvelopeRequest {
   id: UUID;
   status: number;
+  transaction_hash?: string;
 }
 
 

@@ -115,22 +115,35 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
 
         await new Promise((resolve) => setTimeout(resolve, 2000));
         const transactionDetail = await pollTransactionStatus(result.txHash);
-        let finalStatus = ETransactionStatus.Failed;
-        if (transactionDetail && transactionDetail.status === ETransactionStatus.Passed) {
-          finalStatus = ETransactionStatus.Passed;
+
+        // If polling timed out or returned Confirmed, still publish — money is already transferred.
+        // Only mark FAILED if blockchain explicitly reports the tx as Failed.
+        const isFailed = transactionDetail && transactionDetail.status === ETransactionStatus.Failed;
+
+        const finalStatus = isFailed ? ETransactionStatus.Failed : ETransactionStatus.Passed;
+
+        if (isFailed) {
+          toast.error('Transaction failed on blockchain. Lucky Money creation failed.');
+          setGeneratedEnvelope(null);
+        } else {
           toast.success('Create Lucky Money successfully');
           setGeneratedEnvelope(envelope);
           setIsSuccess(true);
-        } else {
-          toast.error('Could not confirm transaction. Create Lucky Money fail.');
-          setGeneratedEnvelope(null);
         }
 
-        await RedEnvelopeService.updateRedEnvelopeStatus({ id: envelope.id, status: finalStatus });
+        await RedEnvelopeService.updateRedEnvelopeStatus({
+          id: envelope.id,
+          status: finalStatus,
+          transaction_hash: result.txHash,
+        });
         fetchUserBalance();
       } else {
         toast.error('Transfer failed.');
-        await RedEnvelopeService.updateRedEnvelopeStatus({ id: envelope.id, status: ETransactionStatus.Failed });
+        await RedEnvelopeService.updateRedEnvelopeStatus({
+          id: envelope.id,
+          status: ETransactionStatus.Failed,
+          transaction_hash: result.txHash,
+        });
       }
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : String(error);
@@ -139,7 +152,7 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
     } finally {
       setIsProcessing(false);
     }
-  }, [methods, transfer, createRedEnvelopeMutation, createRequestFromData, isSuccess, router]);
+  }, [methods, createRequestFromData, createRedEnvelopeMutation, transfer, fetchUserBalance]);
 
   const resetForm = useCallback(() => methods.reset(), [methods]);
 
@@ -170,12 +183,17 @@ export function useCreateRedEnvelopeContext() {
   return context;
 }
 
-async function pollTransactionStatus(txHash: string, retries = 3, delays = [2000, 3000]): Promise<any | null> {
+async function pollTransactionStatus(
+  txHash: string,
+  retries = 5,
+  delays = [2000, 3000, 4000, 5000]
+): Promise<any | null> {
   await new Promise((res) => setTimeout(res, 2000));
   for (let i = 0; i < retries; i++) {
     try {
       const transactionDetail = await TransactionService.getTransactionDetails(txHash);
       if (transactionDetail.status === ETransactionStatus.Passed) return transactionDetail;
+      if (transactionDetail.status === ETransactionStatus.Confirmed) return transactionDetail;
       if (transactionDetail.status === ETransactionStatus.Failed) return transactionDetail;
       if (i < retries - 1) await new Promise((res) => setTimeout(res, delays[i]));
     } catch (error) {

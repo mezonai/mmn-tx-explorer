@@ -113,14 +113,12 @@ func (r *RedEnvelopeRepository) Create(req *models.CreateRedEnvelopeRequest, cre
 		return nil, fmt.Errorf("failed to update red envelope wallet: %w", err)
 	}
 
-
 	if err = tx.Commit(); err != nil {
 		return nil, fmt.Errorf("failed to commit red envelope: %w", err)
 	}
 
 	return &result, nil
 }
-
 
 func (r *RedEnvelopeRepository) GetRecipientsByRedEnvelopeID(id string) ([]models.RedEnvelopeClaim, error) {
 	query := fmt.Sprintf(`
@@ -166,6 +164,7 @@ func (r *RedEnvelopeRepository) GetTotalClaimedAmount(id string) (int64, error) 
 		SELECT COALESCE(SUM(amount), 0)
 		FROM %s.red_envelope_claim
 		WHERE red_envelope_id = $1
+		  AND status = 'SUCCESS'
 	`, r.dongSchema)
 
 	var totalClaimed int64
@@ -279,41 +278,67 @@ func (r *RedEnvelopeRepository) GetStats() (map[string]interface{}, error) {
 	return result, nil
 }
 
-func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status string) error {
-	query := fmt.Sprintf(`
-		UPDATE %s.red_envelope
-		SET status = $1, updated_at = $2
-		WHERE id = $3
-		RETURNING id, name, description, red_envelope_wallet, owner_wallet, total_amount, total_claims, end_date, is_random_distribution, min_amount, max_amount
-	`, r.dongSchema)
-
-	var envelope struct {
-		ID                   string
-		Name                 string
-		Description          *string
-		RedEnvelopeWallet    string
-		OwnerWallet          string
-		TotalAmount          int64
-		TotalClaims          int64
-		EndDate              *time.Time
-		IsRandomDistribution bool
-		MinAmount            *int64
-		MaxAmount            *int64
-	}
-
-	err := r.db.QueryRowContext(ctx, query, status, time.Now(), id).Scan(
-		&envelope.ID,
-		&envelope.Name,
-		&envelope.Description,
-		&envelope.RedEnvelopeWallet,
-		&envelope.OwnerWallet,
-		&envelope.TotalAmount,
-		&envelope.TotalClaims,
-		&envelope.EndDate,
-		&envelope.IsRandomDistribution,
-		&envelope.MinAmount,
-		&envelope.MaxAmount,
+func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status string, txHash *string) error {
+	var (
+		envelope struct {
+			ID                   string
+			Name                 string
+			Description          *string
+			RedEnvelopeWallet    string
+			OwnerWallet          string
+			TotalAmount          int64
+			TotalClaims          int64
+			EndDate              time.Time
+			IsRandomDistribution bool
+			MinAmount            *int64
+			MaxAmount            *int64
+		}
+		err error
 	)
+
+	if txHash != nil {
+		query := fmt.Sprintf(`
+			UPDATE %s.red_envelope
+			SET status = $1, transaction_hash = $2, updated_at = $3
+			WHERE id = $4
+			RETURNING id, name, description, red_envelope_wallet, owner_wallet, total_amount, total_claims, end_date, is_random_distribution, min_amount, max_amount
+		`, r.dongSchema)
+
+		err = r.db.QueryRowContext(ctx, query, status, *txHash, time.Now(), id).Scan(
+			&envelope.ID,
+			&envelope.Name,
+			&envelope.Description,
+			&envelope.RedEnvelopeWallet,
+			&envelope.OwnerWallet,
+			&envelope.TotalAmount,
+			&envelope.TotalClaims,
+			&envelope.EndDate,
+			&envelope.IsRandomDistribution,
+			&envelope.MinAmount,
+			&envelope.MaxAmount,
+		)
+	} else {
+		query := fmt.Sprintf(`
+			UPDATE %s.red_envelope
+			SET status = $1, updated_at = $2
+			WHERE id = $3
+			RETURNING id, name, description, red_envelope_wallet, owner_wallet, total_amount, total_claims, end_date, is_random_distribution, min_amount, max_amount
+		`, r.dongSchema)
+
+		err = r.db.QueryRowContext(ctx, query, status, time.Now(), id).Scan(
+			&envelope.ID,
+			&envelope.Name,
+			&envelope.Description,
+			&envelope.RedEnvelopeWallet,
+			&envelope.OwnerWallet,
+			&envelope.TotalAmount,
+			&envelope.TotalClaims,
+			&envelope.EndDate,
+			&envelope.IsRandomDistribution,
+			&envelope.MinAmount,
+			&envelope.MaxAmount,
+		)
+	}
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -339,11 +364,9 @@ func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status str
 
 	if status == constants.RedEnvelopeStatusPublished && r.queueService != nil {
 		ttl := 2 * 24 * time.Hour
-		if envelope.EndDate != nil {
-			ttl = time.Until(*envelope.EndDate)
-			if ttl < 0 {
-				ttl = 24 * time.Hour
-			}
+		ttl = time.Until(envelope.EndDate)
+		if ttl < 0 {
+			ttl = 24 * time.Hour
 		}
 
 		var amounts []int64
@@ -398,7 +421,6 @@ func (r *RedEnvelopeRepository) GetExpiredEnvelopes() ([]*models.RedEnvelope, er
 			   start_date, end_date, created_at, updated_at
 		FROM %s.red_envelope
 		WHERE status = $1 
-		  AND end_date IS NOT NULL 
 		  AND end_date < $2
 		ORDER BY end_date ASC
 	`, r.dongSchema)
@@ -610,7 +632,7 @@ func (r *RedEnvelopeRepository) GetDetailRedEnvelopeByID(id string) (models.Deta
 		TotalClaim         int64
 		ClaimedCount       int64
 		TotalClaimedAmount int64
-		EndDate            *time.Time
+		EndDate            time.Time
 	}
 	err := r.db.QueryRow(query, id).
 		Scan(
@@ -693,6 +715,8 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 
 	ctx := context.Background()
 
+	var txPtr *string
+
 	envelope, err := r.GetRedEnvelopeCloseSesssion(redEnvelopeID)
 	if err != nil {
 		logger.Error().
@@ -716,24 +740,24 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 		} else {
 			// TODO: update pass amount from envelope
 			amount := types.NewBigIntString(envelope.RemainingAmount).Multiply(constants.TokenMultiplierBigIntString)
-			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
+			txHash, err := r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
 			if err != nil {
 				return err
 			}
+			txPtr = &txHash
 		}
 	}
 
-	err = r.UpdateStatus(ctx, redEnvelopeID, constants.RedEnvelopeStatusExpired)
+	err = r.UpdateStatus(ctx, redEnvelopeID, constants.RedEnvelopeStatusClosed, txPtr)
 	if err != nil {
 		logger.Error().
 			Err(err).
 			Str("red_envelope_id", redEnvelopeID).
-			Msg("Failed to update status to EXPIRED")
+			Msg("Failed to update status to CLOSED")
 	}
 
 	return nil
 }
-
 
 func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUserID, amount int64) error {
 	// --- PHASE 1: RESERVATION (Transaction 1) ---
@@ -852,7 +876,7 @@ func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUs
 			Str("to", claimerWallet).
 			Int64("claim_id", claimID).
 			Msg("Blockchain transfer failed")
-		
+
 		// Revert reservation because transfer failed
 		_ = r.updateFinalClaimStatus(id, claimID, constants.RedEnvelopeClaimStatusFailed, nil, true)
 		return fmt.Errorf("failed to transfer money")
@@ -915,9 +939,6 @@ func (r *RedEnvelopeRepository) updateFinalClaimStatus(envelopeID string, claimI
 
 	return tx.Commit()
 }
-
-
-
 
 func (r *RedEnvelopeRepository) HasUserClaimed(redEnvelopeID string, userID int64) (bool, error) {
 	query := fmt.Sprintf(`

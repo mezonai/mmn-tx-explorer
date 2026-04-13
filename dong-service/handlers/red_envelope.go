@@ -256,8 +256,9 @@ func (r *RedEnvelopeHandler) GetRedEnvelopeCreatedByUser(c *gin.Context) {
 // @Router /api/v1/red-envelopes/update-status-red-envelope [post]
 func (r *RedEnvelopeHandler) UpdateStatusRedEnvelope(c *gin.Context) {
 	var req struct {
-		ID     string `json:"id" binding:"required"`
-		Status int    `json:"status" binding:"required"`
+		ID              string `json:"id" binding:"required"`
+		Status          int    `json:"status" binding:"required"`
+		TransactionHash string `json:"transaction_hash"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -276,11 +277,18 @@ func (r *RedEnvelopeHandler) UpdateStatusRedEnvelope(c *gin.Context) {
 		statusRedEnvelope = constants.RedEnvelopeStatusFailed
 	case constants.StatusExpired:
 		statusRedEnvelope = constants.RedEnvelopeStatusExpired
+	case constants.StatusClosed:
+		statusRedEnvelope = constants.RedEnvelopeStatusClosed
 	default:
 		statusRedEnvelope = constants.RedEnvelopeStatusPublished
 	}
 
-	err := r.repo.UpdateStatus(c, req.ID, statusRedEnvelope)
+	var txPtr *string
+	if req.TransactionHash != "" {
+		txPtr = &req.TransactionHash
+	}
+
+	err := r.repo.UpdateStatus(c, req.ID, statusRedEnvelope, txPtr)
 	if err != nil {
 		logger.Error().Err(err).Str("envelope_id", req.ID).Msg("Failed to update red envelope status")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToUpdateRedEnvelopeStatus))
@@ -533,6 +541,7 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelopeQR(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeAmountClaimed, result))
 }
+
 // ClaimAmountRedEnvelopeQR_Legacy godoc
 // @Summary Claim red envelope amount via QR (ZK authentication)
 // @Description Get claim amount for red envelope using ZK proof authentication
@@ -592,6 +601,7 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelopeQRLegacy(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeAmountClaimed, result))
 }
+
 // ClaimRedEnvelopeQR godoc
 // @Summary Claim red envelope via QR (ZK authentication)
 // @Description Claim red envelope and receive money using ZK proof authentication
