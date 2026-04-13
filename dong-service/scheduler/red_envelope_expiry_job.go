@@ -57,7 +57,6 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 		}
 
 		remainingBalance := envelope.TotalAmount - totalClaimed
-		isSuccess := true
 		var txPtr *string
 		if remainingBalance > 0 {
 			logger.Info().
@@ -70,23 +69,21 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 			var wallet *models.IntermediaryWallet
 			wallet, err = j.walletRepo.GetWalletByAddress(ctx, envelope.RedEnvelopeWallet)
 			if err != nil {
-				logger.Error().Err(err).Msg("Failed to get wallet")
-				isSuccess = false
+				logger.Error().Err(err).
+					Str("red_envelope_id", envelope.ID).
+					Msg("Failed to get wallet for refund; will still mark EXPIRED")
 			} else {
 				// TODO: update pass amount from envelope
 				amount := types.NewBigIntString(remainingBalance).Multiply(constants.TokenMultiplierBigIntString)
-				txHash, err := j.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
-				if err != nil {
-					logger.Error().Err(err).Msg("Failed to transfer funds")
-					isSuccess = false
+				txHash, txErr := j.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
+				if txErr != nil {
+					logger.Error().Err(txErr).
+						Str("red_envelope_id", envelope.ID).
+						Msg("Failed to transfer refund; will still mark EXPIRED")
 				} else {
 					txPtr = &txHash
 				}
 			}
-		}
-
-		if !isSuccess {
-			continue
 		}
 
 		err = j.redEnvelopeRepo.UpdateStatus(ctx, envelope.ID, constants.RedEnvelopeStatusExpired, txPtr)
