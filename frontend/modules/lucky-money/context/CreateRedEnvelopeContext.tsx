@@ -8,10 +8,8 @@ import { useUser } from '@/providers';
 import { mmnClient } from '@/modules/auth';
 import { useTransfer } from '@/modules/transfer/hooks/useTransfer';
 import { toast } from 'sonner';
-import { RedEnvelopeService } from '../api';
-import { ETransactionStatus, TransactionService, ETransferType } from '@/modules/transaction';
+import { ETransferType } from '@/modules/transaction';
 import { useCreateRedEnvelope } from '../hooks/useCreateRedEnvelope';
-import { useRouter } from 'next/navigation';
 
 interface CreateRedEnvelopeContextType {
   methods: UseFormReturn<CreateRedEnvelopeForm>;
@@ -30,7 +28,6 @@ interface CreateRedEnvelopeContextType {
 const CreateRedEnvelopeContext = createContext<CreateRedEnvelopeContextType | undefined>(undefined);
 
 export function CreateRedEnvelopeProvider({ children }: { children: ReactNode }) {
-  const router = useRouter();
   const { transfer } = useTransfer();
   const createRedEnvelopeMutation = useCreateRedEnvelope();
   const { user } = useUser();
@@ -83,14 +80,11 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
     [user?.walletAddress]
   );
 
-  const initiateCreation = useCallback(
-    async (data: CreateRedEnvelopeForm) => {
-      setGeneratedEnvelope(null);
-      setTotalAmount(data.totalAmount);
-      setShowConfirmModal(true);
-    },
-    [user, mmnClient]
-  );
+  const initiateCreation = useCallback(async (data: CreateRedEnvelopeForm) => {
+    setGeneratedEnvelope(null);
+    setTotalAmount(data.totalAmount);
+    setShowConfirmModal(true);
+  }, []);
 
   const confirmCreation = useCallback(async () => {
     const data = methods.getValues();
@@ -110,40 +104,14 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
       );
 
       if (result.success) {
-        toast.success('Transfer money successfully!');
-        if (!result.txHash) throw new Error('Transaction hash not found.');
-
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        const transactionDetail = await pollTransactionStatus(result.txHash);
-
-        // If polling timed out or returned Confirmed, still publish — money is already transferred.
-        // Only mark FAILED if blockchain explicitly reports the tx as Failed.
-        const isFailed = transactionDetail && transactionDetail.status === ETransactionStatus.Failed;
-
-        const finalStatus = isFailed ? ETransactionStatus.Failed : ETransactionStatus.Passed;
-
-        if (isFailed) {
-          toast.error('Transaction failed on blockchain. Lucky Money creation failed.');
-          setGeneratedEnvelope(null);
-        } else {
-          toast.success('Create Lucky Money successfully');
-          setGeneratedEnvelope(envelope);
-          setIsSuccess(true);
-        }
-
-        await RedEnvelopeService.updateRedEnvelopeStatus({
-          id: envelope.id,
-          status: finalStatus,
-          transaction_hash: result.txHash,
-        });
+        toast.success('Lucky Money created successfully! The indexer will process it shortly.');
+        // Indexer will automatically update red envelope status when transaction is confirmed
+        setGeneratedEnvelope(envelope);
+        setIsSuccess(true);
         fetchUserBalance();
       } else {
-        toast.error('Transfer failed.');
-        await RedEnvelopeService.updateRedEnvelopeStatus({
-          id: envelope.id,
-          status: ETransactionStatus.Failed,
-          transaction_hash: result.txHash,
-        });
+        toast.error('Transfer failed. Please try again.');
+        setGeneratedEnvelope(null);
       }
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : String(error);
@@ -181,24 +149,4 @@ export function useCreateRedEnvelopeContext() {
   const context = useContext(CreateRedEnvelopeContext);
   if (!context) throw new Error('useCreateRedEnvelopeContext must be used within CreateRedEnvelopeProvider');
   return context;
-}
-
-async function pollTransactionStatus(
-  txHash: string,
-  retries = 5,
-  delays = [2000, 3000, 4000, 5000]
-): Promise<any | null> {
-  await new Promise((res) => setTimeout(res, 2000));
-  for (let i = 0; i < retries; i++) {
-    try {
-      const transactionDetail = await TransactionService.getTransactionDetails(txHash);
-      if (transactionDetail.status === ETransactionStatus.Passed) return transactionDetail;
-      if (transactionDetail.status === ETransactionStatus.Confirmed) return transactionDetail;
-      if (transactionDetail.status === ETransactionStatus.Failed) return transactionDetail;
-      if (i < retries - 1) await new Promise((res) => setTimeout(res, delays[i]));
-    } catch (error) {
-      if (i < retries - 1) await new Promise((res) => setTimeout(res, delays[i]));
-    }
-  }
-  return null;
 }
