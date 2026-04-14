@@ -57,6 +57,7 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 		}
 
 		remainingBalance := envelope.TotalAmount - totalClaimed
+		var txPtr *string
 		isSuccess := true
 		if remainingBalance > 0 {
 			logger.Info().
@@ -74,10 +75,12 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 			} else {
 				// TODO: update pass amount from envelope
 				amount := types.NewBigIntString(remainingBalance).Multiply(constants.TokenMultiplierBigIntString)
-				_, err = j.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
-				if err != nil {
-					logger.Error().Err(err).Msg("Failed to transfer funds")
+				txHash, txErr := j.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
+				if txErr != nil {
+					logger.Error().Err(txErr).Msg("Failed to transfer funds")
 					isSuccess = false
+				} else {
+					txPtr = &txHash
 				}
 			}
 		}
