@@ -18,6 +18,7 @@ type RedEnvelope struct {
 	Creator              int64     `json:"creator" db:"creator"`
 	Status               string    `json:"status" db:"status"`
 	TransactionHash      *string   `json:"transaction_hash,omitempty" db:"transaction_hash"`
+	RefundTxHash         *string   `json:"refund_tx_hash,omitempty" db:"refund_tx_hash"`
 	IsRandomDistribution bool      `json:"is_random_distribution" db:"is_random_distribution"`
 	StartDate            time.Time `json:"start_date" db:"start_date"`
 	EndDate              time.Time `json:"end_date" db:"end_date"`
@@ -36,16 +37,16 @@ type IntermediaryWallet struct {
 }
 
 type CreateRedEnvelopeRequest struct {
-	Name                 string    `json:"name" binding:"required"`
-	Description          *string   `json:"description,omitempty"`
-	TotalAmount          int64     `json:"total_amount" binding:"required"`
-	MinAmount            *int64    `json:"min_amount,omitempty"`
-	MaxAmount            *int64    `json:"max_amount,omitempty"`
-	TotalClaims          int64     `json:"total_claims" binding:"required"`
-	OwnerWallet          string    `json:"owner_wallet" binding:"required"`
-	IsRandomDistribution bool      `json:"is_random_distribution"`
-	StartDate            time.Time `json:"start_date" binding:"required"`
-	EndDate              time.Time `json:"end_date" binding:"required"`
+	Name                 string     `json:"name" binding:"required"`
+	Description          *string    `json:"description,omitempty"`
+	TotalAmount          int64      `json:"total_amount" binding:"required"`
+	MinAmount            *int64     `json:"min_amount,omitempty"`
+	MaxAmount            *int64     `json:"max_amount,omitempty"`
+	TotalClaims          int64      `json:"total_claims" binding:"required"`
+	OwnerWallet          string     `json:"owner_wallet" binding:"required"`
+	IsRandomDistribution bool       `json:"is_random_distribution"`
+	StartDate            time.Time  `json:"start_date" binding:"required"`
+	EndDate              *time.Time `json:"end_date,omitempty"`
 }
 
 type RedEnvelopeClaim struct {
@@ -81,14 +82,14 @@ type ClaimedRedEnvelopeByUser []struct {
 }
 
 type DetailRedEnvelope struct {
-	Name               string    `json:"name"`
-	Status             string    `json:"status"`
-	RedEnvelopeWallet  string    `json:"red_envelope_wallet"`
-	TotalAmount        int64     `json:"total_amount"`
-	TotalClaim         int64     `json:"total_claim"`
-	ClaimedCount       int64     `json:"claimed_count"`
-	TotalClaimedAmount int64     `json:"total_claimed_amount"`
-	EndDate            time.Time `json:"end_date"`
+	Name               string     `json:"name"`
+	Status             string     `json:"status"`
+	RedEnvelopeWallet  string     `json:"red_envelope_wallet"`
+	TotalAmount        int64      `json:"total_amount"`
+	TotalClaim         int64      `json:"total_claim"`
+	ClaimedCount       int64      `json:"claimed_count"`
+	TotalClaimedAmount int64      `json:"total_claimed_amount"`
+	EndDate            *time.Time `json:"end_date,omitempty"`
 }
 
 type RedEnvelopeCloseSesssion struct {
@@ -99,4 +100,14 @@ type RedEnvelopeCloseSesssion struct {
 
 type ClaimRedEnvelopeRequest struct {
 	SplitMoneyID int64 `json:"split_money_id" binding:"required"`
+}
+
+type UpdateRedEnvelopeStatusRequest struct {
+	ID              string `json:"id" binding:"required"`
+	Status          int    `json:"status" binding:"required"`
+	TransactionHash string `json:"transaction_hash"`
+}
+
+type UpdateRedEnvelopeStatusBatchRequest struct {
+	Updates []UpdateRedEnvelopeStatusRequest `json:"updates" binding:"required,dive"`
 }

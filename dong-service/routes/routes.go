@@ -40,7 +40,8 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 	queueService := repository.NewRedEnvelopeQueueService(database.RedisClient)
 	intermediaryWalletRepo := repository.NewIntermediaryWalletRepository(database.GetDB(), cfg.Database.Schema)
 	redEnvelopeRepo := repository.NewRedEnvelopeRepository(database.GetDB(), cfg.Database.Schema, blockchainService, intermediaryWalletRepo, queueService)
-	redEnvelopeHandler := handlers.NewRedEnvelopeHandler(redEnvelopeRepo, queueService, intermediaryWalletRepo)
+	redEnvelopeService := services.NewRedEnvelopeService(redEnvelopeRepo)
+	redEnvelopeHandler := handlers.NewRedEnvelopeHandler(redEnvelopeRepo, queueService, intermediaryWalletRepo, redEnvelopeService)
 
 	// API v1 routes
 	v1 := router.Group("/api/v1")
@@ -158,5 +159,12 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		zkClaims.POST("/v2/claim-amount", redEnvelopeHandler.ClaimAmountRedEnvelopeQR)
 		zkClaims.POST("/:id/claim", redEnvelopeHandler.ClaimRedEnvelopeQRLegacy)
 		zkClaims.POST("v2/:id/claim", redEnvelopeHandler.ClaimRedEnvelopeQR)
+
+		// Internal routes (service-to-service)
+		internal := v1.Group("/internal")
+		internal.Use(middleware.InternalAuth(cfg.Event.APIKey))
+		{
+			internal.POST("/update-status-red-envelope", redEnvelopeHandler.InternalUpdateStatusRedEnvelope)
+		}
 	}
 }

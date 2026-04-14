@@ -1,11 +1,13 @@
 package storage
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"net/http"
 	"sort"
 	"strconv"
 	"strings"
@@ -25,6 +27,14 @@ const (
 	DataRowsDisplayLimit   = 500000
 	InsertBlockDataTimeout = 10 * time.Minute
 	P2PMultiplier          = 1000000
+
+	// Red Envelope Statuses for Dong Service API
+	RedEnvelopeStatusPublished = 2
+	RedEnvelopeStatusFailed    = 3
+
+	// Red Envelope validation actions
+	RedEnvelopeActionUpdatePublished = "Red Envelope Update Published"
+	RedEnvelopeActionUpdateFailed    = "Red Envelope Update Failed"
 )
 
 type PostgresConnector struct {
@@ -822,6 +832,7 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 		failedSellTxMap := make(map[string]common.Transaction)
 		failedSellOfferIDMap := make(map[string]int64)
 		luckyMoneyTxs := make([]common.Transaction, 0)
+		failedLuckyMoneyTxs := make([]common.Transaction, 0)
 
 		for i := range blockData.Transactions {
 			t := blockData.Transactions[i]
@@ -851,6 +862,8 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 						failedBuyTxMap[t.Hash] = t
 						failedBuyExtraMap[t.Hash] = struct{ OfferID, OrderID int64 }{OfferID: extra.OfferID, OrderID: extra.OrderID}
 					}
+				case common.TransactionExtraInfoLuckyMoney:
+					failedLuckyMoneyTxs = append(failedLuckyMoneyTxs, t)
 				}
 				continue
 			}
@@ -888,6 +901,16 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 		}
 		if err = p.updateRedEnvelopeClaimStatus(ctx, tx, luckyMoneyTxs); err != nil {
 			log.Error().Err(err).Msg("Failed to update red envelope claim status")
+			return err
+		}
+
+		if err = p.updateRedEnvelopeStatus(ctx, tx, luckyMoneyTxs); err != nil {
+			log.Error().Err(err).Msg("Failed to update red envelope status after inserting transactions")
+			return err
+		}
+
+		if err = p.failRedEnvelopeStatus(ctx, tx, failedLuckyMoneyTxs); err != nil {
+			log.Error().Err(err).Msg("Failed to fail red envelope status after inserting transactions")
 			return err
 		}
 
@@ -3232,6 +3255,260 @@ func (p *PostgresConnector) updateRedEnvelopeClaimStatus(ctx context.Context, tx
 	}
 
 	log.Info().Int("claims_reconciled", reconciledCount).Msg("Successfully reconciled red envelope claims via precise batch update")
+
+	return nil
+}
+
+func (p *PostgresConnector) updateRedEnvelopeStatus(
+	ctx context.Context,
+	tx *sql.Tx,
+	txs []common.Transaction,
+) error {
+	validatedTxs, err := p.validateRedEnvelopeTransactions(ctx, tx, txs, RedEnvelopeActionUpdatePublished)
+	if err != nil {
+		return err
+	}
+
+	if len(validatedTxs) == 0 {
+		return nil
+	}
+
+	updates := make([]DongUpdateEntry, 0, len(validatedTxs))
+	for _, v := range validatedTxs {
+		updates = append(updates, DongUpdateEntry{
+			ID:              v.ID,
+			Status:          RedEnvelopeStatusPublished,
+			TransactionHash: v.Hash,
+		})
+	}
+
+	if err := p.callDongServiceUpdateStatus(ctx, updates); err != nil {
+		return fmt.Errorf("failed to call dong service for red envelope status update: %w", err)
+	}
+
+	log.Info().Int("red_envelopes_updated", len(validatedTxs)).Msg("red envelope status update completed via dong service")
+
+	return nil
+}
+
+func (p *PostgresConnector) failRedEnvelopeStatus(
+	ctx context.Context,
+	tx *sql.Tx,
+	txs []common.Transaction,
+) error {
+	validated, err := p.validateRedEnvelopeTransactions(ctx, tx, txs, RedEnvelopeActionUpdateFailed)
+	if err != nil {
+		return err
+	}
+
+	if len(validated) == 0 {
+		return nil
+	}
+
+	updates := make([]DongUpdateEntry, 0, len(validated))
+	for _, v := range validated {
+		updates = append(updates, DongUpdateEntry{
+			ID:     v.ID,
+			Status: RedEnvelopeStatusFailed,
+		})
+	}
+
+	if err := p.callDongServiceUpdateStatus(ctx, updates); err != nil {
+		return fmt.Errorf("failed to call dong service for red envelope failure update: %w", err)
+	}
+
+	log.Info().Int("red_envelopes_failed", len(validated)).Msg("failed red envelopes updated via dong service")
+
+	return nil
+}
+
+type validatedRedEnvelope struct {
+	ID   string
+	Hash string
+}
+
+type redEnvelopeRow struct {
+	ID                string
+	OwnerWallet       string
+	RedEnvelopeWallet string
+	Amount            string
+	Status            string
+}
+
+func (p *PostgresConnector) validateRedEnvelopeTransactions(
+	ctx context.Context,
+	tx *sql.Tx,
+	txs []common.Transaction,
+	logAction string,
+) ([]validatedRedEnvelope, error) {
+	log.Info().Int("transactions_to_validate", len(txs)).Str("action", logAction).Msg("starting red envelope validation")
+	if len(txs) == 0 {
+		return nil, nil
+	}
+
+	type Extra struct {
+		RedEnvelopeID string `json:"red_envelope_id"`
+	}
+
+	redEnvelopeIDs := make([]string, 0, len(txs))
+	txMap := make(map[string]common.Transaction)
+	redEnvelopeIDMap := make(map[string]string)
+
+	for _, t := range txs {
+		var extra Extra
+		if err := json.Unmarshal([]byte(t.ExtraInfo), &extra); err != nil || extra.RedEnvelopeID == "" {
+			continue
+		}
+		redEnvelopeIDs = append(redEnvelopeIDs, extra.RedEnvelopeID)
+		txMap[t.Hash] = t
+		redEnvelopeIDMap[t.Hash] = extra.RedEnvelopeID
+	}
+
+	if len(redEnvelopeIDs) == 0 {
+		log.Info().Str("action", logAction).Msg("no potential red envelopes to validate")
+		return nil, nil
+	}
+
+	querySelect := `
+    SELECT
+        id,
+        owner_wallet,
+        red_envelope_wallet,
+        total_amount,
+        status
+    FROM dong_schema.red_envelope
+    WHERE id = ANY($1::uuid[])
+      AND status = 'PENDING'
+    FOR UPDATE
+    `
+
+	rows, err := tx.QueryContext(ctx, querySelect, pq.Array(redEnvelopeIDs))
+	if err != nil {
+		return nil, fmt.Errorf("select red envelopes for validation (%s) failed: %w", logAction, err)
+	}
+	defer rows.Close()
+
+	envelopeMap := make(map[string]redEnvelopeRow)
+	for rows.Next() {
+		var e redEnvelopeRow
+		if err := rows.Scan(
+			&e.ID,
+			&e.OwnerWallet,
+			&e.RedEnvelopeWallet,
+			&e.Amount,
+			&e.Status,
+		); err != nil {
+			log.Error().Err(err).Str("action", logAction).Msg("failed to scan red envelope row")
+			return nil, err
+		}
+		envelopeMap[e.ID] = e
+	}
+
+	validated := make([]validatedRedEnvelope, 0)
+
+	for hash, t := range txMap {
+		redEnvelopeID := redEnvelopeIDMap[hash]
+		e, ok := envelopeMap[redEnvelopeID]
+		if !ok {
+			log.Error().
+				Str("action", logAction).
+				Str("red_envelope_id", redEnvelopeID).
+				Str("tx_hash", t.Hash).
+				Msg("red envelope validation failed: red envelope not found or not PENDING")
+			continue
+		}
+
+		if e.OwnerWallet != t.FromAddress {
+			log.Error().
+				Str("action", logAction).
+				Str("red_envelope_id", redEnvelopeID).
+				Str("tx_hash", t.Hash).
+				Str("expected", e.OwnerWallet).
+				Str("got", t.FromAddress).
+				Msg("red envelope validation failed: owner wallet mismatch")
+			continue
+		}
+
+		if e.RedEnvelopeWallet != t.ToAddress {
+			log.Error().
+				Str("action", logAction).
+				Str("red_envelope_id", redEnvelopeID).
+				Str("tx_hash", t.Hash).
+				Str("expected", e.RedEnvelopeWallet).
+				Str("got", t.ToAddress).
+				Msg("red envelope validation failed: red envelope wallet mismatch")
+			continue
+		}
+
+		transactionValueBig := new(big.Int)
+		envelopeValueBig := new(big.Int)
+		transactionValueBig.SetString(t.Value, 10)
+		envelopeValueBig.SetString(e.Amount, 10)
+		envelopeValueBig.Mul(envelopeValueBig, big.NewInt(P2PMultiplier))
+		if transactionValueBig.Cmp(envelopeValueBig) != 0 {
+			log.Error().
+				Str("action", logAction).
+				Str("red_envelope_id", redEnvelopeID).
+				Str("tx_hash", t.Hash).
+				Str("expected", envelopeValueBig.String()).
+				Str("got", transactionValueBig.String()).
+				Msg("red envelope validation failed: amount mismatch")
+			continue
+		}
+		validated = append(validated, validatedRedEnvelope{ID: redEnvelopeID, Hash: t.Hash})
+	}
+
+	return validated, nil
+}
+
+type DongUpdateEntry struct {
+	ID              string `json:"id"`
+	Status          int    `json:"status"`
+	TransactionHash string `json:"transaction_hash"`
+}
+
+type DongBatchUpdateRequest struct {
+	Updates []DongUpdateEntry `json:"updates"`
+}
+
+func (p *PostgresConnector) callDongServiceUpdateStatus(ctx context.Context, updates []DongUpdateEntry) error {
+	if len(updates) == 0 {
+		return nil
+	}
+
+	cfg := config.Cfg.Event
+	if cfg.DongAPIURL == "" {
+		log.Warn().Msg("DongAPIURL not configured in Event config, skipping status update call")
+		return nil
+	}
+
+	payload := DongBatchUpdateRequest{Updates: updates}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal dong service payload: %w", err)
+	}
+
+	url := fmt.Sprintf("%s/api/v1/internal/update-status-red-envelope", cfg.DongAPIURL)
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(body))
+	if err != nil {
+		return fmt.Errorf("failed to create dong service request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	if cfg.APIKey != "" {
+		req.Header.Set("X-Internal-Key", cfg.APIKey)
+	}
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to call dong service: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("dong service returned non-OK status: %d", resp.StatusCode)
+	}
 
 	return nil
 }
