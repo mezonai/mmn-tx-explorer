@@ -7,7 +7,7 @@ import { ROUTES } from '@/configs/routes.config';
 import { useUser } from '@/providers';
 import { useRouter } from 'next/navigation';
 import React from 'react';
-import { TriangleAlert } from 'lucide-react';
+import { ClipboardList, TriangleAlert } from 'lucide-react';
 import BigNumber from 'bignumber.js';
 import { P2POffer } from '@/modules/p2p/types';
 import { OfferOrdersModal } from '../offer-orders-modal';
@@ -36,7 +36,7 @@ const OfferMobileCard = ({ offer, isMyOffer = false }: OfferMobileCardProps) => 
       {/* Header: Seller & Rate */}
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">Seller</span>
+          <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">Creator</span>
           <AddressDisplay
             address={offer.offer_creator_wallet_address}
             href={ROUTES.WALLET(offer.offer_creator_wallet_address)}
@@ -56,7 +56,7 @@ const OfferMobileCard = ({ offer, isMyOffer = false }: OfferMobileCardProps) => 
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Available</span>
             <span className="text-brand-primary text-[10px] font-bold tracking-wider uppercase">
-              {sold.toFormat()} {APP_CONFIG.CHAIN_SYMBOL} Sold
+              {sold.toFormat()} {APP_CONFIG.CHAIN_SYMBOL} {offer.side === 'SELL' ? 'Sold' : 'Bought'}
             </span>
           </div>
 
@@ -82,7 +82,7 @@ const OfferMobileCard = ({ offer, isMyOffer = false }: OfferMobileCardProps) => 
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Available</span>
               <span className="text-brand-primary text-[10px] font-bold tracking-wider uppercase">
-                {sold.toFormat()} {APP_CONFIG.CHAIN_SYMBOL} Sold
+                {sold.toFormat()} {APP_CONFIG.CHAIN_SYMBOL} {offer.side === 'SELL' ? 'Sold' : 'Bought'}
               </span>
             </div>
 
@@ -128,10 +128,15 @@ const OfferMobileCard = ({ offer, isMyOffer = false }: OfferMobileCardProps) => 
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 border-gray-700 bg-gray-800/50 px-3 hover:bg-gray-800"
+                  className="group border-brand-primary/30 bg-brand-primary/5 hover:bg-brand-primary h-8 px-3 transition-all"
                   onClick={() => setIsOrdersModalOpen(true)}
                 >
-                  <span className="text-xs text-gray-300">{offer.order_count ?? 0} orders</span>
+                  <div className="flex items-center gap-2">
+                    <ClipboardList className="text-brand-primary h-3.5 w-3.5 transition-colors group-hover:text-white" />
+                    <span className="text-brand-primary text-[10px] font-extrabold tracking-wider uppercase transition-colors group-hover:text-white">
+                      {offer.order_count ?? 0} orders
+                    </span>
+                  </div>
                 </Button>
               </div>
             )}

@@ -68,6 +68,8 @@ const (
 const (
 	RedEnvelopeInitialWalletPool  = 50 // Number of wallets to create on deployment
 	RedEnvelopeWalletMaxAgeInDays = 30 // Maximum age for unused wallets before replacement
+	RedEnvelopeDefaultTTLHours    = 48
+	RedEnvelopeMinTTLHours        = 24
 )
 
 const (
@@ -95,12 +97,12 @@ const (
 	ExtraInfoP2PTrading              = `{"type":"p2p-trading"}`
 	ExtraInfoP2PTradingBuyOffer      = `{"type":"p2p-trading-buy-offer"}`
 	ExtraInfoP2PTradingOfferCanceled = `{"type":"p2p-trading","action":"offer-canceled"}`
-	ExtraInfoP2PTradingOrderExpired  = `{"type":"p2p-trading","action":"order-expired-refund"}`
 )
 
 const (
-	TextDataLuckyMoney = "Lucky Money fund"
-	TextDataP2PTrading = "P2P Trading"
+	TextDataLuckyMoney     = "Lucky Money fund"
+	TextDataP2PTrading     = "P2P Trading"
+	TextDataP2PTradingFund = "P2P Trading Fund"
 )
 
 const (
@@ -109,6 +111,7 @@ const (
 	TradingPending   = "PENDING"
 	TradingConfirmed = "CONFIRMED"
 	TradingCanceled  = "CANCELED"
+	TradingExpired   = "EXPIRED"
 	TradingFailed    = "FAILED"
 	TradingCompleted = "COMPLETED"
 )
@@ -141,12 +144,17 @@ func IsValidStatus(status int16) bool {
 
 // Offer related constants
 const (
-	MaxPriceRateOffer         float64 = 1000000.0
-	MaxLengthSymbol           int     = 64
-	MaxActiveOffersPerUser    int64   = 10
-	MaxActiveOrdersPerUser    int     = 10
+	MaxPriceRateOffer      float64 = 1000000.0
+	MaxLengthSymbol        int     = 64
+	MaxActiveOffersPerUser int64   = 10
+	MaxActiveOrdersPerUser int     = 10
 )
 
 const (
-	OrderExpirationDuration = 4
+	OrderExpirationDuration = 4 // Order expiration duration in hours
+)
+
+const (
+	MaxAccountNumberLength = 14
+	MaxAccountNameLength   = 50
 )

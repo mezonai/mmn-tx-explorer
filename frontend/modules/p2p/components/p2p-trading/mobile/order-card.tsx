@@ -6,8 +6,10 @@ import { APP_CONFIG } from '@/configs/app.config';
 import { ROUTES } from '@/configs/routes.config';
 import { Countdown } from '../../shared/count-down';
 import { NumberUtil } from '@/utils';
+import BigNumber from 'bignumber.js';
+import { useReopenOrder } from '@/modules/p2p/hooks';
 import { getOrderStatusInfo, getOrderStatusLabel } from '@/modules/p2p/util';
-import { P2POrder, TradeTypes } from '@/modules/p2p/types';
+import { OrderStatus, P2POrder, TradeTypes } from '@/modules/p2p/types';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/providers/AppProvider';
 import { P2P_TRADING_ROLE } from '@/modules/p2p/constants';
@@ -15,8 +17,10 @@ import { P2P_TRADING_ROLE } from '@/modules/p2p/constants';
 interface OrderMobileCardProps {
   order: P2POrder;
 }
+
 export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
   const router = useRouter();
+  const { mutate: reopenOrder, isPending: isReopening } = useReopenOrder();
   const { user } = useUser();
 
   const isOrderCreator = user?.walletAddress === order.order_creator_wallet_address;
@@ -102,13 +106,23 @@ export const OrderMobileCard = ({ order }: OrderMobileCardProps) => {
         </div>
       </div>
 
-      <div className="pt-2">
-        <Button
-          className="bg-primary/10 text-brand-primary dark:hover:bg-brand-primary dark:bg-brand-primary/10 dark:border-brand-primary dark:text-primary-light flex w-full items-center justify-center rounded-xl py-3 text-sm font-bold transition hover:text-white dark:border dark:hover:text-white"
-          onClick={() => router.push(ROUTES.P2P_TRADING_ROOM(order.order_id.toString()))}
-        >
-          View Order Details
-        </Button>
+      <div className="flex gap-2 pt-2">
+        {order.status === OrderStatus.EXPIRED ? (
+          <Button
+            className="bg-utility-warning-600 hover:bg-utility-warning-700 flex w-full items-center justify-center rounded-xl py-3 text-sm font-bold text-white transition"
+            onClick={() => reopenOrder(order.order_id.toString())}
+            disabled={isReopening}
+          >
+            {isReopening ? 'Reopening...' : 'Reopen Order'}
+          </Button>
+        ) : (
+          <Button
+            className="bg-primary/10 text-brand-primary dark:hover:bg-brand-primary dark:bg-brand-primary/10 dark:border-brand-primary dark:text-primary-light flex w-full items-center justify-center rounded-xl py-3 text-sm font-bold transition hover:text-white dark:border dark:hover:text-white"
+            onClick={() => router.push(ROUTES.P2P_TRADING_ROOM(order.order_id.toString()))}
+          >
+            View Order Details
+          </Button>
+        )}
       </div>
     </div>
   );

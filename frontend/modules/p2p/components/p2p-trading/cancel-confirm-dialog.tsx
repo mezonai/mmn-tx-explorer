@@ -47,7 +47,7 @@ export const CancelConfirmDialog = ({ offer, onCancelStart }: CancelConfirmDialo
       <DialogTrigger asChild />
       <Button
         variant="destructive"
-        className="hover:bg-destructive/70 dark:hover:bg-destructive/80 w-full rounded-lg px-6 py-2 font-bold"
+        className="hover:bg-destructive/50 bg-destructive/70 dark:hover:bg-destructive/80 w-full rounded-lg px-6 py-2 font-bold"
         onClick={() => setOpen(true)}
       >
         Cancel Offer

@@ -48,6 +48,19 @@ export const useP2POrder = (orderId: string) => {
     };
   }, [orderId]);
 
+  // Expose a manual refresh function so callers can re-fetch the order
+  const refresh = async () => {
+    if (!orderId) return null;
+    try {
+      const updated = await P2PService.getOrderById(String(orderId));
+      setOrder(updated);
+      return updated;
+    } catch (err) {
+      console.error('Error refreshing order:', err);
+      return null;
+    }
+  };
+
   const updateOrderStatus = async (status: OrderStatus | string, transferCode?: string) => {
     if (!order) return;
 
@@ -90,31 +103,20 @@ export const useP2POrder = (orderId: string) => {
       if (!payloadOrderIdStr || payloadOrderIdStr !== orderIdStr) {
         return;
       }
-      if (event.type === P2P_EVENT_TYPES.ORDER_STATUS_UPDATED) {
-        const statusRaw = payload?.['status'];
-        const status = typeof statusRaw === 'string' ? statusRaw : undefined;
-        if (!status) return;
-
-        setOrder((current) => (current ? { ...current, status: status as OrderStatus } : current));
-        return;
-      }
-
       if (event.type === P2P_EVENT_TYPES.ORDER_CONFIRMED || event.type === P2P_EVENT_TYPES.ORDER_COMPLETED) {
         refreshOrder();
         return;
       }
     };
 
-    wsManager.on(P2P_EVENT_TYPES.ORDER_STATUS_UPDATED, handleStatusUpdate);
     wsManager.on(P2P_EVENT_TYPES.ORDER_CONFIRMED, handleStatusUpdate);
     wsManager.on(P2P_EVENT_TYPES.ORDER_COMPLETED, handleStatusUpdate);
 
     return () => {
-      wsManager.off(P2P_EVENT_TYPES.ORDER_STATUS_UPDATED, handleStatusUpdate);
       wsManager.off(P2P_EVENT_TYPES.ORDER_CONFIRMED, handleStatusUpdate);
       wsManager.off(P2P_EVENT_TYPES.ORDER_COMPLETED, handleStatusUpdate);
     };
   }, [orderId, wsManager]);
 
-  return { order, isLoading, error, updateOrderStatus };
+  return { order, isLoading, error, updateOrderStatus, refresh };
 };

@@ -21,10 +21,8 @@ type SocketEvent struct {
 }
 
 const (
-	OFFER_LIST_REFRESH        = "OFFER_LIST_REFRESH"
-	OFFER_ROOM                = "offer_updates"
-	RED_ENVELOPE_LIST_REFRESH = "RED_ENVELOPE_LIST_REFRESH"
-	RED_ENVELOPE_ROOM         = "red_envelope_updates"
+	OFFER_LIST_REFRESH = "OFFER_LIST_REFRESH"
+	OFFER_ROOM         = "offer_updates"
 	DONATION_RECEIVED         = "DONATION_RECEIVED"
 )
 

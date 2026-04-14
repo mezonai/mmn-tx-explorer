@@ -5,6 +5,7 @@ import (
 	"dong-service/logger"
 	"dong-service/models"
 	"dong-service/repository"
+	"dong-service/services"
 	"dong-service/utils"
 	"fmt"
 	"net/http"
@@ -17,13 +18,15 @@ type RedEnvelopeHandler struct {
 	repo         *repository.RedEnvelopeRepository
 	walletRepo   *repository.IntermediaryWalletRepository
 	queueService *repository.RedEnvelopeQueueService
+	service      *services.RedEnvelopeService
 }
 
-func NewRedEnvelopeHandler(repo *repository.RedEnvelopeRepository, queueService *repository.RedEnvelopeQueueService, walletRepo *repository.IntermediaryWalletRepository) *RedEnvelopeHandler {
+func NewRedEnvelopeHandler(repo *repository.RedEnvelopeRepository, queueService *repository.RedEnvelopeQueueService, walletRepo *repository.IntermediaryWalletRepository, service *services.RedEnvelopeService) *RedEnvelopeHandler {
 	return &RedEnvelopeHandler{
 		repo:         repo,
 		queueService: queueService,
 		walletRepo:   walletRepo,
+		service:      service,
 	}
 }
 
@@ -291,6 +294,38 @@ func (r *RedEnvelopeHandler) UpdateStatusRedEnvelope(c *gin.Context) {
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeUpdated, map[string]interface{}{
 		"id":     req.ID,
 		"status": statusRedEnvelope,
+	}))
+}
+
+// InternalUpdateStatusRedEnvelope godoc
+// @Summary internal update status red envelope
+// @Description internal update status red envelope to published or failed (batch)
+// @Tags internal
+// @Accept json
+// @Produce json
+// @Param request body models.UpdateRedEnvelopeStatusBatchRequest true "Update Status Batch Request"
+// @Success 200 {object} models.Response{data=object}
+// @Failure 400 {object} models.Response
+// @Failure 401 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Router /api/v1/internal/update-status-red-envelope [post]
+func (r *RedEnvelopeHandler) InternalUpdateStatusRedEnvelope(c *gin.Context) {
+	var batchReq models.UpdateRedEnvelopeStatusBatchRequest
+	if err := c.ShouldBindJSON(&batchReq); err != nil {
+		logger.Error().Err(err).Msg("Invalid internal update status request")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody))
+		return
+	}
+
+	count, err := r.service.InternalUpdateStatusBatch(c.Request.Context(), batchReq.Updates)
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to update red envelope status batch")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToUpdateRedEnvelopeStatus))
+		return
+	}
+
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeUpdated, map[string]interface{}{
+		"count": count,
 	}))
 }
 

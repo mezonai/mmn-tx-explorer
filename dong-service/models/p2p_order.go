@@ -11,8 +11,9 @@ const (
 	OrderStatusPending   OrderStatus = "PENDING"
 	OrderStatusConfirmed OrderStatus = "CONFIRMED"
 	OrderStatusOpen      OrderStatus = "OPEN"
-	OrderStatusCanceled  OrderStatus = "CANCELED"
-	OrderStatusFailed    OrderStatus = "FAILED"
+	OrderStatusCanceled  OrderStatus = "CANCELED" // Manual cancellation by user (currently not used)
+	OrderStatusExpired   OrderStatus = "EXPIRED"  // Automatic expiration by cron job
+	OrderStatusFailed    OrderStatus = "FAILED"   // Blockchain transaction failed
 	OrderStatusCompleted OrderStatus = "COMPLETED"
 )
 
@@ -25,9 +26,11 @@ type Order struct {
 	PayableAmount             types.BigIntString `json:"payable_amount" db:"payable_amount"`
 	TransactionHash           *string            `json:"transaction_hash,omitempty" db:"transaction_hash"`
 	Status                    string             `json:"status" db:"status"`
+	PreviousStatus            *string            `json:"previous_status,omitempty" db:"previous_status"`
 	TransferCode              *string            `json:"transfer_code,omitempty" db:"transfer_code"`
 	ExpiresAt                 *time.Time         `json:"expires_at,omitempty" db:"expires_at"`
 	PaymentInfoID             *int64             `json:"payment_info_id,omitempty" db:"payment_info_id"`
+	InDispute                 bool               `json:"in_dispute" db:"in_dispute"`
 	CreatedAt                 time.Time          `json:"created_at" db:"created_at"`
 	UpdatedAt                 time.Time          `json:"updated_at" db:"updated_at"`
 	PaymentInfo               *UserPaymentInfo   `json:"payment_info,omitempty" db:"-"`
