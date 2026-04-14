@@ -3,12 +3,13 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import { useForm, FormProvider, UseFormReturn } from 'react-hook-form';
 import { CreateRedEnvelopeForm, CreateRedEnvelopeRequest, RedEnvelope } from '../type';
-import { DEFAULT_FORM_VALUES } from '../constants';
+import { DEFAULT_FORM_VALUES, TIMEOUT_MS } from '../constants';
 import { useUser } from '@/providers';
 import { mmnClient } from '@/modules/auth';
 import { useTransfer } from '@/modules/transfer/hooks/useTransfer';
 import { toast } from 'sonner';
-import { ETransferType } from '@/modules/transaction';
+import { RedEnvelopeService } from '../api';
+import { ETransactionStatus, ETransferType } from '@/modules/transaction';
 import { useCreateRedEnvelope } from '../hooks/useCreateRedEnvelope';
 
 interface CreateRedEnvelopeContextType {
@@ -23,6 +24,7 @@ interface CreateRedEnvelopeContextType {
   isSuccess: boolean;
   resetForm: () => void;
   userBalance: number;
+  onRedEnvelopeStatusUpdated: (redEnvelopeId: string) => void;
 }
 
 const CreateRedEnvelopeContext = createContext<CreateRedEnvelopeContextType | undefined>(undefined);
@@ -43,6 +45,20 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
   const [isSuccess, setIsSuccess] = useState(false);
   const [totalAmount, setTotalAmount] = useState<number>(0);
   const [userBalance, setUserBalance] = useState<number>(0);
+  const [pendingEnvelopeId, setPendingEnvelopeId] = useState<string | null>(null);
+  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
+
+  const clearPendingTimeout = useCallback(() => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      setTimeoutId(null);
+    }
+  }, [timeoutId]);
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => clearPendingTimeout();
+  }, [clearPendingTimeout]);
 
   const fetchUserBalance = useCallback(async () => {
     if (!user || !user.id) return;
@@ -99,30 +115,55 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
           recipientAddress: envelope.red_envelope_wallet,
           amount: data.totalAmount.toString(),
           note: data.message,
+          redEnvelopeId: envelope.id,
         },
         ETransferType.LuckyMoney
       );
 
       if (result.success) {
-        toast.success('Lucky Money created successfully! The indexer will process it shortly.');
-        // Indexer will automatically update red envelope status when transaction is confirmed
+        toast.success('Transfer money successfully, waiting for confirmation...');
+        if (!result.txHash) throw new Error('Transaction hash not found.');
+
+        setPendingEnvelopeId(envelope.id);
         setGeneratedEnvelope(envelope);
-        setIsSuccess(true);
-        fetchUserBalance();
+
+        // Start a fallback timer in case the websocket event never arrives
+        const newTimeoutId = setTimeout(() => {
+          setIsProcessing(false);
+          setPendingEnvelopeId(null);
+          toast.error('Server is taking longer than expected. Please refresh or check your history.');
+        }, TIMEOUT_MS);
+
+        setTimeoutId(newTimeoutId);
       } else {
-        toast.error('Transfer failed. Please try again.');
-        setGeneratedEnvelope(null);
+        toast.error('Transfer failed.');
+        await RedEnvelopeService.updateRedEnvelopeStatus({ id: envelope.id, status: ETransactionStatus.Failed });
+        setIsProcessing(false);
       }
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : String(error);
       toast.error(errMsg);
       setGeneratedEnvelope(null);
-    } finally {
       setIsProcessing(false);
     }
-  }, [methods, createRequestFromData, createRedEnvelopeMutation, transfer, fetchUserBalance]);
+  }, [methods, transfer, createRedEnvelopeMutation, createRequestFromData]);
 
   const resetForm = useCallback(() => methods.reset(), [methods]);
+
+  const onRedEnvelopeStatusUpdated = useCallback(
+    (redEnvelopeId: string) => {
+      // Check if this is the envelope we're waiting for
+      if (pendingEnvelopeId === redEnvelopeId && isProcessing) {
+        clearPendingTimeout();
+        setIsProcessing(false);
+        setIsSuccess(true);
+        toast.success('Create Lucky Money successfully');
+        fetchUserBalance();
+        setPendingEnvelopeId(null);
+      }
+    },
+    [pendingEnvelopeId, isProcessing, fetchUserBalance, clearPendingTimeout]
+  );
 
   return (
     <CreateRedEnvelopeContext.Provider
@@ -138,6 +179,7 @@ export function CreateRedEnvelopeProvider({ children }: { children: ReactNode })
         isSuccess,
         resetForm,
         userBalance,
+        onRedEnvelopeStatusUpdated,
       }}
     >
       <FormProvider {...methods}>{children}</FormProvider>
