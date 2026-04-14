@@ -40,7 +40,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 	queueService := repository.NewRedEnvelopeQueueService(database.RedisClient)
 	intermediaryWalletRepo := repository.NewIntermediaryWalletRepository(database.GetDB(), cfg.Database.Schema)
 	redEnvelopeRepo := repository.NewRedEnvelopeRepository(database.GetDB(), cfg.Database.Schema, blockchainService, intermediaryWalletRepo, queueService)
-	redEnvelopeService := services.NewRedEnvelopeService(redEnvelopeRepo)
+	redEnvelopeService := services.NewRedEnvelopeService(redEnvelopeRepo, intermediaryWalletRepo, queueService)
 	redEnvelopeHandler := handlers.NewRedEnvelopeHandler(redEnvelopeRepo, queueService, intermediaryWalletRepo, redEnvelopeService)
 
 	// API v1 routes

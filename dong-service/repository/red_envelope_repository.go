@@ -947,107 +947,46 @@ func (r *RedEnvelopeRepository) GetRedEnvelopeDescriptionByID(redEnvelopeID stri
 	return description, nil
 }
 
-func (r *RedEnvelopeRepository) UpdateStatusInternal(ctx context.Context, id, status, txHash string) (string, error) {
+func (r *RedEnvelopeRepository) UpdateStatusInternal(ctx context.Context, id, status, txHash string) (*models.RedEnvelope, error) {
 	query := fmt.Sprintf(`
 		UPDATE %s.red_envelope
 		SET status = $1, transaction_hash = $2, updated_at = $3
 		WHERE id = $4
-		RETURNING id, name, description, red_envelope_wallet, owner_wallet, total_amount, total_claims, end_date, is_random_distribution, min_amount, max_amount
+		RETURNING id, name, description, total_amount, min_amount, max_amount, 
+			   total_claims, claimed_count, red_envelope_wallet, owner_wallet, 
+			   creator, status, transaction_hash, is_random_distribution, 
+			   start_date, end_date, created_at, updated_at
 	`, r.dongSchema)
 
-	var envelope struct {
-		ID                   string
-		Name                 string
-		Description          *string
-		RedEnvelopeWallet    string
-		OwnerWallet          string
-		TotalAmount          int64
-		TotalClaims          int64
-		EndDate              *time.Time
-		IsRandomDistribution bool
-		MinAmount            *int64
-		MaxAmount            *int64
-	}
+	envelope := &models.RedEnvelope{}
 
 	err := r.db.QueryRowContext(ctx, query, status, txHash, time.Now(), id).Scan(
 		&envelope.ID,
 		&envelope.Name,
 		&envelope.Description,
-		&envelope.RedEnvelopeWallet,
-		&envelope.OwnerWallet,
 		&envelope.TotalAmount,
-		&envelope.TotalClaims,
-		&envelope.EndDate,
-		&envelope.IsRandomDistribution,
 		&envelope.MinAmount,
 		&envelope.MaxAmount,
+		&envelope.TotalClaims,
+		&envelope.ClaimedCount,
+		&envelope.RedEnvelopeWallet,
+		&envelope.OwnerWallet,
+		&envelope.Creator,
+		&envelope.Status,
+		&envelope.TransactionHash,
+		&envelope.IsRandomDistribution,
+		&envelope.StartDate,
+		&envelope.EndDate,
+		&envelope.CreatedAt,
+		&envelope.UpdatedAt,
 	)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return "", fmt.Errorf("red envelope not found")
+			return nil, fmt.Errorf("red envelope not found")
 		}
-		return "", fmt.Errorf("failed to update status and fetch envelope: %w", err)
+		return nil, fmt.Errorf("failed to update status and fetch envelope: %w", err)
 	}
 
-	if status == constants.RedEnvelopeStatusFailed {
-		if err := r.walletRepo.ReleaseWallet(ctx, envelope.RedEnvelopeWallet); err != nil {
-			logger.Error().Err(err).Str("address", envelope.RedEnvelopeWallet).Msg("Failed to release intermediary wallet")
-		} else {
-			logger.Info().Str("address", envelope.RedEnvelopeWallet).Msg("Released intermediary wallet")
-		}
-	}
-
-	if status == constants.RedEnvelopeStatusPublished && r.queueService != nil {
-		ttl := 2 * 24 * time.Hour
-		if envelope.EndDate != nil {
-			ttl = time.Until(*envelope.EndDate)
-			if ttl < 0 {
-				ttl = 24 * time.Hour
-			}
-		}
-
-		var amounts []int64
-		var errGen error
-		if envelope.IsRandomDistribution && envelope.MinAmount != nil && envelope.MaxAmount != nil {
-			amounts, errGen = utils.GenerateRandomAmounts(envelope.TotalAmount, *envelope.MinAmount, *envelope.MaxAmount, int(envelope.TotalClaims))
-			if errGen != nil {
-				logger.Error().Err(errGen).Str("red_envelope_id", envelope.ID).Msg("Failed to generate random amounts")
-				return "", fmt.Errorf("failed to generate random amounts: %w", errGen)
-			}
-		} else {
-			totalClaims := envelope.TotalClaims
-			baseAmount := envelope.TotalAmount / totalClaims
-			remainder := envelope.TotalAmount % totalClaims
-
-			amounts = make([]int64, totalClaims)
-			for i := int64(0); i < totalClaims; i++ {
-				if i < remainder {
-					amounts[i] = baseAmount + 1
-				} else {
-					amounts[i] = baseAmount
-				}
-			}
-		}
-
-		var descriptionStr string
-		if envelope.Description != nil {
-			descriptionStr = *envelope.Description
-		}
-		errGen = r.queueService.InitializeRedEnvelope(id, amounts, descriptionStr, ttl)
-		if errGen != nil {
-			logger.Error().
-				Err(errGen).
-				Str("red_envelope_id", id).
-				Msg("Failed to initialize queue for red envelope")
-		} else {
-			logger.Info().
-				Str("red_envelope_id", id).
-				Int64("total_claims", envelope.TotalClaims).
-				Dur("ttl", ttl).
-				Msg("Initialized queue for red envelope")
-		}
-	}
-
-	return envelope.OwnerWallet, nil
+	return envelope, nil
 }
