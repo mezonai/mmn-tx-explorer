@@ -21,38 +21,38 @@ on:
         type: string
 
       build_frontend:
-        description: "Build/repackage Frontend"
+        description: "Build Frontend"
         type: boolean
         default: false
       redeploy_frontend_tag:
-        description: "(Optional) Frontend version to redeploy/repackage"
+        description: "(Optional) Frontend version"
         required: false
         type: string
 
       build_dong:
-        description: "Build/repackage Dong Service"
+        description: "Build Dong"
         type: boolean
         default: false
       redeploy_dong_tag:
-        description: "(Optional) Dong version to redeploy/repackage"
+        description: "(Optional) Dong version"
         required: false
         type: string
 
       build_indexer:
-        description: "Build/repackage Indexer Service"
+        description: "Build Indexer"
         type: boolean
         default: false
       redeploy_indexer_tag:
-        description: "(Optional) Indexer version to redeploy/repackage"
+        description: "(Optional) Indexer version"
         required: false
         type: string
 
       build_socket:
-        description: "Build/repackage WebSocket Service"
+        description: "Build WebSocket"
         type: boolean
         default: false
       redeploy_socket_tag:
-        description: "(Optional) Socket version to redeploy/repackage"
+        description: "(Optional) Socket version"
         required: false
         type: string
 
@@ -62,7 +62,6 @@ jobs:
     runs-on: [self-hosted, Linux, mezon-runner]
     outputs:
       target_tag: ${{ steps.plan.outputs.target_tag }}
-      release_tag: ${{ steps.plan.outputs.release_tag }}
       should_release: ${{ steps.plan.outputs.should_release }}
 
       frontend_mode: ${{ steps.plan.outputs.frontend_mode }}
@@ -74,6 +73,11 @@ jobs:
       dong_source_tag: ${{ steps.plan.outputs.dong_source_tag }}
       indexer_source_tag: ${{ steps.plan.outputs.indexer_source_tag }}
       socket_source_tag: ${{ steps.plan.outputs.socket_source_tag }}
+
+      frontend_effective_tag: ${{ steps.state.outputs.frontend_effective_tag }}
+      dong_effective_tag: ${{ steps.state.outputs.dong_effective_tag }}
+      indexer_effective_tag: ${{ steps.state.outputs.indexer_effective_tag }}
+      socket_effective_tag: ${{ steps.state.outputs.socket_effective_tag }}
     steps:
       - name: Checkout for git history
         uses: actions/checkout@v4
@@ -105,12 +109,13 @@ jobs:
 
           calc_next_tag() {
             local latest
-            latest=$(git tag -l 'release-v*' --sort=-v:refname | head -n1)
+            latest=$(git tag -l 'v*' --sort=-v:refname | head -n1)
             if [ -z "$latest" ]; then
               echo "v0.1.0"
               return
             fi
-            local version=${latest#release-}
+            local version=${latest#v}
+
             version=${version#v}
             local major minor patch
             major=$(echo "$version" | cut -d. -f1)
@@ -158,10 +163,8 @@ jobs:
             else
               TARGET_TAG=$(calc_next_tag)
             fi
-            RELEASE_TAG="release-${TARGET_TAG}"
           else
             TARGET_TAG=""
-            RELEASE_TAG=""
           fi
 
           if [ "$FRONTEND_MODE" = "skip" ] && [ "$DONG_MODE" = "skip" ] && [ "$INDEXER_MODE" = "skip" ] && [ "$SOCKET_MODE" = "skip" ]; then
@@ -170,7 +173,6 @@ jobs:
           fi
 
           echo "target_tag=$TARGET_TAG" >> $GITHUB_OUTPUT
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
           echo "should_release=$SHOULD_RELEASE" >> $GITHUB_OUTPUT
 
           echo "frontend_mode=$FRONTEND_MODE" >> $GITHUB_OUTPUT
@@ -187,7 +189,91 @@ jobs:
           echo "Dong => $DONG_MODE (source=$DONG_SOURCE_TAG)"
           echo "Indexer => $INDEXER_MODE (source=$INDEXER_SOURCE_TAG)"
           echo "Socket => $SOCKET_MODE (source=$SOCKET_SOURCE_TAG)"
-          echo "Target release => ${RELEASE_TAG:-<none>}"
+          echo "Target release => ${TARGET_TAG:-<none>}"
+
+      - name: Load and update service state
+        id: state
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FRONTEND_MODE: ${{ steps.plan.outputs.frontend_mode }}
+          DONG_MODE: ${{ steps.plan.outputs.dong_mode }}
+          INDEXER_MODE: ${{ steps.plan.outputs.indexer_mode }}
+          SOCKET_MODE: ${{ steps.plan.outputs.socket_mode }}
+          TARGET_TAG: ${{ steps.plan.outputs.target_tag }}
+          FRONTEND_SOURCE_TAG: ${{ steps.plan.outputs.frontend_source_tag }}
+          DONG_SOURCE_TAG: ${{ steps.plan.outputs.dong_source_tag }}
+          INDEXER_SOURCE_TAG: ${{ steps.plan.outputs.indexer_source_tag }}
+          SOCKET_SOURCE_TAG: ${{ steps.plan.outputs.socket_source_tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p state
+          STATE_FILE="state/service-state.json"
+
+          if gh release view current-state >/dev/null 2>&1; then
+            gh release download current-state --pattern "service-state.json" --dir state || true
+          fi
+
+          if [ ! -f "$STATE_FILE" ]; then
+            cat > "$STATE_FILE" <<'EOF'
+          {
+            "frontend": "",
+            "dong": "",
+            "indexer": "",
+            "socket": ""
+          }
+          EOF
+          fi
+
+          python3 - <<'PY'
+          import json, os
+
+          state_file = "state/service-state.json"
+          with open(state_file, "r", encoding="utf-8") as f:
+              state = json.load(f)
+
+          def effective(mode, source_tag, target_tag, current_value):
+              if mode in ("build", "repackage"):
+                  return target_tag or current_value or ""
+              if mode == "redeploy":
+                  return source_tag or current_value or ""
+              return current_value or ""
+
+          frontend_mode = os.environ["FRONTEND_MODE"]
+          dong_mode = os.environ["DONG_MODE"]
+          indexer_mode = os.environ["INDEXER_MODE"]
+          socket_mode = os.environ["SOCKET_MODE"]
+
+          target_tag = os.environ["TARGET_TAG"]
+
+          frontend_source = os.environ["FRONTEND_SOURCE_TAG"]
+          dong_source = os.environ["DONG_SOURCE_TAG"]
+          indexer_source = os.environ["INDEXER_SOURCE_TAG"]
+          socket_source = os.environ["SOCKET_SOURCE_TAG"]
+
+          state["frontend"] = effective(frontend_mode, frontend_source, target_tag, state.get("frontend", ""))
+          state["dong"] = effective(dong_mode, dong_source, target_tag, state.get("dong", ""))
+          state["indexer"] = effective(indexer_mode, indexer_source, target_tag, state.get("indexer", ""))
+          state["socket"] = effective(socket_mode, socket_source, target_tag, state.get("socket", ""))
+
+          with open(state_file, "w", encoding="utf-8") as f:
+              json.dump(state, f, indent=2)
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
+              out.write(f'frontend_effective_tag={state["frontend"]}\n')
+              out.write(f'dong_effective_tag={state["dong"]}\n')
+              out.write(f'indexer_effective_tag={state["indexer"]}\n')
+              out.write(f'socket_effective_tag={state["socket"]}\n')
+          PY
+
+      - name: Upload service state artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-state
+          path: state/service-state.json
+          if-no-files-found: error
+
 
   deploy-indexer:
     needs: [determine_tags]
@@ -199,7 +285,6 @@ jobs:
       mode: ${{ needs.determine_tags.outputs.indexer_mode }}
       target_tag: ${{ needs.determine_tags.outputs.target_tag }}
       source_tag: ${{ needs.determine_tags.outputs.indexer_source_tag }}
-      release_tag: ${{ needs.determine_tags.outputs.release_tag }}
     secrets:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       EVENT_API_KEY: ${{ secrets.EVENT_API_KEY }}
@@ -214,7 +299,6 @@ jobs:
       mode: ${{ needs.determine_tags.outputs.dong_mode }}
       target_tag: ${{ needs.determine_tags.outputs.target_tag }}
       source_tag: ${{ needs.determine_tags.outputs.dong_source_tag }}
-      release_tag: ${{ needs.determine_tags.outputs.release_tag }}
     secrets:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
@@ -234,7 +318,6 @@ jobs:
       mode: ${{ needs.determine_tags.outputs.frontend_mode }}
       target_tag: ${{ needs.determine_tags.outputs.target_tag }}
       source_tag: ${{ needs.determine_tags.outputs.frontend_source_tag }}
-      release_tag: ${{ needs.determine_tags.outputs.release_tag }}
     secrets:
       NEXT_PUBLIC_COBAR_API_KEY: ${{ secrets.NEXT_PUBLIC_COBAR_API_KEY }}
       NEXT_PUBLIC_MEZON_SERVER_KEY: ${{ secrets.NEXT_PUBLIC_MEZON_SERVER_KEY }}
@@ -249,7 +332,6 @@ jobs:
       mode: ${{ needs.determine_tags.outputs.socket_mode }}
       target_tag: ${{ needs.determine_tags.outputs.target_tag }}
       source_tag: ${{ needs.determine_tags.outputs.socket_source_tag }}
-      release_tag: ${{ needs.determine_tags.outputs.release_tag }}
     secrets:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
@@ -276,23 +358,44 @@ jobs:
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ needs.determine_tags.outputs.release_tag }}
-          name: Release ${{ needs.determine_tags.outputs.release_tag }}
+          tag_name: ${{ needs.determine_tags.outputs.target_tag }}
+          name: Release ${{ needs.determine_tags.outputs.target_tag }}
           overwrite: true
           body: |
             Target build tag: ${{ needs.determine_tags.outputs.target_tag }}
 
-            Frontend: ${{ needs.determine_tags.outputs.frontend_mode }}
-            Frontend-Source: ${{ needs.determine_tags.outputs.frontend_source_tag }}
-
-            Dong: ${{ needs.determine_tags.outputs.dong_mode }}
-            Dong-Source: ${{ needs.determine_tags.outputs.dong_source_tag }}
-
-            Socket: ${{ needs.determine_tags.outputs.socket_mode }}
-            Socket-Source: ${{ needs.determine_tags.outputs.socket_source_tag }}
-
-            Indexer: ${{ needs.determine_tags.outputs.indexer_mode }}
-            Indexer-Source: ${{ needs.determine_tags.outputs.indexer_source_tag }}
+            Frontend: ${{ needs.determine_tags.outputs.frontend_effective_tag }}
+            Dong: ${{ needs.determine_tags.outputs.dong_effective_tag }}
+            Indexer: ${{ needs.determine_tags.outputs.indexer_effective_tag }}
+            Socket: ${{ needs.determine_tags.outputs.socket_effective_tag }}
           files: release-assets/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update_current_state:
+    needs: [determine_tags, create_release]
+    runs-on: ubuntu-latest
+    if: |
+      always() &&
+      needs.determine_tags.result == 'success'
+    steps:
+      - name: Download service state
+        uses: actions/download-artifact@v4
+        with:
+          name: service-state
+          path: state
+
+      - name: Publish current-state release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: current-state
+          name: Current State
+          overwrite: true
+          body: |
+            Frontend: ${{ needs.determine_tags.outputs.frontend_effective_tag }}
+            Dong: ${{ needs.determine_tags.outputs.dong_effective_tag }}
+            Indexer: ${{ needs.determine_tags.outputs.indexer_effective_tag }}
+            Socket: ${{ needs.determine_tags.outputs.socket_effective_tag }}
+          files: state/service-state.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

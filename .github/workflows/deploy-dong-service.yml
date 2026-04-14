@@ -13,7 +13,7 @@ on:
         description: "Git ref (branch, tag, or commit)"
         required: true
         default: "main"
-      existing_tag_to_deploy:
+      target_tag:
         description: "(Optional) Existing tag"
         required: false
 
@@ -34,9 +34,6 @@ on:
       source_tag:
         type: string
         required: false
-      release_tag:
-        type: string
-        required: false
     secrets:
       POSTGRES_PASSWORD:
         required: true
@@ -55,6 +52,7 @@ on:
 
 jobs:
   build:
+    if: inputs.mode != 'skip'
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
     outputs:
@@ -117,10 +115,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          
           mkdir -p build
           OWNER=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f1)
           REPO=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f2)
-          SRC_RELEASE="release-${{ inputs.source_tag }}"
+          SRC_RELEASE="${{ inputs.source_tag }}"
           SRC_ASSET="dong-service-${{ inputs.source_tag }}"
           URL="https://github.com/$OWNER/$REPO/releases/download/$SRC_RELEASE/$SRC_ASSET"
           echo "Downloading $URL"
@@ -155,7 +154,7 @@ jobs:
           ref: ${{ inputs.ref }}
           clean: false
           fetch-depth: 1
-          
+
       - name: Download prepared asset
         if: inputs.mode == 'build' || inputs.mode == 'repackage'
         uses: actions/download-artifact@v4
@@ -182,7 +181,7 @@ jobs:
 
           OWNER=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f1)
           REPO=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f2)
-          TAG_NAME="release-${{ inputs.source_tag }}"
+          TAG_NAME="${{ inputs.source_tag }}"
           BINARY_NAME="dong-service-${{ inputs.source_tag }}"
           BINARY_PATH="build/dong-service-${{ inputs.source_tag }}"
           DOWNLOAD_URL="https://github.com/$OWNER/$REPO/releases/download/$TAG_NAME/$BINARY_NAME"
