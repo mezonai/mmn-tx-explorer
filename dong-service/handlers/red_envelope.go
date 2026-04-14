@@ -280,7 +280,7 @@ func (r *RedEnvelopeHandler) UpdateStatusRedEnvelope(c *gin.Context) {
 		statusRedEnvelope = constants.RedEnvelopeStatusPublished
 	}
 
-	err := r.repo.UpdateStatus(c, req.ID, statusRedEnvelope)
+	err := r.repo.UpdateStatus(c, req.ID, statusRedEnvelope, nil)
 	if err != nil {
 		logger.Error().Err(err).Str("envelope_id", req.ID).Msg("Failed to update red envelope status")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToUpdateRedEnvelopeStatus))
@@ -533,6 +533,7 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelopeQR(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeAmountClaimed, result))
 }
+
 // ClaimAmountRedEnvelopeQR_Legacy godoc
 // @Summary Claim red envelope amount via QR (ZK authentication)
 // @Description Get claim amount for red envelope using ZK proof authentication
@@ -592,6 +593,7 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelopeQRLegacy(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeAmountClaimed, result))
 }
+
 // ClaimRedEnvelopeQR godoc
 // @Summary Claim red envelope via QR (ZK authentication)
 // @Description Claim red envelope and receive money using ZK proof authentication

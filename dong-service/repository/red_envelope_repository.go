@@ -278,20 +278,6 @@ func (r *RedEnvelopeRepository) GetStats() (map[string]interface{}, error) {
 	return result, nil
 }
 
-func (r *RedEnvelopeRepository) UpdateRefundTxHash(ctx context.Context, id, txHash string) error {
-	query := fmt.Sprintf(`
-		UPDATE %s.red_envelope
-		SET refund_tx_hash = $1, updated_at = $2
-		WHERE id = $3
-	`, r.dongSchema)
-
-	_, err := r.db.ExecContext(ctx, query, txHash, time.Now(), id)
-	if err != nil {
-		return fmt.Errorf("failed to update refund_tx_hash: %w", err)
-	}
-	return nil
-}
-
 func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status string, txHash *string) error {
 	var (
 		envelope struct {
@@ -311,12 +297,24 @@ func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status str
 	)
 
 	if txHash != nil {
-		query := fmt.Sprintf(`
-			UPDATE %s.red_envelope
-			SET status = $1, transaction_hash = $2, updated_at = $3
-			WHERE id = $4
-			RETURNING id, name, description, red_envelope_wallet, owner_wallet, total_amount, total_claims, end_date, is_random_distribution, min_amount, max_amount
-		`, r.dongSchema)
+		var query string
+		// For EXPIRED and CLOSED, use refund_tx_hash
+		if status == constants.RedEnvelopeStatusExpired || status == constants.RedEnvelopeStatusClosed {
+			query = fmt.Sprintf(`
+				UPDATE %s.red_envelope
+				SET status = $1, refund_tx_hash = $2, updated_at = $3
+				WHERE id = $4
+				RETURNING id, name, description, red_envelope_wallet, owner_wallet, total_amount, total_claims, end_date, is_random_distribution, min_amount, max_amount
+			`, r.dongSchema)
+		} else {
+			// For PUBLISHED, PENDING, FAILED, etc., use transaction_hash
+			query = fmt.Sprintf(`
+				UPDATE %s.red_envelope
+				SET status = $1, transaction_hash = $2, updated_at = $3
+				WHERE id = $4
+				RETURNING id, name, description, red_envelope_wallet, owner_wallet, total_amount, total_claims, end_date, is_random_distribution, min_amount, max_amount
+			`, r.dongSchema)
+		}
 
 		err = r.db.QueryRowContext(ctx, query, status, *txHash, time.Now(), id).Scan(
 			&envelope.ID,
@@ -670,7 +668,7 @@ func (r *RedEnvelopeRepository) GetDetailRedEnvelopeByID(id string) (models.Deta
 		TotalClaim:         result.TotalClaim,
 		ClaimedCount:       result.ClaimedCount,
 		TotalClaimedAmount: result.TotalClaimedAmount,
-		EndDate:            result.EndDate,
+		EndDate:            &result.EndDate,
 	}, nil
 }
 
@@ -763,20 +761,12 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 		}
 	}
 
-	err = r.UpdateStatus(ctx, redEnvelopeID, constants.RedEnvelopeStatusClosed, nil)
+	err = r.UpdateStatus(ctx, redEnvelopeID, constants.RedEnvelopeStatusClosed, txPtr)
 	if err != nil {
 		logger.Error().
 			Err(err).
 			Str("red_envelope_id", redEnvelopeID).
 			Msg("Failed to update status to CLOSED")
-	}
-	if txPtr != nil {
-		if refundErr := r.UpdateRefundTxHash(ctx, redEnvelopeID, *txPtr); refundErr != nil {
-			logger.Error().
-				Err(refundErr).
-				Str("red_envelope_id", redEnvelopeID).
-				Msg("Failed to update refund_tx_hash")
-		}
 	}
 	return nil
 }

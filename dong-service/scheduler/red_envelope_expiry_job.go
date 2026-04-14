@@ -89,22 +89,13 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 			continue
 		}
 
-		err = j.redEnvelopeRepo.UpdateStatus(ctx, envelope.ID, constants.RedEnvelopeStatusExpired, nil)
+		err = j.redEnvelopeRepo.UpdateStatus(ctx, envelope.ID, constants.RedEnvelopeStatusExpired, txPtr)
 		if err != nil {
 			logger.Error().
 				Err(err).
 				Str("red_envelope_id", envelope.ID).
 				Msg("Failed to update status to EXPIRED")
 			continue
-		}
-
-		if txPtr != nil {
-			if refundErr := j.redEnvelopeRepo.UpdateRefundTxHash(ctx, envelope.ID, *txPtr); refundErr != nil {
-				logger.Error().
-					Err(refundErr).
-					Str("red_envelope_id", envelope.ID).
-					Msg("Failed to update refund_tx_hash")
-			}
 		}
 
 		wallet, err := j.walletRepo.GetWalletByAddress(ctx, envelope.RedEnvelopeWallet)

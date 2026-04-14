@@ -41,6 +41,7 @@ const (
 	RedEnvelopeStatusPublished = "PUBLISHED" // Active and claimable
 	RedEnvelopeStatusExpired   = "EXPIRED"   // Session ended
 	RedEnvelopeStatusFailed    = "FAILED"    // Transaction failed after retries
+	RedEnvelopeStatusClosed    = "CLOSED"    // Fully claimed by users
 )
 
 // Red Envelope Claim Status Constants
@@ -82,8 +83,6 @@ const (
 	RedEnvelopeQueueStatusNotInitialize      = "QUEUE_NOT_INITIALIZE"
 	RedEnvelopeStatusOk                      = "OK"
 )
-
-
 
 const (
 	AmountError = 0
