@@ -9,7 +9,6 @@ export const getVisualStatus = (apiStatus: string): VisualStatus => {
     case 'failed':
       return 'failed';
     case 'expired':
-      return 'closed';
     case 'closed':
       return 'closed';
     default:
@@ -17,10 +16,7 @@ export const getVisualStatus = (apiStatus: string): VisualStatus => {
   }
 };
 
-export const formatClaimDate = (
-  dateString: string | undefined,
-  showTime: boolean = false
-): string => {
+export const formatClaimDate = (dateString: string | undefined, showTime: boolean = false): string => {
   if (!dateString) return '';
 
   try {
@@ -54,7 +50,9 @@ export const truncateWalletAddress = (address: string, chars = 6): string => {
   return `${address.substring(0, chars)}...${address.substring(address.length - chars)}`;
 };
 
-export const getStatusDisplay = (status: string | undefined): {
+export const getStatusDisplay = (
+  status: string | undefined
+): {
   text: string;
   className: string;
 } => {
