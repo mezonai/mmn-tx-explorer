@@ -89,7 +89,7 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 			continue
 		}
 
-		err = j.redEnvelopeRepo.UpdateStatus(ctx, envelope.ID, constants.RedEnvelopeStatusExpired, txPtr)
+		err = j.redEnvelopeRepo.UpdateStatus(ctx, envelope.ID, constants.RedEnvelopeStatusExpired, nil, txPtr)
 		if err != nil {
 			logger.Error().
 				Err(err).
