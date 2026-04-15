@@ -26,8 +26,6 @@ export enum ETransactionStatus {
   Confirmed = 1,
   Passed = 2,
   Failed = 3,
-  Expired = 4,
-  Closed = 5,
 }
 
 export enum ETransactionOrientation {
