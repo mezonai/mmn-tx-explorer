@@ -519,7 +519,7 @@ func (r *OrderRepository) CountOrdersByOffer(ctx context.Context, tx *sql.Tx, of
 	query := fmt.Sprintf(`
 		SELECT COUNT(*) 
 		FROM %s.p2p_orders
-		WHERE offer_id = $1
+		WHERE offer_id = $1 AND status IN ('PENDING','OPEN','WAITING_TRANSFER') LIMIT 1 FOR UPDATE
 	`, r.dongSchema)
 
 	var total int64
