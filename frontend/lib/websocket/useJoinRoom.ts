@@ -80,9 +80,7 @@ export const useJoinRoom = (roomId: string, shouldJoin: boolean = true) => {
       if (!wsManager.isConnected()) return;
 
       try {
-        const ok = wsManager.sendRaw(
-          JSON.stringify({ type: SOCKET_MESSAGE.MSG_JOIN_ROOM, room: roomId })
-        );
+        const ok = wsManager.sendRaw(JSON.stringify({ type: SOCKET_MESSAGE.MSG_JOIN_ROOM, room: roomId }));
 
         if (ok) {
           joiningRef.current = true;
@@ -97,12 +95,10 @@ export const useJoinRoom = (roomId: string, shouldJoin: boolean = true) => {
     const doLeave = () => {
       if (!wsManager) return;
       if (!joinedRef.current && !joiningRef.current) return;
-      
+
       try {
-        const ok = wsManager.sendRaw(
-          JSON.stringify({ type: SOCKET_MESSAGE.MSG_LEAVE_ROOM, room: roomId })
-        );
-        
+        const ok = wsManager.sendRaw(JSON.stringify({ type: SOCKET_MESSAGE.MSG_LEAVE_ROOM, room: roomId }));
+
         if (!ok) {
           console.error(`[useJoinRoom][WS] Failed to send leave room message for room: ${roomId}`);
         }
