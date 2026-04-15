@@ -946,3 +946,47 @@ func (r *RedEnvelopeRepository) GetRedEnvelopeDescriptionByID(redEnvelopeID stri
 	}
 	return description, nil
 }
+
+func (r *RedEnvelopeRepository) UpdateStatusInternal(ctx context.Context, id, status, txHash string) (*models.RedEnvelope, error) {
+	query := fmt.Sprintf(`
+		UPDATE %s.red_envelope
+		SET status = $1, transaction_hash = $2, updated_at = $3
+		WHERE id = $4
+		RETURNING id, name, description, total_amount, min_amount, max_amount, 
+			   total_claims, claimed_count, red_envelope_wallet, owner_wallet, 
+			   creator, status, transaction_hash, is_random_distribution, 
+			   start_date, end_date, created_at, updated_at
+	`, r.dongSchema)
+
+	envelope := &models.RedEnvelope{}
+
+	err := r.db.QueryRowContext(ctx, query, status, txHash, time.Now(), id).Scan(
+		&envelope.ID,
+		&envelope.Name,
+		&envelope.Description,
+		&envelope.TotalAmount,
+		&envelope.MinAmount,
+		&envelope.MaxAmount,
+		&envelope.TotalClaims,
+		&envelope.ClaimedCount,
+		&envelope.RedEnvelopeWallet,
+		&envelope.OwnerWallet,
+		&envelope.Creator,
+		&envelope.Status,
+		&envelope.TransactionHash,
+		&envelope.IsRandomDistribution,
+		&envelope.StartDate,
+		&envelope.EndDate,
+		&envelope.CreatedAt,
+		&envelope.UpdatedAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("red envelope not found")
+		}
+		return nil, fmt.Errorf("failed to update status and fetch envelope: %w", err)
+	}
+
+	return envelope, nil
+}
