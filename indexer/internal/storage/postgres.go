@@ -14,9 +14,9 @@ import (
 	"github.com/lib/pq"
 	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/integration/dong"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/services"
-	"github.com/mezonai/mmn-tx-explorer/indexer/internal/integration/dong"
 	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
 	"github.com/rs/zerolog/log"
 )
@@ -3133,4 +3133,3 @@ func (p *PostgresConnector) failOfferStatus(
 
 	return nil
 }
-
