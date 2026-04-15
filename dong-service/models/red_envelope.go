@@ -101,3 +101,13 @@ type RedEnvelopeCloseSesssion struct {
 type ClaimRedEnvelopeRequest struct {
 	SplitMoneyID int64 `json:"split_money_id" binding:"required"`
 }
+
+type UpdateRedEnvelopeStatusRequest struct {
+	ID              string `json:"id" binding:"required"`
+	Status          int    `json:"status" binding:"required"`
+	TransactionHash string `json:"transaction_hash"`
+}
+
+type UpdateRedEnvelopeStatusBatchRequest struct {
+	Updates []UpdateRedEnvelopeStatusRequest `json:"updates" binding:"required,dive"`
+}

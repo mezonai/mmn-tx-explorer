@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
-import { useWebSocket } from '@/lib/websocket';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useJoinRoom } from '@/lib/websocket';
 import { P2PHeader } from './p2p-header';
 import { useP2POffers } from '../../hooks/useP2POffers';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -24,10 +24,8 @@ import { AvailableAmountFilter } from './filters/available-amount-filter';
 import { SortFilter } from './filters/sort-filter';
 import { P2PMobileFilters } from './filters/p2p-mobile-filters';
 import { SOCKET_MESSAGE } from '@/lib/websocket/constants';
-import { useState } from 'react';
 
 export const P2P = () => {
-  const wsManager = useWebSocket();
   const { page, limit, handleChangePage, handleChangeLimit } = usePaginationQueryParam();
   const { updateParams } = useUpdateQueryParams();
 
@@ -35,108 +33,12 @@ export const P2P = () => {
     queryParam: 'tab',
     defaultValue: P2P_TAB.OFFERS,
   });
-
-  const joinedRef = useRef(false);
-  const joiningRef = useRef(false);
-  const intervalRef = useRef<number | null>(null);
+  const { wsManager } = useJoinRoom(SOCKET_MESSAGE.ROOM_OFFER_UPDATES, tab === P2P_TAB.OFFERS);
   const [cancelingOfferId, setCancelingOfferId] = useState<string | null>(null);
 
   const handleCancelStart = useCallback((offerId: string) => {
     setCancelingOfferId(offerId);
   }, []);
-
-  useEffect(() => {
-    const clearJoinInterval = () => {
-      if (intervalRef.current !== null) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-
-    const markJoined = () => {
-      joinedRef.current = true;
-      joiningRef.current = false;
-      clearJoinInterval();
-    };
-
-    const markLeft = () => {
-      joinedRef.current = false;
-      joiningRef.current = false;
-    };
-
-    const parseRoomEvent = (evt: unknown): { type: string; room: string } | null => {
-      if (typeof evt === 'string') {
-        const [type, r] = evt.split(':');
-        if (type && r) {
-          return { type, room: r };
-        }
-        return null;
-      }
-
-      if (evt && typeof evt === 'object') {
-        const e = evt as Record<string, unknown>;
-        if (typeof e.type === 'string' && typeof e.room === 'string') {
-          return { type: e.type, room: e.room };
-        }
-      }
-
-      return null;
-    };
-
-    const serverHandler = (evt: unknown) => {
-      const parsed = parseRoomEvent(evt);
-      if (!parsed || parsed.room !== SOCKET_MESSAGE.ROOM_OFFER_UPDATES) return;
-
-      switch (parsed.type) {
-        case SOCKET_MESSAGE.SERVER_JOINED_ROOM_PREFIX:
-          markJoined();
-          break;
-        case SOCKET_MESSAGE.SERVER_LEFT_ROOM_PREFIX:
-          markLeft();
-          break;
-      }
-    };
-
-    const doJoin = () => {
-      if (!wsManager) return;
-      if (joinedRef.current || joiningRef.current) return;
-      if (!wsManager.isConnected()) return;
-
-      const ok = wsManager.sendRaw(
-        JSON.stringify({ type: SOCKET_MESSAGE.MSG_JOIN_ROOM, room: SOCKET_MESSAGE.ROOM_OFFER_UPDATES })
-      );
-
-      if (ok) {
-        joiningRef.current = true;
-      }
-    };
-
-    const doLeave = () => {
-      if (!wsManager) return;
-      if (!joinedRef.current && !joiningRef.current) return;
-      wsManager.sendRaw(
-        JSON.stringify({ type: SOCKET_MESSAGE.MSG_LEAVE_ROOM, room: SOCKET_MESSAGE.ROOM_OFFER_UPDATES })
-      );
-
-      markLeft();
-    };
-
-    wsManager?.on(SOCKET_MESSAGE.ROOM_OFFER_UPDATES, serverHandler);
-
-    if (tab === P2P_TAB.OFFERS) {
-      doJoin();
-      if (!joinedRef.current && intervalRef.current === null) {
-        intervalRef.current = window.setInterval(doJoin, 500);
-      }
-    } else {
-      doLeave();
-    }
-    return () => {
-      clearJoinInterval();
-      doLeave();
-      wsManager?.off(SOCKET_MESSAGE.ROOM_OFFER_UPDATES, serverHandler);
-    };
-  }, [wsManager, tab]);
 
   const { value: min } = useQueryParam<number>({
     queryParam: 'min',
