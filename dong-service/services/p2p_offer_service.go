@@ -331,11 +331,11 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 		return fmt.Errorf("cannot cancel offer: one or more orders are in dispute")
 	}
 
-	orderCount, err := s.orderRepo.CountOrdersByOffer(ctx, tx, offerId)
+	hasActiveOrders, err := s.orderRepo.HasActiveOrders(ctx, offerId, tx)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to check active orders: %w", err)
 	}
-	if orderCount > 0 {
+	if hasActiveOrders {
 		return fmt.Errorf(constants.ErrFailedToCancelOfferWithOrder)
 	}
 
