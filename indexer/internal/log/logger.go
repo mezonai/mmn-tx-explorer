@@ -12,6 +12,12 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
+const (
+	defaultMaxSize    = 100
+	defaultMaxBackups = 10
+	defaultMaxAge     = 30
+)
+
 func InitLogger() {
 	// overrides zerolog global logger
 	log.Logger = NewLogger("indexer")
@@ -72,17 +78,17 @@ func createFileWriter(logConfig config.LogConfig) (io.Writer, error) {
 	// Set default values for rotation if not specified
 	maxSize := logConfig.MaxSize
 	if maxSize == 0 {
-		maxSize = 100 // 100MB default
+		maxSize = defaultMaxSize
 	}
 
 	maxBackups := logConfig.MaxBackups
 	if maxBackups == 0 {
-		maxBackups = 10 // Keep max 10 old log files
+		maxBackups = defaultMaxBackups
 	}
 
 	maxAge := logConfig.MaxAge
 	if maxAge == 0 {
-		maxAge = 30 // 30 days default
+		maxAge = defaultMaxAge
 	}
 
 	// Use lumberjack for log rotation
