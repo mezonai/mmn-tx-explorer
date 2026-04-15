@@ -13,13 +13,13 @@ const CampaignHeader = memo(function CampaignHeader({ type = 'create' }: Campaig
           description={`Start a new donation campaign on Mezon ${APP_CONFIG.CHAIN_SYMBOL} to raise funds for your cause.`}
         />
       )}
-      {type === 'edit' &&
-      <PageHeader
-        title="Edit Campaign"
-        header="Edit donation campaign"
-        description={`Changes made here will update the live campaign on Mezon ${APP_CONFIG.CHAIN_SYMBOL}.`}
-      />
-      }
+      {type === 'edit' && (
+        <PageHeader
+          title="Edit Campaign"
+          header="Edit donation campaign"
+          description={`Changes made here will update the live campaign on Mezon ${APP_CONFIG.CHAIN_SYMBOL}.`}
+        />
+      )}
     </>
   );
 });

@@ -927,17 +927,13 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 		}
 
 		if len(affectedDonationAddrs) > 0 {
-			maxConcurrency := 50
-			sem := make(chan struct{}, maxConcurrency)
 			var wg sync.WaitGroup
 
 			for addr := range affectedDonationAddrs {
 				wg.Add(1)
-				sem <- struct{}{}
 
 				go func(toAddress string) {
 					defer wg.Done()
-					defer func() { <-sem }()
 
 					if err := services.SendSocketEventDirect(toAddress, services.DONATION_RECEIVED, nil); err != nil {
 						log.Error().Err(err).Str("to_address", toAddress).Msg("Failed to send donation notification socket event")
