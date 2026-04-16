@@ -143,7 +143,7 @@ func InternalAuth(expectedKey string) gin.HandlerFunc {
 
 		key := c.GetHeader("X-Internal-Key")
 		if key == "" || key != expectedKey {
-			logger.Error().Msg("Invalid internal API key")
+			logger.Error().Str("key", key).Str("expected_key", expectedKey).Msg("Invalid internal API key")
 			abortWithError(c, http.StatusUnauthorized, constants.ErrUnauthorized)
 			return
 		}
