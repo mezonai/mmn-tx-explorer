@@ -39,7 +39,6 @@ on:
 jobs:
   determine_tags:
     runs-on: [self-hosted, Linux, mezon-runner]
-    if: ${{ inputs.deploy_indexer == true || inputs.deploy_dong == true }}
     outputs:
       target_tag: ${{ steps.get_tag.outputs.target_tag }}
       skip_build: ${{ steps.get_tag.outputs.skip_build}}
@@ -112,11 +111,14 @@ jobs:
       VERIFYING_KEY_B64: ${{ secrets.VERIFYING_KEY_B64 }}
  
   deploy-frontend:
+    needs: [determine_tags]
     if: inputs.deploy_frontend == true
     uses: ./.github/workflows/deploy-frontend-service.yml
     with:
       env: ${{ inputs.env }}
       ref: ${{ inputs.ref }}
+      target_tag: ${{ needs.determine_tags.outputs.target_tag }} 
+      skip_build: ${{ needs.determine_tags.outputs.skip_build }}
     secrets:
       NEXT_PUBLIC_COBAR_API_KEY: ${{ secrets.NEXT_PUBLIC_COBAR_API_KEY }}
       NEXT_PUBLIC_MEZON_SERVER_KEY: ${{ secrets.NEXT_PUBLIC_MEZON_SERVER_KEY }}
