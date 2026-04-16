@@ -105,6 +105,12 @@ jobs:
           echo "==> Copying env file to target server..."
           scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} frontend.env ${{ vars.HOST_ALIAS }}:/tmp/frontend_tmp.env
 
+          echo "==> Preparing permissions on server..."
+          ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "
+            set -e
+            sudo chown -R mmn:mmn /opt/frontend
+          "
+
           echo "==> Syncing Frontend build to target..."
           rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" frontend/.next/standalone/ ${{ vars.HOST_ALIAS }}:/opt/frontend/.next/standalone/
           rsync -az --delete -e "ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }}" frontend/public/ ${{ vars.HOST_ALIAS }}:/opt/frontend/.next/standalone/public/
@@ -116,7 +122,7 @@ jobs:
             
             echo '==> Updating /opt/frontend/frontend.env...'
             sudo mv /tmp/frontend_tmp.env /opt/frontend/frontend.env
-            sudo chown -R mmn:mmn /opt/frontend
+            sudo chown mmn:mmn /opt/frontend.env
             sudo chmod 644 /opt/frontend/frontend.env
             
             rm -f /tmp/frontend_tmp.env
