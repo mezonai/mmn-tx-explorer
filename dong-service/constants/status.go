@@ -68,6 +68,8 @@ const (
 const (
 	RedEnvelopeInitialWalletPool  = 50 // Number of wallets to create on deployment
 	RedEnvelopeWalletMaxAgeInDays = 30 // Maximum age for unused wallets before replacement
+	RedEnvelopeDefaultTTLHours    = 48
+	RedEnvelopeMinTTLHours        = 24
 )
 
 const (

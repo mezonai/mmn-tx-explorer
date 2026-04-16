@@ -44,6 +44,7 @@ export const useTransfer = () => {
             type: transaction_type,
             ...(input.offerId && { offer_id: input.offerId }),
             ...(input.orderId && { order_id: input.orderId }),
+            ...(input.redEnvelopeId && { red_envelope_id: input.redEnvelopeId }),
           },
         });
 

@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { useUser } from '@/providers';
 import { UUID } from 'crypto';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -8,70 +7,95 @@ import { toast } from 'sonner';
 import { APP_CONFIG } from '@/configs/app.config';
 import { CloseSessionRequest, RedEnvelopeDetailStats } from '../type';
 import { formatClaimDate, getStatusDisplay } from '../utils';
-import { QUERY_KEYS } from '../constants';
+import { QUERY_KEYS, RED_ENVELOPE_EVENT_TYPES } from '../constants';
 import { RedEnvelopeService } from '../api';
+import { useWebSocket } from '@/lib/websocket';
+import { WebSocketEvent } from '@/lib/websocket/websocket-manager';
 
 export const useRedEnvelopeDetail = () => {
   const [qrSize, setQrSize] = useState(176);
   const { redEnvelopeId } = useParams<{ redEnvelopeId: UUID }>();
   const queryClient = useQueryClient();
 
-  const request: CloseSessionRequest = useMemo(() => ({
-    id: redEnvelopeId,
-  }), [redEnvelopeId]);
+  const request: CloseSessionRequest = useMemo(
+    () => ({
+      id: redEnvelopeId,
+    }),
+    [redEnvelopeId]
+  );
 
   const { stats, isLoading, isError, refetch } = useGetLuckMoneyDetail(redEnvelopeId);
   const recipients = useGetLuckMoneyRecipients(redEnvelopeId || '');
+  const wsManager = useWebSocket();
+
+  useEffect(() => {
+    if (!wsManager || !redEnvelopeId) return;
+
+    const handleRedEnvelopeUpdated = (event: WebSocketEvent) => {
+      const payload = event.payload;
+      if (payload && typeof payload === 'object') {
+        const data = payload as Record<string, unknown>;
+        if (data.red_envelope_id === redEnvelopeId) {
+          refetch();
+        }
+      }
+    };
+
+    wsManager.on(RED_ENVELOPE_EVENT_TYPES.RED_ENVELOPE_LIST_REFRESH, handleRedEnvelopeUpdated);
+
+    return () => {
+      wsManager.off(RED_ENVELOPE_EVENT_TYPES.RED_ENVELOPE_LIST_REFRESH, handleRedEnvelopeUpdated);
+    };
+  }, [wsManager, redEnvelopeId, refetch]);
 
   const { mutate: closeSession, isPending: isClosing } = useMutation({
     mutationFn: () => RedEnvelopeService.closeSession(request),
     onSuccess: () => {
       toast.success('Session closed successfully!');
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RED_ENVELOPE_DETAIL, redEnvelopeId] });
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CREATED_ENVELOPES] })
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RED_ENVELOPE_STATS_BY_USER]})
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CREATED_ENVELOPES] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RED_ENVELOPE_STATS_BY_USER] });
     },
     onError: (error) => {
       console.error('Failed to close session:', error);
       toast.error('Failed to close session. Please try again.');
-    }
+    },
   });
 
-  const { text: displayedStatus, className: statusClassName } = getStatusDisplay(
-    stats.status
-  );
+  const { text: displayedStatus, className: statusClassName } = getStatusDisplay(stats.status);
 
   const isClosable = stats.status.toLocaleLowerCase() === 'published';
 
-  const statsCards = useMemo(() => [
-    {
-      title: "TOTAL AMOUNT",
-      value: stats.total_amount.toLocaleString('en-US'),
-      unit: ` ${APP_CONFIG.CHAIN_SYMBOL}`,
-      subValue: '',
-    },
-    {
-      title: "CLAIMED",
-      value: stats.total_claimed_amount.toLocaleString('en-US'),
-      unit: ` ${APP_CONFIG.CHAIN_SYMBOL}`,
-      subValue: "(" + stats.claimed_count + "/" + stats.total_claim + ")",
-    },
-    {
-      title: "EXPIRY",
-      value: formatClaimDate(stats.end_date),
-      unit: '',
-      subValue: '',
-    },
-  ], [stats, APP_CONFIG.CHAIN_SYMBOL]);
+  const statsCards = useMemo(
+    () => [
+      {
+        title: 'TOTAL AMOUNT',
+        value: stats.total_amount.toLocaleString('en-US'),
+        unit: ` ${APP_CONFIG.CHAIN_SYMBOL}`,
+        subValue: '',
+      },
+      {
+        title: 'CLAIMED',
+        value: stats.total_claimed_amount.toLocaleString('en-US'),
+        unit: ` ${APP_CONFIG.CHAIN_SYMBOL}`,
+        subValue: '(' + stats.claimed_count + '/' + stats.total_claim + ')',
+      },
+      {
+        title: 'EXPIRY',
+        value: formatClaimDate(stats.end_date),
+        unit: '',
+        subValue: '',
+      },
+    ],
+    [stats, APP_CONFIG.CHAIN_SYMBOL]
+  );
 
   const pathName = process.env.NEXT_BASE_FE || window.location.origin;
-  const claimLink = redEnvelopeId
-    ? `${pathName}/lucky-money/${redEnvelopeId}/claim`
-    : '';
+  const claimLink = redEnvelopeId ? `${pathName}/lucky-money/${redEnvelopeId}/claim` : '';
 
   const qrCodeValue = JSON.stringify({
     type: 'lucky-money',
-    lucky_money_id: redEnvelopeId
+    lucky_money_id: redEnvelopeId,
   });
 
   useEffect(() => {
@@ -124,10 +148,10 @@ export function useGetLuckMoneyDetail(id: UUID) {
 
   return {
     stats: data ?? fallback,
-    isLoading, 
-    isError,  
-    error,     
-    refetch,  
+    isLoading,
+    isError,
+    error,
+    refetch,
   };
 }
 
