@@ -5,21 +5,50 @@ import { RedEnvelopeForm } from './red-envelope-form/red-envelope-form';
 import { IBreadcrumb } from '@/types';
 import { ROUTES } from '@/configs/routes.config';
 import { RedEnvelopeSidebar } from './red-envelope-sidebar';
-import { CreateRedEnvelopeProvider } from '../../context/CreateRedEnvelopeContext';
+import { CreateRedEnvelopeProvider, useCreateRedEnvelopeContext } from '../../context/CreateRedEnvelopeContext';
+import { wsManager } from '@/lib/websocket';
+import type { WebSocketEvent } from '@/lib/websocket/websocket-manager';
+import { RED_ENVELOPE_EVENT_TYPES } from '../../constants';
+import { useEffect } from 'react';
 
 const breadcrumbs: IBreadcrumb[] = [
-  { label: 'Lucky Money', href: ROUTES.LUCKY_MONEY},
+  { label: 'Lucky Money', href: ROUTES.LUCKY_MONEY },
   { label: 'Create Lucky Money', href: '#' },
 ] as const;
 
 function CreateRedEnvelopeContent() {
+  const { onRedEnvelopeStatusUpdated } = useCreateRedEnvelopeContext();
+
+  useEffect(() => {
+    const handleRedEnvelopeListRefresh = (event: WebSocketEvent) => {
+      const payload = event.payload;
+      if (payload && typeof payload === 'object') {
+        const data = payload as Record<string, unknown>;
+        const redEnvelopeId = (data as { red_envelope_id?: unknown }).red_envelope_id;
+        if (typeof redEnvelopeId === 'string' && redEnvelopeId) {
+          onRedEnvelopeStatusUpdated(redEnvelopeId);
+        } else {
+          console.error('[LuckyMoney][WS] Invalid red_envelope_id in payload:', redEnvelopeId);
+        }
+      } else {
+        console.error('[LuckyMoney][WS] RED_ENVELOPE_LIST_REFRESH payload is not an object');
+      }
+    };
+
+    wsManager.on(RED_ENVELOPE_EVENT_TYPES.RED_ENVELOPE_LIST_REFRESH, handleRedEnvelopeListRefresh);
+
+    return () => {
+      wsManager.off(RED_ENVELOPE_EVENT_TYPES.RED_ENVELOPE_LIST_REFRESH, handleRedEnvelopeListRefresh);
+    };
+  }, [onRedEnvelopeStatusUpdated]);
+
   return (
-    <div className="container mx-auto max-w-7xl space-y-8 sm:space-y-12 md:space-y-16 px-3 sm:px-4 pb-8 sm:pb-12 md:pb-16">
-      <div className="space-y-4 sm:space-y-6 md:space-y-8"> 
+    <div className="container mx-auto max-w-7xl space-y-8 px-3 pb-8 sm:space-y-12 sm:px-4 sm:pb-12 md:space-y-16">
+      <div className="space-y-4 sm:space-y-6 md:space-y-8">
         <div className="space-y-2 sm:space-y-4">
           <BreadcrumbNavigation breadcrumbs={breadcrumbs} />
         </div>
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4">
+        <div className="flex flex-col items-start justify-between gap-3 sm:gap-4 md:flex-row md:items-center">
           <PageHeader
             title="Lucky Money"
             header="Create Lucky Money drops with QR codes and lucky messages."

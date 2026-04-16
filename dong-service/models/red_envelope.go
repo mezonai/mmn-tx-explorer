@@ -55,6 +55,7 @@ type RedEnvelopeClaim struct {
 	ClaimerWallet   string    `json:"claimer_wallet" db:"claimer_wallet"`
 	ClaimerUserID   *int64    `json:"claimer_user_id,omitempty" db:"claimer_user_id"`
 	Amount          int64     `json:"amount" db:"amount"`
+	Status          string    `json:"status" db:"status"`
 	ClaimedAt       time.Time `json:"claimed_at" db:"claimed_at"`
 	TransactionHash *string   `json:"transaction_hash,omitempty" db:"transaction_hash"`
 }
@@ -96,24 +97,16 @@ type RedEnvelopeCloseSesssion struct {
 	OwnerWallet       string
 }
 
-type ClaimAmount struct {
-	ID          int64
-	Amount      int64
-	Description string
-}
-
-type RedEnvelopeSplitMoney struct {
-	ID             int64   `json:"id" db:"id"`
-	RedEnvelopeID  string  `json:"red_envelope_id" db:"red_envelope_id"`
-	Amount         int64   `json:"amount" db:"amount"`
-	Status         string  `json:"status" db:"status"`
-	ClaimOrder     int     `json:"claim_order" db:"claim_order"`
-	ClaimedUserID  int64   `json:"claimed_user_id,omitempty" db:"claimed_user_id"`
-	ClaimedAddress *string `json:"claimed_address,omitempty" db:"claimed_address"`
-	ClaimedAt      *string `json:"claimed_at,omitempty" db:"claimed_at"`
-	CreatedAt      string  `json:"created_at" db:"created_at"`
-}
-
 type ClaimRedEnvelopeRequest struct {
 	SplitMoneyID int64 `json:"split_money_id" binding:"required"`
+}
+
+type UpdateRedEnvelopeStatusRequest struct {
+	ID              string `json:"id" binding:"required"`
+	Status          int    `json:"status" binding:"required"`
+	TransactionHash string `json:"transaction_hash"`
+}
+
+type UpdateRedEnvelopeStatusBatchRequest struct {
+	Updates []UpdateRedEnvelopeStatusRequest `json:"updates" binding:"required,dive"`
 }

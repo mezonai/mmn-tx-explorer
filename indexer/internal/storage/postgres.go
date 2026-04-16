@@ -16,6 +16,7 @@ import (
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/services"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/integration/dong"
 	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
 	"github.com/rs/zerolog/log"
 )
@@ -30,6 +31,7 @@ type PostgresConnector struct {
 	db             *sql.DB
 	cfg            *config.PostgresConfig
 	mmnGrpcService *rpc.MMNGrpcService
+	dongClient     *dong.Client
 	// Wallet update optimization
 	walletUpdateBatcher *WalletUpdateBatcher
 }
@@ -267,6 +269,11 @@ func NewPostgresConnector(cfg *config.PostgresConfig) (*PostgresConnector, error
 		} else {
 			connector.mmnGrpcService = mmn
 		}
+	}
+
+	// Initialize Dong Service client if URL is provided
+	if config.Cfg.Event.DongAPIURL != "" {
+		connector.dongClient = dong.NewClient(config.Cfg.Event.DongAPIURL, config.Cfg.Event.APIKey)
 	}
 
 	// Initialize wallet update batcher
@@ -820,6 +827,8 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 		failedBuyExtraMap := make(map[string]struct{ OfferID, OrderID int64 })
 		failedSellTxMap := make(map[string]common.Transaction)
 		failedSellOfferIDMap := make(map[string]int64)
+		luckyMoneyTxs := make([]common.Transaction, 0)
+		failedLuckyMoneyTxs := make([]common.Transaction, 0)
 
 		for i := range blockData.Transactions {
 			t := blockData.Transactions[i]
@@ -849,6 +858,8 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 						failedBuyTxMap[t.Hash] = t
 						failedBuyExtraMap[t.Hash] = struct{ OfferID, OrderID int64 }{OfferID: extra.OfferID, OrderID: extra.OrderID}
 					}
+				case common.TransactionExtraInfoLuckyMoney:
+					failedLuckyMoneyTxs = append(failedLuckyMoneyTxs, t)
 				}
 				continue
 			}
@@ -864,6 +875,8 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 					buyTxMap[t.Hash] = t
 					buyExtraMap[t.Hash] = struct{ OfferID, OrderID int64 }{OfferID: extra.OfferID, OrderID: extra.OrderID}
 				}
+			case common.TransactionExtraInfoLuckyMoney:
+				luckyMoneyTxs = append(luckyMoneyTxs, t)
 			}
 		}
 		if err = p.updateOfferStatus(ctx, tx, sellTxMap, sellOfferIDMap); err != nil {
@@ -880,6 +893,20 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 		}
 		if err = p.failOfferStatus(ctx, tx, failedSellTxMap, failedSellOfferIDMap); err != nil {
 			log.Error().Err(err).Msg("Failed to fail offer status after inserting transactions")
+			return err
+		}
+		if err = p.updateRedEnvelopeClaimStatus(ctx, tx, luckyMoneyTxs); err != nil {
+			log.Error().Err(err).Msg("Failed to update red envelope claim status")
+			return err
+		}
+
+		if err = p.updateRedEnvelopeStatus(ctx, tx, luckyMoneyTxs); err != nil {
+			log.Error().Err(err).Msg("Failed to update red envelope status after inserting transactions")
+			return err
+		}
+
+		if err = p.failRedEnvelopeStatus(ctx, tx, failedLuckyMoneyTxs); err != nil {
+			log.Error().Err(err).Msg("Failed to fail red envelope status after inserting transactions")
 			return err
 		}
 
@@ -3068,3 +3095,4 @@ func (p *PostgresConnector) failOfferStatus(
 
 	return nil
 }
+

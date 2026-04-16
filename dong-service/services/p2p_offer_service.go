@@ -264,7 +264,7 @@ func (s *OfferService) GetOfferByID(ctx context.Context, id int64) (*models.Offe
 			offer.HasActiveOrder = &hasActive
 		}
 
-		count, countErr := s.orderRepo.CountOrdersByOffer(ctx, id)
+		count, countErr := s.orderRepo.CountOrdersByOffer(ctx, nil, id)
 		if countErr == nil {
 			offer.OrderCount = count
 		}
@@ -322,11 +322,20 @@ func (s *OfferService) CancelOffer(ctx context.Context, offerId int64, offer *mo
 		}
 	}()
 
-	hasActive, err := s.orderRepo.HasActiveOrders(ctx, offerId, tx)
+	// Block cancellation if any order is in dispute (expired while buyer had already confirmed payment).
+	hasDisputed, err := s.orderRepo.HasDisputedOrders(ctx, offerId, tx)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to check disputed orders: %w", err)
 	}
-	if hasActive {
+	if hasDisputed {
+		return fmt.Errorf("cannot cancel offer: one or more orders are in dispute")
+	}
+
+	hasActiveOrders, err := s.orderRepo.HasActiveOrders(ctx, offerId, tx)
+	if err != nil {
+		return fmt.Errorf("failed to check active orders: %w", err)
+	}
+	if hasActiveOrders {
 		return fmt.Errorf(constants.ErrFailedToCancelOfferWithOrder)
 	}
 
