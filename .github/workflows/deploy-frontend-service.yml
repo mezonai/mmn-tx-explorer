@@ -13,8 +13,15 @@ on:
         description: "Git ref (branch, tag, or commit)"
         required: true
         default: "main"
-      existing_tag_to_deploy:
+      mode:
+        type: string
+        required: true
+        default: "build"
+      target_tag:
         description: "(Optional) Existing tag to deploy"
+        required: false
+      source_tag:
+        type: string
         required: false
 
   workflow_call:
@@ -25,12 +32,15 @@ on:
       ref:
         type: string
         required: true
+      mode:
+        type: string
+        required: true
       target_tag:
         type: string
-        required: true
-      skip_build:
+        required: false
+      source_tag:
         type: string
-        required: true
+        required: false
     secrets:
       NEXT_PUBLIC_COBAR_API_KEY:
         required: true
@@ -42,7 +52,9 @@ jobs:
     runs-on: [self-hosted, Linux, mezon-runner]
     environment: ${{ inputs.env }}
     outputs:
-      tag_name: ${{ steps.build_frontend.outputs.tag_name }}
+      deploy_tag: ${{ steps.meta.outputs.deploy_tag }}
+      asset_name: ${{ steps.meta.outputs.asset_name }}
+      asset_path: ${{ steps.meta.outputs.asset_path }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -51,16 +63,30 @@ jobs:
           clean: false
           fetch-depth: 1
 
+      - name: Prepare metadata
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ inputs.mode }}" = "redeploy" ]; then
+            DEPLOY_TAG="${{ inputs.source_tag }}"
+          else
+            DEPLOY_TAG="${{ inputs.target_tag }}"
+          fi
+          echo "deploy_tag=$DEPLOY_TAG" >> $GITHUB_OUTPUT
+          echo "asset_name=frontend-build-${DEPLOY_TAG}-${{ inputs.env }}.tar.gz" >> $GITHUB_OUTPUT
+          echo "asset_path=build-frontend/frontend-build-${DEPLOY_TAG}-${{ inputs.env }}.tar.gz" >> $GITHUB_OUTPUT
+
       - name: Setup Node.js
-        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
+        if: inputs.mode == 'build'
         uses: actions/setup-node@v3
         with:
           node-version: "20"
           cache: ''
 
       - name: Build Frontend
-        if: inputs.skip_build == 'false' || inputs.existing_tag_to_deploy == ''
-        id: build_frontend
+        if: inputs.mode == 'build'
+        id: build-frontend
         env: 
           NEXT_PUBLIC_APP_API_URL: ${{ vars.NEXT_PUBLIC_APP_API_URL }}
           APP_API_URL_INTERNAL: ${{ vars.APP_API_URL_INTERNAL }}
@@ -79,6 +105,8 @@ jobs:
           NEXT_PUBLIC_WEBSOCKET_URL: ${{ vars.NEXT_PUBLIC_WEBSOCKET_URL }}
           NEXT_PUBLIC_MEZON_SERVER_KEY: ${{ secrets.NEXT_PUBLIC_MEZON_SERVER_KEY }}
         run: |
+          set -euo pipefail
+
           cd frontend
 
           rm -rf .next node_modules
@@ -86,7 +114,6 @@ jobs:
           npm run build
 
           mkdir -p .deploy
-
           cp -r .next/standalone/* .deploy/
           mkdir -p .deploy/.next
           cp -r .next/static .deploy/.next/
@@ -94,26 +121,40 @@ jobs:
 
           cd .deploy
 
-          TAG_NAME="${{ inputs.target_tag }}"
-          if [ -z "$TAG_NAME" ]; then TAG_NAME="v0.0.0"; fi
-          
-          ARTIFACT_NAME="$TAG_NAME-${{ inputs.env }}"
-          
-          mkdir -p ../../build_frontend
-          tar -czf ../../build_frontend/frontend-build-${ARTIFACT_NAME}.tar.gz .
+          mkdir -p ../../build-frontend
+          tar -czf "../../${{ steps.meta.outputs.asset_path }}" .
 
-          echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
-          echo "artifact_name=${ARTIFACT_NAME}" >> $GITHUB_OUTPUT
+      - name: Download source asset for repackage
+        if: inputs.mode == 'repackage'
+        shell: bash
+        run: |
+          set -euo pipefail
 
-      - name: Create Release and Upload Bundle
-        if: inputs.skip_build == 'false'
-        uses: softprops/action-gh-release@v2
+          mkdir -p build-frontend
+          OWNER=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f1)
+          REPO=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f2)
+          SRC_RELEASE="${{ inputs.source_tag }}"
+          SRC_ASSET="frontend-build-${{ inputs.source_tag }}-${{ inputs.env }}.tar.gz"
+          URL="https://github.com/$OWNER/$REPO/releases/download/$SRC_RELEASE/$SRC_ASSET"
+          echo "Downloading $URL"
+          curl -sSL --fail -o "${{ steps.meta.outputs.asset_path }}" "$URL"
+          chmod +x "${{ steps.meta.outputs.asset_path }}"
+
+      - name: Upload packaged asset for release
+        if: inputs.mode == 'build' || inputs.mode == 'repackage'
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: ${{ steps.build_frontend.outputs.tag_name }}
-          name: "Release ${{ steps.build_frontend.outputs.tag_name }}"
-          target_commitish: ${{ inputs.ref }}
-          fail_on_unmatched_files: true
-          files: build_frontend/frontend-build-${{ steps.build_frontend.outputs.artifact_name }}.tar.gz
+          name: frontend-release-asset
+          path: ${{ steps.meta.outputs.asset_path }}
+          if-no-files-found: error
+
+      - name: Upload deploy asset
+        if: inputs.mode == 'build' || inputs.mode == 'repackage'
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-deploy-asset
+          path: ${{ steps.meta.outputs.asset_path }}
+          if-no-files-found: error
 
   deploy:
     needs: build
@@ -122,51 +163,50 @@ jobs:
     environment: ${{ inputs.env }}
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          clean: false
+          fetch-depth: 1
+      
+      - name: Download prepared asset
+        if: inputs.mode == 'build' || inputs.mode == 'repackage'
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-deploy-asset
+          path: build-frontend
+
       - name: Determine Frontend Tag
         id: determine_tag
         run: |
-          TAG_INPUT=""
-          if [ -n "${{ needs.build.outputs.tag_name }}" ]; then
-            TAG_INPUT="${{ needs.build.outputs.tag_name }}"
-          elif [ -n "${{ inputs.existing_tag_to_deploy }}" ]; then 
-            TAG_INPUT="${{ inputs.existing_tag_to_deploy }}"
-          elif [ "${{ needs.build.result }}" == "success" ]; then
-            TAG_INPUT="${{ needs.build.outputs.tag_name }}"
+          if [ "${{ inputs.mode }}" = "redeploy" ]; then
+            TAG_TO_DEPLOY="${{ inputs.source_tag }}"
           else
-            echo "::error::Cannot proceed. No existing tag was provided and the build job did not succeed."
-            exit 1
+            TAG_TO_DEPLOY="${{ inputs.target_tag }}"
           fi
-
-          if [[ ! "$TAG_INPUT" == v* ]]; then
-            TAG_TO_DEPLOY="v$TAG_INPUT"
-            echo "==> Prefix 'v' was missing. Standardizing to: $TAG_TO_DEPLOY"
-          else
-            TAG_TO_DEPLOY="$TAG_INPUT"
-          fi
-
-          ARTIFACT_NAME="${TAG_TO_DEPLOY}-${{ inputs.env }}"
 
           echo "tag_name=$TAG_TO_DEPLOY" >> $GITHUB_OUTPUT
-          echo "frontend_name=frontend-build-$ARTIFACT_NAME.tar.gz" >> $GITHUB_OUTPUT
-          echo "frontend_path=build_frontend/frontend-build-$ARTIFACT_NAME.tar.gz" >> $GITHUB_OUTPUT
+          echo "asset_name=frontend-build-${TAG_TO_DEPLOY}-${{ inputs.env }}.tar.gz" >> $GITHUB_OUTPUT
+          echo "asset_path=build-frontend/frontend-build-${TAG_TO_DEPLOY}-${{ inputs.env }}.tar.gz" >> $GITHUB_OUTPUT
 
       - name: Download Frontend Release Bundle
-        if: inputs.existing_tag_to_deploy != ''
+        if: inputs.mode == 'redeploy'
         run: | 
-          set -e 
+          set -euo pipefail
+
           OWNER=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f1)
           REPO=$(echo "$GITHUB_REPOSITORY" | cut -d/ -f2)
           TAG_NAME="${{ steps.determine_tag.outputs.tag_name }}"
-          FRONTEND_NAME="${{ steps.determine_tag.outputs.frontend_name }}"
-          FRONTEND_PATH="${{ steps.determine_tag.outputs.frontend_path }}"
-
+          FRONTEND_NAME="${{ steps.determine_tag.outputs.asset_name }}"
+          FRONTEND_PATH="${{ steps.determine_tag.outputs.asset_path }}"
           DOWNLOAD_URL="https://github.com/${OWNER}/${REPO}/releases/download/${TAG_NAME}/${FRONTEND_NAME}"
 
           echo "==> Downloading Frontend Bundle from: $DOWNLOAD_URL"
-          
-          mkdir -p build_frontend
-
+          mkdir -p build-frontend
           curl -sSL --fail -L -o "$FRONTEND_PATH" "$DOWNLOAD_URL"
+          chmod +x "$FRONTEND_PATH"
+          ls -lh "$FRONTEND_PATH"
 
 
       - name: Generate remote setup script
@@ -197,7 +237,7 @@ jobs:
           scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} frontend.env ${{ vars.HOST_ALIAS }}:/tmp/frontend_tmp.env 
 
           echo "==> Copying frontend bundle..."
-          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ steps.determine_tag.outputs.frontend_path }} ${{ vars.HOST_ALIAS }}:/tmp/frontend.tar.gz
+          scp -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ steps.determine_tag.outputs.asset_path }} ${{ vars.HOST_ALIAS }}:/tmp/frontend.tar.gz
 
           echo "==> Applying configuration on server..."
           ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS}} "
