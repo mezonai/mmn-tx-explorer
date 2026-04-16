@@ -248,3 +248,9 @@ workMode:
 validation:
   # Validation mode: "disabled" (no validation), "minimal" (basic checks), or "strict" (comprehensive validation)
   mode: strict
+
+# Event Configuration
+event:
+  api_url: "http://host.docker.internal:8899/api/event"
+  api_key: "MezonDongServiceEventAPIKey2024!"
+  dong_api_url: "http://host.docker.internal:8888/api/v1/internal"

@@ -9,7 +9,7 @@ import { APP_CONFIG } from '@/configs/app.config';
 import { useTheme } from '@/providers/ThemeProvider';
 import { ROUTES } from '@/configs/routes.config';
 import { STORAGE_KEYS } from '@/constant';
-import { ChevronDown, Globe, Megaphone, Moon, Sun, LogOut } from 'lucide-react';
+import { ChevronDown, Globe, Megaphone, Moon, Sun, LogOut, CircleDollarSign, Settings } from 'lucide-react';
 import { Wallet02, ChevronRight } from '@/assets/icons';
 
 export const NavBarAuthPanel: React.FC = () => {
@@ -159,6 +159,26 @@ export const NavBarAuthPanel: React.FC = () => {
               </span>
               <ChevronRight className="h-4 w-4 text-gray-500 transition-all group-hover:translate-x-0.5" />
             </Button>
+            <a
+              href={ROUTES.TRANSFER}
+              className="group flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-gray-900 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800"
+            >
+              <span className="flex items-center space-x-2">
+                <CircleDollarSign className="text-brand-primary h-4 w-4" />
+                <span className="font-medium transition-colors">Transfer Funds</span>
+              </span>
+              <ChevronRight className="h-4 w-4 text-gray-500 transition-all group-hover:translate-x-0.5" />
+            </a>
+            <a
+              href={ROUTES.PROFILE}
+              className="group flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-gray-900 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800"
+            >
+              <span className="flex items-center space-x-2">
+                <Settings className="text-brand-primary h-4 w-4" />
+                <span className="font-medium transition-colors">Settings</span>
+              </span>
+              <ChevronRight className="h-4 w-4 text-gray-500 transition-all group-hover:translate-x-0.5" />
+            </a>
           </div>
 
           <div className="border-t border-gray-300 dark:border-gray-700"></div>

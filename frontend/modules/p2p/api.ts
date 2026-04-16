@@ -8,11 +8,26 @@ import {
   UpdateOfferStatusRequest,
   CreateOrderRequest,
   UpdateOrderStatusRequest,
+  UserPaymentInfo,
 } from './types';
 import { apiDongClient } from '@/service';
 import { P2P_ENDPOINTS } from './constants';
 
 export class P2PService {
+  static async getMyPaymentInfos(): Promise<UserPaymentInfo[]> {
+    const { data } = await apiDongClient.get<{ data: UserPaymentInfo[] }>(P2P_ENDPOINTS.USER_PAYMENTS_ME);
+    return data.data;
+  }
+
+  static async updatePaymentInfo(paymentData: Partial<UserPaymentInfo>): Promise<UserPaymentInfo> {
+    const { data } = await apiDongClient.post<{ data: UserPaymentInfo }>(P2P_ENDPOINTS.USER_PAYMENTS, paymentData);
+    return data.data;
+  }
+
+  static async deletePaymentInfo(id: string | number): Promise<void> {
+    await apiDongClient.delete(P2P_ENDPOINTS.DELETE_USER_PAYMENT(String(id)));
+  }
+
   static async getOffers(params: IP2POfferListParams): Promise<IPaginatedResponse<P2POffer[]>> {
     const { data } = await apiDongClient.get<IPaginatedResponse<P2POffer[]>>(P2P_ENDPOINTS.OFFERS, { params });
     return data;
@@ -57,6 +72,10 @@ export class P2PService {
     const { data } = await apiDongClient.get<{ data: P2POrder }>(P2P_ENDPOINTS.ORDER_BY_ID(orderId));
     return data.data;
   }
+  static async getOrdersByOffer(offerId: string): Promise<P2POrder[]> {
+    const { data } = await apiDongClient.get<{ data: P2POrder[] }>(P2P_ENDPOINTS.ORDERS_BY_OFFER(offerId));
+    return data.data;
+  }
 
   static async updateOrderStatus(orderId: string, status: string, transferCode?: string): Promise<P2POrder> {
     const updateData: UpdateOrderStatusRequest = {
@@ -67,5 +86,9 @@ export class P2PService {
     }
     const { data } = await apiDongClient.post<{ data: P2POrder }>(P2P_ENDPOINTS.ORDER_STATUS(orderId), updateData);
     return data.data;
+  }
+
+  static async reopenOrder(orderId: string): Promise<void> {
+    await apiDongClient.post(P2P_ENDPOINTS.REOPEN_ORDER(orderId));
   }
 }

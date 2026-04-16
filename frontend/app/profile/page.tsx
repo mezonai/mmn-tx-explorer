@@ -1,3 +1,4 @@
+import { ProtectedRoute } from '@/modules/auth/components/ProtectedRoute';
 import { Profile } from '@/modules/profile/components/profile';
 import type { Metadata } from 'next';
 
@@ -6,5 +7,9 @@ export const metadata: Metadata = {
 };
 
 export default function ProfilePage() {
-  return <Profile />;
+  return (
+    <ProtectedRoute title="Profile">
+      <Profile />
+    </ProtectedRoute>
+  );
 }

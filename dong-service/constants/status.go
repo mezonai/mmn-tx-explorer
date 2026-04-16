@@ -43,18 +43,19 @@ const (
 	RedEnvelopeStatusFailed    = "FAILED"    // Transaction failed after retries
 )
 
+// Red Envelope Claim Status Constants
+const (
+	RedEnvelopeClaimStatusPending = "PENDING" // Waiting for blockchain confirmation
+	RedEnvelopeClaimStatusSuccess = "SUCCESS" // Claim completed successfully
+	RedEnvelopeClaimStatusFailed  = "FAILED"  // Blockchain transfer failed
+)
+
 // Red Envelope Wallet Status Constants
 const (
 	RedEnvelopeWalletStatusReady          = "READY"           // Available for use
 	RedEnvelopeWalletStatusInUse          = "IN_USE"          // Currently assigned to a red envelope
 	RedEnvelopeWalletStatusPrepareReplace = "PREPARE_REPLACE" // Scheduled for replacement (>30 days old)
 	RedEnvelopeWalletStatusDisabled       = "DISABLED"        // No longer usable
-)
-
-const (
-	RedEnvelopeSplitMoneyStatusAvailable = "AVAILABLE"
-	RedEnvelopeSplitMoneyStatusReserved  = "RESERVED"
-	RedEnvelopeSplitMoneyStatusClaimed   = "CLAIMED"
 )
 
 const (
@@ -67,6 +68,8 @@ const (
 const (
 	RedEnvelopeInitialWalletPool  = 50 // Number of wallets to create on deployment
 	RedEnvelopeWalletMaxAgeInDays = 30 // Maximum age for unused wallets before replacement
+	RedEnvelopeDefaultTTLHours    = 48
+	RedEnvelopeMinTTLHours        = 24
 )
 
 const (
@@ -82,30 +85,40 @@ const (
 	RedEnvelopeStatusOk                      = "OK"
 )
 
+
+
 const (
-	ClaimStatusError         = 0
-	ClaimStatusSuccess       = 1
-	ClaimStatusAlreadyQueued = 2
+	AmountError = 0
 )
 
 const (
 	ExtraInfoLuckyMoney              = `{"type":"lucky-money"}`
+	ExtraInfoLuckyMoneyClaim         = `{"type":"lucky-money","claim_id":%d}`
 	ExtraInfoP2PTrading              = `{"type":"p2p-trading"}`
+	ExtraInfoP2PTradingBuyOffer      = `{"type":"p2p-trading-buy-offer"}`
 	ExtraInfoP2PTradingOfferCanceled = `{"type":"p2p-trading","action":"offer-canceled"}`
 )
 
 const (
-	TextDataLuckyMoney = "Lucky Money fund"
-	TextDataP2PTrading = "P2P Trading"
+	TextDataLuckyMoney     = "Lucky Money fund"
+	TextDataP2PTrading     = "P2P Trading"
+	TextDataP2PTradingFund = "P2P Trading Fund"
 )
 
 const (
+	TradingWaiting   = "WAITING_TRANSFER"
 	TradingOpen      = "OPEN"
 	TradingPending   = "PENDING"
 	TradingConfirmed = "CONFIRMED"
 	TradingCanceled  = "CANCELED"
+	TradingExpired   = "EXPIRED"
 	TradingFailed    = "FAILED"
 	TradingCompleted = "COMPLETED"
+)
+
+const (
+	OfferSideSell = "SELL"
+	OfferSideBuy  = "BUY"
 )
 
 // GetStatusName returns the human-readable name for a status code
@@ -131,10 +144,17 @@ func IsValidStatus(status int16) bool {
 
 // Offer related constants
 const (
-	MaxPriceRateOffer         float64 = 1000000.0
-	MaxLengthSymbol           int     = 64
-	MaxTotalBankInfoSize      int     = 1024
-	MaxIndividualBankInfoSize int     = 128
-	MaxActiveOffersPerUser    int64   = 10
-	MaxActiveOrdersPerUser    int     = 10
+	MaxPriceRateOffer      float64 = 1000000.0
+	MaxLengthSymbol        int     = 64
+	MaxActiveOffersPerUser int64   = 10
+	MaxActiveOrdersPerUser int     = 10
+)
+
+const (
+	OrderExpirationDuration = 4 // Order expiration duration in hours
+)
+
+const (
+	MaxAccountNumberLength = 14
+	MaxAccountNameLength   = 50
 )

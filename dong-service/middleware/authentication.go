@@ -131,3 +131,21 @@ func validateClaims(claims jwt.MapClaims) error {
 func abortWithError(c *gin.Context, statusCode int, message string) {
 	c.AbortWithStatusJSON(statusCode, models.ErrorResponse(statusCode, message))
 }
+
+// InternalAuth returns a middleware that validates internal API keys
+func InternalAuth(expectedKey string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if expectedKey == "" {
+			abortWithError(c, http.StatusInternalServerError, "Internal API key not configured")
+			return
+		}
+
+		key := c.GetHeader("X-Internal-Key")
+		if key == "" || key != expectedKey {
+			abortWithError(c, http.StatusUnauthorized, constants.ErrUnauthorized)
+			return
+		}
+
+		c.Next()
+	}
+}

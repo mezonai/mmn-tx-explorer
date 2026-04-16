@@ -1,17 +1,23 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef } from 'react';
+import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
 import { P2PService } from '../api';
-import { P2P_QUERY_KEYS, P2P_EVENT_TYPES } from '../constants';
-import { IP2POfferListParams } from '../types';
+import { P2P_QUERY_KEYS, P2P_EVENT_TYPES, WS_INVALIDATE_DELAY } from '../constants';
+import { IPaginatedResponse } from '@/types';
+import { IP2POfferListParams, P2POffer } from '../types';
 import { useWebSocket } from '@/lib/websocket';
 
-const WS_INVALIDATE_DELAY = 1000;
+const WS_REFRESH_ANIM_MS = 1200;
 
-export const useP2POffers = (params: IP2POfferListParams, enabled: boolean = true) => {
+export const useP2POffers = (
+  params: IP2POfferListParams,
+  enabled: boolean = true
+): UseQueryResult<IPaginatedResponse<P2POffer[]>, unknown> & { isWsRefreshing: boolean } => {
   const wsManager = useWebSocket();
   const queryClient = useQueryClient();
 
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const refreshAnimTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isWsRefreshing, setIsWsRefreshing] = useState(false);
 
   const query = useQuery({
     queryKey: [P2P_QUERY_KEYS.OFFERS, params],
@@ -26,6 +32,11 @@ export const useP2POffers = (params: IP2POfferListParams, enabled: boolean = tru
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
+
+      // start UI refresh animation
+      setIsWsRefreshing(true);
+      if (refreshAnimTimerRef.current) clearTimeout(refreshAnimTimerRef.current);
+      refreshAnimTimerRef.current = setTimeout(() => setIsWsRefreshing(false), WS_REFRESH_ANIM_MS);
 
       debounceTimerRef.current = setTimeout(() => {
         queryClient.invalidateQueries({
@@ -42,8 +53,11 @@ export const useP2POffers = (params: IP2POfferListParams, enabled: boolean = tru
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
+      if (refreshAnimTimerRef.current) {
+        clearTimeout(refreshAnimTimerRef.current);
+      }
     };
   }, [wsManager, enabled, queryClient]);
 
-  return query;
+  return { ...query, isWsRefreshing };
 };

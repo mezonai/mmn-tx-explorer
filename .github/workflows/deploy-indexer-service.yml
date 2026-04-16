@@ -34,6 +34,8 @@ on:
     secrets:
       POSTGRES_PASSWORD:
         required: true
+      EVENT_API_KEY:
+        required: true
 
 jobs:
   build:
@@ -153,6 +155,9 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_HOST: ${{ vars.POSTGRES_HOST }}
           POSTGRES_PORT: ${{ vars.POSTGRES_PORT }}
+          EVENT_API_URL: ${{ vars.EVENT_API_URL}}
+          EVENT_API_KEY: ${{ secrets.EVENT_API_KEY }}
+          EVENT_DONG_API_URL: ${{ vars.EVENT_DONG_API_URL}}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
@@ -171,6 +176,9 @@ jobs:
           STORAGE_MAIN_POSTGRES_DATABASE=${POSTGRES_DB}
           STORAGE_MAIN_POSTGRES_SSLMODE=disable
           MIGRATIONS_PATH=/opt/indexer/migrations/postgres
+          EVENT_API_URL=${EVENT_API_URL}
+          EVENT_API_KEY=${EVENT_API_KEY}
+          EVENT_DONG_API_URL=${EVENT_DONG_API_URL}
           EON
 
           sudo chown -R mmn:mmn /opt/indexer
@@ -193,7 +201,9 @@ jobs:
           printf "export POSTGRES_PASSWORD=%q\n" "$POSTGRES_PASSWORD" >> remote_env.sh
           printf "export POSTGRES_HOST=%q\n" "$POSTGRES_HOST" >> remote_env.sh
           printf "export POSTGRES_PORT=%q\n" "$POSTGRES_PORT" >> remote_env.sh
-
+          printf "export EVENT_API_URL=%q\n" "$EVENT_API_URL" >> remote_env.sh
+          printf "export EVENT_API_KEY=%q\n" "$EVENT_API_KEY" >> remote_env.sh
+          printf "export EVENT_DONG_API_URL=%q\n" "$EVENT_DONG_API_URL" >> remote_env.sh
       - name: Prepare and deploy to target server
         env:
           DEPLOY_TAG: ${{ steps.determine_binary.outputs.tag_name }}
@@ -312,4 +322,3 @@ jobs:
           echo "==> Checking Orchestrator status..."
           ssh -i ${{ vars.SSH_PRIVATE_KEY_PATH }} ${{ vars.HOST_ALIAS }} "systemctl is-active indexer-orchestrator"
 
-        

@@ -8,14 +8,22 @@ import { APP_CONFIG } from '@/configs/app.config';
 import { OrderStatus } from '../../types';
 import { SellerConfirmReleaseModal } from './seller-confirm-release-modal';
 import { toast } from 'sonner';
+import BigNumber from 'bignumber.js';
+import { NumberUtil } from '@/utils';
 
 interface SellerConfirmButtonProps {
   order: P2POrder;
   onConfirm?: () => Promise<void> | void;
   disabled?: boolean;
+  buttonText?: string;
 }
 
-export const SellerConfirmButton = ({ order, onConfirm, disabled = false }: SellerConfirmButtonProps) => {
+export const SellerConfirmButton = ({
+  order,
+  onConfirm,
+  disabled = false,
+  buttonText,
+}: SellerConfirmButtonProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
@@ -53,21 +61,31 @@ export const SellerConfirmButton = ({ order, onConfirm, disabled = false }: Sell
           className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-500 px-5 py-6 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-600 md:text-base"
         >
           <CheckCircle2 className="h-5 w-5" />
-          {isSubmitting ? 'Confirming...' : `Confirm money received, release ${APP_CONFIG.CHAIN_SYMBOL}`}
+          {isSubmitting
+            ? 'Confirming...'
+            : buttonText || `Confirm money received, release ${APP_CONFIG.CHAIN_SYMBOL}`}
         </Button>
       </div>
       <div className="text-muted-foreground mt-2 px-4 text-center text-sm">
         Only click the button after you have received the transfer from the buyer.
       </div>
 
-      <SellerConfirmReleaseModal
-        open={showConfirmModal}
-        onOpenChange={setShowConfirmModal}
-        amountToRelease={order.amount}
-        amountReceived={order.amount * order.price_rate}
-        onConfirm={handleFinalConfirm}
-        isLoading={isSubmitting}
-      />
+      {
+        (() => {
+          const amount = NumberUtil.scaleDownBigNumber(new BigNumber(order.amount));
+          const amountReceived = amount.multipliedBy(order.price_rate);
+          return (
+            <SellerConfirmReleaseModal
+              open={showConfirmModal}
+              onOpenChange={setShowConfirmModal}
+              amountToRelease={amount.toString()}
+              amountReceived={amountReceived.toString()}
+              onConfirm={handleFinalConfirm}
+              isLoading={isSubmitting}
+            />
+          );
+        })()
+      }
     </div>
   );
 };
