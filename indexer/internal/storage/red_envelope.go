@@ -202,17 +202,22 @@ func (p *PostgresConnector) updateRedEnvelopeStatus(
 	tx *sql.Tx,
 	txs []common.Transaction,
 ) error {
+	log.Debug().Int("tx_count", len(txs)).Msg("Starting updateRedEnvelopeStatus")
+
 	validatedTxs, err := p.validateRedEnvelopeTransactions(ctx, tx, txs, RedEnvelopeActionUpdatePublished)
 	if err != nil {
+		log.Error().Err(err).Msg("validateRedEnvelopeTransactions failed in updateRedEnvelopeStatus")
 		return err
 	}
 
 	if len(validatedTxs) == 0 {
+		log.Debug().Msg("No valid transactions found for red envelope update published status in updateRedEnvelopeStatus")
 		return nil
 	}
 
 	updates := make([]dong.DongUpdateEntry, 0, len(validatedTxs))
 	for _, v := range validatedTxs {
+		log.Debug().Str("red_envelope_id", v.ID).Str("tx_hash", v.Hash).Msg("Preparing to update red envelope status to published")
 		updates = append(updates, dong.DongUpdateEntry{
 			ID:              v.ID,
 			Status:          RedEnvelopeStatusPublished,
@@ -221,6 +226,7 @@ func (p *PostgresConnector) updateRedEnvelopeStatus(
 	}
 
 	if err := p.dongClient.UpdateRedEnvelopeStatus(ctx, updates); err != nil {
+		log.Error().Err(err).Msg("failed to call dong service for red envelope status update")
 		return fmt.Errorf("failed to call dong service for red envelope status update: %w", err)
 	}
 
@@ -268,6 +274,7 @@ func (p *PostgresConnector) validateRedEnvelopeTransactions(
 ) ([]validatedRedEnvelope, error) {
 	log.Info().Int("transactions_to_validate", len(txs)).Str("action", logAction).Msg("starting red envelope validation")
 	if len(txs) == 0 {
+		log.Debug().Str("action", logAction).Msg("Red envelope transaction list is empty, nothing to validate")
 		return nil, nil
 	}
 
@@ -282,15 +289,17 @@ func (p *PostgresConnector) validateRedEnvelopeTransactions(
 	for _, t := range txs {
 		var extra Extra
 		if err := json.Unmarshal([]byte(t.ExtraInfo), &extra); err != nil || extra.RedEnvelopeID == "" {
+			log.Debug().Str("tx_hash", t.Hash).Str("action", logAction).Msg("Transaction has no valid ExtraInfo or RedEnvelopeID, skipping validation")
 			continue
 		}
+		log.Debug().Str("tx_hash", t.Hash).Str("red_envelope_id", extra.RedEnvelopeID).Str("action", logAction).Msg("Transaction identified for red envelope validation")
 		redEnvelopeIDs = append(redEnvelopeIDs, extra.RedEnvelopeID)
 		txMap[t.Hash] = t
 		redEnvelopeIDMap[t.Hash] = extra.RedEnvelopeID
 	}
 
 	if len(redEnvelopeIDs) == 0 {
-		log.Info().Str("action", logAction).Msg("no potential red envelopes to validate")
+		log.Info().Str("action", logAction).Msg("no potential red envelopes to validate after processing ExtraInfo")
 		return nil, nil
 	}
 
@@ -309,6 +318,7 @@ func (p *PostgresConnector) validateRedEnvelopeTransactions(
 
 	rows, err := tx.QueryContext(ctx, querySelect, pq.Array(redEnvelopeIDs))
 	if err != nil {
+		log.Error().Err(err).Str("action", logAction).Msg("QueryContext for red envelope validation failed")
 		return nil, fmt.Errorf("select red envelopes for validation (%s) failed: %w", logAction, err)
 	}
 	defer rows.Close()
@@ -333,6 +343,8 @@ func (p *PostgresConnector) validateRedEnvelopeTransactions(
 
 	for hash, t := range txMap {
 		redEnvelopeID := redEnvelopeIDMap[hash]
+		log.Debug().Str("action", logAction).Str("tx_hash", hash).Str("red_envelope_id", redEnvelopeID).Msg("Validating red envelope details against transaction")
+
 		e, ok := envelopeMap[redEnvelopeID]
 		if !ok {
 			log.Error().
@@ -380,7 +392,13 @@ func (p *PostgresConnector) validateRedEnvelopeTransactions(
 				Msg("red envelope validation failed: amount mismatch")
 			continue
 		}
+
 		validated = append(validated, validatedRedEnvelope{ID: redEnvelopeID, Hash: t.Hash})
+		log.Debug().Str("action", logAction).Str("tx_hash", t.Hash).Str("red_envelope_id", redEnvelopeID).Msg("Transaction successfully validated for red envelope")
+	}
+
+	if len(validated) == 0 {
+		log.Debug().Str("action", logAction).Msg("No transactions passed red envelope validation")
 	}
 
 	return validated, nil
