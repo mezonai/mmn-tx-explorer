@@ -202,7 +202,7 @@ func (p *PostgresConnector) updateRedEnvelopeStatus(
 	tx *sql.Tx,
 	txs []common.Transaction,
 ) error {
-	log.Debug().Int("tx_count", len(txs)).Msg("Starting updateRedEnvelopeStatus")
+	log.Info().Int("tx_count", len(txs)).Msg("Starting updateRedEnvelopeStatus")
 
 	validatedTxs, err := p.validateRedEnvelopeTransactions(ctx, tx, txs, RedEnvelopeActionUpdatePublished)
 	if err != nil {
@@ -211,13 +211,13 @@ func (p *PostgresConnector) updateRedEnvelopeStatus(
 	}
 
 	if len(validatedTxs) == 0 {
-		log.Debug().Msg("No valid transactions found for red envelope update published status in updateRedEnvelopeStatus")
+		log.Info().Msg("No valid transactions found for red envelope update published status in updateRedEnvelopeStatus")
 		return nil
 	}
 
 	updates := make([]dong.DongUpdateEntry, 0, len(validatedTxs))
 	for _, v := range validatedTxs {
-		log.Debug().Str("red_envelope_id", v.ID).Str("tx_hash", v.Hash).Msg("Preparing to update red envelope status to published")
+		log.Info().Str("red_envelope_id", v.ID).Str("tx_hash", v.Hash).Msg("Preparing to update red envelope status to published")
 		updates = append(updates, dong.DongUpdateEntry{
 			ID:              v.ID,
 			Status:          RedEnvelopeStatusPublished,
@@ -274,7 +274,7 @@ func (p *PostgresConnector) validateRedEnvelopeTransactions(
 ) ([]validatedRedEnvelope, error) {
 	log.Info().Int("transactions_to_validate", len(txs)).Str("action", logAction).Msg("starting red envelope validation")
 	if len(txs) == 0 {
-		log.Debug().Str("action", logAction).Msg("Red envelope transaction list is empty, nothing to validate")
+		log.Info().Str("action", logAction).Msg("Red envelope transaction list is empty, nothing to validate")
 		return nil, nil
 	}
 
@@ -289,10 +289,10 @@ func (p *PostgresConnector) validateRedEnvelopeTransactions(
 	for _, t := range txs {
 		var extra Extra
 		if err := json.Unmarshal([]byte(t.ExtraInfo), &extra); err != nil || extra.RedEnvelopeID == "" {
-			log.Debug().Str("tx_hash", t.Hash).Str("action", logAction).Msg("Transaction has no valid ExtraInfo or RedEnvelopeID, skipping validation")
+			log.Info().Str("tx_hash", t.Hash).Str("action", logAction).Msg("Transaction has no valid ExtraInfo or RedEnvelopeID, skipping validation")
 			continue
 		}
-		log.Debug().Str("tx_hash", t.Hash).Str("red_envelope_id", extra.RedEnvelopeID).Str("action", logAction).Msg("Transaction identified for red envelope validation")
+		log.Info().Str("tx_hash", t.Hash).Str("red_envelope_id", extra.RedEnvelopeID).Str("action", logAction).Msg("Transaction identified for red envelope validation")
 		redEnvelopeIDs = append(redEnvelopeIDs, extra.RedEnvelopeID)
 		txMap[t.Hash] = t
 		redEnvelopeIDMap[t.Hash] = extra.RedEnvelopeID
@@ -343,7 +343,7 @@ func (p *PostgresConnector) validateRedEnvelopeTransactions(
 
 	for hash, t := range txMap {
 		redEnvelopeID := redEnvelopeIDMap[hash]
-		log.Debug().Str("action", logAction).Str("tx_hash", hash).Str("red_envelope_id", redEnvelopeID).Msg("Validating red envelope details against transaction")
+		log.Info().Str("action", logAction).Str("tx_hash", hash).Str("red_envelope_id", redEnvelopeID).Msg("Validating red envelope details against transaction")
 
 		e, ok := envelopeMap[redEnvelopeID]
 		if !ok {
@@ -394,11 +394,11 @@ func (p *PostgresConnector) validateRedEnvelopeTransactions(
 		}
 
 		validated = append(validated, validatedRedEnvelope{ID: redEnvelopeID, Hash: t.Hash})
-		log.Debug().Str("action", logAction).Str("tx_hash", t.Hash).Str("red_envelope_id", redEnvelopeID).Msg("Transaction successfully validated for red envelope")
+		log.Info().Str("action", logAction).Str("tx_hash", t.Hash).Str("red_envelope_id", redEnvelopeID).Msg("Transaction successfully validated for red envelope")
 	}
 
 	if len(validated) == 0 {
-		log.Debug().Str("action", logAction).Msg("No transactions passed red envelope validation")
+		log.Info().Str("action", logAction).Msg("No transactions passed red envelope validation")
 	}
 
 	return validated, nil
