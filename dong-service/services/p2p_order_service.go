@@ -359,23 +359,8 @@ func (s *OrderService) ConfirmOrderAsSeller(ctx context.Context, orderID int64, 
 				go SendSocketEvent(*offer.OfferCreatorWalletAddress, constants.ORDER_COMPLETED, completePayload)
 				go SendSocketEvent(*o.OrderCreatorWalletAddress, constants.ORDER_COMPLETED, completePayload)
 
-			} else if status == constants.TxStatusPending || status == constants.TxStatusConfirmed || status == constants.TxStatusFailed {
-				// Status 0, 1, 3 = PENDING, CONFIRMED, FAILED
-				if o.OfferID != nil {
-					if releaseErr := s.offerRepo.ReleaseQuantity(ctx, *o.OfferID, o.OrderAmount, tx); releaseErr != nil {
-						logger.Error().Err(releaseErr).Int64("offer_id", *o.OfferID).Int64("order_amount", o.OrderAmount.Int64()).Msg("Failed to release quantity after transaction failure")
-					} else {
-						logger.Info().Int64("offer_id", *o.OfferID).Int64("order_amount", o.OrderAmount.Int64()).Msg("Released quantity back to offer after transaction failure")
-					}
-				}
-				if err = s.repo.UpdateOrderStatusWithTxHash(ctx, orderID, string(models.OrderStatusFailed), transferTxHash, tx); err != nil {
-					return err
-				}
-				err = fmt.Errorf("transaction failed with status %d", status)
-				return err
 			}
 		}
-	}
 
 	if err = tx.Commit(); err != nil {
 		return err
