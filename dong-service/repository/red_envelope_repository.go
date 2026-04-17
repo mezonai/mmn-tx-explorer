@@ -985,6 +985,7 @@ func (r *RedEnvelopeRepository) UpdateStatusInternal(ctx context.Context, id, st
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("red envelope not found")
 		}
+		logger.Error().Err(err).Str("envelope_id", id).Msg("Scan error on RETURNING UpdateStatusInternal")
 		return nil, fmt.Errorf("failed to update status and fetch envelope: %w", err)
 	}
 

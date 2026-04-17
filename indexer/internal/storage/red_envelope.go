@@ -313,7 +313,6 @@ func (p *PostgresConnector) validateRedEnvelopeTransactions(
     FROM dong_schema.red_envelope
     WHERE id = ANY($1::uuid[])
       AND status = 'PENDING'
-    FOR UPDATE
     `
 
 	rows, err := tx.QueryContext(ctx, querySelect, pq.Array(redEnvelopeIDs))
