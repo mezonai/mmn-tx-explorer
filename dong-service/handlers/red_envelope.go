@@ -291,7 +291,7 @@ func (r *RedEnvelopeHandler) UpdateStatusRedEnvelope(c *gin.Context) {
 		txPtr = &req.TransactionHash
 	}
 
-	err := r.repo.UpdateStatus(c, req.ID, statusRedEnvelope, txPtr)
+	err := r.repo.UpdateRedEnvelope(c, req.ID, statusRedEnvelope, txPtr, nil)
 	if err != nil {
 		logger.Error().Err(err).Str("envelope_id", req.ID).Msg("Failed to update red envelope status")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToUpdateRedEnvelopeStatus))

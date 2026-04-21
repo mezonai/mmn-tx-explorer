@@ -278,7 +278,7 @@ func (r *RedEnvelopeRepository) GetStats() (map[string]interface{}, error) {
 	return result, nil
 }
 
-func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status string, txHash *string) error {
+func (r *RedEnvelopeRepository) UpdateRedEnvelope(ctx context.Context, id, status string, txHash *string, refundTxHash *string) error {
 	var (
 		envelope struct {
 			ID                   string
@@ -296,49 +296,38 @@ func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status str
 		err error
 	)
 
+	setClauses := "status = $1, updated_at = $2"
+	args := []any{status, time.Now()}
+
 	if txHash != nil {
-		query := fmt.Sprintf(`
-			UPDATE %s.red_envelope
-			SET status = $1, transaction_hash = $2, updated_at = $3
-			WHERE id = $4
-			RETURNING id, name, description, red_envelope_wallet, owner_wallet, total_amount, total_claims, end_date, is_random_distribution, min_amount, max_amount
-		`, r.dongSchema)
-
-		err = r.db.QueryRowContext(ctx, query, status, *txHash, time.Now(), id).Scan(
-			&envelope.ID,
-			&envelope.Name,
-			&envelope.Description,
-			&envelope.RedEnvelopeWallet,
-			&envelope.OwnerWallet,
-			&envelope.TotalAmount,
-			&envelope.TotalClaims,
-			&envelope.EndDate,
-			&envelope.IsRandomDistribution,
-			&envelope.MinAmount,
-			&envelope.MaxAmount,
-		)
-	} else {
-		query := fmt.Sprintf(`
-			UPDATE %s.red_envelope
-			SET status = $1, updated_at = $2
-			WHERE id = $3
-			RETURNING id, name, description, red_envelope_wallet, owner_wallet, total_amount, total_claims, end_date, is_random_distribution, min_amount, max_amount
-		`, r.dongSchema)
-
-		err = r.db.QueryRowContext(ctx, query, status, time.Now(), id).Scan(
-			&envelope.ID,
-			&envelope.Name,
-			&envelope.Description,
-			&envelope.RedEnvelopeWallet,
-			&envelope.OwnerWallet,
-			&envelope.TotalAmount,
-			&envelope.TotalClaims,
-			&envelope.EndDate,
-			&envelope.IsRandomDistribution,
-			&envelope.MinAmount,
-			&envelope.MaxAmount,
-		)
+		args = append(args, *txHash)
+		setClauses += fmt.Sprintf(`, transaction_hash = $%d`, len(args))
+	} else if refundTxHash != nil {
+		args = append(args, *refundTxHash)
+		setClauses += fmt.Sprintf(`, refund_tx_hash = $%d`, len(args))
 	}
+
+	args = append(args, id)
+	query := fmt.Sprintf(`
+		UPDATE %s.red_envelope
+		SET %s
+		WHERE id = $%d
+		RETURNING id, name, description, red_envelope_wallet, owner_wallet, total_amount, total_claims, end_date, is_random_distribution, min_amount, max_amount
+	`, r.dongSchema, setClauses, len(args))
+
+	err = r.db.QueryRowContext(ctx, query, args...).Scan(
+		&envelope.ID,
+		&envelope.Name,
+		&envelope.Description,
+		&envelope.RedEnvelopeWallet,
+		&envelope.OwnerWallet,
+		&envelope.TotalAmount,
+		&envelope.TotalClaims,
+		&envelope.EndDate,
+		&envelope.IsRandomDistribution,
+		&envelope.MinAmount,
+		&envelope.MaxAmount,
+	)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -657,7 +646,7 @@ func (r *RedEnvelopeRepository) GetDetailRedEnvelopeByID(id string) (models.Deta
 		TotalClaim:         result.TotalClaim,
 		ClaimedCount:       result.ClaimedCount,
 		TotalClaimedAmount: result.TotalClaimedAmount,
-		EndDate:            result.EndDate,
+		EndDate:            &result.EndDate,
 	}, nil
 }
 
@@ -749,7 +738,7 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 		}
 	}
 
-	err = r.UpdateStatus(ctx, redEnvelopeID, constants.RedEnvelopeStatusClosed, txPtr)
+	err = r.UpdateRedEnvelope(ctx, redEnvelopeID, constants.RedEnvelopeStatusClosed, txPtr, nil)
 	if err != nil {
 		logger.Error().
 			Err(err).
