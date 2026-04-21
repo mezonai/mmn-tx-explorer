@@ -53,8 +53,8 @@ func (s *RedEnvelopeService) InternalUpdateStatusBatch(ctx context.Context, upda
 		// Handle queue initialization if status is PUBLISHED
 		if statusRedEnvelope == constants.RedEnvelopeStatusPublished && s.queue != nil {
 			ttl := time.Duration(constants.RedEnvelopeDefaultTTLHours) * time.Hour
-			if envelope.EndDate != nil {
-				ttl = time.Until(*envelope.EndDate)
+			if !envelope.EndDate.IsZero() {
+				ttl = time.Until(envelope.EndDate)
 				if ttl < 0 {
 					ttl = time.Duration(constants.RedEnvelopeMinTTLHours) * time.Hour
 				}

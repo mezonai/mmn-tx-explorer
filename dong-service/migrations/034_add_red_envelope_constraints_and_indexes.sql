@@ -1,4 +1,4 @@
--- Add CLOSED to the allowed status values for red_envelope
+-- Add CHECK constraint on red_envelope.status
 ALTER TABLE dong_schema.red_envelope DROP CONSTRAINT IF EXISTS chk_red_envelope_status;
 
 ALTER TABLE dong_schema.red_envelope ADD CONSTRAINT chk_red_envelope_status

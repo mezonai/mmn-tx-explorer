@@ -963,7 +963,7 @@ func (r *RedEnvelopeRepository) UpdateStatusInternal(ctx context.Context, id, st
 	query := fmt.Sprintf(`
 		UPDATE %s.red_envelope
 		SET status = $1, transaction_hash = $2, updated_at = $3
-		WHERE id = $4
+		WHERE id = $4 AND status = $5
 		RETURNING id, name, description, total_amount, min_amount, max_amount, 
 			   total_claims, claimed_count, red_envelope_wallet, owner_wallet, 
 			   creator, status, transaction_hash, is_random_distribution, 
@@ -972,7 +972,7 @@ func (r *RedEnvelopeRepository) UpdateStatusInternal(ctx context.Context, id, st
 
 	envelope := &models.RedEnvelope{}
 
-	err := r.db.QueryRowContext(ctx, query, status, txHash, time.Now(), id).Scan(
+	err := r.db.QueryRowContext(ctx, query, status, txHash, time.Now(), id, constants.RedEnvelopeStatusPending).Scan(
 		&envelope.ID,
 		&envelope.Name,
 		&envelope.Description,
@@ -997,6 +997,7 @@ func (r *RedEnvelopeRepository) UpdateStatusInternal(ctx context.Context, id, st
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("red envelope not found")
 		}
+		logger.Error().Err(err).Str("envelope_id", id).Msg("Scan error on RETURNING UpdateStatusInternal")
 		return nil, fmt.Errorf("failed to update status and fetch envelope: %w", err)
 	}
 
