@@ -57,6 +57,7 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 		}
 
 		remainingBalance := envelope.TotalAmount - totalClaimed
+		isSuccess := true
 		var txPtr *string
 		if remainingBalance > 0 {
 			logger.Info().
@@ -71,7 +72,8 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 			if err != nil {
 				logger.Error().Err(err).
 					Str("red_envelope_id", envelope.ID).
-					Msg("Failed to get wallet for refund; will still mark EXPIRED")
+					Msg("Failed to get wallet for refund")
+				isSuccess = false
 			} else {
 				// TODO: update pass amount from envelope
 				amount := types.NewBigIntString(remainingBalance).Multiply(constants.TokenMultiplierBigIntString)
@@ -79,11 +81,19 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 				if txErr != nil {
 					logger.Error().Err(txErr).
 						Str("red_envelope_id", envelope.ID).
-						Msg("Failed to transfer refund; will still mark EXPIRED")
+						Msg("Failed to transfer refund")
+					isSuccess = false
 				} else {
 					txPtr = &txHash
 				}
 			}
+		}
+
+		if !isSuccess {
+			logger.Warn().
+				Str("red_envelope_id", envelope.ID).
+				Msg("Marking red envelope as EXPIRED without refund due to errors")
+			continue
 		}
 
 		err = j.redEnvelopeRepo.UpdateRedEnvelope(ctx, envelope.ID, constants.RedEnvelopeStatusExpired, txPtr, nil)

@@ -70,6 +70,11 @@ export const getStatusDisplay = (
           dark:border-gray-600 dark:bg-yellow-900/50 dark:text-yellow-400`,
       };
     case 'expired':
+      return {
+        text: 'Expired',
+        className: `border bg-yellow-100 text-yellow-700 border-gray-200 
+          dark:border-gray-600 dark:bg-yellow-700/30 dark:text-yellow-400`,
+      };
     case 'closed':
       return {
         text: 'Closed',

@@ -280,8 +280,6 @@ func (r *RedEnvelopeHandler) UpdateStatusRedEnvelope(c *gin.Context) {
 		statusRedEnvelope = constants.RedEnvelopeStatusFailed
 	case constants.StatusExpired:
 		statusRedEnvelope = constants.RedEnvelopeStatusExpired
-	case constants.StatusClosed:
-		statusRedEnvelope = constants.RedEnvelopeStatusClosed
 	default:
 		statusRedEnvelope = constants.RedEnvelopeStatusPublished
 	}
