@@ -736,11 +736,10 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 			} else {
 				txPtr = &txHash
 			}
-			txPtr = &txHash
 		}
 	}
 
-	err = r.UpdateRedEnvelope(ctx, redEnvelopeID, constants.RedEnvelopeStatusClosed, txPtr, nil)
+	err = r.UpdateRedEnvelope(ctx, redEnvelopeID, constants.RedEnvelopeStatusClosed, nil, txPtr)
 	if err != nil {
 		logger.Error().
 			Err(err).
