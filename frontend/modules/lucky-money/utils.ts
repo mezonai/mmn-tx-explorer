@@ -9,16 +9,14 @@ export const getVisualStatus = (apiStatus: string): VisualStatus => {
     case 'failed':
       return 'failed';
     case 'expired':
+    case 'closed':
       return 'closed';
     default:
       return 'closed';
   }
 };
 
-export const formatClaimDate = (
-  dateString: string | undefined,
-  showTime: boolean = false
-): string => {
+export const formatClaimDate = (dateString: string | undefined, showTime: boolean = false): string => {
   if (!dateString) return '';
 
   try {
@@ -52,7 +50,9 @@ export const truncateWalletAddress = (address: string, chars = 6): string => {
   return `${address.substring(0, chars)}...${address.substring(address.length - chars)}`;
 };
 
-export const getStatusDisplay = (status: string | undefined): {
+export const getStatusDisplay = (
+  status: string | undefined
+): {
   text: string;
   className: string;
 } => {
@@ -63,7 +63,14 @@ export const getStatusDisplay = (status: string | undefined): {
         className: `border bg-green-100 text-green-700 border-gray-200 
           dark:border-gray-900 dark:bg-[rgb(34_197_94_/_0.1)] dark:text-green-400`,
       };
+    case 'pending':
+      return {
+        text: 'Pending',
+        className: `border bg-yellow-100 text-yellow-700 border-gray-200 
+          dark:border-gray-600 dark:bg-yellow-900/50 dark:text-yellow-400`,
+      };
     case 'expired':
+    case 'closed':
       return {
         text: 'Closed',
         className: `border bg-yellow-100 text-yellow-700 border-gray-200 

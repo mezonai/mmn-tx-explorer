@@ -278,7 +278,7 @@ func (r *RedEnvelopeRepository) GetStats() (map[string]interface{}, error) {
 	return result, nil
 }
 
-func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status string, txHash *string, refundTxHash *string) error {
+func (r *RedEnvelopeRepository) UpdateRedEnvelope(ctx context.Context, id, status string, txHash *string, refundTxHash *string) error {
 	var (
 		envelope struct {
 			ID                   string
@@ -414,7 +414,8 @@ func (r *RedEnvelopeRepository) GetExpiredEnvelopes() ([]*models.RedEnvelope, er
 		ORDER BY end_date ASC
 	`, r.dongSchema)
 
-	rows, err := r.db.Query(query, constants.RedEnvelopeStatusPublished, time.Now())
+	statuses := []string{constants.RedEnvelopeStatusPublished, constants.RedEnvelopeStatusPending}
+	rows, err := r.db.Query(query, pq.Array(statuses), time.Now())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get expired red envelopes: %w", err)
 	}
@@ -735,10 +736,11 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 			} else {
 				txPtr = &txHash
 			}
+			txPtr = &txHash
 		}
 	}
 
-	err = r.UpdateStatus(ctx, redEnvelopeID, constants.RedEnvelopeStatusClosed, nil, txPtr)
+	err = r.UpdateRedEnvelope(ctx, redEnvelopeID, constants.RedEnvelopeStatusClosed, txPtr, nil)
 	if err != nil {
 		logger.Error().
 			Err(err).

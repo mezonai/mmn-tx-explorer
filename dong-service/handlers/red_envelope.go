@@ -259,8 +259,9 @@ func (r *RedEnvelopeHandler) GetRedEnvelopeCreatedByUser(c *gin.Context) {
 // @Router /api/v1/red-envelopes/update-status-red-envelope [post]
 func (r *RedEnvelopeHandler) UpdateStatusRedEnvelope(c *gin.Context) {
 	var req struct {
-		ID     string `json:"id" binding:"required"`
-		Status int    `json:"status" binding:"required"`
+		ID              string `json:"id" binding:"required"`
+		Status          int    `json:"status" binding:"required"`
+		TransactionHash string `json:"transaction_hash"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -279,11 +280,18 @@ func (r *RedEnvelopeHandler) UpdateStatusRedEnvelope(c *gin.Context) {
 		statusRedEnvelope = constants.RedEnvelopeStatusFailed
 	case constants.StatusExpired:
 		statusRedEnvelope = constants.RedEnvelopeStatusExpired
+	case constants.StatusClosed:
+		statusRedEnvelope = constants.RedEnvelopeStatusClosed
 	default:
 		statusRedEnvelope = constants.RedEnvelopeStatusPublished
 	}
 
-	err := r.repo.UpdateStatus(c, req.ID, statusRedEnvelope, nil, nil)
+	var txPtr *string
+	if req.TransactionHash != "" {
+		txPtr = &req.TransactionHash
+	}
+
+	err := r.repo.UpdateRedEnvelope(c, req.ID, statusRedEnvelope, txPtr, nil)
 	if err != nil {
 		logger.Error().Err(err).Str("envelope_id", req.ID).Msg("Failed to update red envelope status")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToUpdateRedEnvelopeStatus))
