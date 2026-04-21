@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { useP2POrder } from '../../hooks/useP2POrder';
@@ -243,7 +243,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
     }
   };
 
-  const handleMessageSent = () => {
+  const handleMessageSent = useCallback(() => {
     setAutoMessage(null);
     if (order && user?.walletAddress) {
       const isOrderCreator = order.order_creator_wallet_address === user.walletAddress;
@@ -254,7 +254,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
         }
       }
     }
-  };
+  }, [order, user?.walletAddress]);
 
   const handleConfirmBuy = async (amountMZD: number, amountVND: number, paymentInfoId?: number) => {
     if (!offer || !user?.walletAddress) {

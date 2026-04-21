@@ -536,7 +536,7 @@ func (r *OrderRepository) CountOrdersByOffer(ctx context.Context, tx *sql.Tx, of
 }
 
 // HasActiveOrdersByOfferList checks which offers from the provided list have active orders.
-// Returns a map where key is offer_id and value is true if that offer has active orders (PENDING or OPEN status).
+// Returns a map where key is offer_id and value is true if that offer has active orders (PENDING, OPEN, or WAITING_TRANSFER status).
 func (r *OrderRepository) HasActiveOrdersByOfferList(ctx context.Context, offerIDs []int64) (map[int64]bool, error) {
 	result := make(map[int64]bool)
 	if len(offerIDs) == 0 {
@@ -546,8 +546,8 @@ func (r *OrderRepository) HasActiveOrdersByOfferList(ctx context.Context, offerI
 	query := fmt.Sprintf(`
 		SELECT DISTINCT offer_id 
 		FROM %s.p2p_orders 
-		WHERE offer_id = ANY($1) AND status IN ('%s', '%s')
-	`, r.dongSchema, constants.TradingPending, constants.TradingOpen)
+		WHERE offer_id = ANY($1) AND status IN ('%s', '%s', '%s')
+	`, r.dongSchema, constants.TradingPending, constants.TradingOpen, constants.TradingWaiting)
 
 	rows, err := r.db.QueryContext(ctx, query, pq.Array(offerIDs))
 	if err != nil {
