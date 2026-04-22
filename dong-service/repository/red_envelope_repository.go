@@ -278,7 +278,7 @@ func (r *RedEnvelopeRepository) GetStats() (map[string]interface{}, error) {
 	return result, nil
 }
 
-func (r *RedEnvelopeRepository) UpdateRedEnvelope(ctx context.Context, id, status string, txHash *string, refundTxHash *string) error {
+func (r *RedEnvelopeRepository) UpdateRedEnvelope(ctx context.Context, id, status string, txHash *string, refundTxHash *string) (string, error) {
 	var (
 		envelope struct {
 			ID                   string
@@ -331,9 +331,9 @@ func (r *RedEnvelopeRepository) UpdateRedEnvelope(ctx context.Context, id, statu
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return fmt.Errorf("red envelope not found")
+			return "", fmt.Errorf("red envelope not found")
 		}
-		return fmt.Errorf("failed to update status and fetch envelope: %w", err)
+		return "", fmt.Errorf("failed to update status and fetch envelope: %w", err)
 	}
 
 	if status == constants.RedEnvelopeStatusFailed {
@@ -346,13 +346,8 @@ func (r *RedEnvelopeRepository) UpdateRedEnvelope(ctx context.Context, id, statu
 			amount := types.NewBigIntString(envelope.TotalAmount).Multiply(constants.TokenMultiplierBigIntString)
 			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
 			if err != nil {
-				return fmt.Errorf("failed to transfer money to owner wallet: %w", err)
+				return "", fmt.Errorf("failed to transfer money to owner wallet: %w", err)
 			}
-		}
-		if releaseErr := r.walletRepo.ReleaseWallet(ctx, envelope.RedEnvelopeWallet); releaseErr != nil {
-			logger.Error().Err(releaseErr).Str("address", envelope.RedEnvelopeWallet).Msg("Failed to release intermediary wallet")
-		} else {
-			logger.Info().Str("address", envelope.RedEnvelopeWallet).Msg("Released intermediary wallet")
 		}
 	}
 
@@ -368,7 +363,7 @@ func (r *RedEnvelopeRepository) UpdateRedEnvelope(ctx context.Context, id, statu
 			amounts, err = utils.GenerateRandomAmounts(envelope.TotalAmount, *envelope.MinAmount, *envelope.MaxAmount, int(envelope.TotalClaims))
 			if err != nil {
 				logger.Error().Err(err).Str("red_envelope_id", envelope.ID).Msg("Failed to generate random amounts")
-				return fmt.Errorf("failed to generate random amounts: %w", err)
+				return "", fmt.Errorf("failed to generate random amounts: %w", err)
 			}
 		} else {
 			totalClaims := envelope.TotalClaims
@@ -404,7 +399,7 @@ func (r *RedEnvelopeRepository) UpdateRedEnvelope(ctx context.Context, id, statu
 		}
 	}
 
-	return nil
+	return envelope.RedEnvelopeWallet, nil
 }
 
 func (r *RedEnvelopeRepository) GetExpiredEnvelopes() ([]*models.RedEnvelope, error) {
@@ -690,7 +685,7 @@ func (r *RedEnvelopeRepository) CheckUserIDAndEnvelopeID(redEnvelopeID string, u
 	return count > 0, nil
 }
 
-func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64) error {
+func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64) (string, error) {
 	canClose, err := r.CheckUserIDAndEnvelopeID(redEnvelopeID, userID)
 	if err != nil {
 		logger.Error().
@@ -698,14 +693,14 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 			Str("red_envelope_id", redEnvelopeID).
 			Int64("user_id", userID).
 			Msg("Failed to check user id and envelope id")
-		return err
+		return "", err
 	}
 	if !canClose {
 		logger.Error().
 			Str("red_envelope_id", redEnvelopeID).
 			Int64("user_id", userID).
 			Msg("User ID does not match owner of red envelope")
-		return err
+		return "", fmt.Errorf("user is not the owner of this red envelope")
 	}
 
 	ctx := context.Background()
@@ -718,6 +713,7 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 			Err(err).
 			Str("red_envelope_id", redEnvelopeID).
 			Msg("Failed to get total claimed amount")
+		return "", err
 	}
 
 	if envelope.RemainingAmount > 0 {
@@ -737,27 +733,22 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 			amount := types.NewBigIntString(envelope.RemainingAmount).Multiply(constants.TokenMultiplierBigIntString)
 			txHash, err := r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
 			if err != nil {
-				return err
+				return envelope.RedEnvelopeWallet, err
 			}
 			txPtr = &txHash
 		}
 	}
 
-	err = r.UpdateRedEnvelope(ctx, redEnvelopeID, constants.RedEnvelopeStatusClosed, txPtr, nil)
+	_, err = r.UpdateRedEnvelope(ctx, redEnvelopeID, constants.RedEnvelopeStatusClosed, txPtr, nil)
 	if err != nil {
 		logger.Error().
 			Err(err).
 			Str("red_envelope_id", redEnvelopeID).
 			Msg("Failed to update status to CLOSED")
+		return envelope.RedEnvelopeWallet, err
 	}
 
-	if releaseErr := r.walletRepo.ReleaseWallet(ctx, envelope.RedEnvelopeWallet); releaseErr != nil {
-		logger.Error().Err(releaseErr).Str("address", envelope.RedEnvelopeWallet).Msg("Failed to release intermediary wallet after close")
-	} else {
-		logger.Info().Str("address", envelope.RedEnvelopeWallet).Msg("Released intermediary wallet after close")
-	}
-
-	return nil
+	return envelope.RedEnvelopeWallet, nil
 }
 
 func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUserID, amount int64) error {

@@ -278,9 +278,9 @@ func (r *RedEnvelopeHandler) UpdateStatusRedEnvelope(c *gin.Context) {
 		return
 	}
 
-	err := r.repo.UpdateRedEnvelope(c, req.ID, constants.RedEnvelopeStatusFailed, nil, nil)
+	err := r.service.CancelRedEnvelope(c.Request.Context(), req.ID)
 	if err != nil {
-		logger.Error().Err(err).Str("envelope_id", req.ID).Msg("Failed to update red envelope status")
+		logger.Error().Err(err).Str("envelope_id", req.ID).Msg("Failed to cancel red envelope")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToUpdateRedEnvelopeStatus))
 		return
 	}
@@ -392,7 +392,7 @@ func (r *RedEnvelopeHandler) CloseSessionRedEnvelope(c *gin.Context) {
 		return
 	}
 
-	err = r.repo.CloseSession(req.ID, userID)
+	err = r.service.CloseRedEnvelope(c.Request.Context(), req.ID, userID)
 	if err != nil {
 		logger.Error().Err(err).Str("envelope_id", req.ID).Int64("user_id", userID).Msg("Failed to close red envelope session")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToCloseRedEnvelope))
