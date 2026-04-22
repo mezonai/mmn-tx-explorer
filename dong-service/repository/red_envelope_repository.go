@@ -349,6 +349,11 @@ func (r *RedEnvelopeRepository) UpdateRedEnvelope(ctx context.Context, id, statu
 				return fmt.Errorf("failed to transfer money to owner wallet: %w", err)
 			}
 		}
+		if releaseErr := r.walletRepo.ReleaseWallet(ctx, envelope.RedEnvelopeWallet); releaseErr != nil {
+			logger.Error().Err(releaseErr).Str("address", envelope.RedEnvelopeWallet).Msg("Failed to release intermediary wallet")
+		} else {
+			logger.Info().Str("address", envelope.RedEnvelopeWallet).Msg("Released intermediary wallet")
+		}
 	}
 
 	if status == constants.RedEnvelopeStatusPublished && r.queueService != nil {
@@ -744,6 +749,12 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 			Err(err).
 			Str("red_envelope_id", redEnvelopeID).
 			Msg("Failed to update status to CLOSED")
+	}
+
+	if releaseErr := r.walletRepo.ReleaseWallet(ctx, envelope.RedEnvelopeWallet); releaseErr != nil {
+		logger.Error().Err(releaseErr).Str("address", envelope.RedEnvelopeWallet).Msg("Failed to release intermediary wallet after close")
+	} else {
+		logger.Info().Str("address", envelope.RedEnvelopeWallet).Msg("Released intermediary wallet after close")
 	}
 
 	return nil

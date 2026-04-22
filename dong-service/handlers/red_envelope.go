@@ -259,9 +259,8 @@ func (r *RedEnvelopeHandler) GetRedEnvelopeCreatedByUser(c *gin.Context) {
 // @Router /api/v1/red-envelopes/update-status-red-envelope [post]
 func (r *RedEnvelopeHandler) UpdateStatusRedEnvelope(c *gin.Context) {
 	var req struct {
-		ID              string `json:"id" binding:"required"`
-		Status          int    `json:"status" binding:"required"`
-		TransactionHash string `json:"transaction_hash"`
+		ID     string `json:"id" binding:"required"`
+		Status string `json:"status" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -270,36 +269,26 @@ func (r *RedEnvelopeHandler) UpdateStatusRedEnvelope(c *gin.Context) {
 		return
 	}
 
+	if req.Status != constants.RedEnvelopeStatusFailed {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody))
+		return
+	}
+
 	if ok := r.verifyRedEnvelopeOwner(c, req.ID); !ok {
 		return
 	}
 
-	var statusRedEnvelope string
-	switch req.Status {
-	case constants.StatusFailed:
-		statusRedEnvelope = constants.RedEnvelopeStatusFailed
-	case constants.StatusExpired:
-		statusRedEnvelope = constants.RedEnvelopeStatusExpired
-	default:
-		statusRedEnvelope = constants.RedEnvelopeStatusPublished
-	}
-
-	var txPtr *string
-	if req.TransactionHash != "" {
-		txPtr = &req.TransactionHash
-	}
-
-	err := r.repo.UpdateRedEnvelope(c, req.ID, statusRedEnvelope, txPtr, nil)
+	err := r.repo.UpdateRedEnvelope(c, req.ID, constants.RedEnvelopeStatusFailed, nil, nil)
 	if err != nil {
 		logger.Error().Err(err).Str("envelope_id", req.ID).Msg("Failed to update red envelope status")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToUpdateRedEnvelopeStatus))
 		return
 	}
 
-	logger.Info().Str("envelope_id", req.ID).Str("new_status", statusRedEnvelope).Msg("Red envelope status updated successfully")
+	logger.Info().Str("envelope_id", req.ID).Str("new_status", constants.RedEnvelopeStatusFailed).Msg("Red envelope status updated successfully")
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeUpdated, map[string]interface{}{
 		"id":     req.ID,
-		"status": statusRedEnvelope,
+		"status": constants.RedEnvelopeStatusFailed,
 	}))
 }
 
