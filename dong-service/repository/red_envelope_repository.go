@@ -409,7 +409,7 @@ func (r *RedEnvelopeRepository) GetExpiredEnvelopes() ([]*models.RedEnvelope, er
 			   creator, status, transaction_hash, is_random_distribution, 
 			   start_date, end_date, created_at, updated_at
 		FROM %s.red_envelope
-		WHERE status = $1 
+		WHERE status = ANY($1)
 		  AND end_date < $2
 		ORDER BY end_date ASC
 	`, r.dongSchema)
