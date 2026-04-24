@@ -700,7 +700,7 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 			Str("red_envelope_id", redEnvelopeID).
 			Int64("user_id", userID).
 			Msg("User ID does not match owner of red envelope")
-		return fmt.Errorf("unauthorized: user does not own this red envelope")
+		return "", fmt.Errorf("unauthorized: user does not own this red envelope")
 	}
 
 	ctx := context.Background()
