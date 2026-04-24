@@ -7,6 +7,7 @@ import (
 	"dong-service/models"
 	"dong-service/repository"
 	"dong-service/utils"
+	"fmt"
 	"time"
 )
 
@@ -113,4 +114,30 @@ func (s *RedEnvelopeService) InternalUpdateStatusBatch(ctx context.Context, upda
 	}
 
 	return len(updates), nil
+}
+
+func (s *RedEnvelopeService) CancelRedEnvelope(ctx context.Context, id string) error {
+	walletAddress, err := s.repo.UpdateRedEnvelope(ctx, id, constants.RedEnvelopeStatusFailed, nil, nil)
+	if err != nil {
+		return fmt.Errorf("cancel red envelope: %w", err)
+	}
+	if releaseErr := s.walletRepo.ReleaseWallet(ctx, walletAddress); releaseErr != nil {
+		logger.Error().Err(releaseErr).Str("address", walletAddress).Msg("Failed to release intermediary wallet after cancel")
+	} else {
+		logger.Info().Str("address", walletAddress).Msg("Released intermediary wallet after cancel")
+	}
+	return nil
+}
+
+func (s *RedEnvelopeService) CloseRedEnvelope(ctx context.Context, id string, userID int64) error {
+	walletAddress, err := s.repo.CloseSession(id, userID)
+	if err != nil {
+		return fmt.Errorf("close red envelope: %w", err)
+	}
+	if releaseErr := s.walletRepo.ReleaseWallet(ctx, walletAddress); releaseErr != nil {
+		logger.Error().Err(releaseErr).Str("address", walletAddress).Msg("Failed to release intermediary wallet after close")
+	} else {
+		logger.Info().Str("address", walletAddress).Msg("Released intermediary wallet after close")
+	}
+	return nil
 }
