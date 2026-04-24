@@ -36,30 +36,23 @@ export const UploadDonationImage = ({ onImagesUpdate, initialExistingCids = [] }
     if (!e.target.files) return;
     const files = Array.from(e.target.files);
 
-    const invalidFiles: File[] = [];
+    // Always detect real MIME type via file-type library first; fall back to browser's file.type
+    const filesWithMime: { file: File; mime: string }[] = [];
     for (const file of files) {
-      let detectedMime = file.type;
-      if (!detectedMime) {
-        try {
-          const typeResult = await fileTypeFromBlob(file);
-          if (typeResult?.mime) {
-            detectedMime = typeResult.mime;
-          } else {
-            toast.error(`Could not detect file type for: ${file.name}`);
-          }
-        } catch (err) {
-          toast.error(`Failed to read file type for: ${file.name}`);
-        }
+      let mime = file.type;
+      try {
+        const typeResult = await fileTypeFromBlob(file);
+        if (typeResult?.mime) mime = typeResult.mime;
+      } catch {
+        // keep browser's file.type as fallback
       }
-      const isValidMimeType = IMAGE_CONSTRAINTS.ALLOWED_IMAGE_TYPES.includes(detectedMime);
-      if (!isValidMimeType) {
-        invalidFiles.push(file);
-      }
+      filesWithMime.push({ file, mime });
     }
 
+    const invalidFiles = filesWithMime.filter(({ mime }) => !IMAGE_CONSTRAINTS.ALLOWED_IMAGE_TYPES.includes(mime));
     if (invalidFiles.length > 0) {
       toast.error(
-        `Only JPEG, JPG, PNG, and HEIC images are allowed. Invalid file(s): ${invalidFiles.map((f) => f.name).join(', ')}`
+        `Only JPEG, JPG, PNG, and HEIC images are allowed. Invalid file(s): ${invalidFiles.map(({ file }) => file.name).join(', ')}`
       );
       e.target.value = '';
       return;
@@ -78,24 +71,11 @@ export const UploadDonationImage = ({ onImagesUpdate, initialExistingCids = [] }
     try {
       setIsCompressing(true);
       const compressedFiles = await Promise.all(
-        files.map(async (file) => {
+        filesWithMime.map(async ({ file, mime }) => {
           try {
             let processedFile = file;
-            let detectedMime = file.type;
-
-            if (!detectedMime) {
-              try {
-                const typeResult = await fileTypeFromBlob(file);
-                if (typeResult?.mime) {
-                  detectedMime = typeResult.mime;
-                } else {
-                  toast.error(`Could not detect file type for: ${file.name}`);
-                }
-              } catch {
-                toast.error(`Failed to read file type for: ${file.name}`);
-              }
-            }
-            const isHeic = detectedMime === 'image/heic' || detectedMime === 'image/heif';
+            // Check real mime type only — not file extension
+            const isHeic = mime === 'image/heic' || mime === 'image/heif';
 
             if (isHeic) {
               try {
@@ -105,12 +85,11 @@ export const UploadDonationImage = ({ onImagesUpdate, initialExistingCids = [] }
                   toType: 'image/jpeg',
                   quality: 0.9,
                 });
-
                 const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
                 processedFile = new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), {
                   type: 'image/jpeg',
                 });
-              } catch (err) {
+              } catch {
                 toast.error(`Failed to convert HEIC file: ${file.name}`);
                 return null;
               }
@@ -128,7 +107,7 @@ export const UploadDonationImage = ({ onImagesUpdate, initialExistingCids = [] }
               return null;
             }
             return compressedFile;
-          } catch (err) {
+          } catch {
             return null;
           }
         })
@@ -170,7 +149,7 @@ export const UploadDonationImage = ({ onImagesUpdate, initialExistingCids = [] }
           toast.success(`${validFiles.length} image${validFiles.length > 1 ? 's' : ''} uploaded successfully!`);
         }
       }
-    } catch (err) {
+    } catch {
       toast.error('Failed to process images. Please try again.');
     } finally {
       setIsCompressing(false);
