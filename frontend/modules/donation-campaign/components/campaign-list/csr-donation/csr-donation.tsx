@@ -16,9 +16,8 @@ export const CSRDonation = () => {
       value: stats.total_campaigns_active,
     },
     {
-      title: 'Total raised',
+      title: `Total raised (${APP_CONFIG.CHAIN_SYMBOL})`,
       value: `${NumberUtil.formatWithCommasAndScale(stats.total_amount)}`,
-      subValue: ` ${APP_CONFIG.CHAIN_SYMBOL}`,
     },
     {
       title: 'Contributors',
@@ -52,7 +51,7 @@ export const CSRDonation = () => {
         </div>
         <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3">
           {statCards.map((item) => (
-            <StatCard key={item.title} title={item.title} value={item.value} subValue={item.subValue} />
+            <StatCard key={item.title} title={item.title} value={item.value} />
           ))}
         </div>
       </div>

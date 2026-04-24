@@ -29,7 +29,7 @@ export const UpdatePostMobile = ({
   const { user } = useUser();
 
   const [showAllImages, setShowAllImages] = useState(false);
-  const hasMoreImages = update.image_cids.length > MAX_IMAGES_DISPLAY;
+  const hasMoreImages = (update.image_cids ?? []).length > MAX_IMAGES_DISPLAY;
 
   const [expandedDesc, setExpandedDesc] = useState(false);
   const isDescLong = update.description.length > MAX_DESC_CHARACTERS;

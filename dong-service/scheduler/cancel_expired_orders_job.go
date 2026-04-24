@@ -150,31 +150,13 @@ func (j *CancelExpiredOrdersJob) processRefunds(ctx context.Context, expiredOrde
 			continue
 		}
 
-		status, err := j.blockchainSvc.CheckTransactionStatus(txHash)
-		if err != nil {
-			logger.Error().
-				Err(err).
-				Int64("order_id", orderInfo.OrderID).
-				Str("tx_hash", txHash).
-				Msg("Failed to check refund transaction status")
-			continue
-		}
-
-		if status == constants.TxStatusFinalized {
-			logger.Info().
-				Int64("order_id", orderInfo.OrderID).
-				Str("tx_hash", txHash).
-				Str("recipient_wallet", refundRecipient).
-				Str("offer_side", orderInfo.OfferSide).
-				Str("amount", orderInfo.OrderAmount).
-				Msg("Successfully refunded expired order")
-		} else {
-			logger.Warn().
-				Int64("order_id", orderInfo.OrderID).
-				Str("tx_hash", txHash).
-				Int32("status", status).
-				Msg("Refund transaction not yet finalized")
-		}
+		logger.Info().
+			Int64("order_id", orderInfo.OrderID).
+			Str("tx_hash", txHash).
+			Str("recipient_wallet", refundRecipient).
+			Str("offer_side", orderInfo.OfferSide).
+			Str("amount", orderInfo.OrderAmount).
+			Msg("Successfully refunded expired order")
 	}
 }
 
