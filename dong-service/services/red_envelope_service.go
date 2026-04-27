@@ -117,7 +117,7 @@ func (s *RedEnvelopeService) InternalUpdateStatusBatch(ctx context.Context, upda
 }
 
 func (s *RedEnvelopeService) CancelRedEnvelope(ctx context.Context, id string) error {
-	walletAddress, err := s.repo.UpdateRedEnvelope(ctx, id, constants.RedEnvelopeStatusFailed, nil)
+	walletAddress, err := s.repo.UpdateRedEnvelope(ctx, id, constants.RedEnvelopeStatusFailed, nil, nil)
 	if err != nil {
 		return fmt.Errorf("cancel red envelope: %w", err)
 	}
