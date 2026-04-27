@@ -278,7 +278,7 @@ func (r *RedEnvelopeRepository) GetStats() (map[string]interface{}, error) {
 	return result, nil
 }
 
-func (r *RedEnvelopeRepository) UpdateRedEnvelope(ctx context.Context, id, status string, txHash *string, refundTxHash *string) (string, error) {
+func (r *RedEnvelopeRepository) UpdateRedEnvelope(ctx context.Context, id, status string, txHash *string) (string, error) {
 	var (
 		envelope struct {
 			ID                   string
@@ -302,9 +302,6 @@ func (r *RedEnvelopeRepository) UpdateRedEnvelope(ctx context.Context, id, statu
 	if txHash != nil {
 		args = append(args, *txHash)
 		setClauses += fmt.Sprintf(`, transaction_hash = $%d`, len(args))
-	} else if refundTxHash != nil {
-		args = append(args, *refundTxHash)
-		setClauses += fmt.Sprintf(`, refund_tx_hash = $%d`, len(args))
 	}
 
 	args = append(args, id)
@@ -705,8 +702,6 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 
 	ctx := context.Background()
 
-	var txPtr *string
-
 	envelope, err := r.GetRedEnvelopeCloseSesssion(redEnvelopeID)
 	if err != nil {
 		logger.Error().
@@ -731,15 +726,14 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 		} else {
 			// TODO: update pass amount from envelope
 			amount := types.NewBigIntString(envelope.RemainingAmount).Multiply(constants.TokenMultiplierBigIntString)
-			txHash, err := r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
+			_, err := r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
 			if err != nil {
 				return envelope.RedEnvelopeWallet, err
 			}
-			txPtr = &txHash
 		}
 	}
 
-	_, err = r.UpdateRedEnvelope(ctx, redEnvelopeID, constants.RedEnvelopeStatusClosed, txPtr, nil)
+	_, err = r.UpdateRedEnvelope(ctx, redEnvelopeID, constants.RedEnvelopeStatusClosed, nil)
 	if err != nil {
 		logger.Error().
 			Err(err).
