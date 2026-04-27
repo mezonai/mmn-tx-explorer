@@ -31,7 +31,8 @@ export const UpdatePostBody = ({
   hasMoreImages,
   setShowAllImages,
 }: UpdatePostBodyProps) => {
-  const visibleImages = showAllImages ? update.image_cids : update.image_cids.slice(0, maxImagesDisplay);
+  const imageCids = update.image_cids ?? [];
+  const visibleImages = showAllImages ? imageCids : imageCids.slice(0, maxImagesDisplay);
   return (
     <>
       {isHidden ? (
@@ -78,11 +79,11 @@ export const UpdatePostBody = ({
           </div>
         </div>
       )}
-      {!isHidden && <>{getImages(visibleImages || [], onImageClick)}</>}
+      {!isHidden && visibleImages.length > 0 && <>{getImages(visibleImages, onImageClick)}</>}
       {hasMoreImages && !showAllImages && !isHidden && (
         <div className="flex justify-center pb-2">
           <Button variant="link" size="sm" onClick={() => setShowAllImages(true)}>
-            See more ({update.image_cids.length - maxImagesDisplay})
+            See more ({imageCids.length - maxImagesDisplay})
           </Button>
         </div>
       )}

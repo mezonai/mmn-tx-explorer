@@ -40,7 +40,7 @@ func NewBlockchainService(cfg *config.Config) (*BlockchainService, error) {
 	}, nil
 }
 
-func (s *BlockchainService) Transfer(fromAddress, toAddress, amountStr, privateKeyBs58, textData, extraInfo string) (string, error) {
+func (s *BlockchainService) transfer(fromAddress, toAddress, amountStr, privateKeyBs58, textData, extraInfo string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -122,27 +122,34 @@ func (s *BlockchainService) TransferMoney(encryptedPrivateKey, fromAddress, toAd
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to decrypt private key")
 		return "", err
-	} else {
-		txHash, err := s.Transfer(
-			fromAddress,
-			toAddress,
-			amountStr,
-			privateKey,
-			textData,
-			extraInfoType,
-		)
-		if err != nil {
-			logger.Error().Err(err).Msg("Failed to transfer funds")
-			return "", err
-		} else {
-			// TODO: use function GetTxByHash to get status
-			logger.Info().
-				Str("tx_hash", txHash).
-				Str("amount", amountStr).
-				Msg("Successfully transferred remaining balance to owner")
-			return txHash, nil
-		}
 	}
+
+	txHash, err := s.transfer(
+		fromAddress,
+		toAddress,
+		amountStr,
+		privateKey,
+		textData,
+		extraInfoType,
+	)
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to transfer funds")
+		return "", err
+	}
+
+	// Check transaction status to ensure it's finalized
+	_, err = s.CheckTransactionStatus(txHash)
+	if err != nil {
+		logger.Error().Err(err).Str("tx_hash", txHash).Msg("Transaction status check failed")
+		return txHash, err
+	}
+
+	logger.Info().
+		Str("tx_hash", txHash).
+		Str("amount", amountStr).
+		Msg("Successfully transferred funds and confirmed status")
+
+	return txHash, nil
 }
 
 // CheckTransactionStatus checks the transaction status with retry logic

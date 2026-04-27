@@ -278,7 +278,7 @@ func (r *RedEnvelopeRepository) GetStats() (map[string]interface{}, error) {
 	return result, nil
 }
 
-func (r *RedEnvelopeRepository) UpdateRedEnvelope(ctx context.Context, id, status string, txHash *string, refundTxHash *string) (string, error) {
+func (r *RedEnvelopeRepository) UpdateRedEnvelope(ctx context.Context, id, status string, txHash *string, txRefundHash *string) (string, error) {
 	var (
 		envelope struct {
 			ID                   string
@@ -302,9 +302,9 @@ func (r *RedEnvelopeRepository) UpdateRedEnvelope(ctx context.Context, id, statu
 	if txHash != nil {
 		args = append(args, *txHash)
 		setClauses += fmt.Sprintf(`, transaction_hash = $%d`, len(args))
-	} else if refundTxHash != nil {
-		args = append(args, *refundTxHash)
-		setClauses += fmt.Sprintf(`, refund_tx_hash = $%d`, len(args))
+	} else if txRefundHash != nil {
+		args = append(args, *txRefundHash)
+		setClauses += fmt.Sprintf(`, refund_transaction_hash = $%d`, len(args))
 	}
 
 	args = append(args, id)
@@ -705,8 +705,6 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 
 	ctx := context.Background()
 
-	var txPtr *string
-
 	envelope, err := r.GetRedEnvelopeCloseSesssion(redEnvelopeID)
 	if err != nil {
 		logger.Error().
@@ -716,6 +714,7 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 		return "", err
 	}
 
+	var txPtr *string
 	if envelope.RemainingAmount > 0 {
 		logger.Info().
 			Str("red_envelope_id", redEnvelopeID).

@@ -4,15 +4,19 @@ import { CampaignSidebar } from './campaign-sidebar';
 import { CampaignHeader } from './campaign-header';
 import { Separator } from '@/components/ui/separator';
 import { CampaignForm } from './campaign-form';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useCampaign } from '../../hooks';
 import { useEffect } from 'react';
+import { useUser } from '@/providers';
+import { ROUTES } from '@/configs/routes.config';
 
 function EditCampaignContent() {
   const params = useParams<{ slug: string }>();
   const slug = params?.slug ? String(params.slug) : '';
   const { data: campaign } = useCampaign(slug);
   const { updateField } = useCreateCampaignContext();
+  const { user } = useUser();
+  const router = useRouter();
 
   useEffect(() => {
     if (campaign) {
@@ -24,6 +28,13 @@ function EditCampaignContent() {
       updateField('owner', campaign.owner || '');
     }
   }, [campaign, updateField]);
+
+  if (!campaign || !user) return null;
+
+  if (user.id !== campaign.creator) {
+    router.replace(ROUTES.CAMPAIGN(slug));
+    return null;
+  }
 
   return (
     <div className="space-y-16 pb-16">
