@@ -260,7 +260,7 @@ func (r *RedEnvelopeHandler) GetRedEnvelopeCreatedByUser(c *gin.Context) {
 func (r *RedEnvelopeHandler) UpdateStatusRedEnvelope(c *gin.Context) {
 	var req struct {
 		ID     string `json:"id" binding:"required"`
-		Status string `json:"status" binding:"required"`
+		Status int    `json:"status" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -269,7 +269,7 @@ func (r *RedEnvelopeHandler) UpdateStatusRedEnvelope(c *gin.Context) {
 		return
 	}
 
-	if req.Status != constants.RedEnvelopeStatusFailed {
+	if req.Status != constants.StatusFailed {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody))
 		return
 	}
