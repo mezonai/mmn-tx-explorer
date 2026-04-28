@@ -304,7 +304,7 @@ func (r *RedEnvelopeRepository) UpdateRedEnvelope(ctx context.Context, id, statu
 		setClauses += fmt.Sprintf(`, transaction_hash = $%d`, len(args))
 	} else if txRefundHash != nil {
 		args = append(args, *txRefundHash)
-		setClauses += fmt.Sprintf(`, refund_transaction_hash = $%d`, len(args))
+		setClauses += fmt.Sprintf(`, refund_tx_hash = $%d`, len(args))
 	}
 
 	args = append(args, id)
