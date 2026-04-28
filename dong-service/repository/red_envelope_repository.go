@@ -453,15 +453,13 @@ func (r *RedEnvelopeRepository) GetRedEnvelopeCreatedByUser(userID int64, page, 
 	offset := (page - 1) * limit
 
 	query := fmt.Sprintf(`
-		SELECT re.id, re.name, re.total_amount, re.total_claims, re.status, 
-		       re.created_at, COALESCE(COUNT(rec.id), 0) AS claimed_count
+		SELECT re.id, re.name, re.total_amount, re.total_claims, re.status,
+		       re.created_at, re.claimed_count
 		FROM %s.red_envelope re
-		LEFT JOIN %s.red_envelope_claim rec ON re.id = rec.red_envelope_id
 		WHERE re.creator = $1
-		GROUP BY re.id, re.name, re.total_amount, re.total_claims, re.status, re.created_at
 		ORDER BY re.created_at DESC
 		LIMIT $2 OFFSET $3
-	`, r.dongSchema, r.dongSchema)
+	`, r.dongSchema)
 
 	var creates []struct {
 		ID           string    `json:"id"`
@@ -596,11 +594,14 @@ func (r *RedEnvelopeRepository) GetCountCreatedEnvelope(userID int64) (int64, er
 
 func (r *RedEnvelopeRepository) GetDetailRedEnvelopeByID(id string) (models.DetailRedEnvelope, error) {
 	query := fmt.Sprintf(`
-		SELECT re.name, re.status, re.red_envelope_wallet, re.total_amount, re.total_claims, count(rec.id) AS claimed_count, COALESCE(SUM(rec.amount), 0) AS total_claimed_amount, re.end_date
+		SELECT re.name, re.status, re.red_envelope_wallet, re.total_amount, re.total_claims,
+		       re.claimed_count,
+		       COALESCE(SUM(rec.amount), 0) AS total_claimed_amount,
+		       re.end_date
 		FROM %s.red_envelope re
 		LEFT JOIN %s.red_envelope_claim rec ON re.id = rec.red_envelope_id
-		WHERE re.id = $1 
-		GROUP BY re.name, re.status, re.red_envelope_wallet, re.total_amount, re.total_claims, re.end_date
+		WHERE re.id = $1
+		GROUP BY re.name, re.status, re.red_envelope_wallet, re.total_amount, re.total_claims, re.claimed_count, re.end_date
 	`, r.dongSchema, r.dongSchema)
 	var result struct {
 		Name               string
@@ -755,37 +756,46 @@ func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUs
 			}
 		}()
 
-		envelopeQuery := fmt.Sprintf(`
-			SELECT red_envelope_wallet, status, total_claims, claimed_count
-			FROM %s.red_envelope
+		reserveQuery := fmt.Sprintf(`
+			UPDATE %s.red_envelope
+			SET claimed_count = claimed_count + 1,
+				updated_at = $2
 			WHERE id = $1
-			FOR UPDATE
+			  AND status = $3
+			  AND claimed_count < total_claims
+			RETURNING red_envelope_wallet
 		`, r.dongSchema)
 
-		var status string
-		var totalClaims, claimedCount int64
-		err = tx.QueryRow(envelopeQuery, id).Scan(
+		err = tx.QueryRow(reserveQuery, id, time.Now(), constants.RedEnvelopeStatusPublished).Scan(
 			&envelope.RedEnvelopeWallet,
-			&status,
-			&totalClaims,
-			&claimedCount,
 		)
 		if err != nil {
-			return fmt.Errorf("failed to get envelope for reservation: %w", err)
-		}
-
-		if status != constants.RedEnvelopeStatusPublished {
-			return fmt.Errorf("red envelope is not published")
-		}
-
-		if claimedCount >= totalClaims {
-			return fmt.Errorf("red envelope is fully claimed")
+			if errors.Is(err, sql.ErrNoRows) {
+				var status string
+				var totalClaims, claimedCount int64
+				lookupQuery := fmt.Sprintf(`
+					SELECT status, total_claims, claimed_count
+					FROM %s.red_envelope
+					WHERE id = $1
+				`, r.dongSchema)
+				if lookupErr := tx.QueryRow(lookupQuery, id).Scan(&status, &totalClaims, &claimedCount); lookupErr != nil {
+					return fmt.Errorf("failed to get envelope for reservation: %w", lookupErr)
+				}
+				if status != constants.RedEnvelopeStatusPublished {
+					return fmt.Errorf("red envelope is not published")
+				}
+				if claimedCount >= totalClaims {
+					return fmt.Errorf("red envelope is fully claimed")
+				}
+				return fmt.Errorf("failed to reserve claim slot")
+			}
+			return fmt.Errorf("failed to reserve claim slot: %w", err)
 		}
 
 		// Insert claim as PENDING
 		claimQuery := fmt.Sprintf(`
 			INSERT INTO %s.red_envelope_claim (
-				red_envelope_id, claimer_wallet, claimer_user_id, 
+				red_envelope_id, claimer_wallet, claimer_user_id,
 				amount, status
 			)
 			VALUES ($1, $2, $3, $4, $5)
@@ -802,19 +812,6 @@ func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUs
 		).Scan(&claimID)
 		if err != nil {
 			return fmt.Errorf("failed to create pending claim record: %w", err)
-		}
-
-		// Increment claimed_count
-		updateQuery := fmt.Sprintf(`
-			UPDATE %s.red_envelope
-			SET claimed_count = claimed_count + 1,
-				updated_at = $1
-			WHERE id = $2
-		`, r.dongSchema)
-
-		_, err = tx.Exec(updateQuery, time.Now(), id)
-		if err != nil {
-			return fmt.Errorf("failed to reserve claim slot: %w", err)
 		}
 
 		return tx.Commit()
@@ -886,20 +883,27 @@ func (r *RedEnvelopeRepository) updateFinalClaimStatus(envelopeID string, claimI
 		}
 	}()
 
-	// Update claim status
 	query := fmt.Sprintf(`
 		UPDATE %s.red_envelope_claim
 		SET status = $1,
 		    transaction_hash = $2
-		WHERE id = $3
+		WHERE id = $3 AND status = $4
 	`, r.dongSchema)
 
-	_, err = tx.Exec(query, status, txHash, claimID)
+	res, err := tx.Exec(query, status, txHash, claimID, constants.RedEnvelopeClaimStatusPending)
 	if err != nil {
 		return err
 	}
 
-	// Compensation logic: if transfer failed, return the slot
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return tx.Commit()
+	}
+
 	if shouldRevertCount {
 		revertQuery := fmt.Sprintf(`
 			UPDATE %s.red_envelope
