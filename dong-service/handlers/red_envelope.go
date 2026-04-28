@@ -5,6 +5,7 @@ import (
 	"dong-service/logger"
 	"dong-service/models"
 	"dong-service/repository"
+	"dong-service/services"
 	"dong-service/utils"
 	"fmt"
 	"net/http"
@@ -17,13 +18,15 @@ type RedEnvelopeHandler struct {
 	repo         *repository.RedEnvelopeRepository
 	walletRepo   *repository.IntermediaryWalletRepository
 	queueService *repository.RedEnvelopeQueueService
+	service      *services.RedEnvelopeService
 }
 
-func NewRedEnvelopeHandler(repo *repository.RedEnvelopeRepository, queueService *repository.RedEnvelopeQueueService, walletRepo *repository.IntermediaryWalletRepository) *RedEnvelopeHandler {
+func NewRedEnvelopeHandler(repo *repository.RedEnvelopeRepository, queueService *repository.RedEnvelopeQueueService, walletRepo *repository.IntermediaryWalletRepository, service *services.RedEnvelopeService) *RedEnvelopeHandler {
 	return &RedEnvelopeHandler{
 		repo:         repo,
 		queueService: queueService,
 		walletRepo:   walletRepo,
+		service:      service,
 	}
 }
 
@@ -266,31 +269,58 @@ func (r *RedEnvelopeHandler) UpdateStatusRedEnvelope(c *gin.Context) {
 		return
 	}
 
+	if req.Status != constants.StatusFailed {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody))
+		return
+	}
+
 	if ok := r.verifyRedEnvelopeOwner(c, req.ID); !ok {
 		return
 	}
 
-	var statusRedEnvelope string
-	switch req.Status {
-	case constants.StatusFailed:
-		statusRedEnvelope = constants.RedEnvelopeStatusFailed
-	case constants.StatusExpired:
-		statusRedEnvelope = constants.RedEnvelopeStatusExpired
-	default:
-		statusRedEnvelope = constants.RedEnvelopeStatusPublished
-	}
-
-	err := r.repo.UpdateStatus(c, req.ID, statusRedEnvelope)
+	err := r.service.CancelRedEnvelope(c.Request.Context(), req.ID)
 	if err != nil {
-		logger.Error().Err(err).Str("envelope_id", req.ID).Msg("Failed to update red envelope status")
+		logger.Error().Err(err).Str("envelope_id", req.ID).Msg("Failed to cancel red envelope")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToUpdateRedEnvelopeStatus))
 		return
 	}
 
-	logger.Info().Str("envelope_id", req.ID).Str("new_status", statusRedEnvelope).Msg("Red envelope status updated successfully")
+	logger.Info().Str("envelope_id", req.ID).Str("new_status", constants.RedEnvelopeStatusFailed).Msg("Red envelope status updated successfully")
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeUpdated, map[string]interface{}{
 		"id":     req.ID,
-		"status": statusRedEnvelope,
+		"status": constants.RedEnvelopeStatusFailed,
+	}))
+}
+
+// InternalUpdateStatusRedEnvelope godoc
+// @Summary internal update status red envelope
+// @Description internal update status red envelope to published or failed (batch)
+// @Tags internal
+// @Accept json
+// @Produce json
+// @Param request body models.UpdateRedEnvelopeStatusBatchRequest true "Update Status Batch Request"
+// @Success 200 {object} models.Response{data=object}
+// @Failure 400 {object} models.Response
+// @Failure 401 {object} models.Response
+// @Failure 500 {object} models.Response
+// @Router /api/v1/internal/update-status-red-envelope [post]
+func (r *RedEnvelopeHandler) InternalUpdateStatusRedEnvelope(c *gin.Context) {
+	var batchReq models.UpdateRedEnvelopeStatusBatchRequest
+	if err := c.ShouldBindJSON(&batchReq); err != nil {
+		logger.Error().Err(err).Msg("Invalid internal update status request")
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrInvalidRequestBody))
+		return
+	}
+
+	count, err := r.service.InternalUpdateStatusBatch(c.Request.Context(), batchReq.Updates)
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to update red envelope status batch")
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse(http.StatusInternalServerError, constants.ErrFailedToUpdateRedEnvelopeStatus))
+		return
+	}
+
+	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeUpdated, map[string]interface{}{
+		"count": count,
 	}))
 }
 
@@ -362,7 +392,7 @@ func (r *RedEnvelopeHandler) CloseSessionRedEnvelope(c *gin.Context) {
 		return
 	}
 
-	err = r.repo.CloseSession(req.ID, userID)
+	err = r.service.CloseRedEnvelope(c.Request.Context(), req.ID, userID)
 	if err != nil {
 		logger.Error().Err(err).Str("envelope_id", req.ID).Int64("user_id", userID).Msg("Failed to close red envelope session")
 		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, constants.ErrFailedToCloseRedEnvelope))
@@ -533,6 +563,7 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelopeQR(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeAmountClaimed, result))
 }
+
 // ClaimAmountRedEnvelopeQR_Legacy godoc
 // @Summary Claim red envelope amount via QR (ZK authentication)
 // @Description Get claim amount for red envelope using ZK proof authentication
@@ -592,6 +623,7 @@ func (r *RedEnvelopeHandler) ClaimAmountRedEnvelopeQRLegacy(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage(constants.MsgRedEnvelopeAmountClaimed, result))
 }
+
 // ClaimRedEnvelopeQR godoc
 // @Summary Claim red envelope via QR (ZK authentication)
 // @Description Claim red envelope and receive money using ZK proof authentication

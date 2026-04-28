@@ -5,24 +5,25 @@ import (
 )
 
 type RedEnvelope struct {
-	ID                   string     `json:"id" db:"id"`
-	Name                 string     `json:"name" db:"name"`
-	Description          *string    `json:"description,omitempty" db:"description"`
-	TotalAmount          int64      `json:"total_amount" db:"total_amount"`
-	MinAmount            *int64     `json:"min_amount,omitempty" db:"min_amount"`
-	MaxAmount            *int64     `json:"max_amount,omitempty" db:"max_amount"`
-	TotalClaims          int64      `json:"total_claims" db:"total_claims"`
-	ClaimedCount         int64      `json:"claimed_count" db:"claimed_count"`
-	RedEnvelopeWallet    string     `json:"red_envelope_wallet" db:"red_envelope_wallet"`
-	OwnerWallet          string     `json:"owner_wallet" db:"owner_wallet"`
-	Creator              int64      `json:"creator" db:"creator"`
-	Status               string     `json:"status" db:"status"`
-	TransactionHash      *string    `json:"transaction_hash,omitempty" db:"transaction_hash"`
-	IsRandomDistribution bool       `json:"is_random_distribution" db:"is_random_distribution"`
-	StartDate            time.Time  `json:"start_date" db:"start_date"`
-	EndDate              *time.Time `json:"end_date,omitempty" db:"end_date"`
-	CreatedAt            time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt            time.Time  `json:"updated_at" db:"updated_at"`
+	ID                   string    `json:"id" db:"id"`
+	Name                 string    `json:"name" db:"name"`
+	Description          *string   `json:"description,omitempty" db:"description"`
+	TotalAmount          int64     `json:"total_amount" db:"total_amount"`
+	MinAmount            *int64    `json:"min_amount,omitempty" db:"min_amount"`
+	MaxAmount            *int64    `json:"max_amount,omitempty" db:"max_amount"`
+	TotalClaims          int64     `json:"total_claims" db:"total_claims"`
+	ClaimedCount         int64     `json:"claimed_count" db:"claimed_count"`
+	RedEnvelopeWallet    string    `json:"red_envelope_wallet" db:"red_envelope_wallet"`
+	OwnerWallet          string    `json:"owner_wallet" db:"owner_wallet"`
+	Creator              int64     `json:"creator" db:"creator"`
+	Status               string    `json:"status" db:"status"`
+	TransactionHash      *string   `json:"transaction_hash,omitempty" db:"transaction_hash"`
+	RefundTxHash         *string   `json:"refund_tx_hash,omitempty" db:"refund_tx_hash"`
+	IsRandomDistribution bool      `json:"is_random_distribution" db:"is_random_distribution"`
+	StartDate            time.Time `json:"start_date" db:"start_date"`
+	EndDate              time.Time `json:"end_date" db:"end_date"`
+	CreatedAt            time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt            time.Time `json:"updated_at" db:"updated_at"`
 }
 
 type IntermediaryWallet struct {
@@ -99,4 +100,14 @@ type RedEnvelopeCloseSesssion struct {
 
 type ClaimRedEnvelopeRequest struct {
 	SplitMoneyID int64 `json:"split_money_id" binding:"required"`
+}
+
+type UpdateRedEnvelopeStatusRequest struct {
+	ID              string `json:"id" binding:"required"`
+	Status          int    `json:"status" binding:"required"`
+	TransactionHash string `json:"transaction_hash"`
+}
+
+type UpdateRedEnvelopeStatusBatchRequest struct {
+	Updates []UpdateRedEnvelopeStatusRequest `json:"updates" binding:"required,dive"`
 }

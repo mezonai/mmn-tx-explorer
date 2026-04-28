@@ -113,14 +113,12 @@ func (r *RedEnvelopeRepository) Create(req *models.CreateRedEnvelopeRequest, cre
 		return nil, fmt.Errorf("failed to update red envelope wallet: %w", err)
 	}
 
-
 	if err = tx.Commit(); err != nil {
 		return nil, fmt.Errorf("failed to commit red envelope: %w", err)
 	}
 
 	return &result, nil
 }
-
 
 func (r *RedEnvelopeRepository) GetRecipientsByRedEnvelopeID(id string) ([]models.RedEnvelopeClaim, error) {
 	query := fmt.Sprintf(`
@@ -166,6 +164,7 @@ func (r *RedEnvelopeRepository) GetTotalClaimedAmount(id string) (int64, error) 
 		SELECT COALESCE(SUM(amount), 0)
 		FROM %s.red_envelope_claim
 		WHERE red_envelope_id = $1
+		  AND status = 'SUCCESS'
 	`, r.dongSchema)
 
 	var totalClaimed int64
@@ -279,29 +278,44 @@ func (r *RedEnvelopeRepository) GetStats() (map[string]interface{}, error) {
 	return result, nil
 }
 
-func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status string) error {
-	query := fmt.Sprintf(`
-		UPDATE %s.red_envelope
-		SET status = $1, updated_at = $2
-		WHERE id = $3
-		RETURNING id, name, description, red_envelope_wallet, owner_wallet, total_amount, total_claims, end_date, is_random_distribution, min_amount, max_amount
-	`, r.dongSchema)
+func (r *RedEnvelopeRepository) UpdateRedEnvelope(ctx context.Context, id, status string, txHash *string, txRefundHash *string) (string, error) {
+	var (
+		envelope struct {
+			ID                   string
+			Name                 string
+			Description          *string
+			RedEnvelopeWallet    string
+			OwnerWallet          string
+			TotalAmount          int64
+			TotalClaims          int64
+			EndDate              time.Time
+			IsRandomDistribution bool
+			MinAmount            *int64
+			MaxAmount            *int64
+		}
+		err error
+	)
 
-	var envelope struct {
-		ID                   string
-		Name                 string
-		Description          *string
-		RedEnvelopeWallet    string
-		OwnerWallet          string
-		TotalAmount          int64
-		TotalClaims          int64
-		EndDate              *time.Time
-		IsRandomDistribution bool
-		MinAmount            *int64
-		MaxAmount            *int64
+	setClauses := "status = $1, updated_at = $2"
+	args := []any{status, time.Now()}
+
+	if txHash != nil {
+		args = append(args, *txHash)
+		setClauses += fmt.Sprintf(`, transaction_hash = $%d`, len(args))
+	} else if txRefundHash != nil {
+		args = append(args, *txRefundHash)
+		setClauses += fmt.Sprintf(`, refund_transaction_hash = $%d`, len(args))
 	}
 
-	err := r.db.QueryRowContext(ctx, query, status, time.Now(), id).Scan(
+	args = append(args, id)
+	query := fmt.Sprintf(`
+		UPDATE %s.red_envelope
+		SET %s
+		WHERE id = $%d
+		RETURNING id, name, description, red_envelope_wallet, owner_wallet, total_amount, total_claims, end_date, is_random_distribution, min_amount, max_amount
+	`, r.dongSchema, setClauses, len(args))
+
+	err = r.db.QueryRowContext(ctx, query, args...).Scan(
 		&envelope.ID,
 		&envelope.Name,
 		&envelope.Description,
@@ -317,9 +331,9 @@ func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status str
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return fmt.Errorf("red envelope not found")
+			return "", fmt.Errorf("red envelope not found")
 		}
-		return fmt.Errorf("failed to update status and fetch envelope: %w", err)
+		return "", fmt.Errorf("failed to update status and fetch envelope: %w", err)
 	}
 
 	if status == constants.RedEnvelopeStatusFailed {
@@ -332,18 +346,16 @@ func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status str
 			amount := types.NewBigIntString(envelope.TotalAmount).Multiply(constants.TokenMultiplierBigIntString)
 			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
 			if err != nil {
-				return fmt.Errorf("failed to transfer money to owner wallet: %w", err)
+				return "", fmt.Errorf("failed to transfer money to owner wallet: %w", err)
 			}
 		}
 	}
 
 	if status == constants.RedEnvelopeStatusPublished && r.queueService != nil {
 		ttl := 2 * 24 * time.Hour
-		if envelope.EndDate != nil {
-			ttl = time.Until(*envelope.EndDate)
-			if ttl < 0 {
-				ttl = 24 * time.Hour
-			}
+		ttl = time.Until(envelope.EndDate)
+		if ttl < 0 {
+			ttl = 24 * time.Hour
 		}
 
 		var amounts []int64
@@ -351,7 +363,7 @@ func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status str
 			amounts, err = utils.GenerateRandomAmounts(envelope.TotalAmount, *envelope.MinAmount, *envelope.MaxAmount, int(envelope.TotalClaims))
 			if err != nil {
 				logger.Error().Err(err).Str("red_envelope_id", envelope.ID).Msg("Failed to generate random amounts")
-				return fmt.Errorf("failed to generate random amounts: %w", err)
+				return "", fmt.Errorf("failed to generate random amounts: %w", err)
 			}
 		} else {
 			totalClaims := envelope.TotalClaims
@@ -387,7 +399,7 @@ func (r *RedEnvelopeRepository) UpdateStatus(ctx context.Context, id, status str
 		}
 	}
 
-	return nil
+	return envelope.RedEnvelopeWallet, nil
 }
 
 func (r *RedEnvelopeRepository) GetExpiredEnvelopes() ([]*models.RedEnvelope, error) {
@@ -397,13 +409,13 @@ func (r *RedEnvelopeRepository) GetExpiredEnvelopes() ([]*models.RedEnvelope, er
 			   creator, status, transaction_hash, is_random_distribution, 
 			   start_date, end_date, created_at, updated_at
 		FROM %s.red_envelope
-		WHERE status = $1 
-		  AND end_date IS NOT NULL 
+		WHERE status = ANY($1)
 		  AND end_date < $2
 		ORDER BY end_date ASC
 	`, r.dongSchema)
 
-	rows, err := r.db.Query(query, constants.RedEnvelopeStatusPublished, time.Now())
+	statuses := []string{constants.RedEnvelopeStatusPublished, constants.RedEnvelopeStatusPending}
+	rows, err := r.db.Query(query, pq.Array(statuses), time.Now())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get expired red envelopes: %w", err)
 	}
@@ -611,7 +623,7 @@ func (r *RedEnvelopeRepository) GetDetailRedEnvelopeByID(id string) (models.Deta
 		TotalClaim         int64
 		ClaimedCount       int64
 		TotalClaimedAmount int64
-		EndDate            *time.Time
+		EndDate            time.Time
 	}
 	err := r.db.QueryRow(query, id).
 		Scan(
@@ -635,7 +647,7 @@ func (r *RedEnvelopeRepository) GetDetailRedEnvelopeByID(id string) (models.Deta
 		TotalClaim:         result.TotalClaim,
 		ClaimedCount:       result.ClaimedCount,
 		TotalClaimedAmount: result.TotalClaimedAmount,
-		EndDate:            result.EndDate,
+		EndDate:            &result.EndDate,
 	}, nil
 }
 
@@ -645,7 +657,7 @@ func (r *RedEnvelopeRepository) GetRedEnvelopeCloseSesssion(redEnvelopeID string
 				(re.total_amount - COALESCE(SUM(rec.amount), 0)) AS remaining_amount,
 				re.red_envelope_wallet, re.owner_wallet
 		FROM %s.red_envelope re
-		LEFT JOIN %s.red_envelope_claim rec ON re.id = rec.red_envelope_id
+		LEFT JOIN %s.red_envelope_claim rec ON re.id = rec.red_envelope_id AND rec.status = 'SUCCESS'
 		WHERE re.id = $1
 		GROUP BY re.id, re.total_amount, re.red_envelope_wallet, re.owner_wallet;
 	`, r.dongSchema, r.dongSchema)
@@ -674,7 +686,7 @@ func (r *RedEnvelopeRepository) CheckUserIDAndEnvelopeID(redEnvelopeID string, u
 	return count > 0, nil
 }
 
-func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64) error {
+func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64) (string, error) {
 	canClose, err := r.CheckUserIDAndEnvelopeID(redEnvelopeID, userID)
 	if err != nil {
 		logger.Error().
@@ -682,14 +694,14 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 			Str("red_envelope_id", redEnvelopeID).
 			Int64("user_id", userID).
 			Msg("Failed to check user id and envelope id")
-		return err
+		return "", err
 	}
 	if !canClose {
 		logger.Error().
 			Str("red_envelope_id", redEnvelopeID).
 			Int64("user_id", userID).
 			Msg("User ID does not match owner of red envelope")
-		return err
+		return "", fmt.Errorf("unauthorized: user does not own this red envelope")
 	}
 
 	ctx := context.Background()
@@ -700,8 +712,10 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 			Err(err).
 			Str("red_envelope_id", redEnvelopeID).
 			Msg("Failed to get total claimed amount")
+		return "", err
 	}
 
+	var txPtr *string
 	if envelope.RemainingAmount > 0 {
 		logger.Info().
 			Str("red_envelope_id", redEnvelopeID).
@@ -717,24 +731,26 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 		} else {
 			// TODO: update pass amount from envelope
 			amount := types.NewBigIntString(envelope.RemainingAmount).Multiply(constants.TokenMultiplierBigIntString)
-			_, err = r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
+			txHash, err := r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
 			if err != nil {
-				return err
+				logger.Error().Err(err).Str("red_envelope_id", redEnvelopeID).Msg("Failed to refund remaining balance, proceeding to close anyway")
+			} else {
+				txPtr = &txHash
 			}
 		}
 	}
 
-	err = r.UpdateStatus(ctx, redEnvelopeID, constants.RedEnvelopeStatusExpired)
+	_, err = r.UpdateRedEnvelope(ctx, redEnvelopeID, constants.RedEnvelopeStatusClosed, nil, txPtr)
 	if err != nil {
 		logger.Error().
 			Err(err).
 			Str("red_envelope_id", redEnvelopeID).
-			Msg("Failed to update status to EXPIRED")
+			Msg("Failed to update status to CLOSED")
+		return envelope.RedEnvelopeWallet, err
 	}
 
-	return nil
+	return envelope.RedEnvelopeWallet, nil
 }
-
 
 func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUserID, amount int64) error {
 	// --- PHASE 1: RESERVATION (Transaction 1) ---
@@ -849,7 +865,7 @@ func (r *RedEnvelopeRepository) ExecuteClaim(id, claimerWallet string, claimerUs
 			Str("to", claimerWallet).
 			Int64("claim_id", claimID).
 			Msg("Blockchain transfer failed")
-		
+
 		// Revert reservation because transfer failed
 		_ = r.updateFinalClaimStatus(id, claimID, constants.RedEnvelopeClaimStatusFailed, nil, true)
 		return fmt.Errorf("failed to transfer money")
@@ -920,9 +936,6 @@ func (r *RedEnvelopeRepository) updateFinalClaimStatus(envelopeID string, claimI
 	return tx.Commit()
 }
 
-
-
-
 func (r *RedEnvelopeRepository) HasUserClaimed(redEnvelopeID string, userID int64) (bool, error) {
 	query := fmt.Sprintf(`
       SELECT COUNT(*)
@@ -949,4 +962,49 @@ func (r *RedEnvelopeRepository) GetRedEnvelopeDescriptionByID(redEnvelopeID stri
 		return "", fmt.Errorf("failed to get red envelope description by id: %w", err)
 	}
 	return description, nil
+}
+
+func (r *RedEnvelopeRepository) UpdateStatusInternal(ctx context.Context, id, status, txHash string) (*models.RedEnvelope, error) {
+	query := fmt.Sprintf(`
+		UPDATE %s.red_envelope
+		SET status = $1, transaction_hash = $2, updated_at = $3
+		WHERE id = $4 AND status = $5
+		RETURNING id, name, description, total_amount, min_amount, max_amount, 
+			   total_claims, claimed_count, red_envelope_wallet, owner_wallet, 
+			   creator, status, transaction_hash, is_random_distribution, 
+			   start_date, end_date, created_at, updated_at
+	`, r.dongSchema)
+
+	envelope := &models.RedEnvelope{}
+
+	err := r.db.QueryRowContext(ctx, query, status, txHash, time.Now(), id, constants.RedEnvelopeStatusPending).Scan(
+		&envelope.ID,
+		&envelope.Name,
+		&envelope.Description,
+		&envelope.TotalAmount,
+		&envelope.MinAmount,
+		&envelope.MaxAmount,
+		&envelope.TotalClaims,
+		&envelope.ClaimedCount,
+		&envelope.RedEnvelopeWallet,
+		&envelope.OwnerWallet,
+		&envelope.Creator,
+		&envelope.Status,
+		&envelope.TransactionHash,
+		&envelope.IsRandomDistribution,
+		&envelope.StartDate,
+		&envelope.EndDate,
+		&envelope.CreatedAt,
+		&envelope.UpdatedAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("red envelope not found")
+		}
+		logger.Error().Err(err).Str("envelope_id", id).Msg("Scan error on RETURNING UpdateStatusInternal")
+		return nil, fmt.Errorf("failed to update status and fetch envelope: %w", err)
+	}
+
+	return envelope, nil
 }
