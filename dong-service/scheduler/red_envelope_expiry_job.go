@@ -58,6 +58,7 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 
 		remainingBalance := envelope.TotalAmount - totalClaimed
 		isSuccess := true
+		var txPtr *string
 		if remainingBalance > 0 {
 			logger.Info().
 				Str("red_envelope_id", envelope.ID).
@@ -69,24 +70,33 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 			var wallet *models.IntermediaryWallet
 			wallet, err = j.walletRepo.GetWalletByAddress(ctx, envelope.RedEnvelopeWallet)
 			if err != nil {
-				logger.Error().Err(err).Msg("Failed to get wallet")
+				logger.Error().Err(err).
+					Str("red_envelope_id", envelope.ID).
+					Msg("Failed to get wallet for refund")
 				isSuccess = false
 			} else {
 				// TODO: update pass amount from envelope
 				amount := types.NewBigIntString(remainingBalance).Multiply(constants.TokenMultiplierBigIntString)
-				_, err = j.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
-				if err != nil {
-					logger.Error().Err(err).Msg("Failed to transfer funds")
+				txHash, txErr := j.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
+				if txErr != nil {
+					logger.Error().Err(txErr).
+						Str("red_envelope_id", envelope.ID).
+						Msg("Failed to transfer refund")
 					isSuccess = false
+				} else {
+					txPtr = &txHash
 				}
 			}
 		}
 
 		if !isSuccess {
+			logger.Warn().
+				Str("red_envelope_id", envelope.ID).
+				Msg("Marking red envelope as EXPIRED without refund due to errors")
 			continue
 		}
 
-		err = j.redEnvelopeRepo.UpdateStatus(ctx, envelope.ID, constants.RedEnvelopeStatusExpired)
+		_, err = j.redEnvelopeRepo.UpdateRedEnvelope(ctx, envelope.ID, constants.RedEnvelopeStatusExpired, nil, txPtr)
 		if err != nil {
 			logger.Error().
 				Err(err).
@@ -104,7 +114,7 @@ func (j *RedEnvelopeExpiryJob) Run(ctx context.Context) error {
 			continue
 		}
 
-		walletAge := envelope.UpdatedAt.Sub(wallet.CreatedAt).Hours() / 24
+		walletAge := time.Since(wallet.CreatedAt).Hours() / 24
 		if walletAge > float64(constants.RedEnvelopeWalletMaxAgeInDays) {
 			err = j.walletRepo.UpdateWalletStatus(ctx, wallet.ID, constants.RedEnvelopeWalletStatusPrepareReplace)
 			if err != nil {
