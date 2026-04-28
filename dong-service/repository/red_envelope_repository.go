@@ -278,7 +278,7 @@ func (r *RedEnvelopeRepository) GetStats() (map[string]interface{}, error) {
 	return result, nil
 }
 
-func (r *RedEnvelopeRepository) UpdateRedEnvelope(ctx context.Context, id, status string, txHash *string) (string, error) {
+func (r *RedEnvelopeRepository) UpdateRedEnvelope(ctx context.Context, id, status string, txHash *string, txRefundHash *string) (string, error) {
 	var (
 		envelope struct {
 			ID                   string
@@ -302,6 +302,9 @@ func (r *RedEnvelopeRepository) UpdateRedEnvelope(ctx context.Context, id, statu
 	if txHash != nil {
 		args = append(args, *txHash)
 		setClauses += fmt.Sprintf(`, transaction_hash = $%d`, len(args))
+	} else if txRefundHash != nil {
+		args = append(args, *txRefundHash)
+		setClauses += fmt.Sprintf(`, refund_transaction_hash = $%d`, len(args))
 	}
 
 	args = append(args, id)
@@ -653,7 +656,7 @@ func (r *RedEnvelopeRepository) GetRedEnvelopeCloseSesssion(redEnvelopeID string
 				(re.total_amount - COALESCE(SUM(rec.amount), 0)) AS remaining_amount,
 				re.red_envelope_wallet, re.owner_wallet
 		FROM %s.red_envelope re
-		LEFT JOIN %s.red_envelope_claim rec ON re.id = rec.red_envelope_id
+		LEFT JOIN %s.red_envelope_claim rec ON re.id = rec.red_envelope_id AND rec.status = 'SUCCESS'
 		WHERE re.id = $1
 		GROUP BY re.id, re.total_amount, re.red_envelope_wallet, re.owner_wallet;
 	`, r.dongSchema, r.dongSchema)
@@ -697,7 +700,7 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 			Str("red_envelope_id", redEnvelopeID).
 			Int64("user_id", userID).
 			Msg("User ID does not match owner of red envelope")
-		return "", fmt.Errorf("user is not the owner of this red envelope")
+		return "", fmt.Errorf("unauthorized: user does not own this red envelope")
 	}
 
 	ctx := context.Background()
@@ -711,6 +714,7 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 		return "", err
 	}
 
+	var txPtr *string
 	if envelope.RemainingAmount > 0 {
 		logger.Info().
 			Str("red_envelope_id", redEnvelopeID).
@@ -726,14 +730,16 @@ func (r *RedEnvelopeRepository) CloseSession(redEnvelopeID string, userID int64)
 		} else {
 			// TODO: update pass amount from envelope
 			amount := types.NewBigIntString(envelope.RemainingAmount).Multiply(constants.TokenMultiplierBigIntString)
-			_, err := r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
+			txHash, err := r.blockchainService.TransferMoney(wallet.EncryptedPrivateKey, envelope.RedEnvelopeWallet, envelope.OwnerWallet, amount.String(), constants.TextDataLuckyMoney, constants.ExtraInfoLuckyMoney)
 			if err != nil {
-				return envelope.RedEnvelopeWallet, err
+				logger.Error().Err(err).Str("red_envelope_id", redEnvelopeID).Msg("Failed to refund remaining balance, proceeding to close anyway")
+			} else {
+				txPtr = &txHash
 			}
 		}
 	}
 
-	_, err = r.UpdateRedEnvelope(ctx, redEnvelopeID, constants.RedEnvelopeStatusClosed, nil)
+	_, err = r.UpdateRedEnvelope(ctx, redEnvelopeID, constants.RedEnvelopeStatusClosed, nil, txPtr)
 	if err != nil {
 		logger.Error().
 			Err(err).

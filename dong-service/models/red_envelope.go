@@ -18,6 +18,7 @@ type RedEnvelope struct {
 	Creator              int64     `json:"creator" db:"creator"`
 	Status               string    `json:"status" db:"status"`
 	TransactionHash      *string   `json:"transaction_hash,omitempty" db:"transaction_hash"`
+	RefundTxHash         *string   `json:"refund_tx_hash,omitempty" db:"refund_tx_hash"`
 	IsRandomDistribution bool      `json:"is_random_distribution" db:"is_random_distribution"`
 	StartDate            time.Time `json:"start_date" db:"start_date"`
 	EndDate              time.Time `json:"end_date" db:"end_date"`
