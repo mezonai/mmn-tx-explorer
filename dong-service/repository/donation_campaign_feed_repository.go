@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"dong-service/models"
 	"fmt"
@@ -215,4 +216,30 @@ func (r *DonationCampaignFeedRepository) ListHistoryFeedsByRootHash(rootFeedHash
 		return nil, fmt.Errorf("rows error: %w", err)
 	}
 	return feeds, nil
+}
+
+func (r *DonationCampaignFeedRepository) InsertUserContent(ctx context.Context, tx *sql.Tx, feed *models.DonationCampaignFeed) error {
+	query := fmt.Sprintf(`
+		INSERT INTO %s.user_content (
+			tx_hash, creator_address, related_address, title, description, 
+			image_cids, parent_hash, root_hash, reference_tx_hashes, 
+			visible, type, created_at, updated_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
+	`, r.dongSchema)
+
+	_, err := tx.ExecContext(ctx, query,
+		feed.TxHash,
+		feed.CreatorAddress,
+		feed.CampaignAddress,
+		feed.Title,
+		feed.Description,
+		pq.Array(feed.ImageCIDs),
+		feed.ParentHash,
+		feed.RootHash,
+		pq.Array(feed.ReferenceTxHashes),
+		feed.Visible,
+		FeedTypeDonationCampaign,
+		feed.CreatedAt,
+	)
+	return err
 }

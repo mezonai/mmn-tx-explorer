@@ -7,6 +7,7 @@ import (
 	"dong-service/database"
 	"dong-service/logger"
 	"dong-service/middleware"
+	"dong-service/repository"
 	"dong-service/routes"
 	"dong-service/scheduler"
 	"dong-service/services"
@@ -128,6 +129,25 @@ func main() {
 		}
 	}()
 
+	// Initialize scheduler and common context
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Initialize subscriber for Indexer updates via Redis Pub/Sub
+	logger.Info().Msg("Initializing Indexer Subscriber")
+	offerRepo := repository.NewOfferRepository(database.GetDB(), cfg.Database.Schema)
+	orderRepo := repository.NewOrderRepository(database.GetDB(), cfg.Database.Schema)
+	queueService := repository.NewRedEnvelopeQueueService(database.RedisClient)
+	intermediaryWalletRepo := repository.NewIntermediaryWalletRepository(database.GetDB(), cfg.Database.Schema)
+	reRepo := repository.NewRedEnvelopeRepository(database.GetDB(), cfg.Database.Schema, blockchainService, intermediaryWalletRepo, queueService)
+	feedRepo := repository.NewDonationCampaignFeedRepository(database.GetDB(), cfg.Database.Schema)
+
+	syncService := services.NewIndexerSyncService(database.GetDB(), offerRepo, orderRepo, reRepo, intermediaryWalletRepo, feedRepo, cfg.Database.Schema)
+	subscriber := database.NewIndexerSubscriber(database.RedisClient, syncService)
+
+	// Start subscriber in a goroutine
+	go subscriber.Start(ctx)
+
 	// Create Gin router
 	r := gin.New()
 
@@ -140,8 +160,6 @@ func main() {
 	routes.SetupRoutes(r, cfg)
 
 	// Initialize scheduler
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	schedulerInstance := scheduler.NewScheduler()
 

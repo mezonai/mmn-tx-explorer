@@ -325,11 +325,21 @@ func (r *IntermediaryWalletRepository) UpdateWalletStatus(ctx context.Context, w
 }
 
 func (r *IntermediaryWalletRepository) ReleaseWallet(ctx context.Context, walletAddress string) error {
+	return r.ReleaseWalletWithTx(ctx, nil, walletAddress)
+}
+
+func (r *IntermediaryWalletRepository) ReleaseWalletWithTx(ctx context.Context, tx *sql.Tx, walletAddress string) error {
 	query := fmt.Sprintf(`
 		UPDATE %s.intermediary_wallet
 		SET status = $1, updated_at = NOW(), type = $2
 		WHERE wallet_address = $3
 	`, r.dongSchema)
-	_, err := r.db.ExecContext(ctx, query, constants.RedEnvelopeWalletStatusReady, constants.WalletTypeDefault, walletAddress)
+
+	var err error
+	if tx != nil {
+		_, err = tx.ExecContext(ctx, query, constants.RedEnvelopeWalletStatusReady, constants.WalletTypeDefault, walletAddress)
+	} else {
+		_, err = r.db.ExecContext(ctx, query, constants.RedEnvelopeWalletStatusReady, constants.WalletTypeDefault, walletAddress)
+	}
 	return err
 }

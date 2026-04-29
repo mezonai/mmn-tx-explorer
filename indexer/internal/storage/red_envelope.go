@@ -10,7 +10,6 @@ import (
 
 	"github.com/lib/pq"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
-	"github.com/mezonai/mmn-tx-explorer/indexer/internal/integration/dong"
 	"github.com/rs/zerolog/log"
 )
 
@@ -37,9 +36,9 @@ type redEnvelopeRow struct {
 	Status            string
 }
 
-func (p *PostgresConnector) updateRedEnvelopeClaimStatus(ctx context.Context, tx *sql.Tx, txs []common.Transaction) error {
+func (p *PostgresConnector) updateRedEnvelopeClaimStatus(ctx context.Context, tx *sql.Tx, txs []common.Transaction) ([]RedEnvelopeClaimUpdate, error) {
 	if len(txs) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	log.Info().Int("claims_to_reconcile", len(txs)).Msg("starting precise red envelope claim reconciliation")
@@ -62,7 +61,7 @@ func (p *PostgresConnector) updateRedEnvelopeClaimStatus(ctx context.Context, tx
 	}
 
 	if len(claimIDs) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	// Fetch expected claim details for validation
@@ -76,12 +75,11 @@ func (p *PostgresConnector) updateRedEnvelopeClaimStatus(ctx context.Context, tx
 		JOIN dong_schema.red_envelope re ON rec.red_envelope_id = re.id
 		WHERE rec.id = ANY($1::bigint[])
 			AND rec.status = 'PENDING'
-		FOR UPDATE OF rec
-	`
+		`
 
 	rows, err := tx.QueryContext(ctx, querySelect, pq.Array(claimIDs))
 	if err != nil {
-		return fmt.Errorf("failed to select red envelope claims for validation: %w", err)
+		return nil, fmt.Errorf("failed to select red envelope claims for validation: %w", err)
 	}
 	defer rows.Close()
 
@@ -97,7 +95,7 @@ func (p *PostgresConnector) updateRedEnvelopeClaimStatus(ctx context.Context, tx
 		var c claimRow
 		if err := rows.Scan(&c.ID, &c.ClaimerWallet, &c.Amount, &c.IntermediaryWallet); err != nil {
 			log.Error().Err(err).Msg("failed to scan red envelope claim row")
-			return err
+			return nil, err
 		}
 		claimMap[c.ID] = c
 	}
@@ -107,6 +105,7 @@ func (p *PostgresConnector) updateRedEnvelopeClaimStatus(ctx context.Context, tx
 		Hash string
 	}
 	validClaims := make([]validClaim, 0)
+	updates := make([]RedEnvelopeClaimUpdate, 0)
 
 	for id, t := range claimTxMap {
 		c, ok := claimMap[id]
@@ -149,11 +148,16 @@ func (p *PostgresConnector) updateRedEnvelopeClaimStatus(ctx context.Context, tx
 		}
 
 		validClaims = append(validClaims, validClaim{ID: id, Hash: t.Hash})
+		updates = append(updates, RedEnvelopeClaimUpdate{
+			ClaimID: id,
+			Status:  "SUCCESS",
+			TxHash:  t.Hash,
+		})
 	}
 
 	if len(validClaims) == 0 {
 		log.Info().Msg("no valid claims to update")
-		return nil
+		return nil, nil
 	}
 
 	// Sort by ID to prevent database deadlocks on concurrent updates
@@ -168,103 +172,74 @@ func (p *PostgresConnector) updateRedEnvelopeClaimStatus(ctx context.Context, tx
 		finalTxHashes[i] = c.Hash
 	}
 
-	queryUpdate := `
-		UPDATE dong_schema.red_envelope_claim rec
-		SET status = 'SUCCESS', transaction_hash = v.tx_hash
-		FROM unnest($1::bigint[], $2::text[]) AS v(id, tx_hash)
-		WHERE rec.id = v.id AND rec.status = 'PENDING'
-		RETURNING rec.id
-	`
-	rowsUpdate, err := tx.QueryContext(ctx, queryUpdate, pq.Array(finalClaimIDs), pq.Array(finalTxHashes))
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to batch reconcile red envelope claims")
-		return err
-	}
-	defer rowsUpdate.Close()
+	log.Info().Int("claims_validated", len(validClaims)).Msg("Successfully validated red envelope claims via precise batch sync")
 
-	reconciledCount := 0
-	for rowsUpdate.Next() {
-		reconciledCount++
-	}
-
-	if err := rowsUpdate.Err(); err != nil {
-		log.Error().Err(err).Msg("Error occurred while reading reconciled rows")
-		return err
-	}
-
-	log.Info().Int("claims_reconciled", reconciledCount).Msg("Successfully reconciled red envelope claims via precise batch update")
-
-	return nil
+	return updates, nil
 }
+
 
 func (p *PostgresConnector) updateRedEnvelopeStatus(
 	ctx context.Context,
 	tx *sql.Tx,
 	txs []common.Transaction,
-) error {
+) ([]RedEnvelopeUpdate, error) {
 	log.Info().Int("tx_count", len(txs)).Msg("Starting updateRedEnvelopeStatus")
 
 	validatedTxs, err := p.validateRedEnvelopeTransactions(ctx, tx, txs, RedEnvelopeActionUpdatePublished)
 	if err != nil {
 		log.Error().Err(err).Msg("validateRedEnvelopeTransactions failed in updateRedEnvelopeStatus")
-		return err
+		return nil, err
 	}
 
 	if len(validatedTxs) == 0 {
 		log.Info().Msg("No valid transactions found for red envelope update published status in updateRedEnvelopeStatus")
-		return nil
+		return nil, nil
 	}
 
-	updates := make([]dong.DongUpdateEntry, 0, len(validatedTxs))
+	updates := make([]RedEnvelopeUpdate, 0, len(validatedTxs))
 	for _, v := range validatedTxs {
 		log.Info().Str("red_envelope_id", v.ID).Str("tx_hash", v.Hash).Msg("Preparing to update red envelope status to published")
-		updates = append(updates, dong.DongUpdateEntry{
-			ID:              v.ID,
-			Status:          RedEnvelopeStatusPublished,
-			TransactionHash: v.Hash,
+		updates = append(updates, RedEnvelopeUpdate{
+			ID:     v.ID,
+			Status: "PUBLISHED",
+			TxHash: v.Hash,
 		})
 	}
 
-	if err := p.dongClient.UpdateRedEnvelopeStatus(ctx, updates); err != nil {
-		log.Error().Err(err).Msg("failed to call dong service for red envelope status update")
-		return fmt.Errorf("failed to call dong service for red envelope status update: %w", err)
-	}
+	log.Info().Int("red_envelopes_updated", len(validatedTxs)).Msg("red envelope status updates gathered")
 
-	log.Info().Int("red_envelopes_updated", len(validatedTxs)).Msg("red envelope status update completed via dong service")
-
-	return nil
+	return updates, nil
 }
+
 
 func (p *PostgresConnector) failRedEnvelopeStatus(
 	ctx context.Context,
 	tx *sql.Tx,
 	txs []common.Transaction,
-) error {
+) ([]RedEnvelopeUpdate, error) {
 	validated, err := p.validateRedEnvelopeTransactions(ctx, tx, txs, RedEnvelopeActionUpdateFailed)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if len(validated) == 0 {
-		return nil
+		return nil, nil
 	}
 
-	updates := make([]dong.DongUpdateEntry, 0, len(validated))
+	updates := make([]RedEnvelopeUpdate, 0, len(validated))
 	for _, v := range validated {
-		updates = append(updates, dong.DongUpdateEntry{
+		updates = append(updates, RedEnvelopeUpdate{
 			ID:     v.ID,
-			Status: RedEnvelopeStatusFailed,
+			Status: "FAILED",
+			TxHash: v.Hash,
 		})
 	}
 
-	if err := p.dongClient.UpdateRedEnvelopeStatus(ctx, updates); err != nil {
-		return fmt.Errorf("failed to call dong service for red envelope failure update: %w", err)
-	}
+	log.Info().Int("red_envelopes_failed", len(validated)).Msg("failed red envelope updates gathered")
 
-	log.Info().Int("red_envelopes_failed", len(validated)).Msg("failed red envelopes updated via dong service")
-
-	return nil
+	return updates, nil
 }
+
 
 func (p *PostgresConnector) validateRedEnvelopeTransactions(
 	ctx context.Context,

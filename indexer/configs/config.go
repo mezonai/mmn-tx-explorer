@@ -192,6 +192,12 @@ type EventConfig struct {
 	DongAPIURL string `mapstructure:"dong_api_url"`
 }
 
+type RedisConfig struct {
+	Address  string `mapstructure:"address"`
+	Password string `mapstructure:"password"`
+	DB       int    `mapstructure:"db"`
+}
+
 type Config struct {
 	RPC              RPCConfig              `mapstructure:"rpc"`
 	Log              LogConfig              `mapstructure:"log"`
@@ -202,6 +208,7 @@ type Config struct {
 	Storage          StorageConfig          `mapstructure:"storage"`
 	API              APIConfig              `mapstructure:"api"`
 	Publisher        PublisherConfig        `mapstructure:"publisher"`
+	Redis            RedisConfig            `mapstructure:"redis"`
 	WorkMode         WorkModeConfig         `mapstructure:"workMode"`
 	Validation       ValidationConfig       `mapstructure:"validation"`
 	Event            EventConfig            `mapstructure:"event"`
