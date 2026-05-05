@@ -128,6 +128,15 @@ func main() {
 		}
 	}()
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	expiryJob, expiryRepo := scheduler.CreateRedEnvelopeExpiryJob(cfg.Database.Schema, blockchainService)
+	expirySched, err := scheduler.NewRedEnvelopeScheduler(ctx, expiryJob.RunForEnvelope)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("Failed to create red envelope expiry scheduler")
+	}
+
 	// Create Gin router
 	r := gin.New()
 
@@ -137,11 +146,7 @@ func main() {
 	r.Use(middleware.CORS(&cfg.CORS))
 
 	// Setup routes with dependency injection
-	routes.SetupRoutes(r, cfg)
-
-	// Initialize scheduler
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	routes.SetupRoutes(r, cfg, expirySched)
 
 	schedulerInstance := scheduler.NewScheduler()
 
@@ -150,10 +155,6 @@ func main() {
 	syncTask := scheduler.CreateSyncContributorsTask(syncInterval, cfg.Indexer.Schema, cfg.Database.Schema, cfg.Scheduler.RecentStatsWindowDays)
 	schedulerInstance.AddTask(syncTask)
 
-	expiryCheckInterval := time.Duration(cfg.Scheduler.ExpiredRedEnvelopesInterval) * time.Second
-	expiryRedEnvelopeTask := scheduler.CreateRedEnvelopeExpiryTask(expiryCheckInterval, cfg.Database.Schema, blockchainService)
-	schedulerInstance.AddTask(expiryRedEnvelopeTask)
-
 	// Add cancel expired orders task
 	ordersExpiryInterval := time.Duration(cfg.Scheduler.ExpiredOrdersInterval) * time.Second
 	cancelExpiredOrdersTask := scheduler.CreateCancelExpiredOrdersTask(ordersExpiryInterval, cfg.Database.Schema, blockchainService)
@@ -161,6 +162,11 @@ func main() {
 
 	// Start scheduler
 	schedulerInstance.Start(ctx)
+
+	expirySched.Start()
+	if err := scheduler.RecoverRedEnvelopeExpiry(ctx, expirySched, expiryJob, expiryRepo); err != nil {
+		logger.Error().Err(err).Msg("Red envelope expiry recovery failed (service will continue running)")
+	}
 
 	cronjob := cron.New(cron.WithLocation(time.Local))
 	scheduler.InitializeWalletPoolMaintenanceJob(cronjob, ctx, cfg.Database.Schema)
@@ -193,6 +199,10 @@ func main() {
 	// Stop scheduler
 	schedulerInstance.Stop()
 	cronjob.Stop()
+
+	if err := expirySched.Shutdown(); err != nil {
+		logger.Error().Err(err).Msg("Failed to shutdown red envelope expiry scheduler")
+	}
 
 	// Shutdown server with timeout
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)

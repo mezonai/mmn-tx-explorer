@@ -461,6 +461,105 @@ func (r *RedEnvelopeRepository) GetExpiredEnvelopes() ([]*models.RedEnvelope, er
 	return envelopes, nil
 }
 
+func (r *RedEnvelopeRepository) GetEnvelopeByID(id string) (*models.RedEnvelope, error) {
+	query := fmt.Sprintf(`
+		SELECT id, name, description, total_amount, min_amount, max_amount,
+			   total_claims, claimed_count, red_envelope_wallet, owner_wallet,
+			   creator, status, transaction_hash, is_random_distribution,
+			   start_date, end_date, created_at, updated_at
+		FROM %s.red_envelope
+		WHERE id = $1
+	`, r.dongSchema)
+
+	envelope := &models.RedEnvelope{}
+	err := r.db.QueryRow(query, id).Scan(
+		&envelope.ID,
+		&envelope.Name,
+		&envelope.Description,
+		&envelope.TotalAmount,
+		&envelope.MinAmount,
+		&envelope.MaxAmount,
+		&envelope.TotalClaims,
+		&envelope.ClaimedCount,
+		&envelope.RedEnvelopeWallet,
+		&envelope.OwnerWallet,
+		&envelope.Creator,
+		&envelope.Status,
+		&envelope.TransactionHash,
+		&envelope.IsRandomDistribution,
+		&envelope.StartDate,
+		&envelope.EndDate,
+		&envelope.CreatedAt,
+		&envelope.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to get red envelope by id %s: %w", id, err)
+	}
+	return envelope, nil
+}
+
+func (r *RedEnvelopeRepository) GetActiveExpiringEnvelopes() ([]*models.RedEnvelope, error) {
+	query := fmt.Sprintf(`
+		SELECT id, name, description, total_amount, min_amount, max_amount,
+			   total_claims, claimed_count, red_envelope_wallet, owner_wallet,
+			   creator, status, transaction_hash, is_random_distribution,
+			   start_date, end_date, created_at, updated_at
+		FROM %s.red_envelope
+		WHERE status = ANY($1)
+		  AND end_date > $2
+		ORDER BY end_date ASC
+	`, r.dongSchema)
+
+	statuses := []string{constants.RedEnvelopeStatusPublished, constants.RedEnvelopeStatusPending}
+	rows, err := r.db.Query(query, pq.Array(statuses), time.Now())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get active expiring red envelopes: %w", err)
+	}
+	defer func() {
+		if err = rows.Close(); err != nil {
+			logger.Error().Err(err).Msg("Failed to close rows")
+		}
+	}()
+
+	var envelopes []*models.RedEnvelope
+	for rows.Next() {
+		envelope := &models.RedEnvelope{}
+		err = rows.Scan(
+			&envelope.ID,
+			&envelope.Name,
+			&envelope.Description,
+			&envelope.TotalAmount,
+			&envelope.MinAmount,
+			&envelope.MaxAmount,
+			&envelope.TotalClaims,
+			&envelope.ClaimedCount,
+			&envelope.RedEnvelopeWallet,
+			&envelope.OwnerWallet,
+			&envelope.Creator,
+			&envelope.Status,
+			&envelope.TransactionHash,
+			&envelope.IsRandomDistribution,
+			&envelope.StartDate,
+			&envelope.EndDate,
+			&envelope.CreatedAt,
+			&envelope.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan red envelope: %w", err)
+		}
+		envelopes = append(envelopes, envelope)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating active red envelopes: %w", err)
+	}
+
+	return envelopes, nil
+}
+
 func (r *RedEnvelopeRepository) GetRedEnvelopeCreatedByUser(userID int64, page, limit int) (models.CreateRedEnvelopeCreateByUser, error) {
 	offset := (page - 1) * limit
 

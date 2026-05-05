@@ -11,17 +11,29 @@ import (
 	"time"
 )
 
-type RedEnvelopeService struct {
-	repo       *repository.RedEnvelopeRepository
-	walletRepo *repository.IntermediaryWalletRepository
-	queue      *repository.RedEnvelopeQueueService
+type EnvelopeExpiryScheduler interface {
+	ScheduleExpiry(ctx context.Context, envelopeID string, expireAt time.Time) error
+	CancelExpiry(envelopeID string)
 }
 
-func NewRedEnvelopeService(repo *repository.RedEnvelopeRepository, walletRepo *repository.IntermediaryWalletRepository, queue *repository.RedEnvelopeQueueService) *RedEnvelopeService {
+type RedEnvelopeService struct {
+	repo            *repository.RedEnvelopeRepository
+	walletRepo      *repository.IntermediaryWalletRepository
+	queue           *repository.RedEnvelopeQueueService
+	expiryScheduler EnvelopeExpiryScheduler
+}
+
+func NewRedEnvelopeService(
+	repo *repository.RedEnvelopeRepository,
+	walletRepo *repository.IntermediaryWalletRepository,
+	queue *repository.RedEnvelopeQueueService,
+	expiryScheduler EnvelopeExpiryScheduler,
+) *RedEnvelopeService {
 	return &RedEnvelopeService{
-		repo:       repo,
-		walletRepo: walletRepo,
-		queue:      queue,
+		repo:            repo,
+		walletRepo:      walletRepo,
+		queue:           queue,
+		expiryScheduler: expiryScheduler,
 	}
 }
 
@@ -103,6 +115,16 @@ func (s *RedEnvelopeService) InternalUpdateStatusBatch(ctx context.Context, upda
 						Msg("Initialized queue for red envelope")
 				}
 			}
+
+			if s.expiryScheduler != nil && !envelope.EndDate.IsZero() {
+				if schedErr := s.expiryScheduler.ScheduleExpiry(ctx, envelope.ID, envelope.EndDate); schedErr != nil {
+					logger.Error().
+						Err(schedErr).
+						Str("red_envelope_id", envelope.ID).
+						Time("end_date", envelope.EndDate).
+						Msg("Failed to schedule expiry job (envelope will be picked up by recovery sweep)")
+				}
+			}
 		}
 
 		// Send socket event for each updated red envelope to the owner
@@ -121,6 +143,9 @@ func (s *RedEnvelopeService) CancelRedEnvelope(ctx context.Context, id string) e
 	if err != nil {
 		return fmt.Errorf("cancel red envelope: %w", err)
 	}
+	if s.expiryScheduler != nil {
+		s.expiryScheduler.CancelExpiry(id)
+	}
 	if releaseErr := s.walletRepo.ReleaseWallet(ctx, walletAddress); releaseErr != nil {
 		logger.Error().Err(releaseErr).Str("address", walletAddress).Msg("Failed to release intermediary wallet after cancel")
 	} else {
@@ -133,6 +158,9 @@ func (s *RedEnvelopeService) CloseRedEnvelope(ctx context.Context, id string, us
 	walletAddress, err := s.repo.CloseSession(id, userID)
 	if err != nil {
 		return fmt.Errorf("close red envelope: %w", err)
+	}
+	if s.expiryScheduler != nil {
+		s.expiryScheduler.CancelExpiry(id)
 	}
 	if releaseErr := s.walletRepo.ReleaseWallet(ctx, walletAddress); releaseErr != nil {
 		logger.Error().Err(releaseErr).Str("address", walletAddress).Msg("Failed to release intermediary wallet after close")

@@ -17,7 +17,7 @@ import (
 )
 
 // SetupRoutes configures all application routes with dependency injection
-func SetupRoutes(router *gin.Engine, cfg *config.Config) {
+func SetupRoutes(router *gin.Engine, cfg *config.Config, expirySched services.EnvelopeExpiryScheduler) {
 	// Health check endpoint
 	router.GET("/health", handlers.Health)
 
@@ -40,7 +40,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 	queueService := repository.NewRedEnvelopeQueueService(database.RedisClient)
 	intermediaryWalletRepo := repository.NewIntermediaryWalletRepository(database.GetDB(), cfg.Database.Schema)
 	redEnvelopeRepo := repository.NewRedEnvelopeRepository(database.GetDB(), cfg.Database.Schema, blockchainService, intermediaryWalletRepo, queueService)
-	redEnvelopeService := services.NewRedEnvelopeService(redEnvelopeRepo, intermediaryWalletRepo, queueService)
+	redEnvelopeService := services.NewRedEnvelopeService(redEnvelopeRepo, intermediaryWalletRepo, queueService, expirySched)
 	redEnvelopeHandler := handlers.NewRedEnvelopeHandler(redEnvelopeRepo, queueService, intermediaryWalletRepo, redEnvelopeService)
 
 	// API v1 routes
