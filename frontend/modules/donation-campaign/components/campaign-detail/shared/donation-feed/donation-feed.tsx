@@ -71,7 +71,16 @@ export const DonationFeed = ({ campaign, isOwner = true, feedTitle, feedDescript
           <Loader2 className="text-brand-primary h-12 w-12 animate-spin" />
         </div>
       )}
-      {!isLoading && (error || donationFeed.length === 0) && (
+      {!isLoading && error && (
+        <div className="border-muted-foreground/50 bg-background flex flex-col items-center justify-center rounded-2xl border py-12">
+          <FileX2Icon className="text-primary my-4 h-10 w-10" />
+          <h3 className="text-primary mb-2 text-lg font-semibold">Failed to Load Updates</h3>
+          <p className="text-muted-foreground px-4 text-sm">
+            Something went wrong while fetching updates. Please try again later.
+          </p>
+        </div>
+      )}
+      {!isLoading && !error && donationFeed.length === 0 && (
         <div className="border-muted-foreground/50 bg-background flex flex-col items-center justify-center rounded-2xl border py-12">
           <FileX2Icon className="text-primary my-4 h-10 w-10" />
           <h3 className="text-primary mb-2 text-lg font-semibold">No Updates Yet</h3>

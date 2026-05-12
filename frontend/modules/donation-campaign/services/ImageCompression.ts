@@ -24,22 +24,29 @@ export const ImageCompression = () => {
           outputFormat: getOutputFormat(processedFile),
         }),
       });
-      const result = await response.json();
 
-      if (response.ok) {
-        const compressedDataB64 = result.buffer as string;
-        // decode base64 to Uint8Array in browser
-        const binary = atob(compressedDataB64);
-        const len = binary.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
-
-        const compressedFile = new File([bytes], result.filename, { type: result.mime });
-        return compressedFile;
-      } else {
-        toast.error(`Image compression failed for ${processedFile.name}`);
+      if (!response.ok) {
+        let serverError = '';
+        try {
+          const errBody = await response.json();
+          serverError = errBody?.error ? `: ${errBody.error}` : '';
+        } catch {
+          serverError = ` (HTTP ${response.status})`;
+        }
+        toast.error(`Image compression failed for ${processedFile.name}${serverError}`);
         return null;
       }
+
+      const result = await response.json();
+      const compressedDataB64 = result.buffer as string;
+      // decode base64 to Uint8Array in browser
+      const binary = atob(compressedDataB64);
+      const len = binary.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+
+      const compressedFile = new File([bytes], result.filename, { type: result.mime });
+      return compressedFile;
     } catch (err) {
       toast.error(`Failed to compress ${processedFile.name}. Please try a different image.`);
       return null;
