@@ -20,7 +20,6 @@ export const DONATION_ENDPOINTS = {
   PUBLISH_CAMPAIGN: (id: string) => `/api/v1/campaigns/${id}/activate`,
   TOP_CONTRIBUTOR: (id: string) => `/api/v1/campaigns/${id}/top-contributors`,
   REFRESH_CAMPAIGN_RAISED: (id: string) => `/api/v1/campaigns/${id}/sync`,
-  IMAGE_COMPRESSION: '/api/image-compression',
 } as const;
 export const QUERY_KEYS = {
   CAMPAIGNS: 'campaigns',
