@@ -41,6 +41,7 @@ const (
 	RedEnvelopeStatusPublished = "PUBLISHED" // Active and claimable
 	RedEnvelopeStatusExpired   = "EXPIRED"   // Session ended
 	RedEnvelopeStatusFailed    = "FAILED"    // Transaction failed after retries
+	RedEnvelopeStatusClosed    = "CLOSED"    // Manually closed
 )
 
 // Red Envelope Claim Status Constants
@@ -68,12 +69,15 @@ const (
 const (
 	RedEnvelopeInitialWalletPool  = 50 // Number of wallets to create on deployment
 	RedEnvelopeWalletMaxAgeInDays = 30 // Maximum age for unused wallets before replacement
+	RedEnvelopeDefaultTTLHours    = 48
+	RedEnvelopeMinTTLHours        = 24
 )
 
 const (
 	StatusPublished = 2
 	StatusFailed    = 3
 	StatusExpired   = 4
+	StatusClosed    = 5
 )
 
 const (
@@ -82,8 +86,6 @@ const (
 	RedEnvelopeQueueStatusNotInitialize      = "QUEUE_NOT_INITIALIZE"
 	RedEnvelopeStatusOk                      = "OK"
 )
-
-
 
 const (
 	AmountError = 0

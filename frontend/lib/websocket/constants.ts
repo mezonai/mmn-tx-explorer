@@ -11,4 +11,5 @@ export const SOCKET_MESSAGE = {
   SERVER_JOINED_ROOM_PREFIX: 'joined_room',
   SERVER_LEFT_ROOM_PREFIX: 'left_room',
   ROOM_OFFER_UPDATES: 'offer_updates',
+  ROOM_RED_ENVELOPE_UPDATES: 'red_envelope_updates',
 } as const;

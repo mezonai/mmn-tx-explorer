@@ -14,7 +14,22 @@ const inter = Inter({
   display: 'swap',
 });
 
+function getMetadataBase(): URL | undefined {
+  let raw = process.env.NEXT_PUBLIC_CHAT_APP_MMN_API_URL;
+  if (!raw) return undefined;
+  if (!raw.startsWith('http://') && !raw.startsWith('https://')) {
+    raw = `https://${raw}`;
+  }
+  try {
+    const origin = new URL(raw).origin;
+    return new URL(origin);
+  } catch {
+    return undefined;
+  }
+}
+
 export const metadata: Metadata = {
+  metadataBase: getMetadataBase(),
   title: {
     template: '%s | Mezon Đồng',
     default: 'Mezon Đồng',
