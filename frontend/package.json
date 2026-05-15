@@ -38,7 +38,7 @@
     "lucide-react": "^0.539.0",
     "mezon-light-sdk": "^1.0.10",
     "mmn-client-js": "^1.0.15",
-    "next": "15.4.10",
+    "next": "15.5.18",
     "qrcode": "^1.5.4",
     "rc-progress": "^4.0.0",
     "react": "19.2.3",
