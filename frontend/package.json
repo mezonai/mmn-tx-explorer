@@ -36,7 +36,7 @@
     "file-type": "^20.5.0",
     "heic2any": "^0.0.4",
     "lucide-react": "^0.539.0",
-    "mezon-light-sdk": "^1.0.9",
+    "mezon-light-sdk": "^1.0.10",
     "mmn-client-js": "^1.0.15",
     "next": "15.4.10",
     "qrcode": "^1.5.4",
