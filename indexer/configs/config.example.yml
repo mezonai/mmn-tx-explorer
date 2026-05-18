@@ -239,3 +239,9 @@ workMode:
 validation:
   # Validation mode: "disabled" (no validation), "minimal" (basic checks), or "strict" (comprehensive validation)
   mode: strict
+
+# Redis Configuration
+redis:
+  address: "host.docker.internal:6379"
+  password: ""
+  db: 0

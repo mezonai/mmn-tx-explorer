@@ -14,8 +14,8 @@ import (
 	"github.com/lib/pq"
 	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
-	"github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/integration/dong"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc"
 	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
 	"github.com/rs/zerolog/log"
 )
@@ -2820,7 +2820,7 @@ func (p *PostgresConnector) updateOrderStatus(
 		updates = append(updates, OrderUpdate{
 			OfferID: o.OfferID,
 			OrderID: o.OrderID,
-			Status:  "OPEN", // Wait, status in repo is 'OPEN' but for order maybe it means 'COMPLETED'?
+			Status:  "OPEN",
 			TxHash:  t.Hash,
 		})
 	}

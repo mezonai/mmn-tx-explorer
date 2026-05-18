@@ -72,6 +72,12 @@ func (s *IndexerSyncService) ProcessBatch(ctx context.Context, msg *types.DongBa
 		}
 	}
 
+	if len(msg.OfferUpdates) > 0 {
+		go SendSocketEvent(constants.OFFER_ROOM, constants.OFFER_LIST_REFRESH, map[string]any{
+			"action": "updated p2p offer status",
+		})
+	}
+
 	// 2. Process Order Updates
 	for _, u := range msg.OrderUpdates {
 		if err = s.orderRepo.UpdateOrderStatusWithTxHash(ctx, u.OrderID, u.Status, &u.TxHash, tx); err != nil {
@@ -105,7 +111,7 @@ func (s *IndexerSyncService) ProcessBatch(ctx context.Context, msg *types.DongBa
 
 	// 4. Process Red Envelope Claim Updates
 	for _, u := range msg.RedEnvelopeClaimUpdates {
-		query := fmt.Sprintf("UPDATE %s.red_envelope_claim SET status = $1, transaction_hash = $2 WHERE id = $3", s.dongSchema)
+		query := fmt.Sprintf("UPDATE %s.red_envelope_claim SET status = $1, transaction_hash = $2, claimed_at = NOW() WHERE id = $3", s.dongSchema)
 		if _, err = tx.ExecContext(ctx, query, u.Status, u.TxHash, u.ClaimID); err != nil {
 			logger.Error().Err(err).Int64("claim_id", u.ClaimID).Msg("Failed to update red envelope claim status from sync")
 			return err

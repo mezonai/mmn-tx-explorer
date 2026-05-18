@@ -47,12 +47,14 @@ type RedEnvelopeUpdate struct {
 // PublishDongUpdates sends a batch of updates to the Dong Service via Redis Pub/Sub
 func PublishDongUpdates(ctx context.Context, msg *DongBatchMessage) error {
 	if RedisClient == nil {
+		log.Warn().Msg("RedisClient is nil, skipping PublishDongUpdates")
 		return nil
 	}
 
 	if msg == nil || (len(msg.OfferUpdates) == 0 && len(msg.OrderUpdates) == 0 && 
 		len(msg.RedEnvelopeUpdates) == 0 && len(msg.RedEnvelopeClaimUpdates) == 0 && 
 		len(msg.UserContents) == 0) {
+		log.Debug().Msg("No updates to publish, skipping PublishDongUpdates")
 		return nil
 	}
 
