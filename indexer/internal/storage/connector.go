@@ -171,6 +171,12 @@ func NewStorageConnector(cfg *config.StorageConfig) (IStorage, error) {
 	var storage IStorage
 	var err error
 
+	// Initialize Redis
+	if err := InitRedis(&config.Cfg.Redis); err != nil {
+		log.Error().Err(err).Msg("Failed to initialize Redis")
+		// We don't return error here to allow system to run without Redis if not critical
+	}
+
 	storage.OrchestratorStorage, err = NewConnector[IOrchestratorStorage](&cfg.Orchestrator)
 	if err != nil {
 		return IStorage{}, fmt.Errorf("failed to create orchestrator storage: %w", err)

@@ -1,4 +1,4 @@
-﻿name: Deploy Transaction Explorer Services
+name: Deploy Transaction Explorer Services
 permissions:
   contents: write
 
@@ -92,6 +92,7 @@ jobs:
     secrets:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       EVENT_API_KEY: ${{ secrets.EVENT_API_KEY }}
+      REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
 
   deploy-dong:
     needs: [determine_tags]

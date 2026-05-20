@@ -36,6 +36,8 @@ on:
         required: true
       EVENT_API_KEY:
         required: true
+      REDIS_PASSWORD:
+        required: true
 
 jobs:
   build:
@@ -158,6 +160,9 @@ jobs:
           EVENT_API_URL: ${{ vars.EVENT_API_URL}}
           EVENT_API_KEY: ${{ secrets.EVENT_API_KEY }}
           EVENT_DONG_API_URL: ${{ vars.EVENT_DONG_API_URL}}
+          REDIS_ADDRESS: ${{ vars.REDIS_ADDRESS }}
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+          REDIS_DB: ${{ vars.REDIS_DB }}
         run: |
           cat > remote_setup.sh <<'EOF'
           #!/usr/bin/env bash
@@ -179,6 +184,9 @@ jobs:
           EVENT_API_URL=${EVENT_API_URL}
           EVENT_API_KEY=${EVENT_API_KEY}
           EVENT_DONG_API_URL=${EVENT_DONG_API_URL}
+          REDIS_ADDRESS=${REDIS_ADDRESS}
+          REDIS_PASSWORD=${REDIS_PASSWORD}
+          REDIS_DB=${REDIS_DB}
           EON
 
           sudo chown -R mmn:mmn /opt/indexer
@@ -204,6 +212,9 @@ jobs:
           printf "export EVENT_API_URL=%q\n" "$EVENT_API_URL" >> remote_env.sh
           printf "export EVENT_API_KEY=%q\n" "$EVENT_API_KEY" >> remote_env.sh
           printf "export EVENT_DONG_API_URL=%q\n" "$EVENT_DONG_API_URL" >> remote_env.sh
+          printf "export REDIS_ADDRESS=%q\n" "$REDIS_ADDRESS" >> remote_env.sh
+          printf "export REDIS_PASSWORD=%q\n" "$REDIS_PASSWORD" >> remote_env.sh
+          printf "export REDIS_DB=%q\n" "$REDIS_DB" >> remote_env.sh
       - name: Prepare and deploy to target server
         env:
           DEPLOY_TAG: ${{ steps.determine_binary.outputs.tag_name }}
