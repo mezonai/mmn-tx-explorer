@@ -75,7 +75,12 @@ func (fr *FailureRecoverer) Start(ctx context.Context) {
 			// Trigger worker for recovery
 			log.Debug().Msgf("Triggering Failure Recoverer for blocks: %v", blocksToTrigger)
 			recoveryWorker := worker.NewWorker(fr.rpc)
-			results := recoveryWorker.Run(ctx, blocksToTrigger)
+			results := make([]rpc.GetFullBlockResult, 0, len(blocksToTrigger))
+			for i := range blocksToTrigger {
+				bn := blocksToTrigger[i]
+				batch := recoveryWorker.Run(ctx, bn, bn)
+				results = append(results, batch...)
+			}
 			fr.handleWorkerResults(blockFailures, results)
 
 			// Track recovery activity

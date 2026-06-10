@@ -684,6 +684,7 @@ func (p *PostgresConnector) InsertBlockData(data []common.BlockData) error {
 	defer cancel()
 
 	errCh := make(chan error, 1)
+	totalBlocksUpdateCh := make(chan bool, len(data))
 	var wg sync.WaitGroup
 
 	// Determine a safe concurrency level
@@ -712,13 +713,21 @@ loop:
 			default:
 			}
 
-			if err := p.insertBlockAndTransactions(ctx, bd); err != nil {
+			shouldUpdate, err := p.insertBlockAndTransactions(ctx, bd)
+			if err != nil {
 				// Try to send the first error and cancel others
 				select {
 				case errCh <- err:
 					cancel()
 				default:
 				}
+				return
+			}
+
+			select {
+			case totalBlocksUpdateCh <- shouldUpdate:
+			case <-ctx.Done():
+				return
 			}
 		}()
 	}
@@ -735,6 +744,22 @@ loop:
 		<-done
 		return err
 	case <-done:
+		close(totalBlocksUpdateCh)
+
+		var blocksToUpdate int
+		for shouldUpdate := range totalBlocksUpdateCh {
+			if shouldUpdate {
+				blocksToUpdate++
+			}
+		}
+
+		if blocksToUpdate > 0 {
+			if err := p.updateTotalBlocksBatch(ctx, blocksToUpdate); err != nil {
+				log.Error().Err(err).Int("blocks_count", blocksToUpdate).Msg("Failed to batch update total_blocks")
+				return fmt.Errorf("failed to batch update total_blocks: %w", err)
+			}
+		}
+
 		return nil
 	}
 }
@@ -760,10 +785,10 @@ func (p *PostgresConnector) getDBConnectionConcurrencySyncBlocks(total int) int 
 }
 
 // insertBlockAndTransactions inserts a single block and all its transactions atomically in sequence.
-func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, blockData *common.BlockData) (err error) {
+func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, blockData *common.BlockData) (shouldUpdateTotalBlocks bool, err error) {
 	tx, err := p.db.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
+		return false, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
 	defer func() {
@@ -776,9 +801,9 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 
 	log.Info().Str("metric", "main_storage_insert_duration").Msgf("Start inserting block %s", blockData.Block.Number.String())
 
-	// Insert single block inside transaction
-	if dbErr := p.insertBlockTx(ctx, tx, &blockData.Block); dbErr != nil {
-		return dbErr
+	shouldUpdateTotalBlocks, dbErr := p.insertBlockTx(ctx, tx, &blockData.Block)
+	if dbErr != nil {
+		return false, dbErr
 	}
 
 	log.Info().Str("metric", "main_storage_insert_duration").Msgf("Inserting %d transactions for block %s", len(blockData.Transactions), blockData.Block.Number.String())
@@ -789,7 +814,7 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 		// Insert transactions and get affected address stats
 		addressStats, err = p.insertTransactionsTx(ctx, tx, blockData.Transactions)
 		if err != nil {
-			return err
+			return false, err
 		}
 
 		// Insert donation campaign feeds if any
@@ -812,7 +837,7 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 		}
 		err = p.insertUserContentsTx(ctx, tx, userContents)
 		if err != nil {
-			return err
+			return false, err
 		}
 
 		type P2PExtraInfo struct {
@@ -913,7 +938,7 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 	}
 
 	if err = tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit block+txs transaction: %w", err)
+		return false, fmt.Errorf("failed to commit block+txs transaction: %w", err)
 	}
 
 	log.Info().Str("metric", "main_storage_insert_duration").Msgf("Queueing %d wallets for block %s", len(addressStats), blockData.Block.Number.String())
@@ -922,12 +947,31 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 		p.walletUpdateBatcher.QueueMMNServiceCall(w)
 	}
 
+	return shouldUpdateTotalBlocks, nil
+}
+
+// updateTotalBlocksBatch performs a single batch update to total_blocks stat
+func (p *PostgresConnector) updateTotalBlocksBatch(ctx context.Context, count int) error {
+	if count <= 0 {
+		return nil
+	}
+
+	_, err := p.db.ExecContext(ctx, `
+		INSERT INTO stats(key, value) VALUES ('total_blocks', $1)
+			ON CONFLICT (key) 
+			DO UPDATE SET value = stats.value + $1
+		`, count)
+
+	if err != nil {
+		return fmt.Errorf("failed to batch update total_blocks: %w", err)
+	}
+
 	return nil
 }
 
-// insertBlockTx inserts or upsert a single block within a provided transaction and context,
-// and updates the total_blocks stat if the block has transactions.
-func (p *PostgresConnector) insertBlockTx(ctx context.Context, tx *sql.Tx, block *common.Block) error {
+// insertBlockTx inserts or upsert a single block within a provided transaction and context.
+// Returns whether this block should contribute to total_blocks count.
+func (p *PostgresConnector) insertBlockTx(ctx context.Context, tx *sql.Tx, block *common.Block) (bool, error) {
 	const blockInsert = `INSERT INTO blocks (chain_id, block_number, block_timestamp, hash, parent_hash, transaction_count)
 			VALUES ($1, $2, $3, $4, $5, $6)
 			ON CONFLICT (chain_id, block_number)
@@ -948,19 +992,11 @@ func (p *PostgresConnector) insertBlockTx(ctx context.Context, tx *sql.Tx, block
 		block.ParentHash,
 		block.TransactionCount,
 	).Scan(&inserted); err != nil {
-		return fmt.Errorf("failed to insert block: %w", err)
+		return false, fmt.Errorf("failed to insert block: %w", err)
 	}
 
-	if inserted && block.TransactionCount > 0 {
-		if _, err := tx.ExecContext(ctx, `
-			INSERT INTO stats(key, value) VALUES ('total_blocks', $1)
-				ON CONFLICT (key) 
-				DO UPDATE SET value = stats.value + $1
-			`, 1); err != nil {
-			return fmt.Errorf("failed to update total_blocks stat: %w", err)
-		}
-	}
-	return nil
+	shouldUpdateTotalBlocks := inserted && block.TransactionCount > 0
+	return shouldUpdateTotalBlocks, nil
 }
 
 func (p *PostgresConnector) ReplaceBlockData(data []common.BlockData) ([]common.BlockData, error) {

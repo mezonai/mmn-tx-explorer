@@ -95,7 +95,7 @@ func (v *Validator) FixBlocks(invalidBlocks []*big.Int, fixBatchSize int) error 
 		}
 		batch := invalidBlocks[i:end]
 
-		polledBlocks, failedBlocks := v.poller.PollWithoutSaving(context.Background(), batch)
+		polledBlocks, failedBlocks := v.poller.PollWithoutSaving(context.Background(), batch[0], batch[len(batch)-1])
 		log.Debug().Msgf("Batch of invalid blocks polled: %d to %d", batch[0], batch[len(batch)-1])
 		if len(failedBlocks) > 0 {
 			log.Error().Msgf("Failed to poll %d blocks: %v", len(failedBlocks), failedBlocks)
@@ -124,7 +124,7 @@ func (v *Validator) FindAndFixGaps(startBlock, endBlock *big.Int) error {
 	log.Debug().Msgf("Found %d missing blocks: %v", len(missingBlockNumbers), missingBlockNumbers)
 
 	// query missing blocks
-	polledBlocks, failedBlocks := v.poller.PollWithoutSaving(context.Background(), missingBlockNumbers)
+	polledBlocks, failedBlocks := v.poller.PollWithoutSaving(context.Background(), missingBlockNumbers[0], missingBlockNumbers[len(missingBlockNumbers)-1])
 	log.Debug().Msg("Missing blocks polled")
 	if len(failedBlocks) > 0 {
 		log.Error().Msgf("Failed to poll %d blocks: %v", len(failedBlocks), failedBlocks)

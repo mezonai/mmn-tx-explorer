@@ -118,6 +118,29 @@ func (mmn *MMNGrpcService) GetBlockByNumber(ctx context.Context, blockNumbers []
 	})
 }
 
+// GetBlockByRange retrieves blocks by range (from_slot to to_slot)
+func (mmn *MMNGrpcService) GetBlockByRange(ctx context.Context, fromSlot, toSlot uint64) (*pb.GetBlockByRangeResponse, error) {
+	if err := mmn.ensureConnection(); err != nil {
+		return nil, fmt.Errorf("connection error: %w", err)
+	}
+
+	if err := mmn.waitRate(ctx); err != nil {
+		return nil, err
+	}
+
+	mmn.mu.RLock()
+	defer mmn.mu.RUnlock()
+
+	if !mmn.isConnected {
+		return nil, fmt.Errorf("service not connected")
+	}
+
+	return mmn.blockClient.GetBlockByRange(ctx, &pb.GetBlockByRangeRequest{
+		FromSlot: fromSlot,
+		ToSlot:   toSlot,
+	})
+}
+
 // GetBlockNumber retrieves the latest block number
 func (mmn *MMNGrpcService) GetBlockNumber(ctx context.Context) (*pb.GetBlockNumberResponse, error) {
 	if err := mmn.ensureConnection(); err != nil {
