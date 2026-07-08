@@ -155,6 +155,10 @@ const (
 )
 
 const (
-	MaxAccountNumberLength = 14
-	MaxAccountNameLength   = 50
+	MinBankNameLength      = 1
+	MaxBankNameLength      = 100
+	MinAccountNumberLength = 5
+	MaxAccountNumberLength = 50
+	MinAccountNameLength   = 1
+	MaxAccountNameLength   = 100
 )

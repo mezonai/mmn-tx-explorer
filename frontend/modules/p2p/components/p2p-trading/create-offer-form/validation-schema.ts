@@ -15,7 +15,7 @@ export const createOfferSchema = z
       max: z.number().min(0),
     }),
     bank_info: z.object({
-      bank: z.enum(['MB', 'VCB', 'TCB', 'ACB', 'TPBANK', 'VIETCOMBANK']),
+      bank: z.enum(['MB', 'TCB', 'ACB', 'TPBANK', 'VIETCOMBANK']),
       account_number: z.string().optional(),
       account_name: z.string().optional(),
       is_primary: z.boolean().optional(),

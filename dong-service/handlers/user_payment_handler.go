@@ -1,13 +1,11 @@
 package handlers
 
 import (
-	"dong-service/constants"
 	"dong-service/models"
 	"dong-service/services"
 	"dong-service/utils"
 	"fmt"
 	"net/http"
-	"regexp"
 
 	"github.com/gin-gonic/gin"
 )
@@ -39,36 +37,8 @@ func (h *UserPaymentHandler) UpdatePaymentInfo(c *gin.Context) {
 		return
 	}
 
-	validBanks := map[string]bool{
-		"MB Bank":     true,
-		"Vietcombank": true,
-		"Techcombank": true,
-		"ACB":         true,
-		"TPBank":      true,
-	}
-	if !validBanks[req.BankName] {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Invalid bank name"))
-		return
-	}
-
-	if req.AccountNumber == "" {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Please enter the account number"))
-		return
-	}
-	if len(req.AccountNumber) > constants.MaxAccountNumberLength {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, fmt.Sprintf("Account number must be %d digits or less", constants.MaxAccountNumberLength)))
-		return
-	}
-	if !regexp.MustCompile(`^\d+$`).MatchString(req.AccountNumber) {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Account number must contain only digits"))
-		return
-	}
-	if req.AccountName == "" {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, "Please enter the account name"))
-		return
-	}
-	if len(req.AccountName) > constants.MaxAccountNameLength {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, fmt.Sprintf("Account name must be %d characters or less", constants.MaxAccountNameLength)))
+	if err := req.Validate(); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse(http.StatusBadRequest, err.Error()))
 		return
 	}
 
@@ -141,4 +111,3 @@ func (h *UserPaymentHandler) DeletePaymentInfo(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.SuccessResponseWithMessage("payment info deleted successfully", nil))
 }
-

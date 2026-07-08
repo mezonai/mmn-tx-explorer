@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 
 const paymentSchema = z.object({
   bank_info: z.object({
-    bank: z.enum(['MB', 'VCB', 'TCB', 'ACB', 'TPBANK', 'VIETCOMBANK']),
+    bank: z.enum(['MB', 'TCB', 'ACB', 'TPBANK', 'VIETCOMBANK']),
     account_number: z
       .string()
       .min(1, 'Please enter the account number')
