@@ -23,6 +23,7 @@ type SocketEvent struct {
 const (
 	OFFER_LIST_REFRESH = "OFFER_LIST_REFRESH"
 	OFFER_ROOM         = "offer_updates"
+	DONATION_RECEIVED         = "DONATION_RECEIVED"
 )
 
 type EventService struct {

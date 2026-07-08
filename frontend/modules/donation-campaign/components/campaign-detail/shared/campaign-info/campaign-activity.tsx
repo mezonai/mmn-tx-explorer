@@ -20,6 +20,8 @@ import { RecentActivityCardsMobile } from '../../mobile/funding-activity';
 import { WithdrawHistoryTable } from '../../desktop/funding-activity';
 import { WithdrawHistoryCard } from '../../mobile/funding-activity';
 import { DonationCampaign } from '@/modules/donation-campaign/type';
+import { useJoinRoom } from '@/lib/websocket';
+import { SOCKET_MESSAGE } from '@/lib/websocket/constants';
 
 const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
   page: PAGINATION.DEFAULT_PAGE,
@@ -30,6 +32,7 @@ const DEFAULT_VALUE_DATA_SEARCH: ITransactionListParams = {
 export function CampaignActivity({ campaign, walletAddress }: { campaign: DonationCampaign; walletAddress: string }) {
   const isDesktop = useBreakpoint(EBreakpoint.LG);
   const searchTBParams = { limit: 5 };
+  const { wsManager } = useJoinRoom(campaign.donation_wallet, true);
   const searchReceivedParams: ITransactionListParams = {
     ...DEFAULT_VALUE_DATA_SEARCH,
     filter_to_address: walletAddress,
@@ -57,7 +60,7 @@ export function CampaignActivity({ campaign, walletAddress }: { campaign: Donati
       setIsRefreshing(true);
       await DonationCampaignService.refreshCampaignRaised(campaign.id);
       await refetch();
-    } catch (err) {
+    } catch {
     } finally {
       setIsRefreshing(false);
     }
@@ -74,6 +77,22 @@ export function CampaignActivity({ campaign, walletAddress }: { campaign: Donati
     refetch: refetchSentTransactions,
     isPending: isPendingSentTransactions,
   } = useTransactions(searchSentParams);
+
+  useEffect(() => {
+    const handleDonationReceived = () => {
+      // Header component handles toast + campaign stats refresh.
+      // Here we only refetch tables/lists so the UI updates immediately.
+      refetchReceivedTransactions();
+      refetchSentTransactions();
+      refetch();
+    };
+
+    wsManager?.on(SOCKET_MESSAGE.DONATION_RECEIVED, handleDonationReceived);
+
+    return () => {
+      wsManager?.off(SOCKET_MESSAGE.DONATION_RECEIVED, handleDonationReceived);
+    };
+  }, [wsManager, refetchReceivedTransactions, refetchSentTransactions, refetch]);
 
   const receivedTransactions = useMemo(() => receivedTransactionsResponse?.data ?? [], [receivedTransactionsResponse]);
   const sentTransactions = useMemo(() => sentTransactionsResponse?.data ?? [], [sentTransactionsResponse]);

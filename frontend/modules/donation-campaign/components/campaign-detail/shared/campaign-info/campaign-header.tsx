@@ -13,10 +13,52 @@ import { useState } from 'react';
 import { BadgeCheck } from 'lucide-react';
 import { useUser } from '@/providers';
 import { DescriptionDisplay } from '@/components/shared';
+import { useJoinRoom } from '@/lib/websocket';
+import { SOCKET_MESSAGE } from '@/lib/websocket/constants';
+import { toast } from 'sonner';
+import { useRefreshCampaignRaised } from '@/modules/donation-campaign/hooks/useRefreshCampaignRaised';
+import { useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { QUERY_KEYS } from '@/modules/donation-campaign/constants';
 
+const TOAST_DURATION = 5000;
 export function CampaignHeader({ campaign }: { campaign: DonationCampaign }) {
   const [currentCampaign, setCurrentCampaign] = useState(campaign);
   const { user } = useUser();
+  const queryClient = useQueryClient();
+  const { mutate: refreshRaised } = useRefreshCampaignRaised({
+    onSuccess: (data) => {
+      handleRefreshData(data.total_amount, data.current_balance, data.total_withdrawn);
+    },
+  });
+
+  const { wsManager } = useJoinRoom(campaign.donation_wallet, true);
+
+  useEffect(() => {
+    const handleDonationReceived = () => {
+      toast.success(`Campaign has a new donation`, {
+        duration: TOAST_DURATION,
+      });
+
+      // Trigger manual refresh to sync all stats
+      refreshRaised(campaign.id);
+
+      // Sync related campaign queries (activity tables, feeds, etc.)
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TOP_CONTRIBUTOR, campaign.id], exact: false });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.DONATION_FEED, campaign.donation_wallet],
+        exact: false,
+      });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.DONATION_FEED_HISTORY], exact: false });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.DONATION_FEED_POST_DETAIL], exact: false });
+    };
+
+    wsManager?.on(SOCKET_MESSAGE.DONATION_RECEIVED, handleDonationReceived);
+
+    return () => {
+      wsManager?.off(SOCKET_MESSAGE.DONATION_RECEIVED, handleDonationReceived);
+    };
+  }, [wsManager, campaign.id, campaign.donation_wallet, refreshRaised, queryClient]);
 
   const handleRefreshData = (newRaisedAmount?: number, newCurrentBalance?: number, newTotalWithdrawn?: number) => {
     if (newRaisedAmount !== undefined) {

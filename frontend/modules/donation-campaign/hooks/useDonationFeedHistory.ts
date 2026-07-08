@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import { DonationCampaignService } from "../api";
-import { QUERY_KEYS } from "../constants";
+import { useQuery } from '@tanstack/react-query';
+import { DonationCampaignService } from '../api';
+import { QUERY_KEYS } from '../constants';
 
 export const useDonationFeedHistory = (root_hash: string) => {
   const {

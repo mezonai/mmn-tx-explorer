@@ -14,9 +14,9 @@ import (
 	"github.com/lib/pq"
 	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/common"
+	"github.com/mezonai/mmn-tx-explorer/indexer/internal/integration/dong"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/services"
-	"github.com/mezonai/mmn-tx-explorer/indexer/internal/integration/dong"
 	pb "github.com/mezonai/mmn-tx-explorer/indexer/proto"
 	"github.com/rs/zerolog/log"
 )
@@ -910,6 +910,40 @@ func (p *PostgresConnector) insertBlockAndTransactions(ctx context.Context, bloc
 			return err
 		}
 
+		// Handle donation campaign socket events
+		affectedDonationAddrs := make(map[string]struct{})
+		for i := range blockData.Transactions {
+			txObj := &blockData.Transactions[i]
+
+			if txObj.TransactionExtraInfoType == "" {
+				txObj.TransactionExtraInfoType = detectTransactionType(txObj.ExtraInfo)
+			}
+
+			if txObj.TransactionExtraInfoType == common.TransactionExtraInfoDonationCampaign &&
+				txObj.Status != nil && (*txObj.Status == (uint64)(pb.TransactionStatus_CONFIRMED) || *txObj.Status == (uint64)(pb.TransactionStatus_FINALIZED)) &&
+				txObj.ToAddress != "" {
+				affectedDonationAddrs[txObj.ToAddress] = struct{}{}
+			}
+		}
+
+		if len(affectedDonationAddrs) > 0 {
+			var wg sync.WaitGroup
+
+			for addr := range affectedDonationAddrs {
+				wg.Add(1)
+
+				go func(toAddress string) {
+					defer wg.Done()
+
+					if err := services.SendSocketEventDirect(toAddress, services.DONATION_RECEIVED, nil); err != nil {
+						log.Error().Err(err).Str("to_address", toAddress).Msg("Failed to send donation notification socket event")
+					} else {
+						log.Info().Str("to_address", toAddress).Msg("Sent donation notification pulse")
+					}
+				}(addr)
+			}
+			wg.Wait()
+		}
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -3095,4 +3129,3 @@ func (p *PostgresConnector) failOfferStatus(
 
 	return nil
 }
-
