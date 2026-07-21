@@ -214,11 +214,11 @@ jobs:
           EVENT_API_KEY='${EVENT_API_KEY}'
           EON
 
-          sudo chown -R mmn:mmn /opt/dong-service
-          sudo chmod 600 /opt/dong-service/config/dong-service.env
-
           echo "==> Deploying new dong-service binary to staging path..."
           sudo install -m 0755 /tmp/dong-service /opt/dong-service/bin/dong-service-${VERSION_ID}
+
+          sudo chown -R mmn:mmn /opt/dong-service
+          sudo chmod 600 /opt/dong-service/config/dong-service.env
 
           echo "==> Deploying migrations for dong-service..."
           sudo rm -rf /opt/dong-service/migrations

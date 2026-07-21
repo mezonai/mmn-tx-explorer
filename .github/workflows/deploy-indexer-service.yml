@@ -181,11 +181,11 @@ jobs:
           EVENT_DONG_API_URL=${EVENT_DONG_API_URL}
           EON
 
-          sudo chown -R mmn:mmn /opt/indexer
-          sudo chmod 600 /opt/indexer/config/indexer.env
-
           echo "==> Deploying new indexer binary to staging path..."
           sudo install -m 0755 /tmp/indexer /opt/indexer/bin/indexer-${VERSION_ID}
+
+          sudo chown -R mmn:mmn /opt/indexer
+          sudo chmod 600 /opt/indexer/config/indexer.env
 
           echo "==> Deploying migrations..."
           sudo rm -rf /opt/indexer/migrations/postgres

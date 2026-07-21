@@ -188,11 +188,11 @@ jobs:
           SERVER_GIN_MODE='${SERVER_GIN_MODE}'
           EON
 
-          sudo chown -R mmn:mmn /opt/socket-service
-          sudo chmod 600 /opt/socket-service/config/socket-service.env
-
           echo "==> Deploying new binary to staging path..."
           sudo install -m 0755 /tmp/socket-service /opt/socket-service/bin/socket-service-${VERSION_ID}
+
+          sudo chown -R mmn:mmn /opt/socket-service
+          sudo chmod 600 /opt/socket-service/config/socket-service.env
 
           echo "==> Deploying migrations..."
           sudo rm -rf /opt/socket-service/migrations
