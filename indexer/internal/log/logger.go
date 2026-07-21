@@ -9,6 +9,13 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/rs/zerolog/pkgerrors"
+	"gopkg.in/natefinch/lumberjack.v2"
+)
+
+const (
+	defaultMaxSize    = 100
+	defaultMaxBackups = 10
+	defaultMaxAge     = 30
 )
 
 func InitLogger() {
@@ -67,16 +74,29 @@ func NewLogger(name string) zerolog.Logger {
 	return logger
 }
 
-// createFileWriter creates a file writer with rotation support
 func createFileWriter(logConfig config.LogConfig) (io.Writer, error) {
-	// For now, we'll use a simple file writer
-	// In production, you might want to use lumberjack for rotation
-	file, err := os.OpenFile(logConfig.FilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666)
-	if err != nil {
-		return nil, err
+	// Set default values for rotation if not specified
+	maxSize := logConfig.MaxSize
+	if maxSize == 0 {
+		maxSize = defaultMaxSize
 	}
 
-	// Note: For production use, consider implementing log rotation
-	// using a library like gopkg.in/natefinch/lumberjack.v2
-	return file, nil
+	maxBackups := logConfig.MaxBackups
+	if maxBackups == 0 {
+		maxBackups = defaultMaxBackups
+	}
+
+	maxAge := logConfig.MaxAge
+	if maxAge == 0 {
+		maxAge = defaultMaxAge
+	}
+
+	// Use lumberjack for log rotation
+	return &lumberjack.Logger{
+		Filename:   logConfig.FilePath,
+		MaxSize:    maxSize,    // megabytes
+		MaxBackups: maxBackups, // max number of old log files
+		MaxAge:     maxAge,     // days
+		Compress:   logConfig.Compress,
+	}, nil
 }
