@@ -7,14 +7,15 @@ import { useMemo } from 'react';
 import { useRefreshCampaignRaised } from '../../../../hooks';
 import { RefreshButton } from '@/components/shared';
 import { DEFAULT_DEBOUNCE_TIME } from '@/hooks';
+import BigNumber from 'bignumber.js';
 
 interface ProgressCardProps {
-  raised: number;
-  goal: number;
+  raised: string | number;
+  goal: string | number;
   campaignId: string;
-  currentBalance: number;
-  totalWithdrawn?: number;
-  onRefresh?: (newRaisedAmount: number, newCurrentBalance: number, newTotalWithdrawn: number) => void;
+  currentBalance: string | number;
+  totalWithdrawn?: string | number;
+  onRefresh?: (newRaisedAmount: string | number, newCurrentBalance: string | number, newTotalWithdrawn: string | number) => void;
 }
 export function ProgressCard({
   raised,
@@ -31,11 +32,12 @@ export function ProgressCard({
   });
 
   const progress = useMemo(() => {
-    const raisedScaleDown = NumberUtil.scaleDown(raised);
     if (!goal) {
       return 0;
     }
-    return Number(((raisedScaleDown / goal) * 100).toFixed(2));
+    const raisedBN = NumberUtil.scaleDownBigNumber(new BigNumber(raised));
+    const goalBN = NumberUtil.scaleDownBigNumber(new BigNumber(goal));
+    return Number(raisedBN.dividedBy(goalBN).multipliedBy(100).toFixed(2));
   }, [raised, goal]);
 
   return (
@@ -58,7 +60,7 @@ export function ProgressCard({
       </CardContent>
       <CardFooter className="mt-2 flex justify-between text-xs text-gray-500 dark:text-gray-400">
         <span>
-          Goal {NumberUtil.formatWithCommas(goal)} {APP_CONFIG.CHAIN_SYMBOL}
+          Goal {NumberUtil.formatWithCommasAndScale(goal)} {APP_CONFIG.CHAIN_SYMBOL}
         </span>
         <span>{progress}% funded</span>
       </CardFooter>

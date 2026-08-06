@@ -2,73 +2,74 @@ package models
 
 import (
 	"dong-service/constants"
+	"dong-service/types"
 	"fmt"
 	"time"
 )
 
 // DonationCampaign represents a donation campaign
 type DonationCampaign struct {
-	ID                int64     `json:"id" db:"id"`
-	Name              string    `json:"name" db:"name" binding:"required"`
-	Slug              string    `json:"slug" db:"slug"`
-	Description       *string   `json:"description,omitempty" db:"description"`
-	Goal              *int64    `json:"goal,omitempty" db:"goal"`
-	URL               *string   `json:"url,omitempty" db:"url"`
-	EndDate           *string   `json:"end_date,omitempty" db:"end_date"`
-	DonationWallet    string    `json:"donation_wallet" db:"donation_wallet" binding:"required"`
-	Creator           int64     `json:"creator" db:"creator" binding:"required"`
-	Owner             *string   `json:"owner,omitempty" db:"owner"`
-	Verified          bool      `json:"verified" db:"verified"`
-	Status            int16     `json:"status" db:"status"` // 0=Draft, 1=Active, 2=Closed
-	CreatedAt         time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt         time.Time `json:"updated_at" db:"updated_at"`
-	TotalAmount       *int64    `json:"total_amount,omitempty" db:"total_amount"`
-	TotalContributors *int32    `json:"total_contributors,omitempty" db:"total_contributor"`
-	CurrentBalance    *int64    `json:"current_balance,omitempty"`
-	TotalWithdrawn    *int64    `json:"total_withdrawn,omitempty" db:"total_withdrawn"`
-	RecentAmount      *int64    `json:"recent_amount,omitempty" db:"recent_amount"`
+	ID                int64              `json:"id" db:"id"`
+	Name              string             `json:"name" db:"name" binding:"required"`
+	Slug              string             `json:"slug" db:"slug"`
+	Description       *string            `json:"description,omitempty" db:"description"`
+	Goal              *types.BigIntString `json:"goal,omitempty" db:"goal"`
+	URL               *string            `json:"url,omitempty" db:"url"`
+	EndDate           *string            `json:"end_date,omitempty" db:"end_date"`
+	DonationWallet    string             `json:"donation_wallet" db:"donation_wallet" binding:"required"`
+	Creator           int64              `json:"creator" db:"creator" binding:"required"`
+	Owner             *string            `json:"owner,omitempty" db:"owner"`
+	Verified          bool               `json:"verified" db:"verified"`
+	Status            int16              `json:"status" db:"status"` // 0=Draft, 1=Active, 2=Closed
+	CreatedAt         time.Time          `json:"created_at" db:"created_at"`
+	UpdatedAt         time.Time          `json:"updated_at" db:"updated_at"`
+	TotalAmount       *types.BigIntString `json:"total_amount,omitempty" db:"total_amount"`
+	TotalContributors *int32             `json:"total_contributors,omitempty" db:"total_contributor"`
+	CurrentBalance    *types.BigIntString `json:"current_balance,omitempty"`
+	TotalWithdrawn    *types.BigIntString `json:"total_withdrawn,omitempty" db:"total_withdrawn"`
+	RecentAmount      *types.BigIntString `json:"recent_amount,omitempty" db:"recent_amount"`
 }
 
 // CreateDonationCampaignRequest represents the request body for creating a campaign
 type CreateDonationCampaignRequest struct {
-	Name           string  `json:"name" binding:"required"`
-	Description    *string `json:"description,omitempty"`
-	Goal           *int64  `json:"goal,omitempty"`
-	URL            *string `json:"url,omitempty"`
-	EndDate        *string `json:"end_date,omitempty"`
-	DonationWallet string  `json:"donation_wallet" binding:"required"`
-	Owner          *string `json:"owner,omitempty"`
+	Name           string              `json:"name" binding:"required"`
+	Description    *string             `json:"description,omitempty"`
+	Goal           *types.BigIntString `json:"goal,omitempty"`
+	URL            *string             `json:"url,omitempty"`
+	EndDate        *string             `json:"end_date,omitempty"`
+	DonationWallet string              `json:"donation_wallet" binding:"required"`
+	Owner          *string             `json:"owner,omitempty"`
 }
 
 // UpdateDonationCampaignRequest represents the request body for updating a campaign
 type UpdateDonationCampaignRequest struct {
-	Description *string `json:"description,omitempty"`
-	Goal        *int64  `json:"goal,omitempty"`
-	URL         *string `json:"url,omitempty"`
-	EndDate     *string `json:"end_date,omitempty"`
+	Description *string             `json:"description,omitempty"`
+	Goal        *types.BigIntString `json:"goal,omitempty"`
+	URL         *string             `json:"url,omitempty"`
+	EndDate     *string             `json:"end_date,omitempty"`
 }
 
 // DonationCampaignResponse represents the response for a campaign
 type DonationCampaignResponse struct {
-	ID                string  `json:"id"`
-	Name              string  `json:"name"`
-	Slug              string  `json:"slug"`
-	Description       *string `json:"description,omitempty"`
-	Goal              *int64  `json:"goal,omitempty"`
-	URL               *string `json:"url,omitempty"`
-	EndDate           *string `json:"end_date,omitempty"`
-	DonationWallet    string  `json:"donation_wallet"`
-	Creator           string  `json:"creator"`
-	Owner             *string `json:"owner,omitempty"`
-	Verified          bool    `json:"verified"`
-	Status            int16   `json:"status"`
-	CreatedAt         string  `json:"created_at"`
-	UpdatedAt         string  `json:"updated_at"`
-	TotalAmount       *int64  `json:"total_amount,omitempty"`
-	TotalContributors *int32  `json:"total_contributors,omitempty"`
-	CurrentBalance    *int64  `json:"current_balance,omitempty"`
-	TotalWithdrawn    *int64  `json:"total_withdrawn,omitempty"`
-	RecentAmount      *int64  `json:"recent_amount,omitempty"`
+	ID                string              `json:"id"`
+	Name              string              `json:"name"`
+	Slug              string              `json:"slug"`
+	Description       *string             `json:"description,omitempty"`
+	Goal              *types.BigIntString `json:"goal,omitempty"`
+	URL               *string             `json:"url,omitempty"`
+	EndDate           *string             `json:"end_date,omitempty"`
+	DonationWallet    string              `json:"donation_wallet"`
+	Creator           string              `json:"creator"`
+	Owner             *string             `json:"owner,omitempty"`
+	Verified          bool                `json:"verified"`
+	Status            int16               `json:"status"`
+	CreatedAt         string              `json:"created_at"`
+	UpdatedAt         string              `json:"updated_at"`
+	TotalAmount       *types.BigIntString `json:"total_amount,omitempty"`
+	TotalContributors *int32              `json:"total_contributors,omitempty"`
+	CurrentBalance    *types.BigIntString `json:"current_balance,omitempty"`
+	TotalWithdrawn    *types.BigIntString `json:"total_withdrawn,omitempty"`
+	RecentAmount      *types.BigIntString `json:"recent_amount,omitempty"`
 }
 
 // ToResponse converts DonationCampaign to DonationCampaignResponse
@@ -118,16 +119,16 @@ func (dc *DonationCampaign) GetStatusName() string {
 
 // CampaignStatsResponse represents the response for campaign statistics
 type CampaignStatsResponse struct {
-	TotalCampaignsActive int64 `json:"total_campaigns_active"`
-	TotalAmount          int64 `json:"total_amount"`
-	TotalContributors    int64 `json:"total_contributors"`
+	TotalCampaignsActive int64               `json:"total_campaigns_active"`
+	TotalAmount          types.BigIntString  `json:"total_amount"`
+	TotalContributors    int64               `json:"total_contributors"`
 }
 
 // TopContributor represents a top contributor for a campaign
 type TopContributor struct {
-	SenderWallet string  `json:"sender_wallet"`
-	TotalDonate  int64   `json:"total_donate"`
-	Percentage   float64 `json:"percentage"`
+	SenderWallet string             `json:"sender_wallet"`
+	TotalDonate  types.BigIntString `json:"total_donate"`
+	Percentage   float64            `json:"percentage"`
 }
 
 // TopContributorsResponse represents the response for top contributors
@@ -138,9 +139,9 @@ type TopContributorsResponse struct {
 
 // SyncCampaignResponse represents the response for syncing a campaign
 type SyncCampaignResponse struct {
-	TotalAmount       int64 `json:"total_amount"`
-	TotalContributors int64 `json:"total_contributors"`
-	CurrentBalance    int64 `json:"current_balance"`
-	TotalWithdrawn    int64 `json:"total_withdrawn"`
-	RecentAmount      int64 `json:"recent_amount"`
+	TotalAmount       types.BigIntString `json:"total_amount"`
+	TotalContributors int64              `json:"total_contributors"`
+	CurrentBalance    types.BigIntString `json:"current_balance"`
+	TotalWithdrawn    types.BigIntString `json:"total_withdrawn"`
+	RecentAmount      types.BigIntString `json:"recent_amount"`
 }

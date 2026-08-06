@@ -6,6 +6,7 @@ import (
 	"dong-service/constants"
 	"dong-service/logger"
 	"dong-service/models"
+	"dong-service/types"
 	"fmt"
 	"time"
 )
@@ -33,9 +34,9 @@ type Campaign struct {
 	ID               int64
 	DonationWallet   string
 	UpdatedAt        time.Time
-	TotalAmount      int64
+	TotalAmount      types.BigIntString
 	TotalContributor int64
-	TotalWithdrawn   int64
+	TotalWithdrawn   types.BigIntString
 }
 
 // GetActiveCampaigns retrieves all active donation campaigns
@@ -190,7 +191,7 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 	var campaign Campaign
 	err := r.db.QueryRowContext(ctx, campaignQuery, campaignID).Scan(&campaign.ID, &campaign.DonationWallet, &campaign.UpdatedAt, &campaign.TotalAmount, &campaign.TotalContributor, &campaign.TotalWithdrawn)
 	if err != nil {
-		return models.SyncCampaignResponse{TotalAmount: 0, TotalContributors: 0, TotalWithdrawn: 0}, fmt.Errorf("failed to get campaign: %w", err)
+		return models.SyncCampaignResponse{TotalAmount: types.NewBigIntString(0), TotalContributors: 0, TotalWithdrawn: types.NewBigIntString(0)}, fmt.Errorf("failed to get campaign: %w", err)
 	}
 
 	// If statistics are already newer than the latest finalized transaction for this wallet, skip sync
@@ -206,11 +207,12 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 	var lastTS sql.NullTime
 	err = r.db.QueryRowContext(ctx, earlyCheckQuery, campaign.DonationWallet, constants.TransactionStatusFINALIZED, campaign.UpdatedAt).Scan(&lastTS)
 	if err != nil {
-		return models.SyncCampaignResponse{TotalAmount: 0, TotalContributors: 0, TotalWithdrawn: 0}, fmt.Errorf("failed to check latest transaction vs stats: %w", err)
+		return models.SyncCampaignResponse{TotalAmount: types.NewBigIntString(0), TotalContributors: 0, TotalWithdrawn: types.NewBigIntString(0)}, fmt.Errorf("failed to check latest transaction vs stats: %w", err)
 	}
 
 	if !lastTS.Valid || lastTS.Time.IsZero() {
-		currentBalance := campaign.TotalAmount - campaign.TotalWithdrawn
+		currentBalance := types.NewBigIntString(0)
+		currentBalance.Sub(campaign.TotalAmount.GetBigInt(), campaign.TotalWithdrawn.GetBigInt())
 		logger.Info().Int64("campaign_id", campaignID).Time("updated_at", campaign.UpdatedAt).Time("last_ts", lastTS.Time).Msg("Campaign statistics are already up to date")
 		return models.SyncCampaignResponse{TotalAmount: campaign.TotalAmount, TotalContributors: campaign.TotalContributor, CurrentBalance: currentBalance, TotalWithdrawn: campaign.TotalWithdrawn}, nil
 	}
@@ -236,7 +238,7 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 
 	_, err = r.db.ExecContext(ctx, query, campaign.DonationWallet, constants.TransactionStatusFINALIZED)
 	if err != nil {
-		return models.SyncCampaignResponse{TotalAmount: 0, TotalContributors: 0, TotalWithdrawn: 0}, fmt.Errorf("failed to sync contributors: %w", err)
+		return models.SyncCampaignResponse{TotalAmount: types.NewBigIntString(0), TotalContributors: 0, TotalWithdrawn: types.NewBigIntString(0)}, fmt.Errorf("failed to sync contributors: %w", err)
 	}
 
 	recentAmountQuery := fmt.Sprintf(`
@@ -248,10 +250,10 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 		AND transaction_timestamp >= NOW() - INTERVAL '%d days'
 	`, r.indexerSchema, r.recentWindowDays)
 
-	var recentAmount int64
+	var recentAmount types.BigIntString
 	err = r.db.QueryRowContext(ctx, recentAmountQuery, campaign.DonationWallet, constants.TransactionStatusFINALIZED).Scan(&recentAmount)
 	if err != nil {
-		recentAmount = 0 // fallback
+		recentAmount = types.NewBigIntString(0) // fallback
 	}
 
 	updateStatsQuery := fmt.Sprintf(`
@@ -283,13 +285,13 @@ func (r *CampaignStatisticsRepository) SyncCampaignByID(ctx context.Context, cam
 		RETURNING cs.total_amount, cs.total_contributor, (cs.total_amount - cs.total_withdrawn) as current_balance, cs.total_withdrawn, cs.recent_amount
 	`, r.dongSchema, r.dongSchema, r.indexerSchema, r.dongSchema)
 
-	var updatedTotalAmount int64
+	var updatedTotalAmount types.BigIntString
 	var updatedTotalContributor int64
-	var updatedCurrentBalance int64
-	var updatedTotalWithdrawn int64
-	var updatedRecentAmount int64
+	var updatedCurrentBalance types.BigIntString
+	var updatedTotalWithdrawn types.BigIntString
+	var updatedRecentAmount types.BigIntString
 	if err := r.db.QueryRowContext(ctx, updateStatsQuery, campaign.DonationWallet, campaignID, recentAmount, constants.TransactionStatusFINALIZED).Scan(&updatedTotalAmount, &updatedTotalContributor, &updatedCurrentBalance, &updatedTotalWithdrawn, &updatedRecentAmount); err != nil {
-		return models.SyncCampaignResponse{TotalAmount: 0, TotalContributors: 0, CurrentBalance: 0, TotalWithdrawn: 0, RecentAmount: 0}, fmt.Errorf("failed to update campaign statistics: %w", err)
+		return models.SyncCampaignResponse{TotalAmount: types.NewBigIntString(0), TotalContributors: 0, CurrentBalance: types.NewBigIntString(0), TotalWithdrawn: types.NewBigIntString(0), RecentAmount: types.NewBigIntString(0)}, fmt.Errorf("failed to update campaign statistics: %w", err)
 	}
 
 	return models.SyncCampaignResponse{TotalAmount: updatedTotalAmount, TotalContributors: updatedTotalContributor, CurrentBalance: updatedCurrentBalance, TotalWithdrawn: updatedTotalWithdrawn, RecentAmount: updatedRecentAmount}, nil
