@@ -403,7 +403,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
             />
           </div>
 
-          <ChatSidebar sellerId={offer?.offer_creator_user_id || ''} />
+          <ChatSidebar receiverId={offer?.offer_creator_user_id || ''} />
         </div>
       </div>
     );
@@ -530,7 +530,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
           </div>
         </div>
         <ChatSidebar
-          sellerId={
+          receiverId={
             ((order.offer_type || offer?.side) === TradeTypes.BUY
               ? userRole === P2P_TRADING_ROLE.BUYER
                 ? order.order_creator_user_id
