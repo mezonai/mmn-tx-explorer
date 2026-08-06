@@ -1,0 +1,162 @@
+{
+  "stats": {
+    "suites": 1,
+    "tests": 0,
+    "passes": 0,
+    "pending": 0,
+    "failures": 0,
+    "start": "2026-01-26T10:50:21.256Z",
+    "end": "2026-01-26T10:50:27.737Z",
+    "duration": 6481,
+    "testsRegistered": 1,
+    "passPercent": 0,
+    "pendingPercent": 0,
+    "other": 1,
+    "hasOther": true,
+    "skipped": 1,
+    "hasSkipped": true
+  },
+  "results": [
+    {
+      "uuid": "84269efa-3520-4c92-9999-2f4b29f2cf1c",
+      "title": "",
+      "fullFile": "D:\\2025\\Blockchain\\mmn-tx-explorer\\tests\\selenium-js\\tests\\createBulkOffers.test.js",
+      "file": "\\tests\\createBulkOffers.test.js",
+      "beforeHooks": [],
+      "afterHooks": [],
+      "tests": [],
+      "suites": [
+        {
+          "uuid": "5695a3d3-18c9-4882-9eb5-3b3f14e5151f",
+          "title": "Create Bulk Offers",
+          "fullFile": "D:\\2025\\Blockchain\\mmn-tx-explorer\\tests\\selenium-js\\tests\\createBulkOffers.test.js",
+          "file": "\\tests\\createBulkOffers.test.js",
+          "beforeHooks": [
+            {
+              "title": "\"before all\" hook for \"should create 500 offers automatically\"",
+              "fullTitle": "Create Bulk Offers \"before all\" hook for \"should create 500 offers automatically\"",
+              "timedOut": false,
+              "duration": 1454,
+              "state": "failed",
+              "speed": null,
+              "pass": false,
+              "fail": true,
+              "pending": false,
+              "context": null,
+              "code": "this.timeout(120000); // 2 phút để login thủ công\n\nconsole.log(`\\n🚀 Starting: Create ${numberOfOffers} Offers Automatically`);\nconsole.log(`📍 Testing against: ${config.baseUrl}`);\n\ndriver = await createDriver();\np2pPage = new P2PPage(driver);\n\nawait p2pPage.navigate();\n\nconsole.log('\\n⏸️  VUI LÒNG ĐĂNG NHẬP THỦ CÔNG...');\nconsole.log('💡 Bạn có 90 giây để hoàn tất đăng nhập trước khi script bắt đầu.');\n\n// Chờ cho đến khi URL thay đổi hoặc hết 90s (Login thành công)\nawait driver.wait(async () => {\n  const url = await driver.getCurrentUrl();\n  return url.includes('/p2p') || url.includes('/dashboard');\n}, 90000, 'Hết thời gian chờ đăng nhập!');\n\nconsole.log('✅ Đã nhận diện đăng nhập. Bắt đầu tiến trình tạo offer...');",
+              "err": {
+                "message": "WebDriverError: unknown error: net::ERR_NAME_NOT_RESOLVED\n  (Session info: chrome=144.0.7559.97)",
+                "estack": "WebDriverError: unknown error: net::ERR_NAME_NOT_RESOLVED\n  (Session info: chrome=144.0.7559.97)\n    at Object.throwDecodedError (node_modules\\selenium-webdriver\\lib\\error.js:523:15)\n    at parseHttpResponse (node_modules\\selenium-webdriver\\lib\\http.js:524:13)\n    at Executor.execute (node_modules\\selenium-webdriver\\lib\\http.js:456:28)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async Driver.execute (node_modules\\selenium-webdriver\\lib\\webdriver.js:745:17)\n    at async P2PPage.navigateTo (pages\\BasePage.js:13:5)\n    at async P2PPage.navigate (pages\\P2PPage.js:15:5)\n    at async Context.<anonymous> (tests\\createBulkOffers.test.js:26:5)",
+                "diff": null
+              },
+              "uuid": "d6c6ec93-7bd3-4876-b83a-c4ec4d5a3f6d",
+              "parentUUID": "5695a3d3-18c9-4882-9eb5-3b3f14e5151f",
+              "isHook": true,
+              "skipped": false
+            }
+          ],
+          "afterHooks": [
+            {
+              "title": "\"after all\" hook in \"Create Bulk Offers\"",
+              "fullTitle": "Create Bulk Offers \"after all\" hook in \"Create Bulk Offers\"",
+              "timedOut": false,
+              "duration": 5013,
+              "state": null,
+              "speed": null,
+              "pass": false,
+              "fail": false,
+              "pending": false,
+              "context": null,
+              "code": "if (driver) {\n  console.log('\\n🏁 Tất cả đã hoàn tất. Đóng trình duyệt sau 5 giây...');\n  await new Promise(res => setTimeout(res, 5000));\n  await driver.quit();\n}",
+              "err": {},
+              "uuid": "001b6a86-b169-4ebe-9df7-ac74d9341cdb",
+              "parentUUID": "5695a3d3-18c9-4882-9eb5-3b3f14e5151f",
+              "isHook": true,
+              "skipped": false
+            },
+            {
+              "title": "\"after each\" hook",
+              "fullTitle": "Create Bulk Offers \"after each\" hook",
+              "timedOut": false,
+              "duration": 0,
+              "state": null,
+              "speed": null,
+              "pass": false,
+              "fail": false,
+              "pending": false,
+              "context": null,
+              "code": "if (this.currentTest.state === 'failed') {\n  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');\n  const screenshotPath = path.join(config.screenshotPath || './screenshots', `error_${timestamp}.png`);\n  \n  try {\n    // Sử dụng driver trực tiếp để tránh lỗi p2pPage.takeScreenshot is not a function\n    const image = await driver.takeScreenshot();\n    const dir = path.dirname(screenshotPath);\n    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });\n    fs.writeFileSync(screenshotPath, image, 'base64');\n    console.log(`  📸 Screenshot lỗi đã lưu: ${screenshotPath}`);\n  } catch (err) {\n    console.error('  ❌ Không thể chụp ảnh màn hình:', err.message);\n  }\n}",
+              "err": {},
+              "uuid": "16491041-52a6-42fb-8360-8faf3f966e38",
+              "parentUUID": "5695a3d3-18c9-4882-9eb5-3b3f14e5151f",
+              "isHook": true,
+              "skipped": false
+            }
+          ],
+          "tests": [
+            {
+              "title": "should create 500 offers automatically",
+              "fullTitle": "Create Bulk Offers should create 500 offers automatically",
+              "timedOut": false,
+              "duration": 0,
+              "state": null,
+              "speed": null,
+              "pass": false,
+              "fail": false,
+              "pending": false,
+              "context": null,
+              "code": "let results = { success: 0, failed: 0 };\nlet failedOffers = [];\nfor (let i = 0; i < numberOfOffers; i++) {\n  // --- KHAI BÁO DỮ LIỆU OFFER TẠI ĐÂY (Sửa lỗi ReferenceError) ---\n  const offerData = {\n    side: 'SELL',\n    price_rate: (0.1).toString(), // Giá tăng dần nhẹ để dễ phân biệt\n    amount: '1',\n    limit: { \n      min: '1', \n      max: '1' \n    },\n    bank_info: {\n      account_number: '123456789',\n      account_name: `AUTO TEST ${i + 1}`\n    }\n  };\n  console.log(`\\n--------------------------------------------`);\n  console.log(`🚀 [${i + 1}/${numberOfOffers}] Đang tạo: ${offerData.bank_info.account_name}`);\n  try {\n    // Gọi hàm tạo offer\n    const isSuccess = await p2pPage.createOffer(offerData);\n    if (isSuccess) {\n      console.log(`✅ THÀNH CÔNG #${i + 1}`);\n      results.success++;\n    } else {\n      console.log(`❌ THẤT BẠI #${i + 1}`);\n      results.failed++;\n      failedOffers.push({ index: i + 1, data: offerData, reason: 'Hệ thống báo lỗi hoặc không thấy toast thành công' });\n    }\n  } catch (error) {\n    console.error(`🔥 LỖI NGHIÊM TRỌNG tại #${i + 1}:`, error.message);\n    results.failed++;\n    failedOffers.push({ index: i + 1, data: offerData, reason: error.message });\n  }\n  // Nghỉ ngắn để tránh treo trình duyệt (GPU error) và bị rate limit\n  await driver.sleep(1000);\n  \n  // Log báo cáo nhanh mỗi 10 offer\n  if ((i + 1) % 10 === 0) {\n    console.log(`\\n📊 TỔNG KẾT TẠM THỜI: Thành công ${results.success} | Thất bại ${results.failed}`);\n  }\n}\n// --- BÁO CÁO CUỐI CÙNG ---\nconsole.log('\\n' + '='.repeat(40));\nconsole.log('🏆 KẾT QUẢ CHẠY BULK OFFERS');\nconsole.log(`✔️ Tổng số thành công: ${results.success}`);\nconsole.log(`✖️ Tổng số thất bại: ${results.failed}`);\nconsole.log('='.repeat(40));\nif (failedOffers.length > 0) {\n  const reportPath = path.join(config.screenshotPath || './screenshots', 'failed_report.json');\n  fs.writeFileSync(reportPath, JSON.stringify(failedOffers, null, 2));\n  console.log(`📝 Danh sách lỗi đã lưu tại: ${reportPath}`);\n}\nexpect(results.success).to.be.at.least(1, 'Phải tạo được ít nhất 1 offer thành công');",
+              "err": {},
+              "uuid": "5d19e760-b687-447e-84c0-eb7676abae13",
+              "parentUUID": "5695a3d3-18c9-4882-9eb5-3b3f14e5151f",
+              "isHook": false,
+              "skipped": true
+            }
+          ],
+          "suites": [],
+          "passes": [],
+          "failures": [],
+          "pending": [],
+          "skipped": [
+            "5d19e760-b687-447e-84c0-eb7676abae13"
+          ],
+          "duration": 0,
+          "root": false,
+          "rootEmpty": false,
+          "_timeout": 6000000
+        }
+      ],
+      "passes": [],
+      "failures": [],
+      "pending": [],
+      "skipped": [],
+      "duration": 0,
+      "root": true,
+      "rootEmpty": true,
+      "_timeout": 60000
+    }
+  ],
+  "meta": {
+    "mocha": {
+      "version": "10.8.2"
+    },
+    "mochawesome": {
+      "options": {
+        "quiet": false,
+        "reportFilename": "mochawesome",
+        "saveHtml": true,
+        "saveJson": true,
+        "consoleReporter": "spec",
+        "useInlineDiffs": false,
+        "code": true
+      },
+      "version": "7.1.4"
+    },
+    "marge": {
+      "options": {
+        "[object Object]": true
+      },
+      "version": "6.3.2"
+    }
+  }
+}

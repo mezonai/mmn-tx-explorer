@@ -1,0 +1,31 @@
+{
+  "name": "mmn-tx-explorer-selenium-tests",
+  "version": "1.0.0",
+  "description": "Selenium automation tests for MMN Transaction Explorer",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha tests/**/*.test.js --timeout 60000",
+    "test:login": "mocha tests/login.test.js --timeout 60000",
+    "test:create-offer": "mocha tests/createOffer.test.js --timeout 60000",
+    "test:headless": "cross-env HEADLESS=true npm test",
+    "test:chrome": "cross-env BROWSER=chrome npm test",
+    "test:firefox": "cross-env BROWSER=firefox npm test"
+  },
+  "keywords": [
+    "selenium",
+    "automation",
+    "testing",
+    "e2e"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "chai": "^4.3.10",
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.3.1",
+    "faker": "^5.5.3",
+    "mocha": "^10.8.2",
+    "mochawesome": "^7.1.3",
+    "selenium-webdriver": "^4.16.0"
+  }
+}
