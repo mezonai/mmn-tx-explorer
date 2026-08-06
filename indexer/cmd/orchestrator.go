@@ -3,6 +3,7 @@ package cmd
 import (
 	"net/http"
 
+	"github.com/coreos/go-systemd/v22/daemon"
 	config "github.com/mezonai/mmn-tx-explorer/indexer/configs"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/orchestrator"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/rpc"
@@ -35,6 +36,10 @@ func RunOrchestrator(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to create orchestrator")
 	}
+
+	daemon.SdNotify(false, daemon.SdNotifyReady)
+	startSystemdWatchdog()
+
 	// Start Prometheus metrics server
 	log.Info().Msg("Starting Metrics Server on port 2112")
 	go func() {

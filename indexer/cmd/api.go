@@ -14,6 +14,8 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/swag"
 
+	"github.com/coreos/go-systemd/v22/daemon"
+
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/handlers"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/middleware"
 	"github.com/mezonai/mmn-tx-explorer/indexer/internal/storage"
@@ -128,6 +130,9 @@ func RunAPI(cmd *cobra.Command, args []string) {
 	}()
 
 	registerPprof()
+
+	daemon.SdNotify(false, daemon.SdNotifyReady)
+	startSystemdWatchdog()
 
 	// Listen for the interrupt signal.
 	<-ctx.Done()
