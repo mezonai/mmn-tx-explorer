@@ -27,9 +27,9 @@ func NewValidator(rpcClient rpc.IRPCClient, s storage.IStorage) *Validator {
 }
 
 // ValidateBlockRange godoc
-// @param startBlock - The start block number (inclusive)
-// @param endBlock - The end block number (inclusive)
-// @return error - An error if the validation fails
+// param startBlock - The start block number (inclusive)
+// param endBlock - The end block number (inclusive)
+// return error - An error if the validation fails
 func (v *Validator) ValidateBlockRange(startBlock, endBlock *big.Int) (validBlocks, invalidBlocks []common.BlockData, err error) {
 	dbData, err := v.storage.MainStorage.GetValidationBlockData(v.rpc.GetChainID(), startBlock, endBlock)
 	if err != nil {

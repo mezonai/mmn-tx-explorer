@@ -63,21 +63,6 @@ definitions:
         - $ref: '#/definitions/api.Meta'
         description: '@Description Metadata for the query response'
     type: object
-  common.BlockModel:
-    properties:
-      block_hash:
-        type: string
-      block_number:
-        type: integer
-      block_timestamp:
-        type: integer
-      chain_id:
-        type: string
-      parent_hash:
-        type: string
-      transaction_count:
-        type: integer
-    type: object
   common.BaseTransactionModel:
     properties:
       block_hash:
@@ -98,12 +83,29 @@ definitions:
         type: string
       to_address:
         type: string
+      transaction_extra_info_type:
+        $ref: '#/definitions/common.TransactionExtraInfoType'
       transaction_timestamp:
         type: integer
       transaction_type:
         type: integer
       value:
         type: string
+    type: object
+  common.BlockModel:
+    properties:
+      block_hash:
+        type: string
+      block_number:
+        type: integer
+      block_timestamp:
+        type: integer
+      chain_id:
+        type: string
+      parent_hash:
+        type: string
+      transaction_count:
+        type: integer
     type: object
   common.LogModel:
     properties:
@@ -130,6 +132,26 @@ definitions:
       transaction_index:
         type: integer
     type: object
+  common.TransactionExtraInfoType:
+    enum:
+    - dong-give-coffee
+    - give-coffee
+    - donation-campaign
+    - withdraw-campaign
+    - lucky-money
+    - token-transfer
+    - donation-campaign-feed
+    - p2p-trading
+    type: string
+    x-enum-varnames:
+    - TransactionExtraInfoDongGiveCoffee
+    - TransactionExtraInfoGiveCoffee
+    - TransactionExtraInfoDonationCampaign
+    - TransactionExtraInfoWithdrawCampaign
+    - TransactionExtraInfoLuckyMoney
+    - TransactionExtraInfoTokenTransfer
+    - TransactionExtraInfoDonationCampaignFeed
+    - TransactionExtraInfoP2PTrading
   common.TransactionModel:
     properties:
       block_hash:
@@ -152,6 +174,8 @@ definitions:
         type: string
       to_address:
         type: string
+      transaction_extra_info_type:
+        $ref: '#/definitions/common.TransactionExtraInfoType'
       transaction_timestamp:
         type: integer
       transaction_type:
@@ -257,7 +281,6 @@ definitions:
         additionalProperties: true
         type: object
     type: object
-info:
 host: localhost:8080
 info:
   contact:
@@ -862,6 +885,69 @@ paths:
       summary: Health check
       tags:
       - health
+  /v2/{chainId}/transactions/infinite:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve transactions with cursor-based pagination for infinite
+        scroll, returns binary protobuf
+      parameters:
+      - description: Chain ID
+        in: path
+        name: chainId
+        required: true
+        type: string
+      - description: Timestamp less than (from last page) in ISO 8601 format (e.g.,
+          2025-10-11T11:00:21.203Z)
+        format: date-time
+        in: query
+        name: timestamp_lt
+        type: string
+      - description: Last transaction hash (for pagination)
+        in: query
+        name: last_hash
+        type: string
+      - default: 20
+        description: Number of items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Wallet address to filter transactions
+        in: query
+        name: wallet_address
+        type: string
+      - description: From address to filter transactions
+        in: query
+        name: filter_from_address
+        type: string
+      - description: To address to filter transactions
+        in: query
+        name: filter_to_address
+        type: string
+      produces:
+      - application/x-protobuf
+      responses:
+        "200":
+          description: Protobuf encoded TransactionInfiniteResponse
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.Error'
+      security:
+      - BasicAuth: []
+      summary: Get transactions for infinite scroll (protobuf binary)
+      tags:
+      - transactions
 schemes:
 - http
 - https

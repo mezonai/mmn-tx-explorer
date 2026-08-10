@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"net/http"
@@ -64,8 +65,31 @@ func GetTransactions(c *gin.Context) {
 // @Failure 401 {object} api.Error
 // @Failure 500 {object} api.Error
 // @Router /{chainId}/transactions/infinite [get]
-func GetTransactionsInfinite(c *gin.Context) {
-	handleTransactionsInfiniteRequest(c)
+func GetTransactionsInfiniteJSON(c *gin.Context) {
+	handleTransactionsInfiniteRequestJSON(c)
+}
+
+// GetTransactionsInfiniteProto godoc
+// @Summary Get transactions for infinite scroll (protobuf binary)
+// @Description Retrieve transactions with cursor-based pagination for infinite scroll, returns binary protobuf
+// @Tags transactions
+// @Accept json
+// @Produce application/x-protobuf
+// @Security BasicAuth
+// @Param chainId path string true "Chain ID"
+// @Param timestamp_lt query string false "Timestamp less than (from last page) in ISO 8601 format (e.g., 2025-10-11T11:00:21.203Z)" format(date-time)
+// @Param last_hash query string false "Last transaction hash (for pagination)"
+// @Param limit query int false "Number of items per page" default(20)
+// @Param wallet_address query string false "Wallet address to filter transactions"
+// @Param filter_from_address query string false "From address to filter transactions"
+// @Param filter_to_address query string false "To address to filter transactions"
+// @Success 200 {string} binary "Protobuf encoded TransactionInfiniteResponse"
+// @Failure 400 {object} api.Error
+// @Failure 401 {object} api.Error
+// @Failure 500 {object} api.Error
+// @Router /v2/{chainId}/transactions/infinite [get]
+func GetTransactionsInfiniteProto(c *gin.Context) {
+	handleTransactionsInfiniteRequestProto(c)
 }
 
 func handleTransactionsRequest(c *gin.Context) {
@@ -192,31 +216,81 @@ func handleTransactionsRequest(c *gin.Context) {
 	c.JSON(http.StatusOK, queryResult)
 }
 
-func handleTransactionsInfiniteRequest(c *gin.Context) {
+func validateInfiniteScrollQueryParams(queryParams api.QueryParams) error {
+	walletAddress := queryParams.WalletAddress
+	fromAddress := queryParams.FilterParams["from_address"]
+	toAddress := queryParams.FilterParams["to_address"]
+
+	if walletAddress == "" && fromAddress == "" && toAddress == "" {
+		return fmt.Errorf("at least one of wallet_address, filter_from_address, or filter_to_address is required")
+	}
+
+	return nil
+}
+
+func fetchInfiniteScrollTransactions(ctx context.Context, queryParams api.QueryParams) ([]common.Transaction, error) {
+	walletAddress := queryParams.WalletAddress
+	fromAddress := queryParams.FilterParams["from_address"]
+	toAddress := queryParams.FilterParams["to_address"]
+	timestampLt := queryParams.TimestampLt
+	lastHash := queryParams.LastHash
+	limit := queryParams.Limit + 1 // +1 to check hasMore
+
+	mainStorage, err := storage.GetMainStorage()
+	if err != nil {
+		log.Error().Err(err).Msg("Error creating storage connector")
+		return nil, err
+	}
+
+	var transactions []common.Transaction
+
+	if walletAddress != "" {
+		transactions, err = mainStorage.GetTransactionsByWalletWithTimestamp(
+			ctx,
+			walletAddress,
+			limit,
+			timestampLt,
+			lastHash,
+		)
+		if err != nil {
+			log.Error().Err(err).Msg("Error querying transactions by wallet")
+			return nil, err
+		}
+	} else if fromAddress != "" {
+		transactions, err = mainStorage.GetTransactionsByFromAddressWithTimestamp(
+			ctx,
+			fromAddress,
+			limit,
+			timestampLt,
+			lastHash,
+		)
+		if err != nil {
+			log.Error().Err(err).Msg("Error querying transactions by from_address")
+			return nil, err
+		}
+	} else {
+		transactions, err = mainStorage.GetTransactionsByToAddressWithTimestamp(
+			ctx,
+			toAddress,
+			limit,
+			timestampLt,
+			lastHash,
+		)
+		if err != nil {
+			log.Error().Err(err).Msg("Error querying transactions by to_address")
+			return nil, err
+		}
+	}
+
+	return transactions, nil
+}
+
+func handleTransactionsInfiniteRequestJSON(c *gin.Context) {
 	queryParams, err := api.ParseQueryParams(c.Request)
 	if err != nil {
 		api.BadRequestErrorHandler(c, err)
 		return
 	}
-
-	walletAddress := queryParams.WalletAddress
-	var fromAddress, toAddress string
-
-	if filterParams, ok := queryParams.FilterParams["from_address"]; ok {
-		fromAddress = filterParams
-	}
-
-	if filterParams, ok := queryParams.FilterParams["to_address"]; ok {
-		toAddress = filterParams
-	}
-
-	if walletAddress == "" && fromAddress == "" && toAddress == "" {
-		api.BadRequestErrorHandler(c, fmt.Errorf("at least one of wallet_address, filter_from_address, or filter_to_address is required"))
-		return
-	}
-
-	timestampLt := queryParams.TimestampLt
-	lastHash := queryParams.LastHash
 
 	chainId, err := api.GetChainID(c)
 	if err != nil {
@@ -224,68 +298,16 @@ func handleTransactionsInfiniteRequest(c *gin.Context) {
 		return
 	}
 
-	mainStorage, err := storage.GetMainStorage()
-	if err != nil {
-		log.Error().Err(err).Msg("Error creating storage connector")
-		api.InternalErrorHandler(c)
+	if err := validateInfiniteScrollQueryParams(queryParams); err != nil {
+		api.BadRequestErrorHandler(c, err)
 		return
 	}
 
 	ctx := c.Request.Context()
-
-	queryResult := api.QueryResponse{
-		Meta: api.Meta{
-			ChainID: chainId.Uint64(),
-			Page:    0,
-			Limit:   queryParams.Limit,
-		},
-		Data: nil,
-	}
-
-	var transactions []common.Transaction
-
-	if walletAddress != "" {
-		txs, err := mainStorage.GetTransactionsByWalletWithTimestamp(
-			ctx,
-			walletAddress,
-			queryParams.Limit+1,
-			timestampLt,
-			lastHash,
-		)
-		if err != nil {
-			log.Error().Err(err).Msg("Error querying transactions by wallet")
-			api.InternalErrorHandler(c)
-			return
-		}
-		transactions = txs
-	} else if fromAddress != "" {
-		txs, err := mainStorage.GetTransactionsByFromAddressWithTimestamp(
-			ctx,
-			fromAddress,
-			queryParams.Limit+1,
-			timestampLt,
-			lastHash,
-		)
-		if err != nil {
-			log.Error().Err(err).Msg("Error querying transactions by from_address")
-			api.InternalErrorHandler(c)
-			return
-		}
-		transactions = txs
-	} else {
-		txs, err := mainStorage.GetTransactionsByToAddressWithTimestamp(
-			ctx,
-			toAddress,
-			queryParams.Limit+1,
-			timestampLt,
-			lastHash,
-		)
-		if err != nil {
-			log.Error().Err(err).Msg("Error querying transactions by to_address")
-			api.InternalErrorHandler(c)
-			return
-		}
-		transactions = txs
+	transactions, err := fetchInfiniteScrollTransactions(ctx, queryParams)
+	if err != nil {
+		api.InternalErrorHandler(c)
+		return
 	}
 
 	hasMore := len(transactions) > queryParams.Limit
@@ -301,14 +323,111 @@ func handleTransactionsInfiniteRequest(c *gin.Context) {
 		nextHash = lastTx.Hash
 	}
 
+	queryResult := api.QueryResponse{
+		Meta: api.Meta{
+			ChainID:       chainId.Uint64(),
+			Page:          0,
+			Limit:         queryParams.Limit,
+			HasMore:       hasMore,
+			NextTimestamp: &nextTimestamp,
+			NextHash:      nextHash,
+		},
+		Data: nil,
+	}
+
 	var data interface{} = serializeTransactions(transactions)
 	queryResult.Data = &data
 
-	queryResult.Meta.HasMore = hasMore
-	queryResult.Meta.NextTimestamp = &nextTimestamp
-	queryResult.Meta.NextHash = nextHash
-
 	c.JSON(http.StatusOK, queryResult)
+}
+
+func handleTransactionsInfiniteRequestProto(c *gin.Context) {
+	queryParams, err := api.ParseQueryParams(c.Request)
+	if err != nil {
+		api.BadRequestErrorHandler(c, err)
+		return
+	}
+
+	chainId, err := api.GetChainID(c)
+	if err != nil {
+		api.BadRequestErrorHandler(c, err)
+		return
+	}
+
+	if err := validateInfiniteScrollQueryParams(queryParams); err != nil {
+		api.BadRequestErrorHandler(c, err)
+		return
+	}
+
+	ctx := c.Request.Context()
+	transactions, err := fetchInfiniteScrollTransactions(ctx, queryParams)
+	if err != nil {
+		api.InternalErrorHandler(c)
+		return
+	}
+
+	hasMore := len(transactions) > queryParams.Limit
+	if hasMore {
+		transactions = transactions[:queryParams.Limit]
+	}
+
+	var nextTimestamp int64
+	var nextHash string
+	if len(transactions) > 0 {
+		lastTx := transactions[len(transactions)-1]
+		nextTimestamp = lastTx.TransactionTimestamp.Unix()
+		nextHash = lastTx.Hash
+	}
+
+	// Convert to protobuf TransactionItem
+	protoTxs := make([]*pb.TransactionItem, len(transactions))
+	for i, tx := range transactions {
+		var status *uint64
+		if tx.Status != nil {
+			status = tx.Status
+		}
+		protoTxs[i] = &pb.TransactionItem{
+			ChainId:                  tx.ChainID.String(),
+			Hash:                     tx.Hash,
+			Nonce:                    tx.Nonce,
+			BlockHash:                tx.BlockHash,
+			BlockNumber:              tx.BlockNumber.String(),
+			FromAddress:              tx.FromAddress,
+			ToAddress:                tx.ToAddress,
+			TransactionTimestamp:     uint64(tx.TransactionTimestamp.Unix()),
+			Value:                    tx.Value,
+			TransactionType:          tx.TransactionType,
+			Status:                   status,
+			TextData:                 tx.TextData,
+			ExtraInfo:                tx.ExtraInfo,
+			TransactionExtraInfoType: tx.TransactionExtraInfoType.String(),
+		}
+	}
+
+	// Build protobuf response
+	protoResponse := &pb.TransactionInfiniteResponse{
+		Meta: &pb.TransactionInfiniteMeta{
+			ChainId:       chainId.String(),
+			Page:          int32(0),
+			Limit:         int32(queryParams.Limit),
+			HasMore:       hasMore,
+			NextTimestamp: uint64(nextTimestamp),
+			NextHash:      nextHash,
+		},
+		Data: protoTxs,
+	}
+
+	// Marshal to binary using vtprotobuf
+	data, err := protoResponse.MarshalVT()
+	if err != nil {
+		log.Error().Err(err).Msg("Error marshaling protobuf response")
+		api.InternalErrorHandler(c)
+		return
+	}
+
+	// Return binary protobuf
+	c.Header("Content-Type", "application/x-protobuf")
+	c.Data(http.StatusOK, "application/x-protobuf", data)
 }
 
 func serializeTransactions(transactions []common.Transaction) []common.BaseTransactionModel {

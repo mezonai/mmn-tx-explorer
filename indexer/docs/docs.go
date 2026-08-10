@@ -46,6 +46,99 @@ const docTemplate = `{
                 }
             }
         },
+        "/v2/{chainId}/transactions/infinite": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Retrieve transactions with cursor-based pagination for infinite scroll, returns binary protobuf",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/x-protobuf"
+                ],
+                "tags": [
+                    "transactions"
+                ],
+                "summary": "Get transactions for infinite scroll (protobuf binary)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Chain ID",
+                        "name": "chainId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Timestamp less than (from last page) in ISO 8601 format (e.g., 2025-10-11T11:00:21.203Z)",
+                        "name": "timestamp_lt",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Last transaction hash (for pagination)",
+                        "name": "last_hash",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Number of items per page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Wallet address to filter transactions",
+                        "name": "wallet_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "From address to filter transactions",
+                        "name": "filter_from_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "To address to filter transactions",
+                        "name": "filter_to_address",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Protobuf encoded TransactionInfiniteResponse",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/{chainId}/blocks": {
             "get": {
                 "security": [
@@ -1039,29 +1132,6 @@ const docTemplate = `{
                 }
             }
         },
-        "common.BlockModel": {
-            "type": "object",
-            "properties": {
-                "block_hash": {
-                    "type": "string"
-                },
-                "block_number": {
-                    "type": "integer"
-                },
-                "block_timestamp": {
-                    "type": "integer"
-                },
-                "chain_id": {
-                    "type": "string"
-                },
-                "parent_hash": {
-                    "type": "string"
-                },
-                "transaction_count": {
-                    "type": "integer"
-                }
-            }
-        },
         "common.BaseTransactionModel": {
             "type": "object",
             "properties": {
@@ -1092,6 +1162,9 @@ const docTemplate = `{
                 "to_address": {
                     "type": "string"
                 },
+                "transaction_extra_info_type": {
+                    "$ref": "#/definitions/common.TransactionExtraInfoType"
+                },
                 "transaction_timestamp": {
                     "type": "integer"
                 },
@@ -1100,6 +1173,29 @@ const docTemplate = `{
                 },
                 "value": {
                     "type": "string"
+                }
+            }
+        },
+        "common.BlockModel": {
+            "type": "object",
+            "properties": {
+                "block_hash": {
+                    "type": "string"
+                },
+                "block_number": {
+                    "type": "integer"
+                },
+                "block_timestamp": {
+                    "type": "integer"
+                },
+                "chain_id": {
+                    "type": "string"
+                },
+                "parent_hash": {
+                    "type": "string"
+                },
+                "transaction_count": {
+                    "type": "integer"
                 }
             }
         },
@@ -1141,6 +1237,29 @@ const docTemplate = `{
                 }
             }
         },
+        "common.TransactionExtraInfoType": {
+            "type": "string",
+            "enum": [
+                "dong-give-coffee",
+                "give-coffee",
+                "donation-campaign",
+                "withdraw-campaign",
+                "lucky-money",
+                "token-transfer",
+                "donation-campaign-feed",
+                "p2p-trading"
+            ],
+            "x-enum-varnames": [
+                "TransactionExtraInfoDongGiveCoffee",
+                "TransactionExtraInfoGiveCoffee",
+                "TransactionExtraInfoDonationCampaign",
+                "TransactionExtraInfoWithdrawCampaign",
+                "TransactionExtraInfoLuckyMoney",
+                "TransactionExtraInfoTokenTransfer",
+                "TransactionExtraInfoDonationCampaignFeed",
+                "TransactionExtraInfoP2PTrading"
+            ]
+        },
         "common.TransactionModel": {
             "type": "object",
             "properties": {
@@ -1173,6 +1292,9 @@ const docTemplate = `{
                 },
                 "to_address": {
                     "type": "string"
+                },
+                "transaction_extra_info_type": {
+                    "$ref": "#/definitions/common.TransactionExtraInfoType"
                 },
                 "transaction_timestamp": {
                     "type": "integer"
@@ -1212,7 +1334,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.BaseTransactionDetailResponse": {
+        "handlers.InternalTransactionDetailResponse": {
             "type": "object",
             "properties": {
                 "data": {
