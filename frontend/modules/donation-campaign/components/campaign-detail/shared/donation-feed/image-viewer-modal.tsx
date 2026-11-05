@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useBreakpoint } from '@/hooks';
 import { EBreakpoint } from '@/enums';
 import { ipfsServiceURL } from '@/service';
+import { downloadFile } from '@/utils';
 
 const MIN_SWIPE_DISTANCE = 50;
 const CONTROL_AUTO_HIDE_DELAY = 2000;
@@ -23,6 +24,7 @@ export const ImageViewerModal = ({ isOpen, images, initialIndex, onClose }: Imag
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [showControls, setShowControls] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const isMobile = !(useBreakpoint(EBreakpoint.MD) ?? true);
   useEffect(() => {
@@ -40,6 +42,18 @@ export const ImageViewerModal = ({ isOpen, images, initialIndex, onClose }: Imag
   const handleClose = () => {
     setShowControls(false);
     onClose();
+  };
+
+  const handleDownload = async () => {
+    const cid = images[currentIndex];
+    if (!cid || isDownloading) return;
+
+    setIsDownloading(true);
+    try {
+      await downloadFile(`${ipfsServiceURL}/${cid}`, cid);
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -148,6 +162,21 @@ export const ImageViewerModal = ({ isOpen, images, initialIndex, onClose }: Imag
         <X className="h-6 w-6" />
       </Button>
 
+      {/* Not using `disabled`: Button applies pointer-events-none, so the click would fall through and close the modal */}
+      <Button
+        onClick={(e) => {
+          e.stopPropagation();
+          handleDownload();
+        }}
+        variant="secondary"
+        className="absolute top-4 right-16 z-[10000] h-10 w-10 rounded-full p-2 text-black transition-colors"
+        aria-label="Download image"
+        aria-busy={isDownloading}
+        title="Download image"
+      >
+        {isDownloading ? <Loader2 className="h-6 w-6 animate-spin" /> : <Download className="h-6 w-6" />}
+      </Button>
+
       {hasMultipleImages && (
         <Button
           onClick={(e) => {
@@ -179,8 +208,9 @@ export const ImageViewerModal = ({ isOpen, images, initialIndex, onClose }: Imag
               src={`${ipfsServiceURL}/${cid}`}
               alt={`Image ${i + 1} of ${images.length}`}
               className={`absolute inset-0 m-auto max-h-screen max-w-screen object-contain transition-opacity duration-300 ease-out ${
-                i === currentIndex ? 'opacity-100' : 'opacity-0'
+                i === currentIndex ? 'opacity-100' : 'pointer-events-none opacity-0'
               }`}
+              aria-hidden={i !== currentIndex}
               draggable={false}
             />
           ))}
