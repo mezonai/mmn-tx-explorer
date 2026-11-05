@@ -161,7 +161,17 @@ export const uploadAttachmentFile = async (
 };
 
 /**
- * Downloads a file by fetching it as a blob. 
+ * Appends an extension inferred from an image MIME type when the filename has none (e.g. IPFS CIDs).
+ */
+const withImageExtension = (filename: string, mimeType: string): string => {
+    if (/\.\w+$/.test(filename) || !mimeType.startsWith('image/')) return filename;
+
+    const subtype = mimeType.slice('image/'.length).split(/[+;]/)[0];
+    return `${filename}.${subtype === 'jpeg' ? 'jpg' : subtype}`;
+};
+
+/**
+ * Downloads a file by fetching it as a blob.
  * This approach helps bypass modern browser restrictions when downloading files from different origins.
  * @param url - The direct file URL
  * @param filename - The name to save the file as
@@ -176,7 +186,7 @@ export const downloadFile = async (url: string, filename: string): Promise<void>
 
         const link = document.createElement('a');
         link.href = blobUrl;
-        link.download = filename;
+        link.download = withImageExtension(filename, blob.type);
         document.body.appendChild(link);
         link.click();
 
