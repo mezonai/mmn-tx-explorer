@@ -471,8 +471,8 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
             </div>
           )}
 
-          <div className="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-12">
-            <div className="flex flex-col gap-3 lg:col-span-8">
+          <div className="mb-3 grid grid-cols-1 gap-3 xl:grid-cols-12">
+            <div className="flex flex-col gap-3 xl:col-span-8">
               <OrderInfoCard order={effectiveOrder} userRole={userRole} />
               {order &&
                 order.transfer_code &&
@@ -489,7 +489,7 @@ export const TradingRoom = ({ orderId }: TradingRoomProps) => {
                 })()}
             </div>
 
-            <div className="lg:col-span-4">
+            <div className="xl:col-span-4">
               {order &&
                 (() => {
                   // Determine seller's payment info: SELL offer = offer creator, BUY offer = order creator
