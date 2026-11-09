@@ -62,11 +62,11 @@ export const QrCodeCard = ({ payment_info, transfer_code, amount }: QrCodeCardPr
   }
 
   return (
-    <Card className="bg-card border-border mb-4 h-full gap-0 overflow-hidden rounded-lg border p-0 shadow-lg">
+    <Card className="bg-card border-border h-full gap-0 overflow-hidden rounded-lg border p-0 shadow-lg">
       {payment && (
         <p
           role="note"
-          className="flex items-start gap-2 bg-yellow-400 p-3 text-sm leading-snug font-medium text-red-800"
+          className="bg-warning text-warning-foreground flex items-start gap-2 p-3 text-sm leading-snug font-medium"
         >
           <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
           <span>Message the seller first and confirm they’re online.</span>
@@ -80,9 +80,7 @@ export const QrCodeCard = ({ payment_info, transfer_code, amount }: QrCodeCardPr
           <h3 className="min-w-0 text-sm leading-snug font-bold text-balance break-words text-white">
             {payment ? `Pay ${payment.accountName}` : 'Scan to pay'}
           </h3>
-          <span className="shrink-0 rounded bg-white/15 px-1.5 py-0.5 text-[10px] font-bold text-white">
-            mezon-dong
-          </span>
+          <span className="shrink-0 rounded bg-white/15 px-1.5 py-0.5 text-xs font-bold text-white">mezon-dong</span>
         </div>
         {payment?.amount ? (
           <p className="mt-2 text-2xl leading-tight font-bold break-words text-white tabular-nums">
@@ -117,8 +115,9 @@ export const QrCodeCard = ({ payment_info, transfer_code, amount }: QrCodeCardPr
             </div>
           </div>
 
+          {/* Translucent in dark mode for the same contrast reason as the band above. */}
           <Button
-            className="bg-brand-primary hover:bg-brand-primary/90 mx-auto w-full max-w-86 text-white motion-reduce:transition-none"
+            className="bg-brand-primary hover:bg-brand-primary/90 dark:bg-brand-primary/80 dark:hover:bg-brand-primary/70 mx-auto w-full max-w-86 text-white motion-reduce:transition-none pointer-coarse:h-11"
             onClick={handleDownload}
             disabled={isDownloading}
             aria-busy={isDownloading}
@@ -133,7 +132,7 @@ export const QrCodeCard = ({ payment_info, transfer_code, amount }: QrCodeCardPr
         </div>
       ) : (
         <div className="p-3">
-          <div className="border-border bg-muted/50 flex aspect-square w-full items-center justify-center rounded-lg border border-dashed p-4">
+          <div className="border-border bg-muted/50 flex w-full items-center justify-center rounded-lg border border-dashed p-4">
             <p className="text-muted-foreground text-center text-sm">
               QR code unavailable for this bank account. Please transfer using the bank details.
             </p>
