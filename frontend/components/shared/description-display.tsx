@@ -22,7 +22,7 @@ export const DescriptionDisplay = ({ description, lineShow, className }: Descrip
       className={cn('mt-2 w-full text-sm leading-6 break-words text-gray-600 dark:text-gray-400', className)}
       style={clampStyle}
     >
-      <div className="whitespace-pre-line">{description}</div>
+      <div className="whitespace-pre-line">{description?.split('\n\n').join('\n\n')}</div>
     </div>
   );
 };
