@@ -42,7 +42,7 @@ export const CampaignCard = ({ campaign }: CampaignCardProps) => {
   }, [status, total_amount, goal]);
 
   const progressPercent = useMemo(() => {
-    if (goal <= 0) return !total_amount ? 0 : 100;
+    if (!goal || goal <= 0) return !total_amount ? 0 : 100;
     return Math.min(Math.max(Math.floor((NumberUtil.scaleDown(total_amount) / goal) * 100), 0), 100);
   }, [total_amount, goal]);
 
